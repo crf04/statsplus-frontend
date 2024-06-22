@@ -1,0 +1,38 @@
+.filters-container,
+.players-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.custom-range {
+  width: 100%;
+}
+
+.mt-4 {
+  margin-top: 1.5rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.mr-1 {
+  margin-right: 0.25rem !important;
+}
+
+.table-horizontal-gridlines {
+  border-collapse: collapse;
+}
+
+.table-horizontal-gridlines th,
+.table-horizontal-gridlines td {
+  border-bottom: 1px solid #dee2e6;
+  padding: 8px;
+}
+
+.table-horizontal-gridlines thead th {
+  border-bottom: 2px solid #dee2e6;
+}
+

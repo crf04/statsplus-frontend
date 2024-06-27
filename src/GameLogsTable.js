@@ -24,7 +24,6 @@ const GameLogsTable = ({ gameLogs }) => {
 
   return (
     <div>
-      <h3>Game Logs</h3>
       {gameLogs.length > 0 ? (
         <table {...getTableProps()} className="table table-no-gridlines">
           <thead>

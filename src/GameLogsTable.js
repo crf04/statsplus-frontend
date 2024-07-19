@@ -23,7 +23,7 @@ const GameLogsTable = ({ gameLogs }) => {
   } = useTable({ columns, data }, useSortBy);
 
   return (
-    <div>
+    <div className="table-responsive">
       {gameLogs.length > 0 ? (
         <table {...getTableProps()} className="table table-no-gridlines">
           <thead>

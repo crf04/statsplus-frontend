@@ -1,0 +1,12 @@
+.suggestions-list {
+    position: absolute;
+    z-index: 1000;
+    width: calc(100% - 20px); /* Adjust width to match the search box */
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+    margin-top: 2px; /* Adjust margin to avoid overlapping with the input */
+  }
+  

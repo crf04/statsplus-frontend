@@ -115,3 +115,15 @@
 .track.track-1 {
   background: #007bff;
 }
+
+.applied-filter-badge {
+  font-size: 0.85em;
+  padding: 5px 8px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+
+.chart-container {
+  margin-top: 15px;
+}

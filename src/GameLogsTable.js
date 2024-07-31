@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTable, useSortBy } from 'react-table';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './GameLogFilter.css'; // Import the custom CSS file
+import './GameLogFilter.css'; 
 
 const GameLogsTable = ({ gameLogs }) => {
   const columns = React.useMemo(

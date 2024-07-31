@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from 'recharts';
 
-const AssistProfileChart = ({ assistData, teamData }) => {
+const TwoThreeAssistChart = ({ assistData, teamData }) => {
   if (!assistData || Object.keys(assistData).length === 0) {
     return <p>No assist data available for chart</p>;
   }
@@ -14,10 +14,7 @@ const AssistProfileChart = ({ assistData, teamData }) => {
   };
 
   const processData = () => {
-    const assistTypes = [
-      'Arc3Assists', 'Corner3Assists', 'AtRimAssists', 
-      'ShortMidRangeAssists', 'LongMidRangeAssists'
-    ];
+    const assistTypes = ['ThreePtAssists', 'TwoPtAssists'];
     return assistTypes.map(type => {
       const frequency = parseFloat(assistData[type]) || 0;
       const frequencyPlus = -(1 - parseFloat(assistData[`${type}+`])) * 100 || 0;
@@ -26,7 +23,7 @@ const AssistProfileChart = ({ assistData, teamData }) => {
       const teamDefenseRank = teamData ? (parseInt(teamData[`${type}_RANK`]) || 0) : null;
 
       return {
-        type: type.replace('Assists', '').replace('MidRange','MR'),
+        type: type.replace('Assists', ''),
         frequency,
         frequencyPlus,
         teamDefense,
@@ -64,7 +61,7 @@ const AssistProfileChart = ({ assistData, teamData }) => {
       );
     }
     return null;
-    };
+  };
 
   return (
     <div style={{ width: '100%', height: '400px', position: 'relative' }}>
@@ -79,7 +76,7 @@ const AssistProfileChart = ({ assistData, teamData }) => {
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="type" angle={-45} textAnchor="end" interval={0} height={80} />
+          <XAxis dataKey="type" />
           <YAxis yAxisId="left">
             <Label angle={-90} value="Frequency (%)" position="insideLeft" style={{ textAnchor: 'middle' }} />
           </YAxis>
@@ -92,7 +89,7 @@ const AssistProfileChart = ({ assistData, teamData }) => {
           <Legend />
           <Bar yAxisId="left" dataKey="frequency" name="Assist Frequency (%)" fill="#8884d8" />
           {teamData && (
-            <Line yAxisId="right" type="monotone" dataKey="teamDefense" name="Team Defense" stroke="#82ca9d" />
+            <Line yAxisId="right" type="monotone" dataKey="teamDefense" name="Team Defense" stroke="#ff7300" />
           )}
         </ComposedChart>
       </ResponsiveContainer>
@@ -116,4 +113,4 @@ const AssistProfileChart = ({ assistData, teamData }) => {
   );
 };
 
-export default AssistProfileChart;
+export default TwoThreeAssistChart;

@@ -174,7 +174,7 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
               <Form.Control type="number" value={gameFilter} onChange={e => setGameFilter(parseInt(e.target.value))} />
             </Form.Group>
             <Form.Group className="mb-4">
-              <Form.Label>Playstyle Matchup Rating: {playstyleMatchupRating[0]} - {playstyleMatchupRating[1]}</Form.Label>
+              <Form.Label>Playtype Matchup Rating: {playstyleMatchupRating[0]} - {playstyleMatchupRating[1]}</Form.Label>
               <ReactSlider
                 className="horizontal-slider"
                 thumbClassName="thumb"
@@ -213,12 +213,33 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
         <Form.Group className="mb-4">
           <Form.Label>Defensive Filter:</Form.Label>
           <InputGroup>
-            <Form.Select value={selectedDefensiveFilter} onChange={e => setSelectedDefensiveFilter(e.target.value)}>
+            <Form.Select 
+              value={selectedDefensiveFilter} 
+              onChange={e => setSelectedDefensiveFilter(e.target.value)}
+            >
               {defensiveOptions.map(option => (
                 <option key={option} value={option}>{option}</option>
               ))}
             </Form.Select>
-            <FormControl type="number" value={filterNumber} onChange={e => setFilterNumber(parseInt(e.target.value) || 0)} placeholder="Number" />
+            <FormControl 
+              type="text" 
+              value={filterNumber} 
+              onChange={e => {
+                const value = e.target.value;
+                if (value === '' || /^-?\d*$/.test(value)) {
+                  setFilterNumber(value);
+                }
+              }}
+              onBlur={() => {
+                if (filterNumber === '' || isNaN(parseInt(filterNumber))) {
+                  setFilterNumber('');
+                } else {
+                  setFilterNumber(parseInt(filterNumber).toString());
+                }
+              }}
+              placeholder="Number" 
+              style={{ appearance: 'textfield' }}
+            />
             <Button variant="outline-primary" onClick={handleAddFilter}>Add</Button>
           </InputGroup>
           <div className="mt-2">

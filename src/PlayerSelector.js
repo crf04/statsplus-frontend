@@ -38,7 +38,7 @@ const PlayerSelector = ({ selectedPlayer, setSelectedPlayer, lineType, setLineTy
     <Row className="mb-4">
       <Col md={4} className="position-relative">
         <Form.Group>
-          <Form.Label>Select Player:</Form.Label>
+          <Form.Label>Player:</Form.Label>
           <FormControl
             type="text"
             value={searchTerm}

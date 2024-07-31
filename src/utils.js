@@ -35,10 +35,11 @@ export const RankCube = ({ rank }) => {
   return <div style={cubeStyle}>{rank}</div>;
 };
 
-export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages, setInitialGameLogs) => {
+export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam) => {
   if (selectedPlayer === "None") {
     setGameLogs([]);
     setAverages([]);
+    setSelectedTeam('');
   }
   if (selectedPlayer && selectedPlayer !== 'None') {
     axios.get('http://127.0.0.1:5000/api/game_logs', {
@@ -47,17 +48,17 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
       }
     })
     .then(response => {
-      const { game_logs, averages, season_averages } = response.data;
+      const { game_logs, averages, season_averages, next_game } = response.data;
       setGameLogs(JSON.parse(game_logs).reverse());
       setInitialGameLogs(JSON.parse(game_logs).reverse());
       setAverages([JSON.parse(averages)[0], JSON.parse(season_averages)[0]]);
+      setSelectedTeam(next_game);
     })
     .catch(error => {
       console.error('There was an error fetching the unfiltered game logs!', error);
     });
   }
 };
-
 export const fetchGameLogs = (params, setGameLogs, setAverages) => {
   axios.get('http://127.0.0.1:5000/api/game_logs', { params })
     .then(response => {

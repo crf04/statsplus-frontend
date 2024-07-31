@@ -61,6 +61,10 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     setDateFilter(e.target.value);
   };
 
+  const handleTeamChange = (e) => {
+    setSelectedTeam(e.target.value);
+  };
+
   const renderTeamStats = () => {
     if (!teamStats) return <p>Select a team and category to view stats.</p>;
 
@@ -206,7 +210,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
               <Form.Group>
                 <Form.Select 
                   value={selectedTeam} 
-                  onChange={e => setSelectedTeam(e.target.value)}
+                  onChange={handleTeamChange}
                 >
                   <option value="">Choose a team</option>
                   {teams.map(team => (

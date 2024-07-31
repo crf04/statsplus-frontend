@@ -4,7 +4,7 @@ import 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { Chart } from 'chart.js';
 import MetricsDashboardRow from './MetricsDashboardRow';
-import AppliedFiltersDisplay from './AppliedFiltersDisplay';
+import AppliedFilters from './AppliedFilters'
 
 Chart.register(annotationPlugin);
 
@@ -111,7 +111,6 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
     }
   }, [lineType, lineValue, gameLogs, averages]);
 
-
   return (
     <>
       {gameLogs.length > 0 && lineType !== 'None' && (
@@ -125,11 +124,16 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
             last5ratio = {`${gameLogs.slice(1).slice(-5).filter(log => log[lineType] > parseFloat(lineValue)).length}/${gameLogs.slice(1).slice(-5).length}`}
             last10ratio = {`${gameLogs.slice(1).slice(-10).filter(log => log[lineType] > parseFloat(lineValue)).length}/${gameLogs.slice(1).slice(-10).length}`}
           />
-          <Bar 
-            ref={chartRef}
-            data={getChartData()} 
-            options={getChartOptions()} 
-          />
+          <div className="mt-3 mb-3">
+            <AppliedFilters filters={appliedFilters} />
+          </div>
+          <div className="chart-container">
+            <Bar 
+              ref={chartRef}
+              data={getChartData()} 
+              options={getChartOptions()} 
+            />
+          </div>
         </>
       )}
     </>

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Form, ToggleButtonGroup, ToggleButton, Row, Col, Table } from 'react-bootstrap';
+import { Card, Form, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
+import TwoThreeAssistChart from './TwoThreeAssistChart';
+import ArchetypeGameLogs from './ArchetypeGameLogs';
 
 const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
-  const [selectedProfile, setSelectedProfile] = useState('playstyles');
+  const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,13 +21,14 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       const playerRequest = axios.get('http://127.0.0.1:5000/api/player_profile', {
         params: { 
           player_name: selectedPlayer,
-          category: selectedProfile
+          category: selectedProfile,
+          opp_team: selectedTeam
         }
       });
 
       const teamRequest = selectedTeam ? axios.get('http://127.0.0.1:5000/api/team_stats', {
         params: {
-          category: selectedProfile === 'playstyles' ? 'Playtypes' : 'Assists',
+          category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
           team: selectedTeam
         }
       }) : Promise.resolve({ data: null });
@@ -76,9 +79,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         <Col md={12}>
           <h5>{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h5>
           <AssistProfileChart assistData={assistData} teamData={teamData} />
+          <TwoThreeAssistChart assistData={assistData} teamData={teamData} />
         </Col>
       </Row>
-
     );
   };
 
@@ -91,34 +94,45 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       return <p className="text-danger">{error}</p>;
     }
 
-    if (selectedProfile === 'playstyles') {
-      if (playerData) {
-        return (
+    switch (selectedProfile) {
+      case 'Playtypes':
+        return playerData ? (
           <div style={{ width: '100%', height: '500px' }}>
             <h5 style={{ textAlign: 'center', marginBottom: '20px' }}>{selectedPlayer} vs {selectedTeam || 'All'}</h5>
             <PlaystyleComparisonChart playerData={playerData} teamData={teamData} />
           </div>
-        );
-      } else {
-        return <p>No player data available</p>;
-      }
-    } else {
-      return renderAssistProfile();
+        ) : <p>No player data available</p>;
+      case 'assists':
+        return renderAssistProfile();
+      case 'Archetype':
+        return playerData ? (
+          <ArchetypeGameLogs 
+            selectedPlayer={selectedPlayer} 
+            selectedTeam={selectedTeam}
+            gameLogs={playerData}
+          />
+        ) : <p>No archetype data available</p>;
+      default:
+        return <p>Select a profile type</p>;
     }
   };
+
+  const handleSelectedProfile = (profile) => {
+    setSelectedProfile(profile);
+  }
 
   return (
     <Card className="shadow-sm">
       <Card.Body>
         <h4 className="mb-4">Player Profile: {selectedProfile.charAt(0).toUpperCase() + selectedProfile.slice(1)}</h4>
         <Form.Group className="mb-3">
-          <ToggleButtonGroup type="radio" name="profile" value={selectedProfile} onChange={setSelectedProfile}>
+          <ToggleButtonGroup type="radio" name="profile" value={selectedProfile} onChange={handleSelectedProfile}>
             <ToggleButton
               id="tbg-btn-playstyles"
-              value="playstyles"
+              value="Playtypes"
               variant="outline-primary"
             >
-              Playstyles
+              Playtypes
             </ToggleButton>
             <ToggleButton
               id="tbg-btn-assists"
@@ -126,6 +140,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
               variant="outline-primary"
             >
               Assists
+            </ToggleButton>
+            <ToggleButton
+              id="tbg-btn-archetype"
+              value="Archetype"
+              variant="outline-primary"
+            >
+              Archetype
             </ToggleButton>
           </ToggleButtonGroup>
         </Form.Group>

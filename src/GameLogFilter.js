@@ -34,13 +34,20 @@ const GameLogFilter = () => {
   }, []);
 
   useEffect(() => {
-    fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs);
+    fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam);
   }, [selectedPlayer]);
 
   const handleApplyFilters = (filterParams) => {
-    setAppliedFilters(filterParams);
-    fetchGameLogs(filterParams, setGameLogs, setAverages);
+    const cleanedFilters = Object.fromEntries(
+      Object.entries(filterParams).filter(([_, value]) => 
+        value !== null && value !== '' && 
+        !(Array.isArray(value) && value.length === 0)
+      )
+    );
+    setAppliedFilters(cleanedFilters);
+    fetchGameLogs(cleanedFilters, setGameLogs, setAverages);
   };
+
   return (
     <Container fluid className="game-log-filter py-5">
       <Row className="mb-5">
@@ -64,6 +71,7 @@ const GameLogFilter = () => {
                 averages={averages}
                 appliedFilters={appliedFilters}
               />
+              
             </Card.Body>
           </Card>
         </Col>
@@ -72,7 +80,7 @@ const GameLogFilter = () => {
             playerList={playerList}
             onApplyFilters={handleApplyFilters}
             selectedPlayer={selectedPlayer}
-            gameLogs = {gameLogs}
+            gameLogs={gameLogs}
             initialGameLogs={initialGameLogs}
           />
         </Col>

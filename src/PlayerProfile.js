@@ -18,7 +18,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       setLoading(true);
       setError(null);
 
-      const playerRequest = axios.get('http://127.0.0.1:5000/api/player_profile', {
+      const playerRequest = axios.get('http://127.0.0.1:5000/api/players/profile', {
         params: { 
           player_name: selectedPlayer,
           category: selectedProfile,
@@ -26,7 +26,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         }
       });
 
-      const teamRequest = selectedTeam ? axios.get('http://127.0.0.1:5000/api/team_stats', {
+      const teamRequest = selectedTeam ? axios.get('http://127.0.0.1:5000/api/teams/stats', {
         params: {
           category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
           team: selectedTeam

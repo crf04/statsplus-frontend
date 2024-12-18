@@ -42,7 +42,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
     setSelectedTeam('');
   }
   if (selectedPlayer && selectedPlayer !== 'None') {
-    axios.get('http://127.0.0.1:5000/api/game_logs', {
+    axios.get('http://127.0.0.1:5000/api/games/game_logs', {
       params: {
         player_name: selectedPlayer,
       }
@@ -60,7 +60,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
   }
 };
 export const fetchGameLogs = (params, setGameLogs, setAverages) => {
-  axios.get('http://127.0.0.1:5000/api/game_logs', { params })
+  axios.get('http://127.0.0.1:5000/api/games/game_logs', { params })
     .then(response => {
       const { game_logs, averages, season_averages } = response.data;
       setGameLogs(JSON.parse(game_logs).reverse());

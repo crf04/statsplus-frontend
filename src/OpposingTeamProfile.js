@@ -13,7 +13,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
 
   const fetchTeamStats = useCallback(() => {
     if (selectedTeam && selectedCategory) {
-      let endpoint = 'http://127.0.0.1:5000/api/team_stats';
+      let endpoint = 'http://127.0.0.1:5000/api/teams/stats';
       axios.get(endpoint, {
         params: {
           category: selectedCategory,

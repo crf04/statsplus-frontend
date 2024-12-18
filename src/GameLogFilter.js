@@ -28,7 +28,7 @@ const GameLogFilter = () => {
       .then(response => setPlayerList(response.data))
       .catch(error => console.error('Error fetching player list:', error));
 
-    axios.get('http://127.0.0.1:5000/api/get_teams')
+    axios.get('http://127.0.0.1:5000/api/teams')
       .then(response => setTeams(response.data))
       .catch(error => console.error('Error fetching team list:', error));
   }, []);

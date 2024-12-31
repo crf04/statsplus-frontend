@@ -22,7 +22,11 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
         }
       })
       .then(response => {
-        if (response.data && typeof response.data === 'object') {
+        console.log('Raw response:', response);
+        console.log('Response data type:', typeof response.data);
+        console.log('Response data:', response.data);
+        console.log('Is array?', Array.isArray(response.data));
+        if (response.data) {
           setTeamStats(response.data);
         } else {
           console.error('Received invalid data format for team stats');
@@ -65,6 +69,99 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     setSelectedTeam(e.target.value);
   };
 
+  const transformShootingTypeData = (data) => {
+    // Early return if no data
+    if (!data) return [];
+    
+    let parsedData;
+    // Parse the string data into JSON
+    if (typeof data === 'string') {
+      try {
+        parsedData = JSON.parse(data);
+      } catch (e) {
+        console.error('Failed to parse string data:', e);
+        return [];
+      }
+    } else {
+      parsedData = data;
+    }
+    
+    // If we don't have an array after parsing, return empty
+    if (!Array.isArray(parsedData)) {
+      console.error('Parsed data is not an array:', parsedData);
+      return [];
+    }
+  
+    return parsedData.map(item => {
+      const row = {
+        ShootingType: item.ShootingType || 'Unknown',
+        PTS: item.PTS.toFixed(1),
+        PTS_RANK: item.PTS_RANK,
+        FG2A: item.FG2A.toFixed(1),
+        FG2A_RANK: item.FG2A_RANK,
+        FG2M: item.FG2M.toFixed(1),
+        FG2M_RANK: item.FG2M_RANK,
+        FG3A: item.FG3A.toFixed(1),
+        FG3A_RANK: item.FG3A_RANK,
+        FG3M: item.FG3M.toFixed(1),
+        FG3M_RANK: item.FG3M_RANK,
+      };
+      return row;
+    });
+  };
+
+  const renderShootingTypeStats = () => {
+    const transformedData = transformShootingTypeData(teamStats);
+  
+    if (!transformedData || transformedData.length === 0) {
+      return <p>No data available for Shooting Type stats.</p>;
+    }
+  
+    // Modified to show stats and their ranks together
+    const statPairs = [
+      {value: 'PTS', rank: 'PTS_RANK'},
+      { value: 'FG2A', rank: 'FG2A_RANK' },
+      { value: 'FG2M', rank: 'FG2M_RANK' },
+      { value: 'FG3A', rank: 'FG3A_RANK' },
+      { value: 'FG3M', rank: 'FG3M_RANK' }
+    ];
+  
+    return (
+      <BSTable striped bordered hover size="sm">
+        <thead>
+          <tr>
+            <th>Shooting Type</th>
+            {statPairs.map(({ value }) => (
+              <th key={value}>{value}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {transformedData.map((row) => {
+            const shootingType = row.ShootingType || 'N/A';
+            return (
+              <tr key={shootingType}>
+                <td>{shootingType}</td>
+                {statPairs.map(({ value, rank }) => (
+                  <td 
+                    key={`${shootingType}-${value}`}
+                    style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span>{row[value]}</span>
+                      {row[rank] !== undefined && <RankCube rank={row[rank]} />}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </BSTable>
+    );
+  };
+  
+
   const renderTeamStats = () => {
     if (!teamStats) return <p>Select a team and category to view stats.</p>;
 
@@ -82,6 +179,12 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     } else if (selectedCategory === 'Zone Shooting') {
       statColumns = ['Restricted Area_OPP_FGM', 'Restricted Area_OPP_FGA', 'In The Paint (Non-RA)_OPP_FGM', 'In The Paint (Non-RA)_OPP_FGA', 'Mid-Range_OPP_FGM', 'Mid-Range_OPP_FGA', 'Above the Break 3_OPP_FGM', 'Above the Break 3_OPP_FGA', 'Corner 3_OPP_FGM', 'Corner 3_OPP_FGA'];
     }
+    else if (selectedCategory === 'Shooting Type') {
+      return renderShootingTypeStats();
+    }
+
+    
+    
 
     const renderStatRow = (stat) => {
       const value = teamStats[stat] !== undefined ? Number(teamStats[stat]).toFixed(2) : 'N/A';
@@ -229,6 +332,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
                   <option value="Playtypes">Playtypes</option>
                   <option value="Assists">Assists</option>
                   <option value="Zone Shooting">Zone Shooting</option>
+                  <option value="Shooting Type">Shooting Type</option>
                 </Form.Select>
               </Form.Group>
             </Col>

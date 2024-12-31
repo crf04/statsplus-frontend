@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 export const lineTypeOptions = [
-  'None', 'PTS', 'FG3M', 'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FG3A', 'FTM', 'FGA', 'STKS'
+  'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM', 'STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TO'
 ];
 
 export const defensiveOptions = [
-  'None', 'C&S 3s', 'C&S PTS', 'PU 2s', 'PU 3s', 'PU PTS', 'Less Than 10 ft', 
+  'None', 'C&S 3s', 'C&S PTS', 'C&S 3A','PU 2s', 'PU 3s', 'PU PTS', 'Less Than 10 ft', 
   'PRRollMan', 'PRBallHandler', 'Spotup', 'Transition', 'OPP_PTS', 
   'OPP_REB', 'OPP_AST', 'OPP_STOCKS','AtRimAssists','TwoPtAssists','ThreePtAssists'
 ];

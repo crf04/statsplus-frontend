@@ -6,7 +6,7 @@ export const lineTypeOptions = [
 
 export const defensiveOptions = [
   'None', 'C&S 3s', 'C&S PTS', 'C&S 3A','PU 2s', 'PU 3s', 'PU PTS', 'Less Than 10 ft', 
-  'PRRollMan', 'PRBallHandler', 'Spotup', 'Transition', 'OPP_PTS', 
+  'PRRollMan', 'PRBallHandler', 'Isolation', 'Spotup', 'Transition', 'OPP_PTS', 
   'OPP_REB', 'OPP_AST', 'OPP_STOCKS','AtRimAssists','TwoPtAssists','ThreePtAssists'
 ];
 

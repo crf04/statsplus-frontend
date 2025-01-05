@@ -85,15 +85,63 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     );
   };
 
+  const renderShootingTypeProfile = () => {
+    // Ensure playerData is an array of objects
+    console.log(playerData);
+    if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {
+      return <p>No shooting type data available</p>;
+    }
+    return (
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Shot Type</th>
+            <th>FG2A</th>
+            <th>FG2A Frequency</th>
+            <th>FG2M</th>
+            <th>FG2%</th>
+            <th>FG3A</th>
+            <th>FG3A Frequency</th>
+            <th>FG3M</th>
+            <th>FG3%</th>
+            <th>FGA</th>
+            <th>FGA Frequency</th>
+            <th>FGM</th>
+            <th>FG%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {playerData.map((item, index) => (
+            <tr key={index}>
+              <td>{item.SHOT_TYPE}</td>
+              <td>{item.FG2A}</td>
+              <td>{item.FG2A_FREQUENCY}</td>
+              <td>{item.FG2M}</td>
+              <td>{item.FG2_PCT}</td>
+              <td>{item.FG3A}</td>
+              <td>{item.FG3A_FREQUENCY}</td>
+              <td>{item.FG3M}</td>
+              <td>{item.FG3_PCT}</td>
+              <td>{item.FGA}</td>
+              <td>{item.FGA_FREQUENCY}</td>
+              <td>{item.FGM}</td>
+              <td>{item.FG_PCT}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
+  
   const renderContent = () => {
     if (loading) {
       return <p>Loading data...</p>;
     }
-
+  
     if (error) {
       return <p className="text-danger">{error}</p>;
     }
-
+  
     switch (selectedProfile) {
       case 'Playtypes':
         return playerData ? (
@@ -112,11 +160,12 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
             gameLogs={playerData}
           />
         ) : <p>No archetype data available</p>;
+      case 'Shooting Type':
+        return renderShootingTypeProfile();
       default:
         return <p>Select a profile type</p>;
     }
   };
-
   const handleSelectedProfile = (profile) => {
     setSelectedProfile(profile);
   }
@@ -147,6 +196,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
               variant="outline-primary"
             >
               Archetype
+            </ToggleButton>
+            <ToggleButton
+              id="tbg-btn-shooting-type"
+              value="Shooting Type"
+              variant="outline-primary"
+            >
+              Shooting Type
             </ToggleButton>
           </ToggleButtonGroup>
         </Form.Group>

@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 export const lineTypeOptions = [
-  'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM', 'STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TOV'
+  'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM', 'STL','BLK','STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TOV'
 ];
 
 export const defensiveOptions = [
   'None', 'C&S 3s', 'C&S PTS', 'C&S 3A','PU 2s', 'PU 3s', 'PU PTS', 'Less Than 10 ft', 
   'PRRollMan', 'PRBallHandler', 'Isolation', 'Spotup', 'Transition', 'OPP_PTS', 
-  'OPP_REB', 'OPP_AST', 'OPP_STOCKS','AtRimAssists','TwoPtAssists','ThreePtAssists'
+  'OPP_REB', 'OPP_AST', 'OPP_FTA','OPP_STOCKS','AtRimAssists','TwoPtAssists','ThreePtAssists'
 ];
 
 export const RankCube = ({ rank }) => {

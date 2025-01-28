@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const lineTypeOptions = [
-  'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM', 'STL','BLK','STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TOV'
+  'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM','FTA', 'STL','BLK','STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TOV'
 ];
 
 export const defensiveOptions = [

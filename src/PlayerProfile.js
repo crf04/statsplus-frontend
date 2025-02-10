@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { Card, Form, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import PlaystyleComparisonChart from './PlaystyleComparisonChart';
@@ -85,9 +86,56 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     );
   };
 
+  const renderZoneShootingProfile = () => {
+    if (!playerData) {
+      return <p>No zone shooting data available</p>;
+    }
+    console.log(playerData);
+    const zoneData = playerData;
+
+    const zones = [
+      "Above the Break 3",
+      "In The Paint (Non-RA)",
+      "Left Corner 3",
+      "Mid-Range",
+      "Restricted Area",
+      "Right Corner 3"
+    ];
+
+    const sortedZones = zones.sort((a, b) => (zoneData[`${b}_PTS`] || 0) - (zoneData[`${a}_PTS`] || 0));
+
+    return (
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Zone</th>
+            <th>FGA</th>
+            <th>FGM</th>
+            <th>FG%</th>
+            <th>PTS</th>
+            <th>PTS%</th>
+            <th>PTS%+</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedZones.map((zone, index) => (
+            <tr key={index}>
+              <td>{zone}</td>
+              <td>{zoneData[`${zone}_FGA`]}</td>
+              <td>{zoneData[`${zone}_FGM`]}</td>
+              <td>{(zoneData[`${zone}_FG_PCT`] * 100).toFixed(1)}%</td>
+              <td>{zoneData[`${zone}_PTS`] ? zoneData[`${zone}_PTS`].toFixed(2) : 'N/A'}</td>
+              <td>{zoneData[`${zone}_PTS%`] ? zoneData[`${zone}_PTS%`].toFixed(2) : 'N/A'}%</td>
+              <td>{zoneData[`${zone}_PTS%+`] ? zoneData[`${zone}_PTS%+`].toFixed(2) : 'N/A'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
+
   const renderShootingTypeProfile = () => {
     // Ensure playerData is an array of objects
-    console.log(playerData);
     if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {
       return <p>No shooting type data available</p>;
     }
@@ -162,6 +210,8 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         ) : <p>No archetype data available</p>;
       case 'Shooting Type':
         return renderShootingTypeProfile();
+      case 'Zone Shooting':
+        return renderZoneShootingProfile();
       default:
         return <p>Select a profile type</p>;
     }
@@ -203,6 +253,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
               variant="outline-primary"
             >
               Shooting Type
+            </ToggleButton>
+            <ToggleButton
+              id="tbg-btn-zone-shooting"
+              value="Zone Shooting"
+              variant="outline-primary"
+            >
+              Zone Shooting
             </ToggleButton>
           </ToggleButtonGroup>
         </Form.Group>

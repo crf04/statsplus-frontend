@@ -360,7 +360,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="dark-card">
       <Card.Body>
         <h4 className="mb-4">Opposing Team Profile</h4>
         <Form>

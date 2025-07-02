@@ -126,7 +126,7 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
   };
 
   return (
-    <Card className="shadow-sm">
+                  <Card className="dark-card">
       <Card.Body>
         <Form.Group className="mb-4">
           <Form.Label>Player Filter:</Form.Label>

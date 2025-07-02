@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Alert } from 'react-bootstrap';
+import { Table, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
   const [showAll, setShowAll] = useState(false);
@@ -8,11 +8,25 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
     return <Alert variant="warning">No archetype game logs available for the selected player and team.</Alert>;
   }
 
+  // Function to get the tooltip showing percentage change
+  const renderTooltip = (percentage) => (
+    <Tooltip>{percentage !== undefined ? `${percentage.toFixed(1)}% change` : "No data"}</Tooltip>
+  );
+
+  // Function to determine text color based on percentage difference
+  const getColorStyle = (percentage) => {
+    if (percentage === undefined) return {}; // No color if no data
+
+    const red = percentage < 0 ? 255 : Math.max(0, 255 - Math.abs(percentage) * 5);
+    const green = percentage > 0 ? 255 : Math.max(0, 255 - Math.abs(percentage) * 5);
+    return { color: `rgb(${red}, ${green}, 0)`, fontWeight: "bold" };
+  };
+
   const renderGameLogRows = (log) => {
     const rawDataRow = (
       <tr key={`${log.PLAYER_NAME}-${log.GAME_DATE}-raw`}>
-        <td rowSpan="2">{`${log.PLAYER_NAME[0]}. ${log.PLAYER_NAME.split(' ')[1]}`}</td>
-        <td rowSpan="2">{new Date(log.GAME_DATE).toLocaleDateString()}</td>
+        <td>{`${log.PLAYER_NAME[0]}. ${log.PLAYER_NAME.split(' ')[1]}`}</td>
+        <td>{new Date(log.GAME_DATE).toLocaleDateString()}</td>
         <td>{Math.round(log.MIN)}</td>
         <td>{log.FGM}</td>
         <td>{log.FGA}</td>
@@ -20,18 +34,26 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
         <td>{log.FG3A}</td>
         <td>{log.FTA}</td>
         <td>{log.PTS}</td>
+        <td>{log.TOV}</td>
       </tr>
     );
 
     const perMinuteRow = (
-      <tr key={`${log.PLAYER_NAME}-${log.GAME_DATE}-per-minute`}>
-        <td>{(log['MIN/MIN'] || 1).toFixed(2)}</td>
-        <td>{(log['FGM/MIN'] || 0).toFixed(2)}</td>
-        <td>{(log['FGA/MIN'] || 0).toFixed(2)}</td>
-        <td>{(log['FG3M/MIN'] || 0).toFixed(2)}</td>
-        <td>{(log['FG3A/MIN'] || 0).toFixed(2)}</td>
-        <td>{(log['FTA/MIN'] || 0).toFixed(2)}</td>
-        <td>{(log['PTS/MIN'] || 0).toFixed(2)}</td>
+      <tr key={`${log.PLAYER_NAME}-${log.GAME_DATE}-per-minute`} className="text-muted">
+        <td colSpan="2" style={{ fontSize: "14px", fontWeight: "bold" }}>Per 36 Min</td>
+        <td>-</td>
+        {['FGM/36MIN', 'FGA/36MIN', 'FG3M/36MIN', 'FG3A/36MIN', 'FTA/36MIN', 'PTS/36MIN'].map((stat) => (
+          <td key={stat}>
+            <OverlayTrigger
+              placement="top"
+              overlay={renderTooltip(log[`${stat}_DIFF`] * 100)}
+            >
+              <span style={getColorStyle(log[`${stat}_DIFF`] * 100)}>
+                {(log[stat] || 0).toFixed(2)}
+              </span>
+            </OverlayTrigger>
+          </td>
+        ))}
       </tr>
     );
 
@@ -56,10 +78,8 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
         <Table striped bordered hover responsive>
           <thead style={headerStyle}>
             <tr>
-              <th rowSpan="2">Player</th>
-              <th rowSpan="2">Date</th>
-            </tr>
-            <tr>
+              <th>Player</th>
+              <th>Date</th>
               <th>MIN</th>
               <th>FGM</th>
               <th>FGA</th>
@@ -67,6 +87,7 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
               <th>FG3A</th>
               <th>FTA</th>
               <th>PTS</th>
+              <th>TOV</th>
             </tr>
           </thead>
           <tbody>

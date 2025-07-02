@@ -4,13 +4,13 @@ import { Row, Col, Card, Table as BSTable } from 'react-bootstrap';
 const PerformanceAverages = ({ averages }) => {
   const renderAveragesTable = () => {
     if (!Array.isArray(averages) || averages.length !== 2) {
-      return <p>No averages data available.</p>;
+      return <p className="text-light">No averages data available.</p>;
     }
 
     const [filteredAvg, seasonAvg] = averages;
 
     if (!filteredAvg || !seasonAvg) {
-      return <p>Incomplete averages data.</p>;
+      return <p className="text-light">Incomplete averages data.</p>;
     }
 
     const calculatePer36 = (stat, minutes) => {
@@ -35,7 +35,7 @@ const PerformanceAverages = ({ averages }) => {
     const renderTable = (rawFiltered, rawSeason, per36Filtered, per36Season) => {
       const stats = Object.keys(rawFiltered);
       return (
-        <BSTable striped bordered hover responsive>
+        <BSTable striped bordered hover responsive className="table">
           <thead>
             <tr>
               <th>Average Type</th>
@@ -44,7 +44,7 @@ const PerformanceAverages = ({ averages }) => {
           </thead>
           <tbody>
             <tr>
-              <td>Filtered Raw</td>
+              <td>Filtered</td>
               {stats.map(stat => (
                 <td key={stat}>
                   {typeof rawFiltered[stat] === 'number' ? rawFiltered[stat].toFixed(2) : rawFiltered[stat]}
@@ -52,7 +52,7 @@ const PerformanceAverages = ({ averages }) => {
               ))}
             </tr>
             <tr>
-              <td>Season Raw</td>
+              <td>Season</td>
               {stats.map(stat => (
                 <td key={stat}>
                   {typeof rawSeason[stat] === 'number' ? rawSeason[stat].toFixed(2) : rawSeason[stat]}
@@ -60,7 +60,7 @@ const PerformanceAverages = ({ averages }) => {
               ))}
             </tr>
             <tr>
-              <td>Filtered Per 36</td>
+              <td>Filtered/36</td>
               {stats.map(stat => (
                 <td key={stat}>
                   {typeof per36Filtered[stat] === 'number' ? per36Filtered[stat].toFixed(2) : per36Filtered[stat]}
@@ -68,7 +68,7 @@ const PerformanceAverages = ({ averages }) => {
               ))}
             </tr>
             <tr>
-              <td>Season Per 36</td>
+              <td>Season/36</td>
               {stats.map(stat => (
                 <td key={stat}>
                   {typeof per36Season[stat] === 'number' ? per36Season[stat].toFixed(2) : per36Season[stat]}
@@ -91,7 +91,7 @@ const PerformanceAverages = ({ averages }) => {
   return (
     <Row>
       <Col>
-        <Card className="shadow-sm">
+        <Card className="dark-card">
           <Card.Body>
             <div className="table-responsive">
               {renderAveragesTable()}

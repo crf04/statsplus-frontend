@@ -75,7 +75,9 @@ const AppliedFilters = ({ filters }) => {
   const playstyleMin = filters.playstyle_RTG_min;
   const playstyleMax = filters.playstyle_RTG_max;
   const playstyleBadge = (
-    (playstyleMin !== defaultValues.playstyle_RTG_min || playstyleMax !== defaultValues.playstyle_RTG_max) && (
+    // Only show if values are defined and different from defaults
+    (playstyleMin !== undefined && playstyleMax !== undefined && 
+     (playstyleMin !== defaultValues.playstyle_RTG_min || playstyleMax !== defaultValues.playstyle_RTG_max)) && (
       <Badge key="playstyle_RTG" bg="primary" className="m-1">
         {`${playstyleMin} <= PLAYTYPE_RTG <= ${playstyleMax}`}
       </Badge>

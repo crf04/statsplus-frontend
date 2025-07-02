@@ -42,7 +42,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
     setSelectedTeam('');
   }
   if (selectedPlayer && selectedPlayer !== 'None') {
-    axios.get('http://127.0.0.1:5000/api/games/game_logs', {
+    axios.get('http://127.0.0.1:5000/api/game_logs', {
       params: {
         player_name: selectedPlayer,
       }
@@ -59,14 +59,25 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
     });
   }
 };
-export const fetchGameLogs = (params, setGameLogs, setAverages) => {
-  axios.get('http://127.0.0.1:5000/api/games/game_logs', { params })
+export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLogs = null, setSelectedTeam = null) => {
+  return axios.get('http://127.0.0.1:5000/api/game_logs', { params })
     .then(response => {
-      const { game_logs, averages, season_averages } = response.data;
-      setGameLogs(JSON.parse(game_logs).reverse());
+      const { game_logs, averages, season_averages, next_game } = response.data;
+      const parsedGameLogs = JSON.parse(game_logs).reverse();
+      setGameLogs(parsedGameLogs);
       setAverages([JSON.parse(averages)[0], JSON.parse(season_averages)[0]]);
+      
+      // For natural language queries, also set initialGameLogs and selectedTeam
+      if (setInitialGameLogs) {
+        setInitialGameLogs(parsedGameLogs);
+      }
+      if (setSelectedTeam && next_game) {
+        setSelectedTeam(next_game);
+      }
+      return response;
     })
     .catch(error => {
       console.error('There was an error fetching the game logs!', error);
+      throw error;
     });
 };

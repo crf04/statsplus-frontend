@@ -221,7 +221,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   }
 
   return (
-    <Card className="shadow-sm">
+            <Card className="dark-card">
       <Card.Body>
         <h4 className="mb-4">Player Profile: {selectedProfile.charAt(0).toUpperCase() + selectedProfile.slice(1)}</h4>
         <Form.Group className="mb-3">

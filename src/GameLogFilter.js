@@ -28,6 +28,7 @@ const GameLogFilter = () => {
   const [isNLQuery, setIsNLQuery] = useState(false); // Flag to track NL queries
   const [showLandingPage, setShowLandingPage] = useState(true); // Track if landing page should show
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
+  const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
 
   useEffect(() => {
     axios.get('http://127.0.0.1:5000/api/players')
@@ -118,11 +119,12 @@ const GameLogFilter = () => {
         );
         setAppliedFilters(finalFilters);
         
-        // Call API and then set display player to avoid duplicate calls
+        // Call API and then set both display and selected player to avoid duplicate calls
         fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam)
           .then(() => {
-            // Set display player after API call succeeds to update UI (don't set selectedPlayer to avoid useEffect)
+            // Set both display and selected player after API call succeeds to update UI
             setDisplayPlayer(filters.selectedPlayer);
+            setSelectedPlayer(filters.selectedPlayer);
           })
           .catch(error => {
             console.error('Error fetching natural language query results:', error);
@@ -147,6 +149,7 @@ const GameLogFilter = () => {
         onFiltersApplied={handleNLQueryResults}
         onPlayerSelected={handleNLPlayerSelection}
         onQueryUpdate={setCurrentQuery}
+        resetToLanding={resetToLanding}
       />
       
       {/* Player Stats Cards - positioned between search and main content */}
@@ -157,6 +160,9 @@ const GameLogFilter = () => {
               onClick={() => {
                 setShowLandingPage(true);
                 setCurrentQuery('');
+                setResetToLanding(true);
+                // Reset the flag after a brief delay to allow the effect to trigger
+                setTimeout(() => setResetToLanding(false), 100);
               }}
               className="btn btn-back-to-search d-flex align-items-center"
               aria-label="Back to search"
@@ -220,6 +226,7 @@ const GameLogFilter = () => {
                 selectedPlayer={selectedPlayer}
                 gameLogs={gameLogs}
                 initialGameLogs={initialGameLogs}
+                appliedFilters={appliedFilters}
               />
             </Col>
           </Row>
@@ -246,7 +253,7 @@ const GameLogFilter = () => {
             <Col>
               <Card className="dark-card">
                 <Card.Body>
-                  <h1 className="text-center mb-4">Game Logs</h1>
+                  <h4 className="mb-4">Game Logs</h4>
                   <GameLogsTable gameLogs={gameLogs} />
                 </Card.Body>
               </Card>

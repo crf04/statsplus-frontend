@@ -4,7 +4,7 @@ import { Search, CheckCircle, AlertCircle, Brain } from 'lucide-react';
 import axios from 'axios';
 import './ModernSearch.css';
 
-const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate }) => {
+const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -29,6 +29,17 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isExpanded]);
+
+  // Reset to landing page when requested by parent
+  useEffect(() => {
+    if (resetToLanding) {
+      setHasSearched(false);
+      setQuery('');
+      setError('');
+      setLastResult(null);
+      setIsExpanded(false);
+    }
+  }, [resetToLanding]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

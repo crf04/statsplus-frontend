@@ -78,7 +78,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     return (
       <Row>
         <Col md={12}>
-          <h5>{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h5>
+          <h5 className="section-subtitle">{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h5>
           <AssistProfileChart assistData={assistData} teamData={teamData} />
           <TwoThreeAssistChart assistData={assistData} teamData={teamData} />
         </Col>
@@ -194,7 +194,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       case 'Playtypes':
         return playerData ? (
           <div style={{ width: '100%', height: '500px' }}>
-            <h5 style={{ textAlign: 'center', marginBottom: '20px' }}>{selectedPlayer} vs {selectedTeam || 'All'}</h5>
+            <h5 className="section-subtitle">{selectedPlayer} vs {selectedTeam || 'All'}</h5>
             <PlaystyleComparisonChart playerData={playerData} teamData={teamData} />
           </div>
         ) : <p>No player data available</p>;
@@ -223,7 +223,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   return (
             <Card className="dark-card">
       <Card.Body>
-        <h4 className="mb-4">Player Profile: {selectedProfile.charAt(0).toUpperCase() + selectedProfile.slice(1)}</h4>
+        <h4 className="mb-4">Player Profile</h4>
         <Form.Group className="mb-3">
           <ToggleButtonGroup type="radio" name="profile" value={selectedProfile} onChange={handleSelectedProfile}>
             <ToggleButton

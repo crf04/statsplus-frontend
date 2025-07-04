@@ -1,12 +1,99 @@
+/* Player selector styling integrated into parent card */
+.player-selector-row {
+  margin-bottom: 24px;
+}
+
+.player-selector-label {
+  color: #cccccc;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+  text-align: left;
+}
+
+.player-selector-input,
+.player-selector-select {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid #444444;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.player-selector-input:focus,
+.player-selector-select:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.25);
+  color: #ffffff;
+}
+
+.player-selector-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.player-selector-select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
 .suggestions-list {
     position: absolute;
     z-index: 1000;
-    width: calc(100% - 20px); /* Adjust width to match the search box */
+    width: 100%;
     max-height: 150px;
     overflow-y: auto;
-    background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    border-radius: 0.25rem;
-    margin-top: 2px; /* Adjust margin to avoid overlapping with the input */
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 1px solid #444444;
+    border-radius: 8px;
+    margin-top: 2px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    left: 0;
+    right: 0;
+}
+
+.suggestions-list .list-group-item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333333;
+    color: #cccccc;
+    padding: 12px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestions-list .list-group-item:hover {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #ffffff;
+    border-left: 3px solid #f59e0b;
+}
+
+.suggestions-list .list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .player-selector-row {
+    margin-bottom: 16px;
   }
+  
+  .player-selector-input,
+  .player-selector-select {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .player-selector-label {
+    font-size: 0.8rem;
+  }
+}
   

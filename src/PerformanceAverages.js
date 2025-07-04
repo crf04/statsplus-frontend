@@ -4,13 +4,13 @@ import { Row, Col, Card, Table as BSTable } from 'react-bootstrap';
 const PerformanceAverages = ({ averages }) => {
   const renderAveragesTable = () => {
     if (!Array.isArray(averages) || averages.length !== 2) {
-      return <p className="text-light">No averages data available.</p>;
+      return null;
     }
 
     const [filteredAvg, seasonAvg] = averages;
 
     if (!filteredAvg || !seasonAvg) {
-      return <p className="text-light">Incomplete averages data.</p>;
+      return null;
     }
 
     const calculatePer36 = (stat, minutes) => {
@@ -80,12 +80,7 @@ const PerformanceAverages = ({ averages }) => {
       );
     };
 
-    return (
-      <>
-        <h4>Player Averages</h4>
-        {renderTable(filteredAvg, seasonAvg, per36Filtered, per36Season)}
-      </>
-    );
+    return renderTable(filteredAvg, seasonAvg, per36Filtered, per36Season);
   };
 
   return (
@@ -93,6 +88,7 @@ const PerformanceAverages = ({ averages }) => {
       <Col>
         <Card className="dark-card">
           <Card.Body>
+            <h4 className="mb-4">Player Averages</h4>
             <div className="table-responsive">
               {renderAveragesTable()}
             </div>

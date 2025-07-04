@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, InputGroup, FormControl, Badge, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
+import { Card, Form, Button, InputGroup, FormControl, Badge, ToggleButtonGroup, ToggleButton, Row, Col, ListGroup } from 'react-bootstrap';
 import ReactSlider from 'react-slider';
 import { defensiveOptions } from './utils';
 
-const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, initialGameLogs}) => {
+const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, initialGameLogs, appliedFilters}) => {
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
   const [filterNumber, setFilterNumber] = useState(0);
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
   const [playerStatus, setPlayerStatus] = useState('on');
   const [activePlayers, setActivePlayers] = useState([]);
+  const [playerSuggestions, setPlayerSuggestions] = useState([]);
   const [locationFilter, setLocationFilter] = useState('Both');
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
   const [dateFilter, setDateFilter] = useState('');
@@ -40,6 +41,98 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
     }
   }, [initialGameLogs]);
 
+  // Reset all filters to defaults and then pre-populate with new query filters
+  useEffect(() => {
+    // Always reset all form fields to their defaults first
+    setSelectedDefensiveFilter('None');
+    setFilterNumber(0);
+    setActiveFilters([]);
+    setPlayerInput('');
+    setPlayerStatus('on');
+    setActivePlayers([]);
+    setLocationFilter('Both');
+    setMinutesFilter([0, 48]);
+    setDateFilter('');
+    setGameFilter(0);
+    setPlaystyleMatchupRating([75, 125]);
+    setSelectedSelfFilter('');
+    setSelfFilterRange([0, 0]);
+    setActiveSelfFilters([]);
+    setPlayerSuggestions([]);
+
+    // Then pre-populate with new applied filters if they exist
+    if (appliedFilters && Object.keys(appliedFilters).length > 0) {
+      // Pre-populate game filter
+      if (appliedFilters.game_filter) {
+        setGameFilter(appliedFilters.game_filter);
+      }
+
+      // Pre-populate location filter
+      if (appliedFilters.location_filter) {
+        setLocationFilter(appliedFilters.location_filter);
+      }
+
+      // Pre-populate date filter
+      if (appliedFilters.date_filter) {
+        setDateFilter(appliedFilters.date_filter);
+      }
+
+      // Pre-populate minutes filter
+      if (appliedFilters.minutes_filter) {
+        const [min, max] = appliedFilters.minutes_filter.split(',').map(Number);
+        setMinutesFilter([min, max]);
+      }
+
+      // Pre-populate playstyle rating
+      if (appliedFilters.playstyle_RTG_min && appliedFilters.playstyle_RTG_max) {
+        setPlaystyleMatchupRating([appliedFilters.playstyle_RTG_min, appliedFilters.playstyle_RTG_max]);
+      }
+
+      // Pre-populate players on/off
+      const playersToAdd = [];
+      if (appliedFilters['players_on[]']) {
+        const playersOn = Array.isArray(appliedFilters['players_on[]']) ? 
+          appliedFilters['players_on[]'] : [appliedFilters['players_on[]']];
+        playersOn.forEach(player => playersToAdd.push({ name: player, status: 'on' }));
+      }
+      if (appliedFilters['players_off[]']) {
+        const playersOff = Array.isArray(appliedFilters['players_off[]']) ? 
+          appliedFilters['players_off[]'] : [appliedFilters['players_off[]']];
+        playersOff.forEach(player => playersToAdd.push({ name: player, status: 'off' }));
+      }
+      if (playersToAdd.length > 0) {
+        setActivePlayers(playersToAdd);
+      }
+
+      // Pre-populate teams against filter
+      if (appliedFilters.teams_against && appliedFilters.filter_numbers) {
+        const teamsAgainst = Array.isArray(appliedFilters.teams_against) ? 
+          appliedFilters.teams_against : [appliedFilters.teams_against];
+        const filterNumbers = Array.isArray(appliedFilters.filter_numbers) ? 
+          appliedFilters.filter_numbers : [appliedFilters.filter_numbers];
+        
+        const filtersToAdd = teamsAgainst.map((team, index) => ({
+          filter: team,
+          number: filterNumbers[index] || 0
+        }));
+        setActiveFilters(filtersToAdd);
+      }
+
+      // Pre-populate self filters
+      const selfFiltersToAdd = [];
+      Object.keys(appliedFilters).forEach(key => {
+        if (key.startsWith('self_filters[')) {
+          const column = key.match(/\[(.*?)\]/)[1];
+          const [min, max] = appliedFilters[key].split(',').map(Number);
+          selfFiltersToAdd.push({ column, range: [min, max] });
+        }
+      });
+      if (selfFiltersToAdd.length > 0) {
+        setActiveSelfFilters(selfFiltersToAdd);
+      }
+    }
+  }, [appliedFilters]);
+
   const handleAddFilter = () => {
     if (selectedDefensiveFilter !== 'None') {
       const existingFilter = activeFilters.find(f => f.filter === selectedDefensiveFilter);
@@ -55,10 +148,30 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
     setActiveFilters(activeFilters.filter((_, i) => i !== index));
   };
 
+  const handlePlayerSearchChange = (e) => {
+    const value = e.target.value;
+    setPlayerInput(value);
+
+    if (value.length > 0) {
+      const filteredPlayers = playerList
+        .filter(player => player.toLowerCase().includes(value.toLowerCase()))
+        .slice(0, 5); // Limit to 5 suggestions
+      setPlayerSuggestions(filteredPlayers);
+    } else {
+      setPlayerSuggestions([]);
+    }
+  };
+
+  const handlePlayerSuggestionClick = (player) => {
+    setPlayerInput(player);
+    setPlayerSuggestions([]);
+  };
+
   const handleAddPlayer = () => {
     if (playerInput && !activePlayers.some(p => p.name === playerInput)) {
       setActivePlayers([...activePlayers, { name: playerInput, status: playerStatus }]);
       setPlayerInput('');
+      setPlayerSuggestions([]);
     }
   };
 
@@ -130,19 +243,36 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
       <Card.Body>
         <Form.Group className="mb-4">
           <Form.Label>Player Filter:</Form.Label>
-          <InputGroup>
-            <Form.Select value={playerInput} onChange={e => setPlayerInput(e.target.value)}>
-              <option value="">Select Player</option>
-              {playerList.map(player => (
-                <option key={player} value={player}>{player}</option>
-              ))}
-            </Form.Select>
-            <ToggleButtonGroup type="radio" name="playerStatus" value={playerStatus} onChange={setPlayerStatus}>
-              <ToggleButton id="tbg-radio-1" value="on" variant="outline-success">ON</ToggleButton>
-              <ToggleButton id="tbg-radio-2" value="off" variant="outline-danger">OFF</ToggleButton>
-            </ToggleButtonGroup>
-            <Button variant="outline-primary" onClick={handleAddPlayer}>Add</Button>
-          </InputGroup>
+          <div className="position-relative">
+            <InputGroup>
+              <FormControl
+                type="text"
+                value={playerInput}
+                onChange={handlePlayerSearchChange}
+                placeholder="Search for a player..."
+                className="player-selector-input"
+              />
+              <ToggleButtonGroup type="radio" name="playerStatus" value={playerStatus} onChange={setPlayerStatus}>
+                <ToggleButton id="tbg-radio-1" value="on" variant="outline-success">ON</ToggleButton>
+                <ToggleButton id="tbg-radio-2" value="off" variant="outline-danger">OFF</ToggleButton>
+              </ToggleButtonGroup>
+              <Button variant="outline-primary" onClick={handleAddPlayer}>Add</Button>
+            </InputGroup>
+            {playerSuggestions.length > 0 && (
+              <ListGroup className="suggestions-list position-absolute w-100" style={{ zIndex: 1000 }}>
+                {playerSuggestions.map(player => (
+                  <ListGroup.Item 
+                    key={player} 
+                    onClick={() => handlePlayerSuggestionClick(player)}
+                    style={{ cursor: 'pointer' }}
+                    className="py-2"
+                  >
+                    {player}
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            )}
+          </div>
           <div className="mt-2">
             {activePlayers.map((player, index) => (
               <Badge key={index} bg={player.status === 'on' ? 'success' : 'danger'} className="me-1 mb-1 p-2">

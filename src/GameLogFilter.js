@@ -25,7 +25,6 @@ const GameLogFilter = () => {
   const [teams, setTeams] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({});
   const [initialGameLogs, setInitialGameLogs] = useState([]);
-  const [isNLQuery, setIsNLQuery] = useState(false); // Flag to track NL queries
   const [showLandingPage, setShowLandingPage] = useState(true); // Track if landing page should show
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
@@ -41,16 +40,13 @@ const GameLogFilter = () => {
   }, []);
 
   useEffect(() => {
-    // Only fetch unfiltered logs if this is not from a natural language query
-    if (!isNLQuery) {
+    // Fetch unfiltered logs when selectedPlayer changes (manual selection)
+    if (selectedPlayer !== 'None') {
       fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam);
       // Update display player to match selected player for manual selection
       setDisplayPlayer(selectedPlayer);
-    } else {
-      // Reset the flag after handling NL query
-      setIsNLQuery(false);
     }
-  }, [selectedPlayer, isNLQuery]);
+  }, [selectedPlayer]);
 
   const handleApplyFilters = (filterParams, isFromNL = false) => {
     const cleanedFilters = Object.fromEntries(
@@ -119,12 +115,12 @@ const GameLogFilter = () => {
         );
         setAppliedFilters(finalFilters);
         
-        // Call API and then set both display and selected player to avoid duplicate calls
+        // For NL queries, only set displayPlayer (selectedPlayer is set when filters are applied)
         fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam)
           .then(() => {
-            // Set both display and selected player after API call succeeds to update UI
+            // Only set displayPlayer for NL queries
+            // selectedPlayer will be set when user applies filters
             setDisplayPlayer(filters.selectedPlayer);
-            setSelectedPlayer(filters.selectedPlayer);
           })
           .catch(error => {
             console.error('Error fetching natural language query results:', error);
@@ -224,6 +220,7 @@ const GameLogFilter = () => {
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
                 selectedPlayer={selectedPlayer}
+                displayPlayer={displayPlayer}
                 gameLogs={gameLogs}
                 initialGameLogs={initialGameLogs}
                 appliedFilters={appliedFilters}

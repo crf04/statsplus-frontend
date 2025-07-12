@@ -65,10 +65,16 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
     return value.toFixed(1);
   };
 
-  const formatSeasonComparison = (filtered, season) => {
+  const formatSeasonComparison = (filtered, season, isPercentage = false) => {
     if (typeof filtered !== 'number' || typeof season !== 'number') return '';
     const diff = filtered - season;
     const sign = diff > 0 ? '+' : '';
+    
+    if (isPercentage) {
+      // For percentages, multiply by 100 and show one decimal place
+      return `${sign}${(diff * 100).toFixed(1)}% vs Season`;
+    }
+    
     return `${sign}${diff.toFixed(1)} vs Season`;
   };
 
@@ -103,7 +109,7 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
                     {formatStat(filteredAvg[stat.key], stat.isPercentage)}
                   </div>
                   <div className="stat-comparison">
-                    {formatSeasonComparison(filteredAvg[stat.key], seasonAvg[stat.key])}
+                    {formatSeasonComparison(filteredAvg[stat.key], seasonAvg[stat.key], stat.isPercentage)}
                   </div>
                 </div>
               </Col>
@@ -123,7 +129,7 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
                     {formatStat(filteredAvg[stat.key], stat.isPercentage)}
                   </div>
                   <div className="stat-comparison">
-                    {formatSeasonComparison(filteredAvg[stat.key], seasonAvg[stat.key])}
+                    {formatSeasonComparison(filteredAvg[stat.key], seasonAvg[stat.key], stat.isPercentage)}
                   </div>
                 </div>
               </Col>

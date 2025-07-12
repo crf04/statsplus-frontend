@@ -116,6 +116,14 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       filters.season_filter = nlResult.season;
     }
 
+    if (nlResult.teams_against && nlResult.teams_against.length > 0) {
+      filters['teams_against[]'] = nlResult.teams_against;
+    }
+    
+    if (nlResult.rank_filter && nlResult.rank_filter.length > 0) {
+      filters['rank_filter[]'] = nlResult.rank_filter;
+    }
+
     return filters;
   };
 

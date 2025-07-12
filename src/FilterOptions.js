@@ -3,7 +3,7 @@ import { Card, Form, Button, InputGroup, FormControl, Badge, ToggleButtonGroup, 
 import ReactSlider from 'react-slider';
 import { defensiveOptions } from './utils';
 
-const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, initialGameLogs, appliedFilters}) => {
+const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlayer, gameLogs, initialGameLogs, appliedFilters}) => {
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
   const [filterNumber, setFilterNumber] = useState(0);
   const [activeFilters, setActiveFilters] = useState([]);
@@ -219,8 +219,11 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, gameLogs, i
   };
 
   const handleApplyFilters = () => {
+    // Use displayPlayer if selectedPlayer is 'None' (from natural language queries)
+    const playerName = selectedPlayer !== 'None' ? selectedPlayer : displayPlayer;
+    
     const filterParams = {
-      player_name: selectedPlayer,
+      player_name: playerName,
       minutes_filter: `${minutesFilter[0]},${minutesFilter[1]}`,
       players_on: activePlayers.filter(p => p.status === 'on').map(p => p.name),
       players_off: activePlayers.filter(p => p.status === 'off').map(p => p.name),

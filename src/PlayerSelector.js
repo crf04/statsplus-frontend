@@ -3,7 +3,7 @@ import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
 import { lineTypeOptions } from './utils';
 import './PlayerSelector.css'; // Import the CSS file
 
-const PlayerSelector = ({ selectedPlayer, setSelectedPlayer, lineType, setLineType, lineValue, setLineValue, playerList }) => {
+const PlayerSelector = ({ selectedPlayer, setSelectedPlayer, lineType, setLineType, lineValue, setLineValue, playerList, averages }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
 
@@ -15,6 +15,16 @@ const PlayerSelector = ({ selectedPlayer, setSelectedPlayer, lineType, setLineTy
       setSearchTerm('');
     }
   }, [selectedPlayer]);
+
+  // Auto-populate lineValue with average when lineType changes or averages are available
+  useEffect(() => {
+    if (averages && averages[0] && averages[0][lineType]) {
+      const avgValue = averages[0][lineType];
+      if (avgValue && !isNaN(avgValue)) {
+        setLineValue(avgValue.toFixed(1));
+      }
+    }
+  }, [lineType, averages, setLineValue]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -75,7 +85,17 @@ const PlayerSelector = ({ selectedPlayer, setSelectedPlayer, lineType, setLineTy
           <Form.Label className="player-selector-label">Line Type:</Form.Label>
           <Form.Select 
             value={lineType} 
-            onChange={e => setLineType(e.target.value)}
+            onChange={e => {
+              const newLineType = e.target.value;
+              setLineType(newLineType);
+              // Auto-populate with average for the new line type
+              if (averages && averages[0] && averages[0][newLineType]) {
+                const avgValue = Math.round(averages[0][newLineType] * 2) / 2;
+                if (avgValue && !isNaN(avgValue)) {
+                  setLineValue(avgValue.toFixed(1));
+                }
+              }
+            }}
             className="player-selector-select"
           >
             {lineTypeOptions.map(option => (

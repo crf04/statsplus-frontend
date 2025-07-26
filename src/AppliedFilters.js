@@ -44,7 +44,7 @@ const AppliedFilters = ({ filters }) => {
     } else if (key === 'game_filter') {
       return (
         <Badge key={key} bg="primary" className="m-1">
-          {`Games_Shown <= ${value}`}
+          {`GAMES <= ${value}`}
         </Badge>
       );
     } else if (key === 'players_on' || key === 'players_on[]') {

@@ -6,7 +6,7 @@ const MetricCard = ({ title, currentValue, previousValue, change, isFirst, isLas
   const formattedChange = Math.abs(change).toFixed(2);
   
   return (
-    <div className={`bg-gradient-to-br from-gray-800 to-gray-900 p-4 flex-1 border-t border-b border-gray-600 ${isFirst ? 'border-l rounded-l-lg' : ''} ${isLast ? 'border-r rounded-r-lg' : ''} ${!isLast ? 'border-r' : ''} relative hover:border-yellow-500 transition-all duration-300`}>
+    <div className={`bg-gradient-to-br from-gray-800 to-gray-900 p-4 flex-1 border-t border-b border-gray-600 ${isFirst ? 'border-l rounded-l-lg' : 'border-l'} ${isLast ? 'border-r rounded-r-lg' : ''} ${!isLast ? 'border-r' : ''} relative hover:border-yellow-500 transition-all duration-300`}>
       <div className={`absolute top-2 right-2 flex items-center ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
         {isPositive ? (
           <ArrowUpIcon className="w-4 h-4 mr-1" />
@@ -31,7 +31,7 @@ const RatioCard = ({ title, ratio, last5ratio, last10ratio, isLast }) => {
   const percentage = ((parseInt(numerator) / parseInt(denominator)) * 100).toFixed(2);
 
   return (
-    <div className={`bg-gradient-to-br from-gray-800 to-gray-900 p-4 flex-1 border-t border-b border-gray-600 ${isLast ? 'border-r rounded-r-lg' : 'border-r'} relative hover:border-yellow-500 transition-all duration-300`}>
+    <div className={`bg-gradient-to-br from-gray-800 to-gray-900 p-4 flex-1 border-t border-b border-l border-gray-600 ${isLast ? 'border-r rounded-r-lg' : 'border-r'} relative hover:border-yellow-500 transition-all duration-300`}>
       <div className="absolute top-2 right-2 text-sm text-gray-400">
         ({percentage}%)
       </div>
@@ -63,6 +63,7 @@ const MetricsDashboardRow = ({ rawValue, per36Value, seasonRawValue, seasonPer36
           currentValue={per36Value.toFixed(2)}
           previousValue={seasonPer36Value.toFixed(2)}
           change={per36Change}
+          isFirst={false}
         />
         <RatioCard
           title="Hit Rate"

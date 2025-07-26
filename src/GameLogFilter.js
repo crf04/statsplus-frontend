@@ -223,6 +223,7 @@ const GameLogFilter = () => {
                     lineValue={lineValue}
                     setLineValue={setLineValue}
                     playerList={playerList}
+                    averages={averages}
                   />
                   <ChartComponent
                     gameLogs={gameLogs}

@@ -25,8 +25,14 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
   
     const labels = gameLogs.map(log => log?.GAME_DATE || '');
     const data = gameLogs.map(log => log?.[lineType] || 0);
-    const numericLineValue = parseFloat(lineValue);
-    const backgroundColors = !isNaN(numericLineValue) 
+    
+    // Use the average if lineValue is empty or not provided
+    const defaultLineValue = lineValue && lineValue !== '' ? 
+      parseFloat(lineValue) : 
+      (averages[0] && averages[0][lineType] ? averages[0][lineType] : 0);
+    
+    const numericLineValue = defaultLineValue;
+    const backgroundColors = !isNaN(numericLineValue) && numericLineValue > 0
       ? data.map(value => value > numericLineValue ? 'rgba(75, 192, 75, 0.6)' : 'rgba(192, 75, 75, 0.6)')
       : 'rgba(75, 192, 192, 0.6)';
   
@@ -45,7 +51,12 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
   };
   
   const getChartOptions = () => {
-    const numericLineValue = parseFloat(lineValue);
+    // Use the average if lineValue is empty or not provided
+    const defaultLineValue = lineValue && lineValue !== '' ? 
+      parseFloat(lineValue) : 
+      (averages[0] && averages[0][lineType] ? averages[0][lineType] : 0);
+    
+    const numericLineValue = defaultLineValue;
   
     return {
       responsive: true,
@@ -62,7 +73,9 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
               borderColor: 'rgb(255, 99, 132)',
               borderWidth: 2,
               label: {
-                content: `Line: ${lineValue}`,
+                content: lineValue && lineValue !== '' ? 
+                  `Line: ${lineValue}` : 
+                  `Avg: ${numericLineValue.toFixed(1)}`,
                 enabled: true,
                 position: 'start'
               }
@@ -120,9 +133,24 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
             per36Value={averages[0]?.[lineType] ? (averages[0][lineType] / averages[0].MIN) * 36 : 0}
             seasonRawValue={averages[1]?.[lineType] || 0}
             seasonPer36Value={averages[1]?.[lineType] ? (averages[1][lineType] / averages[1].MIN) * 36 : 0}
-            ratio={`${gameLogs.filter(log => log[lineType] > parseFloat(lineValue)).length}/${gameLogs.length}`}
-            last5ratio = {`${gameLogs.slice(1).slice(-5).filter(log => log[lineType] > parseFloat(lineValue)).length}/${gameLogs.slice(1).slice(-5).length}`}
-            last10ratio = {`${gameLogs.slice(1).slice(-10).filter(log => log[lineType] > parseFloat(lineValue)).length}/${gameLogs.slice(1).slice(-10).length}`}
+            ratio={`${gameLogs.filter(log => {
+              const defaultLineValue = lineValue && lineValue !== '' ? 
+                parseFloat(lineValue) : 
+                (averages[0] && averages[0][lineType] ? averages[0][lineType] : 0);
+              return log[lineType] > defaultLineValue;
+            }).length}/${gameLogs.length}`}
+            last5ratio = {`${gameLogs.slice(-5).filter(log => {
+              const defaultLineValue = lineValue && lineValue !== '' ? 
+                parseFloat(lineValue) : 
+                (averages[0] && averages[0][lineType] ? averages[0][lineType] : 0);
+              return log[lineType] > defaultLineValue;
+            }).length}/${Math.min(5, gameLogs.length)}`}
+            last10ratio = {`${gameLogs.slice(-10).filter(log => {
+              const defaultLineValue = lineValue && lineValue !== '' ? 
+                parseFloat(lineValue) : 
+                (averages[0] && averages[0][lineType] ? averages[0][lineType] : 0);
+              return log[lineType] > defaultLineValue;
+            }).length}/${Math.min(10, gameLogs.length)}`}
           />
           <div className="mt-3 mb-3">
             <AppliedFilters filters={appliedFilters} />

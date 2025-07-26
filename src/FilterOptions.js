@@ -90,21 +90,25 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
 
       // Pre-populate players on/off
       const playersToAdd = [];
-      if (appliedFilters['players_on[]']) {
-        const playersOn = Array.isArray(appliedFilters['players_on[]']) ? 
-          appliedFilters['players_on[]'] : [appliedFilters['players_on[]']];
+      // Check for both possible key formats
+      const playersOnKey = appliedFilters['players_on[]'] ? 'players_on[]' : 'players_on';
+      const playersOffKey = appliedFilters['players_off[]'] ? 'players_off[]' : 'players_off';
+      
+      if (appliedFilters[playersOnKey]) {
+        const playersOn = Array.isArray(appliedFilters[playersOnKey]) ? 
+          appliedFilters[playersOnKey] : [appliedFilters[playersOnKey]];
         playersOn.forEach(player => playersToAdd.push({ name: player, status: 'on' }));
       }
-      if (appliedFilters['players_off[]']) {
-        const playersOff = Array.isArray(appliedFilters['players_off[]']) ? 
-          appliedFilters['players_off[]'] : [appliedFilters['players_off[]']];
+      if (appliedFilters[playersOffKey]) {
+        const playersOff = Array.isArray(appliedFilters[playersOffKey]) ? 
+          appliedFilters[playersOffKey] : [appliedFilters[playersOffKey]];
         playersOff.forEach(player => playersToAdd.push({ name: player, status: 'off' }));
       }
       if (playersToAdd.length > 0) {
         setActivePlayers(playersToAdd);
       }
 
-      // Pre-populate teams against filter
+      // Pre-populate teams against filter (legacy format)
       if (appliedFilters.teams_against && appliedFilters.filter_numbers) {
         const teamsAgainst = Array.isArray(appliedFilters.teams_against) ? 
           appliedFilters.teams_against : [appliedFilters.teams_against];
@@ -114,6 +118,20 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
         const filtersToAdd = teamsAgainst.map((team, index) => ({
           filter: team,
           number: filterNumbers[index] || 0
+        }));
+        setActiveFilters(filtersToAdd);
+      }
+
+      // Pre-populate opponent filters from natural language queries
+      if (appliedFilters['teams_against[]'] && appliedFilters['rank_filter[]']) {
+        const teamsAgainst = Array.isArray(appliedFilters['teams_against[]']) ? 
+          appliedFilters['teams_against[]'] : [appliedFilters['teams_against[]']];
+        const rankFilter = Array.isArray(appliedFilters['rank_filter[]']) ? 
+          appliedFilters['rank_filter[]'] : [appliedFilters['rank_filter[]']];
+        
+        const filtersToAdd = teamsAgainst.map((team, index) => ({
+          filter: team,
+          number: parseInt(rankFilter[index]) || 0
         }));
         setActiveFilters(filtersToAdd);
       }
@@ -332,7 +350,7 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
             className="horizontal-slider"
             thumbClassName="thumb"
             trackClassName="track"
-            defaultValue={[0, 48]}
+            value={minutesFilter}
             ariaLabel={['Lower thumb', 'Upper thumb']}
             ariaValuetext={state => `Thumb value ${state.valueNow}`}
             renderThumb={(props, state) => <div {...props}>{state.valueNow}</div>}

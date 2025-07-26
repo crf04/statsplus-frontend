@@ -42,11 +42,18 @@ const GameLogFilter = () => {
   useEffect(() => {
     // Fetch unfiltered logs when selectedPlayer changes (manual selection)
     if (selectedPlayer !== 'None') {
-      fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam);
+      fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, (team) => {
+        // If no opposing team is provided, set the first available team as default
+        if (!team && teams.length > 0) {
+          setSelectedTeam(teams[0]);
+        } else {
+          setSelectedTeam(team);
+        }
+      });
       // Update display player to match selected player for manual selection
       setDisplayPlayer(selectedPlayer);
     }
-  }, [selectedPlayer]);
+  }, [selectedPlayer, teams]);
 
   const handleApplyFilters = (filterParams, isFromNL = false) => {
     const cleanedFilters = Object.fromEntries(
@@ -72,7 +79,14 @@ const GameLogFilter = () => {
     
     // For natural language queries, also update initialGameLogs and selectedTeam
     if (isFromNL) {
-      fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam);
+      fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
+        // If no opposing team is provided, set the first available team as default
+        if (!team && teams.length > 0) {
+          setSelectedTeam(teams[0]);
+        } else {
+          setSelectedTeam(team);
+        }
+      });
     } else {
       fetchGameLogs(cleanedFilters, setGameLogs, setAverages);
     }
@@ -116,7 +130,14 @@ const GameLogFilter = () => {
         setAppliedFilters(finalFilters);
         
         // For NL queries, only set displayPlayer (selectedPlayer is set when filters are applied)
-        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, setSelectedTeam)
+        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
+          // If no opposing team is provided, set the first available team as default
+          if (!team && teams.length > 0) {
+            setSelectedTeam(teams[0]);
+          } else {
+            setSelectedTeam(team);
+          }
+        })
           .then(() => {
             // Only set displayPlayer for NL queries
             // selectedPlayer will be set when user applies filters
@@ -244,18 +265,16 @@ const GameLogFilter = () => {
             </Col>
           </Row>
 
-          <PerformanceAverages averages={averages} />
+          <div className="stats-layout-container">
+            <div className="per36-sidebar">
+              <PerformanceAverages averages={averages} appliedFilters={appliedFilters} />
+            </div>
+            
+            <div className="game-logs-main">
+              <GameLogsTable gameLogs={gameLogs} appliedFilters={appliedFilters} />
+            </div>
+          </div>
 
-          <Row className="mb-5">
-            <Col>
-              <Card className="dark-card">
-                <Card.Body>
-                  <h4 className="mb-4">Game Logs</h4>
-                  <GameLogsTable gameLogs={gameLogs} />
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
         </Container>
       )}
     </>

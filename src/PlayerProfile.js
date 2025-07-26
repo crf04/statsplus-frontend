@@ -78,7 +78,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     return (
       <Row>
         <Col md={12}>
-          <h5 className="section-subtitle">{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h5>
+          <h6 className="subcategory-heading no-border">{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h6>
           <AssistProfileChart assistData={assistData} teamData={teamData} />
           <TwoThreeAssistChart assistData={assistData} teamData={teamData} />
         </Col>
@@ -105,7 +105,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     const sortedZones = zones.sort((a, b) => (zoneData[`${b}_PTS`] || 0) - (zoneData[`${a}_PTS`] || 0));
 
     return (
-      <table className="table">
+      <table className="table table-hover">
         <thead>
           <tr>
             <th>Zone</th>
@@ -140,7 +140,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       return <p>No shooting type data available</p>;
     }
     return (
-      <table className="table">
+      <table className="table table-hover">
         <thead>
           <tr>
             <th>Shot Type</th>
@@ -194,7 +194,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       case 'Playtypes':
         return playerData ? (
           <div style={{ width: '100%', height: '500px' }}>
-            <h5 className="section-subtitle">{selectedPlayer} vs {selectedTeam || 'All'}</h5>
+            <h6 className="subcategory-heading no-border">{selectedPlayer} vs {selectedTeam || 'All'}</h6>
             <PlaystyleComparisonChart playerData={playerData} teamData={teamData} />
           </div>
         ) : <p>No player data available</p>;
@@ -223,46 +223,57 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   return (
             <Card className="dark-card">
       <Card.Body>
-        <h4 className="mb-4">Player Profile</h4>
-        <Form.Group className="mb-3">
-          <ToggleButtonGroup type="radio" name="profile" value={selectedProfile} onChange={handleSelectedProfile}>
+        <h4 className="mb-2">Player Profile</h4>
+        <div className="category-toggles-wrapper">
+          <ToggleButtonGroup 
+            type="radio" 
+            name="player-profile" 
+            value={selectedProfile} 
+            onChange={handleSelectedProfile}
+            className="per36-toggle-group"
+          >
             <ToggleButton
-              id="tbg-btn-playstyles"
+              id="profile-playtypes"
               value="Playtypes"
               variant="outline-primary"
+              className="per36-toggle-btn"
             >
               Playtypes
             </ToggleButton>
             <ToggleButton
-              id="tbg-btn-assists"
+              id="profile-assists"
               value="assists"
               variant="outline-primary"
+              className="per36-toggle-btn"
             >
               Assists
             </ToggleButton>
             <ToggleButton
-              id="tbg-btn-archetype"
+              id="profile-archetype"
               value="Archetype"
               variant="outline-primary"
+              className="per36-toggle-btn"
             >
               Archetype
             </ToggleButton>
             <ToggleButton
-              id="tbg-btn-shooting-type"
+              id="profile-shooting-type"
               value="Shooting Type"
               variant="outline-primary"
+              className="per36-toggle-btn"
             >
               Shooting Type
             </ToggleButton>
             <ToggleButton
-              id="tbg-btn-zone-shooting"
+              id="profile-zone-shooting"
               value="Zone Shooting"
               variant="outline-primary"
+              className="per36-toggle-btn"
             >
               Zone Shooting
             </ToggleButton>
           </ToggleButtonGroup>
-        </Form.Group>
+        </div>
         {renderContent()}
       </Card.Body>
     </Card>

@@ -124,6 +124,73 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       filters['rank_filter[]'] = nlResult.rank_filter;
     }
 
+    // Handle minutes filter - convert to comma-separated string format for (min, max) tuple
+    if (nlResult.minutes_filter) {
+      if (Array.isArray(nlResult.minutes_filter) && nlResult.minutes_filter.length === 2) {
+        // If it's already an array with 2 elements, join with comma for (min, max) format
+        filters.minutes_filter = nlResult.minutes_filter.join(',');
+      } else if (typeof nlResult.minutes_filter === 'string') {
+        // If it's already a string, use as is
+        filters.minutes_filter = nlResult.minutes_filter;
+      } else if (typeof nlResult.minutes_filter === 'object' && nlResult.minutes_filter.min !== undefined && nlResult.minutes_filter.max !== undefined) {
+        // If it's an object with min/max properties, convert to (min, max) format
+        filters.minutes_filter = `${nlResult.minutes_filter.min},${nlResult.minutes_filter.max}`;
+      }
+    }
+
+    // Handle self filters - convert SelfFilter objects to backend format
+    if (nlResult.self_filters && Array.isArray(nlResult.self_filters)) {
+      // Convert SelfFilter objects to the old format that the route expects
+      const selfFiltersDict = {};
+      
+      nlResult.self_filters.forEach(filter => {
+        if (filter && filter.stat_column && filter.operator && filter.value !== undefined) {
+          const statName = filter.stat_column;
+          
+          if (filter.operator === 'between' && filter.value2 !== undefined) {
+            // Range filter: between value and value2
+            selfFiltersDict[statName] = [filter.value, filter.value2];
+          } else if (filter.operator === 'gte') {
+            // Greater than or equal: use value as minimum, set high maximum
+            selfFiltersDict[statName] = [filter.value, 999];
+          } else if (filter.operator === 'gt') {
+            // Greater than: use value+1 as minimum, set high maximum
+            selfFiltersDict[statName] = [filter.value + 1, 999];
+          } else if (filter.operator === 'lte') {
+            // Less than or equal: use 0 as minimum, value as maximum
+            selfFiltersDict[statName] = [0, filter.value];
+          } else if (filter.operator === 'lt') {
+            // Less than: use 0 as minimum, value-1 as maximum
+            selfFiltersDict[statName] = [0, filter.value - 1];
+          } else if (filter.operator === 'eq') {
+            // Equal: use value as both minimum and maximum
+            selfFiltersDict[statName] = [filter.value, filter.value];
+          }
+        }
+      });
+      
+      // Convert the dictionary to the format expected by the route
+      Object.entries(selfFiltersDict).forEach(([statName, [minVal, maxVal]]) => {
+        filters[`self_filters[${statName}]`] = `${minVal},${maxVal}`;
+      });
+    } else if (nlResult.self_filters && typeof nlResult.self_filters === 'object' && !Array.isArray(nlResult.self_filters)) {
+      // Handle legacy format (direct object)
+      Object.entries(nlResult.self_filters).forEach(([statName, value]) => {
+        if (value !== null && value !== undefined) {
+          if (Array.isArray(value)) {
+            // If it's an array, join with comma
+            filters[`self_filters[${statName}]`] = value.join(',');
+          } else if (typeof value === 'object' && value.min !== undefined && value.max !== undefined) {
+            // If it's an object with min/max properties
+            filters[`self_filters[${statName}]`] = `${value.min},${value.max}`;
+          } else {
+            // If it's a single value, convert to string
+            filters[`self_filters[${statName}]`] = String(value);
+          }
+        }
+      });
+    }
+
     return filters;
   };
 
@@ -141,9 +208,9 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
 
   const sampleQueries = [
     "LeBron James last 10 games",
-    "Stephen Curry with Klay Thompson",
+    "Stephen Curry with Jimmy Butler",
     "Giannis at home this season",
-    "Kevin Durant without Kyrie Irving",
+    "Kevin Durant without Devin Booker",
     "Luka last 5 games against top teams"
   ];
 

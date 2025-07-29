@@ -295,12 +295,35 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
             )}
           </div>
           <div className="mt-2">
-            {activePlayers.map((player, index) => (
-              <Badge key={index} bg={player.status === 'on' ? 'success' : 'danger'} className="me-1 mb-1 p-2">
-                {player.name} ({player.status.toUpperCase()})
-                <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => handleRemovePlayer(index)}>×</Button>
-              </Badge>
-            ))}
+            {(() => {
+              const onPlayers = activePlayers.filter(p => p.status === 'on');
+              const offPlayers = activePlayers.filter(p => p.status === 'off');
+              const badges = [];
+              
+              if (onPlayers.length > 0) {
+                badges.push(
+                  <Badge key="on-players" bg="success" className="me-1 mb-1 p-2">
+                    (ON) {onPlayers.map(p => p.name).join(', ')}
+                    <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
+                      setActivePlayers(activePlayers.filter(p => p.status !== 'on'));
+                    }}>×</Button>
+                  </Badge>
+                );
+              }
+              
+              if (offPlayers.length > 0) {
+                badges.push(
+                  <Badge key="off-players" bg="danger" className="me-1 mb-1 p-2">
+                    (OFF) {offPlayers.map(p => p.name).join(', ')}
+                    <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
+                      setActivePlayers(activePlayers.filter(p => p.status !== 'off'));
+                    }}>×</Button>
+                  </Badge>
+                );
+              }
+              
+              return badges;
+            })()}
           </div>
         </Form.Group>
         

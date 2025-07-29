@@ -160,7 +160,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
   return (
     <Card className="dark-card">
       <Card.Body>
-        <h4 className="mb-4">Game Logs</h4>
+        <h4 className="mb-2">Game Logs</h4>
         <div className="mb-2">
           <AppliedFilters filters={appliedFilters || {}} />
         </div>

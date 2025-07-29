@@ -210,7 +210,7 @@ const PerformanceAverages = ({ averages, appliedFilters }) => {
         <Card className="dark-card compact-averages-card">
           <Card.Body className="p-3">
             <h4 className="mb-2">Per 36 Minutes Comparison</h4>
-            <span className="legend-text mb-3 d-block text-center">Filtered vs Season</span>
+            <span className="legend-text mb-1 d-block text-center">Filtered vs Season</span>
             <div className="mb-2">
               <AppliedFilters filters={appliedFilters || {}} />
             </div>

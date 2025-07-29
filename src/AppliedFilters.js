@@ -49,18 +49,18 @@ const AppliedFilters = ({ filters }) => {
       );
     } else if (key === 'players_on' || key === 'players_on[]') {
       const playerList = Array.isArray(value) ? value : [value];
-      return (
-        <Badge key={key} bg="success" className="me-1">
-          {`(ON) ${playerList.join(', ')}`}
+      return playerList.map((player, index) => (
+        <Badge key={`${key}-${index}`} bg="success" className="me-1">
+          {`(ON) ${player}`}
         </Badge>
-      );
+      ));
     } else if (key === 'players_off' || key === 'players_off[]') {
       const playerList = Array.isArray(value) ? value : [value];
-      return (
-        <Badge key={key} bg="danger" className="me-1">
-          {`(OFF) ${playerList.join(', ')}`}
+      return playerList.map((player, index) => (
+        <Badge key={`${key}-${index}`} bg="danger" className="me-1">
+          {`(OFF) ${player}`}
         </Badge>
-      );
+      ));
     }
     else if (key.startsWith('self_filters[')) {
       const stat = key.match(/\[(.*?)\]/)[1];

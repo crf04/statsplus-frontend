@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import './TeamMatchupPage.css';
 import './GameLogFilter.css';
 import MatchupChart from './components/MatchupChart';
@@ -447,6 +448,7 @@ const TeamMatchupPage = () => {
   const [selectedTeamA] = useState('lakers');
   const [selectedTeamB] = useState('warriors');
   const [perspective, setPerspective] = useState('AvsB'); // 'AvsB' or 'BvsA'
+  const navigate = useNavigate();
 
   const teamA = mockTeamData[selectedTeamA];
   const teamB = mockTeamData[selectedTeamB];
@@ -454,6 +456,34 @@ const TeamMatchupPage = () => {
   return (
     <div className="team-matchup-page game-log-filter">
       <Container>
+        {/* Back to Home Button */}
+        <div style={{ marginBottom: '20px' }}>
+          <Button 
+            variant="outline-warning" 
+            onClick={() => navigate('/')}
+            style={{
+              borderColor: '#f59e0b',
+              color: '#f59e0b',
+              backgroundColor: 'transparent',
+              borderWidth: '2px',
+              fontWeight: '600',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f59e0b';
+              e.target.style.color = '#000000';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = '#f59e0b';
+            }}
+          >
+            ← Back to Home
+          </Button>
+        </div>
+
         <div className="dark-card" style={{ marginBottom: '20px' }}>
           <div className="card-body">
             {/* Clean Team vs Team Header */}

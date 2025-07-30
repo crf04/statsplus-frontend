@@ -52,7 +52,14 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
       setGameLogs(JSON.parse(game_logs).reverse());
       setInitialGameLogs(JSON.parse(game_logs).reverse());
       setAverages([JSON.parse(averages)[0], JSON.parse(season_averages)[0]]);
-      setSelectedTeam(next_game);
+      console.log(next_game)
+      if (next_game) {
+        setSelectedTeam(next_game);
+      }
+      else {
+        //set to first team
+        setSelectedTeam('Atlanta Hawks');
+      }
     })
     .catch(error => {
       console.error('There was an error fetching the unfiltered game logs!', error);
@@ -73,6 +80,10 @@ export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLo
       }
       if (setSelectedTeam && next_game) {
         setSelectedTeam(next_game);
+      }
+      else if (setSelectedTeam) {
+        //set hawks as default
+        setSelectedTeam('Atlanta Hawks');
       }
       return response;
     })

@@ -88,7 +88,7 @@ const GameLogFilter = () => {
         }
       });
     } else {
-      fetchGameLogs(cleanedFilters, setGameLogs, setAverages);
+      fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
     }
   };
 

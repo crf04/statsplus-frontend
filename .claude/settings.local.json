@@ -13,7 +13,13 @@
       "Bash(pip install:*)",
       "Bash(grep:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(claude --version)",
+      "Bash(claude config show)",
+      "Bash(where claude)",
+      "Bash(claude config)",
+      "Bash(claude config list)",
+      "Bash(claude --debug --print \"help me test agents\")"
     ],
     "deny": []
   }

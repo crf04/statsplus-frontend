@@ -32,14 +32,14 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
       icon: <Users size={20} />
     },
     {
-      key: 'STL',
-      label: 'STEALS',
-      icon: <Zap size={20} />
+      key: 'STKS',
+      label: 'STOCKS',
+      icon: <Shield size={20} />
     },
     {
-      key: 'BLK',
-      label: 'BLOCKS',
-      icon: <Shield size={20} />
+      key: 'MIN',
+      label: 'MINUTES',
+      icon: <Clock size={20} />
     },
     {
       key: 'FG_PCT',
@@ -48,14 +48,14 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
       isPercentage: true
     },
     {
-      key: 'MIN',
-      label: 'MINUTES',
-      icon: <Clock size={20} />
+      key: 'FD_PTS',
+      label: 'FANTASY POINTS',
+      icon: <TrendingUp size={20} />
     },
     {
-      key: 'PLUS_MINUS',
-      label: '+/-',
-      icon: <TrendingUp size={20} />
+      key: 'TOV',
+      label: 'TOV',
+      icon: <Zap size={20} />
     }
   ];
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Card } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import { Activity, Target, Clock, TrendingUp, BarChart3, Zap, Shield, Users } from 'lucide-react';
 import './PlayerStatsCards.css';
 

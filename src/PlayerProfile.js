@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Card, Form, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
+import { Card, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+import { getApiUrl } from './config';
 import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
@@ -19,7 +20,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       setLoading(true);
       setError(null);
 
-      const playerRequest = axios.get('http://127.0.0.1:5000/api/players/profile', {
+      const playerRequest = axios.get(getApiUrl('PLAYER_PROFILE'), {
         params: { 
           player_name: selectedPlayer,
           category: selectedProfile,
@@ -27,7 +28,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         }
       });
 
-      const teamRequest = selectedTeam ? axios.get('http://127.0.0.1:5000/api/teams/stats', {
+      const teamRequest = selectedTeam ? axios.get(getApiUrl('TEAM_STATS'), {
         params: {
           category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
           team: selectedTeam

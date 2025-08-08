@@ -1,7 +1,8 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
-import { Card, Form, Button, InputGroup, Badge, Alert, Spinner, Row, Col } from 'react-bootstrap';
+import React, { useState, useRef, useEffect } from 'react';
+import { Form, Button, Spinner } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain } from 'lucide-react';
 import axios from 'axios';
+import { getApiUrl } from './config';
 import './ModernSearch.css';
 
 const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding }) => {
@@ -51,7 +52,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     setHasSearched(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/api/nl-query', {
+      const response = await axios.post(getApiUrl('NL_QUERY'), {
         query: query.trim()
       });
 

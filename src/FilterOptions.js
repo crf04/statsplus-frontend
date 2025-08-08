@@ -193,9 +193,6 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
     }
   };
 
-  const handleRemovePlayer = (index) => {
-    setActivePlayers(activePlayers.filter((_, i) => i !== index));
-  };
 
   const handleLocationChange = (val) => {
     setLocationFilter(val);

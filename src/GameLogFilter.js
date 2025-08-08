@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import axios from 'axios';
+import { getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
 import FilterOptions from './FilterOptions';
@@ -30,11 +31,11 @@ const GameLogFilter = () => {
   const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/api/players')
+    axios.get(getApiUrl('PLAYERS'))
       .then(response => setPlayerList(response.data))
       .catch(error => console.error('Error fetching player list:', error));
 
-    axios.get('http://127.0.0.1:5000/api/teams')
+    axios.get(getApiUrl('TEAMS'))
       .then(response => setTeams(response.data))
       .catch(error => console.error('Error fetching team list:', error));
   }, []);

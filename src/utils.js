@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getApiUrl } from './config';
 
 export const lineTypeOptions = [
   'None', 'PTS',  'FD_PTS', 'PRA', 'PA', 'RA', 'PR', 'AST', 'REB', 'FTM','FTA', 'STL','BLK','STKS','FG3M', 'FG3A','FG2M','FG2A','FGM','FGA','TOV'
@@ -42,7 +43,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
     setSelectedTeam('');
   }
   if (selectedPlayer && selectedPlayer !== 'None') {
-    axios.get('http://127.0.0.1:5000/api/game_logs', {
+    axios.get(getApiUrl('GAME_LOGS'), {
       params: {
         player_name: selectedPlayer,
       }
@@ -67,7 +68,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
   }
 };
 export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLogs = null, setSelectedTeam = null) => {
-  return axios.get('http://127.0.0.1:5000/api/game_logs', { params })
+  return axios.get(getApiUrl('GAME_LOGS'), { params })
     .then(response => {
       const { game_logs, averages, season_averages, next_game } = response.data;
       const parsedGameLogs = JSON.parse(game_logs).reverse();

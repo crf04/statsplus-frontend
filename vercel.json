@@ -6,6 +6,9 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "/index.html" }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://statsplus-backend-production.up.railway.app/api/:path*" }
   ]
 }
 

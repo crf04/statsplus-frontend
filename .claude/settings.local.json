@@ -21,8 +21,16 @@
       "Bash(claude config list)",
       "Bash(claude --debug --print \"help me test agents\")",
       "Bash(npx update-browserslist-db:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(venvScripts:*)",
+      "Bash(.venvScriptsactivate.bat)",
+      "Bash(.venvScriptspython.exe test_parser_fix.py)",
+      "Bash(./venv/Scripts/python.exe test_parser_fix.py:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "C:\\Users\\chris\\nba-backend"
+    ]
   }
 }

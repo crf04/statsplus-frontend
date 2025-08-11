@@ -68,8 +68,12 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
   }
 };
 export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLogs = null, setSelectedTeam = null) => {
+  console.log('fetchGameLogs called with params:', params);
+  console.log('API URL:', getApiUrl('GAME_LOGS'));
+  
   return axios.get(getApiUrl('GAME_LOGS'), { params })
     .then(response => {
+      console.log('fetchGameLogs response:', response.data);
       const { game_logs, averages, season_averages, next_game } = response.data;
       const parsedGameLogs = JSON.parse(game_logs).reverse();
       setGameLogs(parsedGameLogs);

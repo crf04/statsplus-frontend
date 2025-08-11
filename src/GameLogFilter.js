@@ -95,6 +95,8 @@ const GameLogFilter = () => {
 
   // Handler for natural language query results
   const handleNLQueryResults = (filters) => {
+    console.log('handleNLQueryResults called with filters:', filters);
+    
     // Hide landing page when search is made
     setShowLandingPage(false);
     
@@ -114,6 +116,8 @@ const GameLogFilter = () => {
             !(Array.isArray(value) && value.length === 0)
           )
         );
+        
+        console.log('About to call fetchGameLogs with cleanedFilters:', cleanedFilters);
         
         // Remove default playstyle values that weren't explicitly set by user
         const appliedFiltersForUI = { ...cleanedFilters };

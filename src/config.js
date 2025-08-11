@@ -1,7 +1,7 @@
 // API Configuration
 const config = {
-  // API Base URL - defaults to localhost for development
-  API_BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000',
+  // API Base URL - use relative path for production (proxied by Vercel), localhost for development
+  API_BASE_URL: process.env.NODE_ENV === 'production' ? '' : (process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'),
   
   // API endpoints
   API_ENDPOINTS: {

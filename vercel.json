@@ -1,12 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
-  ],
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
-  ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://statsplus-backend-production.up.railway.app/api/:path*" }
   ]

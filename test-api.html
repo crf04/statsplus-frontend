@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>NBA API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('https://statsplus-backend-production.up.railway.app/api/players');
+                const data = await response.json();
+                result.innerHTML = `
+                    <h3>✅ Success!</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Players loaded: ${data.length}</p>
+                    <p>First 5 players: ${data.slice(0, 5).join(', ')}</p>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

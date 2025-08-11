@@ -61,6 +61,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
 
       // Convert NL result to frontend filter format
       const filters = convertNLToFilters(result);
+      console.log('NL Query - original result:', result);
+      console.log('NL Query - converted filters:', filters);
       
       // Apply filters to the parent component (includes player selection)
       if (onFiltersApplied) {

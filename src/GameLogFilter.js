@@ -29,6 +29,7 @@ const GameLogFilter = () => {
   const [showLandingPage, setShowLandingPage] = useState(true); // Track if landing page should show
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
+  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
 
   useEffect(() => {
     axios.get(getApiUrl('PLAYERS'))
@@ -80,6 +81,7 @@ const GameLogFilter = () => {
     
     // For natural language queries, also update initialGameLogs and selectedTeam
     if (isFromNL) {
+      setIsGameLogsLoading(true);
       fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
         // If no opposing team is provided, set the first available team as default
         if (!team && teams.length > 0) {
@@ -87,7 +89,13 @@ const GameLogFilter = () => {
         } else {
           setSelectedTeam(team);
         }
-      });
+      })
+        .then(() => {
+          setIsGameLogsLoading(false);
+        })
+        .catch(() => {
+          setIsGameLogsLoading(false);
+        });
     } else {
       fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
     }
@@ -134,6 +142,9 @@ const GameLogFilter = () => {
         );
         setAppliedFilters(finalFilters);
         
+        // Set loading state for game logs API
+        setIsGameLogsLoading(true);
+        
         // For NL queries, only set displayPlayer (selectedPlayer is set when filters are applied)
         fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
           // If no opposing team is provided, set the first available team as default
@@ -147,9 +158,11 @@ const GameLogFilter = () => {
             // Only set displayPlayer for NL queries
             // selectedPlayer will be set when user applies filters
             setDisplayPlayer(filters.selectedPlayer);
+            setIsGameLogsLoading(false); // Clear loading state
           })
           .catch(error => {
             console.error('Error fetching natural language query results:', error);
+            setIsGameLogsLoading(false); // Clear loading state on error
           });
       } else {
         handleApplyFilters(filters, true); // Pass true for isFromNL
@@ -172,6 +185,7 @@ const GameLogFilter = () => {
         onPlayerSelected={handleNLPlayerSelection}
         onQueryUpdate={setCurrentQuery}
         resetToLanding={resetToLanding}
+        gameLogsLoading={isGameLogsLoading}
       />
       
       {/* Player Stats Cards - positioned between search and main content */}

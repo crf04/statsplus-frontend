@@ -74,8 +74,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
         onQueryUpdate(query.trim());
       }
       
-      // Close search after successful submission
-      setIsExpanded(false);
+      // Keep search expanded to show result/loading state
+      // setIsExpanded(false); // Commented out to keep search visible during/after API calls
       
       // Note: Player selection is now handled via filters to prevent duplicate API calls
 
@@ -296,11 +296,11 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               <Search className="compact-search-icon" size={18} />
               <Form.Control
                 type="text"
-                placeholder="Ask anything about NBA stats..."
+                placeholder={loading ? "Processing query..." : "Ask anything about NBA stats..."}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={loading}
-                className="compact-search-input"
+                className={`compact-search-input ${loading ? 'loading' : ''}`}
                 autoFocus
               />
               <Button 

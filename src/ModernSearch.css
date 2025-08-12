@@ -932,6 +932,14 @@
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
+.landing-search-input.loading {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
 .compact-input-wrapper:has(.compact-search-input.loading) {
+  animation: loadingGlow 2s ease-in-out infinite;
+}
+
+.landing-input-wrapper:has(.landing-search-input.loading) {
   animation: loadingGlow 2s ease-in-out infinite;
 } 

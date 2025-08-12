@@ -5,13 +5,16 @@ import axios from 'axios';
 import { getApiUrl } from './config';
 import './ModernSearch.css';
 
-const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding }) => {
+const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Combined loading state: true if either NL query or game logs are loading
+  const isLoading = loading || gameLogsLoading;
   const searchRef = useRef(null);
 
   // Close search when clicking outside
@@ -232,18 +235,18 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 <Search className="landing-search-icon" size={24} />
                 <Form.Control
                   type="text"
-                  placeholder="Ask anything about NBA stats..."
+                  placeholder={isLoading ? "Processing query..." : "Ask anything about NBA stats..."}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  disabled={loading}
-                  className="landing-search-input"
+                  disabled={isLoading}
+                  className={`landing-search-input ${isLoading ? 'loading' : ''}`}
                 />
                 <Button 
                   type="submit"
-                  disabled={loading || !query.trim()}
+                  disabled={isLoading || !query.trim()}
                   className="landing-search-button"
                 >
-                  {loading ? (
+                  {isLoading ? (
                     <Spinner size="sm" />
                   ) : (
                     <Brain size={20} />
@@ -296,19 +299,19 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               <Search className="compact-search-icon" size={18} />
               <Form.Control
                 type="text"
-                placeholder={loading ? "Processing query..." : "Ask anything about NBA stats..."}
+                placeholder={isLoading ? "Processing query..." : "Ask anything about NBA stats..."}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                disabled={loading}
-                className={`compact-search-input ${loading ? 'loading' : ''}`}
+                disabled={isLoading}
+                className={`compact-search-input ${isLoading ? 'loading' : ''}`}
                 autoFocus
               />
               <Button 
                 type="submit"
-                disabled={loading || !query.trim()}
+                disabled={isLoading || !query.trim()}
                 className="compact-search-button"
               >
-                {loading ? (
+                {isLoading ? (
                   <Spinner size="sm" />
                 ) : (
                   <Brain size={16} />

@@ -913,6 +913,25 @@
   }
 }
 
+@keyframes loadingGlow {
+  0%, 100% {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
+  }
+  50% {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+  }
+}
+
 .modern-search-button .spinner-border-sm {
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.compact-search-input.loading {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.compact-input-wrapper:has(.compact-search-input.loading) {
+  animation: loadingGlow 2s ease-in-out infinite;
 } 

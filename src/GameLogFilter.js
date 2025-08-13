@@ -92,9 +92,11 @@ const GameLogFilter = () => {
       })
         .then(() => {
           setIsGameLogsLoading(false);
+          if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
         })
         .catch(() => {
           setIsGameLogsLoading(false);
+          if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
         });
     } else {
       fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
@@ -102,7 +104,7 @@ const GameLogFilter = () => {
   };
 
   // Handler for natural language query results
-  const handleNLQueryResults = (filters) => {
+  const handleNLQueryResults = (filters, nlLoadingCallback) => {
     console.log('handleNLQueryResults called with filters:', filters);
     
     // Hide landing page when search is made
@@ -159,13 +161,16 @@ const GameLogFilter = () => {
             // selectedPlayer will be set when user applies filters
             setDisplayPlayer(filters.selectedPlayer);
             setIsGameLogsLoading(false); // Clear loading state
+            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
           })
           .catch(error => {
             console.error('Error fetching natural language query results:', error);
             setIsGameLogsLoading(false); // Clear loading state on error
+            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
           });
       } else {
         handleApplyFilters(filters, true); // Pass true for isFromNL
+        if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading for non-player queries
       }
     }
   };

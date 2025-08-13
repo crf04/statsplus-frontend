@@ -57,7 +57,7 @@ const GameLogFilter = () => {
     }
   }, [selectedPlayer, teams]);
 
-  const handleApplyFilters = (filterParams, isFromNL = false) => {
+  const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
     const cleanedFilters = Object.fromEntries(
       Object.entries(filterParams).filter(([_, value]) => 
         value !== null && value !== '' && 
@@ -99,7 +99,21 @@ const GameLogFilter = () => {
           if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
         });
     } else {
-      fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
+      if (isFromNL) {
+        setIsGameLogsLoading(true);
+        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam)
+          .then(() => {
+            setIsGameLogsLoading(false);
+            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
+          })
+          .catch(() => {
+            setIsGameLogsLoading(false);
+            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
+          });
+      } else {
+        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
+        // For non-NL calls, there's no callback to handle
+      }
     }
   };
 
@@ -169,8 +183,7 @@ const GameLogFilter = () => {
             if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
           });
       } else {
-        handleApplyFilters(filters, true); // Pass true for isFromNL
-        if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading for non-player queries
+        handleApplyFilters(filters, true, nlLoadingCallback); // Pass callback through
       }
     }
   };

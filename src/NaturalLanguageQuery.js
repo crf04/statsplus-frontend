@@ -5,7 +5,7 @@ import axios from 'axios';
 import { getApiUrl } from './config';
 import './ModernSearch.css';
 
-const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading }) => {
+const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading, onLoadingComplete }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -69,7 +69,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       
       // Apply filters to the parent component (includes player selection)
       if (onFiltersApplied) {
-        onFiltersApplied(filters);
+        // Pass a callback to clear this component's loading state
+        onFiltersApplied(filters, () => setLoading(false));
       }
       
       // Update parent with the successful query
@@ -81,12 +82,12 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       // setIsExpanded(false); // Commented out to keep search visible during/after API calls
       
       // Note: Player selection is now handled via filters to prevent duplicate API calls
+      // Don't set loading to false here - let the parent component handle it via gameLogsLoading
 
     } catch (err) {
       console.error('NL Query Error:', err);
       setError(err.response?.data?.error || 'Failed to process query. Please try again.');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only set loading to false on error
     }
   };
 

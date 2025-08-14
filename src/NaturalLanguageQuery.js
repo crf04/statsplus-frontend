@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Form, Button, Spinner } from 'react-bootstrap';
-import { Search, CheckCircle, AlertCircle, Brain } from 'lucide-react';
+import { Form, Button, Spinner, Modal } from 'react-bootstrap';
+import { Search, CheckCircle, AlertCircle, Brain, HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import { getApiUrl } from './config';
 import './ModernSearch.css';
@@ -12,6 +12,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showPromptingGuide, setShowPromptingGuide] = useState(false);
   
   // Combined loading state: true if either NL query or game logs are loading
   const isLoading = loading || gameLogsLoading;
@@ -216,9 +217,9 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   const sampleQueries = [
     "LeBron James last 10 games",
     "Stephen Curry with Jimmy Butler",
-    "Giannis at home this season",
+    "Giannis at home since November",
     "Kevin Durant without Devin Booker",
-    "Luka last 5 games against top teams"
+    "Luka last 5 games against top 10 defenses"
   ];
 
   // Landing page interface (before first search)
@@ -228,6 +229,14 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
         <div className="landing-container">
           <div className="landing-header">
             <h1 className="landing-title">CourtAI</h1>
+            <button 
+              className="prompting-guide-button"
+              onClick={() => setShowPromptingGuide(true)}
+              title="Prompting Guide"
+            >
+              <HelpCircle size={20} />
+              <span>Prompting Guide</span>
+            </button>
           </div>
           
           <div className="landing-search-wrapper">
@@ -278,6 +287,147 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             </div>
           )}
         </div>
+
+        {/* Prompting Guide Modal */}
+        <Modal 
+          show={showPromptingGuide} 
+          onHide={() => setShowPromptingGuide(false)}
+          size="lg"
+          backdrop="static"
+          style={modalStyles.modal}
+        >
+          <Modal.Header closeButton style={modalStyles.modalHeader}>
+            <Modal.Title style={modalStyles.modalTitle}>📝 Prompting Guide</Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={modalStyles.modalBody}>
+            
+            {/* Getting Started Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>🚀 Getting Started</h4>
+              <div style={modalStyles.content}>
+                <p>To get started, just type in a query and click the search button. You can also click on the sample queries to get started.</p>
+                <p>Think about your favorite player's upcoming matchups and see how they've performed in certain matchups.</p>
+              </div>
+            </div>
+
+            {/* Player Queries Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>🏀 Player Queries</h4>
+              <div style={modalStyles.content}>
+                <p style={modalStyles.introText}>Pick a player and you can see an overview of their stats.</p>
+                
+                <div style={modalStyles.exampleBlock}>
+                  <p style={modalStyles.label}>Basic Example:</p>
+                  <code style={modalStyles.exampleCode}>"Steph Curry this year"</code>
+                  <p style={modalStyles.description}>See stats for the 2024-2025 season</p>
+                </div>
+
+                <p style={modalStyles.highlight}>The cool thing is: you can enter much more complex queries with filters.</p>
+                
+                <div style={modalStyles.exampleBlock}>
+                  <p style={modalStyles.label}>Try These:</p>
+                  <div style={modalStyles.exampleList}>
+                    <code style={modalStyles.exampleCode}>"LeBron James last 10 games"</code>
+                    <code style={modalStyles.exampleCode}>"Giannis at home since November"</code>
+                    <code style={modalStyles.exampleCode}>"Kevin Durant without Devin Booker"</code>
+                  </div>
+                </div>
+
+                <p>You can remove outliers by adding filters like <code style={modalStyles.inlineCode}>"playing 30+ minutes"</code>.</p>
+                
+                <div style={modalStyles.advancedBlock}>
+                  <p style={modalStyles.advancedTitle}>📈 Advanced Scenario:</p>
+                  <p>Let's say the Hawks are playing without Trae Young against the Wizards. We can query games for Jalen Johnson specifically without Trae Young:</p>
+                  <code style={modalStyles.exampleCode}>"Jalen Johnson games without Trae Young"</code>
+                  
+                  <p>Once you get the results, you can even see the Wizards defensive stats. Since they're a poor defense, you can further filter:</p>
+                  <code style={modalStyles.exampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses playing 25+ minutes"</code>
+                </div>
+              </div>
+            </div>
+
+            {/* Team Queries Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>🏟️ Team Queries</h4>
+              <div style={modalStyles.content}>
+                <p>Coming soon!</p>
+              </div>
+            </div>
+
+            {/* Advanced Examples Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>⚡ Advanced Examples</h4>
+              <div style={modalStyles.content}>
+                <p style={modalStyles.introText}>Complex multi-filter queries for detailed analysis:</p>
+                
+                <div style={modalStyles.exampleList}>
+                  <div style={modalStyles.advancedExample}>
+                    <code style={modalStyles.exampleCode}>"LeBron James games without Anthony Davis and with Austin Reaves last 15 games"</code>
+                  </div>
+                  
+                  <div style={modalStyles.advancedExample}>
+                    <code style={modalStyles.exampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses since January 1st"</code>
+                  </div>
+                  
+                  <div style={modalStyles.advancedExample}>
+                    <code style={modalStyles.exampleCode}>"Giannis games at home with 10+ FGA playing 30+ minutes"</code>
+                  </div>
+                  
+                  <div style={modalStyles.advancedExample}>
+                    <code style={modalStyles.exampleCode}>"Anthony Davis games with Kyrie Irving and Klay Thompson"</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro Tips Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>💡 Pro Tips</h4>
+              <div style={modalStyles.content}>
+                <p style={modalStyles.introText}>Try to phrase queries in structured formats so it will be easier to understand.</p>
+                
+                <div style={modalStyles.tipsList}>
+                  <div style={modalStyles.tip}>
+                    <span style={modalStyles.keyword}>"last"</span>
+                    <span style={modalStyles.tipText}>Use if you want to see the last 10 games</span>
+                  </div>
+                  
+                  <div style={modalStyles.tip}>
+                    <span style={modalStyles.keyword}>"since"</span>
+                    <span style={modalStyles.tipText}>Use if you want to see games since a certain date</span>
+                  </div>
+                  
+                  <div style={modalStyles.tip}>
+                    <span style={modalStyles.keyword}>"without"</span>
+                    <span style={modalStyles.tipText}>Use if you want to see games without a certain player</span>
+                  </div>
+                  
+                  <div style={modalStyles.tip}>
+                    <span style={modalStyles.keyword}>"with"</span>
+                    <span style={modalStyles.tipText}>Use if you want to see games with a certain player</span>
+                  </div>
+                  
+                  <div style={modalStyles.tip}>
+                    <span style={modalStyles.keyword}>"against"</span>
+                    <span style={modalStyles.tipText}>Use if you want to see games against an opponent filter</span>
+                  </div>
+                </div>
+                
+                <p style={modalStyles.noteText}>Currently supported opponent filters are:</p>
+              </div>
+            </div>
+
+          </Modal.Body>
+          <Modal.Footer style={modalStyles.modalFooter}>
+            <Button 
+              variant="outline-warning" 
+              onClick={() => setShowPromptingGuide(false)}
+              style={modalStyles.closeButton}
+            >
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     );
   }
@@ -351,6 +501,165 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       )}
     </div>
   );
+};
+
+const modalStyles = {
+  modal: {
+    color: '#ffffff',
+  },
+  modalHeader: {
+    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+    border: 'none',
+    borderBottom: '2px solid #f59e0b',
+    color: '#ffffff',
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontSize: '1.5rem',
+    fontWeight: '600',
+  },
+  modalBody: {
+    background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+    color: '#ffffff',
+    maxHeight: '70vh',
+    overflowY: 'auto',
+    padding: '30px',
+  },
+  modalFooter: {
+    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+    border: 'none',
+    borderTop: '1px solid #333333',
+  },
+  closeButton: {
+    borderColor: '#f59e0b',
+    color: '#f59e0b',
+    fontWeight: '600',
+  },
+  section: {
+    marginBottom: '30px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+    border: '1px solid #333333',
+    borderRadius: '12px',
+    borderLeft: '4px solid #f59e0b',
+  },
+  sectionTitle: {
+    color: '#f59e0b',
+    marginBottom: '15px',
+    fontSize: '1.2rem',
+    fontWeight: '600',
+    borderBottom: '1px solid #333333',
+    paddingBottom: '10px',
+  },
+  content: {
+    color: '#cccccc',
+    lineHeight: '1.6',
+    fontSize: '0.95rem',
+  },
+  introText: {
+    fontSize: '1rem',
+    fontWeight: '500',
+    color: '#ffffff',
+    marginBottom: '20px',
+  },
+  highlight: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#f59e0b',
+    margin: '20px 0',
+    fontStyle: 'italic',
+  },
+  exampleBlock: {
+    background: 'rgba(245, 158, 11, 0.05)',
+    border: '1px solid rgba(245, 158, 11, 0.2)',
+    borderRadius: '8px',
+    padding: '16px',
+    margin: '16px 0',
+  },
+  advancedBlock: {
+    background: 'rgba(76, 175, 80, 0.05)',
+    border: '1px solid rgba(76, 175, 80, 0.2)',
+    borderRadius: '8px',
+    padding: '16px',
+    margin: '20px 0',
+  },
+  advancedTitle: {
+    color: '#4caf50',
+    fontWeight: '600',
+    fontSize: '1rem',
+    marginBottom: '12px',
+  },
+  label: {
+    color: '#f59e0b',
+    fontWeight: '600',
+    fontSize: '0.9rem',
+    marginBottom: '8px',
+  },
+  description: {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    marginTop: '8px',
+    fontStyle: 'italic',
+  },
+  exampleCode: {
+    background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+    color: '#f59e0b',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    fontFamily: 'Monaco, Consolas, "Lucida Console", monospace',
+    border: '1px solid #333',
+    display: 'block',
+    margin: '8px 0',
+    whiteSpace: 'pre-wrap',
+  },
+  inlineCode: {
+    background: 'rgba(245, 158, 11, 0.15)',
+    color: '#f59e0b',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '0.9rem',
+    fontFamily: 'Monaco, Consolas, "Lucida Console", monospace',
+  },
+  exampleList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  advancedExample: {
+    margin: '12px 0',
+  },
+  tipsList: {
+    margin: '16px 0',
+  },
+  tip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 0',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  },
+  keyword: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #ff8c00 100%)',
+    color: '#000',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    fontFamily: 'Monaco, Consolas, "Lucida Console", monospace',
+    minWidth: '80px',
+    textAlign: 'center',
+  },
+  tipText: {
+    color: '#ccc',
+    fontSize: '0.9rem',
+  },
+  noteText: {
+    color: '#aaa',
+    fontSize: '0.9rem',
+    marginTop: '20px',
+    fontStyle: 'italic',
+  },
 };
 
 export default NaturalLanguageQuery;

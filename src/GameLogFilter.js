@@ -121,8 +121,7 @@ const GameLogFilter = () => {
   const handleNLQueryResults = (filters, nlLoadingCallback) => {
     console.log('handleNLQueryResults called with filters:', filters);
     
-    // Hide landing page when search is made
-    setShowLandingPage(false);
+    // Don't hide landing page immediately - wait for game logs to load
     
     // Apply filters received from natural language processing
     if (filters && Object.keys(filters).length > 0) {
@@ -175,15 +174,23 @@ const GameLogFilter = () => {
             // selectedPlayer will be set when user applies filters
             setDisplayPlayer(filters.selectedPlayer);
             setIsGameLogsLoading(false); // Clear loading state
+            setShowLandingPage(false); // Hide landing page only after data loads
             if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
           })
           .catch(error => {
             console.error('Error fetching natural language query results:', error);
             setIsGameLogsLoading(false); // Clear loading state on error
+            // Keep landing page visible on error so user can retry
             if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
           });
       } else {
-        handleApplyFilters(filters, true, nlLoadingCallback); // Pass callback through
+        // For filters without selectedPlayer, we still need to hide landing page after data loads
+        const originalCallback = nlLoadingCallback;
+        const wrappedCallback = () => {
+          setShowLandingPage(false); // Hide landing page after data loads
+          if (originalCallback) originalCallback();
+        };
+        handleApplyFilters(filters, true, wrappedCallback); // Pass wrapped callback
       }
     }
   };

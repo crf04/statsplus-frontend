@@ -305,10 +305,41 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>🚀 Getting Started</h4>
               <div style={modalStyles.content}>
-                <p>To get started, just type in a query and click the search button. You can also click on the sample queries to get started.</p>
-                <p>Think about your favorite player's upcoming matchups and see how they've performed in certain matchups.</p>
+                <div style={modalStyles.gettingStartedGrid}>
+                  <div style={modalStyles.startStep}>
+                    <div style={modalStyles.stepNumber}>1</div>
+                    <div style={modalStyles.stepContent}>
+                      <h5 style={modalStyles.stepTitle}>Type Your Query</h5>
+                      <p style={modalStyles.stepText}>Enter any question about NBA stats in natural language</p>
+                    </div>
+                  </div>
+                  
+                  <div style={modalStyles.startStep}>
+                    <div style={modalStyles.stepNumber}>2</div>
+                    <div style={modalStyles.stepContent}>
+                      <h5 style={modalStyles.stepTitle}>Click Search</h5>
+                      <p style={modalStyles.stepText}>Hit the brain icon or press Enter to analyze your query</p>
+                    </div>
+                  </div>
+                  
+                  <div style={modalStyles.startStep}>
+                    <div style={modalStyles.stepNumber}>3</div>
+                    <div style={modalStyles.stepContent}>
+                      <h5 style={modalStyles.stepTitle}>Explore Results</h5>
+                      <p style={modalStyles.stepText}>View detailed stats, charts, and game logs instantly</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={modalStyles.quickTip}>
+                  <span style={modalStyles.quickTipIcon}>💡</span>
+                  <span style={modalStyles.quickTipText}>
+                    Try the sample queries below or think about your favorite player's upcoming matchups!
+                  </span>
+                </div>
               </div>
             </div>
+
 
             {/* Player Queries Section */}
             <div style={modalStyles.section}>
@@ -346,45 +377,12 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               </div>
             </div>
 
-            {/* Team Queries Section */}
-            <div style={modalStyles.section}>
-              <h4 style={modalStyles.sectionTitle}>🏟️ Team Queries</h4>
-              <div style={modalStyles.content}>
-                <p>Coming soon!</p>
-              </div>
-            </div>
-
-            {/* Advanced Examples Section */}
-            <div style={modalStyles.section}>
-              <h4 style={modalStyles.sectionTitle}>⚡ Advanced Examples</h4>
-              <div style={modalStyles.content}>
-                <p style={modalStyles.introText}>Complex multi-filter queries for detailed analysis:</p>
-                
-                <div style={modalStyles.exampleList}>
-                  <div style={modalStyles.advancedExample}>
-                    <code style={modalStyles.exampleCode}>"LeBron James games without Anthony Davis and with Austin Reaves last 15 games"</code>
-                  </div>
-                  
-                  <div style={modalStyles.advancedExample}>
-                    <code style={modalStyles.exampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses since January 1st"</code>
-                  </div>
-                  
-                  <div style={modalStyles.advancedExample}>
-                    <code style={modalStyles.exampleCode}>"Giannis games at home with 10+ FGA playing 30+ minutes"</code>
-                  </div>
-                  
-                  <div style={modalStyles.advancedExample}>
-                    <code style={modalStyles.exampleCode}>"Anthony Davis games with Kyrie Irving and Klay Thompson"</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            
             {/* Pro Tips Section */}
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>💡 Pro Tips</h4>
               <div style={modalStyles.content}>
-                <p style={modalStyles.introText}>Try to phrase queries in structured formats so it will be easier to understand.</p>
+                <p style={modalStyles.introText}>Try to phrase queries in structured formats for better understanding:</p>
                 
                 <div style={modalStyles.tipsList}>
                   <div style={modalStyles.tip}>
@@ -413,7 +411,76 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                   </div>
                 </div>
                 
-                <p style={modalStyles.noteText}>Currently supported opponent filters are:</p>
+                <div style={modalStyles.opponentFiltersSection}>
+                  <h5 style={modalStyles.subSectionTitle}>🛡️ Opponent Filter Guide</h5>
+                  <p style={modalStyles.filterNote}>
+                    Use <code style={modalStyles.inlineCode}>"top"</code> for best defenses or <code style={modalStyles.inlineCode}>"bottom"</code> for worst defenses. 
+                    Negative numbers = better matchups for the player.
+                  </p>
+                  
+                  <div style={modalStyles.filterGrid}>
+                    <div style={modalStyles.filterCategory}>
+                      <h6 style={modalStyles.categoryTitle}>📊 General Defense</h6>
+                      <div style={modalStyles.filterList}>
+                        <span style={modalStyles.filterItem}><strong>OPP_PTS:</strong> overall defense</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_REB:</strong> rebounds allowed</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_AST:</strong> assists allowed</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_STOCKS:</strong> steals+blocks allowed</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_FTA:</strong> fouls (FT attempts)</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_TOV:</strong> turnovers forced</span>
+                      </div>
+                    </div>
+                    
+                    <div style={modalStyles.filterCategory}>
+                      <h6 style={modalStyles.categoryTitle}>🎯 Shot Type Defense</h6>
+                      <div style={modalStyles.filterList}>
+                        <span style={modalStyles.filterItem}><strong>C&S PTS:</strong> catch-and-shoot defense</span>
+                        <span style={modalStyles.filterItem}><strong>PU PTS:</strong> pull-up shot defense</span>
+                        <span style={modalStyles.filterItem}><strong>Less Than 10 ft:</strong> paint protection</span>
+                        <span style={modalStyles.filterItem}><strong>OPP_FG3M:</strong> threes allowed</span>
+                        <span style={modalStyles.filterItem}><strong>C&S 3A:</strong> catch-shoot 3PT attempts</span>
+                        <span style={modalStyles.filterItem}><strong>PU 2s/3s:</strong> pull-up defense</span>
+                      </div>
+                    </div>
+                    
+                    <div style={modalStyles.filterCategory}>
+                      <h6 style={modalStyles.categoryTitle}>⚡ Play Type Defense</h6>
+                      <div style={modalStyles.filterList}>
+                        <span style={modalStyles.filterItem}><strong>Transition:</strong> fast-break defense</span>
+                        <span style={modalStyles.filterItem}><strong>Isolation:</strong> iso defense</span>
+                        <span style={modalStyles.filterItem}><strong>Spotup:</strong> spot-up defense</span>
+                        <span style={modalStyles.filterItem}><strong>Handoff:</strong> handoff defense</span>
+                        <span style={modalStyles.filterItem}><strong>OffScreen:</strong> off-screen defense</span>
+                        <span style={modalStyles.filterItem}><strong>Postup:</strong> post-up defense</span>
+                        <span style={modalStyles.filterItem}><strong>PRBallHandler/PRRollMan:</strong> pick-roll defense</span>
+                        <span style={modalStyles.filterItem}><strong>Cut:</strong> cutting defense</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Examples Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>⚡ Advanced Examples</h4>
+              <div style={modalStyles.content}>
+                <p style={modalStyles.introText}>Complex multi-filter queries for detailed analysis:</p>
+                
+                <div style={modalStyles.compactExampleList}>
+                  <code style={modalStyles.compactExampleCode}>"LeBron James games without Anthony Davis and with Austin Reaves last 15 games"</code>
+                  <code style={modalStyles.compactExampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses since January 1st"</code>
+                  <code style={modalStyles.compactExampleCode}>"Giannis games at home with 10+ FGA playing 30+ minutes"</code>
+                  <code style={modalStyles.compactExampleCode}>"Anthony Davis games with Kyrie Irving and Klay Thompson against bottom 10 paint defenses"</code>
+                </div>
+              </div>
+            </div>
+
+            {/* Team Queries Section */}
+            <div style={modalStyles.section}>
+              <h4 style={modalStyles.sectionTitle}>🏟️ Team Queries</h4>
+              <div style={modalStyles.content}>
+                <p>Coming soon!</p>
               </div>
             </div>
 
@@ -659,6 +726,148 @@ const modalStyles = {
     fontSize: '0.9rem',
     marginTop: '20px',
     fontStyle: 'italic',
+  },
+  // New styles for Getting Started section
+  gettingStartedGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    margin: '20px 0',
+    maxWidth: '600px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
+  startStep: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '15px',
+    padding: '20px',
+    background: 'rgba(245, 158, 11, 0.05)',
+    border: '1px solid rgba(245, 158, 11, 0.2)',
+    borderRadius: '12px',
+    transition: 'all 0.3s ease',
+    width: '100%',
+  },
+  stepNumber: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #ff8c00 100%)',
+    color: '#000',
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1rem',
+    fontWeight: '700',
+    flexShrink: 0,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    color: '#f59e0b',
+    fontSize: '1rem',
+    fontWeight: '600',
+    margin: '0 0 8px 0',
+  },
+  stepText: {
+    color: '#cccccc',
+    fontSize: '0.9rem',
+    lineHeight: '1.4',
+    margin: 0,
+  },
+  quickTip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    background: 'rgba(76, 175, 80, 0.05)',
+    border: '1px solid rgba(76, 175, 80, 0.2)',
+    borderRadius: '8px',
+    marginTop: '20px',
+  },
+  quickTipIcon: {
+    fontSize: '1.2rem',
+  },
+  quickTipText: {
+    color: '#4caf50',
+    fontSize: '0.95rem',
+    fontWeight: '500',
+  },
+  // New styles for compact examples
+  compactExampleList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  compactExampleCode: {
+    background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+    color: '#f59e0b',
+    padding: '10px 12px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontFamily: 'Monaco, Consolas, "Lucida Console", monospace',
+    border: '1px solid #333',
+    display: 'block',
+    whiteSpace: 'pre-wrap',
+    lineHeight: '1.3',
+  },
+  // New styles for opponent filters section
+  opponentFiltersSection: {
+    marginTop: '30px',
+    padding: '20px',
+    background: 'rgba(30, 30, 30, 0.5)',
+    border: '1px solid #444',
+    borderRadius: '8px',
+  },
+  subSectionTitle: {
+    color: '#f59e0b',
+    fontSize: '1.1rem',
+    fontWeight: '600',
+    margin: '0 0 15px 0',
+    paddingBottom: '8px',
+    borderBottom: '1px solid #444',
+  },
+  filterNote: {
+    color: '#cccccc',
+    fontSize: '0.9rem',
+    marginBottom: '20px',
+    lineHeight: '1.5',
+  },
+  filterGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '20px',
+    justifyContent: 'center',
+    alignItems: 'stretch',
+  },
+  filterCategory: {
+    background: 'rgba(20, 20, 20, 0.5)',
+    padding: '15px',
+    borderRadius: '6px',
+    border: '1px solid #333',
+    flex: '0 0 280px',
+    minWidth: '280px',
+    maxWidth: '320px',
+  },
+  categoryTitle: {
+    color: '#f59e0b',
+    fontSize: '0.95rem',
+    fontWeight: '600',
+    margin: '0 0 12px 0',
+    paddingBottom: '6px',
+    borderBottom: '1px solid #333',
+  },
+  filterList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  filterItem: {
+    color: '#cccccc',
+    fontSize: '0.8rem',
+    lineHeight: '1.3',
+    display: 'block',
   },
 };
 

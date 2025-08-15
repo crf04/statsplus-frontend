@@ -88,8 +88,18 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     }
 
     return parsedData.map((item) => {
+      // Rename shooting types to shorter versions
+      let shootingType = item.ShootingType || 'Unknown';
+      if (shootingType === 'Catch and Shoot') {
+        shootingType = 'C&S';
+      } else if (shootingType === 'Pullups') {
+        shootingType = 'Pullups';
+      } else if (shootingType === 'Less Than 10 ft') {
+        shootingType = '<10 Ft';
+      }
+
       return {
-        ShootingType: item.ShootingType || 'Unknown',
+        ShootingType: shootingType,
         PTS: item.PTS.toFixed(1),
         PTS_RANK: item.PTS_RANK,
         PTS_vs_avg_pct: item.PTS_vs_avg_pct,
@@ -125,40 +135,49 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     ];
 
     return (
-      <BSTable striped bordered hover size="sm">
-        <thead>
-          <tr>
-            <th>Shooting Type</th>
-            {statPairs.map(({ value }) => (
-              <th key={value}>{value}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {transformedData.map((row) => {
-            const shootingType = row.ShootingType || 'N/A';
-            return (
-              <tr key={shootingType}>
-                <td>{shootingType}</td>
-                {statPairs.map(({ value, rank, vs_avg }) => (
-                  <td
-                    key={`${shootingType}-${value}`}
-                    style={{ textAlign: 'center', verticalAlign: 'middle' }}
-                  >
-                    <div
-                      style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+      <div style={{ overflowX: 'auto', width: '100%' }}>
+        <BSTable striped bordered hover size="sm" style={{ minWidth: '600px' }}>
+          <thead>
+            <tr>
+              <th style={{ minWidth: '80px', position: 'sticky', left: 0, backgroundColor: 'var(--bs-table-bg)', zIndex: 1 }}>Type</th>
+              {statPairs.map(({ value }) => (
+                <th key={value} style={{ minWidth: '110px', textAlign: 'center' }}>{value}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {transformedData.map((row) => {
+              const shootingType = row.ShootingType || 'N/A';
+              return (
+                <tr key={shootingType}>
+                  <td style={{ minWidth: '80px', position: 'sticky', left: 0, backgroundColor: 'var(--bs-table-bg)', zIndex: 1, fontWeight: '500' }}>{shootingType}</td>
+                  {statPairs.map(({ value, rank, vs_avg }) => (
+                    <td
+                      key={`${shootingType}-${value}`}
+                      style={{ textAlign: 'center', verticalAlign: 'middle', minWidth: '110px', padding: '6px 2px' }}
                     >
-                      <span>{row[value]}</span>
-                      {row[rank] !== undefined && <RankCube rank={row[rank]} />}
-                      {row[vs_avg] !== undefined && <span style={{ color: 'gray' }}>{`${row[vs_avg].toFixed(2)}%`}</span>}
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </BSTable>
+                      <div
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '4px',
+                          fontSize: '0.8em',
+                          flexWrap: 'nowrap'
+                        }}
+                      >
+                        <span style={{ fontWeight: '600' }}>{row[value]}</span>
+                        {row[rank] !== undefined && <RankCube rank={row[rank]} />}
+                        {row[vs_avg] !== undefined && <span style={{ color: '#6c757d', fontSize: '0.85em' }}>{`${row[vs_avg].toFixed(0)}%`}</span>}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </BSTable>
+      </div>
     );
   };
 
@@ -276,7 +295,6 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
             </BSTable>
           </Col>
         </Row>
-        {selectedCategory === 'Assists' && renderAssistsBarChart()}
       </>
     );
   };

@@ -46,6 +46,13 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     }
   }, [resetToLanding]);
 
+  // Clear loading state when game logs finish loading
+  useEffect(() => {
+    if (!gameLogsLoading && loading) {
+      setLoading(false);
+    }
+  }, [gameLogsLoading, loading]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -88,7 +95,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     } catch (err) {
       console.error('NL Query Error:', err);
       setError(err.response?.data?.error || 'Failed to process query. Please try again.');
-      setLoading(false); // Only set loading to false on error
+      setLoading(false);
+      setHasSearched(true); // Show error on landing page
     }
   };
 
@@ -215,11 +223,11 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   };
 
   const sampleQueries = [
-    "LeBron James last 10 games",
+    "LeBron James this year",
     "Stephen Curry with Jimmy Butler",
-    "Giannis at home since November",
-    "Kevin Durant without Devin Booker",
-    "Luka last 5 games against top 10 defenses"
+    "Giannis at home since November without Khris Middleton shooting 15+ times",
+    "Kevin Durant without Devin Booker playing 30+ minutes",
+    "Luka last 10 games against top 10 paint defenses"
   ];
 
   // Landing page interface (before first search)
@@ -245,7 +253,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 <Search className="landing-search-icon" size={24} />
                 <Form.Control
                   type="text"
-                  placeholder={isLoading ? "Processing query..." : "Ask anything about NBA stats..."}
+                  placeholder={isLoading ? "Processing query..." : "Ask about your favorite player..."}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading}
@@ -517,7 +525,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               <Search className="compact-search-icon" size={18} />
               <Form.Control
                 type="text"
-                placeholder={isLoading ? "Processing query..." : "Ask anything about NBA stats..."}
+                placeholder={isLoading ? "Processing query..." : "Ask about your favorite player"}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={isLoading}

@@ -26,12 +26,14 @@
       "Bash(venvScripts:*)",
       "Bash(.venvScriptsactivate.bat)",
       "Bash(.venvScriptspython.exe test_parser_fix.py)",
-      "Bash(./venv/Scripts/python.exe test_parser_fix.py:*)"
+      "Bash(./venv/Scripts/python.exe test_parser_fix.py:*)",
+      "Bash(venv/Scripts/python.exe -c \"\nfrom app.services.nl_service import NLService\nfrom app.utils.db import get_engine\n\n# Test the specific problematic query\nengine = get_engine()\nnl_service = NLService(engine)\n\nquery = ''Giannis at home since November without Khris Middleton shooting 15+ times''\nprint(f''Testing query: {query}'')\nprint()\n\ntry:\n    result = nl_service.process_query(query)\n    print(''Result:'')\n    import json\n    print(json.dumps(result, indent=2, default=str))\nexcept Exception as e:\n    print(f''Error: {e}'')\n    import traceback\n    traceback.print_exc()\n\")",
+      "Bash(.venvScriptspython.exe run.py)"
     ],
     "deny": [],
+    "defaultMode": "acceptEdits",
     "additionalDirectories": [
       "C:\\Users\\chris\\nba-backend"
-    ],
-    "defaultMode": "acceptEdits"
+    ]
   }
 }

@@ -78,9 +78,12 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
       }
 
       // Pre-populate minutes filter
-      if (appliedFilters.minutes_filter) {
-        const [min, max] = appliedFilters.minutes_filter.split(',').map(Number);
-        setMinutesFilter([min, max]);
+      if (appliedFilters.minutes_filter && typeof appliedFilters.minutes_filter === 'string') {
+        const parts = appliedFilters.minutes_filter.split(',');
+        if (parts.length === 2) {
+          const [min, max] = parts.map(Number);
+          setMinutesFilter([min, max]);
+        }
       }
 
       // Pre-populate playstyle rating
@@ -139,10 +142,13 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
       // Pre-populate self filters
       const selfFiltersToAdd = [];
       Object.keys(appliedFilters).forEach(key => {
-        if (key.startsWith('self_filters[')) {
+        if (key.startsWith('self_filters[') && appliedFilters[key] && typeof appliedFilters[key] === 'string') {
           const column = key.match(/\[(.*?)\]/)[1];
-          const [min, max] = appliedFilters[key].split(',').map(Number);
-          selfFiltersToAdd.push({ column, range: [min, max] });
+          const parts = appliedFilters[key].split(',');
+          if (parts.length === 2) {
+            const [min, max] = parts.map(Number);
+            selfFiltersToAdd.push({ column, range: [min, max] });
+          }
         }
       });
       if (selfFiltersToAdd.length > 0) {
@@ -298,25 +304,29 @@ const FilterOptions = ({ playerList, onApplyFilters, selectedPlayer, displayPlay
               const badges = [];
               
               if (onPlayers.length > 0) {
-                badges.push(
-                  <Badge key="on-players" bg="success" className="me-1 mb-1 p-2">
-                    (ON) {onPlayers.map(p => p.name).join(', ')}
-                    <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
-                      setActivePlayers(activePlayers.filter(p => p.status !== 'on'));
-                    }}>×</Button>
-                  </Badge>
-                );
+                onPlayers.forEach((player, index) => {
+                  badges.push(
+                    <Badge key={`on-player-${index}`} bg="success" className="me-1 mb-1 p-2">
+                      (ON) {player.name}
+                      <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
+                        setActivePlayers(activePlayers.filter(p => !(p.status === 'on' && p.name === player.name)));
+                      }}>×</Button>
+                    </Badge>
+                  );
+                });
               }
               
               if (offPlayers.length > 0) {
-                badges.push(
-                  <Badge key="off-players" bg="danger" className="me-1 mb-1 p-2">
-                    (OFF) {offPlayers.map(p => p.name).join(', ')}
-                    <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
-                      setActivePlayers(activePlayers.filter(p => p.status !== 'off'));
-                    }}>×</Button>
-                  </Badge>
-                );
+                offPlayers.forEach((player, index) => {
+                  badges.push(
+                    <Badge key={`off-player-${index}`} bg="danger" className="me-1 mb-1 p-2">
+                      (OFF) {player.name}
+                      <Button variant="link" size="sm" className="text-light p-0 ms-2" onClick={() => {
+                        setActivePlayers(activePlayers.filter(p => !(p.status === 'off' && p.name === player.name)));
+                      }}>×</Button>
+                    </Badge>
+                  );
+                });
               }
               
               return badges;

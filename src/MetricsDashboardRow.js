@@ -27,6 +27,7 @@ const MetricCard = ({ title, currentValue, previousValue, change, isFirst, isLas
 };
 
 const RatioCard = ({ title, ratio, last5ratio, last10ratio, isLast }) => {
+  if (!ratio) return null;
   const [numerator, denominator] = ratio.split('/');
   const percentage = ((parseInt(numerator) / parseInt(denominator)) * 100).toFixed(2);
 

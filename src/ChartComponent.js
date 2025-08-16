@@ -92,7 +92,8 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
             label: (tooltipItem) => {
               const index = tooltipItem.dataIndex;
               const value = tooltipItem.raw;
-              const opponent = gameLogs[index].MATCHUP.split(' ')[2]; 
+              const matchup = gameLogs[index]?.MATCHUP;
+              const opponent = matchup ? matchup.split(' ')[2] || 'N/A' : 'N/A'; 
               return [
                 `OPP: ${opponent}`,
                 `MIN: ${gameLogs[index].MIN}`,

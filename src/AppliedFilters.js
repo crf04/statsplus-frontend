@@ -65,11 +65,31 @@ const AppliedFilters = ({ filters }) => {
     else if (key.startsWith('self_filters[')) {
       const stat = key.match(/\[(.*?)\]/)[1];
       const [min, max] = value.split(',');
-      return (
-        <Badge key={key} bg="primary" className="me-1">
-          {`${min} <= PLAYER_${stat} <= ${max}`}
-        </Badge>
-      );
+      
+      // If max is 999, this is a "greater than or equal" filter
+      if (max === '999') {
+        return (
+          <Badge key={key} bg="primary" className="me-1">
+            {`PLAYER_${stat} >= ${min}`}
+          </Badge>
+        );
+      }
+      // If min is 0, this is a "less than or equal" filter
+      else if (min === '0') {
+        return (
+          <Badge key={key} bg="primary" className="me-1">
+            {`PLAYER_${stat} <= ${max}`}
+          </Badge>
+        );
+      }
+      // Otherwise show the range
+      else {
+        return (
+          <Badge key={key} bg="primary" className="me-1">
+            {`${min} <= PLAYER_${stat} <= ${max}`}
+          </Badge>
+        );
+      }
     } else if (key === 'location_filter') {
       return (
         <Badge key={key} bg="primary" className="me-1">

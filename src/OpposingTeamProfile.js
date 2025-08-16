@@ -295,6 +295,15 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
             </BSTable>
           </Col>
         </Row>
+        {(selectedCategory === 'Playtypes' || selectedCategory === 'Assists') && (
+          <Row className="mt-2">
+            <Col>
+              <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
+                Note: Numbers are relative to league average (e.g., 1.06 means 6% above league average)
+              </small>
+            </Col>
+          </Row>
+        )}
       </>
     );
   };
@@ -374,6 +383,11 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
         <div style={{ height: '400px' }}>
           <Bar data={chartData} options={options} />
         </div>
+        <div className="mt-2">
+          <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
+            Note: Numbers are relative to league average (e.g., 1.06 means 6% above league average)
+          </small>
+        </div>
       </div>
     );
   };
@@ -422,6 +436,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
           </Row>
         </Form>
         {renderTeamStats()}
+        {selectedCategory === 'Assists' && renderAssistsBarChart()}
       </Card.Body>
     </Card>
   );

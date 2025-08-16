@@ -49,28 +49,29 @@ const AppliedFilters = ({ filters }) => {
       );
     } else if (key === 'players_on' || key === 'players_on[]') {
       const playerList = Array.isArray(value) ? value : [value];
-      return playerList.map((player, index) => (
-        <Badge key={`${key}-${index}`} bg="success" className="me-1">
-          {`(ON) ${player}`}
+      return (
+        <Badge key={key} bg="success" className="me-1">
+          {`(ON) ${playerList.join(', ')}`}
         </Badge>
-      ));
+      );
     } else if (key === 'players_off' || key === 'players_off[]') {
       const playerList = Array.isArray(value) ? value : [value];
-      return playerList.map((player, index) => (
-        <Badge key={`${key}-${index}`} bg="danger" className="me-1">
-          {`(OFF) ${player}`}
+      return (
+        <Badge key={key} bg="danger" className="me-1">
+          {`(OFF) ${playerList.join(', ')}`}
         </Badge>
-      ));
+      );
     }
     else if (key.startsWith('self_filters[')) {
       const stat = key.match(/\[(.*?)\]/)[1];
+      if (!value) return null;
       const [min, max] = value.split(',');
       
       // If max is 999, this is a "greater than or equal" filter
       if (max === '999') {
         return (
           <Badge key={key} bg="primary" className="me-1">
-            {`PLAYER_${stat} >= ${min}`}
+            {`${stat} >= ${min}`}
           </Badge>
         );
       }
@@ -78,7 +79,7 @@ const AppliedFilters = ({ filters }) => {
       else if (min === '0') {
         return (
           <Badge key={key} bg="primary" className="me-1">
-            {`PLAYER_${stat} <= ${max}`}
+            {`${stat} <= ${max}`}
           </Badge>
         );
       }
@@ -86,7 +87,7 @@ const AppliedFilters = ({ filters }) => {
       else {
         return (
           <Badge key={key} bg="primary" className="me-1">
-            {`${min} <= PLAYER_${stat} <= ${max}`}
+            {`${min} <= ${stat} <= ${max}`}
           </Badge>
         );
       }
@@ -97,9 +98,12 @@ const AppliedFilters = ({ filters }) => {
         </Badge>
       );
     } else if (key === 'minutes_filter') {
+      if (!value) return null;
+      const parts = value.split(',');
+      if (parts.length !== 2) return null;
       return (
         <Badge key={key} bg="primary" className="me-1">
-          {`${value.split(',')[0]} <= MIN <= ${value.split(',')[1]}`}
+          {`${parts[0]} <= MIN <= ${parts[1]}`}
         </Badge>
       );
     }

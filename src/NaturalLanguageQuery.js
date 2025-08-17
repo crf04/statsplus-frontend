@@ -3,9 +3,13 @@ import { Form, Button, Spinner, Modal } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import { getApiUrl } from './config';
+import { useAuth } from './contexts/AuthContext';
+import LoginButton from './components/Auth/LoginButton';
+import UserProfile from './components/Auth/UserProfile';
 import './ModernSearch.css';
 
 const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading, onLoadingComplete }) => {
+  const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -236,21 +240,16 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       <div className="landing-page">
         <div className="landing-container">
           <div className="landing-header">
+            <div className="landing-auth-section">
+              {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
+            </div>
             <h1 className="landing-title">CourtAI</h1>
-            <button 
-              className="prompting-guide-button"
-              onClick={() => setShowPromptingGuide(true)}
-              title="Prompting Guide"
-            >
-              <HelpCircle size={20} />
-              <span>Prompting Guide</span>
-            </button>
           </div>
           
           <div className="landing-search-wrapper">
             <Form onSubmit={handleSubmit} className="landing-search-form">
               <div className="landing-input-wrapper">
-                <Search className="landing-search-icon" size={24} />
+                <Search className="landing-search-icon" size={22} />
                 <Form.Control
                   type="text"
                   placeholder={isLoading ? "Processing query..." : "Ask about your favorite player..."}
@@ -259,6 +258,14 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                   disabled={isLoading}
                   className={`landing-search-input ${isLoading ? 'loading' : ''}`}
                 />
+                <button
+                  type="button"
+                  className="landing-help-icon-right"
+                  onClick={() => setShowPromptingGuide(true)}
+                  title="Need help with your query? Click for examples and tips!"
+                >
+                  <HelpCircle size={18} />
+                </button>
                 <Button 
                   type="submit"
                   disabled={isLoading || !query.trim()}
@@ -267,11 +274,17 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                   {isLoading ? (
                     <Spinner size="sm" />
                   ) : (
-                    <Brain size={20} />
+                    <Brain size={18} />
                   )}
                 </Button>
               </div>
             </Form>
+            
+            <div className="landing-help-hint">
+              <span>💡 Click the </span>
+              <HelpCircle size={14} style={{ display: 'inline', color: '#f59e0b' }} />
+              <span> for query examples and tips</span>
+            </div>
           </div>
 
           <div className="landing-samples">
@@ -510,19 +523,23 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   // Compact interface (after search)
   return (
     <div className="compact-search-wrapper" ref={searchRef}>
-      {!isExpanded ? (
-        <button 
-          className="search-toggle-button"
-          onClick={() => setIsExpanded(true)}
-          aria-label="Open search"
-        >
-          <Search size={20} />
-        </button>
-      ) : (
+      <div className="compact-header-controls">
+        {!isExpanded ? (
+          <button 
+            className="search-toggle-button"
+            onClick={() => setIsExpanded(true)}
+            aria-label="Open search"
+          >
+            <Search size={22} />
+          </button>
+        ) : null}
+        {isAuthenticated && <UserProfile />}
+      </div>
+      {isExpanded ? (
         <div className="compact-search-container expanded">
           <Form onSubmit={handleSubmit} className="compact-search-form">
             <div className="compact-input-wrapper">
-              <Search className="compact-search-icon" size={18} />
+              <Search className="compact-search-icon" size={20} />
               <Form.Control
                 type="text"
                 placeholder={isLoading ? "Processing query..." : "Ask about your favorite player"}
@@ -573,7 +590,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

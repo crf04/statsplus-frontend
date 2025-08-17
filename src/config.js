@@ -36,4 +36,7 @@ export const getApiUrl = (endpoint) => {
   return url;
 };
 
+// Export configured axios client with authentication
+export { default as apiClient } from './utils/axiosConfig';
+
 export default config;

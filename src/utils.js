@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { apiClient } from './config';
 import { getApiUrl } from './config';
 
 export const lineTypeOptions = [
@@ -43,7 +43,7 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
     setSelectedTeam('');
   }
   if (selectedPlayer && selectedPlayer !== 'None') {
-    axios.get(getApiUrl('GAME_LOGS'), {
+    apiClient.get(getApiUrl('GAME_LOGS'), {
       params: {
         player_name: selectedPlayer,
       }
@@ -71,7 +71,7 @@ export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLo
   console.log('fetchGameLogs called with params:', params);
   console.log('API URL:', getApiUrl('GAME_LOGS'));
   
-  return axios.get(getApiUrl('GAME_LOGS'), { params })
+  return apiClient.get(getApiUrl('GAME_LOGS'), { params })
     .then(response => {
       console.log('fetchGameLogs response:', response.data);
       const { game_logs, averages, season_averages, next_game } = response.data;

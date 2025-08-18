@@ -532,7 +532,6 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <Search size={22} />
           </button>
         ) : null}
-        {isAuthenticated && <UserProfile />}
       </div>
       {isExpanded ? (
         <div className="compact-search-container expanded">

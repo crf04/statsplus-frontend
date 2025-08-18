@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Form, Button, Spinner, Modal } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, HelpCircle } from 'lucide-react';
-import axios from 'axios';
-import { getApiUrl } from './config';
+import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
@@ -67,7 +66,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     setHasSearched(true);
 
     try {
-      const response = await axios.post(getApiUrl('NL_QUERY'), {
+      const response = await apiClient.post(getApiUrl('NL_QUERY'), {
         query: query.trim()
       });
 

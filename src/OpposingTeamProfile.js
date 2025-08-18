@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Form, Row, Col, Table as BSTable } from 'react-bootstrap';
-import axios from 'axios';
+import { apiClient } from './config';
 import { Bar } from 'react-chartjs-2';
 import { RankCube } from './utils';
 import { getApiUrl } from './config';
@@ -15,7 +15,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
   const fetchTeamStats = useCallback(() => {
     if (selectedTeam && selectedCategory) {
       const endpoint = getApiUrl('TEAM_STATS');
-      axios
+      apiClient
         .get(endpoint, {
           params: {
             category: selectedCategory,

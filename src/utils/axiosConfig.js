@@ -17,6 +17,9 @@ apiClient.interceptors.request.use(
         // Get the Firebase ID token
         const token = await getIdToken(user);
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('Added authorization header with token:', token ? 'Token present' : 'Token missing');
+      } else {
+        console.log('No authenticated user found, skipping authorization header');
       }
     } catch (error) {
       console.error('Error getting auth token:', error);

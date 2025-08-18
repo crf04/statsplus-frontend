@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getApiUrl } from './config';
+import { apiClient, getApiUrl } from './config';
 
 const ApiTest = () => {
   const [result, setResult] = useState('');
@@ -12,8 +12,8 @@ const ApiTest = () => {
     console.log('Testing API call to:', getApiUrl('PLAYERS'));
     
     try {
-      const response = await fetch(getApiUrl('PLAYERS'));
-      const data = await response.json();
+      const response = await apiClient.get(getApiUrl('PLAYERS'));
+      const data = response.data;
       
       setResult(`✅ Success! Got ${data.length} players. First 3: ${data.slice(0, 3).join(', ')}`);
       console.log('API test successful:', data.slice(0, 5));

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import axios from 'axios';
-import { getApiUrl } from './config';
+import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
 import FilterOptions from './FilterOptions';
@@ -32,11 +31,11 @@ const GameLogFilter = () => {
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
 
   useEffect(() => {
-    axios.get(getApiUrl('PLAYERS'))
+    apiClient.get(getApiUrl('PLAYERS'))
       .then(response => setPlayerList(response.data))
       .catch(error => console.error('Error fetching player list:', error));
 
-    axios.get(getApiUrl('TEAMS'))
+    apiClient.get(getApiUrl('TEAMS'))
       .then(response => setTeams(response.data))
       .catch(error => console.error('Error fetching team list:', error));
   }, []);

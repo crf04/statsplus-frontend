@@ -68,8 +68,9 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
   }
 };
 export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLogs = null, setSelectedTeam = null) => {
-  console.log('fetchGameLogs called with params:', params);
-  console.log('API URL:', getApiUrl('GAME_LOGS'));
+  console.log('🎯 fetchGameLogs called with params:', params);
+  console.log('🌐 API URL:', getApiUrl('GAME_LOGS'));
+  console.log('🔗 About to call apiClient.get...');
   
   return apiClient.get(getApiUrl('GAME_LOGS'), { params })
     .then(response => {

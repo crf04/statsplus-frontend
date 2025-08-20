@@ -49,12 +49,13 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     }
   }, [resetToLanding]);
 
-  // Clear loading state when game logs finish loading
+  // Close expanded search bar when transitioning to results page
   useEffect(() => {
-    if (!gameLogsLoading && loading) {
-      setLoading(false);
+    if (hasSearched && !isLoading) {
+      setIsExpanded(false);
     }
-  }, [gameLogsLoading, loading]);
+  }, [hasSearched, isLoading]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,7 +64,6 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     setLoading(true);
     setError('');
     setLastResult(null);
-    setHasSearched(true);
 
     try {
       const response = await apiClient.post(getApiUrl('NL_QUERY'), {
@@ -81,25 +81,22 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       // Apply filters to the parent component (includes player selection)
       if (onFiltersApplied) {
         // Pass a callback to clear this component's loading state
-        onFiltersApplied(filters, () => setLoading(false));
+        onFiltersApplied(filters, () => {
+          setLoading(false);
+          setHasSearched(true);
+        });
       }
       
       // Update parent with the successful query
       if (onQueryUpdate) {
         onQueryUpdate(query.trim());
       }
-      
-      // Keep search expanded to show result/loading state
-      // setIsExpanded(false); // Commented out to keep search visible during/after API calls
-      
-      // Note: Player selection is now handled via filters to prevent duplicate API calls
-      // Don't set loading to false here - let the parent component handle it via gameLogsLoading
 
     } catch (err) {
       console.error('NL Query Error:', err);
       setError(err.response?.data?.error || 'Failed to process query. Please try again.');
       setLoading(false);
-      setHasSearched(true); // Show error on landing page
+      // Don't set hasSearched to true on error - keep user on landing page to retry
     }
   };
 
@@ -248,13 +245,13 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
           <div className="landing-search-wrapper">
             <Form onSubmit={handleSubmit} className="landing-search-form">
               <div className="landing-input-wrapper">
-                <Search className="landing-search-icon" size={22} />
+                <Search className={`landing-search-icon ${isLoading ? 'loading' : ''}`} size={22} />
                 <Form.Control
                   type="text"
-                  placeholder={isLoading ? "Processing query..." : "Ask about your favorite player..."}
+                  placeholder={isLoading ? "Processing query..." : isAuthenticated ? "Ask about your favorite player..." : "Sign in to enter a query..."}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || !isAuthenticated}
                   className={`landing-search-input ${isLoading ? 'loading' : ''}`}
                 />
                 <button
@@ -267,11 +264,11 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 </button>
                 <Button 
                   type="submit"
-                  disabled={isLoading || !query.trim()}
+                  disabled={isLoading || !query.trim() || !isAuthenticated}
                   className="landing-search-button"
                 >
                   {isLoading ? (
-                    <Spinner size="sm" />
+                    <div className="custom-spinner"></div>
                   ) : (
                     <Brain size={18} />
                   )}
@@ -291,8 +288,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               {sampleQueries.map((sample, index) => (
                 <div
                   key={index}
-                  className="landing-sample-pill"
-                  onClick={() => setQuery(sample)}
+                  className={`landing-sample-pill ${isLoading ? 'loading-state' : ''}`}
+                  onClick={() => !isLoading && setQuery(sample)}
                 >
                   {sample}
                 </div>
@@ -515,6 +512,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             </Button>
           </Modal.Footer>
         </Modal>
+
       </div>
     );
   }
@@ -537,23 +535,23 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
         <div className="compact-search-container expanded">
           <Form onSubmit={handleSubmit} className="compact-search-form">
             <div className="compact-input-wrapper">
-              <Search className="compact-search-icon" size={20} />
+              <Search className={`compact-search-icon ${isLoading ? 'loading' : ''}`} size={20} />
               <Form.Control
                 type="text"
-                placeholder={isLoading ? "Processing query..." : "Ask about your favorite player"}
+                placeholder={isLoading ? "Processing query..." : isAuthenticated ? "Ask about your favorite player" : "Login to enter a query"}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || !isAuthenticated}
                 className={`compact-search-input ${isLoading ? 'loading' : ''}`}
                 autoFocus
               />
               <Button 
                 type="submit"
-                disabled={isLoading || !query.trim()}
+                disabled={isLoading || !query.trim() || !isAuthenticated}
                 className="compact-search-button"
               >
                 {isLoading ? (
-                  <Spinner size="sm" />
+                  <div className="custom-spinner-compact"></div>
                 ) : (
                   <Brain size={16} />
                 )}

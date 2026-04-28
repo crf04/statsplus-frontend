@@ -49,7 +49,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           }
         })
         .catch(error => {
-          console.error('Error fetching data:', error);
+          console.error('Error fetching data:', error.response?.status || error.message);
           setError('Failed to fetch data. Please try again.');
         })
         .finally(() => {
@@ -90,7 +90,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     if (!playerData) {
       return <p>No zone shooting data available</p>;
     }
-    console.log(playerData);
     const zoneData = playerData;
 
     const zones = [

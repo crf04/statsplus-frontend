@@ -1,70 +1,153 @@
-# Getting Started with Create React App
+# NBA Game Logs Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React frontend for exploring NBA player game logs, team profiles, and basketball statistics. The app combines structured filters, natural language search, player profile views, and chart-based visualizations to make game-level NBA data easier to inspect.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Interactive filtering for players, teams, matchups, seasons, dates, and stat thresholds
+- Natural language query interface for plain-English stat questions
+- Player profile pages with summaries, averages, and recent game logs
+- Team and opponent analysis views
+- Chart-based visualizations for assists, playstyle comparisons, shooting patterns, and performance trends
+- Responsive UI built with React, Bootstrap, Tailwind CSS, and custom component styles
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- React 18 and Create React App
+- React Router
+- Axios for API requests
+- Bootstrap, React Bootstrap, Tailwind CSS, and custom CSS
+- Chart.js, React Chart.js 2, Recharts, and Chart.js plugins
+- Firebase client SDK for authentication-related configuration
+- Jest and React Testing Library through Create React App
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Prerequisites
 
-### `npm test`
+- Node.js 18 or newer is recommended
+- npm
+- Access to a compatible backend API for game logs, players, teams, profiles, and natural language queries
+- Firebase project configuration if using the authentication flows
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Setup
 
-### `npm run build`
+Install dependencies:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a local environment file from the example, then replace values with settings for your environment:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+cp .env.example .env
+```
 
-### `npm run eject`
+Start the development server:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+npm start
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The app runs at [http://localhost:3000](http://localhost:3000). In development, API requests default to `http://127.0.0.1:8000` unless `REACT_APP_API_BASE_URL` is set.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Environment Variables
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Create React App only exposes browser environment variables prefixed with `REACT_APP_`.
 
-## Learn More
+Common variables used by this frontend:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```env
+REACT_APP_API_BASE_URL=http://127.0.0.1:8000
+REACT_APP_NAME=NBA Game Logs
+REACT_APP_VERSION=1.0.0
+REACT_APP_ENVIRONMENT=development
+REACT_APP_ENABLE_ANALYTICS=false
+REACT_APP_ENABLE_ERROR_REPORTING=false
+REACT_APP_DEBUG=true
+REACT_APP_API_TIMEOUT=5000
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+REACT_APP_FIREBASE_API_KEY=
+REACT_APP_FIREBASE_AUTH_DOMAIN=
+REACT_APP_FIREBASE_PROJECT_ID=
+REACT_APP_FIREBASE_STORAGE_BUCKET=
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
+REACT_APP_FIREBASE_APP_ID=
+```
 
-### Code Splitting
+Firebase web config values are intended to be public client configuration, but service account credentials, private keys, database secrets, and backend tokens should never be committed.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Scripts
 
-### Analyzing the Bundle Size
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Runs the local development server.
 
-### Making a Progressive Web App
+```bash
+npm test
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Starts the Create React App test runner in watch mode.
 
-### Advanced Configuration
+```bash
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Creates an optimized production build in `build/` and runs the CRA lint/build checks.
 
-### Deployment
+```bash
+npm run eject
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Ejects from Create React App. This is irreversible and usually unnecessary.
 
-### `npm run build` fails to minify
+## Backend API
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The frontend expects a backend that serves these routes:
+
+- `GET /api/players`
+- `GET /api/teams`
+- `GET /api/games/game_logs`
+- `GET /api/players/profile`
+- `GET /api/teams/stats`
+- `POST /api/nl-query`
+
+Development builds can point directly to a backend with `REACT_APP_API_BASE_URL`. Production builds currently use same-origin API paths, so the deployed frontend host should proxy or rewrite `/api/*` requests to the backend service.
+
+## Deployment
+
+The app builds to static files and can be hosted on Vercel, Netlify, GitHub Pages, S3/CloudFront, or another static hosting platform.
+
+For production deployments, configure:
+
+- Build command: `npm run build`
+- Publish directory: `build`
+- API proxy or rewrite from `/api/*` to the backend
+- SPA fallback to `index.html` for client-side routes
+- Environment variables for Firebase and optional app flags
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for platform notes.
+
+## Testing and Building
+
+Run tests before larger behavior changes:
+
+```bash
+npm test
+```
+
+Create a production build before release:
+
+```bash
+npm run build
+```
+
+For documentation-only changes, a build is not normally required because no source, package, or asset files changed.
+
+## Public Repository Caveats
+
+- Review `.env`, `.env.production`, deployment settings, and hosting dashboards before publishing. Do not expose secrets or private backend credentials.
+- The frontend depends on a separate backend; this repository alone does not provide data ingestion or API processing.
+- Public demos may need a hosted backend, seeded data, and CORS/proxy configuration.
+- Some stats availability depends on backend data sources and processing jobs.

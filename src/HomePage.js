@@ -1,4 +1,3 @@
-// src/HomePage.js
 import React, { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
@@ -86,7 +85,6 @@ const HomePage = () => {
         <p>&copy; 2024 CourtAI - NBA Analytics Platform</p>
       </footer>
 
-      {/* Prompting Guide Modal */}
       <Modal 
         show={showPromptingGuide} 
         onHide={() => setShowPromptingGuide(false)}
@@ -99,15 +97,11 @@ const HomePage = () => {
         </Modal.Header>
         <Modal.Body style={styles.modalBody}>
           
-          {/* Getting Started Section */}
           <div style={styles.section}>
             <h4 style={styles.sectionTitle}>🚀 Getting Started</h4>
-            <div style={styles.content}>
-              {/* Add your getting started content here */}
-            </div>
+            <div style={styles.content}></div>
           </div>
 
-          {/* Player Queries Section */}
           <div style={styles.section}>
             <h4 style={styles.sectionTitle}>🏀 Player Queries</h4>
             <div style={styles.content}>
@@ -115,28 +109,19 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Team Queries Section */}
           <div style={styles.section}>
             <h4 style={styles.sectionTitle}>🏟️ Team Queries</h4>
-            <div style={styles.content}>
-              {/* Coming Soon! */}
-            </div>
+            <div style={styles.content}></div>
           </div>
 
-          {/* Advanced Examples Section */}
           <div style={styles.section}>
             <h4 style={styles.sectionTitle}>⚡ Advanced Examples</h4>
-            <div style={styles.content}>
-              {/* Add your advanced query examples here */}
-            </div>
+            <div style={styles.content}></div>
           </div>
 
-          {/* Pro Tips Section */}
           <div style={styles.section}>
             <h4 style={styles.sectionTitle}>💡 Pro Tips</h4>
-            <div style={styles.content}>
-              {/* Add your pro tips here */}
-            </div>
+            <div style={styles.content}></div>
           </div>
 
         </Modal.Body>

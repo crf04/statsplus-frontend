@@ -26,8 +26,6 @@ try {
   // Optional: Configure Google provider
   googleProvider.addScope('email');
   googleProvider.addScope('profile');
-  
-  console.log('Firebase initialized successfully');
 } catch (error) {
   console.error('Firebase initialization error:', error);
 }

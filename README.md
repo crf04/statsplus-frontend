@@ -129,8 +129,6 @@ For production deployments, configure:
 - SPA fallback to `index.html` for client-side routes
 - Environment variables for Firebase and optional app flags
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for platform notes.
-
 The current production app is hosted at [courtai.app](https://courtai.app).
 
 ## Testing and Building

@@ -33,11 +33,11 @@ const GameLogFilter = () => {
   useEffect(() => {
     apiClient.get(getApiUrl('PLAYERS'))
       .then(response => setPlayerList(response.data))
-      .catch(error => console.error('Error fetching player list:', error));
+      .catch(error => console.error('Error fetching player list:', error.response?.status || error.message));
 
     apiClient.get(getApiUrl('TEAMS'))
       .then(response => setTeams(response.data))
-      .catch(error => console.error('Error fetching team list:', error));
+      .catch(error => console.error('Error fetching team list:', error.response?.status || error.message));
   }, []);
 
   useEffect(() => {
@@ -118,8 +118,6 @@ const GameLogFilter = () => {
 
   // Handler for natural language query results
   const handleNLQueryResults = (filters, nlLoadingCallback) => {
-    console.log('handleNLQueryResults called with filters:', filters);
-    
     // Don't hide landing page immediately - wait for game logs to load
     
     // Apply filters received from natural language processing
@@ -138,8 +136,6 @@ const GameLogFilter = () => {
             !(Array.isArray(value) && value.length === 0)
           )
         );
-        
-        console.log('About to call fetchGameLogs with cleanedFilters:', cleanedFilters);
         
         // Remove default playstyle values that weren't explicitly set by user
         const appliedFiltersForUI = { ...cleanedFilters };
@@ -177,7 +173,7 @@ const GameLogFilter = () => {
             if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
           })
           .catch(error => {
-            console.error('Error fetching natural language query results:', error);
+            console.error('Error fetching natural language query results:', error.response?.status || error.message);
             setIsGameLogsLoading(false); // Clear loading state on error
             // Keep landing page visible on error so user can retry
             if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error

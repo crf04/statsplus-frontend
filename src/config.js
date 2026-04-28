@@ -30,9 +30,6 @@ const config = {
 // Helper function to build full API URLs
 export const getApiUrl = (endpoint) => {
   const url = `${config.API_BASE_URL}${config.API_ENDPOINTS[endpoint] || endpoint}`;
-  console.log(`getApiUrl(${endpoint}) = ${url}`);
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('REACT_APP_API_BASE_URL:', process.env.REACT_APP_API_BASE_URL);
   return url;
 };
 

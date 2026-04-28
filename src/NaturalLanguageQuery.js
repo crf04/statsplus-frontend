@@ -76,8 +76,6 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
 
       // Convert NL result to frontend filter format
       const filters = convertNLToFilters(result);
-      console.log('NL Query - original result:', result);
-      console.log('NL Query - converted filters:', filters);
       
       // Apply filters to the parent component (includes player selection)
       if (onFiltersApplied) {
@@ -94,7 +92,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       }
 
     } catch (err) {
-      console.error('NL Query Error:', err);
+      console.error('NL Query Error:', err.response?.status || err.message);
       setError(err.response?.data?.error || 'Failed to process query. Please try again.');
       setLoading(false);
       // Don't set hasSearched to true on error - keep user on landing page to retry

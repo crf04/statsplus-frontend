@@ -1,182 +1,165 @@
-# NBA Game Logs - Deployment Guide
+# Deployment Guide
 
-## Environment Configuration
+This frontend is a Create React App project that produces static files in `build/`. It can be deployed to any static host, but production API routing needs a little care: the current app uses same-origin API paths in production, so `/api/*` requests must be proxied or rewritten to the backend service by the hosting platform.
 
-### Required Environment Variables
+## Before Deploying
 
-Before deploying, you **must** update the following variables in `.env.production`:
+1. Confirm the backend API is deployed and reachable over HTTPS.
+2. Configure frontend environment variables in the hosting provider.
+3. Configure a rewrite/proxy from `/api/*` to the backend.
+4. Configure single-page app fallback so browser refreshes serve `index.html`.
+5. Build and smoke-test the app locally.
 
-#### 🔧 **Mandatory Updates**
+## Environment Variables
+
+Set only the values your deployment actually uses. Do not commit production `.env` files that contain secrets, private URLs, or internal credentials.
+
+Common frontend variables:
+
 ```env
-# Replace with your actual production backend API URL
-REACT_APP_API_BASE_URL=https://your-backend-api.com
-
-# Update with your actual domain
-REACT_APP_SITE_URL=https://your-domain.com
-REACT_APP_SITE_TITLE=NBA Game Logs - Advanced Basketball Analytics
-REACT_APP_SITE_DESCRIPTION=Interactive NBA game logs analysis with advanced filtering, natural language queries, and comprehensive data visualization for basketball statistics.
-REACT_APP_SITE_IMAGE=https://your-domain.com/og-image.png
+REACT_APP_NAME=NBA Game Logs
+REACT_APP_VERSION=1.0.0
+REACT_APP_ENVIRONMENT=production
+REACT_APP_ENABLE_ANALYTICS=false
+REACT_APP_ENABLE_ERROR_REPORTING=false
+REACT_APP_DEBUG=false
+REACT_APP_API_TIMEOUT=10000
+GENERATE_SOURCEMAP=false
 ```
 
-#### 📊 **Optional Analytics & Monitoring**
+Firebase client configuration, if authentication is enabled:
+
 ```env
-# Google Analytics (replace with your GA4 measurement ID)
-REACT_APP_GA_TRACKING_ID=G-XXXXXXXXXX
-
-# Error tracking (replace with your Sentry project DSN)
-REACT_APP_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-
-# Session recording (replace with your LogRocket app ID)
-REACT_APP_LOGROCKET_APP_ID=your-app-id/project-name
+REACT_APP_FIREBASE_API_KEY=
+REACT_APP_FIREBASE_AUTH_DOMAIN=
+REACT_APP_FIREBASE_PROJECT_ID=
+REACT_APP_FIREBASE_STORAGE_BUCKET=
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
+REACT_APP_FIREBASE_APP_ID=
 ```
 
-## Deployment Steps
+Development builds can use `REACT_APP_API_BASE_URL` to point at a local or remote backend. Production builds currently use same-origin API paths, so set up hosting rewrites for `/api/*` instead of relying on `REACT_APP_API_BASE_URL`.
 
-### 1. **Build the Application**
+## Build
+
 ```bash
+npm install
 npm run build
 ```
 
-### 2. **Deploy to Static Hosting**
+The production artifacts are written to `build/`.
 
-#### Option A: Netlify
-1. Drag and drop the `build` folder to Netlify
-2. Configure environment variables in Netlify dashboard
-3. Set up custom domain (optional)
-
-#### Option B: Vercel
-
-1. Add `vercel.json` at project root:
-```json
-{
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
-  ],
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
-  ]
-}
-```
-2. In Vercel Project → Settings → Environment Variables, set:
-   - `REACT_APP_API_BASE_URL=https://your-backend-api.com`
-   - Optionally other `REACT_APP_*` vars used by `src/config.js`
-3. Deploy via CLI:
-```bash
-npm install -g vercel
-vercel
-vercel --prod
-```
-   Or connect the repo in the Vercel dashboard and deploy from there.
-
-#### Option C: AWS S3 + CloudFront
-1. Upload `build` folder contents to S3 bucket
-2. Configure S3 for static website hosting
-3. Set up CloudFront distribution
-4. Configure custom domain with Route 53
-
-#### Option D: GitHub Pages
-```bash
-npm install --save-dev gh-pages
-```
-Add to package.json:
-```json
-{
-  "homepage": "https://yourusername.github.io/nba-game-logs",
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-  }
-}
-```
-Then run: `npm run deploy`
-
-### 3. **Backend API Requirements**
-
-Your backend API must be deployed and accessible at the URL specified in `REACT_APP_API_BASE_URL`. The frontend expects these endpoints:
-
-- `GET /api/players` - List of all players
-- `GET /api/teams` - List of all teams  
-- `GET /api/game_logs` - Game logs data with filtering
-- `GET /api/players/profile` - Player profile data
-- `GET /api/teams/stats` - Team statistics
-- `POST /api/nl-query` - Natural language query processing
-
-### 4. **CORS Configuration**
-
-Ensure your backend API allows requests from your frontend domain:
-
-```python
-# Flask example
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, origins=['https://your-domain.com'])
-```
-
-## Security Considerations
-
-### 1. **Environment Variables**
-- Never commit `.env.production` with real credentials to git
-- Use your hosting platform's environment variable settings
-- Keep `GENERATE_SOURCEMAP=false` in production
-
-### 2. **Content Security Policy**
-Consider adding CSP headers to your hosting configuration:
-```
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://your-backend-api.com;
-```
-
-### 3. **HTTPS**
-- Always use HTTPS in production
-- Most hosting platforms provide free SSL certificates
-- Update all API URLs to use HTTPS
-
-## Testing Production Build
-
-Before deploying, test the production build locally:
+To smoke-test locally:
 
 ```bash
-npm run build
 npx serve -s build
 ```
 
-Visit http://localhost:3000 to test the production build.
+Then open [http://localhost:3000](http://localhost:3000).
 
-## Monitoring & Analytics
+## Backend API Requirements
 
-After deployment, monitor:
-- Application performance
-- Error rates
-- User analytics
-- API response times
+The deployed backend should provide:
+
+- `GET /api/players`
+- `GET /api/teams`
+- `GET /api/games/game_logs`
+- `GET /api/players/profile`
+- `GET /api/teams/stats`
+- `POST /api/nl-query`
+
+If the frontend and backend are served from different origins, configure either:
+
+- a same-origin hosting rewrite/proxy from `/api/*` to the backend, or
+- backend CORS that allows the frontend domain, along with source changes to use the remote API base URL in production.
+
+## Vercel
+
+Recommended settings:
+
+- Framework preset: Create React App
+- Build command: `npm run build`
+- Output directory: `build`
+
+Add a `vercel.json` only if this repository does not already have equivalent project settings:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://YOUR_BACKEND_HOST/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+Replace `https://YOUR_BACKEND_HOST` in the hosting configuration with your deployed backend origin. Do not include backend secrets in the frontend project.
+
+## Netlify
+
+Recommended settings:
+
+- Build command: `npm run build`
+- Publish directory: `build`
+
+Configure redirects in Netlify project settings or with a `_redirects` file generated as part of your deployment process:
+
+```text
+/api/*  https://YOUR_BACKEND_HOST/api/:splat  200
+/*      /index.html                           200
+```
+
+Replace `https://YOUR_BACKEND_HOST` with the backend origin.
+
+## GitHub Pages
+
+GitHub Pages can host the static build, but it does not provide a native backend proxy. Use it only when:
+
+- the frontend can call a backend with working CORS, and
+- the app is configured to use the correct production API base URL, or
+- an external proxy/API gateway handles `/api/*` requests.
+
+If deploying under a repository subpath, set the `homepage` field in `package.json` and validate routing before publishing.
+
+## AWS S3 and CloudFront
+
+1. Upload the `build/` contents to S3.
+2. Serve through CloudFront with HTTPS.
+3. Configure custom error responses or CloudFront Functions so SPA routes return `index.html`.
+4. Route `/api/*` to the backend origin through CloudFront behaviors.
+
+## Security Notes
+
+- Do not commit real service account keys, private API keys, backend tokens, or database credentials.
+- Keep production secrets in the backend or hosting provider secret store.
+- Firebase web config is client-side configuration, but Firebase rules and authorized domains still need to be locked down.
+- Prefer HTTPS-only API URLs and hosting.
+- Disable production source maps if they reveal implementation details you do not want public.
 
 ## Troubleshooting
 
-### Common Issues:
+API requests return 404:
 
-1. **API Connection Failed**
-   - Check `REACT_APP_API_BASE_URL` is correct
-   - Verify backend is running and accessible
-   - Check CORS configuration
+- Confirm the host rewrites `/api/*` to the backend.
+- Confirm the backend route path matches the frontend route path, especially `/api/games/game_logs`.
 
-2. **Blank Page After Deployment**
-   - Check browser console for errors
-   - Verify all environment variables are set
-   - Ensure build completed successfully
+API requests fail with CORS errors:
 
-3. **Routing Issues**
-   - Configure your hosting platform for SPA routing
-   - Set up redirects to serve `index.html` for all routes
+- Prefer same-origin proxying through the frontend host.
+- If using cross-origin requests, allow the exact frontend origin in the backend CORS policy.
 
-## Performance Optimization
+Blank page after deploy:
 
-- Enable gzip compression on your hosting platform
-- Set up CDN for static assets
-- Configure proper cache headers
-- Monitor bundle size with webpack-bundle-analyzer
+- Check browser console errors.
+- Confirm the build completed successfully.
+- Confirm SPA fallback routes serve `index.html`.
 
----
+Authentication fails:
 
-**Need Help?** Check the logs in your browser's developer console and your backend API logs for detailed error information.
+- Confirm all Firebase `REACT_APP_FIREBASE_*` values are present.
+- Confirm the deployed frontend domain is authorized in Firebase.

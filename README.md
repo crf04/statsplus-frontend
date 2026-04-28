@@ -2,6 +2,8 @@
 
 A React frontend for exploring NBA player game logs, team profiles, and basketball statistics. The app combines structured filters, natural language search, player profile views, and chart-based visualizations to make game-level NBA data easier to inspect.
 
+Live app: [courtai.app](https://courtai.app)
+
 ## Features
 
 - Interactive filtering for players, teams, matchups, seasons, dates, and stat thresholds
@@ -128,6 +130,8 @@ For production deployments, configure:
 - Environment variables for Firebase and optional app flags
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for platform notes.
+
+The current production app is hosted at [courtai.app](https://courtai.app).
 
 ## Testing and Building
 

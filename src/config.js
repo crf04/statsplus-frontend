@@ -1,7 +1,10 @@
-// API Configuration
+const configuredApiBaseUrl = process.env.REACT_APP_API_BASE_URL || '';
+const defaultApiBaseUrl =
+  process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:8000';
+
 const config = {
-  // API Base URL - use relative path for production (proxied by Vercel), localhost for development
-  API_BASE_URL: process.env.NODE_ENV === 'production' ? '' : (process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000'),
+  // In production, an empty base URL keeps API calls relative to /api for Vercel rewrites.
+  API_BASE_URL: configuredApiBaseUrl || defaultApiBaseUrl,
   
   // API endpoints
   API_ENDPOINTS: {
@@ -29,11 +32,7 @@ const config = {
 
 // Helper function to build full API URLs
 export const getApiUrl = (endpoint) => {
-  const url = `${config.API_BASE_URL}${config.API_ENDPOINTS[endpoint] || endpoint}`;
-  console.log(`getApiUrl(${endpoint}) = ${url}`);
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('REACT_APP_API_BASE_URL:', process.env.REACT_APP_API_BASE_URL);
-  return url;
+  return `${config.API_BASE_URL}${config.API_ENDPOINTS[endpoint] || endpoint}`;
 };
 
 // Export configured axios client with authentication

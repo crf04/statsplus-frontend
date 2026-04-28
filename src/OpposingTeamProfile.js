@@ -32,7 +32,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
           }
         })
         .catch((error) => {
-          console.error('There was an error fetching the team stats!', error);
+          console.error('There was an error fetching the team stats:', error.response?.status || error.message);
           setTeamStats(null);
         });
     } else {
@@ -75,7 +75,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
       try {
         parsedData = JSON.parse(data);
       } catch (e) {
-        console.error('Failed to parse string data:', e);
+        console.error('Failed to parse string data:', e.message);
         return [];
       }
     } else {
@@ -83,7 +83,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     }
 
     if (!Array.isArray(parsedData)) {
-      console.error('Parsed data is not an array:', parsedData);
+      console.error('Parsed data is not an array.');
       return [];
     }
 
@@ -121,7 +121,6 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
 
   const renderShootingTypeStats = () => {
     const transformedData = transformShootingTypeData(teamStats);
-    console.log(transformedData);
     if (!transformedData || transformedData.length === 0) {
       return <p>No data available for Shooting Type stats.</p>;
     }

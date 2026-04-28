@@ -53,7 +53,6 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
       setGameLogs(JSON.parse(game_logs).reverse());
       setInitialGameLogs(JSON.parse(game_logs).reverse());
       setAverages([JSON.parse(averages)[0], JSON.parse(season_averages)[0]]);
-      console.log(next_game)
       if (next_game) {
         setSelectedTeam(next_game);
       }
@@ -63,18 +62,13 @@ export const fetchUnfilteredGameLogs = (selectedPlayer, setGameLogs, setAverages
       }
     })
     .catch(error => {
-      console.error('There was an error fetching the unfiltered game logs!', error);
+      console.error('There was an error fetching the unfiltered game logs:', error.response?.status || error.message);
     });
   }
 };
 export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLogs = null, setSelectedTeam = null) => {
-  console.log('🎯 fetchGameLogs called with params:', params);
-  console.log('🌐 API URL:', getApiUrl('GAME_LOGS'));
-  console.log('🔗 About to call apiClient.get...');
-  
   return apiClient.get(getApiUrl('GAME_LOGS'), { params })
     .then(response => {
-      console.log('fetchGameLogs response:', response.data);
       const { game_logs, averages, season_averages, next_game } = response.data;
       const parsedGameLogs = JSON.parse(game_logs).reverse();
       setGameLogs(parsedGameLogs);
@@ -94,7 +88,7 @@ export const fetchGameLogs = (params, setGameLogs, setAverages, setInitialGameLo
       return response;
     })
     .catch(error => {
-      console.error('There was an error fetching the game logs!', error);
+      console.error('There was an error fetching the game logs:', error.response?.status || error.message);
       throw error;
     });
 };

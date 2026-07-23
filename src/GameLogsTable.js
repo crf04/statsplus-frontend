@@ -48,28 +48,22 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
   };
 
   const getPerformanceColor = (value, columnId) => {
-    if (typeof value !== 'number' || !playerAverages[columnId]) return '#cccccc';
-    
+    if (typeof value !== 'number' || !playerAverages[columnId]) return '#9b937f';
+
     const average = playerAverages[columnId];
-    const ratio = value / average;
-    
-    // For turnovers, lower is better
+    let ratio = value / average;
+
+    // For turnovers and fouls, lower is better — invert the scale
     if (columnId === 'TO' || columnId === 'PF') {
-      if (ratio <= 0.6) return '#10b981'; // Excellent (bright green)
-      if (ratio <= 0.8) return '#22c55e'; // Good (medium green)
-      if (ratio <= 1.0) return '#84cc16'; // Above average (yellow-green)
-      if (ratio <= 1.2) return '#eab308'; // Below average (yellow)
-      if (ratio <= 1.4) return '#f97316'; // Poor (orange)
-      return '#ef4444'; // Very poor (red)
+      ratio = 2 - ratio;
     }
-    
-    // For shooting percentages and other positive stats
-    if (ratio >= 1.4) return '#10b981'; // Excellent (bright green)
-    if (ratio >= 1.2) return '#22c55e'; // Good (medium green)
-    if (ratio >= 1.0) return '#84cc16'; // Above average (yellow-green)
-    if (ratio >= 0.8) return '#eab308'; // Below average (yellow)
-    if (ratio >= 0.6) return '#f97316'; // Poor (orange)
-    return '#ef4444'; // Very poor (red)
+
+    // Quiet 5-step ramp: neutral near average, color only at the extremes
+    if (ratio >= 1.35) return '#5fce93'; // well above average (bright hit green)
+    if (ratio >= 1.12) return '#4caf7d'; // above average
+    if (ratio >= 0.88) return '#c9c2b2'; // around average (neutral warm)
+    if (ratio >= 0.65) return '#b3766f'; // below average
+    return '#d95f5f'; // well below average (bright miss red)
   };
 
   const sortedGames = React.useMemo(() => {
@@ -114,7 +108,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
   };
 
   const getSortIcon = (field) => {
-    if (sortField !== field) return '↕️';
+    if (sortField !== field) return '↕';
     return sortDirection === 'asc' ? '↑' : '↓';
   };
 

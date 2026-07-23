@@ -48,9 +48,9 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="custom-tooltip" style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
+        <div className="custom-tooltip" style={{ backgroundColor: '#1e1a12', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.16)', borderRadius: '6px', color: '#efe9dc' }}>
           <p className="label">{`${data.playstyle}`}</p>
-          <p style={{ color: '#8884d8' }}>{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
+          <p style={{ color: '#e8a33d' }}>{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
           {teamData && (
             <>
               <p style={{ color: getColor(data.teamDefense) }}>
@@ -76,21 +76,21 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
           bottom: 60,
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="playstyle" angle={-45} textAnchor="end" interval={0} height={80} />
-        <YAxis yAxisId="left" orientation="left">
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+        <XAxis tick={{ fill: "#9b937f", fontSize: 11 }} dataKey="playstyle" angle={-45} textAnchor="end" interval={0} height={80} />
+        <YAxis tick={{ fill: "#9b937f", fontSize: 11 }} yAxisId="left" orientation="left">
           <Label angle={-90} value="Player Frequency (%)" position="insideLeft" style={{ textAnchor: 'middle' }} />
         </YAxis>
         {teamData && (
-          <YAxis yAxisId="right" orientation="right" domain={[0.5, 1.5]}>
+          <YAxis tick={{ fill: "#9b937f", fontSize: 11 }} yAxisId="right" orientation="right" domain={[0.5, 1.5]}>
             <Label angle={90} value="Team Defense Multiplier" position="insideRight" style={{ textAnchor: 'middle' }} />
           </YAxis>
         )}
         <Tooltip content={<CustomTooltip />} />
         <Legend />
-        <Bar yAxisId="left" dataKey="playerFrequency" name="Player Frequency (%)" fill="#8884d8" />
+        <Bar yAxisId="left" dataKey="playerFrequency" name="Player Frequency (%)" fill="#e8a33d" radius={[3, 3, 0, 0]} />
         {teamData && (
-          <Line yAxisId="right" type="monotone" dataKey="teamDefense" name="Team Defense" stroke="#82ca9d" />
+          <Line yAxisId="right" type="monotone" dataKey="teamDefense" name="Team Defense" stroke="#7a8699" strokeWidth={2} />
         )}
       </ChartComponent>
     );
@@ -106,9 +106,9 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
           position: 'absolute',
           top: 10,
           right: 10,
-          background: 'rgba(255, 255, 255, 0.8)',
+          background: '#1e1a12', color: '#efe9dc',
           padding: '5px',
-          border: '1px solid #ccc',
+          border: '1px solid rgba(255,255,255,0.16)',
           borderRadius: '5px'
         }}>
           <strong>Total Matchup Rating: </strong>

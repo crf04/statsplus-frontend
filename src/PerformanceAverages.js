@@ -24,21 +24,21 @@ const PerformanceAverages = ({ averages, appliedFilters }) => {
     };
 
     const getStatColor = (filtered, season, statName) => {
-      if (typeof filtered !== 'number' || typeof season !== 'number') return '#f59e0b';
+      if (typeof filtered !== 'number' || typeof season !== 'number') return '#e8a33d';
       
       // For plus/minus, higher (more positive) is better, lower (more negative) is worse
       if (statName === 'PLUS_MINUS') {
         const diff = filtered - season;
-        if (diff > 1) return '#10b981'; // Green for better (more positive)
-        if (diff < -1) return '#ef4444'; // Red for worse (more negative)
-        return '#6b7280'; // Gray for similar
+        if (diff > 1) return '#4caf7d'; // Green for better (more positive)
+        if (diff < -1) return '#c24e4e'; // Red for worse (more negative)
+        return '#9b937f'; // Gray for similar
       }
       
       // For other stats, use ratio comparison
       const ratio = filtered / season;
-      if (ratio > 1.05) return '#10b981'; // Green for better
-      if (ratio < 0.95) return '#ef4444'; // Red for worse
-      return '#6b7280'; // Gray for similar
+      if (ratio > 1.05) return '#4caf7d'; // Green for better
+      if (ratio < 0.95) return '#c24e4e'; // Red for worse
+      return '#9b937f'; // Gray for similar
     };
 
     const getComparisonIcon = (filtered, season, statName) => {
@@ -47,16 +47,16 @@ const PerformanceAverages = ({ averages, appliedFilters }) => {
       // For plus/minus, use difference comparison
       if (statName === 'PLUS_MINUS') {
         const diff = filtered - season;
-        if (diff > 1) return '↗️';
-        if (diff < -1) return '↘️';
-        return '➡️';
+        if (diff > 1) return '↗';
+        if (diff < -1) return '↘';
+        return '→';
       }
       
       // For other stats, use ratio comparison
       const ratio = filtered / season;
-      if (ratio > 1.05) return '↗️';
-      if (ratio < 0.95) return '↘️';
-      return '➡️';
+      if (ratio > 1.05) return '↗';
+      if (ratio < 0.95) return '↘';
+      return '→';
     };
 
     const CompactStatCard = ({ statName, filteredVal, seasonVal }) => {

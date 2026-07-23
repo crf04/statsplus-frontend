@@ -26,9 +26,11 @@ const LoginButton = ({ className = '', size = 'lg' }) => {
         disabled={loading || isSigningIn}
         className={`d-flex align-items-center justify-content-center gap-2 ${className}`}
         style={{
-          backgroundColor: '#1a73e8',
-          borderColor: '#1a73e8',
-          color: 'white',
+          // Google's official dark-neutral button variant — sits in the page's
+          // palette without repainting the brand mark.
+          backgroundColor: '#131314',
+          borderColor: '#3a3428',
+          color: '#e3e3e3',
           fontWeight: '500',
           minWidth: '200px',
           padding: size === 'lg' ? '12px 24px' : '8px 16px'

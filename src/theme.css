@@ -1,0 +1,238 @@
+/* ============================================================
+   CourtAI design tokens & system overrides
+   One system: warm ink ground, single amber accent, semantic
+   green/red reserved for over/under, W/L, and vs-average only.
+   Numerals are monospace (scoreboard voice) across the app.
+   Imported last (index.js) so it wins over bootstrap defaults.
+   ============================================================ */
+
+:root {
+  /* ground & surfaces */
+  --ct-ink: #0d0b07;
+  --ct-surface: #16130d;
+  --ct-surface-2: #1e1a12;
+  --ct-line: rgba(255, 255, 255, 0.08);
+  --ct-line-strong: rgba(255, 255, 255, 0.16);
+
+  /* text */
+  --ct-text: #efe9dc;
+  --ct-dim: #9b937f;
+
+  /* the one accent */
+  --ct-gold: #e8a33d;
+  --ct-gold-hover: #f6b950;
+  --ct-gold-press: #c98a28;
+  --ct-gold-soft: rgba(232, 163, 61, 0.12);
+
+  /* semantic — over/under, W/L, vs-average ONLY */
+  --ct-hit: #4caf7d;
+  --ct-hit-soft: rgba(76, 175, 125, 0.14);
+  --ct-miss: #c24e4e;
+  --ct-miss-soft: rgba(194, 78, 78, 0.14);
+
+  /* data-viz secondary series (comparisons) */
+  --ct-slate: #7a8699;
+
+  /* chrome */
+  --ct-radius-card: 10px;
+  --ct-radius-ctl: 6px;
+  --ct-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* type: athletic condensed display + matched grotesque for UI */
+  --ct-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --ct-sans: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+/* ---------- ground ---------- */
+.App {
+  background: radial-gradient(1200px 600px at 50% -10%, #17130b 0%, var(--ct-ink) 60%) fixed;
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+}
+
+/* card & section titles take the condensed display face */
+.App h1, .App h2, .App h3, .App h4, .App h5,
+.card-title {
+  font-family: var(--ct-display);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+/* ---------- numerals: scoreboard voice ---------- */
+.stat-value,
+.stat-comparison,
+.table-cell,
+.game-logs-table-compact,
+.metric-value,
+.player-initials {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.stat-label,
+.stat-comparison,
+.table-header-cell .header-text {
+  letter-spacing: 0.07em;
+}
+
+/* ---------- cards ---------- */
+.dark-card,
+.card.dark-card {
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  box-shadow: none;
+}
+
+/* ---------- bootstrap controls, re-grounded ---------- */
+.form-control,
+.form-select,
+.input-group .form-control {
+  background-color: var(--ct-surface-2);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  color: var(--ct-text);
+}
+
+.form-control::placeholder {
+  color: var(--ct-dim);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--ct-surface-2);
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  color: var(--ct-text);
+}
+
+/* primary action */
+.btn-primary,
+.btn-warning {
+  background: var(--ct-gold);
+  border-color: var(--ct-gold);
+  color: #1a1408;
+  font-weight: 650;
+  border-radius: var(--ct-radius-ctl);
+}
+
+.btn-primary:hover,
+.btn-warning:hover {
+  background: var(--ct-gold-hover);
+  border-color: var(--ct-gold-hover);
+  color: #1a1408;
+}
+
+.btn-primary:active,
+.btn-warning:active {
+  background: var(--ct-gold-press) !important;
+  border-color: var(--ct-gold-press) !important;
+  color: #1a1408 !important;
+}
+
+/* outline buttons & toggles: was bootstrap blue, now house amber */
+.btn-outline-primary {
+  color: var(--ct-gold);
+  border-color: var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+}
+
+.btn-outline-primary:hover {
+  background: var(--ct-gold-soft);
+  border-color: var(--ct-gold);
+  color: var(--ct-gold-hover);
+}
+
+.btn-check:checked + .btn-outline-primary,
+.btn-outline-primary.active {
+  background: var(--ct-gold);
+  border-color: var(--ct-gold);
+  color: #1a1408;
+}
+
+/* semantic toggles keep meaning, adopt palette hues */
+.btn-outline-success {
+  color: var(--ct-hit);
+  border-color: var(--ct-line-strong);
+}
+
+.btn-check:checked + .btn-outline-success,
+.btn-outline-success:hover {
+  background: var(--ct-hit-soft);
+  border-color: var(--ct-hit);
+  color: var(--ct-hit);
+}
+
+.btn-outline-danger {
+  color: var(--ct-miss);
+  border-color: var(--ct-line-strong);
+}
+
+.btn-check:checked + .btn-outline-danger,
+.btn-outline-danger:hover {
+  background: var(--ct-miss-soft);
+  border-color: var(--ct-miss);
+  color: var(--ct-miss);
+}
+
+/* every interactive gets a visible focus */
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- game logs table ---------- */
+.table-header-row {
+  background: var(--ct-surface-2);
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+
+.table-header-cell {
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ct-dim);
+  border-right: 1px solid var(--ct-line);
+}
+
+.table-header-cell:hover {
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.table-header-cell.sorted {
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.sort-arrow {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.table-row.even,
+.table-row.odd {
+  background: transparent;
+}
+
+.table-row {
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.table-row:hover {
+  background: rgba(232, 163, 61, 0.05);
+}
+
+/* badges (applied filters) */
+.badge.bg-primary,
+.badge.bg-info {
+  background: var(--ct-gold-soft) !important;
+  color: var(--ct-gold) !important;
+  border: 1px solid var(--ct-gold);
+  font-weight: 500;
+}

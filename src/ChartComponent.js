@@ -33,9 +33,9 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
     
     const numericLineValue = defaultLineValue;
     const backgroundColors = !isNaN(numericLineValue) && numericLineValue > 0
-      ? data.map(value => value > numericLineValue ? 'rgba(75, 192, 75, 0.6)' : 'rgba(192, 75, 75, 0.6)')
-      : 'rgba(75, 192, 192, 0.6)';
-  
+      ? data.map(value => value > numericLineValue ? 'rgba(76, 175, 125, 0.78)' : 'rgba(194, 78, 78, 0.72)')
+      : 'rgba(232, 163, 61, 0.72)';
+
     return {
       labels,
       datasets: [
@@ -43,8 +43,9 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
           label: lineType,
           data,
           backgroundColor: backgroundColors,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1,
+          borderWidth: 0,
+          borderRadius: 3,
+          borderSkipped: 'bottom',
         }
       ]
     };
@@ -70,20 +71,34 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
               type: 'line',
               yMin: numericLineValue || 0,
               yMax: numericLineValue || 0,
-              borderColor: 'rgb(255, 99, 132)',
-              borderWidth: 2,
+              borderColor: '#e8a33d',
+              borderWidth: 1.5,
+              borderDash: [6, 4],
               label: {
-                content: lineValue && lineValue !== '' ? 
-                  `Line: ${lineValue}` : 
+                content: lineValue && lineValue !== '' ?
+                  `Line: ${lineValue}` :
                   `Avg: ${numericLineValue.toFixed(1)}`,
                 enabled: true,
-                position: 'start'
+                position: 'start',
+                backgroundColor: '#1e1a12',
+                color: '#e8a33d',
+                borderColor: 'rgba(232, 163, 61, 0.4)',
+                borderWidth: 1,
+                font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 }
               }
             }
           }
         },
         tooltip: {
           displayColors: false, // This removes the colored box
+          backgroundColor: '#1e1a12',
+          titleColor: '#efe9dc',
+          bodyColor: '#9b937f',
+          borderColor: 'rgba(255, 255, 255, 0.16)',
+          borderWidth: 1,
+          cornerRadius: 6,
+          titleFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
+          bodyFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
           callbacks: {
             title: (tooltipItems) => {
               const index = tooltipItems[0].dataIndex;
@@ -107,11 +122,31 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, selectedPlayer, average
         }
       },
       scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#9b937f',
+            font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 },
+            maxRotation: 60,
+            callback(value) {
+              const label = this.getLabelForValue(value);
+              return typeof label === 'number' || /^\d{12,}$/.test(String(label))
+                ? new Date(Number(label)).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+                : label;
+            }
+          }
+        },
         y: {
           beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.06)' },
+          ticks: {
+            color: '#9b937f',
+            font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 }
+          },
           title: {
             display: true,
             text: lineType,
+            color: '#9b937f',
           }
         }
       }

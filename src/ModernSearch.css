@@ -1,81 +1,38 @@
-/* Landing Page Styles */
+/* Landing Page Styles — "center court at night" */
 .landing-page {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #000000 0%, #0a0a0a 20%, #111111 50%, #0d0d0d 100%);
+  background: radial-gradient(1200px 700px at 50% 30%, #17130b 0%, #0d0b07 65%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   overflow: hidden;
 }
 
-.landing-page::before {
-  content: '';
+/* The one signature: a half-court drawn in hairlines, center circle
+   sitting behind the search bar. */
+.court-lines {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    /* Court lines */
-    radial-gradient(ellipse 200px 50px at 20% 70%, rgba(255, 165, 0, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 150px 40px at 80% 30%, rgba(255, 165, 0, 0.08) 0%, transparent 50%),
-    /* Stadium lights */
-    radial-gradient(circle 3px at 15% 20%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
-    radial-gradient(circle 2px at 85% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
-    radial-gradient(circle 2px at 25% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
-    radial-gradient(circle 2px at 75% 75%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
-    /* Basketball court geometry */
-    linear-gradient(45deg, transparent 30%, rgba(255, 165, 0, 0.03) 30%, rgba(255, 165, 0, 0.03) 32%, transparent 32%),
-    linear-gradient(-45deg, transparent 60%, rgba(76, 175, 80, 0.05) 60%, rgba(76, 175, 80, 0.05) 62%, transparent 62%);
-  z-index: -2;
-}
-
-.landing-page::after {
-  content: '';
-  position: absolute;
-  bottom: -20%;
-  left: -10%;
-  right: -10%;
-  height: 80%;
-  background: 
-    /* Arena silhouettes layered */
-    linear-gradient(0deg, rgba(255, 165, 0, 0.12) 0%, rgba(139, 69, 19, 0.08) 20%, transparent 40%),
-    linear-gradient(0deg, rgba(76, 175, 80, 0.06) 10%, transparent 35%),
-    linear-gradient(0deg, rgba(33, 150, 243, 0.08) 5%, transparent 25%);
-  clip-path: polygon(0% 100%, 12% 88%, 18% 85%, 28% 92%, 35% 78%, 42% 85%, 52% 75%, 58% 82%, 68% 72%, 75% 88%, 85% 76%, 92% 85%, 100% 78%, 100% 100%);
-  z-index: -1;
-}
-
-/* Basketball court geometric layers */
-.landing-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    /* Three-point arcs */
-    radial-gradient(circle 300px at 10% 80%, transparent 220px, rgba(255, 165, 0, 0.06) 221px, rgba(255, 165, 0, 0.06) 225px, transparent 226px),
-    radial-gradient(circle 350px at 90% 20%, transparent 280px, rgba(255, 165, 0, 0.05) 281px, rgba(255, 165, 0, 0.05) 285px, transparent 286px),
-    /* Basketball trajectory lines */
-    conic-gradient(from 45deg, transparent 80deg, rgba(255, 165, 0, 0.04) 85deg, rgba(255, 165, 0, 0.04) 95deg, transparent 100deg),
-    conic-gradient(from 225deg, transparent 80deg, rgba(76, 175, 80, 0.03) 85deg, rgba(76, 175, 80, 0.03) 95deg, transparent 100deg);
-  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  width: min(1400px, 160vw);
+  height: auto;
+  fill: none;
+  stroke: rgba(232, 163, 61, 0.13);
+  stroke-width: 1.5;
   pointer-events: none;
-  animation: courtGlow 8s ease-in-out infinite alternate;
+  z-index: 0;
 }
 
-@keyframes courtGlow {
-  0% { opacity: 0.3; transform: scale(1) rotate(0deg); }
-  50% { opacity: 0.6; transform: scale(1.02) rotate(1deg); }
-  100% { opacity: 0.4; transform: scale(0.98) rotate(-0.5deg); }
+.court-lines .court-dash {
+  stroke-dasharray: 10 12;
+  stroke: rgba(232, 163, 61, 0.09);
 }
 
 .landing-container {
@@ -84,36 +41,6 @@
   text-align: center;
   position: relative;
   z-index: 2;
-}
-
-.landing-container::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  right: -50%;
-  bottom: -50%;
-  background: 
-    /* Floating basketballs */
-    radial-gradient(circle 8px at 15% 25%, rgba(255, 165, 0, 0.3) 30%, rgba(139, 69, 19, 0.2) 50%, transparent 70%),
-    radial-gradient(circle 6px at 85% 70%, rgba(255, 165, 0, 0.25) 30%, rgba(139, 69, 19, 0.15) 50%, transparent 70%),
-    radial-gradient(circle 4px at 25% 85%, rgba(255, 165, 0, 0.2) 30%, rgba(139, 69, 19, 0.1) 50%, transparent 70%),
-    radial-gradient(circle 5px at 75% 15%, rgba(255, 165, 0, 0.3) 30%, rgba(139, 69, 19, 0.2) 50%, transparent 70%),
-    /* Court lines intersecting */
-    linear-gradient(30deg, transparent 48%, rgba(255, 255, 255, 0.03) 49%, rgba(255, 255, 255, 0.03) 51%, transparent 52%),
-    linear-gradient(150deg, transparent 48%, rgba(255, 255, 255, 0.02) 49%, rgba(255, 255, 255, 0.02) 51%, transparent 52%),
-    linear-gradient(-30deg, transparent 60%, rgba(76, 175, 80, 0.02) 61%, rgba(76, 175, 80, 0.02) 63%, transparent 64%);
-  z-index: -1;
-  pointer-events: none;
-  animation: floatingElements 12s linear infinite;
-}
-
-@keyframes floatingElements {
-  0% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
-  25% { transform: translateY(-10px) rotate(2deg); opacity: 0.8; }
-  50% { transform: translateY(-5px) rotate(-1deg); opacity: 0.7; }
-  75% { transform: translateY(-15px) rotate(1.5deg); opacity: 0.9; }
-  100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
 }
 
 .landing-header {
@@ -136,15 +63,14 @@
   right: 60px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #f59e0b;
+  background: rgba(232, 163, 61, 0.1);
+  border: 1px solid rgba(232, 163, 61, 0.3);
+  color: #e8a33d;
   cursor: pointer;
   padding: 0;
   border-radius: 10px;
   transition: all 0.3s ease;
   z-index: 10;
-  animation: helpPulse 3s ease-in-out infinite;
   width: 40px;
   height: 40px;
   display: flex;
@@ -154,33 +80,25 @@
 
 .landing-help-icon-right:hover {
   color: #fff;
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: #e8a33d;
+  border-color: #e8a33d;
   transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.4);
 }
 
 .landing-help-icon-right:active {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Subtle pulsing animation to draw attention */
-@keyframes helpPulse {
-  0%, 70%, 100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
-  }
-  35% {
-    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.1);
-  }
-}
 
 /* Help hint text */
 .landing-help-hint {
   text-align: center;
-  margin-top: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  font-weight: 400;
+  margin-top: 12px;
+  color: #9b937f;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.03em;
   opacity: 0;
   animation: fadeInHint 2s ease-in-out 1s forwards;
 }
@@ -196,24 +114,6 @@
   }
 }
 
-.landing-header::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
-  z-index: -1;
-  pointer-events: none;
-  animation: headerGlow 4s ease-in-out infinite alternate;
-}
-
-@keyframes headerGlow {
-  0% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
-}
 
 @keyframes gradientShift {
   0%, 100% {
@@ -225,110 +125,53 @@
 }
 
 .landing-title {
-  font-size: 4rem;
-  font-weight: 700;
-  font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 5.4rem;
+  font-weight: 600;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
   color: #ffffff;
-  margin-bottom: 16px;
-  letter-spacing: 1px;
-  text-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
   position: relative;
+  line-height: 1;
+}
+
+.landing-tagline {
+  color: #9b937f;
+  font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin: 16px 0 0;
 }
 
 .dynamic-title-text {
-  background: linear-gradient(
-    135deg,
-    #f59e0b 0%,
-    #ff8c00 50%,
-    #f59e0b 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradientShift 8s ease-in-out infinite;
+  color: #e8a33d;
   display: inline-block;
   position: relative;
-  font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-.dynamic-title-text::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
-  z-index: -1;
-  border-radius: 8px;
-  animation: titleGlow 6s ease-in-out infinite alternate;
-}
-
-@keyframes titleGlow {
-  0% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0.6;
-    transform: scale(1.02);
-  }
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
 }
 
 /* Accessibility: Reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  .dynamic-title-text {
+  .landing-help-hint,
+  .landing-search-button:disabled {
     animation: none !important;
-    background: linear-gradient(45deg, #f59e0b 0%, #ff8c00 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  .dynamic-title-text::before {
-    animation: none !important;
-    opacity: 0.5;
-    transform: none;
-  }
-  
-  .landing-title {
-    animation: none !important;
-  }
-  
-  .landing-header::before {
-    animation: none !important;
-  }
-  
-  .landing-container::before,
-  .landing-container::after {
-    animation: none !important;
+    opacity: 1;
   }
 }
 
-.landing-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent 0%, #f59e0b 50%, transparent 100%);
-  border-radius: 2px;
-}
 
 .prompting-guide-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  border: 1px solid #333333;
+  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
+  border: 1px solid #241f15;
   border-radius: 12px;
   padding: 12px 20px;
-  color: #cccccc;
+  color: #c9c2b2;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -336,15 +179,15 @@
   position: static;
   margin: 0 auto;
   white-space: nowrap;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .prompting-guide-button:hover {
-  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-  border-color: #f59e0b;
-  color: #f59e0b;
+  background: linear-gradient(135deg, #1e1a12 0%, #3a3a3a 100%);
+  border-color: #e8a33d;
+  color: #e8a33d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.2);
 }
 
 /* User Profile Dropdown Styles */
@@ -367,8 +210,8 @@
 
 .landing-subtitle {
   font-size: 1.25rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
-  color: #cccccc;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: #c9c2b2;
   font-weight: 500;
   margin: 0;
 }
@@ -385,27 +228,24 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  border-radius: 20px;
+  background: rgba(22, 19, 13, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
   padding: 4px 4px 4px 20px;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   backdrop-filter: blur(20px);
   max-width: 720px;
   margin: 0 auto;
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
 .landing-input-wrapper:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
-  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.2);
+  border-color: rgba(232, 163, 61, 0.35);
 }
 
 .landing-input-wrapper:focus-within {
-  border-color: #f59e0b;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12), 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-color: #e8a33d;
+  box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.14), 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
 .landing-input-wrapper:focus-within .landing-search-icon {
@@ -414,7 +254,7 @@
 }
 
 .landing-search-icon {
-  color: #f59e0b;
+  color: #e8a33d;
   margin-right: 16px;
   flex-shrink: 0;
   width: 22px;
@@ -429,7 +269,7 @@
   color: #ffffff !important;
   font-size: 17px;
   font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   padding: 14px 100px 14px 0;
   flex: 1;
   outline: none !important;
@@ -450,28 +290,25 @@
 }
 
 .landing-search-button {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: #e8a33d;
   border: none;
-  border-radius: 14px;
+  border-radius: 10px;
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  color: #000000;
+  transition: background 0.2s ease;
+  color: #1a1408;
   margin-left: 8px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
   font-weight: 600;
   position: relative;
   overflow: hidden;
 }
 
 .landing-search-button:hover {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  background: #f6b950;
 }
 
 .landing-search-button:active {
@@ -479,23 +316,9 @@
 }
 
 .landing-search-button:disabled {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #000000;
+  background: rgba(232, 163, 61, 0.35);
+  color: #1a1408;
   transform: none;
-  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.6);
-  animation: buttonPulse 1.5s ease-in-out infinite;
-}
-
-/* Enhanced loading animation for search button */
-@keyframes buttonPulse {
-  0%, 100% {
-    box-shadow: 0 6px 25px rgba(245, 158, 11, 0.4);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 8px 35px rgba(245, 158, 11, 0.8);
-    transform: scale(1.05);
-  }
 }
 
 /* Loading shimmer effect for button */
@@ -555,40 +378,45 @@
 }
 
 .landing-samples {
-  margin-top: 32px;
+  margin-top: 40px;
+}
+
+.landing-samples-label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9b937f;
+  margin-bottom: 14px;
 }
 
 .landing-samples-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   max-width: 720px;
   margin: 0 auto;
 }
 
 .landing-sample-pill {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 20px;
-  padding: 10px 18px;
-  color: #cccccc;
+  background: rgba(22, 19, 13, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #c9c2b2;
   font-size: 14px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
-  font-weight: 500;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 450;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
   user-select: none;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
 }
 
 .landing-sample-pill:hover {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-  border-color: #f59e0b;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.25);
+  background: rgba(232, 163, 61, 0.08);
+  border-color: rgba(232, 163, 61, 0.6);
+  color: #f6b950;
 }
 
 .landing-sample-pill:active {
@@ -599,7 +427,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(232, 163, 61, 0.05) 100%);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 16px;
   padding: 16px 24px;
@@ -636,26 +464,26 @@
 
 /* Search toggle button */
 .search-toggle-button {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
-  border: 2px solid rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(232, 163, 61, 0.15) 0%, rgba(232, 163, 61, 0.08) 100%);
+  border: 2px solid rgba(232, 163, 61, 0.4);
   border-radius: 50%;
   width: 52px;
   height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f59e0b;
+  color: #e8a33d;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(15px);
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .search-toggle-button:hover {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, rgba(232, 163, 61, 0.2) 0%, rgba(232, 163, 61, 0.1) 100%);
+  border-color: rgba(232, 163, 61, 0.5);
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(232, 163, 61, 0.3);
 }
 
 .search-toggle-button:active {
@@ -664,12 +492,12 @@
 
 /* Expanded search container */
 .compact-search-container {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
+  border: 1px solid rgba(232, 163, 61, 0.3);
   border-radius: 16px;
   padding: 16px;
   backdrop-filter: blur(20px);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   position: absolute;
   top: 0;
   left: 50%;
@@ -679,7 +507,7 @@
   opacity: 0;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
-  box-shadow: 0 10px 40px rgba(245, 158, 11, 0.15), 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(232, 163, 61, 0.15), 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .compact-search-container.expanded {
@@ -716,25 +544,25 @@
 .compact-input-wrapper {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: linear-gradient(135deg, rgba(232, 163, 61, 0.08) 0%, rgba(232, 163, 61, 0.03) 100%);
+  border: 1px solid rgba(232, 163, 61, 0.2);
   border-radius: 16px;
   padding: 6px 6px 6px 18px;
   transition: all 0.3s ease;
   backdrop-filter: blur(20px);
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 4px 16px rgba(232, 163, 61, 0.1);
 }
 
 .compact-input-wrapper:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.2);
+  border-color: rgba(232, 163, 61, 0.4);
+  background: linear-gradient(135deg, rgba(232, 163, 61, 0.12) 0%, rgba(232, 163, 61, 0.06) 100%);
+  box-shadow: 0 6px 20px rgba(232, 163, 61, 0.2);
 }
 
 .compact-input-wrapper:focus-within {
-  border-color: #f59e0b;
+  border-color: #e8a33d;
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12), 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.12), 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .compact-input-wrapper:focus-within .compact-search-icon {
@@ -743,7 +571,7 @@
 }
 
 .compact-search-icon {
-  color: #f59e0b;
+  color: #e8a33d;
   margin-right: 12px;
   flex-shrink: 0;
   width: 20px;
@@ -758,7 +586,7 @@
   color: #ffffff !important;
   font-size: 15px;
   font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   padding: 12px 14px;
   flex: 1;
   outline: none !important;
@@ -778,7 +606,7 @@
 }
 
 .compact-search-button {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, #e8a33d 0%, #d97706 100%);
   border: none;
   border-radius: 12px;
   width: 40px;
@@ -790,19 +618,19 @@
   color: #000000;
   margin-left: 8px;
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 3px 10px rgba(232, 163, 61, 0.3);
   font-weight: 600;
 }
 
 .compact-search-button:hover {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 6px 16px rgba(232, 163, 61, 0.4);
 }
 
 .compact-search-button:active {
   transform: translateY(0px);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 8px rgba(232, 163, 61, 0.3);
 }
 
 .compact-search-button:disabled {
@@ -866,10 +694,10 @@
 }
 
 .compact-results-title {
-  color: #cccccc;
+  color: #c9c2b2;
   font-size: 13px;
   font-weight: 600;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .compact-confidence-badge {
@@ -1080,7 +908,7 @@
 
 .confidence-warning {
   background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  color: #f6b950;
   border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
@@ -1118,7 +946,7 @@
   border-radius: 8px;
   padding: 12px;
   margin-top: 16px;
-  color: #fbbf24;
+  color: #f6b950;
   font-size: 13px;
 }
 
@@ -1131,7 +959,7 @@
 @media (max-width: 768px) {
   /* Landing Page Mobile */
   .landing-title {
-    font-size: 2.5rem;
+    font-size: 3.4rem;
   }
   
   .dynamic-title-text {
@@ -1164,13 +992,14 @@
   
   .landing-input-wrapper {
     max-width: 90%;
-    padding: 6px 6px 6px 20px;
-    border-radius: 20px;
+    padding: 6px 6px 6px 16px;
+    border-radius: 14px;
   }
-  
+
   .landing-search-input {
     font-size: 16px; /* Prevents zoom on iOS */
-    padding: 16px 12px;
+    padding: 16px 96px 16px 0;
+    text-overflow: ellipsis;
   }
   
   .landing-search-button {
@@ -1239,14 +1068,14 @@
 
 @keyframes loadingGlow {
   0%, 100% {
-    border-color: rgba(245, 158, 11, 0.4);
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
-    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+    border-color: rgba(232, 163, 61, 0.4);
+    background: linear-gradient(135deg, rgba(232, 163, 61, 0.12) 0%, rgba(232, 163, 61, 0.06) 100%);
+    box-shadow: 0 4px 20px rgba(232, 163, 61, 0.2);
   }
   50% {
-    border-color: rgba(245, 158, 11, 0.8);
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.12) 100%);
-    box-shadow: 0 6px 30px rgba(245, 158, 11, 0.4);
+    border-color: rgba(232, 163, 61, 0.8);
+    background: linear-gradient(135deg, rgba(232, 163, 61, 0.20) 0%, rgba(232, 163, 61, 0.12) 100%);
+    box-shadow: 0 6px 30px rgba(232, 163, 61, 0.4);
   }
 }
 
@@ -1297,9 +1126,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(245, 158, 11, 0.1) 20%,
-    rgba(245, 158, 11, 0.3) 50%,
-    rgba(245, 158, 11, 0.1) 80%,
+    rgba(232, 163, 61, 0.1) 20%,
+    rgba(232, 163, 61, 0.3) 50%,
+    rgba(232, 163, 61, 0.1) 80%,
     transparent 100%
   );
   animation: loadingShimmer 2s ease-in-out infinite;

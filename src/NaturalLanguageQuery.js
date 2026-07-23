@@ -7,6 +7,14 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import './ModernSearch.css';
 
+const sampleQueries = [
+  "LeBron James this year",
+  "Stephen Curry with Jimmy Butler",
+  "Giannis at home since November without Khris Middleton shooting 15+ times",
+  "Kevin Durant without Devin Booker playing 30+ minutes",
+  "Luka last 10 games against top 10 paint defenses"
+];
+
 const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading, onLoadingComplete }) => {
   const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
@@ -55,6 +63,17 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
       setIsExpanded(false);
     }
   }, [hasSearched, isLoading]);
+
+  // Cycle real example queries through the landing placeholder so the
+  // query language demos itself before the user types anything.
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  useEffect(() => {
+    if (hasSearched || !isAuthenticated) return undefined;
+    const id = setInterval(() => {
+      setPlaceholderIdx(i => (i + 1) % sampleQueries.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [hasSearched, isAuthenticated]);
 
 
   const handleSubmit = async (e) => {
@@ -220,18 +239,21 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     return <AlertCircle size={16} />;
   };
 
-  const sampleQueries = [
-    "LeBron James this year",
-    "Stephen Curry with Jimmy Butler",
-    "Giannis at home since November without Khris Middleton shooting 15+ times",
-    "Kevin Durant without Devin Booker playing 30+ minutes",
-    "Luka last 10 games against top 10 paint defenses"
-  ];
-
   // Landing page interface (before first search)
   if (!hasSearched) {
     return (
       <div className="landing-page">
+        <svg className="court-lines" viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
+          {/* half-court line */}
+          <line x1="0" y1="400" x2="1200" y2="400" />
+          {/* center circle behind the search bar */}
+          <circle cx="600" cy="400" r="150" />
+          <circle cx="600" cy="400" r="48" />
+          {/* three-point arc + key, entering from the bottom */}
+          <path d="M 240 800 L 240 720 A 360 360 0 0 1 960 720 L 960 800" />
+          <rect x="480" y="640" width="240" height="160" />
+          <circle cx="600" cy="640" r="72" className="court-dash" />
+        </svg>
         <div className="landing-container">
           <div className="landing-header">
             <div className="landing-auth-section">
@@ -240,6 +262,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <h1 className="landing-title">
               <span className="dynamic-title-text">CourtAI</span>
             </h1>
+            <p className="landing-tagline">NBA game-log analytics, asked in plain English.</p>
           </div>
           
           <div className="landing-search-wrapper">
@@ -248,7 +271,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 <Search className={`landing-search-icon ${isLoading ? 'loading' : ''}`} size={22} />
                 <Form.Control
                   type="text"
-                  placeholder={isLoading ? "Processing query..." : isAuthenticated ? "Ask about your favorite player..." : "Sign in to enter a query..."}
+                  placeholder={isLoading ? "Processing query..." : isAuthenticated ? sampleQueries[placeholderIdx] : "Sign in to enter a query..."}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading || !isAuthenticated}
@@ -276,16 +299,12 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               </div>
             </Form>
             
-            <div className="landing-help-hint">
-              <span>💡 Click the </span>
-              <HelpCircle size={14} style={{ display: 'inline', color: '#f59e0b' }} />
-              <span> for query examples and tips</span>
-            </div>
           </div>
 
           <div className="landing-samples">
+            <div className="landing-samples-label">Try a query</div>
             <div className="landing-samples-grid">
-              {sampleQueries.map((sample, index) => (
+              {[sampleQueries[0], sampleQueries[3], sampleQueries[2]].map((sample, index) => (
                 <div
                   key={index}
                   className={`landing-sample-pill ${isLoading ? 'loading-state' : ''}`}

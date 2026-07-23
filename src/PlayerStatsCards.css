@@ -12,19 +12,19 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-  border: 3px solid #f59e0b;
+  background: linear-gradient(135deg, #1e1a12 0%, #16130d 100%);
+  border: 3px solid #e8a33d;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px auto;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.2);
 }
 
 .player-initials {
   font-size: 32px;
   font-weight: bold;
-  color: #f59e0b;
+  color: #e8a33d;
   letter-spacing: 2px;
 }
 
@@ -39,8 +39,8 @@
 
 /* Stat Cards */
 .stat-card {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  border: 1px solid #333333;
+  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
+  border: 1px solid #241f15;
   border-radius: 12px;
   padding: 16px;
   height: 100%;
@@ -56,7 +56,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(232, 163, 61, 0.1) 0%, transparent 50%);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 1;
@@ -68,13 +68,13 @@
 
 .stat-card:hover {
   transform: translateY(-2px);
-  border-color: #f59e0b;
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+  border-color: #e8a33d;
+  box-shadow: 0 8px 25px rgba(232, 163, 61, 0.15);
 }
 
 .primary-card {
-  border-color: #f59e0b;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+  border-color: #e8a33d;
+  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.2);
 }
 
 .primary-card::before {
@@ -91,7 +91,7 @@
 }
 
 .stat-icon {
-  color: #f59e0b;
+  color: #e8a33d;
   margin-right: 8px;
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@
 }
 
 .stat-label {
-  color: #cccccc;
+  color: #c9c2b2;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -117,7 +117,7 @@
 }
 
 .stat-comparison {
-  color: #888888;
+  color: #9b937f;
   font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;

@@ -15,8 +15,6 @@
 
 # local agent / editor tooling
 .claude/
-CLAUDE.md
-AGENTS.md
 
 # misc
 .DS_Store

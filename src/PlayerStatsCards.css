@@ -131,30 +131,30 @@
   .player-stats-cards {
     padding: 15px 0;
   }
-  
+
   .headshot-circle {
     width: 100px;
     height: 100px;
     margin-bottom: 12px;
   }
-  
+
   .player-initials {
     font-size: 24px;
   }
-  
+
   .player-name {
     font-size: 16px;
   }
-  
+
   .stat-card {
     padding: 12px;
     margin-bottom: 12px;
   }
-  
+
   .stat-value {
     font-size: 24px;
   }
-  
+
   .stat-header {
     margin-bottom: 8px;
   }
@@ -164,16 +164,16 @@
   .stat-value {
     font-size: 20px;
   }
-  
+
   .stat-icon {
     margin-right: 6px;
   }
-  
+
   .stat-label {
     font-size: 10px;
   }
-  
+
   .stat-comparison {
     font-size: 9px;
   }
-} 
+}

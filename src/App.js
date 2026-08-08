@@ -1,4 +1,3 @@
-import React from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import GameLogFilter from './GameLogFilter.js';

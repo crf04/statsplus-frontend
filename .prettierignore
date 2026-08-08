@@ -1,0 +1,8 @@
+# Dependencies and generated output
+node_modules/
+build/
+dist/
+coverage/
+
+# Machine-generated dependency metadata
+package-lock.json

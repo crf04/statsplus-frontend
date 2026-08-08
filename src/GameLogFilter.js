@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
@@ -11,9 +11,12 @@ import ChartComponent from './ChartComponent';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
-import { fetchUnfilteredGameLogs, fetchGameLogs } from './utils';
+import { useAuth } from './contexts/AuthContext';
+import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { cleanFilterParams, filtersForDisplay, toGameLogParams } from './filterUtils';
 
 const GameLogFilter = () => {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState('None');
   const [displayPlayer, setDisplayPlayer] = useState('None'); // For UI display (includes NL queries)
   const [selectedTeam, setSelectedTeam] = useState('');
@@ -29,172 +32,219 @@ const GameLogFilter = () => {
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
+  const [gameLogsError, setGameLogsError] = useState(null);
+  const [listsLoading, setListsLoading] = useState(false);
+  const [listsError, setListsError] = useState(null);
+  const listRequestRef = useRef({ id: 0, controller: null });
+  const gameLogsRequestRef = useRef({ id: 0, controller: null });
+  const teamsRef = useRef([]);
 
   useEffect(() => {
-    apiClient.get(getApiUrl('PLAYERS'))
-      .then(response => setPlayerList(response.data))
-      .catch(error => console.error('Error fetching player list:', error.response?.status || error.message));
+    teamsRef.current = teams;
+  }, [teams]);
 
-    apiClient.get(getApiUrl('TEAMS'))
-      .then(response => setTeams(response.data))
-      .catch(error => console.error('Error fetching team list:', error.response?.status || error.message));
-  }, []);
-
+  // Player/team lists are protected data. Fetch them only after auth has
+  // settled, and refetch on every auth transition (login/logout).
   useEffect(() => {
-    // Fetch unfiltered logs when selectedPlayer changes (manual selection)
-    if (selectedPlayer !== 'None') {
-      fetchUnfilteredGameLogs(selectedPlayer, setGameLogs, setAverages, setInitialGameLogs, (team) => {
-        // If no opposing team is provided, set the first available team as default
-        if (!team && teams.length > 0) {
-          setSelectedTeam(teams[0]);
-        } else {
-          setSelectedTeam(team);
+    const previousRequest = listRequestRef.current;
+    previousRequest.controller?.abort();
+    const requestId = previousRequest.id + 1;
+    listRequestRef.current = { id: requestId, controller: null };
+
+    if (authLoading) {
+      setListsLoading(false);
+      return undefined;
+    }
+
+    if (!isAuthenticated) {
+      setPlayerList([]);
+      setTeams([]);
+      setListsError(null);
+      setListsLoading(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    listRequestRef.current = { id: requestId, controller };
+    setListsLoading(true);
+    setListsError(null);
+
+    const decodeList = (data, key) => {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.[key])) return data[key];
+      throw new Error(`The ${key} endpoint returned an invalid list.`);
+    };
+
+    Promise.allSettled([
+      apiClient.get(getApiUrl('PLAYERS'), { signal: controller.signal }),
+      apiClient.get(getApiUrl('TEAMS'), { signal: controller.signal }),
+    ])
+      .then(([playersResult, teamsResult]) => {
+        if (listRequestRef.current.id !== requestId) return;
+
+        const errors = [];
+        if (playersResult.status === 'fulfilled') {
+          try {
+            setPlayerList(decodeList(playersResult.value.data, 'players'));
+          } catch (error) {
+            errors.push(error.message);
+            setPlayerList([]);
+          }
+        } else if (!isRequestCancelled(playersResult.reason)) {
+          errors.push(`Players: ${getRequestErrorMessage(playersResult.reason)}`);
+          setPlayerList([]);
+        }
+
+        if (teamsResult.status === 'fulfilled') {
+          try {
+            setTeams(decodeList(teamsResult.value.data, 'teams'));
+          } catch (error) {
+            errors.push(error.message);
+            setTeams([]);
+          }
+        } else if (!isRequestCancelled(teamsResult.reason)) {
+          errors.push(`Teams: ${getRequestErrorMessage(teamsResult.reason)}`);
+          setTeams([]);
+        }
+
+        setListsError(errors.length > 0 ? errors.join(' ') : null);
+      })
+      .finally(() => {
+        if (listRequestRef.current.id === requestId) {
+          setListsLoading(false);
         }
       });
-      // Update display player to match selected player for manual selection
-      setDisplayPlayer(selectedPlayer);
+
+    return () => {
+      if (listRequestRef.current.id === requestId) {
+        listRequestRef.current = { id: requestId + 1, controller: null };
+        controller.abort();
+      }
+    };
+  }, [authLoading, isAuthenticated]);
+
+  const abortGameLogsRequest = useCallback(() => {
+    const currentRequest = gameLogsRequestRef.current;
+    currentRequest.controller?.abort();
+    gameLogsRequestRef.current = { id: currentRequest.id + 1, controller: null };
+    setIsGameLogsLoading(false);
+  }, []);
+
+  // One request seam owns game-log state transitions. A request may only
+  // publish data if it is still the latest request; older requests are
+  // cancelled and ignored when their promises settle.
+  const requestGameLogs = useCallback(
+    (params, { includeInitial = false, updateSelectedTeam = true } = {}) => {
+      const previousRequest = gameLogsRequestRef.current;
+      previousRequest.controller?.abort();
+
+      const requestId = previousRequest.id + 1;
+      const controller = new AbortController();
+      gameLogsRequestRef.current = { id: requestId, controller };
+      setIsGameLogsLoading(true);
+      setGameLogsError(null);
+
+      return fetchGameLogsData(params, { signal: controller.signal })
+        .then((data) => {
+          if (gameLogsRequestRef.current.id !== requestId) {
+            return { stale: true };
+          }
+
+          setGameLogs(data.gameLogs);
+          setAverages(data.averages);
+          if (includeInitial) setInitialGameLogs(data.gameLogs);
+          if (updateSelectedTeam) {
+            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
+          }
+          return { ok: true, data };
+        })
+        .catch((error) => {
+          const stale = gameLogsRequestRef.current.id !== requestId;
+          if (stale || isRequestCancelled(error)) {
+            return { stale, cancelled: true };
+          }
+
+          setGameLogsError(
+            getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
+          );
+          return { ok: false, error };
+        })
+        .finally(() => {
+          if (gameLogsRequestRef.current.id === requestId) {
+            setIsGameLogsLoading(false);
+          }
+        });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    // Fetch unfiltered logs when a player is selected manually.
+    if (selectedPlayer === 'None') {
+      abortGameLogsRequest();
+      setGameLogs([]);
+      setInitialGameLogs([]);
+      setAverages([]);
+      setSelectedTeam('');
+      return undefined;
     }
-  }, [selectedPlayer, teams]);
+
+    setDisplayPlayer(selectedPlayer);
+    requestGameLogs(
+      { player_name: selectedPlayer },
+      { includeInitial: true, updateSelectedTeam: true },
+    );
+    return undefined;
+  }, [abortGameLogsRequest, requestGameLogs, selectedPlayer]);
 
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
-    const cleanedFilters = Object.fromEntries(
-      Object.entries(filterParams).filter(([_, value]) => 
-        value !== null && value !== '' && 
-        !(Array.isArray(value) && value.length === 0)
-      )
-    );
-    
-    // Remove default playstyle values for UI display unless explicitly set
-    const appliedFiltersForUI = { ...cleanedFilters };
-    if (isFromNL && (filterParams.playstyle_RTG_min === undefined || filterParams.playstyle_RTG_max === undefined ||
-        !filterParams.playstyle_RTG_min || !filterParams.playstyle_RTG_max)) {
-      delete appliedFiltersForUI.playstyle_RTG_min;
-      delete appliedFiltersForUI.playstyle_RTG_max;
+    const cleanedFilters = cleanFilterParams(filterParams);
+    const appliedFilters = filtersForDisplay(filterParams, { naturalLanguage: isFromNL });
+    setAppliedFilters(appliedFilters);
+
+    if (Object.keys(cleanedFilters).length === 0) {
+      setGameLogsError('Add at least one filter before loading game logs.');
+      if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
+      return Promise.resolve({ ok: false, empty: true });
     }
-    
-    // Final cleanup: remove any undefined values
-    const finalFilters = Object.fromEntries(
-      Object.entries(appliedFiltersForUI).filter(([_, value]) => value !== undefined)
-    );
-    setAppliedFilters(finalFilters);
-    
-    // For natural language queries, also update initialGameLogs and selectedTeam
-    if (isFromNL) {
-      setIsGameLogsLoading(true);
-      fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
-        // If no opposing team is provided, set the first available team as default
-        if (!team && teams.length > 0) {
-          setSelectedTeam(teams[0]);
-        } else {
-          setSelectedTeam(team);
-        }
-      })
-        .then(() => {
-          setIsGameLogsLoading(false);
-          if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
-        })
-        .catch(() => {
-          setIsGameLogsLoading(false);
-          if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
-        });
-    } else {
-      if (isFromNL) {
-        setIsGameLogsLoading(true);
-        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam)
-          .then(() => {
-            setIsGameLogsLoading(false);
-            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
-          })
-          .catch(() => {
-            setIsGameLogsLoading(false);
-            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
-          });
-      } else {
-        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, null, setSelectedTeam);
-        // For non-NL calls, there's no callback to handle
+
+    const request = requestGameLogs(cleanedFilters, {
+      includeInitial: isFromNL,
+      updateSelectedTeam: true,
+    });
+
+    if (!isFromNL) return request;
+
+    return request.then((result) => {
+      // Each callback is scoped to the NL query that created it. The callback
+      // itself guards against clearing a newer query, so stale/cancelled game
+      // log requests still settle their own loading state.
+      if (nlLoadingCallback) {
+        nlLoadingCallback(result.ok === true);
       }
-    }
+      return result;
+    });
   };
 
   // Handler for natural language query results
   const handleNLQueryResults = (filters, nlLoadingCallback) => {
-    // Don't hide landing page immediately - wait for game logs to load
-    
-    // Apply filters received from natural language processing
-    if (filters && Object.keys(filters).length > 0) {
-      // If player is included, make API call first, then set player
-      if (filters.selectedPlayer) {
-        // Convert selectedPlayer to player_name for API compatibility
-        const apiFilters = { ...filters };
-        apiFilters.player_name = filters.selectedPlayer;
-        delete apiFilters.selectedPlayer;
-        
-        // Make the filtered API call
-        const cleanedFilters = Object.fromEntries(
-          Object.entries(apiFilters).filter(([_, value]) => 
-            value !== null && value !== '' && 
-            !(Array.isArray(value) && value.length === 0)
-          )
-        );
-        
-        // Remove default playstyle values that weren't explicitly set by user
-        const appliedFiltersForUI = { ...cleanedFilters };
-        // Don't show playstyle range if values are undefined or not explicitly set
-        if (apiFilters.playstyle_RTG_min === undefined || apiFilters.playstyle_RTG_max === undefined ||
-            !apiFilters.playstyle_RTG_min || !apiFilters.playstyle_RTG_max) {
-          delete appliedFiltersForUI.playstyle_RTG_min;
-          delete appliedFiltersForUI.playstyle_RTG_max;
-        }
-        
-        // Final cleanup: remove any undefined values
-        const finalFilters = Object.fromEntries(
-          Object.entries(appliedFiltersForUI).filter(([_, value]) => value !== undefined)
-        );
-        setAppliedFilters(finalFilters);
-        
-        // Set loading state for game logs API
-        setIsGameLogsLoading(true);
-        
-        // For NL queries, only set displayPlayer (selectedPlayer is set when filters are applied)
-        fetchGameLogs(cleanedFilters, setGameLogs, setAverages, setInitialGameLogs, (team) => {
-          // If no opposing team is provided, set the first available team as default
-          if (!team && teams.length > 0) {
-            setSelectedTeam(teams[0]);
-          } else {
-            setSelectedTeam(team);
-          }
-        })
-          .then(() => {
-            // Only set displayPlayer for NL queries
-            // selectedPlayer will be set when user applies filters
-            setDisplayPlayer(filters.selectedPlayer);
-            setIsGameLogsLoading(false); // Clear loading state
-            setShowLandingPage(false); // Hide landing page only after data loads
-            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading
-          })
-          .catch(error => {
-            console.error('Error fetching natural language query results:', error.response?.status || error.message);
-            setIsGameLogsLoading(false); // Clear loading state on error
-            // Keep landing page visible on error so user can retry
-            if (nlLoadingCallback) nlLoadingCallback(); // Clear NL loading on error
-          });
-      } else {
-        // For filters without selectedPlayer, we still need to hide landing page after data loads
-        const originalCallback = nlLoadingCallback;
-        const wrappedCallback = () => {
-          setShowLandingPage(false); // Hide landing page after data loads
-          if (originalCallback) originalCallback();
-        };
-        handleApplyFilters(filters, true, wrappedCallback); // Pass wrapped callback
-      }
+    const convertedFilters = cleanFilterParams(filters);
+    if (Object.keys(convertedFilters).length === 0) {
+      if (nlLoadingCallback) nlLoadingCallback(false);
+      return Promise.resolve({ ok: false, empty: true });
     }
-  };
 
-  // Handler for player selection from natural language (no longer triggers separate API call)
-  const handleNLPlayerSelection = (playerName) => {
-    // This is now handled in handleNLQueryResults to avoid duplicate API calls
-    // Keeping this function for potential future use
-    return;
+    const playerName = convertedFilters.selectedPlayer;
+    const apiFilters = toGameLogParams(convertedFilters);
+    const finishNLRequest = (success) => {
+      if (success) {
+        if (playerName) setDisplayPlayer(playerName);
+        setShowLandingPage(false);
+      }
+      if (nlLoadingCallback) nlLoadingCallback(success);
+    };
+
+    return handleApplyFilters(apiFilters, true, finishNLRequest);
   };
 
   return (
@@ -202,20 +252,46 @@ const GameLogFilter = () => {
       {/* Always render NaturalLanguageQuery - it handles landing page vs compact view internally */}
       <NaturalLanguageQuery
         onFiltersApplied={handleNLQueryResults}
-        onPlayerSelected={handleNLPlayerSelection}
         onQueryUpdate={setCurrentQuery}
         resetToLanding={resetToLanding}
         gameLogsLoading={isGameLogsLoading}
       />
-      
+
+      {(authLoading || listsLoading) && (
+        <div className="text-center text-light py-2" role="status" aria-live="polite">
+          <Spinner animation="border" size="sm" className="me-2" />
+          {authLoading ? 'Checking authentication…' : 'Loading players and teams…'}
+        </div>
+      )}
+      {listsError && (
+        <Alert variant="warning" className="mx-3" role="alert">
+          Unable to load player and team lists. {listsError}
+        </Alert>
+      )}
+      {gameLogsError && (
+        <Alert variant="danger" className="mx-3" role="alert">
+          {gameLogsError}
+        </Alert>
+      )}
+      {isGameLogsLoading && !showLandingPage && (
+        <div className="text-center text-light py-2" role="status" aria-live="polite">
+          <Spinner animation="border" size="sm" className="me-2" />
+          Loading game logs…
+        </div>
+      )}
+
       {/* Player Stats Cards - positioned between search and main content */}
       {!showLandingPage && (
         <Container fluid className="pt-2 pb-1">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <button 
+            <button
               onClick={() => {
+                abortGameLogsRequest();
                 setShowLandingPage(true);
                 setCurrentQuery('');
+                setSelectedPlayer('None');
+                setDisplayPlayer('None');
+                setGameLogsError(null);
                 setResetToLanding(true);
                 // Reset the flag after a brief delay to allow the effect to trigger
                 setTimeout(() => setResetToLanding(false), 100);
@@ -234,15 +310,12 @@ const GameLogFilter = () => {
           </div>
           <Card className="dark-card">
             <Card.Body className="p-3">
-              <PlayerStatsCards 
-                averages={averages}
-                selectedPlayer={displayPlayer}
-              />
+              <PlayerStatsCards averages={averages} selectedPlayer={displayPlayer} />
             </Card.Body>
           </Card>
         </Container>
       )}
-      
+
       {/* Only show main content after landing page */}
       {!showLandingPage && (
         <Container fluid className="game-log-filter py-2">
@@ -268,11 +341,9 @@ const GameLogFilter = () => {
                     gameLogs={gameLogs}
                     lineType={lineType}
                     lineValue={lineValue}
-                    selectedPlayer={displayPlayer}
                     averages={averages}
                     appliedFilters={appliedFilters}
                   />
-                  
                 </Card.Body>
               </Card>
             </Col>
@@ -282,23 +353,19 @@ const GameLogFilter = () => {
                 onApplyFilters={handleApplyFilters}
                 selectedPlayer={selectedPlayer}
                 displayPlayer={displayPlayer}
-                gameLogs={gameLogs}
                 initialGameLogs={initialGameLogs}
                 appliedFilters={appliedFilters}
               />
             </Col>
           </Row>
-          
+
           <Row className="mb-5">
             <Col md={6}>
-              <PlayerProfile 
-                selectedPlayer={displayPlayer} 
-                selectedTeam={selectedTeam} 
-              />
+              <PlayerProfile selectedPlayer={displayPlayer} selectedTeam={selectedTeam} />
             </Col>
             <Col md={6}>
-              <OpposingTeamProfile 
-                teams={teams} 
+              <OpposingTeamProfile
+                teams={teams}
                 selectedTeam={selectedTeam}
                 setSelectedTeam={setSelectedTeam}
               />
@@ -309,12 +376,11 @@ const GameLogFilter = () => {
             <div className="per36-sidebar">
               <PerformanceAverages averages={averages} appliedFilters={appliedFilters} />
             </div>
-            
+
             <div className="game-logs-main">
               <GameLogsTable gameLogs={gameLogs} appliedFilters={appliedFilters} />
             </div>
           </div>
-
         </Container>
       )}
     </>

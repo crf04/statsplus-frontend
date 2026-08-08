@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Card } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './GameLogFilter.css';
-import AppliedFilters from './AppliedFilters'; 
+import AppliedFilters from './AppliedFilters';
+import { numericOrZero, toFiniteNumber } from './numberUtils';
 
 const GameLogsTable = ({ gameLogs, appliedFilters }) => {
   const [sortField, setSortField] = useState('GAME_DATE');
@@ -11,47 +11,55 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
   // Calculate player averages for relative comparison
   const playerAverages = React.useMemo(() => {
     if (!gameLogs || gameLogs.length === 0) return {};
-    
+
     const averages = {};
-    const numericColumns = Object.keys(gameLogs[0]).filter(key => 
-      typeof gameLogs[0][key] === 'number' && key !== 'GAME_DATE'
+    const numericColumns = Object.keys(gameLogs[0]).filter(
+      (key) => key !== 'GAME_DATE' && gameLogs.some((game) => toFiniteNumber(game[key]) !== null),
     );
-    
-    numericColumns.forEach(col => {
-      const values = gameLogs.map(game => game[col]).filter(val => typeof val === 'number');
+
+    numericColumns.forEach((col) => {
+      const values = gameLogs
+        .map((game) => toFiniteNumber(game[col]))
+        .filter((val) => val !== null);
       if (values.length > 0) {
         averages[col] = values.reduce((sum, val) => sum + val, 0) / values.length;
       }
     });
-    
+
     // Calculate combination stat averages
-    const praValues = gameLogs.map(game => (game.PTS || 0) + (game.REB || 0) + (game.AST || 0));
-    const prValues = gameLogs.map(game => (game.PTS || 0) + (game.REB || 0));
-    const paValues = gameLogs.map(game => (game.PTS || 0) + (game.AST || 0));
-    const arValues = gameLogs.map(game => (game.AST || 0) + (game.REB || 0));
-    
+    const praValues = gameLogs.map(
+      (game) => numericOrZero(game.PTS) + numericOrZero(game.REB) + numericOrZero(game.AST),
+    );
+    const prValues = gameLogs.map((game) => numericOrZero(game.PTS) + numericOrZero(game.REB));
+    const paValues = gameLogs.map((game) => numericOrZero(game.PTS) + numericOrZero(game.AST));
+    const arValues = gameLogs.map((game) => numericOrZero(game.AST) + numericOrZero(game.REB));
+
     if (praValues.length > 0) {
       averages['PRA'] = praValues.reduce((sum, val) => sum + val, 0) / praValues.length;
       averages['PR'] = prValues.reduce((sum, val) => sum + val, 0) / prValues.length;
       averages['PA'] = paValues.reduce((sum, val) => sum + val, 0) / paValues.length;
       averages['AR'] = arValues.reduce((sum, val) => sum + val, 0) / arValues.length;
     }
-    
+
     return averages;
   }, [gameLogs]);
 
   const formatDate = (dateValue) => {
-    return new Date(dateValue).toLocaleDateString('en-US', {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleDateString('en-US', {
       month: 'numeric',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getPerformanceColor = (value, columnId) => {
-    if (typeof value !== 'number' || !playerAverages[columnId]) return '#9b937f';
+    const numericValue = toFiniteNumber(value);
+    const average = toFiniteNumber(playerAverages[columnId]);
+    if (numericValue === null || average === null) return '#9b937f';
+    if (average === 0) return numericValue === 0 ? '#c9c2b2' : '#4caf7d';
 
-    const average = playerAverages[columnId];
-    let ratio = value / average;
+    let ratio = numericValue / average;
 
     // For turnovers and fouls, lower is better — invert the scale
     if (columnId === 'TO' || columnId === 'PF') {
@@ -68,33 +76,39 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
 
   const sortedGames = React.useMemo(() => {
     if (!gameLogs) return [];
-    
+
     return [...gameLogs].sort((a, b) => {
       let aVal, bVal;
-      
+
       // Handle combination stats
       if (sortField === 'PRA') {
-        aVal = (a.PTS || 0) + (a.REB || 0) + (a.AST || 0);
-        bVal = (b.PTS || 0) + (b.REB || 0) + (b.AST || 0);
+        aVal = numericOrZero(a.PTS) + numericOrZero(a.REB) + numericOrZero(a.AST);
+        bVal = numericOrZero(b.PTS) + numericOrZero(b.REB) + numericOrZero(b.AST);
       } else if (sortField === 'PR') {
-        aVal = (a.PTS || 0) + (a.REB || 0);
-        bVal = (b.PTS || 0) + (b.REB || 0);
+        aVal = numericOrZero(a.PTS) + numericOrZero(a.REB);
+        bVal = numericOrZero(b.PTS) + numericOrZero(b.REB);
       } else if (sortField === 'PA') {
-        aVal = (a.PTS || 0) + (a.AST || 0);
-        bVal = (b.PTS || 0) + (b.AST || 0);
+        aVal = numericOrZero(a.PTS) + numericOrZero(a.AST);
+        bVal = numericOrZero(b.PTS) + numericOrZero(b.AST);
       } else if (sortField === 'AR') {
-        aVal = (a.AST || 0) + (a.REB || 0);
-        bVal = (b.AST || 0) + (b.REB || 0);
+        aVal = numericOrZero(a.AST) + numericOrZero(a.REB);
+        bVal = numericOrZero(b.AST) + numericOrZero(b.REB);
       } else {
         aVal = a[sortField];
         bVal = b[sortField];
       }
-      
-      if (sortDirection === 'asc') {
-        return aVal > bVal ? 1 : -1;
+
+      const aNumber = toFiniteNumber(aVal);
+      const bNumber = toFiniteNumber(bVal);
+      let comparison;
+      if (aNumber !== null && bNumber !== null) {
+        comparison = aNumber - bNumber;
       } else {
-        return aVal < bVal ? 1 : -1;
+        comparison = String(aVal ?? '').localeCompare(String(bVal ?? ''), undefined, {
+          numeric: true,
+        });
       }
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [gameLogs, sortField, sortDirection]);
 
@@ -148,7 +162,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
     { key: 'PRA', label: 'PRA', width: '45px' },
     { key: 'PR', label: 'PR', width: '40px' },
     { key: 'PA', label: 'PA', width: '40px' },
-    { key: 'AR', label: 'AR', width: '40px' }
+    { key: 'AR', label: 'AR', width: '40px' },
   ];
 
   return (
@@ -158,22 +172,38 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
         <div className="mb-2">
           <AppliedFilters filters={appliedFilters || {}} />
         </div>
-        
+
         <div className="table-scroll-container">
           <table className="game-logs-table-compact">
             <thead>
               <tr className="table-header-row">
-                {columns.map(col => (
-                  <th 
+                {columns.map((col) => (
+                  <th
                     key={col.key}
                     className={`table-header-cell ${sortField === col.key ? 'sorted' : ''}`}
                     style={{ width: col.width, minWidth: col.width }}
-                    onClick={() => handleSort(col.key)}
+                    scope="col"
+                    aria-sort={
+                      sortField === col.key
+                        ? sortDirection === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
                   >
-                    <div className="header-content">
-                      <span className="header-text">{col.label}</span>
-                      <span className="sort-arrow">{getSortIcon(col.key)}</span>
-                    </div>
+                    <button
+                      type="button"
+                      className="table-header-button"
+                      onClick={() => handleSort(col.key)}
+                      aria-label={`Sort by ${col.label} (${sortField === col.key && sortDirection === 'asc' ? 'descending' : 'ascending'})`}
+                    >
+                      <span className="header-content">
+                        <span className="header-text">{col.label}</span>
+                        <span className="sort-arrow" aria-hidden="true">
+                          {getSortIcon(col.key)}
+                        </span>
+                      </span>
+                    </button>
                   </th>
                 ))}
               </tr>
@@ -181,46 +211,75 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
             <tbody>
               {sortedGames.map((game, index) => (
                 <tr key={index} className={`table-row ${index % 2 === 0 ? 'even' : 'odd'}`}>
-                  {columns.map(col => {
+                  {columns.map((col) => {
                     const value = game[col.key];
-                    
+
                     // Calculate combination stat values for color coding
                     let displayValue = value;
                     let colorValue = value;
-                    
+
                     if (col.key === 'PRA') {
-                      displayValue = (game.PTS || 0) + (game.REB || 0) + (game.AST || 0);
+                      displayValue =
+                        numericOrZero(game.PTS) + numericOrZero(game.REB) + numericOrZero(game.AST);
                       colorValue = displayValue;
                     } else if (col.key === 'PR') {
-                      displayValue = (game.PTS || 0) + (game.REB || 0);
+                      displayValue = numericOrZero(game.PTS) + numericOrZero(game.REB);
                       colorValue = displayValue;
                     } else if (col.key === 'PA') {
-                      displayValue = (game.PTS || 0) + (game.AST || 0);
+                      displayValue = numericOrZero(game.PTS) + numericOrZero(game.AST);
                       colorValue = displayValue;
                     } else if (col.key === 'AR') {
-                      displayValue = (game.AST || 0) + (game.REB || 0);
+                      displayValue = numericOrZero(game.AST) + numericOrZero(game.REB);
                       colorValue = displayValue;
                     }
-                    
+
+                    const numericValue = toFiniteNumber(value);
+
                     return (
-                      <td 
-                        key={col.key} 
+                      <td
+                        key={col.key}
                         className="table-cell"
-                        style={{ 
+                        style={{
                           width: col.width,
-                          color: ['PTS', 'FG_PCT', 'FG3_PCT', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PRA', 'PR', 'PA', 'AR'].includes(col.key) 
-                            ? getPerformanceColor(colorValue, col.key) 
-                            : '#cccccc'
+                          color: [
+                            'PTS',
+                            'FG_PCT',
+                            'FG3_PCT',
+                            'REB',
+                            'AST',
+                            'STL',
+                            'BLK',
+                            'TO',
+                            'PRA',
+                            'PR',
+                            'PA',
+                            'AR',
+                          ].includes(col.key)
+                            ? getPerformanceColor(colorValue, col.key)
+                            : '#cccccc',
                         }}
                       >
-                        {col.key === 'GAME_DATE' ? formatDate(value) :
-                         col.key === 'MATCHUP' ? (value?.split(' ')[2] || 'N/A') :
-                         col.key === 'W/L' ? (value || '-') :
-                         col.key === 'MIN' ? (value ? Math.floor(value) : 0) :
-                         col.key === 'FG_PCT' || col.key === 'FG3_PCT' ? 
-                           (value ? (value * 100).toFixed(0) + '%' : '0%') :
-                         ['PRA', 'PR', 'PA', 'AR'].includes(col.key) ? displayValue :
-                         (value || 0)}
+                        {col.key === 'GAME_DATE'
+                          ? formatDate(value)
+                          : col.key === 'MATCHUP'
+                            ? typeof value === 'string'
+                              ? value.split(' ')[2] || 'N/A'
+                              : 'N/A'
+                            : col.key === 'W/L'
+                              ? value || '-'
+                              : col.key === 'MIN'
+                                ? numericValue === null
+                                  ? 'N/A'
+                                  : Math.floor(numericValue)
+                                : col.key === 'FG_PCT' || col.key === 'FG3_PCT'
+                                  ? numericValue === null
+                                    ? 'N/A'
+                                    : `${(numericValue * 100).toFixed(0)}%`
+                                  : ['PRA', 'PR', 'PA', 'AR'].includes(col.key)
+                                    ? displayValue
+                                    : numericValue === null
+                                      ? 'N/A'
+                                      : numericValue}
                       </td>
                     );
                   })}

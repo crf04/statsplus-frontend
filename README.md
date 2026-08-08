@@ -2,18 +2,18 @@
 
 A React frontend for exploring NBA game-level data through structured filters, natural language queries, and chart-based visualizations. Built to make per-game player and team statistics easier to slice without writing SQL.
 
-**Live app:** [courtai.app](https://courtai.app) *(authentication required)*
+**Live app:** [courtai.app](https://courtai.app) _(authentication required)_
 
 ## Screenshots
 
-*Screenshots and a short walkthrough live in [`docs/assets/`](docs/assets/).*
+_Screenshots and a short walkthrough live in [`docs/assets/`](docs/assets/)._
 
 ## Overview
 
 CourtAI sits in front of an NBA game-log API and gives the same data three ways:
 
 1. **Structured filtering** for users who know exactly what slice they want (player, team, matchup, season, date range, stat thresholds).
-2. **Natural language queries** for plain-English questions like *"Giannis at home since November without Khris Middleton shooting 15+ times"*. The frontend forwards the prompt to a backend endpoint that resolves it into a structured filter set and returns matching game logs.
+2. **Natural language queries** for plain-English questions like _"Giannis at home since November without Khris Middleton shooting 15+ times"_. The frontend forwards the prompt to a backend endpoint that resolves it into a structured filter set and returns matching game logs.
 3. **Player and team profiles** with summaries, rolling averages, opponent breakdowns, and chart-based views of assist patterns, playstyle, shooting zones, and performance trends.
 
 The natural-language path is the one I cared most about — the structured filters are the fallback when the prompt is ambiguous.
@@ -43,7 +43,7 @@ A few decisions worth calling out:
 
 ## Tech Stack
 
-- **Framework:** React 18, Create React App, React Router
+- **Framework:** React 18 and Vite
 - **HTTP:** Axios with a Firebase-auth interceptor
 - **Auth:** Firebase Web SDK
 - **Charts:** Chart.js, react-chartjs-2, Recharts, plus annotation and datalabels plugins
@@ -70,7 +70,7 @@ npm run build      # production build into build/
 
 ### Environment Variables
 
-CRA only exposes browser-side variables prefixed with `REACT_APP_`. See `.env.example` for the full list. The Firebase web config values are public client config by design — the security boundary is Firebase auth rules and the backend's token verification, not these keys.
+The Vite configuration preserves the existing `REACT_APP_*` variables and also accepts equivalent `VITE_*` names. See `.env.example` for the full list. The Firebase web config values are public client config by design — the security boundary is Firebase auth rules and the backend's token verification, not these keys.
 
 ## Backend API
 
@@ -98,7 +98,7 @@ Production is on Vercel, configured with:
 
 CourtAI is a solo project, deployed and maintained as a portfolio piece. The backend lives in a separate (private) repository.
 
-**Known dependency advisories.** GitHub's Dependabot reports a number of vulnerabilities against this repo; the great majority sit inside `react-scripts@5.0.1`'s build toolchain (webpack, svgo, postcss, nth-check, workbox) and do not ship to production. Runtime-shipping deps (axios, lodash, react-router-dom, firebase) are kept on safe versions. A future migration off CRA — most likely to Vite — would clear the build-tool tail.
+**Dependency maintenance.** The frontend uses Vite rather than Create React App, and unused runtime packages have been removed. Run `npm audit` as part of dependency maintenance; remaining advisories should be evaluated against the dependency path and browser bundle rather than ignored solely by severity count.
 
 ## License
 

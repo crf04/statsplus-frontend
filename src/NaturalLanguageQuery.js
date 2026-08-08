@@ -1,21 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, HelpCircle } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import { convertNLToFilters } from './filterUtils';
+import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import './ModernSearch.css';
 
 const sampleQueries = [
-  "LeBron James this year",
-  "Stephen Curry with Jimmy Butler",
-  "Giannis at home since November without Khris Middleton shooting 15+ times",
-  "Kevin Durant without Devin Booker playing 30+ minutes",
-  "Luka last 10 games against top 10 paint defenses"
+  'LeBron James this year',
+  'Stephen Curry with Jimmy Butler',
+  'Giannis at home since November without Khris Middleton shooting 15+ times',
+  'Kevin Durant without Devin Booker playing 30+ minutes',
+  'Luka last 10 games against top 10 paint defenses',
 ];
 
-const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdate, resetToLanding, gameLogsLoading, onLoadingComplete }) => {
+const NaturalLanguageQuery = ({
+  onFiltersApplied,
+  onQueryUpdate,
+  resetToLanding,
+  gameLogsLoading,
+}) => {
   const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,10 +31,11 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   const [hasSearched, setHasSearched] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showPromptingGuide, setShowPromptingGuide] = useState(false);
-  
+
   // Combined loading state: true if either NL query or game logs are loading
   const isLoading = loading || gameLogsLoading;
   const searchRef = useRef(null);
+  const queryRequestRef = useRef({ id: 0, controller: null });
 
   // Close search when clicking outside
   useEffect(() => {
@@ -49,6 +57,9 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   // Reset to landing page when requested by parent
   useEffect(() => {
     if (resetToLanding) {
+      queryRequestRef.current.controller?.abort();
+      queryRequestRef.current = { id: queryRequestRef.current.id + 1, controller: null };
+      setLoading(false);
       setHasSearched(false);
       setQuery('');
       setError('');
@@ -70,11 +81,10 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
   useEffect(() => {
     if (hasSearched || !isAuthenticated) return undefined;
     const id = setInterval(() => {
-      setPlaceholderIdx(i => (i + 1) % sampleQueries.length);
+      setPlaceholderIdx((i) => (i + 1) % sampleQueries.length);
     }, 4000);
     return () => clearInterval(id);
   }, [hasSearched, isAuthenticated]);
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,147 +94,78 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     setError('');
     setLastResult(null);
 
+    queryRequestRef.current.controller?.abort();
+    const requestId = queryRequestRef.current.id + 1;
+    const controller = new AbortController();
+    queryRequestRef.current = { id: requestId, controller };
+
+    const finishLoading = (success) => {
+      if (queryRequestRef.current.id !== requestId) return;
+      setLoading(false);
+      if (success) setHasSearched(true);
+    };
+
     try {
-      const response = await apiClient.post(getApiUrl('NL_QUERY'), {
-        query: query.trim()
-      });
+      const response = await apiClient.post(
+        getApiUrl('NL_QUERY'),
+        {
+          query: query.trim(),
+        },
+        { signal: controller.signal },
+      );
+
+      if (queryRequestRef.current.id !== requestId) return;
 
       const result = response.data;
       setLastResult(result);
 
       // Convert NL result to frontend filter format
       const filters = convertNLToFilters(result);
-      
+
+      // A successful parser response can still contain no usable filters.
+      // Finish the request explicitly so the search UI cannot remain locked.
+      if (Object.keys(filters).length === 0) {
+        setError(
+          'I could not find usable filters in that query. Please try a player or stat filter.',
+        );
+        finishLoading(false);
+        return;
+      }
+
       // Apply filters to the parent component (includes player selection)
       if (onFiltersApplied) {
         // Pass a callback to clear this component's loading state
-        onFiltersApplied(filters, () => {
-          setLoading(false);
-          setHasSearched(true);
-        });
+        const application = onFiltersApplied(filters, finishLoading);
+        // Parent handlers normally resolve after the game-log request and call
+        // finishLoading themselves. This fallback also supports lightweight
+        // embedders that return a promise but do not use the callback seam.
+        if (application && typeof application.then === 'function') {
+          application
+            .then((result) => {
+              if (
+                queryRequestRef.current.id === requestId &&
+                queryRequestRef.current.controller === controller
+              ) {
+                finishLoading(result?.ok === true);
+              }
+            })
+            .catch(() => finishLoading(false));
+        }
+      } else {
+        finishLoading(true);
       }
-      
+
       // Update parent with the successful query
       if (onQueryUpdate) {
         onQueryUpdate(query.trim());
       }
-
     } catch (err) {
+      if (isRequestCancelled(err) || queryRequestRef.current.id !== requestId) return;
       console.error('NL Query Error:', err.response?.status || err.message);
-      setError(err.response?.data?.error || 'Failed to process query. Please try again.');
-      setLoading(false);
+      setError(getRequestErrorMessage(err, 'Failed to process query. Please try again.'));
+      finishLoading(false);
       // Don't set hasSearched to true on error - keep user on landing page to retry
     }
-  };
-
-  const convertNLToFilters = (nlResult) => {
-    const filters = {};
-    
-    // Include player name in filters to avoid separate API call
-    if (nlResult.player_name) {
-      filters.selectedPlayer = nlResult.player_name;
-    }
-    
-    // Map common NL results to backend API format (snake_case)
-    if (nlResult.game_count) {
-      filters.game_filter = nlResult.game_count;
-    }
-    
-    if (nlResult.location) {
-      // Convert "home"/"away" to backend format
-      filters.location_filter = nlResult.location === 'home' ? 'Home' : 
-                               nlResult.location === 'away' ? 'Away' : 'Both';
-    }
-    
-    // Convert players_on/off to backend array format
-    if (nlResult.players_on && nlResult.players_on.length > 0) {
-      filters['players_on[]'] = nlResult.players_on;
-    }
-    
-    if (nlResult.players_off && nlResult.players_off.length > 0) {
-      filters['players_off[]'] = nlResult.players_off;
-    }
-    
-    if (nlResult.season) {
-      filters.season_filter = nlResult.season;
-    }
-
-    if (nlResult.teams_against && nlResult.teams_against.length > 0) {
-      filters['teams_against[]'] = nlResult.teams_against;
-    }
-    
-    if (nlResult.rank_filter && nlResult.rank_filter.length > 0) {
-      filters['rank_filter[]'] = nlResult.rank_filter;
-    }
-
-    // Handle minutes filter - convert to comma-separated string format for (min, max) tuple
-    if (nlResult.minutes_filter) {
-      if (Array.isArray(nlResult.minutes_filter) && nlResult.minutes_filter.length === 2) {
-        // If it's already an array with 2 elements, join with comma for (min, max) format
-        filters.minutes_filter = nlResult.minutes_filter.join(',');
-      } else if (typeof nlResult.minutes_filter === 'string') {
-        // If it's already a string, use as is
-        filters.minutes_filter = nlResult.minutes_filter;
-      } else if (typeof nlResult.minutes_filter === 'object' && nlResult.minutes_filter.min !== undefined && nlResult.minutes_filter.max !== undefined) {
-        // If it's an object with min/max properties, convert to (min, max) format
-        filters.minutes_filter = `${nlResult.minutes_filter.min},${nlResult.minutes_filter.max}`;
-      }
-    }
-
-    // Handle self filters - convert SelfFilter objects to backend format
-    if (nlResult.self_filters && Array.isArray(nlResult.self_filters)) {
-      // Convert SelfFilter objects to the old format that the route expects
-      const selfFiltersDict = {};
-      
-      nlResult.self_filters.forEach(filter => {
-        if (filter && filter.stat_column && filter.operator && filter.value !== undefined) {
-          const statName = filter.stat_column;
-          
-          if (filter.operator === 'between' && filter.value2 !== undefined) {
-            // Range filter: between value and value2
-            selfFiltersDict[statName] = [filter.value, filter.value2];
-          } else if (filter.operator === 'gte') {
-            // Greater than or equal: use value as minimum, set high maximum
-            selfFiltersDict[statName] = [filter.value, 999];
-          } else if (filter.operator === 'gt') {
-            // Greater than: use value+1 as minimum, set high maximum
-            selfFiltersDict[statName] = [filter.value + 1, 999];
-          } else if (filter.operator === 'lte') {
-            // Less than or equal: use 0 as minimum, value as maximum
-            selfFiltersDict[statName] = [0, filter.value];
-          } else if (filter.operator === 'lt') {
-            // Less than: use 0 as minimum, value-1 as maximum
-            selfFiltersDict[statName] = [0, filter.value - 1];
-          } else if (filter.operator === 'eq') {
-            // Equal: use value as both minimum and maximum
-            selfFiltersDict[statName] = [filter.value, filter.value];
-          }
-        }
-      });
-      
-      // Convert the dictionary to the format expected by the route
-      Object.entries(selfFiltersDict).forEach(([statName, [minVal, maxVal]]) => {
-        filters[`self_filters[${statName}]`] = `${minVal},${maxVal}`;
-      });
-    } else if (nlResult.self_filters && typeof nlResult.self_filters === 'object' && !Array.isArray(nlResult.self_filters)) {
-      // Handle legacy format (direct object)
-      Object.entries(nlResult.self_filters).forEach(([statName, value]) => {
-        if (value !== null && value !== undefined) {
-          if (Array.isArray(value)) {
-            // If it's an array, join with comma
-            filters[`self_filters[${statName}]`] = value.join(',');
-          } else if (typeof value === 'object' && value.min !== undefined && value.max !== undefined) {
-            // If it's an object with min/max properties
-            filters[`self_filters[${statName}]`] = `${value.min},${value.max}`;
-          } else {
-            // If it's a single value, convert to string
-            filters[`self_filters[${statName}]`] = String(value);
-          }
-        }
-      });
-    }
-
-    return filters;
   };
 
   const getConfidenceColor = (confidence) => {
@@ -264,14 +205,20 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             </h1>
             <p className="landing-tagline">NBA game-log analytics, asked in plain English.</p>
           </div>
-          
+
           <div className="landing-search-wrapper">
             <Form onSubmit={handleSubmit} className="landing-search-form">
               <div className="landing-input-wrapper">
                 <Search className={`landing-search-icon ${isLoading ? 'loading' : ''}`} size={22} />
                 <Form.Control
                   type="text"
-                  placeholder={isLoading ? "Processing query..." : isAuthenticated ? sampleQueries[placeholderIdx] : "Sign in to enter a query..."}
+                  placeholder={
+                    isLoading
+                      ? 'Processing query...'
+                      : isAuthenticated
+                        ? sampleQueries[placeholderIdx]
+                        : 'Sign in to enter a query...'
+                  }
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading || !isAuthenticated}
@@ -285,33 +232,30 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 >
                   <HelpCircle size={18} />
                 </button>
-                <Button 
+                <Button
                   type="submit"
                   disabled={isLoading || !query.trim() || !isAuthenticated}
                   className="landing-search-button"
                 >
-                  {isLoading ? (
-                    <div className="custom-spinner"></div>
-                  ) : (
-                    <Brain size={18} />
-                  )}
+                  {isLoading ? <div className="custom-spinner"></div> : <Brain size={18} />}
                 </Button>
               </div>
             </Form>
-            
           </div>
 
           <div className="landing-samples">
             <div className="landing-samples-label">Try a query</div>
             <div className="landing-samples-grid">
-              {[sampleQueries[0], sampleQueries[3], sampleQueries[2]].map((sample, index) => (
-                <div
-                  key={index}
+              {[sampleQueries[0], sampleQueries[3], sampleQueries[2]].map((sample) => (
+                <button
+                  key={sample}
+                  type="button"
                   className={`landing-sample-pill ${isLoading ? 'loading-state' : ''}`}
-                  onClick={() => !isLoading && setQuery(sample)}
+                  onClick={() => setQuery(sample)}
+                  disabled={isLoading || !isAuthenticated}
                 >
                   {sample}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -325,8 +269,8 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
         </div>
 
         {/* Prompting Guide Modal */}
-        <Modal 
-          show={showPromptingGuide} 
+        <Modal
+          show={showPromptingGuide}
           onHide={() => setShowPromptingGuide(false)}
           size="lg"
           backdrop="static"
@@ -336,7 +280,6 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <Modal.Title style={modalStyles.modalTitle}>📝 Prompting Guide</Modal.Title>
           </Modal.Header>
           <Modal.Body style={modalStyles.modalBody}>
-            
             {/* Getting Started Section */}
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>🚀 Getting Started</h4>
@@ -346,51 +289,61 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                     <div style={modalStyles.stepNumber}>1</div>
                     <div style={modalStyles.stepContent}>
                       <h5 style={modalStyles.stepTitle}>Type Your Query</h5>
-                      <p style={modalStyles.stepText}>Enter any question about NBA stats in natural language</p>
+                      <p style={modalStyles.stepText}>
+                        Enter any question about NBA stats in natural language
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div style={modalStyles.startStep}>
                     <div style={modalStyles.stepNumber}>2</div>
                     <div style={modalStyles.stepContent}>
                       <h5 style={modalStyles.stepTitle}>Click Search</h5>
-                      <p style={modalStyles.stepText}>Hit the brain icon or press Enter to analyze your query</p>
+                      <p style={modalStyles.stepText}>
+                        Hit the brain icon or press Enter to analyze your query
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div style={modalStyles.startStep}>
                     <div style={modalStyles.stepNumber}>3</div>
                     <div style={modalStyles.stepContent}>
                       <h5 style={modalStyles.stepTitle}>Explore Results</h5>
-                      <p style={modalStyles.stepText}>View detailed stats, charts, and game logs instantly</p>
+                      <p style={modalStyles.stepText}>
+                        View detailed stats, charts, and game logs instantly
+                      </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div style={modalStyles.quickTip}>
                   <span style={modalStyles.quickTipIcon}>💡</span>
                   <span style={modalStyles.quickTipText}>
-                    Try the sample queries below or think about your favorite player's upcoming matchups!
+                    Try the sample queries below or think about your favorite player's upcoming
+                    matchups!
                   </span>
                 </div>
               </div>
             </div>
 
-
             {/* Player Queries Section */}
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>🏀 Player Queries</h4>
               <div style={modalStyles.content}>
-                <p style={modalStyles.introText}>Pick a player and you can see an overview of their stats.</p>
-                
+                <p style={modalStyles.introText}>
+                  Pick a player and you can see an overview of their stats.
+                </p>
+
                 <div style={modalStyles.exampleBlock}>
                   <p style={modalStyles.label}>Basic Example:</p>
                   <code style={modalStyles.exampleCode}>"Steph Curry this year"</code>
                   <p style={modalStyles.description}>See stats for the 2024-2025 season</p>
                 </div>
 
-                <p style={modalStyles.highlight}>The cool thing is: you can enter much more complex queries with filters.</p>
-                
+                <p style={modalStyles.highlight}>
+                  The cool thing is: you can enter much more complex queries with filters.
+                </p>
+
                 <div style={modalStyles.exampleBlock}>
                   <p style={modalStyles.label}>Try These:</p>
                   <div style={modalStyles.exampleList}>
@@ -400,96 +353,162 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                   </div>
                 </div>
 
-                <p>You can remove outliers by adding filters like <code style={modalStyles.inlineCode}>"playing 30+ minutes"</code>.</p>
-                
+                <p>
+                  You can remove outliers by adding filters like{' '}
+                  <code style={modalStyles.inlineCode}>"playing 30+ minutes"</code>.
+                </p>
+
                 <div style={modalStyles.advancedBlock}>
                   <p style={modalStyles.advancedTitle}>📈 Advanced Scenario:</p>
-                  <p>Let's say the Hawks are playing without Trae Young against the Wizards. We can query games for Jalen Johnson specifically without Trae Young:</p>
-                  <code style={modalStyles.exampleCode}>"Jalen Johnson games without Trae Young"</code>
-                  
-                  <p>Once you get the results, you can even see the Wizards defensive stats. Since they're a poor defense, you can further filter:</p>
-                  <code style={modalStyles.exampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses playing 25+ minutes"</code>
+                  <p>
+                    Let's say the Hawks are playing without Trae Young against the Wizards. We can
+                    query games for Jalen Johnson specifically without Trae Young:
+                  </p>
+                  <code style={modalStyles.exampleCode}>
+                    "Jalen Johnson games without Trae Young"
+                  </code>
+
+                  <p>
+                    Once you get the results, you can even see the Wizards defensive stats. Since
+                    they're a poor defense, you can further filter:
+                  </p>
+                  <code style={modalStyles.exampleCode}>
+                    "Trae Young games without Jalen Johnson against bottom 10 defenses playing 25+
+                    minutes"
+                  </code>
                 </div>
               </div>
             </div>
 
-            
             {/* Pro Tips Section */}
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>💡 Pro Tips</h4>
               <div style={modalStyles.content}>
-                <p style={modalStyles.introText}>Try to phrase queries in structured formats for better understanding:</p>
-                
+                <p style={modalStyles.introText}>
+                  Try to phrase queries in structured formats for better understanding:
+                </p>
+
                 <div style={modalStyles.tipsList}>
                   <div style={modalStyles.tip}>
                     <span style={modalStyles.keyword}>"last"</span>
-                    <span style={modalStyles.tipText}>Use if you want to see the last 10 games</span>
+                    <span style={modalStyles.tipText}>
+                      Use if you want to see the last 10 games
+                    </span>
                   </div>
-                  
+
                   <div style={modalStyles.tip}>
                     <span style={modalStyles.keyword}>"since"</span>
-                    <span style={modalStyles.tipText}>Use if you want to see games since a certain date</span>
+                    <span style={modalStyles.tipText}>
+                      Use if you want to see games since a certain date
+                    </span>
                   </div>
-                  
+
                   <div style={modalStyles.tip}>
                     <span style={modalStyles.keyword}>"without"</span>
-                    <span style={modalStyles.tipText}>Use if you want to see games without a certain player</span>
+                    <span style={modalStyles.tipText}>
+                      Use if you want to see games without a certain player
+                    </span>
                   </div>
-                  
+
                   <div style={modalStyles.tip}>
                     <span style={modalStyles.keyword}>"with"</span>
-                    <span style={modalStyles.tipText}>Use if you want to see games with a certain player</span>
+                    <span style={modalStyles.tipText}>
+                      Use if you want to see games with a certain player
+                    </span>
                   </div>
-                  
+
                   <div style={modalStyles.tip}>
                     <span style={modalStyles.keyword}>"against"</span>
-                    <span style={modalStyles.tipText}>Use if you want to see games against an opponent filter</span>
+                    <span style={modalStyles.tipText}>
+                      Use if you want to see games against an opponent filter
+                    </span>
                   </div>
                 </div>
-                
+
                 <div style={modalStyles.opponentFiltersSection}>
                   <h5 style={modalStyles.subSectionTitle}>🛡️ Opponent Filter Guide</h5>
                   <p style={modalStyles.filterNote}>
-                    Use <code style={modalStyles.inlineCode}>"top"</code> for best defenses or <code style={modalStyles.inlineCode}>"bottom"</code> for worst defenses. 
+                    Use <code style={modalStyles.inlineCode}>"top"</code> for best defenses or{' '}
+                    <code style={modalStyles.inlineCode}>"bottom"</code> for worst defenses.
                     Negative numbers = better matchups for the player.
                   </p>
-                  
+
                   <div style={modalStyles.filterGrid}>
                     <div style={modalStyles.filterCategory}>
                       <h6 style={modalStyles.categoryTitle}>📊 General Defense</h6>
                       <div style={modalStyles.filterList}>
-                        <span style={modalStyles.filterItem}><strong>OPP_PTS:</strong> overall defense</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_REB:</strong> rebounds allowed</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_AST:</strong> assists allowed</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_STOCKS:</strong> steals+blocks allowed</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_FTA:</strong> fouls (FT attempts)</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_TOV:</strong> turnovers forced</span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_PTS:</strong> overall defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_REB:</strong> rebounds allowed
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_AST:</strong> assists allowed
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_STOCKS:</strong> steals+blocks allowed
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_FTA:</strong> fouls (FT attempts)
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_TOV:</strong> turnovers forced
+                        </span>
                       </div>
                     </div>
-                    
+
                     <div style={modalStyles.filterCategory}>
                       <h6 style={modalStyles.categoryTitle}>🎯 Shot Type Defense</h6>
                       <div style={modalStyles.filterList}>
-                        <span style={modalStyles.filterItem}><strong>C&S PTS:</strong> catch-and-shoot defense</span>
-                        <span style={modalStyles.filterItem}><strong>PU PTS:</strong> pull-up shot defense</span>
-                        <span style={modalStyles.filterItem}><strong>Less Than 10 ft:</strong> paint protection</span>
-                        <span style={modalStyles.filterItem}><strong>OPP_FG3M:</strong> threes allowed</span>
-                        <span style={modalStyles.filterItem}><strong>C&S 3A:</strong> catch-shoot 3PT attempts</span>
-                        <span style={modalStyles.filterItem}><strong>PU 2s/3s:</strong> pull-up defense</span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>C&S PTS:</strong> catch-and-shoot defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>PU PTS:</strong> pull-up shot defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Less Than 10 ft:</strong> paint protection
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OPP_FG3M:</strong> threes allowed
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>C&S 3A:</strong> catch-shoot 3PT attempts
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>PU 2s/3s:</strong> pull-up defense
+                        </span>
                       </div>
                     </div>
-                    
+
                     <div style={modalStyles.filterCategory}>
                       <h6 style={modalStyles.categoryTitle}>⚡ Play Type Defense</h6>
                       <div style={modalStyles.filterList}>
-                        <span style={modalStyles.filterItem}><strong>Transition:</strong> fast-break defense</span>
-                        <span style={modalStyles.filterItem}><strong>Isolation:</strong> iso defense</span>
-                        <span style={modalStyles.filterItem}><strong>Spotup:</strong> spot-up defense</span>
-                        <span style={modalStyles.filterItem}><strong>Handoff:</strong> handoff defense</span>
-                        <span style={modalStyles.filterItem}><strong>OffScreen:</strong> off-screen defense</span>
-                        <span style={modalStyles.filterItem}><strong>Postup:</strong> post-up defense</span>
-                        <span style={modalStyles.filterItem}><strong>PRBallHandler/PRRollMan:</strong> pick-roll defense</span>
-                        <span style={modalStyles.filterItem}><strong>Cut:</strong> cutting defense</span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Transition:</strong> fast-break defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Isolation:</strong> iso defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Spotup:</strong> spot-up defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Handoff:</strong> handoff defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>OffScreen:</strong> off-screen defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Postup:</strong> post-up defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>PRBallHandler/PRRollMan:</strong> pick-roll defense
+                        </span>
+                        <span style={modalStyles.filterItem}>
+                          <strong>Cut:</strong> cutting defense
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -501,13 +520,25 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <div style={modalStyles.section}>
               <h4 style={modalStyles.sectionTitle}>⚡ Advanced Examples</h4>
               <div style={modalStyles.content}>
-                <p style={modalStyles.introText}>Complex multi-filter queries for detailed analysis:</p>
-                
+                <p style={modalStyles.introText}>
+                  Complex multi-filter queries for detailed analysis:
+                </p>
+
                 <div style={modalStyles.compactExampleList}>
-                  <code style={modalStyles.compactExampleCode}>"LeBron James games without Anthony Davis and with Austin Reaves last 15 games"</code>
-                  <code style={modalStyles.compactExampleCode}>"Trae Young games without Jalen Johnson against bottom 10 defenses since January 1st"</code>
-                  <code style={modalStyles.compactExampleCode}>"Giannis games at home with 10+ FGA playing 30+ minutes"</code>
-                  <code style={modalStyles.compactExampleCode}>"Anthony Davis games with Kyrie Irving and Klay Thompson against bottom 10 paint defenses"</code>
+                  <code style={modalStyles.compactExampleCode}>
+                    "LeBron James games without Anthony Davis and with Austin Reaves last 15 games"
+                  </code>
+                  <code style={modalStyles.compactExampleCode}>
+                    "Trae Young games without Jalen Johnson against bottom 10 defenses since January
+                    1st"
+                  </code>
+                  <code style={modalStyles.compactExampleCode}>
+                    "Giannis games at home with 10+ FGA playing 30+ minutes"
+                  </code>
+                  <code style={modalStyles.compactExampleCode}>
+                    "Anthony Davis games with Kyrie Irving and Klay Thompson against bottom 10 paint
+                    defenses"
+                  </code>
                 </div>
               </div>
             </div>
@@ -519,11 +550,10 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
                 <p>Coming soon!</p>
               </div>
             </div>
-
           </Modal.Body>
           <Modal.Footer style={modalStyles.modalFooter}>
-            <Button 
-              variant="outline-warning" 
+            <Button
+              variant="outline-warning"
               onClick={() => setShowPromptingGuide(false)}
               style={modalStyles.closeButton}
             >
@@ -531,7 +561,6 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             </Button>
           </Modal.Footer>
         </Modal>
-
       </div>
     );
   }
@@ -541,7 +570,7 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
     <div className="compact-search-wrapper" ref={searchRef}>
       <div className="compact-header-controls">
         {!isExpanded ? (
-          <button 
+          <button
             className="search-toggle-button"
             onClick={() => setIsExpanded(true)}
             aria-label="Open search"
@@ -557,25 +586,27 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
               <Search className={`compact-search-icon ${isLoading ? 'loading' : ''}`} size={20} />
               <Form.Control
                 type="text"
-                placeholder={isLoading ? "Processing query..." : isAuthenticated ? "Ask about your favorite player" : "Login to enter a query"}
+                placeholder={
+                  isLoading
+                    ? 'Processing query...'
+                    : isAuthenticated
+                      ? 'Ask about your favorite player'
+                      : 'Login to enter a query'
+                }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={isLoading || !isAuthenticated}
                 className={`compact-search-input ${isLoading ? 'loading' : ''}`}
                 autoFocus
               />
-              <Button 
+              <Button
                 type="submit"
                 disabled={isLoading || !query.trim() || !isAuthenticated}
                 className="compact-search-button"
               >
-                {isLoading ? (
-                  <div className="custom-spinner-compact"></div>
-                ) : (
-                  <Brain size={16} />
-                )}
+                {isLoading ? <div className="custom-spinner-compact"></div> : <Brain size={16} />}
               </Button>
-              <Button 
+              <Button
                 type="button"
                 onClick={() => setIsExpanded(false)}
                 className="compact-close-button"
@@ -597,7 +628,9 @@ const NaturalLanguageQuery = ({ onFiltersApplied, onPlayerSelected, onQueryUpdat
             <div className="compact-results">
               <div className="compact-results-header">
                 <span className="compact-results-title">Query Understanding</span>
-                <div className={`compact-confidence-badge confidence-${getConfidenceColor(lastResult.confidence)}`}>
+                <div
+                  className={`compact-confidence-badge confidence-${getConfidenceColor(lastResult.confidence)}`}
+                >
                   {getConfidenceIcon(lastResult.confidence)}
                   <span>{Math.round(lastResult.confidence * 100)}%</span>
                 </div>

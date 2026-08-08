@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Table, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
+const ArchetypeGameLogs = ({ gameLogs }) => {
   const [showAll, setShowAll] = useState(false);
 
   if (!gameLogs || !Array.isArray(gameLogs) || gameLogs.length === 0) {
-    return <Alert variant="warning">No archetype game logs available for the selected player and team.</Alert>;
+    return (
+      <Alert variant="warning">
+        No archetype game logs available for the selected player and team.
+      </Alert>
+    );
   }
 
   // Function to get the tooltip showing percentage change
   const renderTooltip = (percentage) => (
-    <Tooltip>{percentage !== undefined ? `${percentage.toFixed(1)}% change` : "No data"}</Tooltip>
+    <Tooltip>{percentage !== undefined ? `${percentage.toFixed(1)}% change` : 'No data'}</Tooltip>
   );
 
   // Function to determine text color based on percentage difference
@@ -19,7 +23,7 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
 
     const red = percentage < 0 ? 255 : Math.max(0, 255 - Math.abs(percentage) * 5);
     const green = percentage > 0 ? 255 : Math.max(0, 255 - Math.abs(percentage) * 5);
-    return { color: `rgb(${red}, ${green}, 0)`, fontWeight: "bold" };
+    return { color: `rgb(${red}, ${green}, 0)`, fontWeight: 'bold' };
   };
 
   const renderGameLogRows = (log) => {
@@ -40,20 +44,21 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
 
     const perMinuteRow = (
       <tr key={`${log.PLAYER_NAME}-${log.GAME_DATE}-per-minute`} className="text-muted">
-        <td colSpan="2" style={{ fontSize: "14px", fontWeight: "bold" }}>Per 36 Min</td>
+        <td colSpan="2" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+          Per 36 Min
+        </td>
         <td>-</td>
-        {['FGM/36MIN', 'FGA/36MIN', 'FG3M/36MIN', 'FG3A/36MIN', 'FTA/36MIN', 'PTS/36MIN'].map((stat) => (
-          <td key={stat}>
-            <OverlayTrigger
-              placement="top"
-              overlay={renderTooltip(log[`${stat}_DIFF`] * 100)}
-            >
-              <span style={getColorStyle(log[`${stat}_DIFF`] * 100)}>
-                {(log[stat] || 0).toFixed(2)}
-              </span>
-            </OverlayTrigger>
-          </td>
-        ))}
+        {['FGM/36MIN', 'FGA/36MIN', 'FG3M/36MIN', 'FG3A/36MIN', 'FTA/36MIN', 'PTS/36MIN'].map(
+          (stat) => (
+            <td key={stat}>
+              <OverlayTrigger placement="top" overlay={renderTooltip(log[`${stat}_DIFF`] * 100)}>
+                <span style={getColorStyle(log[`${stat}_DIFF`] * 100)}>
+                  {(log[stat] || 0).toFixed(2)}
+                </span>
+              </OverlayTrigger>
+            </td>
+          ),
+        )}
       </tr>
     );
 
@@ -90,16 +95,11 @@ const ArchetypeGameLogs = ({ selectedPlayer, selectedTeam, gameLogs }) => {
               <th>TOV</th>
             </tr>
           </thead>
-          <tbody>
-            {gameLogs.filter(log => log.MIN > 10).flatMap(renderGameLogRows)}
-          </tbody>
+          <tbody>{gameLogs.filter((log) => log.MIN > 10).flatMap(renderGameLogRows)}</tbody>
         </Table>
       </div>
       {gameLogs.length > 10 && (
-        <button 
-          onClick={() => setShowAll(!showAll)} 
-          className="btn btn-link mt-2"
-        >
+        <button onClick={() => setShowAll(!showAll)} className="btn btn-link mt-2">
           {showAll ? 'Show Less' : 'Show All'}
         </button>
       )}

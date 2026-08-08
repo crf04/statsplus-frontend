@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Card, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
@@ -6,6 +6,7 @@ import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
+import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
 
 const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
@@ -13,54 +14,72 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
   const fetchProfileData = useCallback(() => {
+    const requestId = ++requestIdRef.current;
+
     if (selectedPlayer !== 'None') {
       setLoading(true);
       setError(null);
 
       const playerRequest = apiClient.get(getApiUrl('PLAYER_PROFILE'), {
-        params: { 
+        params: {
           player_name: selectedPlayer,
           category: selectedProfile,
-          opp_team: selectedTeam
-        }
+          opp_team: selectedTeam,
+        },
       });
 
-      const teamRequest = selectedTeam ? apiClient.get(getApiUrl('TEAM_STATS'), {
-        params: {
-          category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
-          team: selectedTeam
-        }
-      }) : Promise.resolve({ data: null });
+      const teamRequest = selectedTeam
+        ? apiClient.get(getApiUrl('TEAM_STATS'), {
+            params: {
+              category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
+              team: selectedTeam,
+            },
+          })
+        : Promise.resolve({ data: null });
 
       Promise.all([playerRequest, teamRequest])
         .then(([playerResponse, teamResponse]) => {
+          if (requestId !== requestIdRef.current) return;
+
           if (playerResponse.data && Object.keys(playerResponse.data).length > 0) {
             setPlayerData(playerResponse.data);
           } else {
+            setPlayerData(null);
             setError('No data available for this player');
           }
 
           if (teamResponse.data && Object.keys(teamResponse.data).length > 0) {
             setTeamData(teamResponse.data);
           } else if (selectedTeam) {
-            setError(prevError => prevError ? `${prevError}. No data available for this team` : 'No data available for this team');
+            setTeamData(null);
+            setError((prevError) =>
+              prevError
+                ? `${prevError}. No data available for this team`
+                : 'No data available for this team',
+            );
+          } else {
+            setTeamData(null);
           }
         })
-        .catch(error => {
+        .catch((error) => {
+          if (requestId !== requestIdRef.current) return;
           console.error('Error fetching data:', error.response?.status || error.message);
+          setPlayerData(null);
+          setTeamData(null);
           setError('Failed to fetch data. Please try again.');
         })
         .finally(() => {
+          if (requestId !== requestIdRef.current) return;
           setLoading(false);
-          if (!selectedTeam) {
-            setTeamData(null);
-          }
         });
     } else {
       setPlayerData(null);
       setTeamData(null);
+      setLoading(false);
+      setError(null);
     }
   }, [selectedPlayer, selectedTeam, selectedProfile]);
 
@@ -78,7 +97,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     return (
       <Row>
         <Col md={12}>
-          <h6 className="subcategory-heading no-border">{selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}</h6>
+          <h6 className="subcategory-heading no-border">
+            {selectedPlayer}'s Assist Profile vs {selectedTeam || 'All'}
+          </h6>
           <AssistProfileChart assistData={assistData} teamData={teamData} />
           <TwoThreeAssistChart assistData={assistData} teamData={teamData} />
         </Col>
@@ -93,15 +114,19 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     const zoneData = playerData;
 
     const zones = [
-      "Above the Break 3",
-      "In The Paint (Non-RA)",
-      "Left Corner 3",
-      "Mid-Range",
-      "Restricted Area",
-      "Right Corner 3"
+      'Above the Break 3',
+      'In The Paint (Non-RA)',
+      'Left Corner 3',
+      'Mid-Range',
+      'Restricted Area',
+      'Right Corner 3',
     ];
 
-    const sortedZones = zones.sort((a, b) => (zoneData[`${b}_PTS`] || 0) - (zoneData[`${a}_PTS`] || 0));
+    const sortedZones = [...zones].sort(
+      (a, b) =>
+        (toFiniteNumber(zoneData[`${b}_PTS`], 0) || 0) -
+        (toFiniteNumber(zoneData[`${a}_PTS`], 0) || 0),
+    );
 
     return (
       <table className="table table-hover">
@@ -122,10 +147,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
               <td>{zone}</td>
               <td>{zoneData[`${zone}_FGA`]}</td>
               <td>{zoneData[`${zone}_FGM`]}</td>
-              <td>{(zoneData[`${zone}_FG_PCT`] * 100).toFixed(1)}%</td>
-              <td>{zoneData[`${zone}_PTS`] ? zoneData[`${zone}_PTS`].toFixed(2) : 'N/A'}</td>
-              <td>{zoneData[`${zone}_PTS%`] ? zoneData[`${zone}_PTS%`].toFixed(2) : 'N/A'}%</td>
-              <td>{zoneData[`${zone}_PTS%+`] ? zoneData[`${zone}_PTS%+`].toFixed(2) : 'N/A'}</td>
+              <td>{formatPercent(zoneData[`${zone}_FG_PCT`], 1)}</td>
+              <td>{formatNumber(zoneData[`${zone}_PTS`], 2)}</td>
+              <td>
+                {formatNumber(zoneData[`${zone}_PTS%`], 2)}
+                {toFiniteNumber(zoneData[`${zone}_PTS%`]) === null ? '' : '%'}
+              </td>
+              <td>{formatNumber(zoneData[`${zone}_PTS%+`], 2)}</td>
             </tr>
           ))}
         </tbody>
@@ -179,34 +207,36 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
       </table>
     );
   };
-  
+
   const renderContent = () => {
     if (loading) {
       return <p>Loading data...</p>;
     }
-  
+
     if (error) {
       return <p className="text-danger">{error}</p>;
     }
-  
+
     switch (selectedProfile) {
       case 'Playtypes':
         return playerData ? (
           <div style={{ width: '100%', height: '500px' }}>
-            <h6 className="subcategory-heading no-border">{selectedPlayer} vs {selectedTeam || 'All'}</h6>
+            <h6 className="subcategory-heading no-border">
+              {selectedPlayer} vs {selectedTeam || 'All'}
+            </h6>
             <PlaystyleComparisonChart playerData={playerData} teamData={teamData} />
           </div>
-        ) : <p>No player data available</p>;
+        ) : (
+          <p>No player data available</p>
+        );
       case 'assists':
         return renderAssistProfile();
       case 'Archetype':
         return playerData ? (
-          <ArchetypeGameLogs 
-            selectedPlayer={selectedPlayer} 
-            selectedTeam={selectedTeam}
-            gameLogs={playerData}
-          />
-        ) : <p>No archetype data available</p>;
+          <ArchetypeGameLogs gameLogs={playerData} />
+        ) : (
+          <p>No archetype data available</p>
+        );
       case 'Shooting Type':
         return renderShootingTypeProfile();
       case 'Zone Shooting':
@@ -217,17 +247,17 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   };
   const handleSelectedProfile = (profile) => {
     setSelectedProfile(profile);
-  }
+  };
 
   return (
-            <Card className="dark-card">
+    <Card className="dark-card">
       <Card.Body>
         <h4 className="mb-2">Player Profile</h4>
         <div className="category-toggles-wrapper">
-          <ToggleButtonGroup 
-            type="radio" 
-            name="player-profile" 
-            value={selectedProfile} 
+          <ToggleButtonGroup
+            type="radio"
+            name="player-profile"
+            value={selectedProfile}
             onChange={handleSelectedProfile}
             className="per36-toggle-group"
           >

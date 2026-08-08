@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -16,18 +16,20 @@ const UserProfile = () => {
     if (user.displayName) {
       return user.displayName
         .split(' ')
-        .map(name => name.charAt(0).toUpperCase())
+        .map((name) => name.charAt(0).toUpperCase())
         .slice(0, 2)
         .join('');
     }
-    
+
     // Fallback to email initials
     if (user.email) {
       const emailParts = user.email.split('@')[0];
-      return emailParts.charAt(0).toUpperCase() + 
-             (emailParts.length > 1 ? emailParts.charAt(1).toUpperCase() : '');
+      return (
+        emailParts.charAt(0).toUpperCase() +
+        (emailParts.length > 1 ? emailParts.charAt(1).toUpperCase() : '')
+      );
     }
-    
+
     return 'U';
   };
 
@@ -65,18 +67,18 @@ const UserProfile = () => {
             fontWeight: '600',
             border: '2px solid rgba(255, 255, 255, 0.4)',
             flexShrink: 0,
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
           }}
         >
           {initials}
         </div>
-        
-        <span 
+
+        <span
           style={{
             color: 'white',
             fontSize: '14px',
             fontWeight: '500',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
           }}
         >
           {displayName}

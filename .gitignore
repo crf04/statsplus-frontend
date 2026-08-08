@@ -11,6 +11,7 @@
 
 # production
 /build
+/dist
 
 # local agent / editor tooling
 .claude/

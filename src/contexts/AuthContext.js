@@ -1,10 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged, 
-  getIdToken 
-} from 'firebase/auth';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { signInWithPopup, signOut, onAuthStateChanged, getIdToken } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
 
 // Create the Auth Context
@@ -28,6 +23,12 @@ export function AuthProvider({ children }) {
   // Sign in with Google
   const signInWithGoogle = async () => {
     try {
+      if (!auth || !googleProvider) {
+        const configurationError = new Error('Firebase authentication is not configured.');
+        setError(configurationError.message);
+        throw configurationError;
+      }
+
       setError(null);
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
@@ -45,6 +46,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       setError(null);
+      if (!auth) return;
       await signOut(auth);
     } catch (error) {
       console.error('Sign-out error:', error);
@@ -68,10 +70,26 @@ export function AuthProvider({ children }) {
 
   // Listen for authentication state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    if (!auth) {
+      setCurrentUser(null);
       setLoading(false);
-    });
+      return undefined;
+    }
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        setCurrentUser(user);
+        setLoading(false);
+        setError(null);
+      },
+      (authError) => {
+        console.error('Authentication state error:', authError);
+        setCurrentUser(null);
+        setLoading(false);
+        setError(authError.message || 'Unable to determine authentication state.');
+      },
+    );
 
     return unsubscribe;
   }, []);
@@ -83,12 +101,8 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     logout,
     getToken,
-    isAuthenticated: !!currentUser
+    isAuthenticated: !!currentUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

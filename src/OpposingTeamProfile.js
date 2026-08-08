@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Form, Row, Col, Table as BSTable } from 'react-bootstrap';
 import { apiClient } from './config';
 import { Bar } from 'react-chartjs-2';
 import { RankCube } from './utils';
 import { getApiUrl } from './config';
+import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 
 const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
   const [selectedCategory, setSelectedCategory] = useState('Traditional');
@@ -11,8 +12,11 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
   const [dateFilter, setDateFilter] = useState('');
   const [debouncedDateFilter, setDebouncedDateFilter] = useState('');
   const dateTimeoutRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const fetchTeamStats = useCallback(() => {
+    const requestId = ++requestIdRef.current;
+
     if (selectedTeam && selectedCategory) {
       const endpoint = getApiUrl('TEAM_STATS');
       apiClient
@@ -24,6 +28,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
           },
         })
         .then((response) => {
+          if (requestId !== requestIdRef.current) return;
           if (response.data) {
             setTeamStats(response.data);
           } else {
@@ -32,7 +37,11 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
           }
         })
         .catch((error) => {
-          console.error('There was an error fetching the team stats:', error.response?.status || error.message);
+          if (requestId !== requestIdRef.current) return;
+          console.error(
+            'There was an error fetching the team stats:',
+            error.response?.status || error.message,
+          );
           setTeamStats(null);
         });
     } else {
@@ -87,7 +96,8 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
       return [];
     }
 
-    return parsedData.map((item) => {
+    return parsedData.map((rawItem = {}) => {
+      const item = rawItem || {};
       // Rename shooting types to shorter versions
       let shootingType = item.ShootingType || 'Unknown';
       if (shootingType === 'Catch and Shoot') {
@@ -100,19 +110,19 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
 
       return {
         ShootingType: shootingType,
-        PTS: item.PTS.toFixed(1),
+        PTS: formatNumber(item.PTS, 1),
         PTS_RANK: item.PTS_RANK,
         PTS_vs_avg_pct: item.PTS_vs_avg_pct,
-        FG2A: item.FG2A.toFixed(1),
+        FG2A: formatNumber(item.FG2A, 1),
         FG2A_RANK: item.FG2A_RANK,
         FG2A_vs_avg_pct: item.FG2A_vs_avg_pct,
-        FG2M: item.FG2M.toFixed(1),
+        FG2M: formatNumber(item.FG2M, 1),
         FG2M_RANK: item.FG2M_RANK,
         FG2M_vs_avg_pct: item.FG2M_vs_avg_pct,
-        FG3A: item.FG3A.toFixed(1),
+        FG3A: formatNumber(item.FG3A, 1),
         FG3A_RANK: item.FG3A_RANK,
         FG3A_vs_avg_pct: item.FG3A_vs_avg_pct,
-        FG3M: item.FG3M.toFixed(1),
+        FG3M: formatNumber(item.FG3M, 1),
         FG3M_RANK: item.FG3M_RANK,
         FG3M_vs_avg_pct: item.FG3M_vs_avg_pct,
       };
@@ -138,9 +148,21 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
         <BSTable striped bordered hover size="sm" style={{ minWidth: '600px' }}>
           <thead>
             <tr>
-              <th style={{ minWidth: '80px', position: 'sticky', left: 0, backgroundColor: 'var(--bs-table-bg)', zIndex: 1 }}>Type</th>
+              <th
+                style={{
+                  minWidth: '80px',
+                  position: 'sticky',
+                  left: 0,
+                  backgroundColor: 'var(--bs-table-bg)',
+                  zIndex: 1,
+                }}
+              >
+                Type
+              </th>
               {statPairs.map(({ value }) => (
-                <th key={value} style={{ minWidth: '110px', textAlign: 'center' }}>{value}</th>
+                <th key={value} style={{ minWidth: '110px', textAlign: 'center' }}>
+                  {value}
+                </th>
               ))}
             </tr>
           </thead>
@@ -149,25 +171,45 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
               const shootingType = row.ShootingType || 'N/A';
               return (
                 <tr key={shootingType}>
-                  <td style={{ minWidth: '80px', position: 'sticky', left: 0, backgroundColor: 'var(--bs-table-bg)', zIndex: 1, fontWeight: '500' }}>{shootingType}</td>
+                  <td
+                    style={{
+                      minWidth: '80px',
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: 'var(--bs-table-bg)',
+                      zIndex: 1,
+                      fontWeight: '500',
+                    }}
+                  >
+                    {shootingType}
+                  </td>
                   {statPairs.map(({ value, rank, vs_avg }) => (
                     <td
                       key={`${shootingType}-${value}`}
-                      style={{ textAlign: 'center', verticalAlign: 'middle', minWidth: '110px', padding: '6px 2px' }}
+                      style={{
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        minWidth: '110px',
+                        padding: '6px 2px',
+                      }}
                     >
                       <div
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '4px',
                           fontSize: '0.8em',
-                          flexWrap: 'nowrap'
+                          flexWrap: 'nowrap',
                         }}
                       >
                         <span style={{ fontWeight: '600' }}>{row[value]}</span>
                         {row[rank] !== undefined && <RankCube rank={row[rank]} />}
-                        {row[vs_avg] !== undefined && <span style={{ color: '#6c757d', fontSize: '0.85em' }}>{`${row[vs_avg].toFixed(0)}%`}</span>}
+                        {row[vs_avg] !== undefined && (
+                          <span
+                            style={{ color: '#6c757d', fontSize: '0.85em' }}
+                          >{`${formatNumber(row[vs_avg], 0)}%`}</span>
+                        )}
                       </div>
                     </td>
                   ))}
@@ -205,7 +247,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
       ];
     } else if (selectedCategory === 'Playtypes') {
       statColumns = Object.keys(teamStats).filter(
-        (key) => !key.includes('RANK') && !key.includes('TEAM')
+        (key) => !key.includes('RANK') && !key.includes('TEAM'),
       );
     } else if (selectedCategory === 'Assists') {
       statColumns = [
@@ -237,23 +279,23 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
     }
 
     const renderStatRow = (stat) => {
-      const value =
-        teamStats[stat] !== undefined ? Number(teamStats[stat]).toFixed(2) : 'N/A';
-      const rank =
-        teamStats[`${stat}_RANK`] !== undefined
-          ? teamStats[`${stat}_RANK`]
-          : 'N/A';
-      const vs_avg =
-        teamStats[`${stat}_vs_avg_pct`] !== undefined
-          ? `${teamStats[`${stat}_vs_avg_pct`].toFixed(2)}%`
-          : 'N/A';
+      const value = formatNumber(teamStats[stat], 2);
+      const rank = teamStats[`${stat}_RANK`] !== undefined ? teamStats[`${stat}_RANK`] : 'N/A';
+      const vsAvgValue = toFiniteNumber(teamStats[`${stat}_vs_avg_pct`]);
+      const vs_avg = vsAvgValue === null ? 'N/A' : `${vsAvgValue.toFixed(2)}%`;
 
       return (
         <tr key={stat}>
           <td>{stat.replace('OPP_', '').replace('_', ' ')}</td>
           <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
             <div
-              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+              }}
             >
               <span>{value}</span>
               {rank !== 'N/A' && <RankCube rank={rank} />}
@@ -298,7 +340,8 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
           <Row className="mt-2">
             <Col>
               <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
-                Note: Numbers are relative to league average (e.g., 1.06 means 6% above league average)
+                Note: Numbers are relative to league average (e.g., 1.06 means 6% above league
+                average)
               </small>
             </Col>
           </Row>
@@ -321,18 +364,16 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
       'ShortMidRangeAssists',
       'LongMidRangeAssists',
     ];
-    const labels = assistCategories.map((category) =>
-      category.replace(/([A-Z])/g, ' $1').trim()
-    );
+    const labels = assistCategories.map((category) => category.replace(/([A-Z])/g, ' $1').trim());
     const data = assistCategories.map(
-      (category) => -(1 - (teamStats[category] || 0)) * 100
+      (category) => -(1 - numericOrZero(teamStats[category])) * 100,
     );
 
     const backgroundColors = data.map((value) =>
-      value > 0 ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)'
+      value > 0 ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)',
     );
     const borderColors = data.map((value) =>
-      value > 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'
+      value > 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)',
     );
 
     const chartData = {
@@ -367,7 +408,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
         tooltip: {
           callbacks: {
             label: function (tooltipItem) {
-              return `${tooltipItem.label}: ${tooltipItem.raw.toFixed(2)}%`;
+              return `${tooltipItem.label}: ${formatNumber(tooltipItem.raw, 2)}%`;
             },
           },
         },
@@ -425,11 +466,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
             </Col>
             <Col md={4}>
               <Form.Group>
-                <Form.Control
-                  type="date"
-                  value={dateFilter}
-                  onChange={handleDateChange}
-                />
+                <Form.Control type="date" value={dateFilter} onChange={handleDateChange} />
               </Form.Group>
             </Col>
           </Row>

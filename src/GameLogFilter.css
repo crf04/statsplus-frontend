@@ -2,7 +2,8 @@
 body {
   background: linear-gradient(135deg, #000000 0%, #0a0a0a 20%, #111111 50%, #0d0d0d 100%);
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
   margin: 0;
   padding: 0;
 }
@@ -44,8 +45,6 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
-
-
 
 .compact-per36-grid {
   display: grid;
@@ -112,7 +111,6 @@ body {
   margin-bottom: 4px;
 }
 
-
 .compact-label {
   color: #9b937f;
   font-size: 0.7rem;
@@ -146,7 +144,6 @@ body {
   letter-spacing: 0.5px;
   opacity: 0.8;
 }
-
 
 .per36-legend {
   text-align: center;
@@ -201,7 +198,7 @@ body {
   margin: 0 !important;
 }
 
-.per36-toggle-btn:hover:not(.active):not(:checked):not([aria-pressed="true"]) {
+.per36-toggle-btn:hover:not(.active):not(:checked):not([aria-pressed='true']) {
   background: rgba(232, 163, 61, 0.1) !important;
   color: #e8a33d !important;
   border: none !important;
@@ -214,15 +211,15 @@ body {
 
 .per36-toggle-group .per36-toggle-btn.active,
 .per36-toggle-group .per36-toggle-btn:checked,
-.per36-toggle-group .per36-toggle-btn[aria-pressed="true"],
+.per36-toggle-group .per36-toggle-btn[aria-pressed='true'],
 .per36-toggle-group .btn-outline-primary.active,
 .per36-toggle-group .btn-outline-primary:checked,
-.per36-toggle-group .btn-outline-primary[aria-pressed="true"],
+.per36-toggle-group .btn-outline-primary[aria-pressed='true'],
 .per36-toggle-group .btn.active,
 .per36-toggle-group .btn:checked,
-.per36-toggle-group .btn[aria-pressed="true"],
-.per36-toggle-group input[type="radio"]:checked + .per36-toggle-btn,
-.per36-toggle-group input[type="radio"]:checked + .btn-outline-primary {
+.per36-toggle-group .btn[aria-pressed='true'],
+.per36-toggle-group input[type='radio']:checked + .per36-toggle-btn,
+.per36-toggle-group input[type='radio']:checked + .btn-outline-primary {
   background: linear-gradient(135deg, #e8a33d 0%, #d97706 100%) !important;
   color: #000000 !important;
   font-weight: 600 !important;
@@ -296,64 +293,64 @@ body {
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
-  
+
   .category-stats {
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
-  
+
   .subcategory-stats {
     justify-content: center;
     gap: 6px;
   }
-  
+
   .subcategory-heading {
     font-size: 0.75rem;
     margin-bottom: 6px;
   }
-  
+
   .active-category {
     gap: 10px;
   }
-  
+
   .per36-toggle-btn {
     font-size: 0.7rem !important;
     padding: 5px 10px !important;
   }
-  
+
   .category-heading {
     font-size: 0.75rem;
     margin-bottom: 6px;
   }
-  
+
   .per36-categories {
     gap: 12px;
   }
-  
+
   .stat-category {
     margin-bottom: 12px;
   }
-  
+
   .compact-stat-card {
     padding: 6px;
     font-size: 0.75rem;
     min-width: 120px;
   }
-  
+
   .compact-stat-name {
     font-size: 0.7rem;
   }
-  
+
   .compact-label {
     font-size: 0.65rem;
   }
-  
+
   .compact-value,
   .compact-value-season,
   .compact-value-filtered {
     font-size: 0.8rem;
   }
-  
+
   .compact-versus {
     font-size: 0.65rem;
   }
@@ -364,61 +361,61 @@ body {
     grid-template-columns: 1fr;
     gap: 6px;
   }
-  
+
   .category-stats {
     grid-template-columns: 1fr;
     gap: 6px;
   }
-  
+
   .subcategory-stats {
     justify-content: center;
     gap: 6px;
   }
-  
+
   .subcategory-heading {
     font-size: 0.7rem;
   }
-  
+
   .active-category {
     gap: 8px;
   }
-  
+
   .per36-toggle-btn {
     font-size: 0.65rem !important;
     padding: 4px 8px !important;
   }
-  
+
   .category-heading {
     font-size: 0.7rem;
   }
-  
+
   .per36-categories {
     gap: 10px;
   }
-  
+
   .stat-category {
     margin-bottom: 10px;
   }
-  
+
   .compact-stat-card {
     padding: 8px;
     min-width: 100px;
   }
-  
+
   .compact-stat-name {
     font-size: 0.75rem;
   }
-  
+
   .compact-label {
     font-size: 0.7rem;
   }
-  
+
   .compact-value,
   .compact-value-season,
   .compact-value-filtered {
     font-size: 0.85rem;
   }
-  
+
   .compact-versus {
     font-size: 0.7rem;
   }
@@ -605,12 +602,12 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .per36-sidebar {
     grid-column: 1;
     order: 1;
   }
-  
+
   .game-logs-main {
     grid-column: 1;
     order: 2;
@@ -647,7 +644,8 @@ body {
 .game-logs-header-controls .section-subtitle {
   margin-bottom: 0;
   color: #c9c2b2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
   font-weight: 500;
   font-size: 1rem;
   text-align: left;
@@ -902,27 +900,27 @@ body {
   .game-logs-table {
     font-size: 0.8rem;
   }
-  
+
   .header-text {
     font-size: 0.7rem;
   }
-  
+
   .table-cell {
     padding: 8px 6px;
   }
-  
+
   .table-header-cell {
     padding: 10px 6px;
   }
-  
+
   .points-value {
     font-size: 0.9rem;
   }
-  
+
   .made-attempts {
     font-size: 0.75rem;
   }
-  
+
   .shooting-percentage {
     font-size: 0.7rem;
   }
@@ -932,31 +930,31 @@ body {
   .game-logs-table {
     font-size: 0.75rem;
   }
-  
+
   .header-text {
     font-size: 0.65rem;
   }
-  
+
   .table-cell {
     padding: 6px 4px;
   }
-  
+
   .table-header-cell {
     padding: 8px 4px;
   }
-  
+
   .points-value {
     font-size: 0.85rem;
   }
-  
+
   .made-attempts {
     font-size: 0.7rem;
   }
-  
+
   .shooting-percentage {
     font-size: 0.65rem;
   }
-  
+
   .result-badge {
     padding: 3px 6px;
     font-size: 0.65rem;
@@ -968,41 +966,41 @@ body {
     margin: 0 -8px;
     border-radius: 8px;
   }
-  
+
   .game-logs-table {
     font-size: 0.7rem;
   }
-  
+
   .header-text {
     font-size: 0.6rem;
     line-height: 1.1;
   }
-  
+
   .table-cell {
     padding: 4px 2px;
   }
-  
+
   .table-header-cell {
     padding: 6px 2px;
   }
-  
+
   .points-value {
     font-size: 0.8rem;
   }
-  
+
   .made-attempts {
     font-size: 0.65rem;
   }
-  
+
   .shooting-percentage {
     font-size: 0.6rem;
   }
-  
+
   .result-badge {
     padding: 2px 4px;
     font-size: 0.6rem;
   }
-  
+
   .cell-opponent {
     font-size: 0.75rem;
   }
@@ -1146,7 +1144,7 @@ body {
     padding: 6px 10px;
     font-size: 0.6rem;
   }
-  
+
   .list-header-extended {
     font-size: 0.55rem;
   }
@@ -1160,19 +1158,19 @@ body {
     padding: 5px 8px;
     font-size: 0.55rem;
   }
-  
+
   .list-header-extended {
     font-size: 0.5rem;
   }
-  
+
   .col-matchup {
     font-size: 0.55rem;
   }
-  
+
   .col-shooting-combo {
     font-size: 0.55rem;
   }
-  
+
   .col-pct {
     font-size: 0.55rem;
   }
@@ -1183,7 +1181,7 @@ body {
     margin: 0 -8px;
     border-radius: 8px;
   }
-  
+
   .list-header-extended,
   .game-row-extended {
     grid-template-columns: 1fr 1.5fr 0.6fr 1fr 1fr 1.2fr 1fr 1.2fr 1fr 1.2fr 1fr 1fr 1fr 1fr 1fr 0.6fr 0.6fr 0.6fr 0.6fr 1fr;
@@ -1191,38 +1189,38 @@ body {
     padding: 4px 6px;
     font-size: 0.5rem;
   }
-  
+
   .list-header-extended {
     font-size: 0.45rem;
     padding: 6px;
   }
-  
+
   .col-matchup {
     font-size: 0.5rem;
   }
-  
+
   .col-shooting-combo {
     font-size: 0.5rem;
   }
-  
+
   .col-pct {
     font-size: 0.5rem;
   }
-  
+
   .col-rebounds {
     font-size: 0.55rem;
   }
-  
+
   .col-plusminus {
     font-size: 0.5rem;
   }
-  
+
   .game-logs-header-controls {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .sort-controls {
     align-self: stretch;
     justify-content: space-between;
@@ -1407,11 +1405,11 @@ body {
     gap: 6px;
     padding: 8px 12px;
   }
-  
+
   .game-row {
     font-size: 0.75rem;
   }
-  
+
   .list-header {
     font-size: 0.65rem;
   }
@@ -1424,22 +1422,22 @@ body {
     gap: 4px;
     padding: 6px 8px;
   }
-  
+
   .game-row {
     font-size: 0.7rem;
   }
-  
+
   .list-header {
     font-size: 0.6rem;
     padding: 8px;
   }
-  
+
   .game-logs-header-controls {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .sort-controls {
     align-self: stretch;
     justify-content: space-between;
@@ -1451,27 +1449,27 @@ body {
     margin: 0 -8px;
     border-radius: 8px;
   }
-  
+
   .list-header,
   .game-row {
     grid-template-columns: 45px 50px 20px 25px 45px 45px 45px 25px 25px 20px 20px 20px 30px;
     gap: 2px;
     padding: 4px 6px;
   }
-  
+
   .game-row {
     font-size: 0.65rem;
   }
-  
+
   .list-header {
     font-size: 0.55rem;
     padding: 6px;
   }
-  
+
   .made-att {
     font-size: 0.6rem;
   }
-  
+
   .percentage {
     font-size: 0.55rem;
   }
@@ -1829,16 +1827,16 @@ body {
     padding: 8px 3px;
     font-size: 0.7rem;
   }
-  
+
   .compact-td {
     padding: 6px 3px;
     font-size: 0.75rem;
   }
-  
+
   .header-content {
     min-height: 20px;
   }
-  
+
   .sort-indicator-overlay {
     font-size: 0.55rem;
   }
@@ -1851,16 +1849,18 @@ body {
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
 }
 
-.btn-primary, .btn-outline-primary {
+.btn-primary,
+.btn-outline-primary {
   transition: all 0.3s ease;
 }
 
-.btn-primary:hover, .btn-outline-primary:hover {
+.btn-primary:hover,
+.btn-outline-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 /* Dark theme buttons */
@@ -1912,10 +1912,13 @@ body {
 }
 
 /* Section titles styling */
-.dark-card .card-body h4, .dark-card h4,
-.dark-card .card-body h1, .dark-card h1 {
+.dark-card .card-body h4,
+.dark-card h4,
+.dark-card .card-body h1,
+.dark-card h1 {
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
   font-weight: 600;
   font-size: 1.25rem;
   text-align: left;
@@ -1926,7 +1929,8 @@ body {
   letter-spacing: 0.5px;
 }
 
-.dark-card .card-body h1, .dark-card h1 {
+.dark-card .card-body h1,
+.dark-card h1 {
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -1934,7 +1938,8 @@ body {
 /* Section subtitles styling */
 .dark-card .section-subtitle {
   color: #c9c2b2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
   font-weight: 500;
   font-size: 1rem;
   text-align: left;
@@ -1949,14 +1954,16 @@ body {
 }
 
 /* Dark theme form controls */
-.dark-card .form-control, .dark-card .form-select {
+.dark-card .form-control,
+.dark-card .form-select {
   background-color: rgba(255, 255, 255, 0.1);
   border: 1px solid #3a3428;
   color: #ffffff;
   border-radius: 8px;
 }
 
-.dark-card .form-control:focus, .dark-card .form-select:focus {
+.dark-card .form-control:focus,
+.dark-card .form-select:focus {
   background-color: rgba(255, 255, 255, 0.15);
   border-color: #e8a33d;
   box-shadow: 0 0 0 0.2rem rgba(232, 163, 61, 0.25);
@@ -2195,6 +2202,24 @@ body {
   gap: 2px;
 }
 
+.game-logs-table-compact .table-header-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.game-logs-table-compact .table-header-button:focus-visible {
+  outline: 2px solid #e8a33d;
+  outline-offset: -2px;
+}
+
 .game-logs-table-compact .header-text {
   font-size: 0.75rem;
   line-height: 1;
@@ -2240,12 +2265,12 @@ body {
   .game-logs-table-compact {
     font-size: 0.8rem;
   }
-  
+
   .game-logs-table-compact .table-header-cell {
     padding: 6px 3px;
     font-size: 0.75rem;
   }
-  
+
   .game-logs-table-compact .table-cell {
     padding: 6px 3px;
     font-size: 0.8rem;
@@ -2256,12 +2281,12 @@ body {
   .game-logs-table-compact {
     font-size: 0.75rem;
   }
-  
+
   .game-logs-table-compact .table-header-cell {
     padding: 4px 2px;
     font-size: 0.7rem;
   }
-  
+
   .game-logs-table-compact .table-cell {
     padding: 5px 2px;
     font-size: 0.75rem;

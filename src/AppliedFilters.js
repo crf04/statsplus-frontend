@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge } from 'react-bootstrap';
 
 const AppliedFilters = ({ filters }) => {
@@ -24,7 +23,9 @@ const AppliedFilters = ({ filters }) => {
     } else if (key === 'teams_against[]' && filters['rank_filter[]']) {
       // Handle opponent filters from natural language queries
       const teamsArray = Array.isArray(value) ? value : [value];
-      const ranksArray = Array.isArray(filters['rank_filter[]']) ? filters['rank_filter[]'] : [filters['rank_filter[]']];
+      const ranksArray = Array.isArray(filters['rank_filter[]'])
+        ? filters['rank_filter[]']
+        : [filters['rank_filter[]']];
       return teamsArray.map((team, index) => {
         const rank = ranksArray[index];
         return (
@@ -34,8 +35,8 @@ const AppliedFilters = ({ filters }) => {
         );
       });
     } else if (key === 'player_name') {
-  
-    } else if (key === 'date_filter'){
+      return null;
+    } else if (key === 'date_filter') {
       return (
         <Badge key={key} bg="primary" className="me-1">
           {`Date >= ${value}`}
@@ -61,12 +62,11 @@ const AppliedFilters = ({ filters }) => {
           {`(OFF) ${playerList.join(', ')}`}
         </Badge>
       );
-    }
-    else if (key.startsWith('self_filters[')) {
+    } else if (key.startsWith('self_filters[')) {
       const stat = key.match(/\[(.*?)\]/)[1];
       if (!value) return null;
       const [min, max] = value.split(',');
-      
+
       // If max is 999, this is a "greater than or equal" filter
       if (max === '999') {
         return (
@@ -112,15 +112,16 @@ const AppliedFilters = ({ filters }) => {
 
   const playstyleMin = filters.playstyle_RTG_min;
   const playstyleMax = filters.playstyle_RTG_max;
-  const playstyleBadge = (
+  const playstyleBadge =
     // Only show if values are defined and different from defaults
-    (playstyleMin !== undefined && playstyleMax !== undefined && 
-     (playstyleMin !== defaultValues.playstyle_RTG_min || playstyleMax !== defaultValues.playstyle_RTG_max)) && (
-      <Badge key="playstyle_RTG" bg="primary" className="me-1">
-        {`${playstyleMin} <= PLAYTYPE_RTG <= ${playstyleMax}`}
-      </Badge>
-    )
-  );
+    playstyleMin !== undefined &&
+      playstyleMax !== undefined &&
+      (playstyleMin !== defaultValues.playstyle_RTG_min ||
+        playstyleMax !== defaultValues.playstyle_RTG_max) && (
+        <Badge key="playstyle_RTG" bg="primary" className="me-1">
+          {`${playstyleMin} <= PLAYTYPE_RTG <= ${playstyleMax}`}
+        </Badge>
+      );
 
   const nonDefaultFilters = Object.entries(filters).filter(([key, value]) => {
     if (key === 'filter_numbers') return false; // Skip filter_numbers as it's handled with teams_against

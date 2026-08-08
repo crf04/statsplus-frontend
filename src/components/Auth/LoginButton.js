@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -33,7 +33,7 @@ const LoginButton = ({ className = '', size = 'lg' }) => {
           color: '#e3e3e3',
           fontWeight: '500',
           minWidth: '200px',
-          padding: size === 'lg' ? '12px 24px' : '8px 16px'
+          padding: size === 'lg' ? '12px 24px' : '8px 16px',
         }}
       >
         {isSigningIn ? (
@@ -70,12 +70,8 @@ const LoginButton = ({ className = '', size = 'lg' }) => {
           </>
         )}
       </Button>
-      
-      {error && (
-        <div className="text-danger mt-2 small">
-          {error}
-        </div>
-      )}
+
+      {error && <div className="text-danger mt-2 small">{error}</div>}
     </div>
   );
 };

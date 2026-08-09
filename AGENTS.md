@@ -10,12 +10,15 @@ browser fixtures, or critical user journeys.
 
 ## Cross-repository coordination
 
-Keep frontend-only work in this repository. When an outcome requires a backend
-contract change, work through the `crf04/statsplus` coordination repository
-first. Read its agent guide, architecture map, and workflow; agree on the
-boundary contract before implementation, then keep the frontend branch, issue,
-commits, tests, and pull request here. Keep the API decoder and
-`e2e/fixtures/courtai.js` aligned with the agreed contract.
+Start every observable product outcome in the `crf04/statsplus` coordination
+repository, including frontend-only outcomes. Keep the focused frontend
+implementation issue, branch, commits, tests, and pull request here. Internal
+maintenance without an observable product outcome may start in this repository.
+
+Before implementing a linked product outcome, read its parent issue and the
+coordination repository's agent guide, architecture map, and workflow. Agree on
+the boundary contract there before changing the backend contract. Keep the API
+decoder and `e2e/fixtures/courtai.js` aligned with that contract.
 
 ## Change loop
 
@@ -37,8 +40,9 @@ commits, tests, and pull request here. Keep the API decoder and
 
 ### Issue tracker
 
-Issues and specs are tracked in GitHub Issues for
-`crf04/statsplus-frontend`. See `docs/agents/issue-tracker.md`.
+Use this repository for frontend implementation packets and internal
+maintenance. See `docs/agents/issue-tracker.md` before creating, picking up,
+linking, or closing an issue or pull request.
 
 ### Triage labels
 

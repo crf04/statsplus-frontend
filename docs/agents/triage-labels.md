@@ -1,4 +1,4 @@
-# Triage Labels
+# Triage labels
 
 | Canonical role    | Tracker label     | Meaning                                |
 | ----------------- | ----------------- | -------------------------------------- |
@@ -8,4 +8,7 @@
 | `ready-for-human` | `ready-for-human` | Requires human implementation          |
 | `wontfix`         | `wontfix`         | Will not be actioned                   |
 
-When a skill names a canonical role, use its corresponding tracker label.
+Keep these labels mutually exclusive. Swap the current triage label during
+state transitions instead of stacking labels. Remove the triage label when
+successfully closing an implementation issue; retain `wontfix` when closing an
+issue as not planned.

@@ -1,0 +1,630 @@
+// THROWAWAY PROTOTYPE DATA — wayfinder crf04/statsplus#7.
+// Hand-authored mock for one game (BOS @ NYK). Shapes mirror what the backend
+// already stores (see crf04/statsplus#3 stats inventory digest); numbers are
+// plausible fiction. Rank semantics: 1 = allows least (tough matchup),
+// 30 = allows most (juicy matchup) — same ramp RankCube renders red -> green.
+
+export const GAME = {
+  id: '0022501187',
+  away: { tri: 'BOS', name: 'Boston Celtics' },
+  home: { tri: 'NYK', name: 'New York Knicks' },
+  tipUtc: '2026-04-11T23:30:00Z',
+  status: 'Scheduled',
+  classification: null,
+};
+
+// Pool snapshot per the player-pool contract (#5): union of boards, provenance
+// kept, partial board failure shrinks the union honestly.
+export const POOL_META = {
+  retrievedAtLabel: '7 min ago',
+  maxAgeMinutes: 15,
+  boards: { PP: 'ok', UD: 'ok', DAB: 'unavailable' },
+};
+
+export const PLAY_TYPES = [
+  'Isolation',
+  'Transition',
+  'P&R Ball-Handler',
+  'P&R Roll Man',
+  'Post-Up',
+  'Spot-Up',
+  'Handoff',
+  'Cut',
+  'Off-Screen',
+  'Putbacks',
+  'Misc',
+];
+
+export const ZONES = ['Restricted Area', 'Paint (Non-RA)', 'Mid-Range', 'Corner 3', 'Above Break 3'];
+export const SHOT_TYPES = ['Catch & Shoot', 'Pull-Up', '< 10 ft'];
+export const ASSIST_LOCS = ['Rim', 'Corner 3', 'Arc 3', 'Mid-Range'];
+
+// What each defense allows, across the five stored categories.
+export const DEFENSE = {
+  NYK: {
+    traditional: [
+      { stat: 'OPP_PTS', value: 117.8, rank: 22, vsAvg: 2.4 },
+      { stat: 'OPP_REB', value: 44.1, rank: 14, vsAvg: 0.2 },
+      { stat: 'OPP_AST', value: 27.9, rank: 25, vsAvg: 1.8 },
+      { stat: 'OPP_3PM', value: 14.6, rank: 28, vsAvg: 1.7 },
+      { stat: 'OPP_3PA', value: 39.8, rank: 27, vsAvg: 2.9 },
+      { stat: 'OPP_FTA', value: 21.6, rank: 8, vsAvg: -1.2 },
+      { stat: 'OPP_TOV', value: 14.9, rank: 20, vsAvg: 0.6 },
+      { stat: 'OPP_STL', value: 7.2, rank: 11, vsAvg: -0.3 },
+      { stat: 'OPP_BLK', value: 4.6, rank: 9, vsAvg: -0.4 },
+    ],
+    playTypes: {
+      Isolation: { ppp: 0.94, rank: 19 },
+      Transition: { ppp: 1.12, rank: 16 },
+      'P&R Ball-Handler': { ppp: 0.99, rank: 27 },
+      'P&R Roll Man': { ppp: 1.08, rank: 13 },
+      'Post-Up': { ppp: 0.98, rank: 15 },
+      'Spot-Up': { ppp: 1.04, rank: 26 },
+      Handoff: { ppp: 0.95, rank: 22 },
+      Cut: { ppp: 1.28, rank: 18 },
+      'Off-Screen': { ppp: 1.09, rank: 24 },
+      Putbacks: { ppp: 1.11, rank: 12 },
+      Misc: { ppp: 0.98, rank: 14 },
+    },
+    zones: {
+      'Restricted Area': { fgPct: 64.1, rank: 8 },
+      'Paint (Non-RA)': { fgPct: 44.8, rank: 17 },
+      'Mid-Range': { fgPct: 42.9, rank: 21 },
+      'Corner 3': { fgPct: 39.2, rank: 25 },
+      'Above Break 3': { fgPct: 36.8, rank: 27 },
+    },
+    shotTypes: {
+      'Catch & Shoot': { efg: 56.9, rank: 26, vsAvg: 2.1 },
+      'Pull-Up': { efg: 47.8, rank: 24, vsAvg: 1.6 },
+      '< 10 ft': { efg: 58.3, rank: 10, vsAvg: -0.9 },
+    },
+    assistLoc: {
+      Rim: { perGame: 17.8, rank: 21 },
+      'Corner 3': { perGame: 3.9, rank: 26 },
+      'Arc 3': { perGame: 8.1, rank: 24 },
+      'Mid-Range': { perGame: 3.2, rank: 13 },
+    },
+  },
+  BOS: {
+    traditional: [
+      { stat: 'OPP_PTS', value: 110.2, rank: 5, vsAvg: -3.9 },
+      { stat: 'OPP_REB', value: 45.9, rank: 22, vsAvg: 1.1 },
+      { stat: 'OPP_AST', value: 24.1, rank: 4, vsAvg: -2.4 },
+      { stat: 'OPP_3PM', value: 11.9, rank: 3, vsAvg: -1.9 },
+      { stat: 'OPP_3PA', value: 35.1, rank: 6, vsAvg: -2.2 },
+      { stat: 'OPP_FTA', value: 23.9, rank: 21, vsAvg: 1.3 },
+      { stat: 'OPP_TOV', value: 13.1, rank: 8, vsAvg: -0.9 },
+      { stat: 'OPP_STL', value: 6.9, rank: 8, vsAvg: -0.5 },
+      { stat: 'OPP_BLK', value: 5.8, rank: 24, vsAvg: 0.8 },
+    ],
+    playTypes: {
+      Isolation: { ppp: 0.87, rank: 6 },
+      Transition: { ppp: 1.02, rank: 5 },
+      'P&R Ball-Handler': { ppp: 0.9, rank: 9 },
+      'P&R Roll Man': { ppp: 1.14, rank: 23 },
+      'Post-Up': { ppp: 1.06, rank: 24 },
+      'Spot-Up': { ppp: 0.96, rank: 8 },
+      Handoff: { ppp: 0.9, rank: 10 },
+      Cut: { ppp: 1.34, rank: 26 },
+      'Off-Screen': { ppp: 0.98, rank: 9 },
+      Putbacks: { ppp: 1.16, rank: 22 },
+      Misc: { ppp: 0.94, rank: 8 },
+    },
+    zones: {
+      'Restricted Area': { fgPct: 67.2, rank: 24 },
+      'Paint (Non-RA)': { fgPct: 46.1, rank: 22 },
+      'Mid-Range': { fgPct: 40.1, rank: 9 },
+      'Corner 3': { fgPct: 35.8, rank: 7 },
+      'Above Break 3': { fgPct: 34.2, rank: 4 },
+    },
+    shotTypes: {
+      'Catch & Shoot': { efg: 50.1, rank: 5, vsAvg: -2.7 },
+      'Pull-Up': { efg: 44.9, rank: 9, vsAvg: -1.1 },
+      '< 10 ft': { efg: 60.9, rank: 23, vsAvg: 1.8 },
+    },
+    assistLoc: {
+      Rim: { perGame: 19.4, rank: 26 },
+      'Corner 3': { perGame: 2.8, rank: 6 },
+      'Arc 3': { perGame: 6.4, rank: 7 },
+      'Mid-Range': { perGame: 3.6, rank: 18 },
+    },
+  },
+};
+
+// Targetable players per the pool contract (#5): >= 1 qualifying market on any
+// board, keyed to canonical players, provenance per board.
+export const PLAYERS = [
+  {
+    id: 1,
+    name: 'Jayson Tatum',
+    team: 'BOS',
+    pos: 'F',
+    archetype: 'Perimeter Shot Creator',
+    season: { min: 36.2, pts: 27.4, reb: 8.6, ast: 5.1, fg3m: 3.2 },
+    boards: { PP: ['PTS', 'REB', 'AST', '3PM', 'PRA'], UD: ['PTS', 'REB', 'AST', 'PRA'], DAB: [] },
+    playTypes: [
+      { type: 'Isolation', freq: 21.8, ppp: 1.02 },
+      { type: 'P&R Ball-Handler', freq: 19.5, ppp: 0.98 },
+      { type: 'Spot-Up', freq: 14.2, ppp: 1.11 },
+      { type: 'Transition', freq: 13.0, ppp: 1.19 },
+      { type: 'Post-Up', freq: 7.6, ppp: 1.04 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 33.8, fgPct: 36.9 },
+      { zone: 'Restricted Area', share: 24.1, fgPct: 68.2 },
+      { zone: 'Mid-Range', share: 18.9, fgPct: 44.1 },
+      { zone: 'Paint (Non-RA)', share: 14.7, fgPct: 47.3 },
+      { zone: 'Corner 3', share: 8.5, fgPct: 41.2 },
+    ],
+    shotTypes: [
+      { type: 'Pull-Up', fga: 9.4, efg: 49.8 },
+      { type: '< 10 ft', fga: 7.1, efg: 63.4 },
+      { type: 'Catch & Shoot', fga: 5.6, efg: 59.2 },
+    ],
+    assistLoc: { Rim: 2.3, 'Corner 3': 1.0, 'Arc 3': 1.4, 'Mid-Range': 0.6 },
+  },
+  {
+    id: 2,
+    name: 'Jaylen Brown',
+    team: 'BOS',
+    pos: 'G-F',
+    archetype: 'Slashing Wing',
+    season: { min: 34.8, pts: 24.1, reb: 6.3, ast: 3.8, fg3m: 2.2 },
+    boards: { PP: ['PTS', 'REB', 'PRA'], UD: ['PTS', 'AST'], DAB: [] },
+    playTypes: [
+      { type: 'Transition', freq: 18.9, ppp: 1.15 },
+      { type: 'Isolation', freq: 16.2, ppp: 0.96 },
+      { type: 'P&R Ball-Handler', freq: 14.8, ppp: 0.92 },
+      { type: 'Spot-Up', freq: 13.5, ppp: 1.02 },
+      { type: 'Post-Up', freq: 8.8, ppp: 1.01 },
+    ],
+    zones: [
+      { zone: 'Restricted Area', share: 31.2, fgPct: 66.9 },
+      { zone: 'Above Break 3', share: 24.8, fgPct: 34.6 },
+      { zone: 'Mid-Range', share: 21.4, fgPct: 43.8 },
+      { zone: 'Paint (Non-RA)', share: 13.9, fgPct: 45.2 },
+      { zone: 'Corner 3', share: 6.1, fgPct: 37.8 },
+    ],
+    shotTypes: [
+      { type: '< 10 ft', fga: 8.3, efg: 61.2 },
+      { type: 'Pull-Up', fga: 7.2, efg: 46.1 },
+      { type: 'Catch & Shoot', fga: 4.4, efg: 55.3 },
+    ],
+    assistLoc: { Rim: 1.8, 'Corner 3': 0.6, 'Arc 3': 0.8, 'Mid-Range': 0.5 },
+  },
+  {
+    id: 3,
+    name: 'Derrick White',
+    team: 'BOS',
+    pos: 'G',
+    archetype: 'Movement Shooter',
+    season: { min: 33.1, pts: 17.2, reb: 4.4, ast: 4.9, fg3m: 3.1 },
+    boards: { PP: ['PTS', '3PM', 'AST'], UD: ['PTS', '3PM'], DAB: [] },
+    playTypes: [
+      { type: 'P&R Ball-Handler', freq: 24.6, ppp: 1.01 },
+      { type: 'Spot-Up', freq: 22.1, ppp: 1.14 },
+      { type: 'Transition', freq: 12.4, ppp: 1.21 },
+      { type: 'Handoff', freq: 8.9, ppp: 1.05 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 41.2, fgPct: 38.4 },
+      { zone: 'Restricted Area', share: 22.6, fgPct: 61.8 },
+      { zone: 'Corner 3', share: 9.8, fgPct: 42.0 },
+      { zone: 'Mid-Range', share: 13.1, fgPct: 41.6 },
+      { zone: 'Paint (Non-RA)', share: 13.3, fgPct: 44.9 },
+    ],
+    shotTypes: [
+      { type: 'Catch & Shoot', fga: 6.8, efg: 61.8 },
+      { type: 'Pull-Up', fga: 5.3, efg: 48.2 },
+      { type: '< 10 ft', fga: 4.1, efg: 58.7 },
+    ],
+    assistLoc: { Rim: 1.9, 'Corner 3': 0.8, 'Arc 3': 1.1, 'Mid-Range': 0.4 },
+  },
+  {
+    id: 4,
+    name: 'Kristaps Porzingis',
+    team: 'BOS',
+    pos: 'C',
+    archetype: 'Stretch Big',
+    season: { min: 29.4, pts: 20.3, reb: 7.1, ast: 1.9, fg3m: 2.4 },
+    boards: { PP: ['PTS', 'REB', '3PM'], UD: ['PTS', 'REB', 'PRA'], DAB: [] },
+    playTypes: [
+      { type: 'P&R Roll Man', freq: 20.1, ppp: 1.12 },
+      { type: 'Post-Up', freq: 18.4, ppp: 1.08 },
+      { type: 'Spot-Up', freq: 17.8, ppp: 1.18 },
+      { type: 'Putbacks', freq: 7.2, ppp: 1.14 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 30.4, fgPct: 37.8 },
+      { zone: 'Restricted Area', share: 28.9, fgPct: 72.1 },
+      { zone: 'Paint (Non-RA)', share: 16.2, fgPct: 51.0 },
+      { zone: 'Mid-Range', share: 15.4, fgPct: 45.7 },
+      { zone: 'Corner 3', share: 9.1, fgPct: 36.4 },
+    ],
+    shotTypes: [
+      { type: '< 10 ft', fga: 6.8, efg: 66.2 },
+      { type: 'Catch & Shoot', fga: 5.9, efg: 60.4 },
+      { type: 'Pull-Up', fga: 2.1, efg: 41.3 },
+    ],
+    assistLoc: { Rim: 0.7, 'Corner 3': 0.3, 'Arc 3': 0.4, 'Mid-Range': 0.3 },
+  },
+  {
+    id: 5,
+    name: 'Payton Pritchard',
+    team: 'BOS',
+    pos: 'G',
+    archetype: 'Movement Shooter',
+    season: { min: 27.2, pts: 14.8, reb: 3.6, ast: 3.4, fg3m: 3.0 },
+    boards: { PP: ['PTS', '3PM'], UD: ['3PM'], DAB: [] },
+    playTypes: [
+      { type: 'Spot-Up', freq: 26.2, ppp: 1.16 },
+      { type: 'P&R Ball-Handler', freq: 18.1, ppp: 0.94 },
+      { type: 'Transition', freq: 14.6, ppp: 1.24 },
+      { type: 'Handoff', freq: 10.2, ppp: 1.08 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 44.6, fgPct: 39.1 },
+      { zone: 'Restricted Area', share: 18.2, fgPct: 58.9 },
+      { zone: 'Corner 3', share: 10.4, fgPct: 43.1 },
+      { zone: 'Mid-Range', share: 12.6, fgPct: 42.2 },
+      { zone: 'Paint (Non-RA)', share: 14.2, fgPct: 43.8 },
+    ],
+    shotTypes: [
+      { type: 'Catch & Shoot', fga: 6.1, efg: 62.4 },
+      { type: 'Pull-Up', fga: 4.8, efg: 47.1 },
+      { type: '< 10 ft', fga: 2.9, efg: 55.2 },
+    ],
+    assistLoc: { Rim: 1.2, 'Corner 3': 0.5, 'Arc 3': 0.9, 'Mid-Range': 0.3 },
+  },
+  {
+    id: 6,
+    name: 'Sam Hauser',
+    team: 'BOS',
+    pos: 'F',
+    archetype: 'Spot-Up Specialist',
+    season: { min: 22.1, pts: 8.9, reb: 3.4, ast: 1.1, fg3m: 2.3 },
+    boards: { PP: ['3PM', 'PTS'], UD: [], DAB: [] },
+    playTypes: [
+      { type: 'Spot-Up', freq: 48.2, ppp: 1.19 },
+      { type: 'Transition', freq: 12.1, ppp: 1.18 },
+      { type: 'Off-Screen', freq: 10.8, ppp: 1.06 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 52.1, fgPct: 38.2 },
+      { zone: 'Corner 3', share: 21.8, fgPct: 41.9 },
+      { zone: 'Restricted Area', share: 12.4, fgPct: 62.1 },
+      { zone: 'Mid-Range', share: 7.2, fgPct: 39.8 },
+      { zone: 'Paint (Non-RA)', share: 6.5, fgPct: 41.2 },
+    ],
+    shotTypes: [
+      { type: 'Catch & Shoot', fga: 6.9, efg: 63.1 },
+      { type: 'Pull-Up', fga: 1.2, efg: 42.6 },
+      { type: '< 10 ft', fga: 1.1, efg: 57.4 },
+    ],
+    assistLoc: { Rim: 0.4, 'Corner 3': 0.2, 'Arc 3': 0.3, 'Mid-Range': 0.2 },
+  },
+  {
+    id: 7,
+    name: 'Jalen Brunson',
+    team: 'NYK',
+    pos: 'G',
+    archetype: 'Pick-and-Roll Maestro',
+    season: { min: 35.6, pts: 28.1, reb: 3.7, ast: 6.8, fg3m: 2.6 },
+    boards: { PP: ['PTS', 'AST', 'PRA', '3PM'], UD: ['PTS', 'AST', 'PA'], DAB: [] },
+    playTypes: [
+      { type: 'P&R Ball-Handler', freq: 34.8, ppp: 1.04 },
+      { type: 'Isolation', freq: 18.2, ppp: 1.06 },
+      { type: 'Post-Up', freq: 8.1, ppp: 1.02 },
+      { type: 'Spot-Up', freq: 7.4, ppp: 1.03 },
+    ],
+    zones: [
+      { zone: 'Mid-Range', share: 28.4, fgPct: 47.2 },
+      { zone: 'Restricted Area', share: 26.1, fgPct: 59.8 },
+      { zone: 'Above Break 3', share: 22.8, fgPct: 36.1 },
+      { zone: 'Paint (Non-RA)', share: 16.9, fgPct: 46.8 },
+      { zone: 'Corner 3', share: 5.8, fgPct: 39.2 },
+    ],
+    shotTypes: [
+      { type: 'Pull-Up', fga: 10.8, efg: 50.6 },
+      { type: '< 10 ft', fga: 6.9, efg: 54.2 },
+      { type: 'Catch & Shoot', fga: 2.4, efg: 57.8 },
+    ],
+    assistLoc: { Rim: 3.1, 'Corner 3': 1.1, 'Arc 3': 1.6, 'Mid-Range': 0.8 },
+  },
+  {
+    id: 8,
+    name: 'Karl-Anthony Towns',
+    team: 'NYK',
+    pos: 'C',
+    archetype: 'Post Scorer / Stretch Big',
+    season: { min: 34.1, pts: 24.6, reb: 12.8, ast: 3.1, fg3m: 2.0 },
+    boards: { PP: ['PTS', 'REB', 'PRA', '3PM'], UD: ['PTS', 'REB', 'RA'], DAB: [] },
+    playTypes: [
+      { type: 'Post-Up', freq: 19.6, ppp: 1.09 },
+      { type: 'P&R Roll Man', freq: 17.2, ppp: 1.16 },
+      { type: 'Spot-Up', freq: 16.4, ppp: 1.12 },
+      { type: 'Putbacks', freq: 8.4, ppp: 1.21 },
+      { type: 'Transition', freq: 8.0, ppp: 1.14 },
+    ],
+    zones: [
+      { zone: 'Restricted Area', share: 30.2, fgPct: 69.4 },
+      { zone: 'Above Break 3', share: 26.1, fgPct: 40.2 },
+      { zone: 'Paint (Non-RA)', share: 17.8, fgPct: 48.9 },
+      { zone: 'Mid-Range', share: 16.7, fgPct: 46.1 },
+      { zone: 'Corner 3', share: 9.2, fgPct: 41.8 },
+    ],
+    shotTypes: [
+      { type: '< 10 ft', fga: 8.2, efg: 64.8 },
+      { type: 'Catch & Shoot', fga: 4.8, efg: 62.1 },
+      { type: 'Pull-Up', fga: 3.6, efg: 44.9 },
+    ],
+    assistLoc: { Rim: 1.1, 'Corner 3': 0.5, 'Arc 3': 0.8, 'Mid-Range': 0.4 },
+  },
+  {
+    id: 9,
+    name: 'Mikal Bridges',
+    team: 'NYK',
+    pos: 'F',
+    archetype: '3&D Wing',
+    season: { min: 36.8, pts: 17.8, reb: 4.1, ast: 3.4, fg3m: 2.7 },
+    boards: { PP: ['PTS', '3PM'], UD: ['PTS', '3PM', 'PRA'], DAB: [] },
+    playTypes: [
+      { type: 'Spot-Up', freq: 22.4, ppp: 1.08 },
+      { type: 'Off-Screen', freq: 14.2, ppp: 1.02 },
+      { type: 'Transition', freq: 13.8, ppp: 1.12 },
+      { type: 'P&R Ball-Handler', freq: 12.6, ppp: 0.94 },
+      { type: 'Cut', freq: 8.9, ppp: 1.31 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 32.1, fgPct: 36.8 },
+      { zone: 'Restricted Area', share: 24.6, fgPct: 63.2 },
+      { zone: 'Mid-Range', share: 19.8, fgPct: 44.6 },
+      { zone: 'Corner 3', share: 11.2, fgPct: 40.8 },
+      { zone: 'Paint (Non-RA)', share: 12.3, fgPct: 43.1 },
+    ],
+    shotTypes: [
+      { type: 'Catch & Shoot', fga: 5.9, efg: 58.6 },
+      { type: 'Pull-Up', fga: 4.9, efg: 46.8 },
+      { type: '< 10 ft', fga: 3.8, efg: 59.1 },
+    ],
+    assistLoc: { Rim: 1.4, 'Corner 3': 0.5, 'Arc 3': 0.7, 'Mid-Range': 0.4 },
+  },
+  {
+    id: 10,
+    name: 'OG Anunoby',
+    team: 'NYK',
+    pos: 'F',
+    archetype: 'Cutting Wing',
+    season: { min: 34.9, pts: 15.9, reb: 5.2, ast: 2.2, fg3m: 2.1 },
+    boards: { PP: ['PTS', 'REB'], UD: ['PTS', 'STKS'], DAB: [] },
+    playTypes: [
+      { type: 'Spot-Up', freq: 24.8, ppp: 1.05 },
+      { type: 'Cut', freq: 16.2, ppp: 1.38 },
+      { type: 'Transition', freq: 15.4, ppp: 1.18 },
+      { type: 'Putbacks', freq: 6.8, ppp: 1.12 },
+    ],
+    zones: [
+      { zone: 'Restricted Area', share: 32.4, fgPct: 68.9 },
+      { zone: 'Above Break 3', share: 23.4, fgPct: 35.2 },
+      { zone: 'Corner 3', share: 12.1, fgPct: 38.9 },
+      { zone: 'Mid-Range', share: 14.8, fgPct: 41.2 },
+      { zone: 'Paint (Non-RA)', share: 17.3, fgPct: 47.6 },
+    ],
+    shotTypes: [
+      { type: '< 10 ft', fga: 5.4, efg: 63.8 },
+      { type: 'Catch & Shoot', fga: 4.6, efg: 55.9 },
+      { type: 'Pull-Up', fga: 2.2, efg: 43.1 },
+    ],
+    assistLoc: { Rim: 0.9, 'Corner 3': 0.3, 'Arc 3': 0.4, 'Mid-Range': 0.3 },
+  },
+  {
+    id: 11,
+    name: 'Josh Hart',
+    team: 'NYK',
+    pos: 'G-F',
+    archetype: 'Connector',
+    season: { min: 37.2, pts: 13.4, reb: 9.6, ast: 5.8, fg3m: 1.4 },
+    boards: { PP: ['REB', 'AST', 'PRA'], UD: ['REB', 'RA'], DAB: [] },
+    playTypes: [
+      { type: 'Transition', freq: 24.1, ppp: 1.16 },
+      { type: 'Cut', freq: 14.8, ppp: 1.29 },
+      { type: 'Spot-Up', freq: 13.2, ppp: 0.98 },
+      { type: 'Putbacks', freq: 8.9, ppp: 1.18 },
+    ],
+    zones: [
+      { zone: 'Restricted Area', share: 41.2, fgPct: 64.8 },
+      { zone: 'Above Break 3', share: 18.6, fgPct: 33.1 },
+      { zone: 'Corner 3', share: 10.9, fgPct: 36.8 },
+      { zone: 'Mid-Range', share: 12.1, fgPct: 39.4 },
+      { zone: 'Paint (Non-RA)', share: 17.2, fgPct: 46.2 },
+    ],
+    shotTypes: [
+      { type: '< 10 ft', fga: 5.8, efg: 61.9 },
+      { type: 'Catch & Shoot', fga: 2.9, efg: 51.2 },
+      { type: 'Pull-Up', fga: 1.6, efg: 40.8 },
+    ],
+    assistLoc: { Rim: 2.4, 'Corner 3': 0.8, 'Arc 3': 1.1, 'Mid-Range': 0.6 },
+  },
+  {
+    id: 12,
+    name: 'Miles McBride',
+    team: 'NYK',
+    pos: 'G',
+    archetype: 'Bench Combo Guard',
+    season: { min: 24.6, pts: 9.8, reb: 2.9, ast: 2.6, fg3m: 2.1 },
+    boards: { PP: [], UD: ['PTS', '3PM'], DAB: [] },
+    playTypes: [
+      { type: 'Spot-Up', freq: 28.4, ppp: 1.06 },
+      { type: 'P&R Ball-Handler', freq: 16.9, ppp: 0.89 },
+      { type: 'Transition', freq: 13.2, ppp: 1.11 },
+    ],
+    zones: [
+      { zone: 'Above Break 3', share: 46.8, fgPct: 36.4 },
+      { zone: 'Restricted Area', share: 16.9, fgPct: 57.2 },
+      { zone: 'Corner 3', share: 11.2, fgPct: 39.6 },
+      { zone: 'Mid-Range', share: 11.8, fgPct: 40.1 },
+      { zone: 'Paint (Non-RA)', share: 13.3, fgPct: 42.4 },
+    ],
+    shotTypes: [
+      { type: 'Catch & Shoot', fga: 5.2, efg: 57.1 },
+      { type: 'Pull-Up', fga: 3.1, efg: 44.2 },
+      { type: '< 10 ft', fga: 1.8, efg: 52.9 },
+    ],
+    assistLoc: { Rim: 1.0, 'Corner 3': 0.3, 'Arc 3': 0.6, 'Mid-Range': 0.3 },
+  },
+];
+
+// Similar players (same archetype cluster) vs this opponent, this season.
+// Deliberately includes thin/empty samples — the honest state early in a
+// season or for rare archetypes (probes the early-season fog patch).
+export const ARCHETYPE_LOGS = {
+  'Perimeter Shot Creator|NYK': [
+    { player: 'S. Gilgeous-Alexander', date: 'Mar 28', min: 36, pts: 35, reb: 5, ast: 7, fg3m: 2 },
+    { player: 'L. Doncic', date: 'Mar 14', min: 38, pts: 38, reb: 9, ast: 8, fg3m: 5 },
+    { player: 'D. Mitchell', date: 'Feb 21', min: 35, pts: 31, reb: 4, ast: 5, fg3m: 4 },
+    { player: 'D. Booker', date: 'Jan 30', min: 37, pts: 29, reb: 4, ast: 6, fg3m: 3 },
+    { player: 'D. DeRozan', date: 'Jan 12', min: 34, pts: 24, reb: 3, ast: 4, fg3m: 1 },
+  ],
+  'Slashing Wing|NYK': [
+    { player: 'A. Edwards', date: 'Mar 20', min: 37, pts: 27, reb: 6, ast: 4, fg3m: 3 },
+    { player: 'J. Williams', date: 'Feb 26', min: 34, pts: 22, reb: 5, ast: 5, fg3m: 2 },
+    { player: 'B. Ingram', date: 'Feb 2', min: 35, pts: 25, reb: 5, ast: 4, fg3m: 2 },
+  ],
+  'Movement Shooter|NYK': [
+    { player: 'B. Hield', date: 'Mar 25', min: 29, pts: 19, reb: 3, ast: 2, fg3m: 5 },
+    { player: 'M. Beasley', date: 'Mar 3', min: 27, pts: 21, reb: 2, ast: 1, fg3m: 6 },
+    { player: 'D. Robinson', date: 'Jan 27', min: 25, pts: 16, reb: 2, ast: 2, fg3m: 4 },
+  ],
+  'Stretch Big|NYK': [
+    { player: 'L. Markkanen', date: 'Mar 31', min: 33, pts: 24, reb: 8, ast: 2, fg3m: 4 },
+    { player: 'N. Reid', date: 'Mar 20', min: 26, pts: 18, reb: 6, ast: 2, fg3m: 3 },
+  ],
+  'Spot-Up Specialist|NYK': [
+    { player: 'G. Allen', date: 'Jan 30', min: 24, pts: 11, reb: 3, ast: 1, fg3m: 3 },
+  ],
+  'Pick-and-Roll Maestro|BOS': [
+    { player: 'C. Cunningham', date: 'Mar 26', min: 36, pts: 25, reb: 6, ast: 8, fg3m: 2 },
+    { player: 'T. Young', date: 'Mar 8', min: 35, pts: 22, reb: 3, ast: 9, fg3m: 2 },
+    { player: 'T. Haliburton', date: 'Feb 4', min: 34, pts: 19, reb: 4, ast: 10, fg3m: 3 },
+  ],
+  'Post Scorer / Stretch Big|BOS': [
+    { player: 'N. Jokic', date: 'Mar 2', min: 37, pts: 31, reb: 13, ast: 8, fg3m: 1 },
+    { player: 'D. Sabonis', date: 'Feb 10', min: 35, pts: 26, reb: 14, ast: 6, fg3m: 0 },
+    { player: 'A. Davis', date: 'Jan 23', min: 36, pts: 28, reb: 12, ast: 3, fg3m: 1 },
+  ],
+  '3&D Wing|BOS': [
+    { player: 'H. Jones', date: 'Mar 18', min: 33, pts: 9, reb: 4, ast: 2, fg3m: 1 },
+    { player: 'D. Finney-Smith', date: 'Feb 24', min: 28, pts: 8, reb: 3, ast: 1, fg3m: 2 },
+  ],
+  Connector: [],
+  'Connector|BOS': [
+    { player: 'D. Green', date: 'Mar 12', min: 31, pts: 8, reb: 9, ast: 7, fg3m: 1 },
+  ],
+  'Cutting Wing|BOS': [],
+  'Bench Combo Guard|BOS': [],
+};
+
+export function archetypeLogsFor(player) {
+  const opp = player.team === GAME.away.tri ? GAME.home.tri : GAME.away.tri;
+  return ARCHETYPE_LOGS[`${player.archetype}|${opp}`] || [];
+}
+
+export function opponentOf(player) {
+  return player.team === GAME.away.tri ? GAME.home.tri : GAME.away.tri;
+}
+
+export function marketsFor(player) {
+  return [...new Set([...player.boards.PP, ...player.boards.UD, ...player.boards.DAB])];
+}
+
+const MARKET_TO_TRADITIONAL = {
+  PTS: 'OPP_PTS',
+  REB: 'OPP_REB',
+  AST: 'OPP_AST',
+  '3PM': 'OPP_3PM',
+};
+
+// Organize (don't score): line up what a player leans on against what the
+// opponent concedes in that exact category. Hot = opponent bottom-10 defending
+// it (rank >= 21); cold = opponent top-9 (rank <= 9). No composite number.
+export function computeEdges(player) {
+  const def = DEFENSE[opponentOf(player)];
+  const hot = [];
+  const cold = [];
+  const push = (rank, entry) => {
+    if (rank >= 21) hot.push({ ...entry, rank });
+    else if (rank <= 9) cold.push({ ...entry, rank });
+  };
+
+  marketsFor(player).forEach((market) => {
+    const stat = MARKET_TO_TRADITIONAL[market];
+    if (!stat) return;
+    const row = def.traditional.find((r) => r.stat === stat);
+    if (row) {
+      push(row.rank, {
+        category: 'Traditional',
+        label: `${market} market vs ${stat.replace('OPP_', 'opp ')}`,
+        playerLine: `${market} posted`,
+        oppLine: `${row.value} allowed (${row.vsAvg > 0 ? '+' : ''}${row.vsAvg} vs avg)`,
+      });
+    }
+  });
+
+  player.playTypes
+    .filter((pt) => pt.freq >= 12)
+    .forEach((pt) => {
+      const d = def.playTypes[pt.type];
+      if (d) {
+        push(d.rank, {
+          category: 'Play types',
+          label: pt.type,
+          playerLine: `${pt.freq}% freq · ${pt.ppp} PPP`,
+          oppLine: `${d.ppp} PPP allowed`,
+        });
+      }
+    });
+
+  player.zones
+    .filter((z) => z.share >= 20)
+    .forEach((z) => {
+      const d = def.zones[z.zone];
+      if (d) {
+        push(d.rank, {
+          category: 'Shot zones',
+          label: z.zone,
+          playerLine: `${z.share}% of FGA · ${z.fgPct} FG%`,
+          oppLine: `${d.fgPct} FG% allowed`,
+        });
+      }
+    });
+
+  player.shotTypes
+    .filter((st) => st.fga >= 4)
+    .forEach((st) => {
+      const d = def.shotTypes[st.type];
+      if (d) {
+        push(d.rank, {
+          category: 'Shot types',
+          label: st.type,
+          playerLine: `${st.fga} FGA · ${st.efg} eFG%`,
+          oppLine: `${d.efg} eFG% allowed (${d.vsAvg > 0 ? '+' : ''}${d.vsAvg} vs avg)`,
+        });
+      }
+    });
+
+  Object.entries(player.assistLoc)
+    .filter(([, perGame]) => perGame >= 1.0)
+    .forEach(([loc, perGame]) => {
+      const d = def.assistLoc[loc];
+      if (d) {
+        push(d.rank, {
+          category: 'Assist locations',
+          label: `Assists to ${loc}`,
+          playerLine: `${perGame}/gm`,
+          oppLine: `${d.perGame}/gm allowed`,
+        });
+      }
+    });
+
+  return { hot, cold };
+}

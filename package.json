@@ -47,14 +47,23 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand",
+    "test:e2e": "playwright test",
+    "test:e2e:critical": "playwright test --grep @critical",
+    "test:e2e:smoke": "playwright test --grep @smoke",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
     "lint": "eslint .",
-    "format:check": "prettier --check package.json README.md index.html src vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows/ci.yml .prettierrc.json",
-    "format": "prettier --write package.json README.md index.html src vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows/ci.yml .prettierrc.json"
+    "format:check": "prettier --check package.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
+    "format": "prettier --write package.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json"
   },
   "jest": {
     "testEnvironment": "jsdom",
     "setupFilesAfterEnv": [
       "<rootDir>/src/setupTests.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/e2e/"
     ],
     "moduleNameMapper": {
       "\\.(css)$": "identity-obj-proxy"
@@ -67,12 +76,13 @@
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-react": "^7.29.7",
-    "autoprefixer": "^10.4.19",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "autoprefixer": "^10.4.19",
     "babel-jest": "^30.4.1",
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",

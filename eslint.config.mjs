@@ -5,7 +5,14 @@ import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
-    ignores: ['build/**', 'dist/**', 'coverage/**', 'node_modules/**'],
+    ignores: [
+      'build/**',
+      'dist/**',
+      'coverage/**',
+      'node_modules/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
   },
   eslint.configs.recommended,
   {
@@ -41,6 +48,12 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ];

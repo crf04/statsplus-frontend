@@ -52,7 +52,7 @@ const CrossHeader = ({ playerName, oppTri }) => (
   </div>
 );
 
-const Dossier = ({ player }) => {
+export const Dossier = ({ player }) => {
   const oppTri = opponentOf(player);
   const def = DEFENSE[oppTri];
   const edges = computeEdges(player);

@@ -14,7 +14,7 @@ import {
 import { RankPill, MarketChips, Num, SectionCard } from './protoUi';
 
 // Every concession a defense makes, flattened and sortable by rank.
-function concessions(tri) {
+export function concessions(tri) {
   const def = DEFENSE[tri];
   const out = [];
   def.traditional.forEach((r) =>

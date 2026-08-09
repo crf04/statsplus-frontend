@@ -9,17 +9,19 @@ import PrototypeSwitcher from './PrototypeSwitcher';
 import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
+import VariantD from './VariantD';
 
-const VARIANTS = ['A', 'B', 'C'];
+const VARIANTS = ['D', 'A', 'B', 'C'];
 const VARIANT_NAMES = {
   A: 'Player Dossier',
   B: 'Edge Matrix',
   C: 'Defense Funnel',
+  D: 'Target Board (synthesis)',
 };
 
 const readVariant = () => {
   const v = new URLSearchParams(window.location.search).get('variant');
-  return VARIANTS.includes(v) ? v : 'A';
+  return VARIANTS.includes(v) ? v : 'D';
 };
 
 const GameHeader = () => {
@@ -104,6 +106,7 @@ const MatchupDetailPrototype = () => {
         Prototype — matchup detail (mock data, crf04/statsplus#7)
       </div>
       <GameHeader />
+      {variant === 'D' && <VariantD />}
       {variant === 'A' && <VariantA />}
       {variant === 'B' && <VariantB />}
       {variant === 'C' && <VariantC />}

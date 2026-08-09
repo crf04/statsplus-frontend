@@ -48,7 +48,7 @@ A few decisions worth calling out:
 - **Auth:** Firebase Web SDK
 - **Charts:** Chart.js, react-chartjs-2, Recharts, plus annotation and datalabels plugins
 - **Styling:** Tailwind CSS, Bootstrap, react-bootstrap, component-scoped CSS
-- **Testing:** Jest + React Testing Library
+- **Testing:** Jest + React Testing Library + Playwright
 
 ## Local Development
 
@@ -66,7 +66,11 @@ Common scripts:
 npm start          # dev server
 npm test           # Jest in watch mode
 npm run build      # production build into build/
+npm run test:e2e   # hermetic browser tests with mocked API contracts
 ```
+
+See [`docs/testing.md`](docs/testing.md) for the feature-testing workflow, deployed smoke tests, and
+Codex exploratory QA process.
 
 ### Environment Variables
 

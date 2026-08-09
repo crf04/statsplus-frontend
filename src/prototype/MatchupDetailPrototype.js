@@ -11,19 +11,21 @@ import VariantB from './VariantB';
 import VariantC from './VariantC';
 import VariantD from './VariantD';
 import VariantE from './VariantE';
+import VariantF from './VariantF';
 
-const VARIANTS = ['E', 'D', 'A', 'B', 'C'];
+const VARIANTS = ['F', 'E', 'D', 'A', 'B', 'C'];
 const VARIANT_NAMES = {
   A: 'Player Dossier',
   B: 'Edge Matrix',
   C: 'Defense Funnel',
   D: 'Target Board (synthesis)',
   E: 'Category Board (synthesis)',
+  F: 'Team Sheet (synthesis)',
 };
 
 const readVariant = () => {
   const v = new URLSearchParams(window.location.search).get('variant');
-  return VARIANTS.includes(v) ? v : 'E';
+  return VARIANTS.includes(v) ? v : 'F';
 };
 
 const GameHeader = () => {
@@ -108,6 +110,7 @@ const MatchupDetailPrototype = () => {
         Prototype — matchup detail (mock data, crf04/statsplus#7)
       </div>
       <GameHeader />
+      {variant === 'F' && <VariantF />}
       {variant === 'E' && <VariantE />}
       {variant === 'D' && <VariantD />}
       {variant === 'A' && <VariantA />}

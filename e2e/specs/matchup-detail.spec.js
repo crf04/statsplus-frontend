@@ -50,7 +50,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     fullPage: true,
   });
 
-  await page.getByRole('button', { name: 'Last 15' }).click();
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
   await expect(page.getByText('-8% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 20% poss/)).toBeVisible();
 
@@ -201,26 +201,61 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/games/matchup/selection') selectionRequests += 1;
   });
-  await page.goto('/matchups/0022500584');
+  await page.goto('/matchups/0022500584?context=kept');
   await page
     .getByRole('article', { name: 'LeBron James player' })
     .getByRole('button', { name: 'Open selection card' })
     .click();
-  await expect(page).toHaveURL(/player=lebron-james/);
+  await expect(page).toHaveURL(
+    /context=kept.*player=lebron-james|player=lebron-james.*context=kept/,
+  );
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  await page
+    .getByRole('article', { name: 'LeBron James player' })
+    .getByRole('button', { name: 'Selected' })
+    .click();
   const matrix = page.getByRole('table', { name: 'LeBron James Score Matrix' });
   await expect(matrix).toContainText('+12%');
   await expect(matrix).toContainText('thin');
-  await expect(page.getByText('Thin sample — interpret cautiously.')).toBeVisible();
+  await expect(page.getByText('Thin sample — interpret cautiously.').first()).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'AST', exact: true }).click();
-  await expect(page.getByRole('columnheader', { name: 'AST' }).first()).toBeVisible();
+  const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Post up' });
+  await expect(postUpRow).not.toHaveClass(/selection-why/);
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
+  await expect(postUpRow).toHaveClass(/selection-why/);
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page
+    .getByRole('group', { name: 'Selection log stat' })
+    .getByRole('button', { name: 'PRA' })
+    .click();
+  await expect(page.getByRole('columnheader', { name: 'PRA' }).first()).toBeVisible();
+  await expect(page.getByText('+0.102').first()).toBeVisible();
   expect(selectionRequests).toBe(1);
   await page.screenshot({
     path: testInfo.outputPath('selection-card-desktop.png'),
     fullPage: true,
   });
 
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toHaveCount(0);
+  await page.goForward();
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toHaveCount(0);
+  await expect(
+    page.getByRole('article', { name: 'LeBron James player' }).getByRole('button'),
+  ).toBeFocused();
+
+  await page.goto('/matchups/0022500584?player=austin-reaves');
+  await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  await expect(page.getByText('No games vs this opponent data is available.')).toBeVisible();
   await page.goto('/matchups/0022500584?player=lebron-james');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
   await page.setViewportSize({ width: 393, height: 852 });

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -164,12 +164,13 @@ const matchup = {
 };
 
 beforeEach(() => {
+  jest.clearAllMocks();
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchMatchup.mockResolvedValue(matchup);
   fetchMatchupSelection.mockResolvedValue({
     playerId: 'player-one',
     h2h: {
-      status: 'ready',
+      thin: true,
       rows: [
         {
           date: '2025-12-25',
@@ -177,17 +178,19 @@ beforeEach(() => {
           minutes: 36,
           stats: { PTS: 31, FGA: 19 },
           deltas: { PTS: 0.083, FGA: 0.018 },
+          average: false,
+        },
+        {
+          date: null,
+          matchup: 'AVG',
+          minutes: 36,
+          stats: { PTS: 31, FGA: 19 },
+          deltas: { PTS: 0.083, FGA: 0.018 },
+          average: true,
         },
       ],
-      average: {
-        date: null,
-        matchup: 'AVG',
-        minutes: 36,
-        stats: { PTS: 31, FGA: 19 },
-        deltas: { PTS: 0.083, FGA: 0.018 },
-      },
     },
-    archetype: { status: 'empty', rows: [], average: null },
+    archetype: { thin: false, rows: [] },
   });
 });
 
@@ -228,6 +231,67 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   expect(screen.getByText('Isolation')).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
+});
+
+test('selection keeps All active and highlights only display-eligible shares for each window', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.players.find((player) => player.id === 'player-one').dietShares.playTypes[0].season = {
+    share: 0.02,
+    volumePerGame: 5,
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  expect(screen.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(screen.getByText('Transition').closest('article')).not.toHaveClass('selection-why');
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(screen.getByText('Transition').closest('article')).toHaveClass('selection-why');
+});
+
+test('a late selection response cannot replace a newer player selection', async () => {
+  let resolveFirst;
+  const first = new Promise((resolve) => {
+    resolveFirst = resolve;
+  });
+  const austin = {
+    playerId: 'player-two',
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+  fetchMatchupSelection.mockImplementation((_gameId, playerId) =>
+    playerId === 'player-one' ? first : Promise.resolve(austin),
+  );
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  await userEvent.click(
+    within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByRole('button', {
+      name: 'Open selection card',
+    }),
+  );
+  expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  resolveFirst({
+    playerId: 'player-one',
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible(),
+  );
 });
 
 test('sorts the active market by delivered Matchup Score and scopes tabs to the displayed side', async () => {
@@ -296,7 +360,11 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect((await screen.findAllByText('+0.083')).length).toBeGreaterThan(0);
   expect(screen.getByText('No archetype sample data is available.')).toBeVisible();
   expect(screen.getByText('Transition').closest('article')).toHaveClass('selection-why');
-  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  );
   expect((await screen.findAllByText('+0.018')).length).toBeGreaterThan(0);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });

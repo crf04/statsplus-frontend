@@ -5,7 +5,8 @@ import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
-import { shouldDisplayDietShare } from './displayConfig';
+import { getDisplayableDietShare } from './displayConfig';
+import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
 const WINDOWS = [
@@ -98,6 +99,7 @@ function PlayerRail({
   targetableCount,
   selectedId,
   onSelect,
+  registerTrigger,
 }) {
   const [sortMode, setSortMode] = useState('season');
   useEffect(() => {
@@ -106,7 +108,11 @@ function PlayerRail({
   const injuryById = new Map(
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
-  const scoreFor = (player) => player.scores[market]?.[windowKey].blend.value ?? -Infinity;
+  const scoreFor = (player) => {
+    const score = player.scores[market]?.[windowKey];
+    if (!score) return -Infinity;
+    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? -Infinity;
+  };
   const scoped = players.filter(
     (player) => market === 'All' || player.postedMarkets.includes(market),
   );
@@ -174,7 +180,14 @@ function PlayerRail({
                   ))}
                 </div>
                 <Sparkline values={player.last10Minutes} playerName={player.name} />
-                <button type="button" className="select-player" onClick={() => onSelect(player)}>
+                <button
+                  ref={(node) => registerTrigger(player.id, node)}
+                  type="button"
+                  className="select-player"
+                  aria-expanded={selectedId === player.id}
+                  aria-controls="matchup-selection-card"
+                  onClick={() => onSelect(player)}
+                >
                   {selectedId === player.id ? 'Selected' : 'Open selection card'}
                 </button>
               </article>
@@ -191,8 +204,8 @@ function DietShareChips({ players, base, rowKey, windowKey, market }) {
   const chips = players
     .filter((player) => market === 'All' || player.postedMarkets.includes(market))
     .flatMap((player) => {
-      const share = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
-      if (!share || !shouldDisplayDietShare(base, share)) return [];
+      const share = getDisplayableDietShare(player, base, rowKey, windowKey);
+      if (!share) return [];
       return [{ player, share }];
     });
   if (chips.length === 0)
@@ -243,7 +256,8 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
                 return (
                   <article
                     className={`sheet-row${
-                      selectedPlayer?.dietShares[base]?.some((entry) => entry.key === row.key)
+                      selectedPlayer &&
+                      getDisplayableDietShare(selectedPlayer, base, row.key, windowKey)
                         ? ' selection-why'
                         : ''
                     }`}
@@ -283,146 +297,6 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
             </div>
           </section>
         ) : null,
-      )}
-    </section>
-  );
-}
-
-const SCORE_BASE_LABELS = {
-  playTypes: 'Play types',
-  shotZones: 'Shot zones',
-  shotTypes: 'Shot types',
-  assistLocations: 'Assist locations',
-  traditional: 'Traditional',
-};
-const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
-
-function LogTable({ title, table, market }) {
-  return (
-    <section className="selection-log" aria-labelledby={`${title.replaceAll(' ', '-')}-heading`}>
-      <h3 id={`${title.replaceAll(' ', '-')}-heading`}>{title}</h3>
-      {table.status === 'thin' && <p className="thin-note">Thin sample — interpret cautiously.</p>}
-      {table.status === 'empty' ? (
-        <p className="honest-empty">No {title.toLowerCase()} data is available.</p>
-      ) : (
-        <div className="selection-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Game</th>
-                <th scope="col">MIN</th>
-                <th scope="col">{market}</th>
-                <th scope="col">±STAT/MIN</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...table.rows, ...(table.average ? [table.average] : [])].map((row, index) => (
-                <tr
-                  key={row.date || `average-${index}`}
-                  className={row.matchup === 'AVG' ? 'average-row' : undefined}
-                >
-                  <th scope="row">
-                    {row.matchup === 'AVG' ? 'AVG' : `${row.date} · ${row.matchup}`}
-                  </th>
-                  <td>{row.minutes.toFixed(1)}</td>
-                  <td>{row.stats[market].toFixed(1)}</td>
-                  <td>
-                    {row.deltas[market] >= 0 ? '+' : ''}
-                    {row.deltas[market].toFixed(3)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function SelectionCard({ player, selection, status, error, windowKey, market, onClose }) {
-  const panelRef = useRef(null);
-  useEffect(() => panelRef.current?.focus(), [player.id]);
-  const rows = player.postedMarkets.map((postedMarket) => ({
-    market: postedMarket,
-    score: player.scores[postedMarket][windowKey],
-  }));
-  const bases = [...new Set(rows.flatMap(({ score }) => Object.keys(score.components)))];
-  const defensiveMarkets = new Set(['TOV', 'STL', 'BLK', 'STKS']);
-  return (
-    <section
-      ref={panelRef}
-      className="selection-card"
-      aria-labelledby="selection-heading"
-      tabIndex="-1"
-    >
-      <div className="selection-card-heading">
-        <div>
-          <p className="matchup-eyebrow">Selection card</p>
-          <h2 id="selection-heading">{player.name}</h2>
-        </div>
-        <button type="button" onClick={onClose}>
-          Close selection card
-        </button>
-      </div>
-      <p className="selection-explainer">
-        Highlighted Defense Sheet rows show the inputs this player leans on. Scores and deltas are
-        delivered by the API.
-      </p>
-      <div className="selection-table-wrap">
-        <table aria-label={`${player.name} Score Matrix`}>
-          <thead>
-            <tr>
-              <th scope="col">Market</th>
-              {bases.map((base) => (
-                <th scope="col" key={base}>
-                  {SCORE_BASE_LABELS[base] || base}
-                </th>
-              ))}
-              <th scope="col">Blend</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ market: rowMarket, score }) => (
-              <tr
-                key={rowMarket}
-                className={rowMarket === market ? 'active-market-row' : undefined}
-              >
-                <th scope="row">{rowMarket}</th>
-                {bases.map((base) => (
-                  <td key={base}>
-                    {score.components[base] ? (
-                      <>
-                        {formatPercent(score.components[base].value)}
-                        {score.components[base].thin && <span className="thin-flag">thin</span>}
-                      </>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                ))}
-                <td>
-                  {defensiveMarkets.has(rowMarket) ? (
-                    '—'
-                  ) : (
-                    <>
-                      {formatPercent(score.blend.value)}
-                      {score.blend.thin && <span className="thin-flag">thin</span>}
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {status === 'loading' && <p role="status">Loading selection logs…</p>}
-      {status === 'error' && <p role="alert">{error}</p>}
-      {status === 'ready' && (
-        <div className="selection-logs">
-          <LogTable title="Games vs this opponent" table={selection.h2h} market={market} />
-          <LogTable title="Archetype sample" table={selection.archetype} market={market} />
-        </div>
       )}
     </section>
   );
@@ -524,6 +398,8 @@ function Detail({ matchup, gameId }) {
   const [deviation, setDeviation] = useState(1);
   const selectedId = searchParams.get('player');
   const selectedPlayer = matchup.players.find((player) => player.id === selectedId) || null;
+  const selectionTriggers = useRef(new Map());
+  const previousSelectedId = useRef(null);
   const [selectionState, setSelectionState] = useState({ status: 'idle', data: null, error: null });
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
@@ -549,30 +425,50 @@ function Detail({ matchup, gameId }) {
       setSelectionState({ status: 'idle', data: null, error: null });
       return undefined;
     }
-    const selectedDefense = matchup.teams.find((team) => team.teamId !== selectedPlayer.teamId);
-    if (selectedDefense) setTeamId(selectedDefense.teamId);
     const controller = new AbortController();
+    let current = true;
     setSelectionState({ status: 'loading', data: null, error: null });
     fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.postedMarkets, {
       signal: controller.signal,
     })
-      .then((data) => setSelectionState({ status: 'ready', data, error: null }))
+      .then((data) => {
+        if (current) setSelectionState({ status: 'ready', data, error: null });
+      })
       .catch((error) => {
-        if (!isRequestCancelled(error))
+        if (current && !isRequestCancelled(error))
           setSelectionState({
             status: 'error',
             data: null,
             error: getRequestErrorMessage(error, 'Unable to load selection logs.'),
           });
       });
-    return () => controller.abort();
-  }, [gameId, matchup.teams, selectedPlayer]);
+    return () => {
+      current = false;
+      controller.abort();
+    };
+  }, [gameId, selectedPlayer]);
   useEffect(() => {
-    if (selectedPlayer && (market === 'All' || !selectedPlayer.postedMarkets.includes(market))) {
-      setMarket(selectedPlayer.postedMarkets[0]);
+    if (!selectedPlayer) return;
+    const selectedDefense = matchup.teams.find((team) => team.teamId !== selectedPlayer.teamId);
+    if (selectedDefense && selectedDefense.teamId !== teamId) setTeamId(selectedDefense.teamId);
+  }, [matchup.teams, selectedPlayer, teamId]);
+  useEffect(() => {
+    if (previousSelectedId.current && !selectedId) {
+      selectionTriggers.current.get(previousSelectedId.current)?.focus();
     }
-  }, [market, selectedPlayer]); // Market and window flips deliberately do not refetch.
-  const selectPlayer = (player) => setSearchParams({ player: player.id });
+    previousSelectedId.current = selectedId;
+  }, [selectedId]);
+  const updateSelectedPlayer = (playerId) => {
+    if (playerId === selectedId) return;
+    const next = new URLSearchParams(searchParams);
+    if (playerId) next.set('player', playerId);
+    else next.delete('player');
+    setSearchParams(next, { replace: false });
+  };
+  const registerTrigger = (playerId, node) => {
+    if (node) selectionTriggers.current.set(playerId, node);
+    else selectionTriggers.current.delete(playerId);
+  };
   return (
     <>
       <header className="matchup-heading">
@@ -658,7 +554,8 @@ function Detail({ matchup, gameId }) {
           windowKey={windowKey}
           targetableCount={poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null}
           selectedId={selectedId}
-          onSelect={selectPlayer}
+          onSelect={(player) => updateSelectedPlayer(player.id)}
+          registerTrigger={registerTrigger}
         />
       </div>
       {selectedId && !selectedPlayer && (
@@ -666,15 +563,19 @@ function Detail({ matchup, gameId }) {
           That player is not available in this matchup.
         </p>
       )}
-      {selectedPlayer && market !== 'All' && (
+      {selectedPlayer && (
         <SelectionCard
           player={selectedPlayer}
-          selection={selectionState.data}
-          status={selectionState.status}
+          selection={
+            selectionState.data?.playerId === selectedPlayer.id ? selectionState.data : null
+          }
+          status={
+            selectionState.data?.playerId === selectedPlayer.id ? selectionState.status : 'loading'
+          }
           error={selectionState.error}
           windowKey={windowKey}
-          market={market}
-          onClose={() => setSearchParams({})}
+          sheetMarket={market}
+          onClose={() => updateSelectedPlayer(null)}
         />
       )}
       <InjuryReport injuries={matchup.injuries} now={now} />

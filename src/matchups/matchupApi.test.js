@@ -207,32 +207,38 @@ test.each([
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
-test('strictly decodes delivered selection rows and averages for every posted market', () => {
-  const selection = decodeMatchupSelection(
-    {
-      player_id: 'lebron-james',
-      h2h: {
-        status: 'ready',
-        rows: [
-          {
-            game_date: '2025-12-25',
-            matchup: 'LAL vs. BOS',
-            minutes: 36,
-            stats: { PTS: 31, AST: 9 },
-            deltas: { PTS: 0.083, AST: 0.031 },
-          },
-        ],
-        average: { minutes: 36, stats: { PTS: 31, AST: 9 }, deltas: { PTS: 0.083, AST: 0.031 } },
-      },
-      archetype: { status: 'empty', rows: [], average: null },
+test('strictly decodes combo, attempts, and AVG rows from the raw selection response', () => {
+  const raw = {
+    player_id: 'lebron-james',
+    h2h: {
+      rows: [
+        {
+          game_date: '2025-12-25',
+          matchup: 'LAL vs. BOS',
+          minutes: 36,
+          stats: { PRA: 48, FGA: 19 },
+          deltas: { PRA: 0.102, FGA: 0.018 },
+        },
+        {
+          game_date: null,
+          matchup: 'AVG',
+          minutes: 36,
+          stats: { PRA: 48, FGA: 19 },
+          deltas: { PRA: 0.102, FGA: 0.018 },
+        },
+      ],
     },
-    ['PTS', 'AST'],
+    archetype: { rows: [] },
+  };
+  const selection = decodeMatchupSelection(raw, ['PRA', 'FGA'], 'lebron-james');
+  expect(selection.h2h.rows.at(-1)).toEqual(
+    expect.objectContaining({ average: true, deltas: { PRA: 0.102, FGA: 0.018 } }),
   );
-  expect(selection.h2h.average).toEqual(
-    expect.objectContaining({ matchup: 'AVG', deltas: { PTS: 0.083, AST: 0.031 } }),
+  expect(selection.archetype.rows).toEqual([]);
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'AST'], 'lebron-james')).toThrow(
+    'selection endpoint returned an invalid response',
   );
-  expect(selection.archetype.status).toBe('empty');
-  expect(() =>
-    decodeMatchupSelection({ ...selection, player_id: 'lebron-james' }, ['PTS']),
-  ).toThrow('invalid response');
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'FGA'], 'another-player')).toThrow(
+    'selection endpoint returned an invalid response',
+  );
 });

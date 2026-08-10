@@ -246,12 +246,29 @@
   border-color: var(--ct-gold);
 }
 .select-player,
-.selection-card-heading button {
+.selection-close {
   margin-top: 10px;
   border: 1px solid var(--ct-line-strong);
   border-radius: 999px;
   padding: 7px 10px;
   background: transparent;
+  color: var(--ct-text);
+}
+.selection-stat-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+}
+.selection-stat-control button {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: transparent;
+  color: var(--ct-dim);
+}
+.selection-stat-control button[aria-pressed='true'] {
+  border-color: var(--ct-gold);
   color: var(--ct-text);
 }
 .selection-card {

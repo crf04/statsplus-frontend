@@ -129,10 +129,10 @@ export default function SlatePage() {
       ? getSurfaceFreshnessPresentation(state.slate.freshness.pool, 'pool', now)
       : null;
   const effectivePoolStatus =
-    state.status === 'ready' && state.slate.poolStatus === 'fresh'
+    state.status === 'ready' && state.slate.freshness.pool.status === 'fresh'
       ? poolPresentation.status
       : state.status === 'ready'
-        ? state.slate.poolStatus
+        ? state.slate.freshness.pool.status
         : null;
 
   useEffect(() => {

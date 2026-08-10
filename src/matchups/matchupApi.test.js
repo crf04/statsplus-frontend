@@ -1,4 +1,10 @@
-import { decodeMatchup, decodeMatchupSelection } from './matchupApi';
+import { apiClient } from '../config';
+import { decodeMatchup, decodeMatchupSelection, fetchMatchupSelection } from './matchupApi';
+
+jest.mock('../config', () => ({
+  apiClient: { get: jest.fn() },
+  getApiUrl: jest.fn(() => '/api/games/matchup/selection'),
+}));
 
 const payload = {
   game: {
@@ -8,6 +14,30 @@ const payload = {
     scheduled_at: '2026-01-16T00:30:00Z',
     status: { state: 'scheduled', label: 'Scheduled' },
     preseason: false,
+  },
+  league: {
+    defense_sheet: {
+      play_types: [
+        {
+          key: 'transition',
+          season: { average_allowed_per_48: 16.4, sigma: 1.4 },
+          last_15: { average_allowed_per_48: 16.2, sigma: 1.2 },
+        },
+      ],
+      shot_zones: [],
+      shot_types: [],
+      assist_locations: [],
+      traditional: [],
+    },
+    defensive_columns: Object.fromEntries(
+      ['OPP_TOV', 'OPP_STL', 'OPP_BLK'].map((key) => [
+        key,
+        {
+          season: { average_per_48: 10, sigma: 1 },
+          last_15: { average_per_48: 11, sigma: 1.1 },
+        },
+      ]),
+    ),
   },
   teams: [
     {
@@ -34,6 +64,10 @@ const payload = {
             },
           },
         ],
+        shot_zones: [],
+        shot_types: [],
+        assist_locations: [],
+        traditional: [],
       },
       defensive_columns: {
         OPP_TOV: {
@@ -54,7 +88,13 @@ const payload = {
       team_id: 2,
       tricode: 'BOS',
       name: 'Boston Celtics',
-      defense_sheet: { play_types: [] },
+      defense_sheet: {
+        play_types: [],
+        shot_zones: [],
+        shot_types: [],
+        assist_locations: [],
+        traditional: [],
+      },
       defensive_columns: {
         OPP_TOV: {
           season: { per_48: 12, percent_vs_league_average: -4 },
@@ -73,11 +113,12 @@ const payload = {
   ],
   players: [
     {
-      canonical_id: 'lebron-james',
+      canonical_id: 2544,
       name: 'LeBron James',
       team_id: 1,
       tricode: 'LAL',
       posted_markets: ['PTS', 'FGA'],
+      provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
       season_scoring: 25.4,
       last_10_minutes: [35, 36],
       diet_shares: {
@@ -120,7 +161,10 @@ const payload = {
     retrieved_at: null,
     source: 'rotowire',
     source_url: 'https://example.com/injuries',
-    teams: [],
+    teams: [
+      { team_id: 1, tricode: 'LAL', submission_state: 'unknown', entries: [] },
+      { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
+    ],
   },
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
@@ -142,8 +186,9 @@ test('decodes both delivered windows and preserves relative values', () => {
   );
   expect(matchup.players[0]).toEqual(
     expect.objectContaining({
-      id: 'lebron-james',
+      id: 2544,
       postedMarkets: ['PTS', 'FGA'],
+      provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
       scores: expect.objectContaining({
         PTS: expect.objectContaining({
           season: expect.objectContaining({ blend: { value: 0.12, thin: false } }),
@@ -160,6 +205,11 @@ test('decodes both delivered windows and preserves relative values', () => {
   expect(matchup.teams[0].defensiveColumns.OPP_TOV.season).toEqual({
     per48: 14.2,
     percentVsLeagueAverage: 8,
+  });
+  expect(matchup.league.defenseSheet.playTypes[0]).toEqual({
+    key: 'transition',
+    season: { averageAllowedPer48: 16.4, sigma: 1.4 },
+    last15: { averageAllowedPer48: 16.2, sigma: 1.2 },
   });
 });
 
@@ -186,9 +236,108 @@ test('accepts clarified freshness with derived schedule and provider-only pool t
   );
 });
 
+test('strictly decodes injury identities and enforces the v1 team envelope', () => {
+  const injuryPayload = JSON.parse(JSON.stringify(payload));
+  injuryPayload.injuries = {
+    ...injuryPayload.injuries,
+    teams: [
+      {
+        team_id: 1,
+        tricode: 'LAL',
+        submission_state: 'unknown',
+        entries: [
+          {
+            entry_id: 'injury-1',
+            source_player_id: 'source-1',
+            canonical_player_id: 2544,
+            source_player_name: 'LeBron James',
+            team_id: 1,
+            tricode: 'LAL',
+            status: 'Questionable',
+            raw_status: 'Questionable',
+            reason: 'Left ankle soreness',
+            source_url: 'https://example.com/injury-1',
+          },
+        ],
+      },
+      { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
+    ],
+  };
+  expect(decodeMatchup(injuryPayload).injuries.teams[0].entries[0]).toEqual(
+    expect.objectContaining({ sourcePlayerId: 'source-1', playerId: 2544, teamId: 1 }),
+  );
+
+  const wrongTeam = JSON.parse(JSON.stringify(injuryPayload));
+  wrongTeam.injuries.teams[0].entries[0].team_id = 2;
+  expect(() => decodeMatchup(wrongTeam)).toThrow('invalid response');
+  const inventedSubmission = JSON.parse(JSON.stringify(injuryPayload));
+  inventedSubmission.injuries.teams[0].submission_state = 'submitted';
+  expect(() => decodeMatchup(inventedSubmission)).toThrow('invalid response');
+  const missingSourceId = JSON.parse(JSON.stringify(injuryPayload));
+  delete missingSourceId.injuries.teams[0].entries[0].source_player_id;
+  expect(() => decodeMatchup(missingSourceId)).toThrow('invalid response');
+});
+
+test('accepts unavailable injuries with an honest empty team envelope', () => {
+  const unavailable = {
+    ...payload,
+    injuries: { ...payload.injuries, teams: [] },
+  };
+  expect(decodeMatchup(unavailable).injuries).toEqual(
+    expect.objectContaining({
+      status: 'unavailable',
+      unavailableReason: 'permission_required',
+      teams: [],
+    }),
+  );
+
+  const staleWithoutTeams = {
+    ...payload,
+    injuries: {
+      ...payload.injuries,
+      status: 'stale',
+      unavailable_reason: null,
+      retrieved_at: '2026-01-15T11:00:00Z',
+      teams: [],
+    },
+  };
+  expect(() => decodeMatchup(staleWithoutTeams)).toThrow('invalid response');
+
+  const missingReason = JSON.parse(JSON.stringify(unavailable));
+  delete missingReason.injuries.unavailable_reason;
+  expect(() => decodeMatchup(missingReason)).toThrow('invalid response');
+  const unavailableWithoutReason = JSON.parse(JSON.stringify(unavailable));
+  unavailableWithoutReason.injuries.unavailable_reason = null;
+  expect(() => decodeMatchup(unavailableWithoutReason)).toThrow('invalid response');
+});
+
+test('accepts league taxonomy rows that neither matchup team happens to use', () => {
+  const extraLeagueRow = {
+    ...payload,
+    league: {
+      ...payload.league,
+      defense_sheet: {
+        ...payload.league.defense_sheet,
+        play_types: [
+          ...payload.league.defense_sheet.play_types,
+          {
+            key: 'handoff',
+            season: { average_allowed_per_48: 7.2, sigma: 0.7 },
+            last_15: { average_allowed_per_48: 7.4, sigma: 0.8 },
+          },
+        ],
+      },
+    },
+  };
+  expect(decodeMatchup(extraLeagueRow).league.defenseSheet.playTypes).toEqual(
+    expect.arrayContaining([expect.objectContaining({ key: 'handoff' })]),
+  );
+});
+
 test('requires Blend for offensive scores and accepts omitted or null Blend for defensive scores', () => {
   const defensive = JSON.parse(JSON.stringify(payload));
   defensive.players[0].posted_markets = ['TOV'];
+  defensive.players[0].provenance = { prizepicks: ['TOV'] };
   defensive.players[0].scores = {
     TOV: {
       season: { components: { traditional: { value: 0.08, thin: false } } },
@@ -228,13 +377,51 @@ test.each([
     },
   ],
   ['invalid game', { ...payload, game: { ...payload.game, scheduled_at: 'not-a-date' } }],
+  ['missing league', { ...payload, league: undefined }],
+  [
+    'missing matching league row',
+    {
+      ...payload,
+      league: {
+        ...payload.league,
+        defense_sheet: { ...payload.league.defense_sheet, play_types: [] },
+      },
+    },
+  ],
+  [
+    'missing defensive column league denominator',
+    {
+      ...payload,
+      league: {
+        ...payload.league,
+        defensive_columns: Object.fromEntries(
+          Object.entries(payload.league.defensive_columns).filter(([key]) => key !== 'OPP_BLK'),
+        ),
+      },
+    },
+  ],
+  [
+    'string canonical player id',
+    { ...payload, players: [{ ...payload.players[0], canonical_id: '2544' }] },
+  ],
+  [
+    'uncovered posted market provenance',
+    { ...payload, players: [{ ...payload.players[0], provenance: { prizepicks: ['PTS'] } }] },
+  ],
+  [
+    'unposted provenance category',
+    {
+      ...payload,
+      players: [{ ...payload.players[0], provenance: { prizepicks: ['PTS', 'REB'] } }],
+    },
+  ],
 ])('rejects %s at the response boundary', (_name, candidate) => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
 test('strictly decodes combo, attempts, and AVG rows from the raw selection response', () => {
   const raw = {
-    player_id: 'lebron-james',
+    player_id: 2544,
     h2h: {
       thin: false,
       rows: [
@@ -258,22 +445,38 @@ test('strictly decodes combo, attempts, and AVG rows from the raw selection resp
     },
     archetype: { thin: false, rows: [] },
   };
-  const selection = decodeMatchupSelection(raw, ['PRA', 'FGA'], 'lebron-james');
+  const selection = decodeMatchupSelection(raw, ['PRA', 'FGA'], 2544);
   expect(selection.h2h.rows.at(-1)).toEqual(
     expect.objectContaining({ average: true, deltas: { PRA: 0.102, FGA: 0.018 } }),
   );
   expect(selection.archetype.rows).toEqual([]);
-  expect(() => decodeMatchupSelection(raw, ['PRA', 'AST'], 'lebron-james')).toThrow(
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'AST'], 2544)).toThrow(
     'selection endpoint returned an invalid response',
   );
-  expect(() => decodeMatchupSelection(raw, ['PRA', 'FGA'], 'another-player')).toThrow(
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'FGA'], 1630559)).toThrow(
     'selection endpoint returned an invalid response',
   );
   expect(() =>
-    decodeMatchupSelection(
-      { ...raw, h2h: { ...raw.h2h, thin: 'yes' } },
-      ['PRA', 'FGA'],
-      'lebron-james',
-    ),
+    decodeMatchupSelection({ ...raw, h2h: { ...raw.h2h, thin: 'yes' } }, ['PRA', 'FGA'], 2544),
   ).toThrow('selection endpoint returned an invalid response');
+});
+
+test('selection requests keep the game string and canonical player integer distinct', async () => {
+  const response = {
+    player_id: 2544,
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+  apiClient.get.mockResolvedValueOnce({ data: response });
+  await expect(fetchMatchupSelection('0022500584', 2544, ['PTS'])).resolves.toEqual(
+    expect.objectContaining({ playerId: 2544 }),
+  );
+  expect(apiClient.get).toHaveBeenCalledWith('/api/games/matchup/selection', {
+    params: { game_id: '0022500584', player_id: 2544 },
+    signal: undefined,
+  });
+  await expect(fetchMatchupSelection('0022500584', '2544', ['PTS'])).rejects.toThrow(
+    'selection endpoint returned an invalid response',
+  );
+  expect(apiClient.get).toHaveBeenCalledTimes(1);
 });

@@ -85,19 +85,13 @@ const scheduleOnlySlateGame = {
 export const slatePayload = (
   date,
   games,
-  {
-    poolStatus = 'unavailable',
-    poolFreshnessStatus = 'unavailable',
-    poolRetrievedAt = null,
-    providers = {},
-  } = {},
+  { poolFreshnessStatus = 'unavailable', poolRetrievedAt = null, providers = {} } = {},
 ) => ({
   slate_date: date,
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
   },
-  pool_status: poolStatus,
   games,
 });
 
@@ -177,6 +171,42 @@ const teamSheet = (team, playTypes, offset = 0) => ({
   defensive_columns: defensiveColumns(offset),
 });
 
+// Deterministic stand-ins for aggregates derived across all 30 NBA teams.
+const leagueRow = (key, seasonAverage, seasonSigma, last15Average, last15Sigma) => ({
+  key,
+  season: { average_allowed_per_48: seasonAverage, sigma: seasonSigma },
+  last_15: { average_allowed_per_48: last15Average, sigma: last15Sigma },
+});
+
+const league = {
+  defense_sheet: {
+    play_types: [
+      leagueRow('transition', 16.4, 1.4, 16.2, 1.2),
+      leagueRow('isolation', 8, 0.5, 8.1, 0.6),
+      leagueRow('above-break', 11.5, 1, 11.7, 1),
+      leagueRow('post-up', 11, 0.9, 11.4, 1.1),
+      leagueRow('handoff', 7.2, 0.7, 7.4, 0.8),
+    ],
+    shot_zones: [leagueRow('paint', 21, 1.7, 21.2, 1.5)],
+    shot_types: [leagueRow('catch-shoot', 15.5, 1.2, 15.3, 1.1)],
+    assist_locations: [leagueRow('paint-assists', 10, 0.8, 10.1, 0.9)],
+    traditional: [leagueRow('opponent-rebounds', 46, 1.5, 46.2, 1.4)],
+  },
+  defensive_columns: Object.fromEntries(
+    [
+      ['OPP_TOV', 13.1, 1.1, 13, 1],
+      ['OPP_STL', 7.5, 0.8, 7.6, 0.7],
+      ['OPP_BLK', 4.9, 0.6, 4.8, 0.5],
+    ].map(([key, seasonAverage, seasonSigma, last15Average, last15Sigma]) => [
+      key,
+      {
+        season: { average_per_48: seasonAverage, sigma: seasonSigma },
+        last_15: { average_per_48: last15Average, sigma: last15Sigma },
+      },
+    ]),
+  ),
+};
+
 const dietShare = (key, seasonShare, last15Share, seasonVolume = 5.1, last15Volume = 5.4) => ({
   key,
   season: { share: seasonShare, volume_per_game: seasonVolume },
@@ -212,6 +242,7 @@ export const matchupPayload = {
     away_team: { ...slateGame.away_team, targetable_player_count: 2 },
     home_team: { ...slateGame.home_team, targetable_player_count: 1 },
   },
+  league,
   teams: [
     teamSheet(slateGame.away_team, [
       defenseRow(
@@ -269,11 +300,15 @@ export const matchupPayload = {
   // the frontend renders this authoritative result and does not reimplement it.
   players: [
     {
-      canonical_id: 'lebron-james',
+      canonical_id: 2544,
       name: 'LeBron James',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
       posted_markets: ['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'],
+      provenance: {
+        prizepicks: ['PTS', 'FGA', 'AST', 'REB', 'PRA'],
+        underdog: ['PTS', 'TOV'],
+      },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
@@ -286,11 +321,12 @@ export const matchupPayload = {
       scores: scores(['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'], 0.12, -0.02),
     },
     {
-      canonical_id: 'austin-reaves',
+      canonical_id: 1630559,
       name: 'Austin Reaves',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
       posted_markets: ['PTS', 'FG3A', 'STL'],
+      provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['STL'] },
       season_scoring: 20.1,
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
@@ -305,11 +341,12 @@ export const matchupPayload = {
       scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08),
     },
     {
-      canonical_id: 'jayson-tatum',
+      canonical_id: 1628369,
       name: 'Jayson Tatum',
       team_id: slateGame.home_team.team_id,
       tricode: 'BOS',
       posted_markets: ['PTS', 'FGA', 'FG3A', 'REB', 'BLK'],
+      provenance: { prizepicks: ['PTS', 'FGA', 'FG3A', 'REB'], underdog: ['BLK'] },
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {
@@ -336,7 +373,8 @@ export const matchupPayload = {
         entries: [
           {
             entry_id: 'injury-austin',
-            canonical_player_id: 'austin-reaves',
+            source_player_id: '5440',
+            canonical_player_id: 1630559,
             source_player_name: 'Austin Reaves',
             team_id: slateGame.away_team.team_id,
             tricode: 'LAL',
@@ -347,7 +385,8 @@ export const matchupPayload = {
           },
           {
             entry_id: 'injury-non-pool',
-            canonical_player_id: 'maxi-kleber',
+            source_player_id: '3929',
+            canonical_player_id: 203114,
             source_player_name: 'Maxi Kleber',
             team_id: slateGame.away_team.team_id,
             tricode: 'LAL',
@@ -358,6 +397,7 @@ export const matchupPayload = {
           },
           ...['Probable', 'Questionable', 'Doubtful'].map((status, index) => ({
             entry_id: `injury-${status.toLowerCase()}`,
+            source_player_id: index === 2 ? null : `source-${index + 1}`,
             canonical_player_id: null,
             source_player_name: ['Gabe Vincent', 'Jarred Vanderbilt', 'Jordan Goodwin'][index],
             team_id: slateGame.away_team.team_id,
@@ -401,7 +441,7 @@ const selectionLine = (date, matchup, minutes, values, deltas) => ({
 });
 
 export const selectionPayload = {
-  player_id: 'lebron-james',
+  player_id: 2544,
   h2h: {
     thin: false,
     rows: [
@@ -443,7 +483,7 @@ export const selectionPayload = {
 };
 
 export const austinSelectionPayload = {
-  player_id: 'austin-reaves',
+  player_id: 1630559,
   h2h: { thin: false, rows: [] },
   archetype: {
     thin: true,
@@ -526,8 +566,8 @@ export const installApiContract = async (page, overrides = {}) => {
       const gameId = url.searchParams.get('game_id');
       const playerId = url.searchParams.get('player_id');
       const payloads = {
-        'lebron-james': selectionPayload,
-        'austin-reaves': austinSelectionPayload,
+        2544: selectionPayload,
+        1630559: austinSelectionPayload,
       };
       if (gameId !== matchupPayload.game.game_id || !payloads[playerId]) {
         await route.fulfill({ status: 404, json: { error: { code: 'resource_not_found' } } });

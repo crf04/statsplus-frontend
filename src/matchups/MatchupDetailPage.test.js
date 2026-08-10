@@ -81,11 +81,12 @@ const matchup = {
   ],
   players: [
     {
-      id: 'player-two',
+      id: 1630559,
       name: 'Austin Reaves',
       teamId: 1,
       tricode: 'LAL',
       postedMarkets: ['PTS', 'FG3A'],
+      provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['PTS'] },
       seasonScoring: 20.1,
       last10Minutes: [32, 35, 34],
       injuryBadgeRef: 'injury-1',
@@ -101,11 +102,12 @@ const matchup = {
       scores: { PTS: score(0.21, 0.03), FG3A: score(0.07, 0.02) },
     },
     {
-      id: 'player-one',
+      id: 2544,
       name: 'LeBron James',
       teamId: 1,
       tricode: 'LAL',
       postedMarkets: ['PTS', 'FGA'],
+      provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
       seasonScoring: 25.4,
       last10Minutes: [35, 36, 38],
       injuryBadgeRef: null,
@@ -121,11 +123,12 @@ const matchup = {
       scores: { PTS: score(0.12, -0.01), FGA: score(0.04, 0.02) },
     },
     {
-      id: 'player-three',
+      id: 1628369,
       name: 'Jayson Tatum',
       teamId: 2,
       tricode: 'BOS',
       postedMarkets: ['REB'],
+      provenance: { prizepicks: ['REB'] },
       seasonScoring: 27.2,
       last10Minutes: [36, 37, 38],
       injuryBadgeRef: null,
@@ -168,7 +171,7 @@ beforeEach(() => {
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchMatchup.mockResolvedValue(matchup);
   fetchMatchupSelection.mockResolvedValue({
-    playerId: 'player-one',
+    playerId: 2544,
     h2h: {
       thin: true,
       rows: [
@@ -213,6 +216,11 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
+  expect(
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByLabelText(
+      'PTS from prizepicks, underdog',
+    ),
+  ).toBeVisible();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(screen.getByText('-8% vs league')).toBeVisible();
@@ -235,13 +243,13 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
 
 test('selection keeps All active and highlights only display-eligible shares for each window', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
-  candidate.players.find((player) => player.id === 'player-one').dietShares.playTypes[0].season = {
+  candidate.players.find((player) => player.id === 2544).dietShares.playTypes[0].season = {
     share: 0.02,
     volumePerGame: 5,
   };
   fetchMatchup.mockResolvedValueOnce(candidate);
   render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
       </Routes>
@@ -263,15 +271,15 @@ test('a late selection response cannot replace a newer player selection', async 
     resolveFirst = resolve;
   });
   const austin = {
-    playerId: 'player-two',
+    playerId: 1630559,
     h2h: { thin: false, rows: [] },
     archetype: { thin: false, rows: [] },
   };
   fetchMatchupSelection.mockImplementation((_gameId, playerId) =>
-    playerId === 'player-one' ? first : Promise.resolve(austin),
+    playerId === 2544 ? first : Promise.resolve(austin),
   );
   render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
       </Routes>
@@ -285,7 +293,7 @@ test('a late selection response cannot replace a newer player selection', async 
   );
   expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   resolveFirst({
-    playerId: 'player-one',
+    playerId: 2544,
     h2h: { thin: false, rows: [] },
     archetype: { thin: false, rows: [] },
   });
@@ -347,7 +355,7 @@ test('renders raw injury statuses and keeps the signed-out shell honest', async 
 
 test('opens and deep-links the selection card while market flips reuse delivered logs', async () => {
   render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
       </Routes>
@@ -377,7 +385,7 @@ test('player switches clamp the card stat and team toggles remain user-controlle
   });
   fetchMatchupSelection.mockImplementation((_gameId, playerId) => Promise.resolve(empty(playerId)));
   render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
       </Routes>
@@ -435,7 +443,7 @@ test('card stat choices persist while a different global sheet market remains ac
 test('selection request errors replace loading with an honest alert', async () => {
   fetchMatchupSelection.mockRejectedValueOnce(new Error('selection failed'));
   render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
       </Routes>

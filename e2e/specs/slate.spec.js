@@ -2,7 +2,7 @@ import { expect, installApiContract, slateGame, slatePayload, test } from '../fi
 
 test('@critical authenticated user opens a slate and navigates dates', async ({
   authenticatedPage: page,
-}) => {
+}, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   const requests = [];
   page.on('request', (request) => {
@@ -35,14 +35,12 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
             },
           ],
           {
-            poolStatus: 'fresh',
             poolFreshnessStatus: 'fresh',
             poolRetrievedAt: '2026-01-15T11:50:00Z',
           },
         );
       }
       return slatePayload(date, [slateGame], {
-        poolStatus: 'stale-served',
         poolFreshnessStatus: 'stale-served',
         poolRetrievedAt: '2026-01-15T10:00:00Z',
         providers: {
@@ -74,10 +72,12 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(
     page.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i),
   ).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('slate-stale-pool.png'), fullPage: true });
 
   await page.getByRole('button', { name: 'Previous date' }).click();
   await expect(page).toHaveURL(/date=2026-01-14/);
   await expect(page.getByText('No games on this slate.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('slate-empty.png'), fullPage: true });
 
   await page.getByLabel('Slate date').fill('');
   await expect(page).toHaveURL(/\/matchups$/);
@@ -95,10 +95,13 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   ).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
   await expect(page.getByText('4 targetable')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('slate-past.png'), fullPage: true });
   expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-10')).toBe(true);
 });
 
-test('signed-out matchups keeps the shared shell and does not redirect', async ({ page }) => {
+test('signed-out matchups keeps the shared shell and does not redirect', async ({
+  page,
+}, testInfo) => {
   await installApiContract(page);
   await page.goto('/matchups?date=2026-01-15');
 
@@ -107,6 +110,16 @@ test('signed-out matchups keeps the shared shell and does not redirect', async (
   await expect(page.getByRole('link', { name: 'Matchups' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Sign in to view the slate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('slate-signed-out.png'), fullPage: true });
+
+  await page.goto('/matchups/0022500584?player=2544');
+  await expect(page).toHaveURL('/matchups/0022500584?player=2544');
+  await expect(page.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-signed-out-deep-link.png'),
+    fullPage: true,
+  });
 });
 
 test('unknown paths return to the search landing page', async ({ page }) => {
@@ -164,7 +177,7 @@ test('an invalid requested date stays neutral until the backend rejects it', asy
 
 test('explicit unavailable pool status wins over stale provider evidence', async ({
   authenticatedPage: page,
-}) => {
+}, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await installApiContract(page, {
     '/api/games/slate': slatePayload(
@@ -177,7 +190,6 @@ test('explicit unavailable pool status wins over stale provider evidence', async
         },
       ],
       {
-        poolStatus: 'unavailable',
         poolFreshnessStatus: 'unavailable',
         providers: {
           prizepicks: { status: 'stale-served', retrieved_at: '2026-01-15T09:00:00Z' },
@@ -191,6 +203,10 @@ test('explicit unavailable pool status wins over stale provider evidence', async
   await expect(page.getByText(/player pool is unavailable; no targetable players/i)).toBeVisible();
   await expect(page.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
   await expect(page.getByText('0 targetable')).toHaveCount(2);
+  await page.screenshot({
+    path: testInfo.outputPath('slate-pool-unavailable.png'),
+    fullPage: true,
+  });
 });
 
 test('minimum slate freshness payload renders through the browser contract', async ({

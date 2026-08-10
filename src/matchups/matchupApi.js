@@ -26,6 +26,10 @@ const requireNumber = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
 };
+const requireInteger = (value) => {
+  if (!Number.isInteger(value)) throw invalid();
+  return value;
+};
 const requireStringList = (value) => {
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) throw invalid();
   return value;
@@ -54,7 +58,12 @@ const decodeSheetRow = (row) => {
 };
 
 const decodeDefenseSheet = (sheet) => {
-  if (!isRecord(sheet) || Object.keys(sheet).length === 0) throw invalid();
+  if (
+    !isRecord(sheet) ||
+    Object.keys(sheet).sort().join() !==
+      ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].sort().join()
+  )
+    throw invalid();
   return Object.fromEntries(
     Object.entries(sheet).map(([base, rows]) => {
       if (!Array.isArray(rows)) throw invalid();
@@ -129,11 +138,12 @@ const decodePlayer = (player) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
   return {
-    id: requireString(player.canonical_id),
+    id: requireInteger(player.canonical_id),
     name: requireString(player.name),
     teamId: player.team_id,
     tricode: requireString(player.tricode),
     postedMarkets: requireStringList(player.posted_markets),
+    provenance: decodeProvenance(player.provenance, player.posted_markets),
     seasonScoring: requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
@@ -141,6 +151,93 @@ const decodePlayer = (player) => {
       player.injury_badge_ref === null ? null : requireString(player.injury_badge_ref),
     scores: decodeScores(player.scores, player.posted_markets),
   };
+};
+
+function decodeProvenance(provenance, postedMarkets) {
+  if (!isRecord(provenance) || Object.keys(provenance).length === 0) throw invalid();
+  const decoded = Object.fromEntries(
+    Object.entries(provenance).map(([provider, markets]) => {
+      if (!provider || !Array.isArray(markets) || markets.length === 0) throw invalid();
+      const categories = requireStringList(markets);
+      if (categories.some((market) => !postedMarkets.includes(market))) throw invalid();
+      return [provider, categories];
+    }),
+  );
+  if (
+    postedMarkets.some(
+      (market) => !Object.values(decoded).some((markets) => markets.includes(market)),
+    )
+  ) {
+    throw invalid();
+  }
+  return decoded;
+}
+
+const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+
+const decodeLeagueRowWindow = (value) => {
+  if (!isRecord(value)) throw invalid();
+  return {
+    averageAllowedPer48: requireNumber(value.average_allowed_per_48),
+    sigma: requireNumber(value.sigma),
+  };
+};
+
+const decodeLeague = (league) => {
+  if (!isRecord(league) || !isRecord(league.defense_sheet) || !isRecord(league.defensive_columns)) {
+    throw invalid();
+  }
+  if (Object.keys(league.defense_sheet).sort().join() !== [...DEFENSE_BASES].sort().join()) {
+    throw invalid();
+  }
+  const defenseSheet = Object.fromEntries(
+    DEFENSE_BASES.map((base) => {
+      const rows = league.defense_sheet[base];
+      if (!Array.isArray(rows)) throw invalid();
+      const decodedRows = rows.map((row) => {
+        if (!isRecord(row)) throw invalid();
+        return {
+          key: requireString(row.key),
+          season: decodeLeagueRowWindow(row.season),
+          last15: decodeLeagueRowWindow(row.last_15),
+        };
+      });
+      if (new Set(decodedRows.map((row) => row.key)).size !== decodedRows.length) throw invalid();
+      return [camelKey(base), decodedRows];
+    }),
+  );
+  const defensiveColumns = Object.fromEntries(
+    DEFENSIVE_COLUMN_KEYS.map((key) => {
+      const column = league.defensive_columns[key];
+      if (!isRecord(column)) throw invalid();
+      const decodeWindow = (value) => {
+        if (!isRecord(value)) throw invalid();
+        return {
+          averagePer48: requireNumber(value.average_per_48),
+          sigma: requireNumber(value.sigma),
+        };
+      };
+      return [key, { season: decodeWindow(column.season), last15: decodeWindow(column.last_15) }];
+    }),
+  );
+  if (
+    Object.keys(league.defensive_columns).sort().join() !== [...DEFENSIVE_COLUMN_KEYS].sort().join()
+  ) {
+    throw invalid();
+  }
+  return { defenseSheet, defensiveColumns };
+};
+
+const validateLeagueCoverage = (league, teams) => {
+  for (const [base, leagueRows] of Object.entries(league.defenseSheet)) {
+    const leagueKeys = new Set(leagueRows.map((row) => row.key));
+    const teamKeys = new Set(
+      teams.flatMap((team) => team.defenseSheet[base].map((row) => row.key)),
+    );
+    if ([...teamKeys].some((key) => !leagueKeys.has(key))) {
+      throw invalid();
+    }
+  }
 };
 
 const decodeScoreCell = (cell) => {
@@ -289,9 +386,10 @@ const decodeInjuryEntry = (entry) => {
   }
   return {
     id: requireString(entry.entry_id),
-    playerId: entry.canonical_player_id,
+    sourcePlayerId: entry.source_player_id === null ? null : requireString(entry.source_player_id),
+    playerId: entry.canonical_player_id === null ? null : requireInteger(entry.canonical_player_id),
     playerName: requireString(entry.source_player_name),
-    teamId: entry.team_id,
+    teamId: requireInteger(entry.team_id),
     tricode: requireString(entry.tricode),
     status: entry.status || null,
     rawStatus: entry.raw_status || null,
@@ -300,11 +398,31 @@ const decodeInjuryEntry = (entry) => {
   };
 };
 
-const decodeInjuries = (injuries) => {
+const decodeInjuries = (injuries, matchupTeams) => {
   if (!isRecord(injuries) || !['fresh', 'stale', 'unavailable'].includes(injuries.status)) {
     throw invalid();
   }
-  if (!Array.isArray(injuries.teams)) throw invalid();
+  if (!Object.hasOwn(injuries, 'unavailable_reason') || !Object.hasOwn(injuries, 'retrieved_at')) {
+    throw invalid();
+  }
+  const unavailableReasons = ['disabled', 'permission_required', 'fetch_failed', null];
+  if (
+    !unavailableReasons.includes(injuries.unavailable_reason) ||
+    (injuries.status === 'unavailable' && injuries.unavailable_reason === null) ||
+    (injuries.status !== 'unavailable' && injuries.unavailable_reason !== null)
+  ) {
+    throw invalid();
+  }
+  if (
+    !Array.isArray(injuries.teams) ||
+    (injuries.status === 'unavailable'
+      ? ![0, matchupTeams.length].includes(injuries.teams.length)
+      : injuries.teams.length !== matchupTeams.length)
+  ) {
+    throw invalid();
+  }
+  const expectedTeams = new Map(matchupTeams.map((team) => [team.teamId, team.tricode]));
+  const seenTeams = new Set();
   return {
     status: injuries.status,
     unavailableReason: injuries.unavailable_reason || null,
@@ -312,12 +430,27 @@ const decodeInjuries = (injuries) => {
     source: requireString(injuries.source),
     sourceUrl: requireString(injuries.source_url),
     teams: injuries.teams.map((team) => {
-      if (!isRecord(team) || !Array.isArray(team.entries)) throw invalid();
+      if (
+        !isRecord(team) ||
+        !Array.isArray(team.entries) ||
+        !Number.isInteger(team.team_id) ||
+        team.submission_state !== 'unknown'
+      )
+        throw invalid();
+      const tricode = requireString(team.tricode);
+      if (seenTeams.has(team.team_id) || expectedTeams.get(team.team_id) !== tricode) {
+        throw invalid();
+      }
+      seenTeams.add(team.team_id);
+      const entries = team.entries.map(decodeInjuryEntry);
+      if (entries.some((entry) => entry.teamId !== team.team_id || entry.tricode !== tricode)) {
+        throw invalid();
+      }
       return {
         teamId: team.team_id,
-        tricode: requireString(team.tricode),
-        submissionState: team.submission_state || null,
-        entries: team.entries.map(decodeInjuryEntry),
+        tricode,
+        submissionState: team.submission_state,
+        entries,
       };
     }),
   };
@@ -333,11 +466,15 @@ export const decodeMatchup = (data) => {
   ) {
     throw invalid();
   }
+  const league = decodeLeague(data.league);
+  const teams = data.teams.map(decodeTeam);
+  validateLeagueCoverage(league, teams);
   return {
     game: decodeGame(data.game),
-    teams: data.teams.map(decodeTeam),
+    league,
+    teams,
     players: data.players.map(decodePlayer),
-    injuries: decodeInjuries(data.injuries),
+    injuries: decodeInjuries(data.injuries, teams),
     freshness: decodeFreshness(data.freshness),
   };
 };
@@ -399,7 +536,9 @@ const decodeLogTable = (table, markets) => {
 export const decodeMatchupSelection = (data, postedMarkets, expectedPlayerId) => {
   if (!isRecord(data) || !Array.isArray(postedMarkets) || postedMarkets.length === 0)
     throw selectionInvalid();
-  if (data.player_id !== expectedPlayerId) throw selectionInvalid();
+  if (!Number.isInteger(data.player_id) || data.player_id !== expectedPlayerId) {
+    throw selectionInvalid();
+  }
   return {
     playerId: data.player_id,
     h2h: decodeLogTable(data.h2h, postedMarkets),
@@ -408,6 +547,14 @@ export const decodeMatchupSelection = (data, postedMarkets, expectedPlayerId) =>
 };
 
 export const fetchMatchupSelection = async (gameId, playerId, postedMarkets, { signal } = {}) => {
+  if (
+    typeof gameId !== 'string' ||
+    !gameId ||
+    !Number.isInteger(playerId) ||
+    !Array.isArray(postedMarkets) ||
+    postedMarkets.length === 0
+  )
+    throw selectionInvalid();
   const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
     params: { game_id: gameId, player_id: playerId },
     signal,

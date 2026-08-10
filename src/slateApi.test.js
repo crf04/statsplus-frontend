@@ -19,7 +19,6 @@ const payload = {
       },
     },
   },
-  pool_status: 'stale-served',
   games: [
     {
       game_id: '0022500584',
@@ -61,7 +60,6 @@ test('decodes the complete slate freshness boundary and team counts', () => {
         ],
       },
     },
-    poolStatus: 'stale-served',
     games: [
       expect.objectContaining({
         gameId: '0022500584',
@@ -103,8 +101,6 @@ test.each([
       },
     },
   ],
-  ['unknown aggregate pool status', { ...payload, pool_status: 'old' }],
-  ['frontend-derived aggregate pool status', { ...payload, pool_status: 'partial' }],
   [
     'frontend-derived pool freshness status',
     {
@@ -134,7 +130,6 @@ test('accepts schedule staleness and an unavailable aggregate pool from the back
   expect(
     decodeSlate({
       ...payload,
-      pool_status: 'unavailable',
       freshness: {
         schedule: { status: 'stale', retrieved_at: '2026-01-13T10:00:00Z' },
         pool: { status: 'unavailable', retrieved_at: null, providers: {} },
@@ -142,7 +137,6 @@ test('accepts schedule staleness and an unavailable aggregate pool from the back
     }),
   ).toEqual(
     expect.objectContaining({
-      poolStatus: 'unavailable',
       freshness: {
         schedule: { status: 'stale', retrievedAt: '2026-01-13T10:00:00.000Z' },
         pool: { status: 'unavailable', retrievedAt: null, providers: [] },
@@ -151,16 +145,21 @@ test('accepts schedule staleness and an unavailable aggregate pool from the back
   );
 });
 
-test('derives the aggregate pool status when the optional top-level field is absent', () => {
-  const { pool_status: _poolStatus, ...minimumPayload } = payload;
-  minimumPayload.freshness = {
-    ...minimumPayload.freshness,
-    pool: { status: 'fresh', retrieved_at: '2026-01-15T09:55:00Z' },
+test('uses the normative nested aggregate pool status', () => {
+  const minimumPayload = {
+    ...payload,
+    // A legacy, non-contract field cannot override the normative nested surface.
+    pool_status: 'unavailable',
+    freshness: {
+      ...payload.freshness,
+      pool: { status: 'fresh', retrieved_at: '2026-01-15T09:55:00Z' },
+    },
   };
 
-  expect(decodeSlate(minimumPayload)).toEqual(
+  const decoded = decodeSlate(minimumPayload);
+  expect(decoded).not.toHaveProperty('poolStatus');
+  expect(decoded).toEqual(
     expect.objectContaining({
-      poolStatus: 'fresh',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({ status: 'fresh', providers: [] }),
       }),
@@ -169,38 +168,33 @@ test('derives the aggregate pool status when the optional top-level field is abs
 });
 
 test.each([
-  ['unavailable', 'stale-served', 'stale-served', 'unavailable'],
-  ['fresh', 'unavailable', 'missing', 'fresh'],
-  [undefined, 'stale-served', 'fresh', 'stale-served'],
-])(
-  'uses aggregate %s with pool freshness %s and provider freshness %s',
-  (aggregateStatus, poolFreshnessStatus, providerStatus, expected) => {
-    const candidate = {
-      ...payload,
-      freshness: {
-        ...payload.freshness,
-        pool: {
-          status: poolFreshnessStatus,
-          retrieved_at: ['missing', 'unavailable'].includes(poolFreshnessStatus)
-            ? null
-            : '2026-01-15T09:55:00Z',
-          providers: {
-            prizepicks: {
-              status: providerStatus,
-              retrieved_at: ['missing', 'unavailable'].includes(providerStatus)
-                ? null
-                : '2026-01-15T09:55:00Z',
-            },
+  ['stale-served', 'stale-served'],
+  ['unavailable', 'unavailable'],
+  ['fresh', 'fresh'],
+])('uses nested aggregate pool freshness %s', (poolFreshnessStatus, expected) => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        status: poolFreshnessStatus,
+        retrieved_at: ['missing', 'unavailable'].includes(poolFreshnessStatus)
+          ? null
+          : '2026-01-15T09:55:00Z',
+        providers: {
+          prizepicks: {
+            status: poolFreshnessStatus === 'unavailable' ? 'missing' : poolFreshnessStatus,
+            retrieved_at: ['missing', 'unavailable'].includes(poolFreshnessStatus)
+              ? null
+              : '2026-01-15T09:55:00Z',
           },
         },
       },
-    };
-    if (aggregateStatus === undefined) delete candidate.pool_status;
-    else candidate.pool_status = aggregateStatus;
+    },
+  };
 
-    expect(decodeSlate(candidate).poolStatus).toBe(expected);
-  },
-);
+  expect(decodeSlate(candidate).freshness.pool.status).toBe(expected);
+});
 
 test('derives missing pool freshness status from provider evidence', () => {
   const candidate = {
@@ -218,11 +212,8 @@ test('derives missing pool freshness status from provider evidence', () => {
       },
     },
   };
-  delete candidate.pool_status;
-
   expect(decodeSlate(candidate)).toEqual(
     expect.objectContaining({
-      poolStatus: 'stale-served',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({
           status: 'stale-served',
@@ -258,9 +249,7 @@ test.each([
       },
     },
   };
-  delete candidate.pool_status;
-
-  expect(decodeSlate(candidate).poolStatus).toBe(expected);
+  expect(decodeSlate(candidate).freshness.pool.status).toBe(expected);
 });
 
 test('accepts provider freshness without a pool-level retrieved_at', () => {
@@ -276,11 +265,8 @@ test('accepts provider freshness without a pool-level retrieved_at', () => {
       },
     },
   };
-  delete candidate.pool_status;
-
   expect(decodeSlate(candidate)).toEqual(
     expect.objectContaining({
-      poolStatus: 'partial',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({ status: 'partial' }),
       }),
@@ -306,8 +292,6 @@ test.each([
     ...payload,
     freshness: { ...payload.freshness, pool: { providers } },
   };
-  delete candidate.pool_status;
-
   expect(decodeSlate(candidate).freshness.pool).toEqual(
     expect.objectContaining({
       status: 'fresh',

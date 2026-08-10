@@ -157,11 +157,12 @@ function PlayerRail({
         <div className="player-list">
           {scoped.map((player) => {
             const injury = injuryById.get(player.injuryBadgeRef);
+            const serializedPlayerId = String(player.id);
             return (
               <article
                 key={player.id}
                 aria-label={`${player.name} player`}
-                className={`player-card${selectedId === player.id ? ' selected' : ''}`}
+                className={`player-card${selectedId === serializedPlayerId ? ' selected' : ''}`}
               >
                 <div>
                   <h3>{player.name}</h3>
@@ -175,20 +176,28 @@ function PlayerRail({
                   role="group"
                   aria-label={`${player.name} posted markets`}
                 >
-                  {player.postedMarkets.map((postedMarket) => (
-                    <span key={postedMarket}>{postedMarket}</span>
-                  ))}
+                  {player.postedMarkets.map((postedMarket) => {
+                    const providers = Object.entries(player.provenance)
+                      .filter(([, markets]) => markets.includes(postedMarket))
+                      .map(([provider]) => provider);
+                    const provenanceLabel = `${postedMarket} from ${providers.join(', ')}`;
+                    return (
+                      <span key={postedMarket} aria-label={provenanceLabel} title={provenanceLabel}>
+                        {postedMarket}
+                      </span>
+                    );
+                  })}
                 </div>
                 <Sparkline values={player.last10Minutes} playerName={player.name} />
                 <button
-                  ref={(node) => registerTrigger(player.id, node)}
+                  ref={(node) => registerTrigger(serializedPlayerId, node)}
                   type="button"
                   className="select-player"
-                  aria-expanded={selectedId === player.id}
+                  aria-expanded={selectedId === serializedPlayerId}
                   aria-controls="matchup-selection-card"
                   onClick={() => onSelect(player)}
                 >
-                  {selectedId === player.id ? 'Selected' : 'Open selection card'}
+                  {selectedId === serializedPlayerId ? 'Selected' : 'Open selection card'}
                 </button>
               </article>
             );
@@ -397,7 +406,7 @@ function Detail({ matchup, gameId }) {
   const [windowKey, setWindowKey] = useState('season');
   const [deviation, setDeviation] = useState(1);
   const selectedId = searchParams.get('player');
-  const selectedPlayer = matchup.players.find((player) => player.id === selectedId) || null;
+  const selectedPlayer = matchup.players.find((player) => String(player.id) === selectedId) || null;
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
   const [selectionState, setSelectionState] = useState({
@@ -461,9 +470,10 @@ function Detail({ matchup, gameId }) {
     previousSelectedId.current = selectedId;
   }, [selectedId]);
   const updateSelectedPlayer = (playerId) => {
-    if (playerId === selectedId) return;
+    const serializedPlayerId = playerId === null ? null : String(playerId);
+    if (serializedPlayerId === selectedId) return;
     const next = new URLSearchParams(searchParams);
-    if (playerId) next.set('player', playerId);
+    if (serializedPlayerId) next.set('player', serializedPlayerId);
     else next.delete('player');
     setSearchParams(next, { replace: false });
   };

@@ -137,7 +137,6 @@ export const decodeSlate = (data) => {
   return {
     slateDate: data.slate_date,
     freshness,
-    poolStatus: freshness.pool.status,
     games: data.games.map(decodeGame),
   };
 };

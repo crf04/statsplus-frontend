@@ -60,7 +60,6 @@ test('decodes the complete slate freshness boundary and team counts', () => {
         ],
       },
     },
-    poolStatus: 'stale-served',
     games: [
       expect.objectContaining({
         gameId: '0022500584',
@@ -138,7 +137,6 @@ test('accepts schedule staleness and an unavailable aggregate pool from the back
     }),
   ).toEqual(
     expect.objectContaining({
-      poolStatus: 'unavailable',
       freshness: {
         schedule: { status: 'stale', retrievedAt: '2026-01-13T10:00:00.000Z' },
         pool: { status: 'unavailable', retrievedAt: null, providers: [] },
@@ -158,9 +156,10 @@ test('uses the normative nested aggregate pool status', () => {
     },
   };
 
-  expect(decodeSlate(minimumPayload)).toEqual(
+  const decoded = decodeSlate(minimumPayload);
+  expect(decoded).not.toHaveProperty('poolStatus');
+  expect(decoded).toEqual(
     expect.objectContaining({
-      poolStatus: 'fresh',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({ status: 'fresh', providers: [] }),
       }),
@@ -194,7 +193,7 @@ test.each([
     },
   };
 
-  expect(decodeSlate(candidate).poolStatus).toBe(expected);
+  expect(decodeSlate(candidate).freshness.pool.status).toBe(expected);
 });
 
 test('derives missing pool freshness status from provider evidence', () => {
@@ -215,7 +214,6 @@ test('derives missing pool freshness status from provider evidence', () => {
   };
   expect(decodeSlate(candidate)).toEqual(
     expect.objectContaining({
-      poolStatus: 'stale-served',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({
           status: 'stale-served',
@@ -251,7 +249,7 @@ test.each([
       },
     },
   };
-  expect(decodeSlate(candidate).poolStatus).toBe(expected);
+  expect(decodeSlate(candidate).freshness.pool.status).toBe(expected);
 });
 
 test('accepts provider freshness without a pool-level retrieved_at', () => {
@@ -269,7 +267,6 @@ test('accepts provider freshness without a pool-level retrieved_at', () => {
   };
   expect(decodeSlate(candidate)).toEqual(
     expect.objectContaining({
-      poolStatus: 'partial',
       freshness: expect.objectContaining({
         pool: expect.objectContaining({ status: 'partial' }),
       }),

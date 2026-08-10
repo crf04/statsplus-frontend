@@ -42,6 +42,11 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('15.2 per 48')).toBeVisible();
   await expect(page.getByText('2 targetable returned')).toBeVisible();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
+  await expect(
+    page
+      .getByRole('article', { name: 'LeBron James player' })
+      .getByLabel('PTS from prizepicks, underdog'),
+  ).toBeVisible();
   await expect(page.getByRole('article', { name: 'Maxi Kleber player' })).toHaveCount(0);
   await expect(page.getByText('Game-time decision')).toHaveCount(2);
   await expect(page.getByText('Maxi Kleber')).toBeVisible();
@@ -98,7 +103,7 @@ test('matchup renders stale and unavailable surfaces without inventing data', as
         status: 'unavailable',
         unavailable_reason: 'permission_required',
         retrieved_at: null,
-        teams: [],
+        teams: matchupPayload.injuries.teams.map((team) => ({ ...team, entries: [] })),
       },
       freshness: {
         ...matchupPayload.freshness,
@@ -204,11 +209,12 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await page.goto('/matchups?date=2026-01-15');
   await page.getByRole('link', { name: 'Open Team Sheets' }).click();
   await expect(page).toHaveURL('/matchups/0022500584');
+  await page.goto('/matchups/0022500584?context=kept');
   await page
     .getByRole('article', { name: 'LeBron James player' })
     .getByRole('button', { name: 'Open selection card' })
     .click();
-  await expect(page).toHaveURL('/matchups/0022500584?player=lebron-james');
+  await expect(page).toHaveURL(/context=kept.*player=2544|player=2544.*context=kept/);
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -244,8 +250,10 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   });
 
   await page.goBack();
+  await expect(page).toHaveURL('/matchups/0022500584?context=kept');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toHaveCount(0);
   await page.goForward();
+  await expect(page).toHaveURL(/context=kept.*player=2544|player=2544.*context=kept/);
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toHaveCount(0);
@@ -253,11 +261,11 @@ test('@critical selection card supports selection, deep links, and tab flips wit
     page.getByRole('article', { name: 'LeBron James player' }).getByRole('button'),
   ).toBeFocused();
 
-  await page.goto('/matchups/0022500584?player=austin-reaves');
+  await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByText('No games vs this opponent data is available.')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('selection-empty-thin.png'), fullPage: true });
-  await page.goto('/matchups/0022500584?player=lebron-james');
+  await page.goto('/matchups/0022500584?player=2544');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
   await page.setViewportSize({ width: 393, height: 852 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -329,7 +337,7 @@ test('selection request failure renders an honest handled error', async ({ page 
   page.on('response', (response) => {
     if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
   });
-  await page.goto('/matchups/0022500584?player=lebron-james');
+  await page.goto('/matchups/0022500584?player=2544');
   await expect(page.getByRole('alert')).toContainText('Unable to load selection logs');
   await expect(page.getByText('Loading selection logs…')).toHaveCount(0);
   expect(failedResponses).toHaveLength(1);

@@ -32,7 +32,6 @@ const game = {
 
 const slate = {
   slateDate: '2026-01-15',
-  poolStatus: 'stale-served',
   freshness: {
     schedule: { status: 'fresh', retrievedAt: '2026-01-15T11:50:00.000Z' },
     pool: {
@@ -115,7 +114,6 @@ test('warns when a fresh schedule crosses the 30h bar without refetching', async
 test('labels a fresh pool snapshot stale when it crosses the 15m bar', async () => {
   fetchSlate.mockResolvedValue({
     ...slate,
-    poolStatus: 'fresh',
     freshness: {
       ...slate.freshness,
       pool: {
@@ -182,7 +180,6 @@ test('offers Today as a recovery from an invalid requested date', async () => {
 test('explains mixed provider counts without claiming the whole pool is missing', async () => {
   fetchSlate.mockResolvedValue({
     ...slate,
-    poolStatus: 'partial',
     freshness: {
       ...slate.freshness,
       pool: {
@@ -214,7 +211,6 @@ test.each([
 ])('renders distinct %s pool copy', async (poolStatus, expected) => {
   fetchSlate.mockResolvedValue({
     ...slate,
-    poolStatus,
     freshness: {
       ...slate.freshness,
       pool: { status: poolStatus, retrievedAt: null, providers: [] },
@@ -292,7 +288,6 @@ test.each([
     fetchSlate.mockResolvedValue({
       ...slate,
       slateDate: '2026-01-10',
-      poolStatus,
       freshness: {
         ...slate.freshness,
         pool: {
@@ -342,7 +337,6 @@ test('uses the server slate date for the heading and historical pool state', asy
   fetchSlate.mockResolvedValue({
     ...slate,
     slateDate: '2026-01-14',
-    poolStatus: 'fresh',
     freshness: {
       ...slate.freshness,
       pool: {

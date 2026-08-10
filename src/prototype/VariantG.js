@@ -187,7 +187,32 @@ const ScoreCell = ({ value }) => (
 const logAvg = (logs, key) =>
   (logs.reduce((sum, l) => sum + l[key], 0) / logs.length).toFixed(1);
 
-const LogTable = ({ title, logs, withPlayer }) => (
+// Game pts/min vs the player's OWN season pts/min — relative, minutes-fair.
+const ppmDelta = (log, seasonPpm) => {
+  const base = log.spm ?? seasonPpm;
+  if (!base || !log.min) return null;
+  return (log.pts / log.min / base - 1) * 100;
+};
+
+const DeltaCell = ({ delta }) => (
+  <td>
+    {delta == null ? (
+      <span style={{ color: 'var(--ct-dim)' }}>—</span>
+    ) : (
+      <Num
+        style={{
+          fontWeight: 700,
+          color: delta >= 0 ? 'var(--ct-hit)' : 'var(--ct-miss)',
+        }}
+      >
+        {delta >= 0 ? '+' : ''}
+        {delta.toFixed(0)}%
+      </Num>
+    )}
+  </td>
+);
+
+const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
   <div>
     <div
       style={{
@@ -214,6 +239,7 @@ const LogTable = ({ title, logs, withPlayer }) => (
             <th>REB</th>
             <th>AST</th>
             <th>3PM</th>
+            <th title="Game pts/min vs the player's own season pts/min">±PTS/MIN</th>
           </tr>
         </thead>
         <tbody>
@@ -238,6 +264,7 @@ const LogTable = ({ title, logs, withPlayer }) => (
               <td>
                 <Num>{l.fg3m}</Num>
               </td>
+              <DeltaCell delta={ppmDelta(l, seasonPpm)} />
             </tr>
           ))}
         </tbody>
@@ -250,6 +277,17 @@ const LogTable = ({ title, logs, withPlayer }) => (
                 <Num style={{ color: 'var(--ct-gold)' }}>{logAvg(logs, key)}</Num>
               </td>
             ))}
+            <DeltaCell
+              delta={
+                logs.map((l) => ppmDelta(l, seasonPpm)).filter((d) => d != null).length > 0
+                  ? logs
+                      .map((l) => ppmDelta(l, seasonPpm))
+                      .filter((d) => d != null)
+                      .reduce((a, b) => a + b, 0) /
+                    logs.map((l) => ppmDelta(l, seasonPpm)).filter((d) => d != null).length
+                  : null
+              }
+            />
           </tr>
         </tfoot>
       </table>
@@ -320,6 +358,7 @@ const ScoreTable = ({ player, recency, onClose }) => {
         <LogTable
           title={`${player.name.split(' ')[1]} vs ${opponentOf(player)} this season`}
           logs={player.vsOpp || []}
+          seasonPpm={player.season.pts / player.season.min}
         />
         <LogTable
           title={`${player.archetype}s vs ${opponentOf(player)}`}

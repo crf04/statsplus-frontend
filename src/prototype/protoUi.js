@@ -111,6 +111,25 @@ export const Num = ({ children, style }) => (
   <span style={{ fontFamily: 'var(--ct-mono)', ...style }}>{children}</span>
 );
 
+export const Sparkline = ({ values, width = 56, height = 16 }) => {
+  if (!values || values.length < 2) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const x = (i) => (i / (values.length - 1)) * (width - 4) + 2;
+  const y = (v) => height - 2 - ((v - min) / span) * (height - 4);
+  const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const avg3 = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const up = avg3(values.slice(-3)) >= avg3(values.slice(0, 3));
+  const color = up ? 'var(--ct-hit)' : 'var(--ct-miss)';
+  return (
+    <svg width={width} height={height} style={{ display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" opacity="0.85" />
+      <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r="2" fill={color} />
+    </svg>
+  );
+};
+
 export const HotBadge = () => (
   <span style={{ color: 'var(--ct-hit)', fontWeight: 700, fontSize: 11 }}>▲</span>
 );

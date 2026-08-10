@@ -361,6 +361,8 @@ export const PLAYERS = [
       { type: 'Catch & Shoot', fga: 5.6, efg: 59.2 },
     ],
     assistLoc: { Rim: 2.3, 'Corner 3': 1.0, 'Arc 3': 1.4, 'Mid-Range': 0.6 },
+    minutes: [37, 36, 38, 35, 36, 37, 36, 38, 36, 37],
+    vsOpp: [{ date: 'Jan 8', min: 37, pts: 32, reb: 9, ast: 5, fg3m: 3 }, { date: 'Feb 26', min: 36, pts: 28, reb: 7, ast: 6, fg3m: 2 }, { date: 'Mar 30', min: 39, pts: 41, reb: 11, ast: 4, fg3m: 5 }],
   },
   {
     id: 2,
@@ -390,6 +392,8 @@ export const PLAYERS = [
       { type: 'Catch & Shoot', fga: 4.4, efg: 55.3 },
     ],
     assistLoc: { Rim: 1.8, 'Corner 3': 0.6, 'Arc 3': 0.8, 'Mid-Range': 0.5 },
+    minutes: [35, 34, 36, 33, 35, 34, 36, 35, 34, 35],
+    vsOpp: [{ date: 'Jan 8', min: 35, pts: 22, reb: 5, ast: 3, fg3m: 1 }, { date: 'Feb 26', min: 36, pts: 27, reb: 8, ast: 4, fg3m: 3 }, { date: 'Mar 30', min: 33, pts: 19, reb: 6, ast: 5, fg3m: 2 }],
   },
   {
     id: 3,
@@ -418,6 +422,8 @@ export const PLAYERS = [
       { type: '< 10 ft', fga: 4.1, efg: 58.7 },
     ],
     assistLoc: { Rim: 1.9, 'Corner 3': 0.8, 'Arc 3': 1.1, 'Mid-Range': 0.4 },
+    minutes: [32, 33, 34, 33, 35, 34, 35, 36, 36, 37],
+    vsOpp: [{ date: 'Jan 8', min: 33, pts: 15, reb: 4, ast: 6, fg3m: 3 }, { date: 'Feb 26', min: 34, pts: 21, reb: 3, ast: 5, fg3m: 5 }, { date: 'Mar 30', min: 35, pts: 12, reb: 5, ast: 7, fg3m: 2 }],
   },
   {
     id: 4,
@@ -446,6 +452,8 @@ export const PLAYERS = [
       { type: 'Pull-Up', fga: 2.1, efg: 41.3 },
     ],
     assistLoc: { Rim: 0.7, 'Corner 3': 0.3, 'Arc 3': 0.4, 'Mid-Range': 0.3 },
+    minutes: [31, 29, 30, 26, 28, 30, 27, 29, 28, 26],
+    vsOpp: [{ date: 'Jan 8', min: 30, pts: 24, reb: 8, ast: 1, fg3m: 3 }, { date: 'Mar 30', min: 27, pts: 16, reb: 6, ast: 2, fg3m: 1 }],
   },
   {
     id: 5,
@@ -474,6 +482,8 @@ export const PLAYERS = [
       { type: '< 10 ft', fga: 2.9, efg: 55.2 },
     ],
     assistLoc: { Rim: 1.2, 'Corner 3': 0.5, 'Arc 3': 0.9, 'Mid-Range': 0.3 },
+    minutes: [24, 25, 26, 27, 26, 28, 29, 28, 30, 31],
+    vsOpp: [{ date: 'Jan 8', min: 22, pts: 11, reb: 2, ast: 3, fg3m: 3 }, { date: 'Feb 26', min: 27, pts: 18, reb: 4, ast: 2, fg3m: 4 }, { date: 'Mar 30', min: 29, pts: 14, reb: 3, ast: 4, fg3m: 2 }],
   },
   {
     id: 6,
@@ -501,6 +511,8 @@ export const PLAYERS = [
       { type: '< 10 ft', fga: 1.1, efg: 57.4 },
     ],
     assistLoc: { Rim: 0.4, 'Corner 3': 0.2, 'Arc 3': 0.3, 'Mid-Range': 0.2 },
+    minutes: [23, 21, 22, 24, 20, 22, 21, 19, 20, 18],
+    vsOpp: [{ date: 'Feb 26', min: 19, pts: 9, reb: 3, ast: 0, fg3m: 3 }],
   },
   {
     id: 7,
@@ -529,6 +541,8 @@ export const PLAYERS = [
       { type: 'Catch & Shoot', fga: 2.4, efg: 57.8 },
     ],
     assistLoc: { Rim: 3.1, 'Corner 3': 1.1, 'Arc 3': 1.6, 'Mid-Range': 0.8 },
+    minutes: [36, 35, 37, 36, 34, 36, 35, 37, 36, 36],
+    vsOpp: [{ date: 'Dec 12', min: 36, pts: 18, reb: 3, ast: 7, fg3m: 1 }, { date: 'Feb 4', min: 38, pts: 29, reb: 4, ast: 8, fg3m: 3 }, { date: 'Apr 2', min: 35, pts: 24, reb: 2, ast: 6, fg3m: 2 }],
   },
   {
     id: 8,
@@ -558,6 +572,8 @@ export const PLAYERS = [
       { type: 'Pull-Up', fga: 3.6, efg: 44.9 },
     ],
     assistLoc: { Rim: 1.1, 'Corner 3': 0.5, 'Arc 3': 0.8, 'Mid-Range': 0.4 },
+    minutes: [34, 35, 33, 34, 36, 34, 35, 33, 34, 35],
+    vsOpp: [{ date: 'Dec 12', min: 35, pts: 27, reb: 14, ast: 2, fg3m: 2 }, { date: 'Feb 4', min: 33, pts: 22, reb: 11, ast: 4, fg3m: 1 }, { date: 'Apr 2', min: 36, pts: 31, reb: 15, ast: 3, fg3m: 3 }],
   },
   {
     id: 9,
@@ -587,6 +603,8 @@ export const PLAYERS = [
       { type: '< 10 ft', fga: 3.8, efg: 59.1 },
     ],
     assistLoc: { Rim: 1.4, 'Corner 3': 0.5, 'Arc 3': 0.7, 'Mid-Range': 0.4 },
+    minutes: [37, 36, 38, 37, 36, 37, 38, 36, 37, 36],
+    vsOpp: [{ date: 'Dec 12', min: 36, pts: 12, reb: 3, ast: 2, fg3m: 2 }, { date: 'Feb 4', min: 37, pts: 16, reb: 5, ast: 4, fg3m: 2 }, { date: 'Apr 2', min: 34, pts: 10, reb: 4, ast: 1, fg3m: 1 }],
   },
   {
     id: 10,
@@ -615,6 +633,8 @@ export const PLAYERS = [
       { type: 'Pull-Up', fga: 2.2, efg: 43.1 },
     ],
     assistLoc: { Rim: 0.9, 'Corner 3': 0.3, 'Arc 3': 0.4, 'Mid-Range': 0.3 },
+    minutes: [35, 34, 36, 35, 33, 34, 36, 35, 34, 35],
+    vsOpp: [{ date: 'Dec 12', min: 34, pts: 14, reb: 6, ast: 1, fg3m: 2 }, { date: 'Apr 2', min: 36, pts: 18, reb: 7, ast: 2, fg3m: 2 }],
   },
   {
     id: 11,
@@ -643,6 +663,8 @@ export const PLAYERS = [
       { type: 'Pull-Up', fga: 1.6, efg: 40.8 },
     ],
     assistLoc: { Rim: 2.4, 'Corner 3': 0.8, 'Arc 3': 1.1, 'Mid-Range': 0.6 },
+    minutes: [38, 37, 36, 39, 37, 35, 33, 30, 28, 25],
+    vsOpp: [{ date: 'Dec 12', min: 38, pts: 11, reb: 12, ast: 6, fg3m: 0 }, { date: 'Feb 4', min: 36, pts: 8, reb: 9, ast: 7, fg3m: 1 }, { date: 'Apr 2', min: 35, pts: 13, reb: 11, ast: 4, fg3m: 1 }],
   },
   {
     id: 12,
@@ -670,6 +692,8 @@ export const PLAYERS = [
       { type: '< 10 ft', fga: 1.8, efg: 52.9 },
     ],
     assistLoc: { Rim: 1.0, 'Corner 3': 0.3, 'Arc 3': 0.6, 'Mid-Range': 0.3 },
+    minutes: [22, 25, 20, 27, 24, 19, 28, 23, 26, 21],
+    vsOpp: [{ date: 'Feb 4', min: 18, pts: 7, reb: 2, ast: 1, fg3m: 1 }],
   },
 ];
 

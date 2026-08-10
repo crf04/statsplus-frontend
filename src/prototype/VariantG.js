@@ -15,7 +15,8 @@ import {
   scoreComponents,
   scoreLabel,
 } from './mockData';
-import { RankPill, MarketChips, SectionCard, Num } from './protoUi';
+import { RankPill, MarketChips, SectionCard, Num, Sparkline } from './protoUi';
+import { archetypeLogsFor } from './mockData';
 import { Dossier } from './VariantA';
 import { concessions } from './VariantC';
 
@@ -183,6 +184,65 @@ const ScoreCell = ({ value }) => (
   </td>
 );
 
+const LogTable = ({ title, logs, withPlayer }) => (
+  <div>
+    <div
+      style={{
+        fontSize: 10,
+        color: 'var(--ct-dim)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        marginBottom: 4,
+        fontWeight: 700,
+      }}
+    >
+      {title} <span style={{ fontWeight: 400 }}>({logs.length})</span>
+    </div>
+    {logs.length === 0 ? (
+      <div style={{ fontSize: 12, color: 'var(--ct-dim)' }}>No games yet this season.</div>
+    ) : (
+      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
+        <thead>
+          <tr style={{ fontSize: 10, color: 'var(--ct-dim)', textAlign: 'left' }}>
+            {withPlayer && <th style={{ paddingRight: 8 }}>Player</th>}
+            <th>Date</th>
+            <th>MIN</th>
+            <th>PTS</th>
+            <th>REB</th>
+            <th>AST</th>
+            <th>3PM</th>
+          </tr>
+        </thead>
+        <tbody>
+          {logs.map((l) => (
+            <tr key={(l.player || '') + l.date} style={{ borderTop: '1px solid var(--ct-line)' }}>
+              {withPlayer && <td style={{ padding: '3px 8px 3px 0' }}>{l.player}</td>}
+              <td>
+                <Num>{l.date}</Num>
+              </td>
+              <td>
+                <Num>{l.min}</Num>
+              </td>
+              <td>
+                <Num>{l.pts}</Num>
+              </td>
+              <td>
+                <Num>{l.reb}</Num>
+              </td>
+              <td>
+                <Num>{l.ast}</Num>
+              </td>
+              <td>
+                <Num>{l.fg3m}</Num>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+);
+
 const ScoreTable = ({ player, recency, onClose }) => {
   const rows = marketsFor(player)
     .map((m) => ({
@@ -232,6 +292,26 @@ const ScoreTable = ({ player, recency, onClose }) => {
       <div style={{ fontSize: 10, color: 'var(--ct-dim)', marginTop: 6 }}>
         Each cell: {player.name.split(' ')[1]}&apos;s diet in that base × opponent per-48 concession
         vs league avg. Combos (PRA/PA/RA) blend their parts by season weights.
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 16,
+          marginTop: 12,
+          borderTop: '1px solid var(--ct-line-strong)',
+          paddingTop: 10,
+        }}
+      >
+        <LogTable
+          title={`${player.name.split(' ')[1]} vs ${opponentOf(player)} this season`}
+          logs={player.vsOpp || []}
+        />
+        <LogTable
+          title={`${player.archetype}s vs ${opponentOf(player)}`}
+          logs={archetypeLogsFor(player)}
+          withPlayer
+        />
       </div>
     </SectionCard>
   );
@@ -316,6 +396,15 @@ const VariantG = () => {
                   </div>
                   <div style={{ color: 'var(--ct-dim)', fontSize: 11 }}>
                     {p.pos} · <MarketChips markets={marketsFor(p)} />
+                  </div>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}
+                    title="Minutes, last 10 games"
+                  >
+                    <Sparkline values={p.minutes} />
+                    <Num style={{ fontSize: 10, color: 'var(--ct-dim)' }}>
+                      {p.minutes[p.minutes.length - 1]}′ last
+                    </Num>
                   </div>
                 </button>
               );

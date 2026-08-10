@@ -368,3 +368,56 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect((await screen.findAllByText('+0.018')).length).toBeGreaterThan(0);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
+
+test('player switches clamp the card stat and team toggles remain user-controlled', async () => {
+  const empty = (playerId) => ({
+    playerId,
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  });
+  fetchMatchupSelection.mockImplementation((_gameId, playerId) => Promise.resolve(empty(playerId)));
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  );
+  await userEvent.click(
+    within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByRole('button', {
+      name: 'Open selection card',
+    }),
+  );
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  expect(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'PTS',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
+  expect(screen.getByRole('button', { name: 'LAL defense' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  expect(screen.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
+});
+
+test('selection request errors replace loading with an honest alert', async () => {
+  fetchMatchupSelection.mockRejectedValueOnce(new Error('selection failed'));
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load selection logs');
+  expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
+});

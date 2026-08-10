@@ -400,7 +400,12 @@ function Detail({ matchup, gameId }) {
   const selectedPlayer = matchup.players.find((player) => player.id === selectedId) || null;
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
-  const [selectionState, setSelectionState] = useState({ status: 'idle', data: null, error: null });
+  const [selectionState, setSelectionState] = useState({
+    status: 'idle',
+    playerId: null,
+    data: null,
+    error: null,
+  });
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
@@ -422,24 +427,26 @@ function Detail({ matchup, gameId }) {
   }, [market, markets]);
   useEffect(() => {
     if (!selectedPlayer) {
-      setSelectionState({ status: 'idle', data: null, error: null });
+      setSelectionState({ status: 'idle', playerId: null, data: null, error: null });
       return undefined;
     }
     const controller = new AbortController();
     let current = true;
-    setSelectionState({ status: 'loading', data: null, error: null });
+    setSelectionState({ status: 'loading', playerId: selectedPlayer.id, data: null, error: null });
     fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.postedMarkets, {
       signal: controller.signal,
     })
       .then((data) => {
-        if (current) setSelectionState({ status: 'ready', data, error: null });
+        if (current)
+          setSelectionState({ status: 'ready', playerId: selectedPlayer.id, data, error: null });
       })
       .catch((error) => {
         if (current && !isRequestCancelled(error))
           setSelectionState({
             status: 'error',
+            playerId: selectedPlayer.id,
             data: null,
-            error: getRequestErrorMessage(error, 'Unable to load selection logs.'),
+            error: `Unable to load selection logs. ${getRequestErrorMessage(error, 'Please try again.')}`,
           });
       });
     return () => {
@@ -447,11 +454,6 @@ function Detail({ matchup, gameId }) {
       controller.abort();
     };
   }, [gameId, selectedPlayer]);
-  useEffect(() => {
-    if (!selectedPlayer) return;
-    const selectedDefense = matchup.teams.find((team) => team.teamId !== selectedPlayer.teamId);
-    if (selectedDefense && selectedDefense.teamId !== teamId) setTeamId(selectedDefense.teamId);
-  }, [matchup.teams, selectedPlayer, teamId]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
       selectionTriggers.current.get(previousSelectedId.current)?.focus();
@@ -544,7 +546,7 @@ function Detail({ matchup, gameId }) {
             market={market}
             windowKey={windowKey}
             deviation={deviation}
-            selectedPlayer={selectedPlayer}
+            selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
           />
         )}
         <PlayerRail
@@ -566,15 +568,12 @@ function Detail({ matchup, gameId }) {
       {selectedPlayer && (
         <SelectionCard
           player={selectedPlayer}
-          selection={
-            selectionState.data?.playerId === selectedPlayer.id ? selectionState.data : null
-          }
-          status={
-            selectionState.data?.playerId === selectedPlayer.id ? selectionState.status : 'loading'
-          }
+          selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
+          status={selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'}
           error={selectionState.error}
           windowKey={windowKey}
           sheetMarket={market}
+          whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
           onClose={() => updateSelectedPlayer(null)}
         />
       )}

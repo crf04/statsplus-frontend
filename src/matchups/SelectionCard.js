@@ -57,6 +57,7 @@ export default function SelectionCard({
   error,
   windowKey,
   sheetMarket,
+  whyRelevant,
   onClose,
 }) {
   const panelRef = useRef(null);
@@ -65,9 +66,12 @@ export default function SelectionCard({
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
-    if (sheetMarket !== 'All' && player.postedMarkets.includes(sheetMarket))
+    if (!player.postedMarkets.includes(activeStat)) {
+      setActiveStat(player.postedMarkets[0]);
+    } else if (sheetMarket !== 'All' && player.postedMarkets.includes(sheetMarket)) {
       setActiveStat(sheetMarket);
-  }, [player.postedMarkets, sheetMarket]);
+    }
+  }, [activeStat, player.id, player.postedMarkets, sheetMarket]);
   const rows = player.postedMarkets.map((market) => ({
     market,
     score: player.scores[market][windowKey],
@@ -95,7 +99,9 @@ export default function SelectionCard({
         </button>
       </div>
       <p className="selection-explainer">
-        Highlighted Defense Sheet rows show displayed Diet Share inputs for the current window.
+        {whyRelevant
+          ? 'Highlighted Defense Sheet rows show displayed Diet Share inputs for the current window.'
+          : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
       </p>
       <div className="selection-stat-control" role="group" aria-label="Selection log stat">

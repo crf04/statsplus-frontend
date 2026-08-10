@@ -266,3 +266,54 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   expect(failedResponses).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('selection-card-narrow.png'), fullPage: true });
 });
+
+test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.goto('/matchups/0022500584');
+  await page
+    .getByRole('article', { name: 'LeBron James player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await page
+    .getByRole('group', { name: 'Selection log stat' })
+    .getByRole('button', { name: 'PRA' })
+    .click();
+  await page
+    .getByRole('article', { name: 'Austin Reaves player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'Selection log stat' }).getByRole('button', { name: 'PTS' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'LAL defense' }).click();
+  await expect(page.getByRole('button', { name: 'LAL defense' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('selection-player-switch-team-toggle.png'),
+    fullPage: true,
+  });
+});
+
+test('selection request failure renders an honest handled error', async ({ page }, testInfo) => {
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  await installApiContract(page, {
+    '/api/games/matchup/selection': {
+      status: 500,
+      body: { error: { code: 'provider_unavailable' } },
+    },
+  });
+  const failedResponses = [];
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  await page.goto('/matchups/0022500584?player=lebron-james');
+  await expect(page.getByRole('alert')).toContainText('Unable to load selection logs');
+  await expect(page.getByText('Loading selection logs…')).toHaveCount(0);
+  expect(failedResponses).toHaveLength(1);
+  await page.screenshot({ path: testInfo.outputPath('selection-error.png'), fullPage: true });
+});

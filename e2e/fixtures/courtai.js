@@ -392,8 +392,9 @@ export const matchupPayload = {
 };
 
 const selectionLine = (date, matchup, minutes, values, deltas) => ({
+  row_type: date === null ? 'average' : 'game',
   game_date: date,
-  matchup,
+  matchup: date === null ? null : matchup,
   minutes,
   stats: values,
   deltas,
@@ -402,6 +403,7 @@ const selectionLine = (date, matchup, minutes, values, deltas) => ({
 export const selectionPayload = {
   player_id: 'lebron-james',
   h2h: {
+    thin: false,
     rows: [
       selectionLine(
         '2025-12-25',
@@ -420,6 +422,7 @@ export const selectionPayload = {
     ],
   },
   archetype: {
+    thin: true,
     rows: [
       selectionLine(
         '2025-12-20',
@@ -441,8 +444,9 @@ export const selectionPayload = {
 
 export const austinSelectionPayload = {
   player_id: 'austin-reaves',
-  h2h: { rows: [] },
+  h2h: { thin: false, rows: [] },
   archetype: {
+    thin: true,
     rows: [
       selectionLine(
         '2025-12-18',

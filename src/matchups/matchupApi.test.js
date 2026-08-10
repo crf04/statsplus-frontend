@@ -213,6 +213,7 @@ test('strictly decodes combo, attempts, and AVG rows from the raw selection resp
     h2h: {
       rows: [
         {
+          row_type: 'game',
           game_date: '2025-12-25',
           matchup: 'LAL vs. BOS',
           minutes: 36,
@@ -220,8 +221,9 @@ test('strictly decodes combo, attempts, and AVG rows from the raw selection resp
           deltas: { PRA: 0.102, FGA: 0.018 },
         },
         {
+          row_type: 'average',
           game_date: null,
-          matchup: 'AVG',
+          matchup: null,
           minutes: 36,
           stats: { PRA: 48, FGA: 19 },
           deltas: { PRA: 0.102, FGA: 0.018 },
@@ -241,4 +243,11 @@ test('strictly decodes combo, attempts, and AVG rows from the raw selection resp
   expect(() => decodeMatchupSelection(raw, ['PRA', 'FGA'], 'another-player')).toThrow(
     'selection endpoint returned an invalid response',
   );
+  expect(() =>
+    decodeMatchupSelection(
+      { ...raw, h2h: { ...raw.h2h, thin: 'yes' } },
+      ['PRA', 'FGA'],
+      'lebron-james',
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
 });

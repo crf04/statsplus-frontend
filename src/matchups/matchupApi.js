@@ -356,13 +356,17 @@ const decodeSelectionStatMap = (value, markets) => {
 
 const decodeLogLine = (line, markets) => {
   if (!isRecord(line)) throw selectionInvalid();
-  const average = line.matchup === 'AVG';
-  if ((average && line.game_date !== null) || (!average && typeof line.game_date !== 'string')) {
+  if (!['game', 'average'].includes(line.row_type)) throw selectionInvalid();
+  const average = line.row_type === 'average';
+  if (
+    (average && (line.game_date !== null || line.matchup !== null)) ||
+    (!average && (typeof line.game_date !== 'string' || typeof line.matchup !== 'string'))
+  ) {
     throw selectionInvalid();
   }
   return {
     date: line.game_date,
-    matchup: requireSelectionString(line.matchup),
+    matchup: average ? null : requireSelectionString(line.matchup),
     minutes: requireSelectionNumber(line.minutes),
     stats: decodeSelectionStatMap(line.stats, markets),
     deltas: decodeSelectionStatMap(line.deltas, markets),
@@ -371,7 +375,12 @@ const decodeLogLine = (line, markets) => {
 };
 
 const decodeLogTable = (table, markets) => {
-  if (!isRecord(table) || !Array.isArray(table.rows)) throw selectionInvalid();
+  if (
+    !isRecord(table) ||
+    !Array.isArray(table.rows) ||
+    (table.thin !== undefined && typeof table.thin !== 'boolean')
+  )
+    throw selectionInvalid();
   const rows = table.rows.map((row) => decodeLogLine(row, markets));
   if (rows.some((row, index) => row.average && index !== rows.length - 1)) {
     throw selectionInvalid();
@@ -381,9 +390,7 @@ const decodeLogTable = (table, markets) => {
   }
   return {
     rows,
-    thin:
-      rows.filter((row) => !row.average).length > 0 &&
-      rows.filter((row) => !row.average).length < 2,
+    thin: table.thin ?? false,
   };
 };
 

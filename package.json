@@ -54,8 +54,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "eslint .",
-    "format:check": "prettier --check package.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
-    "format": "prettier --write package.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json"
+    "format:check": "prettier --check package.json vercel.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
+    "format": "prettier --write package.json vercel.json README.md index.html src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json"
   },
   "jest": {
     "testEnvironment": "jsdom",

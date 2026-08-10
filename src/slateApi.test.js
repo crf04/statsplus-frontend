@@ -10,9 +10,16 @@ const payload = {
   slate_date: '2026-01-15',
   freshness: {
     schedule: { retrieved_at: '2026-01-15T10:00:00Z', status: 'fresh' },
-    pool: { status: 'unavailable', retrieved_at: null, providers: {} },
+    pool: {
+      status: 'stale-served',
+      retrieved_at: '2026-01-15T09:55:00Z',
+      providers: {
+        prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T09:55:00Z' },
+        underdog: { status: 'missing', retrieved_at: null },
+      },
+    },
   },
-  pool_status: 'unavailable',
+  pool_status: 'stale-served',
   games: [
     {
       game_id: '0022500584',
@@ -32,24 +39,97 @@ const payload = {
       status: { state: 'scheduled', label: '7:30 PM ET' },
       classification: 'NBA Paris Game',
       preseason: false,
-      targetable_counts: { away: 5, home: 4 },
     },
   ],
 };
 
-test('decodes the slate boundary including freshness and targetable counts', () => {
+test('decodes the complete slate freshness boundary and team counts', () => {
   expect(decodeSlate(payload)).toEqual({
     slateDate: '2026-01-15',
-    freshness: payload.freshness,
-    poolStatus: 'unavailable',
+    freshness: {
+      schedule: { retrievedAt: '2026-01-15T10:00:00.000Z', status: 'fresh' },
+      pool: {
+        status: 'stale-served',
+        retrievedAt: '2026-01-15T09:55:00.000Z',
+        providers: [
+          {
+            name: 'prizepicks',
+            status: 'fresh',
+            retrievedAt: '2026-01-15T09:55:00.000Z',
+          },
+          { name: 'underdog', status: 'missing', retrievedAt: null },
+        ],
+      },
+    },
+    poolStatus: 'stale-served',
     games: [
       expect.objectContaining({
         gameId: '0022500584',
         scheduledAt: '2026-01-16T00:30:00.000Z',
-        targetableCounts: { away: 5, home: 4 },
+        away: expect.objectContaining({ targetablePlayerCount: 5 }),
+        home: expect.objectContaining({ targetablePlayerCount: 4 }),
       }),
     ],
   });
+});
+
+test.each([
+  [
+    'missing freshness surface',
+    { ...payload, freshness: { schedule: payload.freshness.schedule } },
+  ],
+  [
+    'unknown schedule status',
+    {
+      ...payload,
+      freshness: {
+        ...payload.freshness,
+        schedule: { ...payload.freshness.schedule, status: 'old' },
+      },
+    },
+  ],
+  [
+    'invalid provider retrieval time',
+    {
+      ...payload,
+      freshness: {
+        ...payload.freshness,
+        pool: {
+          ...payload.freshness.pool,
+          providers: {
+            prizepicks: { status: 'fresh', retrieved_at: 'not-a-date' },
+          },
+        },
+      },
+    },
+  ],
+  ['unknown aggregate pool status', { ...payload, pool_status: 'old' }],
+  ['invalid calendar slate date', { ...payload, slate_date: '2026-02-30' }],
+])('rejects a %s', (_label, malformedPayload) => {
+  expect(() => decodeSlate(malformedPayload)).toThrow(
+    'The slate endpoint returned an invalid response.',
+  );
+});
+
+test('accepts schedule staleness and an unavailable aggregate pool from the backend contract', () => {
+  expect(
+    decodeSlate({
+      ...payload,
+      pool_status: 'unavailable',
+      freshness: {
+        schedule: { status: 'stale', retrieved_at: '2026-01-13T10:00:00Z' },
+        pool: { status: 'unavailable', retrieved_at: null, providers: {} },
+      },
+    }),
+  ).toEqual(
+    expect.objectContaining({
+      poolStatus: 'unavailable',
+      freshness: {
+        schedule: { status: 'stale', retrievedAt: '2026-01-13T10:00:00.000Z' },
+        pool: { status: 'unavailable', retrievedAt: null, providers: [] },
+      },
+    }),
+  );
 });
 
 test('rejects malformed slate payloads rather than inventing an empty slate', () => {

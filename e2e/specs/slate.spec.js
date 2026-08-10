@@ -1,6 +1,14 @@
-import { E2E_AUTH_STORAGE_KEY, expect, installApiContract, test } from '../fixtures/courtai';
+import {
+  E2E_AUTH_STORAGE_KEY,
+  expect,
+  installApiContract,
+  slateGame,
+  slatePayload,
+  test,
+} from '../fixtures/courtai';
 
 test('@critical authenticated user opens a slate and navigates dates', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');
   }, E2E_AUTH_STORAGE_KEY);
@@ -8,7 +16,48 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/games/slate') requests.push(request.url());
   });
-  await installApiContract(page);
+  await installApiContract(page, {
+    '/api/games/slate': (request) => {
+      const date = new URL(request.url()).searchParams.get('date') || '2026-01-15';
+      if (date === '2026-01-14') return slatePayload(date, []);
+      if (date === '2026-01-10') {
+        return slatePayload(
+          date,
+          [
+            {
+              ...slateGame,
+              game_id: '0022500541',
+              away_team: {
+                ...slateGame.away_team,
+                tricode: 'NYK',
+                name: 'New York Knicks',
+                targetable_player_count: 0,
+              },
+              home_team: {
+                ...slateGame.home_team,
+                tricode: 'MIL',
+                name: 'Milwaukee Bucks',
+                targetable_player_count: 0,
+              },
+              scheduled_at: '2026-01-11T01:00:00Z',
+              status: { state: 'final', label: 'Final' },
+              classification: null,
+            },
+          ],
+          { poolStatus: 'fresh' },
+        );
+      }
+      return slatePayload(date, [slateGame], {
+        poolStatus: 'stale-served',
+        poolFreshnessStatus: 'stale-served',
+        poolRetrievedAt: '2026-01-15T10:00:00Z',
+        providers: {
+          prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
+          underdog: { status: 'missing', retrieved_at: null },
+        },
+      });
+    },
+  });
 
   await page.goto('/matchups?date=2026-01-15');
 
@@ -16,9 +65,9 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
   await expect(page.getByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
   await expect(page.getByText('Los Angeles Lakers')).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
-  await expect(page.getByRole('article').getByText('Pool unavailable')).toBeVisible();
-  await expect(page.getByText(/schedule as of/i)).toBeVisible();
-  await expect(page.getByLabel('Data freshness').getByText('Pool unavailable')).toBeVisible();
+  await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
+  await expect(page.getByRole('alert').getByText(/player pool is stale-served/i)).toBeVisible();
+  await expect(page.getByRole('alert').getByText(/underdog pool is missing/i)).toBeVisible();
   await page.screenshot({ path: 'test-results/slate-desktop.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Previous date' }).click();
@@ -28,7 +77,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
   await page.getByLabel('Slate date').fill('2026-01-10');
   await expect(page).toHaveURL(/date=2026-01-10/);
   await expect(page.getByRole('heading', { name: 'NYK @ MIL' })).toBeVisible();
-  await expect(page.getByText('Past slate — player pool unavailable.')).toBeVisible();
+  await expect(page.getByText(/no player pool is available for historical dates/i)).toBeVisible();
   expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-10')).toBe(true);
 });
 
@@ -68,6 +117,7 @@ test('a rejected slate request leaves date navigation available', async ({ page 
 });
 
 test('slate remains usable at a narrow viewport and from the keyboard', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await page.setViewportSize({ width: 393, height: 852 });
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');

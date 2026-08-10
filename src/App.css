@@ -34,6 +34,11 @@
   color: var(--ct-gold);
 }
 
+.app-nav a:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
 .app-brand {
   justify-self: start;
   color: var(--ct-text) !important;

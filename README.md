@@ -18,6 +18,14 @@ CourtAI sits in front of an NBA game-log API and gives the same data three ways:
 
 The natural-language path is the one I cared most about — the structured filters are the fallback when the prompt is ambiguous.
 
+## Routes and navigation
+
+The shared navigation exposes the game-log search at `/` and the date-based NBA slate at
+`/matchups?date=YYYY-MM-DD`. Omitting `date` opens today's Eastern-time slate. Unknown client-side
+paths return to `/`, and Vercel's SPA fallback keeps direct links to `/matchups` working. Signed-out
+visitors keep the shared shell and see a sign-in prompt on the matchups route rather than being
+redirected.
+
 ## Architecture
 
 ```
@@ -83,6 +91,7 @@ This repo is the frontend only. It expects a backend serving:
 - `GET  /api/players`
 - `GET  /api/teams`
 - `GET  /api/games/game_logs`
+- `GET  /api/games/slate?date=YYYY-MM-DD`
 - `GET  /api/players/profile`
 - `GET  /api/teams/stats`
 - `POST /api/nl-query`

@@ -148,8 +148,14 @@ const decodeScoreCell = (cell) => {
   return { value: requireNumber(cell.value), thin: cell.thin };
 };
 
-const decodeScoreWindow = (window) => {
+const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
+
+const decodeScoreWindow = (window, market) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
+  const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
+  if ((!defensive && !isRecord(window.blend)) || (defensive && window.blend != null)) {
+    throw invalid();
+  }
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [
@@ -157,7 +163,7 @@ const decodeScoreWindow = (window) => {
         decodeScoreCell(cell),
       ]),
     ),
-    blend: window.blend === undefined ? null : decodeScoreCell(window.blend),
+    blend: defensive ? null : decodeScoreCell(window.blend),
   };
 };
 
@@ -169,8 +175,8 @@ function decodeScores(scores, postedMarkets) {
     postedMarkets.map((market) => [
       market,
       {
-        season: decodeScoreWindow(scores[market].season),
-        last15: decodeScoreWindow(scores[market].last_15),
+        season: decodeScoreWindow(scores[market].season, market),
+        last15: decodeScoreWindow(scores[market].last_15, market),
       },
     ]),
   );
@@ -375,11 +381,7 @@ const decodeLogLine = (line, markets) => {
 };
 
 const decodeLogTable = (table, markets) => {
-  if (
-    !isRecord(table) ||
-    !Array.isArray(table.rows) ||
-    (table.thin !== undefined && typeof table.thin !== 'boolean')
-  )
+  if (!isRecord(table) || !Array.isArray(table.rows) || typeof table.thin !== 'boolean')
     throw selectionInvalid();
   const rows = table.rows.map((row) => decodeLogLine(row, markets));
   if (rows.some((row, index) => row.average && index !== rows.length - 1)) {
@@ -390,7 +392,7 @@ const decodeLogTable = (table, markets) => {
   }
   return {
     rows,
-    thin: table.thin ?? false,
+    thin: table.thin,
   };
 };
 

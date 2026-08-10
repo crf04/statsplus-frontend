@@ -61,17 +61,31 @@ export default function SelectionCard({
   onClose,
 }) {
   const panelRef = useRef(null);
+  const previousPlayerId = useRef(player.id);
+  const previousSheetMarket = useRef(sheetMarket);
   const [activeStat, setActiveStat] = useState(
     player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
-    if (!player.postedMarkets.includes(activeStat)) {
-      setActiveStat(player.postedMarkets[0]);
-    } else if (sheetMarket !== 'All' && player.postedMarkets.includes(sheetMarket)) {
-      setActiveStat(sheetMarket);
-    }
-  }, [activeStat, player.id, player.postedMarkets, sheetMarket]);
+    const playerChanged = previousPlayerId.current !== player.id;
+    const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
+    setActiveStat((current) => {
+      if (playerChanged) {
+        return player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0];
+      }
+      if (
+        sheetMarketChanged &&
+        sheetMarket !== 'All' &&
+        player.postedMarkets.includes(sheetMarket)
+      ) {
+        return sheetMarket;
+      }
+      return player.postedMarkets.includes(current) ? current : player.postedMarkets[0];
+    });
+    previousPlayerId.current = player.id;
+    previousSheetMarket.current = sheetMarket;
+  }, [player.id, player.postedMarkets, sheetMarket]);
   const rows = player.postedMarkets.map((market) => ({
     market,
     score: player.scores[market][windowKey],

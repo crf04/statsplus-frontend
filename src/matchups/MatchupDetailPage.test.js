@@ -409,6 +409,29 @@ test('player switches clamp the card stat and team toggles remain user-controlle
   expect(screen.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
 });
 
+test('card stat choices persist while a different global sheet market remains active', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  const sheetMarkets = within(screen.getByRole('group', { name: 'Market' }));
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'PTS' }));
+  await userEvent.click(
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('button', {
+      name: 'Open selection card',
+    }),
+  );
+  const cardStats = within(await screen.findByRole('group', { name: 'Selection log stat' }));
+  await userEvent.click(cardStats.getByRole('button', { name: 'FGA' }));
+  expect(cardStats.getByRole('button', { name: 'FGA' })).toHaveAttribute('aria-pressed', 'true');
+  expect(sheetMarkets.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
+  expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
+});
+
 test('selection request errors replace loading with an honest alert', async () => {
   fetchMatchupSelection.mockRejectedValueOnce(new Error('selection failed'));
   render(

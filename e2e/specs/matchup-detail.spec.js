@@ -270,7 +270,12 @@ test('@critical selection card supports selection, deep links, and tab flips wit
 test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({
   authenticatedPage: page,
 }, testInfo) => {
+  let selectionRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup/selection') selectionRequests += 1;
+  });
   await page.goto('/matchups/0022500584');
+  await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'PTS' }).click();
   await page
     .getByRole('article', { name: 'LeBron James player' })
     .getByRole('button', { name: 'Open selection card' })
@@ -279,6 +284,18 @@ test('selection clamps on an in-app player switch and leaves the team toggle ope
     .getByRole('group', { name: 'Selection log stat' })
     .getByRole('button', { name: 'PRA' })
     .click();
+  await expect(
+    page.getByRole('group', { name: 'Selection log stat' }).getByRole('button', { name: 'PRA' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'PTS' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('columnheader', { name: 'PRA' }).first()).toBeVisible();
+  expect(selectionRequests).toBe(1);
+  await page.screenshot({
+    path: testInfo.outputPath('selection-sheet-pts-card-pra.png'),
+    fullPage: true,
+  });
   await page
     .getByRole('article', { name: 'Austin Reaves player' })
     .getByRole('button', { name: 'Open selection card' })

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
@@ -119,6 +119,9 @@ function GameCard({ game }) {
         {game.preseason && <span className="slate-badge">Preseason</span>}
         {game.status === 'postponed' && <span className="slate-badge">Postponed</span>}
       </div>
+      <Link className="open-matchup" to={`/matchups/${game.gameId}`}>
+        Open Team Sheets
+      </Link>
     </article>
   );
 }

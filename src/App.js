@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-do
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import SlatePage from './SlatePage';
+import MatchupDetailPage from './matchups/MatchupDetailPage';
 import './App.css';
 
 function AppNav() {
@@ -40,6 +41,7 @@ function App() {
             <Routes>
               <Route path="/" element={<GameLogFilter />} />
               <Route path="/matchups" element={<SlatePage />} />
+              <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ProtectedRoute>

@@ -234,7 +234,7 @@ const validateLeagueCoverage = (league, teams) => {
     const teamKeys = new Set(
       teams.flatMap((team) => team.defenseSheet[base].map((row) => row.key)),
     );
-    if (leagueKeys.size !== teamKeys.size || [...leagueKeys].some((key) => !teamKeys.has(key))) {
+    if ([...teamKeys].some((key) => !leagueKeys.has(key))) {
       throw invalid();
     }
   }
@@ -402,7 +402,23 @@ const decodeInjuries = (injuries, matchupTeams) => {
   if (!isRecord(injuries) || !['fresh', 'stale', 'unavailable'].includes(injuries.status)) {
     throw invalid();
   }
-  if (!Array.isArray(injuries.teams) || injuries.teams.length !== matchupTeams.length) {
+  if (!Object.hasOwn(injuries, 'unavailable_reason') || !Object.hasOwn(injuries, 'retrieved_at')) {
+    throw invalid();
+  }
+  const unavailableReasons = ['disabled', 'permission_required', 'fetch_failed', null];
+  if (
+    !unavailableReasons.includes(injuries.unavailable_reason) ||
+    (injuries.status === 'unavailable' && injuries.unavailable_reason === null) ||
+    (injuries.status !== 'unavailable' && injuries.unavailable_reason !== null)
+  ) {
+    throw invalid();
+  }
+  if (
+    !Array.isArray(injuries.teams) ||
+    (injuries.status === 'unavailable'
+      ? ![0, matchupTeams.length].includes(injuries.teams.length)
+      : injuries.teams.length !== matchupTeams.length)
+  ) {
     throw invalid();
   }
   const expectedTeams = new Map(matchupTeams.map((team) => [team.teamId, team.tricode]));

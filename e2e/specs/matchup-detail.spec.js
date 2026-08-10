@@ -103,7 +103,7 @@ test('matchup renders stale and unavailable surfaces without inventing data', as
         status: 'unavailable',
         unavailable_reason: 'permission_required',
         retrieved_at: null,
-        teams: matchupPayload.injuries.teams.map((team) => ({ ...team, entries: [] })),
+        teams: [],
       },
       freshness: {
         ...matchupPayload.freshness,

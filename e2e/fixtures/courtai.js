@@ -185,6 +185,7 @@ const league = {
       leagueRow('isolation', 8, 0.5, 8.1, 0.6),
       leagueRow('above-break', 11.5, 1, 11.7, 1),
       leagueRow('post-up', 11, 0.9, 11.4, 1.1),
+      leagueRow('handoff', 7.2, 0.7, 7.4, 0.8),
     ],
     shot_zones: [leagueRow('paint', 21, 1.7, 21.2, 1.5)],
     shot_types: [leagueRow('catch-shoot', 15.5, 1.2, 15.3, 1.1)],

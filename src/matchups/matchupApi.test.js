@@ -278,6 +278,62 @@ test('strictly decodes injury identities and enforces the v1 team envelope', () 
   expect(() => decodeMatchup(missingSourceId)).toThrow('invalid response');
 });
 
+test('accepts unavailable injuries with an honest empty team envelope', () => {
+  const unavailable = {
+    ...payload,
+    injuries: { ...payload.injuries, teams: [] },
+  };
+  expect(decodeMatchup(unavailable).injuries).toEqual(
+    expect.objectContaining({
+      status: 'unavailable',
+      unavailableReason: 'permission_required',
+      teams: [],
+    }),
+  );
+
+  const staleWithoutTeams = {
+    ...payload,
+    injuries: {
+      ...payload.injuries,
+      status: 'stale',
+      unavailable_reason: null,
+      retrieved_at: '2026-01-15T11:00:00Z',
+      teams: [],
+    },
+  };
+  expect(() => decodeMatchup(staleWithoutTeams)).toThrow('invalid response');
+
+  const missingReason = JSON.parse(JSON.stringify(unavailable));
+  delete missingReason.injuries.unavailable_reason;
+  expect(() => decodeMatchup(missingReason)).toThrow('invalid response');
+  const unavailableWithoutReason = JSON.parse(JSON.stringify(unavailable));
+  unavailableWithoutReason.injuries.unavailable_reason = null;
+  expect(() => decodeMatchup(unavailableWithoutReason)).toThrow('invalid response');
+});
+
+test('accepts league taxonomy rows that neither matchup team happens to use', () => {
+  const extraLeagueRow = {
+    ...payload,
+    league: {
+      ...payload.league,
+      defense_sheet: {
+        ...payload.league.defense_sheet,
+        play_types: [
+          ...payload.league.defense_sheet.play_types,
+          {
+            key: 'handoff',
+            season: { average_allowed_per_48: 7.2, sigma: 0.7 },
+            last_15: { average_allowed_per_48: 7.4, sigma: 0.8 },
+          },
+        ],
+      },
+    },
+  };
+  expect(decodeMatchup(extraLeagueRow).league.defenseSheet.playTypes).toEqual(
+    expect.arrayContaining([expect.objectContaining({ key: 'handoff' })]),
+  );
+});
+
 test('requires Blend for offensive scores and accepts omitted or null Blend for defensive scores', () => {
   const defensive = JSON.parse(JSON.stringify(payload));
   defensive.players[0].posted_markets = ['TOV'];
@@ -329,26 +385,6 @@ test.each([
       league: {
         ...payload.league,
         defense_sheet: { ...payload.league.defense_sheet, play_types: [] },
-      },
-    },
-  ],
-  [
-    'unknown league row',
-    {
-      ...payload,
-      league: {
-        ...payload.league,
-        defense_sheet: {
-          ...payload.league.defense_sheet,
-          play_types: [
-            ...payload.league.defense_sheet.play_types,
-            {
-              key: 'unknown',
-              season: { average_allowed_per_48: 1, sigma: 1 },
-              last_15: { average_allowed_per_48: 1, sigma: 1 },
-            },
-          ],
-        },
       },
     },
   ],

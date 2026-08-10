@@ -266,14 +266,6 @@ const VariantG = () => {
             })}
           </SectionCard>
         ))}
-        <SectionCard title="Score backtest (mock target)">
-          <div style={{ fontSize: 12, color: 'var(--ct-dim)', lineHeight: 1.5 }}>
-            Line-relative: when {scoreHeader} ≥ +10%, the <em>over on the posted line</em> hit{' '}
-            <span style={{ color: 'var(--ct-hit)', fontFamily: 'var(--ct-mono)' }}>57%</span>{' '}
-            (n=214) vs 52% baseline. Illustrative numbers — real backtest needs stored board
-            snapshots (line history), since lines adjust to the matchup.
-          </div>
-        </SectionCard>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>

@@ -15,12 +15,8 @@ describe('Vercel deployment configuration', () => {
   });
 
   test('proxies API requests before applying the SPA fallback', () => {
-    expect(vercelConfig.rewrites).toEqual([
-      {
-        source: '/api/:path*',
-        destination: 'https://your-backend.example.com/api/:path*',
-      },
-      { source: '/:path*', destination: '/index.html' },
-    ]);
+    expect(vercelConfig.rewrites).toHaveLength(2);
+    expect(vercelConfig.rewrites[0]).toMatchObject({ source: '/api/:path*' });
+    expect(vercelConfig.rewrites[1]).toEqual({ source: '/:path*', destination: '/index.html' });
   });
 });

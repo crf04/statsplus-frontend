@@ -9,6 +9,12 @@ import {
   GAME,
   LEAGUE_AVG,
   vsAvg,
+  defPlayTypeVolume,
+  defZoneVolume,
+  defShotTypeVolume,
+  playerPlayTypeVolume,
+  playerZoneVolume,
+  playerShotTypeVolume,
   marketsFor,
   archetypeLogsFor,
   computeEdges,
@@ -34,42 +40,51 @@ export function concessions(tri) {
       },
     }),
   );
-  Object.entries(def.playTypes).forEach(([type, d]) =>
+  Object.entries(def.playTypes).forEach(([type, d]) => {
+    const v = defPlayTypeVolume(tri, type);
     out.push({
       category: 'Play types',
       label: type,
-      line: `${d.ppp} PPP allowed (${vsAvg(d.ppp, LEAGUE_AVG.playTypes[type], 2)} vs avg)`,
+      line: `${v.ptsG} pts on ${v.possG} poss (${d.ppp} PPP, ${vsAvg(d.ppp, LEAGUE_AVG.playTypes[type], 2)} vs avg)`,
       rank: d.rank,
       attackers: (p) => {
         const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
-        return pt ? `${pt.freq}% · ${pt.ppp} PPP` : null;
+        if (!pt) return null;
+        const pv = playerPlayTypeVolume(p, pt);
+        return `${pv.possG} poss · ${pv.ptsG} pts/gm`;
       },
-    }),
-  );
-  Object.entries(def.zones).forEach(([zone, d]) =>
+    });
+  });
+  Object.entries(def.zones).forEach(([zone, d]) => {
+    const v = defZoneVolume(tri, zone);
     out.push({
       category: 'Shot zones',
       label: zone,
-      line: `${d.fgPct}% FG allowed (${vsAvg(d.fgPct, LEAGUE_AVG.zones[zone])} vs avg)`,
+      line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.fgPct}% FG, ${vsAvg(d.fgPct, LEAGUE_AVG.zones[zone])} vs avg)`,
       rank: d.rank,
       attackers: (p) => {
         const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
-        return z ? `${z.share}% FGA · ${z.fgPct}%` : null;
+        if (!z) return null;
+        const pz = playerZoneVolume(p, z);
+        return `${pz.fgaG} FGA · ${pz.ptsG} pts/gm`;
       },
-    }),
-  );
-  Object.entries(def.shotTypes).forEach(([type, d]) =>
+    });
+  });
+  Object.entries(def.shotTypes).forEach(([type, d]) => {
+    const v = defShotTypeVolume(tri, type);
     out.push({
       category: 'Shot types',
       label: type,
-      line: `${d.efg}% eFG allowed (${d.vsAvg > 0 ? '+' : ''}${d.vsAvg} vs avg)`,
+      line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.efg}% eFG, ${d.vsAvg > 0 ? '+' : ''}${d.vsAvg} vs avg)`,
       rank: d.rank,
       attackers: (p) => {
         const st = p.shotTypes.find((x) => x.type === type && x.fga >= 4);
-        return st ? `${st.fga} FGA · ${st.efg} eFG%` : null;
+        if (!st) return null;
+        const ps = playerShotTypeVolume(st);
+        return `${ps.fgaG} FGA · ${ps.ptsG} pts/gm`;
       },
-    }),
-  );
+    });
+  });
   Object.entries(def.assistLoc).forEach(([loc, d]) =>
     out.push({
       category: 'Assist locations',

@@ -70,6 +70,73 @@ export const vsAvg = (value, avg, digits = 1) => {
   return `${d >= 0 ? '+' : ''}${d.toFixed(digits)}`;
 };
 
+// League base volumes per game, used to derive points-and-volume lines from
+// the stored efficiency stats (round 6: points + volume lead the categories).
+const PLAYTYPE_BASE_POSS = {
+  Isolation: 7.5,
+  Transition: 16.2,
+  'P&R Ball-Handler': 18.4,
+  'P&R Roll Man': 7.1,
+  'Post-Up': 4.4,
+  'Spot-Up': 18.1,
+  Handoff: 4.6,
+  Cut: 7.2,
+  'Off-Screen': 4.1,
+  Putbacks: 6.3,
+  Misc: 5.2,
+};
+const ZONE_BASE_FGA = {
+  'Restricted Area': 28.4,
+  'Paint (Non-RA)': 15.2,
+  'Mid-Range': 11.8,
+  'Corner 3': 8.9,
+  'Above Break 3': 30.1,
+};
+const SHOTTYPE_BASE_FGA = { 'Catch & Shoot': 27.4, 'Pull-Up': 21.8, '< 10 ft': 24.2 };
+const ZONE_PT_VALUE = {
+  'Restricted Area': 2,
+  'Paint (Non-RA)': 2,
+  'Mid-Range': 2,
+  'Corner 3': 3,
+  'Above Break 3': 3,
+};
+
+const round1 = (n) => Math.round(n * 10) / 10;
+
+export function defPlayTypeVolume(tri, type) {
+  const d = DEFENSE[tri].playTypes[type];
+  const possG = round1(PLAYTYPE_BASE_POSS[type] * (1 + (d.rank - 15.5) * 0.012));
+  return { possG, ptsG: round1(possG * d.ppp) };
+}
+
+export function defZoneVolume(tri, zone) {
+  const d = DEFENSE[tri].zones[zone];
+  const fgaG = round1(ZONE_BASE_FGA[zone] * (1 + (d.rank - 15.5) * 0.012));
+  return { fgaG, ptsG: round1((fgaG * d.fgPct * ZONE_PT_VALUE[zone]) / 100) };
+}
+
+export function defShotTypeVolume(tri, type) {
+  const d = DEFENSE[tri].shotTypes[type];
+  const fgaG = round1(SHOTTYPE_BASE_FGA[type] * (1 + (d.rank - 15.5) * 0.012));
+  return { fgaG, ptsG: round1((fgaG * d.efg * 2) / 100) };
+}
+
+export function playerPlayTypeVolume(player, pt) {
+  const totalPoss = player.season.pts / 1.12;
+  const possG = round1((pt.freq / 100) * totalPoss);
+  return { possG, ptsG: round1(possG * pt.ppp) };
+}
+
+export function playerZoneVolume(player, z) {
+  const totalFga = player.shotTypes.reduce((sum, st) => sum + st.fga, 0);
+  const fgaG = round1((z.share / 100) * totalFga);
+  return { fgaG, ptsG: round1((fgaG * z.fgPct * ZONE_PT_VALUE[z.zone]) / 100) };
+}
+
+export function playerShotTypeVolume(st) {
+  return { fgaG: st.fga, ptsG: round1((st.fga * st.efg * 2) / 100) };
+}
+
 // What each defense allows, across the five stored categories.
 export const DEFENSE = {
   NYK: {

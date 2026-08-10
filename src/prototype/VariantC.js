@@ -32,6 +32,19 @@ const TRAD_MARKETS = {
   OPP_BLK: [],
 };
 const THREE_POINT_ZONES = ['Corner 3', 'Above Break 3'];
+
+// A player chips onto a row only when the mechanism is a meaningful slice of
+// their own diet — thresholds sit above a uniform-diet share (11 play types
+// -> ~9%, 5 zones -> 20%, 3 shot types -> ~33%, 4 assist locations -> 25%),
+// with small volume floors so tiny-sample shares don't sneak in.
+const CHIP_THRESHOLDS = {
+  playTypeFreqPct: 15,
+  zoneSharePct: 25,
+  shotTypeSharePct: 35,
+  shotTypeFgaFloor: 4,
+  assistSharePct: 30,
+  assistPerGameFloor: 1,
+};
 const THREE_POINT_SHOT_TYPES = ['Catch & Shoot', 'Pull-Up'];
 
 // Every concession a defense makes, flattened and sortable by rank.
@@ -65,7 +78,9 @@ export function concessions(tri, window = 'Season') {
       z: v.ptsPctNum / 8,
       markets: type === 'Putbacks' ? ['PTS', 'REB'] : ['PTS'],
       attackers: (p) => {
-        const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
+        const pt = p.playTypes.find(
+          (x) => x.type === type && x.freq >= CHIP_THRESHOLDS.playTypeFreqPct,
+        );
         return pt ? `${Math.round(pt.freq)}% of poss` : null;
       },
     });
@@ -82,7 +97,9 @@ export function concessions(tri, window = 'Season') {
         ? ['PTS', '3PM', 'FGA', 'FG3A']
         : ['PTS', 'FGA'],
       attackers: (p) => {
-        const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
+        const z = p.zones.find(
+          (x) => x.zone === zone && x.share >= CHIP_THRESHOLDS.zoneSharePct,
+        );
         return z ? `${Math.round(z.share)}% of FGA` : null;
       },
     });
@@ -99,10 +116,14 @@ export function concessions(tri, window = 'Season') {
         ? ['PTS', '3PM', 'FGA', 'FG3A']
         : ['PTS', 'FGA'],
       attackers: (p) => {
-        const st = p.shotTypes.find((x) => x.type === type && x.fga >= 4);
+        const st = p.shotTypes.find(
+          (x) => x.type === type && x.fga >= CHIP_THRESHOLDS.shotTypeFgaFloor,
+        );
         if (!st) return null;
         const total = p.shotTypes.reduce((sum, x) => sum + x.fga, 0);
-        return `${Math.round((st.fga / total) * 100)}% of FGA`;
+        const share = (st.fga / total) * 100;
+        if (share < CHIP_THRESHOLDS.shotTypeSharePct) return null;
+        return `${Math.round(share)}% of FGA`;
       },
     });
   });
@@ -115,9 +136,11 @@ export function concessions(tri, window = 'Season') {
       z: ((d.perGame / LEAGUE_AVG.assistLoc[loc] - 1) * 100) / 9,
       markets: ['AST'],
       attackers: (p) => {
-        if (p.assistLoc[loc] < 1) return null;
+        if (p.assistLoc[loc] < CHIP_THRESHOLDS.assistPerGameFloor) return null;
         const total = Object.values(p.assistLoc).reduce((sum, v) => sum + v, 0);
-        return `${Math.round((p.assistLoc[loc] / total) * 100)}% of ast`;
+        const share = (p.assistLoc[loc] / total) * 100;
+        if (share < CHIP_THRESHOLDS.assistSharePct) return null;
+        return `${Math.round(share)}% of ast`;
       },
     }),
   );

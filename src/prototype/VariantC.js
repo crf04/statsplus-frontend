@@ -13,9 +13,6 @@ import {
   defPlayTypeVolume,
   defZoneVolume,
   defShotTypeVolume,
-  playerPlayTypeVolume,
-  playerZoneVolume,
-  playerShotTypeVolume,
   marketsFor,
   archetypeLogsFor,
   computeEdges,
@@ -67,9 +64,7 @@ export function concessions(tri, window = 'Season') {
       markets: type === 'Putbacks' ? ['PTS', 'REB'] : ['PTS'],
       attackers: (p) => {
         const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
-        if (!pt) return null;
-        const pv = playerPlayTypeVolume(p, pt);
-        return `${pv.possG} poss · ${pv.ptsG} pts/gm`;
+        return pt ? `${Math.round(pt.freq)}% of poss` : null;
       },
     });
   });
@@ -85,9 +80,7 @@ export function concessions(tri, window = 'Season') {
         : ['PTS', 'FGA'],
       attackers: (p) => {
         const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
-        if (!z) return null;
-        const pz = playerZoneVolume(p, z);
-        return `${pz.fgaG} FGA · ${pz.ptsG} pts/gm`;
+        return z ? `${Math.round(z.share)}% of FGA` : null;
       },
     });
   });
@@ -104,8 +97,8 @@ export function concessions(tri, window = 'Season') {
       attackers: (p) => {
         const st = p.shotTypes.find((x) => x.type === type && x.fga >= 4);
         if (!st) return null;
-        const ps = playerShotTypeVolume(st);
-        return `${ps.fgaG} FGA · ${ps.ptsG} pts/gm`;
+        const total = p.shotTypes.reduce((sum, x) => sum + x.fga, 0);
+        return `${Math.round((st.fga / total) * 100)}% of FGA`;
       },
     });
   });
@@ -116,7 +109,11 @@ export function concessions(tri, window = 'Season') {
       line: `${d.perGame} ast/gm (${pctVs(d.perGame, LEAGUE_AVG.assistLoc[loc])})`,
       rank: d.rank,
       markets: ['AST'],
-      attackers: (p) => (p.assistLoc[loc] >= 1 ? `${p.assistLoc[loc]}/gm` : null),
+      attackers: (p) => {
+        if (p.assistLoc[loc] < 1) return null;
+        const total = Object.values(p.assistLoc).reduce((sum, v) => sum + v, 0);
+        return `${Math.round((p.assistLoc[loc] / total) * 100)}% of ast`;
+      },
     }),
   );
   return out.sort((a, b) => b.rank - a.rank);

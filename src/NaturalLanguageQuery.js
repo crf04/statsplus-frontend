@@ -3,8 +3,6 @@ import { Form, Button, Modal } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, HelpCircle } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
-import LoginButton from './components/Auth/LoginButton';
-import UserProfile from './components/Auth/UserProfile';
 import { convertNLToFilters } from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import './ModernSearch.css';
@@ -197,9 +195,6 @@ const NaturalLanguageQuery = ({
         </svg>
         <div className="landing-container">
           <div className="landing-header">
-            <div className="landing-auth-section">
-              {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
-            </div>
             <h1 className="landing-title">
               <span className="dynamic-title-text">CourtAI</span>
             </h1>

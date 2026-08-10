@@ -1,0 +1,185 @@
+.slate-page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 52px 0 80px;
+  text-align: left;
+}
+
+.slate-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  border-bottom: 1px solid var(--ct-line);
+  padding-bottom: 24px;
+}
+
+.slate-heading h1,
+.signed-out-slate h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4.6rem);
+  line-height: 0.95;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.date-controls {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.date-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--ct-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.date-controls button,
+.date-controls input {
+  min-height: 42px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+}
+
+.date-controls button {
+  width: 42px;
+  font-size: 1.2rem;
+}
+
+.date-controls button:focus-visible,
+.date-controls input:focus-visible,
+.app-nav a:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.freshness {
+  display: flex;
+  gap: 20px;
+  padding: 18px 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.76rem;
+}
+
+.freshness-warning,
+.past-notice {
+  color: var(--ct-gold);
+}
+
+.slate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.slate-card,
+.empty-slate,
+.signed-out-slate {
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+}
+
+.slate-card {
+  padding: 22px;
+}
+
+.slate-card-topline,
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.slate-card-topline {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.slate-card h2 {
+  margin: 22px 0;
+  font-size: 2.1rem;
+}
+
+.team-row {
+  border-top: 1px solid var(--ct-line);
+  padding: 11px 0;
+}
+
+.team-row span:last-child,
+.pool-status {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.76rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.slate-badge {
+  border: 1px solid var(--ct-gold);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--ct-gold);
+  font-size: 0.72rem;
+}
+
+.empty-slate,
+.signed-out-slate {
+  margin-top: 28px;
+  padding: clamp(28px, 6vw, 64px);
+}
+
+@media (max-width: 700px) {
+  .slate-page {
+    width: min(100% - 20px, 1080px);
+    padding-top: 30px;
+  }
+
+  .slate-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .date-controls {
+    justify-content: space-between;
+  }
+
+  .date-controls label {
+    flex: 1;
+  }
+
+  .date-controls input {
+    width: 100%;
+  }
+
+  .freshness {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .slate-grid {
+    grid-template-columns: 1fr;
+  }
+}

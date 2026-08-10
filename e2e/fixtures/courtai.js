@@ -56,6 +56,36 @@ const averages = {
   TOV: 2.5,
 };
 
+const slateGame = {
+  game_id: '0022500584',
+  away_team: {
+    team_id: 1610612747,
+    tricode: 'LAL',
+    name: 'Los Angeles Lakers',
+    targetable_player_count: 5,
+  },
+  home_team: {
+    team_id: 1610612738,
+    tricode: 'BOS',
+    name: 'Boston Celtics',
+    targetable_player_count: 4,
+  },
+  scheduled_at: '2026-01-16T00:30:00Z',
+  status: { state: 'scheduled', label: 'Scheduled' },
+  classification: 'NBA Paris Game',
+  preseason: false,
+};
+
+const slatePayload = (date, games, poolStatus = 'unavailable') => ({
+  slate_date: date,
+  freshness: {
+    schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
+    pool: { status: poolStatus, retrieved_at: null, providers: {} },
+  },
+  pool_status: poolStatus,
+  games,
+});
+
 export const installApiContract = async (page, overrides = {}) => {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -98,6 +128,42 @@ export const installApiContract = async (page, overrides = {}) => {
           next_game: 'Atlanta Hawks',
         },
       });
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate') {
+      const date = url.searchParams.get('date') || '2026-01-15';
+      if (date === '2026-01-14') {
+        await route.fulfill({ json: slatePayload(date, []) });
+        return;
+      }
+      if (date === '2026-01-10') {
+        await route.fulfill({
+          json: slatePayload(date, [
+            {
+              ...slateGame,
+              game_id: '0022500541',
+              away_team: {
+                ...slateGame.away_team,
+                tricode: 'NYK',
+                name: 'New York Knicks',
+                targetable_player_count: 0,
+              },
+              home_team: {
+                ...slateGame.home_team,
+                tricode: 'MIL',
+                name: 'Milwaukee Bucks',
+                targetable_player_count: 0,
+              },
+              scheduled_at: '2026-01-11T01:00:00Z',
+              status: { state: 'final', label: 'Final' },
+              classification: null,
+            },
+          ]),
+        });
+        return;
+      }
+      await route.fulfill({ json: slatePayload(date, [slateGame]) });
       return;
     }
 

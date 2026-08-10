@@ -103,22 +103,50 @@ const ZONE_PT_VALUE = {
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
+// Percent-vs-league-average, the comparison language for every stat line.
+export const pctVs = (value, avg) => {
+  const p = ((value - avg) / avg) * 100;
+  return `${p >= 0 ? '+' : ''}${Math.round(p)}% vs avg`;
+};
+
 export function defPlayTypeVolume(tri, type) {
   const d = DEFENSE[tri].playTypes[type];
+  const avgPpp = LEAGUE_AVG.playTypes[type];
   const possG = round1(PLAYTYPE_BASE_POSS[type] * (1 + (d.rank - 15.5) * 0.012));
-  return { possG, ptsG: round1(possG * d.ppp) };
+  const ptsG = round1(possG * d.ppp);
+  return {
+    possG,
+    ptsG,
+    ptsPct: pctVs(ptsG, PLAYTYPE_BASE_POSS[type] * avgPpp),
+    pppPct: pctVs(d.ppp, avgPpp),
+  };
 }
 
 export function defZoneVolume(tri, zone) {
   const d = DEFENSE[tri].zones[zone];
-  const fgaG = round1(ZONE_BASE_FGA[zone] * (1 + (d.rank - 15.5) * 0.012));
-  return { fgaG, ptsG: round1((fgaG * d.fgPct * ZONE_PT_VALUE[zone]) / 100) };
+  const base = ZONE_BASE_FGA[zone];
+  const fgaG = round1(base * (1 + (d.rank - 15.5) * 0.012));
+  const ptsG = round1((fgaG * d.fgPct * ZONE_PT_VALUE[zone]) / 100);
+  return {
+    fgaG,
+    ptsG,
+    ptsPct: pctVs(ptsG, (base * LEAGUE_AVG.zones[zone] * ZONE_PT_VALUE[zone]) / 100),
+    fgaPct: pctVs(fgaG, base),
+  };
 }
 
 export function defShotTypeVolume(tri, type) {
   const d = DEFENSE[tri].shotTypes[type];
-  const fgaG = round1(SHOTTYPE_BASE_FGA[type] * (1 + (d.rank - 15.5) * 0.012));
-  return { fgaG, ptsG: round1((fgaG * d.efg * 2) / 100) };
+  const base = SHOTTYPE_BASE_FGA[type];
+  const avgEfg = d.efg - d.vsAvg;
+  const fgaG = round1(base * (1 + (d.rank - 15.5) * 0.012));
+  const ptsG = round1((fgaG * d.efg * 2) / 100);
+  return {
+    fgaG,
+    ptsG,
+    ptsPct: pctVs(ptsG, (base * avgEfg * 2) / 100),
+    fgaPct: pctVs(fgaG, base),
+  };
 }
 
 export function playerPlayTypeVolume(player, pt) {

@@ -8,7 +8,7 @@ import {
   DEFENSE,
   GAME,
   LEAGUE_AVG,
-  vsAvg,
+  pctVs,
   defPlayTypeVolume,
   defZoneVolume,
   defShotTypeVolume,
@@ -44,7 +44,7 @@ export function concessions(tri) {
     out.push({
       category: 'Traditional',
       label: r.stat.replace('OPP_', ''),
-      line: `${r.value} per 48 (${r.vsAvg > 0 ? '+' : ''}${r.vsAvg} vs avg)`,
+      line: `${r.value} per 48 (${pctVs(r.value, r.value - r.vsAvg)})`,
       rank: r.rank,
       markets: TRAD_MARKETS[r.stat] || [],
       attackers: (p) => {
@@ -61,7 +61,7 @@ export function concessions(tri) {
     out.push({
       category: 'Play types',
       label: type,
-      line: `${v.ptsG} pts on ${v.possG} poss (${d.ppp} PPP, ${vsAvg(d.ppp, LEAGUE_AVG.playTypes[type], 2)} vs avg)`,
+      line: `${v.ptsG} pts (${v.ptsPct}) · ${d.ppp} PPP (${v.pppPct})`,
       rank: d.rank,
       markets: type === 'Putbacks' ? ['PTS', 'REB'] : ['PTS'],
       attackers: (p) => {
@@ -77,7 +77,7 @@ export function concessions(tri) {
     out.push({
       category: 'Shot zones',
       label: zone,
-      line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.fgPct}% FG, ${vsAvg(d.fgPct, LEAGUE_AVG.zones[zone])} vs avg)`,
+      line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
       markets: THREE_POINT_ZONES.includes(zone) ? ['PTS', '3PM'] : ['PTS'],
       attackers: (p) => {
@@ -93,7 +93,7 @@ export function concessions(tri) {
     out.push({
       category: 'Shot types',
       label: type,
-      line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.efg}% eFG, ${d.vsAvg > 0 ? '+' : ''}${d.vsAvg} vs avg)`,
+      line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
       markets: THREE_POINT_SHOT_TYPES.includes(type) ? ['PTS', '3PM'] : ['PTS'],
       attackers: (p) => {
@@ -108,7 +108,7 @@ export function concessions(tri) {
     out.push({
       category: 'Assist locations',
       label: `Assists to ${loc}`,
-      line: `${d.perGame}/gm allowed (${vsAvg(d.perGame, LEAGUE_AVG.assistLoc[loc])} vs avg)`,
+      line: `${d.perGame} ast/gm (${pctVs(d.perGame, LEAGUE_AVG.assistLoc[loc])})`,
       rank: d.rank,
       markets: ['AST'],
       attackers: (p) => (p.assistLoc[loc] >= 1 ? `${p.assistLoc[loc]}/gm` : null),

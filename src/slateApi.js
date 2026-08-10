@@ -1,6 +1,11 @@
 import { apiClient, getApiUrl } from './config';
 import { isCalendarDate } from './calendarDate';
-import { derivePoolStatusFromProviders, poolStatuses, scheduleStatuses } from './slateStatus';
+import {
+  derivePoolStatusFromProviders,
+  deriveScheduleStatus,
+  isStatusAllowed,
+  statusAllowsNullRetrievedAt,
+} from './slateStatus';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
 
@@ -12,12 +17,12 @@ const decodeRetrievedAt = (value) => {
   return retrievedAt.toISOString();
 };
 
-const decodeFreshnessSurface = (surface, statuses) => {
-  if (!surface || !statuses.has(surface.status) || !('retrieved_at' in surface)) {
+const decodeFreshnessSurface = (surface, surfaceName) => {
+  if (!surface || !isStatusAllowed(surface.status, surfaceName) || !('retrieved_at' in surface)) {
     throw createInvalidSlateError();
   }
   const retrievedAt = decodeRetrievedAt(surface.retrieved_at);
-  if (!retrievedAt && !['missing', 'unavailable'].includes(surface.status)) {
+  if (!retrievedAt && !statusAllowsNullRetrievedAt(surface.status)) {
     throw createInvalidSlateError();
   }
   return { status: surface.status, retrievedAt };
@@ -27,7 +32,17 @@ const decodeFreshness = (freshness) => {
   if (!freshness || typeof freshness !== 'object' || !freshness.pool) {
     throw createInvalidSlateError();
   }
-  const schedule = decodeFreshnessSurface(freshness.schedule, scheduleStatuses);
+  if (!freshness.schedule || !('retrieved_at' in freshness.schedule)) {
+    throw createInvalidSlateError();
+  }
+  const schedule =
+    freshness.schedule.status === undefined
+      ? (() => {
+          const retrievedAt = decodeRetrievedAt(freshness.schedule.retrieved_at);
+          if (!retrievedAt) throw createInvalidSlateError();
+          return { status: deriveScheduleStatus(retrievedAt), retrievedAt };
+        })()
+      : decodeFreshnessSurface(freshness.schedule, 'schedule');
   const providerSurfaces = freshness.pool.providers;
   if (
     providerSurfaces !== undefined &&
@@ -39,11 +54,11 @@ const decodeFreshness = (freshness) => {
   }
   const providers = Object.entries(providerSurfaces || {}).map(([name, surface]) => {
     if (!name) throw createInvalidSlateError();
-    return { name, ...decodeFreshnessSurface(surface, poolStatuses) };
+    return { name, ...decodeFreshnessSurface(surface, 'pool') };
   });
   let poolSurface;
   if (freshness.pool.status !== undefined) {
-    poolSurface = decodeFreshnessSurface(freshness.pool, poolStatuses);
+    poolSurface = decodeFreshnessSurface(freshness.pool, 'pool');
   } else {
     const status = derivePoolStatusFromProviders(providers);
     if (!status || !('retrieved_at' in freshness.pool)) throw createInvalidSlateError();
@@ -82,7 +97,7 @@ const decodeGame = (game) => {
     typeof game.scheduled_at !== 'string' ||
     !game.status ||
     !['scheduled', 'postponed', 'final'].includes(game.status.state) ||
-    typeof game.status.label !== 'string' ||
+    (game.status.label !== undefined && typeof game.status.label !== 'string') ||
     typeof game.preseason !== 'boolean'
   ) {
     throw createInvalidSlateError();
@@ -97,7 +112,7 @@ const decodeGame = (game) => {
     home: decodeTeam(game.home_team),
     scheduledAt: scheduledAt.toISOString(),
     status: game.status.state,
-    statusLabel: game.status.label,
+    statusLabel: game.status.label || null,
     classification: typeof game.classification === 'string' ? game.classification : null,
     preseason: game.preseason,
   };
@@ -109,7 +124,7 @@ export const decodeSlate = (data) => {
     !isCalendarDate(data.slate_date) ||
     !Array.isArray(data.games) ||
     !data.freshness ||
-    (data.pool_status !== undefined && !poolStatuses.has(data.pool_status))
+    (data.pool_status !== undefined && !isStatusAllowed(data.pool_status, 'pool'))
   ) {
     throw createInvalidSlateError();
   }

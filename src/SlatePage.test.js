@@ -1,4 +1,5 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act } from 'react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SlatePage from './SlatePage';
 import { fetchSlate } from './slateApi';
@@ -64,13 +65,62 @@ test('shows an age for every available freshness surface and names degraded surf
   );
 
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
-  expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toHaveAttribute(
-    'role',
-    'alert',
-  );
+  expect(screen.getByRole('group', { name: 'Data freshness' })).toBeVisible();
+  expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toBeVisible();
   expect(screen.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
-  expect(screen.getByText('underdog pool is missing')).toHaveAttribute('role', 'alert');
+  expect(screen.getByText('underdog pool is missing')).toBeVisible();
+  expect(screen.queryAllByRole('alert')).toHaveLength(0);
   expect(screen.getByText(/targetable counts use the latest available snapshot/i)).toBeVisible();
+});
+
+test('updates freshness ages each minute and cleans up its clock', async () => {
+  const { unmount } = render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
+  expect(jest.getTimerCount()).toBe(1);
+  act(() => jest.advanceTimersByTime(60000));
+  expect(screen.getByText('Schedule is fresh — as of 11m ago')).toBeVisible();
+
+  unmount();
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test('clearing the date requests today without entering an invalid state', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-14']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Thursday, January 15' });
+  fetchSlate.mockClear();
+
+  fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '' } });
+
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+  expect(screen.queryByRole('heading', { name: 'Invalid slate date' })).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-01-15');
+});
+
+test.each([
+  ['Final/OT', 'Final/OT'],
+  [null, 'Final'],
+])('shows final catalog label %s with a Final fallback', async (statusLabel, expected) => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [{ ...game, status: 'final', statusLabel }],
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText(expected)).toBeVisible();
 });
 
 test.each([

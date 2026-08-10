@@ -46,7 +46,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
         poolFreshnessStatus: 'stale-served',
         poolRetrievedAt: '2026-01-15T10:00:00Z',
         providers: {
-          prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
+          prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
           underdog: { status: 'missing', retrieved_at: null },
         },
       });
@@ -66,13 +66,20 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page.getByText('Los Angeles Lakers')).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
-  await expect(page.getByRole('alert').getByText(/player pool is stale-served/i)).toBeVisible();
-  await expect(page.getByRole('alert').getByText(/underdog pool is missing/i)).toBeVisible();
+  const freshness = page.getByRole('group', { name: 'Data freshness' });
+  await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
+  await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
+  await expect(page.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
   await page.screenshot({ path: 'test-results/slate-desktop.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Previous date' }).click();
   await expect(page).toHaveURL(/date=2026-01-14/);
   await expect(page.getByText('No games on this slate.')).toBeVisible();
+
+  await page.getByLabel('Slate date').fill('');
+  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page.getByRole('heading', { name: 'Thursday, January 15' })).toBeVisible();
+  expect(requests.some((url) => !new URL(url).searchParams.has('date'))).toBe(true);
 
   await page.getByLabel('Slate date').fill('2026-01-10');
   await expect(page).toHaveURL(/date=2026-01-10/);
@@ -173,6 +180,41 @@ test('explicit unavailable pool status wins over stale provider evidence', async
   await expect(page.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
   await expect(page.getByText('0 targetable')).toHaveCount(2);
   await page.screenshot({ path: 'test-results/slate-pool-contradiction.png', fullPage: true });
+});
+
+test('minimum slate freshness payload renders through the browser contract', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await installApiContract(page, {
+    '/api/games/slate': {
+      slate_date: '2026-01-15',
+      freshness: {
+        schedule: { retrieved_at: '2026-01-15T11:00:00Z' },
+        pool: {
+          retrieved_at: null,
+          providers: {
+            prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
+          },
+        },
+      },
+      games: [
+        {
+          ...slateGame,
+          status: { state: 'final', label: 'Final after review' },
+        },
+      ],
+    },
+  });
+
+  await page.goto('/matchups?date=2026-01-15');
+
+  await expect(page.getByRole('group', { name: 'Data freshness' })).toBeVisible();
+  await expect(page.getByText('Schedule is fresh — as of 1h ago')).toBeVisible();
+  await expect(page.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();
+  await expect(page.getByText('Final after review')).toBeVisible();
+  await expect(page.getByText(/targetable counts use the current player pool/i)).toBeVisible();
+  await page.screenshot({ path: 'test-results/slate-minimum-payload.png', fullPage: true });
 });
 
 test('slate remains usable at a narrow viewport and from the keyboard', async ({

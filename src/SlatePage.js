@@ -31,21 +31,27 @@ const surfaceStatusText = (name, surface) => {
   return `${name} is ${surface.status}${age}`;
 };
 
+const useMinuteTick = () => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((tick) => tick + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+};
+
 function SurfaceFreshness({ name, surface }) {
   const warning = getStatusPresentation(surface.status).warning;
   return (
-    <span
-      className={warning ? 'freshness-warning' : undefined}
-      role={warning ? 'alert' : undefined}
-    >
+    <span className={warning ? 'freshness-warning' : undefined}>
       {surfaceStatusText(name, surface)}
     </span>
   );
 }
 
 function Freshness({ freshness }) {
+  useMinuteTick();
   return (
-    <div className="freshness" aria-label="Data freshness">
+    <div className="freshness" role="group" aria-label="Data freshness">
       <SurfaceFreshness name="Schedule" surface={freshness.schedule} />
       <SurfaceFreshness name="Player pool" surface={freshness.pool} />
       {freshness.pool.providers.map((provider) => (
@@ -68,7 +74,7 @@ function PoolSummary({ isPast, poolStatus }) {
 }
 
 function GameCard({ game }) {
-  const status = game.status === 'final' ? 'Final' : game.statusLabel;
+  const status = game.statusLabel || (game.status === 'final' ? 'Final' : game.status);
   return (
     <article className="slate-card">
       <div className="slate-card-topline">
@@ -132,7 +138,7 @@ export default function SlatePage() {
     return () => controller.abort();
   }, [authLoading, isAuthenticated, requestedDate]);
 
-  const navigate = (nextDate) => setSearchParams({ date: nextDate });
+  const navigate = (nextDate) => setSearchParams(nextDate ? { date: nextDate } : {});
 
   if (!authLoading && !isAuthenticated) {
     return (

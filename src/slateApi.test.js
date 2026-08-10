@@ -214,6 +214,23 @@ test('derives missing pool freshness status from provider evidence', () => {
   );
 });
 
+test.each([
+  ['2026-01-14T06:00:00Z', 'fresh'],
+  ['2026-01-14T05:59:59Z', 'stale'],
+])('derives missing schedule status from its 30h threshold at %s', (retrievedAt, expected) => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00Z'));
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      schedule: { retrieved_at: retrievedAt },
+    },
+  };
+
+  expect(decodeSlate(candidate).freshness.schedule.status).toBe(expected);
+  jest.useRealTimers();
+});
+
 test('validates optional provider freshness when providers are present', () => {
   expect(() =>
     decodeSlate({

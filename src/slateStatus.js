@@ -1,16 +1,23 @@
 const definitions = {
   fresh: {
-    schedule: true,
-    pool: true,
+    allowedSurfaces: ['schedule', 'pool'],
+    allowsNullRetrievedAt: false,
+    providerRank: 4,
     warning: false,
     currentPoolMessage: 'Targetable counts use the current player pool.',
     historicalPoolMessage:
       'Past slate — the current player pool is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
-  stale: { schedule: true, pool: false, warning: true },
+  stale: {
+    allowedSurfaces: ['schedule'],
+    allowsNullRetrievedAt: false,
+    providerRank: null,
+    warning: true,
+  },
   'stale-served': {
-    schedule: false,
-    pool: true,
+    allowedSurfaces: ['pool'],
+    allowsNullRetrievedAt: false,
+    providerRank: 3,
     warning: true,
     currentPoolMessage:
       'Player pool is stale-served; targetable counts use the latest available snapshot.',
@@ -18,16 +25,18 @@ const definitions = {
       'Past slate — the latest available snapshot is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
   missing: {
-    schedule: true,
-    pool: true,
+    allowedSurfaces: ['schedule', 'pool'],
+    allowsNullRetrievedAt: true,
+    providerRank: 1,
     warning: true,
     currentPoolMessage: 'Player pool unavailable; no targetable players are currently available.',
     historicalPoolMessage:
       'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
   },
   unavailable: {
-    schedule: false,
-    pool: true,
+    allowedSurfaces: ['pool'],
+    allowsNullRetrievedAt: true,
+    providerRank: 2,
     warning: true,
     currentPoolMessage: 'Player pool unavailable; no targetable players are currently available.',
     historicalPoolMessage:
@@ -35,25 +44,24 @@ const definitions = {
   },
 };
 
-export const scheduleStatuses = new Set(
-  Object.entries(definitions)
-    .filter(([, definition]) => definition.schedule)
-    .map(([status]) => status),
-);
-
-export const poolStatuses = new Set(
-  Object.entries(definitions)
-    .filter(([, definition]) => definition.pool)
-    .map(([status]) => status),
-);
-
 export const getStatusPresentation = (status) => definitions[status];
 
+export const isStatusAllowed = (status, surface) =>
+  Boolean(definitions[status]?.allowedSurfaces.includes(surface));
+
+export const statusAllowsNullRetrievedAt = (status) =>
+  Boolean(definitions[status]?.allowsNullRetrievedAt);
+
 export const derivePoolStatusFromProviders = (providers) => {
-  const statuses = providers.map(({ status }) => status);
-  if (statuses.includes('fresh')) return 'fresh';
-  if (statuses.includes('stale-served')) return 'stale-served';
-  if (statuses.includes('unavailable')) return 'unavailable';
-  if (statuses.includes('missing')) return 'missing';
-  return null;
+  return providers.reduce((highest, provider) => {
+    const rank = definitions[provider.status]?.providerRank;
+    if (rank === null || rank === undefined) return highest;
+    if (!highest || rank > definitions[highest].providerRank) return provider.status;
+    return highest;
+  }, null);
 };
+
+export const SCHEDULE_STALE_AFTER_MS = 30 * 60 * 60 * 1000;
+
+export const deriveScheduleStatus = (retrievedAt, now = Date.now()) =>
+  now - new Date(retrievedAt).getTime() <= SCHEDULE_STALE_AFTER_MS ? 'fresh' : 'stale';

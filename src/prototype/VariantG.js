@@ -187,11 +187,30 @@ const ScoreCell = ({ value }) => (
 const logAvg = (logs, key) =>
   (logs.reduce((sum, l) => sum + l[key], 0) / logs.length).toFixed(1);
 
-// Game pts/min vs the player's OWN season pts/min — relative, minutes-fair.
-const ppmDelta = (log, seasonPpm) => {
-  const base = log.spm ?? seasonPpm;
-  if (!base || !log.min) return null;
-  return (log.pts / log.min / base - 1) * 100;
+// The relative column follows the active market tab; markets without a log
+// stat (All, FGA, FG3A) fall back to points.
+const MARKET_STAT_KEYS = {
+  PTS: ['pts'],
+  REB: ['reb'],
+  AST: ['ast'],
+  '3PM': ['fg3m'],
+  PRA: ['pts', 'reb', 'ast'],
+  PA: ['pts', 'ast'],
+  RA: ['reb', 'ast'],
+  PR: ['pts', 'reb'],
+};
+const marketStatKeys = (market) => MARKET_STAT_KEYS[market] || ['pts'];
+const marketStatLabel = (market) => (MARKET_STAT_KEYS[market] ? market : 'PTS');
+
+// Game stat/min vs the player's OWN season stat/min — relative, minutes-fair.
+const rateDelta = (log, market, seasonRates) => {
+  const rates = log.rates || seasonRates;
+  if (!rates || !log.min) return null;
+  const keys = marketStatKeys(market);
+  const base = keys.reduce((sum, k) => sum + (rates[k] ?? 0), 0);
+  if (!base) return null;
+  const perMin = keys.reduce((sum, k) => sum + log[k], 0) / log.min;
+  return (perMin / base - 1) * 100;
 };
 
 const DeltaCell = ({ delta }) => (
@@ -212,7 +231,7 @@ const DeltaCell = ({ delta }) => (
   </td>
 );
 
-const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
+const LogTable = ({ title, logs, withPlayer, market, seasonRates }) => (
   <div>
     <div
       style={{
@@ -239,7 +258,7 @@ const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
             <th>REB</th>
             <th>AST</th>
             <th>3PM</th>
-            <th title="Game pts/min vs the player's own season pts/min">±PTS/MIN</th>
+            <th title="Game stat/min vs the player's own season rate; follows the market tab">±{marketStatLabel(market)}/MIN</th>
           </tr>
         </thead>
         <tbody>
@@ -264,7 +283,7 @@ const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
               <td>
                 <Num>{l.fg3m}</Num>
               </td>
-              <DeltaCell delta={ppmDelta(l, seasonPpm)} />
+              <DeltaCell delta={rateDelta(l, market, seasonRates)} />
             </tr>
           ))}
         </tbody>
@@ -278,15 +297,10 @@ const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
               </td>
             ))}
             <DeltaCell
-              delta={
-                logs.map((l) => ppmDelta(l, seasonPpm)).filter((d) => d != null).length > 0
-                  ? logs
-                      .map((l) => ppmDelta(l, seasonPpm))
-                      .filter((d) => d != null)
-                      .reduce((a, b) => a + b, 0) /
-                    logs.map((l) => ppmDelta(l, seasonPpm)).filter((d) => d != null).length
-                  : null
-              }
+              delta={(() => {
+                const ds = logs.map((l) => rateDelta(l, market, seasonRates)).filter((d) => d != null);
+                return ds.length > 0 ? ds.reduce((a, b) => a + b, 0) / ds.length : null;
+              })()}
             />
           </tr>
         </tfoot>
@@ -295,7 +309,7 @@ const LogTable = ({ title, logs, withPlayer, seasonPpm }) => (
   </div>
 );
 
-const ScoreTable = ({ player, recency, onClose }) => {
+const ScoreTable = ({ player, recency, market, onClose }) => {
   const rows = marketsFor(player)
     .map((m) => ({
       market: m,
@@ -358,11 +372,18 @@ const ScoreTable = ({ player, recency, onClose }) => {
         <LogTable
           title={`${player.name.split(' ')[1]} vs ${opponentOf(player)} this season`}
           logs={player.vsOpp || []}
-          seasonPpm={player.season.pts / player.season.min}
+          market={market}
+          seasonRates={{
+            pts: player.season.pts / player.season.min,
+            reb: player.season.reb / player.season.min,
+            ast: player.season.ast / player.season.min,
+            fg3m: player.season.fg3m / player.season.min,
+          }}
         />
         <LogTable
           title={`${player.archetype}s vs ${opponentOf(player)}`}
           logs={archetypeLogsFor(player)}
+          market={market}
           withPlayer
         />
       </div>
@@ -559,6 +580,7 @@ const VariantG = () => {
           <ScoreTable
             player={PLAYERS.find((p) => p.id === overlayId)}
             recency={recency}
+            market={market}
             onClose={() => setOverlayId(null)}
           />
         )}

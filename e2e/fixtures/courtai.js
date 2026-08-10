@@ -283,7 +283,9 @@ export const matchupPayload = {
       season_scoring: 20.1,
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
-        play_types: [dietShare('transition', 0.14, 0.18)],
+        // Above the display gate but intentionally posted for PTS, not FGA,
+        // so market-tab chip scoping remains observable at the browser seam.
+        play_types: [dietShare('transition', 0.18, 0.18)],
         shot_zones: [dietShare('paint', 0.24, 0.26)],
         shot_types: [dietShare('catch-shoot', 0.4, 0.41, 3.9, 3.8)],
         assist_locations: [dietShare('paint-assists', 0.35, 0.36, 0.8, 0.9)],

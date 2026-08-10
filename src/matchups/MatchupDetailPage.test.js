@@ -93,7 +93,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.14, volumePerGame: 4 },
+            season: { share: 0.18, volumePerGame: 4 },
             last15: { share: 0.18, volumePerGame: 5 },
           },
         ],
@@ -185,6 +185,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(screen.getByText('+12% vs league')).toBeVisible();
   expect(screen.getByText('14.2 per 48')).toBeVisible();
   expect(screen.getByText(/19% poss/)).toBeVisible();
+  expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
@@ -195,6 +196,10 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   expect(screen.getByText('Transition')).toBeVisible();
   expect(screen.queryByText('Above-break three')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Austin Reaves · 18% poss/)).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
 
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));

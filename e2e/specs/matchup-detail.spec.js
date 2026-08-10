@@ -33,6 +33,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('+12% vs league')).toBeVisible();
   await expect(page.getByText('-11% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toBeVisible();
+  await expect(page.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();
   await expect(page.getByText(/LeBron James · 36% FGA/)).toBeVisible();
   await expect(page.getByText(/LeBron James · 31% ast/)).toBeVisible();
@@ -55,6 +56,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
 
   await page.getByRole('button', { name: 'PTS' }).click();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
+  await expect(page.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   await page.getByRole('button', { name: 'Matchup Score' }).click();
   const sortedPlayers = page.getByRole('article', { name: /player$/ });
   await expect(sortedPlayers.first()).toHaveAccessibleName('Austin Reaves player');
@@ -66,6 +68,11 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await page.getByRole('button', { name: 'FGA' }).click();
   await expect(page.getByText('Transition')).toBeVisible();
   await expect(page.getByText('Above-break three')).toHaveCount(0);
+  await expect(page.getByText(/Austin Reaves · 18% poss/)).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-fga-market.png'),
+    fullPage: true,
+  });
   await page.getByRole('button', { name: 'All deviations' }).click();
   await expect(page.getByText('0 rows hidden near league average.')).toBeVisible();
 

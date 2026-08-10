@@ -171,13 +171,15 @@ function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
   );
 }
 
-function DietShareChips({ players, base, rowKey, windowKey }) {
+function DietShareChips({ players, base, rowKey, windowKey, market }) {
   if (!SHARE_LABELS[base]) return null;
-  const chips = players.flatMap((player) => {
-    const share = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
-    if (!share || !shouldDisplayDietShare(base, share)) return [];
-    return [{ player, share }];
-  });
+  const chips = players
+    .filter((player) => market === 'All' || player.postedMarkets.includes(market))
+    .flatMap((player) => {
+      const share = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
+      if (!share || !shouldDisplayDietShare(base, share)) return [];
+      return [{ player, share }];
+    });
   if (chips.length === 0)
     return <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>;
   return (
@@ -251,6 +253,7 @@ function DefenseSheet({ team, players, market, windowKey, deviation }) {
                       base={base}
                       rowKey={row.key}
                       windowKey={windowKey}
+                      market={market}
                     />
                   </article>
                 );

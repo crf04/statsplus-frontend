@@ -21,6 +21,21 @@ import {
 } from './mockData';
 import { RankPill, MarketChips, Num, SectionCard } from './protoUi';
 
+// Which prop markets each defensive stat informs (round 7: prop-type views).
+const TRAD_MARKETS = {
+  OPP_PTS: ['PTS'],
+  OPP_REB: ['REB'],
+  OPP_AST: ['AST'],
+  OPP_3PM: ['3PM'],
+  OPP_3PA: ['3PM'],
+  OPP_FTA: ['PTS'],
+  OPP_TOV: [],
+  OPP_STL: [],
+  OPP_BLK: [],
+};
+const THREE_POINT_ZONES = ['Corner 3', 'Above Break 3'];
+const THREE_POINT_SHOT_TYPES = ['Catch & Shoot', 'Pull-Up'];
+
 // Every concession a defense makes, flattened and sortable by rank.
 export function concessions(tri) {
   const def = DEFENSE[tri];
@@ -31,6 +46,7 @@ export function concessions(tri) {
       label: r.stat.replace('OPP_', ''),
       line: `${r.value} per 48 (${r.vsAvg > 0 ? '+' : ''}${r.vsAvg} vs avg)`,
       rank: r.rank,
+      markets: TRAD_MARKETS[r.stat] || [],
       attackers: (p) => {
         const map = { PTS: 'PTS', REB: 'REB', AST: 'AST', '3PM': '3PM' };
         const market = map[r.stat.replace('OPP_', '')];
@@ -47,6 +63,7 @@ export function concessions(tri) {
       label: type,
       line: `${v.ptsG} pts on ${v.possG} poss (${d.ppp} PPP, ${vsAvg(d.ppp, LEAGUE_AVG.playTypes[type], 2)} vs avg)`,
       rank: d.rank,
+      markets: type === 'Putbacks' ? ['PTS', 'REB'] : ['PTS'],
       attackers: (p) => {
         const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
         if (!pt) return null;
@@ -62,6 +79,7 @@ export function concessions(tri) {
       label: zone,
       line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.fgPct}% FG, ${vsAvg(d.fgPct, LEAGUE_AVG.zones[zone])} vs avg)`,
       rank: d.rank,
+      markets: THREE_POINT_ZONES.includes(zone) ? ['PTS', '3PM'] : ['PTS'],
       attackers: (p) => {
         const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
         if (!z) return null;
@@ -77,6 +95,7 @@ export function concessions(tri) {
       label: type,
       line: `${v.ptsG} pts on ${v.fgaG} FGA (${d.efg}% eFG, ${d.vsAvg > 0 ? '+' : ''}${d.vsAvg} vs avg)`,
       rank: d.rank,
+      markets: THREE_POINT_SHOT_TYPES.includes(type) ? ['PTS', '3PM'] : ['PTS'],
       attackers: (p) => {
         const st = p.shotTypes.find((x) => x.type === type && x.fga >= 4);
         if (!st) return null;
@@ -91,6 +110,7 @@ export function concessions(tri) {
       label: `Assists to ${loc}`,
       line: `${d.perGame}/gm allowed (${vsAvg(d.perGame, LEAGUE_AVG.assistLoc[loc])} vs avg)`,
       rank: d.rank,
+      markets: ['AST'],
       attackers: (p) => (p.assistLoc[loc] >= 1 ? `${p.assistLoc[loc]}/gm` : null),
     }),
   );

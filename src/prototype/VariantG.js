@@ -20,9 +20,21 @@ const CATEGORY_ORDER = [
 
 const rowKeyOf = (tri, c) => `${tri}|${c.category}|${c.label}`;
 
-const SheetRow = ({ tri, c, overlayId, openKey, onOpen }) => {
+// Prop-market views: which rows a market cares about, and which players are
+// even on the board for it (from the posted-lines data — the pool contract).
+const MARKET_TABS = ['All', 'PTS', 'REB', 'AST', '3PM', 'PRA'];
+const rowMatchesMarket = (c, market) => {
+  if (market === 'All') return true;
+  const rowMarkets = c.markets || [];
+  if (market === 'PRA') return ['PTS', 'REB', 'AST', '3PM'].some((m) => rowMarkets.includes(m));
+  return rowMarkets.includes(market);
+};
+const playerMatchesMarket = (p, market) =>
+  market === 'All' || marketsFor(p).includes(market);
+
+const SheetRow = ({ tri, c, market, overlayId, openKey, onOpen }) => {
   const rowKey = rowKeyOf(tri, c);
-  const attackers = PLAYERS.filter((p) => p.team !== tri)
+  const attackers = PLAYERS.filter((p) => p.team !== tri && playerMatchesMarket(p, market))
     .map((p) => ({ player: p, note: c.attackers(p) }))
     .filter((a) => a.note);
   const overlayHit = overlayId && attackers.some((a) => a.player.id === overlayId);
@@ -86,11 +98,13 @@ const SheetRow = ({ tri, c, overlayId, openKey, onOpen }) => {
   );
 };
 
-const TeamSheet = ({ tri, overlayId, openKey, onOpen }) => {
-  const byCategory = concessions(tri).reduce((acc, c) => {
-    (acc[c.category] = acc[c.category] || []).push(c);
-    return acc;
-  }, {});
+const TeamSheet = ({ tri, market, overlayId, openKey, onOpen }) => {
+  const byCategory = concessions(tri)
+    .filter((c) => rowMatchesMarket(c, market))
+    .reduce((acc, c) => {
+      (acc[c.category] = acc[c.category] || []).push(c);
+      return acc;
+    }, {});
   const attackerTri = tri === GAME.home.tri ? GAME.away.tri : GAME.home.tri;
 
   return (
@@ -115,23 +129,26 @@ const TeamSheet = ({ tri, overlayId, openKey, onOpen }) => {
           gap: 10,
         }}
       >
-        {CATEGORY_ORDER.map((category) => (
-          <SectionCard key={category} title={category}>
-            {(byCategory[category] || [])
-              .slice()
-              .sort((a, b) => b.rank - a.rank)
-              .map((c) => (
-                <SheetRow
-                  key={rowKeyOf(tri, c)}
-                  tri={tri}
-                  c={c}
-                  overlayId={overlayId}
-                  openKey={openKey}
-                  onOpen={onOpen}
-                />
-              ))}
-          </SectionCard>
-        ))}
+        {CATEGORY_ORDER.filter((category) => (byCategory[category] || []).length > 0).map(
+          (category) => (
+            <SectionCard key={category} title={category}>
+              {(byCategory[category] || [])
+                .slice()
+                .sort((a, b) => b.rank - a.rank)
+                .map((c) => (
+                  <SheetRow
+                    key={rowKeyOf(tri, c)}
+                    tri={tri}
+                    c={c}
+                    market={market}
+                    overlayId={overlayId}
+                    openKey={openKey}
+                    onOpen={onOpen}
+                  />
+                ))}
+            </SectionCard>
+          ),
+        )}
       </div>
     </div>
   );
@@ -141,6 +158,7 @@ const VariantG = () => {
   const [overlayId, setOverlayId] = useState(null);
   const [openKey, setOpenKey] = useState(null); // {rowKey, playerId}
   const [sheetTri, setSheetTri] = useState(GAME.home.tri);
+  const [market, setMarket] = useState('All');
   const teams = [...new Set(PLAYERS.map((p) => p.team))];
 
   return (
@@ -173,6 +191,7 @@ const VariantG = () => {
                     padding: '6px 8px',
                     cursor: 'pointer',
                     fontSize: 13,
+                    opacity: playerMatchesMarket(p, market) ? 1 : 0.35,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -196,6 +215,40 @@ const VariantG = () => {
         ))}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {MARKET_TABS.map((m) => {
+              const active = m === market;
+              return (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setMarket(m);
+                    setOpenKey(null);
+                  }}
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'var(--ct-mono)',
+                    cursor: 'pointer',
+                    background: active ? 'var(--ct-gold-soft)' : 'none',
+                    color: active ? 'var(--ct-gold)' : 'var(--ct-dim)',
+                    border: active
+                      ? '1px solid var(--ct-gold)'
+                      : '1px solid var(--ct-line)',
+                    borderRadius: 999,
+                  }}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--ct-dim)' }}>
+            market views scope rows + players to posted lines
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 0, alignSelf: 'flex-start' }}>
           {[GAME.home.tri, GAME.away.tri].map((tri, i) => {
             const active = tri === sheetTri;
@@ -223,7 +276,13 @@ const VariantG = () => {
             );
           })}
         </div>
-        <TeamSheet tri={sheetTri} overlayId={overlayId} openKey={openKey} onOpen={setOpenKey} />
+        <TeamSheet
+          tri={sheetTri}
+          market={market}
+          overlayId={overlayId}
+          openKey={openKey}
+          onOpen={setOpenKey}
+        />
       </div>
     </div>
   );

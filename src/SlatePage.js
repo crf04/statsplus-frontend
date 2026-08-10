@@ -9,7 +9,7 @@ import {
   parseCalendarDate,
   shiftCalendarDate,
 } from './calendarDate';
-import { getStatusPresentation } from './slateStatus';
+import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import './SlatePage.css';
 
 const formatTip = (date) =>
@@ -26,9 +26,10 @@ const formatAge = (retrievedAt) => {
   return `${Math.round(hours / 24)}d ago`;
 };
 
-const surfaceStatusText = (name, surface) => {
+const surfaceStatusText = (name, surface, presentation) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt)}` : '';
-  return `${name} is ${surface.status}${age}`;
+  const thresholdNote = presentation.thresholdNote ? ` (${presentation.thresholdNote})` : '';
+  return `${name} is ${presentation.status}${age}${thresholdNote}`;
 };
 
 const useMinuteTick = () => {
@@ -39,11 +40,11 @@ const useMinuteTick = () => {
   }, []);
 };
 
-function SurfaceFreshness({ name, surface }) {
-  const warning = getStatusPresentation(surface.status).warning;
+function SurfaceFreshness({ name, surface, surfaceName }) {
+  const presentation = getSurfaceFreshnessPresentation(surface, surfaceName);
   return (
-    <span className={warning ? 'freshness-warning' : undefined}>
-      {surfaceStatusText(name, surface)}
+    <span className={presentation.warning ? 'freshness-warning' : undefined}>
+      {surfaceStatusText(name, surface, presentation)}
     </span>
   );
 }
@@ -52,10 +53,15 @@ function Freshness({ freshness }) {
   useMinuteTick();
   return (
     <div className="freshness" role="group" aria-label="Data freshness">
-      <SurfaceFreshness name="Schedule" surface={freshness.schedule} />
-      <SurfaceFreshness name="Player pool" surface={freshness.pool} />
+      <SurfaceFreshness name="Schedule" surface={freshness.schedule} surfaceName="schedule" />
+      <SurfaceFreshness name="Player pool" surface={freshness.pool} surfaceName="pool" />
       {freshness.pool.providers.map((provider) => (
-        <SurfaceFreshness key={provider.name} name={`${provider.name} pool`} surface={provider} />
+        <SurfaceFreshness
+          key={provider.name}
+          name={`${provider.name} pool`}
+          surface={provider}
+          surfaceName="pool"
+        />
       ))}
     </div>
   );
@@ -74,7 +80,8 @@ function PoolSummary({ isPast, poolStatus }) {
 }
 
 function GameCard({ game }) {
-  const status = game.statusLabel || (game.status === 'final' ? 'Final' : game.status);
+  const fallbackLabels = { scheduled: 'Scheduled', postponed: 'Postponed', final: 'Final' };
+  const status = game.statusLabel || fallbackLabels[game.status];
   return (
     <article className="slate-card">
       <div className="slate-card-topline">
@@ -166,7 +173,6 @@ export default function SlatePage() {
           <label>
             <span>Slate date</span>
             <input
-              aria-label="Slate date"
               type="date"
               value={slateDate || ''}
               onChange={(event) => navigate(event.target.value)}

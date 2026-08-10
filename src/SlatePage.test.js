@@ -67,7 +67,9 @@ test('shows an age for every available freshness surface and names degraded surf
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
   expect(screen.getByRole('group', { name: 'Data freshness' })).toBeVisible();
   expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toBeVisible();
-  expect(screen.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
+  expect(screen.getByText(/prizepicks pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
+    'freshness-warning',
+  );
   expect(screen.getByText('underdog pool is missing')).toBeVisible();
   expect(screen.queryAllByRole('alert')).toHaveLength(0);
   expect(screen.getByText(/targetable counts use the latest available snapshot/i)).toBeVisible();
@@ -89,6 +91,55 @@ test('updates freshness ages each minute and cleans up its clock', async () => {
   expect(jest.getTimerCount()).toBe(0);
 });
 
+test('warns when a fresh schedule crosses the 30h bar without refetching', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    freshness: {
+      ...slate.freshness,
+      schedule: { status: 'fresh', retrievedAt: '2026-01-14T06:01:00.000Z' },
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const fresh = await screen.findByText(/schedule is fresh/i);
+  expect(fresh).not.toHaveClass('freshness-warning');
+  act(() => jest.advanceTimersByTime(120000));
+  expect(screen.getByText(/schedule is stale/i)).toHaveClass('freshness-warning');
+  expect(fetchSlate).toHaveBeenCalledTimes(1);
+});
+
+test('warns when a fresh pool crosses the 15m bar without rewriting its status', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    poolStatus: 'fresh',
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        status: 'fresh',
+        retrievedAt: '2026-01-15T11:46:00.000Z',
+        providers: [],
+      },
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const fresh = await screen.findByText('Player pool is fresh — as of 14m ago');
+  expect(fresh).not.toHaveClass('freshness-warning');
+  act(() => jest.advanceTimersByTime(120000));
+  expect(screen.getByText(/player pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
+    'freshness-warning',
+  );
+  expect(fetchSlate).toHaveBeenCalledTimes(1);
+});
+
 test('clearing the date requests today without entering an invalid state', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups?date=2026-01-14']}>
@@ -106,12 +157,14 @@ test('clearing the date requests today without entering an invalid state', async
 });
 
 test.each([
-  ['Final/OT', 'Final/OT'],
-  [null, 'Final'],
-])('shows final catalog label %s with a Final fallback', async (statusLabel, expected) => {
+  ['scheduled', null, 'Scheduled'],
+  ['postponed', null, 'Postponed'],
+  ['final', null, 'Final'],
+  ['final', 'Final/OT', 'Final/OT'],
+])('shows %s catalog label %s with a cased fallback', async (status, statusLabel, expected) => {
   fetchSlate.mockResolvedValue({
     ...slate,
-    games: [{ ...game, status: 'final', statusLabel }],
+    games: [{ ...game, status, statusLabel }],
   });
 
   render(
@@ -120,7 +173,7 @@ test.each([
     </MemoryRouter>,
   );
 
-  expect(await screen.findByText(expected)).toBeVisible();
+  expect((await screen.findAllByText(expected))[0]).toBeVisible();
 });
 
 test.each([

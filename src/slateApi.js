@@ -28,20 +28,20 @@ const decodeFreshnessSurface = (surface, surfaceName) => {
   return { status: surface.status, retrievedAt };
 };
 
+const decodeDerivedSchedule = (surface) => {
+  if (!surface || !('retrieved_at' in surface)) throw createInvalidSlateError();
+  const retrievedAt = decodeRetrievedAt(surface.retrieved_at);
+  if (!retrievedAt) throw createInvalidSlateError();
+  return { status: deriveScheduleStatus(retrievedAt), retrievedAt };
+};
+
 const decodeFreshness = (freshness) => {
   if (!freshness || typeof freshness !== 'object' || !freshness.pool) {
     throw createInvalidSlateError();
   }
-  if (!freshness.schedule || !('retrieved_at' in freshness.schedule)) {
-    throw createInvalidSlateError();
-  }
   const schedule =
-    freshness.schedule.status === undefined
-      ? (() => {
-          const retrievedAt = decodeRetrievedAt(freshness.schedule.retrieved_at);
-          if (!retrievedAt) throw createInvalidSlateError();
-          return { status: deriveScheduleStatus(retrievedAt), retrievedAt };
-        })()
+    freshness.schedule?.status === undefined
+      ? decodeDerivedSchedule(freshness.schedule)
       : decodeFreshnessSurface(freshness.schedule, 'schedule');
   const providerSurfaces = freshness.pool.providers;
   if (

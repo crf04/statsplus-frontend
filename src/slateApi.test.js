@@ -215,6 +215,36 @@ test('derives missing pool freshness status from provider evidence', () => {
 });
 
 test.each([
+  [['fresh', 'missing'], 'missing'],
+  [['fresh', 'stale-served'], 'stale-served'],
+  [['unavailable'], 'unavailable'],
+])('derives degraded pool status %s from mixed providers', (statuses, expected) => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        retrieved_at: null,
+        providers: Object.fromEntries(
+          statuses.map((status, index) => [
+            `provider-${index}`,
+            {
+              status,
+              retrieved_at: ['missing', 'unavailable'].includes(status)
+                ? null
+                : '2026-01-15T09:55:00Z',
+            },
+          ]),
+        ),
+      },
+    },
+  };
+  delete candidate.pool_status;
+
+  expect(decodeSlate(candidate).poolStatus).toBe(expected);
+});
+
+test.each([
   ['2026-01-14T06:00:00Z', 'fresh'],
   ['2026-01-14T05:59:59Z', 'stale'],
 ])('derives missing schedule status from its 30h threshold at %s', (retrievedAt, expected) => {

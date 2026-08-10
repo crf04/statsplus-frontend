@@ -69,7 +69,9 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
   await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
-  await expect(page.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
+  await expect(
+    page.getByText(/prizepicks pool is fresh.*older than 15m freshness bar/i),
+  ).toHaveClass(/freshness-warning/);
   await page.screenshot({ path: 'test-results/slate-desktop.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Previous date' }).click();
@@ -190,7 +192,7 @@ test('minimum slate freshness payload renders through the browser contract', asy
     '/api/games/slate': {
       slate_date: '2026-01-15',
       freshness: {
-        schedule: { retrieved_at: '2026-01-15T11:00:00Z' },
+        schedule: { retrieved_at: '2026-01-14T05:00:00Z' },
         pool: {
           retrieved_at: null,
           providers: {
@@ -210,8 +212,12 @@ test('minimum slate freshness payload renders through the browser contract', asy
   await page.goto('/matchups?date=2026-01-15');
 
   await expect(page.getByRole('group', { name: 'Data freshness' })).toBeVisible();
-  await expect(page.getByText('Schedule is fresh — as of 1h ago')).toBeVisible();
-  await expect(page.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();
+  await expect(page.getByText('Schedule is stale — as of 31h ago')).toHaveClass(
+    /freshness-warning/,
+  );
+  await expect(page.getByText(/player pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
+    /freshness-warning/,
+  );
   await expect(page.getByText('Final after review')).toBeVisible();
   await expect(page.getByText(/targetable counts use the current player pool/i)).toBeVisible();
   await page.screenshot({ path: 'test-results/slate-minimum-payload.png', fullPage: true });

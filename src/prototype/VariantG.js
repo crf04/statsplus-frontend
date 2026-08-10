@@ -5,7 +5,7 @@
 // on it. Tap a player chip to open their dossier under the row; tapping a
 // rail player just highlights their rows across the sheets.
 import { Fragment, useState } from 'react';
-import { GAME, PLAYERS, marketsFor, computeEdges } from './mockData';
+import { GAME, PLAYERS, marketsFor, computeEdges, opponentOf } from './mockData';
 import { RankPill, MarketChips, SectionCard, Num } from './protoUi';
 import { Dossier } from './VariantA';
 import { concessions } from './VariantC';
@@ -140,6 +140,7 @@ const TeamSheet = ({ tri, overlayId, openKey, onOpen }) => {
 const VariantG = () => {
   const [overlayId, setOverlayId] = useState(null);
   const [openKey, setOpenKey] = useState(null); // {rowKey, playerId}
+  const [sheetTri, setSheetTri] = useState(GAME.home.tri);
   const teams = [...new Set(PLAYERS.map((p) => p.team))];
 
   return (
@@ -157,7 +158,10 @@ const VariantG = () => {
               return (
                 <button
                   key={p.id}
-                  onClick={() => setOverlayId(active ? null : p.id)}
+                  onClick={() => {
+                    setOverlayId(active ? null : p.id);
+                    if (!active) setSheetTri(opponentOf(p));
+                  }}
                   style={{
                     display: 'block',
                     width: '100%',
@@ -191,19 +195,35 @@ const VariantG = () => {
           </SectionCard>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <TeamSheet
-          tri={GAME.home.tri}
-          overlayId={overlayId}
-          openKey={openKey}
-          onOpen={setOpenKey}
-        />
-        <TeamSheet
-          tri={GAME.away.tri}
-          overlayId={overlayId}
-          openKey={openKey}
-          onOpen={setOpenKey}
-        />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 0, alignSelf: 'flex-start' }}>
+          {[GAME.home.tri, GAME.away.tri].map((tri, i) => {
+            const active = tri === sheetTri;
+            return (
+              <button
+                key={tri}
+                onClick={() => {
+                  setSheetTri(tri);
+                  setOpenKey(null);
+                }}
+                style={{
+                  padding: '6px 18px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: active ? 'var(--ct-gold)' : 'var(--ct-surface-2)',
+                  color: active ? '#0d0b07' : 'var(--ct-dim)',
+                  border: '1px solid var(--ct-line-strong)',
+                  borderRadius:
+                    i === 0 ? 'var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl)' : '0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0',
+                }}
+              >
+                {tri} defense
+              </button>
+            );
+          })}
+        </div>
+        <TeamSheet tri={sheetTri} overlayId={overlayId} openKey={openKey} onOpen={setOpenKey} />
       </div>
     </div>
   );

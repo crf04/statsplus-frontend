@@ -7,6 +7,8 @@ import {
   PLAYERS,
   DEFENSE,
   GAME,
+  LEAGUE_AVG,
+  vsAvg,
   marketsFor,
   archetypeLogsFor,
   computeEdges,
@@ -36,7 +38,7 @@ export function concessions(tri) {
     out.push({
       category: 'Play types',
       label: type,
-      line: `${d.ppp} PPP allowed`,
+      line: `${d.ppp} PPP allowed (${vsAvg(d.ppp, LEAGUE_AVG.playTypes[type], 2)} vs avg)`,
       rank: d.rank,
       attackers: (p) => {
         const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
@@ -48,7 +50,7 @@ export function concessions(tri) {
     out.push({
       category: 'Shot zones',
       label: zone,
-      line: `${d.fgPct}% FG allowed`,
+      line: `${d.fgPct}% FG allowed (${vsAvg(d.fgPct, LEAGUE_AVG.zones[zone])} vs avg)`,
       rank: d.rank,
       attackers: (p) => {
         const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
@@ -72,7 +74,7 @@ export function concessions(tri) {
     out.push({
       category: 'Assist locations',
       label: `Assists to ${loc}`,
-      line: `${d.perGame}/gm allowed`,
+      line: `${d.perGame}/gm allowed (${vsAvg(d.perGame, LEAGUE_AVG.assistLoc[loc])} vs avg)`,
       rank: d.rank,
       attackers: (p) => (p.assistLoc[loc] >= 1 ? `${p.assistLoc[loc]}/gm` : null),
     }),

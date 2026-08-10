@@ -39,6 +39,37 @@ export const ZONES = ['Restricted Area', 'Paint (Non-RA)', 'Mid-Range', 'Corner 
 export const SHOT_TYPES = ['Catch & Shoot', 'Pull-Up', '< 10 ft'];
 export const ASSIST_LOCS = ['Rim', 'Corner 3', 'Arc 3', 'Mid-Range'];
 
+// League-average baselines so every allowed stat can render raw + vs-avg.
+// Traditional and shot types already carry vsAvg on their rows.
+export const LEAGUE_AVG = {
+  playTypes: {
+    Isolation: 0.91,
+    Transition: 1.08,
+    'P&R Ball-Handler': 0.94,
+    'P&R Roll Man': 1.1,
+    'Post-Up': 1.0,
+    'Spot-Up': 1.0,
+    Handoff: 0.92,
+    Cut: 1.3,
+    'Off-Screen': 1.03,
+    Putbacks: 1.13,
+    Misc: 0.96,
+  },
+  zones: {
+    'Restricted Area': 65.4,
+    'Paint (Non-RA)': 44.9,
+    'Mid-Range': 41.8,
+    'Corner 3': 38.1,
+    'Above Break 3': 35.6,
+  },
+  assistLoc: { Rim: 17.1, 'Corner 3': 3.3, 'Arc 3': 7.2, 'Mid-Range': 3.3 },
+};
+
+export const vsAvg = (value, avg, digits = 1) => {
+  const d = value - avg;
+  return `${d >= 0 ? '+' : ''}${d.toFixed(digits)}`;
+};
+
 // What each defense allows, across the five stored categories.
 export const DEFENSE = {
   NYK: {

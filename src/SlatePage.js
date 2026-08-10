@@ -3,36 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
-import { isCalendarDate } from './calendarDate';
+import {
+  formatCalendarDate,
+  getTodaySlateDate,
+  parseCalendarDate,
+  shiftCalendarDate,
+} from './calendarDate';
+import { getStatusPresentation } from './slateStatus';
 import './SlatePage.css';
-
-const getTodaySlateDate = () => {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(new Date());
-};
-
-const parseSlateDate = (value) => {
-  return isCalendarDate(value) ? value : null;
-};
-
-const shiftDate = (date, days) => {
-  const value = new Date(`${date}T12:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
-};
-
-const formatSlateDate = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T12:00:00Z`));
 
 const formatTip = (date) =>
   new Intl.DateTimeFormat(undefined, {
@@ -48,35 +26,13 @@ const formatAge = (retrievedAt) => {
   return `${Math.round(hours / 24)}d ago`;
 };
 
-const statusPresentations = {
-  fresh: {
-    label: 'fresh',
-    poolMessage: 'Targetable counts use the current player pool.',
-  },
-  stale: { label: 'stale' },
-  'stale-served': {
-    label: 'stale-served',
-    poolMessage:
-      'Player pool is stale-served; targetable counts use the latest available snapshot.',
-  },
-  missing: {
-    label: 'missing',
-    poolMessage: 'Player pool unavailable; no targetable players are currently available.',
-  },
-  unavailable: {
-    label: 'unavailable',
-    poolMessage: 'Player pool unavailable; no targetable players are currently available.',
-  },
-};
-
 const surfaceStatusText = (name, surface) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt)}` : '';
-  const label = statusPresentations[surface.status].label;
-  return `${name} is ${label}${age}`;
+  return `${name} is ${surface.status}${age}`;
 };
 
 function SurfaceFreshness({ name, surface }) {
-  const warning = surface.status !== 'fresh';
+  const warning = getStatusPresentation(surface.status).warning;
   return (
     <span
       className={warning ? 'freshness-warning' : undefined}
@@ -100,20 +56,8 @@ function Freshness({ freshness }) {
 }
 
 function PoolSummary({ isPast, poolStatus }) {
-  let message = statusPresentations[poolStatus].poolMessage;
-  if (isPast) {
-    const historicalMessages = {
-      fresh:
-        'Past slate — the current player pool is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
-      'stale-served':
-        'Past slate — the latest available snapshot is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
-      missing:
-        'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
-      unavailable:
-        'Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate.',
-    };
-    message = historicalMessages[poolStatus];
-  }
+  const presentation = getStatusPresentation(poolStatus);
+  const message = isPast ? presentation.historicalPoolMessage : presentation.currentPoolMessage;
 
   return (
     <section className="pool-summary" aria-labelledby="player-pool-heading">
@@ -156,11 +100,16 @@ export default function SlatePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedDate = searchParams.get('date');
   const todaySlateDate = getTodaySlateDate();
-  const parsedRequestedDate = parseSlateDate(requestedDate);
-  const provisionalDate = parsedRequestedDate || todaySlateDate;
+  const parsedRequestedDate = parseCalendarDate(requestedDate);
+  const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
-  const slateDate = state.status === 'ready' ? state.slate.slateDate : provisionalDate;
-  const isPast = slateDate < todaySlateDate;
+  const slateDate =
+    state.status === 'ready'
+      ? state.slate.slateDate
+      : invalidRequestedDate
+        ? null
+        : parsedRequestedDate || todaySlateDate;
+  const isPast = slateDate ? slateDate < todaySlateDate : false;
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
@@ -198,12 +147,13 @@ export default function SlatePage() {
     <main className="slate-page">
       <section className="slate-heading">
         <p className="eyebrow">NBA slate</p>
-        <h1>{formatSlateDate(slateDate)}</h1>
+        <h1>{slateDate ? formatCalendarDate(slateDate) : 'Invalid slate date'}</h1>
         <div className="date-controls">
           <button
             type="button"
             aria-label="Previous date"
-            onClick={() => navigate(shiftDate(slateDate, -1))}
+            disabled={!slateDate}
+            onClick={() => navigate(shiftCalendarDate(slateDate, -1))}
           >
             ←
           </button>
@@ -212,19 +162,22 @@ export default function SlatePage() {
             <input
               aria-label="Slate date"
               type="date"
-              value={slateDate}
+              value={slateDate || ''}
               onChange={(event) => navigate(event.target.value)}
             />
           </label>
           <button
             type="button"
             aria-label="Next date"
-            onClick={() => navigate(shiftDate(slateDate, 1))}
+            disabled={!slateDate}
+            onClick={() => navigate(shiftCalendarDate(slateDate, 1))}
           >
             →
           </button>
         </div>
       </section>
+
+      {!slateDate && <p>Requested date “{requestedDate}” is invalid.</p>}
 
       {state.status === 'loading' && <p role="status">Loading slate…</p>}
       {state.status === 'error' && <p role="alert">{state.error}</p>}

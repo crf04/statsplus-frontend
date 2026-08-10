@@ -1,10 +1,8 @@
 import { apiClient, getApiUrl } from './config';
 import { isCalendarDate } from './calendarDate';
+import { derivePoolStatusFromProviders, poolStatuses, scheduleStatuses } from './slateStatus';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
-
-const scheduleStatuses = new Set(['fresh', 'stale', 'missing']);
-const poolStatuses = new Set(['fresh', 'stale-served', 'missing', 'unavailable']);
 
 const decodeRetrievedAt = (value) => {
   if (value === null) return null;
@@ -26,9 +24,10 @@ const decodeFreshnessSurface = (surface, statuses) => {
 };
 
 const decodeFreshness = (freshness) => {
-  if (!freshness || typeof freshness !== 'object') throw createInvalidSlateError();
+  if (!freshness || typeof freshness !== 'object' || !freshness.pool) {
+    throw createInvalidSlateError();
+  }
   const schedule = decodeFreshnessSurface(freshness.schedule, scheduleStatuses);
-  const poolSurface = decodeFreshnessSurface(freshness.pool, poolStatuses);
   const providerSurfaces = freshness.pool.providers;
   if (
     providerSurfaces !== undefined &&
@@ -42,15 +41,19 @@ const decodeFreshness = (freshness) => {
     if (!name) throw createInvalidSlateError();
     return { name, ...decodeFreshnessSurface(surface, poolStatuses) };
   });
+  let poolSurface;
+  if (freshness.pool.status !== undefined) {
+    poolSurface = decodeFreshnessSurface(freshness.pool, poolStatuses);
+  } else {
+    const status = derivePoolStatusFromProviders(providers);
+    if (!status || !('retrieved_at' in freshness.pool)) throw createInvalidSlateError();
+    const retrievedAt =
+      decodeRetrievedAt(freshness.pool.retrieved_at) ||
+      providers.find((provider) => provider.status === status)?.retrievedAt ||
+      null;
+    poolSurface = { status, retrievedAt };
+  }
   return { schedule, pool: { ...poolSurface, providers } };
-};
-
-const derivePoolStatus = (aggregateStatus, pool) => {
-  if (['fresh', 'stale-served'].includes(pool.status)) return pool.status;
-  const providerStatuses = pool.providers.map(({ status }) => status);
-  if (providerStatuses.includes('fresh')) return 'fresh';
-  if (providerStatuses.includes('stale-served')) return 'stale-served';
-  return aggregateStatus || pool.status;
 };
 
 const decodeTeam = (team) => {
@@ -116,7 +119,7 @@ export const decodeSlate = (data) => {
   return {
     slateDate: data.slate_date,
     freshness,
-    poolStatus: derivePoolStatus(data.pool_status, freshness.pool),
+    poolStatus: data.pool_status ?? freshness.pool.status,
     games: data.games.map(decodeGame),
   };
 };

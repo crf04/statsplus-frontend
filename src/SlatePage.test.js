@@ -116,6 +116,11 @@ test('forwards an impossible calendar date so the backend can return invalid_inp
   );
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid date.');
+  expect(screen.getByRole('heading', { name: 'Invalid slate date' })).toBeVisible();
+  expect(screen.getByText(/requested date.*2026-02-30.*invalid/i)).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Previous date' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Next date' })).toBeDisabled();
+  expect(screen.getByLabelText('Slate date')).toHaveValue('');
   await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith('2026-02-30', expect.any(Object)));
 });
 

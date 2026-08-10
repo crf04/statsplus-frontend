@@ -123,6 +123,58 @@ test('a rejected slate request leaves date navigation available', async ({
   await expect(page.getByLabel('Slate date')).toBeEnabled();
 });
 
+test('an invalid requested date stays neutral until the backend rejects it', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page, {
+    '/api/games/slate': {
+      status: 400,
+      body: { error: { code: 'invalid_input', message: 'Enter a valid date.' } },
+    },
+  });
+
+  await page.goto('/matchups?date=2026-02-30');
+
+  await expect(page.getByRole('heading', { name: 'Invalid slate date' })).toBeVisible();
+  await expect(page.getByText(/requested date.*2026-02-30.*invalid/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Previous date' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Next date' })).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText('Enter a valid date.');
+  await page.screenshot({ path: 'test-results/slate-invalid-date.png', fullPage: true });
+});
+
+test('explicit unavailable pool status wins over stale provider evidence', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await installApiContract(page, {
+    '/api/games/slate': slatePayload(
+      '2026-01-15',
+      [
+        {
+          ...slateGame,
+          away_team: { ...slateGame.away_team, targetable_player_count: 0 },
+          home_team: { ...slateGame.home_team, targetable_player_count: 0 },
+        },
+      ],
+      {
+        poolStatus: 'unavailable',
+        poolFreshnessStatus: 'unavailable',
+        providers: {
+          prizepicks: { status: 'stale-served', retrieved_at: '2026-01-15T09:00:00Z' },
+        },
+      },
+    ),
+  });
+
+  await page.goto('/matchups?date=2026-01-15');
+
+  await expect(page.getByText(/player pool unavailable; no targetable players/i)).toBeVisible();
+  await expect(page.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
+  await expect(page.getByText('0 targetable')).toHaveCount(2);
+  await page.screenshot({ path: 'test-results/slate-pool-contradiction.png', fullPage: true });
+});
+
 test('slate remains usable at a narrow viewport and from the keyboard', async ({
   authenticatedPage: page,
 }) => {

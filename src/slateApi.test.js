@@ -149,26 +149,69 @@ test('derives the aggregate pool status when the optional top-level field is abs
   );
 });
 
-test('does not report the pool unavailable when freshness has served evidence', () => {
-  expect(
-    decodeSlate({
+test.each([
+  ['unavailable', 'stale-served', 'stale-served', 'unavailable'],
+  ['fresh', 'unavailable', 'missing', 'fresh'],
+  [undefined, 'stale-served', 'fresh', 'stale-served'],
+])(
+  'uses aggregate %s with pool freshness %s and provider freshness %s',
+  (aggregateStatus, poolFreshnessStatus, providerStatus, expected) => {
+    const candidate = {
       ...payload,
-      pool_status: 'unavailable',
       freshness: {
         ...payload.freshness,
         pool: {
-          status: 'unavailable',
-          retrieved_at: null,
+          status: poolFreshnessStatus,
+          retrieved_at: ['missing', 'unavailable'].includes(poolFreshnessStatus)
+            ? null
+            : '2026-01-15T09:55:00Z',
           providers: {
             prizepicks: {
-              status: 'stale-served',
-              retrieved_at: '2026-01-15T09:55:00Z',
+              status: providerStatus,
+              retrieved_at: ['missing', 'unavailable'].includes(providerStatus)
+                ? null
+                : '2026-01-15T09:55:00Z',
             },
           },
         },
       },
-    }).poolStatus,
-  ).toBe('stale-served');
+    };
+    if (aggregateStatus === undefined) delete candidate.pool_status;
+    else candidate.pool_status = aggregateStatus;
+
+    expect(decodeSlate(candidate).poolStatus).toBe(expected);
+  },
+);
+
+test('derives missing pool freshness status from provider evidence', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        retrieved_at: null,
+        providers: {
+          prizepicks: {
+            status: 'stale-served',
+            retrieved_at: '2026-01-15T09:55:00Z',
+          },
+        },
+      },
+    },
+  };
+  delete candidate.pool_status;
+
+  expect(decodeSlate(candidate)).toEqual(
+    expect.objectContaining({
+      poolStatus: 'stale-served',
+      freshness: expect.objectContaining({
+        pool: expect.objectContaining({
+          status: 'stale-served',
+          retrievedAt: '2026-01-15T09:55:00.000Z',
+        }),
+      }),
+    }),
+  );
 });
 
 test('validates optional provider freshness when providers are present', () => {

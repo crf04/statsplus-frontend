@@ -175,7 +175,6 @@ const VariantG = () => {
   const [market, setMarket] = useState('All');
   const [recency, setRecency] = useState('Season');
   const teams = [...new Set(PLAYERS.map((p) => p.team))];
-  const scoreHeader = market === 'All' || market === 'PTS' ? 'pts/48 matchup' : `${market} matchup`;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: 12 }}>
@@ -197,15 +196,10 @@ const VariantG = () => {
           )}
         </SectionCard>
         {teams.map((tri) => (
-          <SectionCard
-            key={tri}
-            title={`${tri} targetable`}
-            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>{scoreHeader}</span>}
-          >
+          <SectionCard key={tri} title={`${tri} targetable`}>
             {PLAYERS.filter((p) => p.team === tri)
-              .map((p) => ({ p, score: matchupScore(p, market, recency) }))
-              .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity))
-              .map(({ p, score }) => {
+              .sort((a, b) => b.season.pts - a.season.pts)
+              .map((p) => {
               const active = p.id === overlayId;
               return (
                 <button
@@ -244,23 +238,32 @@ const VariantG = () => {
                         </span>
                       )}
                     </span>
-                    {score != null && (
-                      <span
-                        title="Matchup score for the active market: the player's diet in the relevant mechanisms weighted by the opponent's per-48 concession ratio vs league average"
-                        style={{
-                          fontFamily: 'var(--ct-mono)',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: score >= 1 ? 'var(--ct-hit)' : 'var(--ct-miss)',
-                        }}
-                      >
-                        {scoreLabel(score)}
-                      </span>
-                    )}
                   </div>
                   <div style={{ color: 'var(--ct-dim)', fontSize: 11 }}>
                     {p.pos} · <MarketChips markets={marketsFor(p)} />
                   </div>
+                  {active && (
+                    <div
+                      title="Matchup score per posted market: the player's diet in that market's mechanisms weighted by the opponent's per-48 concession ratio vs league average"
+                      style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 5 }}
+                    >
+                      {marketsFor(p).map((m) => {
+                        const sc = matchupScore(p, m, recency);
+                        if (sc == null) return null;
+                        return (
+                          <span
+                            key={m}
+                            style={{ fontFamily: 'var(--ct-mono)', fontSize: 11, fontWeight: 700 }}
+                          >
+                            <span style={{ color: 'var(--ct-dim)', fontWeight: 400 }}>{m} </span>
+                            <span style={{ color: sc >= 1 ? 'var(--ct-hit)' : 'var(--ct-miss)' }}>
+                              {scoreLabel(sc)}
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </button>
               );
             })}

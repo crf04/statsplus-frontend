@@ -248,6 +248,37 @@ test.each([
   expect((await screen.findAllByText(expected))[0]).toBeVisible();
 });
 
+test('shows preseason and unusual classification badges', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [{ ...game, classification: 'International Series', preseason: true }],
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('International Series')).toBeVisible();
+  expect(screen.getByText('Preseason')).toBeVisible();
+});
+
+test('does not invent a classification badge for an ordinary game', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [{ ...game, classification: null, preseason: false }],
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'LAL @ BOS' });
+  expect(screen.queryByText('International Series')).not.toBeInTheDocument();
+  expect(screen.queryByText('Preseason')).not.toBeInTheDocument();
+});
+
 test.each([
   ['fresh', 'current player pool is not displayed', 'posted targetable counts'],
   ['stale-served', 'latest available snapshot is not displayed', 'posted targetable counts'],

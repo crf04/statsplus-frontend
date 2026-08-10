@@ -104,6 +104,17 @@ test.each([
     },
   ],
   ['unknown aggregate pool status', { ...payload, pool_status: 'old' }],
+  ['frontend-derived aggregate pool status', { ...payload, pool_status: 'partial' }],
+  [
+    'frontend-derived pool freshness status',
+    {
+      ...payload,
+      freshness: {
+        ...payload.freshness,
+        pool: { status: 'partial', retrieved_at: null, providers: {} },
+      },
+    },
+  ],
   ['invalid calendar slate date', { ...payload, slate_date: '2026-02-30' }],
 ])('rejects a %s', (_label, malformedPayload) => {
   expect(() => decodeSlate(malformedPayload)).toThrow(
@@ -265,6 +276,34 @@ test('accepts provider freshness without a pool-level retrieved_at', () => {
       freshness: expect.objectContaining({
         pool: expect.objectContaining({ status: 'partial' }),
       }),
+    }),
+  );
+});
+
+test.each([
+  [
+    {
+      prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z' },
+      underdog: { status: 'fresh', retrieved_at: '2026-01-15T11:30:00Z' },
+    },
+  ],
+  [
+    {
+      underdog: { status: 'fresh', retrieved_at: '2026-01-15T11:30:00Z' },
+      prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z' },
+    },
+  ],
+])('uses the oldest provider timestamp independent of key order', (providers) => {
+  const candidate = {
+    ...payload,
+    freshness: { ...payload.freshness, pool: { providers } },
+  };
+  delete candidate.pool_status;
+
+  expect(decodeSlate(candidate).freshness.pool).toEqual(
+    expect.objectContaining({
+      status: 'fresh',
+      retrievedAt: '2026-01-15T11:30:00.000Z',
     }),
   );
 });

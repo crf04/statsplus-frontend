@@ -1,26 +1,23 @@
 const definitions = {
   fresh: {
-    allowedSurfaces: ['schedule', 'pool'],
+    inboundSurfaces: ['schedule', 'pool'],
     allowsNullRetrievedAt: false,
-    providerRank: 0,
     warning: false,
     currentPoolMessage: 'Targetable counts use the current player pool.',
     historicalPoolMessage:
       'Past slate — the current player pool is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
   stale: {
-    allowedSurfaces: ['schedule'],
+    inboundSurfaces: ['schedule'],
     allowsNullRetrievedAt: false,
-    providerRank: null,
     warning: true,
     currentPoolMessage: 'Player pool snapshot is stale; targetable counts may be out of date.',
     historicalPoolMessage:
       'Past slate — the stale player pool snapshot is not displayed. Game cards retain the targetable counts returned for this slate.',
   },
   'stale-served': {
-    allowedSurfaces: ['pool'],
+    inboundSurfaces: ['pool'],
     allowsNullRetrievedAt: false,
-    providerRank: 1,
     warning: true,
     currentPoolMessage:
       'Player pool is stale-served; targetable counts use the latest available snapshot.',
@@ -28,18 +25,16 @@ const definitions = {
       'Past slate — the latest available snapshot is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
   missing: {
-    allowedSurfaces: ['schedule', 'pool'],
+    inboundSurfaces: ['schedule', 'pool'],
     allowsNullRetrievedAt: true,
-    providerRank: 2,
     warning: true,
     currentPoolMessage: 'Player pool is missing; no targetable players are currently available.',
     historicalPoolMessage:
       'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
   },
   unavailable: {
-    allowedSurfaces: ['pool'],
+    inboundSurfaces: ['pool'],
     allowsNullRetrievedAt: true,
-    providerRank: 3,
     warning: true,
     currentPoolMessage:
       'Player pool is unavailable; no targetable players are currently available.',
@@ -47,9 +42,8 @@ const definitions = {
       'Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate.',
   },
   partial: {
-    allowedSurfaces: ['pool'],
+    inboundSurfaces: [],
     allowsNullRetrievedAt: true,
-    providerRank: null,
     warning: true,
     currentPoolMessage: 'Player pool is partial; targetable counts reflect the available boards.',
     historicalPoolMessage:
@@ -60,7 +54,7 @@ const definitions = {
 export const getStatusPresentation = (status) => definitions[status];
 
 export const isStatusAllowed = (status, surface) =>
-  Boolean(definitions[status]?.allowedSurfaces.includes(surface));
+  Boolean(definitions[status]?.inboundSurfaces.includes(surface));
 
 export const statusAllowsNullRetrievedAt = (status) =>
   Boolean(definitions[status]?.allowsNullRetrievedAt);

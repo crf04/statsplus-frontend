@@ -65,6 +65,8 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page.getByText(viewerLocalTip, { exact: true })).toBeVisible();
   await expect(page.getByText('Los Angeles Lakers')).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
+  await expect(page.getByText('NBA Paris Game')).toBeVisible();
+  await expect(page.getByText('Preseason')).toHaveCount(0);
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
@@ -211,6 +213,8 @@ test('minimum slate freshness payload renders through the browser contract', asy
         {
           ...slateGame,
           status: { state: 'final', label: 'Final after review' },
+          classification: null,
+          preseason: true,
         },
       ],
     },
@@ -223,7 +227,44 @@ test('minimum slate freshness payload renders through the browser contract', asy
   await expect(page.getByText('Schedule is stale — as of 31h ago')).toBeVisible();
   await expect(freshness.getByText(/player pool is partial/i)).toBeVisible();
   await expect(page.getByText('Final after review')).toBeVisible();
+  await expect(page.getByText('Preseason')).toBeVisible();
+  await expect(page.getByText('NBA Paris Game')).toHaveCount(0);
   await expect(page.getByText(/counts reflect the available boards/i)).toBeVisible();
+});
+
+test('provider aggregate uses the oldest timestamp regardless of provider key order', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await installApiContract(page, {
+    '/api/games/slate': (request) => {
+      const date = new URL(request.url()).searchParams.get('date') || '2026-01-15';
+      const entries = [
+        ['newer', { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z' }],
+        ['older', { status: 'fresh', retrieved_at: '2026-01-15T11:30:00Z' }],
+      ];
+      return {
+        slate_date: date,
+        freshness: {
+          schedule: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z' },
+          pool: {
+            providers: Object.fromEntries(date === '2026-01-15' ? entries : entries.reverse()),
+          },
+        },
+        games: [slateGame],
+      };
+    },
+  });
+
+  await page.goto('/matchups?date=2026-01-15');
+  await expect(
+    page.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
+  ).toBeVisible();
+
+  await page.getByLabel('Slate date').fill('2026-01-16');
+  await expect(
+    page.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
+  ).toBeVisible();
 });
 
 test('slate remains usable at a narrow viewport and from the keyboard', async ({

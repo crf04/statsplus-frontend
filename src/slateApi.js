@@ -68,12 +68,8 @@ const decodeFreshness = (freshness) => {
       .map(({ retrievedAt }) => retrievedAt)
       .filter(Boolean)
       .sort()
-      .at(-1);
-    const retrievedAt =
-      poolRetrievedAt ||
-      providers.find((provider) => provider.status === status)?.retrievedAt ||
-      providerRetrievedAt ||
-      null;
+      .at(0);
+    const retrievedAt = poolRetrievedAt || providerRetrievedAt || null;
     poolSurface = { status, retrievedAt };
   }
   return { schedule, pool: { ...poolSurface, providers } };

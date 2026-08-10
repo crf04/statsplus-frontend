@@ -108,13 +108,14 @@ const SheetRow = ({ tri, c, market, overlayId, openKey, onOpen }) => {
   );
 };
 
-const TeamSheet = ({ tri, market, recency, overlayId, openKey, onOpen }) => {
-  const byCategory = concessions(tri, recency)
-    .filter((c) => rowMatchesMarket(c, market))
-    .reduce((acc, c) => {
-      (acc[c.category] = acc[c.category] || []).push(c);
-      return acc;
-    }, {});
+const TeamSheet = ({ tri, market, recency, sigma, overlayId, openKey, onOpen }) => {
+  const marketRows = concessions(tri, recency).filter((c) => rowMatchesMarket(c, market));
+  const shown = marketRows.filter((c) => Math.abs(c.z ?? 0) >= sigma);
+  const hidden = marketRows.length - shown.length;
+  const byCategory = shown.reduce((acc, c) => {
+    (acc[c.category] = acc[c.category] || []).push(c);
+    return acc;
+  }, {});
   const attackerTri = tri === GAME.home.tri ? GAME.away.tri : GAME.home.tri;
 
   return (
@@ -131,6 +132,20 @@ const TeamSheet = ({ tri, market, recency, overlayId, openKey, onOpen }) => {
         }}
       >
         {tri} defense · attacked by {attackerTri}
+        {hidden > 0 && (
+          <span
+            style={{
+              marginLeft: 10,
+              fontSize: 11,
+              fontWeight: 400,
+              textTransform: 'none',
+              letterSpacing: 0,
+              color: 'var(--ct-dim)',
+            }}
+          >
+            {hidden} row{hidden === 1 ? '' : 's'} within ±{sigma}σ of league average hidden
+          </span>
+        )}
       </div>
       <div
         style={{
@@ -403,6 +418,7 @@ const VariantG = () => {
   const [sheetTri, setSheetTri] = useState(GAME.home.tri);
   const [market, setMarket] = useState('All');
   const [recency, setRecency] = useState('Season');
+  const [sigma, setSigma] = useState(1);
   const teams = [...new Set(PLAYERS.map((p) => p.team))];
 
   return (
@@ -549,6 +565,40 @@ const VariantG = () => {
             })}
           </div>
           <div style={{ display: 'flex' }}>
+            {[
+              [0, 'All'],
+              [1, '≥1σ'],
+              [2, '≥2σ'],
+            ].map(([value, label], i) => {
+              const active = value === sigma;
+              return (
+                <button
+                  key={label}
+                  onClick={() => setSigma(value)}
+                  title="Hide rows within this many league standard deviations of average"
+                  style={{
+                    padding: '5px 12px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'var(--ct-mono)',
+                    cursor: 'pointer',
+                    background: active ? 'var(--ct-surface-2)' : 'none',
+                    color: active ? 'var(--ct-text)' : 'var(--ct-dim)',
+                    border: '1px solid var(--ct-line-strong)',
+                    borderRadius:
+                      i === 0
+                        ? 'var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl)'
+                        : i === 2
+                          ? '0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0'
+                          : 0,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex' }}>
           {[GAME.home.tri, GAME.away.tri].map((tri, i) => {
             const active = tri === sheetTri;
             return (
@@ -588,6 +638,7 @@ const VariantG = () => {
           tri={sheetTri}
           market={market}
           recency={recency}
+          sigma={sigma}
           overlayId={overlayId}
           openKey={openKey}
           onOpen={setOpenKey}

@@ -191,6 +191,7 @@ export function defPlayTypeVolume(tri, type, window = 'Season') {
     possG,
     ptsG,
     ptsPct: pctVs(ptsG, PLAYTYPE_BASE_POSS[type] * avgPpp),
+    ptsPctNum: (ptsG / (PLAYTYPE_BASE_POSS[type] * avgPpp) - 1) * 100,
     pppPct: pctVs(d.ppp, avgPpp),
   };
 }
@@ -204,6 +205,7 @@ export function defZoneVolume(tri, zone, window = 'Season') {
     fgaG,
     ptsG,
     ptsPct: pctVs(ptsG, (base * LEAGUE_AVG.zones[zone] * ZONE_PT_VALUE[zone]) / 100),
+    ptsPctNum: (ptsG / ((base * LEAGUE_AVG.zones[zone] * ZONE_PT_VALUE[zone]) / 100) - 1) * 100,
     fgaPct: pctVs(fgaG, base),
   };
 }
@@ -218,6 +220,7 @@ export function defShotTypeVolume(tri, type, window = 'Season') {
     fgaG,
     ptsG,
     ptsPct: pctVs(ptsG, (base * avgEfg * 2) / 100),
+    ptsPctNum: (ptsG / ((base * avgEfg * 2) / 100) - 1) * 100,
     fgaPct: pctVs(fgaG, base),
   };
 }

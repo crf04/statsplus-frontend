@@ -44,6 +44,7 @@ export function concessions(tri, window = 'Season') {
       label: r.stat.replace('OPP_', ''),
       line: `${r.value} per 48 (${pctVs(r.value, r.value - r.vsAvg)})`,
       rank: r.rank,
+      z: (r.vsAvg / (r.value - r.vsAvg)) * 100 / 7,
       markets: TRAD_MARKETS[r.stat] || [],
       attackers: (p) => {
         const map = { PTS: 'PTS', REB: 'REB', AST: 'AST', '3PM': '3PM' };
@@ -61,6 +62,7 @@ export function concessions(tri, window = 'Season') {
       label: type,
       line: `${v.ptsG} pts (${v.ptsPct}) · ${d.ppp} PPP (${v.pppPct})`,
       rank: d.rank,
+      z: v.ptsPctNum / 8,
       markets: type === 'Putbacks' ? ['PTS', 'REB'] : ['PTS'],
       attackers: (p) => {
         const pt = p.playTypes.find((x) => x.type === type && x.freq >= 12);
@@ -75,6 +77,7 @@ export function concessions(tri, window = 'Season') {
       label: zone,
       line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
+      z: v.ptsPctNum / 8,
       markets: THREE_POINT_ZONES.includes(zone)
         ? ['PTS', '3PM', 'FGA', 'FG3A']
         : ['PTS', 'FGA'],
@@ -91,6 +94,7 @@ export function concessions(tri, window = 'Season') {
       label: type,
       line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
+      z: v.ptsPctNum / 8,
       markets: THREE_POINT_SHOT_TYPES.includes(type)
         ? ['PTS', '3PM', 'FGA', 'FG3A']
         : ['PTS', 'FGA'],
@@ -108,6 +112,7 @@ export function concessions(tri, window = 'Season') {
       label: `Assists to ${loc}`,
       line: `${d.perGame} ast/gm (${pctVs(d.perGame, LEAGUE_AVG.assistLoc[loc])})`,
       rank: d.rank,
+      z: ((d.perGame / LEAGUE_AVG.assistLoc[loc] - 1) * 100) / 9,
       markets: ['AST'],
       attackers: (p) => {
         if (p.assistLoc[loc] < 1) return null;

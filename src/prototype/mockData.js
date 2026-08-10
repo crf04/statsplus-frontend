@@ -663,6 +663,31 @@ export function marketsFor(player) {
   return [...new Set([...player.boards.PP, ...player.boards.UD, ...player.boards.DAB])];
 }
 
+// Round 9 — the user's matchup-score formula: weight the opponent's
+// PPP-vs-league-average ratio in each play type by the share of the player's
+// own diet that lives there. 1.0 = league-average matchup; returned as a
+// ratio (render as +/-%). Weighted by covered frequency so a partial
+// play-type profile doesn't understate the score.
+export function playTypeMatchupScore(player) {
+  const def = DEFENSE[opponentOf(player)].playTypes;
+  let covered = 0;
+  let acc = 0;
+  player.playTypes.forEach((pt) => {
+    const d = def[pt.type];
+    const avg = LEAGUE_AVG.playTypes[pt.type];
+    if (!d || !avg) return;
+    acc += (pt.freq / 100) * (d.ppp / avg);
+    covered += pt.freq / 100;
+  });
+  return covered > 0 ? acc / covered : null;
+}
+
+export const scoreLabel = (ratio) => {
+  if (ratio == null) return null;
+  const p = (ratio - 1) * 100;
+  return `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
+};
+
 const MARKET_TO_TRADITIONAL = {
   PTS: 'OPP_PTS',
   REB: 'OPP_REB',

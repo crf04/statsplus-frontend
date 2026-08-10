@@ -5,7 +5,14 @@
 // on it. Tap a player chip to open their dossier under the row; tapping a
 // rail player just highlights their rows across the sheets.
 import { Fragment, useState } from 'react';
-import { GAME, PLAYERS, marketsFor, computeEdges, opponentOf } from './mockData';
+import {
+  GAME,
+  PLAYERS,
+  marketsFor,
+  opponentOf,
+  playTypeMatchupScore,
+  scoreLabel,
+} from './mockData';
 import { RankPill, MarketChips, SectionCard, Num } from './protoUi';
 import { Dossier } from './VariantA';
 import { concessions } from './VariantC';
@@ -169,9 +176,15 @@ const VariantG = () => {
           dossier.
         </div>
         {teams.map((tri) => (
-          <SectionCard key={tri} title={`${tri} targetable`}>
-            {PLAYERS.filter((p) => p.team === tri).map((p) => {
-              const edges = computeEdges(p);
+          <SectionCard
+            key={tri}
+            title={`${tri} targetable`}
+            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>PT matchup</span>}
+          >
+            {PLAYERS.filter((p) => p.team === tri)
+              .map((p) => ({ p, score: playTypeMatchupScore(p) }))
+              .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity))
+              .map(({ p, score }) => {
               const active = p.id === overlayId;
               return (
                 <button
@@ -196,14 +209,19 @@ const VariantG = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontWeight: active ? 700 : 400 }}>{p.name}</span>
-                    <span>
-                      {edges.hot.length > 0 && (
-                        <span style={{ color: 'var(--ct-hit)', fontSize: 11 }}>▲{edges.hot.length}</span>
-                      )}{' '}
-                      {edges.cold.length > 0 && (
-                        <span style={{ color: 'var(--ct-miss)', fontSize: 11 }}>▼{edges.cold.length}</span>
-                      )}
-                    </span>
+                    {score != null && (
+                      <span
+                        title="Play-type matchup score: player's play-type distribution weighted by the opponent's PPP ratio vs league average"
+                        style={{
+                          fontFamily: 'var(--ct-mono)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: score >= 1 ? 'var(--ct-hit)' : 'var(--ct-miss)',
+                        }}
+                      >
+                        {scoreLabel(score)}
+                      </span>
+                    )}
                   </div>
                   <div style={{ color: 'var(--ct-dim)', fontSize: 11 }}>
                     {p.pos} · <MarketChips markets={marketsFor(p)} />

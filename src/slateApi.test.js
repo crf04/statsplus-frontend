@@ -1,9 +1,9 @@
 import { decodeSlate, fetchSlate } from './slateApi';
 import { apiClient, getApiUrl } from './config';
 
-jest.mock('./utils/axiosConfig', () => ({
-  __esModule: true,
-  default: { get: jest.fn() },
+jest.mock('./config', () => ({
+  apiClient: { get: jest.fn() },
+  getApiUrl: jest.fn(() => '/api/games/slate'),
 }));
 
 const payload = {
@@ -130,6 +130,57 @@ test('accepts schedule staleness and an unavailable aggregate pool from the back
       },
     }),
   );
+});
+
+test('derives the aggregate pool status when the optional top-level field is absent', () => {
+  const { pool_status: _poolStatus, ...minimumPayload } = payload;
+  minimumPayload.freshness = {
+    ...minimumPayload.freshness,
+    pool: { status: 'fresh', retrieved_at: '2026-01-15T09:55:00Z' },
+  };
+
+  expect(decodeSlate(minimumPayload)).toEqual(
+    expect.objectContaining({
+      poolStatus: 'fresh',
+      freshness: expect.objectContaining({
+        pool: expect.objectContaining({ status: 'fresh', providers: [] }),
+      }),
+    }),
+  );
+});
+
+test('does not report the pool unavailable when freshness has served evidence', () => {
+  expect(
+    decodeSlate({
+      ...payload,
+      pool_status: 'unavailable',
+      freshness: {
+        ...payload.freshness,
+        pool: {
+          status: 'unavailable',
+          retrieved_at: null,
+          providers: {
+            prizepicks: {
+              status: 'stale-served',
+              retrieved_at: '2026-01-15T09:55:00Z',
+            },
+          },
+        },
+      },
+    }).poolStatus,
+  ).toBe('stale-served');
+});
+
+test('validates optional provider freshness when providers are present', () => {
+  expect(() =>
+    decodeSlate({
+      ...payload,
+      freshness: {
+        ...payload.freshness,
+        pool: { ...payload.freshness.pool, providers: [] },
+      },
+    }),
+  ).toThrow('The slate endpoint returned an invalid response.');
 });
 
 test('rejects malformed slate payloads rather than inventing an empty slate', () => {

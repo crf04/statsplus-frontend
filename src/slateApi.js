@@ -1,4 +1,5 @@
 import { apiClient, getApiUrl } from './config';
+import { isCalendarDate } from './calendarDate';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
 
@@ -28,18 +29,28 @@ const decodeFreshness = (freshness) => {
   if (!freshness || typeof freshness !== 'object') throw createInvalidSlateError();
   const schedule = decodeFreshnessSurface(freshness.schedule, scheduleStatuses);
   const poolSurface = decodeFreshnessSurface(freshness.pool, poolStatuses);
+  const providerSurfaces = freshness.pool.providers;
   if (
-    !freshness.pool.providers ||
-    typeof freshness.pool.providers !== 'object' ||
-    Array.isArray(freshness.pool.providers)
+    providerSurfaces !== undefined &&
+    (typeof providerSurfaces !== 'object' ||
+      providerSurfaces === null ||
+      Array.isArray(providerSurfaces))
   ) {
     throw createInvalidSlateError();
   }
-  const providers = Object.entries(freshness.pool.providers).map(([name, surface]) => {
+  const providers = Object.entries(providerSurfaces || {}).map(([name, surface]) => {
     if (!name) throw createInvalidSlateError();
     return { name, ...decodeFreshnessSurface(surface, poolStatuses) };
   });
   return { schedule, pool: { ...poolSurface, providers } };
+};
+
+const derivePoolStatus = (aggregateStatus, pool) => {
+  if (['fresh', 'stale-served'].includes(pool.status)) return pool.status;
+  const providerStatuses = pool.providers.map(({ status }) => status);
+  if (providerStatuses.includes('fresh')) return 'fresh';
+  if (providerStatuses.includes('stale-served')) return 'stale-served';
+  return aggregateStatus || pool.status;
 };
 
 const decodeTeam = (team) => {
@@ -92,26 +103,20 @@ const decodeGame = (game) => {
 export const decodeSlate = (data) => {
   if (
     !data ||
-    typeof data.slate_date !== 'string' ||
+    !isCalendarDate(data.slate_date) ||
     !Array.isArray(data.games) ||
     !data.freshness ||
-    !poolStatuses.has(data.pool_status)
+    (data.pool_status !== undefined && !poolStatuses.has(data.pool_status))
   ) {
     throw createInvalidSlateError();
   }
 
-  const slateDate = new Date(`${data.slate_date}T12:00:00Z`);
-  if (
-    Number.isNaN(slateDate.getTime()) ||
-    slateDate.toISOString().slice(0, 10) !== data.slate_date
-  ) {
-    throw createInvalidSlateError();
-  }
+  const freshness = decodeFreshness(data.freshness);
 
   return {
     slateDate: data.slate_date,
-    freshness: decodeFreshness(data.freshness),
-    poolStatus: data.pool_status,
+    freshness,
+    poolStatus: derivePoolStatus(data.pool_status, freshness.pool),
     games: data.games.map(decodeGame),
   };
 };

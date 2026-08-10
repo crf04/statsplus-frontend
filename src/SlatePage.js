@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { isCalendarDate } from './calendarDate';
 import './SlatePage.css';
 
-const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const getTodaySlateDate = () => {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/New_York',
@@ -17,11 +17,7 @@ const getTodaySlateDate = () => {
 };
 
 const parseSlateDate = (value) => {
-  if (!value || !datePattern.test(value)) return null;
-  const parsed = new Date(`${value}T12:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
-    ? value
-    : null;
+  return isCalendarDate(value) ? value : null;
 };
 
 const shiftDate = (date, days) => {
@@ -74,9 +70,9 @@ const statusPresentations = {
 };
 
 const surfaceStatusText = (name, surface) => {
-  const age = surface.retrievedAt ? ` as of ${formatAge(surface.retrievedAt)}` : '';
+  const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt)}` : '';
   const label = statusPresentations[surface.status].label;
-  return `${name} is ${label}${age ? ` — ${age.trimStart()}` : ''}`;
+  return `${name} is ${label}${age}`;
 };
 
 function SurfaceFreshness({ name, surface }) {
@@ -104,9 +100,20 @@ function Freshness({ freshness }) {
 }
 
 function PoolSummary({ isPast, poolStatus }) {
-  const message = isPast
-    ? 'Past slate — no player pool is available for historical dates.'
-    : statusPresentations[poolStatus].poolMessage;
+  let message = statusPresentations[poolStatus].poolMessage;
+  if (isPast) {
+    const historicalMessages = {
+      fresh:
+        'Past slate — the current player pool is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
+      'stale-served':
+        'Past slate — the latest available snapshot is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
+      missing:
+        'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
+      unavailable:
+        'Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate.',
+    };
+    message = historicalMessages[poolStatus];
+  }
 
   return (
     <section className="pool-summary" aria-labelledby="player-pool-heading">
@@ -148,7 +155,7 @@ export default function SlatePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedDate = searchParams.get('date');
-  const todaySlateDate = useMemo(getTodaySlateDate, []);
+  const todaySlateDate = getTodaySlateDate();
   const parsedRequestedDate = parseSlateDate(requestedDate);
   const provisionalDate = parsedRequestedDate || todaySlateDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });

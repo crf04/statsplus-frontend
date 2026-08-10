@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SlatePage from './SlatePage';
 import { fetchSlate } from './slateApi';
@@ -73,18 +73,36 @@ test('shows an age for every available freshness surface and names degraded surf
   expect(screen.getByText(/targetable counts use the latest available snapshot/i)).toBeVisible();
 });
 
-test('renders the historical empty pool section regardless of aggregate pool status', async () => {
-  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-01-10', poolStatus: 'fresh' });
+test.each([
+  ['fresh', 'current player pool is not displayed', 'posted targetable counts'],
+  ['stale-served', 'latest available snapshot is not displayed', 'posted targetable counts'],
+  ['unavailable', 'player pool is unavailable', 'returned targetable counts'],
+])(
+  'renders an honest historical empty pool section when the pool is %s',
+  async (poolStatus, statusText, countsText) => {
+    fetchSlate.mockResolvedValue({
+      ...slate,
+      slateDate: '2026-01-10',
+      poolStatus,
+      freshness: {
+        ...slate.freshness,
+        pool: { ...slate.freshness.pool, status: poolStatus },
+      },
+      games: [{ ...game, status: 'final', statusLabel: 'Final' }],
+    });
 
-  render(
-    <MemoryRouter initialEntries={['/matchups?date=2026-01-10']}>
-      <SlatePage />
-    </MemoryRouter>,
-  );
+    render(
+      <MemoryRouter initialEntries={['/matchups?date=2026-01-10']}>
+        <SlatePage />
+      </MemoryRouter>,
+    );
 
-  expect(await screen.findByRole('heading', { name: 'Player pool' })).toBeVisible();
-  expect(screen.getByText(/no player pool is available for historical dates/i)).toBeVisible();
-});
+    const heading = await screen.findByRole('heading', { name: 'Player pool' });
+    const poolSection = heading.closest('section');
+    expect(within(poolSection).getByText(new RegExp(statusText, 'i'))).toBeVisible();
+    expect(within(poolSection).getByText(new RegExp(countsText, 'i'))).toBeVisible();
+  },
+);
 
 test('forwards an impossible calendar date so the backend can return invalid_input', async () => {
   fetchSlate.mockRejectedValue({
@@ -111,5 +129,5 @@ test('uses the server slate date for the heading and historical pool state', asy
   );
 
   expect(await screen.findByRole('heading', { name: 'Wednesday, January 14' })).toBeVisible();
-  expect(screen.getByText(/no player pool is available for historical dates/i)).toBeVisible();
+  expect(screen.getByText(/current player pool is not displayed/i)).toBeVisible();
 });

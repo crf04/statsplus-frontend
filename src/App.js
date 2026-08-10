@@ -1,8 +1,7 @@
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import GameLogFilter from './GameLogFilter.js';
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import SlatePage from './SlatePage';

@@ -1,17 +1,9 @@
-import {
-  E2E_AUTH_STORAGE_KEY,
-  expect,
-  installApiContract,
-  slateGame,
-  slatePayload,
-  test,
-} from '../fixtures/courtai';
+import { expect, installApiContract, slateGame, slatePayload, test } from '../fixtures/courtai';
 
-test('@critical authenticated user opens a slate and navigates dates', async ({ page }) => {
+test('@critical authenticated user opens a slate and navigates dates', async ({
+  authenticatedPage: page,
+}) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
-  await page.addInitScript((storageKey) => {
-    window.localStorage.setItem(storageKey, 'true');
-  }, E2E_AUTH_STORAGE_KEY);
   const requests = [];
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/games/slate') requests.push(request.url());
@@ -31,20 +23,22 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
                 ...slateGame.away_team,
                 tricode: 'NYK',
                 name: 'New York Knicks',
-                targetable_player_count: 0,
               },
               home_team: {
                 ...slateGame.home_team,
                 tricode: 'MIL',
                 name: 'Milwaukee Bucks',
-                targetable_player_count: 0,
               },
               scheduled_at: '2026-01-11T01:00:00Z',
               status: { state: 'final', label: 'Final' },
               classification: null,
             },
           ],
-          { poolStatus: 'fresh' },
+          {
+            poolStatus: 'fresh',
+            poolFreshnessStatus: 'fresh',
+            poolRetrievedAt: '2026-01-15T10:00:00Z',
+          },
         );
       }
       return slatePayload(date, [slateGame], {
@@ -63,6 +57,12 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
 
   await expect(page.getByRole('heading', { name: 'Thursday, January 15' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
+  const viewerLocalTip = await page.evaluate((scheduledAt) => {
+    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
+      new Date(scheduledAt),
+    );
+  }, slateGame.scheduled_at);
+  await expect(page.getByText(viewerLocalTip, { exact: true })).toBeVisible();
   await expect(page.getByText('Los Angeles Lakers')).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
@@ -77,7 +77,15 @@ test('@critical authenticated user opens a slate and navigates dates', async ({ 
   await page.getByLabel('Slate date').fill('2026-01-10');
   await expect(page).toHaveURL(/date=2026-01-10/);
   await expect(page.getByRole('heading', { name: 'NYK @ MIL' })).toBeVisible();
-  await expect(page.getByText(/no player pool is available for historical dates/i)).toBeVisible();
+  await expect(
+    page.getByText(/current player pool is not displayed for historical dates/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/final game cards retain the posted targetable counts/i),
+  ).toBeVisible();
+  await expect(page.getByText('5 targetable')).toBeVisible();
+  await expect(page.getByText('4 targetable')).toBeVisible();
+  await page.screenshot({ path: 'test-results/slate-past.png', fullPage: true });
   expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-10')).toBe(true);
 });
 
@@ -98,10 +106,9 @@ test('unknown paths return to the search landing page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
 });
 
-test('a rejected slate request leaves date navigation available', async ({ page }) => {
-  await page.addInitScript((storageKey) => {
-    window.localStorage.setItem(storageKey, 'true');
-  }, E2E_AUTH_STORAGE_KEY);
+test('a rejected slate request leaves date navigation available', async ({
+  authenticatedPage: page,
+}) => {
   await installApiContract(page, {
     '/api/games/slate': {
       status: 503,
@@ -116,13 +123,11 @@ test('a rejected slate request leaves date navigation available', async ({ page 
   await expect(page.getByLabel('Slate date')).toBeEnabled();
 });
 
-test('slate remains usable at a narrow viewport and from the keyboard', async ({ page }) => {
+test('slate remains usable at a narrow viewport and from the keyboard', async ({
+  authenticatedPage: page,
+}) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await page.setViewportSize({ width: 393, height: 852 });
-  await page.addInitScript((storageKey) => {
-    window.localStorage.setItem(storageKey, 'true');
-  }, E2E_AUTH_STORAGE_KEY);
-  await installApiContract(page);
   await page.goto('/matchups?date=2026-01-15');
   await expect(page.getByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
 

@@ -76,6 +76,12 @@ export const slateGame = {
   preseason: false,
 };
 
+const scheduleOnlySlateGame = {
+  ...slateGame,
+  away_team: { ...slateGame.away_team, targetable_player_count: 0 },
+  home_team: { ...slateGame.home_team, targetable_player_count: 0 },
+};
+
 export const slatePayload = (
   date,
   games,
@@ -142,7 +148,7 @@ export const installApiContract = async (page, overrides = {}) => {
 
     if (url.pathname === '/api/games/slate') {
       const date = url.searchParams.get('date') || '2026-01-15';
-      await route.fulfill({ json: slatePayload(date, [slateGame]) });
+      await route.fulfill({ json: slatePayload(date, [scheduleOnlySlateGame]) });
       return;
     }
 

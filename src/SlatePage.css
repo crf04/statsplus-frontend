@@ -145,8 +145,7 @@
   padding: 11px 0;
 }
 
-.team-row span:last-child,
-.pool-status {
+.team-row span:last-child {
   color: var(--ct-dim);
   font-family: var(--ct-mono);
   font-size: 0.76rem;

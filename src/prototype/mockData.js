@@ -757,13 +757,18 @@ export function playTypeMatchupScore(player, window = 'Season') {
 }
 
 const THREE_ZONES = ['Corner 3', 'Above Break 3'];
+const THREE_SHOT_TYPES = ['Catch & Shoot', 'Pull-Up'];
 
-// Round 11 — per-market scores, same shape as the play-type score: weight the
-// slice of the player's own diet by the opponent's per-48 concession ratio vs
-// league average in that slice. Which slices count depends on the market.
-export function matchupScore(player, market = 'PTS', window = 'Season') {
+// Round 14 — a market's score decomposes by category base: PTS is estimable
+// independently via play types, shot zones, and shot types. Each component is
+// the same shape: player diet share × opponent per-48 concession ratio vs
+// league average. Returns { playTypes?, zones?, shotTypes?, assistLoc?,
+// traditional? } — only the bases that inform the market.
+export function scoreComponents(player, market = 'PTS', window = 'Season') {
   const tri = opponentOf(player);
   const def = defenseFor(tri, window);
+  const totalFga = player.shotTypes.reduce((sum, st) => sum + st.fga, 0);
+  const ALL_ZONES = Object.keys(LEAGUE_AVG.zones);
 
   const zoneScore = (zones, volumeOnly) => {
     let covered = 0;
@@ -781,11 +786,25 @@ export function matchupScore(player, market = 'PTS', window = 'Season') {
     return covered > 0 ? acc / covered : null;
   };
 
-  if (market === 'PTS' || market === 'All') return playTypeMatchupScore(player, window);
-  if (market === 'FGA') return zoneScore(Object.keys(LEAGUE_AVG.zones), true);
-  if (market === 'FG3A') return zoneScore(THREE_ZONES, true);
-  if (market === '3PM') return zoneScore(THREE_ZONES, false);
-  if (market === 'AST') {
+  const shotTypeScore = (types, volumeOnly) => {
+    let covered = 0;
+    let acc = 0;
+    player.shotTypes
+      .filter((st) => types.includes(st.type))
+      .forEach((st) => {
+        const v = defShotTypeVolume(tri, st.type, window);
+        const base = SHOTTYPE_BASE_FGA[st.type];
+        const d = def.shotTypes[st.type];
+        const avgPts = (base * (d.efg - d.vsAvg) * 2) / 100;
+        const ratio = volumeOnly ? v.fgaG / base : v.ptsG / avgPts;
+        const w = totalFga > 0 ? st.fga / totalFga : 0;
+        acc += w * ratio;
+        covered += w;
+      });
+    return covered > 0 ? acc / covered : null;
+  };
+
+  const assistScore = () => {
     let covered = 0;
     let acc = 0;
     Object.entries(player.assistLoc).forEach(([loc, perGame]) => {
@@ -796,23 +815,56 @@ export function matchupScore(player, market = 'PTS', window = 'Season') {
       covered += perGame;
     });
     return covered > 0 ? acc / covered : null;
-  }
-  if (market === 'REB') {
+  };
+
+  const rebScore = () => {
     const r = def.traditional.find((x) => x.stat === 'OPP_REB');
     return r ? r.value / (r.value - r.vsAvg) : null;
+  };
+
+  switch (market) {
+    case 'All':
+    case 'PTS':
+      return {
+        playTypes: playTypeMatchupScore(player, window),
+        zones: zoneScore(ALL_ZONES, false),
+        shotTypes: shotTypeScore(SHOT_TYPES, false),
+      };
+    case '3PM':
+      return { zones: zoneScore(THREE_ZONES, false), shotTypes: shotTypeScore(THREE_SHOT_TYPES, false) };
+    case 'FGA':
+      return { zones: zoneScore(ALL_ZONES, true), shotTypes: shotTypeScore(SHOT_TYPES, true) };
+    case 'FG3A':
+      return { zones: zoneScore(THREE_ZONES, true), shotTypes: shotTypeScore(THREE_SHOT_TYPES, true) };
+    case 'AST':
+      return { assistLoc: assistScore() };
+    case 'REB':
+      return { traditional: rebScore() };
+    default:
+      return {};
   }
-  if (market === 'PRA') {
-    const { pts, reb, ast } = player.season;
-    const total = pts + reb + ast;
-    const parts = [
-      [pts, matchupScore(player, 'PTS', window)],
-      [reb, matchupScore(player, 'REB', window)],
-      [ast, matchupScore(player, 'AST', window)],
-    ].filter(([, sc]) => sc != null);
+}
+
+// Season-stat-weighted combos; simple markets blend as the mean of their
+// available component bases.
+const COMBO_PARTS = {
+  PRA: ['pts', 'reb', 'ast'],
+  PA: ['pts', 'ast'],
+  RA: ['reb', 'ast'],
+  PR: ['pts', 'reb'],
+};
+const PART_MARKET = { pts: 'PTS', reb: 'REB', ast: 'AST' };
+
+export function matchupScore(player, market = 'PTS', window = 'Season') {
+  if (COMBO_PARTS[market]) {
+    const parts = COMBO_PARTS[market]
+      .map((part) => [player.season[part], matchupScore(player, PART_MARKET[part], window)])
+      .filter(([, sc]) => sc != null);
     const w = parts.reduce((sum, [wt]) => sum + wt, 0);
-    return w > 0 && total > 0 ? parts.reduce((sum, [wt, sc]) => sum + wt * sc, 0) / w : null;
+    return w > 0 ? parts.reduce((sum, [wt, sc]) => sum + wt * sc, 0) / w : null;
   }
-  return null;
+  const comps = Object.values(scoreComponents(player, market, window)).filter((v) => v != null);
+  return comps.length > 0 ? comps.reduce((a, b) => a + b, 0) / comps.length : null;
 }
 
 export const scoreLabel = (ratio) => {

@@ -12,6 +12,7 @@ import {
   marketsFor,
   opponentOf,
   matchupScore,
+  scoreComponents,
   scoreLabel,
 } from './mockData';
 import { RankPill, MarketChips, SectionCard, Num } from './protoUi';
@@ -162,6 +163,80 @@ const TeamSheet = ({ tri, market, recency, overlayId, openKey, onOpen }) => {
   );
 };
 
+const SCORE_COLS = [
+  ['playTypes', 'Play types'],
+  ['zones', 'Shot zones'],
+  ['shotTypes', 'Shot types'],
+  ['assistLoc', 'Assist loc'],
+  ['traditional', 'Traditional'],
+];
+
+const ScoreCell = ({ value }) => (
+  <td style={{ padding: '5px 10px', textAlign: 'right', fontFamily: 'var(--ct-mono)', fontSize: 12 }}>
+    {value == null ? (
+      <span style={{ color: 'var(--ct-dim)' }}>—</span>
+    ) : (
+      <span style={{ fontWeight: 700, color: value >= 1 ? 'var(--ct-hit)' : 'var(--ct-miss)' }}>
+        {scoreLabel(value)}
+      </span>
+    )}
+  </td>
+);
+
+const ScoreTable = ({ player, recency, onClose }) => {
+  const rows = marketsFor(player)
+    .map((m) => ({
+      market: m,
+      comps: scoreComponents(player, m, recency),
+      blend: matchupScore(player, m, recency),
+    }))
+    .filter((r) => r.blend != null || Object.values(r.comps).some((v) => v != null));
+
+  return (
+    <SectionCard
+      title={`${player.name} — matchup scores vs ${opponentOf(player)} (${recency === 'L15' ? 'last 15' : 'season'})`}
+      right={
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', color: 'var(--ct-dim)', cursor: 'pointer' }}
+        >
+          ✕
+        </button>
+      }
+      style={{ borderColor: 'var(--ct-gold)' }}
+    >
+      <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <thead>
+          <tr style={{ fontSize: 10, color: 'var(--ct-dim)', textTransform: 'uppercase' }}>
+            <th style={{ textAlign: 'left', padding: '4px 10px 4px 0' }}>Market</th>
+            {SCORE_COLS.map(([, label]) => (
+              <th key={label} style={{ textAlign: 'right', padding: '4px 10px' }}>
+                {label}
+              </th>
+            ))}
+            <th style={{ textAlign: 'right', padding: '4px 10px' }}>Blend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ market, comps, blend }) => (
+            <tr key={market} style={{ borderTop: '1px solid var(--ct-line)' }}>
+              <td style={{ padding: '5px 10px 5px 0', fontSize: 12, fontWeight: 700 }}>{market}</td>
+              {SCORE_COLS.map(([key]) => (
+                <ScoreCell key={key} value={comps[key]} />
+              ))}
+              <ScoreCell value={blend} />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ fontSize: 10, color: 'var(--ct-dim)', marginTop: 6 }}>
+        Each cell: {player.name.split(' ')[1]}&apos;s diet in that base × opponent per-48 concession
+        vs league avg. Combos (PRA/PA/RA) blend their parts by season weights.
+      </div>
+    </SectionCard>
+  );
+};
+
 const INJURY_COLOR = { OUT: 'var(--ct-miss)', GTD: 'var(--ct-gold)' };
 const injuryFor = (name) =>
   Object.values(INJURIES)
@@ -242,28 +317,6 @@ const VariantG = () => {
                   <div style={{ color: 'var(--ct-dim)', fontSize: 11 }}>
                     {p.pos} · <MarketChips markets={marketsFor(p)} />
                   </div>
-                  {active && (
-                    <div
-                      title="Matchup score per posted market: the player's diet in that market's mechanisms weighted by the opponent's per-48 concession ratio vs league average"
-                      style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 5 }}
-                    >
-                      {marketsFor(p).map((m) => {
-                        const sc = matchupScore(p, m, recency);
-                        if (sc == null) return null;
-                        return (
-                          <span
-                            key={m}
-                            style={{ fontFamily: 'var(--ct-mono)', fontSize: 11, fontWeight: 700 }}
-                          >
-                            <span style={{ color: 'var(--ct-dim)', fontWeight: 400 }}>{m} </span>
-                            <span style={{ color: sc >= 1 ? 'var(--ct-hit)' : 'var(--ct-miss)' }}>
-                              {scoreLabel(sc)}
-                            </span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
                 </button>
               );
             })}
@@ -360,6 +413,13 @@ const VariantG = () => {
           })}
           </div>
         </div>
+        {overlayId && (
+          <ScoreTable
+            player={PLAYERS.find((p) => p.id === overlayId)}
+            recency={recency}
+            onClose={() => setOverlayId(null)}
+          />
+        )}
         <TeamSheet
           tri={sheetTri}
           market={market}

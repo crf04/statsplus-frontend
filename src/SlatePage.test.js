@@ -67,7 +67,7 @@ test('shows an age for every available freshness surface and names degraded surf
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
   expect(screen.getByRole('group', { name: 'Data freshness' })).toBeVisible();
   expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toBeVisible();
-  expect(screen.getByText(/prizepicks pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
+  expect(screen.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i)).toHaveClass(
     'freshness-warning',
   );
   expect(screen.getByText('underdog pool is missing')).toBeVisible();
@@ -112,7 +112,7 @@ test('warns when a fresh schedule crosses the 30h bar without refetching', async
   expect(fetchSlate).toHaveBeenCalledTimes(1);
 });
 
-test('warns when a fresh pool crosses the 15m bar without rewriting its status', async () => {
+test('labels a fresh pool snapshot stale when it crosses the 15m bar', async () => {
   fetchSlate.mockResolvedValue({
     ...slate,
     poolStatus: 'fresh',
@@ -134,7 +134,7 @@ test('warns when a fresh pool crosses the 15m bar without rewriting its status',
   const fresh = await screen.findByText('Player pool is fresh — as of 14m ago');
   expect(fresh).not.toHaveClass('freshness-warning');
   act(() => jest.advanceTimersByTime(120000));
-  expect(screen.getByText(/player pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
+  expect(screen.getByText(/player pool is stale.*older than 15m freshness bar/i)).toHaveClass(
     'freshness-warning',
   );
   expect(fetchSlate).toHaveBeenCalledTimes(1);
@@ -146,7 +146,7 @@ test('clearing the date requests today without entering an invalid state', async
       <SlatePage />
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'Thursday, January 15' });
+  await screen.findByRole('heading', { name: 'Thursday, January 15, 2026' });
   fetchSlate.mockClear();
 
   fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '' } });
@@ -154,6 +154,78 @@ test('clearing the date requests today without entering an invalid state', async
   await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
   expect(screen.queryByRole('heading', { name: 'Invalid slate date' })).not.toBeInTheDocument();
   expect(screen.getByLabelText('Slate date')).toHaveValue('2026-01-15');
+});
+
+test('offers Today as a recovery from an invalid requested date', async () => {
+  fetchSlate.mockRejectedValueOnce({
+    response: { data: { error: { code: 'invalid_input', message: 'Enter a valid date.' } } },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-02-30']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Invalid slate date' });
+  await screen.findByRole('alert');
+  fetchSlate.mockClear();
+  fetchSlate.mockResolvedValue(slate);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+  expect(screen.queryByRole('heading', { name: 'Invalid slate date' })).not.toBeInTheDocument();
+});
+
+test('explains mixed provider counts without claiming the whole pool is missing', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    poolStatus: 'partial',
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        status: 'partial',
+        retrievedAt: '2026-01-15T11:40:00.000Z',
+        providers: [
+          { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:40:00.000Z' },
+          { name: 'underdog', status: 'missing', retrievedAt: null },
+        ],
+      },
+    },
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText(/counts reflect the available boards/i)).toBeVisible();
+  expect(screen.getByText('5 targetable')).toBeVisible();
+  expect(screen.getByText('4 targetable')).toBeVisible();
+  expect(screen.queryByText(/no targetable players/i)).not.toBeInTheDocument();
+});
+
+test.each([
+  ['missing', /player pool is missing/i],
+  ['unavailable', /player pool is unavailable/i],
+])('renders distinct %s pool copy', async (poolStatus, expected) => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    poolStatus,
+    freshness: {
+      ...slate.freshness,
+      pool: { status: poolStatus, retrievedAt: null, providers: [] },
+    },
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const heading = await screen.findByRole('heading', { name: 'Player pool' });
+  expect(within(heading.closest('section')).getByText(expected)).toBeVisible();
 });
 
 test.each([
@@ -236,6 +308,6 @@ test('uses the server slate date for the heading and historical pool state', asy
     </MemoryRouter>,
   );
 
-  expect(await screen.findByRole('heading', { name: 'Wednesday, January 14' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'Wednesday, January 14, 2026' })).toBeVisible();
   expect(screen.getByText(/current player pool is not displayed/i)).toBeVisible();
 });

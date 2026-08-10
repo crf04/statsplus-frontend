@@ -61,10 +61,18 @@ const decodeFreshness = (freshness) => {
     poolSurface = decodeFreshnessSurface(freshness.pool, 'pool');
   } else {
     const status = derivePoolStatusFromProviders(providers);
-    if (!status || !('retrieved_at' in freshness.pool)) throw createInvalidSlateError();
+    if (!status) throw createInvalidSlateError();
+    const poolRetrievedAt =
+      'retrieved_at' in freshness.pool ? decodeRetrievedAt(freshness.pool.retrieved_at) : null;
+    const providerRetrievedAt = providers
+      .map(({ retrievedAt }) => retrievedAt)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
     const retrievedAt =
-      decodeRetrievedAt(freshness.pool.retrieved_at) ||
+      poolRetrievedAt ||
       providers.find((provider) => provider.status === status)?.retrievedAt ||
+      providerRetrievedAt ||
       null;
     poolSurface = { status, retrievedAt };
   }

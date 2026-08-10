@@ -215,10 +215,10 @@ test('derives missing pool freshness status from provider evidence', () => {
 });
 
 test.each([
-  [['fresh', 'missing'], 'missing'],
-  [['fresh', 'stale-served'], 'stale-served'],
+  [['fresh', 'missing'], 'partial'],
+  [['fresh', 'stale-served'], 'partial'],
   [['unavailable'], 'unavailable'],
-])('derives degraded pool status %s from mixed providers', (statuses, expected) => {
+])('preserves provider-aware pool status %s from providers', (statuses, expected) => {
   const candidate = {
     ...payload,
     freshness: {
@@ -242,6 +242,31 @@ test.each([
   delete candidate.pool_status;
 
   expect(decodeSlate(candidate).poolStatus).toBe(expected);
+});
+
+test('accepts provider freshness without a pool-level retrieved_at', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        providers: {
+          prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T09:55:00Z' },
+          underdog: { status: 'missing', retrieved_at: null },
+        },
+      },
+    },
+  };
+  delete candidate.pool_status;
+
+  expect(decodeSlate(candidate)).toEqual(
+    expect.objectContaining({
+      poolStatus: 'partial',
+      freshness: expect.objectContaining({
+        pool: expect.objectContaining({ status: 'partial' }),
+      }),
+    }),
+  );
 });
 
 test.each([

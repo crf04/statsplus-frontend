@@ -186,6 +186,11 @@ export default function SlatePage() {
           >
             →
           </button>
+          {!slateDate && (
+            <button className="today-reset" type="button" onClick={() => navigate('')}>
+              Today
+            </button>
+          )}
         </div>
       </section>
 

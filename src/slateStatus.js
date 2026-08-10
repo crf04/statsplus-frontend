@@ -13,6 +13,9 @@ const definitions = {
     allowsNullRetrievedAt: false,
     providerRank: null,
     warning: true,
+    currentPoolMessage: 'Player pool snapshot is stale; targetable counts may be out of date.',
+    historicalPoolMessage:
+      'Past slate — the stale player pool snapshot is not displayed. Game cards retain the targetable counts returned for this slate.',
   },
   'stale-served': {
     allowedSurfaces: ['pool'],
@@ -29,7 +32,7 @@ const definitions = {
     allowsNullRetrievedAt: true,
     providerRank: 2,
     warning: true,
-    currentPoolMessage: 'Player pool unavailable; no targetable players are currently available.',
+    currentPoolMessage: 'Player pool is missing; no targetable players are currently available.',
     historicalPoolMessage:
       'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
   },
@@ -38,9 +41,19 @@ const definitions = {
     allowsNullRetrievedAt: true,
     providerRank: 3,
     warning: true,
-    currentPoolMessage: 'Player pool unavailable; no targetable players are currently available.',
+    currentPoolMessage:
+      'Player pool is unavailable; no targetable players are currently available.',
     historicalPoolMessage:
       'Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate.',
+  },
+  partial: {
+    allowedSurfaces: ['pool'],
+    allowsNullRetrievedAt: true,
+    providerRank: null,
+    warning: true,
+    currentPoolMessage: 'Player pool is partial; targetable counts reflect the available boards.',
+    historicalPoolMessage:
+      'Past slate — the partial player pool is not displayed. Final game cards retain the posted targetable counts returned for this slate.',
   },
 };
 
@@ -53,12 +66,10 @@ export const statusAllowsNullRetrievedAt = (status) =>
   Boolean(definitions[status]?.allowsNullRetrievedAt);
 
 export const derivePoolStatusFromProviders = (providers) => {
-  return providers.reduce((highest, provider) => {
-    const rank = definitions[provider.status]?.providerRank;
-    if (rank === null || rank === undefined) return highest;
-    if (!highest || rank > definitions[highest].providerRank) return provider.status;
-    return highest;
-  }, null);
+  const statuses = new Set(providers.map(({ status }) => status));
+  if (statuses.size === 0) return null;
+  if (statuses.size === 1) return statuses.values().next().value;
+  return 'partial';
 };
 
 export const SCHEDULE_STALE_AFTER_MS = 30 * 60 * 60 * 1000;
@@ -81,8 +92,9 @@ export const getSurfaceFreshnessPresentation = (surface, surfaceName, now = Date
       surfaceName === 'pool' &&
       now - new Date(surface.retrievedAt).getTime() > POOL_STALE_AFTER_MS
     ) {
+      status = 'stale';
       warning = true;
-      thresholdNote = 'older than 15m freshness bar';
+      thresholdNote = `older than ${POOL_STALE_AFTER_MS / 60000}m freshness bar`;
     }
   }
 

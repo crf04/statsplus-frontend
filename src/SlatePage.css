@@ -59,6 +59,11 @@
   font-size: 1.2rem;
 }
 
+.date-controls .today-reset {
+  width: auto;
+  padding: 0 14px;
+}
+
 .date-controls button:focus-visible,
 .date-controls input:focus-visible {
   outline: 2px solid var(--ct-gold);

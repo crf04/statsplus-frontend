@@ -55,7 +55,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
 
   await page.goto('/matchups?date=2026-01-15');
 
-  await expect(page.getByRole('heading', { name: 'Thursday, January 15' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
   const viewerLocalTip = await page.evaluate((scheduledAt) => {
     return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
@@ -70,9 +70,8 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
   await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
   await expect(
-    page.getByText(/prizepicks pool is fresh.*older than 15m freshness bar/i),
-  ).toHaveClass(/freshness-warning/);
-  await page.screenshot({ path: 'test-results/slate-desktop.png', fullPage: true });
+    page.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Previous date' }).click();
   await expect(page).toHaveURL(/date=2026-01-14/);
@@ -80,7 +79,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
 
   await page.getByLabel('Slate date').fill('');
   await expect(page).toHaveURL(/\/matchups$/);
-  await expect(page.getByRole('heading', { name: 'Thursday, January 15' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
   expect(requests.some((url) => !new URL(url).searchParams.has('date'))).toBe(true);
 
   await page.getByLabel('Slate date').fill('2026-01-10');
@@ -94,7 +93,6 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   ).toBeVisible();
   await expect(page.getByText('5 targetable')).toBeVisible();
   await expect(page.getByText('4 targetable')).toBeVisible();
-  await page.screenshot({ path: 'test-results/slate-past.png', fullPage: true });
   expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-10')).toBe(true);
 });
 
@@ -136,9 +134,15 @@ test('an invalid requested date stays neutral until the backend rejects it', asy
   authenticatedPage: page,
 }) => {
   await installApiContract(page, {
-    '/api/games/slate': {
-      status: 400,
-      body: { error: { code: 'invalid_input', message: 'Enter a valid date.' } },
+    '/api/games/slate': (request) => {
+      const date = new URL(request.url()).searchParams.get('date');
+      if (date) {
+        return {
+          status: 400,
+          body: { error: { code: 'invalid_input', message: 'Enter a valid date.' } },
+        };
+      }
+      return slatePayload('2026-01-15', [slateGame]);
     },
   });
 
@@ -149,7 +153,11 @@ test('an invalid requested date stays neutral until the backend rejects it', asy
   await expect(page.getByRole('button', { name: 'Previous date' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Next date' })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('Enter a valid date.');
-  await page.screenshot({ path: 'test-results/slate-invalid-date.png', fullPage: true });
+  await expect(page.getByRole('button', { name: 'Today' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Today' }).click();
+  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
 });
 
 test('explicit unavailable pool status wins over stale provider evidence', async ({
@@ -178,10 +186,9 @@ test('explicit unavailable pool status wins over stale provider evidence', async
 
   await page.goto('/matchups?date=2026-01-15');
 
-  await expect(page.getByText(/player pool unavailable; no targetable players/i)).toBeVisible();
+  await expect(page.getByText(/player pool is unavailable; no targetable players/i)).toBeVisible();
   await expect(page.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
   await expect(page.getByText('0 targetable')).toHaveCount(2);
-  await page.screenshot({ path: 'test-results/slate-pool-contradiction.png', fullPage: true });
 });
 
 test('minimum slate freshness payload renders through the browser contract', async ({
@@ -194,9 +201,9 @@ test('minimum slate freshness payload renders through the browser contract', asy
       freshness: {
         schedule: { retrieved_at: '2026-01-14T05:00:00Z' },
         pool: {
-          retrieved_at: null,
           providers: {
             prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
+            underdog: { status: 'missing', retrieved_at: null },
           },
         },
       },
@@ -211,16 +218,12 @@ test('minimum slate freshness payload renders through the browser contract', asy
 
   await page.goto('/matchups?date=2026-01-15');
 
-  await expect(page.getByRole('group', { name: 'Data freshness' })).toBeVisible();
-  await expect(page.getByText('Schedule is stale — as of 31h ago')).toHaveClass(
-    /freshness-warning/,
-  );
-  await expect(page.getByText(/player pool is fresh.*older than 15m freshness bar/i)).toHaveClass(
-    /freshness-warning/,
-  );
+  const freshness = page.getByRole('group', { name: 'Data freshness' });
+  await expect(freshness).toBeVisible();
+  await expect(page.getByText('Schedule is stale — as of 31h ago')).toBeVisible();
+  await expect(freshness.getByText(/player pool is partial/i)).toBeVisible();
   await expect(page.getByText('Final after review')).toBeVisible();
-  await expect(page.getByText(/targetable counts use the current player pool/i)).toBeVisible();
-  await page.screenshot({ path: 'test-results/slate-minimum-payload.png', fullPage: true });
+  await expect(page.getByText(/counts reflect the available boards/i)).toBeVisible();
 });
 
 test('slate remains usable at a narrow viewport and from the keyboard', async ({
@@ -243,5 +246,4 @@ test('slate remains usable at a narrow viewport and from the keyboard', async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  await page.screenshot({ path: 'test-results/slate-narrow.png', fullPage: true });
 });

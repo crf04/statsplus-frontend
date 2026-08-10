@@ -27,5 +27,6 @@ export const formatCalendarDate = (date) =>
     weekday: 'long',
     month: 'long',
     day: 'numeric',
+    year: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));

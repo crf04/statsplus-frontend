@@ -184,6 +184,9 @@ const ScoreCell = ({ value }) => (
   </td>
 );
 
+const logAvg = (logs, key) =>
+  (logs.reduce((sum, l) => sum + l[key], 0) / logs.length).toFixed(1);
+
 const LogTable = ({ title, logs, withPlayer }) => (
   <div>
     <div
@@ -238,6 +241,17 @@ const LogTable = ({ title, logs, withPlayer }) => (
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr style={{ borderTop: '1px solid var(--ct-line-strong)', fontWeight: 700 }}>
+            {withPlayer && <td style={{ padding: '4px 8px 4px 0', color: 'var(--ct-gold)' }}>AVG</td>}
+            <td style={{ color: 'var(--ct-gold)' }}>{withPlayer ? '' : 'AVG'}</td>
+            {['min', 'pts', 'reb', 'ast', 'fg3m'].map((key) => (
+              <td key={key}>
+                <Num style={{ color: 'var(--ct-gold)' }}>{logAvg(logs, key)}</Num>
+              </td>
+            ))}
+          </tr>
+        </tfoot>
       </table>
     )}
   </div>

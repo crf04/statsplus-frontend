@@ -8,9 +8,10 @@ import { Fragment, useState } from 'react';
 import {
   GAME,
   PLAYERS,
+  INJURIES,
   marketsFor,
   opponentOf,
-  playTypeMatchupScore,
+  matchupScore,
   scoreLabel,
 } from './mockData';
 import { RankPill, MarketChips, SectionCard, Num } from './protoUi';
@@ -105,8 +106,8 @@ const SheetRow = ({ tri, c, market, overlayId, openKey, onOpen }) => {
   );
 };
 
-const TeamSheet = ({ tri, market, overlayId, openKey, onOpen }) => {
-  const byCategory = concessions(tri)
+const TeamSheet = ({ tri, market, recency, overlayId, openKey, onOpen }) => {
+  const byCategory = concessions(tri, recency)
     .filter((c) => rowMatchesMarket(c, market))
     .reduce((acc, c) => {
       (acc[c.category] = acc[c.category] || []).push(c);
@@ -161,12 +162,20 @@ const TeamSheet = ({ tri, market, overlayId, openKey, onOpen }) => {
   );
 };
 
+const INJURY_COLOR = { OUT: 'var(--ct-miss)', GTD: 'var(--ct-gold)' };
+const injuryFor = (name) =>
+  Object.values(INJURIES)
+    .flat()
+    .find((i) => i.player === name);
+
 const VariantG = () => {
   const [overlayId, setOverlayId] = useState(null);
   const [openKey, setOpenKey] = useState(null); // {rowKey, playerId}
   const [sheetTri, setSheetTri] = useState(GAME.home.tri);
   const [market, setMarket] = useState('All');
+  const [recency, setRecency] = useState('Season');
   const teams = [...new Set(PLAYERS.map((p) => p.team))];
+  const scoreHeader = market === 'All' || market === 'PTS' ? 'pts/48 matchup' : `${market} matchup`;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: 12 }}>
@@ -175,14 +184,26 @@ const VariantG = () => {
           Tap a player to trace their rows across the sheets; tap chips in the sheet for the full
           dossier.
         </div>
+        <SectionCard title="Injury report">
+          {Object.entries(INJURIES).flatMap(([tri, list]) =>
+            list.map((inj) => (
+              <div key={inj.player} style={{ fontSize: 12, padding: '3px 0' }}>
+                <span style={{ fontWeight: 700, color: INJURY_COLOR[inj.status] }}>
+                  {inj.status}
+                </span>{' '}
+                {inj.player} <span style={{ color: 'var(--ct-dim)' }}>({tri}) — {inj.note}</span>
+              </div>
+            )),
+          )}
+        </SectionCard>
         {teams.map((tri) => (
           <SectionCard
             key={tri}
             title={`${tri} targetable`}
-            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>pts/48 matchup</span>}
+            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>{scoreHeader}</span>}
           >
             {PLAYERS.filter((p) => p.team === tri)
-              .map((p) => ({ p, score: playTypeMatchupScore(p) }))
+              .map((p) => ({ p, score: matchupScore(p, market, recency) }))
               .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity))
               .map(({ p, score }) => {
               const active = p.id === overlayId;
@@ -207,11 +228,25 @@ const VariantG = () => {
                     opacity: playerMatchesMarket(p, market) ? 1 : 0.35,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: active ? 700 : 400 }}>{p.name}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+                    <span style={{ fontWeight: active ? 700 : 400 }}>
+                      {p.name}
+                      {injuryFor(p.name) && (
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: INJURY_COLOR[injuryFor(p.name).status],
+                          }}
+                        >
+                          {injuryFor(p.name).status}
+                        </span>
+                      )}
+                    </span>
                     {score != null && (
                       <span
-                        title="Play-type matchup score: player's play-type distribution weighted by the opponent's points allowed per 48 in that type vs league average"
+                        title="Matchup score for the active market: the player's diet in the relevant mechanisms weighted by the opponent's per-48 concession ratio vs league average"
                         style={{
                           fontFamily: 'var(--ct-mono)',
                           fontSize: 11,
@@ -231,6 +266,14 @@ const VariantG = () => {
             })}
           </SectionCard>
         ))}
+        <SectionCard title="Score backtest (mock target)">
+          <div style={{ fontSize: 12, color: 'var(--ct-dim)', lineHeight: 1.5 }}>
+            Line-relative: when {scoreHeader} ≥ +10%, the <em>over on the posted line</em> hit{' '}
+            <span style={{ color: 'var(--ct-hit)', fontFamily: 'var(--ct-mono)' }}>57%</span>{' '}
+            (n=214) vs 52% baseline. Illustrative numbers — real backtest needs stored board
+            snapshots (line history), since lines adjust to the matchup.
+          </div>
+        </SectionCard>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -267,7 +310,34 @@ const VariantG = () => {
             market views scope rows + players to posted lines
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 0, alignSelf: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: 12, alignSelf: 'flex-start', alignItems: 'center' }}>
+          <div style={{ display: 'flex' }}>
+            {['Season', 'L15'].map((w, i) => {
+              const active = w === recency;
+              return (
+                <button
+                  key={w}
+                  onClick={() => setRecency(w)}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: active ? 'var(--ct-surface-2)' : 'none',
+                    color: active ? 'var(--ct-text)' : 'var(--ct-dim)',
+                    border: '1px solid var(--ct-line-strong)',
+                    borderRadius:
+                      i === 0
+                        ? 'var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl)'
+                        : '0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0',
+                  }}
+                >
+                  {w === 'L15' ? 'Last 15' : 'Season'}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex' }}>
           {[GAME.home.tri, GAME.away.tri].map((tri, i) => {
             const active = tri === sheetTri;
             return (
@@ -293,10 +363,12 @@ const VariantG = () => {
               </button>
             );
           })}
+          </div>
         </div>
         <TeamSheet
           tri={sheetTri}
           market={market}
+          recency={recency}
           overlayId={overlayId}
           openKey={openKey}
           onOpen={setOpenKey}

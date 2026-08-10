@@ -6,6 +6,7 @@ import { useState } from 'react';
 import {
   PLAYERS,
   DEFENSE,
+  defenseFor,
   GAME,
   LEAGUE_AVG,
   pctVs,
@@ -37,8 +38,8 @@ const THREE_POINT_ZONES = ['Corner 3', 'Above Break 3'];
 const THREE_POINT_SHOT_TYPES = ['Catch & Shoot', 'Pull-Up'];
 
 // Every concession a defense makes, flattened and sortable by rank.
-export function concessions(tri) {
-  const def = DEFENSE[tri];
+export function concessions(tri, window = 'Season') {
+  const def = defenseFor(tri, window);
   const out = [];
   def.traditional.forEach((r) =>
     out.push({
@@ -57,7 +58,7 @@ export function concessions(tri) {
     }),
   );
   Object.entries(def.playTypes).forEach(([type, d]) => {
-    const v = defPlayTypeVolume(tri, type);
+    const v = defPlayTypeVolume(tri, type, window);
     out.push({
       category: 'Play types',
       label: type,
@@ -73,7 +74,7 @@ export function concessions(tri) {
     });
   });
   Object.entries(def.zones).forEach(([zone, d]) => {
-    const v = defZoneVolume(tri, zone);
+    const v = defZoneVolume(tri, zone, window);
     out.push({
       category: 'Shot zones',
       label: zone,
@@ -91,7 +92,7 @@ export function concessions(tri) {
     });
   });
   Object.entries(def.shotTypes).forEach(([type, d]) => {
-    const v = defShotTypeVolume(tri, type);
+    const v = defShotTypeVolume(tri, type, window);
     out.push({
       category: 'Shot types',
       label: type,

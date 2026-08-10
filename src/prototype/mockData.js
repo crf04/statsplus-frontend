@@ -102,6 +102,79 @@ const ZONE_PT_VALUE = {
 };
 
 const round1 = (n) => Math.round(n * 10) / 10;
+const round2 = (n) => Math.round(n * 100) / 100;
+const clampRank = (r) => Math.max(1, Math.min(30, r));
+
+// Round 11 — recency window. L15 defense derives deterministically from the
+// season numbers: storied overrides plus a small hash jitter, so the toggle
+// shows real movement (e.g. NYK's PnR defense has gotten worse lately).
+const L15_OVERRIDES = {
+  'NYK|playTypes|P&R Ball-Handler': 0.09,
+  'NYK|playTypes|Isolation': -0.05,
+  'NYK|zones|Above Break 3': 0.06,
+  'NYK|shotTypes|Pull-Up': 0.07,
+  'BOS|playTypes|Cut': 0.08,
+  'BOS|zones|Restricted Area': 0.05,
+  'BOS|traditional|OPP_REB': 0.04,
+};
+const l15Shift = (tri, cat, label) => {
+  const key = `${tri}|${cat}|${label}`;
+  if (key in L15_OVERRIDES) return L15_OVERRIDES[key];
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) % 997;
+  return (h / 997 - 0.5) * 0.08;
+};
+
+const l15Cache = {};
+export function defenseFor(tri, window = 'Season') {
+  if (window !== 'L15') return DEFENSE[tri];
+  if (l15Cache[tri]) return l15Cache[tri];
+  const s = DEFENSE[tri];
+  const derived = {
+    traditional: s.traditional.map((r) => {
+      const sh = l15Shift(tri, 'traditional', r.stat);
+      const value = round1(r.value * (1 + sh / 2));
+      return { ...r, value, vsAvg: round1(value - (r.value - r.vsAvg)), rank: clampRank(r.rank + Math.round(sh * 40)) };
+    }),
+    playTypes: Object.fromEntries(
+      Object.entries(s.playTypes).map(([type, d]) => {
+        const sh = l15Shift(tri, 'playTypes', type);
+        return [type, { ppp: round2(d.ppp * (1 + sh)), rank: clampRank(d.rank + Math.round(sh * 40)) }];
+      }),
+    ),
+    zones: Object.fromEntries(
+      Object.entries(s.zones).map(([zone, d]) => {
+        const sh = l15Shift(tri, 'zones', zone);
+        return [zone, { fgPct: round1(d.fgPct * (1 + sh / 2)), rank: clampRank(d.rank + Math.round(sh * 40)) }];
+      }),
+    ),
+    shotTypes: Object.fromEntries(
+      Object.entries(s.shotTypes).map(([type, d]) => {
+        const sh = l15Shift(tri, 'shotTypes', type);
+        const efg = round1(d.efg * (1 + sh / 2));
+        return [type, { efg, vsAvg: round1(efg - (d.efg - d.vsAvg)), rank: clampRank(d.rank + Math.round(sh * 40)) }];
+      }),
+    ),
+    assistLoc: Object.fromEntries(
+      Object.entries(s.assistLoc).map(([loc, d]) => {
+        const sh = l15Shift(tri, 'assistLoc', loc);
+        return [loc, { perGame: round1(d.perGame * (1 + sh)), rank: clampRank(d.rank + Math.round(sh * 40)) }];
+      }),
+    ),
+  };
+  l15Cache[tri] = derived;
+  return derived;
+}
+
+// Round 11 — injuries wanted on this page. Includes a non-pool player whose
+// absence changes the matchup (rim protection), not just pool members.
+export const INJURIES = {
+  NYK: [
+    { player: 'Mitchell Robinson', status: 'OUT', note: 'knee — rim protection down' },
+    { player: 'Josh Hart', status: 'GTD', note: 'ankle' },
+  ],
+  BOS: [{ player: 'Jrue Holiday', status: 'OUT', note: 'hamstring' }],
+};
 
 // Percent-vs-league-average, the comparison language for every stat line.
 export const pctVs = (value, avg) => {
@@ -109,8 +182,8 @@ export const pctVs = (value, avg) => {
   return `${p >= 0 ? '+' : ''}${Math.round(p)}% vs avg`;
 };
 
-export function defPlayTypeVolume(tri, type) {
-  const d = DEFENSE[tri].playTypes[type];
+export function defPlayTypeVolume(tri, type, window = 'Season') {
+  const d = defenseFor(tri, window).playTypes[type];
   const avgPpp = LEAGUE_AVG.playTypes[type];
   const possG = round1(PLAYTYPE_BASE_POSS[type] * (1 + (d.rank - 15.5) * 0.012));
   const ptsG = round1(possG * d.ppp);
@@ -122,8 +195,8 @@ export function defPlayTypeVolume(tri, type) {
   };
 }
 
-export function defZoneVolume(tri, zone) {
-  const d = DEFENSE[tri].zones[zone];
+export function defZoneVolume(tri, zone, window = 'Season') {
+  const d = defenseFor(tri, window).zones[zone];
   const base = ZONE_BASE_FGA[zone];
   const fgaG = round1(base * (1 + (d.rank - 15.5) * 0.012));
   const ptsG = round1((fgaG * d.fgPct * ZONE_PT_VALUE[zone]) / 100);
@@ -135,8 +208,8 @@ export function defZoneVolume(tri, zone) {
   };
 }
 
-export function defShotTypeVolume(tri, type) {
-  const d = DEFENSE[tri].shotTypes[type];
+export function defShotTypeVolume(tri, type, window = 'Season') {
+  const d = defenseFor(tri, window).shotTypes[type];
   const base = SHOTTYPE_BASE_FGA[type];
   const avgEfg = d.efg - d.vsAvg;
   const fgaG = round1(base * (1 + (d.rank - 15.5) * 0.012));
@@ -668,7 +741,7 @@ export function marketsFor(player) {
 // type vs the league average (points fold efficiency and volume together;
 // per-48 normalizes overtime volume — the mock's per-game numbers stand in
 // for per-48). 1.0 = league-average matchup; render as +/-%.
-export function playTypeMatchupScore(player) {
+export function playTypeMatchupScore(player, window = 'Season') {
   const tri = opponentOf(player);
   let covered = 0;
   let acc = 0;
@@ -676,11 +749,70 @@ export function playTypeMatchupScore(player) {
     const avgPpp = LEAGUE_AVG.playTypes[pt.type];
     const basePoss = PLAYTYPE_BASE_POSS[pt.type];
     if (!avgPpp || !basePoss || !DEFENSE[tri].playTypes[pt.type]) return;
-    const v = defPlayTypeVolume(tri, pt.type);
+    const v = defPlayTypeVolume(tri, pt.type, window);
     acc += (pt.freq / 100) * (v.ptsG / (basePoss * avgPpp));
     covered += pt.freq / 100;
   });
   return covered > 0 ? acc / covered : null;
+}
+
+const THREE_ZONES = ['Corner 3', 'Above Break 3'];
+
+// Round 11 — per-market scores, same shape as the play-type score: weight the
+// slice of the player's own diet by the opponent's per-48 concession ratio vs
+// league average in that slice. Which slices count depends on the market.
+export function matchupScore(player, market = 'PTS', window = 'Season') {
+  const tri = opponentOf(player);
+  const def = defenseFor(tri, window);
+
+  const zoneScore = (zones, volumeOnly) => {
+    let covered = 0;
+    let acc = 0;
+    player.zones
+      .filter((z) => zones.includes(z.zone))
+      .forEach((z) => {
+        const v = defZoneVolume(tri, z.zone, window);
+        const base = ZONE_BASE_FGA[z.zone];
+        const avgPts = (base * LEAGUE_AVG.zones[z.zone] * ZONE_PT_VALUE[z.zone]) / 100;
+        const ratio = volumeOnly ? v.fgaG / base : v.ptsG / avgPts;
+        acc += (z.share / 100) * ratio;
+        covered += z.share / 100;
+      });
+    return covered > 0 ? acc / covered : null;
+  };
+
+  if (market === 'PTS' || market === 'All') return playTypeMatchupScore(player, window);
+  if (market === 'FGA') return zoneScore(Object.keys(LEAGUE_AVG.zones), true);
+  if (market === 'FG3A') return zoneScore(THREE_ZONES, true);
+  if (market === '3PM') return zoneScore(THREE_ZONES, false);
+  if (market === 'AST') {
+    let covered = 0;
+    let acc = 0;
+    Object.entries(player.assistLoc).forEach(([loc, perGame]) => {
+      const d = def.assistLoc[loc];
+      const avg = LEAGUE_AVG.assistLoc[loc];
+      if (!d || !avg) return;
+      acc += perGame * (d.perGame / avg);
+      covered += perGame;
+    });
+    return covered > 0 ? acc / covered : null;
+  }
+  if (market === 'REB') {
+    const r = def.traditional.find((x) => x.stat === 'OPP_REB');
+    return r ? r.value / (r.value - r.vsAvg) : null;
+  }
+  if (market === 'PRA') {
+    const { pts, reb, ast } = player.season;
+    const total = pts + reb + ast;
+    const parts = [
+      [pts, matchupScore(player, 'PTS', window)],
+      [reb, matchupScore(player, 'REB', window)],
+      [ast, matchupScore(player, 'AST', window)],
+    ].filter(([, sc]) => sc != null);
+    const w = parts.reduce((sum, [wt]) => sum + wt, 0);
+    return w > 0 && total > 0 ? parts.reduce((sum, [wt, sc]) => sum + wt * sc, 0) / w : null;
+  }
+  return null;
 }
 
 export const scoreLabel = (ratio) => {

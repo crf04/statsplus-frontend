@@ -1,4 +1,4 @@
-import { decodeMatchup } from './matchupApi';
+import { decodeMatchup, decodeMatchupSelection } from './matchupApi';
 
 const payload = {
   game: {
@@ -205,4 +205,34 @@ test.each([
   ['invalid game', { ...payload, game: { ...payload.game, scheduled_at: 'not-a-date' } }],
 ])('rejects %s at the response boundary', (_name, candidate) => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('strictly decodes delivered selection rows and averages for every posted market', () => {
+  const selection = decodeMatchupSelection(
+    {
+      player_id: 'lebron-james',
+      h2h: {
+        status: 'ready',
+        rows: [
+          {
+            game_date: '2025-12-25',
+            matchup: 'LAL vs. BOS',
+            minutes: 36,
+            stats: { PTS: 31, AST: 9 },
+            deltas: { PTS: 0.083, AST: 0.031 },
+          },
+        ],
+        average: { minutes: 36, stats: { PTS: 31, AST: 9 }, deltas: { PTS: 0.083, AST: 0.031 } },
+      },
+      archetype: { status: 'empty', rows: [], average: null },
+    },
+    ['PTS', 'AST'],
+  );
+  expect(selection.h2h.average).toEqual(
+    expect.objectContaining({ matchup: 'AVG', deltas: { PTS: 0.083, AST: 0.031 } }),
+  );
+  expect(selection.archetype.status).toBe('empty');
+  expect(() =>
+    decodeMatchupSelection({ ...selection, player_id: 'lebron-james' }, ['PTS']),
+  ).toThrow('invalid response');
 });

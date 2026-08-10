@@ -183,11 +183,13 @@ const dietShare = (key, seasonShare, last15Share, seasonVolume = 5.1, last15Volu
   last_15: { share: last15Share, volume_per_game: last15Volume },
 });
 
-const scoreWindow = (value) => ({
-  components: {
-    play_types: { value: value - 0.01, thin: false },
-    shot_zones: { value, thin: false },
-  },
+const scoreWindow = (value, market) => ({
+  components: ['TOV', 'STL', 'BLK', 'STKS'].includes(market)
+    ? { traditional: { value, thin: false } }
+    : {
+        play_types: { value: value - 0.01, thin: market === 'AST' },
+        shot_zones: { value, thin: false },
+      },
   blend: { value, thin: false },
 });
 
@@ -196,8 +198,8 @@ const scores = (markets, seasonValue, last15Value) =>
     markets.map((market, index) => [
       market,
       {
-        season: scoreWindow(seasonValue + index / 100),
-        last_15: scoreWindow(last15Value + index / 100),
+        season: scoreWindow(seasonValue + index / 100, market),
+        last_15: scoreWindow(last15Value + index / 100, market),
       },
     ]),
   );
@@ -380,6 +382,36 @@ export const matchupPayload = {
   },
 };
 
+const selectionLine = (date, matchup, minutes, pts, ast, ptsDelta, astDelta) => ({
+  game_date: date,
+  matchup,
+  minutes,
+  stats: { PTS: pts, FGA: 19, AST: ast, REB: 8, TOV: 3 },
+  deltas: { PTS: ptsDelta, FGA: 0.018, AST: astDelta, REB: -0.012, TOV: 0.006 },
+});
+
+export const selectionPayload = {
+  player_id: 'lebron-james',
+  h2h: {
+    status: 'ready',
+    rows: [selectionLine('2025-12-25', 'LAL vs. BOS', 36, 31, 9, 0.083, 0.031)],
+    average: {
+      minutes: 36,
+      stats: { PTS: 31, FGA: 19, AST: 9, REB: 8, TOV: 3 },
+      deltas: { PTS: 0.083, FGA: 0.018, AST: 0.031, REB: -0.012, TOV: 0.006 },
+    },
+  },
+  archetype: {
+    status: 'thin',
+    rows: [selectionLine('2025-12-20', 'DAL @ BOS', 34, 28, 7, 0.041, -0.009)],
+    average: {
+      minutes: 34,
+      stats: { PTS: 28, FGA: 19, AST: 7, REB: 8, TOV: 3 },
+      deltas: { PTS: 0.041, FGA: 0.018, AST: -0.009, REB: -0.012, TOV: 0.006 },
+    },
+  },
+};
+
 export const installApiContract = async (page, overrides = {}) => {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -433,6 +465,11 @@ export const installApiContract = async (page, overrides = {}) => {
 
     if (url.pathname === '/api/games/matchup') {
       await route.fulfill({ json: matchupPayload });
+      return;
+    }
+
+    if (url.pathname === '/api/games/matchup/selection') {
+      await route.fulfill({ json: selectionPayload });
       return;
     }
 

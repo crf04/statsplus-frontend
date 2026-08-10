@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchMatchup } from './matchupApi';
+import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import MatchupDetailPage from './MatchupDetailPage';
 
 jest.mock('../contexts/AuthContext');
@@ -166,6 +166,29 @@ const matchup = {
 beforeEach(() => {
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchMatchup.mockResolvedValue(matchup);
+  fetchMatchupSelection.mockResolvedValue({
+    playerId: 'player-one',
+    h2h: {
+      status: 'ready',
+      rows: [
+        {
+          date: '2025-12-25',
+          matchup: 'LAL vs. BOS',
+          minutes: 36,
+          stats: { PTS: 31, FGA: 19 },
+          deltas: { PTS: 0.083, FGA: 0.018 },
+        },
+      ],
+      average: {
+        date: null,
+        matchup: 'AVG',
+        minutes: 36,
+        stats: { PTS: 31, FGA: 19 },
+        deltas: { PTS: 0.083, FGA: 0.018 },
+      },
+    },
+    archetype: { status: 'empty', rows: [], average: null },
+  });
 });
 
 test('toggles delivered windows and applies a two-sided sigma filter without refetching', async () => {
@@ -256,4 +279,24 @@ test('renders raw injury statuses and keeps the signed-out shell honest', async 
   );
   expect(screen.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
   await waitFor(() => expect(fetchMatchup).not.toHaveBeenCalled());
+});
+
+test('opens and deep-links the selection card while market flips reuse delivered logs', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=player-one']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  expect(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).toHaveTextContent(
+    '+12%',
+  );
+  expect((await screen.findAllByText('+0.083')).length).toBeGreaterThan(0);
+  expect(screen.getByText('No archetype sample data is available.')).toBeVisible();
+  expect(screen.getByText('Transition').closest('article')).toHaveClass('selection-why');
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  expect((await screen.findAllByText('+0.018')).length).toBeGreaterThan(0);
+  expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });

@@ -184,3 +184,50 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
   await expect(freshness.getByText(/schedule: stale.*schedule data warning/i)).toBeVisible();
   expect(matchupRequests).toBe(1);
 });
+
+test('@critical selection card supports selection, deep links, and tab flips without refetching', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  let selectionRequests = 0;
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup/selection') selectionRequests += 1;
+  });
+  await page.goto('/matchups/0022500584');
+  await page
+    .getByRole('article', { name: 'LeBron James player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await expect(page).toHaveURL(/player=lebron-james/);
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  const matrix = page.getByRole('table', { name: 'LeBron James Score Matrix' });
+  await expect(matrix).toContainText('+12%');
+  await expect(matrix).toContainText('thin');
+  await expect(page.getByText('Thin sample — interpret cautiously.')).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'AST', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'AST' }).first()).toBeVisible();
+  expect(selectionRequests).toBe(1);
+  await page.screenshot({
+    path: testInfo.outputPath('selection-card-desktop.png'),
+    fullPage: true,
+  });
+
+  await page.goto('/matchups/0022500584?player=lebron-james');
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  await page.setViewportSize({ width: 393, height: 852 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('selection-card-narrow.png'), fullPage: true });
+});

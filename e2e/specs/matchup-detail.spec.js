@@ -201,14 +201,14 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/games/matchup/selection') selectionRequests += 1;
   });
-  await page.goto('/matchups/0022500584?context=kept');
+  await page.goto('/matchups?date=2026-01-15');
+  await page.getByRole('link', { name: 'Open Team Sheets' }).click();
+  await expect(page).toHaveURL('/matchups/0022500584');
   await page
     .getByRole('article', { name: 'LeBron James player' })
     .getByRole('button', { name: 'Open selection card' })
     .click();
-  await expect(page).toHaveURL(
-    /context=kept.*player=lebron-james|player=lebron-james.*context=kept/,
-  );
+  await expect(page).toHaveURL('/matchups/0022500584?player=lebron-james');
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -256,6 +256,7 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await page.goto('/matchups/0022500584?player=austin-reaves');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByText('No games vs this opponent data is available.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('selection-empty-thin.png'), fullPage: true });
   await page.goto('/matchups/0022500584?player=lebron-james');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
   await page.setViewportSize({ width: 393, height: 852 });

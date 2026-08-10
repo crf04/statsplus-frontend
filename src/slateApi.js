@@ -128,13 +128,7 @@ const decodeGame = (game) => {
 };
 
 export const decodeSlate = (data) => {
-  if (
-    !data ||
-    !isCalendarDate(data.slate_date) ||
-    !Array.isArray(data.games) ||
-    !data.freshness ||
-    (data.pool_status !== undefined && !isStatusAllowed(data.pool_status, 'pool'))
-  ) {
+  if (!data || !isCalendarDate(data.slate_date) || !Array.isArray(data.games) || !data.freshness) {
     throw createInvalidSlateError();
   }
 
@@ -143,7 +137,7 @@ export const decodeSlate = (data) => {
   return {
     slateDate: data.slate_date,
     freshness,
-    poolStatus: data.pool_status ?? freshness.pool.status,
+    poolStatus: freshness.pool.status,
     games: data.games.map(decodeGame),
   };
 };

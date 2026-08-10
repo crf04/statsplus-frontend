@@ -85,19 +85,13 @@ const scheduleOnlySlateGame = {
 export const slatePayload = (
   date,
   games,
-  {
-    poolStatus = 'unavailable',
-    poolFreshnessStatus = 'unavailable',
-    poolRetrievedAt = null,
-    providers = {},
-  } = {},
+  { poolFreshnessStatus = 'unavailable', poolRetrievedAt = null, providers = {} } = {},
 ) => ({
   slate_date: date,
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
   },
-  pool_status: poolStatus,
   games,
 });
 

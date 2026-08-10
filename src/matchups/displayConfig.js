@@ -13,3 +13,8 @@ export const shouldDisplayDietShare = (base, value) => {
     value.volumePerGame >= threshold.minimumVolumePerGame
   );
 };
+
+export const getDisplayableDietShare = (player, base, rowKey, windowKey) => {
+  const value = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
+  return value && shouldDisplayDietShare(base, value) ? value : null;
+};

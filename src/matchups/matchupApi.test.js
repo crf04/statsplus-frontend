@@ -1,4 +1,4 @@
-import { decodeMatchup } from './matchupApi';
+import { decodeMatchup, decodeMatchupSelection } from './matchupApi';
 
 const payload = {
   game: {
@@ -186,6 +186,31 @@ test('accepts clarified freshness with derived schedule and provider-only pool t
   );
 });
 
+test('requires Blend for offensive scores and accepts omitted or null Blend for defensive scores', () => {
+  const defensive = JSON.parse(JSON.stringify(payload));
+  defensive.players[0].posted_markets = ['TOV'];
+  defensive.players[0].scores = {
+    TOV: {
+      season: { components: { traditional: { value: 0.08, thin: false } } },
+      last_15: { components: { traditional: { value: -0.02, thin: false } }, blend: null },
+    },
+  };
+  expect(decodeMatchup(defensive).players[0].scores.TOV).toEqual(
+    expect.objectContaining({
+      season: expect.objectContaining({ blend: null }),
+      last15: expect.objectContaining({ blend: null }),
+    }),
+  );
+
+  const missingOffensiveBlend = JSON.parse(JSON.stringify(payload));
+  delete missingOffensiveBlend.players[0].scores.PTS.season.blend;
+  expect(() => decodeMatchup(missingOffensiveBlend)).toThrow('invalid response');
+
+  const inventedDefensiveBlend = JSON.parse(JSON.stringify(defensive));
+  inventedDefensiveBlend.players[0].scores.TOV.season.blend = { value: 0.08, thin: false };
+  expect(() => decodeMatchup(inventedDefensiveBlend)).toThrow('invalid response');
+});
+
 test.each([
   ['missing windows', { ...payload, teams: [{ ...payload.teams[0], defense_sheet: {} }] }],
   [
@@ -205,4 +230,50 @@ test.each([
   ['invalid game', { ...payload, game: { ...payload.game, scheduled_at: 'not-a-date' } }],
 ])('rejects %s at the response boundary', (_name, candidate) => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('strictly decodes combo, attempts, and AVG rows from the raw selection response', () => {
+  const raw = {
+    player_id: 'lebron-james',
+    h2h: {
+      thin: false,
+      rows: [
+        {
+          row_type: 'game',
+          game_date: '2025-12-25',
+          matchup: 'LAL vs. BOS',
+          minutes: 36,
+          stats: { PRA: 48, FGA: 19 },
+          deltas: { PRA: 0.102, FGA: 0.018 },
+        },
+        {
+          row_type: 'average',
+          game_date: null,
+          matchup: null,
+          minutes: 36,
+          stats: { PRA: 48, FGA: 19 },
+          deltas: { PRA: 0.102, FGA: 0.018 },
+        },
+      ],
+    },
+    archetype: { thin: false, rows: [] },
+  };
+  const selection = decodeMatchupSelection(raw, ['PRA', 'FGA'], 'lebron-james');
+  expect(selection.h2h.rows.at(-1)).toEqual(
+    expect.objectContaining({ average: true, deltas: { PRA: 0.102, FGA: 0.018 } }),
+  );
+  expect(selection.archetype.rows).toEqual([]);
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'AST'], 'lebron-james')).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+  expect(() => decodeMatchupSelection(raw, ['PRA', 'FGA'], 'another-player')).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+  expect(() =>
+    decodeMatchupSelection(
+      { ...raw, h2h: { ...raw.h2h, thin: 'yes' } },
+      ['PRA', 'FGA'],
+      'lebron-james',
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
 });

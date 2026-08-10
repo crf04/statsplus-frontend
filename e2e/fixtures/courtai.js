@@ -183,12 +183,16 @@ const dietShare = (key, seasonShare, last15Share, seasonVolume = 5.1, last15Volu
   last_15: { share: last15Share, volume_per_game: last15Volume },
 });
 
-const scoreWindow = (value) => ({
-  components: {
-    play_types: { value: value - 0.01, thin: false },
-    shot_zones: { value, thin: false },
-  },
-  blend: { value, thin: false },
+const scoreWindow = (value, market) => ({
+  components: ['TOV', 'STL', 'BLK', 'STKS'].includes(market)
+    ? { traditional: { value, thin: false } }
+    : {
+        play_types: { value: value - 0.01, thin: market === 'AST' },
+        shot_zones: { value, thin: false },
+      },
+  ...(!['TOV', 'STL', 'BLK', 'STKS'].includes(market) && {
+    blend: { value, thin: false },
+  }),
 });
 
 const scores = (markets, seasonValue, last15Value) =>
@@ -196,8 +200,8 @@ const scores = (markets, seasonValue, last15Value) =>
     markets.map((market, index) => [
       market,
       {
-        season: scoreWindow(seasonValue + index / 100),
-        last_15: scoreWindow(last15Value + index / 100),
+        season: scoreWindow(seasonValue + index / 100, market),
+        last_15: scoreWindow(last15Value + index / 100, market),
       },
     ]),
   );
@@ -249,6 +253,13 @@ export const matchupPayload = {
           defenseValue(8.1, 2, 0.4, 16),
           defenseValue(8.4, 4, 0.5, 18),
         ),
+        defenseRow(
+          'post-up',
+          'Post up',
+          ['PTS'],
+          defenseValue(12.1, 10, 1.2, 25),
+          defenseValue(12.8, 11, 1.3, 26),
+        ),
       ],
       1,
     ),
@@ -262,17 +273,17 @@ export const matchupPayload = {
       name: 'LeBron James',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
-      posted_markets: ['PTS', 'FGA', 'AST', 'REB', 'TOV'],
+      posted_markets: ['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'],
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
-        play_types: [dietShare('transition', 0.19, 0.2)],
+        play_types: [dietShare('transition', 0.19, 0.2), dietShare('post-up', 0.02, 0.16)],
         shot_zones: [dietShare('paint', 0.27, 0.28)],
         shot_types: [dietShare('catch-shoot', 0.36, 0.37, 4.2, 4.3)],
         assist_locations: [dietShare('paint-assists', 0.31, 0.32, 1.1, 1.2)],
       },
       injury_badge_ref: null,
-      scores: scores(['PTS', 'FGA', 'AST', 'REB', 'TOV'], 0.12, -0.02),
+      scores: scores(['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'], 0.12, -0.02),
     },
     {
       canonical_id: 'austin-reaves',
@@ -380,6 +391,81 @@ export const matchupPayload = {
   },
 };
 
+const selectionLine = (date, matchup, minutes, values, deltas) => ({
+  row_type: date === null ? 'average' : 'game',
+  game_date: date,
+  matchup: date === null ? null : matchup,
+  minutes,
+  stats: values,
+  deltas,
+});
+
+export const selectionPayload = {
+  player_id: 'lebron-james',
+  h2h: {
+    thin: false,
+    rows: [
+      selectionLine(
+        '2025-12-25',
+        'LAL vs. BOS',
+        36,
+        { PTS: 31, FGA: 19, AST: 9, REB: 8, PRA: 48, TOV: 3 },
+        { PTS: 0.083, FGA: 0.018, AST: 0.031, REB: -0.012, PRA: 0.102, TOV: 0.006 },
+      ),
+      selectionLine(
+        null,
+        'AVG',
+        36,
+        { PTS: 31, FGA: 19, AST: 9, REB: 8, PRA: 48, TOV: 3 },
+        { PTS: 0.083, FGA: 0.018, AST: 0.031, REB: -0.012, PRA: 0.102, TOV: 0.006 },
+      ),
+    ],
+  },
+  archetype: {
+    thin: true,
+    rows: [
+      selectionLine(
+        '2025-12-20',
+        'DAL @ BOS',
+        34,
+        { PTS: 28, FGA: 18, AST: 7, REB: 8, PRA: 43, TOV: 3 },
+        { PTS: 0.041, FGA: 0.015, AST: -0.009, REB: -0.012, PRA: 0.02, TOV: 0.006 },
+      ),
+      selectionLine(
+        null,
+        'AVG',
+        34,
+        { PTS: 28, FGA: 18, AST: 7, REB: 8, PRA: 43, TOV: 3 },
+        { PTS: 0.041, FGA: 0.015, AST: -0.009, REB: -0.012, PRA: 0.02, TOV: 0.006 },
+      ),
+    ],
+  },
+};
+
+export const austinSelectionPayload = {
+  player_id: 'austin-reaves',
+  h2h: { thin: false, rows: [] },
+  archetype: {
+    thin: true,
+    rows: [
+      selectionLine(
+        '2025-12-18',
+        'MIA @ BOS',
+        33,
+        { PTS: 22, FG3A: 7, STL: 1 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+      ),
+      selectionLine(
+        null,
+        'AVG',
+        33,
+        { PTS: 22, FG3A: 7, STL: 1 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+      ),
+    ],
+  },
+};
+
 export const installApiContract = async (page, overrides = {}) => {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -433,6 +519,21 @@ export const installApiContract = async (page, overrides = {}) => {
 
     if (url.pathname === '/api/games/matchup') {
       await route.fulfill({ json: matchupPayload });
+      return;
+    }
+
+    if (url.pathname === '/api/games/matchup/selection') {
+      const gameId = url.searchParams.get('game_id');
+      const playerId = url.searchParams.get('player_id');
+      const payloads = {
+        'lebron-james': selectionPayload,
+        'austin-reaves': austinSelectionPayload,
+      };
+      if (gameId !== matchupPayload.game.game_id || !payloads[playerId]) {
+        await route.fulfill({ status: 404, json: { error: { code: 'resource_not_found' } } });
+        return;
+      }
+      await route.fulfill({ json: payloads[playerId] });
       return;
     }
 

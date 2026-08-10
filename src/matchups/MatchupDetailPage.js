@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
-import { fetchMatchup } from './matchupApi';
-import { shouldDisplayDietShare } from './displayConfig';
+import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import { getDisplayableDietShare } from './displayConfig';
+import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
 const WINDOWS = [
@@ -90,7 +91,16 @@ function Sparkline({ values, playerName }) {
   );
 }
 
-function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
+function PlayerRail({
+  players,
+  injuries,
+  market,
+  windowKey,
+  targetableCount,
+  selectedId,
+  onSelect,
+  registerTrigger,
+}) {
   const [sortMode, setSortMode] = useState('season');
   useEffect(() => {
     if (market === 'All') setSortMode('season');
@@ -98,7 +108,11 @@ function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
   const injuryById = new Map(
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
-  const scoreFor = (player) => player.scores[market]?.[windowKey].blend.value ?? -Infinity;
+  const scoreFor = (player) => {
+    const score = player.scores[market]?.[windowKey];
+    if (!score) return -Infinity;
+    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? -Infinity;
+  };
   const scoped = players.filter(
     (player) => market === 'All' || player.postedMarkets.includes(market),
   );
@@ -144,7 +158,11 @@ function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
           {scoped.map((player) => {
             const injury = injuryById.get(player.injuryBadgeRef);
             return (
-              <article key={player.id} aria-label={`${player.name} player`} className="player-card">
+              <article
+                key={player.id}
+                aria-label={`${player.name} player`}
+                className={`player-card${selectedId === player.id ? ' selected' : ''}`}
+              >
                 <div>
                   <h3>{player.name}</h3>
                   <p>{player.seasonScoring.toFixed(1)} PPG</p>
@@ -162,6 +180,16 @@ function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
                   ))}
                 </div>
                 <Sparkline values={player.last10Minutes} playerName={player.name} />
+                <button
+                  ref={(node) => registerTrigger(player.id, node)}
+                  type="button"
+                  className="select-player"
+                  aria-expanded={selectedId === player.id}
+                  aria-controls="matchup-selection-card"
+                  onClick={() => onSelect(player)}
+                >
+                  {selectedId === player.id ? 'Selected' : 'Open selection card'}
+                </button>
               </article>
             );
           })}
@@ -176,8 +204,8 @@ function DietShareChips({ players, base, rowKey, windowKey, market }) {
   const chips = players
     .filter((player) => market === 'All' || player.postedMarkets.includes(market))
     .flatMap((player) => {
-      const share = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
-      if (!share || !shouldDisplayDietShare(base, share)) return [];
+      const share = getDisplayableDietShare(player, base, rowKey, windowKey);
+      if (!share) return [];
       return [{ player, share }];
     });
   if (chips.length === 0)
@@ -193,7 +221,7 @@ function DietShareChips({ players, base, rowKey, windowKey, market }) {
   );
 }
 
-function DefenseSheet({ team, players, market, windowKey, deviation }) {
+function DefenseSheet({ team, players, market, windowKey, deviation, selectedPlayer }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
     const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
@@ -226,7 +254,15 @@ function DefenseSheet({ team, players, market, windowKey, deviation }) {
               {visibleRows.map((row) => {
                 const stat = row[windowKey];
                 return (
-                  <article className="sheet-row" key={`${base}-${row.key}`}>
+                  <article
+                    className={`sheet-row${
+                      selectedPlayer &&
+                      getDisplayableDietShare(selectedPlayer, base, row.key, windowKey)
+                        ? ' selection-why'
+                        : ''
+                    }`}
+                    key={`${base}-${row.key}`}
+                  >
                     <div className="row-stat">
                       <div>
                         <h4>{row.label}</h4>
@@ -350,7 +386,8 @@ function InjuryReport({ injuries, now }) {
   );
 }
 
-function Detail({ matchup }) {
+function Detail({ matchup, gameId }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const now = useMinuteNow(true);
   const homeTricode = matchup.game.home.tricode;
   const initialTeam =
@@ -359,6 +396,16 @@ function Detail({ matchup }) {
   const [market, setMarket] = useState('All');
   const [windowKey, setWindowKey] = useState('season');
   const [deviation, setDeviation] = useState(1);
+  const selectedId = searchParams.get('player');
+  const selectedPlayer = matchup.players.find((player) => player.id === selectedId) || null;
+  const selectionTriggers = useRef(new Map());
+  const previousSelectedId = useRef(null);
+  const [selectionState, setSelectionState] = useState({
+    status: 'idle',
+    playerId: null,
+    data: null,
+    error: null,
+  });
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
@@ -378,6 +425,52 @@ function Detail({ matchup }) {
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);
+  useEffect(() => {
+    if (!selectedPlayer) {
+      setSelectionState({ status: 'idle', playerId: null, data: null, error: null });
+      return undefined;
+    }
+    const controller = new AbortController();
+    let current = true;
+    setSelectionState({ status: 'loading', playerId: selectedPlayer.id, data: null, error: null });
+    fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.postedMarkets, {
+      signal: controller.signal,
+    })
+      .then((data) => {
+        if (current)
+          setSelectionState({ status: 'ready', playerId: selectedPlayer.id, data, error: null });
+      })
+      .catch((error) => {
+        if (current && !isRequestCancelled(error))
+          setSelectionState({
+            status: 'error',
+            playerId: selectedPlayer.id,
+            data: null,
+            error: `Unable to load selection logs. ${getRequestErrorMessage(error, 'Please try again.')}`,
+          });
+      });
+    return () => {
+      current = false;
+      controller.abort();
+    };
+  }, [gameId, selectedPlayer]);
+  useEffect(() => {
+    if (previousSelectedId.current && !selectedId) {
+      selectionTriggers.current.get(previousSelectedId.current)?.focus();
+    }
+    previousSelectedId.current = selectedId;
+  }, [selectedId]);
+  const updateSelectedPlayer = (playerId) => {
+    if (playerId === selectedId) return;
+    const next = new URLSearchParams(searchParams);
+    if (playerId) next.set('player', playerId);
+    else next.delete('player');
+    setSearchParams(next, { replace: false });
+  };
+  const registerTrigger = (playerId, node) => {
+    if (node) selectionTriggers.current.set(playerId, node);
+    else selectionTriggers.current.delete(playerId);
+  };
   return (
     <>
       <header className="matchup-heading">
@@ -453,6 +546,7 @@ function Detail({ matchup }) {
             market={market}
             windowKey={windowKey}
             deviation={deviation}
+            selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
           />
         )}
         <PlayerRail
@@ -461,8 +555,28 @@ function Detail({ matchup }) {
           market={market}
           windowKey={windowKey}
           targetableCount={poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null}
+          selectedId={selectedId}
+          onSelect={(player) => updateSelectedPlayer(player.id)}
+          registerTrigger={registerTrigger}
         />
       </div>
+      {selectedId && !selectedPlayer && (
+        <p role="alert" className="selection-card">
+          That player is not available in this matchup.
+        </p>
+      )}
+      {selectedPlayer && (
+        <SelectionCard
+          player={selectedPlayer}
+          selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
+          status={selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'}
+          error={selectionState.error}
+          windowKey={windowKey}
+          sheetMarket={market}
+          whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
+          onClose={() => updateSelectedPlayer(null)}
+        />
+      )}
       <InjuryReport injuries={matchup.injuries} now={now} />
     </>
   );
@@ -504,7 +618,7 @@ export default function MatchupDetailPage() {
     <main className="matchup-page">
       {state.status === 'loading' && <p role="status">Loading matchup…</p>}
       {state.status === 'error' && <p role="alert">{state.error}</p>}
-      {state.status === 'ready' && <Detail matchup={state.matchup} />}
+      {state.status === 'ready' && <Detail matchup={state.matchup} gameId={gameId} />}
     </main>
   );
 }

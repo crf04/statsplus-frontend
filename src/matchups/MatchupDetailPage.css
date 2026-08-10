@@ -120,6 +120,10 @@
   padding: 14px;
   background: var(--ct-surface-2);
 }
+.sheet-row.selection-why {
+  border-color: var(--ct-gold);
+  box-shadow: inset 3px 0 var(--ct-gold);
+}
 .row-stat {
   display: flex;
   justify-content: space-between;
@@ -238,6 +242,96 @@
 .injury-list p {
   margin: 0;
 }
+.player-card.selected {
+  border-color: var(--ct-gold);
+}
+.select-player,
+.selection-close {
+  margin-top: 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--ct-text);
+}
+.selection-stat-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+}
+.selection-stat-control button {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: transparent;
+  color: var(--ct-dim);
+}
+.selection-stat-control button[aria-pressed='true'] {
+  border-color: var(--ct-gold);
+  color: var(--ct-text);
+}
+.selection-card {
+  margin-top: 18px;
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-card);
+  padding: 20px;
+  background: var(--ct-surface);
+}
+.selection-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+.selection-card-heading h2 {
+  margin: 0;
+}
+.selection-explainer,
+.thin-note {
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+}
+.selection-table-wrap {
+  overflow-x: auto;
+}
+.selection-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+.selection-table-wrap th,
+.selection-table-wrap td {
+  border-bottom: 1px solid var(--ct-line);
+  padding: 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+.selection-table-wrap th:first-child {
+  text-align: left;
+}
+.selection-table-wrap .active-market-row {
+  background: color-mix(in srgb, var(--ct-gold) 12%, transparent);
+}
+.thin-flag {
+  display: block;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+.selection-logs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+.selection-log {
+  min-width: 0;
+}
+.average-row {
+  font-weight: 700;
+}
 .player-card p {
   color: var(--ct-dim);
   font-size: 0.75rem;
@@ -290,6 +384,9 @@
   }
 
   .defensive-column-grid {
+    grid-template-columns: 1fr;
+  }
+  .selection-logs {
     grid-template-columns: 1fr;
   }
   .row-stat {

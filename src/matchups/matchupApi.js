@@ -7,6 +7,16 @@ import {
 } from '../slateStatus';
 
 const invalid = () => new Error('The matchup endpoint returned an invalid response.');
+const selectionInvalid = () =>
+  new Error('The matchup selection endpoint returned an invalid response.');
+const requireSelectionString = (value) => {
+  if (typeof value !== 'string' || !value) throw selectionInvalid();
+  return value;
+};
+const requireSelectionNumber = (value) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw selectionInvalid();
+  return value;
+};
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const requireString = (value) => {
   if (typeof value !== 'string' || !value) throw invalid();
@@ -138,8 +148,14 @@ const decodeScoreCell = (cell) => {
   return { value: requireNumber(cell.value), thin: cell.thin };
 };
 
-const decodeScoreWindow = (window) => {
+const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
+
+const decodeScoreWindow = (window, market) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
+  const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
+  if ((!defensive && !isRecord(window.blend)) || (defensive && window.blend != null)) {
+    throw invalid();
+  }
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [
@@ -147,7 +163,7 @@ const decodeScoreWindow = (window) => {
         decodeScoreCell(cell),
       ]),
     ),
-    blend: decodeScoreCell(window.blend),
+    blend: defensive ? null : decodeScoreCell(window.blend),
   };
 };
 
@@ -159,8 +175,8 @@ function decodeScores(scores, postedMarkets) {
     postedMarkets.map((market) => [
       market,
       {
-        season: decodeScoreWindow(scores[market].season),
-        last15: decodeScoreWindow(scores[market].last_15),
+        season: decodeScoreWindow(scores[market].season, market),
+        last15: decodeScoreWindow(scores[market].last_15, market),
       },
     ]),
   );
@@ -332,4 +348,69 @@ export const fetchMatchup = async (gameId, { signal } = {}) => {
     signal,
   });
   return decodeMatchup(response.data);
+};
+
+const decodeSelectionStatMap = (value, markets) => {
+  if (!isRecord(value) || markets.some((market) => !(market in value))) throw selectionInvalid();
+  return Object.fromEntries(
+    Object.entries(value).map(([key, number]) => {
+      if (typeof number !== 'number' || !Number.isFinite(number)) throw selectionInvalid();
+      return [key, number];
+    }),
+  );
+};
+
+const decodeLogLine = (line, markets) => {
+  if (!isRecord(line)) throw selectionInvalid();
+  if (!['game', 'average'].includes(line.row_type)) throw selectionInvalid();
+  const average = line.row_type === 'average';
+  if (
+    (average && (line.game_date !== null || line.matchup !== null)) ||
+    (!average && (typeof line.game_date !== 'string' || typeof line.matchup !== 'string'))
+  ) {
+    throw selectionInvalid();
+  }
+  return {
+    date: line.game_date,
+    matchup: average ? null : requireSelectionString(line.matchup),
+    minutes: requireSelectionNumber(line.minutes),
+    stats: decodeSelectionStatMap(line.stats, markets),
+    deltas: decodeSelectionStatMap(line.deltas, markets),
+    average,
+  };
+};
+
+const decodeLogTable = (table, markets) => {
+  if (!isRecord(table) || !Array.isArray(table.rows) || typeof table.thin !== 'boolean')
+    throw selectionInvalid();
+  const rows = table.rows.map((row) => decodeLogLine(row, markets));
+  if (rows.some((row, index) => row.average && index !== rows.length - 1)) {
+    throw selectionInvalid();
+  }
+  if (rows.length > 0 && (!rows.at(-1).average || rows.filter((row) => row.average).length !== 1)) {
+    throw selectionInvalid();
+  }
+  return {
+    rows,
+    thin: table.thin,
+  };
+};
+
+export const decodeMatchupSelection = (data, postedMarkets, expectedPlayerId) => {
+  if (!isRecord(data) || !Array.isArray(postedMarkets) || postedMarkets.length === 0)
+    throw selectionInvalid();
+  if (data.player_id !== expectedPlayerId) throw selectionInvalid();
+  return {
+    playerId: data.player_id,
+    h2h: decodeLogTable(data.h2h, postedMarkets),
+    archetype: decodeLogTable(data.archetype, postedMarkets),
+  };
+};
+
+export const fetchMatchupSelection = async (gameId, playerId, postedMarkets, { signal } = {}) => {
+  const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
+    params: { game_id: gameId, player_id: playerId },
+    signal,
+  });
+  return decodeMatchupSelection(response.data, postedMarkets, playerId);
 };

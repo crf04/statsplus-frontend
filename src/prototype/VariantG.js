@@ -29,7 +29,7 @@ const rowKeyOf = (tri, c) => `${tri}|${c.category}|${c.label}`;
 
 // Prop-market views: which rows a market cares about, and which players are
 // even on the board for it (from the posted-lines data — the pool contract).
-const MARKET_TABS = ['All', 'PTS', 'REB', 'AST', '3PM', 'PRA'];
+const MARKET_TABS = ['All', 'PTS', 'REB', 'AST', '3PM', 'FGA', 'FG3A', 'PRA'];
 const rowMatchesMarket = (c, market) => {
   if (market === 'All') return true;
   const rowMarkets = c.markets || [];
@@ -179,7 +179,7 @@ const VariantG = () => {
           <SectionCard
             key={tri}
             title={`${tri} targetable`}
-            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>PT matchup</span>}
+            right={<span style={{ fontSize: 10, color: 'var(--ct-dim)' }}>pts/48 matchup</span>}
           >
             {PLAYERS.filter((p) => p.team === tri)
               .map((p) => ({ p, score: playTypeMatchupScore(p) }))
@@ -211,7 +211,7 @@ const VariantG = () => {
                     <span style={{ fontWeight: active ? 700 : 400 }}>{p.name}</span>
                     {score != null && (
                       <span
-                        title="Play-type matchup score: player's play-type distribution weighted by the opponent's PPP ratio vs league average"
+                        title="Play-type matchup score: player's play-type distribution weighted by the opponent's points allowed per 48 in that type vs league average"
                         style={{
                           fontFamily: 'var(--ct-mono)',
                           fontSize: 11,

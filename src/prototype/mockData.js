@@ -267,7 +267,7 @@ export const PLAYERS = [
     pos: 'F',
     archetype: 'Perimeter Shot Creator',
     season: { min: 36.2, pts: 27.4, reb: 8.6, ast: 5.1, fg3m: 3.2 },
-    boards: { PP: ['PTS', 'REB', 'AST', '3PM', 'PRA'], UD: ['PTS', 'REB', 'AST', 'PRA'], DAB: [] },
+    boards: { PP: ['PTS', 'REB', 'AST', '3PM', 'PRA'], UD: ['PTS', 'REB', 'AST', 'PRA', 'FGA'], DAB: [] },
     playTypes: [
       { type: 'Isolation', freq: 21.8, ppp: 1.02 },
       { type: 'P&R Ball-Handler', freq: 19.5, ppp: 0.98 },
@@ -325,7 +325,7 @@ export const PLAYERS = [
     pos: 'G',
     archetype: 'Movement Shooter',
     season: { min: 33.1, pts: 17.2, reb: 4.4, ast: 4.9, fg3m: 3.1 },
-    boards: { PP: ['PTS', '3PM', 'AST'], UD: ['PTS', '3PM'], DAB: [] },
+    boards: { PP: ['PTS', '3PM', 'AST'], UD: ['PTS', '3PM', 'FG3A'], DAB: [] },
     playTypes: [
       { type: 'P&R Ball-Handler', freq: 24.6, ppp: 1.01 },
       { type: 'Spot-Up', freq: 22.1, ppp: 1.14 },
@@ -381,7 +381,7 @@ export const PLAYERS = [
     pos: 'G',
     archetype: 'Movement Shooter',
     season: { min: 27.2, pts: 14.8, reb: 3.6, ast: 3.4, fg3m: 3.0 },
-    boards: { PP: ['PTS', '3PM'], UD: ['3PM'], DAB: [] },
+    boards: { PP: ['PTS', '3PM', 'FG3A'], UD: ['3PM'], DAB: [] },
     playTypes: [
       { type: 'Spot-Up', freq: 26.2, ppp: 1.16 },
       { type: 'P&R Ball-Handler', freq: 18.1, ppp: 0.94 },
@@ -409,7 +409,7 @@ export const PLAYERS = [
     pos: 'F',
     archetype: 'Spot-Up Specialist',
     season: { min: 22.1, pts: 8.9, reb: 3.4, ast: 1.1, fg3m: 2.3 },
-    boards: { PP: ['3PM', 'PTS'], UD: [], DAB: [] },
+    boards: { PP: ['3PM', 'PTS', 'FG3A'], UD: [], DAB: [] },
     playTypes: [
       { type: 'Spot-Up', freq: 48.2, ppp: 1.19 },
       { type: 'Transition', freq: 12.1, ppp: 1.18 },
@@ -436,7 +436,7 @@ export const PLAYERS = [
     pos: 'G',
     archetype: 'Pick-and-Roll Maestro',
     season: { min: 35.6, pts: 28.1, reb: 3.7, ast: 6.8, fg3m: 2.6 },
-    boards: { PP: ['PTS', 'AST', 'PRA', '3PM'], UD: ['PTS', 'AST', 'PA'], DAB: [] },
+    boards: { PP: ['PTS', 'AST', 'PRA', '3PM', 'FGA'], UD: ['PTS', 'AST', 'PA'], DAB: [] },
     playTypes: [
       { type: 'P&R Ball-Handler', freq: 34.8, ppp: 1.04 },
       { type: 'Isolation', freq: 18.2, ppp: 1.06 },
@@ -464,7 +464,7 @@ export const PLAYERS = [
     pos: 'C',
     archetype: 'Post Scorer / Stretch Big',
     season: { min: 34.1, pts: 24.6, reb: 12.8, ast: 3.1, fg3m: 2.0 },
-    boards: { PP: ['PTS', 'REB', 'PRA', '3PM'], UD: ['PTS', 'REB', 'RA'], DAB: [] },
+    boards: { PP: ['PTS', 'REB', 'PRA', '3PM'], UD: ['PTS', 'REB', 'RA', 'FGA'], DAB: [] },
     playTypes: [
       { type: 'Post-Up', freq: 19.6, ppp: 1.09 },
       { type: 'P&R Roll Man', freq: 17.2, ppp: 1.16 },
@@ -663,20 +663,21 @@ export function marketsFor(player) {
   return [...new Set([...player.boards.PP, ...player.boards.UD, ...player.boards.DAB])];
 }
 
-// Round 9 — the user's matchup-score formula: weight the opponent's
-// PPP-vs-league-average ratio in each play type by the share of the player's
-// own diet that lives there. 1.0 = league-average matchup; returned as a
-// ratio (render as +/-%). Weighted by covered frequency so a partial
-// play-type profile doesn't understate the score.
+// Round 9/10 — the user's matchup-score formula: weight the share of the
+// player's own play-type diet by the opponent's POINTS allowed per 48 in that
+// type vs the league average (points fold efficiency and volume together;
+// per-48 normalizes overtime volume — the mock's per-game numbers stand in
+// for per-48). 1.0 = league-average matchup; render as +/-%.
 export function playTypeMatchupScore(player) {
-  const def = DEFENSE[opponentOf(player)].playTypes;
+  const tri = opponentOf(player);
   let covered = 0;
   let acc = 0;
   player.playTypes.forEach((pt) => {
-    const d = def[pt.type];
-    const avg = LEAGUE_AVG.playTypes[pt.type];
-    if (!d || !avg) return;
-    acc += (pt.freq / 100) * (d.ppp / avg);
+    const avgPpp = LEAGUE_AVG.playTypes[pt.type];
+    const basePoss = PLAYTYPE_BASE_POSS[pt.type];
+    if (!avgPpp || !basePoss || !DEFENSE[tri].playTypes[pt.type]) return;
+    const v = defPlayTypeVolume(tri, pt.type);
+    acc += (pt.freq / 100) * (v.ptsG / (basePoss * avgPpp));
     covered += pt.freq / 100;
   });
   return covered > 0 ? acc / covered : null;

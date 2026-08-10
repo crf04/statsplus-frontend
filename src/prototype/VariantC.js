@@ -79,7 +79,9 @@ export function concessions(tri) {
       label: zone,
       line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
-      markets: THREE_POINT_ZONES.includes(zone) ? ['PTS', '3PM'] : ['PTS'],
+      markets: THREE_POINT_ZONES.includes(zone)
+        ? ['PTS', '3PM', 'FGA', 'FG3A']
+        : ['PTS', 'FGA'],
       attackers: (p) => {
         const z = p.zones.find((x) => x.zone === zone && x.share >= 20);
         if (!z) return null;
@@ -95,7 +97,9 @@ export function concessions(tri) {
       label: type,
       line: `${v.ptsG} pts (${v.ptsPct}) · ${v.fgaG} FGA (${v.fgaPct})`,
       rank: d.rank,
-      markets: THREE_POINT_SHOT_TYPES.includes(type) ? ['PTS', '3PM'] : ['PTS'],
+      markets: THREE_POINT_SHOT_TYPES.includes(type)
+        ? ['PTS', '3PM', 'FGA', 'FG3A']
+        : ['PTS', 'FGA'],
       attackers: (p) => {
         const st = p.shotTypes.find((x) => x.type === type && x.fga >= 4);
         if (!st) return null;

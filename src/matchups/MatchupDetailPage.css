@@ -95,7 +95,8 @@
 }
 .hidden-count,
 .honest-empty,
-.no-lean {
+.no-lean,
+.rail-count {
   color: var(--ct-dim);
   font-size: 0.82rem;
 }
@@ -162,6 +163,61 @@
   font-family: var(--ct-mono);
   font-size: 0.66rem;
 }
+.rail-sort {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rail-sort button {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+}
+
+.rail-sort button[aria-pressed='true'] {
+  border-color: var(--ct-gold);
+  color: var(--ct-text);
+}
+
+.defensive-columns {
+  margin-top: 18px;
+}
+
+.defensive-columns > h3 {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.defensive-column-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.defensive-column-grid article {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 12px;
+  background: var(--ct-surface-2);
+}
+
+.defensive-column-grid h4 {
+  margin: 0;
+}
+
+.defensive-column-grid span,
+.injury-list small {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+}
 .player-rail {
   position: sticky;
   top: 16px;
@@ -202,8 +258,14 @@
   position: relative;
 }
 .injury-list a {
+  display: block;
   color: var(--ct-gold);
   font-size: 0.75rem;
+}
+
+.injury-list small {
+  display: block;
+  margin-top: 4px;
 }
 .signed-out-detail {
   margin-top: 28px;
@@ -224,6 +286,10 @@
     position: static;
   }
   .injury-list {
+    grid-template-columns: 1fr;
+  }
+
+  .defensive-column-grid {
     grid-template-columns: 1fr;
   }
   .row-stat {

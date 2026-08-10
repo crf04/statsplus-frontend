@@ -1,6 +1,6 @@
 const definitions = {
   fresh: {
-    inboundSurfaces: ['schedule', 'pool'],
+    inboundSurfaces: ['schedule', 'pool', 'stats', 'injuries'],
     allowsNullRetrievedAt: false,
     warning: false,
     currentPoolMessage: 'Targetable counts use the current player pool.',
@@ -8,7 +8,7 @@ const definitions = {
       'Past slate — the current player pool is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
   stale: {
-    inboundSurfaces: ['schedule'],
+    inboundSurfaces: ['schedule', 'stats', 'injuries'],
     allowsNullRetrievedAt: false,
     warning: true,
     currentPoolMessage: 'Player pool snapshot is stale; targetable counts may be out of date.',
@@ -25,7 +25,7 @@ const definitions = {
       'Past slate — the latest available snapshot is not displayed for historical dates. Final game cards retain the posted targetable counts returned for this slate.',
   },
   missing: {
-    inboundSurfaces: ['schedule', 'pool'],
+    inboundSurfaces: ['schedule', 'pool', 'stats', 'injuries'],
     allowsNullRetrievedAt: true,
     warning: true,
     currentPoolMessage: 'Player pool is missing; no targetable players are currently available.',

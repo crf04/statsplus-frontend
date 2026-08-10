@@ -14,15 +14,38 @@ const value = (allowedPer48, percentVsLeagueAverage, sigmaDeviation, rank) => ({
   sigmaDeviation,
   rank,
 });
+const defensiveColumns = {
+  OPP_TOV: {
+    season: { per48: 14.2, percentVsLeagueAverage: 8 },
+    last15: { per48: 12.9, percentVsLeagueAverage: -3 },
+  },
+  OPP_STL: {
+    season: { per48: 7.1, percentVsLeagueAverage: -5 },
+    last15: { per48: 7.8, percentVsLeagueAverage: 4 },
+  },
+  OPP_BLK: {
+    season: { per48: 5.4, percentVsLeagueAverage: 11 },
+    last15: { per48: 4.7, percentVsLeagueAverage: -2 },
+  },
+};
+const score = (season, last15 = season) => ({
+  season: { components: {}, blend: { value: season, thin: false } },
+  last15: { components: {}, blend: { value: last15, thin: false } },
+});
 
 const matchup = {
-  game: { game_id: 'game-1', away_team: { tricode: 'LAL' }, home_team: { tricode: 'BOS' } },
+  game: {
+    gameId: 'game-1',
+    away: { tricode: 'LAL' },
+    home: { tricode: 'BOS' },
+  },
   teams: [
     {
       teamId: 1,
       tricode: 'LAL',
       name: 'Los Angeles Lakers',
       defenseSheet: { playTypes: [] },
+      defensiveColumns,
     },
     {
       teamId: 2,
@@ -53,6 +76,7 @@ const matchup = {
           },
         ],
       },
+      defensiveColumns,
     },
   ],
   players: [
@@ -74,6 +98,7 @@ const matchup = {
           },
         ],
       },
+      scores: { PTS: score(0.21, 0.03), FG3A: score(0.07, 0.02) },
     },
     {
       id: 'player-one',
@@ -93,6 +118,19 @@ const matchup = {
           },
         ],
       },
+      scores: { PTS: score(0.12, -0.01), FGA: score(0.04, 0.02) },
+    },
+    {
+      id: 'player-three',
+      name: 'Jayson Tatum',
+      teamId: 2,
+      tricode: 'BOS',
+      postedMarkets: ['REB'],
+      seasonScoring: 27.2,
+      last10Minutes: [36, 37, 38],
+      injuryBadgeRef: null,
+      dietShares: { playTypes: [] },
+      scores: { REB: score(0.08) },
     },
   ],
   injuries: {
@@ -145,6 +183,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(screen.queryByText('Isolation')).not.toBeInTheDocument();
   expect(screen.getByText('1 row hidden near league average.')).toBeVisible();
   expect(screen.getByText('+12% vs league')).toBeVisible();
+  expect(screen.getByText('14.2 per 48')).toBeVisible();
   expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
 
@@ -161,6 +200,32 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   expect(screen.getByText('Isolation')).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
+});
+
+test('sorts the active market by delivered Matchup Score and scopes tabs to the displayed side', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  expect(screen.queryByRole('button', { name: 'REB' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('Austin Reaves');
+
+  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
+  expect(await screen.findByRole('button', { name: 'REB' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'FGA' })).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    ),
+  );
 });
 
 test('renders raw injury statuses and keeps the signed-out shell honest', async () => {

@@ -24,12 +24,24 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
   await expect(page.getByText('Transition')).toBeVisible();
   await expect(page.getByText('Above-break three')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Shot zones' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Shot types' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Assist locations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Traditional defense' })).toBeVisible();
   await expect(page.getByText('Isolation')).toHaveCount(0);
   await expect(page.getByText('1 row hidden near league average.')).toBeVisible();
   await expect(page.getByText('+12% vs league')).toBeVisible();
   await expect(page.getByText('-11% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toBeVisible();
+  await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();
+  await expect(page.getByText(/LeBron James · 36% FGA/)).toBeVisible();
+  await expect(page.getByText(/LeBron James · 31% ast/)).toBeVisible();
+  await expect(page.getByText(/Austin Reaves · 40% FGA/)).toHaveCount(0);
+  await expect(page.getByText(/Austin Reaves · 35% ast/)).toHaveCount(0);
+  await expect(page.getByText('15.2 per 48')).toBeVisible();
+  await expect(page.getByText('2 targetable returned')).toBeVisible();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Maxi Kleber player' })).toHaveCount(0);
   await expect(page.getByText('Game-time decision')).toHaveCount(2);
   await expect(page.getByText('Maxi Kleber')).toBeVisible();
   await page.screenshot({
@@ -40,6 +52,16 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await page.getByRole('button', { name: 'Last 15' }).click();
   await expect(page.getByText('-8% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 20% poss/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'PTS' }).click();
+  await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
+  await page.getByRole('button', { name: 'Matchup Score' }).click();
+  const sortedPlayers = page.getByRole('article', { name: /player$/ });
+  await expect(sortedPlayers.first()).toHaveAccessibleName('Austin Reaves player');
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-score-sort.png'),
+    fullPage: true,
+  });
 
   await page.getByRole('button', { name: 'FGA' }).click();
   await expect(page.getByText('Transition')).toBeVisible();
@@ -115,7 +137,7 @@ test('matchup exposes a truthful loading state before the fixture resolves', asy
   await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
   await installApiContract(page, {
     '/api/games/matchup': async () => {
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return matchupPayload;
     },
   });
@@ -126,4 +148,32 @@ test('matchup exposes a truthful loading state before the fixture resolves', asy
     fullPage: true,
   });
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+});
+
+test('matchup freshness ages cross named bars without refetching', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-01-15T12:00:00Z') });
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  await installApiContract(page, {
+    '/api/games/matchup': {
+      ...matchupPayload,
+      freshness: {
+        ...matchupPayload.freshness,
+        schedule: { status: 'fresh', retrieved_at: '2026-01-14T06:01:00Z' },
+      },
+    },
+  });
+  let matchupRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup') matchupRequests += 1;
+  });
+  await page.goto('/matchups/0022500584');
+  const freshness = page.getByRole('region', { name: 'Matchup data freshness' });
+  await expect(freshness.getByText(/^pool: fresh, as of 10m ago$/i)).toBeVisible();
+
+  await page.clock.runFor(6 * 60 * 1000);
+  await expect(
+    freshness.getByText(/pool: stale, as of 16m ago.*older than 15m freshness bar/i),
+  ).toBeVisible();
+  await expect(freshness.getByText(/schedule: stale.*schedule data warning/i)).toBeVisible();
+  expect(matchupRequests).toBe(1);
 });

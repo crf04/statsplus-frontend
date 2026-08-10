@@ -10,6 +10,7 @@ import {
   shiftCalendarDate,
 } from './calendarDate';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
+import { formatAge, useMinuteNow } from './freshness';
 import './SlatePage.css';
 
 const formatTip = (date) =>
@@ -18,29 +19,10 @@ const formatTip = (date) =>
     minute: '2-digit',
   }).format(new Date(date));
 
-const formatAge = (retrievedAt) => {
-  const minutes = Math.max(0, Math.round((Date.now() - new Date(retrievedAt).getTime()) / 60000));
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 48) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-};
-
-const surfaceStatusText = (name, surface, presentation) => {
-  const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt)}` : '';
+const surfaceStatusText = (name, surface, presentation, now) => {
+  const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt, now)}` : '';
   const thresholdNote = presentation.thresholdNote ? ` (${presentation.thresholdNote})` : '';
   return `${name} is ${presentation.status}${age}${thresholdNote}`;
-};
-
-const useMinuteNow = (enabled) => {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!enabled) return undefined;
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(interval);
-  }, [enabled]);
-  return now;
 };
 
 function SurfaceFreshness({ name, surface, surfaceName, now, presentation }) {
@@ -48,7 +30,7 @@ function SurfaceFreshness({ name, surface, surfaceName, now, presentation }) {
     presentation || getSurfaceFreshnessPresentation(surface, surfaceName, now);
   return (
     <span className={effectivePresentation.warning ? 'freshness-warning' : undefined}>
-      {surfaceStatusText(name, surface, effectivePresentation)}
+      {surfaceStatusText(name, surface, effectivePresentation, now)}
     </span>
   );
 }

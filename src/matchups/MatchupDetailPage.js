@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
+import { formatAge, useMinuteNow } from '../freshness';
+import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup } from './matchupApi';
 import { shouldDisplayDietShare } from './displayConfig';
 import './MatchupDetailPage.css';
@@ -29,25 +31,7 @@ const SHARE_LABELS = {
   assistLocations: 'ast',
 };
 
-const ageText = (retrievedAt) => {
-  if (!retrievedAt) return 'age unavailable';
-  const minutes = Math.max(0, Math.round((Date.now() - new Date(retrievedAt).getTime()) / 60000));
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 48) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-};
-
-const isFreshnessWarning = (name, surface) => {
-  if (surface.status !== 'fresh') return true;
-  if (!surface.retrievedAt) return true;
-  const age = Date.now() - new Date(surface.retrievedAt).getTime();
-  if (name === 'pool') return age > 15 * 60 * 1000;
-  if (name === 'schedule') return age > 30 * 60 * 60 * 1000;
-  return false;
-};
-
-function Freshness({ freshness }) {
+function Freshness({ freshness, now }) {
   const surfaces = [
     ['schedule', freshness.schedule],
     ['pool', freshness.pool],
@@ -57,23 +41,28 @@ function Freshness({ freshness }) {
   return (
     <section className="matchup-freshness" aria-label="Matchup data freshness">
       {surfaces.map(([name, surface]) => {
-        const warning = isFreshnessWarning(name, surface);
+        const presentation = getSurfaceFreshnessPresentation(surface, name, now);
         return (
-          <span key={name} className={warning ? 'matchup-warning' : undefined}>
-            <strong>{name}</strong>: {surface.status}, as of {ageText(surface.retrievedAt)}
-            {warning ? ` — ${name} data warning` : ''}
+          <span key={name} className={presentation.warning ? 'matchup-warning' : undefined}>
+            <strong>{name}</strong>: {presentation.status}, as of{' '}
+            {formatAge(surface.retrievedAt, now)}
+            {presentation.warning ? ` — ${name} data warning` : ''}
+            {presentation.thresholdNote ? ` (${presentation.thresholdNote})` : ''}
           </span>
         );
       })}
-      {freshness.pool.providers.map((provider) => (
-        <span
-          key={provider.name}
-          className={isFreshnessWarning('pool', provider) ? 'matchup-warning' : undefined}
-        >
-          <strong>{provider.name} pool</strong>: {provider.status}, as of{' '}
-          {ageText(provider.retrievedAt)}
-        </span>
-      ))}
+      {freshness.pool.providers.map((provider) => {
+        const presentation = getSurfaceFreshnessPresentation(provider, 'pool', now);
+        return (
+          <span
+            key={provider.name}
+            className={presentation.warning ? 'matchup-warning' : undefined}
+          >
+            <strong>{provider.name} pool</strong>: {presentation.status}, as of{' '}
+            {formatAge(provider.retrievedAt, now)}
+          </span>
+        );
+      })}
     </section>
   );
 }
@@ -101,18 +90,52 @@ function Sparkline({ values, playerName }) {
   );
 }
 
-function PlayerRail({ players, injuries, market }) {
+function PlayerRail({ players, injuries, market, windowKey, targetableCount }) {
+  const [sortMode, setSortMode] = useState('season');
+  useEffect(() => {
+    if (market === 'All') setSortMode('season');
+  }, [market]);
   const injuryById = new Map(
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
-  const scoped = players
-    .filter((player) => market === 'All' || player.postedMarkets.includes(market))
-    .sort((a, b) => b.seasonScoring - a.seasonScoring || a.name.localeCompare(b.name));
+  const scoreFor = (player) => player.scores[market]?.[windowKey].blend.value ?? -Infinity;
+  const scoped = players.filter(
+    (player) => market === 'All' || player.postedMarkets.includes(market),
+  );
+  scoped.sort((a, b) =>
+    sortMode === 'score' && market !== 'All'
+      ? scoreFor(b) - scoreFor(a) || b.seasonScoring - a.seasonScoring
+      : b.seasonScoring - a.seasonScoring || a.name.localeCompare(b.name),
+  );
   return (
     <aside className="player-rail" aria-labelledby="player-rail-heading">
       <div className="section-heading">
         <p className="matchup-eyebrow">Targetable players</p>
-        <h2 id="player-rail-heading">Season scoring order</h2>
+        <h2 id="player-rail-heading">
+          {sortMode === 'score' && market !== 'All'
+            ? `${market} Matchup Score order`
+            : 'Season scoring order'}
+        </h2>
+        {targetableCount !== null && (
+          <p className="rail-count">{targetableCount} targetable returned</p>
+        )}
+        <div className="rail-sort" role="group" aria-label="Player rail sort">
+          <button
+            type="button"
+            aria-pressed={sortMode === 'season'}
+            onClick={() => setSortMode('season')}
+          >
+            Season scoring
+          </button>
+          <button
+            type="button"
+            aria-pressed={sortMode === 'score'}
+            disabled={market === 'All'}
+            onClick={() => setSortMode('score')}
+          >
+            Matchup Score
+          </button>
+        </div>
       </div>
       {scoped.length === 0 ? (
         <p className="honest-empty">No posted players are available for this market.</p>
@@ -129,7 +152,11 @@ function PlayerRail({ players, injuries, market }) {
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>
                 )}
-                <div className="market-chips" aria-label={`${player.name} posted markets`}>
+                <div
+                  className="market-chips"
+                  role="group"
+                  aria-label={`${player.name} posted markets`}
+                >
                   {player.postedMarkets.map((postedMarket) => (
                     <span key={postedMarket}>{postedMarket}</span>
                   ))}
@@ -154,7 +181,7 @@ function DietShareChips({ players, base, rowKey, windowKey }) {
   if (chips.length === 0)
     return <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>;
   return (
-    <div className="diet-chips" aria-label="Players leaning on this slice">
+    <div className="diet-chips" role="group" aria-label="Players leaning on this slice">
       {chips.map(({ player, share }) => (
         <span key={player.id}>
           {player.name} · {Math.round(share.share * 100)}% {SHARE_LABELS[base]}
@@ -185,6 +212,7 @@ function DefenseSheet({ team, players, market, windowKey, deviation }) {
       <p className="hidden-count">
         {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
       </p>
+      <DefensiveColumns columns={team.defensiveColumns} market={market} windowKey={windowKey} />
       {visibleCount === 0 && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
@@ -235,7 +263,36 @@ function DefenseSheet({ team, players, market, windowKey, deviation }) {
   );
 }
 
-function InjuryReport({ injuries }) {
+const DEFENSIVE_COLUMN_MARKETS = { OPP_TOV: 'TOV', OPP_STL: 'STL', OPP_BLK: 'BLK' };
+
+function DefensiveColumns({ columns, market, windowKey }) {
+  const visible = Object.entries(columns).filter(
+    ([key]) => market === 'All' || DEFENSIVE_COLUMN_MARKETS[key] === market,
+  );
+  if (visible.length === 0) return null;
+  return (
+    <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
+      <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
+      <div className="defensive-column-grid">
+        {visible.map(([key, windows]) => {
+          const value = windows[windowKey];
+          return (
+            <article key={key}>
+              <h4>{key}</h4>
+              <strong>{value.per48.toFixed(1)} per 48</strong>
+              <span>
+                {value.percentVsLeagueAverage > 0 ? '+' : ''}
+                {value.percentVsLeagueAverage}% vs league
+              </span>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function InjuryReport({ injuries, now }) {
   if (injuries.status === 'unavailable') {
     return (
       <section className="injury-report" aria-labelledby="injury-heading">
@@ -243,6 +300,9 @@ function InjuryReport({ injuries }) {
         <p className="honest-empty">
           Injury report unavailable: {injuries.unavailableReason || 'unknown reason'}.
         </p>
+        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
+          Data source: {injuries.source}
+        </a>
       </section>
     );
   }
@@ -251,28 +311,36 @@ function InjuryReport({ injuries }) {
     <section className="injury-report" aria-labelledby="injury-heading">
       <div className="section-heading">
         <p className="matchup-eyebrow">
-          {injuries.status} · as of {ageText(injuries.retrievedAt)}
+          {injuries.status} · as of {formatAge(injuries.retrievedAt, now)}
         </p>
         <h2 id="injury-heading">Injury Report</h2>
+        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
+          Data source: {injuries.source}
+        </a>
       </div>
       {entries.length === 0 ? (
         <p className="honest-empty">No non-Available injury entries were reported.</p>
       ) : (
         <div className="injury-list">
-          {entries.map((entry) => (
-            <article key={entry.id}>
-              <div>
-                <strong>{entry.playerName}</strong> <span>{entry.tricode}</span>
-              </div>
-              <span className="injury-badge">
-                {entry.status || entry.rawStatus || 'Unknown status'}
-              </span>
-              <p>{entry.reason}</p>
-              <a href={entry.sourceUrl} target="_blank" rel="noreferrer">
-                Source
-              </a>
-            </article>
-          ))}
+          {injuries.teams.flatMap((team) =>
+            team.entries.map((entry) => (
+              <article key={entry.id}>
+                <div>
+                  <strong>{entry.playerName}</strong> <span>{entry.tricode}</span>
+                </div>
+                <span className="injury-badge">
+                  {entry.status || entry.rawStatus || 'Unknown status'}
+                </span>
+                <p>{entry.reason}</p>
+                <a href={entry.sourceUrl} target="_blank" rel="noreferrer">
+                  Source
+                </a>
+                <small>
+                  {team.tricode} submission: {team.submissionState || 'unknown'}
+                </small>
+              </article>
+            )),
+          )}
         </div>
       )}
     </section>
@@ -280,7 +348,8 @@ function InjuryReport({ injuries }) {
 }
 
 function Detail({ matchup }) {
-  const homeTricode = matchup.game.home_team?.tricode;
+  const now = useMinuteNow(true);
+  const homeTricode = matchup.game.home.tricode;
   const initialTeam =
     matchup.teams.find((team) => team.tricode === homeTricode) || matchup.teams[0];
   const [teamId, setTeamId] = useState(initialTeam.teamId);
@@ -289,13 +358,23 @@ function Detail({ matchup }) {
   const [deviation, setDeviation] = useState(1);
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
-  const opposingPlayers = matchup.players.filter(
-    (player) => player.teamId === opposingTeam?.teamId,
+  const opposingTeamId = opposingTeam?.teamId;
+  const poolAvailable = !['missing', 'unavailable'].includes(matchup.freshness.pool.status);
+  const opposingPlayers = useMemo(
+    () =>
+      poolAvailable ? matchup.players.filter((player) => player.teamId === opposingTeamId) : [],
+    [matchup.players, opposingTeamId, poolAvailable],
+  );
+  const opposingGameTeam = [matchup.game.away, matchup.game.home].find(
+    (team) => team.teamId === opposingTeamId,
   );
   const markets = useMemo(
-    () => ['All', ...new Set(matchup.players.flatMap((player) => player.postedMarkets))],
-    [matchup.players],
+    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.postedMarkets))],
+    [opposingPlayers],
   );
+  useEffect(() => {
+    if (!markets.includes(market)) setMarket('All');
+  }, [market, markets]);
   return (
     <>
       <header className="matchup-heading">
@@ -303,7 +382,7 @@ function Detail({ matchup }) {
           <Link to="/matchups">← Back to slate</Link>
           <p className="matchup-eyebrow">Open Team Sheets</p>
           <h1>
-            {matchup.game.away_team.tricode} @ {matchup.game.home_team.tricode}
+            {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
         <div className="team-toggle" role="group" aria-label="Defense team">
@@ -319,7 +398,7 @@ function Detail({ matchup }) {
           ))}
         </div>
       </header>
-      <Freshness freshness={matchup.freshness} />
+      <Freshness freshness={matchup.freshness} now={now} />
       <section className="detail-controls" aria-label="Defense Sheet controls">
         <div className="segmented" role="group" aria-label="Market">
           {markets.map((item) => (
@@ -359,16 +438,29 @@ function Detail({ matchup }) {
         </div>
       </section>
       <div className="detail-grid">
-        <DefenseSheet
-          team={defenseTeam}
+        {matchup.freshness.stats.status === 'missing' ? (
+          <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
+            <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
+            <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
+          </section>
+        ) : (
+          <DefenseSheet
+            team={defenseTeam}
+            players={opposingPlayers}
+            market={market}
+            windowKey={windowKey}
+            deviation={deviation}
+          />
+        )}
+        <PlayerRail
           players={opposingPlayers}
+          injuries={matchup.injuries}
           market={market}
           windowKey={windowKey}
-          deviation={deviation}
+          targetableCount={poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null}
         />
-        <PlayerRail players={opposingPlayers} injuries={matchup.injuries} market={market} />
       </div>
-      <InjuryReport injuries={matchup.injuries} />
+      <InjuryReport injuries={matchup.injuries} now={now} />
     </>
   );
 }

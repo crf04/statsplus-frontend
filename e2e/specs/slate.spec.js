@@ -37,7 +37,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
           {
             poolStatus: 'fresh',
             poolFreshnessStatus: 'fresh',
-            poolRetrievedAt: '2026-01-15T10:00:00Z',
+            poolRetrievedAt: '2026-01-15T11:50:00Z',
           },
         );
       }

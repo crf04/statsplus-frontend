@@ -115,6 +115,14 @@ test.each([
       },
     },
   ],
+  ...['text', 7, null].map((schedule) => [
+    `primitive schedule surface ${String(schedule)}`,
+    { ...payload, freshness: { ...payload.freshness, schedule } },
+  ]),
+  ...['text', 7, null].map((pool) => [
+    `primitive pool surface ${String(pool)}`,
+    { ...payload, freshness: { ...payload.freshness, pool } },
+  ]),
   ['invalid calendar slate date', { ...payload, slate_date: '2026-02-30' }],
 ])('rejects a %s', (_label, malformedPayload) => {
   expect(() => decodeSlate(malformedPayload)).toThrow(

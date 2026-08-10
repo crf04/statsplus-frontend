@@ -8,6 +8,7 @@ import {
 } from './slateStatus';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
+const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const decodeRetrievedAt = (value) => {
   if (value === null) return null;
@@ -18,7 +19,11 @@ const decodeRetrievedAt = (value) => {
 };
 
 const decodeFreshnessSurface = (surface, surfaceName) => {
-  if (!surface || !isStatusAllowed(surface.status, surfaceName) || !('retrieved_at' in surface)) {
+  if (
+    !isRecord(surface) ||
+    !isStatusAllowed(surface.status, surfaceName) ||
+    !('retrieved_at' in surface)
+  ) {
     throw createInvalidSlateError();
   }
   const retrievedAt = decodeRetrievedAt(surface.retrieved_at);
@@ -29,14 +34,14 @@ const decodeFreshnessSurface = (surface, surfaceName) => {
 };
 
 const decodeDerivedSchedule = (surface) => {
-  if (!surface || !('retrieved_at' in surface)) throw createInvalidSlateError();
+  if (!isRecord(surface) || !('retrieved_at' in surface)) throw createInvalidSlateError();
   const retrievedAt = decodeRetrievedAt(surface.retrieved_at);
   if (!retrievedAt) throw createInvalidSlateError();
   return { status: deriveScheduleStatus(retrievedAt), retrievedAt };
 };
 
 const decodeFreshness = (freshness) => {
-  if (!freshness || typeof freshness !== 'object' || !freshness.pool) {
+  if (!isRecord(freshness) || !isRecord(freshness.pool)) {
     throw createInvalidSlateError();
   }
   const schedule =

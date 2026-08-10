@@ -133,10 +133,13 @@ test('labels a fresh pool snapshot stale when it crosses the 15m bar', async () 
 
   const fresh = await screen.findByText('Player pool is fresh — as of 14m ago');
   expect(fresh).not.toHaveClass('freshness-warning');
+  expect(screen.getByText('Targetable counts use the current player pool.')).toBeVisible();
   act(() => jest.advanceTimersByTime(120000));
   expect(screen.getByText(/player pool is stale.*older than 15m freshness bar/i)).toHaveClass(
     'freshness-warning',
   );
+  expect(screen.getByText(/player pool snapshot is stale/i)).toBeVisible();
+  expect(screen.queryByText(/use the current player pool/i)).not.toBeInTheDocument();
   expect(fetchSlate).toHaveBeenCalledTimes(1);
 });
 
@@ -292,7 +295,12 @@ test.each([
       poolStatus,
       freshness: {
         ...slate.freshness,
-        pool: { ...slate.freshness.pool, status: poolStatus },
+        pool: {
+          ...slate.freshness.pool,
+          status: poolStatus,
+          retrievedAt:
+            poolStatus === 'fresh' ? '2026-01-15T11:50:00.000Z' : slate.freshness.pool.retrievedAt,
+        },
       },
       games: [{ ...game, status: 'final', statusLabel: 'Final' }],
     });
@@ -331,7 +339,19 @@ test('forwards an impossible calendar date so the backend can return invalid_inp
 });
 
 test('uses the server slate date for the heading and historical pool state', async () => {
-  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-01-14', poolStatus: 'fresh' });
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    slateDate: '2026-01-14',
+    poolStatus: 'fresh',
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        ...slate.freshness.pool,
+        status: 'fresh',
+        retrievedAt: '2026-01-15T11:50:00.000Z',
+      },
+    },
+  });
 
   render(
     <MemoryRouter initialEntries={['/matchups']}>

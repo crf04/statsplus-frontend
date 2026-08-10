@@ -32,35 +32,50 @@ const surfaceStatusText = (name, surface, presentation) => {
   return `${name} is ${presentation.status}${age}${thresholdNote}`;
 };
 
-const useMinuteTick = () => {
-  const [, setTick] = useState(0);
+const useMinuteNow = (enabled) => {
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const interval = setInterval(() => setTick((tick) => tick + 1), 60000);
+    if (!enabled) return undefined;
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [enabled]);
+  return now;
 };
 
-function SurfaceFreshness({ name, surface, surfaceName }) {
-  const presentation = getSurfaceFreshnessPresentation(surface, surfaceName);
+function SurfaceFreshness({ name, surface, surfaceName, now, presentation }) {
+  const effectivePresentation =
+    presentation || getSurfaceFreshnessPresentation(surface, surfaceName, now);
   return (
-    <span className={presentation.warning ? 'freshness-warning' : undefined}>
-      {surfaceStatusText(name, surface, presentation)}
+    <span className={effectivePresentation.warning ? 'freshness-warning' : undefined}>
+      {surfaceStatusText(name, surface, effectivePresentation)}
     </span>
   );
 }
 
-function Freshness({ freshness }) {
-  useMinuteTick();
+function Freshness({ freshness, now, poolPresentation }) {
   return (
     <div className="freshness" role="group" aria-label="Data freshness">
-      <SurfaceFreshness name="Schedule" surface={freshness.schedule} surfaceName="schedule" />
-      <SurfaceFreshness name="Player pool" surface={freshness.pool} surfaceName="pool" />
+      <SurfaceFreshness
+        name="Schedule"
+        surface={freshness.schedule}
+        surfaceName="schedule"
+        now={now}
+      />
+      <SurfaceFreshness
+        name="Player pool"
+        surface={freshness.pool}
+        surfaceName="pool"
+        now={now}
+        presentation={poolPresentation}
+      />
       {freshness.pool.providers.map((provider) => (
         <SurfaceFreshness
           key={provider.name}
           name={`${provider.name} pool`}
           surface={provider}
           surfaceName="pool"
+          now={now}
         />
       ))}
     </div>
@@ -116,6 +131,7 @@ export default function SlatePage() {
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
+  const now = useMinuteNow(state.status === 'ready');
   const slateDate =
     state.status === 'ready'
       ? state.slate.slateDate
@@ -123,6 +139,16 @@ export default function SlatePage() {
         ? null
         : parsedRequestedDate || todaySlateDate;
   const isPast = slateDate ? slateDate < todaySlateDate : false;
+  const poolPresentation =
+    state.status === 'ready'
+      ? getSurfaceFreshnessPresentation(state.slate.freshness.pool, 'pool', now)
+      : null;
+  const effectivePoolStatus =
+    state.status === 'ready' && state.slate.poolStatus === 'fresh'
+      ? poolPresentation.status
+      : state.status === 'ready'
+        ? state.slate.poolStatus
+        : null;
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
@@ -200,8 +226,12 @@ export default function SlatePage() {
       {state.status === 'error' && <p role="alert">{state.error}</p>}
       {state.status === 'ready' && (
         <>
-          <Freshness freshness={state.slate.freshness} />
-          <PoolSummary isPast={isPast} poolStatus={state.slate.poolStatus} />
+          <Freshness
+            freshness={state.slate.freshness}
+            now={now}
+            poolPresentation={poolPresentation}
+          />
+          <PoolSummary isPast={isPast} poolStatus={effectivePoolStatus} />
           {state.slate.games.length === 0 ? (
             <div className="empty-slate">
               <h2>No games on this slate.</h2>

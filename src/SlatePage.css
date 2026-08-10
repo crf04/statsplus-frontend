@@ -171,6 +171,18 @@
   font-size: 0.72rem;
 }
 
+.open-matchup {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--ct-gold);
+  font-weight: 700;
+}
+
+.open-matchup:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 3px;
+}
+
 .empty-slate,
 .signed-out-slate {
   margin-top: 28px;

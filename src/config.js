@@ -14,6 +14,7 @@ const config = {
     TEAMS: '/api/teams',
     GAME_LOGS: '/api/games/game_logs',
     SLATE: '/api/games/slate',
+    MATCHUP: '/api/games/matchup',
     PLAYER_PROFILE: '/api/players/profile',
     TEAM_STATS: '/api/teams/stats',
     NL_QUERY: '/api/nl-query',

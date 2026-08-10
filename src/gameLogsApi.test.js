@@ -1,5 +1,5 @@
 import { apiClient, getApiUrl } from './config';
-import { decodeGameLogsResponse, fetchGameLogsData } from './gameLogsApi';
+import { decodeGameLogsResponse, fetchGameLogsData, getRequestErrorMessage } from './gameLogsApi';
 
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
@@ -46,5 +46,13 @@ describe('gameLogsApi', () => {
     expect(() => decodeGameLogsResponse({ game_logs: '{not-json}' })).toThrow(
       /invalid game logs response/i,
     );
+  });
+
+  test('reads the standard backend error shape', () => {
+    expect(
+      getRequestErrorMessage({
+        response: { data: { error: { code: 'provider_unavailable', message: 'Try later.' } } },
+      }),
+    ).toBe('Try later.');
   });
 });

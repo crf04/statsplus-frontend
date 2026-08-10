@@ -56,6 +56,51 @@ const averages = {
   TOV: 2.5,
 };
 
+export const slateGame = {
+  game_id: '0022500584',
+  away_team: {
+    team_id: 1610612747,
+    tricode: 'LAL',
+    name: 'Los Angeles Lakers',
+    targetable_player_count: 5,
+  },
+  home_team: {
+    team_id: 1610612738,
+    tricode: 'BOS',
+    name: 'Boston Celtics',
+    targetable_player_count: 4,
+  },
+  scheduled_at: '2026-01-16T00:30:00Z',
+  status: { state: 'scheduled', label: 'Scheduled' },
+  classification: 'NBA Paris Game',
+  preseason: false,
+};
+
+const scheduleOnlySlateGame = {
+  ...slateGame,
+  away_team: { ...slateGame.away_team, targetable_player_count: 0 },
+  home_team: { ...slateGame.home_team, targetable_player_count: 0 },
+};
+
+export const slatePayload = (
+  date,
+  games,
+  {
+    poolStatus = 'unavailable',
+    poolFreshnessStatus = 'unavailable',
+    poolRetrievedAt = null,
+    providers = {},
+  } = {},
+) => ({
+  slate_date: date,
+  freshness: {
+    schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
+    pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
+  },
+  pool_status: poolStatus,
+  games,
+});
+
 export const installApiContract = async (page, overrides = {}) => {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -98,6 +143,12 @@ export const installApiContract = async (page, overrides = {}) => {
           next_game: 'Atlanta Hawks',
         },
       });
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate') {
+      const date = url.searchParams.get('date') || '2026-01-15';
+      await route.fulfill({ json: slatePayload(date, [scheduleOnlySlateGame]) });
       return;
     }
 

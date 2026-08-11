@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const externalBaseUrl = process.env.E2E_BASE_URL;
+const vercelAutomationBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
   testDir: './e2e/specs',
@@ -17,6 +18,14 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    ...(vercelAutomationBypassSecret
+      ? {
+          extraHTTPHeaders: {
+            'x-vercel-protection-bypass': vercelAutomationBypassSecret,
+            'x-vercel-set-bypass-cookie': 'true',
+          },
+        }
+      : {}),
   },
   expect: {
     timeout: 10_000,

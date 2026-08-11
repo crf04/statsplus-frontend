@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 10
     env:
       E2E_BASE_URL: ${{ inputs.base_url || github.event.deployment_status.environment_url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

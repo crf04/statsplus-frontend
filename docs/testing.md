@@ -98,10 +98,12 @@ npx playwright show-trace path/to/trace.zip
 
 The `Deployed smoke test` workflow runs automatically only after a successful Production deployment
 status, checks the allowlisted StatsPlus Vercel URL, and checks out the repository's trusted default
-branch harness. That public production path uses no bypass secret. Protected Preview smoke is
-workflow-dispatch only, uses the same trusted harness and URL validation, and fails closed when the
-encrypted repository secret is missing. Playwright trace and video are disabled whenever the secret
-is present; screenshots remain available for failure evidence.
+branch harness. That public production path uses no bypass secret. Explicit `workflow_dispatch` runs
+for either production or Protected Preview instead check out `github.workflow_sha`, the immutable
+revision of the reviewed workflow selected for that dispatch; they never check out the moving
+deployed commit or an older default-branch harness. Protected Preview smoke validates its URL and
+fails closed when the encrypted repository secret is missing. Playwright trace and video are disabled
+whenever the secret is present; screenshots remain available for failure evidence.
 
 For branch protection, require both `validate` and `E2E` before merging.
 

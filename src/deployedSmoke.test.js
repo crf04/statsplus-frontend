@@ -159,12 +159,30 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource).toContain(
       "github.event_name == 'workflow_dispatch' && inputs.mode == 'protected-preview'",
     );
-    expect(workflowSource).toContain('ref: ${{ github.event.repository.default_branch }}');
+    expect(workflowSource).toContain('github.event.repository.default_branch');
     expect(workflowSource).toContain('node scripts/validate-deployment-url.mjs');
     expect(workflowSource).toContain('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.');
     expect(workflowSource.indexOf('Validate protected preview deployment URL')).toBeLessThan(
       workflowSource.indexOf('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.'),
     );
+  });
+
+  test('uses the immutable workflow revision for manual smoke runs', () => {
+    const workflowSource = fs.readFileSync(
+      path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
+      'utf8',
+    );
+    const manualWorkflowRevision =
+      "ref: ${{ github.event_name == 'workflow_dispatch' && github.workflow_sha || github.event.repository.default_branch }}";
+    const checkoutSteps = workflowSource.match(
+      /- name: Check out trusted smoke harness[\s\S]*?persist-credentials: false/g,
+    );
+
+    expect(checkoutSteps).toHaveLength(2);
+    expect(checkoutSteps).toEqual([
+      expect.stringContaining(manualWorkflowRevision),
+      expect.stringContaining(manualWorkflowRevision),
+    ]);
   });
 
   test.each([

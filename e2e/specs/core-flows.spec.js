@@ -1,5 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { E2E_AUTH_STORAGE_KEY, expect, installApiContract } from '../fixtures/courtai';
 import { test } from '../fixtures/deployedSmoke';
+
+const vercelConfig = JSON.parse(
+  fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
+);
+const productionBackendOrigin = new URL(vercelConfig.rewrites[0].destination).origin;
 
 test('@smoke public landing page explains how to authenticate', async ({ deployedPage: page }) => {
   const rawBypassHeaders = [];
@@ -15,6 +22,49 @@ test('@smoke public landing page explains how to authenticate', async ({ deploye
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
   await expect(page.getByRole('textbox')).toBeDisabled();
   expect(rawBypassHeaders).toHaveLength(0);
+});
+
+test('@smoke deployed Matchups shell and deep links resolve', async ({ deployedPage: page }) => {
+  await page.goto('/matchups');
+  await expect(page.getByRole('heading', { name: 'Sign in to view the slate' })).toBeVisible();
+
+  await page.goto('/matchups/0022500584');
+  await expect(page.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
+
+  const bundledAssetUrls = await page
+    .locator('script[src], link[rel="modulepreload"][href]')
+    .evaluateAll((elements) =>
+      elements
+        .map((element) => element.src || element.href)
+        .filter((url) => new URL(url).origin === window.location.origin),
+    );
+  expect(bundledAssetUrls.length).toBeGreaterThan(0);
+
+  const bundledAssets = await Promise.all(
+    bundledAssetUrls.map((url) => page.request.get(url).then((response) => response.text())),
+  );
+  expect(bundledAssets.length).toBeGreaterThan(0);
+  expect(bundledAssets.join('\n')).not.toContain(productionBackendOrigin);
+});
+
+test('@smoke production Matchups API routing reaches authenticated backend', async ({
+  request,
+}) => {
+  test.skip(!process.env.E2E_BASE_URL, 'Only meaningful against a deployed environment.');
+  test.skip(
+    process.env.E2E_PROTECTED_PREVIEW === 'true',
+    'Production-only check avoids forwarding the protected-preview cookie through the proxy.',
+  );
+
+  const response = await request.get(
+    new URL('/api/games/slate?date=2026-01-15', process.env.E2E_BASE_URL).href,
+  );
+
+  expect(response.status()).toBe(401);
+  expect(response.headers()['content-type']).toContain('application/json');
+  await expect(response.json()).resolves.toMatchObject({
+    error: { code: 'authentication_required' },
+  });
 });
 
 test('@critical the development auth adapter unlocks the search seam', async ({ page }) => {

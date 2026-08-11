@@ -2,11 +2,12 @@ import { API_TIMEOUT } from './apiSettings';
 
 const trimTrailingSlashes = (value) => value.replace(/\/+$/, '');
 const configuredApiBaseUrl = trimTrailingSlashes((process.env.REACT_APP_API_BASE_URL || '').trim());
-const defaultApiBaseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:8000';
+const apiBaseUrl =
+  process.env.NODE_ENV === 'production' ? '' : configuredApiBaseUrl || 'http://127.0.0.1:8000';
 
 const config = {
-  // In production, an empty base URL keeps API calls relative to /api for Vercel rewrites.
-  API_BASE_URL: configuredApiBaseUrl || defaultApiBaseUrl,
+  // Production always stays same-origin so Vercel's /api rewrite owns backend routing.
+  API_BASE_URL: apiBaseUrl,
 
   // API endpoints
   API_ENDPOINTS: {

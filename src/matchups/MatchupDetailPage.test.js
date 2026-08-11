@@ -271,6 +271,8 @@ test('selection keeps All active and uses only the delivered Season Diet Share',
     </MemoryRouter>,
   );
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  expect(screen.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
+  expect(screen.queryByText(/Diet Share inputs for the current window/)).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -291,6 +293,19 @@ test('names an unavailable surface window while leaving available surfaces usabl
       row.last15 = null;
     });
   });
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('AST');
+  lebron.provenance.prizepicks.push('AST');
+  lebron.scores.AST = score(0.05);
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.assistLocations = [
+    {
+      key: 'paint-assists',
+      label: 'Paint assists',
+      markets: ['AST'],
+      season: value(11, 13, 1.5, 28),
+      last15: value(10, 9, 1.1, 24),
+    },
+  ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
@@ -305,6 +320,65 @@ test('names an unavailable surface window while leaving available surfaces usabl
     screen.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
   expect(screen.getByText('12.9 per 48')).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'AST' }));
+  expect(
+    screen.queryByText('Play types unavailable for Last 15: provider_unsupported.'),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText('Paint assists')).toBeVisible();
+});
+
+test('renders one relevant traditional unavailability notice for All and specific markets', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.traditional.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'not_stored',
+  };
+  candidate.teams.forEach((team) => {
+    team.defenseSheet.traditional = [
+      {
+        key: 'opponent-rebounds',
+        label: 'Opponent rebounds',
+        markets: ['REB'],
+        season: value(45, -8, -1.2, 4),
+        last15: null,
+      },
+    ];
+    Object.values(team.defensiveColumns).forEach((column) => {
+      column.last15 = null;
+    });
+  });
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('TOV', 'AST');
+  lebron.provenance.prizepicks.push('TOV', 'AST');
+  lebron.scores.TOV = {
+    season: { components: { traditional: { value: 0.03, thin: false } }, blend: null },
+    last15: { components: { traditional: { value: 0.02, thin: false } }, blend: null },
+  };
+  lebron.scores.AST = score(0.05);
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(
+    screen.getAllByText('Traditional defense unavailable for Last 15: not_stored.'),
+  ).toHaveLength(1);
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(
+    screen.getAllByText('Traditional defense unavailable for Last 15: not_stored.'),
+  ).toHaveLength(1);
+
+  await userEvent.click(screen.getByRole('button', { name: 'AST' }));
+  expect(
+    screen.queryByText('Traditional defense unavailable for Last 15: not_stored.'),
+  ).not.toBeInTheDocument();
 });
 
 test('renders nullable season scoring and explains zero-component offensive scores', async () => {

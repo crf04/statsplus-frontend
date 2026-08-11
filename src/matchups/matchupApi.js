@@ -58,7 +58,6 @@ const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locatio
 const decodeAvailabilityState = (value) => {
   if (
     !isRecord(value) ||
-    Object.keys(value).sort().join() !== ['status', 'unavailable_reason'].sort().join() ||
     !['available', 'unavailable', 'missing'].includes(value.status) ||
     (value.status === 'available'
       ? value.unavailable_reason !== null
@@ -127,11 +126,7 @@ const decodeSheetRow = (row, availability) => {
 };
 
 const decodeDefenseSheet = (sheet, surfaceAvailability) => {
-  if (
-    !isRecord(sheet) ||
-    Object.keys(sheet).sort().join() !==
-      ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].sort().join()
-  )
+  if (!isRecord(sheet) || Object.keys(sheet).sort().join() !== [...DEFENSE_BASES].sort().join())
     throw invalid();
   return Object.fromEntries(
     Object.entries(sheet).map(([base, rows]) => {
@@ -201,21 +196,11 @@ const decodeDietShares = (dietShares) => {
       return [
         camelKey(base),
         entries.map((entry) => {
-          if (
-            !isRecord(entry) ||
-            Object.keys(entry).sort().join() !== ['key', 'season'].sort().join() ||
-            !isRecord(entry.season)
-          ) {
+          if (!isRecord(entry) || Object.hasOwn(entry, 'last_15') || !isRecord(entry.season)) {
             throw invalid();
           }
           const season = entry.season;
-          if (
-            Object.keys(season).sort().join() !==
-              ['share', 'volume', 'games_played', 'volume_unit'].sort().join() ||
-            !Number.isInteger(season.games_played) ||
-            season.games_played <= 0
-          )
-            throw invalid();
+          if (!Number.isInteger(season.games_played) || season.games_played <= 0) throw invalid();
           const share = requireNumber(season.share);
           const volume = requireNumber(season.volume);
           if (share < 0 || volume < 0) throw invalid();
@@ -375,12 +360,7 @@ const validateLeagueCoverage = (league, teams) => {
 };
 
 const decodeScoreCell = (cell) => {
-  if (
-    !isRecord(cell) ||
-    Object.keys(cell).sort().join() !== ['thin', 'value'].sort().join() ||
-    typeof cell.thin !== 'boolean'
-  )
-    throw invalid();
+  if (!isRecord(cell) || typeof cell.thin !== 'boolean') throw invalid();
   return { value: requireNumber(cell.value), thin: cell.thin };
 };
 
@@ -389,12 +369,6 @@ const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
 const decodeScoreWindow = (window, market) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
   const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
-  const keys = Object.keys(window).sort().join();
-  if (
-    (defensive && !['components', 'blend,components'].includes(keys)) ||
-    (!defensive && keys !== ['blend', 'components'].sort().join())
-  )
-    throw invalid();
   const componentBases = Object.keys(window.components);
   if (
     componentBases.some((base) => !DEFENSE_BASES.includes(base)) ||
@@ -576,7 +550,7 @@ const decodeInjuries = (injuries, matchupTeams) => {
   if (
     !Array.isArray(injuries.teams) ||
     (injuries.status === 'unavailable'
-      ? injuries.teams.length !== 0
+      ? ![0, matchupTeams.length].includes(injuries.teams.length)
       : injuries.teams.length !== matchupTeams.length)
   ) {
     throw invalid();

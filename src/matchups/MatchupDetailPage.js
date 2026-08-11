@@ -246,19 +246,21 @@ function DefenseSheet({
 }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
+    const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
     const availability = surfaceAvailability[base][windowKey];
     if (availability.status !== 'available') {
-      return { base, availability, visibleRows: [] };
+      return { base, availability, relevant: marketRows.length > 0, visibleRows: [] };
     }
-    const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
     const visibleRows = marketRows.filter((row) => {
       const shown = Math.abs(row[windowKey].sigmaDeviation) >= deviation;
       if (!shown) hidden += 1;
       return shown;
     });
-    return { base, availability, visibleRows };
+    return { base, availability, relevant: marketRows.length > 0, visibleRows };
   });
   const visibleCount = sections.reduce((total, section) => total + section.visibleRows.length, 0);
+  const traditionalHasRelevantRows =
+    sections.find((section) => section.base === 'traditional')?.relevant ?? false;
   return (
     <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
       <div className="section-heading">
@@ -273,12 +275,13 @@ function DefenseSheet({
         market={market}
         windowKey={windowKey}
         availability={surfaceAvailability.traditional[windowKey]}
+        hasRelevantRows={traditionalHasRelevantRows}
       />
       {visibleCount === 0 && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
-      {sections.map(({ base, availability, visibleRows }) =>
-        availability.status !== 'available' ? (
+      {sections.map(({ base, availability, relevant, visibleRows }) =>
+        availability.status !== 'available' && relevant && base !== 'traditional' ? (
           <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
             <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
             <p className="honest-empty">
@@ -342,12 +345,12 @@ function DefenseSheet({
 
 const DEFENSIVE_COLUMN_MARKETS = { OPP_TOV: 'TOV', OPP_STL: 'STL', OPP_BLK: 'BLK' };
 
-function DefensiveColumns({ columns, market, windowKey, availability }) {
+function DefensiveColumns({ columns, market, windowKey, availability, hasRelevantRows }) {
   const visible = Object.entries(columns).filter(
     ([key]) => market === 'All' || DEFENSIVE_COLUMN_MARKETS[key] === market,
   );
-  if (visible.length === 0) return null;
   if (availability.status !== 'available') {
+    if (visible.length === 0 && !hasRelevantRows) return null;
     return (
       <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
         <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
@@ -359,6 +362,7 @@ function DefensiveColumns({ columns, market, windowKey, availability }) {
       </section>
     );
   }
+  if (visible.length === 0) return null;
   return (
     <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
       <h3 id="defensive-columns-heading">Traditional defensive columns</h3>

@@ -510,13 +510,21 @@ test.each([
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
-test('requires unavailable injuries to use the backend empty-team encoding', () => {
+test('accepts both backend unavailable-injury envelopes and rejects partial team envelopes', () => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.injuries.teams = [
     { team_id: 1, tricode: 'LAL', submission_state: 'unknown', entries: [] },
     { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
   ];
-  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  expect(decodeMatchup(candidate).injuries.teams).toHaveLength(2);
+
+  const partial = JSON.parse(JSON.stringify(candidate));
+  partial.injuries.teams.pop();
+  expect(() => decodeMatchup(partial)).toThrow('invalid response');
+
+  const wrongTeam = JSON.parse(JSON.stringify(candidate));
+  wrongTeam.injuries.teams[1].team_id = 3;
+  expect(() => decodeMatchup(wrongTeam)).toThrow('invalid response');
 });
 
 test('requires injury block and injury freshness status to agree', () => {
@@ -553,20 +561,20 @@ test('requires Blend for offensive scores and accepts omitted or null Blend for 
 
 test('accepts a null offensive Blend only when zero components are computable', () => {
   const zeroComponents = JSON.parse(JSON.stringify(payload));
-  zeroComponents.players[0].scores.PTS.last_15 = { components: {}, blend: null };
-  expect(decodeMatchup(zeroComponents).players[0].scores.PTS.last15).toEqual({
+  zeroComponents.players[0].scores.FGA.last_15 = { components: {}, blend: null };
+  expect(decodeMatchup(zeroComponents).players[0].scores.FGA.last15).toEqual({
     components: {},
     blend: null,
   });
 
   const componentWithoutBlend = JSON.parse(JSON.stringify(zeroComponents));
-  componentWithoutBlend.players[0].scores.PTS.last_15.components = {
-    play_types: { value: 0.08, thin: false },
+  componentWithoutBlend.players[0].scores.FGA.last_15.components = {
+    shot_zones: { value: 0.08, thin: false },
   };
   expect(() => decodeMatchup(componentWithoutBlend)).toThrow('invalid response');
 
   const inventedBlend = JSON.parse(JSON.stringify(zeroComponents));
-  inventedBlend.players[0].scores.PTS.last_15.blend = { value: 0, thin: true };
+  inventedBlend.players[0].scores.FGA.last_15.blend = { value: 0, thin: true };
   expect(() => decodeMatchup(inventedBlend)).toThrow('invalid response');
 });
 
@@ -576,7 +584,6 @@ test.each([
   ['component without thin', { play_types: { value: 0.08 } }],
   ['component with nonnumeric value', { play_types: { value: '0.08', thin: false } }],
   ['component with nonboolean thin', { play_types: { value: 0.08, thin: 'false' } }],
-  ['component with an invented field', { play_types: { value: 0.08, thin: false, note: 'x' } }],
 ])('rejects a %s score-cell shape', (_name, components) => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.players[0].scores.PTS.season.components = components;
@@ -588,11 +595,34 @@ test.each([
   ['Blend without thin', { value: 0.08 }],
   ['Blend with nonnumeric value', { value: '0.08', thin: false }],
   ['Blend with nonboolean thin', { value: 0.08, thin: 0 }],
-  ['Blend with an invented field', { value: 0.08, thin: false, note: 'x' }],
 ])('rejects a %s score-cell shape', (_name, blend) => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.players[0].scores.PTS.season.blend = blend;
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('tolerates additive fields on forward-compatible low-level contract objects', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.surface_availability.play_types.season.observed_at = '2026-01-15T10:00:00Z';
+  candidate.players[0].diet_shares.play_types[0].provider = 'nba_stats';
+  candidate.players[0].diet_shares.play_types[0].season.sample_note = 'complete';
+  candidate.players[0].scores.PTS.season.components.play_types.provider = 'nba_stats';
+  candidate.players[0].scores.PTS.season.blend.formula_version = 2;
+  candidate.players[0].scores.PTS.season.explanation = 'additive metadata';
+
+  expect(decodeMatchup(candidate)).toEqual(
+    expect.objectContaining({
+      players: expect.arrayContaining([
+        expect.objectContaining({
+          scores: expect.objectContaining({
+            PTS: expect.objectContaining({
+              season: expect.objectContaining({ blend: { value: 0.12, thin: false } }),
+            }),
+          }),
+        }),
+      ]),
+    }),
+  );
 });
 
 test('decodes the complete governed backend market set and both score encodings', () => {

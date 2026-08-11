@@ -248,11 +248,11 @@ const COMPLETE_MARKETS = [
   'STKS',
 ];
 
-const scoreWindow = (value, market, window) => {
+const scoreWindow = (value, market, window, zeroComponents = false) => {
   if (DEFENSIVE_MARKETS.includes(market)) {
     return { components: { traditional: { value, thin: false } } };
   }
-  if (market === 'FG3A' && window === 'last_15') {
+  if (zeroComponents) {
     return { components: {}, blend: null };
   }
   return {
@@ -267,13 +267,23 @@ const scoreWindow = (value, market, window) => {
   };
 };
 
-const scores = (markets, seasonValue, last15Value) =>
+const scores = (markets, seasonValue, last15Value, { zeroMarkets = [] } = {}) =>
   Object.fromEntries(
     markets.map((market, index) => [
       market,
       {
-        season: scoreWindow(seasonValue + index / 100, market, 'season'),
-        last_15: scoreWindow(last15Value + index / 100, market, 'last_15'),
+        season: scoreWindow(
+          seasonValue + index / 100,
+          market,
+          'season',
+          zeroMarkets.includes(market),
+        ),
+        last_15: scoreWindow(
+          last15Value + index / 100,
+          market,
+          'last_15',
+          zeroMarkets.includes(market),
+        ),
       },
     ]),
   );
@@ -375,12 +385,16 @@ export const matchupPayload = {
         // Above the display gate but intentionally posted for PTS, not FGA,
         // so market-tab chip scoping remains observable at the browser seam.
         play_types: [dietShare('transition', 0.18)],
+        // Paint is not an FG3A-compatible slice, and no shot-type Diet fact
+        // exists, so FG3A has no contributing player evidence.
         shot_zones: [dietShare('paint', 0.24, 5.1, 'field_goal_attempts')],
-        shot_types: [dietShare('catch-shoot', 0.4, 3.9, 'field_goal_attempts')],
+        shot_types: [],
         assist_locations: [dietShare('paint-assists', 0.35, 0.8, 'assists')],
       },
       injury_badge_ref: 'injury-austin',
-      scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08),
+      scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08, {
+        zeroMarkets: ['FG3A'],
+      }),
     },
     {
       canonical_id: 1628369,

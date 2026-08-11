@@ -60,6 +60,11 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'AST', exact: true }).click();
+  await expect(
+    page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
+  ).toHaveCount(0);
+  await expect(page.getByText('Paint assists')).toBeVisible();
   await page.getByRole('button', { name: 'Season', exact: true }).click();
 
   await page.getByRole('button', { name: 'PTS' }).click();
@@ -97,6 +102,14 @@ test('matchup renders disabled injuries and unavailable surfaces without inventi
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
   await installApiContract(page, {
     '/api/games/matchup': {
       ...matchupPayload,
@@ -122,10 +135,61 @@ test('matchup renders disabled injuries and unavailable surfaces without inventi
   await expect(page.getByText(/stats: stale.*stats data warning/i)).toBeVisible();
   await expect(page.getByText('No posted players are available for this market.')).toBeVisible();
   await expect(page.getByText('Injury report unavailable: disabled.')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-degraded.png'),
     fullPage: true,
   });
+});
+
+test('traditional unavailability has one market-relevant owner', async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.league.surface_availability.traditional.last_15 = {
+    status: 'unavailable',
+    unavailable_reason: 'not_stored',
+  };
+  candidate.league.defense_sheet.traditional.forEach((row) => {
+    row.last_15 = null;
+  });
+  Object.values(candidate.league.defensive_columns).forEach((column) => {
+    column.last_15 = null;
+  });
+  candidate.teams.forEach((team) => {
+    team.defense_sheet.traditional.forEach((row) => {
+      row.last_15 = null;
+    });
+    Object.values(team.defensive_columns).forEach((column) => {
+      column.last_15 = null;
+    });
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+
+  await page.goto('/matchups/0022500584');
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
+  await expect(
+    page.getByText('Traditional defense unavailable for Last 15: not_stored.'),
+  ).toHaveCount(1);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-traditional-unavailable.png'),
+    fullPage: true,
+  });
+  await page.getByRole('button', { name: 'AST', exact: true }).click();
+  await expect(
+    page.getByText('Traditional defense unavailable for Last 15: not_stored.'),
+  ).toHaveCount(0);
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
 });
 
 test('matchup keeps stale unmatched injury entries visible', async ({ page }, testInfo) => {
@@ -171,6 +235,14 @@ test('matchup detail is usable at a narrow viewport with keyboard-only controls'
   authenticatedPage: page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto('/matchups/0022500584');
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
@@ -182,6 +254,8 @@ test('matchup detail is usable at a narrow viewport with keyboard-only controls'
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('matchup-detail-narrow.png'), fullPage: true });
 });
 
@@ -271,13 +345,11 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(matrix).toContainText('thin');
   await expect(page.getByText('Thin sample — interpret cautiously.').first()).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
+  await expect(page.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
   const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Post up' });
   await expect(postUpRow).not.toHaveClass(/selection-why/);
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
   await expect(postUpRow).toHaveCount(0);
-  await expect(
-    page.getByText('No score components were computable for FG3A in Last 15.'),
-  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -309,6 +381,9 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByText('No games vs this opponent data is available.')).toBeVisible();
+  await expect(
+    page.getByText('No score components were computable for FG3A in Season.'),
+  ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('selection-empty-thin.png'), fullPage: true });
   await page.goto('/matchups/0022500584?player=2544');
   await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();

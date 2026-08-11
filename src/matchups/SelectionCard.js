@@ -115,7 +115,7 @@ export default function SelectionCard({
       </div>
       <p className="selection-explainer">
         {whyRelevant
-          ? 'Highlighted Defense Sheet rows show displayed Diet Share inputs for the current window.'
+          ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
       </p>

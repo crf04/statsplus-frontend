@@ -27,6 +27,7 @@ export const isAllowedDeploymentUrl = (candidate, mode = 'any') => {
     url.search === '' &&
     url.hash === '' &&
     vercelDeploymentHost.test(url.hostname) &&
+    !(mode === 'production' && url.hostname !== 'statsplus-frontend.vercel.app') &&
     !(mode === 'protected-preview' && url.hostname === 'statsplus-frontend.vercel.app')
   );
 };

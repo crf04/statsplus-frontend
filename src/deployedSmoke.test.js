@@ -113,6 +113,10 @@ describe('deployed smoke URL and fixture wiring', () => {
   test('allows only the StatsPlus Vercel project deployment host over HTTPS', () => {
     expect(isAllowedDeploymentUrl(deploymentUrl)).toBe(true);
     expect(isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/')).toBe(true);
+    expect(isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/', 'production')).toBe(
+      true,
+    );
+    expect(isAllowedDeploymentUrl(deploymentUrl, 'production')).toBe(false);
     expect(
       isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/', 'protected-preview'),
     ).toBe(false);
@@ -165,6 +169,10 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource.indexOf('Validate protected preview deployment URL')).toBeLessThan(
       workflowSource.indexOf('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.'),
     );
+    expect(workflowSource).toContain(
+      "E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || 'https://statsplus-frontend.vercel.app' }}",
+    );
+    expect(workflowSource).not.toContain('github.event.deployment_status.environment_url');
   });
 
   test('uses the immutable workflow revision for manual smoke runs', () => {

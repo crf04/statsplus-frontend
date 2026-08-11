@@ -381,6 +381,34 @@ test('renders one relevant traditional unavailability notice for All and specifi
   ).not.toBeInTheDocument();
 });
 
+test('keeps legacy traditional columns usable when available OPP_REB has no window value', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
+    {
+      key: 'OPP_REB',
+      label: 'Opponent rebounds',
+      markets: ['REB'],
+      season: value(45, -8, -1.2, 4),
+      last15: null,
+    },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+
+  expect(screen.getByText('12.9 per 48')).toBeVisible();
+  expect(screen.getByText('7.8 per 48')).toBeVisible();
+  expect(screen.getByText('4.7 per 48')).toBeVisible();
+  expect(screen.queryByText('Opponent rebounds')).not.toBeInTheDocument();
+});
+
 test('renders nullable season scoring and explains zero-component offensive scores', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const lebron = candidate.players.find((player) => player.id === 2544);

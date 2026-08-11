@@ -60,6 +60,14 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toHaveCount(0);
+  await expect(page.getByText('13.9 per 48')).toBeVisible();
+  await expect(page.getByText('8.8 per 48')).toBeVisible();
+  await expect(page.getByText('5.7 per 48')).toBeVisible();
+  await expect(page.getByText('Opponent rebounds')).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-legacy-traditional.png'),
+    fullPage: true,
+  });
   await page.getByRole('button', { name: 'AST', exact: true }).click();
   await expect(
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),

@@ -160,11 +160,11 @@ const teamSheet = (team, playTypes, offset = 0) => ({
     ],
     traditional: [
       defenseRow(
-        'opponent-rebounds',
+        'OPP_REB',
         'Opponent rebounds',
         ['REB'],
         defenseValue(45 + offset, -8, -1.2, 4),
-        defenseValue(47 + offset, 6, 1.1, 21),
+        null,
       ),
     ],
   },
@@ -202,7 +202,7 @@ const league = {
     shot_zones: [leagueRow('paint', 21, 1.7, 21.2, 1.5)],
     shot_types: [leagueRow('catch-shoot', 15.5, 1.2, 15.3, 1.1)],
     assist_locations: [leagueRow('paint-assists', 10, 0.8, 10.1, 0.9)],
-    traditional: [leagueRow('opponent-rebounds', 46, 1.5, 46.2, 1.4)],
+    traditional: [{ ...leagueRow('OPP_REB', 46, 1.5, 46.2, 1.4), last_15: null }],
   },
   defensive_columns: Object.fromEntries(
     [

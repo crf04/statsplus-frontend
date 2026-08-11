@@ -104,6 +104,18 @@ const decodeAvailableWindow = (value, availability, decode) => {
   return null;
 };
 
+const decodeSheetWindow = (value, availability, decode, base, key) => {
+  if (
+    value === null &&
+    availability.status === 'available' &&
+    base === 'traditional' &&
+    key === 'OPP_REB'
+  ) {
+    return null;
+  }
+  return decodeAvailableWindow(value, availability, decode);
+};
+
 const decodeWindowValue = (value) => {
   if (!isRecord(value)) throw invalid();
   return {
@@ -114,14 +126,15 @@ const decodeWindowValue = (value) => {
   };
 };
 
-const decodeSheetRow = (row, availability) => {
+const decodeSheetRow = (row, availability, base) => {
   if (!isRecord(row)) throw invalid();
+  const key = requireString(row.key);
   return {
-    key: requireString(row.key),
+    key,
     label: requireString(row.label),
     markets: requireStringList(row.markets),
-    season: decodeAvailableWindow(row.season, availability.season, decodeWindowValue),
-    last15: decodeAvailableWindow(row.last_15, availability.last15, decodeWindowValue),
+    season: decodeSheetWindow(row.season, availability.season, decodeWindowValue, base, key),
+    last15: decodeSheetWindow(row.last_15, availability.last15, decodeWindowValue, base, key),
   };
 };
 
@@ -133,7 +146,7 @@ const decodeDefenseSheet = (sheet, surfaceAvailability) => {
       if (!Array.isArray(rows)) throw invalid();
       return [
         camelKey(base),
-        rows.map((row) => decodeSheetRow(row, surfaceAvailability[camelKey(base)])),
+        rows.map((row) => decodeSheetRow(row, surfaceAvailability[camelKey(base)], base)),
       ];
     }),
   );
@@ -293,17 +306,22 @@ const decodeLeague = (league) => {
       if (!Array.isArray(rows)) throw invalid();
       const decodedRows = rows.map((row) => {
         if (!isRecord(row)) throw invalid();
+        const key = requireString(row.key);
         return {
-          key: requireString(row.key),
-          season: decodeAvailableWindow(
+          key,
+          season: decodeSheetWindow(
             row.season,
             surfaceAvailability[camelKey(base)].season,
             decodeLeagueRowWindow,
+            base,
+            key,
           ),
-          last15: decodeAvailableWindow(
+          last15: decodeSheetWindow(
             row.last_15,
             surfaceAvailability[camelKey(base)].last15,
             decodeLeagueRowWindow,
+            base,
+            key,
           ),
         };
       });

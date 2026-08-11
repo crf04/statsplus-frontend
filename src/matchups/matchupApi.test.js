@@ -408,6 +408,73 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
   });
 });
 
+test.each([
+  ['Season', 'season', 'last_15'],
+  ['Last 15', 'last_15', 'season'],
+])(
+  'accepts an asymmetric null %s OPP_REB row under available traditional data',
+  (_label, nullWindow, valueWindow) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    const leagueValue = { average_allowed_per_48: 46, sigma: 1.4 };
+    const teamValue = {
+      allowed_per_48: 45,
+      percent_vs_league_average: -8,
+      sigma_deviation: -1.2,
+      rank: 4,
+    };
+    candidate.league.defense_sheet.traditional = [
+      { key: 'OPP_REB', [nullWindow]: null, [valueWindow]: leagueValue },
+    ];
+    candidate.teams.forEach((team) => {
+      team.defense_sheet.traditional = [
+        {
+          key: 'OPP_REB',
+          label: 'Opponent rebounds',
+          markets: ['REB'],
+          [nullWindow]: null,
+          [valueWindow]: teamValue,
+        },
+      ];
+    });
+
+    const decoded = decodeMatchup(candidate);
+    expect(
+      decoded.league.defenseSheet.traditional[0][nullWindow === 'season' ? 'season' : 'last15'],
+    ).toBeNull();
+    expect(
+      decoded.teams[0].defenseSheet.traditional[0][nullWindow === 'season' ? 'season' : 'last15'],
+    ).toBeNull();
+  },
+);
+
+test.each([
+  ['another traditional row', 'traditional', 'OPP_TOV'],
+  ['another Base row', 'play_types', 'transition'],
+])('rejects a null available window on %s', (_label, base, key) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet[base] = [
+    { key, season: null, last_15: { average_allowed_per_48: 10, sigma: 1 } },
+  ];
+  candidate.teams.forEach((team) => {
+    team.defense_sheet[base] = [
+      {
+        key,
+        label: key,
+        markets: ['TOV'],
+        season: null,
+        last_15: {
+          allowed_per_48: 10,
+          percent_vs_league_average: 0,
+          sigma_deviation: 0,
+          rank: 15,
+        },
+      },
+    ];
+  });
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test('decodes the backend canonical injury status and preserves unmatched entries', () => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.injuries = {

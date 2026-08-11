@@ -251,11 +251,13 @@ function DefenseSheet({
     if (availability.status !== 'available') {
       return { base, availability, relevant: marketRows.length > 0, visibleRows: [] };
     }
-    const visibleRows = marketRows.filter((row) => {
-      const shown = Math.abs(row[windowKey].sigmaDeviation) >= deviation;
-      if (!shown) hidden += 1;
-      return shown;
-    });
+    const visibleRows = marketRows
+      .filter((row) => row[windowKey] !== null)
+      .filter((row) => {
+        const shown = Math.abs(row[windowKey].sigmaDeviation) >= deviation;
+        if (!shown) hidden += 1;
+        return shown;
+      });
     return { base, availability, relevant: marketRows.length > 0, visibleRows };
   });
   const visibleCount = sections.reduce((total, section) => total + section.visibleRows.length, 0);

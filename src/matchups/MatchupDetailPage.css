@@ -160,6 +160,9 @@
   color: #7ee7c4;
   font-size: 1.5rem;
 }
+.relative-neutral strong {
+  font-size: 1.5rem;
+}
 .diet-chips,
 .market-chips {
   display: flex;

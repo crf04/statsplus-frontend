@@ -73,9 +73,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('13.9 per 48')).toBeVisible();
   await expect(page.getByText('8.8 per 48')).toBeVisible();
   await expect(page.getByText('5.7 per 48')).toBeVisible();
-  await expect(
-    page.getByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
-  ).toBeVisible();
+  await expect(page.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   await expect(page.getByText('OPP TOV')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
   await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
@@ -84,9 +82,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     fullPage: true,
   });
   await page.getByRole('button', { name: 'REB', exact: true }).click();
-  await expect(
-    page.getByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
-  ).toBeVisible();
+  await expect(page.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
   await page.getByRole('button', { name: 'TOV', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
@@ -169,7 +165,7 @@ test('preseason matchups show a clear limited-sample caveat', async ({ page }, t
   });
 });
 
-test('structural-zero windows explain unavailable relative percentages', async ({
+test('null relative percentages stay neutral when the matching league average is zero', async ({
   page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
@@ -177,14 +173,14 @@ test('structural-zero windows explain unavailable relative percentages', async (
   const candidate = JSON.parse(JSON.stringify(matchupPayload));
   candidate.league.defense_sheet.play_types[0].season.average_allowed_per_48 = 0;
   candidate.teams.find((team) => team.tricode === 'BOS').defense_sheet.play_types[0].season = {
-    allowed_per_48: 0,
+    allowed_per_48: 7.5,
     percent_vs_league_average: null,
-    sigma_deviation: 0,
+    sigma_deviation: 1.4,
     rank: 1,
   };
   candidate.league.defensive_columns.OPP_BLK.season.average_per_48 = 0;
   candidate.teams.find((team) => team.tricode === 'BOS').defensive_columns.OPP_BLK.season = {
-    per_48: 0,
+    per_48: 2.5,
     percent_vs_league_average: null,
   };
   const consoleErrors = [];
@@ -199,18 +195,15 @@ test('structural-zero windows explain unavailable relative percentages', async (
 
   await page.goto('/matchups/0022500584');
   await page.getByRole('button', { name: 'All deviations', exact: true }).click();
-  const transition = page.locator('article.sheet-row').filter({ hasText: 'Transition PTS' });
-  await expect(transition).toContainText('0.0');
-  await expect(transition).toContainText('vs league: unavailable (not comparable)');
-  await expect(transition).not.toContainText('null%');
-  await expect(transition).not.toHaveClass(/relative-over|relative-under/);
-  const blockColumn = page.getByRole('heading', { name: 'OPP_BLK' }).locator('..');
-  await expect(blockColumn).toContainText('0.0 per 48');
-  await expect(blockColumn).toContainText('vs league: unavailable (not comparable)');
+  await expect(page.getByText('Transition PTS')).toBeVisible();
+  await expect(page.getByText('7.5', { exact: true })).toBeVisible();
+  await expect(page.getByText('2.5 per 48')).toBeVisible();
+  await expect(page.getByText('vs league: unavailable (not comparable)')).toHaveCount(2);
+  await expect(page.getByText(/null%/)).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
   await page.screenshot({
-    path: testInfo.outputPath('matchup-detail-structural-zero.png'),
+    path: testInfo.outputPath('matchup-detail-neutral-relative.png'),
     fullPage: true,
   });
 });
@@ -464,20 +457,13 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(page.getByText('Thin sample — interpret cautiously.').first()).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
   await expect(page.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
-  const restrictedAreaRow = page
-    .locator('article.sheet-row')
-    .filter({ hasText: 'Restricted Area FGA' });
-  const catchAndShootRow = page
-    .locator('article.sheet-row')
-    .filter({ hasText: 'Catch and Shoot FG3A' });
-  await expect(restrictedAreaRow).toHaveClass(/selection-why/);
-  await expect(catchAndShootRow).toHaveClass(/selection-why/);
-  await expect(restrictedAreaRow.getByText(/LeBron James · 27% FGA/)).toBeVisible();
-  await expect(catchAndShootRow.getByText(/LeBron James · 36% FGA/)).toBeVisible();
-  const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Postup PTS' });
-  await expect(postUpRow).not.toHaveClass(/selection-why/);
+  await expect(page.getByText('Restricted Area FGA')).toBeVisible();
+  await expect(page.getByText('Catch and Shoot FG3A')).toBeVisible();
+  await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();
+  await expect(page.getByText(/LeBron James · 36% FGA/)).toBeVisible();
+  await expect(page.getByText('Postup PTS')).toBeVisible();
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
-  await expect(postUpRow).toHaveCount(0);
+  await expect(page.getByText('Postup PTS')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

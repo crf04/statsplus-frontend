@@ -488,7 +488,7 @@ const validateStructuralZeroPercentages = (league, teams) => {
           const value = row[windowKey];
           if (value?.percentVsLeagueAverage !== null) continue;
           const leagueValue = leagueRows.get(row.key)?.[windowKey];
-          if (value.allowedPer48 !== 0 || !leagueValue || leagueValue.averageAllowedPer48 !== 0) {
+          if (value.allowedPer48 !== 0 && (!leagueValue || leagueValue.averageAllowedPer48 !== 0)) {
             throw invalid();
           }
         }
@@ -499,7 +499,9 @@ const validateStructuralZeroPercentages = (league, teams) => {
         const value = windows[windowKey];
         if (value?.percentVsLeagueAverage !== null) continue;
         const leagueValue = league.defensiveColumns[key][windowKey];
-        if (value.per48 !== 0 || !leagueValue || leagueValue.averagePer48 !== 0) throw invalid();
+        if (value.per48 !== 0 && (!leagueValue || leagueValue.averagePer48 !== 0)) {
+          throw invalid();
+        }
       }
     }
   }

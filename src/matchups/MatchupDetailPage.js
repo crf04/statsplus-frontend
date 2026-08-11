@@ -347,7 +347,7 @@ function DefenseSheet({
                         >
                           <strong>{stat.allowedPer48.toFixed(1)}</strong>
                           {stat.percentVsLeagueAverage === null ? (
-                            <span className="relative-neutral">{UNAVAILABLE_RELATIVE_LABEL}</span>
+                            <span>{UNAVAILABLE_RELATIVE_LABEL}</span>
                           ) : (
                             <span>
                               {stat.percentVsLeagueAverage > 0 ? '+' : ''}
@@ -374,7 +374,7 @@ function DefenseSheet({
             {legacyUnavailableRow && (
               <p className="honest-empty">
                 Opponent rebounds unavailable for{' '}
-                {WINDOWS.find((window) => window.key === windowKey)?.label}: legacy-unavailable.
+                {WINDOWS.find((window) => window.key === windowKey)?.label}.
               </p>
             )}
           </section>

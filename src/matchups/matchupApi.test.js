@@ -697,41 +697,51 @@ test.each([
   },
 );
 
-test('accepts null relative percentages only for structural-zero sheet and defensive-column windows', () => {
-  const candidate = JSON.parse(JSON.stringify(payload));
-  candidate.league.defense_sheet.play_types[0].season = {
-    average_allowed_per_48: 0,
-    sigma: 0,
-  };
-  candidate.league.defensive_columns.OPP_BLK.season = { average_per_48: 0, sigma: 0 };
-  candidate.teams[1].defense_sheet.play_types = [
-    JSON.parse(JSON.stringify(candidate.teams[0].defense_sheet.play_types[0])),
-  ];
-  candidate.teams.forEach((team) => {
-    team.defense_sheet.play_types[0].season = {
-      allowed_per_48: 0,
+test.each([
+  {
+    label: 'the delivered team value is zero',
+    leagueSheetAverage: 16.4,
+    teamSheetValue: 0,
+    leagueColumnAverage: 4.9,
+    teamColumnValue: 0,
+  },
+  {
+    label: 'the matching league average is zero',
+    leagueSheetAverage: 0,
+    teamSheetValue: 7.5,
+    leagueColumnAverage: 0,
+    teamColumnValue: 2.5,
+  },
+])(
+  'accepts a null relative percentage when $label',
+  ({ leagueSheetAverage, teamSheetValue, leagueColumnAverage, teamColumnValue }) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    candidate.league.defense_sheet.play_types[0].season.average_allowed_per_48 = leagueSheetAverage;
+    candidate.league.defensive_columns.OPP_BLK.season.average_per_48 = leagueColumnAverage;
+    candidate.teams[0].defense_sheet.play_types[0].season = {
+      allowed_per_48: teamSheetValue,
       percent_vs_league_average: null,
-      sigma_deviation: 0,
+      sigma_deviation: 1.4,
       rank: 1,
     };
-    team.defensive_columns.OPP_BLK.season = {
-      per_48: 0,
+    candidate.teams[0].defensive_columns.OPP_BLK.season = {
+      per_48: teamColumnValue,
       percent_vs_league_average: null,
     };
-  });
 
-  const decoded = decodeMatchup(candidate);
-  expect(decoded.teams[0].defenseSheet.playTypes[0].season).toEqual({
-    allowedPer48: 0,
-    percentVsLeagueAverage: null,
-    sigmaDeviation: 0,
-    rank: 1,
-  });
-  expect(decoded.teams[0].defensiveColumns.OPP_BLK.season).toEqual({
-    per48: 0,
-    percentVsLeagueAverage: null,
-  });
-});
+    const decoded = decodeMatchup(candidate);
+    expect(decoded.teams[0].defenseSheet.playTypes[0].season).toEqual({
+      allowedPer48: teamSheetValue,
+      percentVsLeagueAverage: null,
+      sigmaDeviation: 1.4,
+      rank: 1,
+    });
+    expect(decoded.teams[0].defensiveColumns.OPP_BLK.season).toEqual({
+      per48: teamColumnValue,
+      percentVsLeagueAverage: null,
+    });
+  },
+);
 
 test.each([
   [

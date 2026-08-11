@@ -415,7 +415,7 @@ test('renders one relevant traditional unavailability notice for All and specifi
   ).not.toBeInTheDocument();
 });
 
-test('names a legacy-unavailable OPP_REB window without hiding other traditional markets', async () => {
+test('names an unavailable OPP_REB window without hiding other traditional markets', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
     {
@@ -454,23 +454,17 @@ test('names a legacy-unavailable OPP_REB window without hiding other traditional
   expect(screen.getByText('12.9 per 48')).toBeVisible();
   expect(screen.getByText('7.8 per 48')).toBeVisible();
   expect(screen.getByText('4.7 per 48')).toBeVisible();
-  expect(
-    screen.getByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
-  ).toBeVisible();
+  expect(screen.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   expect(screen.getByText('Opponent turnovers')).toBeVisible();
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'REB' }));
-  expect(
-    screen.getAllByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
-  ).toHaveLength(1);
+  expect(screen.getAllByText('Opponent rebounds unavailable for Last 15.')).toHaveLength(1);
   expect(screen.queryByText('Rank 4 of 30')).not.toBeInTheDocument();
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
-  expect(
-    screen.queryByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Opponent rebounds unavailable for Last 15.')).not.toBeInTheDocument();
   expect(screen.getByText('Opponent turnovers')).toBeVisible();
   expect(screen.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
 });
@@ -515,11 +509,11 @@ test('renders governed traditional sheet rows alongside defensive columns', asyn
   expect(within(columns).getByText('14.2 per 48')).toBeVisible();
 });
 
-test('renders structural-zero windows without a null percentage or directional color', async () => {
+test('renders neutral relative percentages for nonzero values without directional color', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
-  boston.defenseSheet.playTypes[0].season = value(0, null, 0, 1);
-  boston.defensiveColumns.OPP_BLK.season = { per48: 0, percentVsLeagueAverage: null };
+  boston.defenseSheet.playTypes[0].season = value(7.5, null, 1.4, 1);
+  boston.defensiveColumns.OPP_BLK.season = { per48: 2.5, percentVsLeagueAverage: null };
   fetchMatchup.mockResolvedValueOnce(candidate);
 
   render(
@@ -531,18 +525,21 @@ test('renders structural-zero windows without a null percentage or directional c
   );
   await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
   const blockColumn = screen.getByRole('heading', { name: 'OPP_BLK' }).closest('article');
-  expect(blockColumn).toHaveTextContent('0.0 per 48');
+  expect(blockColumn).toHaveTextContent('2.5 per 48');
   expect(blockColumn).toHaveTextContent('vs league: unavailable (not comparable)');
   expect(blockColumn).not.toHaveTextContent('null%');
 
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   const transition = screen.getByText('Transition').closest('article');
-  expect(transition).toHaveTextContent('0.0');
-  expect(transition).toHaveTextContent('0.0σ');
+  expect(transition).toHaveTextContent('7.5');
+  expect(transition).toHaveTextContent('1.4σ');
   expect(transition).toHaveTextContent('vs league: unavailable (not comparable)');
   expect(transition).not.toHaveTextContent('null%');
   expect(transition.querySelector('.relative-over, .relative-under')).not.toBeInTheDocument();
-  expect(transition.querySelector('.relative-neutral')).toBeInTheDocument();
+  expect(transition.querySelector('.relative-neutral > strong')).toHaveTextContent('7.5');
+  expect(
+    within(transition).getByText('vs league: unavailable (not comparable)'),
+  ).not.toHaveAttribute('class');
 });
 
 test('renders nullable season scoring and explains zero-component offensive scores', async () => {

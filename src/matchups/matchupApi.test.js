@@ -16,6 +16,15 @@ const payload = {
     preseason: false,
   },
   league: {
+    surface_availability: Object.fromEntries(
+      ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
+        base,
+        {
+          season: { status: 'available', unavailable_reason: null },
+          last_15: { status: 'available', unavailable_reason: null },
+        },
+      ]),
+    ),
     defense_sheet: {
       play_types: [
         {
@@ -125,10 +134,17 @@ const payload = {
         play_types: [
           {
             key: 'transition',
-            season: { share: 0.19, volume_per_game: 5.1 },
-            last_15: { share: 0.2, volume_per_game: 5.3 },
+            season: {
+              share: 0.19,
+              volume: 102,
+              games_played: 20,
+              volume_unit: 'possessions',
+            },
           },
         ],
+        shot_zones: [],
+        shot_types: [],
+        assist_locations: [],
       },
       injury_badge_ref: null,
       scores: {
@@ -161,16 +177,13 @@ const payload = {
     retrieved_at: null,
     source: 'rotowire',
     source_url: 'https://example.com/injuries',
-    teams: [
-      { team_id: 1, tricode: 'LAL', submission_state: 'unknown', entries: [] },
-      { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
-    ],
+    teams: [],
   },
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z', providers: {} },
     stats: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
-    injuries: { status: 'missing', retrieved_at: null },
+    injuries: { status: 'unavailable', retrieved_at: null },
   },
 };
 
@@ -240,6 +253,9 @@ test('strictly decodes injury identities and enforces the v1 team envelope', () 
   const injuryPayload = JSON.parse(JSON.stringify(payload));
   injuryPayload.injuries = {
     ...injuryPayload.injuries,
+    status: 'fresh',
+    unavailable_reason: null,
+    retrieved_at: '2026-01-15T11:55:00Z',
     teams: [
       {
         team_id: 1,
@@ -253,7 +269,7 @@ test('strictly decodes injury identities and enforces the v1 team envelope', () 
             source_player_name: 'LeBron James',
             team_id: 1,
             tricode: 'LAL',
-            status: 'Questionable',
+            canonical_status: 'Questionable',
             raw_status: 'Questionable',
             reason: 'Left ankle soreness',
             source_url: 'https://example.com/injury-1',
@@ -262,6 +278,10 @@ test('strictly decodes injury identities and enforces the v1 team envelope', () 
       },
       { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
     ],
+  };
+  injuryPayload.freshness.injuries = {
+    status: 'fresh',
+    retrieved_at: '2026-01-15T11:55:00Z',
   };
   expect(decodeMatchup(injuryPayload).injuries.teams[0].entries[0]).toEqual(
     expect.objectContaining({ sourcePlayerId: 'source-1', playerId: 2544, teamId: 1 }),
@@ -334,6 +354,177 @@ test('accepts league taxonomy rows that neither matchup team happens to use', ()
   );
 });
 
+test('decodes Season-only Diet Shares and an unavailable team window without substitution', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.surface_availability = Object.fromEntries(
+    ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
+      base,
+      {
+        season: { status: 'available', unavailable_reason: null },
+        last_15:
+          base === 'play_types'
+            ? { status: 'unavailable', unavailable_reason: 'provider_unsupported' }
+            : { status: 'available', unavailable_reason: null },
+      },
+    ]),
+  );
+  candidate.league.defense_sheet.play_types[0].last_15 = null;
+  candidate.teams[0].defense_sheet.play_types[0].last_15 = null;
+  candidate.players[0].season_scoring = null;
+  candidate.players[0].diet_shares = {
+    play_types: [
+      {
+        key: 'transition',
+        season: {
+          share: 0.19,
+          volume: 95,
+          games_played: 20,
+          volume_unit: 'possessions',
+        },
+      },
+    ],
+    shot_zones: [],
+    shot_types: [],
+    assist_locations: [],
+  };
+
+  const decoded = decodeMatchup(candidate);
+  expect(decoded.league.surfaceAvailability.playTypes.last15).toEqual({
+    status: 'unavailable',
+    unavailableReason: 'provider_unsupported',
+  });
+  expect(decoded.league.defenseSheet.playTypes[0].last15).toBeNull();
+  expect(decoded.teams[0].defenseSheet.playTypes[0].last15).toBeNull();
+  expect(decoded.players[0].seasonScoring).toBeNull();
+  expect(decoded.players[0].dietShares.playTypes[0]).toEqual({
+    key: 'transition',
+    season: {
+      share: 0.19,
+      volume: 95,
+      gamesPlayed: 20,
+      volumeUnit: 'possessions',
+      volumePerGame: 4.75,
+    },
+  });
+});
+
+test('decodes the backend canonical injury status and preserves unmatched entries', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.injuries = {
+    status: 'stale',
+    unavailable_reason: null,
+    retrieved_at: '2026-01-15T11:30:00Z',
+    source: 'rotowire',
+    source_url: 'https://www.rotowire.com/basketball/injury-report.php',
+    teams: [
+      {
+        team_id: 1,
+        tricode: 'LAL',
+        submission_state: 'unknown',
+        entries: [
+          {
+            entry_id: 'rotowire:unmatched',
+            source_player_id: null,
+            source_player_name: 'Unmatched Player',
+            canonical_player_id: null,
+            team_id: 1,
+            tricode: 'LAL',
+            canonical_status: 'Questionable',
+            raw_status: 'Questionable',
+            reason: 'Ankle soreness',
+            source_url: 'https://www.rotowire.com/basketball/injury-report.php',
+          },
+        ],
+      },
+      { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
+    ],
+  };
+  candidate.freshness.injuries = {
+    status: 'stale',
+    retrieved_at: '2026-01-15T11:30:00Z',
+  };
+
+  expect(decodeMatchup(candidate).injuries.teams[0].entries[0]).toEqual(
+    expect.objectContaining({
+      playerId: null,
+      sourcePlayerId: null,
+      status: 'Questionable',
+      rawStatus: 'Questionable',
+    }),
+  );
+});
+
+test.each([
+  [
+    'a null metric whose surface is available',
+    (candidate) => {
+      candidate.league.defense_sheet.play_types[0].season = null;
+    },
+  ],
+  [
+    'a metric whose surface is unavailable',
+    (candidate) => {
+      candidate.league.surface_availability.play_types.last_15 = {
+        status: 'unavailable',
+        unavailable_reason: 'provider_unsupported',
+      };
+    },
+  ],
+  [
+    'an available surface with an unavailable reason',
+    (candidate) => {
+      candidate.league.surface_availability.play_types.season.unavailable_reason = 'not_stored';
+    },
+  ],
+  [
+    'an unavailable surface without a reason',
+    (candidate) => {
+      candidate.league.surface_availability.play_types.last_15 = {
+        status: 'unavailable',
+        unavailable_reason: null,
+      };
+      candidate.league.defense_sheet.play_types[0].last_15 = null;
+      candidate.teams[0].defense_sheet.play_types[0].last_15 = null;
+    },
+  ],
+  [
+    'an invented Diet Share Last-15 window',
+    (candidate) => {
+      candidate.players[0].diet_shares.play_types[0].last_15 = {
+        share: 0.2,
+        volume: 100,
+        games_played: 15,
+        volume_unit: 'possessions',
+      };
+    },
+  ],
+  [
+    'a Diet Share without its volume unit',
+    (candidate) => {
+      delete candidate.players[0].diet_shares.play_types[0].season.volume_unit;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('requires unavailable injuries to use the backend empty-team encoding', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.injuries.teams = [
+    { team_id: 1, tricode: 'LAL', submission_state: 'unknown', entries: [] },
+    { team_id: 2, tricode: 'BOS', submission_state: 'unknown', entries: [] },
+  ];
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('requires injury block and injury freshness status to agree', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.freshness.injuries = { status: 'missing', retrieved_at: null };
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test('requires Blend for offensive scores and accepts omitted or null Blend for defensive scores', () => {
   const defensive = JSON.parse(JSON.stringify(payload));
   defensive.players[0].posted_markets = ['TOV'];
@@ -358,6 +549,142 @@ test('requires Blend for offensive scores and accepts omitted or null Blend for 
   const inventedDefensiveBlend = JSON.parse(JSON.stringify(defensive));
   inventedDefensiveBlend.players[0].scores.TOV.season.blend = { value: 0.08, thin: false };
   expect(() => decodeMatchup(inventedDefensiveBlend)).toThrow('invalid response');
+});
+
+test('accepts a null offensive Blend only when zero components are computable', () => {
+  const zeroComponents = JSON.parse(JSON.stringify(payload));
+  zeroComponents.players[0].scores.PTS.last_15 = { components: {}, blend: null };
+  expect(decodeMatchup(zeroComponents).players[0].scores.PTS.last15).toEqual({
+    components: {},
+    blend: null,
+  });
+
+  const componentWithoutBlend = JSON.parse(JSON.stringify(zeroComponents));
+  componentWithoutBlend.players[0].scores.PTS.last_15.components = {
+    play_types: { value: 0.08, thin: false },
+  };
+  expect(() => decodeMatchup(componentWithoutBlend)).toThrow('invalid response');
+
+  const inventedBlend = JSON.parse(JSON.stringify(zeroComponents));
+  inventedBlend.players[0].scores.PTS.last_15.blend = { value: 0, thin: true };
+  expect(() => decodeMatchup(inventedBlend)).toThrow('invalid response');
+});
+
+test.each([
+  ['null component', { play_types: null }],
+  ['component without value', { play_types: { thin: false } }],
+  ['component without thin', { play_types: { value: 0.08 } }],
+  ['component with nonnumeric value', { play_types: { value: '0.08', thin: false } }],
+  ['component with nonboolean thin', { play_types: { value: 0.08, thin: 'false' } }],
+  ['component with an invented field', { play_types: { value: 0.08, thin: false, note: 'x' } }],
+])('rejects a %s score-cell shape', (_name, components) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.PTS.season.components = components;
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  ['Blend without value', { thin: false }],
+  ['Blend without thin', { value: 0.08 }],
+  ['Blend with nonnumeric value', { value: '0.08', thin: false }],
+  ['Blend with nonboolean thin', { value: 0.08, thin: 0 }],
+  ['Blend with an invented field', { value: 0.08, thin: false, note: 'x' }],
+])('rejects a %s score-cell shape', (_name, blend) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.PTS.season.blend = blend;
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('decodes the complete governed backend market set and both score encodings', () => {
+  const markets = [
+    'PTS',
+    'REB',
+    'AST',
+    '3PM',
+    'FGA',
+    'FG2A',
+    'FG3A',
+    'PRA',
+    'PA',
+    'PR',
+    'RA',
+    'TOV',
+    'STL',
+    'BLK',
+    'STKS',
+  ];
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].posted_markets = markets;
+  candidate.players[0].provenance = { prizepicks: markets };
+  candidate.players[0].scores = Object.fromEntries(
+    markets.map((market) => {
+      const defensive = ['TOV', 'STL', 'BLK', 'STKS'].includes(market);
+      const window = defensive
+        ? { components: { traditional: { value: 0.03, thin: false } } }
+        : {
+            components: { play_types: { value: 0.03, thin: market === 'PRA' } },
+            blend: { value: 0.03, thin: market === 'PRA' },
+          };
+      return [market, { season: window, last_15: window }];
+    }),
+  );
+  candidate.players[0].scores.FG3A.last_15 = { components: {}, blend: null };
+
+  expect(Object.keys(decodeMatchup(candidate).players[0].scores)).toEqual(markets);
+});
+
+test.each([
+  [
+    'an unposted score row',
+    (candidate) => {
+      candidate.players[0].scores.REB = candidate.players[0].scores.PTS;
+    },
+  ],
+  [
+    'an unknown posted market',
+    (candidate) => {
+      candidate.players[0].posted_markets.push('FANTASY');
+      candidate.players[0].provenance.prizepicks.push('FANTASY');
+      candidate.players[0].scores.FANTASY = candidate.players[0].scores.PTS;
+    },
+  ],
+  [
+    'a duplicate posted market',
+    (candidate) => {
+      candidate.players[0].posted_markets.push('PTS');
+    },
+  ],
+  [
+    'an unknown component Base',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.components = {
+        pace: { value: 0.08, thin: false },
+      };
+    },
+  ],
+  [
+    'a non-traditional defensive component',
+    (candidate) => {
+      candidate.players[0].posted_markets = ['TOV'];
+      candidate.players[0].provenance = { prizepicks: ['TOV'] };
+      candidate.players[0].scores = {
+        TOV: {
+          season: { components: { shot_zones: { value: 0.08, thin: false } } },
+          last_15: { components: {} },
+        },
+      };
+    },
+  ],
+  [
+    'an invented score window',
+    (candidate) => {
+      candidate.players[0].scores.PTS.rolling_10 = candidate.players[0].scores.PTS.season;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
 test.each([

@@ -33,7 +33,7 @@ const definitions = {
       'Past slate — the player pool is missing and no current pool is displayed. Game cards retain the targetable counts returned for this slate.',
   },
   unavailable: {
-    inboundSurfaces: ['pool'],
+    inboundSurfaces: ['pool', 'injuries'],
     allowsNullRetrievedAt: true,
     warning: true,
     currentPoolMessage:

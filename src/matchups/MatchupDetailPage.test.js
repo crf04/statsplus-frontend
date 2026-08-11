@@ -29,8 +29,14 @@ const defensiveColumns = {
   },
 };
 const score = (season, last15 = season) => ({
-  season: { components: {}, blend: { value: season, thin: false } },
-  last15: { components: {}, blend: { value: last15, thin: false } },
+  season: {
+    components: { playTypes: { value: season, thin: false } },
+    blend: { value: season, thin: false },
+  },
+  last15: {
+    components: { playTypes: { value: last15, thin: false } },
+    blend: { value: last15, thin: false },
+  },
 });
 
 const matchup = {
@@ -38,6 +44,17 @@ const matchup = {
     gameId: 'game-1',
     away: { tricode: 'LAL' },
     home: { tricode: 'BOS' },
+  },
+  league: {
+    surfaceAvailability: Object.fromEntries(
+      ['playTypes', 'shotZones', 'shotTypes', 'assistLocations', 'traditional'].map((base) => [
+        base,
+        {
+          season: { status: 'available', unavailableReason: null },
+          last15: { status: 'available', unavailableReason: null },
+        },
+      ]),
+    ),
   },
   teams: [
     {
@@ -95,7 +112,6 @@ const matchup = {
           {
             key: 'transition',
             season: { share: 0.18, volumePerGame: 4 },
-            last15: { share: 0.18, volumePerGame: 5 },
           },
         ],
       },
@@ -116,7 +132,6 @@ const matchup = {
           {
             key: 'transition',
             season: { share: 0.19, volumePerGame: 5 },
-            last15: { share: 0.2, volumePerGame: 5.2 },
           },
         ],
       },
@@ -224,7 +239,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(screen.getByText('-8% vs league')).toBeVisible();
-  expect(screen.getByText(/20% poss/)).toBeVisible();
+  expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
@@ -241,7 +256,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 });
 
-test('selection keeps All active and highlights only display-eligible shares for each window', async () => {
+test('selection keeps All active and uses only the delivered Season Diet Share', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.find((player) => player.id === 2544).dietShares.playTypes[0].season = {
     share: 0.02,
@@ -262,7 +277,53 @@ test('selection keeps All active and highlights only display-eligible shares for
   );
   expect(screen.getByText('Transition').closest('article')).not.toHaveClass('selection-why');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(screen.getByText('Transition').closest('article')).toHaveClass('selection-why');
+  expect(screen.getByText('Transition').closest('article')).not.toHaveClass('selection-why');
+});
+
+test('names an unavailable surface window while leaving available surfaces usable', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.playTypes.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'provider_unsupported',
+  };
+  candidate.teams.forEach((team) => {
+    team.defenseSheet.playTypes.forEach((row) => {
+      row.last15 = null;
+    });
+  });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(
+    screen.getByText('Play types unavailable for Last 15: provider_unsupported.'),
+  ).toBeVisible();
+  expect(screen.getByText('12.9 per 48')).toBeVisible();
+});
+
+test('renders nullable season scoring and explains zero-component offensive scores', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.seasonScoring = null;
+  lebron.scores.FGA.last15 = { components: {}, blend: null };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const card = await screen.findByRole('article', { name: 'LeBron James player' });
+  expect(card).toHaveTextContent('Season scoring unavailable');
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(screen.getByText('No score components were computable for FGA in Last 15.')).toBeVisible();
 });
 
 test('a late selection response cannot replace a newer player selection', async () => {

@@ -113,13 +113,14 @@ function PlayerRail({
     if (!score) return -Infinity;
     return score.blend?.value ?? Object.values(score.components)[0]?.value ?? -Infinity;
   };
+  const seasonScoreFor = (player) => player.seasonScoring ?? -Infinity;
   const scoped = players.filter(
     (player) => market === 'All' || player.postedMarkets.includes(market),
   );
   scoped.sort((a, b) =>
     sortMode === 'score' && market !== 'All'
-      ? scoreFor(b) - scoreFor(a) || b.seasonScoring - a.seasonScoring
-      : b.seasonScoring - a.seasonScoring || a.name.localeCompare(b.name),
+      ? scoreFor(b) - scoreFor(a) || seasonScoreFor(b) - seasonScoreFor(a)
+      : seasonScoreFor(b) - seasonScoreFor(a) || a.name.localeCompare(b.name),
   );
   return (
     <aside className="player-rail" aria-labelledby="player-rail-heading">
@@ -166,7 +167,11 @@ function PlayerRail({
               >
                 <div>
                   <h3>{player.name}</h3>
-                  <p>{player.seasonScoring.toFixed(1)} PPG</p>
+                  <p>
+                    {player.seasonScoring === null
+                      ? 'Season scoring unavailable'
+                      : `${player.seasonScoring.toFixed(1)} PPG`}
+                  </p>
                 </div>
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>
@@ -208,12 +213,12 @@ function PlayerRail({
   );
 }
 
-function DietShareChips({ players, base, rowKey, windowKey, market }) {
+function DietShareChips({ players, base, rowKey, market }) {
   if (!SHARE_LABELS[base]) return null;
   const chips = players
     .filter((player) => market === 'All' || player.postedMarkets.includes(market))
     .flatMap((player) => {
-      const share = getDisplayableDietShare(player, base, rowKey, windowKey);
+      const share = getDisplayableDietShare(player, base, rowKey);
       if (!share) return [];
       return [{ player, share }];
     });
@@ -230,16 +235,28 @@ function DietShareChips({ players, base, rowKey, windowKey, market }) {
   );
 }
 
-function DefenseSheet({ team, players, market, windowKey, deviation, selectedPlayer }) {
+function DefenseSheet({
+  team,
+  players,
+  market,
+  windowKey,
+  deviation,
+  selectedPlayer,
+  surfaceAvailability,
+}) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
+    const availability = surfaceAvailability[base][windowKey];
+    if (availability.status !== 'available') {
+      return { base, availability, visibleRows: [] };
+    }
     const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
     const visibleRows = marketRows.filter((row) => {
       const shown = Math.abs(row[windowKey].sigmaDeviation) >= deviation;
       if (!shown) hidden += 1;
       return shown;
     });
-    return { base, visibleRows };
+    return { base, availability, visibleRows };
   });
   const visibleCount = sections.reduce((total, section) => total + section.visibleRows.length, 0);
   return (
@@ -251,12 +268,26 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
       <p className="hidden-count">
         {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
       </p>
-      <DefensiveColumns columns={team.defensiveColumns} market={market} windowKey={windowKey} />
+      <DefensiveColumns
+        columns={team.defensiveColumns}
+        market={market}
+        windowKey={windowKey}
+        availability={surfaceAvailability.traditional[windowKey]}
+      />
       {visibleCount === 0 && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
-      {sections.map(({ base, visibleRows }) =>
-        visibleRows.length ? (
+      {sections.map(({ base, availability, visibleRows }) =>
+        availability.status !== 'available' ? (
+          <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
+            <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
+            <p className="honest-empty">
+              {BASE_LABELS[base] || base} unavailable for{' '}
+              {WINDOWS.find((window) => window.key === windowKey)?.label}:{' '}
+              {availability.unavailableReason}.
+            </p>
+          </section>
+        ) : visibleRows.length ? (
           <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
             <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
             <div className="sheet-rows">
@@ -265,8 +296,7 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
                 return (
                   <article
                     className={`sheet-row${
-                      selectedPlayer &&
-                      getDisplayableDietShare(selectedPlayer, base, row.key, windowKey)
+                      selectedPlayer && getDisplayableDietShare(selectedPlayer, base, row.key)
                         ? ' selection-why'
                         : ''
                     }`}
@@ -297,7 +327,6 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
                       players={players}
                       base={base}
                       rowKey={row.key}
-                      windowKey={windowKey}
                       market={market}
                     />
                   </article>
@@ -313,11 +342,23 @@ function DefenseSheet({ team, players, market, windowKey, deviation, selectedPla
 
 const DEFENSIVE_COLUMN_MARKETS = { OPP_TOV: 'TOV', OPP_STL: 'STL', OPP_BLK: 'BLK' };
 
-function DefensiveColumns({ columns, market, windowKey }) {
+function DefensiveColumns({ columns, market, windowKey, availability }) {
   const visible = Object.entries(columns).filter(
     ([key]) => market === 'All' || DEFENSIVE_COLUMN_MARKETS[key] === market,
   );
   if (visible.length === 0) return null;
+  if (availability.status !== 'available') {
+    return (
+      <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
+        <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
+        <p className="honest-empty">
+          Traditional defense unavailable for{' '}
+          {WINDOWS.find((window) => window.key === windowKey)?.label}:{' '}
+          {availability.unavailableReason}.
+        </p>
+      </section>
+    );
+  }
   return (
     <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
       <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
@@ -557,6 +598,7 @@ function Detail({ matchup, gameId }) {
             windowKey={windowKey}
             deviation={deviation}
             selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
+            surfaceAvailability={matchup.league.surfaceAvailability}
           />
         )}
         <PlayerRail

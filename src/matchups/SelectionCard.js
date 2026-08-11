@@ -8,6 +8,7 @@ const BASE_LABELS = {
   traditional: 'Traditional',
 };
 const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
+const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
 function LogTable({ title, table, market }) {
   return (
@@ -176,6 +177,13 @@ export default function SelectionCard({
           </tbody>
         </table>
       </div>
+      {rows
+        .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
+        .map(({ market }) => (
+          <p className="honest-empty" key={`degraded-${market}`}>
+            No score components were computable for {market} in {WINDOW_LABELS[windowKey]}.
+          </p>
+        ))}
       {status === 'loading' && <p role="status">Loading selection logs…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' && (

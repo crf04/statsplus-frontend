@@ -14,7 +14,7 @@ export const shouldDisplayDietShare = (base, value) => {
   );
 };
 
-export const getDisplayableDietShare = (player, base, rowKey, windowKey) => {
-  const value = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.[windowKey];
+export const getDisplayableDietShare = (player, base, rowKey) => {
+  const value = player.dietShares[base]?.find((entry) => entry.key === rowKey)?.season;
   return value && shouldDisplayDietShare(base, value) ? value : null;
 };

@@ -56,8 +56,11 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   });
 
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
-  await expect(page.getByText('-8% vs league')).toBeVisible();
-  await expect(page.getByText(/LeBron James · 20% poss/)).toBeVisible();
+  await expect(
+    page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
+  ).toBeVisible();
+  await expect(page.getByText(/LeBron James · 19% poss/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Season', exact: true }).click();
 
   await page.getByRole('button', { name: 'PTS' }).click();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
@@ -89,7 +92,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   expect(failedResponses).toEqual([]);
 });
 
-test('matchup renders stale and unavailable surfaces without inventing data', async ({
+test('matchup renders disabled injuries and unavailable surfaces without inventing data', async ({
   page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
@@ -101,7 +104,7 @@ test('matchup renders stale and unavailable surfaces without inventing data', as
       injuries: {
         ...matchupPayload.injuries,
         status: 'unavailable',
-        unavailable_reason: 'permission_required',
+        unavailable_reason: 'disabled',
         retrieved_at: null,
         teams: [],
       },
@@ -109,7 +112,7 @@ test('matchup renders stale and unavailable surfaces without inventing data', as
         ...matchupPayload.freshness,
         pool: { status: 'unavailable', retrieved_at: null, providers: {} },
         stats: { status: 'stale', retrieved_at: '2026-01-13T10:00:00Z' },
-        injuries: { status: 'missing', retrieved_at: null },
+        injuries: { status: 'unavailable', retrieved_at: null },
       },
     },
   });
@@ -118,9 +121,48 @@ test('matchup renders stale and unavailable surfaces without inventing data', as
   await expect(page.getByText(/pool: unavailable.*pool data warning/i)).toBeVisible();
   await expect(page.getByText(/stats: stale.*stats data warning/i)).toBeVisible();
   await expect(page.getByText('No posted players are available for this market.')).toBeVisible();
-  await expect(page.getByText('Injury report unavailable: permission_required.')).toBeVisible();
+  await expect(page.getByText('Injury report unavailable: disabled.')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-degraded.png'),
+    fullPage: true,
+  });
+});
+
+test('matchup keeps stale unmatched injury entries visible', async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:30:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const staleRetrievedAt = '2026-01-15T11:55:00Z';
+  await installApiContract(page, {
+    '/api/games/matchup': {
+      ...matchupPayload,
+      injuries: {
+        ...matchupPayload.injuries,
+        status: 'stale',
+        retrieved_at: staleRetrievedAt,
+      },
+      freshness: {
+        ...matchupPayload.freshness,
+        injuries: { status: 'stale', retrieved_at: staleRetrievedAt },
+      },
+    },
+  });
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+
+  await page.goto('/matchups/0022500584');
+  await expect(page.getByText(/injuries: stale.*injuries data warning/i)).toBeVisible();
+  await expect(page.getByText('Gabe Vincent')).toBeVisible();
+  await expect(page.getByText('Probable')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-stale-injuries.png'),
     fullPage: true,
   });
 });
@@ -232,7 +274,10 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Post up' });
   await expect(postUpRow).not.toHaveClass(/selection-why/);
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
-  await expect(postUpRow).toHaveClass(/selection-why/);
+  await expect(postUpRow).toHaveCount(0);
+  await expect(
+    page.getByText('No score components were computable for FG3A in Last 15.'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

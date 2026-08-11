@@ -130,7 +130,7 @@ const teamSheet = (team, playTypes, offset = 0) => ({
   tricode: team.tricode,
   name: team.name,
   defense_sheet: {
-    play_types: playTypes,
+    play_types: playTypes.map((row) => ({ ...row, last_15: null })),
     shot_zones: [
       defenseRow(
         'paint',
@@ -179,6 +179,18 @@ const leagueRow = (key, seasonAverage, seasonSigma, last15Average, last15Sigma) 
 });
 
 const league = {
+  surface_availability: Object.fromEntries(
+    ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
+      base,
+      {
+        season: { status: 'available', unavailable_reason: null },
+        last_15:
+          base === 'play_types'
+            ? { status: 'unavailable', unavailable_reason: 'provider_unsupported' }
+            : { status: 'available', unavailable_reason: null },
+      },
+    ]),
+  ),
   defense_sheet: {
     play_types: [
       leagueRow('transition', 16.4, 1.4, 16.2, 1.2),
@@ -186,7 +198,7 @@ const league = {
       leagueRow('above-break', 11.5, 1, 11.7, 1),
       leagueRow('post-up', 11, 0.9, 11.4, 1.1),
       leagueRow('handoff', 7.2, 0.7, 7.4, 0.8),
-    ],
+    ].map((row) => ({ ...row, last_15: null })),
     shot_zones: [leagueRow('paint', 21, 1.7, 21.2, 1.5)],
     shot_types: [leagueRow('catch-shoot', 15.5, 1.2, 15.3, 1.1)],
     assist_locations: [leagueRow('paint-assists', 10, 0.8, 10.1, 0.9)],
@@ -207,31 +219,61 @@ const league = {
   ),
 };
 
-const dietShare = (key, seasonShare, last15Share, seasonVolume = 5.1, last15Volume = 5.4) => ({
+const dietShare = (key, seasonShare, volumePerGame = 5.1, volumeUnit = 'possessions') => ({
   key,
-  season: { share: seasonShare, volume_per_game: seasonVolume },
-  last_15: { share: last15Share, volume_per_game: last15Volume },
+  season: {
+    share: seasonShare,
+    volume: volumePerGame * 20,
+    games_played: 20,
+    volume_unit: volumeUnit,
+  },
 });
 
-const scoreWindow = (value, market) => ({
-  components: ['TOV', 'STL', 'BLK', 'STKS'].includes(market)
-    ? { traditional: { value, thin: false } }
-    : {
-        play_types: { value: value - 0.01, thin: market === 'AST' },
-        shot_zones: { value, thin: false },
-      },
-  ...(!['TOV', 'STL', 'BLK', 'STKS'].includes(market) && {
-    blend: { value, thin: false },
-  }),
-});
+const DEFENSIVE_MARKETS = ['TOV', 'STL', 'BLK', 'STKS'];
+const COMPLETE_MARKETS = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'FGA',
+  'FG2A',
+  'FG3A',
+  'PRA',
+  'PA',
+  'PR',
+  'RA',
+  'TOV',
+  'STL',
+  'BLK',
+  'STKS',
+];
+
+const scoreWindow = (value, market, window) => {
+  if (DEFENSIVE_MARKETS.includes(market)) {
+    return { components: { traditional: { value, thin: false } } };
+  }
+  if (market === 'FG3A' && window === 'last_15') {
+    return { components: {}, blend: null };
+  }
+  return {
+    components:
+      window === 'season'
+        ? {
+            play_types: { value: value - 0.01, thin: market === 'AST' },
+            shot_zones: { value, thin: false },
+          }
+        : { shot_zones: { value, thin: market === 'AST' } },
+    blend: { value, thin: market === 'AST' && window === 'last_15' },
+  };
+};
 
 const scores = (markets, seasonValue, last15Value) =>
   Object.fromEntries(
     markets.map((market, index) => [
       market,
       {
-        season: scoreWindow(seasonValue + index / 100, market),
-        last_15: scoreWindow(last15Value + index / 100, market),
+        season: scoreWindow(seasonValue + index / 100, market, 'season'),
+        last_15: scoreWindow(last15Value + index / 100, market, 'last_15'),
       },
     ]),
   );
@@ -304,21 +346,21 @@ export const matchupPayload = {
       name: 'LeBron James',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
-      posted_markets: ['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'],
+      posted_markets: COMPLETE_MARKETS,
       provenance: {
-        prizepicks: ['PTS', 'FGA', 'AST', 'REB', 'PRA'],
+        prizepicks: COMPLETE_MARKETS,
         underdog: ['PTS', 'TOV'],
       },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
-        play_types: [dietShare('transition', 0.19, 0.2), dietShare('post-up', 0.02, 0.16)],
-        shot_zones: [dietShare('paint', 0.27, 0.28)],
-        shot_types: [dietShare('catch-shoot', 0.36, 0.37, 4.2, 4.3)],
-        assist_locations: [dietShare('paint-assists', 0.31, 0.32, 1.1, 1.2)],
+        play_types: [dietShare('transition', 0.19), dietShare('post-up', 0.02)],
+        shot_zones: [dietShare('paint', 0.27, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('catch-shoot', 0.36, 4.2, 'field_goal_attempts')],
+        assist_locations: [dietShare('paint-assists', 0.31, 1.1, 'assists')],
       },
       injury_badge_ref: null,
-      scores: scores(['PTS', 'FGA', 'AST', 'REB', 'PRA', 'TOV'], 0.12, -0.02),
+      scores: scores(COMPLETE_MARKETS, 0.12, -0.02),
     },
     {
       canonical_id: 1630559,
@@ -332,10 +374,10 @@ export const matchupPayload = {
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,
         // so market-tab chip scoping remains observable at the browser seam.
-        play_types: [dietShare('transition', 0.18, 0.18)],
-        shot_zones: [dietShare('paint', 0.24, 0.26)],
-        shot_types: [dietShare('catch-shoot', 0.4, 0.41, 3.9, 3.8)],
-        assist_locations: [dietShare('paint-assists', 0.35, 0.36, 0.8, 0.9)],
+        play_types: [dietShare('transition', 0.18)],
+        shot_zones: [dietShare('paint', 0.24, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('catch-shoot', 0.4, 3.9, 'field_goal_attempts')],
+        assist_locations: [dietShare('paint-assists', 0.35, 0.8, 'assists')],
       },
       injury_badge_ref: 'injury-austin',
       scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08),
@@ -350,10 +392,10 @@ export const matchupPayload = {
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {
-        play_types: [dietShare('transition', 0.21, 0.23)],
-        shot_zones: [dietShare('paint', 0.29, 0.3)],
-        shot_types: [dietShare('catch-shoot', 0.39, 0.4, 4.8, 5)],
-        assist_locations: [dietShare('paint-assists', 0.33, 0.34, 1.2, 1.3)],
+        play_types: [dietShare('transition', 0.21)],
+        shot_zones: [dietShare('paint', 0.29, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('catch-shoot', 0.39, 4.8, 'field_goal_attempts')],
+        assist_locations: [dietShare('paint-assists', 0.33, 1.2, 'assists')],
       },
       injury_badge_ref: null,
       scores: scores(['PTS', 'FGA', 'FG3A', 'REB', 'BLK'], 0.15, 0.11),
@@ -378,7 +420,7 @@ export const matchupPayload = {
             source_player_name: 'Austin Reaves',
             team_id: slateGame.away_team.team_id,
             tricode: 'LAL',
-            status: null,
+            canonical_status: null,
             raw_status: 'Game-time decision',
             reason: 'Left calf soreness',
             source_url: 'https://www.rotowire.com/basketball/player/austin-reaves-5440',
@@ -390,7 +432,7 @@ export const matchupPayload = {
             source_player_name: 'Maxi Kleber',
             team_id: slateGame.away_team.team_id,
             tricode: 'LAL',
-            status: 'Out',
+            canonical_status: 'Out',
             raw_status: 'Out',
             reason: 'Right foot recovery',
             source_url: 'https://www.rotowire.com/basketball/player/maxi-kleber-3929',
@@ -402,7 +444,7 @@ export const matchupPayload = {
             source_player_name: ['Gabe Vincent', 'Jarred Vanderbilt', 'Jordan Goodwin'][index],
             team_id: slateGame.away_team.team_id,
             tricode: 'LAL',
-            status,
+            canonical_status: status,
             raw_status: status,
             reason: ['Left knee soreness', 'Right shoulder soreness', 'Illness'][index],
             source_url: 'https://www.rotowire.com/basketball/injury-report.php',
@@ -440,6 +482,41 @@ const selectionLine = (date, matchup, minutes, values, deltas) => ({
   deltas,
 });
 
+const completeSelectionStats = {
+  PTS: 31,
+  REB: 8,
+  AST: 9,
+  '3PM': 4,
+  FGA: 19,
+  FG2A: 11,
+  FG3A: 8,
+  PRA: 48,
+  PA: 40,
+  PR: 39,
+  RA: 17,
+  TOV: 3,
+  STL: 1,
+  BLK: 1,
+  STKS: 2,
+};
+const completeSelectionDeltas = {
+  PTS: 0.083,
+  REB: -0.012,
+  AST: 0.031,
+  '3PM': 0.011,
+  FGA: 0.018,
+  FG2A: 0.007,
+  FG3A: 0.011,
+  PRA: 0.102,
+  PA: 0.114,
+  PR: 0.071,
+  RA: 0.019,
+  TOV: 0.006,
+  STL: -0.004,
+  BLK: 0.003,
+  STKS: -0.001,
+};
+
 export const selectionPayload = {
   player_id: 2544,
   h2h: {
@@ -449,16 +526,10 @@ export const selectionPayload = {
         '2025-12-25',
         'LAL vs. BOS',
         36,
-        { PTS: 31, FGA: 19, AST: 9, REB: 8, PRA: 48, TOV: 3 },
-        { PTS: 0.083, FGA: 0.018, AST: 0.031, REB: -0.012, PRA: 0.102, TOV: 0.006 },
+        completeSelectionStats,
+        completeSelectionDeltas,
       ),
-      selectionLine(
-        null,
-        'AVG',
-        36,
-        { PTS: 31, FGA: 19, AST: 9, REB: 8, PRA: 48, TOV: 3 },
-        { PTS: 0.083, FGA: 0.018, AST: 0.031, REB: -0.012, PRA: 0.102, TOV: 0.006 },
-      ),
+      selectionLine(null, 'AVG', 36, completeSelectionStats, completeSelectionDeltas),
     ],
   },
   archetype: {
@@ -468,15 +539,15 @@ export const selectionPayload = {
         '2025-12-20',
         'DAL @ BOS',
         34,
-        { PTS: 28, FGA: 18, AST: 7, REB: 8, PRA: 43, TOV: 3 },
-        { PTS: 0.041, FGA: 0.015, AST: -0.009, REB: -0.012, PRA: 0.02, TOV: 0.006 },
+        { ...completeSelectionStats, PTS: 28, FGA: 18, AST: 7, PRA: 43, PA: 35, PR: 36 },
+        { ...completeSelectionDeltas, PTS: 0.041, FGA: 0.015, AST: -0.009, PRA: 0.02 },
       ),
       selectionLine(
         null,
         'AVG',
         34,
-        { PTS: 28, FGA: 18, AST: 7, REB: 8, PRA: 43, TOV: 3 },
-        { PTS: 0.041, FGA: 0.015, AST: -0.009, REB: -0.012, PRA: 0.02, TOV: 0.006 },
+        { ...completeSelectionStats, PTS: 28, FGA: 18, AST: 7, PRA: 43, PA: 35, PR: 36 },
+        { ...completeSelectionDeltas, PTS: 0.041, FGA: 0.015, AST: -0.009, PRA: 0.02 },
       ),
     ],
   },

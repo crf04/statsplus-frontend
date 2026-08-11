@@ -35,6 +35,75 @@ const requireStringList = (value) => {
   return value;
 };
 const camelKey = (key) => key.replace(/_([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
+const MARKET_CATEGORIES = new Set([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'FGA',
+  'FG2A',
+  'FG3A',
+  'PRA',
+  'PA',
+  'PR',
+  'RA',
+  'TOV',
+  'STL',
+  'BLK',
+  'STKS',
+]);
+
+const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+
+const decodeAvailabilityState = (value) => {
+  if (
+    !isRecord(value) ||
+    Object.keys(value).sort().join() !== ['status', 'unavailable_reason'].sort().join() ||
+    !['available', 'unavailable', 'missing'].includes(value.status) ||
+    (value.status === 'available'
+      ? value.unavailable_reason !== null
+      : typeof value.unavailable_reason !== 'string' || !value.unavailable_reason)
+  ) {
+    throw invalid();
+  }
+  return {
+    status: value.status,
+    unavailableReason: value.unavailable_reason,
+  };
+};
+
+const decodeSurfaceAvailability = (availability) => {
+  if (
+    !isRecord(availability) ||
+    Object.keys(availability).sort().join() !== [...DEFENSE_BASES].sort().join()
+  ) {
+    throw invalid();
+  }
+  return Object.fromEntries(
+    DEFENSE_BASES.map((base) => {
+      const windows = availability[base];
+      if (
+        !isRecord(windows) ||
+        Object.keys(windows).sort().join() !== ['season', 'last_15'].sort().join()
+      ) {
+        throw invalid();
+      }
+      return [
+        camelKey(base),
+        {
+          season: decodeAvailabilityState(windows.season),
+          last15: decodeAvailabilityState(windows.last_15),
+        },
+      ];
+    }),
+  );
+};
+
+const decodeAvailableWindow = (value, availability, decode) => {
+  if (availability.status === 'available') return decode(value);
+  if (value !== null) throw invalid();
+  return null;
+};
 
 const decodeWindowValue = (value) => {
   if (!isRecord(value)) throw invalid();
@@ -46,18 +115,18 @@ const decodeWindowValue = (value) => {
   };
 };
 
-const decodeSheetRow = (row) => {
+const decodeSheetRow = (row, availability) => {
   if (!isRecord(row)) throw invalid();
   return {
     key: requireString(row.key),
     label: requireString(row.label),
     markets: requireStringList(row.markets),
-    season: decodeWindowValue(row.season),
-    last15: decodeWindowValue(row.last_15),
+    season: decodeAvailableWindow(row.season, availability.season, decodeWindowValue),
+    last15: decodeAvailableWindow(row.last_15, availability.last15, decodeWindowValue),
   };
 };
 
-const decodeDefenseSheet = (sheet) => {
+const decodeDefenseSheet = (sheet, surfaceAvailability) => {
   if (
     !isRecord(sheet) ||
     Object.keys(sheet).sort().join() !==
@@ -67,19 +136,25 @@ const decodeDefenseSheet = (sheet) => {
   return Object.fromEntries(
     Object.entries(sheet).map(([base, rows]) => {
       if (!Array.isArray(rows)) throw invalid();
-      return [camelKey(base), rows.map(decodeSheetRow)];
+      return [
+        camelKey(base),
+        rows.map((row) => decodeSheetRow(row, surfaceAvailability[camelKey(base)])),
+      ];
     }),
   );
 };
 
-const decodeTeam = (team) => {
+const decodeTeam = (team, surfaceAvailability) => {
   if (!isRecord(team) || !Number.isInteger(team.team_id)) throw invalid();
   return {
     teamId: team.team_id,
     tricode: requireString(team.tricode),
     name: requireString(team.name),
-    defenseSheet: decodeDefenseSheet(team.defense_sheet),
-    defensiveColumns: decodeDefensiveColumns(team.defensive_columns),
+    defenseSheet: decodeDefenseSheet(team.defense_sheet, surfaceAvailability),
+    defensiveColumns: decodeDefensiveColumns(
+      team.defensive_columns,
+      surfaceAvailability.traditional,
+    ),
   };
 };
 
@@ -93,7 +168,7 @@ const decodeDefensiveColumnWindow = (value) => {
   };
 };
 
-function decodeDefensiveColumns(columns) {
+function decodeDefensiveColumns(columns, availability) {
   if (!isRecord(columns) || DEFENSIVE_COLUMN_KEYS.some((key) => !isRecord(columns[key]))) {
     throw invalid();
   }
@@ -101,32 +176,58 @@ function decodeDefensiveColumns(columns) {
     DEFENSIVE_COLUMN_KEYS.map((key) => [
       key,
       {
-        season: decodeDefensiveColumnWindow(columns[key].season),
-        last15: decodeDefensiveColumnWindow(columns[key].last_15),
+        season: decodeAvailableWindow(
+          columns[key].season,
+          availability.season,
+          decodeDefensiveColumnWindow,
+        ),
+        last15: decodeAvailableWindow(
+          columns[key].last_15,
+          availability.last15,
+          decodeDefensiveColumnWindow,
+        ),
       },
     ]),
   );
 }
 
 const decodeDietShares = (dietShares) => {
-  if (!isRecord(dietShares)) throw invalid();
+  const dietBases = DEFENSE_BASES.filter((base) => base !== 'traditional');
+  if (!isRecord(dietShares) || Object.keys(dietShares).sort().join() !== dietBases.sort().join())
+    throw invalid();
   return Object.fromEntries(
     Object.entries(dietShares).map(([base, entries]) => {
       if (!Array.isArray(entries)) throw invalid();
       return [
         camelKey(base),
         entries.map((entry) => {
-          if (!isRecord(entry) || !isRecord(entry.season) || !isRecord(entry.last_15)) {
+          if (
+            !isRecord(entry) ||
+            Object.keys(entry).sort().join() !== ['key', 'season'].sort().join() ||
+            !isRecord(entry.season)
+          ) {
             throw invalid();
           }
-          const decodeShare = (share) => ({
-            share: requireNumber(share.share),
-            volumePerGame: requireNumber(share.volume_per_game),
-          });
+          const season = entry.season;
+          if (
+            Object.keys(season).sort().join() !==
+              ['share', 'volume', 'games_played', 'volume_unit'].sort().join() ||
+            !Number.isInteger(season.games_played) ||
+            season.games_played <= 0
+          )
+            throw invalid();
+          const share = requireNumber(season.share);
+          const volume = requireNumber(season.volume);
+          if (share < 0 || volume < 0) throw invalid();
           return {
             key: requireString(entry.key),
-            season: decodeShare(entry.season),
-            last15: decodeShare(entry.last_15),
+            season: {
+              share,
+              volume,
+              gamesPlayed: season.games_played,
+              volumeUnit: requireString(season.volume_unit),
+              volumePerGame: volume / season.games_played,
+            },
           };
         }),
       ];
@@ -137,19 +238,26 @@ const decodeDietShares = (dietShares) => {
 const decodePlayer = (player) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
+  const postedMarkets = requireStringList(player.posted_markets);
+  if (
+    postedMarkets.length === 0 ||
+    new Set(postedMarkets).size !== postedMarkets.length ||
+    postedMarkets.some((market) => !MARKET_CATEGORIES.has(market))
+  )
+    throw invalid();
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
     teamId: player.team_id,
     tricode: requireString(player.tricode),
-    postedMarkets: requireStringList(player.posted_markets),
-    provenance: decodeProvenance(player.provenance, player.posted_markets),
-    seasonScoring: requireNumber(player.season_scoring),
+    postedMarkets,
+    provenance: decodeProvenance(player.provenance, postedMarkets),
+    seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:
       player.injury_badge_ref === null ? null : requireString(player.injury_badge_ref),
-    scores: decodeScores(player.scores, player.posted_markets),
+    scores: decodeScores(player.scores, postedMarkets),
   };
 };
 
@@ -173,8 +281,6 @@ function decodeProvenance(provenance, postedMarkets) {
   return decoded;
 }
 
-const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
-
 const decodeLeagueRowWindow = (value) => {
   if (!isRecord(value)) throw invalid();
   return {
@@ -184,9 +290,15 @@ const decodeLeagueRowWindow = (value) => {
 };
 
 const decodeLeague = (league) => {
-  if (!isRecord(league) || !isRecord(league.defense_sheet) || !isRecord(league.defensive_columns)) {
+  if (
+    !isRecord(league) ||
+    !isRecord(league.defense_sheet) ||
+    !isRecord(league.defensive_columns) ||
+    !isRecord(league.surface_availability)
+  ) {
     throw invalid();
   }
+  const surfaceAvailability = decodeSurfaceAvailability(league.surface_availability);
   if (Object.keys(league.defense_sheet).sort().join() !== [...DEFENSE_BASES].sort().join()) {
     throw invalid();
   }
@@ -198,8 +310,16 @@ const decodeLeague = (league) => {
         if (!isRecord(row)) throw invalid();
         return {
           key: requireString(row.key),
-          season: decodeLeagueRowWindow(row.season),
-          last15: decodeLeagueRowWindow(row.last_15),
+          season: decodeAvailableWindow(
+            row.season,
+            surfaceAvailability[camelKey(base)].season,
+            decodeLeagueRowWindow,
+          ),
+          last15: decodeAvailableWindow(
+            row.last_15,
+            surfaceAvailability[camelKey(base)].last15,
+            decodeLeagueRowWindow,
+          ),
         };
       });
       if (new Set(decodedRows.map((row) => row.key)).size !== decodedRows.length) throw invalid();
@@ -217,7 +337,21 @@ const decodeLeague = (league) => {
           sigma: requireNumber(value.sigma),
         };
       };
-      return [key, { season: decodeWindow(column.season), last15: decodeWindow(column.last_15) }];
+      return [
+        key,
+        {
+          season: decodeAvailableWindow(
+            column.season,
+            surfaceAvailability.traditional.season,
+            decodeWindow,
+          ),
+          last15: decodeAvailableWindow(
+            column.last_15,
+            surfaceAvailability.traditional.last15,
+            decodeWindow,
+          ),
+        },
+      ];
     }),
   );
   if (
@@ -225,7 +359,7 @@ const decodeLeague = (league) => {
   ) {
     throw invalid();
   }
-  return { defenseSheet, defensiveColumns };
+  return { defenseSheet, defensiveColumns, surfaceAvailability };
 };
 
 const validateLeagueCoverage = (league, teams) => {
@@ -241,7 +375,12 @@ const validateLeagueCoverage = (league, teams) => {
 };
 
 const decodeScoreCell = (cell) => {
-  if (!isRecord(cell) || typeof cell.thin !== 'boolean') throw invalid();
+  if (
+    !isRecord(cell) ||
+    Object.keys(cell).sort().join() !== ['thin', 'value'].sort().join() ||
+    typeof cell.thin !== 'boolean'
+  )
+    throw invalid();
   return { value: requireNumber(cell.value), thin: cell.thin };
 };
 
@@ -250,7 +389,21 @@ const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
 const decodeScoreWindow = (window, market) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
   const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
-  if ((!defensive && !isRecord(window.blend)) || (defensive && window.blend != null)) {
+  const keys = Object.keys(window).sort().join();
+  if (
+    (defensive && !['components', 'blend,components'].includes(keys)) ||
+    (!defensive && keys !== ['blend', 'components'].sort().join())
+  )
+    throw invalid();
+  const componentBases = Object.keys(window.components);
+  if (
+    componentBases.some((base) => !DEFENSE_BASES.includes(base)) ||
+    (defensive && componentBases.some((base) => base !== 'traditional'))
+  )
+    throw invalid();
+  const componentCount = Object.keys(window.components).length;
+  const validOffensiveBlend = componentCount === 0 ? window.blend === null : isRecord(window.blend);
+  if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
     throw invalid();
   }
   return {
@@ -260,12 +413,20 @@ const decodeScoreWindow = (window, market) => {
         decodeScoreCell(cell),
       ]),
     ),
-    blend: defensive ? null : decodeScoreCell(window.blend),
+    blend: defensive || window.blend === null ? null : decodeScoreCell(window.blend),
   };
 };
 
 function decodeScores(scores, postedMarkets) {
-  if (!isRecord(scores) || postedMarkets.some((market) => !isRecord(scores[market]))) {
+  if (
+    !isRecord(scores) ||
+    Object.keys(scores).sort().join() !== [...postedMarkets].sort().join() ||
+    postedMarkets.some(
+      (market) =>
+        !isRecord(scores[market]) ||
+        Object.keys(scores[market]).sort().join() !== ['season', 'last_15'].sort().join(),
+    )
+  ) {
     throw invalid();
   }
   return Object.fromEntries(
@@ -378,9 +539,8 @@ const decodeGame = (game) => {
 const decodeInjuryEntry = (entry) => {
   if (!isRecord(entry)) throw invalid();
   if (
-    entry.status !== null &&
-    entry.status !== undefined &&
-    !['Probable', 'Questionable', 'Doubtful', 'Out'].includes(entry.status)
+    entry.canonical_status !== null &&
+    !['Probable', 'Questionable', 'Doubtful', 'Out'].includes(entry.canonical_status)
   ) {
     throw invalid();
   }
@@ -391,7 +551,7 @@ const decodeInjuryEntry = (entry) => {
     playerName: requireString(entry.source_player_name),
     teamId: requireInteger(entry.team_id),
     tricode: requireString(entry.tricode),
-    status: entry.status || null,
+    status: entry.canonical_status,
     rawStatus: entry.raw_status || null,
     reason: requireString(entry.reason),
     sourceUrl: requireString(entry.source_url),
@@ -416,7 +576,7 @@ const decodeInjuries = (injuries, matchupTeams) => {
   if (
     !Array.isArray(injuries.teams) ||
     (injuries.status === 'unavailable'
-      ? ![0, matchupTeams.length].includes(injuries.teams.length)
+      ? injuries.teams.length !== 0
       : injuries.teams.length !== matchupTeams.length)
   ) {
     throw invalid();
@@ -467,15 +627,22 @@ export const decodeMatchup = (data) => {
     throw invalid();
   }
   const league = decodeLeague(data.league);
-  const teams = data.teams.map(decodeTeam);
+  const teams = data.teams.map((team) => decodeTeam(team, league.surfaceAvailability));
   validateLeagueCoverage(league, teams);
+  const injuries = decodeInjuries(data.injuries, teams);
+  const freshness = decodeFreshness(data.freshness);
+  if (
+    freshness.injuries.status !== injuries.status ||
+    freshness.injuries.retrievedAt !== injuries.retrievedAt
+  )
+    throw invalid();
   return {
     game: decodeGame(data.game),
     league,
     teams,
     players: data.players.map(decodePlayer),
-    injuries: decodeInjuries(data.injuries, teams),
-    freshness: decodeFreshness(data.freshness),
+    injuries,
+    freshness,
   };
 };
 

@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -59,7 +60,6 @@ describe('deployed smoke Vercel bootstrap', () => {
         name: '_vercel_jwt',
         value: 'jwt-token',
         url: deploymentUrl,
-        path: '/',
         secure: true,
         httpOnly: true,
         sameSite: 'Lax',
@@ -165,5 +165,24 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource.indexOf('Validate protected preview deployment URL')).toBeLessThan(
       workflowSource.indexOf('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.'),
     );
+  });
+
+  test('reports the rejected mode and URL without exposing a bypass secret', () => {
+    const rejectedUrl = 'https://statsplus-frontend.vercel.app/?redirect=evil';
+    const bypassSecret = 'do-not-print-this-secret';
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/validate-deployment-url.mjs', 'protected-preview', rejectedUrl],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: { ...process.env, VERCEL_AUTOMATION_BYPASS_SECRET: bypassSecret },
+      },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('mode="protected-preview"');
+    expect(result.stderr).toContain(`url=${JSON.stringify(rejectedUrl)}`);
+    expect(result.stderr).not.toContain(bypassSecret);
   });
 });

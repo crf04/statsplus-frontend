@@ -40,7 +40,7 @@ Run the public smoke test against a deployment without starting a local server:
 
 ```bash
 # Public production smoke does not need a credential.
-E2E_BASE_URL=https://statsplus-frontend-<deployment-id>-chris-fus-projects.vercel.app \
+E2E_BASE_URL=https://statsplus-frontend.vercel.app \
   npm run test:e2e:smoke
 ```
 

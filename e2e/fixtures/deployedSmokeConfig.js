@@ -89,7 +89,6 @@ export const bootstrapVercelBypassCookie = async ({
         name: '_vercel_jwt',
         value,
         url: configuredBaseUrl,
-        path: '/',
         secure: true,
         httpOnly: true,
         sameSite: 'Lax',

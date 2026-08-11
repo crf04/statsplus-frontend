@@ -7,5 +7,10 @@ if (
   !['production', 'protected-preview'].includes(mode) ||
   !isAllowedDeploymentUrl(deploymentUrl, mode)
 ) {
+  console.error(
+    `Rejected deployment URL: mode=${JSON.stringify(mode ?? '<missing>')} url=${JSON.stringify(
+      deploymentUrl ?? '<missing>',
+    )}`,
+  );
   process.exitCode = 1;
 }

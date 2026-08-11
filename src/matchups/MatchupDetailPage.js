@@ -31,6 +31,7 @@ const SHARE_LABELS = {
   shotTypes: 'FGA',
   assistLocations: 'ast',
 };
+const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
 
 function Freshness({ freshness, now }) {
   const surfaces = [
@@ -249,8 +250,18 @@ function DefenseSheet({
     const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
     const availability = surfaceAvailability[base][windowKey];
     if (availability.status !== 'available') {
-      return { base, availability, relevant: marketRows.length > 0, visibleRows: [] };
+      return {
+        base,
+        availability,
+        relevant: marketRows.length > 0,
+        legacyUnavailableRow: null,
+        visibleRows: [],
+      };
     }
+    const legacyUnavailableRow =
+      base === 'traditional'
+        ? marketRows.find((row) => row.key === 'OPP_REB' && row[windowKey] === null) || null
+        : null;
     const visibleRows = marketRows
       .filter((row) => row[windowKey] !== null)
       .filter((row) => {
@@ -258,9 +269,20 @@ function DefenseSheet({
         if (!shown) hidden += 1;
         return shown;
       });
-    return { base, availability, relevant: marketRows.length > 0, visibleRows };
+    return {
+      base,
+      availability,
+      relevant: marketRows.length > 0,
+      legacyUnavailableRow,
+      visibleRows,
+    };
   });
   const visibleCount = sections.reduce((total, section) => total + section.visibleRows.length, 0);
+  const hasNamedUnavailable = sections.some(
+    (section) =>
+      section.legacyUnavailableRow ||
+      (section.availability.status !== 'available' && section.relevant),
+  );
   const traditionalHasRelevantRows =
     sections.find((section) => section.base === 'traditional')?.relevant ?? false;
   return (
@@ -279,10 +301,10 @@ function DefenseSheet({
         availability={surfaceAvailability.traditional[windowKey]}
         hasRelevantRows={traditionalHasRelevantRows}
       />
-      {visibleCount === 0 && (
+      {visibleCount === 0 && !hasNamedUnavailable && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
-      {sections.map(({ base, availability, relevant, visibleRows }) =>
+      {sections.map(({ base, availability, relevant, legacyUnavailableRow, visibleRows }) =>
         availability.status !== 'available' && relevant && base !== 'traditional' ? (
           <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
             <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
@@ -292,52 +314,69 @@ function DefenseSheet({
               {availability.unavailableReason}.
             </p>
           </section>
-        ) : visibleRows.length ? (
+        ) : visibleRows.length || legacyUnavailableRow ? (
           <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
             <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
-            <div className="sheet-rows">
-              {visibleRows.map((row) => {
-                const stat = row[windowKey];
-                return (
-                  <article
-                    className={`sheet-row${
-                      selectedPlayer && getDisplayableDietShare(selectedPlayer, base, row.sliceKey)
-                        ? ' selection-why'
-                        : ''
-                    }`}
-                    key={`${base}-${row.key}`}
-                  >
-                    <div className="row-stat">
-                      <div>
-                        <h4>{row.label}</h4>
-                        <span>Rank {stat.rank} of 30</span>
+            {visibleRows.length > 0 && (
+              <div className="sheet-rows">
+                {visibleRows.map((row) => {
+                  const stat = row[windowKey];
+                  return (
+                    <article
+                      className={`sheet-row${
+                        selectedPlayer &&
+                        getDisplayableDietShare(selectedPlayer, base, row.sliceKey)
+                          ? ' selection-why'
+                          : ''
+                      }`}
+                      key={`${base}-${row.key}`}
+                    >
+                      <div className="row-stat">
+                        <div>
+                          <h4>{row.label}</h4>
+                          <span>Rank {stat.rank} of 30</span>
+                        </div>
+                        <div
+                          className={
+                            stat.percentVsLeagueAverage === null
+                              ? 'relative-neutral'
+                              : stat.percentVsLeagueAverage < 0
+                                ? 'relative-under'
+                                : 'relative-over'
+                          }
+                        >
+                          <strong>{stat.allowedPer48.toFixed(1)}</strong>
+                          {stat.percentVsLeagueAverage === null ? (
+                            <span className="relative-neutral">{UNAVAILABLE_RELATIVE_LABEL}</span>
+                          ) : (
+                            <span>
+                              {stat.percentVsLeagueAverage > 0 ? '+' : ''}
+                              {stat.percentVsLeagueAverage}% vs league
+                            </span>
+                          )}
+                          <span>
+                            {stat.sigmaDeviation > 0 ? '+' : ''}
+                            {stat.sigmaDeviation.toFixed(1)}σ
+                          </span>
+                        </div>
                       </div>
-                      <div
-                        className={
-                          stat.percentVsLeagueAverage < 0 ? 'relative-under' : 'relative-over'
-                        }
-                      >
-                        <strong>{stat.allowedPer48.toFixed(1)}</strong>
-                        <span>
-                          {stat.percentVsLeagueAverage > 0 ? '+' : ''}
-                          {stat.percentVsLeagueAverage}% vs league
-                        </span>
-                        <span>
-                          {stat.sigmaDeviation > 0 ? '+' : ''}
-                          {stat.sigmaDeviation.toFixed(1)}σ
-                        </span>
-                      </div>
-                    </div>
-                    <DietShareChips
-                      players={players}
-                      base={base}
-                      sliceKey={row.sliceKey}
-                      market={market}
-                    />
-                  </article>
-                );
-              })}
-            </div>
+                      <DietShareChips
+                        players={players}
+                        base={base}
+                        sliceKey={row.sliceKey}
+                        market={market}
+                      />
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+            {legacyUnavailableRow && (
+              <p className="honest-empty">
+                Opponent rebounds unavailable for{' '}
+                {WINDOWS.find((window) => window.key === windowKey)?.label}: legacy-unavailable.
+              </p>
+            )}
           </section>
         ) : null,
       )}
@@ -375,10 +414,14 @@ function DefensiveColumns({ columns, market, windowKey, availability, hasRelevan
             <article key={key}>
               <h4>{key}</h4>
               <strong>{value.per48.toFixed(1)} per 48</strong>
-              <span>
-                {value.percentVsLeagueAverage > 0 ? '+' : ''}
-                {value.percentVsLeagueAverage}% vs league
-              </span>
+              {value.percentVsLeagueAverage === null ? (
+                <span>{UNAVAILABLE_RELATIVE_LABEL}</span>
+              ) : (
+                <span>
+                  {value.percentVsLeagueAverage > 0 ? '+' : ''}
+                  {value.percentVsLeagueAverage}% vs league
+                </span>
+              )}
             </article>
           );
         })}
@@ -551,6 +594,15 @@ function Detail({ matchup, gameId }) {
           ))}
         </div>
       </header>
+      {matchup.game.preseason && (
+        <p
+          role="note"
+          aria-label="Preseason matchup caveat"
+          className="matchup-warning preseason-caveat"
+        >
+          Preseason matchup — current-season samples may be limited.
+        </p>
+      )}
       <Freshness freshness={matchup.freshness} now={now} />
       <section className="detail-controls" aria-label="Defense Sheet controls">
         <div className="segmented" role="group" aria-label="Market">

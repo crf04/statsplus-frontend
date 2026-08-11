@@ -697,6 +697,85 @@ test.each([
   },
 );
 
+test('accepts null relative percentages only for structural-zero sheet and defensive-column windows', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.play_types[0].season = {
+    average_allowed_per_48: 0,
+    sigma: 0,
+  };
+  candidate.league.defensive_columns.OPP_BLK.season = { average_per_48: 0, sigma: 0 };
+  candidate.teams[1].defense_sheet.play_types = [
+    JSON.parse(JSON.stringify(candidate.teams[0].defense_sheet.play_types[0])),
+  ];
+  candidate.teams.forEach((team) => {
+    team.defense_sheet.play_types[0].season = {
+      allowed_per_48: 0,
+      percent_vs_league_average: null,
+      sigma_deviation: 0,
+      rank: 1,
+    };
+    team.defensive_columns.OPP_BLK.season = {
+      per_48: 0,
+      percent_vs_league_average: null,
+    };
+  });
+
+  const decoded = decodeMatchup(candidate);
+  expect(decoded.teams[0].defenseSheet.playTypes[0].season).toEqual({
+    allowedPer48: 0,
+    percentVsLeagueAverage: null,
+    sigmaDeviation: 0,
+    rank: 1,
+  });
+  expect(decoded.teams[0].defensiveColumns.OPP_BLK.season).toEqual({
+    per48: 0,
+    percentVsLeagueAverage: null,
+  });
+});
+
+test.each([
+  [
+    'sheet window',
+    (candidate) =>
+      (candidate.teams[0].defense_sheet.play_types[0].season.percent_vs_league_average = null),
+  ],
+  [
+    'defensive-column window',
+    (candidate) =>
+      (candidate.teams[0].defensive_columns.OPP_BLK.season.percent_vs_league_average = null),
+  ],
+])('rejects a null relative percentage on a nonzero %s', (_label, mutate) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each(['allowed_per_48', 'sigma_deviation', 'rank'])(
+  'keeps structural-zero sheet field %s numeric',
+  (field) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    candidate.league.defense_sheet.play_types[0].season.average_allowed_per_48 = 0;
+    candidate.teams[0].defense_sheet.play_types[0].season = {
+      allowed_per_48: 0,
+      percent_vs_league_average: null,
+      sigma_deviation: 0,
+      rank: 1,
+      [field]: null,
+    };
+    expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  },
+);
+
+test('keeps structural-zero defensive-column per_48 numeric', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defensive_columns.OPP_BLK.season.average_per_48 = 0;
+  candidate.teams[0].defensive_columns.OPP_BLK.season = {
+    per_48: null,
+    percent_vs_league_average: null,
+  };
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test.each([
   ['another traditional row', 'traditional', 'OPP_TOV'],
   ['another Base row', 'play_types', 'Transition:PTS'],

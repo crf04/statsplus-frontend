@@ -26,6 +26,7 @@ const requireNumber = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
 };
+const decodeRelativePercentage = (value) => (value === null ? null : requireNumber(value));
 const requireInteger = (value) => {
   if (!Number.isInteger(value)) throw invalid();
   return value;
@@ -209,7 +210,7 @@ const decodeWindowValue = (value) => {
   if (!isRecord(value)) throw invalid();
   return {
     allowedPer48: requireNumber(value.allowed_per_48),
-    percentVsLeagueAverage: requireNumber(value.percent_vs_league_average),
+    percentVsLeagueAverage: decodeRelativePercentage(value.percent_vs_league_average),
     sigmaDeviation: requireNumber(value.sigma_deviation),
     rank: requireNumber(value.rank),
   };
@@ -268,7 +269,7 @@ const decodeDefensiveColumnWindow = (value) => {
   if (!isRecord(value)) throw invalid();
   return {
     per48: requireNumber(value.per_48),
-    percentVsLeagueAverage: requireNumber(value.percent_vs_league_average),
+    percentVsLeagueAverage: decodeRelativePercentage(value.percent_vs_league_average),
   };
 };
 
@@ -474,6 +475,32 @@ const validateLeagueCoverage = (league, teams) => {
     );
     if ([...teamKeys].some((key) => !leagueKeys.has(key))) {
       throw invalid();
+    }
+  }
+};
+
+const validateStructuralZeroPercentages = (league, teams) => {
+  for (const team of teams) {
+    for (const [base, rows] of Object.entries(team.defenseSheet)) {
+      const leagueRows = new Map(league.defenseSheet[base].map((row) => [row.key, row]));
+      for (const row of rows) {
+        for (const windowKey of ['season', 'last15']) {
+          const value = row[windowKey];
+          if (value?.percentVsLeagueAverage !== null) continue;
+          const leagueValue = leagueRows.get(row.key)?.[windowKey];
+          if (value.allowedPer48 !== 0 || !leagueValue || leagueValue.averageAllowedPer48 !== 0) {
+            throw invalid();
+          }
+        }
+      }
+    }
+    for (const [key, windows] of Object.entries(team.defensiveColumns)) {
+      for (const windowKey of ['season', 'last15']) {
+        const value = windows[windowKey];
+        if (value?.percentVsLeagueAverage !== null) continue;
+        const leagueValue = league.defensiveColumns[key][windowKey];
+        if (value.per48 !== 0 || !leagueValue || leagueValue.averagePer48 !== 0) throw invalid();
+      }
     }
   }
 };
@@ -722,6 +749,7 @@ export const decodeMatchup = (data) => {
   const league = decodeLeague(data.league);
   const teams = data.teams.map((team) => decodeTeam(team, league.surfaceAvailability));
   validateLeagueCoverage(league, teams);
+  validateStructuralZeroPercentages(league, teams);
   const injuries = decodeInjuries(data.injuries, teams);
   const freshness = decodeFreshness(data.freshness);
   if (

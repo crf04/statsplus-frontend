@@ -66,6 +66,15 @@
 .matchup-warning {
   color: var(--ct-gold);
 }
+.preseason-caveat {
+  margin: 16px 0 0;
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--ct-gold) 10%, var(--ct-surface));
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+}
 .detail-controls {
   display: grid;
   gap: 10px;
@@ -138,7 +147,8 @@
   font-size: 0.72rem;
 }
 .relative-over,
-.relative-under {
+.relative-under,
+.relative-neutral {
   display: grid;
   justify-items: end;
 }

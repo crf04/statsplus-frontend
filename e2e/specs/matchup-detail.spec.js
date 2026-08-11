@@ -73,12 +73,23 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('13.9 per 48')).toBeVisible();
   await expect(page.getByText('8.8 per 48')).toBeVisible();
   await expect(page.getByText('5.7 per 48')).toBeVisible();
-  await expect(page.getByText('OPP REB')).toHaveCount(0);
+  await expect(
+    page.getByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
+  ).toBeVisible();
   await expect(page.getByText('OPP TOV')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-legacy-traditional.png'),
     fullPage: true,
   });
+  await page.getByRole('button', { name: 'REB', exact: true }).click();
+  await expect(
+    page.getByText('Opponent rebounds unavailable for Last 15: legacy-unavailable.'),
+  ).toBeVisible();
+  await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
+  await page.getByRole('button', { name: 'TOV', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
   await page.getByRole('button', { name: 'AST', exact: true }).click();
   await expect(
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
@@ -126,6 +137,82 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   expect(matchupRequests).toHaveLength(1);
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
+});
+
+test('preseason matchups show a clear limited-sample caveat', async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.game.preseason = true;
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+
+  await page.goto('/matchups/0022500584');
+  await expect(page.getByRole('note', { name: 'Preseason matchup caveat' })).toContainText(
+    'Preseason matchup — current-season samples may be limited.',
+  );
+  await expect(
+    page.getByText('Preseason matchup — current-season samples may be limited.'),
+  ).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-preseason.png'),
+    fullPage: true,
+  });
+});
+
+test('structural-zero windows explain unavailable relative percentages', async ({
+  page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.league.defense_sheet.play_types[0].season.average_allowed_per_48 = 0;
+  candidate.teams.find((team) => team.tricode === 'BOS').defense_sheet.play_types[0].season = {
+    allowed_per_48: 0,
+    percent_vs_league_average: null,
+    sigma_deviation: 0,
+    rank: 1,
+  };
+  candidate.league.defensive_columns.OPP_BLK.season.average_per_48 = 0;
+  candidate.teams.find((team) => team.tricode === 'BOS').defensive_columns.OPP_BLK.season = {
+    per_48: 0,
+    percent_vs_league_average: null,
+  };
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+
+  await page.goto('/matchups/0022500584');
+  await page.getByRole('button', { name: 'All deviations', exact: true }).click();
+  const transition = page.locator('article.sheet-row').filter({ hasText: 'Transition PTS' });
+  await expect(transition).toContainText('0.0');
+  await expect(transition).toContainText('vs league: unavailable (not comparable)');
+  await expect(transition).not.toContainText('null%');
+  await expect(transition).not.toHaveClass(/relative-over|relative-under/);
+  const blockColumn = page.getByRole('heading', { name: 'OPP_BLK' }).locator('..');
+  await expect(blockColumn).toContainText('0.0 per 48');
+  await expect(blockColumn).toContainText('vs league: unavailable (not comparable)');
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-structural-zero.png'),
+    fullPage: true,
+  });
 });
 
 test('matchup renders disabled injuries and unavailable surfaces without inventing data', async ({

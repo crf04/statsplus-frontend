@@ -36,7 +36,7 @@ Browser  ──►  CourtAI (Vercel static)  ──►  /api/*  ──►  Backe
 
 A few decisions worth calling out:
 
-- **Same-origin API in production.** Vercel rewrites `/api/*` to the backend origin, so the frontend never deals with CORS. In development the backend is hit directly via `REACT_APP_API_BASE_URL`.
+- **Same-origin API in production.** Vercel rewrites `/api/*` to the backend origin, so the frontend never deals with CORS. Production builds deliberately ignore `REACT_APP_API_BASE_URL`; in development it selects a direct backend origin.
 - **Auth on the frontend, authorization on the backend.** Firebase issues an ID token; an Axios interceptor (`src/utils/axiosConfig.js`) attaches it to every API request. The backend verifies the token before returning data.
 - **Two charting libraries on purpose.** Chart.js handles dense per-game charts (assists, shot zones) where its plugin ecosystem and label control matter; Recharts handles the simpler React-native dashboards where its declarative API is faster to write.
 - **Natural language is a backend concern.** The frontend renders the prompt, posts to `/api/nl-query`, and displays the resolved filters + results. Anything LLM- or parser-related lives outside this repo.
@@ -96,7 +96,7 @@ This repo is the frontend only. It expects a backend serving:
 - `GET  /api/teams/stats`
 - `POST /api/nl-query`
 
-In production the deployed host (Vercel) rewrites `/api/*` to the backend origin. In development, set `REACT_APP_API_BASE_URL` to point at a local or remote backend.
+In production the deployed host (Vercel) rewrites `/api/*` to the backend origin and ignores `REACT_APP_API_BASE_URL`. In development, set `REACT_APP_API_BASE_URL` to point at a local or remote backend.
 
 ## Deployment
 

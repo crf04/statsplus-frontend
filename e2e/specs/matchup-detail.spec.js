@@ -22,13 +22,13 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await page.getByRole('link', { name: 'Open Team Sheets' }).click();
   await expect(page).toHaveURL(/\/matchups\/0022500584$/);
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
-  await expect(page.getByText('Transition')).toBeVisible();
-  await expect(page.getByText('Above-break three')).toBeVisible();
+  await expect(page.getByText('Transition PTS')).toBeVisible();
+  await expect(page.getByText('Above the Break 3 FGA')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Shot zones' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Shot types' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Assist locations' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Traditional defense' })).toBeVisible();
-  await expect(page.getByText('Isolation')).toHaveCount(0);
+  await expect(page.getByText('Isolation PTS')).toHaveCount(0);
   await expect(page.getByText('1 row hidden near league average.')).toBeVisible();
   await expect(page.getByText('+12% vs league')).toBeVisible();
   await expect(page.getByText('-11% vs league')).toBeVisible();
@@ -63,7 +63,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('13.9 per 48')).toBeVisible();
   await expect(page.getByText('8.8 per 48')).toBeVisible();
   await expect(page.getByText('5.7 per 48')).toBeVisible();
-  await expect(page.getByText('Opponent rebounds')).toHaveCount(0);
+  await expect(page.getByText('OPP REB')).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-legacy-traditional.png'),
     fullPage: true,
@@ -72,7 +72,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toHaveCount(0);
-  await expect(page.getByText('Paint assists')).toBeVisible();
+  await expect(page.getByText('AtRimAssists')).toBeVisible();
   await page.getByRole('button', { name: 'Season', exact: true }).click();
 
   await page.getByRole('button', { name: 'PTS' }).click();
@@ -86,12 +86,18 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     fullPage: true,
   });
 
-  await page.getByRole('button', { name: 'FGA' }).click();
-  await expect(page.getByText('Transition')).toBeVisible();
-  await expect(page.getByText('Above-break three')).toHaveCount(0);
+  await page.getByRole('button', { name: 'FG2A' }).click();
+  await expect(page.getByText('Restricted Area FGA')).toBeVisible();
+  await expect(page.getByText('Above the Break 3 FGA')).toHaveCount(0);
+  await expect(page.getByText('Catch and Shoot FG3A')).toHaveCount(0);
+  await expect(page.getByText('Transition PTS')).toHaveCount(0);
   await expect(page.getByText(/Austin Reaves · 18% poss/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'FG3A' }).click();
+  await expect(page.getByText('Restricted Area FGA')).toHaveCount(0);
+  await expect(page.getByText('Above the Break 3 FGA')).toBeVisible();
+  await expect(page.getByText('Catch and Shoot FG3A')).toBeVisible();
   await page.screenshot({
-    path: testInfo.outputPath('matchup-detail-fga-market.png'),
+    path: testInfo.outputPath('matchup-detail-real-market-split.png'),
     fullPage: true,
   });
   await page.getByRole('button', { name: 'All deviations' }).click();
@@ -354,7 +360,17 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(page.getByText('Thin sample — interpret cautiously.').first()).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
   await expect(page.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
-  const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Post up' });
+  const restrictedAreaRow = page
+    .locator('article.sheet-row')
+    .filter({ hasText: 'Restricted Area FGA' });
+  const catchAndShootRow = page
+    .locator('article.sheet-row')
+    .filter({ hasText: 'Catch and Shoot FG3A' });
+  await expect(restrictedAreaRow).toHaveClass(/selection-why/);
+  await expect(catchAndShootRow).toHaveClass(/selection-why/);
+  await expect(restrictedAreaRow.getByText(/LeBron James · 27% FGA/)).toBeVisible();
+  await expect(catchAndShootRow.getByText(/LeBron James · 36% FGA/)).toBeVisible();
+  const postUpRow = page.locator('article.sheet-row').filter({ hasText: 'Postup PTS' });
   await expect(postUpRow).not.toHaveClass(/selection-why/);
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
   await expect(postUpRow).toHaveCount(0);

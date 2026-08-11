@@ -213,12 +213,12 @@ function PlayerRail({
   );
 }
 
-function DietShareChips({ players, base, rowKey, market }) {
+function DietShareChips({ players, base, sliceKey, market }) {
   if (!SHARE_LABELS[base]) return null;
   const chips = players
     .filter((player) => market === 'All' || player.postedMarkets.includes(market))
     .flatMap((player) => {
-      const share = getDisplayableDietShare(player, base, rowKey);
+      const share = getDisplayableDietShare(player, base, sliceKey);
       if (!share) return [];
       return [{ player, share }];
     });
@@ -301,7 +301,7 @@ function DefenseSheet({
                 return (
                   <article
                     className={`sheet-row${
-                      selectedPlayer && getDisplayableDietShare(selectedPlayer, base, row.key)
+                      selectedPlayer && getDisplayableDietShare(selectedPlayer, base, row.sliceKey)
                         ? ' selection-why'
                         : ''
                     }`}
@@ -331,7 +331,7 @@ function DefenseSheet({
                     <DietShareChips
                       players={players}
                       base={base}
-                      rowKey={row.key}
+                      sliceKey={row.sliceKey}
                       market={market}
                     />
                   </article>

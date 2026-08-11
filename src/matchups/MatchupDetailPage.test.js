@@ -72,6 +72,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
+            sliceKey: 'transition',
             label: 'Transition',
             markets: ['PTS', 'FGA'],
             season: value(18.4, 12, 1.4, 27),
@@ -79,6 +80,7 @@ const matchup = {
           },
           {
             key: 'isolation',
+            sliceKey: 'isolation',
             label: 'Isolation',
             markets: ['PTS'],
             season: value(8.1, 2, 0.4, 16),
@@ -86,6 +88,7 @@ const matchup = {
           },
           {
             key: 'above-break',
+            sliceKey: 'above-break',
             label: 'Above-break three',
             markets: ['FG3A'],
             season: value(10.2, -11, -1.3, 3),
@@ -300,6 +303,7 @@ test('names an unavailable surface window while leaving available surfaces usabl
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.assistLocations = [
     {
       key: 'paint-assists',
+      sliceKey: 'paint-assists',
       label: 'Paint assists',
       markets: ['AST'],
       season: value(11, 13, 1.5, 28),
@@ -538,6 +542,53 @@ test('opens and deep-links the selection card while market flips reuse delivered
   );
   expect((await screen.findAllByText('+0.018')).length).toBeGreaterThan(0);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
+});
+
+test('joins suffixed sheet rows to bare governed Diet slice identities', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const defense = candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet;
+  defense.shotZones = [
+    {
+      key: 'Restricted Area:FGA',
+      sliceKey: 'Restricted Area',
+      label: 'Restricted Area FGA',
+      markets: ['FGA', 'FG2A'],
+      season: value(23, 10, 1.2, 25),
+      last15: value(21, -7, -1.1, 7),
+    },
+  ];
+  defense.shotTypes = [
+    {
+      key: 'Catch and Shoot:FG3A',
+      sliceKey: 'Catch and Shoot',
+      label: 'Catch and Shoot FG3A',
+      markets: ['FGA', 'FG3A'],
+      season: value(17, 9, 1.1, 23),
+      last15: value(16, 8, 1.2, 22),
+    },
+  ];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.dietShares.shotZones = [
+    { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1 } },
+  ];
+  lebron.dietShares.shotTypes = [
+    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2 } },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+
+  expect(screen.getByText('Restricted Area FGA').closest('article')).toHaveClass('selection-why');
+  expect(screen.getByText('Catch and Shoot FG3A').closest('article')).toHaveClass('selection-why');
+  expect(screen.getByText(/LeBron James · 27% FGA/)).toBeVisible();
+  expect(screen.getByText(/LeBron James · 36% FGA/)).toBeVisible();
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {

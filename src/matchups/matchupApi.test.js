@@ -28,7 +28,7 @@ const payload = {
     defense_sheet: {
       play_types: [
         {
-          key: 'transition',
+          key: 'Transition:PTS',
           season: { average_allowed_per_48: 16.4, sigma: 1.4 },
           last_15: { average_allowed_per_48: 16.2, sigma: 1.2 },
         },
@@ -56,9 +56,9 @@ const payload = {
       defense_sheet: {
         play_types: [
           {
-            key: 'transition',
-            label: 'Transition',
-            markets: ['PTS', 'FGA'],
+            key: 'Transition:PTS',
+            label: 'Transition PTS',
+            markets: ['PTS', 'PA', 'PR', 'PRA'],
             season: {
               allowed_per_48: 18.4,
               percent_vs_league_average: 12,
@@ -133,7 +133,7 @@ const payload = {
       diet_shares: {
         play_types: [
           {
-            key: 'transition',
+            key: 'Transition',
             season: {
               share: 0.19,
               volume: 102,
@@ -192,7 +192,7 @@ test('decodes both delivered windows and preserves relative values', () => {
 
   expect(matchup.teams[0].defenseSheet.playTypes[0]).toEqual(
     expect.objectContaining({
-      markets: ['PTS', 'FGA'],
+      markets: ['PTS', 'PA', 'PR', 'PRA'],
       season: expect.objectContaining({ allowedPer48: 18.4, sigmaDeviation: 1.4 }),
       last15: expect.objectContaining({ percentVsLeagueAverage: -8 }),
     }),
@@ -220,7 +220,8 @@ test('decodes both delivered windows and preserves relative values', () => {
     percentVsLeagueAverage: 8,
   });
   expect(matchup.league.defenseSheet.playTypes[0]).toEqual({
-    key: 'transition',
+    key: 'Transition:PTS',
+    sliceKey: 'Transition',
     season: { averageAllowedPer48: 16.4, sigma: 1.4 },
     last15: { averageAllowedPer48: 16.2, sigma: 1.2 },
   });
@@ -341,7 +342,7 @@ test('accepts league taxonomy rows that neither matchup team happens to use', ()
         play_types: [
           ...payload.league.defense_sheet.play_types,
           {
-            key: 'handoff',
+            key: 'Handoff:PTS',
             season: { average_allowed_per_48: 7.2, sigma: 0.7 },
             last_15: { average_allowed_per_48: 7.4, sigma: 0.8 },
           },
@@ -350,8 +351,168 @@ test('accepts league taxonomy rows that neither matchup team happens to use', ()
     },
   };
   expect(decodeMatchup(extraLeagueRow).league.defenseSheet.playTypes).toEqual(
-    expect.arrayContaining([expect.objectContaining({ key: 'handoff' })]),
+    expect.arrayContaining([expect.objectContaining({ key: 'Handoff:PTS', sliceKey: 'Handoff' })]),
   );
+});
+
+test('derives canonical governed Diet slice identities from backend sheet row keys', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.play_types[0].key = 'Transition:PTS';
+  candidate.teams[0].defense_sheet.play_types[0].key = 'Transition:PTS';
+  candidate.teams[0].defense_sheet.play_types[0].label = 'Transition PTS';
+  candidate.teams[0].defense_sheet.play_types[0].markets = ['PTS', 'PA', 'PR', 'PRA'];
+  candidate.league.defense_sheet.shot_zones = [
+    {
+      key: 'Restricted Area:FGA',
+      season: { average_allowed_per_48: 30, sigma: 2 },
+      last_15: { average_allowed_per_48: 29, sigma: 1.8 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.shot_zones = [
+    {
+      key: 'Restricted Area:FGA',
+      label: 'Restricted Area FGA',
+      markets: ['FGA', 'FG2A'],
+      season: {
+        allowed_per_48: 32,
+        percent_vs_league_average: 7,
+        sigma_deviation: 1.2,
+        rank: 24,
+      },
+      last_15: {
+        allowed_per_48: 31,
+        percent_vs_league_average: 6,
+        sigma_deviation: 1.1,
+        rank: 22,
+      },
+    },
+  ];
+  candidate.league.defense_sheet.shot_types = [
+    {
+      key: 'Catch and Shoot:FG3A',
+      season: { average_allowed_per_48: 7, sigma: 1 },
+      last_15: { average_allowed_per_48: 6.8, sigma: 0.9 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.shot_types = [
+    {
+      key: 'Catch and Shoot:FG3A',
+      label: 'Catch and Shoot FG3A',
+      markets: ['FGA', 'FG3A'],
+      season: {
+        allowed_per_48: 8,
+        percent_vs_league_average: 14,
+        sigma_deviation: 1.4,
+        rank: 27,
+      },
+      last_15: {
+        allowed_per_48: 7.7,
+        percent_vs_league_average: 13,
+        sigma_deviation: 1.3,
+        rank: 26,
+      },
+    },
+  ];
+  candidate.league.defense_sheet.assist_locations = [
+    {
+      key: 'AtRimAssists',
+      season: { average_allowed_per_48: 10, sigma: 0.8 },
+      last_15: { average_allowed_per_48: 9.8, sigma: 0.7 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.assist_locations = [
+    {
+      key: 'AtRimAssists',
+      label: 'AtRimAssists',
+      markets: ['AST', 'PA', 'RA', 'PRA'],
+      season: {
+        allowed_per_48: 12,
+        percent_vs_league_average: 13,
+        sigma_deviation: 1.5,
+        rank: 28,
+      },
+      last_15: {
+        allowed_per_48: 11,
+        percent_vs_league_average: 9,
+        sigma_deviation: 1.1,
+        rank: 24,
+      },
+    },
+  ];
+
+  const decoded = decodeMatchup(candidate);
+  expect(decoded.teams[0].defenseSheet.playTypes[0].sliceKey).toBe('Transition');
+  expect(decoded.teams[0].defenseSheet.shotZones[0].sliceKey).toBe('Restricted Area');
+  expect(decoded.teams[0].defenseSheet.shotTypes[0].sliceKey).toBe('Catch and Shoot');
+  expect(decoded.teams[0].defenseSheet.assistLocations[0].sliceKey).toBe('AtRimAssists');
+  expect(decoded.league.defenseSheet.shotZones[0].sliceKey).toBe('Restricted Area');
+  expect(decoded.league.defenseSheet.shotTypes[0].sliceKey).toBe('Catch and Shoot');
+});
+
+test.each([
+  ['an ungoverned slice', 'Paint:FGA'],
+  ['a missing stat suffix', 'Restricted Area'],
+  ['a stat outside the Base taxonomy', 'Restricted Area:FG3A'],
+])('rejects %s instead of guessing a sheet slice identity', (_label, key) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.shot_zones = [
+    {
+      key,
+      season: { average_allowed_per_48: 30, sigma: 2 },
+      last_15: { average_allowed_per_48: 29, sigma: 1.8 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.shot_zones = [
+    {
+      key,
+      label: key,
+      markets: ['FGA', 'FG2A'],
+      season: {
+        allowed_per_48: 32,
+        percent_vs_league_average: 7,
+        sigma_deviation: 1.2,
+        rank: 24,
+      },
+      last_15: {
+        allowed_per_48: 31,
+        percent_vs_league_average: 6,
+        sigma_deviation: 1.1,
+        rank: 22,
+      },
+    },
+  ];
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects a sheet row whose markets do not match its governed slice and stat', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.shot_zones = [
+    {
+      key: 'Restricted Area:FGA',
+      season: { average_allowed_per_48: 30, sigma: 2 },
+      last_15: { average_allowed_per_48: 29, sigma: 1.8 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.shot_zones = [
+    {
+      key: 'Restricted Area:FGA',
+      label: 'Restricted Area FGA',
+      markets: ['FGA', 'FG3A'],
+      season: {
+        allowed_per_48: 32,
+        percent_vs_league_average: 7,
+        sigma_deviation: 1.2,
+        rank: 24,
+      },
+      last_15: {
+        allowed_per_48: 31,
+        percent_vs_league_average: 6,
+        sigma_deviation: 1.1,
+        rank: 22,
+      },
+    },
+  ];
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
 test('decodes Season-only Diet Shares and an unavailable team window without substitution', () => {
@@ -374,7 +535,7 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
   candidate.players[0].diet_shares = {
     play_types: [
       {
-        key: 'transition',
+        key: 'Transition',
         season: {
           share: 0.19,
           volume: 95,
@@ -397,7 +558,7 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
   expect(decoded.teams[0].defenseSheet.playTypes[0].last15).toBeNull();
   expect(decoded.players[0].seasonScoring).toBeNull();
   expect(decoded.players[0].dietShares.playTypes[0]).toEqual({
-    key: 'transition',
+    key: 'Transition',
     season: {
       share: 0.19,
       volume: 95,
@@ -430,7 +591,7 @@ test.each([
         {
           key: 'OPP_REB',
           label: 'Opponent rebounds',
-          markets: ['REB'],
+          markets: ['REB', 'PR', 'RA', 'PRA'],
           [nullWindow]: null,
           [valueWindow]: teamValue,
         },
@@ -444,12 +605,13 @@ test.each([
     expect(
       decoded.teams[0].defenseSheet.traditional[0][nullWindow === 'season' ? 'season' : 'last15'],
     ).toBeNull();
+    expect(decoded.teams[0].defenseSheet.traditional[0].sliceKey).toBe('OPP_REB');
   },
 );
 
 test.each([
   ['another traditional row', 'traditional', 'OPP_TOV'],
-  ['another Base row', 'play_types', 'transition'],
+  ['another Base row', 'play_types', 'Transition:PTS'],
 ])('rejects a null available window on %s', (_label, base, key) => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.league.defense_sheet[base] = [
@@ -460,7 +622,7 @@ test.each([
       {
         key,
         label: key,
-        markets: ['TOV'],
+        markets: base === 'traditional' ? ['TOV'] : ['PTS', 'PA', 'PR', 'PRA'],
         season: null,
         last_15: {
           allowed_per_48: 10,

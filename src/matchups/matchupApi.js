@@ -54,6 +54,87 @@ const MARKET_CATEGORIES = new Set([
 ]);
 
 const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+const PLAY_TYPE_SLICES = new Set([
+  'Transition',
+  'Isolation',
+  'PRBallHandler',
+  'PRRollMan',
+  'OffRebound',
+  'Spotup',
+  'Cut',
+  'Handoff',
+  'OffScreen',
+  'Misc',
+  'Postup',
+]);
+const TWO_POINT_SHOT_ZONE_SLICES = new Set([
+  'Restricted Area',
+  'In The Paint (Non-RA)',
+  'Mid-Range',
+]);
+const THREE_POINT_SHOT_ZONE_SLICES = new Set(['Corner 3', 'Above the Break 3']);
+const SHOT_ZONE_SLICES = new Set([...TWO_POINT_SHOT_ZONE_SLICES, ...THREE_POINT_SHOT_ZONE_SLICES]);
+const SHOT_TYPE_SLICES = new Set(['Catch and Shoot', 'Pullups', 'Less Than 10 ft']);
+const ASSIST_LOCATION_SLICES = new Set([
+  'Arc3Assists',
+  'Corner3Assists',
+  'AtRimAssists',
+  'ShortMidRangeAssists',
+  'LongMidRangeAssists',
+]);
+const TRADITIONAL_SLICES = new Set(['OPP_REB', 'OPP_TOV', 'OPP_STL', 'OPP_BLK']);
+
+const expectedSheetMarkets = (base, sliceKey, statKey) => {
+  if (base === 'play_types') {
+    return statKey === 'PTS' ? ['PTS', 'PA', 'PR', 'PRA'] : ['PTS'];
+  }
+  if (base === 'shot_zones') {
+    if (statKey === 'FGA') {
+      return TWO_POINT_SHOT_ZONE_SLICES.has(sliceKey) ? ['FGA', 'FG2A'] : ['FGA', 'FG3A'];
+    }
+    return THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey) ? ['PTS', '3PM'] : ['PTS'];
+  }
+  if (base === 'shot_types') {
+    return {
+      FG2M: ['PTS'],
+      FG2A: ['FGA', 'FG2A'],
+      FG3M: ['3PM', 'PTS'],
+      FG3A: ['FGA', 'FG3A'],
+    }[statKey];
+  }
+  if (base === 'assist_locations') return ['AST', 'PA', 'RA', 'PRA'];
+  return {
+    OPP_REB: ['REB', 'PR', 'RA', 'PRA'],
+    OPP_TOV: ['TOV'],
+    OPP_STL: ['STL', 'STKS'],
+    OPP_BLK: ['BLK', 'STKS'],
+  }[statKey];
+};
+
+const decodeSheetIdentity = (base, key) => {
+  let sliceKey;
+  let statKey;
+  if (base === 'assist_locations' || base === 'traditional') {
+    sliceKey = key;
+    statKey = key;
+  } else {
+    const parts = key.split(':');
+    if (parts.length !== 2 || !parts[0] || !parts[1]) throw invalid();
+    [sliceKey, statKey] = parts;
+  }
+  const valid =
+    (base === 'play_types' &&
+      PLAY_TYPE_SLICES.has(sliceKey) &&
+      ['PTS', 'POSS'].includes(statKey)) ||
+    (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey) && ['FGA', 'FGM'].includes(statKey)) ||
+    (base === 'shot_types' &&
+      SHOT_TYPE_SLICES.has(sliceKey) &&
+      ['FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
+    (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
+    (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
+  if (!valid) throw invalid();
+  return { sliceKey, markets: expectedSheetMarkets(base, sliceKey, statKey) };
+};
 
 const decodeAvailabilityState = (value) => {
   if (
@@ -129,10 +210,14 @@ const decodeWindowValue = (value) => {
 const decodeSheetRow = (row, availability, base) => {
   if (!isRecord(row)) throw invalid();
   const key = requireString(row.key);
+  const identity = decodeSheetIdentity(base, key);
+  const markets = requireStringList(row.markets);
+  if (markets.join() !== identity.markets.join()) throw invalid();
   return {
     key,
+    sliceKey: identity.sliceKey,
     label: requireString(row.label),
-    markets: requireStringList(row.markets),
+    markets,
     season: decodeSheetWindow(row.season, availability.season, decodeWindowValue, base, key),
     last15: decodeSheetWindow(row.last_15, availability.last15, decodeWindowValue, base, key),
   };
@@ -307,8 +392,10 @@ const decodeLeague = (league) => {
       const decodedRows = rows.map((row) => {
         if (!isRecord(row)) throw invalid();
         const key = requireString(row.key);
+        const identity = decodeSheetIdentity(base, key);
         return {
           key,
+          sliceKey: identity.sliceKey,
           season: decodeSheetWindow(
             row.season,
             surfaceAvailability[camelKey(base)].season,

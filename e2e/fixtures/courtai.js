@@ -133,27 +133,34 @@ const teamSheet = (team, playTypes, offset = 0) => ({
     play_types: playTypes.map((row) => ({ ...row, last_15: null })),
     shot_zones: [
       defenseRow(
-        'paint',
-        'Paint',
-        ['PTS', 'FGA'],
+        'Restricted Area:FGA',
+        'Restricted Area FGA',
+        ['FGA', 'FG2A'],
         defenseValue(22 + offset, 10, 1.2, 25),
         defenseValue(20 + offset, -7, -1.1, 7),
+      ),
+      defenseRow(
+        'Above the Break 3:FGA',
+        'Above the Break 3 FGA',
+        ['FGA', 'FG3A'],
+        defenseValue(10.2 + offset, -11, -1.3, 3),
+        defenseValue(11 + offset, -6, -0.7, 9),
       ),
     ],
     shot_types: [
       defenseRow(
-        'catch-shoot',
-        'Catch and shoot',
-        ['PTS', 'FG3A'],
+        'Catch and Shoot:FG3A',
+        'Catch and Shoot FG3A',
+        ['FGA', 'FG3A'],
         defenseValue(16 + offset, 9, 1.1, 23),
         defenseValue(15 + offset, 8, 1.2, 22),
       ),
     ],
     assist_locations: [
       defenseRow(
-        'paint-assists',
-        'Paint assists',
-        ['AST'],
+        'AtRimAssists',
+        'AtRimAssists',
+        ['AST', 'PA', 'RA', 'PRA'],
         defenseValue(11 + offset, 13, 1.5, 28),
         defenseValue(10 + offset, 9, 1.1, 24),
       ),
@@ -161,8 +168,8 @@ const teamSheet = (team, playTypes, offset = 0) => ({
     traditional: [
       defenseRow(
         'OPP_REB',
-        'Opponent rebounds',
-        ['REB'],
+        'OPP REB',
+        ['REB', 'PR', 'RA', 'PRA'],
         defenseValue(45 + offset, -8, -1.2, 4),
         null,
       ),
@@ -193,15 +200,17 @@ const league = {
   ),
   defense_sheet: {
     play_types: [
-      leagueRow('transition', 16.4, 1.4, 16.2, 1.2),
-      leagueRow('isolation', 8, 0.5, 8.1, 0.6),
-      leagueRow('above-break', 11.5, 1, 11.7, 1),
-      leagueRow('post-up', 11, 0.9, 11.4, 1.1),
-      leagueRow('handoff', 7.2, 0.7, 7.4, 0.8),
+      leagueRow('Transition:PTS', 16.4, 1.4, 16.2, 1.2),
+      leagueRow('Isolation:PTS', 8, 0.5, 8.1, 0.6),
+      leagueRow('Postup:PTS', 11, 0.9, 11.4, 1.1),
+      leagueRow('Handoff:PTS', 7.2, 0.7, 7.4, 0.8),
     ].map((row) => ({ ...row, last_15: null })),
-    shot_zones: [leagueRow('paint', 21, 1.7, 21.2, 1.5)],
-    shot_types: [leagueRow('catch-shoot', 15.5, 1.2, 15.3, 1.1)],
-    assist_locations: [leagueRow('paint-assists', 10, 0.8, 10.1, 0.9)],
+    shot_zones: [
+      leagueRow('Restricted Area:FGA', 21, 1.7, 21.2, 1.5),
+      leagueRow('Above the Break 3:FGA', 11.5, 1, 11.7, 1),
+    ],
+    shot_types: [leagueRow('Catch and Shoot:FG3A', 15.5, 1.2, 15.3, 1.1)],
+    assist_locations: [leagueRow('AtRimAssists', 10, 0.8, 10.1, 0.9)],
     traditional: [{ ...leagueRow('OPP_REB', 46, 1.5, 46.2, 1.4), last_15: null }],
   },
   defensive_columns: Object.fromEntries(
@@ -298,16 +307,16 @@ export const matchupPayload = {
   teams: [
     teamSheet(slateGame.away_team, [
       defenseRow(
-        'transition',
-        'Transition',
-        ['PTS', 'FGA'],
+        'Transition:PTS',
+        'Transition PTS',
+        ['PTS', 'PA', 'PR', 'PRA'],
         defenseValue(17.1, 9, 1.2, 24),
         defenseValue(14.8, -9, -1.1, 6),
       ),
       defenseRow(
-        'isolation',
-        'Isolation',
-        ['PTS'],
+        'Isolation:PTS',
+        'Isolation PTS',
+        ['PTS', 'PA', 'PR', 'PRA'],
         defenseValue(8.2, 2, 0.3, 16),
         defenseValue(9, 5, 0.6, 19),
       ),
@@ -316,30 +325,23 @@ export const matchupPayload = {
       slateGame.home_team,
       [
         defenseRow(
-          'transition',
-          'Transition',
-          ['PTS', 'FGA'],
+          'Transition:PTS',
+          'Transition PTS',
+          ['PTS', 'PA', 'PR', 'PRA'],
           defenseValue(18.4, 12, 1.4, 27),
           defenseValue(15.2, -8, -1.1, 5),
         ),
         defenseRow(
-          'above-break',
-          'Above-break three',
-          ['FG3A'],
-          defenseValue(10.2, -11, -1.3, 3),
-          defenseValue(11, -6, -0.7, 9),
-        ),
-        defenseRow(
-          'isolation',
-          'Isolation',
-          ['PTS'],
+          'Isolation:PTS',
+          'Isolation PTS',
+          ['PTS', 'PA', 'PR', 'PRA'],
           defenseValue(8.1, 2, 0.4, 16),
           defenseValue(8.4, 4, 0.5, 18),
         ),
         defenseRow(
-          'post-up',
-          'Post up',
-          ['PTS'],
+          'Postup:PTS',
+          'Postup PTS',
+          ['PTS', 'PA', 'PR', 'PRA'],
           defenseValue(12.1, 10, 1.2, 25),
           defenseValue(12.8, 11, 1.3, 26),
         ),
@@ -364,10 +366,10 @@ export const matchupPayload = {
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
-        play_types: [dietShare('transition', 0.19), dietShare('post-up', 0.02)],
-        shot_zones: [dietShare('paint', 0.27, 5.1, 'field_goal_attempts')],
-        shot_types: [dietShare('catch-shoot', 0.36, 4.2, 'field_goal_attempts')],
-        assist_locations: [dietShare('paint-assists', 0.31, 1.1, 'assists')],
+        play_types: [dietShare('Transition', 0.19), dietShare('Postup', 0.02)],
+        shot_zones: [dietShare('Restricted Area', 0.27, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('Catch and Shoot', 0.36, 4.2, 'field_goal_attempts')],
+        assist_locations: [dietShare('AtRimAssists', 0.31, 1.1, 'assists')],
       },
       injury_badge_ref: null,
       scores: scores(COMPLETE_MARKETS, 0.12, -0.02),
@@ -384,12 +386,12 @@ export const matchupPayload = {
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,
         // so market-tab chip scoping remains observable at the browser seam.
-        play_types: [dietShare('transition', 0.18)],
-        // Paint is not an FG3A-compatible slice, and no shot-type Diet fact
-        // exists, so FG3A has no contributing player evidence.
-        shot_zones: [dietShare('paint', 0.24, 5.1, 'field_goal_attempts')],
+        play_types: [dietShare('Transition', 0.18)],
+        // Restricted Area is not an FG3A-compatible slice, and no shot-type
+        // Diet fact exists, so FG3A has no contributing player evidence.
+        shot_zones: [dietShare('Restricted Area', 0.24, 5.1, 'field_goal_attempts')],
         shot_types: [],
-        assist_locations: [dietShare('paint-assists', 0.35, 0.8, 'assists')],
+        assist_locations: [dietShare('AtRimAssists', 0.35, 0.8, 'assists')],
       },
       injury_badge_ref: 'injury-austin',
       scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08, {
@@ -406,10 +408,10 @@ export const matchupPayload = {
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {
-        play_types: [dietShare('transition', 0.21)],
-        shot_zones: [dietShare('paint', 0.29, 5.1, 'field_goal_attempts')],
-        shot_types: [dietShare('catch-shoot', 0.39, 4.8, 'field_goal_attempts')],
-        assist_locations: [dietShare('paint-assists', 0.33, 1.2, 'assists')],
+        play_types: [dietShare('Transition', 0.21)],
+        shot_zones: [dietShare('Restricted Area', 0.29, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('Catch and Shoot', 0.39, 4.8, 'field_goal_attempts')],
+        assist_locations: [dietShare('AtRimAssists', 0.33, 1.2, 'assists')],
       },
       injury_badge_ref: null,
       scores: scores(['PTS', 'FGA', 'FG3A', 'REB', 'BLK'], 0.15, 0.11),

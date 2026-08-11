@@ -167,22 +167,50 @@ describe('deployed smoke URL and fixture wiring', () => {
     );
   });
 
-  test('reports the rejected mode and URL without exposing a bypass secret', () => {
-    const rejectedUrl = 'https://statsplus-frontend.vercel.app/?redirect=evil';
-    const bypassSecret = 'do-not-print-this-secret';
-    const result = spawnSync(
-      process.execPath,
-      ['scripts/validate-deployment-url.mjs', 'protected-preview', rejectedUrl],
-      {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-        env: { ...process.env, VERCEL_AUTOMATION_BYPASS_SECRET: bypassSecret },
-      },
-    );
+  test.each([
+    {
+      label: 'query values',
+      rejectedUrl: 'https://statsplus-frontend.vercel.app/?x-vercel-protection-bypass=query-secret',
+      secret: 'query-secret',
+      expectedOrigin: 'https://statsplus-frontend.vercel.app',
+    },
+    {
+      label: 'userinfo',
+      rejectedUrl: 'https://userinfo-secret:password@statsplus-frontend.vercel.app/',
+      secret: 'userinfo-secret',
+      expectedOrigin: 'https://statsplus-frontend.vercel.app',
+    },
+    {
+      label: 'fragment values',
+      rejectedUrl: 'https://statsplus-frontend.vercel.app/#fragment-secret',
+      secret: 'fragment-secret',
+      expectedOrigin: 'https://statsplus-frontend.vercel.app',
+    },
+    {
+      label: 'malformed input',
+      rejectedUrl: 'https://[malformed-secret',
+      secret: 'malformed-secret',
+      expectedOrigin: '<redacted-invalid-url>',
+    },
+  ])(
+    'reports the rejected mode and safe origin for $label',
+    ({ rejectedUrl, secret, expectedOrigin }) => {
+      const bypassSecret = 'do-not-print-this-secret';
+      const result = spawnSync(
+        process.execPath,
+        ['scripts/validate-deployment-url.mjs', 'protected-preview', rejectedUrl],
+        {
+          cwd: process.cwd(),
+          encoding: 'utf8',
+          env: { ...process.env, VERCEL_AUTOMATION_BYPASS_SECRET: bypassSecret },
+        },
+      );
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('mode="protected-preview"');
-    expect(result.stderr).toContain(`url=${JSON.stringify(rejectedUrl)}`);
-    expect(result.stderr).not.toContain(bypassSecret);
-  });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('mode="protected-preview"');
+      expect(result.stderr).toContain(`origin=${JSON.stringify(expectedOrigin)}`);
+      expect(result.stderr).not.toContain(secret);
+      expect(result.stderr).not.toContain(bypassSecret);
+    },
+  );
 });

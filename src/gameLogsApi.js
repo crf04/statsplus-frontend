@@ -64,5 +64,15 @@ export const isRequestCancelled = (error) =>
       error.message === 'The operation was aborted.'),
   );
 
-export const getRequestErrorMessage = (error, fallback = 'The request failed. Please try again.') =>
-  error?.response?.data?.error || error?.response?.data?.message || error?.message || fallback;
+export const getRequestErrorMessage = (
+  error,
+  fallback = 'The request failed. Please try again.',
+) => {
+  const responseError = error?.response?.data?.error;
+  return (
+    (typeof responseError === 'string' ? responseError : responseError?.message) ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
+};

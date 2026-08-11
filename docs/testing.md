@@ -39,8 +39,22 @@ npm run test:e2e:debug
 Run the public smoke test against a deployment without starting a local server:
 
 ```bash
-E2E_BASE_URL=https://your-preview.example.com npm run test:e2e:smoke
+# Public production smoke does not need a credential.
+E2E_BASE_URL=https://statsplus-frontend.vercel.app \
+  npm run test:e2e:smoke
 ```
+
+Protected preview smoke is a manual workflow dispatch. It accepts only an HTTPS
+`statsplus-frontend-<deployment-id>-chris-fus-projects.vercel.app` URL, checks that URL before
+installing dependencies, and then reads `VERCEL_AUTOMATION_BYPASS_SECRET` from the encrypted GitHub
+repository secret. Do not put the value in a command, source file, or log. The secret is scoped to
+the protected smoke step; the step checks that it exists before `npm ci` or browser installation.
+
+The protected fixture sends one out-of-browser request to the exact deployment URL with the two Vercel
+bypass headers and redirects disabled. It requires Vercel's `307` response, extracts only the
+`_vercel_jwt` `Set-Cookie`, and adds that value to the browser context as a secure, HttpOnly,
+host-scoped cookie. Browser page, redirect, and subresource requests never receive the raw bypass
+secret. Local and public production runs do not bootstrap a cookie.
 
 ## Adding a feature test
 
@@ -74,15 +88,22 @@ backend, or live NBA data.
 
 The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical
 journeys run at a desktop viewport, and the public smoke test also runs at a Pixel 7 viewport. Failed
-runs retain an HTML report, trace, screenshot, and video for 14 days. Open a downloaded trace with:
+hermetic runs without a bypass secret retain an HTML report, trace, screenshot, and video for 14 days.
+Credential-bearing deployed smoke runs retain the HTML report and screenshots, but force trace and video off so the raw
+bypass credential or cookie cannot enter CI artifacts. Open a retained hermetic trace with:
 
 ```bash
 npx playwright show-trace path/to/trace.zip
 ```
 
-The `Deployed smoke test` workflow runs automatically after a successful GitHub deployment status
-when an environment URL is available. It can also be dispatched manually with a preview or
-production URL.
+The `Deployed smoke test` workflow runs automatically only after a successful Production deployment
+status, checks the allowlisted StatsPlus Vercel URL, and checks out the repository's trusted default
+branch harness. That public production path uses no bypass secret. Explicit `workflow_dispatch` runs
+for either production or Protected Preview instead check out `github.workflow_sha`, the immutable
+revision of the reviewed workflow selected for that dispatch; they never check out the moving
+deployed commit or an older default-branch harness. Protected Preview smoke validates its URL and
+fails closed when the encrypted repository secret is missing. Playwright trace and video are disabled
+whenever the secret is present; screenshots remain available for failure evidence.
 
 For branch protection, require both `validate` and `E2E` before merging.
 

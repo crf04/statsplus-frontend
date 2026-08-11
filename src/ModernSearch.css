@@ -55,13 +55,6 @@
   text-align: center;
 }
 
-.landing-auth-section {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-}
-
 /* Help icon on right side of search bar */
 .landing-help-icon-right {
   position: absolute;

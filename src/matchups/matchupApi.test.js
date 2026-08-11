@@ -355,6 +355,94 @@ test('accepts league taxonomy rows that neither matchup team happens to use', ()
   );
 });
 
+test('ignores undisplayed additive rows from backend-projected Bases', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  const leagueWindow = { average_allowed_per_48: 7.2, sigma: 0.7 };
+  const teamWindow = {
+    allowed_per_48: 7.8,
+    percent_vs_league_average: 8,
+    sigma_deviation: 0.8,
+    rank: 22,
+  };
+  const extras = [
+    {
+      base: 'traditional',
+      league: { key: 'OPP_PF', season: leagueWindow, last_15: leagueWindow },
+      team: {
+        key: 'OPP_PF',
+        label: 'Opponent fouls',
+        markets: [],
+        season: teamWindow,
+        last_15: teamWindow,
+      },
+    },
+    {
+      base: 'assist_locations',
+      league: { key: 'Assists', season: leagueWindow, last_15: leagueWindow },
+      team: {
+        key: 'Assists',
+        label: 'Assists',
+        markets: ['AST'],
+        season: teamWindow,
+        last_15: teamWindow,
+      },
+    },
+    {
+      base: 'play_types',
+      league: { key: 'Backcourt:PTS', season: leagueWindow, last_15: leagueWindow },
+      team: {
+        key: 'Backcourt:PTS',
+        label: 'Backcourt PTS',
+        markets: ['PTS'],
+        season: teamWindow,
+        last_15: teamWindow,
+      },
+    },
+  ];
+  extras.forEach(({ base, league, team }) => {
+    candidate.league.defense_sheet[base].push(league);
+    candidate.teams[0].defense_sheet[base].push(team);
+  });
+
+  const decoded = decodeMatchup(candidate);
+  expect(decoded.league.defenseSheet.traditional.map((row) => row.key)).not.toContain('OPP_PF');
+  expect(decoded.league.defenseSheet.assistLocations.map((row) => row.key)).not.toContain(
+    'Assists',
+  );
+  expect(decoded.league.defenseSheet.playTypes.map((row) => row.key)).not.toContain(
+    'Backcourt:PTS',
+  );
+  expect(decoded.teams[0].defenseSheet.traditional.map((row) => row.key)).not.toContain('OPP_PF');
+  expect(decoded.teams[0].defenseSheet.assistLocations.map((row) => row.key)).not.toContain(
+    'Assists',
+  );
+  expect(decoded.teams[0].defenseSheet.playTypes.map((row) => row.key)).not.toContain(
+    'Backcourt:PTS',
+  );
+});
+
+test.each([
+  ['a malformed suffix on a recognized play type', 'play_types', 'Transition:PPP'],
+  ['an undisplayed shot zone', 'shot_zones', 'Backcourt:FGA'],
+  ['an undisplayed shot type', 'shot_types', 'Floaters:FG2A'],
+])('rejects %s', (_label, base, key) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet[base] = [
+    {
+      key,
+      season: { average_allowed_per_48: 10, sigma: 1 },
+      last_15: { average_allowed_per_48: 10, sigma: 1 },
+    },
+  ];
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects malformed markets on a recognized additive-Base row', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.teams[0].defense_sheet.play_types[0].markets = ['PTS'];
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test('derives canonical governed Diet slice identities from backend sheet row keys', () => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.league.defense_sheet.play_types[0].key = 'Transition:PTS';

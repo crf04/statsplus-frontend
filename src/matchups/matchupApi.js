@@ -83,6 +83,7 @@ const ASSIST_LOCATION_SLICES = new Set([
   'LongMidRangeAssists',
 ]);
 const TRADITIONAL_SLICES = new Set(['OPP_REB', 'OPP_TOV', 'OPP_STL', 'OPP_BLK']);
+const ADDITIVE_SHEET_BASES = new Set(['play_types', 'assist_locations', 'traditional']);
 
 const expectedSheetMarkets = (base, sliceKey, statKey) => {
   if (base === 'play_types') {
@@ -122,6 +123,13 @@ const decodeSheetIdentity = (base, key) => {
     if (parts.length !== 2 || !parts[0] || !parts[1]) throw invalid();
     [sliceKey, statKey] = parts;
   }
+  const recognizedSlice =
+    (base === 'play_types' && PLAY_TYPE_SLICES.has(sliceKey)) ||
+    (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey)) ||
+    (base === 'shot_types' && SHOT_TYPE_SLICES.has(sliceKey)) ||
+    (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
+    (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
+  if (!recognizedSlice && ADDITIVE_SHEET_BASES.has(base)) return null;
   const valid =
     (base === 'play_types' &&
       PLAY_TYPE_SLICES.has(sliceKey) &&
@@ -211,6 +219,7 @@ const decodeSheetRow = (row, availability, base) => {
   if (!isRecord(row)) throw invalid();
   const key = requireString(row.key);
   const identity = decodeSheetIdentity(base, key);
+  if (identity === null) return null;
   const markets = requireStringList(row.markets);
   if (markets.join() !== identity.markets.join()) throw invalid();
   return {
@@ -231,7 +240,9 @@ const decodeDefenseSheet = (sheet, surfaceAvailability) => {
       if (!Array.isArray(rows)) throw invalid();
       return [
         camelKey(base),
-        rows.map((row) => decodeSheetRow(row, surfaceAvailability[camelKey(base)], base)),
+        rows
+          .map((row) => decodeSheetRow(row, surfaceAvailability[camelKey(base)], base))
+          .filter(Boolean),
       ];
     }),
   );
@@ -389,29 +400,32 @@ const decodeLeague = (league) => {
     DEFENSE_BASES.map((base) => {
       const rows = league.defense_sheet[base];
       if (!Array.isArray(rows)) throw invalid();
-      const decodedRows = rows.map((row) => {
-        if (!isRecord(row)) throw invalid();
-        const key = requireString(row.key);
-        const identity = decodeSheetIdentity(base, key);
-        return {
-          key,
-          sliceKey: identity.sliceKey,
-          season: decodeSheetWindow(
-            row.season,
-            surfaceAvailability[camelKey(base)].season,
-            decodeLeagueRowWindow,
-            base,
+      const decodedRows = rows
+        .map((row) => {
+          if (!isRecord(row)) throw invalid();
+          const key = requireString(row.key);
+          const identity = decodeSheetIdentity(base, key);
+          if (identity === null) return null;
+          return {
             key,
-          ),
-          last15: decodeSheetWindow(
-            row.last_15,
-            surfaceAvailability[camelKey(base)].last15,
-            decodeLeagueRowWindow,
-            base,
-            key,
-          ),
-        };
-      });
+            sliceKey: identity.sliceKey,
+            season: decodeSheetWindow(
+              row.season,
+              surfaceAvailability[camelKey(base)].season,
+              decodeLeagueRowWindow,
+              base,
+              key,
+            ),
+            last15: decodeSheetWindow(
+              row.last_15,
+              surfaceAvailability[camelKey(base)].last15,
+              decodeLeagueRowWindow,
+              base,
+              key,
+            ),
+          };
+        })
+        .filter(Boolean);
       if (new Set(decodedRows.map((row) => row.key)).size !== decodedRows.length) throw invalid();
       return [camelKey(base), decodedRows];
     }),

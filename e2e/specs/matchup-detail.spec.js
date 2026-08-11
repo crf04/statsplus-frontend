@@ -28,6 +28,16 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByRole('heading', { name: 'Shot types' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Assist locations' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Traditional defense' })).toBeVisible();
+  await expect(page.getByText('OPP REB')).toBeVisible();
+  await expect(page.getByText('OPP TOV')).toBeVisible();
+  await expect(page.getByText('OPP STL')).toBeVisible();
+  await expect(page.getByText('OPP BLK')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_STL' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_BLK' })).toBeVisible();
+  await expect(page.getByText('OPP PF')).toHaveCount(0);
+  await expect(page.getByText('Assists', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Backcourt PTS')).toHaveCount(0);
   await expect(page.getByText('Isolation PTS')).toHaveCount(0);
   await expect(page.getByText('1 row hidden near league average.')).toBeVisible();
   await expect(page.getByText('+12% vs league')).toBeVisible();
@@ -64,6 +74,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('8.8 per 48')).toBeVisible();
   await expect(page.getByText('5.7 per 48')).toBeVisible();
   await expect(page.getByText('OPP REB')).toHaveCount(0);
+  await expect(page.getByText('OPP TOV')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-legacy-traditional.png'),
     fullPage: true,
@@ -74,6 +85,12 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   ).toHaveCount(0);
   await expect(page.getByText('AtRimAssists')).toBeVisible();
   await page.getByRole('button', { name: 'Season', exact: true }).click();
+
+  await page.getByRole('button', { name: 'TOV', exact: true }).click();
+  await expect(page.getByText('OPP TOV')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  await expect(page.getByText('OPP STL')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'OPP_STL' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'PTS' }).click();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();

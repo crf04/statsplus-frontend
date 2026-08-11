@@ -164,6 +164,13 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(11 + offset, 13, 1.5, 28),
         defenseValue(10 + offset, 9, 1.1, 24),
       ),
+      defenseRow(
+        'Assists',
+        'Assists',
+        ['AST', 'PA', 'RA', 'PRA'],
+        defenseValue(25 + offset, 4, 0.6, 18),
+        defenseValue(24 + offset, 2, 0.4, 16),
+      ),
     ],
     traditional: [
       defenseRow(
@@ -172,6 +179,34 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         ['REB', 'PR', 'RA', 'PRA'],
         defenseValue(45 + offset, -8, -1.2, 4),
         null,
+      ),
+      defenseRow(
+        'OPP_TOV',
+        'OPP TOV',
+        ['TOV'],
+        defenseValue(14.8 + offset, 10, 1.3, 25),
+        defenseValue(13.4 + offset, 5, 1.1, 22),
+      ),
+      defenseRow(
+        'OPP_STL',
+        'OPP STL',
+        ['STL', 'STKS'],
+        defenseValue(6.9 + offset, -8, -1.1, 6),
+        defenseValue(7.3 + offset, 3, 1.2, 19),
+      ),
+      defenseRow(
+        'OPP_BLK',
+        'OPP BLK',
+        ['BLK', 'STKS'],
+        defenseValue(5.1 + offset, 9, 1.4, 24),
+        defenseValue(4.6 + offset, -4, -1.1, 8),
+      ),
+      defenseRow(
+        'OPP_PF',
+        'OPP PF',
+        [],
+        defenseValue(20 + offset, 3, 0.4, 17),
+        defenseValue(19 + offset, -2, -0.3, 13),
       ),
     ],
   },
@@ -204,14 +239,24 @@ const league = {
       leagueRow('Isolation:PTS', 8, 0.5, 8.1, 0.6),
       leagueRow('Postup:PTS', 11, 0.9, 11.4, 1.1),
       leagueRow('Handoff:PTS', 7.2, 0.7, 7.4, 0.8),
+      leagueRow('Backcourt:PTS', 1.2, 0.2, 1.1, 0.2),
     ].map((row) => ({ ...row, last_15: null })),
     shot_zones: [
       leagueRow('Restricted Area:FGA', 21, 1.7, 21.2, 1.5),
       leagueRow('Above the Break 3:FGA', 11.5, 1, 11.7, 1),
     ],
     shot_types: [leagueRow('Catch and Shoot:FG3A', 15.5, 1.2, 15.3, 1.1)],
-    assist_locations: [leagueRow('AtRimAssists', 10, 0.8, 10.1, 0.9)],
-    traditional: [{ ...leagueRow('OPP_REB', 46, 1.5, 46.2, 1.4), last_15: null }],
+    assist_locations: [
+      leagueRow('AtRimAssists', 10, 0.8, 10.1, 0.9),
+      leagueRow('Assists', 24, 1.4, 23.8, 1.3),
+    ],
+    traditional: [
+      { ...leagueRow('OPP_REB', 46, 1.5, 46.2, 1.4), last_15: null },
+      leagueRow('OPP_TOV', 13.8, 1.1, 13.5, 1),
+      leagueRow('OPP_STL', 7.5, 0.8, 7.6, 0.7),
+      leagueRow('OPP_BLK', 4.9, 0.6, 4.8, 0.5),
+      leagueRow('OPP_PF', 19.5, 1.2, 19.2, 1.1),
+    ],
   },
   defensive_columns: Object.fromEntries(
     [
@@ -320,6 +365,13 @@ export const matchupPayload = {
         defenseValue(8.2, 2, 0.3, 16),
         defenseValue(9, 5, 0.6, 19),
       ),
+      defenseRow(
+        'Backcourt:PTS',
+        'Backcourt PTS',
+        ['PTS', 'PA', 'PR', 'PRA'],
+        defenseValue(1.4, 4, 0.4, 18),
+        defenseValue(1.3, 3, 0.3, 17),
+      ),
     ]),
     teamSheet(
       slateGame.home_team,
@@ -344,6 +396,13 @@ export const matchupPayload = {
           ['PTS', 'PA', 'PR', 'PRA'],
           defenseValue(12.1, 10, 1.2, 25),
           defenseValue(12.8, 11, 1.3, 26),
+        ),
+        defenseRow(
+          'Backcourt:PTS',
+          'Backcourt PTS',
+          ['PTS', 'PA', 'PR', 'PRA'],
+          defenseValue(1.6, 5, 0.5, 19),
+          defenseValue(1.5, 4, 0.4, 18),
         ),
       ],
       1,

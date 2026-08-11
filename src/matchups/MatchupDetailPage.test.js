@@ -413,6 +413,46 @@ test('keeps legacy traditional columns usable when available OPP_REB has no wind
   expect(screen.queryByText('Opponent rebounds')).not.toBeInTheDocument();
 });
 
+test('renders governed traditional sheet rows alongside defensive columns', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
+    ['OPP_REB', 'Opponent rebounds', ['REB', 'PR', 'RA', 'PRA'], 45, -1.2],
+    ['OPP_TOV', 'Opponent turnovers', ['TOV'], 15.8, 1.3],
+    ['OPP_STL', 'Opponent steals', ['STL', 'STKS'], 6.9, -1.1],
+    ['OPP_BLK', 'Opponent blocks', ['BLK', 'STKS'], 5.8, 1.4],
+  ].map(([key, label, markets, allowed, sigma]) => ({
+    key,
+    sliceKey: key,
+    label,
+    markets,
+    season: value(allowed, 8, sigma, 22),
+    last15: value(allowed - 0.5, 4, sigma, 18),
+  }));
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+
+  const traditionalSheet = screen
+    .getByRole('heading', { name: 'Traditional defense' })
+    .closest('section');
+  expect(within(traditionalSheet).getByText('Opponent rebounds')).toBeVisible();
+  expect(within(traditionalSheet).getByText('Opponent turnovers')).toBeVisible();
+  expect(within(traditionalSheet).getByText('Opponent steals')).toBeVisible();
+  expect(within(traditionalSheet).getByText('Opponent blocks')).toBeVisible();
+  const columns = screen
+    .getByRole('heading', { name: 'Traditional defensive columns' })
+    .closest('section');
+  expect(within(columns).getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  expect(within(columns).getByText('14.2 per 48')).toBeVisible();
+});
+
 test('renders nullable season scoring and explains zero-component offensive scores', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const lebron = candidate.players.find((player) => player.id === 2544);

@@ -39,8 +39,16 @@ npm run test:e2e:debug
 Run the public smoke test against a deployment without starting a local server:
 
 ```bash
+# For a protected preview, set VERCEL_AUTOMATION_BYPASS_SECRET in the environment first.
 E2E_BASE_URL=https://your-preview.example.com npm run test:e2e:smoke
 ```
+
+Protected Vercel previews also require `VERCEL_AUTOMATION_BYPASS_SECRET` in the environment.
+Use the value mirrored by the encrypted GitHub repository secret with that exact name; do not put
+the value in a command, source file, or log. The deployed smoke fixture adds the bypass headers only
+to requests whose origin exactly matches `E2E_BASE_URL`. Hermetic runs do not use the secret, even if
+it is present in the shell environment; an accidentally present secret still disables trace and video
+as a safety measure.
 
 ## Adding a feature test
 
@@ -74,7 +82,9 @@ backend, or live NBA data.
 
 The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical
 journeys run at a desktop viewport, and the public smoke test also runs at a Pixel 7 viewport. Failed
-runs retain an HTML report, trace, screenshot, and video for 14 days. Open a downloaded trace with:
+hermetic runs without a bypass secret retain an HTML report, trace, screenshot, and video for 14 days.
+Credential-bearing deployed smoke runs retain the HTML report and screenshots, but force trace and video off so the raw
+bypass credential or cookie cannot enter CI artifacts. Open a retained hermetic trace with:
 
 ```bash
 npx playwright show-trace path/to/trace.zip
@@ -82,7 +92,9 @@ npx playwright show-trace path/to/trace.zip
 
 The `Deployed smoke test` workflow runs automatically after a successful GitHub deployment status
 when an environment URL is available. It can also be dispatched manually with a preview or
-production URL.
+production URL. It passes `VERCEL_AUTOMATION_BYPASS_SECRET` only to the smoke-test step and fails
+closed before the test when the encrypted repository secret is missing (including fork runs without
+access to repository secrets).
 
 For branch protection, require both `validate` and `E2E` before merging.
 

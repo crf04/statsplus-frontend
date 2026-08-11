@@ -1,6 +1,7 @@
-import { E2E_AUTH_STORAGE_KEY, expect, installApiContract, test } from '../fixtures/courtai';
+import { E2E_AUTH_STORAGE_KEY, expect, installApiContract } from '../fixtures/courtai';
+import { test } from '../fixtures/deployedSmoke';
 
-test('@smoke public landing page explains how to authenticate', async ({ page }) => {
+test('@smoke public landing page explains how to authenticate', async ({ deployedPage: page }) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();

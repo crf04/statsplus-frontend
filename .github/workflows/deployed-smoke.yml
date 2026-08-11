@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 10
     env:
       E2E_BASE_URL: ${{ inputs.base_url || github.event.deployment_status.environment_url }}
-      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -40,7 +39,14 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run deployed smoke test
-        run: npm run test:e2e:smoke
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET" || {
+            echo "VERCEL_AUTOMATION_BYPASS_SECRET is required for deployed smoke tests." >&2
+            exit 1
+          }
+          npm run test:e2e:smoke
 
       - name: Upload smoke-test evidence
         if: always()

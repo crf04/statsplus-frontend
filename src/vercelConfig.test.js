@@ -1,13 +1,20 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { getOriginScopedBypassHeaders } from './vercelBypass';
 
 const vercelConfig = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
 );
 
-const loadPlaywrightUseConfig = (vercelAutomationBypassSecret) => {
+const loadPlaywrightUseConfig = ({ baseUrl, vercelAutomationBypassSecret } = {}) => {
   const env = { ...process.env };
+
+  if (baseUrl === undefined) {
+    delete env.E2E_BASE_URL;
+  } else {
+    env.E2E_BASE_URL = baseUrl;
+  }
 
   if (vercelAutomationBypassSecret === undefined) {
     delete env.VERCEL_AUTOMATION_BYPASS_SECRET;
@@ -43,17 +50,57 @@ describe('Vercel deployment configuration', () => {
     expect(vercelConfig.rewrites[1]).toEqual({ source: '/:path*', destination: '/index.html' });
   });
 
-  test('keeps hermetic Playwright runs free of deployment bypass headers', () => {
-    expect(loadPlaywrightUseConfig()).not.toHaveProperty('extraHTTPHeaders');
-    expect(loadPlaywrightUseConfig('')).not.toHaveProperty('extraHTTPHeaders');
+  test('keeps hermetic Playwright runs free of deployment credentials and preserves evidence', () => {
+    const use = loadPlaywrightUseConfig();
+
+    expect(use).not.toHaveProperty('extraHTTPHeaders');
+    expect(use.trace).toBe('retain-on-failure');
+    expect(use.video).toBe('retain-on-failure');
   });
 
-  test('passes Vercel deployment bypass headers when configured', () => {
-    expect(loadPlaywrightUseConfig('test-secret')).toMatchObject({
-      extraHTTPHeaders: {
-        'x-vercel-protection-bypass': 'test-secret',
-        'x-vercel-set-bypass-cookie': 'true',
-      },
+  test('does not add deployment headers to a hermetic run with an accidental secret', () => {
+    const use = loadPlaywrightUseConfig({ vercelAutomationBypassSecret: 'opaque-test-value' });
+
+    expect(use).not.toHaveProperty('extraHTTPHeaders');
+    expect(use.trace).toBe('off');
+    expect(use.video).toBe('off');
+  });
+
+  test('disables credential-bearing evidence for a protected deployment run', () => {
+    const use = loadPlaywrightUseConfig({
+      baseUrl: 'https://preview.example.com/path',
+      vercelAutomationBypassSecret: 'opaque-test-value',
     });
+
+    expect(use).not.toHaveProperty('extraHTTPHeaders');
+    expect(use.trace).toBe('off');
+    expect(use.video).toBe('off');
+  });
+
+  test('adds bypass headers only for the configured deployment origin', () => {
+    const options = {
+      configuredBaseUrl: 'https://preview.example.com/path',
+      bypassSecret: 'opaque-test-value',
+    };
+
+    expect(
+      getOriginScopedBypassHeaders({ ...options, requestUrl: 'https://preview.example.com/' }),
+    ).toEqual({
+      'x-vercel-protection-bypass': options.bypassSecret,
+      'x-vercel-set-bypass-cookie': 'true',
+    });
+    expect(
+      getOriginScopedBypassHeaders({
+        ...options,
+        requestUrl: 'https://cdn.example.com/app.js',
+      }),
+    ).toEqual({});
+    expect(
+      getOriginScopedBypassHeaders({
+        configuredBaseUrl: undefined,
+        bypassSecret: options.bypassSecret,
+        requestUrl: 'https://preview.example.com/',
+      }),
+    ).toEqual({});
   });
 });

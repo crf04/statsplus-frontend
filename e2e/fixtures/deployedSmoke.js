@@ -1,9 +1,10 @@
 import { expect, test as base } from './courtai';
-import { installOriginScopedBypass } from '../../src/vercelBypass';
+import { request } from '@playwright/test';
+import { bootstrapVercelBypassCookie } from './deployedSmokeConfig';
 
 export const test = base.extend({
-  deployedPage: async ({ page }, run) => {
-    await installOriginScopedBypass(page);
+  deployedPage: async ({ page, context }, run) => {
+    await bootstrapVercelBypassCookie({ browserContext: context, requestApi: request });
     await run(page);
   },
 });

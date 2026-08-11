@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getOriginScopedBypassHeaders } from './vercelBypass';
 
 const vercelConfig = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
@@ -68,39 +67,12 @@ describe('Vercel deployment configuration', () => {
 
   test('disables credential-bearing evidence for a protected deployment run', () => {
     const use = loadPlaywrightUseConfig({
-      baseUrl: 'https://preview.example.com/path',
+      baseUrl: 'https://statsplus-frontend-pj8o7a8n2-chris-fus-projects.vercel.app/',
       vercelAutomationBypassSecret: 'opaque-test-value',
     });
 
     expect(use).not.toHaveProperty('extraHTTPHeaders');
     expect(use.trace).toBe('off');
     expect(use.video).toBe('off');
-  });
-
-  test('adds bypass headers only for the configured deployment origin', () => {
-    const options = {
-      configuredBaseUrl: 'https://preview.example.com/path',
-      bypassSecret: 'opaque-test-value',
-    };
-
-    expect(
-      getOriginScopedBypassHeaders({ ...options, requestUrl: 'https://preview.example.com/' }),
-    ).toEqual({
-      'x-vercel-protection-bypass': options.bypassSecret,
-      'x-vercel-set-bypass-cookie': 'true',
-    });
-    expect(
-      getOriginScopedBypassHeaders({
-        ...options,
-        requestUrl: 'https://cdn.example.com/app.js',
-      }),
-    ).toEqual({});
-    expect(
-      getOriginScopedBypassHeaders({
-        configuredBaseUrl: undefined,
-        bypassSecret: options.bypassSecret,
-        requestUrl: 'https://preview.example.com/',
-      }),
-    ).toEqual({});
   });
 });

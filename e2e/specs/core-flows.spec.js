@@ -2,11 +2,19 @@ import { E2E_AUTH_STORAGE_KEY, expect, installApiContract } from '../fixtures/co
 import { test } from '../fixtures/deployedSmoke';
 
 test('@smoke public landing page explains how to authenticate', async ({ deployedPage: page }) => {
+  const rawBypassHeaders = [];
+  page.on('request', (request) => {
+    const headers = request.headers();
+    if (headers['x-vercel-protection-bypass'] || headers['x-vercel-set-bypass-cookie']) {
+      rawBypassHeaders.push(request.url());
+    }
+  });
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
   await expect(page.getByRole('textbox')).toBeDisabled();
+  expect(rawBypassHeaders).toHaveLength(0);
 });
 
 test('@critical the development auth adapter unlocks the search seam', async ({ page }) => {

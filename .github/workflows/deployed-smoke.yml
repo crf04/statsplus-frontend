@@ -4,8 +4,15 @@ on:
   deployment_status:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Run a public production check or a protected preview check
+        required: true
+        type: choice
+        options:
+          - production
+          - protected-preview
       base_url:
-        description: Deployed CourtAI URL to test
+        description: StatsPlus Vercel deployment URL to test
         required: true
         type: string
 
@@ -13,15 +20,23 @@ permissions:
   contents: read
 
 jobs:
-  smoke:
-    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+  production-smoke:
+    if: >-
+      github.repository == 'crf04/statsplus-frontend' &&
+      ((github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'production'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      E2E_BASE_URL: ${{ inputs.base_url || github.event.deployment_status.environment_url }}
+      E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || github.event.deployment_status.environment_url }}
     steps:
-      - name: Check out repository
+      - name: Check out trusted smoke harness
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -29,8 +44,8 @@ jobs:
           node-version: 22.14.0
           cache: npm
 
-      - name: Validate deployment URL
-        run: test -n "$E2E_BASE_URL"
+      - name: Validate production deployment URL
+        run: node scripts/validate-deployment-url.mjs production "$E2E_BASE_URL"
 
       - name: Install dependencies
         run: npm ci
@@ -38,21 +53,67 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run deployed smoke test
+      - name: Run public production smoke test
+        run: npm run test:e2e:smoke
+
+      - name: Upload production smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-production-smoke-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  protected-preview-smoke:
+    if: >-
+      github.repository == 'crf04/statsplus-frontend' &&
+      github.event_name == 'workflow_dispatch' && inputs.mode == 'protected-preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+    steps:
+      - name: Check out trusted smoke harness
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Validate protected preview deployment URL
+        run: node scripts/validate-deployment-url.mjs protected-preview "$E2E_BASE_URL"
+
+      - name: Run protected preview smoke test
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           test -n "$VERCEL_AUTOMATION_BYPASS_SECRET" || {
-            echo "VERCEL_AUTOMATION_BYPASS_SECRET is required for deployed smoke tests." >&2
+            echo "VERCEL_AUTOMATION_BYPASS_SECRET is required for protected preview smoke tests." >&2
             exit 1
           }
-          npm run test:e2e:smoke
 
-      - name: Upload smoke-test evidence
+          protected_secret="$VERCEL_AUTOMATION_BYPASS_SECRET"
+          unset VERCEL_AUTOMATION_BYPASS_SECRET
+          npm ci
+          npx playwright install --with-deps chromium
+          E2E_PROTECTED_PREVIEW=true \
+            VERCEL_AUTOMATION_BYPASS_SECRET="$protected_secret" \
+            npm run test:e2e:smoke
+          unset protected_secret
+
+      - name: Upload protected preview smoke evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deployed-smoke-evidence
+          name: deployed-protected-preview-smoke-evidence
           path: |
             playwright-report/
             test-results/

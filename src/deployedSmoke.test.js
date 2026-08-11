@@ -7,6 +7,7 @@ import {
 } from '../e2e/fixtures/deployedSmokeConfig';
 
 const deploymentUrl = 'https://statsplus-frontend-pj8o7a8n2-chris-fus-projects.vercel.app/';
+const productionUrl = 'https://statsplus-frontend.vercel.app/';
 
 const makeResponse = ({ status = 307, headers = [] } = {}) => ({
   status: jest.fn(() => status),
@@ -112,14 +113,10 @@ describe('deployed smoke Vercel bootstrap', () => {
 describe('deployed smoke URL and fixture wiring', () => {
   test('allows only the StatsPlus Vercel project deployment host over HTTPS', () => {
     expect(isAllowedDeploymentUrl(deploymentUrl)).toBe(true);
-    expect(isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/')).toBe(true);
-    expect(isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/', 'production')).toBe(
-      true,
-    );
+    expect(isAllowedDeploymentUrl(productionUrl)).toBe(true);
+    expect(isAllowedDeploymentUrl(productionUrl, 'production')).toBe(true);
     expect(isAllowedDeploymentUrl(deploymentUrl, 'production')).toBe(false);
-    expect(
-      isAllowedDeploymentUrl('https://statsplus-frontend.vercel.app/', 'protected-preview'),
-    ).toBe(false);
+    expect(isAllowedDeploymentUrl(productionUrl, 'protected-preview')).toBe(false);
     expect(
       isAllowedDeploymentUrl(
         'https://statsplus-frontend-git-feature-chris-fus-projects.vercel.app/',
@@ -164,7 +161,9 @@ describe('deployed smoke URL and fixture wiring', () => {
       "github.event_name == 'workflow_dispatch' && inputs.mode == 'protected-preview'",
     );
     expect(workflowSource).toContain('github.event.repository.default_branch');
-    expect(workflowSource).toContain('node scripts/validate-deployment-url.mjs');
+    expect(workflowSource).toContain(
+      'run: node scripts/validate-deployment-url.mjs production "$E2E_BASE_URL"',
+    );
     expect(workflowSource).toContain('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.');
     expect(workflowSource.indexOf('Validate protected preview deployment URL')).toBeLessThan(
       workflowSource.indexOf('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.'),
@@ -191,6 +190,19 @@ describe('deployed smoke URL and fixture wiring', () => {
       expect.stringContaining(manualWorkflowRevision),
       expect.stringContaining(manualWorkflowRevision),
     ]);
+  });
+
+  test.each([
+    { label: 'public production alias', url: productionUrl, status: 0 },
+    { label: 'immutable deployment URL', url: deploymentUrl, status: 1 },
+  ])('validates the production URL for $label', ({ url, status }) => {
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/validate-deployment-url.mjs', 'production', url],
+      { cwd: process.cwd(), encoding: 'utf8' },
+    );
+
+    expect(result.status).toBe(status);
   });
 
   test.each([

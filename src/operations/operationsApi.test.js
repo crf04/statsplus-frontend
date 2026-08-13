@@ -84,6 +84,54 @@ test('decodes the bounded diagnostics contract into safe UI fields', () => {
 });
 
 test.each([
+  'cycles',
+  'streams',
+  'collectors',
+  'alerts',
+  'reconciliation',
+  'validation',
+  'usage',
+  'jobs',
+])('accepts 50 %s diagnostics rows and rejects 51', (category) => {
+  const row = diagnostics[category][0];
+  const uniqueRow = (index) => {
+    const suffix = index + 1;
+    switch (category) {
+      case 'cycles':
+        return { ...row, cycle_id: `cycle-${suffix}` };
+      case 'streams':
+        return {
+          ...row,
+          stream_key: `stream-${suffix}`,
+          publication_id: `publication-${suffix}`,
+        };
+      case 'collectors':
+        return { ...row, identity_id: `collector-${suffix}` };
+      case 'alerts':
+        return { ...row, alert_id: `alert-${suffix}` };
+      case 'reconciliation':
+        return { ...row, item_id: `item-${suffix}` };
+      case 'validation':
+        return { ...row, summary_id: `summary-${suffix}`, cycle_id: `cycle-${suffix}` };
+      case 'usage':
+        return { ...row, collector_id: `collector-${suffix}` };
+      case 'jobs':
+        return { ...row, job_id: `job-${suffix}`, resource: `composition-${suffix}` };
+      default:
+        throw new Error(`Unhandled diagnostics category: ${category}`);
+    }
+  };
+  const rows = Array.from({ length: 51 }, (_, index) => uniqueRow(index));
+
+  expect(
+    decodeOperationsDiagnostics({ ...diagnostics, [category]: rows.slice(0, 50) })[category],
+  ).toHaveLength(50);
+  expect(() => decodeOperationsDiagnostics({ ...diagnostics, [category]: rows })).toThrow(
+    /invalid/i,
+  );
+});
+
+test.each([
   [
     'unknown cycle state',
     () => ({ ...diagnostics, cycles: [{ ...diagnostics.cycles[0], status: 'running' }] }),

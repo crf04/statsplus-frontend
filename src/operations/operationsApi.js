@@ -435,7 +435,7 @@ const decodeJob = (value) => {
 };
 
 const decodeList = (value, decoder, label) => {
-  if (!Array.isArray(value) || value.length > 100)
+  if (!Array.isArray(value) || value.length > 50)
     fail(`The operations API returned an invalid ${label} list.`);
   return value.map(decoder);
 };

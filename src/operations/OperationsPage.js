@@ -243,22 +243,10 @@ function CycleSection({ cycles, beginAction, disabled }) {
                   <dt>Cutoff</dt>
                   <dd>{formatDate(cycle.cutoff)}</dd>
                 </div>
-                {cycle.manifestId && (
-                  <div>
-                    <dt>Manifest</dt>
-                    <dd>{cycle.manifestId}</dd>
-                  </div>
-                )}
-                {cycle.completedGameCount !== null && (
-                  <div>
-                    <dt>Completed games</dt>
-                    <dd>{cycle.completedGameCount}</dd>
-                  </div>
-                )}
               </dl>
               {cycle.status === 'attention' && (
                 <p className="operations-attention" role="alert">
-                  Attention Required: {humanize(cycle.attentionReason || 'cycle_attention')}.
+                  Attention Required: this cycle requires operator review.
                 </p>
               )}
               {cycle.status === 'superseded' && (
@@ -346,21 +334,8 @@ function StreamsSection({ streams, beginAction, disabled }) {
                     <small>{stream.owner}</small>
                   </td>
                   <td>
-                    <span
-                      className={statusClass(
-                        stream.freshnessStatus || (stream.enabled ? 'active' : 'inactive'),
-                      )}
-                    >
-                      {humanize(stream.freshnessStatus || (stream.enabled ? 'active' : 'inactive'))}
-                    </span>
-                    <small>
-                      {stream.lastPublishedAt
-                        ? `Published ${formatDate(stream.lastPublishedAt)}`
-                        : 'No publication recorded'}
-                    </small>
-                    {stream.unavailableReason && (
-                      <small>{humanize(stream.unavailableReason)}</small>
-                    )}
+                    <span className="status-neutral">Unavailable</span>
+                    <small>Current freshness is not reported by diagnostics.</small>
                   </td>
                   <td>{stream.enabled ? 'Enabled' : 'Inactive'}</td>
                   <td className="operations-actions">
@@ -393,26 +368,8 @@ function StreamsSection({ streams, beginAction, disabled }) {
                             label: `Rollback ${stream.streamKey}`,
                             description:
                               'Move this stream back to its previous governed publication, if the fence still matches.',
-                            fields:
-                              stream.fence === null
-                                ? []
-                                : [
-                                    {
-                                      name: 'expectedFence',
-                                      label: 'Expected fence',
-                                      type: 'number',
-                                      required: true,
-                                      placeholder: String(stream.fence),
-                                    },
-                                  ],
-                            execute: (reason, values) =>
-                              operationsApi.rollbackStream(
-                                stream.streamKey,
-                                reason,
-                                values.expectedFence === undefined || values.expectedFence === ''
-                                  ? null
-                                  : Number(values.expectedFence),
-                              ),
+                            execute: (reason) =>
+                              operationsApi.rollbackStream(stream.streamKey, reason, null),
                           })
                         }
                         aria-label={`Rollback ${stream.streamKey}`}
@@ -469,9 +426,6 @@ function StreamsSection({ streams, beginAction, disabled }) {
 }
 
 function CollectorsSection({ collectors, beginAction, disabled }) {
-  const releaseVersions = new Set(
-    collectors.map((collector) => collector.releaseVersion).filter(Boolean),
-  );
   return (
     <section className="operations-section" aria-labelledby="operations-collectors-heading">
       <div className="operations-section-heading">
@@ -480,12 +434,6 @@ function CollectorsSection({ collectors, beginAction, disabled }) {
           <h2 id="operations-collectors-heading">Collectors</h2>
         </div>
       </div>
-      {releaseVersions.size > 1 && (
-        <p className="operations-attention" role="alert">
-          Version mismatch: registered Collectors report more than one release version. Resolve this
-          through the staged private-network upgrade runbook.
-        </p>
-      )}
       {collectors.length === 0 ? (
         <EmptyState>No Collector identities are registered.</EmptyState>
       ) : (
@@ -493,13 +441,9 @@ function CollectorsSection({ collectors, beginAction, disabled }) {
           {collectors.map((collector) => (
             <article className="operations-card" key={collector.identityId}>
               <div className="operations-card-heading">
-                <h3>{collector.label || collector.identityId}</h3>
-                <span
-                  className={statusClass(
-                    collector.status || (collector.revoked ? 'revoked' : 'active'),
-                  )}
-                >
-                  {collector.revoked ? 'Revoked' : humanize(collector.status || 'active')}
+                <h3>{collector.identityId}</h3>
+                <span className={statusClass(collector.revoked ? 'revoked' : 'active')}>
+                  {collector.revoked ? 'Revoked' : 'Active'}
                 </span>
               </div>
               <dl className="operations-details">
@@ -517,7 +461,7 @@ function CollectorsSection({ collectors, beginAction, disabled }) {
                 </div>
                 <div>
                   <dt>Release</dt>
-                  <dd>{collector.releaseVersion || 'Not reported'}</dd>
+                  <dd>Not reported by diagnostics</dd>
                 </div>
               </dl>
               {collector.lastSeenAt === null && (
@@ -589,9 +533,7 @@ function AlertsSection({ alerts }) {
               <span className={statusClass(alert.severity)}>{humanize(alert.severity)}</span>
               <div>
                 <strong>{humanize(alert.code)}</strong>
-                <small>
-                  {alert.cycleId ? `Cycle ${alert.cycleId}` : 'Collection control plane'}
-                </small>
+                <small>Collection control plane</small>
               </div>
               <span className={statusClass(alert.status)}>{humanize(alert.status)}</span>
             </article>
@@ -666,19 +608,9 @@ function ValidationSection({ validation }) {
             <article className="operations-list-row" key={summary.summaryId}>
               <div>
                 <strong>Cycle {summary.cycleId}</strong>
-                <small>
-                  {summary.createdAt ? formatDate(summary.createdAt) : 'Time not recorded'}
-                </small>
+                <small>Counts and check time are not reported.</small>
               </div>
               <span className={statusClass(summary.status)}>{humanize(summary.status)}</span>
-              <span className="operations-counts">
-                {Object.entries(summary.counts)
-                  .map(
-                    ([key, value]) =>
-                      `${humanize(key)}: ${Array.isArray(value) ? value.length : value}`,
-                  )
-                  .join(' · ')}
-              </span>
             </article>
           ))}
         </div>
@@ -704,20 +636,12 @@ function UsageSection({ usage }) {
             <article className="operations-card" key={entry.collectorId}>
               <h3>{entry.collectorId}</h3>
               <div className="operations-metric-row">
-                <Metric
-                  label="Polls"
-                  value={entry.pollCount}
-                  detail={entry.limits ? `of ${entry.limits.maxPolls}` : undefined}
-                />
-                <Metric
-                  label="Envelopes"
-                  value={entry.envelopeCount}
-                  detail={entry.limits ? `of ${entry.limits.maxEnvelopes}` : undefined}
-                />
+                <Metric label="Polls" value={entry.pollCount} detail="Limit not reported" />
+                <Metric label="Envelopes" value={entry.envelopeCount} detail="Limit not reported" />
                 <Metric
                   label="Bytes"
                   value={entry.byteCount.toLocaleString()}
-                  detail={entry.limits ? `of ${entry.limits.maxBytes.toLocaleString()}` : undefined}
+                  detail="Limit not reported"
                 />
               </div>
             </article>
@@ -833,9 +757,6 @@ export default function OperationsPage() {
       onlineCollectors: data.collectors.filter(
         (collector) => collector.lastSeenAt && !collector.revoked,
       ).length,
-      versionMismatch:
-        new Set(data.collectors.map((collector) => collector.releaseVersion).filter(Boolean)).size >
-        1,
       runningJobs: data.jobs.filter((job) => ['queued', 'running'].includes(job.status)).length,
     };
   }, [data]);
@@ -907,11 +828,7 @@ export default function OperationsPage() {
           <Metric label="Attention required" value={totals.attention} />
           <Metric label="Active streams" value={totals.activeStreams} />
           <Metric label="Collectors seen" value={totals.onlineCollectors} />
-          <Metric
-            label="Version consistency"
-            value={totals.versionMismatch ? 'Mismatch' : 'Aligned'}
-            detail="Compared across reported releases"
-          />
+          <Metric label="Collector releases" value="Unavailable" detail="Not reported" />
           <Metric label="Queued or running jobs" value={totals.runningJobs} />
         </section>
       )}

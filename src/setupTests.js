@@ -38,6 +38,11 @@ jest.mock('firebase/auth', () => ({
     callback(null);
     return jest.fn();
   }),
+  onIdTokenChanged: jest.fn((_auth, callback) => {
+    callback(null);
+    return jest.fn();
+  }),
+  getIdTokenResult: jest.fn(() => Promise.resolve({ claims: {} })),
   GoogleAuthProvider: jest.fn().mockImplementation(() => ({
     addScope: jest.fn(),
   })),

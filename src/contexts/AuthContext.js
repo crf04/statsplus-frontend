@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   signInWithPopup,
   signOut,
@@ -45,8 +45,9 @@ export function useAuth() {
 }
 
 // AuthProvider component
-export function AuthProvider({ children }) {
+export function AuthProvider({ children, authClient = auth, authProvider = googleProvider }) {
   const [currentUser, setCurrentUser] = useState(getInitialUser);
+  const currentUserRef = useRef(getInitialUser());
   const [loading, setLoading] = useState(!isE2EMode);
   const [error, setError] = useState(null);
   const [adminState, setAdminState] = useState(() => ({
@@ -57,7 +58,7 @@ export function AuthProvider({ children }) {
   }));
 
   const refreshAdminClaims = useCallback(
-    async (user = currentUser, forceRefresh = false) => {
+    async (user = currentUserRef.current, forceRefresh = false) => {
       if (!user) {
         setAdminState({ loading: false, isAdmin: false, status: 'signed_out', error: null });
         return false;
@@ -74,7 +75,7 @@ export function AuthProvider({ children }) {
         return isAdmin;
       }
 
-      if (!auth || typeof getIdTokenResult !== 'function') {
+      if (!authClient || typeof getIdTokenResult !== 'function') {
         const configurationError = 'Firebase authentication is not configured for admin access.';
         setAdminState({
           loading: false,
@@ -107,7 +108,7 @@ export function AuthProvider({ children }) {
         return false;
       }
     },
-    [currentUser],
+    [authClient],
   );
 
   // Sign in with Google
@@ -115,13 +116,14 @@ export function AuthProvider({ children }) {
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
+        currentUserRef.current = e2eUser;
         setCurrentUser(e2eUser);
         await refreshAdminClaims(e2eUser);
         setError(null);
         return e2eUser;
       }
 
-      if (!auth || !googleProvider) {
+      if (!authClient || !authProvider) {
         const configurationError = new Error('Firebase authentication is not configured.');
         setError(configurationError.message);
         throw configurationError;
@@ -129,7 +131,7 @@ export function AuthProvider({ children }) {
 
       setError(null);
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(authClient, authProvider);
       return result.user;
     } catch (error) {
       console.error('Google sign-in error:', error);
@@ -147,12 +149,13 @@ export function AuthProvider({ children }) {
       if (isE2EMode) {
         window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
         window.localStorage.removeItem(E2E_ADMIN_STORAGE_KEY);
+        currentUserRef.current = null;
         setCurrentUser(null);
         setAdminState({ loading: false, isAdmin: false, status: 'signed_out', error: null });
         return;
       }
-      if (!auth) return;
-      await signOut(auth);
+      if (!authClient) return;
+      await signOut(authClient);
     } catch (error) {
       console.error('Sign-out error:', error);
       setError(error.message);
@@ -183,17 +186,25 @@ export function AuthProvider({ children }) {
       return undefined;
     }
 
-    if (!auth) {
+    if (!authClient) {
       setCurrentUser(null);
+      currentUserRef.current = null;
       setLoading(false);
+      setAdminState({
+        loading: false,
+        isAdmin: false,
+        status: 'configuration_error',
+        error: 'Firebase authentication is not configured for admin access.',
+      });
       return undefined;
     }
 
     const authStateListener =
       typeof onIdTokenChanged === 'function' ? onIdTokenChanged : onAuthStateChanged;
     const unsubscribe = authStateListener(
-      auth,
+      authClient,
       async (user) => {
+        currentUserRef.current = user;
         setCurrentUser(user);
         setLoading(false);
         setError(null);
@@ -214,7 +225,7 @@ export function AuthProvider({ children }) {
     );
 
     return unsubscribe;
-  }, [refreshAdminClaims]);
+  }, [authClient, refreshAdminClaims]);
 
   const value = {
     currentUser,

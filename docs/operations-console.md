@@ -3,9 +3,12 @@
 The Operations Console is a Firebase-admin-only view at `/operations` (the
 `/admin/operations` alias is retained for deep links). It displays bounded
 control-plane diagnostics from `GET /api/admin/collection/diagnostics`:
-collection cycles, publication streams, Collector last-seen/version state,
-alerts, reconciliation items, validation summaries, usage counters, and
-durable operator jobs.
+collection cycles, registered publication streams, Collector identity and
+last-seen state, alerts, reconciliation items, validation states, raw usage
+counters, and durable operator jobs. The frozen diagnostics contract does not
+report current stream freshness, Collector release versions, usage limits, or
+validation counts/timestamps, so the page labels those dimensions unavailable
+instead of inferring health.
 
 ## Permissions and failure states
 
@@ -17,8 +20,8 @@ the page fails closed and offers a permission-check retry; it never loads
 diagnostics with an unverified identity.
 
 The browser requests and decodes only the stable safe-field diagnostics
-contract. Unknown fields, malformed timestamps/counts/checksums, unknown
-statuses/actions, and fields associated with secrets, credentials, raw
+contract. Unknown fields (including unsupported checksum fields), malformed
+timestamps/counts, unknown statuses/actions, and fields associated with secrets, credentials, raw
 provider responses, payloads, player facts, databases, or exceptions are
 rejected at the API seam.
 
@@ -40,5 +43,6 @@ not contact the residential machine through this page.
 
 The console is intentionally additive and depends on backend collection-control
 routes. Deploy the backend contract before enabling the route for operators.
-Hermetic Playwright fixtures intercept the diagnostics and admin POST routes;
-they do not use Firebase, production data, or a residential Collector.
+Hermetic Playwright fixtures intercept only documented diagnostics and admin
+POST routes, require the E2E bearer token, and validate exact request fields and
+types. They do not use Firebase, production data, or a residential Collector.

@@ -2,6 +2,7 @@ import {
   decodeMutationResult,
   decodeOperationsDiagnostics,
   decodeReconciliationResponse,
+  OPERATOR_ACTIONS,
 } from './operationsApi';
 
 const diagnostics = {
@@ -92,17 +93,151 @@ test.each([
 
 test('rejects unrecognized response fields instead of leaking them to the page', () => {
   expect(() => decodeOperationsDiagnostics({ ...diagnostics, raw: 'provider response' })).toThrow();
-  expect(() => decodeMutationResult({ job_id: 'job-1', payload: { player_id: 7 } })).toThrow();
-  expect(() => decodeMutationResult({ job_id: 'job-1', unexpected: 'field' })).toThrow();
+  expect(() =>
+    decodeMutationResult('retryComposition', {
+      job_id: 'job-1',
+      composition_job_id: 'composition-1',
+      status: 'queued',
+      attempts: 1,
+      payload: { player_id: 7 },
+    }),
+  ).toThrow();
 });
 
-test('requires durable job responses and bounded reconciliation lists', () => {
-  expect(decodeMutationResult({ job_id: 'job-1', status: 'queued' })).toEqual({
+test('decodes action-specific durable job responses', () => {
+  expect(
+    decodeMutationResult('retryComposition', {
+      job_id: 'job-1',
+      composition_job_id: 'composition-1',
+      status: 'queued',
+      attempts: 2,
+    }),
+  ).toEqual({
     jobId: 'job-1',
+    compositionJobId: 'composition-1',
     status: 'queued',
+    attempts: 2,
   });
-  expect(() => decodeMutationResult({ status: 'queued' })).toThrow();
+});
+
+test.each([
+  [
+    'unknown mutation status',
+    'retryComposition',
+    { job_id: 'job-1', composition_job_id: 'composition-1', status: 'paused', attempts: 1 },
+  ],
+  [
+    'negative count',
+    'retryComposition',
+    { job_id: 'job-1', composition_job_id: 'composition-1', status: 'queued', attempts: -1 },
+  ],
+  [
+    'unsafe count',
+    'retryComposition',
+    {
+      job_id: 'job-1',
+      composition_job_id: 'composition-1',
+      status: 'queued',
+      attempts: Number.MAX_SAFE_INTEGER + 1,
+    },
+  ],
+  [
+    'malformed identifier',
+    'retryComposition',
+    { job_id: 'job 1', composition_job_id: 'composition-1', status: 'queued', attempts: 1 },
+  ],
+  [
+    'malformed season',
+    'activateSeason',
+    {
+      job_id: 'job-1',
+      season: '2025',
+      status: 'active',
+      activated_at: '2026-04-13T00:00:00Z',
+    },
+  ],
+  [
+    'malformed timestamp',
+    'activateSeason',
+    { job_id: 'job-1', season: '2025-26', status: 'active', activated_at: 'tomorrow' },
+  ],
+  [
+    'wrong boolean type',
+    'activateStream',
+    { job_id: 'job-1', stream_key: 'games', enabled: 'true' },
+  ],
+  ['unknown action', 'wakeCollector', { job_id: 'job-1' }],
+])('rejects %s responses', (_label, action, response) => {
+  expect(() => decodeMutationResult(action, response)).toThrow(/invalid/i);
+});
+
+test('requires bounded reconciliation lists', () => {
   expect(decodeReconciliationResponse({ items: diagnostics.reconciliation }).items[0].itemId).toBe(
     'item-1',
   );
+});
+
+test.each([
+  [
+    'startCycle',
+    {},
+    { manifestId: 'manifest-1', reason: 'Start governed cycle' },
+    '/api/admin/collection/cycles/start',
+    { manifest_id: 'manifest-1', reason: 'Start governed cycle' },
+  ],
+  [
+    'retryComposition',
+    { jobId: 'composition-1' },
+    { reason: 'Retry failed composition' },
+    '/api/admin/collection/compositions/composition-1/retry',
+    { reason: 'Retry failed composition' },
+  ],
+  [
+    'scopedRepair',
+    {},
+    {
+      streamKey: 'traditional_opponent',
+      season: '2025-26',
+      cutoff: '2026-04-13T00:00:00Z',
+      reason: 'Repair governed slice',
+    },
+    '/api/admin/collection/repair',
+    {
+      stream_key: 'traditional_opponent',
+      season: '2025-26',
+      cutoff: '2026-04-13T00:00:00.000Z',
+      reason: 'Repair governed slice',
+    },
+  ],
+  [
+    'activateStream',
+    { streamKey: 'synergy:l15' },
+    { reason: 'Enable governed stream' },
+    '/api/admin/collection/streams/synergy%3Al15/activate',
+    { reason: 'Enable governed stream' },
+  ],
+  [
+    'rollbackStream',
+    { streamKey: 'games' },
+    { reason: 'Restore prior publication', expectedFence: 3 },
+    '/api/admin/collection/streams/games/rollback',
+    { reason: 'Restore prior publication', expected_fence: 3 },
+  ],
+  [
+    'revokeCollector',
+    { identityId: 'collector-1' },
+    { reason: 'Revoke compromised identity' },
+    '/api/admin/collection/collectors/collector-1/revoke',
+    { reason: 'Revoke compromised identity' },
+  ],
+  [
+    'rotateCollector',
+    { identityId: 'collector-1' },
+    { reason: 'Rotate scheduled identity', overlapSeconds: 3600 },
+    '/api/admin/collection/collectors/collector-1/rotate',
+    { reason: 'Rotate scheduled identity', overlap_seconds: 3600 },
+  ],
+])('centralizes the exact %s path and request body', (name, pathArgs, bodyArgs, path, body) => {
+  expect(OPERATOR_ACTIONS[name].path(pathArgs)).toBe(path);
+  expect(OPERATOR_ACTIONS[name].body(bodyArgs)).toEqual(body);
 });

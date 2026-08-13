@@ -660,9 +660,6 @@ export const operationsPayload = {
       season: '2025-26',
       status: 'attention',
       cutoff: '2026-04-13T00:00:00Z',
-      manifest_id: 'manifest-e2e-1',
-      completed_game_count: 1230,
-      attention_reason: 'cycle_window_expired',
     },
   ],
   streams: [
@@ -672,10 +669,6 @@ export const operationsPayload = {
       owner: 'railway',
       enabled: true,
       freshness_rule: 'cutoff_current',
-      freshness_status: 'stale',
-      last_published_at: '2026-04-12T23:00:00Z',
-      active_publication_id: 'publication-e2e-1',
-      fence: 3,
     },
     {
       stream_key: 'synergy:l15',
@@ -683,25 +676,19 @@ export const operationsPayload = {
       owner: 'residential_collector',
       enabled: false,
       freshness_rule: 'unavailable',
-      freshness_status: 'unavailable',
-      unavailable_reason: 'provider_window_unsupported',
     },
   ],
   collectors: [
     {
       identity_id: 'collector-e2e-1',
-      label: 'Residential NBA collector',
       environment: 'production',
-      owner: 'residential_collector',
       revoked: false,
       last_seen_at: '2026-04-13T00:05:00Z',
-      release_version: '2026.04.13',
     },
   ],
   alerts: [
     {
       alert_id: 'alert-e2e-1',
-      cycle_id: 'cycle-e2e-1',
       severity: 'critical',
       code: 'cycle_attention',
       status: 'open',
@@ -721,7 +708,6 @@ export const operationsPayload = {
       summary_id: 'validation-e2e-1',
       cycle_id: 'cycle-e2e-1',
       status: 'attention',
-      counts: { missing_streams: ['traditional_opponent'] },
     },
   ],
   usage: [
@@ -730,7 +716,6 @@ export const operationsPayload = {
       poll_count: 4,
       envelope_count: 7,
       byte_count: 4096,
-      limits: { max_polls: 100, max_envelopes: 1000, max_bytes: 52428800 },
     },
   ],
   jobs: [
@@ -746,18 +731,171 @@ export const operationsPayload = {
   ],
 };
 
+const hasExactKeys = (body, required, optional = []) => {
+  const keys = Object.keys(body).sort();
+  const allowed = [...required, ...optional];
+  return (
+    required.every((key) => Object.hasOwn(body, key)) && keys.every((key) => allowed.includes(key))
+  );
+};
+const validReason = (value) => typeof value === 'string' && value.trim().length >= 3;
+const validId = (value) => typeof value === 'string' && /^[A-Za-z0-9._:/-]{1,160}$/.test(value);
+const validSeason = (value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
+const validTimestamp = (value) =>
+  typeof value === 'string' && value.includes('T') && !Number.isNaN(Date.parse(value));
+
+const mutationContract = [
+  {
+    match: /^\/api\/admin\/collection\/seasons\/(\d{4}-\d{2})$/,
+    action: 'season.activate',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, season]) => ({
+      job_id: jobId,
+      season,
+      status: 'active',
+      activated_at: '2026-04-13T00:10:00Z',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/streams\/([^/]+)\/rollback$/,
+    action: 'publication.rollback',
+    valid: (body) =>
+      hasExactKeys(body, ['reason'], ['expected_fence']) &&
+      validReason(body.reason) &&
+      (body.expected_fence === undefined ||
+        (Number.isSafeInteger(body.expected_fence) && body.expected_fence >= 0)),
+    response: (jobId, [, streamKey]) => ({
+      job_id: jobId,
+      publication_id: 'publication-e2e-rollback',
+      stream_key: decodeURIComponent(streamKey),
+      status: 'rollback',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/streams\/([^/]+)\/activate$/,
+    action: 'stream.activate',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, streamKey]) => ({
+      job_id: jobId,
+      stream_key: decodeURIComponent(streamKey),
+      enabled: true,
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/compositions\/([^/]+)\/retry$/,
+    action: 'composition.retry',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, compositionId]) => ({
+      job_id: jobId,
+      composition_job_id: decodeURIComponent(compositionId),
+      status: 'queued',
+      attempts: 2,
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/start$/,
+    action: 'cycle.start',
+    valid: (body) =>
+      hasExactKeys(body, ['manifest_id', 'reason']) &&
+      validId(body.manifest_id) &&
+      validReason(body.reason),
+    response: (jobId) => ({ job_id: jobId, cycle_id: 'cycle-e2e-2', status: 'collecting' }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/repair$/,
+    action: 'scoped_repair.start',
+    valid: (body) =>
+      hasExactKeys(body, ['stream_key', 'season', 'cutoff', 'reason']) &&
+      validId(body.stream_key) &&
+      validSeason(body.season) &&
+      validTimestamp(body.cutoff) &&
+      validReason(body.reason),
+    response: (jobId) => ({
+      job_id: jobId,
+      composition_job_id: 'composition-e2e-repair',
+      status: 'queued',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/([^/]+)\/finish$/,
+    action: 'cycle.finish',
+    valid: (body) =>
+      hasExactKeys(body, ['status', 'reason']) &&
+      ['complete', 'no_game', 'failed'].includes(body.status) &&
+      validReason(body.reason),
+    response: (jobId, [, cycleId]) => ({
+      job_id: jobId,
+      cycle_id: decodeURIComponent(cycleId),
+      status: 'complete',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/([^/]+)\/not-applicable$/,
+    action: 'cycle.not_applicable',
+    valid: (body) =>
+      hasExactKeys(body, ['stream_key', 'reason']) &&
+      validId(body.stream_key) &&
+      validReason(body.reason),
+    response: (jobId, [, cycleId]) => ({
+      job_id: jobId,
+      cycle_id: decodeURIComponent(cycleId),
+      stream_key: 'e2e-stream',
+      status: 'governed',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/bootstrap$/,
+    action: 'bootstrap.start',
+    valid: (body) =>
+      hasExactKeys(body, ['season', 'catalog_type', 'cutoff', 'reason']) &&
+      validSeason(body.season) &&
+      validId(body.catalog_type) &&
+      validTimestamp(body.cutoff) &&
+      validReason(body.reason),
+    response: (jobId) => ({ job_id: jobId, request_id: 'request-e2e-1', status: 'pending' }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/collectors\/([^/]+)\/revoke$/,
+    action: 'collector.revoke',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, identityId]) => ({
+      job_id: jobId,
+      identity_id: decodeURIComponent(identityId),
+      status: 'revoked',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/collectors\/([^/]+)\/rotate$/,
+    action: 'collector.rotate',
+    valid: (body) =>
+      hasExactKeys(body, ['reason'], ['overlap_seconds']) &&
+      validReason(body.reason) &&
+      (body.overlap_seconds === undefined ||
+        (Number.isSafeInteger(body.overlap_seconds) && body.overlap_seconds >= 0)),
+    response: (jobId, [, identityId]) => ({
+      job_id: jobId,
+      identity_id: decodeURIComponent(identityId),
+      status: 'rotated',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/reconciliation\/([^/]+)\/resolve$/,
+    action: 'reconciliation.resolve',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, itemId]) => ({
+      job_id: jobId,
+      item_id: decodeURIComponent(itemId),
+      status: 'resolved',
+    }),
+  },
+];
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const override = overrides[url.pathname];
-
-    if (override) {
-      const response = typeof override === 'function' ? await override(request) : override;
-      await route.fulfill({ status: response.status || 200, json: response.body ?? response });
-      return;
-    }
 
     if (url.pathname === '/api/admin/collection/diagnostics' && request.method() === 'GET') {
       await route.fulfill({ json: { ...operationsPayload, jobs: operationsJobs } });
@@ -770,35 +908,54 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname.startsWith('/api/admin/collection/') && request.method() === 'POST') {
-      const path = url.pathname;
-      const action = path.includes('/retry')
-        ? 'composition.retry'
-        : path.includes('/rollback')
-          ? 'publication.rollback'
-          : path.includes('/activate')
-            ? 'stream.activate'
-            : path.includes('/repair')
-              ? 'scoped_repair.start'
-              : path.includes('/finish')
-                ? 'cycle.finish'
-                : path.includes('/revoke')
-                  ? 'collector.revoke'
-                  : path.includes('/rotate')
-                    ? 'collector.rotate'
-                    : path.includes('/resolve')
-                      ? 'reconciliation.resolve'
-                      : 'cycle.start';
+      const matchedContract = mutationContract
+        .map((contract) => ({ contract, match: url.pathname.match(contract.match) }))
+        .find(({ match }) => match);
+      if (!matchedContract) {
+        await route.fulfill({ status: 501, json: { error: 'Undocumented operator mutation.' } });
+        return;
+      }
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({ status: 401, json: { error: 'Missing E2E bearer token.' } });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      if (!body || !matchedContract.contract.valid(body)) {
+        await route.fulfill({ status: 400, json: { error: 'Invalid operator mutation body.' } });
+        return;
+      }
+
+      if (override) {
+        const response = typeof override === 'function' ? await override(request) : override;
+        await route.fulfill({ status: response.status || 200, json: response.body ?? response });
+        return;
+      }
+
       const job = {
         job_id: `job-e2e-${operationsJobs.length + 1}`,
-        action,
-        resource: 'e2e-resource',
+        action: matchedContract.contract.action,
+        resource: decodeURIComponent(matchedContract.match[1] || 'e2e-resource'),
         status: 'queued',
         created_at: '2026-04-13T00:10:00Z',
         completed_at: null,
         error_code: null,
       };
       operationsJobs.unshift(job);
-      await route.fulfill({ status: 202, json: { job_id: job.job_id, status: job.status } });
+      await route.fulfill({
+        status: 202,
+        json: matchedContract.contract.response(job.job_id, matchedContract.match, body),
+      });
+      return;
+    }
+
+    if (override) {
+      const response = typeof override === 'function' ? await override(request) : override;
+      await route.fulfill({ status: response.status || 200, json: response.body ?? response });
       return;
     }
 

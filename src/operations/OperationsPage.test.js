@@ -3,31 +3,53 @@ import { MemoryRouter } from 'react-router-dom';
 import OperationsPage from './OperationsPage';
 import { operationsApi } from './operationsApi';
 
-jest.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({ isAdmin: true }),
-}));
-
+jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ isAdmin: true }) }));
 jest.mock('./operationsApi', () => ({
   getOperationsErrorMessage: (error, fallback) => error?.message || fallback,
   operationsApi: {
     getDiagnostics: jest.fn(),
     scopedRepair: jest.fn(),
     rollbackStream: jest.fn(),
+    activateStream: jest.fn(),
+    retryComposition: jest.fn(),
+    resolveReconciliation: jest.fn(),
+    startCycle: jest.fn(),
+    finishCycle: jest.fn(),
+    rotateCollector: jest.fn(),
+    revokeCollector: jest.fn(),
   },
 }));
+
+const emptyPayload = {
+  cycles: [],
+  streams: [],
+  collectors: [],
+  alerts: [],
+  reconciliation: [],
+  validation: [],
+  usage: [],
+  jobs: [],
+};
 
 const payload = {
   cycles: [
     {
-      cycleId: 'cycle-1',
+      cycleId: 'cycle-attention',
       season: '2025-26',
       status: 'attention',
       cutoff: '2026-04-13T00:00:00.000Z',
-      attentionReason: 'cycle_window_expired',
-      manifestId: null,
-      completedGameCount: null,
-      completedAt: null,
-      supersededAt: null,
+    },
+    {
+      cycleId: 'cycle-complete',
+      season: '2024-25',
+      status: 'complete',
+      cutoff: '2025-04-13T00:00:00.000Z',
+    },
+    {
+      cycleId: 'cycle-superseded',
+      season: '2023-24',
+      status: 'superseded',
+      cutoff: '2024-04-13T00:00:00.000Z',
     },
   ],
   streams: [
@@ -37,41 +59,44 @@ const payload = {
       owner: 'railway',
       enabled: true,
       freshnessRule: 'cutoff_current',
-      freshnessStatus: 'stale',
-      activePublicationId: 'publication-1',
-      fence: 2,
-      lastPublishedAt: null,
-      retrievedAt: null,
-      cutoff: null,
-      publicationVersion: null,
-      checksum: null,
-      schemaVersions: [],
-      supportedWindows: [],
-      completenessRule: null,
-      publicationStrategy: null,
-      unavailableReason: null,
+    },
+    {
+      streamKey: 'unsupported_stream',
+      provider: 'nba',
+      owner: 'collector',
+      enabled: false,
+      freshnessRule: 'unavailable',
     },
   ],
   collectors: [
     {
-      identityId: 'collector-1',
-      label: 'Residential Collector',
+      identityId: 'collector-offline',
       environment: 'production',
       revoked: false,
       lastSeenAt: null,
-      releaseVersion: null,
-      owner: null,
-      providers: [],
-      surfaces: [],
-      scopes: [],
-      status: null,
     },
   ],
-  alerts: [],
-  reconciliation: [],
-  validation: [],
-  usage: [],
-  jobs: [],
+  alerts: [{ alertId: 'alert-1', severity: 'critical', code: 'cycle_attention', status: 'open' }],
+  reconciliation: [
+    {
+      itemId: 'item-1',
+      season: '2025-26',
+      kind: 'identity',
+      reason: 'identity_unresolved',
+      status: 'open',
+    },
+  ],
+  validation: [{ summaryId: 'summary-1', cycleId: 'cycle-attention', status: 'failed' }],
+  usage: [{ collectorId: 'collector-offline', pollCount: 4, envelopeCount: 7, byteCount: 4096 }],
+  jobs: ['queued', 'running', 'succeeded', 'failed'].map((status) => ({
+    jobId: `job-${status}`,
+    action: 'composition.retry',
+    resource: `composition-${status}`,
+    status,
+    createdAt: '2026-04-13T00:00:00.000Z',
+    completedAt: status === 'queued' || status === 'running' ? null : '2026-04-13T00:01:00.000Z',
+    errorCode: status === 'failed' ? 'provider_unavailable' : null,
+  })),
 };
 
 const renderPage = () =>
@@ -82,44 +107,112 @@ const renderPage = () =>
   );
 
 beforeEach(() => {
+  jest.clearAllMocks();
   operationsApi.getDiagnostics.mockResolvedValue(payload);
-  operationsApi.scopedRepair.mockResolvedValue({ jobId: 'job-2' });
-  operationsApi.rollbackStream.mockResolvedValue({ jobId: 'job-3' });
+  Object.values(operationsApi).forEach((operation) => {
+    if (operation !== operationsApi.getDiagnostics)
+      operation.mockResolvedValue({ jobId: 'job-new' });
+  });
 });
 
-test('renders attention, stale-stream, and offline Collector states', async () => {
+test('renders empty states for every bounded diagnostic collection', async () => {
+  operationsApi.getDiagnostics.mockResolvedValue(emptyPayload);
   renderPage();
+  expect(await screen.findByText('No collection cycles have been recorded.')).toBeInTheDocument();
+  expect(screen.getByText('No publication streams are registered.')).toBeInTheDocument();
+  expect(screen.getByText('No Collector identities are registered.')).toBeInTheDocument();
+  expect(screen.getByText('No open or historical alerts are recorded.')).toBeInTheDocument();
+  expect(screen.getByText('No reconciliation items are recorded.')).toBeInTheDocument();
+  expect(screen.getByText('No validation summaries are recorded.')).toBeInTheDocument();
+  expect(screen.getByText('No usage windows are recorded.')).toBeInTheDocument();
+  expect(screen.getByText('No durable operator jobs are recorded.')).toBeInTheDocument();
+});
 
-  expect(await screen.findByRole('heading', { name: 'Publication streams' })).toBeInTheDocument();
-  expect(screen.getByText('Attention Required: Cycle Window Expired.')).toBeInTheDocument();
-  expect(screen.getByText('Stale')).toBeInTheDocument();
+test('renders healthy, degraded, attention, superseded, and durable job states', async () => {
+  renderPage();
+  expect(
+    await screen.findByText('Attention Required: this cycle requires operator review.'),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/superseded; it remains visible for audit/i)).toBeInTheDocument();
+  expect(screen.getAllByText('Complete').length).toBeGreaterThan(0);
+  expect(screen.getByText('Cycle Attention')).toBeInTheDocument();
+  expect(screen.getByText(/Identity Unresolved/)).toBeInTheDocument();
+  expect(screen.getByText('Counts and check time are not reported.')).toBeInTheDocument();
+  for (const state of ['Queued', 'Running', 'Succeeded', 'Failed']) {
+    expect(screen.getAllByText(state).length).toBeGreaterThan(0);
+  }
+});
+
+test('shows unsupported diagnostic dimensions as unavailable instead of inferring them', async () => {
+  renderPage();
+  await screen.findByRole('heading', { name: 'Publication streams' });
+  expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(3);
+  expect(screen.getAllByText('Current freshness is not reported by diagnostics.')).toHaveLength(2);
   expect(screen.getByText(/Offline: no last-seen heartbeat/)).toBeInTheDocument();
+  expect(screen.getByText('Not reported by diagnostics')).toBeInTheDocument();
+  expect(screen.getAllByText('Limit not reported')).toHaveLength(3);
+  expect(screen.queryByText(/version mismatch/i)).not.toBeInTheDocument();
 });
 
 test('requires a reason and confirmation before scheduling scoped repair', async () => {
   renderPage();
   await screen.findByRole('heading', { name: 'Publication streams' });
   fireEvent.click(screen.getByRole('button', { name: 'Repair traditional_opponent' }));
-
   expect(screen.getByRole('button', { name: 'Confirm action' })).toBeDisabled();
   fireEvent.change(screen.getByLabelText('Season'), { target: { value: '2025-26' } });
   fireEvent.change(screen.getByLabelText('Cutoff (ISO timestamp)'), {
     target: { value: '2026-04-13T00:00:00Z' },
   });
   fireEvent.change(screen.getByLabelText('Reason (required)'), {
-    target: { value: 'Repair the stale stream' },
+    target: { value: 'Repair the governed stream' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Confirm action' }));
-
   await waitFor(() =>
     expect(operationsApi.scopedRepair).toHaveBeenCalledWith(
       'traditional_opponent',
       '2025-26',
       '2026-04-13T00:00:00Z',
-      'Repair the stale stream',
+      'Repair the governed stream',
     ),
   );
   expect(await screen.findByText(/Durable job/)).toBeInTheDocument();
+});
+
+test('prevents duplicate submission while a durable action is pending', async () => {
+  let resolveMutation;
+  operationsApi.rollbackStream.mockImplementation(
+    () => new Promise((resolve) => (resolveMutation = resolve)),
+  );
+  renderPage();
+  await screen.findByRole('heading', { name: 'Publication streams' });
+  fireEvent.click(screen.getByRole('button', { name: 'Rollback traditional_opponent' }));
+  fireEvent.change(screen.getByLabelText('Reason (required)'), {
+    target: { value: 'Use the prior governed publication' },
+  });
+  const confirm = screen.getByRole('button', { name: 'Confirm action' });
+  fireEvent.click(confirm);
+  expect(await screen.findByRole('button', { name: /Submitting/ })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: /Submitting/ }));
+  expect(operationsApi.rollbackStream).toHaveBeenCalledTimes(1);
+  resolveMutation({ jobId: 'job-new' });
+  expect(await screen.findByText(/Durable job/)).toBeInTheDocument();
+});
+
+test('keeps an accessible action error open and permits retry', async () => {
+  operationsApi.retryComposition
+    .mockRejectedValueOnce(new Error('Provider unavailable'))
+    .mockResolvedValueOnce({ jobId: 'job-retry' });
+  renderPage();
+  await screen.findByRole('heading', { name: 'Operator jobs' });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  fireEvent.change(screen.getByLabelText('Reason (required)'), {
+    target: { value: 'Retry after provider recovery' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm action' }));
+  expect(await screen.findByText('Provider unavailable')).toHaveAttribute('role', 'alert');
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm action' }));
+  expect(await screen.findByText(/job-retry/)).toBeInTheDocument();
+  expect(operationsApi.retryComposition).toHaveBeenCalledTimes(2);
 });
 
 test('retains a useful error state when diagnostics cannot be loaded', async () => {

@@ -1,6 +1,7 @@
 import { expect, test as base } from '@playwright/test';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
+export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
 
 const gameLogs = [
   {
@@ -652,11 +653,354 @@ export const austinSelectionPayload = {
   },
 };
 
+export const operationsPayload = {
+  cycles: [
+    {
+      cycle_id: 'cycle-e2e-1',
+      season: '2025-26',
+      status: 'attention',
+      cutoff: '2026-04-13T00:00:00Z',
+    },
+  ],
+  streams: [
+    {
+      stream_key: 'traditional_opponent',
+      provider: 'pbp',
+      owner: 'railway',
+      enabled: true,
+      available: true,
+      activation_status: 'active',
+      freshness_rule: 'cutoff_current',
+      publication_id: 'publication-e2e-1',
+      coverage_cutoff: '2026-04-13T00:00:00Z',
+      fence: 3,
+      freshness_status: 'stale',
+      age_seconds: 7200,
+    },
+    {
+      stream_key: 'synergy:l15',
+      provider: 'nba',
+      owner: 'residential_collector',
+      enabled: false,
+      available: false,
+      activation_status: 'unavailable',
+      freshness_rule: 'unavailable',
+      publication_id: null,
+      coverage_cutoff: null,
+      fence: null,
+      freshness_status: 'unavailable',
+      age_seconds: null,
+    },
+    {
+      stream_key: 'play_types',
+      provider: 'nba',
+      owner: 'residential_collector',
+      enabled: false,
+      available: true,
+      activation_status: 'inactive',
+      freshness_rule: 'cutoff_current',
+      publication_id: null,
+      coverage_cutoff: null,
+      fence: null,
+      freshness_status: 'missing',
+      age_seconds: null,
+    },
+  ],
+  collectors: [
+    {
+      identity_id: 'collector-e2e-1',
+      environment: 'production',
+      revoked: false,
+      last_seen_at: '2026-04-13T00:05:00Z',
+      release_version: 'collector-1.2.3',
+      release_checksum: 'a'.repeat(64),
+    },
+    {
+      identity_id: 'collector-e2e-2',
+      environment: 'production',
+      revoked: false,
+      last_seen_at: '2026-04-13T00:04:00Z',
+      release_version: 'collector-1.1.0',
+      release_checksum: 'b'.repeat(64),
+    },
+  ],
+  alerts: [
+    {
+      alert_id: 'alert-e2e-1',
+      severity: 'critical',
+      code: 'cycle_attention',
+      status: 'open',
+    },
+  ],
+  reconciliation: [
+    {
+      item_id: 'reconciliation-e2e-1',
+      season: '2025-26',
+      kind: 'identity',
+      reason: 'identity_unresolved',
+      status: 'open',
+    },
+  ],
+  validation: [
+    {
+      summary_id: 'validation-e2e-1',
+      cycle_id: 'cycle-e2e-1',
+      status: 'attention',
+    },
+  ],
+  usage: [
+    {
+      collector_id: 'collector-e2e-1',
+      poll_count: 85,
+      envelope_count: 7,
+      byte_count: 4096,
+      concurrency_count: 1,
+      limits: {
+        poll_count: 100,
+        envelope_count: 1000,
+        byte_count: 52428800,
+        concurrency_count: 1,
+      },
+      window_started_at: '2026-04-13T00:00:00Z',
+      window_resets_at: '2026-04-14T00:00:00Z',
+      retry_after_seconds: 3600,
+      concurrency_retry_after_seconds: 30,
+    },
+  ],
+  jobs: [
+    {
+      job_id: 'job-e2e-1',
+      action: 'composition.retry',
+      resource: 'composition-e2e-1',
+      status: 'failed',
+      created_at: '2026-04-13T00:00:00Z',
+      completed_at: '2026-04-13T00:02:00Z',
+      error_code: 'provider_unavailable',
+    },
+  ],
+};
+
+const hasExactKeys = (body, required, optional = []) => {
+  const keys = Object.keys(body).sort();
+  const allowed = [...required, ...optional];
+  return (
+    required.every((key) => Object.hasOwn(body, key)) && keys.every((key) => allowed.includes(key))
+  );
+};
+const validReason = (value) => typeof value === 'string' && value.trim().length >= 3;
+const validId = (value) => typeof value === 'string' && /^[A-Za-z0-9._:/-]{1,160}$/.test(value);
+const validSeason = (value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
+const validTimestamp = (value) =>
+  typeof value === 'string' && value.includes('T') && !Number.isNaN(Date.parse(value));
+
+const mutationContract = [
+  {
+    match: /^\/api\/admin\/collection\/seasons\/(\d{4}-\d{2})$/,
+    action: 'season.activate',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, season]) => ({
+      job_id: jobId,
+      season,
+      status: 'active',
+      activated_at: '2026-04-13T00:10:00Z',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/streams\/([^/]+)\/rollback$/,
+    action: 'publication.rollback',
+    valid: (body) =>
+      hasExactKeys(body, ['reason'], ['expected_fence']) &&
+      validReason(body.reason) &&
+      (body.expected_fence === undefined ||
+        (Number.isSafeInteger(body.expected_fence) && body.expected_fence >= 0)),
+    response: (jobId, [, streamKey]) => ({
+      job_id: jobId,
+      publication_id: 'publication-e2e-rollback',
+      stream_key: decodeURIComponent(streamKey),
+      status: 'rollback',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/streams\/([^/]+)\/activate$/,
+    action: 'stream.activate',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, streamKey]) => ({
+      job_id: jobId,
+      stream_key: decodeURIComponent(streamKey),
+      enabled: true,
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/compositions\/([^/]+)\/retry$/,
+    action: 'composition.retry',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, compositionId]) => ({
+      job_id: jobId,
+      composition_job_id: decodeURIComponent(compositionId),
+      status: 'queued',
+      attempts: 2,
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/start$/,
+    action: 'cycle.start',
+    valid: (body) =>
+      hasExactKeys(body, ['manifest_id', 'reason']) &&
+      validId(body.manifest_id) &&
+      validReason(body.reason),
+    response: (jobId) => ({ job_id: jobId, cycle_id: 'cycle-e2e-2', status: 'collecting' }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/repair$/,
+    action: 'scoped_repair.start',
+    valid: (body) =>
+      hasExactKeys(body, ['stream_key', 'season', 'cutoff', 'reason']) &&
+      validId(body.stream_key) &&
+      validSeason(body.season) &&
+      validTimestamp(body.cutoff) &&
+      validReason(body.reason),
+    response: (jobId) => ({
+      job_id: jobId,
+      composition_job_id: 'composition-e2e-repair',
+      status: 'queued',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/([^/]+)\/finish$/,
+    action: 'cycle.finish',
+    valid: (body) =>
+      hasExactKeys(body, ['status', 'reason']) &&
+      ['complete', 'no_game', 'failed'].includes(body.status) &&
+      validReason(body.reason),
+    response: (jobId, [, cycleId]) => ({
+      job_id: jobId,
+      cycle_id: decodeURIComponent(cycleId),
+      status: 'complete',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/cycles\/([^/]+)\/not-applicable$/,
+    action: 'cycle.not_applicable',
+    valid: (body) =>
+      hasExactKeys(body, ['stream_key', 'reason']) &&
+      validId(body.stream_key) &&
+      validReason(body.reason),
+    response: (jobId, [, cycleId]) => ({
+      job_id: jobId,
+      cycle_id: decodeURIComponent(cycleId),
+      stream_key: 'e2e-stream',
+      status: 'governed',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/bootstrap$/,
+    action: 'bootstrap.start',
+    valid: (body) =>
+      hasExactKeys(body, ['season', 'catalog_type', 'cutoff', 'reason']) &&
+      validSeason(body.season) &&
+      validId(body.catalog_type) &&
+      validTimestamp(body.cutoff) &&
+      validReason(body.reason),
+    response: (jobId) => ({ job_id: jobId, request_id: 'request-e2e-1', status: 'pending' }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/collectors\/([^/]+)\/revoke$/,
+    action: 'collector.revoke',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, identityId]) => ({
+      job_id: jobId,
+      identity_id: decodeURIComponent(identityId),
+      status: 'revoked',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/collectors\/([^/]+)\/rotate$/,
+    action: 'collector.rotate',
+    valid: (body) =>
+      hasExactKeys(body, ['reason'], ['overlap_seconds']) &&
+      validReason(body.reason) &&
+      (body.overlap_seconds === undefined ||
+        (Number.isSafeInteger(body.overlap_seconds) && body.overlap_seconds >= 0)),
+    response: (jobId, [, identityId]) => ({
+      job_id: jobId,
+      identity_id: decodeURIComponent(identityId),
+      status: 'rotated',
+    }),
+  },
+  {
+    match: /^\/api\/admin\/collection\/reconciliation\/([^/]+)\/resolve$/,
+    action: 'reconciliation.resolve',
+    valid: (body) => hasExactKeys(body, ['reason']) && validReason(body.reason),
+    response: (jobId, [, itemId]) => ({
+      job_id: jobId,
+      item_id: decodeURIComponent(itemId),
+      status: 'resolved',
+    }),
+  },
+];
+
 export const installApiContract = async (page, overrides = {}) => {
+  const operationsJobs = [...operationsPayload.jobs];
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const override = overrides[url.pathname];
+
+    if (url.pathname === '/api/admin/collection/diagnostics' && request.method() === 'GET') {
+      await route.fulfill({ json: { ...operationsPayload, jobs: operationsJobs } });
+      return;
+    }
+
+    if (url.pathname === '/api/admin/collection/reconciliation' && request.method() === 'GET') {
+      await route.fulfill({ json: { items: operationsPayload.reconciliation } });
+      return;
+    }
+
+    if (url.pathname.startsWith('/api/admin/collection/') && request.method() === 'POST') {
+      const matchedContract = mutationContract
+        .map((contract) => ({ contract, match: url.pathname.match(contract.match) }))
+        .find(({ match }) => match);
+      if (!matchedContract) {
+        await route.fulfill({ status: 501, json: { error: 'Undocumented operator mutation.' } });
+        return;
+      }
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({ status: 401, json: { error: 'Missing E2E bearer token.' } });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      if (!body || !matchedContract.contract.valid(body)) {
+        await route.fulfill({ status: 400, json: { error: 'Invalid operator mutation body.' } });
+        return;
+      }
+
+      if (override) {
+        const response = typeof override === 'function' ? await override(request) : override;
+        await route.fulfill({ status: response.status || 200, json: response.body ?? response });
+        return;
+      }
+
+      const job = {
+        job_id: `job-e2e-${operationsJobs.length + 1}`,
+        action: matchedContract.contract.action,
+        resource: decodeURIComponent(matchedContract.match[1] || 'e2e-resource'),
+        status: 'queued',
+        created_at: '2026-04-13T00:10:00Z',
+        completed_at: null,
+        error_code: null,
+      };
+      operationsJobs.unshift(job);
+      await route.fulfill({
+        status: 202,
+        json: matchedContract.contract.response(job.job_id, matchedContract.match, body),
+      });
+      return;
+    }
 
     if (override) {
       const response = typeof override === 'function' ? await override(request) : override;
@@ -751,6 +1095,17 @@ export const test = base.extend({
     await page.addInitScript((storageKey) => {
       window.localStorage.setItem(storageKey, 'true');
     }, E2E_AUTH_STORAGE_KEY);
+    await installApiContract(page);
+    await run(page);
+  },
+  adminPage: async ({ page }, run) => {
+    await page.addInitScript(
+      ({ authKey, adminKey }) => {
+        window.localStorage.setItem(authKey, 'true');
+        window.localStorage.setItem(adminKey, 'true');
+      },
+      { authKey: E2E_AUTH_STORAGE_KEY, adminKey: E2E_ADMIN_STORAGE_KEY },
+    );
     await installApiContract(page);
     await run(page);
   },

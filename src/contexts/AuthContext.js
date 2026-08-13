@@ -1,11 +1,19 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { signInWithPopup, signOut, onAuthStateChanged, getIdToken } from 'firebase/auth';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import {
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  onIdTokenChanged,
+  getIdToken,
+  getIdTokenResult,
+} from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
 
 // Create the Auth Context
 const AuthContext = createContext();
 
 const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
+export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
 const isE2EMode =
   process.env.NODE_ENV !== 'production' && process.env.REACT_APP_E2E_MODE === 'true';
 const e2eUser = {
@@ -19,6 +27,14 @@ const getInitialUser = () => {
   return window.localStorage.getItem(E2E_AUTH_STORAGE_KEY) === 'true' ? e2eUser : null;
 };
 
+const hasAdminClaim = (claims = {}) =>
+  claims.admin === true || claims.role === 'admin' || claims.roles?.includes?.('admin');
+
+const getE2EAdmin = () =>
+  isE2EMode && typeof window !== 'undefined'
+    ? window.localStorage.getItem(E2E_ADMIN_STORAGE_KEY) === 'true'
+    : false;
+
 // Custom hook to use the Auth Context
 export function useAuth() {
   const context = useContext(AuthContext);
@@ -29,22 +45,85 @@ export function useAuth() {
 }
 
 // AuthProvider component
-export function AuthProvider({ children }) {
+export function AuthProvider({ children, authClient = auth, authProvider = googleProvider }) {
   const [currentUser, setCurrentUser] = useState(getInitialUser);
+  const currentUserRef = useRef(getInitialUser());
   const [loading, setLoading] = useState(!isE2EMode);
   const [error, setError] = useState(null);
+  const [adminState, setAdminState] = useState(() => ({
+    loading: !isE2EMode,
+    isAdmin: getE2EAdmin(),
+    status: isE2EMode ? (getE2EAdmin() ? 'authorized' : 'forbidden') : 'unknown',
+    error: null,
+  }));
+
+  const refreshAdminClaims = useCallback(
+    async (user = currentUserRef.current, forceRefresh = false) => {
+      if (!user) {
+        setAdminState({ loading: false, isAdmin: false, status: 'signed_out', error: null });
+        return false;
+      }
+
+      if (isE2EMode) {
+        const isAdmin = getE2EAdmin();
+        setAdminState({
+          loading: false,
+          isAdmin,
+          status: isAdmin ? 'authorized' : 'forbidden',
+          error: null,
+        });
+        return isAdmin;
+      }
+
+      if (!authClient || typeof getIdTokenResult !== 'function') {
+        const configurationError = 'Firebase authentication is not configured for admin access.';
+        setAdminState({
+          loading: false,
+          isAdmin: false,
+          status: 'configuration_error',
+          error: configurationError,
+        });
+        return false;
+      }
+
+      setAdminState((previous) => ({ ...previous, loading: true, error: null }));
+      try {
+        const tokenResult = await getIdTokenResult(user, forceRefresh);
+        const isAdmin = hasAdminClaim(tokenResult?.claims);
+        setAdminState({
+          loading: false,
+          isAdmin,
+          status: isAdmin ? 'authorized' : 'forbidden',
+          error: null,
+        });
+        return isAdmin;
+      } catch (claimError) {
+        const message = claimError?.message || 'Unable to verify administrator permissions.';
+        setAdminState({
+          loading: false,
+          isAdmin: false,
+          status: 'configuration_error',
+          error: message,
+        });
+        return false;
+      }
+    },
+    [authClient],
+  );
 
   // Sign in with Google
   const signInWithGoogle = async () => {
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
+        currentUserRef.current = e2eUser;
         setCurrentUser(e2eUser);
+        await refreshAdminClaims(e2eUser);
         setError(null);
         return e2eUser;
       }
 
-      if (!auth || !googleProvider) {
+      if (!authClient || !authProvider) {
         const configurationError = new Error('Firebase authentication is not configured.');
         setError(configurationError.message);
         throw configurationError;
@@ -52,7 +131,7 @@ export function AuthProvider({ children }) {
 
       setError(null);
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(authClient, authProvider);
       return result.user;
     } catch (error) {
       console.error('Google sign-in error:', error);
@@ -69,11 +148,14 @@ export function AuthProvider({ children }) {
       setError(null);
       if (isE2EMode) {
         window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
+        window.localStorage.removeItem(E2E_ADMIN_STORAGE_KEY);
+        currentUserRef.current = null;
         setCurrentUser(null);
+        setAdminState({ loading: false, isAdmin: false, status: 'signed_out', error: null });
         return;
       }
-      if (!auth) return;
-      await signOut(auth);
+      if (!authClient) return;
+      await signOut(authClient);
     } catch (error) {
       console.error('Sign-out error:', error);
       setError(error.message);
@@ -100,32 +182,50 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (isE2EMode) {
       setLoading(false);
+      refreshAdminClaims(getInitialUser());
       return undefined;
     }
 
-    if (!auth) {
+    if (!authClient) {
       setCurrentUser(null);
+      currentUserRef.current = null;
       setLoading(false);
+      setAdminState({
+        loading: false,
+        isAdmin: false,
+        status: 'configuration_error',
+        error: 'Firebase authentication is not configured for admin access.',
+      });
       return undefined;
     }
 
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
+    const authStateListener =
+      typeof onIdTokenChanged === 'function' ? onIdTokenChanged : onAuthStateChanged;
+    const unsubscribe = authStateListener(
+      authClient,
+      async (user) => {
+        currentUserRef.current = user;
         setCurrentUser(user);
         setLoading(false);
         setError(null);
+        await refreshAdminClaims(user);
       },
       (authError) => {
         console.error('Authentication state error:', authError);
         setCurrentUser(null);
         setLoading(false);
+        setAdminState({
+          loading: false,
+          isAdmin: false,
+          status: 'configuration_error',
+          error: authError.message || 'Unable to verify administrator permissions.',
+        });
         setError(authError.message || 'Unable to determine authentication state.');
       },
     );
 
     return unsubscribe;
-  }, []);
+  }, [authClient, refreshAdminClaims]);
 
   const value = {
     currentUser,
@@ -135,6 +235,11 @@ export function AuthProvider({ children }) {
     logout,
     getToken,
     isAuthenticated: !!currentUser,
+    isAdmin: adminState.isAdmin,
+    adminLoading: adminState.loading,
+    adminStatus: adminState.status,
+    adminError: adminState.error,
+    refreshAdminClaims,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

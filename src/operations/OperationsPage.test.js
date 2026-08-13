@@ -147,7 +147,13 @@ test('shows unsupported diagnostic dimensions as unavailable instead of inferrin
   renderPage();
   await screen.findByRole('heading', { name: 'Publication streams' });
   expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(3);
-  expect(screen.getAllByText('Current freshness is not reported by diagnostics.')).toHaveLength(2);
+  expect(screen.getByText('Current freshness is not reported by diagnostics.')).toBeInTheDocument();
+  expect(
+    screen.getByText('Unsupported provider window; this stream cannot be activated.'),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Activate unsupported_stream' }),
+  ).not.toBeInTheDocument();
   expect(screen.getByText(/Offline: no last-seen heartbeat/)).toBeInTheDocument();
   expect(screen.getByText('Not reported by diagnostics')).toBeInTheDocument();
   expect(screen.getAllByText('Limit not reported')).toHaveLength(3);

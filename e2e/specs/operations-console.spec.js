@@ -28,6 +28,10 @@ test('@critical admin can inspect collection health and confirm an audited repai
   await expect(
     page.getByText('Current freshness is not reported by diagnostics.').first(),
   ).toBeVisible();
+  await expect(
+    page.getByText('Unsupported provider window; this stream cannot be activated.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Activate synergy:l15' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Repair traditional_opponent' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -59,10 +63,10 @@ test('@critical admin confirms activation and rollback with exact audited contra
 }) => {
   await page.goto('/operations');
 
-  await page.getByRole('button', { name: 'Activate synergy:l15' }).click();
+  await page.getByRole('button', { name: 'Activate play_types' }).click();
   await page.getByLabel('Reason (required)').fill('Enable governed provider stream');
   const activateRequestPromise = page.waitForRequest((request) =>
-    request.url().endsWith('/api/admin/collection/streams/synergy%3Al15/activate'),
+    request.url().endsWith('/api/admin/collection/streams/play_types/activate'),
   );
   await page.getByRole('button', { name: 'Confirm action' }).click();
   const activateRequest = await activateRequestPromise;

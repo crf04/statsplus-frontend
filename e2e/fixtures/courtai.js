@@ -677,6 +677,13 @@ export const operationsPayload = {
       enabled: false,
       freshness_rule: 'unavailable',
     },
+    {
+      stream_key: 'play_types',
+      provider: 'nba',
+      owner: 'residential_collector',
+      enabled: false,
+      freshness_rule: 'cutoff_current',
+    },
   ],
   collectors: [
     {

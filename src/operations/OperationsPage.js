@@ -335,11 +335,15 @@ function StreamsSection({ streams, beginAction, disabled }) {
                   </td>
                   <td>
                     <span className="status-neutral">Unavailable</span>
-                    <small>Current freshness is not reported by diagnostics.</small>
+                    <small>
+                      {stream.freshnessRule === 'unavailable'
+                        ? 'Unsupported provider window; this stream cannot be activated.'
+                        : 'Current freshness is not reported by diagnostics.'}
+                    </small>
                   </td>
                   <td>{stream.enabled ? 'Enabled' : 'Inactive'}</td>
                   <td className="operations-actions">
-                    {!stream.enabled && (
+                    {!stream.enabled && stream.freshnessRule !== 'unavailable' && (
                       <button
                         type="button"
                         className="operations-button operations-button-small"

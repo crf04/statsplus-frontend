@@ -1,6 +1,7 @@
 import { expect, test as base } from '@playwright/test';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
+export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
 
 const gameLogs = [
   {
@@ -652,7 +653,101 @@ export const austinSelectionPayload = {
   },
 };
 
+export const operationsPayload = {
+  cycles: [
+    {
+      cycle_id: 'cycle-e2e-1',
+      season: '2025-26',
+      status: 'attention',
+      cutoff: '2026-04-13T00:00:00Z',
+      manifest_id: 'manifest-e2e-1',
+      completed_game_count: 1230,
+      attention_reason: 'cycle_window_expired',
+    },
+  ],
+  streams: [
+    {
+      stream_key: 'traditional_opponent',
+      provider: 'pbp',
+      owner: 'railway',
+      enabled: true,
+      freshness_rule: 'cutoff_current',
+      freshness_status: 'stale',
+      last_published_at: '2026-04-12T23:00:00Z',
+      active_publication_id: 'publication-e2e-1',
+      fence: 3,
+    },
+    {
+      stream_key: 'synergy:l15',
+      provider: 'nba',
+      owner: 'residential_collector',
+      enabled: false,
+      freshness_rule: 'unavailable',
+      freshness_status: 'unavailable',
+      unavailable_reason: 'provider_window_unsupported',
+    },
+  ],
+  collectors: [
+    {
+      identity_id: 'collector-e2e-1',
+      label: 'Residential NBA collector',
+      environment: 'production',
+      owner: 'residential_collector',
+      revoked: false,
+      last_seen_at: '2026-04-13T00:05:00Z',
+      release_version: '2026.04.13',
+    },
+  ],
+  alerts: [
+    {
+      alert_id: 'alert-e2e-1',
+      cycle_id: 'cycle-e2e-1',
+      severity: 'critical',
+      code: 'cycle_attention',
+      status: 'open',
+    },
+  ],
+  reconciliation: [
+    {
+      item_id: 'reconciliation-e2e-1',
+      season: '2025-26',
+      kind: 'identity',
+      reason: 'identity_unresolved',
+      status: 'open',
+    },
+  ],
+  validation: [
+    {
+      summary_id: 'validation-e2e-1',
+      cycle_id: 'cycle-e2e-1',
+      status: 'attention',
+      counts: { missing_streams: ['traditional_opponent'] },
+    },
+  ],
+  usage: [
+    {
+      collector_id: 'collector-e2e-1',
+      poll_count: 4,
+      envelope_count: 7,
+      byte_count: 4096,
+      limits: { max_polls: 100, max_envelopes: 1000, max_bytes: 52428800 },
+    },
+  ],
+  jobs: [
+    {
+      job_id: 'job-e2e-1',
+      action: 'composition.retry',
+      resource: 'composition-e2e-1',
+      status: 'failed',
+      created_at: '2026-04-13T00:00:00Z',
+      completed_at: '2026-04-13T00:02:00Z',
+      error_code: 'provider_unavailable',
+    },
+  ],
+};
+
 export const installApiContract = async (page, overrides = {}) => {
+  const operationsJobs = [...operationsPayload.jobs];
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -661,6 +756,49 @@ export const installApiContract = async (page, overrides = {}) => {
     if (override) {
       const response = typeof override === 'function' ? await override(request) : override;
       await route.fulfill({ status: response.status || 200, json: response.body ?? response });
+      return;
+    }
+
+    if (url.pathname === '/api/admin/collection/diagnostics' && request.method() === 'GET') {
+      await route.fulfill({ json: { ...operationsPayload, jobs: operationsJobs } });
+      return;
+    }
+
+    if (url.pathname === '/api/admin/collection/reconciliation' && request.method() === 'GET') {
+      await route.fulfill({ json: { items: operationsPayload.reconciliation } });
+      return;
+    }
+
+    if (url.pathname.startsWith('/api/admin/collection/') && request.method() === 'POST') {
+      const path = url.pathname;
+      const action = path.includes('/retry')
+        ? 'composition.retry'
+        : path.includes('/rollback')
+          ? 'publication.rollback'
+          : path.includes('/activate')
+            ? 'stream.activate'
+            : path.includes('/repair')
+              ? 'scoped_repair.start'
+              : path.includes('/finish')
+                ? 'cycle.finish'
+                : path.includes('/revoke')
+                  ? 'collector.revoke'
+                  : path.includes('/rotate')
+                    ? 'collector.rotate'
+                    : path.includes('/resolve')
+                      ? 'reconciliation.resolve'
+                      : 'cycle.start';
+      const job = {
+        job_id: `job-e2e-${operationsJobs.length + 1}`,
+        action,
+        resource: 'e2e-resource',
+        status: 'queued',
+        created_at: '2026-04-13T00:10:00Z',
+        completed_at: null,
+        error_code: null,
+      };
+      operationsJobs.unshift(job);
+      await route.fulfill({ status: 202, json: { job_id: job.job_id, status: job.status } });
       return;
     }
 
@@ -751,6 +889,17 @@ export const test = base.extend({
     await page.addInitScript((storageKey) => {
       window.localStorage.setItem(storageKey, 'true');
     }, E2E_AUTH_STORAGE_KEY);
+    await installApiContract(page);
+    await run(page);
+  },
+  adminPage: async ({ page }, run) => {
+    await page.addInitScript(
+      ({ authKey, adminKey }) => {
+        window.localStorage.setItem(authKey, 'true');
+        window.localStorage.setItem(adminKey, 'true');
+      },
+      { authKey: E2E_AUTH_STORAGE_KEY, adminKey: E2E_ADMIN_STORAGE_KEY },
+    );
     await installApiContract(page);
     await run(page);
   },

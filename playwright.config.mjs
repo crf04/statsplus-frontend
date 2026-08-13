@@ -37,7 +37,10 @@ export default defineConfig({
   webServer: externalBaseUrl
     ? undefined
     : {
-        command: 'REACT_APP_E2E_MODE=true npm start -- --host 127.0.0.1 --port 4173 --strictPort',
+        // Keep the hermetic auth adapter cross-platform. The previous inline
+        // POSIX assignment is not understood by Windows PowerShell/cmd.
+        command: 'npm start -- --host 127.0.0.1 --port 4173 --strictPort',
+        env: { ...process.env, REACT_APP_E2E_MODE: 'true' },
         url: 'http://127.0.0.1:4173',
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

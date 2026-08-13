@@ -15,7 +15,14 @@ const diagnostics = {
       provider: 'pbp',
       owner: 'railway',
       enabled: true,
+      available: true,
+      activation_status: 'active',
       freshness_rule: 'cutoff_current',
+      publication_id: 'publication-1',
+      coverage_cutoff: '2026-04-13T00:00:00Z',
+      fence: 2,
+      freshness_status: 'fresh',
+      age_seconds: 300,
     },
   ],
   collectors: [
@@ -24,6 +31,8 @@ const diagnostics = {
       environment: 'production',
       revoked: false,
       last_seen_at: '2026-04-13T00:05:00Z',
+      release_version: 'collector-1.2.3',
+      release_checksum: 'a'.repeat(64),
     },
   ],
   alerts: [{ alert_id: 'alert-1', severity: 'critical', code: 'cycle_attention', status: 'open' }],
@@ -37,7 +46,20 @@ const diagnostics = {
     },
   ],
   validation: [{ summary_id: 'summary-1', cycle_id: 'cycle-1', status: 'attention' }],
-  usage: [{ collector_id: 'collector-1', poll_count: 1, envelope_count: 2, byte_count: 128 }],
+  usage: [
+    {
+      collector_id: 'collector-1',
+      poll_count: 1,
+      envelope_count: 2,
+      byte_count: 128,
+      concurrency_count: 1,
+      limits: { poll_count: 100, envelope_count: 1000, byte_count: 52428800, concurrency_count: 1 },
+      window_started_at: '2026-04-13T00:00:00Z',
+      window_resets_at: '2026-04-14T00:00:00Z',
+      retry_after_seconds: 86400,
+      concurrency_retry_after_seconds: 30,
+    },
+  ],
   jobs: [
     {
       job_id: 'job-1',
@@ -55,7 +77,8 @@ test('decodes the bounded diagnostics contract into safe UI fields', () => {
   expect(decodeOperationsDiagnostics(diagnostics)).toMatchObject({
     cycles: [{ cycleId: 'cycle-1', status: 'attention' }],
     streams: [{ streamKey: 'player_game_logs', enabled: true }],
-    collectors: [{ identityId: 'collector-1', lastSeenAt: '2026-04-13T00:05:00.000Z' }],
+    collectors: [{ identityId: 'collector-1', releaseVersion: 'collector-1.2.3' }],
+    usage: [{ limits: { pollCount: 100 }, concurrencyRetryAfterSeconds: 30 }],
     jobs: [{ action: 'composition.retry', status: 'queued' }],
   });
 });
@@ -73,7 +96,49 @@ test.each([
     'invalid checksum',
     () => ({
       ...diagnostics,
-      streams: [{ ...diagnostics.streams[0], checksum: 'not-a-checksum' }],
+      collectors: [{ ...diagnostics.collectors[0], release_checksum: 'not-a-checksum' }],
+    }),
+  ],
+  [
+    'unknown freshness state',
+    () => ({
+      ...diagnostics,
+      streams: [{ ...diagnostics.streams[0], freshness_status: 'delayed' }],
+    }),
+  ],
+  [
+    'inconsistent unavailable stream',
+    () => ({
+      ...diagnostics,
+      streams: [{ ...diagnostics.streams[0], available: false, activation_status: 'active' }],
+    }),
+  ],
+  [
+    'count above reported limit',
+    () => ({
+      ...diagnostics,
+      usage: [{ ...diagnostics.usage[0], poll_count: 101 }],
+    }),
+  ],
+  [
+    'malformed usage window timestamp',
+    () => ({
+      ...diagnostics,
+      usage: [{ ...diagnostics.usage[0], window_resets_at: 'next-day' }],
+    }),
+  ],
+  [
+    'negative retry timing',
+    () => ({
+      ...diagnostics,
+      usage: [{ ...diagnostics.usage[0], retry_after_seconds: -1 }],
+    }),
+  ],
+  [
+    'unsafe release version',
+    () => ({
+      ...diagnostics,
+      collectors: [{ ...diagnostics.collectors[0], release_version: '../../credential' }],
     }),
   ],
   [

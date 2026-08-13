@@ -58,14 +58,56 @@ const payload = {
       provider: 'pbp',
       owner: 'railway',
       enabled: true,
+      available: true,
+      activationStatus: 'active',
       freshnessRule: 'cutoff_current',
+      publicationId: 'publication-1',
+      coverageCutoff: '2026-04-13T00:00:00.000Z',
+      fence: 2,
+      freshnessStatus: 'stale',
+      ageSeconds: 7200,
     },
     {
       streamKey: 'unsupported_stream',
       provider: 'nba',
       owner: 'collector',
       enabled: false,
+      available: false,
+      activationStatus: 'unavailable',
       freshnessRule: 'unavailable',
+      publicationId: null,
+      coverageCutoff: null,
+      fence: null,
+      freshnessStatus: 'unavailable',
+      ageSeconds: null,
+    },
+    {
+      streamKey: 'missing_stream',
+      provider: 'nba',
+      owner: 'collector',
+      enabled: false,
+      available: true,
+      activationStatus: 'inactive',
+      freshnessRule: 'daily_recheck',
+      publicationId: null,
+      coverageCutoff: null,
+      fence: null,
+      freshnessStatus: 'missing',
+      ageSeconds: null,
+    },
+    {
+      streamKey: 'fresh_stream',
+      provider: 'nba',
+      owner: 'collector',
+      enabled: true,
+      available: true,
+      activationStatus: 'active',
+      freshnessRule: 'daily_recheck',
+      publicationId: 'publication-fresh',
+      coverageCutoff: '2026-04-13T00:00:00.000Z',
+      fence: 1,
+      freshnessStatus: 'fresh',
+      ageSeconds: 30,
     },
   ],
   collectors: [
@@ -74,6 +116,16 @@ const payload = {
       environment: 'production',
       revoked: false,
       lastSeenAt: null,
+      releaseVersion: 'collector-1.2.3',
+      releaseChecksum: 'a'.repeat(64),
+    },
+    {
+      identityId: 'collector-new',
+      environment: 'production',
+      revoked: false,
+      lastSeenAt: '2026-04-13T00:05:00.000Z',
+      releaseVersion: 'collector-1.3.0',
+      releaseChecksum: 'b'.repeat(64),
     },
   ],
   alerts: [{ alertId: 'alert-1', severity: 'critical', code: 'cycle_attention', status: 'open' }],
@@ -87,7 +139,20 @@ const payload = {
     },
   ],
   validation: [{ summaryId: 'summary-1', cycleId: 'cycle-attention', status: 'failed' }],
-  usage: [{ collectorId: 'collector-offline', pollCount: 4, envelopeCount: 7, byteCount: 4096 }],
+  usage: [
+    {
+      collectorId: 'collector-offline',
+      pollCount: 85,
+      envelopeCount: 7,
+      byteCount: 4096,
+      concurrencyCount: 1,
+      limits: { pollCount: 100, envelopeCount: 1000, byteCount: 52428800, concurrencyCount: 1 },
+      windowStartedAt: '2026-04-13T00:00:00.000Z',
+      windowResetsAt: '2026-04-14T00:00:00.000Z',
+      retryAfterSeconds: 3600,
+      concurrencyRetryAfterSeconds: 30,
+    },
+  ],
   jobs: ['queued', 'running', 'succeeded', 'failed'].map((status) => ({
     jobId: `job-${status}`,
     action: 'composition.retry',
@@ -143,11 +208,13 @@ test('renders healthy, degraded, attention, superseded, and durable job states',
   }
 });
 
-test('shows unsupported diagnostic dimensions as unavailable instead of inferring them', async () => {
+test('shows stale, unsupported, release, usage threshold, and retry evidence', async () => {
   renderPage();
   await screen.findByRole('heading', { name: 'Publication streams' });
-  expect(screen.getAllByText('Unavailable').length).toBeGreaterThanOrEqual(3);
-  expect(screen.getByText('Current freshness is not reported by diagnostics.')).toBeInTheDocument();
+  expect(screen.getByText('Stale')).toBeInTheDocument();
+  expect(screen.getByText('Fresh')).toBeInTheDocument();
+  expect(screen.getByText('Missing')).toBeInTheDocument();
+  expect(screen.getByText('No active publication has been recorded.')).toBeInTheDocument();
   expect(
     screen.getByText('Unsupported provider window; this stream cannot be activated.'),
   ).toBeInTheDocument();
@@ -155,9 +222,11 @@ test('shows unsupported diagnostic dimensions as unavailable instead of inferrin
     screen.queryByRole('button', { name: 'Activate unsupported_stream' }),
   ).not.toBeInTheDocument();
   expect(screen.getByText(/Offline: no last-seen heartbeat/)).toBeInTheDocument();
-  expect(screen.getByText('Not reported by diagnostics')).toBeInTheDocument();
-  expect(screen.getAllByText('Limit not reported')).toHaveLength(3);
-  expect(screen.queryByText(/version mismatch/i)).not.toBeInTheDocument();
+  expect(screen.getByText('collector-1.2.3')).toBeInTheDocument();
+  expect(screen.getByText(/Usage threshold/)).toBeInTheDocument();
+  expect(screen.getByText(/Counter retry in 1h/)).toBeInTheDocument();
+  expect(screen.getByText(/Concurrency retry in 30s/)).toBeInTheDocument();
+  expect(screen.getByText(/Version mismatch/)).toBeInTheDocument();
 });
 
 test('requires a reason and confirmation before scheduling scoped repair', async () => {

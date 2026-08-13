@@ -20,6 +20,9 @@ const ALERT_SEVERITIES = new Set(['warning', 'critical']);
 const ALERT_STATUSES = new Set(['open', 'resolved']);
 const VALIDATION_STATUSES = new Set(['passed', 'failed', 'attention']);
 const RECONCILIATION_STATUSES = new Set(['open', 'resolved']);
+const STREAM_ACTIVATION_STATUSES = new Set(['active', 'inactive', 'unavailable']);
+const STREAM_FRESHNESS_STATUSES = new Set(['fresh', 'stale', 'missing', 'unavailable']);
+const MAX_DIAGNOSTIC_INTEGER = 2_147_483_647;
 const KNOWN_JOB_ACTIONS = new Set([
   'season.activate',
   'publication.rollback',
@@ -101,6 +104,12 @@ const decodeSeason = (value) =>
 const decodeCode = (value, detail) =>
   requireString(value, detail, { pattern: /^[a-z0-9][a-z0-9_.:-]{0,63}$/ });
 
+const decodeNullableIdentifier = (value, detail) =>
+  value === null ? null : decodeIdentifier(value, detail);
+
+const decodeNullableInteger = (value, detail) =>
+  value === null ? null : requireInteger(value, detail, { max: MAX_DIAGNOSTIC_INTEGER });
+
 const decodeCycle = (value) => {
   assertKeys(
     value,
@@ -124,26 +133,109 @@ const decodeCycle = (value) => {
 const decodeStream = (value) => {
   assertKeys(
     value,
-    ['stream_key', 'provider', 'owner', 'enabled', 'freshness_rule'],
-    ['stream_key', 'provider', 'owner', 'enabled', 'freshness_rule'],
+    [
+      'stream_key',
+      'provider',
+      'owner',
+      'enabled',
+      'available',
+      'activation_status',
+      'freshness_rule',
+      'publication_id',
+      'coverage_cutoff',
+      'fence',
+      'freshness_status',
+      'age_seconds',
+    ],
+    [
+      'stream_key',
+      'provider',
+      'owner',
+      'enabled',
+      'available',
+      'activation_status',
+      'freshness_rule',
+      'publication_id',
+      'coverage_cutoff',
+      'fence',
+      'freshness_status',
+      'age_seconds',
+    ],
     'The operations API returned an invalid publication stream.',
   );
-  return {
+  if (!STREAM_ACTIVATION_STATUSES.has(value.activation_status))
+    fail('The publication activation status is invalid.');
+  if (!STREAM_FRESHNESS_STATUSES.has(value.freshness_status))
+    fail('The publication freshness status is invalid.');
+  const decoded = {
     streamKey: decodeIdentifier(value.stream_key, 'The publication stream identifier is invalid.'),
     provider: decodeIdentifier(value.provider, 'The publication provider is invalid.'),
     owner: decodeIdentifier(value.owner, 'The publication owner is invalid.'),
     enabled: requireBoolean(value.enabled, 'The publication enabled flag is invalid.'),
+    available: requireBoolean(value.available, 'The publication availability flag is invalid.'),
+    activationStatus: value.activation_status,
     freshnessRule: decodeCode(value.freshness_rule, 'The stream freshness rule is invalid.'),
+    publicationId: decodeNullableIdentifier(
+      value.publication_id,
+      'The publication identifier is invalid.',
+    ),
+    coverageCutoff:
+      value.coverage_cutoff === null
+        ? null
+        : decodeTimestamp(value.coverage_cutoff, 'The publication coverage cutoff is invalid.'),
+    fence: decodeNullableInteger(value.fence, 'The publication fence is invalid.'),
+    freshnessStatus: value.freshness_status,
+    ageSeconds: decodeNullableInteger(value.age_seconds, 'The publication age is invalid.'),
   };
+  if (
+    (!decoded.available &&
+      (decoded.enabled ||
+        decoded.activationStatus !== 'unavailable' ||
+        decoded.freshnessStatus !== 'unavailable' ||
+        decoded.publicationId !== null ||
+        decoded.coverageCutoff !== null ||
+        decoded.fence !== null ||
+        decoded.ageSeconds !== null)) ||
+    (decoded.available &&
+      (decoded.activationStatus !== (decoded.enabled ? 'active' : 'inactive') ||
+        decoded.freshnessStatus === 'unavailable')) ||
+    (decoded.freshnessStatus === 'missing' &&
+      (decoded.publicationId !== null ||
+        decoded.coverageCutoff !== null ||
+        decoded.ageSeconds !== null)) ||
+    (['fresh', 'stale'].includes(decoded.freshnessStatus) &&
+      (decoded.publicationId === null ||
+        decoded.coverageCutoff === null ||
+        decoded.fence === null ||
+        decoded.ageSeconds === null))
+  )
+    fail('The publication diagnostic state is invalid or inconsistent.');
+  return decoded;
 };
 
 const decodeCollector = (value) => {
   assertKeys(
     value,
-    ['identity_id', 'environment', 'revoked', 'last_seen_at'],
-    ['identity_id', 'environment', 'revoked', 'last_seen_at'],
+    [
+      'identity_id',
+      'environment',
+      'revoked',
+      'last_seen_at',
+      'release_version',
+      'release_checksum',
+    ],
+    [
+      'identity_id',
+      'environment',
+      'revoked',
+      'last_seen_at',
+      'release_version',
+      'release_checksum',
+    ],
     'The operations API returned an invalid collector.',
   );
+  if ((value.release_version === null) !== (value.release_checksum === null))
+    fail('The collector release evidence is incomplete.');
   return {
     identityId: decodeIdentifier(value.identity_id, 'The collector identity is invalid.'),
     environment: decodeIdentifier(value.environment, 'The collector environment is invalid.'),
@@ -153,6 +245,18 @@ const decodeCollector = (value) => {
       'The collector last-seen timestamp is invalid.',
       { nullable: true },
     ),
+    releaseVersion:
+      value.release_version === null
+        ? null
+        : requireString(value.release_version, 'The collector release version is invalid.', {
+            pattern: /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/,
+          }),
+    releaseChecksum:
+      value.release_checksum === null
+        ? null
+        : requireString(value.release_checksum, 'The collector release checksum is invalid.', {
+            pattern: /^[0-9a-f]{64}$/,
+          }),
   };
 };
 
@@ -208,23 +312,91 @@ const decodeValidation = (value) => {
 const decodeUsage = (value) => {
   assertKeys(
     value,
-    ['collector_id', 'poll_count', 'envelope_count', 'byte_count'],
-    ['collector_id', 'poll_count', 'envelope_count', 'byte_count'],
+    [
+      'collector_id',
+      'poll_count',
+      'envelope_count',
+      'byte_count',
+      'concurrency_count',
+      'limits',
+      'window_started_at',
+      'window_resets_at',
+      'retry_after_seconds',
+      'concurrency_retry_after_seconds',
+    ],
+    [
+      'collector_id',
+      'poll_count',
+      'envelope_count',
+      'byte_count',
+      'concurrency_count',
+      'limits',
+      'window_started_at',
+      'window_resets_at',
+      'retry_after_seconds',
+      'concurrency_retry_after_seconds',
+    ],
     'The operations API returned invalid collector usage.',
   );
-  const pollCount = requireInteger(value.poll_count, 'The poll count is invalid.');
-  const envelopeCount = requireInteger(value.envelope_count, 'The envelope count is invalid.', {
-    max: Number.MAX_SAFE_INTEGER,
-  });
-  const byteCount = requireInteger(value.byte_count, 'The byte count is invalid.', {
-    max: Number.MAX_SAFE_INTEGER,
-  });
-  return {
-    collectorId: decodeIdentifier(value.collector_id, 'The usage collector identifier is invalid.'),
-    pollCount,
-    envelopeCount,
-    byteCount,
+  assertKeys(
+    value.limits,
+    ['poll_count', 'envelope_count', 'byte_count', 'concurrency_count'],
+    ['poll_count', 'envelope_count', 'byte_count', 'concurrency_count'],
+    'The collector usage limits are invalid.',
+  );
+  const decodeBoundedCount = (count, detail, { min = 0 } = {}) =>
+    requireInteger(count, detail, { min, max: MAX_DIAGNOSTIC_INTEGER });
+  const limits = {
+    pollCount: decodeBoundedCount(value.limits.poll_count, 'The poll limit is invalid.', {
+      min: 1,
+    }),
+    envelopeCount: decodeBoundedCount(
+      value.limits.envelope_count,
+      'The envelope limit is invalid.',
+      {
+        min: 1,
+      },
+    ),
+    byteCount: decodeBoundedCount(value.limits.byte_count, 'The byte limit is invalid.', {
+      min: 1,
+    }),
+    concurrencyCount: decodeBoundedCount(
+      value.limits.concurrency_count,
+      'The concurrency limit is invalid.',
+      { min: 1 },
+    ),
   };
+  const decoded = {
+    collectorId: decodeIdentifier(value.collector_id, 'The usage collector identifier is invalid.'),
+    pollCount: decodeBoundedCount(value.poll_count, 'The poll count is invalid.'),
+    envelopeCount: decodeBoundedCount(value.envelope_count, 'The envelope count is invalid.'),
+    byteCount: decodeBoundedCount(value.byte_count, 'The byte count is invalid.'),
+    concurrencyCount: decodeBoundedCount(
+      value.concurrency_count,
+      'The concurrency count is invalid.',
+    ),
+    limits,
+    windowStartedAt: decodeTimestamp(value.window_started_at, 'The usage window start is invalid.'),
+    windowResetsAt: decodeTimestamp(value.window_resets_at, 'The usage window reset is invalid.'),
+    retryAfterSeconds: decodeBoundedCount(
+      value.retry_after_seconds,
+      'The usage retry timing is invalid.',
+    ),
+    concurrencyRetryAfterSeconds: decodeBoundedCount(
+      value.concurrency_retry_after_seconds,
+      'The concurrency retry timing is invalid.',
+    ),
+  };
+  if (
+    decoded.pollCount > limits.pollCount ||
+    decoded.envelopeCount > limits.envelopeCount ||
+    decoded.byteCount > limits.byteCount ||
+    decoded.concurrencyCount > limits.concurrencyCount ||
+    new Date(decoded.windowResetsAt) <= new Date(decoded.windowStartedAt) ||
+    (decoded.concurrencyCount === 0 && decoded.concurrencyRetryAfterSeconds !== 0)
+  )
+    fail('The collector usage diagnostic state is invalid or inconsistent.');
+  return decoded;
 };
 
 const decodeJob = (value) => {

@@ -3,12 +3,11 @@
 The Operations Console is a Firebase-admin-only view at `/operations` (the
 `/admin/operations` alias is retained for deep links). It displays bounded
 control-plane diagnostics from `GET /api/admin/collection/diagnostics`:
-collection cycles, registered publication streams, Collector identity and
-last-seen state, alerts, reconciliation items, validation states, raw usage
-counters, and durable operator jobs. The frozen diagnostics contract does not
-report current stream freshness, Collector release versions, usage limits, or
-validation counts/timestamps, so the page labels those dimensions unavailable
-instead of inferring health.
+collection cycles, registered publication streams and their bounded freshness
+evidence, Collector identity/release/last-seen state, alerts, reconciliation
+items, validation states, usage counters and limits, retry timing, and durable
+operator jobs. Validation counts and timestamps are not part of the contract,
+so the page labels those dimensions unavailable instead of inferring them.
 
 ## Permissions and failure states
 

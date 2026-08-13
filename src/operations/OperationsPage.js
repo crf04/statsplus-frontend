@@ -19,6 +19,12 @@ const humanize = (value) =>
 
 const statusClass = (status) => `operations-status operations-status-${status || 'unknown'}`;
 
+const formatDuration = (seconds) => {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`;
+  return `${Math.ceil(seconds / 3600)}h`;
+};
+
 const actionLabels = {
   'season.activate': 'Activate season',
   'publication.rollback': 'Rollback publication',
@@ -334,16 +340,20 @@ function StreamsSection({ streams, beginAction, disabled }) {
                     <small>{stream.owner}</small>
                   </td>
                   <td>
-                    <span className="status-neutral">Unavailable</span>
+                    <span className={statusClass(stream.freshnessStatus)}>
+                      {humanize(stream.freshnessStatus)}
+                    </span>
                     <small>
-                      {stream.freshnessRule === 'unavailable'
+                      {!stream.available
                         ? 'Unsupported provider window; this stream cannot be activated.'
-                        : 'Current freshness is not reported by diagnostics.'}
+                        : stream.freshnessStatus === 'missing'
+                          ? 'No active publication has been recorded.'
+                          : `${formatDuration(stream.ageSeconds)} old · cutoff ${formatDate(stream.coverageCutoff)}`}
                     </small>
                   </td>
-                  <td>{stream.enabled ? 'Enabled' : 'Inactive'}</td>
+                  <td>{humanize(stream.activationStatus)}</td>
                   <td className="operations-actions">
-                    {!stream.enabled && stream.freshnessRule !== 'unavailable' && (
+                    {!stream.enabled && stream.available && (
                       <button
                         type="button"
                         className="operations-button operations-button-small"
@@ -362,7 +372,7 @@ function StreamsSection({ streams, beginAction, disabled }) {
                         Activate
                       </button>
                     )}
-                    {stream.enabled && (
+                    {stream.enabled && stream.available && stream.publicationId && (
                       <button
                         type="button"
                         className="operations-button operations-button-small operations-button-muted"
@@ -373,7 +383,7 @@ function StreamsSection({ streams, beginAction, disabled }) {
                             description:
                               'Move this stream back to its previous governed publication, if the fence still matches.',
                             execute: (reason) =>
-                              operationsApi.rollbackStream(stream.streamKey, reason, null),
+                              operationsApi.rollbackStream(stream.streamKey, reason, stream.fence),
                           })
                         }
                         aria-label={`Rollback ${stream.streamKey}`}
@@ -381,7 +391,7 @@ function StreamsSection({ streams, beginAction, disabled }) {
                         Rollback
                       </button>
                     )}
-                    {stream.enabled && (
+                    {stream.enabled && stream.available && (
                       <button
                         type="button"
                         className="operations-button operations-button-small operations-button-muted"
@@ -430,6 +440,9 @@ function StreamsSection({ streams, beginAction, disabled }) {
 }
 
 function CollectorsSection({ collectors, beginAction, disabled }) {
+  const reportedVersions = new Set(
+    collectors.map((collector) => collector.releaseVersion).filter(Boolean),
+  );
   return (
     <section className="operations-section" aria-labelledby="operations-collectors-heading">
       <div className="operations-section-heading">
@@ -438,6 +451,11 @@ function CollectorsSection({ collectors, beginAction, disabled }) {
           <h2 id="operations-collectors-heading">Collectors</h2>
         </div>
       </div>
+      {reportedVersions.size > 1 && (
+        <p className="operations-attention" role="alert">
+          Version mismatch: Collectors report different release versions.
+        </p>
+      )}
       {collectors.length === 0 ? (
         <EmptyState>No Collector identities are registered.</EmptyState>
       ) : (
@@ -465,7 +483,15 @@ function CollectorsSection({ collectors, beginAction, disabled }) {
                 </div>
                 <div>
                   <dt>Release</dt>
-                  <dd>Not reported by diagnostics</dd>
+                  <dd>{collector.releaseVersion || 'Not reported'}</dd>
+                </div>
+                <div>
+                  <dt>Release checksum</dt>
+                  <dd>
+                    {collector.releaseChecksum
+                      ? collector.releaseChecksum.slice(0, 12)
+                      : 'Not reported'}
+                  </dd>
                 </div>
               </dl>
               {collector.lastSeenAt === null && (
@@ -639,15 +665,44 @@ function UsageSection({ usage }) {
           {usage.map((entry) => (
             <article className="operations-card" key={entry.collectorId}>
               <h3>{entry.collectorId}</h3>
+              {[
+                ['poll', entry.pollCount, entry.limits.pollCount],
+                ['envelope', entry.envelopeCount, entry.limits.envelopeCount],
+                ['byte', entry.byteCount, entry.limits.byteCount],
+                ['concurrency', entry.concurrencyCount, entry.limits.concurrencyCount],
+              ].some(([, count, limit]) => count / limit >= 0.8) && (
+                <p className="operations-attention" role="alert">
+                  Usage threshold: one or more counters are at least 80% of the reported limit.
+                </p>
+              )}
               <div className="operations-metric-row">
-                <Metric label="Polls" value={entry.pollCount} detail="Limit not reported" />
-                <Metric label="Envelopes" value={entry.envelopeCount} detail="Limit not reported" />
+                <Metric
+                  label="Polls"
+                  value={entry.pollCount}
+                  detail={`of ${entry.limits.pollCount}`}
+                />
+                <Metric
+                  label="Envelopes"
+                  value={entry.envelopeCount}
+                  detail={`of ${entry.limits.envelopeCount}`}
+                />
                 <Metric
                   label="Bytes"
                   value={entry.byteCount.toLocaleString()}
-                  detail="Limit not reported"
+                  detail={`of ${entry.limits.byteCount.toLocaleString()}`}
+                />
+                <Metric
+                  label="Concurrency"
+                  value={entry.concurrencyCount}
+                  detail={`of ${entry.limits.concurrencyCount}`}
                 />
               </div>
+              <p className="operations-muted">
+                Window {formatDate(entry.windowStartedAt)}–{formatDate(entry.windowResetsAt)}.
+                Counter retry in {formatDuration(entry.retryAfterSeconds)}.
+                {entry.concurrencyRetryAfterSeconds > 0 &&
+                  ` Concurrency retry in ${formatDuration(entry.concurrencyRetryAfterSeconds)}.`}
+              </p>
             </article>
           ))}
         </div>
@@ -753,14 +808,25 @@ export default function OperationsPage() {
   const data = diagnostics.data;
   const totals = useMemo(() => {
     if (!data) return null;
+    const releaseVersions = new Set(
+      data.collectors.map((collector) => collector.releaseVersion).filter(Boolean),
+    );
     return {
       attention:
         data.cycles.filter((cycle) => cycle.status === 'attention').length +
-        data.alerts.filter((alert) => alert.status === 'open').length,
+        data.alerts.filter((alert) => alert.status === 'open').length +
+        data.streams.filter((stream) => ['stale', 'missing'].includes(stream.freshnessStatus))
+          .length,
       activeStreams: data.streams.filter((stream) => stream.enabled).length,
       onlineCollectors: data.collectors.filter(
         (collector) => collector.lastSeenAt && !collector.revoked,
       ).length,
+      releaseConsistency:
+        releaseVersions.size === 0
+          ? 'Unavailable'
+          : releaseVersions.size === 1
+            ? 'Aligned'
+            : 'Mismatch',
       runningJobs: data.jobs.filter((job) => ['queued', 'running'].includes(job.status)).length,
     };
   }, [data]);
@@ -832,7 +898,7 @@ export default function OperationsPage() {
           <Metric label="Attention required" value={totals.attention} />
           <Metric label="Active streams" value={totals.activeStreams} />
           <Metric label="Collectors seen" value={totals.onlineCollectors} />
-          <Metric label="Collector releases" value="Unavailable" detail="Not reported" />
+          <Metric label="Collector releases" value={totals.releaseConsistency} />
           <Metric label="Queued or running jobs" value={totals.runningJobs} />
         </section>
       )}

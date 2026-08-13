@@ -246,6 +246,7 @@
 .operations-status-attention,
 .operations-status-warning,
 .operations-status-stale,
+.operations-status-missing,
 .operations-status-degraded,
 .operations-status-running {
   border-color: rgba(232, 163, 61, 0.65);

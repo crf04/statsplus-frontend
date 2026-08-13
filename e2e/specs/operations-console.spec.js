@@ -25,13 +25,16 @@ test('@critical admin can inspect collection health and confirm an audited repai
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Publication streams' })).toBeVisible();
   await expect(page.getByText('collector-e2e-1', { exact: true }).first()).toBeVisible();
-  await expect(
-    page.getByText('Current freshness is not reported by diagnostics.').first(),
-  ).toBeVisible();
+  await expect(page.getByText('Stale')).toBeVisible();
+  await expect(page.getByText(/2h old/)).toBeVisible();
+  await expect(page.getByText('Missing')).toBeVisible();
   await expect(
     page.getByText('Unsupported provider window; this stream cannot be activated.'),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Activate synergy:l15' })).toHaveCount(0);
+  await expect(page.getByText(/Version mismatch/)).toBeVisible();
+  await expect(page.getByText(/Usage threshold/)).toBeVisible();
+  await expect(page.getByText(/Counter retry in 1h/)).toBeVisible();
 
   await page.getByRole('button', { name: 'Repair traditional_opponent' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -87,6 +90,7 @@ test('@critical admin confirms activation and rollback with exact audited contra
   expect(rollbackRequest.headers().authorization).toBe('Bearer courtai-e2e-token');
   expect(rollbackRequest.postDataJSON()).toEqual({
     reason: 'Rollback to the last known publication',
+    expected_fence: 3,
   });
 });
 

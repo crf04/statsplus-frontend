@@ -448,7 +448,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   );
   await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
   expect(screen.getByText('Opponent rebounds')).toBeVisible();
-  expect(screen.getByText('Rank 4 of 30')).toBeVisible();
+  expect(screen.getByTitle('Opponent rank 4/30 — 30 allows the most')).toBeVisible();
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
 
   expect(screen.getByText('12.9 per 48')).toBeVisible();
@@ -460,7 +460,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
 
   await userEvent.click(screen.getByRole('button', { name: 'REB' }));
   expect(screen.getAllByText('Opponent rebounds unavailable for Last 15.')).toHaveLength(1);
-  expect(screen.queryByText('Rank 4 of 30')).not.toBeInTheDocument();
+  expect(screen.queryByTitle('Opponent rank 4/30 — 30 allows the most')).not.toBeInTheDocument();
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));

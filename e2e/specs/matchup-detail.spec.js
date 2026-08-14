@@ -1,5 +1,33 @@
 import { expect, installApiContract, matchupPayload, test } from '../fixtures/courtai';
 
+test('matchup detail preserves the approved Open Team Sheets hierarchy', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.goto('/matchups/0022500584');
+
+  const rail = page.getByRole('complementary', { name: 'Season scoring order' });
+  const sheet = page.getByRole('region', { name: 'BOS Defense Sheet' });
+  const controls = page.getByRole('region', { name: 'Defense Sheet controls' });
+  await expect(rail).toBeVisible();
+  await expect(sheet).toBeVisible();
+  await expect(controls).toBeVisible();
+
+  const [railBox, sheetBox, controlsBox] = await Promise.all([
+    rail.boundingBox(),
+    sheet.boundingBox(),
+    controls.boundingBox(),
+  ]);
+  expect(railBox.x).toBeLessThan(sheetBox.x);
+  expect(controlsBox.x).toBeGreaterThanOrEqual(sheetBox.x);
+  expect(sheetBox.width).toBeGreaterThan(railBox.width * 2);
+
+  const playTypes = await page.getByRole('region', { name: 'Play types' }).boundingBox();
+  const shotZones = await page.getByRole('region', { name: 'Shot zones' }).boundingBox();
+  expect(Math.abs(playTypes.y - shotZones.y)).toBeLessThan(20);
+  expect(playTypes.x).toBeLessThan(shotZones.x);
+});
+
 test('@critical user opens a Defense Sheet and changes local spotting controls', async ({
   authenticatedPage: page,
 }, testInfo) => {
@@ -357,8 +385,7 @@ test('matchup detail is usable at a narrow viewport with keyboard-only controls'
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto('/matchups/0022500584');
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
-  await page.getByRole('button', { name: 'BOS defense' }).focus();
-  await page.keyboard.press('Tab');
+  await page.getByRole('button', { name: 'All', exact: true }).focus();
   await expect(page.getByRole('button', { name: 'All', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'PTS' })).toBeFocused();

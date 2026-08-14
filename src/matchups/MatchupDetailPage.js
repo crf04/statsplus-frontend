@@ -332,9 +332,15 @@ function DefenseSheet({
                       key={`${base}-${row.key}`}
                     >
                       <div className="row-stat">
+                        <span
+                          className="rank-pill"
+                          style={{ '--rank': stat.rank }}
+                          title={`Opponent rank ${stat.rank}/30 — 30 allows the most`}
+                        >
+                          {stat.rank}
+                        </span>
                         <div>
                           <h4>{row.label}</h4>
-                          <span>Rank {stat.rank} of 30</span>
                         </div>
                         <div
                           className={
@@ -576,23 +582,12 @@ function Detail({ matchup, gameId }) {
       <header className="matchup-heading">
         <div>
           <Link to="/matchups">← Back to slate</Link>
-          <p className="matchup-eyebrow">Open Team Sheets</p>
+          <p className="matchup-eyebrow">Open Team Sheets · live contract</p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
-        <div className="team-toggle" role="group" aria-label="Defense team">
-          {matchup.teams.map((team) => (
-            <button
-              type="button"
-              aria-pressed={team.teamId === defenseTeam.teamId}
-              key={team.teamId}
-              onClick={() => setTeamId(team.teamId)}
-            >
-              {team.tricode} defense
-            </button>
-          ))}
-        </div>
+        <Freshness freshness={matchup.freshness} now={now} />
       </header>
       {matchup.game.preseason && (
         <p
@@ -603,91 +598,116 @@ function Detail({ matchup, gameId }) {
           Preseason matchup — current-season samples may be limited.
         </p>
       )}
-      <Freshness freshness={matchup.freshness} now={now} />
-      <section className="detail-controls" aria-label="Defense Sheet controls">
-        <div className="segmented" role="group" aria-label="Market">
-          {markets.map((item) => (
-            <button
-              type="button"
-              aria-pressed={market === item}
-              key={item}
-              onClick={() => setMarket(item)}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="segmented" role="group" aria-label="Stat window">
-          {WINDOWS.map((item) => (
-            <button
-              type="button"
-              aria-pressed={windowKey === item.key}
-              key={item.key}
-              onClick={() => setWindowKey(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div className="segmented" role="group" aria-label="Deviation filter">
-          {DEVIATIONS.map((item) => (
-            <button
-              type="button"
-              aria-pressed={deviation === item.value}
-              key={item.value}
-              onClick={() => setDeviation(item.value)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </section>
       <div className="detail-grid">
-        {matchup.freshness.stats.status === 'missing' ? (
-          <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
-            <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
-            <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
-          </section>
-        ) : (
-          <DefenseSheet
-            team={defenseTeam}
+        <div className="matchup-sidebar">
+          <p className="sheet-instruction">
+            Tap a player to trace their rows across the sheet; use the score card for the full
+            dossier.
+          </p>
+          <InjuryReport injuries={matchup.injuries} now={now} />
+          <PlayerRail
             players={opposingPlayers}
+            injuries={matchup.injuries}
             market={market}
             windowKey={windowKey}
-            deviation={deviation}
-            selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
-            surfaceAvailability={matchup.league.surfaceAvailability}
+            targetableCount={
+              poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null
+            }
+            selectedId={selectedId}
+            onSelect={(player) => updateSelectedPlayer(player.id)}
+            registerTrigger={registerTrigger}
           />
-        )}
-        <PlayerRail
-          players={opposingPlayers}
-          injuries={matchup.injuries}
-          market={market}
-          windowKey={windowKey}
-          targetableCount={poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null}
-          selectedId={selectedId}
-          onSelect={(player) => updateSelectedPlayer(player.id)}
-          registerTrigger={registerTrigger}
-        />
+        </div>
+        <div className="matchup-workspace">
+          <section className="detail-controls" aria-label="Defense Sheet controls">
+            <div className="segmented market-tabs" role="group" aria-label="Market">
+              {markets.map((item) => (
+                <button
+                  type="button"
+                  aria-pressed={market === item}
+                  key={item}
+                  onClick={() => setMarket(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="control-row">
+              <div className="segmented" role="group" aria-label="Stat window">
+                {WINDOWS.map((item) => (
+                  <button
+                    type="button"
+                    aria-pressed={windowKey === item.key}
+                    key={item.key}
+                    onClick={() => setWindowKey(item.key)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="segmented" role="group" aria-label="Deviation filter">
+                {DEVIATIONS.map((item) => (
+                  <button
+                    type="button"
+                    aria-pressed={deviation === item.value}
+                    key={item.value}
+                    onClick={() => setDeviation(item.value)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="team-toggle" role="group" aria-label="Defense team">
+                {matchup.teams.map((team) => (
+                  <button
+                    type="button"
+                    aria-pressed={team.teamId === defenseTeam.teamId}
+                    key={team.teamId}
+                    onClick={() => setTeamId(team.teamId)}
+                  >
+                    {team.tricode} defense
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+          {selectedId && !selectedPlayer && (
+            <p role="alert" className="selection-card">
+              That player is not available in this matchup.
+            </p>
+          )}
+          {selectedPlayer && (
+            <SelectionCard
+              player={selectedPlayer}
+              selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
+              status={
+                selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'
+              }
+              error={selectionState.error}
+              windowKey={windowKey}
+              sheetMarket={market}
+              whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
+              onClose={() => updateSelectedPlayer(null)}
+            />
+          )}
+          {matchup.freshness.stats.status === 'missing' ? (
+            <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
+              <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
+              <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
+            </section>
+          ) : (
+            <DefenseSheet
+              team={defenseTeam}
+              players={opposingPlayers}
+              market={market}
+              windowKey={windowKey}
+              deviation={deviation}
+              selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
+              surfaceAvailability={matchup.league.surfaceAvailability}
+            />
+          )}
+        </div>
       </div>
-      {selectedId && !selectedPlayer && (
-        <p role="alert" className="selection-card">
-          That player is not available in this matchup.
-        </p>
-      )}
-      {selectedPlayer && (
-        <SelectionCard
-          player={selectedPlayer}
-          selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
-          status={selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'}
-          error={selectionState.error}
-          windowKey={windowKey}
-          sheetMarket={market}
-          whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
-          onClose={() => updateSelectedPlayer(null)}
-        />
-      )}
-      <InjuryReport injuries={matchup.injuries} now={now} />
     </>
   );
 }

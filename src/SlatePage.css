@@ -1,7 +1,7 @@
 .slate-page {
-  width: min(1080px, calc(100% - 32px));
+  width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 52px 0 80px;
+  padding: 40px 0 80px;
   text-align: left;
 }
 
@@ -10,74 +10,150 @@
   justify-content: space-between;
   align-items: end;
   gap: 24px;
-  border-bottom: 1px solid var(--ct-line);
-  padding-bottom: 24px;
+}
+
+.slate-title {
+  min-width: 0;
 }
 
 .slate-heading h1,
 .signed-out-slate h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 6vw, 4.6rem);
-  line-height: 0.95;
+  font-size: clamp(1.9rem, 4vw, 2.9rem);
+  line-height: 1;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: var(--ct-gold);
   font-family: var(--ct-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.date-controls {
-  display: flex;
-  align-items: end;
-  gap: 8px;
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.date-controls label {
-  display: grid;
-  gap: 5px;
-  color: var(--ct-dim);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* One segmented pill rather than three loose boxes under a caption: the
+   arrows and the field are the same control and should read as one. */
+.date-controls {
+  display: inline-flex;
+  align-items: stretch;
+  align-self: end;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  overflow: hidden;
 }
 
 .date-controls button,
 .date-controls input {
-  min-height: 42px;
-  border: 1px solid var(--ct-line-strong);
-  border-radius: var(--ct-radius-ctl);
-  background: var(--ct-surface-2);
+  min-height: 40px;
+  border: 0;
+  background: transparent;
   color: var(--ct-text);
+  font-size: 0.86rem;
 }
 
 .date-controls button {
-  width: 42px;
-  font-size: 1.2rem;
+  width: 38px;
+  color: var(--ct-dim);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.date-controls button:hover:not(:disabled) {
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.date-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.date-field {
+  display: flex;
+  border-right: 1px solid var(--ct-line);
+  border-left: 1px solid var(--ct-line);
+}
+
+.date-controls input {
+  padding: 0 12px;
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The native picker indicator is near-invisible on a dark surface. */
+.date-controls input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1);
+  opacity: 0.45;
+}
+
+.date-controls input::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.9;
 }
 
 .date-controls .today-reset {
   width: auto;
+  border-left: 1px solid var(--ct-line);
   padding: 0 14px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+/* On today's slate the control is inert, so it reads as a marker of where you
+   are rather than an action that would do nothing. */
+.date-controls .today-reset:disabled {
+  color: var(--ct-dim);
+  opacity: 1;
 }
 
 .date-controls button:focus-visible,
 .date-controls input:focus-visible {
   outline: 2px solid var(--ct-gold);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+/* One status line rather than a stacked block: every freshness surface the
+   slate reports still states itself, but the slate itself starts higher up the
+   page. The line only grows when a surface is degraded. */
+
+.slate-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--ct-line);
+  padding: 10px 0;
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+}
+
+.slate-count {
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
 }
 
 .freshness {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 18px 0;
+  gap: 4px 18px;
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 .freshness-warning {
@@ -85,11 +161,9 @@
 }
 
 .pool-summary {
-  margin-bottom: 18px;
-  border: 1px solid var(--ct-line);
-  border-radius: var(--ct-radius-ctl);
-  padding: 14px 18px;
-  background: var(--ct-surface-2);
+  margin: 14px 0 6px;
+  border-left: 2px solid var(--ct-line-strong);
+  padding: 2px 0 2px 14px;
 }
 
 .pool-summary h2,
@@ -98,100 +172,214 @@
 }
 
 .pool-summary h2 {
-  margin-bottom: 4px;
-  font-size: 0.82rem;
+  margin-bottom: 3px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .pool-summary p {
-  color: var(--ct-dim);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
-.slate-grid {
+/* ---------- the board ---------- */
+
+.slate-board {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slate-window {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: start;
+  border-bottom: 1px solid var(--ct-line);
+  padding: 14px 0;
 }
 
-.slate-card,
-.empty-slate,
-.signed-out-slate {
-  border: 1px solid var(--ct-line);
-  border-radius: var(--ct-radius-card);
+.slate-window:last-child {
+  border-bottom: 0;
+}
+
+.slate-window-tip {
+  position: sticky;
+  top: 12px;
+  margin: 0;
+  padding-top: 14px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+.slate-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The whole row is the control. There is no separate link to aim at. */
+.slate-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.3fr) minmax(240px, 0.8fr) 20px;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid transparent;
+  border-radius: var(--ct-radius-ctl);
+  padding: 9px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.slate-row:hover {
+  border-color: var(--ct-line-strong);
   background: var(--ct-surface);
 }
 
-.slate-card {
-  padding: 22px;
+.slate-row:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
 }
 
-.slate-card-topline,
-.team-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+.slate-row.is-blocked {
+  opacity: 0.55;
 }
 
-.slate-card-topline {
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-}
-
-.slate-card h2 {
-  margin: 22px 0;
-  font-size: 2.1rem;
-}
-
-.team-row {
-  border-top: 1px solid var(--ct-line);
-  padding: 11px 0;
-}
-
-.team-row span:last-child {
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.76rem;
-}
-
-.badges {
+.slate-row-title {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
   gap: 8px;
-  margin-top: 12px;
+}
+
+.slate-row-title h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+.slate-row-names {
+  display: block;
+  margin-top: 1px;
+  color: var(--ct-dim);
+  font-size: 0.74rem;
 }
 
 .slate-badge {
-  border: 1px solid var(--ct-gold);
+  border: 1px solid var(--ct-line-strong);
   border-radius: 999px;
-  padding: 3px 8px;
-  color: var(--ct-gold);
-  font-size: 0.72rem;
+  padding: 2px 8px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.open-matchup {
-  display: inline-block;
-  margin-top: 18px;
-  color: var(--ct-gold);
-  font-weight: 700;
+/* A postponement changes whether the row is worth opening at all; a
+   classification only describes it. They should not look the same. */
+.slate-badge.is-blocked {
+  border-color: var(--ct-miss);
+  background: var(--ct-miss-soft);
+  color: #f0a4a4;
 }
 
-.open-matchup:focus-visible {
-  outline: 2px solid var(--ct-gold);
-  outline-offset: 3px;
+.slate-badge.is-event {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.slate-depth {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Marks run right-to-left from the figure, so the figure stays in a fixed
+   column and the shape of the count grows into the empty space beside it. */
+.slate-pips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 14px;
+}
+
+.slate-pip-group {
+  display: flex;
+  gap: 4px;
+}
+
+.slate-pip {
+  width: 6px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.slate-pip.is-away {
+  background: var(--ct-gold);
+}
+
+.slate-pip.is-home {
+  background: rgba(232, 163, 61, 0.5);
+}
+
+.slate-row.is-blocked .slate-pip {
+  background: var(--ct-line-strong);
+}
+
+.slate-depth-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  /* Widest case is a two-digit count plus the unit; fixing it keeps every
+     figure on the same vertical rule down the slate. */
+  min-width: 128px;
+}
+
+.slate-depth-total {
+  min-width: 2ch;
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1;
+  text-align: right;
+}
+
+.slate-depth-unit {
+  color: var(--ct-dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.slate-row-go {
+  color: var(--ct-dim);
+  text-align: right;
+}
+
+.slate-row:hover .slate-row-go {
+  color: var(--ct-gold);
 }
 
 .empty-slate,
 .signed-out-slate {
   margin-top: 28px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
   padding: clamp(28px, 6vw, 64px);
+  background: var(--ct-surface);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 820px) {
   .slate-page {
-    width: min(100% - 20px, 1080px);
+    width: min(100% - 20px, 1160px);
     padding-top: 30px;
   }
 
@@ -212,13 +400,38 @@
     width: 100%;
   }
 
-  .freshness {
+  .slate-status {
     align-items: flex-start;
     flex-direction: column;
     gap: 5px;
   }
 
-  .slate-grid {
+  .freshness {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .slate-window {
     grid-template-columns: 1fr;
+  }
+
+  .slate-window-tip {
+    position: static;
+    padding: 0 0 6px;
+  }
+
+  .slate-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+
+  .slate-depth {
+    grid-column: 1 / -1;
+  }
+
+  .slate-row-go {
+    grid-row: 1;
+    grid-column: 2;
   }
 }

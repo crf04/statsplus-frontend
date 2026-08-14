@@ -200,9 +200,103 @@ test('explains mixed provider counts without claiming the whole pool is missing'
   );
 
   expect(await screen.findByText(/counts reflect the available boards/i)).toBeVisible();
-  expect(screen.getByText('5 targetable')).toBeVisible();
-  expect(screen.getByText('4 targetable')).toBeVisible();
+  expect(screen.getByRole('link', { name: /9 targetable players, LAL 5, BOS 4/ })).toBeVisible();
+  expect(screen.getByText('9')).toBeVisible();
+  expect(document.querySelectorAll('.slate-pip')).toHaveLength(9);
   expect(screen.queryByText(/no targetable players/i)).not.toBeInTheDocument();
+});
+
+test('groups the slate into tip-time windows in schedule order', async () => {
+  const later = {
+    ...game,
+    gameId: '0022500585',
+    away: { ...game.away, tricode: 'NYK', name: 'New York Knicks' },
+    home: { ...game.home, tricode: 'MIL', name: 'Milwaukee Bucks' },
+    scheduledAt: '2026-01-16T03:00:00.000Z',
+  };
+  fetchSlate.mockResolvedValue({ ...slate, games: [later, game] });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'LAL @ BOS' });
+  const headings = screen.getAllByRole('heading').map((node) => node.textContent);
+  const earlyTip = headings.indexOf('LAL @ BOS');
+  const lateTip = headings.indexOf('NYK @ MIL');
+  expect(earlyTip).toBeGreaterThan(-1);
+  expect(lateTip).toBeGreaterThan(earlyTip);
+});
+
+test('states depth as a figure, not a bar against an invented denominator', async () => {
+  const deeper = {
+    ...game,
+    gameId: '0022500585',
+    away: { ...game.away, tricode: 'NYK', targetablePlayerCount: 8 },
+    home: { ...game.home, tricode: 'MIL', targetablePlayerCount: 7 },
+  };
+  fetchSlate.mockResolvedValue({ ...slate, games: [game, deeper] });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const shallow = await screen.findByRole('link', { name: /9 targetable players/ });
+  const busiest = screen.getByRole('link', { name: /15 targetable players/ });
+  expect(within(shallow).getByText('9')).toBeVisible();
+  expect(within(busiest).getByText('15')).toBeVisible();
+
+  // One mark per player, grouped away then home — a unit chart, so no mark
+  // stands for a fraction of a capacity that does not exist.
+  const marks = (row) =>
+    [...row.querySelectorAll('.slate-pip-group')].map((g) => g.childElementCount);
+  expect(marks(shallow)).toEqual([5, 4]);
+  expect(marks(busiest)).toEqual([8, 7]);
+  expect(document.querySelector('.slate-bar')).toBeNull();
+});
+
+test('offers Today from any other date and marks it inert on today', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'Thursday, January 15, 2026' });
+  // Today's slate: the control is inert rather than an action that does nothing.
+  expect(screen.getByRole('button', { name: 'Today' })).toBeDisabled();
+
+  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-01-10' });
+  fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '2026-01-10' } });
+
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Today' })).toBeEnabled());
+  fetchSlate.mockClear();
+  fetchSlate.mockResolvedValue(slate);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+});
+
+test('opens Team Sheets from anywhere on the row', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const heading = await screen.findByRole('heading', { name: 'LAL @ BOS' });
+  const row = heading.closest('a');
+  expect(row).toHaveAttribute('href', '/matchups/0022500584');
+  // One control, one sentence — not a heading plus a separate call to action.
+  expect(row).toHaveAccessibleName(
+    /^LAL @ BOS, .+, 9 targetable players, LAL 5, BOS 4, Open Team Sheets$/,
+  );
+  expect(screen.getAllByRole('link')).toHaveLength(1);
 });
 
 test.each([
@@ -228,10 +322,10 @@ test.each([
 });
 
 test.each([
-  ['scheduled', null, 'Scheduled'],
   ['postponed', null, 'Postponed'],
   ['final', null, 'Final'],
   ['final', 'Final/OT', 'Final/OT'],
+  ['scheduled', 'Delayed', 'Delayed'],
 ])('shows %s catalog label %s with a cased fallback', async (status, statusLabel, expected) => {
   fetchSlate.mockResolvedValue({
     ...slate,
@@ -245,6 +339,38 @@ test.each([
   );
 
   expect((await screen.findAllByText(expected))[0]).toBeVisible();
+});
+
+test('does not label an ordinary scheduled game, which its tip time already states', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [{ ...game, status: 'scheduled', statusLabel: 'Scheduled' }],
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'LAL @ BOS' });
+  expect(screen.queryByText('Scheduled')).not.toBeInTheDocument();
+});
+
+test('separates a postponement from a descriptive classification', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [{ ...game, status: 'postponed', statusLabel: null, classification: 'NBA Cup' }],
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('Postponed')).toHaveClass('is-blocked');
+  expect(screen.getByText('NBA Cup')).toHaveClass('is-event');
 });
 
 test('shows preseason and unusual classification badges', async () => {

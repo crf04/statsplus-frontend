@@ -76,35 +76,124 @@ function PoolSummary({ isPast, poolStatus }) {
   );
 }
 
-function GameCard({ game }) {
+/*
+ * A scheduled game states itself with its tip time, so printing "Scheduled" on
+ * every row is noise. A status the catalog bothered to name differently is
+ * information, and so is any state other than scheduled.
+ */
+const statusBadge = (game) => {
   const fallbackLabels = { scheduled: 'Scheduled', postponed: 'Postponed', final: 'Final' };
-  const status = game.statusLabel || fallbackLabels[game.status];
+  const label = game.statusLabel || fallbackLabels[game.status];
+  if (game.status === 'scheduled' && label === fallbackLabels.scheduled) return null;
+  return { label, tone: game.status === 'postponed' ? 'blocked' : 'muted' };
+};
+
+/*
+ * Games grouped into the tip-time windows they share, in schedule order. The
+ * slate's own organising fact is when its games start, and a reader picking one
+ * already thinks in windows.
+ */
+const groupByTip = (games) =>
+  [...games]
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
+    .reduce((groups, game) => {
+      const tip = formatTip(game.scheduledAt);
+      const current = groups.at(-1);
+      if (current?.tip === tip) current.games.push(game);
+      else groups.push({ tip, games: [game] });
+      return groups;
+    }, []);
+
+function GameRow({ game }) {
+  const away = game.away.targetablePlayerCount;
+  const home = game.home.targetablePlayerCount;
+  const total = away + home;
+  const status = statusBadge(game);
+
+  /*
+   * The row is one control, so it gets one accessible name that reads as a
+   * sentence. Everything inside it is decoration for that name, which is why
+   * the depth figures below are aria-hidden rather than separately labelled.
+   */
+  const label = [
+    `${game.away.tricode} @ ${game.home.tricode}`,
+    formatTip(game.scheduledAt),
+    status && status.label,
+    `${total} targetable players, ${game.away.tricode} ${away}, ${game.home.tricode} ${home}`,
+    'Open Team Sheets',
+  ]
+    .filter(Boolean)
+    .join(', ');
+
   return (
-    <article className="slate-card">
-      <div className="slate-card-topline">
-        <span>{formatTip(game.scheduledAt)}</span>
-        <span>{status}</span>
-      </div>
-      <h2>
-        {game.away.tricode} @ {game.home.tricode}
-      </h2>
-      <div className="team-row">
-        <span>{game.away.name}</span>
-        <span>{game.away.targetablePlayerCount} targetable</span>
-      </div>
-      <div className="team-row">
-        <span>{game.home.name}</span>
-        <span>{game.home.targetablePlayerCount} targetable</span>
-      </div>
-      <div className="badges">
-        {game.classification && <span className="slate-badge">{game.classification}</span>}
-        {game.preseason && <span className="slate-badge">Preseason</span>}
-        {game.status === 'postponed' && <span className="slate-badge">Postponed</span>}
-      </div>
-      <Link className="open-matchup" to={`/matchups/${game.gameId}`}>
-        Open Team Sheets
+    <li>
+      <Link
+        className={`slate-row${game.status === 'postponed' ? ' is-blocked' : ''}`}
+        to={`/matchups/${game.gameId}`}
+        aria-label={label}
+      >
+        <span className="slate-row-teams">
+          <span className="slate-row-title">
+            <h3>
+              {game.away.tricode} @ {game.home.tricode}
+            </h3>
+            {status && <span className={`slate-badge is-${status.tone}`}>{status.label}</span>}
+            {game.classification && (
+              <span className="slate-badge is-event">{game.classification}</span>
+            )}
+            {game.preseason && <span className="slate-badge is-event">Preseason</span>}
+          </span>
+          <span className="slate-row-names">
+            {game.away.name} at {game.home.name}
+          </span>
+        </span>
+
+        {/* One mark per targetable player, away then home. Deliberately a unit
+            chart and not a bar: a bar needs a denominator, and there is no known
+            cap on targetable players per game, so any full-width reference would
+            be invented. Counting marks needs no such reference, and the two
+            groups state the per-side split exactly. */}
+        <span className="slate-depth" aria-hidden="true">
+          <span className="slate-pips">
+            <span className="slate-pip-group">
+              {Array.from({ length: away }, (_, index) => (
+                <i className="slate-pip is-away" key={index} />
+              ))}
+            </span>
+            <span className="slate-pip-group">
+              {Array.from({ length: home }, (_, index) => (
+                <i className="slate-pip is-home" key={index} />
+              ))}
+            </span>
+          </span>
+          <span className="slate-depth-figure">
+            <b className="slate-depth-total">{total}</b>
+            <span className="slate-depth-unit">targetable</span>
+          </span>
+        </span>
+
+        <span className="slate-row-go" aria-hidden="true">
+          →
+        </span>
       </Link>
-    </article>
+    </li>
+  );
+}
+
+function SlateBoard({ games }) {
+  return (
+    <ol className="slate-board">
+      {groupByTip(games).map((group) => (
+        <li className="slate-window" key={group.tip}>
+          <h2 className="slate-window-tip">{group.tip}</h2>
+          <ul className="slate-rows">
+            {group.games.map((game) => (
+              <GameRow key={game.gameId} game={game} />
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -170,8 +259,10 @@ export default function SlatePage() {
   return (
     <main className="slate-page">
       <section className="slate-heading">
-        <p className="eyebrow">NBA slate</p>
-        <h1>{slateDate ? formatCalendarDate(slateDate) : 'Invalid slate date'}</h1>
+        <div className="slate-title">
+          <p className="eyebrow">NBA slate</p>
+          <h1>{slateDate ? formatCalendarDate(slateDate) : 'Invalid slate date'}</h1>
+        </div>
         <div className="date-controls">
           <button
             type="button"
@@ -181,8 +272,10 @@ export default function SlatePage() {
           >
             ←
           </button>
-          <label>
-            <span>Slate date</span>
+          {/* The h1 already names the date in words, so the field's caption is
+              for assistive technology only rather than a third line of chrome. */}
+          <label className="date-field">
+            <span className="visually-hidden">Slate date</span>
             <input
               type="date"
               value={slateDate || ''}
@@ -197,11 +290,17 @@ export default function SlatePage() {
           >
             →
           </button>
-          {!slateDate && (
-            <button className="today-reset" type="button" onClick={() => navigate('')}>
-              Today
-            </button>
-          )}
+          {/* Always reachable, not only as recovery from a bad date. Disabled
+              on today's slate so the control doubles as a statement of where
+              you are. */}
+          <button
+            className="today-reset"
+            type="button"
+            disabled={slateDate === todaySlateDate}
+            onClick={() => navigate('')}
+          >
+            Today
+          </button>
         </div>
       </section>
 
@@ -211,11 +310,16 @@ export default function SlatePage() {
       {state.status === 'error' && <p role="alert">{state.error}</p>}
       {state.status === 'ready' && (
         <>
-          <Freshness
-            freshness={state.slate.freshness}
-            now={now}
-            poolPresentation={poolPresentation}
-          />
+          <div className="slate-status">
+            <span className="slate-count">
+              {state.slate.games.length} {state.slate.games.length === 1 ? 'game' : 'games'}
+            </span>
+            <Freshness
+              freshness={state.slate.freshness}
+              now={now}
+              poolPresentation={poolPresentation}
+            />
+          </div>
           <PoolSummary isPast={isPast} poolStatus={effectivePoolStatus} />
           {state.slate.games.length === 0 ? (
             <div className="empty-slate">
@@ -223,11 +327,7 @@ export default function SlatePage() {
               <p>Choose another date to keep browsing the season.</p>
             </div>
           ) : (
-            <div className="slate-grid">
-              {state.slate.games.map((game) => (
-                <GameCard key={game.gameId} game={game} />
-              ))}
-            </div>
+            <SlateBoard games={state.slate.games} />
           )}
         </>
       )}

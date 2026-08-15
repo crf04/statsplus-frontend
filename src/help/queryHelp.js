@@ -39,6 +39,9 @@ export const KEYWORDS = [
 export const OPPONENT_RANK_NOTE =
   'Use "top" for the best defenses and "bottom" for the worst. Bottom ranks are the better matchups for the player.';
 
+// The vocabulary is the backend's `SUPPORTED_TEAM_FILTERS`
+// (statsplus-backend app/models/catalogs.py), which is wider than the
+// frontend's own `defensiveOptions` dropdown in src/utils.js.
 export const OPPONENT_FILTERS = [
   {
     category: 'General defense',
@@ -47,6 +50,8 @@ export const OPPONENT_FILTERS = [
       { token: 'OPP_REB', means: 'Rebounds allowed' },
       { token: 'OPP_AST', means: 'Assists allowed' },
       { token: 'OPP_STOCKS', means: 'Steals + blocks allowed' },
+      { token: 'OPP_STL', means: 'Steals allowed' },
+      { token: 'OPP_BLK', means: 'Blocks allowed' },
       { token: 'OPP_FTA', means: 'Fouls (FT attempts)' },
       { token: 'OPP_TOV', means: 'Turnovers forced' },
     ],
@@ -62,6 +67,7 @@ export const OPPONENT_FILTERS = [
       { token: 'PU 3s', means: 'Pull-up three defense' },
       { token: 'Less Than 10 ft', means: 'Paint protection' },
       { token: 'OPP_FG3M', means: 'Threes allowed' },
+      { token: 'OPP_FG3A', means: 'Three-point attempts allowed' },
     ],
   },
   {
@@ -76,6 +82,8 @@ export const OPPONENT_FILTERS = [
       { token: 'PRBallHandler', means: 'Pick-and-roll ball-handler defense' },
       { token: 'PRRollMan', means: 'Pick-and-roll roll-man defense' },
       { token: 'Cut', means: 'Cutting defense' },
+      { token: 'OffRebound', means: 'Putback defense' },
+      { token: 'Misc', means: 'Everything the other play types do not cover' },
     ],
   },
   {
@@ -84,6 +92,10 @@ export const OPPONENT_FILTERS = [
       { token: 'AtRimAssists', means: 'Assists on shots at the rim' },
       { token: 'TwoPtAssists', means: 'Assists on two-point shots' },
       { token: 'ThreePtAssists', means: 'Assists on three-point shots' },
+      { token: 'Arc3Assists', means: 'Assists on above-the-break threes' },
+      { token: 'Corner3Assists', means: 'Assists on corner threes' },
+      { token: 'ShortMidRangeAssists', means: 'Assists on short mid-range shots' },
+      { token: 'LongMidRangeAssists', means: 'Assists on long mid-range shots' },
     ],
   },
 ];

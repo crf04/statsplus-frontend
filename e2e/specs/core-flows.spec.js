@@ -129,6 +129,12 @@ test('@critical consulting the reference does not discard a half-typed query', a
 
   await page.getByRole('link', { name: 'Back to search' }).click();
   await expect(page.getByRole('textbox')).toHaveValue(draft);
+
+  // The browser's own Back button has to restore it too, not just our link.
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('textbox')).toHaveValue(draft);
 });
 
 test('the landing help and reference stay usable at a narrow viewport', async ({
@@ -140,13 +146,14 @@ test('the landing help and reference stay usable at a narrow viewport', async ({
   await page.getByRole('button', { name: /Narrow it down/ }).click();
   await expect(page.getByRole('textbox')).toHaveValue('Jalen Johnson this year without Trae Young');
 
-  const overflows = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth,
-  );
-  expect(overflows).toBe(false);
+  const overflowsHorizontally = () =>
+    page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+
+  expect(await overflowsHorizontally()).toBe(false);
 
   await page.getByRole('link', { name: 'Every filter we understand' }).click();
   await expect(page.getByRole('rowheader', { name: 'PRRollMan' })).toBeVisible();
+  expect(await overflowsHorizontally()).toBe(false);
 });
 
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {

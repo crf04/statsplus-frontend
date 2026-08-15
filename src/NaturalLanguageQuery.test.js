@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import apiClient from './utils/axiosConfig';
 
@@ -23,7 +24,11 @@ describe('NaturalLanguageQuery', () => {
     apiClient.post.mockResolvedValue({ data: { confidence: 0 } });
     const onFiltersApplied = jest.fn();
 
-    render(<NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />);
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />
+      </MemoryRouter>,
+    );
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'an unsupported query' } });
     fireEvent.submit(input.closest('form'));
@@ -56,7 +61,11 @@ describe('NaturalLanguageQuery', () => {
         });
       });
 
-    render(<NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />);
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />
+      </MemoryRouter>,
+    );
     const input = screen.getByRole('textbox');
 
     fireEvent.change(input, { target: { value: 'LeBron this year' } });
@@ -81,5 +90,26 @@ describe('NaturalLanguageQuery', () => {
       resolveSecondApplication({ ok: true });
     });
     expect(screen.getByRole('button', { name: /open search/i })).toBeInTheDocument();
+  });
+
+  test('seeds the search box with an example chosen on the query reference page', () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/', state: { query: 'Giannis games at home' } }]}>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('textbox')).toHaveValue('Giannis games at home');
+  });
+
+  test('teaches the query language on the page instead of behind a dialog', () => {
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /narrow it down/i })).toBeInTheDocument();
   });
 });

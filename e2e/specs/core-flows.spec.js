@@ -96,6 +96,66 @@ test('@critical natural-language search renders results and returns to search', 
   await expect(page.getByRole('textbox')).toHaveValue('');
 });
 
+test('@critical the query reference is linkable and hands an example back to search', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page).toHaveURL(/\/help$/);
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: 'Less Than 10 ft' })).toBeVisible();
+
+  // The reference survives a reload because it is a route, not an overlay.
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+
+  const example = 'Giannis games at home with 10+ FGA playing 30+ minutes';
+  await page.getByRole('link', { name: example }).click();
+  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveValue(example);
+});
+
+test('@critical consulting the reference does not discard a half-typed query', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+
+  const draft = 'Luka last 10 games';
+  await page.getByRole('textbox').fill(draft);
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeFocused();
+
+  await page.getByRole('link', { name: 'Back to search' }).click();
+  await expect(page.getByRole('textbox')).toHaveValue(draft);
+
+  // The browser's own Back button has to restore it too, not just our link.
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('textbox')).toHaveValue(draft);
+});
+
+test('the landing help and reference stay usable at a narrow viewport', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Narrow it down/ }).click();
+  await expect(page.getByRole('textbox')).toHaveValue('Jalen Johnson this year without Trae Young');
+
+  const overflowsHorizontally = () =>
+    page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+
+  expect(await overflowsHorizontally()).toBe(false);
+
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page.getByRole('rowheader', { name: 'PRRollMan' })).toBeVisible();
+  expect(await overflowsHorizontally()).toBe(false);
+});
+
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');

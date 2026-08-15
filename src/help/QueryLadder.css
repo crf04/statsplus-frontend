@@ -1,0 +1,164 @@
+.query-ladder {
+  max-width: 720px;
+  margin: 40px auto 0;
+  text-align: left;
+}
+
+.query-ladder-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.query-ladder-title {
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+  margin: 0;
+}
+
+.query-ladder-sub {
+  font-size: 13px;
+  color: var(--ct-dim);
+  margin: 0;
+}
+
+.query-ladder-rungs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.query-ladder-rung {
+  position: relative;
+}
+
+/* the connector that reads as one query growing */
+.query-ladder-rung:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: 44px;
+  bottom: 6px;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(232, 163, 61, 0.45), rgba(232, 163, 61, 0.08));
+}
+
+.query-ladder-button {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--ct-radius-card);
+  padding: 18px 16px;
+  cursor: pointer;
+  color: var(--ct-text);
+  font-family: inherit;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.query-ladder-button:hover:not(:disabled) {
+  background: rgba(232, 163, 61, 0.05);
+  border-color: rgba(232, 163, 61, 0.28);
+}
+
+.query-ladder-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.query-ladder-index {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 163, 61, 0.5);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  background: var(--ct-ink);
+  position: relative;
+  z-index: 1;
+}
+
+.query-ladder-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.query-ladder-rung-title {
+  font-family: var(--ct-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.query-ladder-query {
+  font-family: var(--ct-mono);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #c9c2b2;
+}
+
+.query-ladder-query mark {
+  background: rgba(232, 163, 61, 0.16);
+  color: var(--ct-gold-hover);
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+.query-ladder-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ct-dim);
+}
+
+.query-ladder-reference {
+  margin: 24px 0 0;
+  text-align: center;
+}
+
+.query-ladder-reference a {
+  color: var(--ct-dim);
+  font-size: 13.5px;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+
+.query-ladder-reference a:hover {
+  color: var(--ct-gold);
+  border-bottom-color: rgba(232, 163, 61, 0.5);
+}
+
+@media (max-width: 640px) {
+  .query-ladder {
+    margin-top: 28px;
+  }
+
+  .query-ladder-button {
+    gap: 12px;
+    padding: 14px 8px;
+  }
+
+  .query-ladder-rung:not(:last-child)::after {
+    left: 19px;
+  }
+}

@@ -7,8 +7,11 @@
   height: 100vh;
   background: radial-gradient(1200px 700px at 50% 30%, #17130b 0%, #0d0b07 65%);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Centred by the container's auto margins rather than by alignment, so a
+     viewport shorter than the content scrolls instead of clipping its top. */
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 88px 16px 48px;
   z-index: 1000;
   font-family:
     'Barlow',
@@ -17,7 +20,8 @@
     'Segoe UI',
     system-ui,
     sans-serif;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* The one signature: a half-court drawn in hairlines, center circle
@@ -44,6 +48,7 @@
 .landing-container {
   max-width: 800px;
   width: 90%;
+  margin: auto;
   text-align: center;
   position: relative;
   z-index: 2;
@@ -53,39 +58,6 @@
   margin-bottom: 48px;
   position: relative;
   text-align: center;
-}
-
-/* Help icon on right side of search bar */
-.landing-help-icon-right {
-  position: absolute;
-  right: 60px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(232, 163, 61, 0.1);
-  border: 1px solid rgba(232, 163, 61, 0.3);
-  color: #e8a33d;
-  cursor: pointer;
-  padding: 0;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  z-index: 10;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.landing-help-icon-right:hover {
-  color: #fff;
-  background: #e8a33d;
-  border-color: #e8a33d;
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.4);
-}
-
-.landing-help-icon-right:active {
-  transform: translateY(-50%) scale(0.95);
 }
 
 /* Help hint text */
@@ -398,68 +370,6 @@
   border-left: 2px solid #000000;
   border-radius: 50%;
   animation: customSpinnerRotate 1s linear infinite;
-}
-
-.landing-samples {
-  margin-top: 40px;
-}
-
-.landing-samples-label {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #9b937f;
-  margin-bottom: 14px;
-}
-
-.landing-samples-grid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.landing-sample-pill {
-  appearance: none;
-  font: inherit;
-  background: rgba(22, 19, 13, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px 16px;
-  color: #c9c2b2;
-  font-size: 14px;
-  font-family:
-    'Barlow',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    system-ui,
-    sans-serif;
-  font-weight: 450;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    color 0.2s ease,
-    background 0.2s ease;
-  user-select: none;
-}
-
-.landing-sample-pill:hover {
-  background: rgba(232, 163, 61, 0.08);
-  border-color: rgba(232, 163, 61, 0.6);
-  color: #f6b950;
-}
-
-.landing-sample-pill:focus-visible {
-  outline: 2px solid #e8a33d;
-  outline-offset: 2px;
-}
-
-.landing-sample-pill:active {
-  transform: translateY(0);
 }
 
 .landing-error {
@@ -1082,16 +992,6 @@
     height: 48px;
   }
 
-  .landing-samples-grid {
-    gap: 8px;
-    max-width: 100%;
-  }
-
-  .landing-sample-pill {
-    font-size: 14px;
-    padding: 10px 16px;
-  }
-
   /* Legacy Mobile Styles */
   .modern-search-container {
     padding: 20px 16px;
@@ -1228,11 +1128,4 @@
 .landing-search-icon.loading,
 .compact-search-icon.loading {
   animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Loading state for disabled samples */
-.landing-sample-pill.loading-state {
-  opacity: 0.4;
-  pointer-events: none;
-  animation: pulse 2s ease-in-out infinite;
 }

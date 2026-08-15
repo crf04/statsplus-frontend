@@ -69,4 +69,12 @@ describe('QueryLadder', () => {
       '/help',
     );
   });
+
+  test('leaves a modified click to the browser so the reference can open in a new tab', () => {
+    renderLadder();
+    const link = screen.getByRole('link', { name: /every filter we understand/i });
+
+    expect(fireEvent.click(link, { button: 0 })).toBe(false); // handled in-app
+    expect(fireEvent.click(link, { button: 0, metaKey: true })).toBe(true); // left to the browser
+  });
 });

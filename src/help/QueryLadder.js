@@ -14,10 +14,17 @@ const QueryLadder = ({ onUseQuery, disabled = false, currentQuery = '' }) => {
   const location = useLocation();
 
   // Stamp the draft onto the entry being left, so the browser's own Back
-  // button restores it too, not just the reference page's link.
+  // button restores it too, not just the reference page's link. Modified
+  // clicks are left to the browser, which is what opens a new tab.
   const openReference = (event) => {
+    const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+    if (event.defaultPrevented || event.button !== 0 || modified) return;
+
     event.preventDefault();
-    navigate(location.pathname, { replace: true, state: { query: currentQuery } });
+    navigate(
+      { pathname: location.pathname, search: location.search, hash: location.hash },
+      { replace: true, state: { query: currentQuery } },
+    );
     navigate('/help', { state: { query: currentQuery } });
   };
 

@@ -35,7 +35,7 @@ test('renders the CourtAI search landing page', async () => {
   render(<App />);
 
   expect(await screen.findByRole('heading', { name: /courtai/i })).toBeInTheDocument();
-  expect(screen.getByText(/lebron james this year/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /start with a player/i })).toBeInTheDocument();
   expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Sign in to enter a query...');
   expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument();
 });

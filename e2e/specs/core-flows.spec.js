@@ -96,6 +96,26 @@ test('@critical natural-language search renders results and returns to search', 
   await expect(page.getByRole('textbox')).toHaveValue('');
 });
 
+test('@critical the query reference is linkable and hands an example back to search', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page).toHaveURL(/\/help$/);
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: 'Less Than 10 ft' })).toBeVisible();
+
+  // The reference survives a reload because it is a route, not an overlay.
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
+
+  const example = 'Giannis games at home with 10+ FGA playing 30+ minutes';
+  await page.getByRole('link', { name: example }).click();
+  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveValue(example);
+});
+
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');

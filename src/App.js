@@ -8,6 +8,7 @@ import UserProfile from './components/Auth/UserProfile';
 import SlatePage from './SlatePage';
 import MatchupDetailPage from './matchups/MatchupDetailPage';
 import OperationsPage from './operations/OperationsPage';
+import QueryReferencePage from './help/QueryReferencePage';
 import './App.css';
 
 function AppNav() {
@@ -43,6 +44,7 @@ function App() {
             <AppNav />
             <Routes>
               <Route path="/" element={<GameLogFilter />} />
+              <Route path="/help" element={<QueryReferencePage />} />
               <Route path="/matchups" element={<SlatePage />} />
               <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
               <Route

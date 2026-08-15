@@ -238,7 +238,11 @@ const NaturalLanguageQuery = ({
             </Form>
           </div>
 
-          <QueryLadder onUseQuery={setQuery} disabled={isLoading || !isAuthenticated} />
+          <QueryLadder
+            onUseQuery={setQuery}
+            disabled={isLoading || !isAuthenticated}
+            currentQuery={query}
+          />
 
           {error && (
             <div className="landing-error">

@@ -116,6 +116,39 @@ test('@critical the query reference is linkable and hands an example back to sea
   await expect(page.getByRole('textbox')).toHaveValue(example);
 });
 
+test('@critical consulting the reference does not discard a half-typed query', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+
+  const draft = 'Luka last 10 games';
+  await page.getByRole('textbox').fill(draft);
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Query reference' })).toBeFocused();
+
+  await page.getByRole('link', { name: 'Back to search' }).click();
+  await expect(page.getByRole('textbox')).toHaveValue(draft);
+});
+
+test('the landing help and reference stay usable at a narrow viewport', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Narrow it down/ }).click();
+  await expect(page.getByRole('textbox')).toHaveValue('Jalen Johnson this year without Trae Young');
+
+  const overflows = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
+  expect(overflows).toBe(false);
+
+  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await expect(page.getByRole('rowheader', { name: 'PRRollMan' })).toBeVisible();
+});
+
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');

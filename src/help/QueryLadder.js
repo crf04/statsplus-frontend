@@ -3,10 +3,13 @@ import { QUERY_LADDER, splitAddedClause } from './queryHelp';
 import './QueryLadder.css';
 
 /**
- * The landing page's empty state. Each rung loads a query that is the rung
- * above it plus one clause, so the stacking rule is taught by doing it.
+ * The landing page's empty state. Each rung loads the rung above it plus what
+ * it adds, so the stacking rule is taught by doing it.
+ *
+ * `currentQuery` rides along to the reference page so a half-typed query
+ * survives the trip there and back.
  */
-const QueryLadder = ({ onUseQuery, disabled = false }) => (
+const QueryLadder = ({ onUseQuery, disabled = false, currentQuery = '' }) => (
   <section className="query-ladder" aria-labelledby="query-ladder-heading">
     <div className="query-ladder-head">
       <h2 id="query-ladder-heading" className="query-ladder-title">
@@ -24,6 +27,7 @@ const QueryLadder = ({ onUseQuery, disabled = false }) => (
             <button
               type="button"
               className="query-ladder-button"
+              aria-label={`${step.rung}. Loads ${step.query}. Adds ${step.added}.`}
               onClick={() => onUseQuery(step.query)}
               disabled={disabled}
             >
@@ -46,7 +50,9 @@ const QueryLadder = ({ onUseQuery, disabled = false }) => (
     </ol>
 
     <p className="query-ladder-reference">
-      <Link to="/help">Every filter we understand</Link>
+      <Link to="/help" state={{ query: currentQuery }}>
+        Every filter we understand
+      </Link>
     </p>
   </section>
 );

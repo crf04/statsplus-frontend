@@ -44,7 +44,7 @@ A few decisions worth calling out:
 ## Features
 
 - Multi-dimensional filtering (player, team, matchup, season, date, stat thresholds, teammates on/off court, home/away)
-- Natural language query box with a prompting guide
+- Natural language query box, with a guided ladder on the landing page and a linkable query reference at `/help`
 - Player profile pages with summaries, averages, recent game logs, assist profiles, and 2-vs-3 distribution charts
 - Team and opponent matchup pages
 - Responsive layout via Tailwind + Bootstrap + custom CSS

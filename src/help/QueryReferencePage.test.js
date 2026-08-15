@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import QueryReferencePage from './QueryReferencePage';
 import { OPPONENT_FILTERS, KEYWORDS, STACKED_EXAMPLES } from './queryHelp';
+import { defensiveOptions } from '../utils';
 
 const renderPage = () =>
   render(
@@ -21,6 +22,24 @@ describe('QueryReferencePage', () => {
     OPPONENT_FILTERS.flatMap((group) => group.items).forEach((item) => {
       expect(screen.getByRole('rowheader', { name: item.token })).toBeInTheDocument();
     });
+  });
+
+  // The page promises "every filter we understand", so the claim is checked
+  // against the app's own opponent vocabulary rather than against this
+  // module's constants.
+  test('documents every opponent filter the app offers, spelled the same way', () => {
+    renderPage();
+
+    const documented = new Set(
+      OPPONENT_FILTERS.flatMap((group) => group.items).map((item) => item.token),
+    );
+
+    defensiveOptions
+      .filter((option) => option !== 'None')
+      .forEach((option) => {
+        expect(documented.has(option)).toBe(true);
+        expect(screen.getByRole('rowheader', { name: option })).toBeInTheDocument();
+      });
   });
 
   test('sends a chosen example back to the search page as router state', () => {

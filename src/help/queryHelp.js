@@ -55,11 +55,13 @@ export const OPPONENT_FILTERS = [
     category: 'Shot type defense',
     items: [
       { token: 'C&S PTS', means: 'Catch-and-shoot defense' },
+      { token: 'C&S 3s', means: 'Catch-and-shoot threes allowed' },
+      { token: 'C&S 3A', means: 'Catch-and-shoot 3PT attempts' },
       { token: 'PU PTS', means: 'Pull-up shot defense' },
+      { token: 'PU 2s', means: 'Pull-up two defense' },
+      { token: 'PU 3s', means: 'Pull-up three defense' },
       { token: 'Less Than 10 ft', means: 'Paint protection' },
       { token: 'OPP_FG3M', means: 'Threes allowed' },
-      { token: 'C&S 3A', means: 'Catch-and-shoot 3PT attempts' },
-      { token: 'PU 2s/3s', means: 'Pull-up defense' },
     ],
   },
   {
@@ -71,8 +73,17 @@ export const OPPONENT_FILTERS = [
       { token: 'Handoff', means: 'Handoff defense' },
       { token: 'OffScreen', means: 'Off-screen defense' },
       { token: 'Postup', means: 'Post-up defense' },
-      { token: 'PRBallHandler / PRRollMan', means: 'Pick-and-roll defense' },
+      { token: 'PRBallHandler', means: 'Pick-and-roll ball-handler defense' },
+      { token: 'PRRollMan', means: 'Pick-and-roll roll-man defense' },
       { token: 'Cut', means: 'Cutting defense' },
+    ],
+  },
+  {
+    category: 'Assists allowed',
+    items: [
+      { token: 'AtRimAssists', means: 'Assists on shots at the rim' },
+      { token: 'TwoPtAssists', means: 'Assists on two-point shots' },
+      { token: 'ThreePtAssists', means: 'Assists on three-point shots' },
     ],
   },
 ];

@@ -61,8 +61,10 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
     );
   }, slateGame.scheduled_at);
   await expect(page.getByText(viewerLocalTip, { exact: true })).toBeVisible();
-  await expect(page.getByText('Los Angeles Lakers')).toBeVisible();
-  await expect(page.getByText('5 targetable')).toBeVisible();
+  await expect(page.getByText('Los Angeles Lakers at Boston Celtics')).toBeVisible();
+  await expect(page.getByLabel('9 targetable players, LAL 5, BOS 4')).toBeVisible();
+  // One mark per targetable player, grouped away then home.
+  await expect(page.locator('.slate-pip')).toHaveCount(9);
   await expect(page.getByText('NBA Paris Game')).toBeVisible();
   await expect(page.getByText('Preseason')).toHaveCount(0);
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
@@ -93,10 +95,15 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(
     page.getByText(/final game cards retain the posted targetable counts/i),
   ).toBeVisible();
-  await expect(page.getByText('5 targetable')).toBeVisible();
-  await expect(page.getByText('4 targetable')).toBeVisible();
+  await expect(page.getByLabel('9 targetable players, NYK 5, MIL 4')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('slate-past.png'), fullPage: true });
   expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-10')).toBe(true);
+
+  // Today is reachable from any date, not only as recovery from a bad one.
+  await page.getByRole('button', { name: 'Today' }).click();
+  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Today' })).toBeDisabled();
 });
 
 test('signed-out matchups keeps the shared shell and does not redirect', async ({
@@ -202,7 +209,7 @@ test('explicit unavailable pool status wins over stale provider evidence', async
 
   await expect(page.getByText(/player pool is unavailable; no targetable players/i)).toBeVisible();
   await expect(page.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
-  await expect(page.getByText('0 targetable')).toHaveCount(2);
+  await expect(page.getByLabel('0 targetable players, LAL 0, BOS 0')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('slate-pool-unavailable.png'),
     fullPage: true,

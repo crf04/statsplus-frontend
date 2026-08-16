@@ -12,9 +12,17 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     try {
+      const e2eTokenAvailable =
+        process.env.NODE_ENV !== 'production' &&
+        process.env.REACT_APP_E2E_MODE === 'true' &&
+        typeof window !== 'undefined' &&
+        window.localStorage.getItem('courtai:e2e-authenticated') === 'true';
       const user = auth?.currentUser;
 
-      if (user) {
+      if (e2eTokenAvailable) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = 'Bearer courtai-e2e-token';
+      } else if (user) {
         // Get the Firebase ID token
         const token = await getIdToken(user);
         config.headers = config.headers || {};

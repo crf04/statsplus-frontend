@@ -69,6 +69,9 @@ export const getRequestErrorMessage = (
   fallback = 'The request failed. Please try again.',
 ) => {
   const responseError = error?.response?.data?.error;
+  if (!responseError && ['ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)) {
+    return 'The request took too long. Please try again.';
+  }
   return (
     (typeof responseError === 'string' ? responseError : responseError?.message) ||
     error?.response?.data?.message ||

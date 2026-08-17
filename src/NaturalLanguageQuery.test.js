@@ -40,6 +40,26 @@ describe('NaturalLanguageQuery', () => {
     expect(screen.getByRole('textbox')).not.toBeDisabled();
   });
 
+  test('gives natural-language parsing a cold-start-safe timeout', async () => {
+    apiClient.post.mockResolvedValue({ data: { confidence: 0 } });
+
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} />
+      </MemoryRouter>,
+    );
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'LeBron last 10 games' } });
+    fireEvent.submit(input.closest('form'));
+
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledTimes(1));
+    expect(apiClient.post).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/nl-query$/),
+      { query: 'LeBron last 10 games' },
+      expect.objectContaining({ timeout: 15000 }),
+    );
+  });
+
   test('settles a stale game-log application without clearing a newer query', async () => {
     apiClient.post
       .mockResolvedValueOnce({ data: { player_name: 'LeBron James' } })

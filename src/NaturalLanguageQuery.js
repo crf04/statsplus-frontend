@@ -6,6 +6,7 @@ import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
 import { convertNLToFilters } from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
 import './ModernSearch.css';
 
@@ -117,7 +118,7 @@ const NaturalLanguageQuery = ({
         {
           query: query.trim(),
         },
-        { signal: controller.signal },
+        { signal: controller.signal, timeout: NL_QUERY_TIMEOUT },
       );
 
       if (queryRequestRef.current.id !== requestId) return;

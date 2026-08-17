@@ -55,4 +55,13 @@ describe('gameLogsApi', () => {
       }),
     ).toBe('Try later.');
   });
+
+  test('turns transport timeouts into a useful retry message', () => {
+    expect(
+      getRequestErrorMessage({
+        code: 'ECONNABORTED',
+        message: 'timeout of 15000ms exceeded',
+      }),
+    ).toBe('The request took too long. Please try again.');
+  });
 });

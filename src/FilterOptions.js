@@ -42,6 +42,19 @@ const FilterOptions = ({
   const [selfFilterRange, setSelfFilterRange] = useState([0, 0]);
   const [activeSelfFilters, setActiveSelfFilters] = useState([]);
   const [columnRanges, setColumnRanges] = useState({});
+  // Only controls the user touched are emitted, so the API applies its own
+  // defaults to the rest. Touched-ness is tracked rather than compared against
+  // a copy of those defaults, which would drift from the API.
+  const [touchedControls, setTouchedControls] = useState(() => new Set());
+
+  const markControlTouched = (control) => {
+    setTouchedControls((previous) => {
+      if (previous.has(control)) return previous;
+      const next = new Set(previous);
+      next.add(control);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (initialGameLogs && initialGameLogs.length > 0) {
@@ -88,21 +101,28 @@ const FilterOptions = ({
     setPlayerSuggestions([]);
     setActivePlayerSuggestionIndex(0);
 
+    // A control pre-populated from an existing filter set counts as touched, so
+    // a later apply preserves it instead of dropping it.
+    const prepopulatedControls = new Set();
+
     // Then pre-populate with new applied filters if they exist
     if (appliedFilters && Object.keys(appliedFilters).length > 0) {
       // Pre-populate game filter
       if (appliedFilters.game_filter) {
         setGameFilter(appliedFilters.game_filter);
+        prepopulatedControls.add('game_filter');
       }
 
       // Pre-populate location filter
       if (appliedFilters.location_filter) {
         setLocationFilter(appliedFilters.location_filter);
+        prepopulatedControls.add('location_filter');
       }
 
       // Pre-populate date filter
       if (appliedFilters.date_filter) {
         setDateFilter(appliedFilters.date_filter);
+        prepopulatedControls.add('date_filter');
       }
 
       // Pre-populate minutes filter
@@ -111,6 +131,7 @@ const FilterOptions = ({
         if (parts.length === 2) {
           const [min, max] = parts.map(Number);
           setMinutesFilter([min, max]);
+          prepopulatedControls.add('minutes_filter');
         }
       }
 
@@ -120,6 +141,7 @@ const FilterOptions = ({
           appliedFilters.playstyle_RTG_min,
           appliedFilters.playstyle_RTG_max,
         ]);
+        prepopulatedControls.add('playstyle_RTG');
       }
 
       // Pre-populate players on/off
@@ -142,6 +164,7 @@ const FilterOptions = ({
       }
       if (playersToAdd.length > 0) {
         setActivePlayers(playersToAdd);
+        prepopulatedControls.add('players');
       }
 
       // Pre-populate teams against filter (legacy format)
@@ -158,6 +181,7 @@ const FilterOptions = ({
           number: filterNumbers[index] || 0,
         }));
         setActiveFilters(filtersToAdd);
+        prepopulatedControls.add('teams_against');
       }
 
       // Pre-populate opponent filters from natural language queries
@@ -174,6 +198,7 @@ const FilterOptions = ({
           number: parseInt(rankFilter[index]) || 0,
         }));
         setActiveFilters(filtersToAdd);
+        prepopulatedControls.add('teams_against');
       }
 
       // Pre-populate self filters
@@ -194,8 +219,11 @@ const FilterOptions = ({
       });
       if (selfFiltersToAdd.length > 0) {
         setActiveSelfFilters(selfFiltersToAdd);
+        prepopulatedControls.add('self_filters');
       }
     }
+
+    setTouchedControls(prepopulatedControls);
   }, [appliedFilters]);
 
   const handleAddFilter = () => {
@@ -206,6 +234,7 @@ const FilterOptions = ({
           ...activeFilters,
           { filter: selectedDefensiveFilter, number: filterNumber },
         ]);
+        markControlTouched('teams_against');
         setSelectedDefensiveFilter('None');
         setFilterNumber(0);
       }
@@ -272,6 +301,7 @@ const FilterOptions = ({
   const handleAddPlayer = () => {
     if (playerInput.trim() && !activePlayers.some((p) => p.name === playerInput.trim())) {
       setActivePlayers([...activePlayers, { name: playerInput.trim(), status: playerStatus }]);
+      markControlTouched('players');
       setPlayerInput('');
       setPlayerSuggestions([]);
       setActivePlayerSuggestionIndex(0);
@@ -280,14 +310,17 @@ const FilterOptions = ({
 
   const handleLocationChange = (val) => {
     setLocationFilter(val);
+    markControlTouched('location_filter');
   };
 
   const handleMinutesFilterChange = (newValues) => {
     setMinutesFilter(newValues);
+    markControlTouched('minutes_filter');
   };
 
   const handlePlaystyleMatchupRatingChange = (newRange) => {
     setPlaystyleMatchupRating(newRange);
+    markControlTouched('playstyle_RTG');
   };
 
   const handleSelfFilterSelect = (column) => {
@@ -308,6 +341,7 @@ const FilterOptions = ({
         range: selfFilterRange,
       };
       setActiveSelfFilters([...activeSelfFilters, newFilter]);
+      markControlTouched('self_filters');
       setSelectedSelfFilter('');
       setSelfFilterRange([0, 0]);
     }
@@ -321,22 +355,38 @@ const FilterOptions = ({
     // Use displayPlayer if selectedPlayer is 'None' (from natural language queries)
     const playerName = selectedPlayer !== 'None' ? selectedPlayer : displayPlayer;
 
-    const filterParams = {
-      player_name: playerName,
-      minutes_filter: `${minutesFilter[0]},${minutesFilter[1]}`,
-      players_on: activePlayers.filter((p) => p.status === 'on').map((p) => p.name),
-      players_off: activePlayers.filter((p) => p.status === 'off').map((p) => p.name),
-      date_filter: dateFilter || null,
-      teams_against: activeFilters.map((filter) => filter.filter),
-      filter_numbers: activeFilters.map((filter) => filter.number),
-      location_filter: locationFilter,
-      game_filter: gameFilter || null,
-      playstyle_RTG_min: playstyleMatchupRating[0],
-      playstyle_RTG_max: playstyleMatchupRating[1],
-    };
-    activeSelfFilters.forEach((filter) => {
-      filterParams[`self_filters[${filter.column}]`] = filter.range.join(',');
-    });
+    const filterParams = { player_name: playerName };
+
+    if (touchedControls.has('minutes_filter')) {
+      filterParams.minutes_filter = `${minutesFilter[0]},${minutesFilter[1]}`;
+    }
+    if (touchedControls.has('players')) {
+      filterParams.players_on = activePlayers.filter((p) => p.status === 'on').map((p) => p.name);
+      filterParams.players_off = activePlayers.filter((p) => p.status === 'off').map((p) => p.name);
+    }
+    if (touchedControls.has('date_filter')) {
+      filterParams.date_filter = dateFilter || null;
+    }
+    if (touchedControls.has('teams_against')) {
+      filterParams.teams_against = activeFilters.map((filter) => filter.filter);
+      filterParams.filter_numbers = activeFilters.map((filter) => filter.number);
+    }
+    if (touchedControls.has('location_filter')) {
+      filterParams.location_filter = locationFilter;
+    }
+    if (touchedControls.has('game_filter')) {
+      filterParams.game_filter = gameFilter || null;
+    }
+    if (touchedControls.has('playstyle_RTG')) {
+      filterParams.playstyle_RTG_min = playstyleMatchupRating[0];
+      filterParams.playstyle_RTG_max = playstyleMatchupRating[1];
+    }
+    if (touchedControls.has('self_filters')) {
+      activeSelfFilters.forEach((filter) => {
+        filterParams[`self_filters[${filter.column}]`] = filter.range.join(',');
+      });
+    }
+
     onApplyFilters(filterParams);
   };
 
@@ -480,7 +530,10 @@ const FilterOptions = ({
                 id="filter-date"
                 type="date"
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
+                onChange={(e) => {
+                  setDateFilter(e.target.value);
+                  markControlTouched('date_filter');
+                }}
               />
             </Form.Group>
             <Form.Group className="mb-4">
@@ -527,9 +580,10 @@ const FilterOptions = ({
                 type="number"
                 min="0"
                 value={gameFilter}
-                onChange={(e) =>
-                  setGameFilter(e.target.value === '' ? '' : parseInt(e.target.value, 10))
-                }
+                onChange={(e) => {
+                  setGameFilter(e.target.value === '' ? '' : parseInt(e.target.value, 10));
+                  markControlTouched('game_filter');
+                }}
               />
             </Form.Group>
             <Form.Group className="mb-4">

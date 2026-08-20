@@ -225,3 +225,46 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 });
+
+test('@critical applying an untouched panel emits only the controls the user moved', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const latestRequest = new URL(gameLogRequests.at(-1));
+
+  // The one moved control and the player travel; every untouched control stays
+  // home so the API applies its own defaults.
+  expect([...latestRequest.searchParams.keys()].sort()).toEqual(['game_filter', 'player_name']);
+  expect(latestRequest.searchParams.get('game_filter')).toBe('5');
+  expect(latestRequest.searchParams.get('player_name')).toBe('LeBron James');
+
+  // Moving a second control keeps the filter the panel was pre-populated with,
+  // and still leaves the untouched controls behind.
+  const appliedRequestCount = gameLogRequests.length;
+  await page.getByLabel('Date Filter:').fill('2025-01-09');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedRequestCount);
+  const secondRequest = new URL(gameLogRequests.at(-1));
+  expect([...secondRequest.searchParams.keys()].sort()).toEqual([
+    'date_filter',
+    'game_filter',
+    'player_name',
+  ]);
+  expect(secondRequest.searchParams.get('date_filter')).toBe('2025-01-09');
+  expect(secondRequest.searchParams.get('game_filter')).toBe('5');
+});

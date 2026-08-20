@@ -371,6 +371,12 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
 });
 
 test('@critical a signed-out visitor keeps the link they followed', async ({ page }) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
   await installApiContract(page);
 
   await page.goto('/?player_name=LeBron+James&game_filter=10');
@@ -381,4 +387,13 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
   // The requested URL is honoured, not rewritten, so signing in lands here.
   expect(page.url()).toContain('player_name=LeBron+James');
   expect(page.url()).toContain('game_filter=10');
+  expect(gameLogRequests).toHaveLength(0);
+
+  // Signing in fires the held Filter Set exactly once, without a second visit.
+  await page.getByRole('button', { name: 'Sign in with Google' }).click();
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBe(1);
+  const requested = new URL(gameLogRequests[0]);
+  expect(requested.searchParams.get('player_name')).toBe('LeBron James');
+  expect(requested.searchParams.get('game_filter')).toBe('10');
 });

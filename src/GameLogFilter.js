@@ -239,12 +239,22 @@ const GameLogFilter = () => {
     setAppliedFilters(urlFilters);
     setDisplayPlayer(urlFilters.player_name || 'None');
 
+    // Signing out mid-flight must not publish protected logs underneath the
+    // sign-in prompt, so drop anything already in the air.
+    if (!authLoading && !isAuthenticated) {
+      abortGameLogsRequest();
+      setGameLogs([]);
+      setInitialGameLogs([]);
+      setAverages([]);
+      return undefined;
+    }
+
     // A Filter Set without a player is partial, not malformed: hold it in the
     // panel and wait for the user to choose who to apply it to.
-    if (!urlFilters.player_name || authLoading || !isAuthenticated) return undefined;
+    if (!urlFilters.player_name || authLoading) return undefined;
 
     requestGameLogs(urlFilters, { includeInitial: true, updateSelectedTeam: true });
-    return undefined;
+    return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,

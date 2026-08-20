@@ -220,7 +220,13 @@ const wholeNumber = (value) => {
   return parsed !== null && Number.isInteger(parsed) ? parsed : null;
 };
 
-/** Decode a "low,high" pair, optionally constrained to an inclusive envelope. */
+/**
+ * Decode a "low,high" pair, optionally constrained to an inclusive envelope.
+ *
+ * Returns the pair re-spelled as plain decimals. Exponent and hex forms satisfy
+ * `Number()` but are not the decimals the API reads, so a link we accepted would
+ * otherwise produce a request it rejects with an error naming nothing.
+ */
 const boundedRange = (value, bounds) => {
   if (typeof value !== 'string') return null;
   const parts = value.split(',');
@@ -228,8 +234,10 @@ const boundedRange = (value, bounds) => {
   const [low, high] = parts.map(finiteNumber);
   if (low === null || high === null || low > high) return null;
   if (bounds && (low < bounds.min || high > bounds.max)) return null;
-  return value;
+  return `${low},${high}`;
 };
+
+const SEASON_FORMAT = /^\d{4}-\d{2}$/;
 
 export const filterSetFromSearchParams = (searchParams) => {
   const filters = {};
@@ -238,16 +246,28 @@ export const filterSetFromSearchParams = (searchParams) => {
     if (!invalid.includes(name)) invalid.push(name);
   };
 
-  const readText = (name) => {
-    const raw = searchParams.get(name);
+  // `get` returns only the first value, so a repeated scalar would hide any
+  // later one from validation entirely. Refuse rather than pick.
+  const readOnce = (name) => {
+    const values = searchParams.getAll(name);
+    if (values.length === 0) return null;
+    if (values.length > 1) {
+      reject(name);
+      return null;
+    }
+    return values[0];
+  };
+
+  const readText = (name, isValid) => {
+    const raw = readOnce(name);
     if (raw === null) return;
     const value = raw.trim();
-    if (value === '') return reject(name);
+    if (value === '' || (isValid && !isValid(value))) return reject(name);
     filters[name] = value;
   };
 
   const readDecoded = (name, decode) => {
-    const raw = searchParams.get(name);
+    const raw = readOnce(name);
     if (raw === null) return;
     const value = decode(raw);
     if (value === null) return reject(name);
@@ -263,13 +283,13 @@ export const filterSetFromSearchParams = (searchParams) => {
   };
 
   readText('player_name');
-  readText('season_filter');
+  readText('season_filter', (value) => SEASON_FORMAT.test(value));
   readDecoded('minutes_filter', (value) => boundedRange(value, MINUTES_BOUNDS));
   readDecoded('date_filter', parseCalendarDate);
   readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
   readDecoded('game_filter', (value) => {
     const parsed = wholeNumber(value);
-    return parsed !== null && parsed >= 0 ? parsed : null;
+    return parsed !== null && parsed >= 1 ? parsed : null;
   });
   readDecoded('playstyle_RTG_min', finiteNumber);
   readDecoded('playstyle_RTG_max', finiteNumber);
@@ -302,7 +322,9 @@ export const filterSetFromSearchParams = (searchParams) => {
 
   for (const key of new Set(searchParams.keys())) {
     if (!SELF_FILTER_KEY.test(key)) continue;
-    const range = boundedRange(searchParams.get(key));
+    const raw = readOnce(key);
+    if (raw === null) continue;
+    const range = boundedRange(raw);
     if (range === null) reject(key);
     else filters[key] = range;
   }

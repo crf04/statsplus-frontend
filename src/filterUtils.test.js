@@ -138,6 +138,33 @@ describe('filterSetFromSearchParams', () => {
     expect(invalid).toContain(expected);
   });
 
+  test('normalises a numerically valid range to plain decimals', () => {
+    // The backend parses "low,high" as plain numbers; exponent and hex spellings
+    // satisfy Number() but are not what it reads, so canonicalise them here.
+    const { filters, invalid } = decode(
+      'minutes_filter=1e1%2C2e1&self_filters%5BPTS%5D=0x10%2C0x20',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters.minutes_filter).toBe('10,20');
+    expect(filters['self_filters[PTS]']).toBe('16,32');
+  });
+
+  test('rejects a repeated scalar rather than honouring only the first', () => {
+    const { filters, invalid } = decode('player_name=X&game_filter=5&game_filter=-3');
+
+    expect(invalid).toEqual(['game_filter']);
+    expect(filters).toEqual({});
+  });
+
+  test.each([
+    ['season_filter=banana', 'season_filter'],
+    ['season_filter=2025', 'season_filter'],
+    ['game_filter=0', 'game_filter'],
+  ])('names %s as invalid rather than letting the API reject it', (query, expected) => {
+    expect(decode(query).invalid).toContain(expected);
+  });
+
   test('never partially applies a Filter Set containing an invalid value', () => {
     const { filters, invalid } = decode('player_name=LeBron+James&game_filter=-3');
 

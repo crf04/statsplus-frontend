@@ -14,14 +14,7 @@ const AppliedFilters = ({ filters }) => {
       return null;
     }
 
-    if (key === 'teams_against' && filters.filter_numbers) {
-      return filters.teams_against.map((team, index) => (
-        <Badge key={`${key}-${index}`} bg="primary" className="me-1">
-          {`${team} (${filters.filter_numbers[index]})`}
-        </Badge>
-      ));
-    } else if (key === 'teams_against[]' && filters['rank_filter[]']) {
-      // Handle opponent filters from natural language queries
+    if (key === 'teams_against[]' && filters['rank_filter[]']) {
       const teamsArray = Array.isArray(value) ? value : [value];
       const ranksArray = Array.isArray(filters['rank_filter[]'])
         ? filters['rank_filter[]']
@@ -124,7 +117,6 @@ const AppliedFilters = ({ filters }) => {
       );
 
   const nonDefaultFilters = Object.entries(filters).filter(([key, value]) => {
-    if (key === 'filter_numbers') return false; // Skip filter_numbers as it's handled with teams_against
     if (key === 'rank_filter[]') return false; // Skip rank_filter[] as it's handled with teams_against[]
     if (key in defaultValues) {
       return value !== defaultValues[key];

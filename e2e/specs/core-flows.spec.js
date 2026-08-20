@@ -197,3 +197,97 @@ test('@critical structured filters serialize through the game-log request seam',
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.get('game_filter')).toBe('5');
 });
+
+test('@critical a manual defensive filter reaches the game-log request seam', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+
+  const defensiveFilter = page.getByPlaceholder('Number').locator('xpath=..');
+  await defensiveFilter.getByRole('combobox').selectOption('Isolation');
+  await page.getByPlaceholder('Number').fill('5');
+  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const latestRequest = new URL(gameLogRequests.at(-1));
+  expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
+  expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
+
+  // A filter is only addable with a usable rank. A blank rank would be stripped
+  // on the way out and desynchronise rank_filter[] from teams_against[]; a rank
+  // of zero asks for the top nothing and silently returns an empty table.
+  await defensiveFilter.getByRole('combobox').selectOption('Transition');
+  await page.getByPlaceholder('Number').fill('');
+  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
+  await page.getByPlaceholder('Number').fill('0');
+  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeHidden();
+
+  // A real rank makes it addable, and both filters travel with paired ranks.
+  const rankedRequestCount = gameLogRequests.length;
+  await page.getByPlaceholder('Number').fill('-8');
+  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
+  const pairedRequest = new URL(gameLogRequests.at(-1));
+  expect(pairedRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation', 'Transition']);
+  expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '-8']);
+});
+
+test('@critical applying an untouched panel emits only the controls the user moved', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const latestRequest = new URL(gameLogRequests.at(-1));
+
+  // The one moved control and the player travel; every untouched control stays
+  // home so the API applies its own defaults.
+  expect([...latestRequest.searchParams.keys()].sort()).toEqual(['game_filter', 'player_name']);
+  expect(latestRequest.searchParams.get('game_filter')).toBe('5');
+  expect(latestRequest.searchParams.get('player_name')).toBe('LeBron James');
+
+  // Moving a second control keeps the filter the panel was pre-populated with,
+  // and still leaves the untouched controls behind.
+  const appliedRequestCount = gameLogRequests.length;
+  await page.getByLabel('Date Filter:').fill('2025-01-09');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedRequestCount);
+  const secondRequest = new URL(gameLogRequests.at(-1));
+  expect([...secondRequest.searchParams.keys()].sort()).toEqual([
+    'date_filter',
+    'game_filter',
+    'player_name',
+  ]);
+  expect(secondRequest.searchParams.get('date_filter')).toBe('2025-01-09');
+  expect(secondRequest.searchParams.get('game_filter')).toBe('5');
+});

@@ -130,7 +130,6 @@ describe('filterSetFromSearchParams', () => {
     ['playstyle_RTG_min=120&playstyle_RTG_max=80', 'playstyle_RTG_max'],
     ['player_name=+', 'player_name'],
     ['self_filters%5BPTS%5D=20', 'self_filters[PTS]'],
-    ['teams_against%5B%5D=NotAFilter&rank_filter%5B%5D=5', 'teams_against[]'],
     ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=0', 'rank_filter[]'],
     ['teams_against%5B%5D=Isolation', 'rank_filter[]'],
   ])('names %s as invalid rather than guessing', (query, expected) => {
@@ -163,6 +162,26 @@ describe('filterSetFromSearchParams', () => {
     ['game_filter=0', 'game_filter'],
   ])('names %s as invalid rather than letting the API reject it', (query, expected) => {
     expect(decode(query).invalid).toContain(expected);
+  });
+
+  test('accepts opponent filters the panel does not offer', () => {
+    // The API's rankable vocabulary is wider than the panel dropdown; a link
+    // written from the API documentation must not be refused here.
+    const { filters, invalid } = decode('teams_against%5B%5D=Arc3Assists&rank_filter%5B%5D=8');
+
+    expect(invalid).toEqual([]);
+    expect(filters['teams_against[]']).toEqual(['Arc3Assists']);
+  });
+
+  test('rejects a player named both present and absent', () => {
+    // The API intersects on-games then subtracts off-games, so naming one
+    // player in both returns an empty table with no error.
+    const { filters, invalid } = decode(
+      'player_name=X&players_on%5B%5D=LeBron+James&players_off%5B%5D=LeBron+James',
+    );
+
+    expect(invalid).toEqual(['players_off[]']);
+    expect(filters).toEqual({});
   });
 
   test('never partially applies a Filter Set containing an invalid value', () => {

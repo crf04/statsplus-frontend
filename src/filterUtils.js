@@ -1,4 +1,3 @@
-import { defensiveOptions } from './utils';
 import { parseCalendarDate } from './calendarDate';
 /**
  * Shared filter translation and cleaning.
@@ -205,7 +204,6 @@ export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}
  */
 
 const LOCATION_VALUES = new Set(['Both', 'Home', 'Away']);
-const RANKABLE_FILTERS = new Set(defensiveOptions.filter((option) => option !== 'None'));
 const SELF_FILTER_KEY = /^self_filters\[(.+)\]$/;
 const MINUTES_BOUNDS = { min: 0, max: 48 };
 
@@ -303,13 +301,20 @@ export const filterSetFromSearchParams = (searchParams) => {
 
   readNames('players_on[]');
   readNames('players_off[]');
+  const presentPlayers = new Set(filters['players_on[]'] || []);
+  if ((filters['players_off[]'] || []).some((player) => presentPlayers.has(player))) {
+    reject('players_off[]');
+  }
 
   // Opponent filters and their ranks are one filter expressed across two
   // parameters: the API pairs them by position and rejects any length mismatch.
   const teams = searchParams.getAll('teams_against[]');
   const ranks = searchParams.getAll('rank_filter[]');
   if (teams.length > 0 || ranks.length > 0) {
-    if (teams.some((team) => !RANKABLE_FILTERS.has(team))) reject('teams_against[]');
+    // Which opponent filters are rankable is the API's vocabulary, and it is
+    // wider than the panel dropdown. Validating names here would refuse links
+    // written from the API documentation, so only the structure is checked.
+    if (teams.some((team) => team.trim() === '')) reject('teams_against[]');
     // Zero asks for the top nothing, which matches no team and empties the table.
     const parsedRanks = ranks.map(wholeNumber);
     if (parsedRanks.some((rank) => rank === null || rank === 0)) reject('rank_filter[]');

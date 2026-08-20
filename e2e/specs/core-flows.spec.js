@@ -397,3 +397,28 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
   expect(requested.searchParams.get('game_filter')).toBe('10');
 });
+
+test('a bound the link arrived with survives a later apply', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  // 0 is the API's own lower playstyle bound, so the panel must be able to hold
+  // it. A falsy check here would drop the bound the link arrived with.
+  await page.goto('/?player_name=LeBron+James&playstyle_RTG_min=0&playstyle_RTG_max=80');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+
+  const arrivedCount = gameLogRequests.length;
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(arrivedCount);
+
+  const reapplied = new URL(gameLogRequests.at(-1));
+  expect(reapplied.searchParams.get('playstyle_RTG_min')).toBe('0');
+  expect(reapplied.searchParams.get('playstyle_RTG_max')).toBe('80');
+});

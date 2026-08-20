@@ -1,3 +1,5 @@
+import { defensiveOptions } from './utils';
+import { parseCalendarDate } from './calendarDate';
 /**
  * Shared filter translation and cleaning.
  *
@@ -189,4 +191,123 @@ export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}
   }
 
   return cleaned;
+};
+
+/**
+ * URL decoding.
+ *
+ * A shared link carries the game-log API's own parameter names, so a link is
+ * self-describing against the API documentation and needs no alias vocabulary.
+ * An unrecognised name is ignored, because a stray tracking parameter must not
+ * break someone's link. A recognised name carrying a value we cannot honour
+ * names itself and blocks the whole Filter Set: showing results that quietly
+ * disagree with the URL is worse than refusing.
+ */
+
+const LOCATION_VALUES = new Set(['Both', 'Home', 'Away']);
+const RANKABLE_FILTERS = new Set(defensiveOptions.filter((option) => option !== 'None'));
+const SELF_FILTER_KEY = /^self_filters\[(.+)\]$/;
+const MINUTES_BOUNDS = { min: 0, max: 48 };
+
+const finiteNumber = (value) => {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const wholeNumber = (value) => {
+  const parsed = finiteNumber(value);
+  return parsed !== null && Number.isInteger(parsed) ? parsed : null;
+};
+
+/** Decode a "low,high" pair, optionally constrained to an inclusive envelope. */
+const boundedRange = (value, bounds) => {
+  if (typeof value !== 'string') return null;
+  const parts = value.split(',');
+  if (parts.length !== 2) return null;
+  const [low, high] = parts.map(finiteNumber);
+  if (low === null || high === null || low > high) return null;
+  if (bounds && (low < bounds.min || high > bounds.max)) return null;
+  return value;
+};
+
+export const filterSetFromSearchParams = (searchParams) => {
+  const filters = {};
+  const invalid = [];
+  const reject = (name) => {
+    if (!invalid.includes(name)) invalid.push(name);
+  };
+
+  const readText = (name) => {
+    const raw = searchParams.get(name);
+    if (raw === null) return;
+    const value = raw.trim();
+    if (value === '') return reject(name);
+    filters[name] = value;
+  };
+
+  const readDecoded = (name, decode) => {
+    const raw = searchParams.get(name);
+    if (raw === null) return;
+    const value = decode(raw);
+    if (value === null) return reject(name);
+    filters[name] = value;
+  };
+
+  const readNames = (name) => {
+    const values = searchParams.getAll(name);
+    if (values.length === 0) return;
+    const trimmed = values.map((value) => value.trim());
+    if (trimmed.some((value) => value === '')) return reject(name);
+    filters[name] = trimmed;
+  };
+
+  readText('player_name');
+  readText('season_filter');
+  readDecoded('minutes_filter', (value) => boundedRange(value, MINUTES_BOUNDS));
+  readDecoded('date_filter', parseCalendarDate);
+  readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
+  readDecoded('game_filter', (value) => {
+    const parsed = wholeNumber(value);
+    return parsed !== null && parsed >= 0 ? parsed : null;
+  });
+  readDecoded('playstyle_RTG_min', finiteNumber);
+  readDecoded('playstyle_RTG_max', finiteNumber);
+  if (
+    hasValue(filters.playstyle_RTG_min) &&
+    hasValue(filters.playstyle_RTG_max) &&
+    filters.playstyle_RTG_min > filters.playstyle_RTG_max
+  ) {
+    reject('playstyle_RTG_max');
+  }
+
+  readNames('players_on[]');
+  readNames('players_off[]');
+
+  // Opponent filters and their ranks are one filter expressed across two
+  // parameters: the API pairs them by position and rejects any length mismatch.
+  const teams = searchParams.getAll('teams_against[]');
+  const ranks = searchParams.getAll('rank_filter[]');
+  if (teams.length > 0 || ranks.length > 0) {
+    if (teams.some((team) => !RANKABLE_FILTERS.has(team))) reject('teams_against[]');
+    // Zero asks for the top nothing, which matches no team and empties the table.
+    const parsedRanks = ranks.map(wholeNumber);
+    if (parsedRanks.some((rank) => rank === null || rank === 0)) reject('rank_filter[]');
+    if (teams.length !== ranks.length) reject('rank_filter[]');
+    if (invalid.length === 0) {
+      filters['teams_against[]'] = teams;
+      filters['rank_filter[]'] = parsedRanks;
+    }
+  }
+
+  for (const key of new Set(searchParams.keys())) {
+    if (!SELF_FILTER_KEY.test(key)) continue;
+    const range = boundedRange(searchParams.get(key));
+    if (range === null) reject(key);
+    else filters[key] = range;
+  }
+
+  // A known filter is never partially applied: what is on screen must always
+  // match what the URL says, so one bad value withholds the whole Filter Set.
+  return invalid.length > 0 ? { filters: {}, invalid } : { filters, invalid };
 };

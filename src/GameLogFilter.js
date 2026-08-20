@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
@@ -13,10 +14,26 @@ import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
-import { cleanFilterParams, filtersForDisplay, toGameLogParams } from './filterUtils';
+import {
+  cleanFilterParams,
+  filterSetFromSearchParams,
+  filtersForDisplay,
+  toGameLogParams,
+} from './filterUtils';
+
+const listNames = (names) =>
+  names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
 const GameLogFilter = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  // The URL is the game-log API's own query string, so a link is readable
+  // against the API documentation and needs no alias vocabulary.
+  const { filters: urlFilters, invalid: urlInvalid } = useMemo(
+    () => filterSetFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
   const [selectedPlayer, setSelectedPlayer] = useState('None');
   const [displayPlayer, setDisplayPlayer] = useState('None'); // For UI display (includes NL queries)
   const [selectedTeam, setSelectedTeam] = useState('');
@@ -28,7 +45,7 @@ const GameLogFilter = () => {
   const [teams, setTeams] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({});
   const [initialGameLogs, setInitialGameLogs] = useState([]);
-  const [showLandingPage, setShowLandingPage] = useState(true); // Track if landing page should show
+  const [showLandingPage, setShowLandingPage] = useState(!hasUrlFilterSet);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
@@ -197,6 +214,47 @@ const GameLogFilter = () => {
     return undefined;
   }, [abortGameLogsRequest, requestGameLogs, selectedPlayer]);
 
+  // A URL carrying a Filter Set opens the Log Workspace with it applied, so a
+  // view can be bookmarked, shared, and reloaded. Requests wait for auth rather
+  // than firing and failing, and the requested URL is never rewritten.
+  useEffect(() => {
+    if (!hasUrlFilterSet) return undefined;
+    setShowLandingPage(false);
+
+    if (urlInvalid.length > 0) {
+      abortGameLogsRequest();
+      setGameLogs([]);
+      setInitialGameLogs([]);
+      setAverages([]);
+      setAppliedFilters({});
+      setGameLogsError(
+        `This link could not be opened: ${listNames(urlInvalid)} ` +
+          `${urlInvalid.length === 1 ? 'is not a value' : 'are not values'} we can apply. ` +
+          'No filters were applied.',
+      );
+      return undefined;
+    }
+
+    setGameLogsError(null);
+    setAppliedFilters(urlFilters);
+    setDisplayPlayer(urlFilters.player_name || 'None');
+
+    // A Filter Set without a player is partial, not malformed: hold it in the
+    // panel and wait for the user to choose who to apply it to.
+    if (!urlFilters.player_name || authLoading || !isAuthenticated) return undefined;
+
+    requestGameLogs(urlFilters, { includeInitial: true, updateSelectedTeam: true });
+    return undefined;
+  }, [
+    abortGameLogsRequest,
+    authLoading,
+    hasUrlFilterSet,
+    isAuthenticated,
+    requestGameLogs,
+    urlFilters,
+    urlInvalid,
+  ]);
+
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
     const cleanedFilters = cleanFilterParams(filterParams);
     const appliedFilters = filtersForDisplay(filterParams, { naturalLanguage: isFromNL });
@@ -255,6 +313,7 @@ const GameLogFilter = () => {
         onQueryUpdate={setCurrentQuery}
         resetToLanding={resetToLanding}
         gameLogsLoading={isGameLogsLoading}
+        inWorkspace={!showLandingPage}
       />
 
       {(authLoading || listsLoading) && (
@@ -271,6 +330,12 @@ const GameLogFilter = () => {
       {gameLogsError && (
         <Alert variant="danger" className="mx-3" role="alert">
           {gameLogsError}
+        </Alert>
+      )}
+      {!showLandingPage && !authLoading && !isAuthenticated && (
+        <Alert variant="info" className="mx-3" role="status">
+          Sign in to load these game logs. This link is kept as-is, so signing in opens exactly what
+          it points at.
         </Alert>
       )}
       {isGameLogsLoading && !showLandingPage && (

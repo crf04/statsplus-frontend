@@ -225,24 +225,28 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 
-  // A rank left blank must still travel. An empty rank is stripped on the way
-  // out, which would leave one opponent filter against zero ranks and fail the
-  // backend's one-rank-per-filter rule.
-  const rankedRequestCount = gameLogRequests.length;
+  // A filter is only addable with a usable rank. A blank rank would be stripped
+  // on the way out and desynchronise rank_filter[] from teams_against[]; a rank
+  // of zero asks for the top nothing and silently returns an empty table.
   await defensiveFilter.getByRole('combobox').selectOption('Transition');
   await page.getByPlaceholder('Number').fill('');
+  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
+  await page.getByPlaceholder('Number').fill('0');
+  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeHidden();
+
+  // A real rank makes it addable, and both filters travel with paired ranks.
+  const rankedRequestCount = gameLogRequests.length;
+  await page.getByPlaceholder('Number').fill('-8');
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
-  const blankRankRequest = new URL(gameLogRequests.at(-1));
-  expect(blankRankRequest.searchParams.getAll('teams_against[]')).toEqual([
-    'Isolation',
-    'Transition',
-  ]);
-  expect(blankRankRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '0']);
+  const pairedRequest = new URL(gameLogRequests.at(-1));
+  expect(pairedRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation', 'Transition']);
+  expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '-8']);
 });
 
 test('@critical applying an untouched panel emits only the controls the user moved', async ({

@@ -25,7 +25,7 @@ const FilterOptions = ({
   appliedFilters,
 }) => {
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
-  const [filterNumber, setFilterNumber] = useState(0);
+  const [filterNumber, setFilterNumber] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
   const [playerStatus, setPlayerStatus] = useState('on');
@@ -85,7 +85,7 @@ const FilterOptions = ({
   useEffect(() => {
     // Always reset all form fields to their defaults first
     setSelectedDefensiveFilter('None');
-    setFilterNumber(0);
+    setFilterNumber('');
     setActiveFilters([]);
     setPlayerInput('');
     setPlayerStatus('on');
@@ -176,12 +176,15 @@ const FilterOptions = ({
           ? appliedFilters['rank_filter[]']
           : [appliedFilters['rank_filter[]']];
 
-        const filtersToAdd = teamsAgainst.map((team, index) => ({
-          filter: team,
-          number: parseInt(rankFilter[index]) || 0,
-        }));
-        setActiveFilters(filtersToAdd);
-        prepopulatedControls.add('teams_against');
+        // Same rule as adding by hand: a rank of zero matches no team, so an
+        // unusable rank drops its filter rather than silently emptying the table.
+        const filtersToAdd = teamsAgainst
+          .map((team, index) => ({ filter: team, number: parseInt(rankFilter[index], 10) }))
+          .filter(({ number }) => !Number.isNaN(number) && number !== 0);
+        if (filtersToAdd.length > 0) {
+          setActiveFilters(filtersToAdd);
+          prepopulatedControls.add('teams_against');
+        }
       }
 
       // Pre-populate self filters
@@ -209,23 +212,25 @@ const FilterOptions = ({
     setTouchedControls(prepopulatedControls);
   }, [appliedFilters]);
 
+  // A rank is a league position: positive counts from the best defenses, negative
+  // from the worst. Zero asks for the top nothing, which silently matches no team
+  // and returns an empty table, so it is not an addable filter.
+  const parsedFilterRank = parseInt(filterNumber, 10);
+  const canAddFilter =
+    selectedDefensiveFilter !== 'None' &&
+    !Number.isNaN(parsedFilterRank) &&
+    parsedFilterRank !== 0 &&
+    !activeFilters.some((f) => f.filter === selectedDefensiveFilter);
+
   const handleAddFilter = () => {
-    if (selectedDefensiveFilter !== 'None') {
-      const existingFilter = activeFilters.find((f) => f.filter === selectedDefensiveFilter);
-      if (!existingFilter) {
-        // Store a real number: a blank rank is stripped as empty on the way out,
-        // desynchronising rank_filter[] from teams_against[] and failing the
-        // backend's one-rank-per-filter rule.
-        const rank = parseInt(filterNumber, 10);
-        setActiveFilters([
-          ...activeFilters,
-          { filter: selectedDefensiveFilter, number: Number.isNaN(rank) ? 0 : rank },
-        ]);
-        markControlTouched('teams_against');
-        setSelectedDefensiveFilter('None');
-        setFilterNumber(0);
-      }
-    }
+    if (!canAddFilter) return;
+    setActiveFilters([
+      ...activeFilters,
+      { filter: selectedDefensiveFilter, number: parsedFilterRank },
+    ]);
+    markControlTouched('teams_against');
+    setSelectedDefensiveFilter('None');
+    setFilterNumber('');
   };
 
   const handleRemoveFilter = (index) => {
@@ -646,7 +651,12 @@ const FilterOptions = ({
               placeholder="Number"
               style={{ appearance: 'textfield' }}
             />
-            <Button type="button" variant="outline-primary" onClick={handleAddFilter}>
+            <Button
+              type="button"
+              variant="outline-primary"
+              onClick={handleAddFilter}
+              disabled={!canAddFilter}
+            >
               Add
             </Button>
           </InputGroup>

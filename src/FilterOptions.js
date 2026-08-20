@@ -213,9 +213,13 @@ const FilterOptions = ({
     if (selectedDefensiveFilter !== 'None') {
       const existingFilter = activeFilters.find((f) => f.filter === selectedDefensiveFilter);
       if (!existingFilter) {
+        // Store a real number: a blank rank is stripped as empty on the way out,
+        // desynchronising rank_filter[] from teams_against[] and failing the
+        // backend's one-rank-per-filter rule.
+        const rank = parseInt(filterNumber, 10);
         setActiveFilters([
           ...activeFilters,
-          { filter: selectedDefensiveFilter, number: filterNumber },
+          { filter: selectedDefensiveFilter, number: Number.isNaN(rank) ? 0 : rank },
         ]);
         markControlTouched('teams_against');
         setSelectedDefensiveFilter('None');

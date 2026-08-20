@@ -224,6 +224,25 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
+
+  // A rank left blank must still travel. An empty rank is stripped on the way
+  // out, which would leave one opponent filter against zero ranks and fail the
+  // backend's one-rank-per-filter rule.
+  const rankedRequestCount = gameLogRequests.length;
+  await defensiveFilter.getByRole('combobox').selectOption('Transition');
+  await page.getByPlaceholder('Number').fill('');
+  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
+  const blankRankRequest = new URL(gameLogRequests.at(-1));
+  expect(blankRankRequest.searchParams.getAll('teams_against[]')).toEqual([
+    'Isolation',
+    'Transition',
+  ]);
+  expect(blankRankRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '0']);
 });
 
 test('@critical applying an untouched panel emits only the controls the user moved', async ({

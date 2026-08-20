@@ -197,3 +197,31 @@ test('@critical structured filters serialize through the game-log request seam',
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.get('game_filter')).toBe('5');
 });
+
+test('@critical a manual defensive filter reaches the game-log request seam', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+
+  const defensiveFilter = page.getByPlaceholder('Number').locator('xpath=..');
+  await defensiveFilter.getByRole('combobox').selectOption('Isolation');
+  await page.getByPlaceholder('Number').fill('5');
+  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const latestRequest = new URL(gameLogRequests.at(-1));
+  expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
+  expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
+});

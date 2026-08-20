@@ -144,23 +144,7 @@ const FilterOptions = ({
         setActivePlayers(playersToAdd);
       }
 
-      // Pre-populate teams against filter (legacy format)
-      if (appliedFilters.teams_against && appliedFilters.filter_numbers) {
-        const teamsAgainst = Array.isArray(appliedFilters.teams_against)
-          ? appliedFilters.teams_against
-          : [appliedFilters.teams_against];
-        const filterNumbers = Array.isArray(appliedFilters.filter_numbers)
-          ? appliedFilters.filter_numbers
-          : [appliedFilters.filter_numbers];
-
-        const filtersToAdd = teamsAgainst.map((team, index) => ({
-          filter: team,
-          number: filterNumbers[index] || 0,
-        }));
-        setActiveFilters(filtersToAdd);
-      }
-
-      // Pre-populate opponent filters from natural language queries
+      // Pre-populate opponent filters
       if (appliedFilters['teams_against[]'] && appliedFilters['rank_filter[]']) {
         const teamsAgainst = Array.isArray(appliedFilters['teams_against[]'])
           ? appliedFilters['teams_against[]']
@@ -327,8 +311,8 @@ const FilterOptions = ({
       players_on: activePlayers.filter((p) => p.status === 'on').map((p) => p.name),
       players_off: activePlayers.filter((p) => p.status === 'off').map((p) => p.name),
       date_filter: dateFilter || null,
-      teams_against: activeFilters.map((filter) => filter.filter),
-      filter_numbers: activeFilters.map((filter) => filter.number),
+      'teams_against[]': activeFilters.map((filter) => filter.filter),
+      'rank_filter[]': activeFilters.map((filter) => filter.number),
       location_filter: locationFilter,
       game_filter: gameFilter || null,
       playstyle_RTG_min: playstyleMatchupRating[0],

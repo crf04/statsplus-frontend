@@ -746,11 +746,15 @@ test('player switches clamp the card stat and team toggles remain user-controlle
     }),
   );
   await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
-  expect(
-    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
-      name: 'PTS',
-    }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  // The clamp runs in an effect, so it lands a render after the heading. Waiting
+  // on the heading alone would sample the stat before the clamp is applied.
+  await waitFor(() =>
+    expect(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'PTS',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true'),
+  );
   await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
   expect(screen.getByRole('button', { name: 'LAL defense' })).toHaveAttribute(
     'aria-pressed',

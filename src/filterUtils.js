@@ -176,22 +176,6 @@ export const convertNLToFilters = (nlResult = {}) => {
   return cleanFilterParams(filters);
 };
 
-/** Keep default playstyle bounds out of the applied-filter badges for NL. */
-export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}) => {
-  const cleaned = cleanFilterParams(filters);
-  if (!naturalLanguage) return cleaned;
-
-  const hasExplicitPlaystyleRange =
-    hasValue(filters.playstyle_RTG_min) && hasValue(filters.playstyle_RTG_max);
-
-  if (!hasExplicitPlaystyleRange) {
-    delete cleaned.playstyle_RTG_min;
-    delete cleaned.playstyle_RTG_max;
-  }
-
-  return cleaned;
-};
-
 /**
  * URL decoding.
  *
@@ -348,3 +332,69 @@ export const filterSetFromSearchParams = (searchParams) => {
   // match what the URL says, so one bad value withholds the whole Filter Set.
   return invalid.length > 0 ? { filters: {}, invalid } : { filters, invalid };
 };
+
+/*
+ * The encode direction. A Filter Set becomes the query string the API would
+ * have received, so what is in the address bar and what goes on the wire are
+ * the same thing, and `filterSetFromSearchParams` reads back what this wrote.
+ */
+
+const SCALAR_FILTER_NAMES = [
+  'player_name',
+  'season_filter',
+  'minutes_filter',
+  'date_filter',
+  'location_filter',
+  'game_filter',
+  'playstyle_RTG_min',
+  'playstyle_RTG_max',
+];
+
+const REPEATED_FILTER_NAMES = ['players_on[]', 'players_off[]', 'teams_against[]', 'rank_filter[]'];
+
+/**
+ * Encode a Filter Set as game-log query parameters, in a stable order.
+ *
+ * Only the API's own vocabulary is written. A key outside it — the prose of a
+ * query, or the frontend-only `selectedPlayer` — is dropped rather than
+ * published, because a parameter nobody re-parses becomes untrue as soon as
+ * someone hand-edits the URL.
+ */
+export const filterSetToSearchParams = (filters = {}) => {
+  const cleaned = cleanFilterParams(filters);
+  const searchParams = new URLSearchParams();
+
+  SCALAR_FILTER_NAMES.forEach((name) => {
+    if (hasValue(cleaned[name])) searchParams.set(name, String(cleaned[name]));
+  });
+
+  REPEATED_FILTER_NAMES.forEach((name) => {
+    [].concat(cleaned[name] || []).forEach((value) => searchParams.append(name, String(value)));
+  });
+
+  Object.keys(cleaned)
+    .filter((name) => SELF_FILTER_KEY.test(name))
+    .sort()
+    .forEach((name) => searchParams.set(name, String(cleaned[name])));
+
+  return searchParams;
+};
+
+/**
+ * Apply a patch to a Filter Set, replacing only the parameters it names.
+ *
+ * The panel emits the controls the user touched, so everything it stays silent
+ * about survives — including parameters it has no control for at all, such as a
+ * season that arrived from a Parsed Query. A blank patch value clears its
+ * parameter, which is how a control that was emptied differs from one that was
+ * never touched.
+ */
+export const mergeFilterSet = (filters = {}, patch = {}) =>
+  Object.entries(patch).reduce(
+    (merged, [name, value]) => {
+      if (isEmptyFilterValue(value)) delete merged[name];
+      else merged[name] = value;
+      return merged;
+    },
+    { ...filters },
+  );

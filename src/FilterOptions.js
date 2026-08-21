@@ -154,19 +154,16 @@ const FilterOptions = ({
       // Pre-populate players on/off
       const playersToAdd = [];
       // Check for both possible key formats
-      const playersOnKey = appliedFilters['players_on[]'] ? 'players_on[]' : 'players_on';
-      const playersOffKey = appliedFilters['players_off[]'] ? 'players_off[]' : 'players_off';
-
-      if (appliedFilters[playersOnKey]) {
-        const playersOn = Array.isArray(appliedFilters[playersOnKey])
-          ? appliedFilters[playersOnKey]
-          : [appliedFilters[playersOnKey]];
+      if (appliedFilters['players_on[]']) {
+        const playersOn = Array.isArray(appliedFilters['players_on[]'])
+          ? appliedFilters['players_on[]']
+          : [appliedFilters['players_on[]']];
         playersOn.forEach((player) => playersToAdd.push({ name: player, status: 'on' }));
       }
-      if (appliedFilters[playersOffKey]) {
-        const playersOff = Array.isArray(appliedFilters[playersOffKey])
-          ? appliedFilters[playersOffKey]
-          : [appliedFilters[playersOffKey]];
+      if (appliedFilters['players_off[]']) {
+        const playersOff = Array.isArray(appliedFilters['players_off[]'])
+          ? appliedFilters['players_off[]']
+          : [appliedFilters['players_off[]']];
         playersOff.forEach((player) => playersToAdd.push({ name: player, status: 'off' }));
       }
       if (playersToAdd.length > 0) {
@@ -348,6 +345,7 @@ const FilterOptions = ({
 
   const handleRemoveSelfFilter = (index) => {
     setActiveSelfFilters(activeSelfFilters.filter((_, i) => i !== index));
+    markControlTouched('self_filters');
   };
 
   const handleApplyFilters = () => {
@@ -360,8 +358,12 @@ const FilterOptions = ({
       filterParams.minutes_filter = `${minutesFilter[0]},${minutesFilter[1]}`;
     }
     if (touchedControls.has('players')) {
-      filterParams.players_on = activePlayers.filter((p) => p.status === 'on').map((p) => p.name);
-      filterParams.players_off = activePlayers.filter((p) => p.status === 'off').map((p) => p.name);
+      filterParams['players_on[]'] = activePlayers
+        .filter((p) => p.status === 'on')
+        .map((p) => p.name);
+      filterParams['players_off[]'] = activePlayers
+        .filter((p) => p.status === 'off')
+        .map((p) => p.name);
     }
     if (touchedControls.has('date_filter')) {
       filterParams.date_filter = dateFilter || null;
@@ -381,6 +383,11 @@ const FilterOptions = ({
       filterParams.playstyle_RTG_max = playstyleMatchupRating[1];
     }
     if (touchedControls.has('self_filters')) {
+      Object.keys(appliedFilters || {})
+        .filter((key) => key.startsWith('self_filters['))
+        .forEach((key) => {
+          filterParams[key] = null;
+        });
       activeSelfFilters.forEach((filter) => {
         filterParams[`self_filters[${filter.column}]`] = filter.range.join(',');
       });

@@ -1,8 +1,9 @@
 import {
   filterSetFromSearchParams,
+  filterSetToSearchParams,
+  mergeFilterSet,
   cleanFilterParams,
   convertNLToFilters,
-  filtersForDisplay,
   toGameLogParams,
 } from './filterUtils';
 
@@ -45,16 +46,6 @@ describe('filterUtils', () => {
       player_name: 'A player',
       game_filter: 0,
     });
-  });
-
-  test('hides incomplete NL playstyle defaults from display filters', () => {
-    expect(filtersForDisplay({ playstyle_RTG_min: 75 }, { naturalLanguage: true })).toEqual({});
-    expect(
-      filtersForDisplay(
-        { playstyle_RTG_min: 80, playstyle_RTG_max: 120 },
-        { naturalLanguage: true },
-      ),
-    ).toEqual({ playstyle_RTG_min: 80, playstyle_RTG_max: 120 });
   });
 });
 
@@ -222,5 +213,94 @@ describe('filterSetFromSearchParams', () => {
 
     expect(invalid).toEqual(['game_filter']);
     expect(filters).toEqual({});
+  });
+});
+
+describe('filterSetToSearchParams', () => {
+  const roundTrip = (filters) =>
+    filterSetFromSearchParams(filterSetToSearchParams(filters)).filters;
+
+  test('round-trips every recognised parameter through the decode direction', () => {
+    const filters = {
+      player_name: 'LeBron James',
+      season_filter: '2023-24',
+      minutes_filter: '20,40',
+      date_filter: '2026-01-09',
+      location_filter: 'Home',
+      game_filter: 10,
+      playstyle_RTG_min: 80,
+      playstyle_RTG_max: 120,
+      'players_on[]': ['Anthony Davis'],
+      'players_off[]': ['Austin Reaves'],
+      'teams_against[]': ['Isolation', 'Transition'],
+      'rank_filter[]': [5, -8],
+      'self_filters[PTS]': '20,60',
+    };
+
+    expect(roundTrip(filters)).toEqual(filters);
+  });
+
+  test('writes repeated parameters under the names the API reads', () => {
+    const search = filterSetToSearchParams({
+      'players_on[]': ['A', 'B'],
+      'teams_against[]': ['Isolation'],
+      'rank_filter[]': [5],
+    });
+
+    expect(search.getAll('players_on[]')).toEqual(['A', 'B']);
+    expect(search.getAll('teams_against[]')).toEqual(['Isolation']);
+    expect(search.getAll('rank_filter[]')).toEqual(['5']);
+  });
+
+  test('omits blank values rather than writing parameters nobody chose', () => {
+    const search = filterSetToSearchParams({
+      player_name: 'LeBron James',
+      date_filter: null,
+      game_filter: '',
+      'players_on[]': [],
+    });
+
+    expect(search.toString()).toBe('player_name=LeBron+James');
+  });
+
+  test('writes nothing for a key outside the API vocabulary', () => {
+    // Prose is scaffolding, not part of the Filter Set, and the frontend-only
+    // player key never reaches the wire either.
+    const search = filterSetToSearchParams({
+      player_name: 'LeBron James',
+      selectedPlayer: 'LeBron James',
+      query: 'LeBron last 10 games',
+    });
+
+    expect(search.toString()).toBe('player_name=LeBron+James');
+  });
+
+  test('an empty Filter Set writes an empty query string', () => {
+    expect(filterSetToSearchParams({}).toString()).toBe('');
+  });
+});
+
+describe('mergeFilterSet', () => {
+  test('patches only the parameters the panel named', () => {
+    // A season arrives from a Parsed Query and no panel control can express it,
+    // so adjusting an unrelated filter must not drop it.
+    expect(
+      mergeFilterSet(
+        { player_name: 'LeBron James', season_filter: '2023-24', game_filter: 10 },
+        { player_name: 'LeBron James', game_filter: 5 },
+      ),
+    ).toEqual({ player_name: 'LeBron James', season_filter: '2023-24', game_filter: 5 });
+  });
+
+  test('a blank patch value clears its parameter', () => {
+    expect(
+      mergeFilterSet({ game_filter: 10, date_filter: '2026-01-09' }, { date_filter: null }),
+    ).toEqual({ game_filter: 10 });
+  });
+
+  test('an untouched control leaves its parameter exactly as it was', () => {
+    const current = { player_name: 'LeBron James', minutes_filter: '20,40' };
+
+    expect(mergeFilterSet(current, { player_name: 'LeBron James' })).toEqual(current);
   });
 });

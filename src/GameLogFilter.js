@@ -54,7 +54,12 @@ const GameLogFilter = () => {
   const [playerList, setPlayerList] = useState([]);
   const [teams, setTeams] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({});
-  const [initialGameLogs, setInitialGameLogs] = useState([]);
+  // The player's season with no filter applied. It is what the Self Filters
+  // controls offer stats and slider bounds from, so it must never be a filtered
+  // result set: ranges taken from one cannot be widened back out.
+  const [seasonGameLogs, setSeasonGameLogs] = useState({ player: null, gameLogs: [] });
+  const [seasonGameLogsLoading, setSeasonGameLogsLoading] = useState(false);
+  const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
@@ -156,70 +161,126 @@ const GameLogFilter = () => {
     setIsGameLogsLoading(false);
   }, []);
 
+  const seasonRequestRef = useRef({ player: null, controller: null });
+
+  const clearSeasonGameLogs = useCallback(() => {
+    seasonRequestRef.current.controller?.abort();
+    seasonRequestRef.current = { player: null, controller: null };
+    setSeasonGameLogsLoading(false);
+    setSeasonGameLogsFailed(false);
+    setSeasonGameLogs({ player: null, gameLogs: [] });
+  }, []);
+
+  // Nothing in flight outlives the workspace.
+  useEffect(() => clearSeasonGameLogs, [clearSeasonGameLogs]);
+
+  /*
+   * The game-log endpoint is the slowest in the application and most sessions
+   * never touch Self Filters, so the season is asked for only when that control
+   * is opened, and only once per player. It is its own request rather than a
+   * by-product of the filtered one, because the whole point of it is that no
+   * filter is applied.
+   */
+  const loadSeasonGameLogs = useCallback(() => {
+    const player = urlFilters.player_name;
+    if (!player || authLoading || !isAuthenticated) return;
+    if (seasonRequestRef.current.player === player) return;
+
+    seasonRequestRef.current.controller?.abort();
+    const controller = new AbortController();
+    seasonRequestRef.current = { player, controller };
+    setSeasonGameLogsLoading(true);
+    setSeasonGameLogsFailed(false);
+
+    // Only the request still on the ref may report anything. Comparing the
+    // controller rather than the player is what makes that true whatever order
+    // a superseded request settles in, including a second request for the same
+    // player after a change away and back.
+    const isCurrentRequest = () => seasonRequestRef.current.controller === controller;
+
+    fetchGameLogsData({ player_name: player }, { signal: controller.signal })
+      .then((data) => {
+        if (!isCurrentRequest()) return;
+        setSeasonGameLogsLoading(false);
+        setSeasonGameLogs({ player, gameLogs: data.gameLogs });
+      })
+      .catch((error) => {
+        if (!isCurrentRequest()) return;
+        // Forget the attempt so that re-opening the control asks again rather
+        // than offering nothing forever. A cancelled request was superseded
+        // deliberately and has nothing to report.
+        seasonRequestRef.current = { player: null, controller: null };
+        setSeasonGameLogsLoading(false);
+        setSeasonGameLogsFailed(!isRequestCancelled(error));
+      });
+  }, [authLoading, isAuthenticated, urlFilters.player_name]);
+
+  // One player's season must never bound another player's sliders.
+  const playerSeasonGameLogs = useMemo(
+    () => (seasonGameLogs.player === selectedPlayer ? seasonGameLogs.gameLogs : []),
+    [seasonGameLogs, selectedPlayer],
+  );
+
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
   // cancelled and ignored when their promises settle.
-  const requestGameLogs = useCallback(
-    (params, { includeInitial = false, updateSelectedTeam = true } = {}) => {
-      const previousRequest = gameLogsRequestRef.current;
-      previousRequest.controller?.abort();
+  const requestGameLogs = useCallback((params, { updateSelectedTeam = true } = {}) => {
+    const previousRequest = gameLogsRequestRef.current;
+    previousRequest.controller?.abort();
 
-      const requestId = previousRequest.id + 1;
-      const controller = new AbortController();
-      gameLogsRequestRef.current = { id: requestId, controller };
-      setIsGameLogsLoading(true);
-      setGameLogsError(null);
-      // The badges above the table already describe the Filter Set just
-      // requested, so whatever is still on screen belongs to nobody. Clearing
-      // at the start is what keeps that true while the request is in flight and
-      // if it never arrives, rather than only once it does.
-      setGameLogs([]);
-      setAverages([]);
+    const requestId = previousRequest.id + 1;
+    const controller = new AbortController();
+    gameLogsRequestRef.current = { id: requestId, controller };
+    setIsGameLogsLoading(true);
+    setGameLogsError(null);
+    // The badges above the table already describe the Filter Set just
+    // requested, so whatever is still on screen belongs to nobody. Clearing
+    // at the start is what keeps that true while the request is in flight and
+    // if it never arrives, rather than only once it does.
+    setGameLogs([]);
+    setAverages([]);
 
-      return fetchGameLogsData(params, { signal: controller.signal })
-        .then((data) => {
-          if (gameLogsRequestRef.current.id !== requestId) {
-            return { stale: true };
-          }
+    return fetchGameLogsData(params, { signal: controller.signal })
+      .then((data) => {
+        if (gameLogsRequestRef.current.id !== requestId) {
+          return { stale: true };
+        }
 
-          setGameLogs(data.gameLogs);
-          setAverages(data.averages);
-          if (includeInitial) setInitialGameLogs(data.gameLogs);
-          if (updateSelectedTeam) {
-            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
-          }
-          return { ok: true, data };
-        })
-        .catch((error) => {
-          const stale = gameLogsRequestRef.current.id !== requestId;
-          if (stale || isRequestCancelled(error)) {
-            return { stale, cancelled: true };
-          }
+        setGameLogs(data.gameLogs);
+        setAverages(data.averages);
+        if (updateSelectedTeam) {
+          setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
+        }
+        return { ok: true, data };
+      })
+      .catch((error) => {
+        const stale = gameLogsRequestRef.current.id !== requestId;
+        if (stale || isRequestCancelled(error)) {
+          return { stale, cancelled: true };
+        }
 
-          setGameLogsError(
-            getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
-          );
-          return { ok: false, error };
-        })
-        .finally(() => {
-          if (gameLogsRequestRef.current.id === requestId) {
-            setIsGameLogsLoading(false);
-          }
-        });
-    },
-    [],
-  );
+        setGameLogsError(
+          getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
+        );
+        return { ok: false, error };
+      })
+      .finally(() => {
+        if (gameLogsRequestRef.current.id === requestId) {
+          setIsGameLogsLoading(false);
+        }
+      });
+  }, []);
 
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
     setCurrentQuery('');
     setAppliedFilters({});
     setGameLogs([]);
-    setInitialGameLogs([]);
+    clearSeasonGameLogs();
     setAverages([]);
     setSelectedTeam('');
     setGameLogsError(null);
-  }, [abortGameLogsRequest]);
+  }, [abortGameLogsRequest, clearSeasonGameLogs]);
 
   // The sentinel only ever says "Workspace, no filters yet". Alongside filters
   // it is already untrue, so it is dropped rather than carried into a link
@@ -256,7 +317,7 @@ const GameLogFilter = () => {
     if (urlInvalid.length > 0) {
       abortGameLogsRequest();
       setGameLogs([]);
-      setInitialGameLogs([]);
+      clearSeasonGameLogs();
       setAverages([]);
       setAppliedFilters({});
       setGameLogsError(
@@ -275,7 +336,7 @@ const GameLogFilter = () => {
     if (!authLoading && !isAuthenticated) {
       abortGameLogsRequest();
       setGameLogs([]);
-      setInitialGameLogs([]);
+      clearSeasonGameLogs();
       setAverages([]);
       return undefined;
     }
@@ -287,7 +348,7 @@ const GameLogFilter = () => {
     if (!urlFilters.player_name) {
       abortGameLogsRequest();
       setGameLogs([]);
-      setInitialGameLogs([]);
+      clearSeasonGameLogs();
       setAverages([]);
       setSelectedTeam('');
       return undefined;
@@ -300,11 +361,12 @@ const GameLogFilter = () => {
     // request only to abort it.
     if (hasBrowseSentinel) return undefined;
 
-    requestGameLogs(urlFilters, { includeInitial: true, updateSelectedTeam: true });
+    requestGameLogs(urlFilters, { updateSelectedTeam: true });
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,
+    clearSeasonGameLogs,
     hasBrowseSentinel,
     inWorkspace,
     isAuthenticated,
@@ -501,7 +563,10 @@ const GameLogFilter = () => {
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
                 selectedPlayer={selectedPlayer}
-                initialGameLogs={initialGameLogs}
+                seasonGameLogs={playerSeasonGameLogs}
+                seasonGameLogsLoading={seasonGameLogsLoading}
+                seasonGameLogsFailed={seasonGameLogsFailed}
+                onOpenSelfFilters={loadSeasonGameLogs}
                 appliedFilters={appliedFilters}
               />
             </Col>

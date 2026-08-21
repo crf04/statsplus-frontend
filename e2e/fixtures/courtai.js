@@ -939,6 +939,29 @@ const mutationContract = [
   },
 ];
 
+// Two players whose seasons cannot be confused for one another: ranges taken
+// from the wrong player's season are only detectable if the seasons differ.
+export const curryGameLogs = gameLogs.map((log, index) => ({
+  ...log,
+  MATCHUP: log.MATCHUP.replace('LAL', 'GSW'),
+  PTS: index === 0 ? 42 : 18,
+}));
+
+const seasonsByPlayer = {
+  'Stephen Curry': curryGameLogs,
+};
+
+// The real endpoint narrows the season by the self filters it is sent. The
+// contract has to narrow too, or a test cannot tell a filtered result set from
+// the unfiltered season the Self Filters ranges are supposed to come from.
+const applySelfFilters = (logs, url) =>
+  [...url.searchParams].reduce((remaining, [key, value]) => {
+    const stat = key.match(/^self_filters\[(.+)\]$/)?.[1];
+    if (!stat) return remaining;
+    const [min, max] = value.split(',').map(Number);
+    return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
+  }, logs);
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   await page.route('**/api/**', async (route) => {
@@ -1032,7 +1055,10 @@ export const installApiContract = async (page, overrides = {}) => {
     if (url.pathname === '/api/games/game_logs') {
       await route.fulfill({
         json: {
-          game_logs: gameLogs,
+          game_logs: applySelfFilters(
+            seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs,
+            url,
+          ),
           averages: [averages],
           season_averages: [{ ...averages, PTS: 27, AST: 8 }],
           next_game: 'Atlanta Hawks',

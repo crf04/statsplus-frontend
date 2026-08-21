@@ -360,8 +360,12 @@ const FilterOptions = ({
       filterParams.minutes_filter = `${minutesFilter[0]},${minutesFilter[1]}`;
     }
     if (touchedControls.has('players')) {
-      filterParams.players_on = activePlayers.filter((p) => p.status === 'on').map((p) => p.name);
-      filterParams.players_off = activePlayers.filter((p) => p.status === 'off').map((p) => p.name);
+      filterParams['players_on[]'] = activePlayers
+        .filter((p) => p.status === 'on')
+        .map((p) => p.name);
+      filterParams['players_off[]'] = activePlayers
+        .filter((p) => p.status === 'off')
+        .map((p) => p.name);
     }
     if (touchedControls.has('date_filter')) {
       filterParams.date_filter = dateFilter || null;

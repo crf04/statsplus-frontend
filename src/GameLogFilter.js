@@ -17,7 +17,8 @@ import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from '.
 import {
   cleanFilterParams,
   filterSetFromSearchParams,
-  filtersForDisplay,
+  filterSetToSearchParams,
+  mergeFilterSet,
   toGameLogParams,
 } from './filterUtils';
 
@@ -26,7 +27,7 @@ const listNames = (names) =>
 
 const GameLogFilter = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
   const { filters: urlFilters, invalid: urlInvalid } = useMemo(
@@ -265,10 +266,17 @@ const GameLogFilter = () => {
     urlInvalid,
   ]);
 
+  /*
+   * Applying writes the Filter Set to the URL and stops there. The URL effect
+   * above owns the request, so there is one path from "what the user asked
+   * for" to "what the API is sent", and it runs through the address bar.
+   *
+   * The write patches rather than replaces: the panel emits only the controls
+   * the user touched, so a parameter it has no control for — a season that
+   * arrived from a Parsed Query — survives an apply instead of being dropped.
+   */
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
     const cleanedFilters = cleanFilterParams(filterParams);
-    const appliedFilters = filtersForDisplay(filterParams, { naturalLanguage: isFromNL });
-    setAppliedFilters(appliedFilters);
 
     if (Object.keys(cleanedFilters).length === 0) {
       setGameLogsError('Add at least one filter before loading game logs.');
@@ -285,22 +293,17 @@ const GameLogFilter = () => {
       return Promise.resolve({ ok: false, empty: true });
     }
 
-    const request = requestGameLogs(cleanedFilters, {
-      includeInitial: isFromNL,
-      updateSelectedTeam: true,
-    });
+    // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
+    // only ever describes part of one, so it patches.
+    const nextFilters = isFromNL ? cleanedFilters : mergeFilterSet(urlFilters, cleanedFilters);
+    // Pushed, not replaced, so Back undoes the last filter change.
+    setSearchParams(filterSetToSearchParams(nextFilters), { replace: false });
 
-    if (!isFromNL) return request;
-
-    return request.then((result) => {
-      // Each callback is scoped to the NL query that created it. The callback
-      // itself guards against clearing a newer query, so stale/cancelled game
-      // log requests still settle their own loading state.
-      if (nlLoadingCallback) {
-        nlLoadingCallback(result.ok === true);
-      }
-      return result;
-    });
+    // The Filter Set is now recorded, which is all a Parsed Query was for. The
+    // game-log request that follows reports itself through gameLogsLoading and
+    // the error alert.
+    if (nlLoadingCallback) nlLoadingCallback(true);
+    return undefined;
   };
 
   // Handler for natural language query results
@@ -371,7 +374,9 @@ const GameLogFilter = () => {
             <button
               onClick={() => {
                 abortGameLogsRequest();
+                setSearchParams(new URLSearchParams(), { replace: false });
                 setShowLandingPage(true);
+                setAppliedFilters({});
                 setCurrentQuery('');
                 setSelectedPlayer('None');
                 setDisplayPlayer('None');

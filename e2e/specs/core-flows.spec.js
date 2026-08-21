@@ -88,12 +88,100 @@ test('@critical natural-language search renders results and returns to search', 
 
   await expect(page.getByRole('heading', { name: 'LeBron James', exact: true })).toBeVisible();
   await expect(page.getByText(`"${query}"`)).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
 
+  // The prose was scaffolding. The Filter Set it resolved to is the artifact
+  // worth keeping, so it goes in the address bar; the prose does not.
+  await expect(page).toHaveURL(/player_name=LeBron\+James/);
+  await expect(page).toHaveURL(/game_filter=10/);
+  expect(new URL(page.url()).searchParams.has('query')).toBe(false);
+
   await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveValue('');
+});
+
+test('@critical a shared link reproduces a prose query with no language model', async ({
+  authenticatedPage: page,
+}) => {
+  const parserCalls = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/nl-query') parserCalls.push(request.url());
+  });
+
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/player_name=/);
+
+  // What the sender is looking at, opened by someone else.
+  const shared = new URL(page.url());
+  await page.goto('/');
+  parserCalls.length = 0;
+  await page.goto(shared.pathname + shared.search);
+
+  await expect(page.getByRole('heading', { name: 'LeBron James', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  expect(parserCalls).toHaveLength(0);
+});
+
+test('@critical Back undoes the last filter change', async ({ authenticatedPage: page }) => {
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await expect(page).toHaveURL(/game_filter=5/);
+
+  await page.goBack();
+  await expect(page).not.toHaveURL(/game_filter/);
+  await expect(page).toHaveURL(/player_name=LeBron\+James/);
+});
+
+test('@critical leaving is one action however many filters were applied', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  for (const games of ['9', '8', '7']) {
+    await page.getByLabel('Last N games:').fill(games);
+    await page.getByRole('button', { name: 'Apply Filters' }).click();
+    await expect(page).toHaveURL(new RegExp(`game_filter=${games}`));
+  }
+
+  await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+});
+
+test('a season the panel cannot express survives an unrelated apply', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&season_filter=2023-24');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page).toHaveURL(/season_filter=2023-24/);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const latest = new URL(gameLogRequests.at(-1));
+  expect(latest.searchParams.get('season_filter')).toBe('2023-24');
+  expect(latest.searchParams.get('game_filter')).toBe('5');
+  // Untouched controls stay absent so the API applies its own defaults.
+  expect(latest.searchParams.has('minutes_filter')).toBe(false);
+  expect(latest.searchParams.has('location_filter')).toBe(false);
 });
 
 test('@critical the query reference is linkable and hands an example back to search', async ({
@@ -188,7 +276,7 @@ test('@critical structured filters serialize through the game-log request seam',
   await page.goto('/');
   await page.getByRole('textbox').fill('LeBron James last 10 games');
   await page.getByRole('textbox').press('Enter');
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   await page.getByLabel('Last N games:').fill('5');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
@@ -210,7 +298,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await page.goto('/');
   await page.getByRole('textbox').fill('LeBron James last 10 games');
   await page.getByRole('textbox').press('Enter');
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   const defensiveFilter = page.getByPlaceholder('Number').locator('xpath=..');
   await defensiveFilter.getByRole('combobox').selectOption('Isolation');
@@ -261,7 +349,7 @@ test('@critical applying an untouched panel emits only the controls the user mov
   await page.goto('/');
   await page.getByRole('textbox').fill('LeBron James last 10 games');
   await page.getByRole('textbox').press('Enter');
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   await page.getByLabel('Last N games:').fill('5');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
@@ -305,7 +393,7 @@ test('@critical a link carrying a Filter Set opens the workspace and survives re
   await page.goto('/?player_name=LeBron+James&game_filter=10&location_filter=Home');
 
   // No prose was typed and no parser was called, yet the workspace is open.
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
   const requested = new URL(gameLogRequests.at(-1));
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
@@ -313,7 +401,7 @@ test('@critical a link carrying a Filter Set opens the workspace and survives re
   expect(requested.searchParams.get('location_filter')).toBe('Home');
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   expect(page.url()).toContain('player_name=LeBron+James');
 });
 
@@ -363,7 +451,7 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
 
   await page.goto('/?player_name=LeBron+James&utm_source=twitter');
 
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
   const requested = new URL(gameLogRequests.at(-1));
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
@@ -391,7 +479,7 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
 
   // Signing in fires the held Filter Set exactly once, without a second visit.
   await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect.poll(() => gameLogRequests.length).toBe(1);
   const requested = new URL(gameLogRequests[0]);
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
@@ -411,16 +499,20 @@ test('a bound the link arrived with survives a later apply', async ({
   // 0 is the API's own lower playstyle bound, so the panel must be able to hold
   // it. A falsy check here would drop the bound the link arrived with.
   await page.goto('/?player_name=LeBron+James&playstyle_RTG_min=0&playstyle_RTG_max=80');
-  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
 
   const arrivedCount = gameLogRequests.length;
+  // Touch an unrelated control, so the apply is a real change rather than a
+  // rewrite of the Filter Set already in the address bar.
+  await page.getByLabel('Last N games:').fill('5');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(arrivedCount);
 
   const reapplied = new URL(gameLogRequests.at(-1));
   expect(reapplied.searchParams.get('playstyle_RTG_min')).toBe('0');
   expect(reapplied.searchParams.get('playstyle_RTG_max')).toBe('80');
+  await expect(page).toHaveURL(/playstyle_RTG_min=0/);
 });
 
 test('applying a playerless link asks for a player instead of sending a placeholder', async ({

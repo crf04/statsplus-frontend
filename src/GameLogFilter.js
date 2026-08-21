@@ -39,6 +39,9 @@ const GameLogFilter = () => {
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
   const inWorkspace = isWorkspaceSearch(searchParams);
   const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
+  // A refused link decoded to nothing, so there is no Filter Set to show, edit,
+  // or patch a player into — only the refusal naming what has to be fixed.
+  const isRefusedLink = urlInvalid.length > 0;
   // The player is a parameter of the Filter Set like any other, so it is read
   // back out of the URL rather than held beside it. One source of truth is what
   // keeps the applied-filter badges describing the data actually on screen.
@@ -327,7 +330,7 @@ const GameLogFilter = () => {
     // open, quietly replaced by a different one we did. A Parsed Query is not a
     // patch but a whole Filter Set, so it still supersedes the refused link and
     // stays the way out.
-    if (!isFromNL && urlInvalid.length > 0) {
+    if (!isFromNL && isRefusedLink) {
       return Promise.resolve({ ok: false, refused: true });
     }
 
@@ -464,7 +467,7 @@ const GameLogFilter = () => {
       )}
 
       {/* Only show main content after landing page */}
-      {inWorkspace && (
+      {inWorkspace && !isRefusedLink && (
         <Container fluid className="game-log-filter py-2">
           <Row className="mb-5">
             <Col md={8}>
@@ -520,7 +523,11 @@ const GameLogFilter = () => {
             </div>
 
             <div className="game-logs-main">
-              <GameLogsTable gameLogs={gameLogs} appliedFilters={appliedFilters} />
+              <GameLogsTable
+                gameLogs={gameLogs}
+                appliedFilters={appliedFilters}
+                isLoading={isGameLogsLoading}
+              />
             </div>
           </div>
         </Container>

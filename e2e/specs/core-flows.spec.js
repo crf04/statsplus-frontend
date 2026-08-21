@@ -814,15 +814,51 @@ test('a refused link is not quietly replaced by choosing a player', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=0');
   await expect(page.getByRole('alert')).toContainText('game_filter');
 
-  await page.getByLabel('Player:').fill('Stephen');
-  await page.getByRole('option', { name: 'Stephen Curry' }).click();
-
-  // The refusal withheld the whole Filter Set, so there is nothing to patch a
-  // player into. Publishing what is left would drop the parameter the alert is
-  // naming and load unfiltered data the link never asked for.
+  // The refusal withheld the whole Filter Set, so there is nothing to show, edit,
+  // or patch a player into. Offering controls that cannot act on it would invite
+  // an apply that drops the parameter the alert is naming and loads unfiltered
+  // data the link never asked for.
+  await expect(page.getByLabel('Player:')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Apply Filters' })).toBeHidden();
   await expect(page).toHaveURL(/game_filter=0/);
-  await expect(page.getByRole('alert')).toContainText('game_filter');
   expect(gameLogRequests).toHaveLength(0);
+
+  // Leaving is still one action, so the refusal is never a dead end.
+  await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page.getByRole('textbox')).toBeVisible();
+});
+
+test('a slow request never claims the result was empty', async ({ authenticatedPage: page }) => {
+  let release;
+  await page.route('**/api/games/game_logs**', async (route) => {
+    if (new URL(route.request().url()).searchParams.has('game_filter')) {
+      await new Promise((resolve) => {
+        release = resolve;
+      });
+    }
+    await route.fulfill({
+      json: {
+        game_logs: gameLogs,
+        averages: [averages],
+        season_averages: [averages],
+        next_game: 'Atlanta Hawks',
+      },
+    });
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  // "No game logs to display" is a finding. A request that has not answered yet
+  // has not found anything, and a user who acts on that reads a real result.
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByText('No game logs to display')).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
 });
 
 test('a link carrying filters but no player applies them to the player chosen', async ({

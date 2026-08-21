@@ -4,7 +4,7 @@ import './GameLogFilter.css';
 import AppliedFilters from './AppliedFilters';
 import { numericOrZero, toFiniteNumber } from './numberUtils';
 
-const GameLogsTable = ({ gameLogs, appliedFilters }) => {
+const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
   const [sortField, setSortField] = useState('GAME_DATE');
   const [sortDirection, setSortDirection] = useState('desc');
 
@@ -131,9 +131,14 @@ const GameLogsTable = ({ gameLogs, appliedFilters }) => {
       <Card className="dark-card">
         <Card.Body>
           <h4 className="mb-4">Game Logs</h4>
-          <div className="no-games-message">
-            <h4>No game logs to display</h4>
-          </div>
+          {/* A request still in flight has not found nothing — it has not
+              answered yet. The loading state above says so; claiming an empty
+              result here would be a lie the user acts on. */}
+          {!isLoading && (
+            <div className="no-games-message">
+              <h4>No game logs to display</h4>
+            </div>
+          )}
         </Card.Body>
       </Card>
     );

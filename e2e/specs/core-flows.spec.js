@@ -422,3 +422,22 @@ test('a bound the link arrived with survives a later apply', async ({
   expect(reapplied.searchParams.get('playstyle_RTG_min')).toBe('0');
   expect(reapplied.searchParams.get('playstyle_RTG_max')).toBe('80');
 });
+
+test('applying a playerless link asks for a player instead of sending a placeholder', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?game_filter=10');
+  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page.getByRole('alert')).toContainText('Choose a player');
+  expect(gameLogRequests).toHaveLength(0);
+});

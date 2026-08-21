@@ -276,6 +276,15 @@ const GameLogFilter = () => {
       return Promise.resolve({ ok: false, empty: true });
     }
 
+    // Arriving on a link that carries filters but no player leaves the panel
+    // holding a Filter Set with nobody to apply it to. Say so, rather than
+    // sending the placeholder and reporting a player the user never named.
+    if (!cleanedFilters.player_name || cleanedFilters.player_name === 'None') {
+      setGameLogsError('Choose a player before applying these filters.');
+      if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
+      return Promise.resolve({ ok: false, empty: true });
+    }
+
     const request = requestGameLogs(cleanedFilters, {
       includeInitial: isFromNL,
       updateSelectedTeam: true,

@@ -121,7 +121,6 @@ describe('filterSetFromSearchParams', () => {
   test.each([
     ['minutes_filter=oops', 'minutes_filter'],
     ['minutes_filter=40%2C20', 'minutes_filter'],
-    ['minutes_filter=0%2C60', 'minutes_filter'],
     ['location_filter=Somewhere', 'location_filter'],
     ['game_filter=-3', 'game_filter'],
     ['game_filter=1.5', 'game_filter'],
@@ -182,6 +181,40 @@ describe('filterSetFromSearchParams', () => {
 
     expect(invalid).toEqual(['players_off[]']);
     expect(filters).toEqual({});
+  });
+
+  test('accepts a minute range beyond the panel slider', () => {
+    // The API caps nothing; overtime games really do log 50+ minutes, so
+    // refusing them here would refuse a link the API would honour.
+    const { filters, invalid } = decode('minutes_filter=0%2C53');
+
+    expect(invalid).toEqual([]);
+    expect(filters.minutes_filter).toBe('0,53');
+  });
+
+  test.each([
+    ['minutes_filter=20.5%2C40', 'minutes_filter'],
+    ['season_filter=2023-25', 'season_filter'],
+    ['season_filter=2023-23', 'season_filter'],
+  ])('names %s, which the API would reject without naming it', (query, expected) => {
+    expect(decode(query).invalid).toContain(expected);
+  });
+
+  test('accepts a fractional self-filter range, which the API allows', () => {
+    const { filters, invalid } = decode('self_filters%5BFG_PCT%5D=0.4%2C0.6');
+
+    expect(invalid).toEqual([]);
+    expect(filters['self_filters[FG_PCT]']).toBe('0.4,0.6');
+  });
+
+  test('rejects the same player named present and absent under either spelling', () => {
+    // The API resolves names by fuzzy match, so casing and spacing collapse to
+    // the same player and the table comes back silently empty.
+    const { invalid } = decode(
+      'player_name=X&players_on%5B%5D=LeBron+James&players_off%5B%5D=lebron++james',
+    );
+
+    expect(invalid).toEqual(['players_off[]']);
   });
 
   test('never partially applies a Filter Set containing an invalid value', () => {

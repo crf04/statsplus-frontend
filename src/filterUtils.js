@@ -205,7 +205,6 @@ export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}
 
 const LOCATION_VALUES = new Set(['Both', 'Home', 'Away']);
 const SELF_FILTER_KEY = /^self_filters\[(.+)\]$/;
-const MINUTES_BOUNDS = { min: 0, max: 48 };
 
 const finiteNumber = (value) => {
   if (typeof value !== 'string' || value.trim() === '') return null;
@@ -219,23 +218,33 @@ const wholeNumber = (value) => {
 };
 
 /**
- * Decode a "low,high" pair, optionally constrained to an inclusive envelope.
+ * Decode a "low,high" pair.
  *
  * Returns the pair re-spelled as plain decimals. Exponent and hex forms satisfy
  * `Number()` but are not the decimals the API reads, so a link we accepted would
  * otherwise produce a request it rejects with an error naming nothing.
+ *
+ * `whole` mirrors the API, which parses minutes as integers. No range is capped
+ * here: the API caps nothing, and overtime games really do log more than 48
+ * minutes, so an envelope would refuse links the API would honour.
  */
-const boundedRange = (value, bounds) => {
+const numericRange = (value, { whole = false } = {}) => {
   if (typeof value !== 'string') return null;
   const parts = value.split(',');
   if (parts.length !== 2) return null;
-  const [low, high] = parts.map(finiteNumber);
+  const [low, high] = parts.map(whole ? wholeNumber : finiteNumber);
   if (low === null || high === null || low > high) return null;
-  if (bounds && (low < bounds.min || high > bounds.max)) return null;
   return `${low},${high}`;
 };
 
-const SEASON_FORMAT = /^\d{4}-\d{2}$/;
+const SEASON_FORMAT = /^(\d{4})-(\d{2})$/;
+
+/** The API requires the suffix to be the following calendar year's last two digits. */
+const isCanonicalSeason = (value) => {
+  const match = SEASON_FORMAT.exec(value);
+  if (match === null) return false;
+  return match[2] === String((Number(match[1]) + 1) % 100).padStart(2, '0');
+};
 
 export const filterSetFromSearchParams = (searchParams) => {
   const filters = {};
@@ -281,8 +290,8 @@ export const filterSetFromSearchParams = (searchParams) => {
   };
 
   readText('player_name');
-  readText('season_filter', (value) => SEASON_FORMAT.test(value));
-  readDecoded('minutes_filter', (value) => boundedRange(value, MINUTES_BOUNDS));
+  readText('season_filter', isCanonicalSeason);
+  readDecoded('minutes_filter', (value) => numericRange(value, { whole: true }));
   readDecoded('date_filter', parseCalendarDate);
   readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
   readDecoded('game_filter', (value) => {
@@ -301,8 +310,9 @@ export const filterSetFromSearchParams = (searchParams) => {
 
   readNames('players_on[]');
   readNames('players_off[]');
-  const presentPlayers = new Set(filters['players_on[]'] || []);
-  if ((filters['players_off[]'] || []).some((player) => presentPlayers.has(player))) {
+  const samePlayer = (name) => name.toLowerCase().replace(/\s+/g, ' ');
+  const presentPlayers = new Set((filters['players_on[]'] || []).map(samePlayer));
+  if ((filters['players_off[]'] || []).some((player) => presentPlayers.has(samePlayer(player)))) {
     reject('players_off[]');
   }
 
@@ -329,7 +339,7 @@ export const filterSetFromSearchParams = (searchParams) => {
     if (!SELF_FILTER_KEY.test(key)) continue;
     const raw = readOnce(key);
     if (raw === null) continue;
-    const range = boundedRange(raw);
+    const range = numericRange(raw);
     if (range === null) reject(key);
     else filters[key] = range;
   }

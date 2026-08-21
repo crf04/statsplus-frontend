@@ -642,6 +642,16 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   await page.getByLabel('Self filter stat').selectOption('PTS');
   await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
 
+  // Everything the disclosure hides sits inside the region it says it controls,
+  // both ends of the range included.
+  const disclosure = page.getByRole('button', { name: 'Self Filters' });
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+  await expect(disclosure).toHaveAttribute('aria-controls', 'self-filter-controls');
+  const selfFilterControls = page.locator('#self-filter-controls');
+  await expect(selfFilterControls.getByLabel('Self filter stat')).toBeVisible();
+  await expect(selfFilterControls.getByLabel('Lower thumb')).toBeVisible();
+  await expect(selfFilterControls.getByLabel('Upper thumb')).toBeVisible();
+
   // The season bounds the slider, so the filter the user arrived with can be
   // widened back out again.
   await page.getByRole('button', { name: 'Add self filter' }).click();
@@ -650,6 +660,14 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   await expect.poll(() => gameLogRequests.length).toBe(3);
   expect(gameLogRequests.at(-1).searchParams.get('self_filters[PTS]')).toBe('27,31');
   await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+
+  // Closed, the control is gone but what it already applied is not: a filter
+  // that arrived on a link stays readable and removable without opening it.
+  await disclosure.click();
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+  await expect(selfFilterControls).toHaveCount(0);
+  const appliedSelfFilters = page.getByRole('group', { name: 'Applied self filters' });
+  await expect(appliedSelfFilters.getByRole('button', { name: 'Remove PTS filter' })).toBeVisible();
 });
 
 test('an open Self Filters control follows a player change to that season', async ({
@@ -726,7 +744,131 @@ test('a superseded season never bounds the player on screen', async ({
   await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
 });
 
-test('a season that fails to load says so and is retried on re-opening', async ({
+test('a player left and returned to gets a fresh season request', async ({
+  authenticatedPage: page,
+}) => {
+  const seasonRequests = [];
+  const cancelledSeasonRequests = [];
+  const isSeasonUrl = (url) =>
+    url.pathname === '/api/games/game_logs' &&
+    [...url.searchParams.keys()].join() === 'player_name';
+
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (isSeasonUrl(url)) seasonRequests.push(url.searchParams.get('player_name'));
+  });
+  page.on('requestfailed', (request) => {
+    const url = new URL(request.url());
+    if (isSeasonUrl(url)) cancelledSeasonRequests.push(url.searchParams.get('player_name'));
+  });
+
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  let leBronSeasonCount = 0;
+  await page.route('**/api/games/game_logs**', async (route) => {
+    const url = new URL(route.request().url());
+    const player = url.searchParams.get('player_name');
+    if (isSeasonUrl(url) && player === 'LeBron James') {
+      leBronSeasonCount += 1;
+      // Only the first one waits, so the request that answers the return is
+      // deterministically the second.
+      if (leBronSeasonCount === 1) await held;
+    }
+    try {
+      await route.fulfill({
+        json: {
+          game_logs: player === 'Stephen Curry' ? curryGameLogs : gameLogs,
+          averages: [averages],
+          season_averages: [averages],
+          next_game: 'Atlanta Hawks',
+        },
+      });
+    } catch {
+      // The browser gave up on this request while it was held. Nothing to send.
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await expect.poll(() => seasonRequests).toEqual(['LeBron James']);
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+
+  // Back to the player we started on. The first request for them was abandoned
+  // on the way out, so returning has to ask again rather than wait on it.
+  await page.getByLabel('Player:').fill('LeBron');
+  await page.getByRole('option', { name: 'LeBron James' }).click();
+  await expect
+    .poll(() => seasonRequests)
+    .toEqual(['LeBron James', 'Stephen Curry', 'LeBron James']);
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+
+  // The abandoned first request answers at last, for the player now on screen.
+  // It is not the request anyone is waiting on, so it changes nothing.
+  release();
+  await expect(page.getByText('PTS: 18.0 - 42.0')).toHaveCount(0);
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  expect(cancelledSeasonRequests).toEqual(['LeBron James']);
+});
+
+test('leaving the Workspace cancels a season still in flight', async ({
+  authenticatedPage: page,
+}) => {
+  const cancelledSeasonRequests = [];
+  page.on('requestfailed', (request) => {
+    const url = new URL(request.url());
+    if (
+      url.pathname === '/api/games/game_logs' &&
+      [...url.searchParams.keys()].join() === 'player_name'
+    ) {
+      cancelledSeasonRequests.push(url.searchParams.get('player_name'));
+    }
+  });
+
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/games/game_logs**', async (route) => {
+    const url = new URL(route.request().url());
+    if ([...url.searchParams.keys()].join() === 'player_name') await held;
+    try {
+      await route.fulfill({
+        json: {
+          game_logs: gameLogs,
+          averages: [averages],
+          season_averages: [averages],
+          next_game: 'Atlanta Hawks',
+        },
+      });
+    } catch {
+      // The browser gave up on this request while it was held. Nothing to send.
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await expect(page.getByText('Loading the season for this player…')).toBeVisible();
+
+  // The slowest endpoint in the application does not keep working for a
+  // workspace nobody is in any more.
+  await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page.getByRole('textbox')).toBeVisible();
+  await expect.poll(() => cancelledSeasonRequests).toEqual(['LeBron James']);
+  release();
+});
+
+test('a season that fails to load says so, and loads on re-opening', async ({
   authenticatedPage: page,
 }) => {
   const seasonRequests = [];
@@ -739,11 +881,17 @@ test('a season that fails to load says so and is retried on re-opening', async (
       seasonRequests.push(url.searchParams.get('player_name'));
     }
   });
+  let seasonAttempts = 0;
   await installApiContract(page, {
     '/api/games/game_logs': (request) => {
       const url = new URL(request.url());
       if ([...url.searchParams.keys()].join() === 'player_name') {
-        return { status: 500, body: { error: 'The season could not be loaded.' } };
+        seasonAttempts += 1;
+        // The first attempt fails, the retry succeeds, so the message has to
+        // both appear and go away.
+        if (seasonAttempts === 1) {
+          return { status: 500, body: { error: 'The season could not be loaded.' } };
+        }
       }
       return {
         body: {
@@ -762,11 +910,16 @@ test('a season that fails to load says so and is retried on re-opening', async (
   await page.getByRole('button', { name: 'Self Filters' }).click();
   // An empty stat list with no explanation is indistinguishable from a player
   // with no stats.
-  await expect(page.getByText('could not be loaded')).toBeVisible();
+  const failure = page.getByRole('status').filter({ hasText: 'could not be loaded' });
+  await expect(failure).toBeVisible();
 
   await page.getByRole('button', { name: 'Self Filters' }).click();
   await page.getByRole('button', { name: 'Self Filters' }).click();
+
   await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'LeBron James']);
+  await expect(failure).toHaveCount(0);
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
 });
 
 test('a session that never opens Self Filters pays for no extra request', async ({

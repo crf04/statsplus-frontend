@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
-import { convertNLToFilters } from './filterUtils';
+import { BROWSE_PARAM, convertNLToFilters } from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
@@ -21,7 +21,6 @@ const sampleQueries = [
 const NaturalLanguageQuery = ({
   onFiltersApplied,
   onQueryUpdate,
-  resetToLanding,
   gameLogsLoading,
   inWorkspace = false,
 }) => {
@@ -30,9 +29,10 @@ const NaturalLanguageQuery = ({
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [error, setError] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const wasInWorkspace = useRef(inWorkspace);
 
   // Combined loading state: true if either NL query or game logs are loading
   const isLoading = loading || gameLogsLoading;
@@ -56,26 +56,30 @@ const NaturalLanguageQuery = ({
     };
   }, [isExpanded]);
 
-  // Reset to landing page when requested by parent
+  // Leaving the Log Workspace starts a fresh query. This watches the
+  // transition rather than a signal prop, so there is no flag to resynchronise
+  // and no timing workaround. A mount that merely lands on the Query Prompt —
+  // arriving from the reference page with a draft, say — is not that
+  // transition and must keep what it was seeded with.
   useEffect(() => {
-    if (resetToLanding) {
+    if (wasInWorkspace.current && !inWorkspace) {
       queryRequestRef.current.controller?.abort();
       queryRequestRef.current = { id: queryRequestRef.current.id + 1, controller: null };
       setLoading(false);
-      setHasSearched(false);
       setQuery('');
       setError('');
       setLastResult(null);
       setIsExpanded(false);
     }
-  }, [resetToLanding]);
+    wasInWorkspace.current = inWorkspace;
+  }, [inWorkspace]);
 
   // Close expanded search bar when transitioning to results page
   useEffect(() => {
-    if (hasSearched && !isLoading) {
+    if (inWorkspace && !isLoading) {
       setIsExpanded(false);
     }
-  }, [hasSearched, isLoading]);
+  }, [inWorkspace, isLoading]);
 
   // An example chosen on the query reference page arrives as router state.
   useEffect(() => {
@@ -87,12 +91,12 @@ const NaturalLanguageQuery = ({
   // query language demos itself before the user types anything.
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   useEffect(() => {
-    if (hasSearched || !isAuthenticated) return undefined;
+    if (inWorkspace || !isAuthenticated) return undefined;
     const id = setInterval(() => {
       setPlaceholderIdx((i) => (i + 1) % sampleQueries.length);
     }, 4000);
     return () => clearInterval(id);
-  }, [hasSearched, isAuthenticated]);
+  }, [inWorkspace, isAuthenticated]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,10 +111,9 @@ const NaturalLanguageQuery = ({
     const controller = new AbortController();
     queryRequestRef.current = { id: requestId, controller };
 
-    const finishLoading = (success) => {
+    const finishLoading = () => {
       if (queryRequestRef.current.id !== requestId) return;
       setLoading(false);
-      if (success) setHasSearched(true);
     };
 
     try {
@@ -136,7 +139,7 @@ const NaturalLanguageQuery = ({
         setError(
           'I could not find usable filters in that query. Please try a player or stat filter.',
         );
-        finishLoading(false);
+        finishLoading();
         return;
       }
 
@@ -149,18 +152,18 @@ const NaturalLanguageQuery = ({
         // embedders that return a promise but do not use the callback seam.
         if (application && typeof application.then === 'function') {
           application
-            .then((result) => {
+            .then(() => {
               if (
                 queryRequestRef.current.id === requestId &&
                 queryRequestRef.current.controller === controller
               ) {
-                finishLoading(result?.ok === true);
+                finishLoading();
               }
             })
-            .catch(() => finishLoading(false));
+            .catch(() => finishLoading());
         }
       } else {
-        finishLoading(true);
+        finishLoading();
       }
 
       // Update parent with the successful query
@@ -171,8 +174,8 @@ const NaturalLanguageQuery = ({
       if (isRequestCancelled(err) || queryRequestRef.current.id !== requestId) return;
       console.error('NL Query Error:', err.response?.status || err.message);
       setError(getRequestErrorMessage(err, 'Failed to process query. Please try again.'));
-      finishLoading(false);
-      // Don't set hasSearched to true on error - keep user on landing page to retry
+      finishLoading();
+      // Stay on the Query Prompt on error so the query can be retried.
     }
   };
 
@@ -188,8 +191,9 @@ const NaturalLanguageQuery = ({
     return <AlertCircle size={16} />;
   };
 
-  // Landing page interface (before first search)
-  if (!hasSearched && !inWorkspace) {
+  // The Query Prompt. Whether we are past it is the URL's business, not a flag
+  // this component keeps.
+  if (!inWorkspace) {
     return (
       <div className="landing-page">
         <svg className="court-lines" viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
@@ -238,6 +242,20 @@ const NaturalLanguageQuery = ({
                 </Button>
               </div>
             </Form>
+          </div>
+
+          {/* The deterministic door. Disabled rather than hidden when signed
+              out, so the capability is discoverable and the page does not
+              reflow on sign-in. */}
+          <div className="prompt-browse">
+            <button
+              type="button"
+              className="prompt-browse-button"
+              disabled={isLoading || !isAuthenticated}
+              onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
+            >
+              Browse without a query
+            </button>
           </div>
 
           <QueryLadder

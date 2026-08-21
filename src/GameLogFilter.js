@@ -15,8 +15,10 @@ import PlayerStatsCards from './PlayerStatsCards';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
+  BROWSE_PARAM,
   cleanFilterParams,
   filterSetFromSearchParams,
+  isWorkspaceSearch,
   filterSetToSearchParams,
   mergeFilterSet,
   toGameLogParams,
@@ -35,6 +37,8 @@ const GameLogFilter = () => {
     [searchParams],
   );
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
+  const inWorkspace = isWorkspaceSearch(searchParams);
+  const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
   const [selectedPlayer, setSelectedPlayer] = useState('None');
   const [displayPlayer, setDisplayPlayer] = useState('None'); // For UI display (includes NL queries)
   const [selectedTeam, setSelectedTeam] = useState('');
@@ -46,9 +50,7 @@ const GameLogFilter = () => {
   const [teams, setTeams] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({});
   const [initialGameLogs, setInitialGameLogs] = useState([]);
-  const [showLandingPage, setShowLandingPage] = useState(!hasUrlFilterSet);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
-  const [resetToLanding, setResetToLanding] = useState(false); // Signal to reset NL component
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
@@ -218,7 +220,6 @@ const GameLogFilter = () => {
 
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
-    setShowLandingPage(true);
     setCurrentQuery('');
     setSelectedPlayer('None');
     setDisplayPlayer('None');
@@ -227,17 +228,30 @@ const GameLogFilter = () => {
     setInitialGameLogs([]);
     setAverages([]);
     setGameLogsError(null);
-    setResetToLanding(true);
-    // Reset the flag after a brief delay to allow the effect to trigger
-    setTimeout(() => setResetToLanding(false), 100);
   }, [abortGameLogsRequest]);
+
+  // The sentinel only ever says "Workspace, no filters yet". Alongside filters
+  // it is already untrue, so it is dropped rather than carried into a link
+  // someone shares.
+  //
+  // Only the sentinel is removed, and the rest of the query string is left
+  // exactly as it arrived. Re-encoding the decoded Filter Set instead would
+  // erase a link we are refusing — the offending value withholds the whole
+  // Filter Set, so there would be nothing left to write and the refusal would
+  // be left naming a parameter no longer in the address bar.
+  useEffect(() => {
+    if (!hasBrowseSentinel || !hasUrlFilterSet) return;
+    const withoutSentinel = new URLSearchParams(searchParams);
+    withoutSentinel.delete(BROWSE_PARAM);
+    setSearchParams(withoutSentinel, { replace: true });
+  }, [hasBrowseSentinel, hasUrlFilterSet, searchParams, setSearchParams]);
 
   // A URL carrying a Filter Set opens the Log Workspace with it applied, so a
   // view can be bookmarked, shared, and reloaded. Requests wait for auth rather
   // than firing and failing, and the requested URL is never rewritten.
   useEffect(() => {
-    if (!hasUrlFilterSet) {
-      // The URL no longer describes a Filter Set, so whatever workspace it
+    if (!inWorkspace) {
+      // The URL no longer opens a Workspace, so whatever workspace it
       // opened is over — however the user got here, including by pressing the
       // browser's own Back button. A mount on the bare route is not that
       // transition and must leave a seeded query alone.
@@ -247,7 +261,6 @@ const GameLogFilter = () => {
       return undefined;
     }
     wasInWorkspace.current = true;
-    setShowLandingPage(false);
 
     if (urlInvalid.length > 0) {
       abortGameLogsRequest();
@@ -281,12 +294,18 @@ const GameLogFilter = () => {
     // panel and wait for the user to choose who to apply it to.
     if (!urlFilters.player_name || authLoading) return undefined;
 
+    // A sentinel still sitting beside filters is about to be dropped, which
+    // rewrites the URL and re-runs this effect. Let it, rather than firing a
+    // request only to abort it.
+    if (hasBrowseSentinel) return undefined;
+
     requestGameLogs(urlFilters, { includeInitial: true, updateSelectedTeam: true });
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,
-    hasUrlFilterSet,
+    hasBrowseSentinel,
+    inWorkspace,
     isAuthenticated,
     requestGameLogs,
     returnToQueryPrompt,
@@ -357,10 +376,7 @@ const GameLogFilter = () => {
     const playerName = convertedFilters.selectedPlayer;
     const apiFilters = toGameLogParams(convertedFilters);
     const finishNLRequest = (success) => {
-      if (success) {
-        if (playerName) setDisplayPlayer(playerName);
-        setShowLandingPage(false);
-      }
+      if (success && playerName) setDisplayPlayer(playerName);
       if (nlLoadingCallback) nlLoadingCallback(success);
     };
 
@@ -373,9 +389,8 @@ const GameLogFilter = () => {
       <NaturalLanguageQuery
         onFiltersApplied={handleNLQueryResults}
         onQueryUpdate={setCurrentQuery}
-        resetToLanding={resetToLanding}
         gameLogsLoading={isGameLogsLoading}
-        inWorkspace={!showLandingPage}
+        inWorkspace={inWorkspace}
       />
 
       {(authLoading || listsLoading) && (
@@ -394,13 +409,13 @@ const GameLogFilter = () => {
           {gameLogsError}
         </Alert>
       )}
-      {!showLandingPage && !authLoading && !isAuthenticated && (
+      {inWorkspace && !authLoading && !isAuthenticated && (
         <Alert variant="info" className="mx-3" role="status">
           Sign in to load these game logs. This link is kept as-is, so signing in opens exactly what
           it points at.
         </Alert>
       )}
-      {isGameLogsLoading && !showLandingPage && (
+      {isGameLogsLoading && inWorkspace && (
         <div className="text-center text-light py-2" role="status" aria-live="polite">
           <Spinner animation="border" size="sm" className="me-2" />
           Loading game logs…
@@ -408,7 +423,7 @@ const GameLogFilter = () => {
       )}
 
       {/* Player Stats Cards - positioned between search and main content */}
-      {!showLandingPage && (
+      {inWorkspace && (
         <Container fluid className="pt-2 pb-1">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button
@@ -437,7 +452,7 @@ const GameLogFilter = () => {
       )}
 
       {/* Only show main content after landing page */}
-      {!showLandingPage && (
+      {inWorkspace && (
         <Container fluid className="game-log-filter py-2">
           <Row className="mb-5">
             <Col md={8}>
@@ -448,7 +463,6 @@ const GameLogFilter = () => {
                     setSelectedPlayer={(player) => {
                       setSelectedPlayer(player);
                       setDisplayPlayer(player);
-                      setShowLandingPage(false); // Hide landing page on manual selection
                     }}
                     lineType={lineType}
                     setLineType={setLineType}

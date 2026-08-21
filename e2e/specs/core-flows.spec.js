@@ -607,3 +607,90 @@ test('@critical removing every self filter clears its parameter', async ({
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   expect(gameLogRequests.at(-1).searchParams.has('self_filters[PTS]')).toBe(false);
 });
+
+test('@critical the escape hatch reaches a result with no language model', async ({
+  authenticatedPage: page,
+}) => {
+  const parserCalls = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/nl-query') parserCalls.push(request.url());
+  });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Browse without a query' }).click();
+  await expect(page).toHaveURL(/\?browse=1$/);
+  await expect(page.getByLabel('Player:')).toBeVisible();
+
+  await page.getByLabel('Player:').fill('LeBron');
+  await page.getByRole('option', { name: 'LeBron James' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  expect(parserCalls).toHaveLength(0);
+});
+
+test('@critical the manual entry control is present but disabled when signed out', async ({
+  page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/');
+
+  // Rendered rather than hidden, so the page does not shift on sign-in and the
+  // capability is discoverable before you have an account.
+  const browse = page.getByRole('button', { name: 'Browse without a query' });
+  await expect(browse).toBeVisible();
+  await expect(browse).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Sign in with Google' }).click();
+  await expect(browse).toBeEnabled();
+});
+
+test('an empty workspace is shareable, and the sentinel never reaches a request', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?browse=1');
+  await expect(page.getByLabel('Player:')).toBeVisible();
+  expect(gameLogRequests).toHaveLength(0);
+
+  await page.getByLabel('Player:').fill('LeBron');
+  await page.getByRole('option', { name: 'LeBron James' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  expect(gameLogRequests.at(-1).searchParams.has('browse')).toBe(false);
+
+  // Applying puts real filters in the URL, and the sentinel has stopped being
+  // true, so it goes.
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await expect(page).toHaveURL(/game_filter=5/);
+  await expect(page).not.toHaveURL(/browse/);
+});
+
+test('the sentinel is dropped when it arrives alongside filters', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?browse=1&player_name=LeBron+James');
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page).not.toHaveURL(/browse/);
+  await expect(page).toHaveURL(/player_name=LeBron\+James/);
+});
+
+test('the sentinel is dropped without destroying a link we must refuse', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?browse=1&game_filter=0');
+
+  // Dropping the sentinel must not take the offending parameter with it: a
+  // refusal that names nothing, on a bare route, is worse than no refusal.
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+  await expect(page).toHaveURL(/game_filter=0/);
+  await expect(page).not.toHaveURL(/browse/);
+});

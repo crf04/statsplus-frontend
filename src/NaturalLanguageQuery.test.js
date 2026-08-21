@@ -109,7 +109,36 @@ describe('NaturalLanguageQuery', () => {
       secondFinishLoading(true);
       resolveSecondApplication({ ok: true });
     });
+    expect(input).not.toBeDisabled();
+  });
+
+  test('the Query Prompt gives way to the compact search on the URL alone', () => {
+    // Whether we are past the prompt is the URL's business. This component
+    // keeps no flag of its own, so a future entry path cannot be locked behind
+    // the language model the way the manual filter panel was.
+    const { rerender } = render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} inWorkspace={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('heading', { name: 'CourtAI' })).toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} inWorkspace />
+      </MemoryRouter>,
+    );
     expect(screen.getByRole('button', { name: /open search/i })).toBeInTheDocument();
+  });
+
+  test('offers a deterministic door beside the query prompt', () => {
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /browse without a query/i })).toBeInTheDocument();
   });
 
   test('seeds the search box with an example chosen on the query reference page', () => {

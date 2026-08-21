@@ -694,3 +694,72 @@ test('the sentinel is dropped without destroying a link we must refuse', async (
   await expect(page).toHaveURL(/game_filter=0/);
   await expect(page).not.toHaveURL(/browse/);
 });
+
+test('@critical changing player keeps the Filter Set', async ({ authenticatedPage: page }) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  const appliedCount = gameLogRequests.length;
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  // Comparing two players under identical conditions is one action, so the
+  // filter the user applied is still on the wire for the new player.
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
+  const afterChange = gameLogRequests.at(-1);
+  expect(afterChange.searchParams.get('player_name')).toBe('Stephen Curry');
+  expect(afterChange.searchParams.get('game_filter')).toBe('5');
+
+  await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
+  await expect(page).toHaveURL(/game_filter=5/);
+});
+
+test('the applied-filter badges describe the data after a player change', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?player_name=LeBron+James&game_filter=5');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  const badgeCount = await page.getByText('GAMES <= 5').count();
+  expect(badgeCount).toBeGreaterThan(0);
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
+  // Every place the badges render still describes the request that produced
+  // the table underneath them.
+  await expect(page.getByText('GAMES <= 5')).toHaveCount(badgeCount);
+});
+
+test('a link carrying filters but no player applies them to the player chosen', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?game_filter=10');
+  expect(gameLogRequests).toHaveLength(0);
+
+  await page.getByLabel('Player:').fill('LeBron');
+  await page.getByRole('option', { name: 'LeBron James' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  const requested = gameLogRequests.at(-1);
+  expect(requested.searchParams.get('player_name')).toBe('LeBron James');
+  expect(requested.searchParams.get('game_filter')).toBe('10');
+});

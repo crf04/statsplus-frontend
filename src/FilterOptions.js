@@ -22,7 +22,6 @@ const FilterOptions = ({
   playerList,
   onApplyFilters,
   selectedPlayer,
-  displayPlayer,
   initialGameLogs,
   appliedFilters,
 }) => {
@@ -349,10 +348,7 @@ const FilterOptions = ({
   };
 
   const handleApplyFilters = () => {
-    // Use displayPlayer if selectedPlayer is 'None' (from natural language queries)
-    const playerName = selectedPlayer !== 'None' ? selectedPlayer : displayPlayer;
-
-    const filterParams = { player_name: playerName };
+    const filterParams = { player_name: selectedPlayer };
 
     if (touchedControls.has('minutes_filter')) {
       filterParams.minutes_filter = `${minutesFilter[0]},${minutesFilter[1]}`;

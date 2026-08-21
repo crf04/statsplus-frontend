@@ -770,11 +770,12 @@ test("a player change never leaves the previous player's rows under the new name
   authenticatedPage: page,
 }) => {
   let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
   await page.route('**/api/games/game_logs**', async (route) => {
     if (new URL(route.request().url()).searchParams.get('player_name') === 'Stephen Curry') {
-      await new Promise((resolve) => {
-        release = resolve;
-      });
+      await held;
     }
     await route.fulfill({
       json: {
@@ -828,13 +829,37 @@ test('a refused link is not quietly replaced by choosing a player', async ({
   await expect(page.getByRole('textbox')).toBeVisible();
 });
 
+test('a refused link keeps its explanation when prose names no player', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page, {
+    '/api/nl-query': { body: { game_count: 10, confidence: 0.9 } },
+  });
+  await page.goto('/?player_name=LeBron+James&game_filter=0');
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+
+  // Reached from the keyboard: the toggle is overlapped by the header in the
+  // workspace, which is a separate pre-existing defect on every link, not this
+  // one's to fix.
+  await page.getByRole('button', { name: 'Open search' }).press('Enter');
+  await page.getByRole('textbox').fill('last 10 games');
+  await page.getByRole('textbox').press('Enter');
+
+  // The advice to choose a player points at a selector a refused link does not
+  // render. Replacing the alert that names the real problem with it would leave
+  // the user holding neither.
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+  await expect(page.getByText('Choose a player before applying these filters.')).toBeHidden();
+});
+
 test('a slow request never claims the result was empty', async ({ authenticatedPage: page }) => {
   let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
   await page.route('**/api/games/game_logs**', async (route) => {
     if (new URL(route.request().url()).searchParams.has('game_filter')) {
-      await new Promise((resolve) => {
-        release = resolve;
-      });
+      await held;
     }
     await route.fulfill({
       json: {

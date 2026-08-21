@@ -355,7 +355,10 @@ const GameLogFilter = () => {
     // holding a Filter Set with nobody to apply it to. Say so, rather than
     // sending the placeholder and reporting a player the user never named.
     if (!nextFilters.player_name || nextFilters.player_name === 'None') {
-      setGameLogsError('Choose a player before applying these filters.');
+      // A refused link keeps its own alert. That alert names the parameter to
+      // fix, and the player selector this advice points at is not on screen to
+      // act on — replacing one with the other loses both.
+      if (!isRefusedLink) setGameLogsError('Choose a player before applying these filters.');
       if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
       return Promise.resolve({ ok: false, empty: true });
     }

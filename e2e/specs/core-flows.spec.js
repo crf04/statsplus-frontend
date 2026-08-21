@@ -533,3 +533,43 @@ test('applying a playerless link asks for a player instead of sending a placehol
   await expect(page.getByRole('alert')).toContainText('Choose a player');
   expect(gameLogRequests).toHaveLength(0);
 });
+
+test('@critical clearing a control clears its parameter', async ({ authenticatedPage: page }) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+
+  // Emptying a control is a decision, not silence. It has to be able to say so.
+  await page.getByLabel('Last N games:').fill('');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page).not.toHaveURL(/game_filter/);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  expect(gameLogRequests.at(-1).searchParams.has('game_filter')).toBe(false);
+  await expect(page.getByText('GAMES <= 10')).toHaveCount(0);
+});
+
+test('@critical Back out of the workspace returns to the Query Prompt', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/player_name=/);
+
+  // The browser's own Back button has to leave the workspace, not strand it on
+  // a bare route that says something different from what is on screen.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('textbox')).toHaveValue('');
+});

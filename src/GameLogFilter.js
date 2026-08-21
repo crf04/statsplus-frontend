@@ -56,6 +56,7 @@ const GameLogFilter = () => {
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
   const teamsRef = useRef([]);
+  const wasInWorkspace = useRef(false);
 
   useEffect(() => {
     teamsRef.current = teams;
@@ -215,11 +216,37 @@ const GameLogFilter = () => {
     return undefined;
   }, [abortGameLogsRequest, requestGameLogs, selectedPlayer]);
 
+  const returnToQueryPrompt = useCallback(() => {
+    abortGameLogsRequest();
+    setShowLandingPage(true);
+    setCurrentQuery('');
+    setSelectedPlayer('None');
+    setDisplayPlayer('None');
+    setAppliedFilters({});
+    setGameLogs([]);
+    setInitialGameLogs([]);
+    setAverages([]);
+    setGameLogsError(null);
+    setResetToLanding(true);
+    // Reset the flag after a brief delay to allow the effect to trigger
+    setTimeout(() => setResetToLanding(false), 100);
+  }, [abortGameLogsRequest]);
+
   // A URL carrying a Filter Set opens the Log Workspace with it applied, so a
   // view can be bookmarked, shared, and reloaded. Requests wait for auth rather
   // than firing and failing, and the requested URL is never rewritten.
   useEffect(() => {
-    if (!hasUrlFilterSet) return undefined;
+    if (!hasUrlFilterSet) {
+      // The URL no longer describes a Filter Set, so whatever workspace it
+      // opened is over — however the user got here, including by pressing the
+      // browser's own Back button. A mount on the bare route is not that
+      // transition and must leave a seeded query alone.
+      if (!wasInWorkspace.current) return undefined;
+      wasInWorkspace.current = false;
+      returnToQueryPrompt();
+      return undefined;
+    }
+    wasInWorkspace.current = true;
     setShowLandingPage(false);
 
     if (urlInvalid.length > 0) {
@@ -262,6 +289,7 @@ const GameLogFilter = () => {
     hasUrlFilterSet,
     isAuthenticated,
     requestGameLogs,
+    returnToQueryPrompt,
     urlFilters,
     urlInvalid,
   ]);
@@ -276,9 +304,18 @@ const GameLogFilter = () => {
    * arrived from a Parsed Query — survives an apply instead of being dropped.
    */
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
-    const cleanedFilters = cleanFilterParams(filterParams);
+    // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
+    // only ever describes part of one, so it patches.
+    //
+    // The panel's patch is deliberately not cleaned first: a control the user
+    // emptied arrives as a blank value, and that blank is the instruction to
+    // drop the parameter. Cleaning it away would make clearing a control
+    // indistinguishable from never touching it, and the old value would stand.
+    const nextFilters = isFromNL
+      ? cleanFilterParams(filterParams)
+      : mergeFilterSet(urlFilters, filterParams);
 
-    if (Object.keys(cleanedFilters).length === 0) {
+    if (Object.keys(nextFilters).length === 0) {
       setGameLogsError('Add at least one filter before loading game logs.');
       if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
       return Promise.resolve({ ok: false, empty: true });
@@ -287,17 +324,20 @@ const GameLogFilter = () => {
     // Arriving on a link that carries filters but no player leaves the panel
     // holding a Filter Set with nobody to apply it to. Say so, rather than
     // sending the placeholder and reporting a player the user never named.
-    if (!cleanedFilters.player_name || cleanedFilters.player_name === 'None') {
+    if (!nextFilters.player_name || nextFilters.player_name === 'None') {
       setGameLogsError('Choose a player before applying these filters.');
       if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
       return Promise.resolve({ ok: false, empty: true });
     }
 
-    // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
-    // only ever describes part of one, so it patches.
-    const nextFilters = isFromNL ? cleanedFilters : mergeFilterSet(urlFilters, cleanedFilters);
+    const nextSearch = filterSetToSearchParams(nextFilters);
+    // An apply that changes nothing is not a place to come back to.
+    if (nextSearch.toString() === searchParams.toString()) {
+      if (nlLoadingCallback) nlLoadingCallback(true);
+      return undefined;
+    }
     // Pushed, not replaced, so Back undoes the last filter change.
-    setSearchParams(filterSetToSearchParams(nextFilters), { replace: false });
+    setSearchParams(nextSearch, { replace: false });
 
     // The Filter Set is now recorded, which is all a Parsed Query was for. The
     // game-log request that follows reports itself through gameLogsLoading and
@@ -372,19 +412,10 @@ const GameLogFilter = () => {
         <Container fluid className="pt-2 pb-1">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button
-              onClick={() => {
-                abortGameLogsRequest();
-                setSearchParams(new URLSearchParams(), { replace: false });
-                setShowLandingPage(true);
-                setAppliedFilters({});
-                setCurrentQuery('');
-                setSelectedPlayer('None');
-                setDisplayPlayer('None');
-                setGameLogsError(null);
-                setResetToLanding(true);
-                // Reset the flag after a brief delay to allow the effect to trigger
-                setTimeout(() => setResetToLanding(false), 100);
-              }}
+              // Navigating to the bare route is the whole action: the effect
+              // watching the URL is what closes the workspace, so leaving by
+              // this button and leaving by the browser's Back button agree.
+              onClick={() => setSearchParams(new URLSearchParams(), { replace: false })}
               className="btn btn-back-to-search d-flex align-items-center"
               aria-label="Back to search"
             >

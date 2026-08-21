@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   averages,
+  curryGameLogs,
   E2E_AUTH_STORAGE_KEY,
   expect,
   gameLogs,
@@ -670,11 +671,102 @@ test('an open Self Filters control follows a player change to that season', asyn
 
   await page.getByRole('button', { name: 'Self Filters' }).click();
   await expect.poll(() => seasonRequests).toEqual(['LeBron James']);
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
   await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
+  // The ranges on offer are this player's, not the one we arrived on.
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+});
+
+test('a superseded season never bounds the player on screen', async ({
+  authenticatedPage: page,
+}) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/games/game_logs**', async (route) => {
+    const url = new URL(route.request().url());
+    const player = url.searchParams.get('player_name');
+    const isSeason = [...url.searchParams.keys()].join() === 'player_name';
+    if (isSeason && player === 'LeBron James') await held;
+    try {
+      await route.fulfill({
+        json: {
+          game_logs: player === 'Stephen Curry' ? curryGameLogs : gameLogs,
+          averages: [averages],
+          season_averages: [averages],
+          next_game: 'Atlanta Hawks',
+        },
+      });
+    } catch {
+      // The browser gave up on this request while it was held. Nothing to send.
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+
+  // The season asked for before the player changed arrives late. It belongs to
+  // nobody on screen, so it must change nothing.
+  release();
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toHaveCount(0);
+  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+});
+
+test('a season that fails to load says so and is retried on re-opening', async ({
+  authenticatedPage: page,
+}) => {
+  const seasonRequests = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (
+      url.pathname === '/api/games/game_logs' &&
+      [...url.searchParams.keys()].join() === 'player_name'
+    ) {
+      seasonRequests.push(url.searchParams.get('player_name'));
+    }
+  });
+  await installApiContract(page, {
+    '/api/games/game_logs': (request) => {
+      const url = new URL(request.url());
+      if ([...url.searchParams.keys()].join() === 'player_name') {
+        return { status: 500, body: { error: 'The season could not be loaded.' } };
+      }
+      return {
+        body: {
+          game_logs: gameLogs,
+          averages: [averages],
+          season_averages: [averages],
+          next_game: 'Atlanta Hawks',
+        },
+      };
+    },
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  // An empty stat list with no explanation is indistinguishable from a player
+  // with no stats.
+  await expect(page.getByText('could not be loaded')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'LeBron James']);
 });
 
 test('a session that never opens Self Filters pays for no extra request', async ({

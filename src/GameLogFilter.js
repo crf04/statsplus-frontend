@@ -59,6 +59,7 @@ const GameLogFilter = () => {
   // result set: ranges taken from one cannot be widened back out.
   const [seasonGameLogs, setSeasonGameLogs] = useState({ player: null, gameLogs: [] });
   const [seasonGameLogsLoading, setSeasonGameLogsLoading] = useState(false);
+  const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
@@ -166,8 +167,12 @@ const GameLogFilter = () => {
     seasonRequestRef.current.controller?.abort();
     seasonRequestRef.current = { player: null, controller: null };
     setSeasonGameLogsLoading(false);
+    setSeasonGameLogsFailed(false);
     setSeasonGameLogs({ player: null, gameLogs: [] });
   }, []);
+
+  // Nothing in flight outlives the workspace.
+  useEffect(() => clearSeasonGameLogs, [clearSeasonGameLogs]);
 
   /*
    * The game-log endpoint is the slowest in the application and most sessions
@@ -185,19 +190,28 @@ const GameLogFilter = () => {
     const controller = new AbortController();
     seasonRequestRef.current = { player, controller };
     setSeasonGameLogsLoading(true);
+    setSeasonGameLogsFailed(false);
+
+    // Only the request still on the ref may report anything. Comparing the
+    // controller rather than the player is what makes that true whatever order
+    // a superseded request settles in, including a second request for the same
+    // player after a change away and back.
+    const isCurrentRequest = () => seasonRequestRef.current.controller === controller;
 
     fetchGameLogsData({ player_name: player }, { signal: controller.signal })
       .then((data) => {
-        if (seasonRequestRef.current.player !== player) return;
+        if (!isCurrentRequest()) return;
         setSeasonGameLogsLoading(false);
         setSeasonGameLogs({ player, gameLogs: data.gameLogs });
       })
-      .catch(() => {
-        // There are no ranges to offer. Forget the attempt so that re-opening
-        // the control asks again rather than offering nothing forever.
-        if (seasonRequestRef.current.player !== player) return;
+      .catch((error) => {
+        if (!isCurrentRequest()) return;
+        // Forget the attempt so that re-opening the control asks again rather
+        // than offering nothing forever. A cancelled request was superseded
+        // deliberately and has nothing to report.
         seasonRequestRef.current = { player: null, controller: null };
         setSeasonGameLogsLoading(false);
+        setSeasonGameLogsFailed(!isRequestCancelled(error));
       });
   }, [authLoading, isAuthenticated, urlFilters.player_name]);
 
@@ -551,6 +565,7 @@ const GameLogFilter = () => {
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}
                 seasonGameLogsLoading={seasonGameLogsLoading}
+                seasonGameLogsFailed={seasonGameLogsFailed}
                 onOpenSelfFilters={loadSeasonGameLogs}
                 appliedFilters={appliedFilters}
               />

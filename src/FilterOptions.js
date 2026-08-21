@@ -24,6 +24,7 @@ const FilterOptions = ({
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
+  seasonGameLogsFailed,
   onOpenSelfFilters,
   appliedFilters,
 }) => {
@@ -746,52 +747,63 @@ const FilterOptions = ({
                   Loading the season for this player…
                 </div>
               )}
+              {seasonGameLogsFailed && (
+                <div className="mt-2" role="status" aria-live="polite">
+                  This player's season could not be loaded, so there are no stat ranges to offer.
+                  Close and re-open Self Filters to try again.
+                </div>
+              )}
+              {selectedSelfFilter && columnRanges[selectedSelfFilter] && (
+                <div className="mt-2">
+                  <Form.Label>
+                    {selectedSelfFilter}: {formatNumber(selfFilterRange[0], 1)} -{' '}
+                    {formatNumber(selfFilterRange[1], 1)}
+                  </Form.Label>
+                  <ReactSlider
+                    className="horizontal-slider"
+                    thumbClassName="thumb"
+                    trackClassName="track"
+                    value={selfFilterRange}
+                    ariaLabel={['Lower thumb', 'Upper thumb']}
+                    ariaValuetext={(state) => `Thumb value ${state.valueNow}`}
+                    renderThumb={(props, state) => (
+                      <div {...props}>{formatNumber(state.valueNow, 1)}</div>
+                    )}
+                    pearling
+                    minDistance={0.1}
+                    step={0.1}
+                    min={columnRanges[selectedSelfFilter].min}
+                    max={columnRanges[selectedSelfFilter].max}
+                    onChange={handleSelfFilterRangeChange}
+                  />
+                </div>
+              )}
             </div>
           )}
-          {selfFiltersOpen && selectedSelfFilter && columnRanges[selectedSelfFilter] && (
-            <div className="mt-2">
-              <Form.Label>
-                {selectedSelfFilter}: {formatNumber(selfFilterRange[0], 1)} -{' '}
-                {formatNumber(selfFilterRange[1], 1)}
-              </Form.Label>
-              <ReactSlider
-                className="horizontal-slider"
-                thumbClassName="thumb"
-                trackClassName="track"
-                value={selfFilterRange}
-                ariaLabel={['Lower thumb', 'Upper thumb']}
-                ariaValuetext={(state) => `Thumb value ${state.valueNow}`}
-                renderThumb={(props, state) => (
-                  <div {...props}>{formatNumber(state.valueNow, 1)}</div>
-                )}
-                pearling
-                minDistance={0.1}
-                step={0.1}
-                min={columnRanges[selectedSelfFilter].min}
-                max={columnRanges[selectedSelfFilter].max}
-                onChange={handleSelfFilterRangeChange}
-              />
+          {/* The self filters already applied are a summary of the Filter Set,
+              not part of the control, so they stay readable and removable while
+              the control that builds new ones is closed. */}
+          {activeSelfFilters.length > 0 && (
+            <div className="mt-2" role="group" aria-label="Applied self filters">
+              {activeSelfFilters.map((filter, index) => (
+                <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
+                  {filter.column}: {formatNumber(filter.range[0], 1)} -{' '}
+                  {formatNumber(filter.range[1], 1)}
+                  <Button
+                    type="button"
+                    aria-label={`Remove ${filter.column} filter`}
+                    title="Remove filter"
+                    variant="link"
+                    size="sm"
+                    className="text-light p-0 ms-2"
+                    onClick={() => handleRemoveSelfFilter(index)}
+                  >
+                    ×
+                  </Button>
+                </Badge>
+              ))}
             </div>
           )}
-          <div className="mt-2">
-            {activeSelfFilters.map((filter, index) => (
-              <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
-                {filter.column}: {formatNumber(filter.range[0], 1)} -{' '}
-                {formatNumber(filter.range[1], 1)}
-                <Button
-                  type="button"
-                  aria-label={`Remove ${filter.column} filter`}
-                  title="Remove filter"
-                  variant="link"
-                  size="sm"
-                  className="text-light p-0 ms-2"
-                  onClick={() => handleRemoveSelfFilter(index)}
-                >
-                  ×
-                </Button>
-              </Badge>
-            ))}
-          </div>
         </Form.Group>
 
         <Button type="button" variant="primary" className="w-100" onClick={handleApplyFilters}>

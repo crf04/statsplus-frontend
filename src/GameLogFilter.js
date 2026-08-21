@@ -39,8 +39,13 @@ const GameLogFilter = () => {
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
   const inWorkspace = isWorkspaceSearch(searchParams);
   const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
-  const [selectedPlayer, setSelectedPlayer] = useState('None');
-  const [displayPlayer, setDisplayPlayer] = useState('None'); // For UI display (includes NL queries)
+  // A refused link decoded to nothing, so there is no Filter Set to show, edit,
+  // or patch a player into — only the refusal naming what has to be fixed.
+  const isRefusedLink = urlInvalid.length > 0;
+  // The player is a parameter of the Filter Set like any other, so it is read
+  // back out of the URL rather than held beside it. One source of truth is what
+  // keeps the applied-filter badges describing the data actually on screen.
+  const selectedPlayer = urlFilters.player_name || 'None';
   const [selectedTeam, setSelectedTeam] = useState('');
   const [lineType, setLineType] = useState('PTS');
   const [lineValue, setLineValue] = useState('');
@@ -164,6 +169,12 @@ const GameLogFilter = () => {
       gameLogsRequestRef.current = { id: requestId, controller };
       setIsGameLogsLoading(true);
       setGameLogsError(null);
+      // The badges above the table already describe the Filter Set just
+      // requested, so whatever is still on screen belongs to nobody. Clearing
+      // at the start is what keeps that true while the request is in flight and
+      // if it never arrives, rather than only once it does.
+      setGameLogs([]);
+      setAverages([]);
 
       return fetchGameLogsData(params, { signal: controller.signal })
         .then((data) => {
@@ -199,34 +210,14 @@ const GameLogFilter = () => {
     [],
   );
 
-  useEffect(() => {
-    // Fetch unfiltered logs when a player is selected manually.
-    if (selectedPlayer === 'None') {
-      abortGameLogsRequest();
-      setGameLogs([]);
-      setInitialGameLogs([]);
-      setAverages([]);
-      setSelectedTeam('');
-      return undefined;
-    }
-
-    setDisplayPlayer(selectedPlayer);
-    requestGameLogs(
-      { player_name: selectedPlayer },
-      { includeInitial: true, updateSelectedTeam: true },
-    );
-    return undefined;
-  }, [abortGameLogsRequest, requestGameLogs, selectedPlayer]);
-
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
     setCurrentQuery('');
-    setSelectedPlayer('None');
-    setDisplayPlayer('None');
     setAppliedFilters({});
     setGameLogs([]);
     setInitialGameLogs([]);
     setAverages([]);
+    setSelectedTeam('');
     setGameLogsError(null);
   }, [abortGameLogsRequest]);
 
@@ -278,7 +269,6 @@ const GameLogFilter = () => {
 
     setGameLogsError(null);
     setAppliedFilters(urlFilters);
-    setDisplayPlayer(urlFilters.player_name || 'None');
 
     // Signing out mid-flight must not publish protected logs underneath the
     // sign-in prompt, so drop anything already in the air.
@@ -291,8 +281,19 @@ const GameLogFilter = () => {
     }
 
     // A Filter Set without a player is partial, not malformed: hold it in the
-    // panel and wait for the user to choose who to apply it to.
-    if (!urlFilters.player_name || authLoading) return undefined;
+    // panel and wait for the user to choose who to apply it to. Whatever is on
+    // screen belongs to a player this Filter Set no longer names, so it goes
+    // rather than sitting under badges that have stopped describing it.
+    if (!urlFilters.player_name) {
+      abortGameLogsRequest();
+      setGameLogs([]);
+      setInitialGameLogs([]);
+      setAverages([]);
+      setSelectedTeam('');
+      return undefined;
+    }
+
+    if (authLoading) return undefined;
 
     // A sentinel still sitting beside filters is about to be dropped, which
     // rewrites the URL and re-runs this effect. Let it, rather than firing a
@@ -323,6 +324,16 @@ const GameLogFilter = () => {
    * arrived from a Parsed Query — survives an apply instead of being dropped.
    */
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
+    // A refused link has no Filter Set to patch: the decoder withheld the whole
+    // of it, so merging into what it returned would publish a URL missing the
+    // very parameter the refusal on screen is naming — a link we declined to
+    // open, quietly replaced by a different one we did. A Parsed Query is not a
+    // patch but a whole Filter Set, so it still supersedes the refused link and
+    // stays the way out.
+    if (!isFromNL && isRefusedLink) {
+      return Promise.resolve({ ok: false, refused: true });
+    }
+
     // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
     // only ever describes part of one, so it patches.
     //
@@ -344,7 +355,10 @@ const GameLogFilter = () => {
     // holding a Filter Set with nobody to apply it to. Say so, rather than
     // sending the placeholder and reporting a player the user never named.
     if (!nextFilters.player_name || nextFilters.player_name === 'None') {
-      setGameLogsError('Choose a player before applying these filters.');
+      // A refused link keeps its own alert. That alert names the parameter to
+      // fix, and the player selector this advice points at is not on screen to
+      // act on — replacing one with the other loses both.
+      if (!isRefusedLink) setGameLogsError('Choose a player before applying these filters.');
       if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
       return Promise.resolve({ ok: false, empty: true });
     }
@@ -365,6 +379,15 @@ const GameLogFilter = () => {
     return undefined;
   };
 
+  /*
+   * Choosing a player patches the player into the Filter Set rather than
+   * replacing it, so comparing two players under identical conditions is one
+   * action, and a link that carries filters but no player is answered by
+   * naming one. It travels the same apply path as the panel, so the request
+   * still comes from the address bar.
+   */
+  const handleSelectPlayer = (player) => handleApplyFilters({ player_name: player });
+
   // Handler for natural language query results
   const handleNLQueryResults = (filters, nlLoadingCallback) => {
     const convertedFilters = cleanFilterParams(filters);
@@ -373,14 +396,9 @@ const GameLogFilter = () => {
       return Promise.resolve({ ok: false, empty: true });
     }
 
-    const playerName = convertedFilters.selectedPlayer;
     const apiFilters = toGameLogParams(convertedFilters);
-    const finishNLRequest = (success) => {
-      if (success && playerName) setDisplayPlayer(playerName);
-      if (nlLoadingCallback) nlLoadingCallback(success);
-    };
 
-    return handleApplyFilters(apiFilters, true, finishNLRequest);
+    return handleApplyFilters(apiFilters, true, nlLoadingCallback);
   };
 
   return (
@@ -445,25 +463,22 @@ const GameLogFilter = () => {
           </div>
           <Card className="dark-card">
             <Card.Body className="p-3">
-              <PlayerStatsCards averages={averages} selectedPlayer={displayPlayer} />
+              <PlayerStatsCards averages={averages} selectedPlayer={selectedPlayer} />
             </Card.Body>
           </Card>
         </Container>
       )}
 
       {/* Only show main content after landing page */}
-      {inWorkspace && (
+      {inWorkspace && !isRefusedLink && (
         <Container fluid className="game-log-filter py-2">
           <Row className="mb-5">
             <Col md={8}>
               <Card className="dark-card">
                 <Card.Body>
                   <PlayerSelector
-                    selectedPlayer={displayPlayer}
-                    setSelectedPlayer={(player) => {
-                      setSelectedPlayer(player);
-                      setDisplayPlayer(player);
-                    }}
+                    selectedPlayer={selectedPlayer}
+                    setSelectedPlayer={handleSelectPlayer}
                     lineType={lineType}
                     setLineType={setLineType}
                     lineValue={lineValue}
@@ -486,7 +501,6 @@ const GameLogFilter = () => {
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
                 selectedPlayer={selectedPlayer}
-                displayPlayer={displayPlayer}
                 initialGameLogs={initialGameLogs}
                 appliedFilters={appliedFilters}
               />
@@ -495,7 +509,7 @@ const GameLogFilter = () => {
 
           <Row className="mb-5">
             <Col md={6}>
-              <PlayerProfile selectedPlayer={displayPlayer} selectedTeam={selectedTeam} />
+              <PlayerProfile selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} />
             </Col>
             <Col md={6}>
               <OpposingTeamProfile
@@ -512,7 +526,11 @@ const GameLogFilter = () => {
             </div>
 
             <div className="game-logs-main">
-              <GameLogsTable gameLogs={gameLogs} appliedFilters={appliedFilters} />
+              <GameLogsTable
+                gameLogs={gameLogs}
+                appliedFilters={appliedFilters}
+                isLoading={isGameLogsLoading}
+              />
             </div>
           </div>
         </Container>

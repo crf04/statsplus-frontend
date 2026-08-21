@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { E2E_AUTH_STORAGE_KEY, expect, installApiContract } from '../fixtures/courtai';
+import {
+  averages,
+  E2E_AUTH_STORAGE_KEY,
+  expect,
+  gameLogs,
+  installApiContract,
+} from '../fixtures/courtai';
 import { test } from '../fixtures/deployedSmoke';
 
 const vercelConfig = JSON.parse(
@@ -728,18 +734,95 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
 test('the applied-filter badges describe the data after a player change', async ({
   authenticatedPage: page,
 }) => {
+  // The shared contract answers every player identically, which cannot tell
+  // "the new player's rows arrived" from "the old player's rows never left".
+  // Registered after the contract, so it wins for this journey only.
+  await page.route('**/api/games/game_logs**', async (route) => {
+    const requested = new URL(route.request().url()).searchParams.get('player_name');
+    const points = requested === 'Stephen Curry' ? 77 : 31;
+    await route.fulfill({
+      json: {
+        game_logs: [{ ...gameLogs[0], PTS: points }, gameLogs[1]],
+        averages: [averages],
+        season_averages: [averages],
+        next_game: 'Atlanta Hawks',
+      },
+    });
+  });
+
   await page.goto('/?player_name=LeBron+James&game_filter=5');
-  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  const badgeCount = await page.getByText('GAMES <= 5').count();
-  expect(badgeCount).toBeGreaterThan(0);
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  const badgePlaces = await page.getByText('GAMES <= 5').count();
+  expect(badgePlaces).toBe(3);
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
+  // The new player's rows are what is on screen, and every place the badges
+  // render is still describing the Filter Set that fetched them.
+  await expect(page.getByRole('cell', { name: '77', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
-  // Every place the badges render still describes the request that produced
-  // the table underneath them.
-  await expect(page.getByText('GAMES <= 5')).toHaveCount(badgeCount);
+  await expect(page.getByText('GAMES <= 5')).toHaveCount(badgePlaces);
+});
+
+test("a player change never leaves the previous player's rows under the new name", async ({
+  authenticatedPage: page,
+}) => {
+  let release;
+  await page.route('**/api/games/game_logs**', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('player_name') === 'Stephen Curry') {
+      await new Promise((resolve) => {
+        release = resolve;
+      });
+    }
+    await route.fulfill({
+      json: {
+        game_logs: gameLogs,
+        averages: [averages],
+        season_averages: [averages],
+        next_game: 'Atlanta Hawks',
+      },
+    });
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  // The request is still in flight, so there is no data for the player now
+  // named on screen. Showing the previous player's is worse than showing none.
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+});
+
+test('a refused link is not quietly replaced by choosing a player', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=0');
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  // The refusal withheld the whole Filter Set, so there is nothing to patch a
+  // player into. Publishing what is left would drop the parameter the alert is
+  // naming and load unfiltered data the link never asked for.
+  await expect(page).toHaveURL(/game_filter=0/);
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+  expect(gameLogRequests).toHaveLength(0);
 });
 
 test('a link carrying filters but no player applies them to the player chosen', async ({

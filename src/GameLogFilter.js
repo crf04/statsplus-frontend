@@ -166,6 +166,12 @@ const GameLogFilter = () => {
       gameLogsRequestRef.current = { id: requestId, controller };
       setIsGameLogsLoading(true);
       setGameLogsError(null);
+      // The badges above the table already describe the Filter Set just
+      // requested, so whatever is still on screen belongs to nobody. Clearing
+      // at the start is what keeps that true while the request is in flight and
+      // if it never arrives, rather than only once it does.
+      setGameLogs([]);
+      setAverages([]);
 
       return fetchGameLogsData(params, { signal: controller.signal })
         .then((data) => {
@@ -315,6 +321,16 @@ const GameLogFilter = () => {
    * arrived from a Parsed Query — survives an apply instead of being dropped.
    */
   const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
+    // A refused link has no Filter Set to patch: the decoder withheld the whole
+    // of it, so merging into what it returned would publish a URL missing the
+    // very parameter the refusal on screen is naming — a link we declined to
+    // open, quietly replaced by a different one we did. A Parsed Query is not a
+    // patch but a whole Filter Set, so it still supersedes the refused link and
+    // stays the way out.
+    if (!isFromNL && urlInvalid.length > 0) {
+      return Promise.resolve({ ok: false, refused: true });
+    }
+
     // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
     // only ever describes part of one, so it patches.
     //

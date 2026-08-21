@@ -3,7 +3,7 @@ import { expect, test as base } from '@playwright/test';
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
 
-const gameLogs = [
+export const gameLogs = [
   {
     GAME_DATE: '2025-01-10',
     MATCHUP: 'LAL vs. ATL',
@@ -46,7 +46,7 @@ const gameLogs = [
   },
 ];
 
-const averages = {
+export const averages = {
   MIN: 35,
   PTS: 29,
   REB: 7.5,

@@ -4,7 +4,6 @@ import {
   mergeFilterSet,
   cleanFilterParams,
   convertNLToFilters,
-  filtersForDisplay,
   toGameLogParams,
 } from './filterUtils';
 
@@ -47,16 +46,6 @@ describe('filterUtils', () => {
       player_name: 'A player',
       game_filter: 0,
     });
-  });
-
-  test('hides incomplete NL playstyle defaults from display filters', () => {
-    expect(filtersForDisplay({ playstyle_RTG_min: 75 }, { naturalLanguage: true })).toEqual({});
-    expect(
-      filtersForDisplay(
-        { playstyle_RTG_min: 80, playstyle_RTG_max: 120 },
-        { naturalLanguage: true },
-      ),
-    ).toEqual({ playstyle_RTG_min: 80, playstyle_RTG_max: 120 });
   });
 });
 

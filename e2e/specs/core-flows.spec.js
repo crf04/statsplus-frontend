@@ -129,16 +129,28 @@ test('@critical a shared link reproduces a prose query with no language model', 
 });
 
 test('@critical Back undoes the last filter change', async ({ authenticatedPage: page }) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
   await page.goto('/?player_name=LeBron+James');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   await page.getByLabel('Last N games:').fill('5');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
   await expect(page).toHaveURL(/game_filter=5/);
+  await expect(page.getByText('GAMES <= 5').first()).toBeVisible();
 
   await page.goBack();
   await expect(page).not.toHaveURL(/game_filter/);
   await expect(page).toHaveURL(/player_name=LeBron\+James/);
+  // Undoing has to undo the view, not just the address bar.
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
+  expect(gameLogRequests.at(-1).searchParams.has('game_filter')).toBe(false);
+  await expect(page.getByText('GAMES <= 5')).toHaveCount(0);
 });
 
 test('@critical leaving is one action however many filters were applied', async ({
@@ -572,4 +584,26 @@ test('@critical Back out of the workspace returns to the Query Prompt', async ({
   await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveValue('');
+});
+
+test('@critical removing every self filter clears its parameter', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=20%2C60');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove PTS filter' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remove PTS filter' }).click();
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page).not.toHaveURL(/self_filters/);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  expect(gameLogRequests.at(-1).searchParams.has('self_filters[PTS]')).toBe(false);
 });

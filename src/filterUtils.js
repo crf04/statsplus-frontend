@@ -176,22 +176,6 @@ export const convertNLToFilters = (nlResult = {}) => {
   return cleanFilterParams(filters);
 };
 
-/** Keep default playstyle bounds out of the applied-filter badges for NL. */
-export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}) => {
-  const cleaned = cleanFilterParams(filters);
-  if (!naturalLanguage) return cleaned;
-
-  const hasExplicitPlaystyleRange =
-    hasValue(filters.playstyle_RTG_min) && hasValue(filters.playstyle_RTG_max);
-
-  if (!hasExplicitPlaystyleRange) {
-    delete cleaned.playstyle_RTG_min;
-    delete cleaned.playstyle_RTG_max;
-  }
-
-  return cleaned;
-};
-
 /**
  * URL decoding.
  *

@@ -1,3 +1,4 @@
+import { parseCalendarDate } from './calendarDate';
 /**
  * Shared filter translation and cleaning.
  *
@@ -189,4 +190,161 @@ export const filtersForDisplay = (filters = {}, { naturalLanguage = false } = {}
   }
 
   return cleaned;
+};
+
+/**
+ * URL decoding.
+ *
+ * A shared link carries the game-log API's own parameter names, so a link is
+ * self-describing against the API documentation and needs no alias vocabulary.
+ * An unrecognised name is ignored, because a stray tracking parameter must not
+ * break someone's link. A recognised name carrying a value we cannot honour
+ * names itself and blocks the whole Filter Set: showing results that quietly
+ * disagree with the URL is worse than refusing.
+ */
+
+const LOCATION_VALUES = new Set(['Both', 'Home', 'Away']);
+const SELF_FILTER_KEY = /^self_filters\[(.+)\]$/;
+
+const finiteNumber = (value) => {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const wholeNumber = (value) => {
+  const parsed = finiteNumber(value);
+  return parsed !== null && Number.isInteger(parsed) ? parsed : null;
+};
+
+/**
+ * Decode a "low,high" pair.
+ *
+ * Returns the pair re-spelled as plain decimals. Exponent and hex forms satisfy
+ * `Number()` but are not the decimals the API reads, so a link we accepted would
+ * otherwise produce a request it rejects with an error naming nothing.
+ *
+ * `whole` mirrors the API, which parses minutes as integers. No range is capped
+ * here: the API caps nothing, and overtime games really do log more than 48
+ * minutes, so an envelope would refuse links the API would honour.
+ */
+const numericRange = (value, { whole = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const parts = value.split(',');
+  if (parts.length !== 2) return null;
+  const [low, high] = parts.map(whole ? wholeNumber : finiteNumber);
+  if (low === null || high === null || low > high) return null;
+  return `${low},${high}`;
+};
+
+const SEASON_FORMAT = /^(\d{4})-(\d{2})$/;
+
+/** The API requires the suffix to be the following calendar year's last two digits. */
+const isCanonicalSeason = (value) => {
+  const match = SEASON_FORMAT.exec(value);
+  if (match === null) return false;
+  return match[2] === String((Number(match[1]) + 1) % 100).padStart(2, '0');
+};
+
+export const filterSetFromSearchParams = (searchParams) => {
+  const filters = {};
+  const invalid = [];
+  const reject = (name) => {
+    if (!invalid.includes(name)) invalid.push(name);
+  };
+
+  // `get` returns only the first value, so a repeated scalar would hide any
+  // later one from validation entirely. Refuse rather than pick.
+  const readOnce = (name) => {
+    const values = searchParams.getAll(name);
+    if (values.length === 0) return null;
+    if (values.length > 1) {
+      reject(name);
+      return null;
+    }
+    return values[0];
+  };
+
+  const readText = (name, isValid) => {
+    const raw = readOnce(name);
+    if (raw === null) return;
+    const value = raw.trim();
+    if (value === '' || (isValid && !isValid(value))) return reject(name);
+    filters[name] = value;
+  };
+
+  const readDecoded = (name, decode) => {
+    const raw = readOnce(name);
+    if (raw === null) return;
+    const value = decode(raw);
+    if (value === null) return reject(name);
+    filters[name] = value;
+  };
+
+  const readNames = (name) => {
+    const values = searchParams.getAll(name);
+    if (values.length === 0) return;
+    const trimmed = values.map((value) => value.trim());
+    if (trimmed.some((value) => value === '')) return reject(name);
+    filters[name] = trimmed;
+  };
+
+  readText('player_name');
+  readText('season_filter', isCanonicalSeason);
+  readDecoded('minutes_filter', (value) => numericRange(value, { whole: true }));
+  readDecoded('date_filter', parseCalendarDate);
+  readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
+  readDecoded('game_filter', (value) => {
+    const parsed = wholeNumber(value);
+    return parsed !== null && parsed >= 1 ? parsed : null;
+  });
+  readDecoded('playstyle_RTG_min', finiteNumber);
+  readDecoded('playstyle_RTG_max', finiteNumber);
+  if (
+    hasValue(filters.playstyle_RTG_min) &&
+    hasValue(filters.playstyle_RTG_max) &&
+    filters.playstyle_RTG_min > filters.playstyle_RTG_max
+  ) {
+    reject('playstyle_RTG_max');
+  }
+
+  readNames('players_on[]');
+  readNames('players_off[]');
+  const samePlayer = (name) => name.toLowerCase().replace(/\s+/g, ' ');
+  const presentPlayers = new Set((filters['players_on[]'] || []).map(samePlayer));
+  if ((filters['players_off[]'] || []).some((player) => presentPlayers.has(samePlayer(player)))) {
+    reject('players_off[]');
+  }
+
+  // Opponent filters and their ranks are one filter expressed across two
+  // parameters: the API pairs them by position and rejects any length mismatch.
+  const teams = searchParams.getAll('teams_against[]');
+  const ranks = searchParams.getAll('rank_filter[]');
+  if (teams.length > 0 || ranks.length > 0) {
+    // Which opponent filters are rankable is the API's vocabulary, and it is
+    // wider than the panel dropdown. Validating names here would refuse links
+    // written from the API documentation, so only the structure is checked.
+    if (teams.some((team) => team.trim() === '')) reject('teams_against[]');
+    // Zero asks for the top nothing, which matches no team and empties the table.
+    const parsedRanks = ranks.map(wholeNumber);
+    if (parsedRanks.some((rank) => rank === null || rank === 0)) reject('rank_filter[]');
+    if (teams.length !== ranks.length) reject('rank_filter[]');
+    if (invalid.length === 0) {
+      filters['teams_against[]'] = teams;
+      filters['rank_filter[]'] = parsedRanks;
+    }
+  }
+
+  for (const key of new Set(searchParams.keys())) {
+    if (!SELF_FILTER_KEY.test(key)) continue;
+    const raw = readOnce(key);
+    if (raw === null) continue;
+    const range = numericRange(raw);
+    if (range === null) reject(key);
+    else filters[key] = range;
+  }
+
+  // A known filter is never partially applied: what is on screen must always
+  // match what the URL says, so one bad value withholds the whole Filter Set.
+  return invalid.length > 0 ? { filters: {}, invalid } : { filters, invalid };
 };

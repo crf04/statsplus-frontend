@@ -291,3 +291,153 @@ test('@critical applying an untouched panel emits only the controls the user mov
   expect(secondRequest.searchParams.get('date_filter')).toBe('2025-01-09');
   expect(secondRequest.searchParams.get('game_filter')).toBe('5');
 });
+
+test('@critical a link carrying a Filter Set opens the workspace and survives reload', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10&location_filter=Home');
+
+  // No prose was typed and no parser was called, yet the workspace is open.
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  const requested = new URL(gameLogRequests.at(-1));
+  expect(requested.searchParams.get('player_name')).toBe('LeBron James');
+  expect(requested.searchParams.get('game_filter')).toBe('10');
+  expect(requested.searchParams.get('location_filter')).toBe('Home');
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  expect(page.url()).toContain('player_name=LeBron+James');
+});
+
+test('@critical a link without a player waits for one instead of erroring', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?game_filter=10');
+
+  // A Filter Set without a player is partial, not malformed: the panel holds it.
+  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+  await expect(page.getByRole('alert')).toBeHidden();
+  expect(gameLogRequests).toHaveLength(0);
+});
+
+test('a link with an unusable value names it and applies nothing', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=-3');
+
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+  expect(gameLogRequests).toHaveLength(0);
+});
+
+test('a link keeps working when it carries an unrecognised parameter', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&utm_source=twitter');
+
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  const requested = new URL(gameLogRequests.at(-1));
+  expect(requested.searchParams.get('player_name')).toBe('LeBron James');
+  expect(requested.searchParams.has('utm_source')).toBe(false);
+});
+
+test('@critical a signed-out visitor keeps the link they followed', async ({ page }) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await installApiContract(page);
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
+  ).toBeVisible();
+  // The requested URL is honoured, not rewritten, so signing in lands here.
+  expect(page.url()).toContain('player_name=LeBron+James');
+  expect(page.url()).toContain('game_filter=10');
+  expect(gameLogRequests).toHaveLength(0);
+
+  // Signing in fires the held Filter Set exactly once, without a second visit.
+  await page.getByRole('button', { name: 'Sign in with Google' }).click();
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBe(1);
+  const requested = new URL(gameLogRequests[0]);
+  expect(requested.searchParams.get('player_name')).toBe('LeBron James');
+  expect(requested.searchParams.get('game_filter')).toBe('10');
+});
+
+test('a bound the link arrived with survives a later apply', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  // 0 is the API's own lower playstyle bound, so the panel must be able to hold
+  // it. A falsy check here would drop the bound the link arrived with.
+  await page.goto('/?player_name=LeBron+James&playstyle_RTG_min=0&playstyle_RTG_max=80');
+  await expect(page.getByRole('heading', { name: 'Game Logs' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+
+  const arrivedCount = gameLogRequests.length;
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(arrivedCount);
+
+  const reapplied = new URL(gameLogRequests.at(-1));
+  expect(reapplied.searchParams.get('playstyle_RTG_min')).toBe('0');
+  expect(reapplied.searchParams.get('playstyle_RTG_max')).toBe('80');
+});
+
+test('applying a playerless link asks for a player instead of sending a placeholder', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/?game_filter=10');
+  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page.getByRole('alert')).toContainText('Choose a player');
+  expect(gameLogRequests).toHaveLength(0);
+});

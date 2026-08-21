@@ -16,6 +16,8 @@ import ReactSlider from 'react-slider';
 import { defensiveOptions } from './utils';
 import { formatNumber, toFiniteNumber } from './numberUtils';
 
+const hasFilterValue = (value) => value !== null && value !== undefined && value !== '';
+
 const FilterOptions = ({
   playerList,
   onApplyFilters,
@@ -135,8 +137,13 @@ const FilterOptions = ({
         }
       }
 
-      // Pre-populate playstyle rating
-      if (appliedFilters.playstyle_RTG_min && appliedFilters.playstyle_RTG_max) {
+      // Pre-populate playstyle rating. Presence, not truthiness: the API's own
+      // lower bound is 0, so a link carrying it must reach the slider or a later
+      // apply would silently drop the bound the user arrived with.
+      if (
+        hasFilterValue(appliedFilters.playstyle_RTG_min) &&
+        hasFilterValue(appliedFilters.playstyle_RTG_max)
+      ) {
         setPlaystyleMatchupRating([
           appliedFilters.playstyle_RTG_min,
           appliedFilters.playstyle_RTG_max,

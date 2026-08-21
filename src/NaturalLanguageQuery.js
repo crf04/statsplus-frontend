@@ -23,6 +23,7 @@ const NaturalLanguageQuery = ({
   onQueryUpdate,
   resetToLanding,
   gameLogsLoading,
+  inWorkspace = false,
 }) => {
   const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
@@ -188,7 +189,7 @@ const NaturalLanguageQuery = ({
   };
 
   // Landing page interface (before first search)
-  if (!hasSearched) {
+  if (!hasSearched && !inWorkspace) {
     return (
       <div className="landing-page">
         <svg className="court-lines" viewBox="0 0 1200 800" aria-hidden="true" focusable="false">

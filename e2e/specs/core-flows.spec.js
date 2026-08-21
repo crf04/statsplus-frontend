@@ -682,3 +682,15 @@ test('the sentinel is dropped when it arrives alongside filters', async ({
   await expect(page).not.toHaveURL(/browse/);
   await expect(page).toHaveURL(/player_name=LeBron\+James/);
 });
+
+test('the sentinel is dropped without destroying a link we must refuse', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?browse=1&game_filter=0');
+
+  // Dropping the sentinel must not take the offending parameter with it: a
+  // refusal that names nothing, on a bare route, is worse than no refusal.
+  await expect(page.getByRole('alert')).toContainText('game_filter');
+  await expect(page).toHaveURL(/game_filter=0/);
+  await expect(page).not.toHaveURL(/browse/);
+});

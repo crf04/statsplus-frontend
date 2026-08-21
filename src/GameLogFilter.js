@@ -233,10 +233,18 @@ const GameLogFilter = () => {
   // The sentinel only ever says "Workspace, no filters yet". Alongside filters
   // it is already untrue, so it is dropped rather than carried into a link
   // someone shares.
+  //
+  // Only the sentinel is removed, and the rest of the query string is left
+  // exactly as it arrived. Re-encoding the decoded Filter Set instead would
+  // erase a link we are refusing — the offending value withholds the whole
+  // Filter Set, so there would be nothing left to write and the refusal would
+  // be left naming a parameter no longer in the address bar.
   useEffect(() => {
     if (!hasBrowseSentinel || !hasUrlFilterSet) return;
-    setSearchParams(filterSetToSearchParams(urlFilters), { replace: true });
-  }, [hasBrowseSentinel, hasUrlFilterSet, setSearchParams, urlFilters]);
+    const withoutSentinel = new URLSearchParams(searchParams);
+    withoutSentinel.delete(BROWSE_PARAM);
+    setSearchParams(withoutSentinel, { replace: true });
+  }, [hasBrowseSentinel, hasUrlFilterSet, searchParams, setSearchParams]);
 
   // A URL carrying a Filter Set opens the Log Workspace with it applied, so a
   // view can be bookmarked, shared, and reloaded. Requests wait for auth rather
@@ -286,11 +294,17 @@ const GameLogFilter = () => {
     // panel and wait for the user to choose who to apply it to.
     if (!urlFilters.player_name || authLoading) return undefined;
 
+    // A sentinel still sitting beside filters is about to be dropped, which
+    // rewrites the URL and re-runs this effect. Let it, rather than firing a
+    // request only to abort it.
+    if (hasBrowseSentinel) return undefined;
+
     requestGameLogs(urlFilters, { includeInitial: true, updateSelectedTeam: true });
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,
+    hasBrowseSentinel,
     inWorkspace,
     isAuthenticated,
     requestGameLogs,

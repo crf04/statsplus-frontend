@@ -614,6 +614,91 @@ test('@critical removing every self filter clears its parameter', async ({
   expect(gameLogRequests.at(-1).searchParams.has('self_filters[PTS]')).toBe(false);
 });
 
+test('@critical Self Filters ranges are the player unfiltered season', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/games/game_logs') gameLogRequests.push(url);
+  });
+
+  // Entered already narrowed. The result set on screen holds only the 31-point
+  // game, so ranges taken from it could never be widened back out.
+  await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=30%2C60');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
+  expect(gameLogRequests).toHaveLength(1);
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBe(2);
+  expect([...gameLogRequests.at(-1).searchParams.entries()]).toEqual([
+    ['player_name', 'LeBron James'],
+  ]);
+
+  await page.getByLabel('Self filter stat').selectOption('PTS');
+  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+
+  // The season bounds the slider, so the filter the user arrived with can be
+  // widened back out again.
+  await page.getByRole('button', { name: 'Add self filter' }).click();
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBe(3);
+  expect(gameLogRequests.at(-1).searchParams.get('self_filters[PTS]')).toBe('27,31');
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+});
+
+test('an open Self Filters control follows a player change to that season', async ({
+  authenticatedPage: page,
+}) => {
+  const seasonRequests = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (
+      url.pathname === '/api/games/game_logs' &&
+      [...url.searchParams.keys()].join() === 'player_name'
+    ) {
+      seasonRequests.push(url.searchParams.get('player_name'));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await expect.poll(() => seasonRequests).toEqual(['LeBron James']);
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+
+  await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
+});
+
+test('a session that never opens Self Filters pays for no extra request', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/games/game_logs') gameLogRequests.push(url);
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+
+  await page.getByLabel('Last N games:').fill('5');
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBe(2);
+  // The slowest endpoint in the application is only asked for the season when
+  // the control that needs it is opened.
+  expect(gameLogRequests.every((url) => url.searchParams.has('game_filter'))).toBe(true);
+});
+
 test('@critical the escape hatch reaches a result with no language model', async ({
   authenticatedPage: page,
 }) => {

@@ -22,7 +22,9 @@ const FilterOptions = ({
   playerList,
   onApplyFilters,
   selectedPlayer,
-  initialGameLogs,
+  seasonGameLogs,
+  seasonGameLogsLoading,
+  onOpenSelfFilters,
   appliedFilters,
 }) => {
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
@@ -43,6 +45,7 @@ const FilterOptions = ({
   const [selfFilterRange, setSelfFilterRange] = useState([0, 0]);
   const [activeSelfFilters, setActiveSelfFilters] = useState([]);
   const [columnRanges, setColumnRanges] = useState({});
+  const [selfFiltersOpen, setSelfFiltersOpen] = useState(false);
   // Only controls the user touched are emitted, so the API applies its own
   // defaults to the rest. Touched-ness is tracked rather than compared against
   // a copy of those defaults, which would drift from the API.
@@ -57,30 +60,44 @@ const FilterOptions = ({
     });
   };
 
+  // The stats on offer and the bounds of their sliders describe the player's
+  // whole season, so a filter narrowed to it can always be widened out again.
   useEffect(() => {
-    if (initialGameLogs && initialGameLogs.length > 0) {
-      const columns = Object.keys(initialGameLogs[0]).filter(
-        (col) =>
-          typeof initialGameLogs[0][col] === 'number' &&
-          !['GAME_ID', 'GAME_DATE', 'MIN'].includes(col),
-      );
-      setSelfFilterColumns(columns);
-
-      const ranges = columns.reduce((acc, col) => {
-        const values = initialGameLogs
-          .map((log) => toFiniteNumber(log[col]))
-          .filter((value) => value !== null);
-        if (values.length > 0) {
-          acc[col] = {
-            min: Math.min(...values),
-            max: Math.max(...values),
-          };
-        }
-        return acc;
-      }, {});
-      setColumnRanges(ranges);
+    if (!seasonGameLogs || seasonGameLogs.length === 0) {
+      setSelfFilterColumns([]);
+      setColumnRanges({});
+      return;
     }
-  }, [initialGameLogs]);
+
+    const columns = Object.keys(seasonGameLogs[0]).filter(
+      (col) =>
+        typeof seasonGameLogs[0][col] === 'number' &&
+        !['GAME_ID', 'GAME_DATE', 'MIN'].includes(col),
+    );
+    setSelfFilterColumns(columns);
+
+    const ranges = columns.reduce((acc, col) => {
+      const values = seasonGameLogs
+        .map((log) => toFiniteNumber(log[col]))
+        .filter((value) => value !== null);
+      if (values.length > 0) {
+        acc[col] = {
+          min: Math.min(...values),
+          max: Math.max(...values),
+        };
+      }
+      return acc;
+    }, {});
+    setColumnRanges(ranges);
+  }, [seasonGameLogs]);
+
+  // The season is asked for when the control that needs it is opened, and an
+  // open control follows a player change onto that player's season. A control
+  // never opened asks for nothing at all.
+  useEffect(() => {
+    if (!selfFiltersOpen) return;
+    onOpenSelfFilters();
+  }, [onOpenSelfFilters, selfFiltersOpen]);
 
   // Reset all filters to defaults and then pre-populate with new query filters
   useEffect(() => {
@@ -690,24 +707,48 @@ const FilterOptions = ({
           </div>
         </Form.Group>
         <Form.Group className="mb-4">
-          <Form.Label>Self Filters:</Form.Label>
-          <InputGroup>
-            <Form.Select
-              value={selectedSelfFilter}
-              onChange={(e) => handleSelfFilterSelect(e.target.value)}
-            >
-              <option value="">Select Stat</option>
-              {selfFilterColumns.map((column) => (
-                <option key={column} value={column}>
-                  {column}
-                </option>
-              ))}
-            </Form.Select>
-            <Button type="button" variant="outline-primary" onClick={handleAddSelfFilter}>
-              Add
-            </Button>
-          </InputGroup>
-          {selectedSelfFilter && columnRanges[selectedSelfFilter] && (
+          <Button
+            type="button"
+            variant="link"
+            className="p-0 text-decoration-none form-label"
+            aria-expanded={selfFiltersOpen}
+            aria-controls="self-filter-controls"
+            onClick={() => setSelfFiltersOpen(!selfFiltersOpen)}
+          >
+            Self Filters:
+          </Button>
+          {selfFiltersOpen && (
+            <div id="self-filter-controls">
+              <InputGroup>
+                <Form.Select
+                  aria-label="Self filter stat"
+                  value={selectedSelfFilter}
+                  onChange={(e) => handleSelfFilterSelect(e.target.value)}
+                >
+                  <option value="">Select Stat</option>
+                  {selfFilterColumns.map((column) => (
+                    <option key={column} value={column}>
+                      {column}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Button
+                  type="button"
+                  aria-label="Add self filter"
+                  variant="outline-primary"
+                  onClick={handleAddSelfFilter}
+                >
+                  Add
+                </Button>
+              </InputGroup>
+              {seasonGameLogsLoading && (
+                <div className="mt-2" role="status" aria-live="polite">
+                  Loading the season for this player…
+                </div>
+              )}
+            </div>
+          )}
+          {selfFiltersOpen && selectedSelfFilter && columnRanges[selectedSelfFilter] && (
             <div className="mt-2">
               <Form.Label>
                 {selectedSelfFilter}: {formatNumber(selfFilterRange[0], 1)} -{' '}

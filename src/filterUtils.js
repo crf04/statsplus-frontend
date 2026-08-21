@@ -398,3 +398,27 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
     },
     { ...filters },
   );
+
+/**
+ * The only non-filter search parameter.
+ *
+ * Manual entry lands with an empty Filter Set, which is indistinguishable from
+ * a fresh visit, so the escape hatch navigates to this sentinel to declare
+ * intent to work in the Workspace without filters. It is never part of a Filter
+ * Set, so it never reaches a request, and it is dropped as soon as real filters
+ * exist — any URL carrying filters stays a pure API query string.
+ */
+export const BROWSE_PARAM = 'browse';
+
+/**
+ * The one place that decides whether the user is in the Log Workspace.
+ *
+ * Deriving this from the URL rather than storing it is what keeps a future
+ * entry path from being accidentally locked behind the language model, which is
+ * exactly what two separate stored flags did to the manual filter panel.
+ */
+export const isWorkspaceSearch = (searchParams) => {
+  if (searchParams.has(BROWSE_PARAM)) return true;
+  const { filters, invalid } = filterSetFromSearchParams(searchParams);
+  return Object.keys(filters).length > 0 || invalid.length > 0;
+};

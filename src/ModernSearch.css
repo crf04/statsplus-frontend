@@ -1129,3 +1129,30 @@
 .compact-search-icon.loading {
   animation: pulse 1.5s ease-in-out infinite;
 }
+
+.prompt-browse {
+  display: flex;
+  justify-content: center;
+  margin: -12px 0 24px;
+}
+
+.prompt-browse-button {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(232, 163, 61, 0.45);
+  padding: 2px 0;
+  color: #c9c2b2;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.prompt-browse-button:hover:not(:disabled) {
+  color: #f6b950;
+}
+
+.prompt-browse-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

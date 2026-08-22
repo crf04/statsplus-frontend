@@ -75,7 +75,7 @@ const AppliedFilters = ({ filters }) => {
     }
     return (
       typeof value === 'number' ||
-      (typeof value === 'string' && value !== '' && value !== 'null') ||
+      (typeof value === 'string' && value !== '') ||
       (Array.isArray(value) && value.length > 0)
     );
   });

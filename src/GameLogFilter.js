@@ -16,12 +16,9 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   BROWSE_PARAM,
-  cleanFilterParams,
   filterSetFromSearchParams,
-  isWorkspaceSearch,
   filterSetToSearchParams,
   mergeFilterSet,
-  toGameLogParams,
 } from './filterUtils';
 
 const listNames = (names) =>
@@ -37,8 +34,8 @@ const GameLogFilter = () => {
     [searchParams],
   );
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
-  const inWorkspace = isWorkspaceSearch(searchParams);
   const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
+  const inWorkspace = hasBrowseSentinel || hasUrlFilterSet;
   // A refused link decoded to nothing, so there is no Filter Set to show, edit,
   // or patch a player into — only the refusal naming what has to be fixed.
   const isRefusedLink = urlInvalid.length > 0;
@@ -385,7 +382,7 @@ const GameLogFilter = () => {
    * the user touched, so a parameter it has no control for — a season that
    * arrived from a Parsed Query — survives an apply instead of being dropped.
    */
-  const handleApplyFilters = (filterParams, isFromNL = false, nlLoadingCallback = null) => {
+  const handleApplyFilters = (filterParams, isFromNL = false) => {
     // A refused link has no Filter Set to patch: the decoder withheld the whole
     // of it, so merging into what it returned would publish a URL missing the
     // very parameter the refusal on screen is naming — a link we declined to
@@ -393,7 +390,7 @@ const GameLogFilter = () => {
     // patch but a whole Filter Set, so it still supersedes the refused link and
     // stays the way out.
     if (!isFromNL && isRefusedLink) {
-      return Promise.resolve({ ok: false, refused: true });
+      return { ok: false, reason: 'refused' };
     }
 
     // A Parsed Query resolves to a whole Filter Set, so it replaces; the panel
@@ -403,14 +400,11 @@ const GameLogFilter = () => {
     // emptied arrives as a blank value, and that blank is the instruction to
     // drop the parameter. Cleaning it away would make clearing a control
     // indistinguishable from never touching it, and the old value would stand.
-    const nextFilters = isFromNL
-      ? cleanFilterParams(filterParams)
-      : mergeFilterSet(urlFilters, filterParams);
+    const nextFilters = isFromNL ? filterParams : mergeFilterSet(urlFilters, filterParams);
 
     if (Object.keys(nextFilters).length === 0) {
-      setGameLogsError('Add at least one filter before loading game logs.');
-      if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
-      return Promise.resolve({ ok: false, empty: true });
+      if (!isFromNL) setGameLogsError('Add at least one filter before loading game logs.');
+      return { ok: false, reason: 'empty' };
     }
 
     // Arriving on a link that carries filters but no player leaves the panel
@@ -421,15 +415,13 @@ const GameLogFilter = () => {
       // fix, and the player selector this advice points at is not on screen to
       // act on — replacing one with the other loses both.
       if (!isRefusedLink) setGameLogsError('Choose a player before applying these filters.');
-      if (isFromNL && nlLoadingCallback) nlLoadingCallback(false);
-      return Promise.resolve({ ok: false, empty: true });
+      return { ok: false, reason: 'needsPlayer' };
     }
 
     const nextSearch = filterSetToSearchParams(nextFilters);
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
-      if (nlLoadingCallback) nlLoadingCallback(true);
-      return undefined;
+      return { ok: false, reason: 'unchanged' };
     }
     // Pushed, not replaced, so Back undoes the last filter change.
     setSearchParams(nextSearch, { replace: false });
@@ -437,8 +429,7 @@ const GameLogFilter = () => {
     // The Filter Set is now recorded, which is all a Parsed Query was for. The
     // game-log request that follows reports itself through gameLogsLoading and
     // the error alert.
-    if (nlLoadingCallback) nlLoadingCallback(true);
-    return undefined;
+    return { ok: true };
   };
 
   /*
@@ -451,17 +442,7 @@ const GameLogFilter = () => {
   const handleSelectPlayer = (player) => handleApplyFilters({ player_name: player });
 
   // Handler for natural language query results
-  const handleNLQueryResults = (filters, nlLoadingCallback) => {
-    const convertedFilters = cleanFilterParams(filters);
-    if (Object.keys(convertedFilters).length === 0) {
-      if (nlLoadingCallback) nlLoadingCallback(false);
-      return Promise.resolve({ ok: false, empty: true });
-    }
-
-    const apiFilters = toGameLogParams(convertedFilters);
-
-    return handleApplyFilters(apiFilters, true, nlLoadingCallback);
-  };
+  const handleNLQueryResults = (filters) => handleApplyFilters(filters, true);
 
   return (
     <>

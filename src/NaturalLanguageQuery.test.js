@@ -22,7 +22,7 @@ describe('NaturalLanguageQuery', () => {
 
   test('clears loading when the parser returns no usable filters', async () => {
     apiClient.post.mockResolvedValue({ data: { confidence: 0 } });
-    const onFiltersApplied = jest.fn();
+    const onFiltersApplied = jest.fn(() => ({ ok: false, reason: 'empty' }));
 
     render(
       <MemoryRouter>
@@ -36,7 +36,7 @@ describe('NaturalLanguageQuery', () => {
     await waitFor(() =>
       expect(screen.getByText(/could not find usable filters/i)).toBeInTheDocument(),
     );
-    expect(onFiltersApplied).not.toHaveBeenCalled();
+    expect(onFiltersApplied).toHaveBeenCalledWith({});
     expect(screen.getByRole('textbox')).not.toBeDisabled();
   });
 
@@ -60,26 +60,9 @@ describe('NaturalLanguageQuery', () => {
     );
   });
 
-  test('settles a stale game-log application without clearing a newer query', async () => {
-    apiClient.post
-      .mockResolvedValueOnce({ data: { player_name: 'LeBron James' } })
-      .mockResolvedValueOnce({ data: { player_name: 'Stephen Curry' } });
-
-    let firstFinishLoading;
-    let secondFinishLoading;
-    let resolveSecondApplication;
-    const onFiltersApplied = jest
-      .fn()
-      .mockImplementationOnce((_filters, finishLoading) => {
-        firstFinishLoading = finishLoading;
-        return Promise.resolve({ stale: true, cancelled: true });
-      })
-      .mockImplementationOnce((_filters, finishLoading) => {
-        secondFinishLoading = finishLoading;
-        return new Promise((resolve) => {
-          resolveSecondApplication = resolve;
-        });
-      });
+  test('finishes loading for a synchronous unchanged application without showing an error', async () => {
+    apiClient.post.mockResolvedValue({ data: { player_name: 'LeBron James' } });
+    const onFiltersApplied = jest.fn(() => ({ ok: false, reason: 'unchanged' }));
 
     render(
       <MemoryRouter>
@@ -93,22 +76,42 @@ describe('NaturalLanguageQuery', () => {
 
     await waitFor(() => expect(onFiltersApplied).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(input).not.toBeDisabled());
+    expect(screen.queryByText(/could not find usable filters/i)).not.toBeInTheDocument();
+  });
 
+  test('a superseded parser response neither applies nor unlocks the newer query', async () => {
+    let resolveFirst;
+    let resolveSecond;
+    apiClient.post
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveSecond = resolve)));
+    const onFiltersApplied = jest.fn(() => ({ ok: true }));
+
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />
+      </MemoryRouter>,
+    );
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: 'LeBron this year' } });
+    fireEvent.submit(input.closest('form'));
+    await waitFor(() => expect(resolveFirst).toBeDefined());
     fireEvent.change(input, { target: { value: 'Stephen this year' } });
     fireEvent.submit(input.closest('form'));
-    await waitFor(() => expect(onFiltersApplied).toHaveBeenCalledTimes(2));
-    expect(input).toBeDisabled();
-
-    // A late callback from the first request must not finish the second one.
-    await act(async () => {
-      firstFinishLoading(false);
-    });
-    expect(input).toBeDisabled();
+    await waitFor(() => expect(resolveSecond).toBeDefined());
 
     await act(async () => {
-      secondFinishLoading(true);
-      resolveSecondApplication({ ok: true });
+      resolveFirst({ data: { player_name: 'LeBron James' } });
     });
+    expect(onFiltersApplied).not.toHaveBeenCalled();
+    expect(input).toBeDisabled();
+
+    await act(async () => {
+      resolveSecond({ data: { player_name: 'Stephen Curry' } });
+    });
+    expect(onFiltersApplied).toHaveBeenCalledTimes(1);
+    expect(onFiltersApplied).toHaveBeenCalledWith({ player_name: 'Stephen Curry' });
     expect(input).not.toBeDisabled();
   });
 

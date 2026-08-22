@@ -1,12 +1,9 @@
 import {
-  BROWSE_PARAM,
-  isWorkspaceSearch,
   filterSetFromSearchParams,
   filterSetToSearchParams,
   mergeFilterSet,
   cleanFilterParams,
   convertNLToFilters,
-  toGameLogParams,
 } from './filterUtils';
 
 describe('filterUtils', () => {
@@ -36,17 +33,10 @@ describe('filterUtils', () => {
         players_on: ['Jimmy Butler'],
       }),
     ).toEqual({
-      selectedPlayer: 'Stephen Curry',
+      player_name: 'Stephen Curry',
       minutes_filter: '30,48',
       'self_filters[FGA]': '16,999',
       'players_on[]': ['Jimmy Butler'],
-    });
-  });
-
-  test('moves the frontend player key at the request seam', () => {
-    expect(toGameLogParams({ selectedPlayer: 'A player', game_filter: 0 })).toEqual({
-      player_name: 'A player',
-      game_filter: 0,
     });
   });
 });
@@ -266,11 +256,11 @@ describe('filterSetToSearchParams', () => {
   });
 
   test('writes nothing for a key outside the API vocabulary', () => {
-    // Prose is scaffolding, not part of the Filter Set, and the frontend-only
-    // player key never reaches the wire either.
+    // Prose is scaffolding, not part of the Filter Set, and unknown keys never
+    // reach the wire either.
     const search = filterSetToSearchParams({
       player_name: 'LeBron James',
-      selectedPlayer: 'LeBron James',
+      legacy_player: 'LeBron James',
       query: 'LeBron last 10 games',
     });
 
@@ -304,42 +294,5 @@ describe('mergeFilterSet', () => {
     const current = { player_name: 'LeBron James', minutes_filter: '20,40' };
 
     expect(mergeFilterSet(current, { player_name: 'LeBron James' })).toEqual(current);
-  });
-});
-
-describe('isWorkspaceSearch', () => {
-  const gate = (query) => isWorkspaceSearch(new URLSearchParams(query));
-
-  test('a bare route is the Query Prompt', () => {
-    expect(gate('')).toBe(false);
-  });
-
-  test('the sentinel alone opens an empty Log Workspace', () => {
-    // Manual entry lands with no filters, and an empty Filter Set is otherwise
-    // indistinguishable from a fresh visit.
-    expect(gate(`${BROWSE_PARAM}=1`)).toBe(true);
-  });
-
-  test('any Filter Set opens the Log Workspace', () => {
-    expect(gate('player_name=LeBron+James')).toBe(true);
-    expect(gate('game_filter=10')).toBe(true);
-  });
-
-  test('a link we must refuse still opens the Workspace, to say so', () => {
-    expect(gate('game_filter=0')).toBe(true);
-  });
-
-  test('a stray tracking parameter is not an entry', () => {
-    expect(gate('utm_source=newsletter')).toBe(false);
-  });
-
-  test('the sentinel is not a filter and never reaches a request', () => {
-    const { filters, invalid } = filterSetFromSearchParams(
-      new URLSearchParams(`player_name=LeBron+James&${BROWSE_PARAM}=1`),
-    );
-
-    expect(invalid).toEqual([]);
-    expect(filters).toEqual({ player_name: 'LeBron James' });
-    expect(filterSetToSearchParams(filters).has(BROWSE_PARAM)).toBe(false);
   });
 });

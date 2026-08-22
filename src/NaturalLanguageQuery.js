@@ -133,38 +133,22 @@ const NaturalLanguageQuery = ({
       // Convert NL result to frontend filter format
       const filters = convertNLToFilters(result);
 
-      // A successful parser response can still contain no usable filters.
-      // Finish the request explicitly so the search UI cannot remain locked.
-      if (Object.keys(filters).length === 0) {
+      // Apply filters to the parent component (includes player selection)
+      const application = onFiltersApplied
+        ? onFiltersApplied(filters)
+        : Object.keys(filters).length === 0
+          ? { ok: false, reason: 'empty' }
+          : { ok: true };
+
+      if (application?.reason === 'empty') {
         setError(
           'I could not find usable filters in that query. Please try a player or stat filter.',
         );
-        finishLoading();
-        return;
       }
 
-      // Apply filters to the parent component (includes player selection)
-      if (onFiltersApplied) {
-        // Pass a callback to clear this component's loading state
-        const application = onFiltersApplied(filters, finishLoading);
-        // Parent handlers normally resolve after the game-log request and call
-        // finishLoading themselves. This fallback also supports lightweight
-        // embedders that return a promise but do not use the callback seam.
-        if (application && typeof application.then === 'function') {
-          application
-            .then(() => {
-              if (
-                queryRequestRef.current.id === requestId &&
-                queryRequestRef.current.controller === controller
-              ) {
-                finishLoading();
-              }
-            })
-            .catch(() => finishLoading());
-        }
-      } else {
-        finishLoading();
-      }
+      finishLoading();
+
+      if (application?.reason === 'empty') return;
 
       // Update parent with the successful query
       if (onQueryUpdate) {

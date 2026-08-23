@@ -1133,6 +1133,7 @@
 .prompt-browse {
   display: flex;
   justify-content: center;
+  gap: 20px;
   margin: -12px 0 24px;
 }
 

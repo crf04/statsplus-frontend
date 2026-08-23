@@ -12,6 +12,8 @@ import ChartComponent from './ChartComponent';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
+import SaveFilterSetModal from './SaveFilterSetModal';
+import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
@@ -62,6 +64,8 @@ const GameLogFilter = () => {
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
+  const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
+  const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
   const teamsRef = useRef([]);
@@ -452,6 +456,10 @@ const GameLogFilter = () => {
         onQueryUpdate={setCurrentQuery}
         gameLogsLoading={isGameLogsLoading}
         inWorkspace={inWorkspace}
+        // The saved list is reachable from the Query Prompt as well as from the
+        // Workspace, so coming back to a saved Filter Set does not require
+        // building one first.
+        onOpenSavedFilterSets={isAuthenticated ? () => setShowSavedFilterSets(true) : undefined}
       />
 
       {(authLoading || listsLoading) && (
@@ -501,6 +509,29 @@ const GameLogFilter = () => {
               <div className="current-query-display">
                 <span className="query-label">Query:</span>
                 <span className="query-text">"{currentQuery}"</span>
+              </div>
+            )}
+            {isAuthenticated && (
+              <div className="d-flex align-items-center gap-2 ms-auto">
+                {/* There is nothing to save until the URL carries a Filter
+                    Set, and a refused link is one we would not open again —
+                    but the saved list is still the way back out of either. */}
+                {hasUrlFilterSet && !isRefusedLink && (
+                  <button
+                    type="button"
+                    className="btn btn-back-to-search"
+                    onClick={() => setShowSaveFilterSet(true)}
+                  >
+                    Save Filter Set
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-back-to-search"
+                  onClick={() => setShowSavedFilterSets(true)}
+                >
+                  Saved Filter Sets
+                </button>
               </div>
             )}
           </div>
@@ -580,6 +611,24 @@ const GameLogFilter = () => {
             </div>
           </div>
         </Container>
+      )}
+
+      {/* Saving and the saved list belong to an account, so neither exists for
+          a signed-out reader. */}
+      {isAuthenticated && (
+        <>
+          <SaveFilterSetModal
+            show={showSaveFilterSet}
+            onHide={() => setShowSaveFilterSet(false)}
+            // The URL as it stands is what gets saved, so what opens later is
+            // the link the user was looking at.
+            queryString={searchParams.toString()}
+          />
+          <SavedFilterSetsModal
+            show={showSavedFilterSets}
+            onHide={() => setShowSavedFilterSets(false)}
+          />
+        </>
       )}
     </>
   );

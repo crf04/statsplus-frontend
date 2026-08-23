@@ -395,9 +395,11 @@
 
 /* Compact Search Interface Styles (after search) */
 /* Search container wrapper for click-to-expand functionality */
+/* Must float clear of the header band: the header paints above this layer,
+   so anything drawn inside the band takes no pointer clicks. */
 .compact-search-wrapper {
   position: fixed;
-  top: 15px;
+  top: calc(var(--ct-header-height) + 12px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 2000;

@@ -7,6 +7,15 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
 }
 
+:root {
+  /* The height of the header band, published so anything floating at the top
+     of the viewport can clear it. The header paints above those layers, so a
+     control drawn inside this band takes no pointer clicks. Keep in step with
+     .app-nav min-height plus the header border; the workspace search-toggle
+     pointer-click e2e test fails if this drifts. */
+  --ct-header-height: 69px;
+}
+
 .app-header {
   position: relative;
   z-index: 2001;
@@ -58,6 +67,11 @@
 }
 
 @media (max-width: 620px) {
+  :root {
+    /* The links wrap onto their own row here, so the band grows. */
+    --ct-header-height: 81px;
+  }
+
   .app-nav {
     grid-template-columns: auto 1fr;
     width: min(100% - 20px, 1160px);

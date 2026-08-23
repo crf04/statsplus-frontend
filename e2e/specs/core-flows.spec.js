@@ -1177,9 +1177,8 @@ test('a refused link keeps its explanation when prose names no player', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=0');
   await expect(page.getByRole('alert')).toContainText('game_filter');
 
-  // Reached from the keyboard: the toggle is overlapped by the header in the
-  // workspace, which is a separate pre-existing defect on every link, not this
-  // one's to fix.
+  // Reached from the keyboard, which stays a way in of its own however the
+  // toggle is placed.
   await page.getByRole('button', { name: 'Open search' }).press('Enter');
   await page.getByRole('textbox').fill('last 10 games');
   await page.getByRole('textbox').press('Enter');
@@ -1189,6 +1188,30 @@ test('a refused link keeps its explanation when prose names no player', async ({
   // the user holding neither.
   await expect(page.getByRole('alert')).toContainText('game_filter');
   await expect(page.getByText('Choose a player before applying these filters.')).toBeHidden();
+});
+
+test('@critical the workspace search toggle answers a real pointer click', async ({
+  authenticatedPage: page,
+}) => {
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 375, height: 667 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/?player_name=LeBron+James');
+    await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+    // A plain click, never `force`. Playwright's own hit test is the assertion:
+    // it fails when the header covers the toggle, which is what a pointer hits
+    // and the keyboard path hides.
+    await page.getByRole('button', { name: 'Open search' }).click();
+    await expect(page.getByPlaceholder('Ask about your favorite player')).toBeVisible();
+    await page.getByRole('button', { name: 'Close search' }).click();
+
+    // Moving the toggle out of the header cannot cost the header its own links.
+    await page.getByRole('link', { name: 'Matchups' }).click();
+    await expect(page).toHaveURL(/\/matchups$/);
+  }
 });
 
 test('a slow request never claims the result was empty', async ({ authenticatedPage: page }) => {

@@ -35,23 +35,6 @@ export const cleanFilterParams = (filters = {}) => {
   }, {});
 };
 
-/**
- * Convert the frontend-only selectedPlayer key to the backend's player_name
- * key.  The natural-language result keeps selectedPlayer until this seam so
- * the UI can still display the resolved player name.
- */
-export const toGameLogParams = (filters = {}) => {
-  const cleaned = cleanFilterParams(filters);
-  const selectedPlayer = cleaned.selectedPlayer;
-
-  delete cleaned.selectedPlayer;
-  if (hasValue(selectedPlayer) && selectedPlayer !== 'None' && !hasValue(cleaned.player_name)) {
-    cleaned.player_name = selectedPlayer;
-  }
-
-  return cleaned;
-};
-
 const toNumericValue = (value) => {
   const numericValue = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
@@ -133,7 +116,7 @@ export const convertNLToFilters = (nlResult = {}) => {
   const filters = {};
 
   if (hasValue(nlResult.player_name)) {
-    filters.selectedPlayer = nlResult.player_name;
+    filters.player_name = nlResult.player_name;
   }
 
   if (hasValue(nlResult.game_count)) {
@@ -356,9 +339,9 @@ const REPEATED_FILTER_NAMES = ['players_on[]', 'players_off[]', 'teams_against[]
  * Encode a Filter Set as game-log query parameters, in a stable order.
  *
  * Only the API's own vocabulary is written. A key outside it — the prose of a
- * query, or the frontend-only `selectedPlayer` — is dropped rather than
- * published, because a parameter nobody re-parses becomes untrue as soon as
- * someone hand-edits the URL.
+ * query or any other unknown key — is dropped rather than published, because
+ * a parameter nobody re-parses becomes untrue as soon as someone hand-edits
+ * the URL.
  */
 export const filterSetToSearchParams = (filters = {}) => {
   const cleaned = cleanFilterParams(filters);
@@ -409,16 +392,3 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
  * exist — any URL carrying filters stays a pure API query string.
  */
 export const BROWSE_PARAM = 'browse';
-
-/**
- * The one place that decides whether the user is in the Log Workspace.
- *
- * Deriving this from the URL rather than storing it is what keeps a future
- * entry path from being accidentally locked behind the language model, which is
- * exactly what two separate stored flags did to the manual filter panel.
- */
-export const isWorkspaceSearch = (searchParams) => {
-  if (searchParams.has(BROWSE_PARAM)) return true;
-  const { filters, invalid } = filterSetFromSearchParams(searchParams);
-  return Object.keys(filters).length > 0 || invalid.length > 0;
-};

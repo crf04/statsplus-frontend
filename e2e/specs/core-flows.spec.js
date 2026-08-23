@@ -1276,11 +1276,14 @@ test('@critical a saved Filter Set is a name that reopens the same Log Workspace
   await expect(page).toHaveURL(/game_filter=10/);
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByText('GAMES <= 10').first()).toBeVisible();
+  // Opening an item is done with the list, so the list goes.
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // The account menu opens the same list, so renaming and deleting there is
   // the same list changing.
   await page.getByRole('banner').getByRole('button', { name: 'CourtAI Test User' }).click();
   await page.getByRole('banner').getByRole('button', { name: 'Saved Filter Sets' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.getByRole('button', { name: 'Rename LeBron last 10' }).click();
   await page.getByLabel('New name for LeBron last 10').fill('LeBron recent form');
   await page.getByRole('button', { name: 'Save name' }).click();
@@ -1299,4 +1302,58 @@ test('signed-out readers are offered no saved Filter Sets', async ({ page }) => 
   await expect(page.getByText('Sign in to load these game logs')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save Filter Set' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Saved Filter Sets' })).toHaveCount(0);
+});
+
+test('saved Filter Set fixture answers the documented envelopes and rejections', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+
+  const contract = await page.evaluate(async () => {
+    const base = '/api/user/saved-filter-sets';
+    const send = (path, method, body) =>
+      fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+
+    const created = await send(base, 'POST', {
+      name: 'Fixture contract',
+      query_string: 'player_name=LeBron+James',
+    });
+    const createdBody = await created.json();
+    const renamed = await send(`${base}/${createdBody.saved_filter_set.id}`, 'PATCH', {
+      name: 'Fixture contract renamed',
+    });
+    const renamedBody = await renamed.json();
+
+    return {
+      created: { status: created.status, body: createdBody },
+      renamed: { status: renamed.status, body: renamedBody },
+      rejections: await Promise.all(
+        [
+          send(base, 'POST', { name: '   ', query_string: 'player_name=LeBron+James' }),
+          send(`${base}/${createdBody.saved_filter_set.id}`, 'PATCH', { name: '' }),
+          send(`${base}/9999`, 'PATCH', { name: 'No such item' }),
+          send(`${base}/9999`, 'DELETE'),
+        ].map((response) => response.then((settled) => settled.status)),
+      ),
+    };
+  });
+
+  expect(contract.created.status).toBe(201);
+  expect(contract.created.body).toMatchObject({
+    success: true,
+    saved_filter_set: { name: 'Fixture contract', query_string: 'player_name=LeBron+James' },
+  });
+  expect(contract.renamed.status).toBe(200);
+  expect(contract.renamed.body.saved_filter_set).toMatchObject({
+    name: 'Fixture contract renamed',
+    // Renaming moves the name and its timestamp; the query string is immutable.
+    query_string: 'player_name=LeBron+James',
+    created_at: '2026-04-13T00:10:00Z',
+    updated_at: '2026-04-13T00:20:00Z',
+  });
+  expect(contract.rejections).toEqual([400, 400, 404, 404]);
 });

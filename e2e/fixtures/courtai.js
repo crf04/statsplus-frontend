@@ -1047,6 +1047,11 @@ export const installApiContract = async (page, overrides = {}) => {
         );
       const conflict = (message) =>
         route.fulfill({ status: 409, json: { error: { code: 'conflict', message } } });
+      const invalidName = () =>
+        route.fulfill({
+          status: 400,
+          json: { error: { code: 'invalid_request', message: 'Invalid saved filter set.' } },
+        });
       const index = savedFilterSets.findIndex((item) => String(item.id) === savedFilterSetId);
 
       if (method === 'GET') {
@@ -1056,10 +1061,7 @@ export const installApiContract = async (page, overrides = {}) => {
 
       if (method === 'POST') {
         if (!body?.name?.trim() || typeof body.query_string !== 'string') {
-          await route.fulfill({
-            status: 400,
-            json: { error: { code: 'invalid_request', message: 'Invalid saved filter set.' } },
-          });
+          await invalidName();
           return;
         }
         if (duplicateName(body.name)) {
@@ -1075,7 +1077,11 @@ export const installApiContract = async (page, overrides = {}) => {
           created_at: '2026-04-13T00:10:00Z',
           updated_at: '2026-04-13T00:10:00Z',
         });
-        await route.fulfill({ status: 201, json: savedFilterSets[0] });
+        // A single item travels in its own envelope, as the backend sends it.
+        await route.fulfill({
+          status: 201,
+          json: { success: true, saved_filter_set: savedFilterSets[0] },
+        });
         return;
       }
 
@@ -1088,12 +1094,21 @@ export const installApiContract = async (page, overrides = {}) => {
       }
 
       if (method === 'PATCH') {
-        if (duplicateName(body?.name, savedFilterSets[index].id)) {
+        if (!body?.name?.trim()) {
+          await invalidName();
+          return;
+        }
+        if (duplicateName(body.name, savedFilterSets[index].id)) {
           await conflict('You already have a saved Filter Set with that name.');
           return;
         }
-        savedFilterSets[index] = { ...savedFilterSets[index], name: body.name.trim() };
-        await route.fulfill({ json: savedFilterSets[index] });
+        savedFilterSets[index] = {
+          ...savedFilterSets[index],
+          name: body.name.trim(),
+          // The query string is immutable; only the name and its timestamp move.
+          updated_at: '2026-04-13T00:20:00Z',
+        };
+        await route.fulfill({ json: { success: true, saved_filter_set: savedFilterSets[index] } });
         return;
       }
 

@@ -10,7 +10,9 @@
 :root {
   /* The height of the header band, published so anything floating at the top
      of the viewport can clear it. The header paints above those layers, so a
-     control drawn inside this band takes no pointer clicks. */
+     control drawn inside this band takes no pointer clicks. Keep in step with
+     .app-nav min-height plus the header border; the workspace search-toggle
+     pointer-click e2e test fails if this drifts. */
   --ct-header-height: 69px;
 }
 

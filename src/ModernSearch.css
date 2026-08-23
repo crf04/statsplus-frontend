@@ -395,9 +395,8 @@
 
 /* Compact Search Interface Styles (after search) */
 /* Search container wrapper for click-to-expand functionality */
-/* Floats clear of the header band. Inside it the header, which paints above
-   this layer, is what a pointer lands on, so the toggle only ever opened from
-   the keyboard. */
+/* Must float clear of the header band: the header paints above this layer,
+   so anything drawn inside the band takes no pointer clicks. */
 .compact-search-wrapper {
   position: fixed;
   top: calc(var(--ct-header-height) + 12px);

@@ -23,6 +23,9 @@ const NaturalLanguageQuery = ({
   onQueryUpdate,
   gameLogsLoading,
   inWorkspace = false,
+  // Present only for a signed-in reader, because only an account has saved
+  // Filter Sets to come back to.
+  onOpenSavedFilterSets,
 }) => {
   const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
@@ -240,6 +243,16 @@ const NaturalLanguageQuery = ({
             >
               Browse without a query
             </button>
+            {onOpenSavedFilterSets && (
+              <button
+                type="button"
+                className="prompt-browse-button"
+                disabled={isLoading}
+                onClick={onOpenSavedFilterSets}
+              >
+                Saved Filter Sets
+              </button>
+            )}
           </div>
 
           <QueryLadder

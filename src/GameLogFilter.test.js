@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
 import { apiClient } from './config';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData } from './gameLogsApi';
+import { createSavedFilterSet, fetchSavedFilterSets } from './savedFilterSetsApi';
 
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
@@ -15,14 +16,25 @@ jest.mock('./gameLogsApi', () => ({
   isRequestCancelled: jest.fn(() => false),
 }));
 jest.mock('./contexts/AuthContext', () => ({ useAuth: jest.fn() }));
+jest.mock('./savedFilterSetsApi', () => ({
+  fetchSavedFilterSets: jest.fn(),
+  createSavedFilterSet: jest.fn(),
+  renameSavedFilterSet: jest.fn(),
+  deleteSavedFilterSet: jest.fn(),
+}));
 jest.mock('./NaturalLanguageQuery', () => ({
   __esModule: true,
-  default: ({ inWorkspace, onFiltersApplied }) => (
+  default: ({ inWorkspace, onFiltersApplied, onOpenSavedFilterSets }) => (
     <div data-testid="query-prompt">
       {String(inWorkspace)}
       <button type="button" onClick={() => onFiltersApplied(mockParsedFilters)}>
         Apply parsed query
       </button>
+      {onOpenSavedFilterSets && !inWorkspace && (
+        <button type="button" onClick={onOpenSavedFilterSets}>
+          Saved Filter Sets
+        </button>
+      )}
     </div>
   ),
 }));
@@ -78,6 +90,8 @@ beforeEach(() => {
   useAuth.mockImplementation(() => mockAuthState);
   apiClient.get.mockImplementation(() => new Promise(() => {}));
   fetchGameLogsData.mockImplementation(() => new Promise(() => {}));
+  fetchSavedFilterSets.mockResolvedValue([]);
+  createSavedFilterSet.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -204,4 +218,77 @@ test('keeps a refused link unchanged, refuses a panel apply, and accepts a parse
       '/?player_name=Stephen+Curry&game_filter=10',
     ),
   );
+});
+
+test('saves the Log Workspace URL exactly as it stands', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: 'Save Filter Set' }));
+  fireEvent.change(await screen.findByLabelText('Name'), {
+    target: { value: 'LeBron last 10' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  });
+
+  expect(createSavedFilterSet).toHaveBeenCalledWith({
+    name: 'LeBron last 10',
+    queryString: 'player_name=LeBron+James&game_filter=10',
+  });
+});
+
+test('reaches the saved list from the Query Prompt and from the Log Workspace', async () => {
+  const promptRender = renderGameLogFilter(['/']);
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(fetchSavedFilterSets).toHaveBeenCalledTimes(1);
+  promptRender.unmount();
+
+  renderGameLogFilter(['/?player_name=LeBron+James']);
+  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
+});
+
+test('offers no save affordance and no saved list while signed out', async () => {
+  mockAuthState.isAuthenticated = false;
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+  await waitFor(() => expect(screen.getByText(/Sign in to load these game logs/)).toBeVisible());
+  expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Saved Filter Sets' })).not.toBeInTheDocument();
+  expect(fetchSavedFilterSets).not.toHaveBeenCalled();
+});
+
+test('a saved link we can no longer honour opens with the existing URL-entry refusal', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    { id: 1, name: 'Saved before the rules changed', queryString: 'game_filter=0' },
+  ]);
+  renderGameLogFilter(['/']);
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Open saved Filter Set Saved before the rules changed',
+    }),
+  );
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
+  expect(screen.getByTestId('location')).toHaveTextContent('/?game_filter=0');
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
+});
+
+test('offers nothing to save until the URL carries a Filter Set', async () => {
+  renderGameLogFilter(['/?browse=1']);
+
+  expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
 });

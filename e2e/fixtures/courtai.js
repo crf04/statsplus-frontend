@@ -964,6 +964,11 @@ const applySelfFilters = (logs, url) =>
 
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
+  // Saved Filter Sets are account state rather than reference data, so the
+  // contract remembers what this page saved: a list that never changes cannot
+  // show that saving, renaming, and deleting reach the same list.
+  const savedFilterSets = [];
+  let nextSavedFilterSetId = 0;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -1029,6 +1034,89 @@ export const installApiContract = async (page, overrides = {}) => {
       const response = typeof override === 'function' ? await override(request) : override;
       await route.fulfill({ status: response.status || 200, json: response.body ?? response });
       return;
+    }
+
+    const savedFilterSetPath = url.pathname.match(/^\/api\/user\/saved-filter-sets(?:\/(.+))?$/);
+    if (savedFilterSetPath) {
+      const [, savedFilterSetId] = savedFilterSetPath;
+      const method = request.method();
+      const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
+      const duplicateName = (name, ignoredId) =>
+        savedFilterSets.some(
+          (item) => item.id !== ignoredId && item.name.toLowerCase() === String(name).toLowerCase(),
+        );
+      const conflict = (message) =>
+        route.fulfill({ status: 409, json: { error: { code: 'conflict', message } } });
+      const invalidName = () =>
+        route.fulfill({
+          status: 400,
+          json: { error: { code: 'invalid_request', message: 'Invalid saved filter set.' } },
+        });
+      const index = savedFilterSets.findIndex((item) => String(item.id) === savedFilterSetId);
+
+      if (method === 'GET') {
+        await route.fulfill({ json: { success: true, saved_filter_sets: savedFilterSets } });
+        return;
+      }
+
+      if (method === 'POST') {
+        if (!body?.name?.trim() || typeof body.query_string !== 'string') {
+          await invalidName();
+          return;
+        }
+        if (duplicateName(body.name)) {
+          await conflict('You already have a saved Filter Set with that name.');
+          return;
+        }
+        nextSavedFilterSetId += 1;
+        // Newest-first is the list's contract, so the store keeps that order.
+        savedFilterSets.unshift({
+          id: nextSavedFilterSetId,
+          name: body.name.trim(),
+          query_string: body.query_string,
+          created_at: '2026-04-13T00:10:00Z',
+          updated_at: '2026-04-13T00:10:00Z',
+        });
+        // A single item travels in its own envelope, as the backend sends it.
+        await route.fulfill({
+          status: 201,
+          json: { success: true, saved_filter_set: savedFilterSets[0] },
+        });
+        return;
+      }
+
+      if (index === -1) {
+        await route.fulfill({
+          status: 404,
+          json: { error: { code: 'resource_not_found', message: 'Saved filter set not found.' } },
+        });
+        return;
+      }
+
+      if (method === 'PATCH') {
+        if (!body?.name?.trim()) {
+          await invalidName();
+          return;
+        }
+        if (duplicateName(body.name, savedFilterSets[index].id)) {
+          await conflict('You already have a saved Filter Set with that name.');
+          return;
+        }
+        savedFilterSets[index] = {
+          ...savedFilterSets[index],
+          name: body.name.trim(),
+          // The query string is immutable; only the name and its timestamp move.
+          updated_at: '2026-04-13T00:20:00Z',
+        };
+        await route.fulfill({ json: { success: true, saved_filter_set: savedFilterSets[index] } });
+        return;
+      }
+
+      if (method === 'DELETE') {
+        savedFilterSets.splice(index, 1);
+        await route.fulfill({ json: { success: true } });
+        return;
+      }
     }
 
     if (url.pathname === '/api/players') {

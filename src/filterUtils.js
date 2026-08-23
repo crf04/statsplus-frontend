@@ -282,8 +282,15 @@ export const filterSetFromSearchParams = (searchParams) => {
     const parsed = wholeNumber(value);
     return parsed !== null && parsed >= 1 ? parsed : null;
   });
-  readDecoded('playstyle_RTG_min', finiteNumber);
-  readDecoded('playstyle_RTG_max', finiteNumber);
+  // 0-200 is the API's own playtype rating domain and the slider now spans
+  // exactly it, so a bound outside it is a value we cannot honour and names
+  // itself rather than arriving as a range no control could show.
+  const playstyleRating = (value) => {
+    const parsed = finiteNumber(value);
+    return parsed !== null && parsed >= 0 && parsed <= 200 ? parsed : null;
+  };
+  readDecoded('playstyle_RTG_min', playstyleRating);
+  readDecoded('playstyle_RTG_max', playstyleRating);
   if (
     hasValue(filters.playstyle_RTG_min) &&
     hasValue(filters.playstyle_RTG_max) &&

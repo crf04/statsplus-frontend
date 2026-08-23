@@ -40,7 +40,7 @@ const FilterOptions = ({
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
   const [dateFilter, setDateFilter] = useState('');
   const [gameFilter, setGameFilter] = useState(0);
-  const [playstyleMatchupRating, setPlaystyleMatchupRating] = useState([75, 125]);
+  const [playstyleMatchupRating, setPlaystyleMatchupRating] = useState([0, 200]);
   const [selfFilterColumns, setSelfFilterColumns] = useState([]);
   const [selectedSelfFilter, setSelectedSelfFilter] = useState('');
   const [selfFilterRange, setSelfFilterRange] = useState([0, 0]);
@@ -113,7 +113,7 @@ const FilterOptions = ({
     setMinutesFilter([0, 48]);
     setDateFilter('');
     setGameFilter(0);
-    setPlaystyleMatchupRating([75, 125]);
+    setPlaystyleMatchupRating([0, 200]);
     setSelectedSelfFilter('');
     setSelfFilterRange([0, 0]);
     setActiveSelfFilters([]);
@@ -156,14 +156,16 @@ const FilterOptions = ({
 
       // Pre-populate playstyle rating. Presence, not truthiness: the API's own
       // lower bound is 0, so a link carrying it must reach the slider or a later
-      // apply would silently drop the bound the user arrived with.
+      // apply would silently drop the bound the user arrived with. Either bound
+      // alone is still a range: the side the link left out is the API's own
+      // default, so the slider can show exactly what the request applied.
       if (
-        hasFilterValue(appliedFilters.playstyle_RTG_min) &&
+        hasFilterValue(appliedFilters.playstyle_RTG_min) ||
         hasFilterValue(appliedFilters.playstyle_RTG_max)
       ) {
         setPlaystyleMatchupRating([
-          appliedFilters.playstyle_RTG_min,
-          appliedFilters.playstyle_RTG_max,
+          hasFilterValue(appliedFilters.playstyle_RTG_min) ? appliedFilters.playstyle_RTG_min : 0,
+          hasFilterValue(appliedFilters.playstyle_RTG_max) ? appliedFilters.playstyle_RTG_max : 200,
         ]);
         prepopulatedControls.add('playstyle_RTG');
       }
@@ -614,14 +616,14 @@ const FilterOptions = ({
                 className="horizontal-slider"
                 thumbClassName="thumb"
                 trackClassName="track"
-                defaultValue={[75, 125]}
+                value={playstyleMatchupRating}
                 ariaLabel={['Lower thumb', 'Upper thumb']}
                 ariaValuetext={(state) => `Thumb value ${state.valueNow}`}
                 renderThumb={(props, state) => <div {...props}>{state.valueNow}</div>}
                 pearling
                 minDistance={1}
-                min={75}
-                max={125}
+                min={0}
+                max={200}
                 step={1}
                 onChange={handlePlaystyleMatchupRatingChange}
               />

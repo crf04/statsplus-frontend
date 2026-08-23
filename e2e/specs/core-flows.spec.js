@@ -521,6 +521,14 @@ test('a bound the link arrived with survives a later apply', async ({
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
 
+  // The label and the thumbs are two separate readings of the same range, and
+  // this journey once passed while they disagreed. The playtype control is the
+  // first of the two range sliders; both name their thumbs the same way.
+  await expect(page.getByText('Playtype Matchup Rating: 0 - 80')).toBeVisible();
+  const playstyleThumbs = page.getByRole('slider');
+  await expect(playstyleThumbs.first()).toHaveAttribute('aria-valuenow', '0');
+  await expect(playstyleThumbs.nth(1)).toHaveAttribute('aria-valuenow', '80');
+
   const arrivedCount = gameLogRequests.length;
   // Touch an unrelated control, so the apply is a real change rather than a
   // rewrite of the Filter Set already in the address bar.

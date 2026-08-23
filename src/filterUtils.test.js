@@ -110,6 +110,8 @@ describe('filterSetFromSearchParams', () => {
     ['date_filter=2026-13-45', 'date_filter'],
     ['playstyle_RTG_min=abc', 'playstyle_RTG_min'],
     ['playstyle_RTG_min=120&playstyle_RTG_max=80', 'playstyle_RTG_max'],
+    ['playstyle_RTG_min=-1', 'playstyle_RTG_min'],
+    ['playstyle_RTG_max=201', 'playstyle_RTG_max'],
     ['player_name=+', 'player_name'],
     ['self_filters%5BPTS%5D=20', 'self_filters[PTS]'],
     ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=0', 'rank_filter[]'],

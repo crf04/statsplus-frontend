@@ -409,7 +409,7 @@ test('@critical a link carrying a Filter Set opens the workspace and survives re
     }
   });
 
-  await page.goto('/?player_name=LeBron+James&game_filter=10&location_filter=Home');
+  await page.goto('/?player_name=LeBron+James&game_filter=10&location_filter=Both');
 
   // No prose was typed and no parser was called, yet the workspace is open.
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
@@ -417,7 +417,8 @@ test('@critical a link carrying a Filter Set opens the workspace and survives re
   const requested = new URL(gameLogRequests.at(-1));
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
   expect(requested.searchParams.get('game_filter')).toBe('10');
-  expect(requested.searchParams.get('location_filter')).toBe('Home');
+  expect(requested.searchParams.get('location_filter')).toBe('Both');
+  await expect(page.getByText('Location: Both')).toHaveCount(3);
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();

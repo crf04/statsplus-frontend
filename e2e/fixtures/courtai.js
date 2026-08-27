@@ -77,6 +77,12 @@ export const slateGame = {
   preseason: false,
 };
 
+export const slateGameWithMissingNameSentinels = {
+  ...slateGame,
+  away_team: { ...slateGame.away_team, name: 'None' },
+  home_team: { ...slateGame.home_team, name: 'None' },
+};
+
 const scheduleOnlySlateGame = {
   ...slateGame,
   away_team: { ...slateGame.away_team, targetable_player_count: 0 },

@@ -8,6 +8,7 @@ import {
 } from './slateStatus';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
+const MISSING_TEAM_NAME_SENTINEL = 'None';
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const decodeRetrievedAt = (value) => {
@@ -94,7 +95,7 @@ const decodeTeam = (team) => {
   return {
     teamId: team.team_id,
     tricode: team.tricode,
-    name: team.name,
+    name: team.name === MISSING_TEAM_NAME_SENTINEL ? team.tricode : team.name,
     targetablePlayerCount: team.targetable_player_count,
   };
 };

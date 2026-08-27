@@ -1,4 +1,11 @@
-import { expect, installApiContract, slateGame, slatePayload, test } from '../fixtures/courtai';
+import {
+  expect,
+  installApiContract,
+  slateGame,
+  slateGameWithMissingNameSentinels,
+  slatePayload,
+  test,
+} from '../fixtures/courtai';
 
 test('@critical authenticated user opens a slate and navigates dates', async ({
   authenticatedPage: page,
@@ -104,6 +111,19 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page).toHaveURL(/\/matchups$/);
   await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Today' })).toBeDisabled();
+});
+
+test('falls back to team tricodes when slate team names are unavailable', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page, {
+    '/api/games/slate': slatePayload('2025-12-25', [slateGameWithMissingNameSentinels]),
+  });
+
+  await page.goto('/matchups?date=2025-12-25');
+
+  const row = page.getByRole('link', { name: /^LAL @ BOS,/ });
+  await expect(row.getByText('LAL at BOS')).toBeVisible();
 });
 
 test('signed-out matchups keeps the shared shell and does not redirect', async ({

@@ -65,7 +65,7 @@ export default function SelectionCard({
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const [activeStat, setActiveStat] = useState(
-    player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0],
+    player.statCategories.includes(sheetMarket) ? sheetMarket : player.statCategories[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
@@ -73,21 +73,21 @@ export default function SelectionCard({
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
     setActiveStat((current) => {
       if (playerChanged) {
-        return player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0];
+        return player.statCategories.includes(sheetMarket) ? sheetMarket : player.statCategories[0];
       }
       if (
         sheetMarketChanged &&
         sheetMarket !== 'All' &&
-        player.postedMarkets.includes(sheetMarket)
+        player.statCategories.includes(sheetMarket)
       ) {
         return sheetMarket;
       }
-      return player.postedMarkets.includes(current) ? current : player.postedMarkets[0];
+      return player.statCategories.includes(current) ? current : player.statCategories[0];
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, player.postedMarkets, sheetMarket]);
-  const rows = player.postedMarkets.map((market) => ({
+  }, [player.id, player.statCategories, sheetMarket]);
+  const rows = player.statCategories.map((market) => ({
     market,
     score: player.scores[market][windowKey],
   }));
@@ -119,8 +119,17 @@ export default function SelectionCard({
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
       </p>
+      {player.focalGameLine && (
+        <p className="focal-line">
+          Focal game {player.focalGameLine.matchup} · {player.focalGameLine.gameDate} ·{' '}
+          {player.focalGameLine.minutes.toFixed(1)} MIN ·{' '}
+          {player.statCategories
+            .map((category) => `${player.focalGameLine.stats[category].toFixed(1)} ${category}`)
+            .join(' · ')}
+        </p>
+      )}
       <div className="selection-stat-control" role="group" aria-label="Selection log stat">
-        {player.postedMarkets.map((market) => (
+        {player.statCategories.map((market) => (
           <button
             type="button"
             key={market}
@@ -188,6 +197,16 @@ export default function SelectionCard({
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' && (
         <div className="selection-logs">
+          {selection.experience?.samples.excludesFocalGame && (
+            <p className="selection-provenance">
+              Pregame samples use games strictly before the focal game.
+            </p>
+          )}
+          {selection.experience?.baseline.hindsight && (
+            <p className="selection-provenance">
+              Completed-season baseline — hindsight, not pregame evidence.
+            </p>
+          )}
           <LogTable title="Games vs this opponent" table={selection.h2h} market={activeStat} />
           <LogTable title="Archetype sample" table={selection.archetype} market={activeStat} />
         </div>

@@ -89,6 +89,12 @@ accidentally set.
 but small. A test can override one route to cover failures without relying on Firebase, the private
 backend, or live NBA data.
 
+The Matchup contract serves two games. `0022500584` is the current/live slate matchup. `0022501082`
+is the completed-season LAC @ MIL Historical Matchup: every Season defense Surface published, Last 15
+unavailable for want of a point-in-time snapshot, no archived DFS markets, and canonical game-log
+participants for both teams. One authenticated journey covers each; keep the historical outcome in a
+single integrated journey rather than splitting it across implementation-shaped tests.
+
 ## CI and failure evidence
 
 The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical

@@ -55,6 +55,33 @@ const MARKET_CATEGORIES = new Set([
 ]);
 
 const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+const EXPERIENCE_MODES = ['historical', 'current'];
+const PLAYER_SOURCES = ['game_logs', 'player_pool'];
+const EXPERIENCE_SECTIONS = [
+  'schedule',
+  'participants',
+  'season_defense',
+  'last_15_defense',
+  'injuries',
+];
+const SECTION_SOURCES = [
+  'event_catalog',
+  'player_game_logs',
+  'player_pool',
+  'team_matchup_publication',
+  'rotowire',
+];
+const SECTION_CONTEXTS = [
+  'completed_season_catalog',
+  'current_season_catalog',
+  'completed_season',
+  'pregame',
+  'posted_markets',
+  'current',
+];
+const MISSING_INPUT_PATTERN = new RegExp(
+  `^(?:player_season_rate|(?:team_defense|player_diet):(?:${DEFENSE_BASES.join('|')}))$`,
+);
 const PLAY_TYPE_SLICES = new Set([
   'Transition',
   'Isolation',
@@ -143,6 +170,55 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
   return { sliceKey, markets: expectedSheetMarkets(base, sliceKey, statKey) };
+};
+
+const decodeExperienceSection = (section) => {
+  if (
+    !isRecord(section) ||
+    Object.keys(section).sort().join() !==
+      ['status', 'source', 'context', 'unavailable_reason'].sort().join() ||
+    !['available', 'unavailable', 'missing'].includes(section.status) ||
+    (section.source !== null && !SECTION_SOURCES.includes(section.source)) ||
+    (section.context !== null && !SECTION_CONTEXTS.includes(section.context)) ||
+    (section.status === 'available'
+      ? section.unavailable_reason !== null
+      : typeof section.unavailable_reason !== 'string' || !section.unavailable_reason)
+  ) {
+    throw invalid();
+  }
+  return {
+    status: section.status,
+    source: section.source,
+    context: section.context,
+    unavailableReason: section.unavailable_reason,
+  };
+};
+
+// The rollout is backend-first, so an absent block means the pre-historical
+// live contract rather than an unreadable response.
+const decodeExperience = (experience) => {
+  if (experience === undefined || experience === null) {
+    return { mode: 'current', playerSource: 'player_pool', sections: null };
+  }
+  if (
+    !isRecord(experience) ||
+    !EXPERIENCE_MODES.includes(experience.mode) ||
+    !PLAYER_SOURCES.includes(experience.player_source) ||
+    !isRecord(experience.sections) ||
+    Object.keys(experience.sections).sort().join() !== [...EXPERIENCE_SECTIONS].sort().join()
+  ) {
+    throw invalid();
+  }
+  return {
+    mode: experience.mode,
+    playerSource: experience.player_source,
+    sections: Object.fromEntries(
+      EXPERIENCE_SECTIONS.map((section) => [
+        camelKey(section),
+        decodeExperienceSection(experience.sections[section]),
+      ]),
+    ),
+  };
 };
 
 const decodeAvailabilityState = (value) => {
@@ -330,29 +406,64 @@ const decodeDietShares = (dietShares) => {
   );
 };
 
-const decodePlayer = (player) => {
+const decodeCategoryList = (value) => {
+  const categories = requireStringList(value);
+  if (
+    new Set(categories).size !== categories.length ||
+    categories.some((category) => !MARKET_CATEGORIES.has(category))
+  ) {
+    throw invalid();
+  }
+  return categories;
+};
+
+const decodeFocalGameLine = (line, statCategories) => {
+  if (line === null || line === undefined) return null;
+  if (!isRecord(line) || !isRecord(line.stats)) throw invalid();
+  if (statCategories.some((category) => !Object.hasOwn(line.stats, category))) throw invalid();
+  return {
+    gameId: requireString(line.game_id),
+    gameDate: requireString(line.game_date),
+    matchup: requireString(line.matchup),
+    minutes: requireNumber(line.minutes),
+    stats: Object.fromEntries(
+      Object.entries(line.stats).map(([category, value]) => [category, requireNumber(value)]),
+    ),
+  };
+};
+
+const decodePlayer = (player, experience) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
-  const postedMarkets = requireStringList(player.posted_markets);
-  if (
-    postedMarkets.length === 0 ||
-    new Set(postedMarkets).size !== postedMarkets.length ||
-    postedMarkets.some((market) => !MARKET_CATEGORIES.has(market))
-  )
+  const playerSource = player.player_source ?? experience.playerSource;
+  if (!PLAYER_SOURCES.includes(playerSource)) throw invalid();
+  const gameLogSourced = playerSource === 'game_logs';
+  const postedMarkets = decodeCategoryList(player.posted_markets);
+  // A game-log participant carries no posted-market claim at all.
+  if (gameLogSourced ? postedMarkets.length !== 0 : postedMarkets.length === 0) throw invalid();
+  const statCategories =
+    player.stat_categories === undefined
+      ? postedMarkets
+      : decodeCategoryList(player.stat_categories);
+  if (statCategories.length === 0) throw invalid();
+  if (gameLogSourced && (!isRecord(player.provenance) || Object.keys(player.provenance).length))
     throw invalid();
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
     teamId: player.team_id,
     tricode: requireString(player.tricode),
+    playerSource,
     postedMarkets,
-    provenance: decodeProvenance(player.provenance, postedMarkets),
+    statCategories,
+    provenance: gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets),
+    focalGameLine: decodeFocalGameLine(player.focal_game_line, statCategories),
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:
       player.injury_badge_ref === null ? null : requireString(player.injury_badge_ref),
-    scores: decodeScores(player.scores, postedMarkets),
+    scores: decodeScores(player.scores, statCategories),
   };
 };
 
@@ -528,6 +639,14 @@ const decodeScoreWindow = (window, market) => {
   if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
     throw invalid();
   }
+  const missingInputs =
+    window.missing_inputs === undefined ? [] : requireStringList(window.missing_inputs);
+  if (
+    new Set(missingInputs).size !== missingInputs.length ||
+    missingInputs.some((input) => !MISSING_INPUT_PATTERN.test(input))
+  ) {
+    throw invalid();
+  }
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [
@@ -536,27 +655,28 @@ const decodeScoreWindow = (window, market) => {
       ]),
     ),
     blend: defensive || window.blend === null ? null : decodeScoreCell(window.blend),
+    missingInputs,
   };
 };
 
-function decodeScores(scores, postedMarkets) {
+function decodeScores(scores, statCategories) {
   if (
     !isRecord(scores) ||
-    Object.keys(scores).sort().join() !== [...postedMarkets].sort().join() ||
-    postedMarkets.some(
-      (market) =>
-        !isRecord(scores[market]) ||
-        Object.keys(scores[market]).sort().join() !== ['season', 'last_15'].sort().join(),
+    Object.keys(scores).sort().join() !== [...statCategories].sort().join() ||
+    statCategories.some(
+      (category) =>
+        !isRecord(scores[category]) ||
+        Object.keys(scores[category]).sort().join() !== ['season', 'last_15'].sort().join(),
     )
   ) {
     throw invalid();
   }
   return Object.fromEntries(
-    postedMarkets.map((market) => [
-      market,
+    statCategories.map((category) => [
+      category,
       {
-        season: decodeScoreWindow(scores[market].season, market),
-        last15: decodeScoreWindow(scores[market].last_15, market),
+        season: decodeScoreWindow(scores[category].season, category),
+        last15: decodeScoreWindow(scores[category].last_15, category),
       },
     ]),
   );
@@ -759,11 +879,13 @@ export const decodeMatchup = (data) => {
     freshness.injuries.retrievedAt !== injuries.retrievedAt
   )
     throw invalid();
+  const experience = decodeExperience(data.experience);
   return {
     game: decodeGame(data.game),
+    experience,
     league,
     teams,
-    players: data.players.map(decodePlayer),
+    players: data.players.map((player) => decodePlayer(player, experience)),
     injuries,
     freshness,
   };
@@ -823,31 +945,72 @@ const decodeLogTable = (table, markets) => {
   };
 };
 
-export const decodeMatchupSelection = (data, postedMarkets, expectedPlayerId) => {
-  if (!isRecord(data) || !Array.isArray(postedMarkets) || postedMarkets.length === 0)
+const decodeFocalGame = (focalGame, statCategories) => {
+  if (focalGame === null || focalGame === undefined) return null;
+  if (!isRecord(focalGame) || !isRecord(focalGame.stats)) throw selectionInvalid();
+  return {
+    gameId: requireSelectionString(focalGame.game_id),
+    gameDate: requireSelectionString(focalGame.game_date),
+    matchup: requireSelectionString(focalGame.matchup),
+    minutes: requireSelectionNumber(focalGame.minutes),
+    stats: decodeSelectionStatMap(focalGame.stats, statCategories),
+  };
+};
+
+const decodeSelectionExperience = (experience, statCategories) => {
+  if (experience === undefined || experience === null) return null;
+  if (
+    !isRecord(experience) ||
+    !EXPERIENCE_MODES.includes(experience.mode) ||
+    !PLAYER_SOURCES.includes(experience.player_source) ||
+    !isRecord(experience.samples) ||
+    !isRecord(experience.baseline) ||
+    typeof experience.samples.excludes_focal_game !== 'boolean' ||
+    typeof experience.baseline.hindsight !== 'boolean'
+  ) {
+    throw selectionInvalid();
+  }
+  return {
+    mode: experience.mode,
+    playerSource: experience.player_source,
+    focalGame: decodeFocalGame(experience.focal_game, statCategories),
+    samples: {
+      context: requireSelectionString(experience.samples.context),
+      excludesFocalGame: experience.samples.excludes_focal_game,
+    },
+    baseline: {
+      context: requireSelectionString(experience.baseline.context),
+      hindsight: experience.baseline.hindsight,
+    },
+  };
+};
+
+export const decodeMatchupSelection = (data, statCategories, expectedPlayerId) => {
+  if (!isRecord(data) || !Array.isArray(statCategories) || statCategories.length === 0)
     throw selectionInvalid();
   if (!Number.isInteger(data.player_id) || data.player_id !== expectedPlayerId) {
     throw selectionInvalid();
   }
   return {
     playerId: data.player_id,
-    h2h: decodeLogTable(data.h2h, postedMarkets),
-    archetype: decodeLogTable(data.archetype, postedMarkets),
+    experience: decodeSelectionExperience(data.experience, statCategories),
+    h2h: decodeLogTable(data.h2h, statCategories),
+    archetype: decodeLogTable(data.archetype, statCategories),
   };
 };
 
-export const fetchMatchupSelection = async (gameId, playerId, postedMarkets, { signal } = {}) => {
+export const fetchMatchupSelection = async (gameId, playerId, statCategories, { signal } = {}) => {
   if (
     typeof gameId !== 'string' ||
     !gameId ||
     !Number.isInteger(playerId) ||
-    !Array.isArray(postedMarkets) ||
-    postedMarkets.length === 0
+    !Array.isArray(statCategories) ||
+    statCategories.length === 0
   )
     throw selectionInvalid();
   const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
     params: { game_id: gameId, player_id: playerId },
     signal,
   });
-  return decodeMatchupSelection(response.data, postedMarkets, playerId);
+  return decodeMatchupSelection(response.data, statCategories, playerId);
 };

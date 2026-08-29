@@ -32,11 +32,17 @@ const score = (season, last15 = season) => ({
   season: {
     components: { playTypes: { value: season, thin: false } },
     blend: { value: season, thin: false },
+    missingInputs: [],
   },
   last15: {
     components: { playTypes: { value: last15, thin: false } },
     blend: { value: last15, thin: false },
+    missingInputs: [],
   },
+});
+const unavailableScore = (missingInputs) => ({
+  season: { components: {}, blend: null, missingInputs },
+  last15: { components: {}, blend: null, missingInputs },
 });
 
 const matchup = {
@@ -46,6 +52,7 @@ const matchup = {
     home: { tricode: 'BOS' },
     preseason: false,
   },
+  experience: { mode: 'current', playerSource: 'player_pool', sections: null },
   league: {
     surfaceAvailability: Object.fromEntries(
       ['playTypes', 'shotZones', 'shotTypes', 'assistLocations', 'traditional'].map((base) => [
@@ -107,6 +114,9 @@ const matchup = {
       teamId: 1,
       tricode: 'LAL',
       postedMarkets: ['PTS', 'FG3A'],
+      statCategories: ['PTS', 'FG3A'],
+      playerSource: 'player_pool',
+      focalGameLine: null,
       provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['PTS'] },
       seasonScoring: 20.1,
       last10Minutes: [32, 35, 34],
@@ -127,6 +137,9 @@ const matchup = {
       teamId: 1,
       tricode: 'LAL',
       postedMarkets: ['PTS', 'FGA'],
+      statCategories: ['PTS', 'FGA'],
+      playerSource: 'player_pool',
+      focalGameLine: null,
       provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
       seasonScoring: 25.4,
       last10Minutes: [35, 36, 38],
@@ -147,6 +160,9 @@ const matchup = {
       teamId: 2,
       tricode: 'BOS',
       postedMarkets: ['REB'],
+      statCategories: ['REB'],
+      playerSource: 'player_pool',
+      focalGameLine: null,
       provenance: { prizepicks: ['REB'] },
       seasonScoring: 27.2,
       last10Minutes: [36, 37, 38],
@@ -328,6 +344,7 @@ test('names an unavailable surface window while leaving available surfaces usabl
   });
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.postedMarkets.push('AST');
+  lebron.statCategories.push('AST');
   lebron.provenance.prizepicks.push('AST');
   lebron.scores.AST = score(0.05);
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.assistLocations = [
@@ -384,10 +401,19 @@ test('renders one relevant traditional unavailability notice for All and specifi
   });
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.postedMarkets.push('TOV', 'AST');
+  lebron.statCategories.push('TOV', 'AST');
   lebron.provenance.prizepicks.push('TOV', 'AST');
   lebron.scores.TOV = {
-    season: { components: { traditional: { value: 0.03, thin: false } }, blend: null },
-    last15: { components: { traditional: { value: 0.02, thin: false } }, blend: null },
+    season: {
+      components: { traditional: { value: 0.03, thin: false } },
+      blend: null,
+      missingInputs: [],
+    },
+    last15: {
+      components: { traditional: { value: 0.02, thin: false } },
+      blend: null,
+      missingInputs: [],
+    },
   };
   lebron.scores.AST = score(0.05);
   fetchMatchup.mockResolvedValueOnce(candidate);
@@ -437,6 +463,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   ];
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.postedMarkets.push('REB', 'TOV');
+  lebron.statCategories.push('REB', 'TOV');
   lebron.provenance.prizepicks.push('REB', 'TOV');
   fetchMatchup.mockResolvedValueOnce(candidate);
   render(
@@ -546,7 +573,7 @@ test('renders nullable season scoring and explains zero-component offensive scor
   const candidate = JSON.parse(JSON.stringify(matchup));
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.seasonScoring = null;
-  lebron.scores.FGA.last15 = { components: {}, blend: null };
+  lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
   fetchMatchup.mockResolvedValueOnce(candidate);
   render(
     <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
@@ -785,6 +812,197 @@ test('card stat choices persist while a different global sheet market remains ac
   expect(cardStats.getByRole('button', { name: 'FGA' })).toHaveAttribute('aria-pressed', 'true');
   expect(sheetMarkets.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
+});
+
+const historicalSection = (status, source, context, unavailableReason = null) => ({
+  status,
+  source,
+  context,
+  unavailableReason,
+});
+
+const historicalMatchup = () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience = {
+    mode: 'historical',
+    playerSource: 'game_logs',
+    sections: {
+      schedule: historicalSection('available', 'event_catalog', 'completed_season_catalog'),
+      participants: historicalSection('available', 'player_game_logs', 'completed_season'),
+      seasonDefense: historicalSection('available', 'team_matchup_publication', 'completed_season'),
+      last15Defense: historicalSection('unavailable', null, null, 'no_point_in_time_snapshot'),
+      injuries: historicalSection('unavailable', null, null, 'no_pregame_snapshot'),
+    },
+  };
+  // The production red signal: no stats_tables marker and no archived pool.
+  candidate.freshness.stats = { status: 'missing', retrievedAt: null };
+  candidate.freshness.pool = { status: 'unavailable', retrievedAt: null, providers: [] };
+  candidate.players.forEach((player, index) => {
+    player.playerSource = 'game_logs';
+    player.postedMarkets = [];
+    player.provenance = {};
+    player.injuryBadgeRef = null;
+    player.focalGameLine = {
+      gameId: 'game-1',
+      gameDate: '2026-03-29',
+      matchup: 'LAL @ BOS',
+      minutes: 30 + index,
+      stats: Object.fromEntries(
+        player.statCategories.map((category, offset) => [category, 10 + offset]),
+      ),
+    };
+  });
+  return candidate;
+};
+
+const renderMatchup = (path = '/matchups/game-1') =>
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+test('renders Season defense from its own Surface while legacy stats freshness is missing', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup();
+
+  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+  expect(screen.getByText('Transition')).toBeVisible();
+  expect(
+    screen.queryByText('Defense Sheet unavailable because stats are missing.'),
+  ).not.toBeInTheDocument();
+
+  const evidence = screen.getByRole('region', { name: 'Historical matchup evidence' });
+  expect(screen.queryByRole('region', { name: 'Matchup data freshness' })).not.toBeInTheDocument();
+  expect(evidence).toHaveTextContent('Schedule: Completed-season catalog · from Event Catalog');
+  expect(evidence).toHaveTextContent('Participants: Completed-season context · from game logs');
+  expect(evidence).toHaveTextContent(
+    'Season defense: Completed-season context · from Defense Sheet publication',
+  );
+  expect(evidence).toHaveTextContent(
+    'Last 15 defense: unavailable — No point-in-time snapshot was captured for this game.',
+  );
+
+  expect(screen.getByText('Completed-season context')).toBeVisible();
+  expect(
+    screen.getByText(
+      'Season defense provenance: Completed-season context · Defense Sheet publication',
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Last 15' })).toBeDisabled();
+  expect(
+    screen.getAllByText('No point-in-time snapshot was captured for this game.').length,
+  ).toBeGreaterThan(0);
+  expect(screen.getByText('No pregame injury snapshot was archived for this game.')).toBeVisible();
+  expect(screen.queryByText('Left calf soreness')).not.toBeInTheDocument();
+});
+
+test('labels the historical rail Players in game and switches it with the defense team', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup();
+
+  const rail = await screen.findByRole('complementary', { name: 'Players in game' });
+  expect(within(rail).getByRole('article', { name: 'LeBron James player' })).toBeVisible();
+  expect(within(rail).getByRole('article', { name: 'Austin Reaves player' })).toBeVisible();
+  expect(
+    within(rail).queryByRole('article', { name: 'Jayson Tatum player' }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Targetable players')).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('group', { name: 'LeBron James posted markets' }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Market' })).not.toBeInTheDocument();
+  expect(screen.getByRole('group', { name: 'Stat category' })).toBeVisible();
+
+  const lebron = within(rail).getByRole('article', { name: 'LeBron James player' });
+  expect(lebron).toHaveTextContent('25.4 PPG · completed-season context');
+  expect(lebron).toHaveTextContent('Focal game LAL @ BOS · 31.0 MIN · 10.0 PTS · 11.0 FGA');
+
+  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
+  expect(await screen.findByRole('article', { name: 'Jayson Tatum player' })).toBeVisible();
+  expect(screen.queryByRole('article', { name: 'LeBron James player' })).not.toBeInTheDocument();
+});
+
+test('keeps a participant with an unavailable score visible, named, and sorted last', async () => {
+  const candidate = historicalMatchup();
+  candidate.players.find((player) => player.id === 1630559).scores.PTS = unavailableScore([
+    'team_defense:play_types',
+    'player_diet:shot_zones',
+  ]);
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(
+    screen.getByText(
+      'PTS Matchup Score unavailable: missing team_defense:play_types, player_diet:shot_zones.',
+    ),
+  ).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  const cards = screen.getAllByRole('article', { name: /player$/ });
+  expect(cards[0]).toHaveTextContent('LeBron James');
+  expect(cards.at(-1)).toHaveTextContent('Austin Reaves');
+});
+
+test('names an unavailable participant source while the Defense Sheet stays usable', async () => {
+  const candidate = historicalMatchup();
+  candidate.experience.sections.participants = historicalSection(
+    'unavailable',
+    null,
+    null,
+    'game_logs_incomplete',
+  );
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+  expect(screen.getByText('Transition')).toBeVisible();
+  expect(screen.getByText('Canonical game logs are incomplete for this game.')).toBeVisible();
+  expect(screen.queryByRole('article', { name: 'LeBron James player' })).not.toBeInTheDocument();
+});
+
+test('separates the focal outcome from hindsight context in the historical dossier', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  fetchMatchupSelection.mockResolvedValueOnce({
+    playerId: 2544,
+    experience: {
+      mode: 'historical',
+      playerSource: 'game_logs',
+      focalGame: {
+        gameId: 'game-1',
+        gameDate: '2026-03-29',
+        matchup: 'LAL @ BOS',
+        minutes: 31,
+        stats: { PTS: 10, FGA: 11 },
+      },
+      samples: { context: 'pregame', excludesFocalGame: true },
+      baseline: { context: 'completed_season', hindsight: true },
+    },
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  });
+  renderMatchup('/matchups/game-1?player=2544');
+
+  expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  expect(
+    await screen.findByText('Pregame samples use games strictly before the focal game.'),
+  ).toBeVisible();
+  expect(
+    screen.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
+  ).toBeVisible();
+  expect(
+    screen.getByText('Focal game LAL @ BOS · 2026-03-29 · 31.0 MIN · 10.0 PTS · 11.0 FGA'),
+  ).toBeVisible();
+  // The dossier is requested for governed Stat Categories, not posted markets.
+  expect(fetchMatchupSelection.mock.calls.at(-1).slice(0, 3)).toEqual([
+    'game-1',
+    2544,
+    ['PTS', 'FGA'],
+  ]);
 });
 
 test('selection request errors replace loading with an honest alert', async () => {

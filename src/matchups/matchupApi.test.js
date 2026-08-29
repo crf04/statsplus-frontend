@@ -971,6 +971,7 @@ test('accepts a null offensive Blend only when zero components are computable', 
   expect(decodeMatchup(zeroComponents).players[0].scores.FGA.last15).toEqual({
     components: {},
     blend: null,
+    missingInputs: [],
   });
 
   const componentWithoutBlend = JSON.parse(JSON.stringify(zeroComponents));
@@ -1242,4 +1243,223 @@ test('selection requests keep the game string and canonical player integer disti
     'selection endpoint returned an invalid response',
   );
   expect(apiClient.get).toHaveBeenCalledTimes(1);
+});
+
+const experienceSection = (status, source, context, unavailableReason = null) => ({
+  status,
+  source,
+  context,
+  unavailable_reason: unavailableReason,
+});
+
+const historicalPayload = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.experience = {
+    mode: 'historical',
+    player_source: 'game_logs',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'completed_season_catalog'),
+      participants: experienceSection('available', 'player_game_logs', 'completed_season'),
+      season_defense: experienceSection(
+        'available',
+        'team_matchup_publication',
+        'completed_season',
+      ),
+      last_15_defense: experienceSection('unavailable', null, null, 'no_point_in_time_snapshot'),
+      injuries: experienceSection('unavailable', null, null, 'no_pregame_snapshot'),
+    },
+  };
+  const participant = candidate.players[0];
+  participant.posted_markets = [];
+  participant.provenance = {};
+  participant.player_source = 'game_logs';
+  participant.stat_categories = ['PTS', 'FGA'];
+  participant.focal_game_line = {
+    game_id: '0022501082',
+    game_date: '2026-03-29',
+    matchup: 'LAC @ MIL',
+    minutes: 34.5,
+    stats: { PTS: 24, FGA: 18 },
+  };
+  return candidate;
+};
+
+test('reads the additive Historical Matchup mode and section-owned evidence', () => {
+  const decoded = decodeMatchup(historicalPayload());
+
+  expect(decoded.experience.mode).toBe('historical');
+  expect(decoded.experience.playerSource).toBe('game_logs');
+  expect(decoded.experience.sections.seasonDefense).toEqual({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'completed_season',
+    unavailableReason: null,
+  });
+  expect(decoded.experience.sections.last15Defense).toEqual({
+    status: 'unavailable',
+    source: null,
+    context: null,
+    unavailableReason: 'no_point_in_time_snapshot',
+  });
+  expect(decoded.experience.sections.participants.source).toBe('player_game_logs');
+  expect(decoded.experience.sections.injuries.unavailableReason).toBe('no_pregame_snapshot');
+});
+
+test('treats an absent experience block as the pre-historical live contract', () => {
+  const decoded = decodeMatchup(payload);
+
+  expect(decoded.experience).toEqual({
+    mode: 'current',
+    playerSource: 'player_pool',
+    sections: null,
+  });
+  expect(decoded.players[0].playerSource).toBe('player_pool');
+  expect(decoded.players[0].statCategories).toEqual(['PTS', 'FGA']);
+  expect(decoded.players[0].focalGameLine).toBeNull();
+  expect(decoded.players[0].scores.PTS.season.missingInputs).toEqual([]);
+});
+
+test('reads a game-log participant that carries no posted-market claim', () => {
+  const [participant] = decodeMatchup(historicalPayload()).players;
+
+  expect(participant.playerSource).toBe('game_logs');
+  expect(participant.postedMarkets).toEqual([]);
+  expect(participant.provenance).toEqual({});
+  expect(participant.statCategories).toEqual(['PTS', 'FGA']);
+  expect(participant.focalGameLine).toEqual({
+    gameId: '0022501082',
+    gameDate: '2026-03-29',
+    matchup: 'LAC @ MIL',
+    minutes: 34.5,
+    stats: { PTS: 24, FGA: 18 },
+  });
+});
+
+test('names the missing inputs of an incomplete Matchup Score', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].scores.PTS.last_15 = {
+    components: {},
+    blend: null,
+    missing_inputs: ['team_defense:play_types', 'player_diet:shot_zones', 'player_season_rate'],
+  };
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.last15).toEqual({
+    components: {},
+    blend: null,
+    missingInputs: ['team_defense:play_types', 'player_diet:shot_zones', 'player_season_rate'],
+  });
+});
+
+test.each([
+  [
+    'an unknown experience mode',
+    (candidate) => {
+      candidate.experience.mode = 'archived';
+    },
+  ],
+  [
+    'a missing experience section',
+    (candidate) => {
+      delete candidate.experience.sections.injuries;
+    },
+  ],
+  [
+    'an experience section missing a key',
+    (candidate) => {
+      delete candidate.experience.sections.schedule.context;
+    },
+  ],
+  [
+    'an available section that still names an unavailable reason',
+    (candidate) => {
+      candidate.experience.sections.schedule.unavailable_reason = 'no_pregame_snapshot';
+    },
+  ],
+  [
+    'an unavailable section with no reason',
+    (candidate) => {
+      candidate.experience.sections.last_15_defense.unavailable_reason = null;
+    },
+  ],
+  [
+    'an ungoverned section source',
+    (candidate) => {
+      candidate.experience.sections.participants.source = 'roster_guess';
+    },
+  ],
+  [
+    'a posted-market claim on a game-log participant',
+    (candidate) => {
+      candidate.players[0].posted_markets = ['PTS'];
+    },
+  ],
+  [
+    'provenance on a game-log participant',
+    (candidate) => {
+      candidate.players[0].provenance = { prizepicks: ['PTS'] };
+    },
+  ],
+  [
+    'stat categories that disagree with the delivered scores',
+    (candidate) => {
+      candidate.players[0].stat_categories = ['PTS', 'FGA', 'AST'];
+    },
+  ],
+  [
+    'a focal game line missing a governed category',
+    (candidate) => {
+      delete candidate.players[0].focal_game_line.stats.FGA;
+    },
+  ],
+  [
+    'an ungoverned missing-input name',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.missing_inputs = ['vibes'];
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('reads the additive selection experience and its separated focal game', () => {
+  const raw = {
+    player_id: 2544,
+    experience: {
+      mode: 'historical',
+      player_source: 'game_logs',
+      focal_game: {
+        game_id: '0022501082',
+        game_date: '2026-03-29',
+        matchup: 'LAC @ MIL',
+        minutes: 34.5,
+        stats: { PTS: 24, FGA: 18 },
+      },
+      samples: { context: 'pregame', excludes_focal_game: true },
+      baseline: { context: 'completed_season', hindsight: true },
+    },
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+
+  const selection = decodeMatchupSelection(raw, ['PTS', 'FGA'], 2544);
+  expect(selection.experience.mode).toBe('historical');
+  expect(selection.experience.focalGame.matchup).toBe('LAC @ MIL');
+  expect(selection.experience.samples).toEqual({ context: 'pregame', excludesFocalGame: true });
+  expect(selection.experience.baseline).toEqual({
+    context: 'completed_season',
+    hindsight: true,
+  });
+
+  expect(
+    decodeMatchupSelection({ ...raw, experience: undefined }, ['PTS', 'FGA'], 2544).experience,
+  ).toBeNull();
+  expect(() =>
+    decodeMatchupSelection(
+      { ...raw, experience: { ...raw.experience, baseline: { context: 'completed_season' } } },
+      ['PTS', 'FGA'],
+      2544,
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
 });

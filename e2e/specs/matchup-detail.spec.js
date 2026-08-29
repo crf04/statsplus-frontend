@@ -1,4 +1,201 @@
-import { expect, installApiContract, matchupPayload, test } from '../fixtures/courtai';
+import {
+  expect,
+  HISTORICAL_GAME_ID,
+  historicalMatchupPayload,
+  installApiContract,
+  matchupPayload,
+  test,
+} from '../fixtures/courtai';
+
+test('@critical a completed-season matchup renders section-owned evidence and game-log players', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-04-02T12:00:00Z'));
+  const matchupRequests = [];
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup')
+      matchupRequests.push(request.url());
+  });
+
+  await page.goto(`/matchups/${HISTORICAL_GAME_ID}`);
+
+  // Season defense renders even though the legacy stats marker is missing.
+  await expect(page.getByRole('heading', { name: 'MIL Defense Sheet' })).toBeVisible();
+  await expect(page.getByText('Transition PTS')).toBeVisible();
+  await expect(page.getByText('Restricted Area FGA')).toBeVisible();
+  await expect(page.getByText('Above the Break 3 FGA')).toBeVisible();
+  await expect(page.getByText('Defense Sheet unavailable because stats are missing.')).toHaveCount(
+    0,
+  );
+
+  // Section-owned statuses replace the generic Pool/Stats freshness warnings.
+  const evidence = page.getByRole('region', { name: 'Historical matchup evidence' });
+  await expect(evidence).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Matchup data freshness' })).toHaveCount(0);
+  await expect(evidence).toContainText('Schedule: Completed-season catalog · from Event Catalog');
+  await expect(evidence).toContainText('Participants: Completed-season context · from game logs');
+  await expect(evidence).toContainText(
+    'Season defense: Completed-season context · from Defense Sheet publication',
+  );
+  await expect(evidence).toContainText(
+    'Last 15 defense: unavailable — No point-in-time snapshot was captured for this game.',
+  );
+  await expect(page.getByText(/pool data warning/i)).toHaveCount(0);
+  await expect(page.getByText(/stats data warning/i)).toHaveCount(0);
+
+  await expect(
+    page.getByText(
+      'Season defense provenance: Completed-season context · Defense Sheet publication',
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Last 15', exact: true })).toBeDisabled();
+  await expect(
+    page.getByText('No point-in-time snapshot was captured for this game.').last(),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: 'Injuries' })
+      .getByText('No pregame injury snapshot was archived for this game.'),
+  ).toBeVisible();
+
+  // The rail is Players in game, drawn from the opposing side's game logs.
+  const rail = page.getByRole('complementary', { name: 'Players in game' });
+  await expect(rail.getByRole('article', { name: 'Kawhi Leonard player' })).toBeVisible();
+  await expect(rail.getByRole('article', { name: 'James Harden player' })).toBeVisible();
+  await expect(rail.getByRole('article', { name: 'Ivica Zubac player' })).toBeVisible();
+  await expect(rail.getByRole('article', { name: 'Giannis Antetokounmpo player' })).toHaveCount(0);
+  await expect(page.getByText('Targetable players')).toHaveCount(0);
+  await expect(page.getByText(/targetable returned/)).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Kawhi Leonard posted markets' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Market' })).toHaveCount(0);
+
+  // The focal outcome and the completed-season baseline stay distinguishable.
+  await expect(
+    rail
+      .getByRole('article', { name: 'Kawhi Leonard player' })
+      .getByText('Focal game LAC @ MIL · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST'),
+  ).toBeVisible();
+  await expect(page.getByText('21.4 PPG · completed-season context')).toBeVisible();
+  await expect(page.getByText(/Kawhi Leonard · 22% poss/)).toBeVisible();
+  await expect(page.getByText(/Kawhi Leonard · 28% FGA/)).toBeVisible();
+  await expect(page.getByText(/James Harden · 31% FGA/)).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('historical-matchup-desktop.png'),
+    fullPage: true,
+  });
+
+  // Governed Stat Categories, not posted DFS markets, drive the control.
+  const categories = page.getByRole('group', { name: 'Stat category' });
+  await expect(categories).toBeVisible();
+  await expect(categories.getByRole('button', { name: 'FG3A', exact: true })).toBeVisible();
+  await categories.getByRole('button', { name: 'PTS', exact: true }).click();
+  await expect(page.getByText('Transition PTS')).toBeVisible();
+  await expect(page.getByText('Above the Break 3 FGA')).toHaveCount(0);
+
+  // Season scoring order, then Matchup Score order, with unavailable last.
+  let players = page.getByRole('article', { name: /player$/ });
+  await expect(players.first()).toHaveAccessibleName('Kawhi Leonard player');
+  await page.getByRole('button', { name: 'Matchup Score' }).click();
+  players = page.getByRole('article', { name: /player$/ });
+  await expect(players.first()).toHaveAccessibleName('James Harden player');
+  await expect(players.last()).toHaveAccessibleName('Ivica Zubac player');
+  await expect(
+    page.getByText(
+      'PTS Matchup Score unavailable: missing team_defense:play_types, player_diet:shot_zones.',
+    ),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('historical-matchup-score-sort.png'),
+    fullPage: true,
+  });
+
+  // Switching the defense team switches the opposing participant rail.
+  await page.getByRole('button', { name: 'LAC defense' }).click();
+  await expect(page.getByRole('heading', { name: 'LAC Defense Sheet' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Giannis Antetokounmpo player' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Damian Lillard player' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Kawhi Leonard player' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'MIL defense' }).click();
+
+  // Selecting a game-log participant opens the stored-data dossier.
+  await page
+    .getByRole('article', { name: 'Kawhi Leonard player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`player=202695`));
+  await expect(page.getByRole('heading', { name: 'Kawhi Leonard', level: 2 })).toBeVisible();
+  await expect(
+    page.getByText('Focal game LAC @ MIL · 2026-03-29 · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Pregame samples use games strictly before the focal game.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
+  ).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: '2026-01-12 · LAC vs. MIL' })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: /2026-03-29/ })).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('historical-selection-card.png'),
+    fullPage: true,
+  });
+
+  await page.setViewportSize({ width: 393, height: 852 });
+  await expect(page.getByRole('heading', { name: 'MIL Defense Sheet' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('historical-matchup-narrow.png'),
+    fullPage: true,
+  });
+
+  expect(matchupRequests).toHaveLength(1);
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});
+
+test('historical participants stay unavailable with a precise reason without hiding defense evidence', async ({
+  page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-04-02T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(historicalMatchupPayload));
+  candidate.experience.sections.participants = {
+    status: 'unavailable',
+    source: null,
+    context: null,
+    unavailable_reason: 'game_logs_incomplete',
+  };
+  const consoleErrors = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+
+  await page.goto(`/matchups/${HISTORICAL_GAME_ID}`);
+  await expect(page.getByRole('heading', { name: 'MIL Defense Sheet' })).toBeVisible();
+  await expect(page.getByText('Transition PTS')).toBeVisible();
+  await expect(
+    page
+      .getByRole('complementary', { name: 'Players in game' })
+      .getByText('Canonical game logs are incomplete for this game.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Kawhi Leonard player' })).toHaveCount(0);
+  expect(consoleErrors).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath('historical-participants-unavailable.png'),
+    fullPage: true,
+  });
+});
 
 test('matchup detail preserves the approved Open Team Sheets hierarchy', async ({
   authenticatedPage: page,

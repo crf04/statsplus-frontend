@@ -182,10 +182,19 @@
 .hidden-count,
 .honest-empty,
 .no-lean,
-.rail-count {
+.rail-count,
+.sheet-provenance,
+.window-context,
+.focal-line,
+.selection-provenance {
   margin: 0;
   color: var(--ct-dim);
   font-size: 0.68rem;
+}
+
+.focal-line,
+.window-context {
+  overflow-wrap: anywhere;
 }
 
 .sheet-base,

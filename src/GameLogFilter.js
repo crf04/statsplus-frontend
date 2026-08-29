@@ -22,6 +22,8 @@ import {
   filterSetToSearchParams,
   mergeFilterSet,
 } from './filterUtils';
+import { linkPreviewFor } from './linkPreview';
+import useDocumentTitle from './useDocumentTitle';
 
 const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
@@ -45,6 +47,8 @@ const GameLogFilter = () => {
   // back out of the URL rather than held beside it. One source of truth is what
   // keeps the applied-filter badges describing the data actually on screen.
   const selectedPlayer = urlFilters.player_name || 'None';
+  // The tab and any link preview say the same thing about the same URL.
+  useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [lineType, setLineType] = useState('PTS');
   const [lineValue, setLineValue] = useState('');

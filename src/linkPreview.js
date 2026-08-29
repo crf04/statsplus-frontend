@@ -40,7 +40,7 @@ export const linkPreviewFor = (searchParams) => {
   const details = describeFilters(filters);
   const title = `${filters.player_name} Game Logs | ${SITE_NAME}`;
   const summary = details.length > 0 ? details.join(', ') : 'every logged game';
-  const description = `${filters.player_name} NBA game logs: ${summary}. Explore on ${SITE_NAME}.`;
+  const description = `${summary[0].toUpperCase()}${summary.slice(1)}. Explore on ${SITE_NAME}.`;
   return { title, description };
 };
 

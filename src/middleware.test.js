@@ -41,7 +41,7 @@ test('describes a player link in the served document head', async () => {
   expect(response.headers.get('content-length')).toBeNull();
   const html = await response.text();
   expect(html).toContain('<title>LeBron James Game Logs | CourtAI</title>');
-  expect(html).toContain('last 10 games');
+  expect(html).toContain('Last 10 games. Explore on CourtAI.');
 });
 
 test('leaves a link without a player, or one the Workspace refuses, to the static document', async () => {

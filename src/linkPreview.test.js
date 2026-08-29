@@ -14,15 +14,14 @@ describe('linkPreviewFor', () => {
 
     expect(preview).toEqual({
       title: 'LeBron James Game Logs | CourtAI',
-      description:
-        'LeBron James NBA game logs: 2024-25 season, last 10 games, home games, vs BOS. Explore on CourtAI.',
+      description: '2024-25 season, last 10 games, home games, vs BOS. Explore on CourtAI.',
     });
   });
 
   test('describes a bare player link as every logged game', () => {
     expect(linkPreviewFor(new URLSearchParams('player_name=Stephen+Curry'))).toEqual({
       title: 'Stephen Curry Game Logs | CourtAI',
-      description: 'Stephen Curry NBA game logs: every logged game. Explore on CourtAI.',
+      description: 'Every logged game. Explore on CourtAI.',
     });
   });
 

@@ -665,6 +665,7 @@ function Detail({ matchup, gameId }) {
     fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.statCategories, {
       signal: controller.signal,
       mode: experienceMode,
+      focalGameLine: selectedPlayer.focalGameLine,
     })
       .then((data) => {
         if (current)

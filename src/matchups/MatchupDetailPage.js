@@ -613,7 +613,6 @@ function Detail({ matchup, gameId }) {
   const [windowKey, setWindowKey] = useState('season');
   const [deviation, setDeviation] = useState(1);
   const selectedId = searchParams.get('player');
-  const selectedPlayer = matchup.players.find((player) => String(player.id) === selectedId) || null;
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
   const [selectionState, setSelectionState] = useState({
@@ -632,6 +631,11 @@ function Detail({ matchup, gameId }) {
   const participantsAvailable = historical
     ? sections.participants.status === 'available'
     : poolAvailable;
+  // Nobody is selectable when Participants are unavailable, so a deep link
+  // cannot open a dossier the rail says this matchup does not have.
+  const selectedPlayer =
+    (participantsAvailable && matchup.players.find((player) => String(player.id) === selectedId)) ||
+    null;
   const opposingPlayers = useMemo(
     () =>
       participantsAvailable
@@ -843,6 +847,7 @@ function Detail({ matchup, gameId }) {
               windowKey={windowKey}
               sheetMarket={market}
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
+              historical={historical}
               onClose={() => updateSelectedPlayer(null)}
             />
           )}

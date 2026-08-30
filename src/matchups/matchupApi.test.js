@@ -1969,6 +1969,45 @@ test.each([
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
+test.each([
+  [
+    'a withheld historical offensive score that names no missing input',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season = {
+        components: {},
+        blend: null,
+        missing_inputs: [],
+      };
+    },
+  ],
+  [
+    'a withheld historical defensive score that names no missing input',
+    (candidate) => {
+      candidate.players[0].stat_categories = ['PTS', 'FGA', 'TOV'];
+      candidate.players[0].scores.TOV = {
+        season: { components: {}, missing_inputs: [] },
+        last_15: { components: {}, missing_inputs: ['team_defense:traditional'] },
+      };
+      candidate.players[0].focal_game_line.stats.TOV = 2;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('leaves the legacy zero-component window decodable in current mode', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.FGA.last_15 = { components: {}, blend: null };
+
+  expect(decodeMatchup(candidate).players[0].scores.FGA.last15).toEqual({
+    components: {},
+    blend: null,
+    missingInputs: [],
+  });
+});
+
 test('leaves the current-mode blend contract unchanged', () => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.players[0].scores.PTS.season.missing_inputs = ['team_defense:play_types'];

@@ -731,6 +731,10 @@ const decodeScoreWindow = (window, market, historical) => {
     throw invalid();
   }
   if (historical && isRecord(window.blend) && missingInputs.length > 0) throw invalid();
+  // A withheld historical score has to say what it was missing, or the page has
+  // nothing truthful to explain the gap with.
+  const withheldScore = defensive ? componentCount === 0 : window.blend === null;
+  if (historical && withheldScore && missingInputs.length === 0) throw invalid();
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [

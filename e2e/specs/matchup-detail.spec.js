@@ -152,6 +152,9 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   await expect(
     page.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
   ).toBeVisible();
+  const matrix = page.getByRole('table', { name: 'Kawhi Leonard Score Matrix' });
+  await expect(matrix.getByRole('columnheader', { name: 'Category' })).toBeVisible();
+  await expect(matrix.getByRole('columnheader', { name: 'Market' })).toHaveCount(0);
   await expect(page.getByRole('rowheader', { name: '2026-01-12 · LAC vs. MIL' })).toBeVisible();
   await expect(page.getByRole('rowheader', { name: /2026-03-29/ })).toHaveCount(0);
   await page.screenshot({

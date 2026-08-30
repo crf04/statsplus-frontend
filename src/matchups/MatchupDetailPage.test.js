@@ -1017,6 +1017,57 @@ test('keeps a participant with an unavailable score visible, named, and sorted l
   expect(cards.at(-1)).toHaveTextContent('Austin Reaves');
 });
 
+test('refuses to open a dossier for an unavailable participant', async () => {
+  const candidate = historicalMatchup();
+  candidate.experience.sections.participants = historicalSection(
+    'unavailable',
+    null,
+    null,
+    'game_logs_incomplete',
+  );
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup('/matchups/game-1?player=2544');
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  expect(screen.getByText('That player is not available in this matchup.')).toBeVisible();
+  expect(screen.queryByRole('heading', { name: 'LeBron James', level: 2 })).not.toBeInTheDocument();
+  expect(fetchMatchupSelection).not.toHaveBeenCalled();
+});
+
+test('names the missing inputs of a withheld score in the dossier', async () => {
+  fetchMatchup.mockResolvedValueOnce(
+    withDefensiveScores(historicalMatchup(), ['team_defense:traditional']),
+  );
+  renderMatchup('/matchups/game-1?player=1630559');
+
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  // The component evidence survives, so the card must say why the score did not.
+  expect(screen.getByRole('table', { name: 'Austin Reaves Score Matrix' })).toHaveTextContent(
+    '+44%',
+  );
+  expect(
+    screen.getByText('TOV Matchup Score unavailable in Season: missing team_defense:traditional.'),
+  ).toBeVisible();
+});
+
+test('drops posted-market vocabulary from the historical dossier', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup('/matchups/game-1?player=2544');
+
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+  expect(within(matrix).getByRole('columnheader', { name: 'Category' })).toBeVisible();
+  expect(within(matrix).queryByRole('columnheader', { name: 'Market' })).not.toBeInTheDocument();
+});
+
+test('keeps posted-market vocabulary in the live dossier', async () => {
+  renderMatchup('/matchups/game-1?player=2544');
+
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+  expect(within(matrix).getByRole('columnheader', { name: 'Market' })).toBeVisible();
+});
+
 test('names an unavailable participant source while the Defense Sheet stays usable', async () => {
   const candidate = historicalMatchup();
   candidate.experience.sections.participants = historicalSection(

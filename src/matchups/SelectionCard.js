@@ -60,6 +60,7 @@ export default function SelectionCard({
   windowKey,
   sheetMarket,
   whyRelevant,
+  historical,
   onClose,
 }) {
   const panelRef = useRef(null);
@@ -143,7 +144,7 @@ export default function SelectionCard({
         <table aria-label={`${player.name} Score Matrix`}>
           <thead>
             <tr>
-              <th scope="col">Market</th>
+              <th scope="col">{historical ? 'Category' : 'Market'}</th>
               {bases.map((base) => (
                 <th scope="col" key={base}>
                   {BASE_LABELS[base] || base}
@@ -190,6 +191,16 @@ export default function SelectionCard({
         .map(({ market }) => (
           <p className="honest-empty" key={`degraded-${market}`}>
             No score components were computable for {market} in {WINDOW_LABELS[windowKey]}.
+          </p>
+        ))}
+      {/* Component evidence can survive a score the contract could not
+          complete, so the card names what that score was missing. */}
+      {rows
+        .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
+        .map(({ market, score }) => (
+          <p className="honest-empty" key={`withheld-${market}`}>
+            {market} Matchup Score unavailable in {WINDOW_LABELS[windowKey]}: missing{' '}
+            {score.missingInputs.join(', ')}.
           </p>
         ))}
       {status === 'loading' && <p role="status">Loading selection logs…</p>}

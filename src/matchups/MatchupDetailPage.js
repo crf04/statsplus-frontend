@@ -5,7 +5,7 @@ import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
-import { getDisplayableDietShare } from './displayConfig';
+import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
 import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
@@ -268,10 +268,10 @@ function PlayerRail({
                 )}
                 {historical && focalLine && (
                   <p className="focal-line">
-                    Focal game {focalLine.matchup} · {focalLine.minutes.toFixed(1)} MIN ·{' '}
-                    {(market === 'All' ? player.statCategories : [market])
-                      .map((category) => `${focalLine.stats[category].toFixed(1)} ${category}`)
-                      .join(' · ')}
+                    {formatFocalGameLine(
+                      focalLine,
+                      market === 'All' ? player.statCategories : [market],
+                    )}
                   </p>
                 )}
                 {historical && unscored && (

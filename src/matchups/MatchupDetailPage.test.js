@@ -911,9 +911,12 @@ test('states schedule collection time as provenance rather than a staleness warn
   expect(evidence).toHaveTextContent(
     'Schedule: Completed-season catalog · from Event Catalog · collected 2026-03-30',
   );
-  expect(evidence).not.toHaveTextContent('warning');
+  // The live bars say "<surface> data warning" and age their timestamps. An
+  // immutable completed season states neither.
+  expect(evidence).not.toHaveTextContent('data warning');
   expect(evidence).not.toHaveTextContent('ago');
-  expect(evidence.querySelector('.matchup-warning')).not.toBeInTheDocument();
+  expect(evidence).not.toHaveTextContent('stale');
+  expect(screen.queryByText(/schedule: .*, as of/i)).not.toBeInTheDocument();
 });
 
 test('labels the historical rail Players in game and switches it with the defense team', async () => {

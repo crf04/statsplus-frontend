@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { formatFocalGameLine } from './displayConfig';
 
 const BASE_LABELS = {
   playTypes: 'Play types',
@@ -121,11 +122,9 @@ export default function SelectionCard({
       </p>
       {player.focalGameLine && (
         <p className="focal-line">
-          Focal game {player.focalGameLine.matchup} · {player.focalGameLine.gameDate} ·{' '}
-          {player.focalGameLine.minutes.toFixed(1)} MIN ·{' '}
-          {player.statCategories
-            .map((category) => `${player.focalGameLine.stats[category].toFixed(1)} ${category}`)
-            .join(' · ')}
+          {formatFocalGameLine(player.focalGameLine, player.statCategories, {
+            includeDate: true,
+          })}
         </p>
       )}
       <div className="selection-stat-control" role="group" aria-label="Selection log stat">

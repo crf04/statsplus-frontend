@@ -1252,8 +1252,29 @@ const experienceSection = (status, source, context, unavailableReason = null) =>
   unavailable_reason: unavailableReason,
 });
 
-const historicalPayload = () => {
-  const candidate = JSON.parse(JSON.stringify(payload));
+// A completed game with no point-in-time snapshot: the Last-15 Surfaces are
+// unavailable, so the Last-15 section can truthfully say so.
+const withoutPointInTimeWindow = (candidate) => {
+  Object.values(candidate.league.surface_availability).forEach((windows) => {
+    windows.last_15 = { status: 'unavailable', unavailable_reason: 'no_point_in_time_snapshot' };
+  });
+  [candidate.league, ...candidate.teams].forEach((holder) => {
+    Object.values(holder.defense_sheet).forEach((rows) =>
+      rows.forEach((row) => {
+        row.last_15 = null;
+      }),
+    );
+    Object.values(holder.defensive_columns).forEach((column) => {
+      column.last_15 = null;
+    });
+  });
+  return candidate;
+};
+
+const historicalPayload = ({ pointInTime = false } = {}) => {
+  const raw = JSON.parse(JSON.stringify(payload));
+  const candidate = pointInTime ? raw : withoutPointInTimeWindow(raw);
+  candidate.game.status = { state: 'final', label: 'Final' };
   candidate.experience = {
     mode: 'historical',
     player_source: 'game_logs',
@@ -1657,6 +1678,10 @@ test('leaves the current selection contract unbound to historical evidence', () 
 });
 
 const focalLineOf = (candidate) => candidate.players[0].focal_game_line;
+const withOneParticipant = (candidate, participant) => ({
+  ...JSON.parse(JSON.stringify(candidate)),
+  players: [JSON.parse(JSON.stringify(participant))],
+});
 
 test.each([
   [
@@ -1694,7 +1719,11 @@ test('rejects participants that disagree about which game is focal', () => {
   const second = JSON.parse(JSON.stringify(candidate.players[0]));
   second.canonical_id = 1630559;
   second.name = 'Austin Reaves';
-  second.focal_game_line.game_date = '2026-01-14';
+  // Both dates are individually allowed for a 2026-01-16T00:30Z tip, so only
+  // the cross-participant agreement guard can reject this pair.
+  expect(candidate.players[0].focal_game_line.game_date).toBe('2026-01-15');
+  second.focal_game_line.game_date = '2026-01-16';
+  expect(() => decodeMatchup(withOneParticipant(candidate, second))).not.toThrow();
   candidate.players.push(second);
 
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
@@ -1884,7 +1913,8 @@ test.each([
 });
 
 test('accepts truthful archived pregame Last-15 and injury evidence in historical mode', () => {
-  const candidate = historicalPayload();
+  // A point-in-time snapshot was captured, so its Surfaces are delivered too.
+  const candidate = historicalPayload({ pointInTime: true });
   candidate.experience.sections.last_15_defense = experienceSection(
     'available',
     'team_matchup_publication',
@@ -1903,6 +1933,193 @@ test('accepts truthful archived pregame Last-15 and injury evidence in historica
   expect(sections.injuries).toEqual(
     expect.objectContaining({ status: 'available', source: 'rotowire', context: 'pregame' }),
   );
+});
+
+test('keeps historical component evidence while withholding an incomplete blend', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].scores.PTS.season = {
+    components: { shot_zones: { value: 0.07, thin: true } },
+    blend: null,
+    missing_inputs: ['team_defense:play_types'],
+  };
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.season).toEqual({
+    components: { shotZones: { value: 0.07, thin: true } },
+    blend: null,
+    missingInputs: ['team_defense:play_types'],
+  });
+});
+
+test.each([
+  [
+    'a historical blend presented complete despite named missing inputs',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.missing_inputs = ['team_defense:play_types'];
+    },
+  ],
+  [
+    'a historical offensive window that withholds a computable blend',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.blend = null;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('leaves the current-mode blend contract unchanged', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.PTS.season.missing_inputs = ['team_defense:play_types'];
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.season.blend).toEqual({
+    value: 0.12,
+    thin: false,
+  });
+});
+
+test.each([
+  [
+    'a defense sheet for a team outside the focal game',
+    (candidate) => {
+      candidate.teams[1].team_id = 99;
+    },
+  ],
+  [
+    'a defense sheet whose tricode contradicts the game header',
+    (candidate) => {
+      candidate.teams[0].tricode = 'BOS';
+    },
+  ],
+  [
+    'defense sheets delivered home before away',
+    (candidate) => {
+      candidate.teams.reverse();
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'an available Season Surface alongside an unavailable Season defense section',
+    (candidate) => {
+      candidate.experience.sections.season_defense = experienceSection(
+        'unavailable',
+        null,
+        null,
+        'not_stored',
+      );
+    },
+  ],
+  [
+    'an available Season defense section with no available Season Surface',
+    (candidate) => {
+      // The Season windows go away with their Surfaces, so only the section's
+      // own claim of availability is left to reject.
+      Object.values(candidate.league.surface_availability).forEach((windows) => {
+        windows.season = { status: 'unavailable', unavailable_reason: 'not_stored' };
+      });
+      [candidate.league, ...candidate.teams].forEach((holder) => {
+        Object.values(holder.defense_sheet).forEach((rows) =>
+          rows.forEach((row) => {
+            row.season = null;
+          }),
+        );
+        Object.values(holder.defensive_columns).forEach((column) => {
+          column.season = null;
+        });
+      });
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects an available Last-15 Surface alongside an unavailable Last-15 section', () => {
+  // Traditional keeps its delivered Last-15 window; the other Bases lose theirs.
+  const candidate = historicalPayload();
+  const restored = JSON.parse(JSON.stringify(payload));
+  candidate.league.surface_availability.traditional.last_15 = {
+    status: 'available',
+    unavailable_reason: null,
+  };
+  [
+    [candidate.league, restored.league],
+    ...candidate.teams.map((team, index) => [team, restored.teams[index]]),
+  ].forEach(([holder, source]) => {
+    holder.defense_sheet.traditional = source.defense_sheet.traditional;
+    Object.entries(holder.defensive_columns).forEach(([key, column]) => {
+      column.last_15 = source.defensive_columns[key].last_15;
+    });
+  });
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('keeps section independence when a window is genuinely unavailable', () => {
+  const { sections } = decodeMatchup(historicalPayload()).experience;
+
+  expect(sections.seasonDefense.status).toBe('available');
+  expect(sections.last15Defense.status).toBe('unavailable');
+  expect(sections.injuries.status).toBe('unavailable');
+  expect(sections.participants.status).toBe('available');
+});
+
+test.each([
+  [
+    'a historical experience on a game that has not been played',
+    (candidate) => {
+      candidate.game.status = { state: 'scheduled', label: 'Scheduled' };
+    },
+  ],
+  [
+    'a historical experience on a postponed game',
+    (candidate) => {
+      candidate.game.status = { state: 'postponed', label: 'Postponed' };
+    },
+  ],
+  [
+    'a historical experience on a preseason game',
+    (candidate) => {
+      candidate.game.preseason = true;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('still reads the backend-declared mode rather than inferring it from a final game', () => {
+  const finalCurrent = JSON.parse(JSON.stringify(payload));
+  finalCurrent.game.status = { state: 'final', label: 'Final' };
+
+  expect(decodeMatchup(finalCurrent).experience.mode).toBe('current');
+});
+
+test('rejects an impossible focal date rather than comparing it as a string', () => {
+  const candidate = historicalPayload();
+  focalLineOf(candidate).game_date = '2025-99-99';
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+
+  const dossier = historicalDossier();
+  dossier.h2h.rows[0].game_date = '2025-99-99';
+  expect(() => decodeMatchupSelection(dossier, ['PTS', 'FGA'], 2544, focalExpectation)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+
+  const impossibleFocal = historicalDossier();
+  impossibleFocal.experience.focal_game.game_date = '2026-02-30';
+  expect(() =>
+    decodeMatchupSelection(impossibleFocal, ['PTS', 'FGA'], 2544, focalExpectation),
+  ).toThrow('selection endpoint returned an invalid response');
 });
 
 test('keeps live Player Pool categories identical to the posted markets', () => {

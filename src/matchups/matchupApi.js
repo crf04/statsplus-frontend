@@ -468,9 +468,18 @@ const decodeFocalGameLine = (line, statCategories) =>
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// A date fence is only meaningful over real calendar dates, so a string that
+// merely looks sortable is not one.
+const isCalendarDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
 // A game's local calendar date is either the UTC date of its tip or the day
 // before it, for every North American time zone the league plays in.
 const focalDateFits = (gameDate, scheduledAt) => {
+  if (!isCalendarDate(gameDate)) return false;
   const utcDate = scheduledAt.slice(0, 10);
   const dayBefore = new Date(new Date(`${utcDate}T00:00:00Z`).getTime() - DAY_MS)
     .toISOString()
@@ -532,7 +541,7 @@ const decodePlayer = (player, experience, game) => {
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:
       player.injury_badge_ref === null ? null : requireString(player.injury_badge_ref),
-    scores: decodeScores(player.scores, statCategories),
+    scores: decodeScores(player.scores, statCategories, gameLogSourced),
   };
 };
 
@@ -694,7 +703,7 @@ const decodeScoreCell = (cell) => {
 
 const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
 
-const decodeScoreWindow = (window, market) => {
+const decodeScoreWindow = (window, market, historical) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
   const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
   const componentBases = Object.keys(window.components);
@@ -703,11 +712,6 @@ const decodeScoreWindow = (window, market) => {
     (defensive && componentBases.some((base) => base !== 'traditional'))
   )
     throw invalid();
-  const componentCount = Object.keys(window.components).length;
-  const validOffensiveBlend = componentCount === 0 ? window.blend === null : isRecord(window.blend);
-  if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
-    throw invalid();
-  }
   const missingInputs =
     window.missing_inputs === undefined ? [] : requireStringList(window.missing_inputs);
   if (
@@ -716,6 +720,17 @@ const decodeScoreWindow = (window, market) => {
   ) {
     throw invalid();
   }
+  const componentCount = componentBases.length;
+  // A historical window may show its components while withholding a Blend the
+  // score contract could not complete, and names what was missing. It may never
+  // present a Blend as complete while naming a missing input.
+  const withheldBlend = historical && window.blend === null && missingInputs.length > 0;
+  const validOffensiveBlend =
+    componentCount === 0 ? window.blend === null : isRecord(window.blend) || withheldBlend;
+  if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
+    throw invalid();
+  }
+  if (historical && isRecord(window.blend) && missingInputs.length > 0) throw invalid();
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [
@@ -728,7 +743,7 @@ const decodeScoreWindow = (window, market) => {
   };
 };
 
-function decodeScores(scores, statCategories) {
+function decodeScores(scores, statCategories, historical) {
   if (
     !isRecord(scores) ||
     Object.keys(scores).sort().join() !== [...statCategories].sort().join() ||
@@ -744,8 +759,8 @@ function decodeScores(scores, statCategories) {
     statCategories.map((category) => [
       category,
       {
-        season: decodeScoreWindow(scores[category].season, category),
-        last15: decodeScoreWindow(scores[category].last_15, category),
+        season: decodeScoreWindow(scores[category].season, category, historical),
+        last15: decodeScoreWindow(scores[category].last_15, category, historical),
       },
     ]),
   );
@@ -920,6 +935,20 @@ const decodeInjuries = (injuries, matchupTeams) => {
   };
 };
 
+// A defense section speaks for one window's Surfaces and for nothing else, so
+// each window's section status must agree with what that window delivered.
+const validateSectionSurfaces = (sections, surfaceAvailability) => {
+  [
+    ['season', sections.seasonDefense],
+    ['last15', sections.last15Defense],
+  ].forEach(([windowKey, section]) => {
+    const delivered = Object.values(surfaceAvailability).some(
+      (windows) => windows[windowKey].status === 'available',
+    );
+    if (delivered !== (section.status === 'available')) throw invalid();
+  });
+};
+
 export const decodeMatchup = (data) => {
   if (
     !isRecord(data) ||
@@ -943,6 +972,23 @@ export const decodeMatchup = (data) => {
     throw invalid();
   const experience = decodeExperience(data.experience);
   const game = decodeGame(data.game);
+  // The sheets the toggle switches between are this game's two teams, away
+  // then home, under the identities the game header records.
+  if (
+    teams.some(
+      (team, index) =>
+        team.teamId !== [game.away, game.home][index].teamId ||
+        team.tricode !== [game.away, game.home][index].tricode,
+    )
+  ) {
+    throw invalid();
+  }
+  // Historical mode describes a completed, non-postponed Regular Season game.
+  // The mode itself stays backend-declared; only its coherence is checked.
+  if (experience.mode === 'historical' && (game.status !== 'final' || game.preseason)) {
+    throw invalid();
+  }
+  if (experience.sections) validateSectionSurfaces(experience.sections, league.surfaceAvailability);
   const players = data.players.map((player) => decodePlayer(player, experience, game));
   // One game is focal, so every participant's line has to date it the same way.
   const focalDates = new Set(
@@ -982,7 +1028,13 @@ const decodeLogLine = (line, markets, focalGame) => {
   }
   // A pregame sample is strictly earlier than the game it contextualizes, which
   // is what excludes the focal game itself rather than a flag claiming so.
-  if (!average && focalGame && line.game_date >= focalGame.gameDate) throw selectionInvalid();
+  if (
+    !average &&
+    focalGame &&
+    (!isCalendarDate(line.game_date) || line.game_date >= focalGame.gameDate)
+  ) {
+    throw selectionInvalid();
+  }
   return {
     date: line.game_date,
     matchup: average ? null : requireSelectionString(line.matchup),
@@ -1065,6 +1117,7 @@ const decodeSelectionExperience = (experience, statCategories, expected) => {
     throw selectionInvalid();
   }
   const focalGame = decodeFocalGame(experience.focal_game, statCategories);
+  if (focalGame !== null && !isCalendarDate(focalGame.gameDate)) throw selectionInvalid();
   // The dossier contextualizes the focal game the client asked about, and it
   // cannot contradict the participant's own line for that game.
   if (focalGame !== null && expected.gameId !== undefined && focalGame.gameId !== expected.gameId) {

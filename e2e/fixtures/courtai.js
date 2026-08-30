@@ -645,13 +645,19 @@ const historicalScoreWindow = (value, category, available, missingInputs) => {
       ? { components: { traditional: { value, thin: false } }, missing_inputs: [] }
       : { components: { traditional: { value: 0.91, thin: true } }, missing_inputs: missingInputs };
   }
+  // A withheld offensive Blend still ships the components that were computable
+  // and names the inputs the score contract did not get.
   return available
     ? {
         components: { shot_zones: { value, thin: false } },
         blend: { value, thin: false },
         missing_inputs: [],
       }
-    : { components: {}, blend: null, missing_inputs: missingInputs };
+    : {
+        components: { shot_zones: { value: 0.88, thin: true } },
+        blend: null,
+        missing_inputs: missingInputs,
+      };
 };
 
 const historicalScores = (base, unavailable = []) =>

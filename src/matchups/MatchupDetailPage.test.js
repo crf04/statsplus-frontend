@@ -865,6 +865,17 @@ const renderMatchup = (path = '/matchups/game-1') =>
     </MemoryRouter>,
   );
 
+test('keeps the live Defense Sheet gated on missing legacy stats freshness', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.freshness.stats = { status: 'missing', retrievedAt: null };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+  expect(screen.getByText('Defense Sheet unavailable because stats are missing.')).toBeVisible();
+  expect(screen.queryByText('Transition')).not.toBeInTheDocument();
+});
+
 test('renders Season defense from its own Surface while legacy stats freshness is missing', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();

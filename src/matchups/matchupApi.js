@@ -976,14 +976,18 @@ export const decodeMatchup = (data) => {
     throw invalid();
   const experience = decodeExperience(data.experience);
   const game = decodeGame(data.game);
-  // The sheets the toggle switches between are this game's two teams, away
-  // then home, under the identities the game header records.
+  // The sheets the toggle switches between are this game's own two teams, under
+  // the identities the game header records. Their delivered order is the live
+  // contract's business; only a historical response is held to away-then-home.
+  const focalTeams = [game.away, game.home];
   if (
     teams.some(
-      (team, index) =>
-        team.teamId !== [game.away, game.home][index].teamId ||
-        team.tricode !== [game.away, game.home][index].tricode,
-    )
+      (team) =>
+        !focalTeams.some((focal) => focal.teamId === team.teamId && focal.tricode === team.tricode),
+    ) ||
+    new Set(teams.map((team) => team.teamId)).size !== teams.length ||
+    (experience.mode === 'historical' &&
+      teams.some((team, index) => team.teamId !== focalTeams[index].teamId))
   ) {
     throw invalid();
   }

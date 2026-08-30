@@ -2161,6 +2161,23 @@ test('rejects an impossible focal date rather than comparing it as a string', ()
   ).toThrow('selection endpoint returned an invalid response');
 });
 
+test('accepts either team ordering in current mode', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.teams.reverse();
+
+  expect(decodeMatchup(candidate).teams.map((team) => team.tricode)).toEqual(['BOS', 'LAL']);
+});
+
+test('still binds current-mode defense sheets to the two teams that played', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.teams[1].team_id = 99;
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+
+  const swappedTricode = JSON.parse(JSON.stringify(payload));
+  swappedTricode.teams[0].tricode = 'BOS';
+  expect(() => decodeMatchup(swappedTricode)).toThrow('invalid response');
+});
+
 test('keeps live Player Pool categories identical to the posted markets', () => {
   const [player] = decodeMatchup(payload).players;
 

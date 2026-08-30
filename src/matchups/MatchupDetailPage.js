@@ -851,22 +851,30 @@ function Detail({ matchup, gameId }) {
               onClose={() => updateSelectedPlayer(null)}
             />
           )}
-          {/* The Defense Sheet is governed by its own Surface availability. The
-              generic legacy stats freshness marker never suppresses it. */}
-          <DefenseSheet
-            team={defenseTeam}
-            players={opposingPlayers}
-            market={market}
-            windowKey={windowKey}
-            deviation={deviation}
-            selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
-            surfaceAvailability={matchup.league.surfaceAvailability}
-            provenance={
-              windowSection
-                ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
-                : null
-            }
-          />
+          {/* A historical Defense Sheet is governed by its own Surface
+              availability, so the generic legacy stats marker never suppresses
+              it. The live journey keeps the gate it has always had. */}
+          {!historical && matchup.freshness.stats.status === 'missing' ? (
+            <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
+              <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
+              <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
+            </section>
+          ) : (
+            <DefenseSheet
+              team={defenseTeam}
+              players={opposingPlayers}
+              market={market}
+              windowKey={windowKey}
+              deviation={deviation}
+              selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
+              surfaceAvailability={matchup.league.surfaceAvailability}
+              provenance={
+                windowSection
+                  ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
+                  : null
+              }
+            />
+          )}
         </div>
       </div>
     </>

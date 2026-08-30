@@ -180,10 +180,20 @@ const decodeRetrievedAt = (value) => {
 };
 
 const SECTION_STATE_KEYS = ['status', 'source', 'context', 'unavailable_reason'];
+// The mode owns its evidence vocabulary. A completed season cannot be described
+// as pregame, and a live slate cannot be described as hindsight, so a response
+// that mixes them is incoherent rather than merely unusual.
+const MODE_PLAYER_SOURCES = { historical: 'game_logs', current: 'player_pool' };
+const MODE_ONLY_CONTEXTS = {
+  historical: ['completed_season_catalog', 'completed_season'],
+  current: ['current_season_catalog', 'pregame', 'posted_markets', 'current'],
+};
+const MODE_ONLY_SOURCES = { historical: ['player_game_logs'], current: ['player_pool'] };
+const otherMode = (mode) => (mode === 'historical' ? 'current' : 'historical');
 
 // Only the schedule section carries collection provenance. It is immutable
 // evidence of a completed season, never an age-based staleness signal.
-const decodeExperienceSection = (section, name) => {
+const decodeExperienceSection = (section, name, mode) => {
   const allowedKeys =
     name === 'schedule' ? [...SECTION_STATE_KEYS, 'collected_at'] : SECTION_STATE_KEYS;
   if (
@@ -193,6 +203,8 @@ const decodeExperienceSection = (section, name) => {
     !['available', 'unavailable', 'missing'].includes(section.status) ||
     (section.source !== null && !SECTION_SOURCES.includes(section.source)) ||
     (section.context !== null && !SECTION_CONTEXTS.includes(section.context)) ||
+    MODE_ONLY_CONTEXTS[otherMode(mode)].includes(section.context) ||
+    MODE_ONLY_SOURCES[otherMode(mode)].includes(section.source) ||
     (section.status === 'available'
       ? section.unavailable_reason !== null
       : typeof section.unavailable_reason !== 'string' || !section.unavailable_reason)
@@ -218,6 +230,7 @@ const decodeExperience = (experience) => {
     !isRecord(experience) ||
     !EXPERIENCE_MODES.includes(experience.mode) ||
     !PLAYER_SOURCES.includes(experience.player_source) ||
+    experience.player_source !== MODE_PLAYER_SOURCES[experience.mode] ||
     !isRecord(experience.sections) ||
     Object.keys(experience.sections).sort().join() !== [...EXPERIENCE_SECTIONS].sort().join()
   ) {
@@ -229,7 +242,7 @@ const decodeExperience = (experience) => {
     sections: Object.fromEntries(
       EXPERIENCE_SECTIONS.map((section) => [
         camelKey(section),
-        decodeExperienceSection(experience.sections[section], section),
+        decodeExperienceSection(experience.sections[section], section, experience.mode),
       ]),
     ),
   };
@@ -458,8 +471,10 @@ const decodeFocalGameLine = (line, statCategories) =>
 const decodePlayer = (player, experience) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
+  // A participant cannot claim a different source than its own experience.
   const playerSource = player.player_source ?? experience.playerSource;
-  if (!PLAYER_SOURCES.includes(playerSource)) throw invalid();
+  if (!PLAYER_SOURCES.includes(playerSource) || playerSource !== experience.playerSource)
+    throw invalid();
   const gameLogSourced = playerSource === 'game_logs';
   const postedMarkets = decodeCategoryList(player.posted_markets);
   // A game-log participant carries no posted-market claim at all.
@@ -469,8 +484,14 @@ const decodePlayer = (player, experience) => {
       ? postedMarkets
       : decodeCategoryList(player.stat_categories);
   if (statCategories.length === 0) throw invalid();
+  // Current-mode categories are the posted markets. Keeping them identical is
+  // what lets the live Player Pool controls and selection stay unchanged.
+  if (!gameLogSourced && statCategories.join() !== postedMarkets.join()) throw invalid();
   if (gameLogSourced && (!isRecord(player.provenance) || Object.keys(player.provenance).length))
     throw invalid();
+  const focalGameLine = decodeFocalGameLine(player.focal_game_line, statCategories);
+  // A historical participant always has a focal line; a pool player never does.
+  if (gameLogSourced ? focalGameLine === null : focalGameLine !== null) throw invalid();
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
@@ -480,7 +501,7 @@ const decodePlayer = (player, experience) => {
     postedMarkets,
     statCategories,
     provenance: gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets),
-    focalGameLine: decodeFocalGameLine(player.focal_game_line, statCategories),
+    focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
@@ -968,16 +989,45 @@ const decodeFocalGame = (focalGame, statCategories) =>
     requireValue: requireSelectionNumber,
   });
 
+// The dossier's separation labels are driven by these fields, so a response
+// that mislabels them would silently drop a required disclosure.
+const SELECTION_MODE_CONTRACT = {
+  historical: {
+    focalGame: true,
+    samplesContext: 'pregame',
+    excludesFocalGame: true,
+    baselineContext: 'completed_season',
+    hindsight: true,
+  },
+  current: {
+    focalGame: false,
+    samplesContext: 'season_to_date',
+    excludesFocalGame: false,
+    baselineContext: 'season_to_date',
+    hindsight: false,
+  },
+};
+
 const decodeSelectionExperience = (experience, statCategories) => {
   if (experience === undefined || experience === null) return null;
   if (
     !isRecord(experience) ||
     !EXPERIENCE_MODES.includes(experience.mode) ||
-    !PLAYER_SOURCES.includes(experience.player_source) ||
+    experience.player_source !== MODE_PLAYER_SOURCES[experience.mode] ||
     !isRecord(experience.samples) ||
     !isRecord(experience.baseline) ||
     typeof experience.samples.excludes_focal_game !== 'boolean' ||
     typeof experience.baseline.hindsight !== 'boolean'
+  ) {
+    throw selectionInvalid();
+  }
+  const required = SELECTION_MODE_CONTRACT[experience.mode];
+  if (
+    isRecord(experience.focal_game) !== required.focalGame ||
+    experience.samples.context !== required.samplesContext ||
+    experience.samples.excludes_focal_game !== required.excludesFocalGame ||
+    experience.baseline.context !== required.baselineContext ||
+    experience.baseline.hindsight !== required.hindsight
   ) {
     throw selectionInvalid();
   }

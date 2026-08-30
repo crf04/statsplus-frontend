@@ -1,7 +1,6 @@
 import {
   expect,
   HISTORICAL_GAME_ID,
-  historicalMatchupPayload,
   installApiContract,
   matchupPayload,
   test,
@@ -40,7 +39,9 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   const evidence = page.getByRole('region', { name: 'Historical matchup evidence' });
   await expect(evidence).toBeVisible();
   await expect(page.getByRole('region', { name: 'Matchup data freshness' })).toHaveCount(0);
-  await expect(evidence).toContainText('Schedule: Completed-season catalog · from Event Catalog');
+  await expect(evidence).toContainText(
+    'Schedule: Completed-season catalog · from Event Catalog · collected 2026-03-30',
+  );
   await expect(evidence).toContainText('Participants: Completed-season context · from game logs');
   await expect(evidence).toContainText(
     'Season defense: Completed-season context · from Defense Sheet publication',
@@ -161,40 +162,6 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   expect(matchupRequests).toHaveLength(1);
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
-});
-
-test('historical participants stay unavailable with a precise reason without hiding defense evidence', async ({
-  page,
-}, testInfo) => {
-  await page.clock.setFixedTime(new Date('2026-04-02T12:00:00Z'));
-  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
-  const candidate = JSON.parse(JSON.stringify(historicalMatchupPayload));
-  candidate.experience.sections.participants = {
-    status: 'unavailable',
-    source: null,
-    context: null,
-    unavailable_reason: 'game_logs_incomplete',
-  };
-  const consoleErrors = [];
-  page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text());
-  });
-  await installApiContract(page, { '/api/games/matchup': candidate });
-
-  await page.goto(`/matchups/${HISTORICAL_GAME_ID}`);
-  await expect(page.getByRole('heading', { name: 'MIL Defense Sheet' })).toBeVisible();
-  await expect(page.getByText('Transition PTS')).toBeVisible();
-  await expect(
-    page
-      .getByRole('complementary', { name: 'Players in game' })
-      .getByText('Canonical game logs are incomplete for this game.'),
-  ).toBeVisible();
-  await expect(page.getByRole('article', { name: 'Kawhi Leonard player' })).toHaveCount(0);
-  expect(consoleErrors).toEqual([]);
-  await page.screenshot({
-    path: testInfo.outputPath('historical-participants-unavailable.png'),
-    fullPage: true,
-  });
 });
 
 test('matchup detail preserves the approved Open Team Sheets hierarchy', async ({

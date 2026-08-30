@@ -172,11 +172,24 @@ const decodeSheetIdentity = (base, key) => {
   return { sliceKey, markets: expectedSheetMarkets(base, sliceKey, statKey) };
 };
 
-const decodeExperienceSection = (section) => {
+const decodeRetrievedAt = (value) => {
+  if (value === null) return null;
+  const date = new Date(requireString(value));
+  if (Number.isNaN(date.getTime())) throw invalid();
+  return date.toISOString();
+};
+
+const SECTION_STATE_KEYS = ['status', 'source', 'context', 'unavailable_reason'];
+
+// Only the schedule section carries collection provenance. It is immutable
+// evidence of a completed season, never an age-based staleness signal.
+const decodeExperienceSection = (section, name) => {
+  const allowedKeys =
+    name === 'schedule' ? [...SECTION_STATE_KEYS, 'collected_at'] : SECTION_STATE_KEYS;
   if (
     !isRecord(section) ||
-    Object.keys(section).sort().join() !==
-      ['status', 'source', 'context', 'unavailable_reason'].sort().join() ||
+    SECTION_STATE_KEYS.some((key) => !Object.hasOwn(section, key)) ||
+    Object.keys(section).some((key) => !allowedKeys.includes(key)) ||
     !['available', 'unavailable', 'missing'].includes(section.status) ||
     (section.source !== null && !SECTION_SOURCES.includes(section.source)) ||
     (section.context !== null && !SECTION_CONTEXTS.includes(section.context)) ||
@@ -191,6 +204,7 @@ const decodeExperienceSection = (section) => {
     source: section.source,
     context: section.context,
     unavailableReason: section.unavailable_reason,
+    collectedAt: decodeRetrievedAt(section.collected_at ?? null),
   };
 };
 
@@ -215,7 +229,7 @@ const decodeExperience = (experience) => {
     sections: Object.fromEntries(
       EXPERIENCE_SECTIONS.map((section) => [
         camelKey(section),
-        decodeExperienceSection(experience.sections[section]),
+        decodeExperienceSection(experience.sections[section], section),
       ]),
     ),
   };
@@ -417,20 +431,29 @@ const decodeCategoryList = (value) => {
   return categories;
 };
 
-const decodeFocalGameLine = (line, statCategories) => {
+// The focal line has one shape. The matchup and selection responses only differ
+// in which rejection they raise, so they share this translation.
+const decodeFocalLine = (line, statCategories, { fail, requireText, requireValue }) => {
   if (line === null || line === undefined) return null;
-  if (!isRecord(line) || !isRecord(line.stats)) throw invalid();
-  if (statCategories.some((category) => !Object.hasOwn(line.stats, category))) throw invalid();
+  if (!isRecord(line) || !isRecord(line.stats)) throw fail();
+  if (statCategories.some((category) => !Object.hasOwn(line.stats, category))) throw fail();
   return {
-    gameId: requireString(line.game_id),
-    gameDate: requireString(line.game_date),
-    matchup: requireString(line.matchup),
-    minutes: requireNumber(line.minutes),
+    gameId: requireText(line.game_id),
+    gameDate: requireText(line.game_date),
+    matchup: requireText(line.matchup),
+    minutes: requireValue(line.minutes),
     stats: Object.fromEntries(
-      Object.entries(line.stats).map(([category, value]) => [category, requireNumber(value)]),
+      Object.entries(line.stats).map(([category, value]) => [category, requireValue(value)]),
     ),
   };
 };
+
+const decodeFocalGameLine = (line, statCategories) =>
+  decodeFocalLine(line, statCategories, {
+    fail: invalid,
+    requireText: requireString,
+    requireValue: requireNumber,
+  });
 
 const decodePlayer = (player, experience) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
@@ -681,13 +704,6 @@ function decodeScores(scores, statCategories) {
     ]),
   );
 }
-
-const decodeRetrievedAt = (value) => {
-  if (value === null) return null;
-  const date = new Date(requireString(value));
-  if (Number.isNaN(date.getTime())) throw invalid();
-  return date.toISOString();
-};
 
 const decodeFreshnessSurface = (surface, surfaceName) => {
   if (!isRecord(surface) || !isStatusAllowed(surface.status, surfaceName)) throw invalid();
@@ -945,17 +961,12 @@ const decodeLogTable = (table, markets) => {
   };
 };
 
-const decodeFocalGame = (focalGame, statCategories) => {
-  if (focalGame === null || focalGame === undefined) return null;
-  if (!isRecord(focalGame) || !isRecord(focalGame.stats)) throw selectionInvalid();
-  return {
-    gameId: requireSelectionString(focalGame.game_id),
-    gameDate: requireSelectionString(focalGame.game_date),
-    matchup: requireSelectionString(focalGame.matchup),
-    minutes: requireSelectionNumber(focalGame.minutes),
-    stats: decodeSelectionStatMap(focalGame.stats, statCategories),
-  };
-};
+const decodeFocalGame = (focalGame, statCategories) =>
+  decodeFocalLine(focalGame, statCategories, {
+    fail: selectionInvalid,
+    requireText: requireSelectionString,
+    requireValue: requireSelectionNumber,
+  });
 
 const decodeSelectionExperience = (experience, statCategories) => {
   if (experience === undefined || experience === null) return null;

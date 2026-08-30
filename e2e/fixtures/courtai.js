@@ -714,6 +714,8 @@ export const historicalMatchupPayload = {
         source: 'event_catalog',
         context: 'completed_season_catalog',
         unavailable_reason: null,
+        // Immutable completed-season provenance, never a staleness signal.
+        collected_at: '2026-03-30T04:10:00Z',
       },
       participants: {
         status: 'available',

@@ -65,6 +65,10 @@ const sectionReason = (section) =>
   SECTION_REASONS[section.unavailableReason] || `${section.unavailableReason}.`;
 const contextLabel = (section) => CONTEXT_LABELS[section.context] || section.context;
 const sourceLabel = (section) => SOURCE_LABELS[section.source] || section.source;
+// Collection time is provenance for immutable evidence, so it is stated as a
+// date rather than an age that would read as an operational staleness warning.
+const collectedLabel = (section) =>
+  section.collectedAt ? ` · collected ${section.collectedAt.slice(0, 10)}` : '';
 
 // Historical sections replace the live freshness bars: each one governs only its
 // own evidence, so a missing pool or stats marker cannot speak for the others.
@@ -77,7 +81,7 @@ function HistoricalEvidence({ sections }) {
           <span key={key}>
             <strong>{label}</strong>:{' '}
             {section.status === 'available'
-              ? `${contextLabel(section)} · from ${sourceLabel(section)}`
+              ? `${contextLabel(section)} · from ${sourceLabel(section)}${collectedLabel(section)}`
               : `${section.status} — ${sectionReason(section)}`}
           </span>
         );
@@ -172,7 +176,7 @@ function PlayerRail({
     return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
   };
   const byScore = sortMode === 'score' && market !== 'All';
-  const rank = (a, b, valueOf) => {
+  const compareDescendingUnavailableLast = (a, b, valueOf) => {
     const first = valueOf(a);
     const second = valueOf(b);
     if ((first === null) !== (second === null)) return first === null ? 1 : -1;
@@ -184,8 +188,8 @@ function PlayerRail({
   );
   scoped.sort(
     (a, b) =>
-      (byScore ? rank(a, b, scoreFor) : 0) ||
-      rank(a, b, (player) => player.seasonScoring) ||
+      (byScore ? compareDescendingUnavailableLast(a, b, scoreFor) : 0) ||
+      compareDescendingUnavailableLast(a, b, (player) => player.seasonScoring) ||
       a.name.localeCompare(b.name),
   );
   return (

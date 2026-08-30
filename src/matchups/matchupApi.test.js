@@ -1294,15 +1294,57 @@ test('reads the additive Historical Matchup mode and section-owned evidence', ()
     source: 'team_matchup_publication',
     context: 'completed_season',
     unavailableReason: null,
+    collectedAt: null,
   });
   expect(decoded.experience.sections.last15Defense).toEqual({
     status: 'unavailable',
     source: null,
     context: null,
     unavailableReason: 'no_point_in_time_snapshot',
+    collectedAt: null,
   });
   expect(decoded.experience.sections.participants.source).toBe('player_game_logs');
   expect(decoded.experience.sections.injuries.unavailableReason).toBe('no_pregame_snapshot');
+});
+
+test('reads schedule collection provenance without letting it govern any section', () => {
+  const candidate = historicalPayload();
+  candidate.experience.sections.schedule.collected_at = '2026-03-30T04:10:00Z';
+
+  const { sections } = decodeMatchup(candidate).experience;
+  expect(sections.schedule.collectedAt).toBe('2026-03-30T04:10:00.000Z');
+  expect(sections.schedule.status).toBe('available');
+  // Only schedule carries collection provenance.
+  expect(sections.participants.collectedAt).toBeNull();
+  expect(sections.seasonDefense.collectedAt).toBeNull();
+
+  const absent = historicalPayload();
+  expect(decodeMatchup(absent).experience.sections.schedule.collectedAt).toBeNull();
+});
+
+test.each([
+  [
+    'an unparseable schedule collection time',
+    (candidate) => {
+      candidate.experience.sections.schedule.collected_at = 'not-a-timestamp';
+    },
+  ],
+  [
+    'collection provenance on a section that does not carry it',
+    (candidate) => {
+      candidate.experience.sections.participants.collected_at = '2026-03-30T04:10:00Z';
+    },
+  ],
+  [
+    'an undocumented schedule key',
+    (candidate) => {
+      candidate.experience.sections.schedule.published_at = '2026-03-30T04:10:00Z';
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
 test('treats an absent experience block as the pre-historical live contract', () => {
@@ -1455,6 +1497,27 @@ test('reads the additive selection experience and its separated focal game', () 
   expect(
     decodeMatchupSelection({ ...raw, experience: undefined }, ['PTS', 'FGA'], 2544).experience,
   ).toBeNull();
+  expect(
+    decodeMatchupSelection(
+      { ...raw, experience: { ...raw.experience, focal_game: null } },
+      ['PTS', 'FGA'],
+      2544,
+    ).experience.focalGame,
+  ).toBeNull();
+  // The focal line rejects a missing governed category on both response seams.
+  expect(() =>
+    decodeMatchupSelection(
+      {
+        ...raw,
+        experience: {
+          ...raw.experience,
+          focal_game: { ...raw.experience.focal_game, stats: { PTS: 24 } },
+        },
+      },
+      ['PTS', 'FGA'],
+      2544,
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
   expect(() =>
     decodeMatchupSelection(
       { ...raw, experience: { ...raw.experience, baseline: { context: 'completed_season' } } },

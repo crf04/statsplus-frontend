@@ -819,6 +819,7 @@ const historicalSection = (status, source, context, unavailableReason = null) =>
   source,
   context,
   unavailableReason,
+  collectedAt: null,
 });
 
 const historicalMatchup = () => {
@@ -897,6 +898,22 @@ test('renders Season defense from its own Surface while legacy stats freshness i
   ).toBeGreaterThan(0);
   expect(screen.getByText('No pregame injury snapshot was archived for this game.')).toBeVisible();
   expect(screen.queryByText('Left calf soreness')).not.toBeInTheDocument();
+});
+
+test('states schedule collection time as provenance rather than a staleness warning', async () => {
+  const candidate = historicalMatchup();
+  candidate.experience.sections.schedule.collectedAt = '2026-03-30T04:10:00.000Z';
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  const evidence = screen.getByRole('region', { name: 'Historical matchup evidence' });
+  expect(evidence).toHaveTextContent(
+    'Schedule: Completed-season catalog · from Event Catalog · collected 2026-03-30',
+  );
+  expect(evidence).not.toHaveTextContent('warning');
+  expect(evidence).not.toHaveTextContent('ago');
+  expect(evidence.querySelector('.matchup-warning')).not.toBeInTheDocument();
 });
 
 test('labels the historical rail Players in game and switches it with the defense team', async () => {

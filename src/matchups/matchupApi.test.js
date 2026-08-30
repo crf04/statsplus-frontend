@@ -1275,7 +1275,8 @@ const historicalPayload = () => {
   participant.player_source = 'game_logs';
   participant.stat_categories = ['PTS', 'FGA'];
   participant.focal_game_line = {
-    game_id: '0022501082',
+    // The focal line is evidence about this matchup's own game.
+    game_id: candidate.game.game_id,
     game_date: '2026-03-29',
     matchup: 'LAC @ MIL',
     minutes: 34.5,
@@ -1369,7 +1370,7 @@ test('reads a game-log participant that carries no posted-market claim', () => {
   expect(participant.provenance).toEqual({});
   expect(participant.statCategories).toEqual(['PTS', 'FGA']);
   expect(participant.focalGameLine).toEqual({
-    gameId: '0022501082',
+    gameId: payload.game.game_id,
     gameDate: '2026-03-29',
     matchup: 'LAC @ MIL',
     minutes: 34.5,
@@ -1556,6 +1557,102 @@ test.each([
   expect(() => decodeMatchup(candidate)).not.toThrow();
   mutate(candidate);
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'a focal game line from a different game',
+    (candidate) => {
+      candidate.players[0].focal_game_line.game_id = '0022509999';
+    },
+  ],
+  [
+    'an available section with no source',
+    (candidate) => {
+      candidate.experience.sections.participants.source = null;
+    },
+  ],
+  [
+    'an available section with no context',
+    (candidate) => {
+      candidate.experience.sections.season_defense.context = null;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('binds the focal game line to the decoded matchup game', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].focal_game_line.game_id = candidate.game.game_id;
+
+  expect(decodeMatchup(candidate).players[0].focalGameLine.gameId).toBe(candidate.game.game_id);
+});
+
+const historicalSelection = (overrides = {}) => ({
+  player_id: 2544,
+  experience: {
+    mode: 'historical',
+    player_source: 'game_logs',
+    focal_game: {
+      game_id: '0022500584',
+      game_date: '2026-03-29',
+      matchup: 'LAC @ MIL',
+      minutes: 34.5,
+      stats: { PTS: 24, FGA: 18 },
+    },
+    samples: { context: 'pregame', excludes_focal_game: true },
+    baseline: { context: 'completed_season', hindsight: true },
+  },
+  h2h: { thin: false, rows: [] },
+  archetype: { thin: false, rows: [] },
+  ...overrides,
+});
+
+test('binds historical selection evidence to the requested matchup', () => {
+  const expected = { gameId: '0022500584', mode: 'historical' };
+  const selection = decodeMatchupSelection(historicalSelection(), ['PTS', 'FGA'], 2544, expected);
+  expect(selection.experience.focalGame.gameId).toBe('0022500584');
+
+  // A historical dossier without its experience would silently drop the
+  // strict-before and hindsight disclosures the outcome requires.
+  expect(() =>
+    decodeMatchupSelection(historicalSelection({ experience: undefined }), ['PTS', 'FGA'], 2544, {
+      ...expected,
+    }),
+  ).toThrow('selection endpoint returned an invalid response');
+
+  const otherGame = historicalSelection();
+  otherGame.experience.focal_game.game_id = '0022509999';
+  expect(() => decodeMatchupSelection(otherGame, ['PTS', 'FGA'], 2544, expected)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+
+  const currentDossier = historicalSelection();
+  currentDossier.experience.mode = 'current';
+  currentDossier.experience.player_source = 'player_pool';
+  currentDossier.experience.focal_game = null;
+  currentDossier.experience.samples = { context: 'season_to_date', excludes_focal_game: false };
+  currentDossier.experience.baseline = { context: 'season_to_date', hindsight: false };
+  expect(() => decodeMatchupSelection(currentDossier, ['PTS', 'FGA'], 2544, expected)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+});
+
+test('leaves the current selection contract unbound to historical evidence', () => {
+  const raw = {
+    player_id: 2544,
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+
+  expect(decodeMatchupSelection(raw, ['PTS'], 2544).experience).toBeNull();
+  expect(
+    decodeMatchupSelection(raw, ['PTS'], 2544, { gameId: '0022500584', mode: 'current' })
+      .experience,
+  ).toBeNull();
 });
 
 test('keeps live Player Pool categories identical to the posted markets', () => {

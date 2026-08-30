@@ -118,6 +118,16 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
     fullPage: true,
   });
 
+  // A withheld defensive score still ships component evidence. That component
+  // must not be promoted into an available score or an ordering position.
+  await categories.getByRole('button', { name: 'TOV', exact: true }).click();
+  await expect(
+    page.getByText('TOV Matchup Score unavailable: missing team_defense:traditional.'),
+  ).toBeVisible();
+  players = page.getByRole('article', { name: /player$/ });
+  await expect(players.last()).toHaveAccessibleName('Ivica Zubac player');
+  await categories.getByRole('button', { name: 'PTS', exact: true }).click();
+
   // Switching the defense team switches the opposing participant rail.
   await page.getByRole('button', { name: 'LAC defense' }).click();
   await expect(page.getByRole('heading', { name: 'LAC Defense Sheet' })).toBeVisible();

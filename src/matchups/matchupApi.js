@@ -205,8 +205,10 @@ const decodeExperienceSection = (section, name, mode) => {
     (section.context !== null && !SECTION_CONTEXTS.includes(section.context)) ||
     MODE_ONLY_CONTEXTS[otherMode(mode)].includes(section.context) ||
     MODE_ONLY_SOURCES[otherMode(mode)].includes(section.source) ||
+    // An available section owns its evidence, so it must name where that
+    // evidence came from and what it describes.
     (section.status === 'available'
-      ? section.unavailable_reason !== null
+      ? section.unavailable_reason !== null || section.source === null || section.context === null
       : typeof section.unavailable_reason !== 'string' || !section.unavailable_reason)
   ) {
     throw invalid();
@@ -468,7 +470,7 @@ const decodeFocalGameLine = (line, statCategories) =>
     requireValue: requireNumber,
   });
 
-const decodePlayer = (player, experience) => {
+const decodePlayer = (player, experience, gameId) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
   // A participant cannot claim a different source than its own experience.
@@ -491,7 +493,9 @@ const decodePlayer = (player, experience) => {
     throw invalid();
   const focalGameLine = decodeFocalGameLine(player.focal_game_line, statCategories);
   // A historical participant always has a focal line; a pool player never does.
+  // The line is evidence about this game, so it cannot describe another one.
   if (gameLogSourced ? focalGameLine === null : focalGameLine !== null) throw invalid();
+  if (focalGameLine !== null && focalGameLine.gameId !== gameId) throw invalid();
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
@@ -917,12 +921,13 @@ export const decodeMatchup = (data) => {
   )
     throw invalid();
   const experience = decodeExperience(data.experience);
+  const game = decodeGame(data.game);
   return {
-    game: decodeGame(data.game),
+    game,
     experience,
     league,
     teams,
-    players: data.players.map((player) => decodePlayer(player, experience)),
+    players: data.players.map((player) => decodePlayer(player, experience, game.gameId)),
     injuries,
     freshness,
   };
@@ -1008,11 +1013,17 @@ const SELECTION_MODE_CONTRACT = {
   },
 };
 
-const decodeSelectionExperience = (experience, statCategories) => {
-  if (experience === undefined || experience === null) return null;
+const decodeSelectionExperience = (experience, statCategories, expected) => {
+  if (experience === undefined || experience === null) {
+    // A historical dossier must carry its own evidence, or its strict-before
+    // and hindsight disclosures would silently disappear.
+    if (expected.mode === 'historical') throw selectionInvalid();
+    return null;
+  }
   if (
     !isRecord(experience) ||
     !EXPERIENCE_MODES.includes(experience.mode) ||
+    (expected.mode !== undefined && experience.mode !== expected.mode) ||
     experience.player_source !== MODE_PLAYER_SOURCES[experience.mode] ||
     !isRecord(experience.samples) ||
     !isRecord(experience.baseline) ||
@@ -1031,10 +1042,15 @@ const decodeSelectionExperience = (experience, statCategories) => {
   ) {
     throw selectionInvalid();
   }
+  const focalGame = decodeFocalGame(experience.focal_game, statCategories);
+  // The dossier contextualizes the focal game the client asked about.
+  if (focalGame !== null && expected.gameId !== undefined && focalGame.gameId !== expected.gameId) {
+    throw selectionInvalid();
+  }
   return {
     mode: experience.mode,
     playerSource: experience.player_source,
-    focalGame: decodeFocalGame(experience.focal_game, statCategories),
+    focalGame,
     samples: {
       context: requireSelectionString(experience.samples.context),
       excludesFocalGame: experience.samples.excludes_focal_game,
@@ -1046,7 +1062,9 @@ const decodeSelectionExperience = (experience, statCategories) => {
   };
 };
 
-export const decodeMatchupSelection = (data, statCategories, expectedPlayerId) => {
+// `expected` binds the response to the matchup the client asked about: the
+// game it must contextualize, and the experience it must disclose.
+export const decodeMatchupSelection = (data, statCategories, expectedPlayerId, expected = {}) => {
   if (!isRecord(data) || !Array.isArray(statCategories) || statCategories.length === 0)
     throw selectionInvalid();
   if (!Number.isInteger(data.player_id) || data.player_id !== expectedPlayerId) {
@@ -1054,13 +1072,18 @@ export const decodeMatchupSelection = (data, statCategories, expectedPlayerId) =
   }
   return {
     playerId: data.player_id,
-    experience: decodeSelectionExperience(data.experience, statCategories),
+    experience: decodeSelectionExperience(data.experience, statCategories, expected),
     h2h: decodeLogTable(data.h2h, statCategories),
     archetype: decodeLogTable(data.archetype, statCategories),
   };
 };
 
-export const fetchMatchupSelection = async (gameId, playerId, statCategories, { signal } = {}) => {
+export const fetchMatchupSelection = async (
+  gameId,
+  playerId,
+  statCategories,
+  { signal, mode } = {},
+) => {
   if (
     typeof gameId !== 'string' ||
     !gameId ||
@@ -1073,5 +1096,5 @@ export const fetchMatchupSelection = async (gameId, playerId, statCategories, { 
     params: { game_id: gameId, player_id: playerId },
     signal,
   });
-  return decodeMatchupSelection(response.data, statCategories, playerId);
+  return decodeMatchupSelection(response.data, statCategories, playerId, { gameId, mode });
 };

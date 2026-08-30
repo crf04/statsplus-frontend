@@ -639,9 +639,11 @@ const historicalLeague = () => {
 
 const historicalScoreWindow = (value, category, available, missingInputs) => {
   if (DEFENSIVE_MARKETS.includes(category)) {
+    // A withheld defensive score can still ship its component evidence, so the
+    // component must not stand in for the score the contract did not complete.
     return available
       ? { components: { traditional: { value, thin: false } }, missing_inputs: [] }
-      : { components: {}, missing_inputs: missingInputs };
+      : { components: { traditional: { value: 0.91, thin: true } }, missing_inputs: missingInputs };
   }
   return available
     ? {
@@ -661,7 +663,10 @@ const historicalScores = (base, unavailable = []) =>
           base + index / 100,
           category,
           !unavailable.includes(category),
-          ['team_defense:play_types', 'player_diet:shot_zones'],
+          // A category can only be missing inputs its own score contract needs.
+          DEFENSIVE_MARKETS.includes(category)
+            ? ['team_defense:traditional']
+            : ['team_defense:play_types', 'player_diet:shot_zones'],
         ),
         last_15: historicalScoreWindow(0, category, false, HISTORICAL_LAST_15_MISSING),
       },
@@ -787,7 +792,7 @@ export const historicalMatchupPayload = {
       minutes: 27.8,
       focalStats: { PTS: 10, REB: 12, AST: 1, FGA: 8, FG3A: 0, TOV: 1 },
       scoreBase: 0.05,
-      unavailable: ['PTS'],
+      unavailable: ['PTS', 'TOV'],
     }),
     historicalParticipant({
       id: 203507,

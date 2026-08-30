@@ -170,9 +170,13 @@ function PlayerRail({
   );
   const windowScoreFor = (player) => player.scores[market]?.[windowKey] ?? null;
   // A score is unavailable, not zero, when the contract could not compute it.
+  // A Blend withheld alongside named missing inputs is an incomplete score, so
+  // no single component may stand in for it. A defensive category has no Blend
+  // by contract and names nothing missing, so its component is the whole score.
   const scoreFor = (player) => {
     const score = windowScoreFor(player);
     if (!score) return null;
+    if (score.blend === null && score.missingInputs.length > 0) return null;
     return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
   };
   const byScore = sortMode === 'score' && market !== 'All';
@@ -621,7 +625,8 @@ function Detail({ matchup, gameId }) {
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
-  const historical = matchup.experience.mode === 'historical';
+  const experienceMode = matchup.experience.mode;
+  const historical = experienceMode === 'historical';
   const sections = matchup.experience.sections;
   const poolAvailable = !['missing', 'unavailable'].includes(matchup.freshness.pool.status);
   const participantsAvailable = historical
@@ -659,6 +664,7 @@ function Detail({ matchup, gameId }) {
     setSelectionState({ status: 'loading', playerId: selectedPlayer.id, data: null, error: null });
     fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.statCategories, {
       signal: controller.signal,
+      mode: experienceMode,
     })
       .then((data) => {
         if (current)
@@ -677,7 +683,7 @@ function Detail({ matchup, gameId }) {
       current = false;
       controller.abort();
     };
-  }, [gameId, selectedPlayer]);
+  }, [experienceMode, gameId, selectedPlayer]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
       selectionTriggers.current.get(previousSelectedId.current)?.focus();

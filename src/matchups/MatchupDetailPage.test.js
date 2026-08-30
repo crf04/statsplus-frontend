@@ -942,6 +942,55 @@ test('labels the historical rail Players in game and switches it with the defens
   expect(screen.queryByRole('article', { name: 'LeBron James player' })).not.toBeInTheDocument();
 });
 
+// A defensive category has no Blend by contract, so its component carries the
+// score. That is the reachable shape in which a withheld score can still ship
+// component evidence: the offensive case is already rejected by the decoder.
+const withDefensiveScores = (candidate, missingInputs) => {
+  candidate.players.forEach((player) => {
+    player.statCategories = [...player.statCategories, 'TOV'];
+    player.scores.TOV = {
+      season: {
+        components: { traditional: { value: player.id === 1630559 ? 0.44 : 0.12, thin: false } },
+        blend: null,
+        missingInputs: player.id === 1630559 ? missingInputs : [],
+      },
+      last15: { components: {}, blend: null, missingInputs: [] },
+    };
+    player.focalGameLine.stats.TOV = 2;
+  });
+  return candidate;
+};
+
+test('treats a withheld score with named missing inputs as unavailable', async () => {
+  fetchMatchup.mockResolvedValueOnce(
+    withDefensiveScores(historicalMatchup(), ['team_defense:traditional']),
+  );
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(
+    screen.getByText('TOV Matchup Score unavailable: missing team_defense:traditional.'),
+  ).toBeVisible();
+
+  // 0.44 would outrank every complete score if the component were promoted.
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  const cards = screen.getAllByRole('article', { name: /player$/ });
+  expect(cards[0]).toHaveTextContent('LeBron James');
+  expect(cards.at(-1)).toHaveTextContent('Austin Reaves');
+});
+
+test('keeps a complete defensive score available from its only component', async () => {
+  fetchMatchup.mockResolvedValueOnce(withDefensiveScores(historicalMatchup(), []));
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(screen.queryByText(/TOV Matchup Score unavailable/)).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  expect(screen.getAllByRole('article', { name: /player$/ })[0]).toHaveTextContent('Austin Reaves');
+});
+
 test('keeps a participant with an unavailable score visible, named, and sorted last', async () => {
   const candidate = historicalMatchup();
   candidate.players.find((player) => player.id === 1630559).scores.PTS = unavailableScore([

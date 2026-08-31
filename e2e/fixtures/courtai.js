@@ -1384,7 +1384,10 @@ export const installApiContract = async (page, overrides = {}) => {
       return;
     }
 
-    const savedFilterSetPath = url.pathname.match(/^\/api\/user\/saved-filter-sets(?:\/(.+))?$/);
+    const savedFilterSetPath =
+      url.pathname === '/api/user/saved-filter-sets'
+        ? [url.pathname, undefined]
+        : url.pathname.match(/^\/api\/user\/saved-filter-sets\/(.+)$/);
     if (savedFilterSetPath) {
       const [, savedFilterSetId] = savedFilterSetPath;
       const method = request.method();

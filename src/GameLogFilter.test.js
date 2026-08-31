@@ -292,3 +292,22 @@ test('offers nothing to save until the URL carries a Filter Set', async () => {
   expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
 });
+
+test('names the tab after the player the URL shows, and hands the default back', async () => {
+  const { unmount } = renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+  await waitFor(() => expect(document.title).toBe('LeBron James Game Logs | CourtAI'));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Apply parsed query' }));
+  await waitFor(() => expect(document.title).toBe('Stephen Curry Game Logs | CourtAI'));
+
+  unmount();
+  expect(document.title).toBe('CourtAI | NBA Game Log Analytics');
+});
+
+test('does not name a tab after a link it refuses', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=0']);
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
+  expect(document.title).toBe('CourtAI | NBA Game Log Analytics');
+});

@@ -55,6 +55,18 @@ const MARKET_CATEGORIES = new Set([
 ]);
 
 const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+const EXPERIENCE_MODES = ['historical', 'current'];
+const PLAYER_SOURCES = ['game_logs', 'player_pool'];
+const EXPERIENCE_SECTIONS = [
+  'schedule',
+  'participants',
+  'season_defense',
+  'last_15_defense',
+  'injuries',
+];
+const MISSING_INPUT_PATTERN = new RegExp(
+  `^(?:player_season_rate|(?:team_defense|player_diet):(?:${DEFENSE_BASES.join('|')}))$`,
+);
 const PLAY_TYPE_SLICES = new Set([
   'Transition',
   'Isolation',
@@ -143,6 +155,95 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
   return { sliceKey, markets: expectedSheetMarkets(base, sliceKey, statKey) };
+};
+
+const decodeRetrievedAt = (value) => {
+  if (value === null) return null;
+  const date = new Date(requireString(value));
+  if (Number.isNaN(date.getTime())) throw invalid();
+  return date.toISOString();
+};
+
+const SECTION_STATE_KEYS = ['status', 'source', 'context', 'unavailable_reason'];
+// The mode owns its evidence vocabulary. A completed season cannot be described
+// as pregame, and a live slate cannot be described as hindsight, so a response
+// that mixes them is incoherent rather than merely unusual.
+const MODE_PLAYER_SOURCES = { historical: 'game_logs', current: 'player_pool' };
+// Provenance is owned by the section, not the mode. Each section names the one
+// source and context its own evidence can truthfully have. Historical Last-15
+// and injuries describe archived pregame snapshots when any were captured.
+const SECTION_PROVENANCE = {
+  historical: {
+    schedule: { source: 'event_catalog', context: 'completed_season_catalog' },
+    participants: { source: 'player_game_logs', context: 'completed_season' },
+    season_defense: { source: 'team_matchup_publication', context: 'completed_season' },
+    last_15_defense: { source: 'team_matchup_publication', context: 'pregame' },
+    injuries: { source: 'rotowire', context: 'pregame' },
+  },
+  current: {
+    schedule: { source: 'event_catalog', context: 'current_season_catalog' },
+    participants: { source: 'player_pool', context: 'posted_markets' },
+    season_defense: { source: 'team_matchup_publication', context: 'pregame' },
+    last_15_defense: { source: 'team_matchup_publication', context: 'pregame' },
+    injuries: { source: 'rotowire', context: 'current' },
+  },
+};
+
+// Only the schedule section carries collection provenance. It is immutable
+// evidence of a completed season, never an age-based staleness signal.
+const decodeExperienceSection = (section, name, mode) => {
+  const allowedKeys =
+    name === 'schedule' ? [...SECTION_STATE_KEYS, 'collected_at'] : SECTION_STATE_KEYS;
+  if (
+    !isRecord(section) ||
+    SECTION_STATE_KEYS.some((key) => !Object.hasOwn(section, key)) ||
+    Object.keys(section).some((key) => !allowedKeys.includes(key)) ||
+    !['available', 'unavailable', 'missing'].includes(section.status) ||
+    (section.source !== null && section.source !== SECTION_PROVENANCE[mode][name].source) ||
+    (section.context !== null && section.context !== SECTION_PROVENANCE[mode][name].context) ||
+    // An available section owns its evidence, so it must name where that
+    // evidence came from and what it describes.
+    (section.status === 'available'
+      ? section.unavailable_reason !== null || section.source === null || section.context === null
+      : typeof section.unavailable_reason !== 'string' || !section.unavailable_reason)
+  ) {
+    throw invalid();
+  }
+  return {
+    status: section.status,
+    source: section.source,
+    context: section.context,
+    unavailableReason: section.unavailable_reason,
+    collectedAt: decodeRetrievedAt(section.collected_at ?? null),
+  };
+};
+
+// The rollout is backend-first, so an absent block means the pre-historical
+// live contract rather than an unreadable response.
+const decodeExperience = (experience) => {
+  if (experience === undefined || experience === null) {
+    return { mode: 'current', playerSource: 'player_pool', sections: null };
+  }
+  if (
+    !isRecord(experience) ||
+    !EXPERIENCE_MODES.includes(experience.mode) ||
+    !PLAYER_SOURCES.includes(experience.player_source) ||
+    experience.player_source !== MODE_PLAYER_SOURCES[experience.mode] ||
+    !isRecord(experience.sections) ||
+    Object.keys(experience.sections).sort().join() !== [...EXPERIENCE_SECTIONS].sort().join()
+  ) {
+    throw invalid();
+  }
+  return {
+    mode: experience.mode,
+    playerSource: experience.player_source,
+    sections: Object.fromEntries(
+      EXPERIENCE_SECTIONS.map((section) => [
+        camelKey(section),
+        decodeExperienceSection(experience.sections[section], section, experience.mode),
+      ]),
+    ),
+  };
 };
 
 const decodeAvailabilityState = (value) => {
@@ -330,29 +431,117 @@ const decodeDietShares = (dietShares) => {
   );
 };
 
-const decodePlayer = (player) => {
+const decodeCategoryList = (value) => {
+  const categories = requireStringList(value);
+  if (
+    new Set(categories).size !== categories.length ||
+    categories.some((category) => !MARKET_CATEGORIES.has(category))
+  ) {
+    throw invalid();
+  }
+  return categories;
+};
+
+// The focal line has one shape. The matchup and selection responses only differ
+// in which rejection they raise, so they share this translation.
+const decodeFocalLine = (line, statCategories, { fail, requireText, requireValue }) => {
+  if (line === null || line === undefined) return null;
+  if (!isRecord(line) || !isRecord(line.stats)) throw fail();
+  if (statCategories.some((category) => !Object.hasOwn(line.stats, category))) throw fail();
+  return {
+    gameId: requireText(line.game_id),
+    gameDate: requireText(line.game_date),
+    matchup: requireText(line.matchup),
+    minutes: requireValue(line.minutes),
+    stats: Object.fromEntries(
+      Object.entries(line.stats).map(([category, value]) => [category, requireValue(value)]),
+    ),
+  };
+};
+
+const decodeFocalGameLine = (line, statCategories) =>
+  decodeFocalLine(line, statCategories, {
+    fail: invalid,
+    requireText: requireString,
+    requireValue: requireNumber,
+  });
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// A date fence is only meaningful over real calendar dates, so a string that
+// merely looks sortable is not one.
+const isCalendarDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
+// A game's local calendar date is either the UTC date of its tip or the day
+// before it, for every North American time zone the league plays in.
+const focalDateFits = (gameDate, scheduledAt) => {
+  if (!isCalendarDate(gameDate)) return false;
+  const utcDate = scheduledAt.slice(0, 10);
+  const dayBefore = new Date(new Date(`${utcDate}T00:00:00Z`).getTime() - DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+  return gameDate === utcDate || gameDate === dayBefore;
+};
+
+const decodePlayer = (player, experience, game) => {
   if (!isRecord(player) || !Number.isInteger(player.team_id)) throw invalid();
   if (!Array.isArray(player.last_10_minutes)) throw invalid();
-  const postedMarkets = requireStringList(player.posted_markets);
-  if (
-    postedMarkets.length === 0 ||
-    new Set(postedMarkets).size !== postedMarkets.length ||
-    postedMarkets.some((market) => !MARKET_CATEGORIES.has(market))
-  )
+  // A participant played for one of this game's two teams, under the identity
+  // the game header records for it.
+  const tricode = requireString(player.tricode);
+  const focalTeam = [game.away, game.home].find((team) => team.teamId === player.team_id);
+  if (!focalTeam || focalTeam.tricode !== tricode) throw invalid();
+  // A participant cannot claim a different source than its own experience.
+  const playerSource = player.player_source ?? experience.playerSource;
+  if (!PLAYER_SOURCES.includes(playerSource) || playerSource !== experience.playerSource)
     throw invalid();
+  const gameLogSourced = playerSource === 'game_logs';
+  const postedMarkets = decodeCategoryList(player.posted_markets);
+  // A game-log participant carries no posted-market claim at all.
+  if (gameLogSourced ? postedMarkets.length !== 0 : postedMarkets.length === 0) throw invalid();
+  const statCategories =
+    player.stat_categories === undefined
+      ? postedMarkets
+      : decodeCategoryList(player.stat_categories);
+  if (statCategories.length === 0) throw invalid();
+  // Current-mode categories are the posted markets. Keeping them identical is
+  // what lets the live Player Pool controls and selection stay unchanged.
+  if (!gameLogSourced && statCategories.join() !== postedMarkets.join()) throw invalid();
+  if (gameLogSourced && (!isRecord(player.provenance) || Object.keys(player.provenance).length))
+    throw invalid();
+  const focalGameLine = decodeFocalGameLine(player.focal_game_line, statCategories);
+  // A historical participant always has a focal line; a pool player never does.
+  // The line is evidence about this game, so its game, matchup identity, and
+  // date must all be this game's.
+  if (gameLogSourced ? focalGameLine === null : focalGameLine !== null) throw invalid();
+  if (
+    focalGameLine !== null &&
+    (focalGameLine.gameId !== game.gameId ||
+      focalGameLine.matchup !== `${game.away.tricode} @ ${game.home.tricode}` ||
+      !focalDateFits(focalGameLine.gameDate, game.scheduledAt))
+  ) {
+    throw invalid();
+  }
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
     teamId: player.team_id,
-    tricode: requireString(player.tricode),
+    tricode,
+    playerSource,
     postedMarkets,
-    provenance: decodeProvenance(player.provenance, postedMarkets),
+    statCategories,
+    provenance: gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets),
+    focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:
       player.injury_badge_ref === null ? null : requireString(player.injury_badge_ref),
-    scores: decodeScores(player.scores, postedMarkets),
+    scores: decodeScores(player.scores, statCategories, gameLogSourced),
   };
 };
 
@@ -514,7 +703,7 @@ const decodeScoreCell = (cell) => {
 
 const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
 
-const decodeScoreWindow = (window, market) => {
+const decodeScoreWindow = (window, market, historical) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
   const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
   const componentBases = Object.keys(window.components);
@@ -523,11 +712,29 @@ const decodeScoreWindow = (window, market) => {
     (defensive && componentBases.some((base) => base !== 'traditional'))
   )
     throw invalid();
-  const componentCount = Object.keys(window.components).length;
-  const validOffensiveBlend = componentCount === 0 ? window.blend === null : isRecord(window.blend);
+  const missingInputs =
+    window.missing_inputs === undefined ? [] : requireStringList(window.missing_inputs);
+  if (
+    new Set(missingInputs).size !== missingInputs.length ||
+    missingInputs.some((input) => !MISSING_INPUT_PATTERN.test(input))
+  ) {
+    throw invalid();
+  }
+  const componentCount = componentBases.length;
+  // A historical window may show its components while withholding a Blend the
+  // score contract could not complete, and names what was missing. It may never
+  // present a Blend as complete while naming a missing input.
+  const withheldBlend = historical && window.blend === null && missingInputs.length > 0;
+  const validOffensiveBlend =
+    componentCount === 0 ? window.blend === null : isRecord(window.blend) || withheldBlend;
   if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
     throw invalid();
   }
+  if (historical && isRecord(window.blend) && missingInputs.length > 0) throw invalid();
+  // A withheld historical score has to say what it was missing, or the page has
+  // nothing truthful to explain the gap with.
+  const withheldScore = defensive ? componentCount === 0 : window.blend === null;
+  if (historical && withheldScore && missingInputs.length === 0) throw invalid();
   return {
     components: Object.fromEntries(
       Object.entries(window.components).map(([base, cell]) => [
@@ -536,38 +743,32 @@ const decodeScoreWindow = (window, market) => {
       ]),
     ),
     blend: defensive || window.blend === null ? null : decodeScoreCell(window.blend),
+    missingInputs,
   };
 };
 
-function decodeScores(scores, postedMarkets) {
+function decodeScores(scores, statCategories, historical) {
   if (
     !isRecord(scores) ||
-    Object.keys(scores).sort().join() !== [...postedMarkets].sort().join() ||
-    postedMarkets.some(
-      (market) =>
-        !isRecord(scores[market]) ||
-        Object.keys(scores[market]).sort().join() !== ['season', 'last_15'].sort().join(),
+    Object.keys(scores).sort().join() !== [...statCategories].sort().join() ||
+    statCategories.some(
+      (category) =>
+        !isRecord(scores[category]) ||
+        Object.keys(scores[category]).sort().join() !== ['season', 'last_15'].sort().join(),
     )
   ) {
     throw invalid();
   }
   return Object.fromEntries(
-    postedMarkets.map((market) => [
-      market,
+    statCategories.map((category) => [
+      category,
       {
-        season: decodeScoreWindow(scores[market].season, market),
-        last15: decodeScoreWindow(scores[market].last_15, market),
+        season: decodeScoreWindow(scores[category].season, category, historical),
+        last15: decodeScoreWindow(scores[category].last_15, category, historical),
       },
     ]),
   );
 }
-
-const decodeRetrievedAt = (value) => {
-  if (value === null) return null;
-  const date = new Date(requireString(value));
-  if (Number.isNaN(date.getTime())) throw invalid();
-  return date.toISOString();
-};
 
 const decodeFreshnessSurface = (surface, surfaceName) => {
   if (!isRecord(surface) || !isStatusAllowed(surface.status, surfaceName)) throw invalid();
@@ -738,6 +939,20 @@ const decodeInjuries = (injuries, matchupTeams) => {
   };
 };
 
+// A defense section speaks for one window's Surfaces and for nothing else, so
+// each window's section status must agree with what that window delivered.
+const validateSectionSurfaces = (sections, surfaceAvailability) => {
+  [
+    ['season', sections.seasonDefense],
+    ['last15', sections.last15Defense],
+  ].forEach(([windowKey, section]) => {
+    const delivered = Object.values(surfaceAvailability).some(
+      (windows) => windows[windowKey].status === 'available',
+    );
+    if (delivered !== (section.status === 'available')) throw invalid();
+  });
+};
+
 export const decodeMatchup = (data) => {
   if (
     !isRecord(data) ||
@@ -759,14 +974,36 @@ export const decodeMatchup = (data) => {
     freshness.injuries.retrievedAt !== injuries.retrievedAt
   )
     throw invalid();
-  return {
-    game: decodeGame(data.game),
-    league,
-    teams,
-    players: data.players.map(decodePlayer),
-    injuries,
-    freshness,
-  };
+  const experience = decodeExperience(data.experience);
+  const game = decodeGame(data.game);
+  // The sheets the toggle switches between are this game's own two teams, under
+  // the identities the game header records. Their delivered order is the live
+  // contract's business; only a historical response is held to away-then-home.
+  const focalTeams = [game.away, game.home];
+  if (
+    teams.some(
+      (team) =>
+        !focalTeams.some((focal) => focal.teamId === team.teamId && focal.tricode === team.tricode),
+    ) ||
+    new Set(teams.map((team) => team.teamId)).size !== teams.length ||
+    (experience.mode === 'historical' &&
+      teams.some((team, index) => team.teamId !== focalTeams[index].teamId))
+  ) {
+    throw invalid();
+  }
+  // Historical mode describes a completed, non-postponed Regular Season game.
+  // The mode itself stays backend-declared; only its coherence is checked.
+  if (experience.mode === 'historical' && (game.status !== 'final' || game.preseason)) {
+    throw invalid();
+  }
+  if (experience.sections) validateSectionSurfaces(experience.sections, league.surfaceAvailability);
+  const players = data.players.map((player) => decodePlayer(player, experience, game));
+  // One game is focal, so every participant's line has to date it the same way.
+  const focalDates = new Set(
+    players.map((player) => player.focalGameLine?.gameDate).filter(Boolean),
+  );
+  if (focalDates.size > 1) throw invalid();
+  return { game, experience, league, teams, players, injuries, freshness };
 };
 
 export const fetchMatchup = async (gameId, { signal } = {}) => {
@@ -787,13 +1024,22 @@ const decodeSelectionStatMap = (value, markets) => {
   );
 };
 
-const decodeLogLine = (line, markets) => {
+const decodeLogLine = (line, markets, focalGame) => {
   if (!isRecord(line)) throw selectionInvalid();
   if (!['game', 'average'].includes(line.row_type)) throw selectionInvalid();
   const average = line.row_type === 'average';
   if (
     (average && (line.game_date !== null || line.matchup !== null)) ||
     (!average && (typeof line.game_date !== 'string' || typeof line.matchup !== 'string'))
+  ) {
+    throw selectionInvalid();
+  }
+  // A pregame sample is strictly earlier than the game it contextualizes, which
+  // is what excludes the focal game itself rather than a flag claiming so.
+  if (
+    !average &&
+    focalGame &&
+    (!isCalendarDate(line.game_date) || line.game_date >= focalGame.gameDate)
   ) {
     throw selectionInvalid();
   }
@@ -807,10 +1053,10 @@ const decodeLogLine = (line, markets) => {
   };
 };
 
-const decodeLogTable = (table, markets) => {
+const decodeLogTable = (table, markets, focalGame) => {
   if (!isRecord(table) || !Array.isArray(table.rows) || typeof table.thin !== 'boolean')
     throw selectionInvalid();
-  const rows = table.rows.map((row) => decodeLogLine(row, markets));
+  const rows = table.rows.map((row) => decodeLogLine(row, markets, focalGame));
   if (rows.some((row, index) => row.average && index !== rows.length - 1)) {
     throw selectionInvalid();
   }
@@ -823,31 +1069,137 @@ const decodeLogTable = (table, markets) => {
   };
 };
 
-export const decodeMatchupSelection = (data, postedMarkets, expectedPlayerId) => {
-  if (!isRecord(data) || !Array.isArray(postedMarkets) || postedMarkets.length === 0)
+const decodeFocalGame = (focalGame, statCategories) =>
+  decodeFocalLine(focalGame, statCategories, {
+    fail: selectionInvalid,
+    requireText: requireSelectionString,
+    requireValue: requireSelectionNumber,
+  });
+
+// The dossier's separation labels are driven by these fields, so a response
+// that mislabels them would silently drop a required disclosure.
+const SELECTION_MODE_CONTRACT = {
+  historical: {
+    focalGame: true,
+    samplesContext: 'pregame',
+    excludesFocalGame: true,
+    baselineContext: 'completed_season',
+    hindsight: true,
+  },
+  current: {
+    focalGame: false,
+    samplesContext: 'season_to_date',
+    excludesFocalGame: false,
+    baselineContext: 'season_to_date',
+    hindsight: false,
+  },
+};
+
+const decodeSelectionExperience = (experience, statCategories, expected) => {
+  if (experience === undefined || experience === null) {
+    // A historical dossier must carry its own evidence, or its strict-before
+    // and hindsight disclosures would silently disappear.
+    if (expected.mode === 'historical') throw selectionInvalid();
+    return null;
+  }
+  if (
+    !isRecord(experience) ||
+    !EXPERIENCE_MODES.includes(experience.mode) ||
+    (expected.mode !== undefined && experience.mode !== expected.mode) ||
+    experience.player_source !== MODE_PLAYER_SOURCES[experience.mode] ||
+    !isRecord(experience.samples) ||
+    !isRecord(experience.baseline) ||
+    typeof experience.samples.excludes_focal_game !== 'boolean' ||
+    typeof experience.baseline.hindsight !== 'boolean'
+  ) {
+    throw selectionInvalid();
+  }
+  const required = SELECTION_MODE_CONTRACT[experience.mode];
+  if (
+    isRecord(experience.focal_game) !== required.focalGame ||
+    experience.samples.context !== required.samplesContext ||
+    experience.samples.excludes_focal_game !== required.excludesFocalGame ||
+    experience.baseline.context !== required.baselineContext ||
+    experience.baseline.hindsight !== required.hindsight
+  ) {
+    throw selectionInvalid();
+  }
+  const focalGame = decodeFocalGame(experience.focal_game, statCategories);
+  if (focalGame !== null && !isCalendarDate(focalGame.gameDate)) throw selectionInvalid();
+  // The dossier contextualizes the focal game the client asked about, and it
+  // cannot contradict the participant's own line for that game.
+  if (focalGame !== null && expected.gameId !== undefined && focalGame.gameId !== expected.gameId) {
+    throw selectionInvalid();
+  }
+  const line = expected.focalGameLine;
+  if (
+    focalGame !== null &&
+    line &&
+    (focalGame.gameId !== line.gameId ||
+      focalGame.gameDate !== line.gameDate ||
+      focalGame.matchup !== line.matchup ||
+      focalGame.minutes !== line.minutes ||
+      Object.entries(line.stats).some(
+        ([category, value]) =>
+          focalGame.stats[category] !== undefined && focalGame.stats[category] !== value,
+      ))
+  ) {
+    throw selectionInvalid();
+  }
+  return {
+    mode: experience.mode,
+    playerSource: experience.player_source,
+    focalGame,
+    samples: {
+      context: requireSelectionString(experience.samples.context),
+      excludesFocalGame: experience.samples.excludes_focal_game,
+    },
+    baseline: {
+      context: requireSelectionString(experience.baseline.context),
+      hindsight: experience.baseline.hindsight,
+    },
+  };
+};
+
+// `expected` binds the response to the matchup the client asked about: the
+// game it must contextualize, and the experience it must disclose.
+export const decodeMatchupSelection = (data, statCategories, expectedPlayerId, expected = {}) => {
+  if (!isRecord(data) || !Array.isArray(statCategories) || statCategories.length === 0)
     throw selectionInvalid();
   if (!Number.isInteger(data.player_id) || data.player_id !== expectedPlayerId) {
     throw selectionInvalid();
   }
+  const experience = decodeSelectionExperience(data.experience, statCategories, expected);
+  const focalGame = experience?.mode === 'historical' ? experience.focalGame : null;
   return {
     playerId: data.player_id,
-    h2h: decodeLogTable(data.h2h, postedMarkets),
-    archetype: decodeLogTable(data.archetype, postedMarkets),
+    experience,
+    h2h: decodeLogTable(data.h2h, statCategories, focalGame),
+    archetype: decodeLogTable(data.archetype, statCategories, focalGame),
   };
 };
 
-export const fetchMatchupSelection = async (gameId, playerId, postedMarkets, { signal } = {}) => {
+export const fetchMatchupSelection = async (
+  gameId,
+  playerId,
+  statCategories,
+  { signal, mode, focalGameLine } = {},
+) => {
   if (
     typeof gameId !== 'string' ||
     !gameId ||
     !Number.isInteger(playerId) ||
-    !Array.isArray(postedMarkets) ||
-    postedMarkets.length === 0
+    !Array.isArray(statCategories) ||
+    statCategories.length === 0
   )
     throw selectionInvalid();
   const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
     params: { game_id: gameId, player_id: playerId },
     signal,
   });
-  return decodeMatchupSelection(response.data, postedMarkets, playerId);
+  return decodeMatchupSelection(response.data, statCategories, playerId, {
+    gameId,
+    mode,
+    focalGameLine,
+  });
 };

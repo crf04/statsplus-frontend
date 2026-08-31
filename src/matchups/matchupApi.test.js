@@ -971,6 +971,7 @@ test('accepts a null offensive Blend only when zero components are computable', 
   expect(decodeMatchup(zeroComponents).players[0].scores.FGA.last15).toEqual({
     components: {},
     blend: null,
+    missingInputs: [],
   });
 
   const componentWithoutBlend = JSON.parse(JSON.stringify(zeroComponents));
@@ -1242,4 +1243,1064 @@ test('selection requests keep the game string and canonical player integer disti
     'selection endpoint returned an invalid response',
   );
   expect(apiClient.get).toHaveBeenCalledTimes(1);
+});
+
+const experienceSection = (status, source, context, unavailableReason = null) => ({
+  status,
+  source,
+  context,
+  unavailable_reason: unavailableReason,
+});
+
+// A completed game with no point-in-time snapshot: the Last-15 Surfaces are
+// unavailable, so the Last-15 section can truthfully say so.
+const withoutPointInTimeWindow = (candidate) => {
+  Object.values(candidate.league.surface_availability).forEach((windows) => {
+    windows.last_15 = { status: 'unavailable', unavailable_reason: 'no_point_in_time_snapshot' };
+  });
+  [candidate.league, ...candidate.teams].forEach((holder) => {
+    Object.values(holder.defense_sheet).forEach((rows) =>
+      rows.forEach((row) => {
+        row.last_15 = null;
+      }),
+    );
+    Object.values(holder.defensive_columns).forEach((column) => {
+      column.last_15 = null;
+    });
+  });
+  return candidate;
+};
+
+const historicalPayload = ({ pointInTime = false } = {}) => {
+  const raw = JSON.parse(JSON.stringify(payload));
+  const candidate = pointInTime ? raw : withoutPointInTimeWindow(raw);
+  candidate.game.status = { state: 'final', label: 'Final' };
+  candidate.experience = {
+    mode: 'historical',
+    player_source: 'game_logs',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'completed_season_catalog'),
+      participants: experienceSection('available', 'player_game_logs', 'completed_season'),
+      season_defense: experienceSection(
+        'available',
+        'team_matchup_publication',
+        'completed_season',
+      ),
+      last_15_defense: experienceSection('unavailable', null, null, 'no_point_in_time_snapshot'),
+      injuries: experienceSection('unavailable', null, null, 'no_pregame_snapshot'),
+    },
+  };
+  const participant = candidate.players[0];
+  participant.posted_markets = [];
+  participant.provenance = {};
+  participant.player_source = 'game_logs';
+  participant.stat_categories = ['PTS', 'FGA'];
+  // The focal line is evidence about this matchup's own game, so its game,
+  // date, and matchup identity all have to be that game's.
+  participant.focal_game_line = {
+    game_id: candidate.game.game_id,
+    game_date: '2026-01-15',
+    matchup: 'LAL @ BOS',
+    minutes: 34.5,
+    stats: { PTS: 24, FGA: 18 },
+  };
+  return candidate;
+};
+
+test('reads the additive Historical Matchup mode and section-owned evidence', () => {
+  const decoded = decodeMatchup(historicalPayload());
+
+  expect(decoded.experience.mode).toBe('historical');
+  expect(decoded.experience.playerSource).toBe('game_logs');
+  expect(decoded.experience.sections.seasonDefense).toEqual({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'completed_season',
+    unavailableReason: null,
+    collectedAt: null,
+  });
+  expect(decoded.experience.sections.last15Defense).toEqual({
+    status: 'unavailable',
+    source: null,
+    context: null,
+    unavailableReason: 'no_point_in_time_snapshot',
+    collectedAt: null,
+  });
+  expect(decoded.experience.sections.participants.source).toBe('player_game_logs');
+  expect(decoded.experience.sections.injuries.unavailableReason).toBe('no_pregame_snapshot');
+});
+
+test('reads schedule collection provenance without letting it govern any section', () => {
+  const candidate = historicalPayload();
+  candidate.experience.sections.schedule.collected_at = '2026-03-30T04:10:00Z';
+
+  const { sections } = decodeMatchup(candidate).experience;
+  expect(sections.schedule.collectedAt).toBe('2026-03-30T04:10:00.000Z');
+  expect(sections.schedule.status).toBe('available');
+  // Only schedule carries collection provenance.
+  expect(sections.participants.collectedAt).toBeNull();
+  expect(sections.seasonDefense.collectedAt).toBeNull();
+
+  const absent = historicalPayload();
+  expect(decodeMatchup(absent).experience.sections.schedule.collectedAt).toBeNull();
+});
+
+test.each([
+  [
+    'an unparseable schedule collection time',
+    (candidate) => {
+      candidate.experience.sections.schedule.collected_at = 'not-a-timestamp';
+    },
+  ],
+  [
+    'collection provenance on a section that does not carry it',
+    (candidate) => {
+      candidate.experience.sections.participants.collected_at = '2026-03-30T04:10:00Z';
+    },
+  ],
+  [
+    'an undocumented schedule key',
+    (candidate) => {
+      candidate.experience.sections.schedule.published_at = '2026-03-30T04:10:00Z';
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('treats an absent experience block as the pre-historical live contract', () => {
+  const decoded = decodeMatchup(payload);
+
+  expect(decoded.experience).toEqual({
+    mode: 'current',
+    playerSource: 'player_pool',
+    sections: null,
+  });
+  expect(decoded.players[0].playerSource).toBe('player_pool');
+  expect(decoded.players[0].statCategories).toEqual(['PTS', 'FGA']);
+  expect(decoded.players[0].focalGameLine).toBeNull();
+  expect(decoded.players[0].scores.PTS.season.missingInputs).toEqual([]);
+});
+
+test('reads a game-log participant that carries no posted-market claim', () => {
+  const [participant] = decodeMatchup(historicalPayload()).players;
+
+  expect(participant.playerSource).toBe('game_logs');
+  expect(participant.postedMarkets).toEqual([]);
+  expect(participant.provenance).toEqual({});
+  expect(participant.statCategories).toEqual(['PTS', 'FGA']);
+  expect(participant.focalGameLine).toEqual({
+    gameId: payload.game.game_id,
+    gameDate: '2026-01-15',
+    matchup: 'LAL @ BOS',
+    minutes: 34.5,
+    stats: { PTS: 24, FGA: 18 },
+  });
+});
+
+test('names the missing inputs of an incomplete Matchup Score', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].scores.PTS.last_15 = {
+    components: {},
+    blend: null,
+    missing_inputs: ['team_defense:play_types', 'player_diet:shot_zones', 'player_season_rate'],
+  };
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.last15).toEqual({
+    components: {},
+    blend: null,
+    missingInputs: ['team_defense:play_types', 'player_diet:shot_zones', 'player_season_rate'],
+  });
+});
+
+test.each([
+  [
+    'an unknown experience mode',
+    (candidate) => {
+      candidate.experience.mode = 'archived';
+    },
+  ],
+  [
+    'a missing experience section',
+    (candidate) => {
+      delete candidate.experience.sections.injuries;
+    },
+  ],
+  [
+    'an experience section missing a key',
+    (candidate) => {
+      delete candidate.experience.sections.schedule.context;
+    },
+  ],
+  [
+    'an available section that still names an unavailable reason',
+    (candidate) => {
+      candidate.experience.sections.schedule.unavailable_reason = 'no_pregame_snapshot';
+    },
+  ],
+  [
+    'an unavailable section with no reason',
+    (candidate) => {
+      candidate.experience.sections.last_15_defense.unavailable_reason = null;
+    },
+  ],
+  [
+    'an ungoverned section source',
+    (candidate) => {
+      candidate.experience.sections.participants.source = 'roster_guess';
+    },
+  ],
+  [
+    'a posted-market claim on a game-log participant',
+    (candidate) => {
+      candidate.players[0].posted_markets = ['PTS'];
+    },
+  ],
+  [
+    'provenance on a game-log participant',
+    (candidate) => {
+      candidate.players[0].provenance = { prizepicks: ['PTS'] };
+    },
+  ],
+  [
+    'stat categories that disagree with the delivered scores',
+    (candidate) => {
+      candidate.players[0].stat_categories = ['PTS', 'FGA', 'AST'];
+    },
+  ],
+  [
+    'a focal game line missing a governed category',
+    (candidate) => {
+      delete candidate.players[0].focal_game_line.stats.FGA;
+    },
+  ],
+  [
+    'an ungoverned missing-input name',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.missing_inputs = ['vibes'];
+    },
+  ],
+  // Cross-field coherence: the declared mode owns its evidence vocabulary.
+  [
+    'a historical mode that claims a Player Pool source',
+    (candidate) => {
+      candidate.experience.player_source = 'player_pool';
+    },
+  ],
+  [
+    'a historical section described as pregame',
+    (candidate) => {
+      candidate.experience.sections.season_defense.context = 'pregame';
+    },
+  ],
+  [
+    'a historical schedule described as a current-season catalog',
+    (candidate) => {
+      candidate.experience.sections.schedule.context = 'current_season_catalog';
+    },
+  ],
+  [
+    'historical participants sourced from a Player Pool',
+    (candidate) => {
+      candidate.experience.sections.participants.source = 'player_pool';
+    },
+  ],
+  [
+    'a participant that overrides its experience player source',
+    (candidate) => {
+      candidate.players[0].player_source = 'player_pool';
+    },
+  ],
+  [
+    'a historical participant with no focal game line',
+    (candidate) => {
+      candidate.players[0].focal_game_line = null;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'a current mode that claims game-log participants',
+    (candidate) => {
+      candidate.experience.player_source = 'game_logs';
+    },
+  ],
+  [
+    'a current section described as completed-season hindsight',
+    (candidate) => {
+      candidate.experience.sections.season_defense.context = 'completed_season';
+    },
+  ],
+  [
+    'current participants sourced from game logs',
+    (candidate) => {
+      candidate.experience.sections.participants.source = 'player_game_logs';
+    },
+  ],
+  [
+    'a pool player carrying a focal game line',
+    (candidate) => {
+      candidate.players[0].focal_game_line = {
+        game_id: '0022500584',
+        game_date: '2026-01-15',
+        matchup: 'LAL @ BOS',
+        minutes: 34,
+        stats: { PTS: 24, FGA: 18 },
+      };
+    },
+  ],
+  [
+    'current stat categories that diverge from the posted markets',
+    (candidate) => {
+      candidate.players[0].stat_categories = ['FGA', 'PTS'];
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.experience = {
+    mode: 'current',
+    player_source: 'player_pool',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'current_season_catalog'),
+      participants: experienceSection('available', 'player_pool', 'posted_markets'),
+      season_defense: experienceSection('available', 'team_matchup_publication', 'pregame'),
+      last_15_defense: experienceSection('available', 'team_matchup_publication', 'pregame'),
+      injuries: experienceSection('unavailable', 'rotowire', 'current', 'disabled'),
+    },
+  };
+  // The unmutated current-mode payload must stay decodable.
+  expect(() => decodeMatchup(candidate)).not.toThrow();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'a focal game line from a different game',
+    (candidate) => {
+      candidate.players[0].focal_game_line.game_id = '0022509999';
+    },
+  ],
+  [
+    'an available section with no source',
+    (candidate) => {
+      candidate.experience.sections.participants.source = null;
+    },
+  ],
+  [
+    'an available section with no context',
+    (candidate) => {
+      candidate.experience.sections.season_defense.context = null;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('binds the focal game line to the decoded matchup game', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].focal_game_line.game_id = candidate.game.game_id;
+
+  expect(decodeMatchup(candidate).players[0].focalGameLine.gameId).toBe(candidate.game.game_id);
+});
+
+const historicalSelection = (overrides = {}) => ({
+  player_id: 2544,
+  experience: {
+    mode: 'historical',
+    player_source: 'game_logs',
+    focal_game: {
+      game_id: '0022500584',
+      game_date: '2026-03-29',
+      matchup: 'LAC @ MIL',
+      minutes: 34.5,
+      stats: { PTS: 24, FGA: 18 },
+    },
+    samples: { context: 'pregame', excludes_focal_game: true },
+    baseline: { context: 'completed_season', hindsight: true },
+  },
+  h2h: { thin: false, rows: [] },
+  archetype: { thin: false, rows: [] },
+  ...overrides,
+});
+
+test('binds historical selection evidence to the requested matchup', () => {
+  const expected = { gameId: '0022500584', mode: 'historical' };
+  const selection = decodeMatchupSelection(historicalSelection(), ['PTS', 'FGA'], 2544, expected);
+  expect(selection.experience.focalGame.gameId).toBe('0022500584');
+
+  // A historical dossier without its experience would silently drop the
+  // strict-before and hindsight disclosures the outcome requires.
+  expect(() =>
+    decodeMatchupSelection(historicalSelection({ experience: undefined }), ['PTS', 'FGA'], 2544, {
+      ...expected,
+    }),
+  ).toThrow('selection endpoint returned an invalid response');
+
+  const otherGame = historicalSelection();
+  otherGame.experience.focal_game.game_id = '0022509999';
+  expect(() => decodeMatchupSelection(otherGame, ['PTS', 'FGA'], 2544, expected)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+
+  const currentDossier = historicalSelection();
+  currentDossier.experience.mode = 'current';
+  currentDossier.experience.player_source = 'player_pool';
+  currentDossier.experience.focal_game = null;
+  currentDossier.experience.samples = { context: 'season_to_date', excludes_focal_game: false };
+  currentDossier.experience.baseline = { context: 'season_to_date', hindsight: false };
+  expect(() => decodeMatchupSelection(currentDossier, ['PTS', 'FGA'], 2544, expected)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+});
+
+test('leaves the current selection contract unbound to historical evidence', () => {
+  const raw = {
+    player_id: 2544,
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+
+  expect(decodeMatchupSelection(raw, ['PTS'], 2544).experience).toBeNull();
+  expect(
+    decodeMatchupSelection(raw, ['PTS'], 2544, { gameId: '0022500584', mode: 'current' })
+      .experience,
+  ).toBeNull();
+});
+
+const focalLineOf = (candidate) => candidate.players[0].focal_game_line;
+const withOneParticipant = (candidate, participant) => ({
+  ...JSON.parse(JSON.stringify(candidate)),
+  players: [JSON.parse(JSON.stringify(participant))],
+});
+
+test.each([
+  [
+    'a participant on neither focal team',
+    (candidate) => {
+      candidate.players[0].team_id = 99;
+    },
+  ],
+  [
+    'a participant whose tricode contradicts its focal team',
+    (candidate) => {
+      candidate.players[0].tricode = 'BOS';
+    },
+  ],
+  [
+    'a focal line naming a matchup other than the decoded one',
+    (candidate) => {
+      focalLineOf(candidate).matchup = 'LAC @ MIL';
+    },
+  ],
+  [
+    'a focal line dated away from the decoded game',
+    (candidate) => {
+      focalLineOf(candidate).game_date = '2026-03-29';
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects participants that disagree about which game is focal', () => {
+  const candidate = historicalPayload();
+  const second = JSON.parse(JSON.stringify(candidate.players[0]));
+  second.canonical_id = 1630559;
+  second.name = 'Austin Reaves';
+  // Both dates are individually allowed for a 2026-01-16T00:30Z tip, so only
+  // the cross-participant agreement guard can reject this pair.
+  expect(candidate.players[0].focal_game_line.game_date).toBe('2026-01-15');
+  second.focal_game_line.game_date = '2026-01-16';
+  expect(() => decodeMatchup(withOneParticipant(candidate, second))).not.toThrow();
+  candidate.players.push(second);
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+const historicalDossier = (overrides = {}) => ({
+  player_id: 2544,
+  experience: {
+    mode: 'historical',
+    player_source: 'game_logs',
+    focal_game: {
+      game_id: '0022500584',
+      game_date: '2026-01-15',
+      matchup: 'LAL @ BOS',
+      minutes: 34.5,
+      stats: { PTS: 24, FGA: 18 },
+    },
+    samples: { context: 'pregame', excludes_focal_game: true },
+    baseline: { context: 'completed_season', hindsight: true },
+  },
+  h2h: {
+    thin: false,
+    rows: [
+      {
+        row_type: 'game',
+        game_date: '2025-12-25',
+        matchup: 'LAL vs. BOS',
+        minutes: 33,
+        stats: { PTS: 21, FGA: 17 },
+        deltas: { PTS: 0.06, FGA: 0.01 },
+      },
+      {
+        row_type: 'average',
+        game_date: null,
+        matchup: null,
+        minutes: 33,
+        stats: { PTS: 21, FGA: 17 },
+        deltas: { PTS: 0.06, FGA: 0.01 },
+      },
+    ],
+  },
+  archetype: { thin: false, rows: [] },
+  ...overrides,
+});
+
+const focalExpectation = {
+  gameId: '0022500584',
+  mode: 'historical',
+  focalGameLine: {
+    gameId: '0022500584',
+    gameDate: '2026-01-15',
+    matchup: 'LAL @ BOS',
+    minutes: 34.5,
+    stats: { PTS: 24, FGA: 18 },
+  },
+};
+
+test('keeps historical samples strictly before the focal game', () => {
+  expect(
+    decodeMatchupSelection(historicalDossier(), ['PTS', 'FGA'], 2544, focalExpectation).h2h.rows,
+  ).toHaveLength(2);
+
+  const onFocalDay = historicalDossier();
+  onFocalDay.h2h.rows[0].game_date = '2026-01-15';
+  expect(() => decodeMatchupSelection(onFocalDay, ['PTS', 'FGA'], 2544, focalExpectation)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+
+  const afterFocal = historicalDossier();
+  afterFocal.archetype = {
+    thin: false,
+    rows: [{ ...onFocalDay.h2h.rows[0], game_date: '2026-02-02' }, { ...onFocalDay.h2h.rows[1] }],
+  };
+  expect(() => decodeMatchupSelection(afterFocal, ['PTS', 'FGA'], 2544, focalExpectation)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+});
+
+test.each([
+  [
+    'a dossier focal game dated away from the participant evidence',
+    (dossier) => {
+      dossier.experience.focal_game.game_date = '2026-01-14';
+    },
+  ],
+  [
+    'a dossier focal game naming a different matchup',
+    (dossier) => {
+      dossier.experience.focal_game.matchup = 'LAC @ MIL';
+    },
+  ],
+  [
+    'a dossier focal game contradicting the participant minutes',
+    (dossier) => {
+      dossier.experience.focal_game.minutes = 12;
+    },
+  ],
+  [
+    'a dossier focal game contradicting the participant stat line',
+    (dossier) => {
+      dossier.experience.focal_game.stats.PTS = 41;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const dossier = historicalDossier();
+  mutate(dossier);
+  expect(() => decodeMatchupSelection(dossier, ['PTS', 'FGA'], 2544, focalExpectation)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+});
+
+test('leaves current selection samples unbound to a focal game', () => {
+  const raw = {
+    player_id: 2544,
+    h2h: {
+      thin: false,
+      rows: [
+        {
+          row_type: 'game',
+          game_date: '2026-02-02',
+          matchup: 'LAL vs. BOS',
+          minutes: 33,
+          stats: { PTS: 21 },
+          deltas: { PTS: 0.06 },
+        },
+        {
+          row_type: 'average',
+          game_date: null,
+          matchup: null,
+          minutes: 33,
+          stats: { PTS: 21 },
+          deltas: { PTS: 0.06 },
+        },
+      ],
+    },
+    archetype: { thin: false, rows: [] },
+  };
+
+  expect(
+    decodeMatchupSelection(raw, ['PTS'], 2544, { gameId: '0022500584', mode: 'current' }).h2h.rows,
+  ).toHaveLength(2);
+});
+
+test.each([
+  [
+    'season defense sourced from game logs',
+    (candidate) => {
+      candidate.experience.sections.season_defense.source = 'player_game_logs';
+    },
+  ],
+  [
+    'schedule sourced from a defense publication',
+    (candidate) => {
+      candidate.experience.sections.schedule.source = 'team_matchup_publication';
+    },
+  ],
+  [
+    'participants sourced from the Event Catalog',
+    (candidate) => {
+      candidate.experience.sections.participants.source = 'event_catalog';
+    },
+  ],
+  [
+    'an archived Last-15 snapshot sourced from game logs',
+    (candidate) => {
+      candidate.experience.sections.last_15_defense = experienceSection(
+        'available',
+        'player_game_logs',
+        'pregame',
+      );
+    },
+  ],
+  [
+    'an archived injury snapshot described as completed-season context',
+    (candidate) => {
+      candidate.experience.sections.injuries = experienceSection(
+        'available',
+        'rotowire',
+        'completed_season',
+      );
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('accepts truthful archived pregame Last-15 and injury evidence in historical mode', () => {
+  // A point-in-time snapshot was captured, so its Surfaces are delivered too.
+  const candidate = historicalPayload({ pointInTime: true });
+  candidate.experience.sections.last_15_defense = experienceSection(
+    'available',
+    'team_matchup_publication',
+    'pregame',
+  );
+  candidate.experience.sections.injuries = experienceSection('available', 'rotowire', 'pregame');
+
+  const { sections } = decodeMatchup(candidate).experience;
+  expect(sections.last15Defense).toEqual(
+    expect.objectContaining({
+      status: 'available',
+      source: 'team_matchup_publication',
+      context: 'pregame',
+    }),
+  );
+  expect(sections.injuries).toEqual(
+    expect.objectContaining({ status: 'available', source: 'rotowire', context: 'pregame' }),
+  );
+});
+
+test('keeps historical component evidence while withholding an incomplete blend', () => {
+  const candidate = historicalPayload();
+  candidate.players[0].scores.PTS.season = {
+    components: { shot_zones: { value: 0.07, thin: true } },
+    blend: null,
+    missing_inputs: ['team_defense:play_types'],
+  };
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.season).toEqual({
+    components: { shotZones: { value: 0.07, thin: true } },
+    blend: null,
+    missingInputs: ['team_defense:play_types'],
+  });
+});
+
+test.each([
+  [
+    'a historical blend presented complete despite named missing inputs',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.missing_inputs = ['team_defense:play_types'];
+    },
+  ],
+  [
+    'a historical offensive window that withholds a computable blend',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season.blend = null;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'a withheld historical offensive score that names no missing input',
+    (candidate) => {
+      candidate.players[0].scores.PTS.season = {
+        components: {},
+        blend: null,
+        missing_inputs: [],
+      };
+    },
+  ],
+  [
+    'a withheld historical defensive score that names no missing input',
+    (candidate) => {
+      candidate.players[0].stat_categories = ['PTS', 'FGA', 'TOV'];
+      candidate.players[0].scores.TOV = {
+        season: { components: {}, missing_inputs: [] },
+        last_15: { components: {}, missing_inputs: ['team_defense:traditional'] },
+      };
+      candidate.players[0].focal_game_line.stats.TOV = 2;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('leaves the legacy zero-component window decodable in current mode', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.FGA.last_15 = { components: {}, blend: null };
+
+  expect(decodeMatchup(candidate).players[0].scores.FGA.last15).toEqual({
+    components: {},
+    blend: null,
+    missingInputs: [],
+  });
+});
+
+test('leaves the current-mode blend contract unchanged', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.PTS.season.missing_inputs = ['team_defense:play_types'];
+
+  expect(decodeMatchup(candidate).players[0].scores.PTS.season.blend).toEqual({
+    value: 0.12,
+    thin: false,
+  });
+});
+
+test.each([
+  [
+    'a defense sheet for a team outside the focal game',
+    (candidate) => {
+      candidate.teams[1].team_id = 99;
+    },
+  ],
+  [
+    'a defense sheet whose tricode contradicts the game header',
+    (candidate) => {
+      candidate.teams[0].tricode = 'BOS';
+    },
+  ],
+  [
+    'defense sheets delivered home before away',
+    (candidate) => {
+      candidate.teams.reverse();
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test.each([
+  [
+    'an available Season Surface alongside an unavailable Season defense section',
+    (candidate) => {
+      candidate.experience.sections.season_defense = experienceSection(
+        'unavailable',
+        null,
+        null,
+        'not_stored',
+      );
+    },
+  ],
+  [
+    'an available Season defense section with no available Season Surface',
+    (candidate) => {
+      // The Season windows go away with their Surfaces, so only the section's
+      // own claim of availability is left to reject.
+      Object.values(candidate.league.surface_availability).forEach((windows) => {
+        windows.season = { status: 'unavailable', unavailable_reason: 'not_stored' };
+      });
+      [candidate.league, ...candidate.teams].forEach((holder) => {
+        Object.values(holder.defense_sheet).forEach((rows) =>
+          rows.forEach((row) => {
+            row.season = null;
+          }),
+        );
+        Object.values(holder.defensive_columns).forEach((column) => {
+          column.season = null;
+        });
+      });
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects an available Last-15 Surface alongside an unavailable Last-15 section', () => {
+  // Traditional keeps its delivered Last-15 window; the other Bases lose theirs.
+  const candidate = historicalPayload();
+  const restored = JSON.parse(JSON.stringify(payload));
+  candidate.league.surface_availability.traditional.last_15 = {
+    status: 'available',
+    unavailable_reason: null,
+  };
+  [
+    [candidate.league, restored.league],
+    ...candidate.teams.map((team, index) => [team, restored.teams[index]]),
+  ].forEach(([holder, source]) => {
+    holder.defense_sheet.traditional = source.defense_sheet.traditional;
+    Object.entries(holder.defensive_columns).forEach(([key, column]) => {
+      column.last_15 = source.defensive_columns[key].last_15;
+    });
+  });
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('keeps section independence when a window is genuinely unavailable', () => {
+  const { sections } = decodeMatchup(historicalPayload()).experience;
+
+  expect(sections.seasonDefense.status).toBe('available');
+  expect(sections.last15Defense.status).toBe('unavailable');
+  expect(sections.injuries.status).toBe('unavailable');
+  expect(sections.participants.status).toBe('available');
+});
+
+test.each([
+  [
+    'a historical experience on a game that has not been played',
+    (candidate) => {
+      candidate.game.status = { state: 'scheduled', label: 'Scheduled' };
+    },
+  ],
+  [
+    'a historical experience on a postponed game',
+    (candidate) => {
+      candidate.game.status = { state: 'postponed', label: 'Postponed' };
+    },
+  ],
+  [
+    'a historical experience on a preseason game',
+    (candidate) => {
+      candidate.game.preseason = true;
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('still reads the backend-declared mode rather than inferring it from a final game', () => {
+  const finalCurrent = JSON.parse(JSON.stringify(payload));
+  finalCurrent.game.status = { state: 'final', label: 'Final' };
+
+  expect(decodeMatchup(finalCurrent).experience.mode).toBe('current');
+});
+
+test('rejects an impossible focal date rather than comparing it as a string', () => {
+  const candidate = historicalPayload();
+  focalLineOf(candidate).game_date = '2025-99-99';
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+
+  const dossier = historicalDossier();
+  dossier.h2h.rows[0].game_date = '2025-99-99';
+  expect(() => decodeMatchupSelection(dossier, ['PTS', 'FGA'], 2544, focalExpectation)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
+
+  const impossibleFocal = historicalDossier();
+  impossibleFocal.experience.focal_game.game_date = '2026-02-30';
+  expect(() =>
+    decodeMatchupSelection(impossibleFocal, ['PTS', 'FGA'], 2544, focalExpectation),
+  ).toThrow('selection endpoint returned an invalid response');
+});
+
+test('accepts either team ordering in current mode', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.teams.reverse();
+
+  expect(decodeMatchup(candidate).teams.map((team) => team.tricode)).toEqual(['BOS', 'LAL']);
+});
+
+test('still binds current-mode defense sheets to the two teams that played', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.teams[1].team_id = 99;
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+
+  const swappedTricode = JSON.parse(JSON.stringify(payload));
+  swappedTricode.teams[0].tricode = 'BOS';
+  expect(() => decodeMatchup(swappedTricode)).toThrow('invalid response');
+});
+
+test('keeps live Player Pool categories identical to the posted markets', () => {
+  const [player] = decodeMatchup(payload).players;
+
+  expect(player.playerSource).toBe('player_pool');
+  expect(player.statCategories).toEqual(player.postedMarkets);
+  expect(player.focalGameLine).toBeNull();
+});
+
+test('reads the additive selection experience and its separated focal game', () => {
+  const raw = {
+    player_id: 2544,
+    experience: {
+      mode: 'historical',
+      player_source: 'game_logs',
+      focal_game: {
+        game_id: '0022501082',
+        game_date: '2026-03-29',
+        matchup: 'LAC @ MIL',
+        minutes: 34.5,
+        stats: { PTS: 24, FGA: 18 },
+      },
+      samples: { context: 'pregame', excludes_focal_game: true },
+      baseline: { context: 'completed_season', hindsight: true },
+    },
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+
+  const selection = decodeMatchupSelection(raw, ['PTS', 'FGA'], 2544);
+  expect(selection.experience.mode).toBe('historical');
+  expect(selection.experience.focalGame.matchup).toBe('LAC @ MIL');
+  expect(selection.experience.samples).toEqual({ context: 'pregame', excludesFocalGame: true });
+  expect(selection.experience.baseline).toEqual({
+    context: 'completed_season',
+    hindsight: true,
+  });
+
+  expect(
+    decodeMatchupSelection({ ...raw, experience: undefined }, ['PTS', 'FGA'], 2544).experience,
+  ).toBeNull();
+  // The focal line rejects a missing governed category on both response seams.
+  expect(() =>
+    decodeMatchupSelection(
+      {
+        ...raw,
+        experience: {
+          ...raw.experience,
+          focal_game: { ...raw.experience.focal_game, stats: { PTS: 24 } },
+        },
+      },
+      ['PTS', 'FGA'],
+      2544,
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
+  expect(() =>
+    decodeMatchupSelection(
+      { ...raw, experience: { ...raw.experience, baseline: { context: 'completed_season' } } },
+      ['PTS', 'FGA'],
+      2544,
+    ),
+  ).toThrow('selection endpoint returned an invalid response');
+
+  const current = decodeMatchupSelection(
+    {
+      ...raw,
+      experience: {
+        mode: 'current',
+        player_source: 'player_pool',
+        focal_game: null,
+        samples: { context: 'season_to_date', excludes_focal_game: false },
+        baseline: { context: 'season_to_date', hindsight: false },
+      },
+    },
+    ['PTS', 'FGA'],
+    2544,
+  );
+  expect(current.experience.focalGame).toBeNull();
+  expect(current.experience.baseline.hindsight).toBe(false);
+});
+
+// The dossier renders its separation labels from these fields, so a mislabelled
+// response must fail closed rather than quietly drop a required disclosure.
+test.each([
+  ['a historical selection with no focal game', { focal_game: null }],
+  [
+    'a historical selection whose samples do not exclude the focal game',
+    { samples: { context: 'pregame', excludes_focal_game: false } },
+  ],
+  [
+    'a historical selection with a season-to-date sample context',
+    { samples: { context: 'season_to_date', excludes_focal_game: true } },
+  ],
+  [
+    'a historical selection whose baseline is not marked hindsight',
+    { baseline: { context: 'completed_season', hindsight: false } },
+  ],
+  [
+    'a historical selection with a season-to-date baseline context',
+    { baseline: { context: 'season_to_date', hindsight: true } },
+  ],
+  ['a historical selection sourced from a Player Pool', { player_source: 'player_pool' }],
+  ['a current selection that still carries a focal game', { mode: 'current' }],
+])('rejects %s', (_name, override) => {
+  const raw = {
+    player_id: 2544,
+    experience: {
+      mode: 'historical',
+      player_source: 'game_logs',
+      focal_game: {
+        game_id: '0022501082',
+        game_date: '2026-03-29',
+        matchup: 'LAC @ MIL',
+        minutes: 34.5,
+        stats: { PTS: 24, FGA: 18 },
+      },
+      samples: { context: 'pregame', excludes_focal_game: true },
+      baseline: { context: 'completed_season', hindsight: true },
+      ...override,
+    },
+    h2h: { thin: false, rows: [] },
+    archetype: { thin: false, rows: [] },
+  };
+  expect(() => decodeMatchupSelection(raw, ['PTS', 'FGA'], 2544)).toThrow(
+    'selection endpoint returned an invalid response',
+  );
 });

@@ -5,7 +5,7 @@ import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
-import { getDisplayableDietShare } from './displayConfig';
+import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
 import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
@@ -32,6 +32,63 @@ const SHARE_LABELS = {
   assistLocations: 'ast',
 };
 const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
+const SECTION_ORDER = [
+  ['schedule', 'Schedule'],
+  ['participants', 'Participants'],
+  ['seasonDefense', 'Season defense'],
+  ['last15Defense', 'Last 15 defense'],
+  ['injuries', 'Injuries'],
+];
+const CONTEXT_LABELS = {
+  completed_season_catalog: 'Completed-season catalog',
+  current_season_catalog: 'Current-season catalog',
+  completed_season: 'Completed-season context',
+  pregame: 'Pregame',
+  posted_markets: 'Posted markets',
+  current: 'Current',
+};
+const SOURCE_LABELS = {
+  event_catalog: 'Event Catalog',
+  player_game_logs: 'game logs',
+  player_pool: 'Player Pool',
+  team_matchup_publication: 'Defense Sheet publication',
+  rotowire: 'rotowire',
+};
+const SECTION_REASONS = {
+  no_point_in_time_snapshot: 'No point-in-time snapshot was captured for this game.',
+  no_pregame_snapshot: 'No pregame injury snapshot was archived for this game.',
+  game_logs_incomplete: 'Canonical game logs are incomplete for this game.',
+  no_game_log_rows: 'No canonical game-log rows exist for this game.',
+  player_pool_unavailable: 'No Player Pool snapshot is available for this game.',
+};
+const sectionReason = (section) =>
+  SECTION_REASONS[section.unavailableReason] || `${section.unavailableReason}.`;
+const contextLabel = (section) => CONTEXT_LABELS[section.context] || section.context;
+const sourceLabel = (section) => SOURCE_LABELS[section.source] || section.source;
+// Collection time is provenance for immutable evidence, so it is stated as a
+// date rather than an age that would read as an operational staleness warning.
+const collectedLabel = (section) =>
+  section.collectedAt ? ` · collected ${section.collectedAt.slice(0, 10)}` : '';
+
+// Historical sections replace the live freshness bars: each one governs only its
+// own evidence, so a missing pool or stats marker cannot speak for the others.
+function HistoricalEvidence({ sections }) {
+  return (
+    <section className="matchup-freshness" aria-label="Historical matchup evidence">
+      {SECTION_ORDER.map(([key, label]) => {
+        const section = sections[key];
+        return (
+          <span key={key}>
+            <strong>{label}</strong>:{' '}
+            {section.status === 'available'
+              ? `${contextLabel(section)} · from ${sourceLabel(section)}${collectedLabel(section)}`
+              : `${section.status} — ${sectionReason(section)}`}
+          </span>
+        );
+      })}
+    </section>
+  );
+}
 
 function Freshness({ freshness, now }) {
   const surfaces = [
@@ -95,6 +152,8 @@ function Sparkline({ values, playerName }) {
 function PlayerRail({
   players,
   injuries,
+  historical,
+  unavailableMessage,
   market,
   windowKey,
   targetableCount,
@@ -109,24 +168,42 @@ function PlayerRail({
   const injuryById = new Map(
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
+  const windowScoreFor = (player) => player.scores[market]?.[windowKey] ?? null;
+  // A score is unavailable, not zero, when the contract could not compute it.
+  // A Blend withheld alongside named missing inputs is an incomplete score, so
+  // no single component may stand in for it. A defensive category has no Blend
+  // by contract and names nothing missing, so its component is the whole score.
   const scoreFor = (player) => {
-    const score = player.scores[market]?.[windowKey];
-    if (!score) return -Infinity;
-    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? -Infinity;
+    const score = windowScoreFor(player);
+    if (!score) return null;
+    if (score.blend === null && score.missingInputs.length > 0) return null;
+    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
   };
-  const seasonScoreFor = (player) => player.seasonScoring ?? -Infinity;
+  const byScore = sortMode === 'score' && market !== 'All';
+  const compareDescendingUnavailableLast = (a, b, valueOf) => {
+    const first = valueOf(a);
+    const second = valueOf(b);
+    if ((first === null) !== (second === null)) return first === null ? 1 : -1;
+    if (first === null || first === second) return 0;
+    return second - first;
+  };
   const scoped = players.filter(
-    (player) => market === 'All' || player.postedMarkets.includes(market),
+    (player) => market === 'All' || player.statCategories.includes(market),
   );
-  scoped.sort((a, b) =>
-    sortMode === 'score' && market !== 'All'
-      ? scoreFor(b) - scoreFor(a) || seasonScoreFor(b) - seasonScoreFor(a)
-      : seasonScoreFor(b) - seasonScoreFor(a) || a.name.localeCompare(b.name),
+  scoped.sort(
+    (a, b) =>
+      (byScore ? compareDescendingUnavailableLast(a, b, scoreFor) : 0) ||
+      compareDescendingUnavailableLast(a, b, (player) => player.seasonScoring) ||
+      a.name.localeCompare(b.name),
   );
   return (
-    <aside className="player-rail" aria-labelledby="player-rail-heading">
+    <aside
+      className="player-rail"
+      aria-label={historical ? 'Players in game' : undefined}
+      aria-labelledby={historical ? undefined : 'player-rail-heading'}
+    >
       <div className="section-heading">
-        <p className="matchup-eyebrow">Targetable players</p>
+        <p className="matchup-eyebrow">{historical ? 'Players in game' : 'Targetable players'}</p>
         <h2 id="player-rail-heading">
           {sortMode === 'score' && market !== 'All'
             ? `${market} Matchup Score order`
@@ -153,13 +230,22 @@ function PlayerRail({
           </button>
         </div>
       </div>
-      {scoped.length === 0 ? (
-        <p className="honest-empty">No posted players are available for this market.</p>
+      {unavailableMessage ? (
+        <p className="honest-empty">{unavailableMessage}</p>
+      ) : scoped.length === 0 ? (
+        <p className="honest-empty">
+          {historical
+            ? 'No participants are available for this Stat Category.'
+            : 'No posted players are available for this market.'}
+        </p>
       ) : (
         <div className="player-list">
           {scoped.map((player) => {
-            const injury = injuryById.get(player.injuryBadgeRef);
+            const injury = historical ? undefined : injuryById.get(player.injuryBadgeRef);
             const serializedPlayerId = String(player.id);
+            const focalLine = player.focalGameLine;
+            const unscored = market !== 'All' && scoreFor(player) === null;
+            const missingInputs = unscored ? (windowScoreFor(player)?.missingInputs ?? []) : [];
             return (
               <article
                 key={player.id}
@@ -172,28 +258,51 @@ function PlayerRail({
                     {player.seasonScoring === null
                       ? 'Season scoring unavailable'
                       : `${player.seasonScoring.toFixed(1)} PPG`}
+                    {historical && player.seasonScoring !== null
+                      ? ' · completed-season context'
+                      : ''}
                   </p>
                 </div>
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>
                 )}
-                <div
-                  className="market-chips"
-                  role="group"
-                  aria-label={`${player.name} posted markets`}
-                >
-                  {player.postedMarkets.map((postedMarket) => {
-                    const providers = Object.entries(player.provenance)
-                      .filter(([, markets]) => markets.includes(postedMarket))
-                      .map(([provider]) => provider);
-                    const provenanceLabel = `${postedMarket} from ${providers.join(', ')}`;
-                    return (
-                      <span key={postedMarket} aria-label={provenanceLabel} title={provenanceLabel}>
-                        {postedMarket}
-                      </span>
-                    );
-                  })}
-                </div>
+                {historical && focalLine && (
+                  <p className="focal-line">
+                    {formatFocalGameLine(
+                      focalLine,
+                      market === 'All' ? player.statCategories : [market],
+                    )}
+                  </p>
+                )}
+                {historical && unscored && (
+                  <p className="honest-empty">
+                    {market} Matchup Score unavailable
+                    {missingInputs.length ? `: missing ${missingInputs.join(', ')}` : ''}.
+                  </p>
+                )}
+                {!historical && (
+                  <div
+                    className="market-chips"
+                    role="group"
+                    aria-label={`${player.name} posted markets`}
+                  >
+                    {player.postedMarkets.map((postedMarket) => {
+                      const providers = Object.entries(player.provenance)
+                        .filter(([, markets]) => markets.includes(postedMarket))
+                        .map(([provider]) => provider);
+                      const provenanceLabel = `${postedMarket} from ${providers.join(', ')}`;
+                      return (
+                        <span
+                          key={postedMarket}
+                          aria-label={provenanceLabel}
+                          title={provenanceLabel}
+                        >
+                          {postedMarket}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
                 <Sparkline values={player.last10Minutes} playerName={player.name} />
                 <button
                   ref={(node) => registerTrigger(serializedPlayerId, node)}
@@ -217,7 +326,7 @@ function PlayerRail({
 function DietShareChips({ players, base, sliceKey, market }) {
   if (!SHARE_LABELS[base]) return null;
   const chips = players
-    .filter((player) => market === 'All' || player.postedMarkets.includes(market))
+    .filter((player) => market === 'All' || player.statCategories.includes(market))
     .flatMap((player) => {
       const share = getDisplayableDietShare(player, base, sliceKey);
       if (!share) return [];
@@ -244,6 +353,7 @@ function DefenseSheet({
   deviation,
   selectedPlayer,
   surfaceAvailability,
+  provenance,
 }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
@@ -290,6 +400,7 @@ function DefenseSheet({
       <div className="section-heading">
         <p className="matchup-eyebrow">Relative concessions · per 48</p>
         <h2 id="defense-sheet-heading">{team.tricode} Defense Sheet</h2>
+        {provenance && <p className="sheet-provenance">{provenance}</p>}
       </div>
       <p className="hidden-count">
         {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
@@ -502,7 +613,6 @@ function Detail({ matchup, gameId }) {
   const [windowKey, setWindowKey] = useState('season');
   const [deviation, setDeviation] = useState(1);
   const selectedId = searchParams.get('player');
-  const selectedPlayer = matchup.players.find((player) => String(player.id) === selectedId) || null;
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
   const [selectionState, setSelectionState] = useState({
@@ -514,19 +624,37 @@ function Detail({ matchup, gameId }) {
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
+  const experienceMode = matchup.experience.mode;
+  const historical = experienceMode === 'historical';
+  const sections = matchup.experience.sections;
   const poolAvailable = !['missing', 'unavailable'].includes(matchup.freshness.pool.status);
+  const participantsAvailable = historical
+    ? sections.participants.status === 'available'
+    : poolAvailable;
+  // Nobody is selectable when Participants are unavailable, so a deep link
+  // cannot open a dossier the rail says this matchup does not have.
+  const selectedPlayer =
+    (participantsAvailable && matchup.players.find((player) => String(player.id) === selectedId)) ||
+    null;
   const opposingPlayers = useMemo(
     () =>
-      poolAvailable ? matchup.players.filter((player) => player.teamId === opposingTeamId) : [],
-    [matchup.players, opposingTeamId, poolAvailable],
+      participantsAvailable
+        ? matchup.players.filter((player) => player.teamId === opposingTeamId)
+        : [],
+    [matchup.players, opposingTeamId, participantsAvailable],
   );
   const opposingGameTeam = [matchup.game.away, matchup.game.home].find(
     (team) => team.teamId === opposingTeamId,
   );
   const markets = useMemo(
-    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.postedMarkets))],
+    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.statCategories))],
     [opposingPlayers],
   );
+  const windowSection = historical
+    ? sections[windowKey === 'season' ? 'seasonDefense' : 'last15Defense']
+    : null;
+  const last15Section = historical ? sections.last15Defense : null;
+  const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);
@@ -538,8 +666,10 @@ function Detail({ matchup, gameId }) {
     const controller = new AbortController();
     let current = true;
     setSelectionState({ status: 'loading', playerId: selectedPlayer.id, data: null, error: null });
-    fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.postedMarkets, {
+    fetchMatchupSelection(gameId, selectedPlayer.id, selectedPlayer.statCategories, {
       signal: controller.signal,
+      mode: experienceMode,
+      focalGameLine: selectedPlayer.focalGameLine,
     })
       .then((data) => {
         if (current)
@@ -558,7 +688,7 @@ function Detail({ matchup, gameId }) {
       current = false;
       controller.abort();
     };
-  }, [gameId, selectedPlayer]);
+  }, [experienceMode, gameId, selectedPlayer]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
       selectionTriggers.current.get(previousSelectedId.current)?.focus();
@@ -582,12 +712,20 @@ function Detail({ matchup, gameId }) {
       <header className="matchup-heading">
         <div>
           <Link to="/matchups">← Back to slate</Link>
-          <p className="matchup-eyebrow">Open Team Sheets · live contract</p>
+          <p className="matchup-eyebrow">
+            {historical
+              ? 'Historical Matchup · stored evidence'
+              : 'Open Team Sheets · live contract'}
+          </p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
-        <Freshness freshness={matchup.freshness} now={now} />
+        {historical ? (
+          <HistoricalEvidence sections={sections} />
+        ) : (
+          <Freshness freshness={matchup.freshness} now={now} />
+        )}
       </header>
       {matchup.game.preseason && (
         <p
@@ -604,14 +742,27 @@ function Detail({ matchup, gameId }) {
             Tap a player to trace their rows across the sheet; use the score card for the full
             dossier.
           </p>
-          <InjuryReport injuries={matchup.injuries} now={now} />
+          {historical && sections.injuries.status !== 'available' ? (
+            <section className="injury-report" aria-labelledby="injury-heading">
+              <h2 id="injury-heading">Injuries</h2>
+              <p className="honest-empty">{sectionReason(sections.injuries)}</p>
+            </section>
+          ) : (
+            <InjuryReport injuries={matchup.injuries} now={now} />
+          )}
           <PlayerRail
             players={opposingPlayers}
             injuries={matchup.injuries}
+            historical={historical}
+            unavailableMessage={
+              historical && !participantsAvailable ? sectionReason(sections.participants) : null
+            }
             market={market}
             windowKey={windowKey}
             targetableCount={
-              poolAvailable ? (opposingGameTeam?.targetablePlayerCount ?? null) : null
+              !historical && poolAvailable
+                ? (opposingGameTeam?.targetablePlayerCount ?? null)
+                : null
             }
             selectedId={selectedId}
             onSelect={(player) => updateSelectedPlayer(player.id)}
@@ -620,7 +771,11 @@ function Detail({ matchup, gameId }) {
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">
-            <div className="segmented market-tabs" role="group" aria-label="Market">
+            <div
+              className="segmented market-tabs"
+              role="group"
+              aria-label={historical ? 'Stat category' : 'Market'}
+            >
               {markets.map((item) => (
                 <button
                   type="button"
@@ -638,6 +793,7 @@ function Detail({ matchup, gameId }) {
                   <button
                     type="button"
                     aria-pressed={windowKey === item.key}
+                    disabled={item.key === 'last15' && last15Blocked}
                     key={item.key}
                     onClick={() => setWindowKey(item.key)}
                   >
@@ -670,6 +826,10 @@ function Detail({ matchup, gameId }) {
                 ))}
               </div>
             </div>
+            {windowSection?.context && (
+              <p className="window-context">{contextLabel(windowSection)}</p>
+            )}
+            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
           </section>
           {selectedId && !selectedPlayer && (
             <p role="alert" className="selection-card">
@@ -687,10 +847,14 @@ function Detail({ matchup, gameId }) {
               windowKey={windowKey}
               sheetMarket={market}
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
+              historical={historical}
               onClose={() => updateSelectedPlayer(null)}
             />
           )}
-          {matchup.freshness.stats.status === 'missing' ? (
+          {/* A historical Defense Sheet is governed by its own Surface
+              availability, so the generic legacy stats marker never suppresses
+              it. The live journey keeps the gate it has always had. */}
+          {!historical && matchup.freshness.stats.status === 'missing' ? (
             <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
               <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
               <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
@@ -704,6 +868,11 @@ function Detail({ matchup, gameId }) {
               deviation={deviation}
               selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
               surfaceAvailability={matchup.league.surfaceAvailability}
+              provenance={
+                windowSection
+                  ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
+                  : null
+              }
             />
           )}
         </div>

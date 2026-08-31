@@ -1279,7 +1279,7 @@ test('@critical a saved Filter Set is a name that reopens the same Log Workspace
   await page.getByRole('button', { name: 'Save Filter Set' }).click();
   await page.getByLabel('Name').fill('LeBron last 10');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeHidden();
 
   // The same name twice is the backend's answer, shown rather than swallowed.
   await page.getByRole('button', { name: 'Save Filter Set' }).click();

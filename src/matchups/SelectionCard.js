@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { formatFocalGameLine } from './displayConfig';
 
 const BASE_LABELS = {
   playTypes: 'Play types',
@@ -59,13 +60,14 @@ export default function SelectionCard({
   windowKey,
   sheetMarket,
   whyRelevant,
+  historical,
   onClose,
 }) {
   const panelRef = useRef(null);
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const [activeStat, setActiveStat] = useState(
-    player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0],
+    player.statCategories.includes(sheetMarket) ? sheetMarket : player.statCategories[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
@@ -73,21 +75,21 @@ export default function SelectionCard({
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
     setActiveStat((current) => {
       if (playerChanged) {
-        return player.postedMarkets.includes(sheetMarket) ? sheetMarket : player.postedMarkets[0];
+        return player.statCategories.includes(sheetMarket) ? sheetMarket : player.statCategories[0];
       }
       if (
         sheetMarketChanged &&
         sheetMarket !== 'All' &&
-        player.postedMarkets.includes(sheetMarket)
+        player.statCategories.includes(sheetMarket)
       ) {
         return sheetMarket;
       }
-      return player.postedMarkets.includes(current) ? current : player.postedMarkets[0];
+      return player.statCategories.includes(current) ? current : player.statCategories[0];
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, player.postedMarkets, sheetMarket]);
-  const rows = player.postedMarkets.map((market) => ({
+  }, [player.id, player.statCategories, sheetMarket]);
+  const rows = player.statCategories.map((market) => ({
     market,
     score: player.scores[market][windowKey],
   }));
@@ -119,8 +121,15 @@ export default function SelectionCard({
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
       </p>
+      {player.focalGameLine && (
+        <p className="focal-line">
+          {formatFocalGameLine(player.focalGameLine, player.statCategories, {
+            includeDate: true,
+          })}
+        </p>
+      )}
       <div className="selection-stat-control" role="group" aria-label="Selection log stat">
-        {player.postedMarkets.map((market) => (
+        {player.statCategories.map((market) => (
           <button
             type="button"
             key={market}
@@ -135,7 +144,7 @@ export default function SelectionCard({
         <table aria-label={`${player.name} Score Matrix`}>
           <thead>
             <tr>
-              <th scope="col">Market</th>
+              <th scope="col">{historical ? 'Category' : 'Market'}</th>
               {bases.map((base) => (
                 <th scope="col" key={base}>
                   {BASE_LABELS[base] || base}
@@ -184,10 +193,30 @@ export default function SelectionCard({
             No score components were computable for {market} in {WINDOW_LABELS[windowKey]}.
           </p>
         ))}
+      {/* Component evidence can survive a score the contract could not
+          complete, so the card names what that score was missing. */}
+      {rows
+        .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
+        .map(({ market, score }) => (
+          <p className="honest-empty" key={`withheld-${market}`}>
+            {market} Matchup Score unavailable in {WINDOW_LABELS[windowKey]}: missing{' '}
+            {score.missingInputs.join(', ')}.
+          </p>
+        ))}
       {status === 'loading' && <p role="status">Loading selection logs…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' && (
         <div className="selection-logs">
+          {selection.experience?.samples.excludesFocalGame && (
+            <p className="selection-provenance">
+              Pregame samples use games strictly before the focal game.
+            </p>
+          )}
+          {selection.experience?.baseline.hindsight && (
+            <p className="selection-provenance">
+              Completed-season baseline — hindsight, not pregame evidence.
+            </p>
+          )}
           <LogTable title="Games vs this opponent" table={selection.h2h} market={activeStat} />
           <LogTable title="Archetype sample" table={selection.archetype} market={activeStat} />
         </div>

@@ -555,6 +555,293 @@ export const matchupPayload = {
   },
 };
 
+// Production LAC @ MIL 0022501082: every Season defense Surface published, no
+// point-in-time Last 15, no archived DFS markets, canonical game-log players.
+export const HISTORICAL_GAME_ID = '0022501082';
+const HISTORICAL_CATEGORIES = ['PTS', 'REB', 'AST', 'FGA', 'FG3A', 'TOV'];
+const HISTORICAL_LAST_15_MISSING = [
+  'team_defense:play_types',
+  'team_defense:shot_zones',
+  'team_defense:shot_types',
+  'team_defense:assist_locations',
+  'team_defense:traditional',
+];
+
+const historicalGame = {
+  game_id: HISTORICAL_GAME_ID,
+  away_team: {
+    team_id: 1610612746,
+    tricode: 'LAC',
+    name: 'LA Clippers',
+    targetable_player_count: 0,
+  },
+  home_team: {
+    team_id: 1610612749,
+    tricode: 'MIL',
+    name: 'Milwaukee Bucks',
+    targetable_player_count: 0,
+  },
+  scheduled_at: '2026-03-29T23:00:00Z',
+  status: { state: 'final', label: 'Final' },
+  classification: null,
+  preseason: false,
+};
+
+const withoutPointInTimeWindow = (sheet) => {
+  Object.values(sheet.defense_sheet).forEach((rows) =>
+    rows.forEach((row) => {
+      row.last_15 = null;
+    }),
+  );
+  Object.values(sheet.defensive_columns).forEach((column) => {
+    column.last_15 = null;
+  });
+  return sheet;
+};
+
+const historicalPlayTypes = (offset) => [
+  defenseRow(
+    'Transition:PTS',
+    'Transition PTS',
+    ['PTS', 'PA', 'PR', 'PRA'],
+    defenseValue(17.9 + offset, 9, 1.2, 24),
+    null,
+  ),
+  defenseRow(
+    'Isolation:PTS',
+    'Isolation PTS',
+    ['PTS', 'PA', 'PR', 'PRA'],
+    defenseValue(8.3 + offset, 3, 0.4, 17),
+    null,
+  ),
+  defenseRow(
+    'Postup:PTS',
+    'Postup PTS',
+    ['PTS', 'PA', 'PR', 'PRA'],
+    defenseValue(12.4 + offset, 11, 1.3, 26),
+    null,
+  ),
+];
+
+const historicalLeague = () => {
+  const scoped = JSON.parse(JSON.stringify(league));
+  scoped.surface_availability = Object.fromEntries(
+    Object.keys(scoped.surface_availability).map((base) => [
+      base,
+      {
+        season: { status: 'available', unavailable_reason: null },
+        last_15: { status: 'unavailable', unavailable_reason: 'no_point_in_time_snapshot' },
+      },
+    ]),
+  );
+  return withoutPointInTimeWindow(scoped);
+};
+
+const historicalScoreWindow = (value, category, available, missingInputs) => {
+  if (DEFENSIVE_MARKETS.includes(category)) {
+    // A withheld defensive score can still ship its component evidence, so the
+    // component must not stand in for the score the contract did not complete.
+    return available
+      ? { components: { traditional: { value, thin: false } }, missing_inputs: [] }
+      : { components: { traditional: { value: 0.91, thin: true } }, missing_inputs: missingInputs };
+  }
+  // A withheld offensive Blend still ships the components that were computable
+  // and names the inputs the score contract did not get.
+  return available
+    ? {
+        components: { shot_zones: { value, thin: false } },
+        blend: { value, thin: false },
+        missing_inputs: [],
+      }
+    : {
+        components: { shot_zones: { value: 0.88, thin: true } },
+        blend: null,
+        missing_inputs: missingInputs,
+      };
+};
+
+const historicalScores = (base, unavailable = []) =>
+  Object.fromEntries(
+    HISTORICAL_CATEGORIES.map((category, index) => [
+      category,
+      {
+        season: historicalScoreWindow(
+          base + index / 100,
+          category,
+          !unavailable.includes(category),
+          // A category can only be missing inputs its own score contract needs.
+          DEFENSIVE_MARKETS.includes(category)
+            ? ['team_defense:traditional']
+            : ['team_defense:play_types', 'player_diet:shot_zones'],
+        ),
+        last_15: historicalScoreWindow(0, category, false, HISTORICAL_LAST_15_MISSING),
+      },
+    ]),
+  );
+
+const historicalFocalLine = (minutes, stats) => ({
+  game_id: HISTORICAL_GAME_ID,
+  game_date: '2026-03-29',
+  matchup: 'LAC @ MIL',
+  minutes,
+  stats: Object.fromEntries(HISTORICAL_CATEGORIES.map((category) => [category, stats[category]])),
+});
+
+const historicalParticipant = ({
+  id,
+  name,
+  team,
+  seasonScoring,
+  minutes,
+  focalStats,
+  scoreBase,
+  unavailable = [],
+  dietShares = { play_types: [], shot_zones: [], shot_types: [], assist_locations: [] },
+}) => ({
+  canonical_id: id,
+  name,
+  team_id: team.team_id,
+  tricode: team.tricode,
+  player_source: 'game_logs',
+  posted_markets: [],
+  provenance: {},
+  stat_categories: HISTORICAL_CATEGORIES,
+  focal_game_line: historicalFocalLine(minutes, focalStats),
+  season_scoring: seasonScoring,
+  last_10_minutes: [34, 33, 36, 32, 35, 34, 33, 36, 35, 34],
+  diet_shares: dietShares,
+  injury_badge_ref: null,
+  scores: historicalScores(scoreBase, unavailable),
+});
+
+export const historicalMatchupPayload = {
+  game: historicalGame,
+  experience: {
+    mode: 'historical',
+    player_source: 'game_logs',
+    sections: {
+      schedule: {
+        status: 'available',
+        source: 'event_catalog',
+        context: 'completed_season_catalog',
+        unavailable_reason: null,
+        // Immutable completed-season provenance, never a staleness signal.
+        collected_at: '2026-03-30T04:10:00Z',
+      },
+      participants: {
+        status: 'available',
+        source: 'player_game_logs',
+        context: 'completed_season',
+        unavailable_reason: null,
+      },
+      season_defense: {
+        status: 'available',
+        source: 'team_matchup_publication',
+        context: 'completed_season',
+        unavailable_reason: null,
+      },
+      last_15_defense: {
+        status: 'unavailable',
+        source: null,
+        context: null,
+        unavailable_reason: 'no_point_in_time_snapshot',
+      },
+      injuries: {
+        status: 'unavailable',
+        source: null,
+        context: null,
+        unavailable_reason: 'no_pregame_snapshot',
+      },
+    },
+  },
+  league: historicalLeague(),
+  teams: [
+    withoutPointInTimeWindow(teamSheet(historicalGame.away_team, historicalPlayTypes(0))),
+    withoutPointInTimeWindow(teamSheet(historicalGame.home_team, historicalPlayTypes(0.4), 1)),
+  ],
+  players: [
+    historicalParticipant({
+      id: 202695,
+      name: 'Kawhi Leonard',
+      team: historicalGame.away_team,
+      seasonScoring: 21.4,
+      minutes: 34.5,
+      focalStats: { PTS: 24, REB: 5, AST: 7, FGA: 18, FG3A: 6, TOV: 2 },
+      scoreBase: 0.18,
+      dietShares: {
+        play_types: [dietShare('Transition', 0.22), dietShare('Postup', 0.14)],
+        shot_zones: [dietShare('Restricted Area', 0.28, 5.4, 'field_goal_attempts')],
+        shot_types: [dietShare('Catch and Shoot', 0.34, 4.4, 'field_goal_attempts')],
+        assist_locations: [dietShare('AtRimAssists', 0.3, 1.2, 'assists')],
+      },
+    }),
+    historicalParticipant({
+      id: 201935,
+      name: 'James Harden',
+      team: historicalGame.away_team,
+      seasonScoring: 19.8,
+      minutes: 36.2,
+      focalStats: { PTS: 19, REB: 4, AST: 11, FGA: 15, FG3A: 9, TOV: 4 },
+      scoreBase: 0.26,
+      dietShares: {
+        play_types: [dietShare('Isolation', 0.24)],
+        shot_zones: [dietShare('Above the Break 3', 0.31, 6.2, 'field_goal_attempts')],
+        shot_types: [],
+        assist_locations: [dietShare('AtRimAssists', 0.38, 1.9, 'assists')],
+      },
+    }),
+    historicalParticipant({
+      id: 1627826,
+      name: 'Ivica Zubac',
+      team: historicalGame.away_team,
+      seasonScoring: 12.1,
+      minutes: 27.8,
+      focalStats: { PTS: 10, REB: 12, AST: 1, FGA: 8, FG3A: 0, TOV: 1 },
+      scoreBase: 0.05,
+      unavailable: ['PTS', 'TOV'],
+    }),
+    historicalParticipant({
+      id: 203507,
+      name: 'Giannis Antetokounmpo',
+      team: historicalGame.home_team,
+      seasonScoring: 30.2,
+      minutes: 35.1,
+      focalStats: { PTS: 33, REB: 14, AST: 6, FGA: 22, FG3A: 2, TOV: 3 },
+      scoreBase: 0.21,
+      dietShares: {
+        play_types: [dietShare('Transition', 0.26)],
+        shot_zones: [dietShare('Restricted Area', 0.41, 8.1, 'field_goal_attempts')],
+        shot_types: [],
+        assist_locations: [dietShare('AtRimAssists', 0.29, 1.4, 'assists')],
+      },
+    }),
+    historicalParticipant({
+      id: 203081,
+      name: 'Damian Lillard',
+      team: historicalGame.home_team,
+      seasonScoring: 24.6,
+      minutes: 33.4,
+      focalStats: { PTS: 22, REB: 3, AST: 8, FGA: 17, FG3A: 11, TOV: 2 },
+      scoreBase: 0.13,
+    }),
+  ],
+  injuries: {
+    status: 'unavailable',
+    unavailable_reason: 'fetch_failed',
+    retrieved_at: null,
+    source: 'rotowire',
+    source_url: 'https://www.rotowire.com/basketball/injury-report.php',
+    teams: [],
+  },
+  freshness: {
+    schedule: { status: 'fresh', retrieved_at: '2026-03-29T10:00:00Z' },
+    pool: { status: 'unavailable', retrieved_at: null, providers: {} },
+    // The reported production failure: no stats_tables publication marker.
+    stats: { status: 'missing', retrieved_at: null },
+    injuries: { status: 'unavailable', retrieved_at: null },
+  },
+};
+
 const selectionLine = (date, matchup, minutes, values, deltas) => ({
   row_type: date === null ? 'average' : 'game',
   game_date: date,
@@ -655,6 +942,61 @@ export const austinSelectionPayload = {
         { PTS: 22, FG3A: 7, STL: 1 },
         { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
       ),
+    ],
+  },
+};
+
+const historicalSelectionStats = { PTS: 21, REB: 6, AST: 5, FGA: 17, FG3A: 5, TOV: 2 };
+const historicalSelectionDeltas = {
+  PTS: 0.061,
+  REB: 0.014,
+  AST: -0.008,
+  FGA: 0.012,
+  FG3A: 0.009,
+  TOV: -0.003,
+};
+
+// Pregame samples use games strictly before 2026-03-29; the focal game never
+// appears in either table.
+export const historicalSelectionPayload = {
+  player_id: 202695,
+  experience: {
+    mode: 'historical',
+    player_source: 'game_logs',
+    focal_game: {
+      game_id: HISTORICAL_GAME_ID,
+      game_date: '2026-03-29',
+      matchup: 'LAC @ MIL',
+      minutes: 34.5,
+      stats: { PTS: 24, REB: 5, AST: 7, FGA: 18, FG3A: 6, TOV: 2 },
+    },
+    samples: { context: 'pregame', excludes_focal_game: true },
+    baseline: { context: 'completed_season', hindsight: true },
+  },
+  h2h: {
+    thin: true,
+    rows: [
+      selectionLine(
+        '2026-01-12',
+        'LAC vs. MIL',
+        33,
+        historicalSelectionStats,
+        historicalSelectionDeltas,
+      ),
+      selectionLine(null, 'AVG', 33, historicalSelectionStats, historicalSelectionDeltas),
+    ],
+  },
+  archetype: {
+    thin: false,
+    rows: [
+      selectionLine(
+        '2026-02-08',
+        'LAC @ BOS',
+        35,
+        historicalSelectionStats,
+        historicalSelectionDeltas,
+      ),
+      selectionLine(null, 'AVG', 35, historicalSelectionStats, historicalSelectionDeltas),
     ],
   },
 };
@@ -1042,7 +1384,10 @@ export const installApiContract = async (page, overrides = {}) => {
       return;
     }
 
-    const savedFilterSetPath = url.pathname.match(/^\/api\/user\/saved-filter-sets(?:\/(.+))?$/);
+    const savedFilterSetPath =
+      url.pathname === '/api/user/saved-filter-sets'
+        ? [url.pathname, undefined]
+        : url.pathname.match(/^\/api\/user\/saved-filter-sets\/(.+)$/);
     if (savedFilterSetPath) {
       const [, savedFilterSetId] = savedFilterSetPath;
       const method = request.method();
@@ -1168,18 +1513,26 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/games/matchup') {
-      await route.fulfill({ json: matchupPayload });
+      const gameId = url.searchParams.get('game_id');
+      await route.fulfill({
+        json: gameId === HISTORICAL_GAME_ID ? historicalMatchupPayload : matchupPayload,
+      });
       return;
     }
 
     if (url.pathname === '/api/games/matchup/selection') {
       const gameId = url.searchParams.get('game_id');
       const playerId = url.searchParams.get('player_id');
-      const payloads = {
-        2544: selectionPayload,
-        1630559: austinSelectionPayload,
+      const payloadsByGame = {
+        [matchupPayload.game.game_id]: {
+          2544: selectionPayload,
+          1630559: austinSelectionPayload,
+        },
+        // A canonical game-log participant is selectable with no Player Pool.
+        [HISTORICAL_GAME_ID]: { 202695: historicalSelectionPayload },
       };
-      if (gameId !== matchupPayload.game.game_id || !payloads[playerId]) {
+      const payloads = payloadsByGame[gameId];
+      if (!payloads || !payloads[playerId]) {
         await route.fulfill({ status: 404, json: { error: { code: 'resource_not_found' } } });
         return;
       }

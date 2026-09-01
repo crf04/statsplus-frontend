@@ -236,6 +236,14 @@
   opacity: 1;
 }
 
+/* A touch device never hovers, so hiding the manage column there would hide it
+   for good. Show it always where there is no pointer to reveal it with. */
+@media (hover: none) {
+  .pa-actions {
+    opacity: 1;
+  }
+}
+
 .pa-confirm-text {
   font-size: 0.75rem;
   color: var(--ct-miss);

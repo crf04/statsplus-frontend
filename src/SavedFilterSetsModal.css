@@ -1,5 +1,13 @@
 /* The saved list, built on the design tokens in theme.css. */
 
+/* A long list must not push the dialog past the viewport: the header band
+   paints above every floating layer, so a dialog that grows into it takes the
+   close button with it. The list scrolls instead. */
+.saved-filter-sets-body {
+  max-height: calc(100vh - var(--ct-header-height) - 8rem);
+  overflow-y: auto;
+}
+
 .saved-filter-sets-list {
   list-style: none;
   margin: 0;
@@ -152,6 +160,11 @@
   align-items: center;
   gap: 0.4rem;
   width: 100%;
+}
+
+.saved-filter-set-rename .btn {
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .saved-filter-set-rename .form-control {

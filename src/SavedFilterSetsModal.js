@@ -232,7 +232,7 @@ const SavedFilterSetsModal = ({ show, onHide }) => {
           Saved Filter Sets
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="saved-filter-sets-body">
         {error && (
           <Alert variant="danger" role="alert">
             {error}

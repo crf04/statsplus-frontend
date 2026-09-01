@@ -134,6 +134,11 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   await expect(page.getByRole('article', { name: 'Giannis Antetokounmpo player' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'Damian Lillard player' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'Kawhi Leonard player' })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('article', { name: 'Giannis Antetokounmpo player' })
+      .getByText('Focal game MIL vs. LAC · 35.1 MIN · 33.0 PTS'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'MIL defense' }).click();
 
   // Selecting a game-log participant opens the stored-data dossier.

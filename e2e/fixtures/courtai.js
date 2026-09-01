@@ -679,13 +679,18 @@ const historicalScores = (base, unavailable = []) =>
     ]),
   );
 
-const historicalFocalLine = (minutes, stats) => ({
-  game_id: HISTORICAL_GAME_ID,
-  game_date: '2026-03-29',
-  matchup: 'LAC @ MIL',
-  minutes,
-  stats: Object.fromEntries(HISTORICAL_CATEGORIES.map((category) => [category, stats[category]])),
-});
+const historicalFocalLine = (team, minutes, stats) => {
+  const away = historicalGame.away_team;
+  const home = historicalGame.home_team;
+  const isHome = team.team_id === home.team_id;
+  return {
+    game_id: HISTORICAL_GAME_ID,
+    game_date: '2026-03-29',
+    matchup: isHome ? `${home.tricode} vs. ${away.tricode}` : `${away.tricode} @ ${home.tricode}`,
+    minutes,
+    stats: Object.fromEntries(HISTORICAL_CATEGORIES.map((category) => [category, stats[category]])),
+  };
+};
 
 const historicalParticipant = ({
   id,
@@ -706,7 +711,7 @@ const historicalParticipant = ({
   posted_markets: [],
   provenance: {},
   stat_categories: HISTORICAL_CATEGORIES,
-  focal_game_line: historicalFocalLine(minutes, focalStats),
+  focal_game_line: historicalFocalLine(team, minutes, focalStats),
   season_scoring: seasonScoring,
   last_10_minutes: [34, 33, 36, 32, 35, 34, 33, 36, 35, 34],
   diet_shares: dietShares,

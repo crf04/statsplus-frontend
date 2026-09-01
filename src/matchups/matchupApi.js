@@ -518,10 +518,13 @@ const decodePlayer = (player, experience, game) => {
   // The line is evidence about this game, so its game, matchup identity, and
   // date must all be this game's.
   if (gameLogSourced ? focalGameLine === null : focalGameLine !== null) throw invalid();
+  const isHome = focalTeam.teamId === game.home.teamId;
+  const opposingTeam = isHome ? game.away : game.home;
+  const expectedMatchup = `${tricode} ${isHome ? 'vs.' : '@'} ${opposingTeam.tricode}`;
   if (
     focalGameLine !== null &&
     (focalGameLine.gameId !== game.gameId ||
-      focalGameLine.matchup !== `${game.away.tricode} @ ${game.home.tricode}` ||
+      focalGameLine.matchup !== expectedMatchup ||
       !focalDateFits(focalGameLine.gameDate, game.scheduledAt))
   ) {
     throw invalid();

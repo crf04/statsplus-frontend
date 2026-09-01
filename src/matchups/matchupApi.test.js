@@ -1714,6 +1714,18 @@ test.each([
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
+test('accepts the home participant game-log matchup identity', () => {
+  const candidate = historicalPayload();
+  const homeParticipant = JSON.parse(JSON.stringify(candidate.players[0]));
+  homeParticipant.canonical_id = 1630559;
+  homeParticipant.name = 'Home Participant';
+  homeParticipant.team_id = candidate.game.home_team.team_id;
+  homeParticipant.tricode = candidate.game.home_team.tricode;
+  homeParticipant.focal_game_line.matchup = 'BOS vs. LAL';
+
+  expect(() => decodeMatchup(withOneParticipant(candidate, homeParticipant))).not.toThrow();
+});
+
 test('rejects participants that disagree about which game is focal', () => {
   const candidate = historicalPayload();
   const second = JSON.parse(JSON.stringify(candidate.players[0]));

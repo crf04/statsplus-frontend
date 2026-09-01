@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import {
@@ -47,7 +47,73 @@ test('lists saved Filter Sets in the order the backend returned them', async () 
   renderModal();
 
   const names = await screen.findAllByRole('button', { name: /Open saved Filter Set/ });
-  expect(names.map((button) => button.textContent)).toEqual(['Curry at home', 'LeBron last 10']);
+  expect(names.map((button) => button.getAttribute('aria-label'))).toEqual([
+    'Open saved Filter Set Curry at home',
+    'Open saved Filter Set LeBron last 10',
+  ]);
+});
+
+/*
+ * A name is typed in a hurry and the prose of a Parsed Query is never stored,
+ * so the parameters are the only description of a saved item that can be
+ * relied on. One Filter Set carrying every kind of parameter says them all.
+ */
+test('describes a Saved Filter Set by every parameter its URL carries', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    {
+      id: 9,
+      name: 'everything at once',
+      queryString:
+        'player_name=Luka+Doncic&season_filter=2025-26&game_filter=10&location_filter=Away' +
+        '&teams_against%5B%5D=Isolation&rank_filter%5B%5D=5' +
+        '&teams_against%5B%5D=Transition&rank_filter%5B%5D=-8' +
+        '&minutes_filter=32,48&date_filter=2026-02-01' +
+        '&players_on%5B%5D=Kyrie+Irving&players_off%5B%5D=Anthony+Davis' +
+        '&self_filters%5BAST%5D=8,999&playstyle_RTG_min=40&playstyle_RTG_max=90',
+    },
+  ]);
+  renderModal();
+
+  const row = (await screen.findByRole('button', { name: /Open saved Filter Set/ })).closest('li');
+  [
+    'Luka Doncic',
+    '2025-26',
+    'last 10',
+    'away',
+    'vs top 5 Isolation D',
+    'vs bottom 8 Transition D',
+    '32–48 min',
+    'since 2026-02-01',
+    'with Kyrie Irving',
+    'without Anthony Davis',
+    'AST ≥ 8',
+    'PLAYTYPE_RTG 40–90',
+  ].forEach((parameter) => expect(within(row).getByText(parameter)).toBeVisible());
+});
+
+test('says a Filter Set with no parameters covers every logged game', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    { id: 3, name: 'all of it', queryString: 'player_name=Stephen+Curry' },
+  ]);
+  renderModal();
+
+  expect(await screen.findByText('every logged game')).toBeVisible();
+});
+
+/*
+ * The decoder withholds the whole Filter Set when one parameter is
+ * unhonourable, so a refused item has no parameters to show. It still has to be
+ * identifiable enough to delete, so its player is read off the raw URL.
+ */
+test('says on the row when a saved link can no longer be opened', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    { id: 4, name: 'old link', queryString: 'player_name=Kawhi+Leonard&game_filter=0' },
+  ]);
+  renderModal();
+
+  expect(await screen.findByText('this link can no longer be opened')).toBeVisible();
+  expect(screen.getByText('Kawhi Leonard')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Delete old link' })).toBeInTheDocument();
 });
 
 test('opening a saved Filter Set navigates to its query string and closes the list', async () => {
@@ -115,22 +181,35 @@ test('surfaces a duplicate-name conflict and keeps the item in the list', async 
   expect(screen.getByRole('button', { name: 'Open saved Filter Set Curry at home' })).toBeVisible();
 });
 
-test('deletes an item and reloads the list', async () => {
+test('deletes an item once the row confirms, and reloads the list', async () => {
   deleteSavedFilterSet.mockResolvedValue(undefined);
   fetchSavedFilterSets
     .mockResolvedValueOnce(savedFilterSets)
     .mockResolvedValueOnce([savedFilterSets[1]]);
   renderModal();
 
-  const deleteButton = await screen.findByRole('button', { name: 'Delete Curry at home' });
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Curry at home' }));
+  expect(deleteSavedFilterSet).not.toHaveBeenCalled();
+
   await act(async () => {
-    fireEvent.click(deleteButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deleting Curry at home' }));
   });
 
   expect(deleteSavedFilterSet).toHaveBeenCalledWith({ id: 2 });
   expect(
     screen.queryByRole('button', { name: 'Open saved Filter Set Curry at home' }),
   ).not.toBeInTheDocument();
+});
+
+// Deleting is not undoable, so backing out of it has to keep the item.
+test('a delete the row backs out of removes nothing', async () => {
+  renderModal();
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Curry at home' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Keep Curry at home' }));
+
+  expect(deleteSavedFilterSet).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Open saved Filter Set Curry at home' })).toBeVisible();
 });
 
 test('reports a failed load and says when nothing is saved yet', async () => {

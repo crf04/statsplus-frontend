@@ -8,14 +8,28 @@ describe('linkPreviewFor', () => {
   test('names the player and the filters a link carries', () => {
     const preview = linkPreviewFor(
       new URLSearchParams(
-        'player_name=LeBron+James&season_filter=2024-25&game_filter=10&location_filter=Home&teams_against[]=BOS&rank_filter[]=30',
+        'player_name=LeBron+James&season_filter=2024-25&game_filter=10&location_filter=Home&teams_against[]=Isolation&rank_filter[]=30',
       ),
     );
 
     expect(preview).toEqual({
       title: 'LeBron James Game Logs | CourtAI',
-      description: '2024-25 season, last 10 games, home games, vs BOS. Explore on CourtAI.',
+      description:
+        '2024-25 season, last 10 games, home games, vs top 30 Isolation D. Explore on CourtAI.',
     });
+  });
+
+  // The rank is half of the defensive filter, and its sign is the whole
+  // meaning. Naming the category alone described a link as asking about
+  // isolation defense in general when it asked for the worst eight.
+  test('states which end of the league a defensive filter asks for', () => {
+    expect(
+      linkPreviewFor(
+        new URLSearchParams(
+          'player_name=Anthony+Edwards&teams_against[]=Transition&rank_filter[]=-8&teams_against[]=Spotup&rank_filter[]=10',
+        ),
+      ).description,
+    ).toBe('Vs bottom 8 Transition D, vs top 10 Spotup D. Explore on CourtAI.');
   });
 
   test('describes a bare player link as every logged game', () => {

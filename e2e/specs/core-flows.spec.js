@@ -1293,6 +1293,8 @@ test('@critical a saved Filter Set is a name that reopens the same Log Workspace
   await page.getByRole('button', { name: 'Back to search' }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole('button', { name: 'Saved Filter Sets' }).click();
+  // The row says what the Filter Set asks for, not only what it was called.
+  await expect(page.getByRole('dialog').getByText('last 10', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Open saved Filter Set LeBron last 10' }).click();
 
   await expect(page).toHaveURL(/player_name=LeBron\+James/);
@@ -1314,7 +1316,9 @@ test('@critical a saved Filter Set is a name that reopens the same Log Workspace
     page.getByRole('button', { name: 'Open saved Filter Set LeBron recent form' }),
   ).toBeVisible();
 
+  // Deleting is not undoable, so the row asks before it goes.
   await page.getByRole('button', { name: 'Delete LeBron recent form' }).click();
+  await page.getByRole('button', { name: 'Confirm deleting LeBron recent form' }).click();
   await expect(page.getByText('You have not saved any Filter Sets yet')).toBeVisible();
 });
 

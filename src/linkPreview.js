@@ -1,4 +1,5 @@
 import { filterSetFromSearchParams } from './filterUtils';
+import { describeDefensiveFilter } from './savedFilterSetDescription';
 
 export const SITE_NAME = 'CourtAI';
 export const DEFAULT_TITLE = 'CourtAI | NBA Game Log Analytics';
@@ -15,7 +16,12 @@ const describeFilters = (filters) => {
   if (filters.location_filter && filters.location_filter !== 'Both') {
     parts.push(`${filters.location_filter.toLowerCase()} games`);
   }
-  if (filters['teams_against[]']?.length) parts.push(`vs ${listNames(filters['teams_against[]'])}`);
+  // The defensive filter is one condition across two parameters, and the rank's
+  // sign is the whole meaning. Naming the category alone described a link as
+  // asking about isolation defense in general when it asked for the best five.
+  filters['teams_against[]']?.forEach((category, index) => {
+    parts.push(describeDefensiveFilter(category, filters['rank_filter[]']?.[index]));
+  });
   if (filters.minutes_filter) {
     const [low, high] = filters.minutes_filter.split(',');
     parts.push(`${low}-${high} minutes`);

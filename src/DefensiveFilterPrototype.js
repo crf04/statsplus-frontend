@@ -1,11 +1,11 @@
 /*
  * PROTOTYPE — throwaway, see branch prototype/defensive-filter-look
- * Plan: Four variants of the defensive filter control, switchable via
+ * Plan: Six variants of the defensive filter control, switchable via
  * #dfproto=, inside the existing filter panel on /.
  *
- * Four structurally different presentations of the defensive-filter control
- * from src/FilterOptions.js, chosen at runtime by `#dfproto=A|B|C|D` in the
- * URL hash (never a query param — on `/` the query string is parsed as a
+ * Six structurally different presentations of the defensive-filter control
+ * from src/FilterOptions.js, chosen at runtime by `#dfproto=A|B|C|D|E|F` in
+ * the URL hash (never a query param — on `/` the query string is parsed as a
  * Saved Filter Set, and an unknown param makes the page refuse to load).
  * Defaults to A. Gated end-to-end on NODE_ENV !== 'production': in
  * production this module always resolves to variant A and the switcher bar
@@ -16,12 +16,14 @@ import { Form, FormControl, Button, InputGroup } from 'react-bootstrap';
 import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
 import './DefensiveFilterPrototype.css';
 
-const VARIANTS = ['A', 'B', 'C', 'D'];
+const VARIANTS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const VARIANT_NAMES = {
   A: 'Grouped select',
   B: 'Category pills',
   C: 'Searchable picker',
   D: 'Pills + select',
+  E: 'Scout sheet',
+  F: 'Sentence builder',
 };
 
 const CATEGORY_SHORT_LABELS = {
@@ -32,7 +34,7 @@ const CATEGORY_SHORT_LABELS = {
 };
 
 const parseVariantFromHash = () => {
-  const match = (window.location.hash || '').match(/dfproto=([ABCD])/);
+  const match = (window.location.hash || '').match(/dfproto=([A-F])/);
   return match ? match[1] : 'A';
 };
 
@@ -489,6 +491,425 @@ export const VariantD = ({
           Add
         </Button>
       </InputGroup>
+    </div>
+  );
+};
+
+// Both E and F replace the raw signed-number input with an explicit
+// Top/Bottom affordance. The signed string handleAddFilter/canAddFilter
+// expect is only ever produced here, via applyRank, and pushed through the
+// existing setFilterNumber setter — the parent's add/validate logic is
+// untouched.
+const clampMagnitude = (value) => Math.min(30, Math.max(1, value));
+
+/**
+ * Variant E — "Scout sheet". The control collapses to a single trigger
+ * button; tapping opens an overlay (a bottom sheet on narrow screens, an
+ * anchored panel on desktop) with a searchable, grouped list. Picking a row
+ * swaps the list for a rank line (Top/Bottom segmented toggle + stepper)
+ * inside the same sheet.
+ */
+export const VariantE = ({
+  selectedDefensiveFilter,
+  setSelectedDefensiveFilter,
+  setFilterNumber,
+  canAddFilter,
+  handleAddFilter,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [direction, setDirection] = useState('top');
+  const [magnitude, setMagnitude] = useState(5);
+
+  const phase = selectedDefensiveFilter === 'None' ? 'list' : 'rank';
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
+
+  const trimmed = query.trim().toLowerCase();
+  const filteredGroups = OPPONENT_FILTERS.map((group) => ({
+    category: group.category,
+    items: group.items.filter(
+      (item) =>
+        trimmed === '' ||
+        item.label.toLowerCase().includes(trimmed) ||
+        item.token.toLowerCase().includes(trimmed),
+    ),
+  })).filter((group) => group.items.length > 0);
+  const flatResults = filteredGroups.flatMap((group) => group.items);
+
+  const applyRank = (nextDirection, nextMagnitude) => {
+    setFilterNumber(`${nextDirection === 'bottom' ? '-' : ''}${nextMagnitude}`);
+  };
+
+  const handleSelectRow = (item) => {
+    setSelectedDefensiveFilter(item.token);
+    applyRank(direction, magnitude);
+  };
+
+  const handleDirectionChange = (nextDirection) => {
+    setDirection(nextDirection);
+    applyRank(nextDirection, magnitude);
+  };
+
+  const handleMagnitudeChange = (nextMagnitude) => {
+    const clamped = clampMagnitude(nextMagnitude);
+    setMagnitude(clamped);
+    applyRank(direction, clamped);
+  };
+
+  const handleListKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, flatResults.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const chosen = flatResults[highlightedIndex];
+      if (chosen) handleSelectRow(chosen);
+    }
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        id="defensive-filter"
+        className="dfproto-sheet-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen(true)}
+      >
+        <span>
+          {selectedDefensiveFilter === 'None'
+            ? 'Choose a defensive filter'
+            : opponentFilterLabel(selectedDefensiveFilter)}
+        </span>
+        <span className="dfproto-sheet-trigger-chevron" aria-hidden="true">
+          ⌄
+        </span>
+      </button>
+      {isOpen && (
+        <>
+          <div className="dfproto-sheet-backdrop" onClick={() => setIsOpen(false)} />
+          <div
+            className="dfproto-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Choose a defensive filter"
+          >
+            {phase === 'list' ? (
+              <>
+                <FormControl
+                  type="text"
+                  autoFocus
+                  autoComplete="off"
+                  placeholder="Search 35 defensive filters…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleListKeyDown}
+                  className="dfproto-picker-search"
+                />
+                <div className="dfproto-picker-list">
+                  {filteredGroups.length === 0 && (
+                    <div className="dfproto-results-empty">
+                      No filters match &ldquo;{query}&rdquo;
+                    </div>
+                  )}
+                  {filteredGroups.map((group) => (
+                    <div key={group.category}>
+                      <div className="dfproto-results-heading">{group.category}</div>
+                      {group.items.map((item) => {
+                        const flatIndex = flatResults.indexOf(item);
+                        return (
+                          <button
+                            type="button"
+                            key={item.token}
+                            className={`dfproto-sheet-row${
+                              flatIndex === highlightedIndex ? ' highlighted' : ''
+                            }`}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleSelectRow(item)}
+                          >
+                            <span>{item.label}</span>
+                            <span className="dfproto-sheet-row-token">{item.token}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="dfproto-sheet-rank">
+                <button
+                  type="button"
+                  className="dfproto-sheet-back"
+                  onClick={() => setSelectedDefensiveFilter('None')}
+                >
+                  ← Change filter
+                </button>
+                <div className="dfproto-sheet-chosen-label">
+                  {opponentFilterLabel(selectedDefensiveFilter)}
+                </div>
+                <div className="dfproto-segmented" role="group" aria-label="Rank direction">
+                  <button
+                    type="button"
+                    className={direction === 'top' ? 'active' : ''}
+                    onClick={() => handleDirectionChange('top')}
+                  >
+                    Top
+                  </button>
+                  <button
+                    type="button"
+                    className={direction === 'bottom' ? 'active' : ''}
+                    onClick={() => handleDirectionChange('bottom')}
+                  >
+                    Bottom
+                  </button>
+                </div>
+                <div className="dfproto-stepper">
+                  <button
+                    type="button"
+                    aria-label="Decrease rank"
+                    disabled={magnitude <= 1}
+                    onClick={() => handleMagnitudeChange(magnitude - 1)}
+                  >
+                    −
+                  </button>
+                  <span className="dfproto-stepper-value">{magnitude}</span>
+                  <button
+                    type="button"
+                    aria-label="Increase rank"
+                    disabled={magnitude >= 30}
+                    onClick={() => handleMagnitudeChange(magnitude + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="dfproto-helper-copy">
+                  {direction === 'top'
+                    ? `Top ${magnitude} — the ${magnitude} best defenses`
+                    : `Bottom ${magnitude} — the ${magnitude} weakest`}
+                </div>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="dfproto-sheet-add"
+                  disabled={!canAddFilter}
+                  onClick={() => {
+                    if (!canAddFilter) return;
+                    handleAddFilter();
+                    setIsOpen(false);
+                  }}
+                >
+                  Add filter
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Variant F — "Sentence builder". The control reads as one line of prose:
+ * `vs [top] [8] [Spot-Up] defenses`. "vs"/"defenses" are static; the three
+ * blanks are inline controls (direction toggle, inline number, and a
+ * category word that opens a compact searchable popover reusing Variant C's
+ * grouped/sticky-heading list). An "Add" text-button closes the sentence.
+ */
+export const VariantF = ({
+  selectedDefensiveFilter,
+  setSelectedDefensiveFilter,
+  setFilterNumber,
+  canAddFilter,
+  handleAddFilter,
+}) => {
+  const [direction, setDirection] = useState('top');
+  const [magnitudeText, setMagnitudeText] = useState('5');
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [popoverQuery, setPopoverQuery] = useState('');
+  const [popoverHighlightIndex, setPopoverHighlightIndex] = useState(0);
+
+  useEffect(() => {
+    setPopoverHighlightIndex(0);
+  }, [popoverQuery]);
+
+  useEffect(() => {
+    if (!isPopoverOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setIsPopoverOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isPopoverOpen]);
+
+  const currentMagnitude = () => {
+    const parsed = parseInt(magnitudeText, 10);
+    return Number.isNaN(parsed) ? 5 : clampMagnitude(parsed);
+  };
+
+  const applyRank = (nextDirection, nextMagnitude) => {
+    setFilterNumber(`${nextDirection === 'bottom' ? '-' : ''}${nextMagnitude}`);
+  };
+
+  const cycleDirection = () => {
+    const next = direction === 'top' ? 'bottom' : 'top';
+    setDirection(next);
+    applyRank(next, currentMagnitude());
+  };
+
+  const commitMagnitude = () => {
+    const clamped = currentMagnitude();
+    setMagnitudeText(clamped.toString());
+    applyRank(direction, clamped);
+  };
+
+  const trimmed = popoverQuery.trim().toLowerCase();
+  const filteredGroups = OPPONENT_FILTERS.map((group) => ({
+    category: group.category,
+    items: group.items.filter(
+      (item) =>
+        trimmed === '' ||
+        item.label.toLowerCase().includes(trimmed) ||
+        item.token.toLowerCase().includes(trimmed),
+    ),
+  })).filter((group) => group.items.length > 0);
+  const flatResults = filteredGroups.flatMap((group) => group.items);
+
+  const selectCategoryItem = (item) => {
+    setSelectedDefensiveFilter(item.token);
+    applyRank(direction, currentMagnitude());
+    setIsPopoverOpen(false);
+  };
+
+  const handlePopoverKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setPopoverHighlightIndex((i) => Math.min(i + 1, flatResults.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setPopoverHighlightIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const chosen = flatResults[popoverHighlightIndex];
+      if (chosen) selectCategoryItem(chosen);
+    }
+  };
+
+  return (
+    <div className="dfproto-sentence">
+      <span className="dfproto-sentence-plain">vs</span>
+      <button
+        type="button"
+        className="dfproto-sentence-blank dfproto-sentence-direction"
+        onClick={cycleDirection}
+      >
+        {direction} <span aria-hidden="true">▾</span>
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        aria-label="Rank number"
+        className="dfproto-sentence-number"
+        value={magnitudeText}
+        size={2}
+        onChange={(e) => setMagnitudeText(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={commitMagnitude}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitMagnitude();
+          }
+        }}
+      />
+      <span className="dfproto-sentence-category-wrap">
+        <button
+          type="button"
+          id="defensive-filter"
+          className={`dfproto-sentence-blank dfproto-sentence-category${
+            selectedDefensiveFilter === 'None' ? ' placeholder' : ''
+          }`}
+          aria-haspopup="listbox"
+          aria-expanded={isPopoverOpen}
+          onClick={() => setIsPopoverOpen((open) => !open)}
+        >
+          {selectedDefensiveFilter === 'None'
+            ? 'choose a filter'
+            : opponentFilterLabel(selectedDefensiveFilter)}
+        </button>
+        {isPopoverOpen && (
+          <div className="dfproto-results-panel dfproto-sentence-popover">
+            <FormControl
+              type="text"
+              autoFocus
+              autoComplete="off"
+              placeholder="Search…"
+              value={popoverQuery}
+              onChange={(e) => setPopoverQuery(e.target.value)}
+              onKeyDown={handlePopoverKeyDown}
+              onBlur={() => window.setTimeout(() => setIsPopoverOpen(false), 120)}
+              className="dfproto-picker-search"
+            />
+            <div className="dfproto-picker-list">
+              {filteredGroups.length === 0 && (
+                <div className="dfproto-results-empty">
+                  No filters match &ldquo;{popoverQuery}&rdquo;
+                </div>
+              )}
+              {filteredGroups.map((group) => (
+                <div key={group.category}>
+                  <div className="dfproto-results-heading">{group.category}</div>
+                  {group.items.map((item) => {
+                    const flatIndex = flatResults.indexOf(item);
+                    return (
+                      <button
+                        type="button"
+                        key={item.token}
+                        className={`dfproto-result-item${
+                          flatIndex === popoverHighlightIndex ? ' highlighted' : ''
+                        }`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectCategoryItem(item)}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </span>
+      <span className="dfproto-sentence-plain">defenses</span>
+      <button
+        type="button"
+        className="dfproto-sentence-add"
+        disabled={!canAddFilter}
+        onClick={() => {
+          if (!canAddFilter) return;
+          handleAddFilter();
+        }}
+      >
+        Add
+      </button>
     </div>
   );
 };

@@ -113,6 +113,331 @@
   font-size: 14px;
 }
 
+/* ---------- Shared: search field + list, used inside E's sheet and F's popover ---------- */
+.dfproto-picker-search {
+  margin: 10px;
+  width: calc(100% - 20px);
+}
+
+.dfproto-picker-list {
+  overflow-y: auto;
+}
+
+/* ---------- Variant E: scout sheet ---------- */
+.dfproto-sheet-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: var(--ct-surface-2);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  color: var(--ct-text);
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dfproto-sheet-trigger:hover {
+  border-color: var(--ct-gold);
+}
+
+.dfproto-sheet-trigger-chevron {
+  color: var(--ct-dim);
+}
+
+.dfproto-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dfproto-sheet {
+  position: absolute;
+  z-index: 2000;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--ct-surface) 0%, var(--ct-surface-2) 100%);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: dfproto-sheet-fade-in 0.15s ease-out;
+}
+
+@keyframes dfproto-sheet-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .dfproto-sheet {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 75vh;
+    border-radius: var(--ct-radius-card) var(--ct-radius-card) 0 0;
+    animation: dfproto-sheet-slide-up 0.22s ease-out;
+  }
+
+  @keyframes dfproto-sheet-slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dfproto-sheet {
+    animation: none;
+  }
+}
+
+.dfproto-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--ct-line);
+  color: var(--ct-text);
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dfproto-sheet-row:hover,
+.dfproto-sheet-row.highlighted {
+  background: var(--ct-gold-soft);
+  border-left-color: var(--ct-gold);
+}
+
+.dfproto-sheet-row-token {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+}
+
+.dfproto-sheet-row:hover .dfproto-sheet-row-token,
+.dfproto-sheet-row.highlighted .dfproto-sheet-row-token {
+  color: var(--ct-gold-hover);
+}
+
+.dfproto-sheet-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.dfproto-sheet-back {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--ct-dim);
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dfproto-sheet-back:hover {
+  color: var(--ct-gold);
+}
+
+.dfproto-sheet-chosen-label {
+  font-family: var(--ct-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+
+.dfproto-segmented {
+  display: flex;
+  width: fit-content;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  overflow: hidden;
+}
+
+.dfproto-segmented button {
+  background: transparent;
+  border: none;
+  color: var(--ct-dim);
+  padding: 8px 20px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dfproto-segmented button.active {
+  background: var(--ct-gold);
+  color: #1a1408;
+  font-weight: 650;
+}
+
+.dfproto-stepper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dfproto-stepper button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--ct-line-strong);
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dfproto-stepper button:hover:not(:disabled) {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.dfproto-stepper button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dfproto-stepper-value {
+  min-width: 2.5ch;
+  text-align: center;
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+}
+
+.dfproto-helper-copy {
+  color: var(--ct-dim);
+  font-size: 0.85rem;
+}
+
+.dfproto-sheet-add {
+  align-self: flex-start;
+}
+
+/* ---------- Variant F: sentence builder ---------- */
+.dfproto-sentence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ct-display);
+  font-size: 1.15rem;
+  color: var(--ct-dim);
+}
+
+.dfproto-sentence-plain {
+  color: var(--ct-dim);
+}
+
+.dfproto-sentence-blank {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: var(--ct-gold);
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: underline dotted var(--ct-gold);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.dfproto-sentence-blank:hover {
+  color: var(--ct-gold-hover);
+}
+
+.dfproto-sentence-category.placeholder {
+  color: var(--ct-dim);
+  text-decoration-color: var(--ct-dim);
+  animation: dfproto-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dfproto-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dfproto-sentence-category.placeholder {
+    animation: none;
+  }
+}
+
+.dfproto-sentence-number {
+  width: 2.2ch;
+  padding: 0 2px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dotted var(--ct-gold);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: inherit;
+}
+
+.dfproto-sentence-number:focus {
+  outline: none;
+  border-bottom-color: var(--ct-gold-hover);
+}
+
+.dfproto-sentence-category-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.dfproto-sentence-popover {
+  width: 280px;
+  max-height: 320px;
+}
+
+.dfproto-sentence-add {
+  margin-left: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ct-gold);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dfproto-sentence-add:hover:not(:disabled) {
+  color: var(--ct-gold-hover);
+}
+
+.dfproto-sentence-add:disabled {
+  color: var(--ct-dim);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ---------- Switcher bar: deliberately alien to the app palette ---------- */
 .dfproto-switcher {
   position: fixed;

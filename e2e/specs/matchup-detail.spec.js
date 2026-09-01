@@ -242,16 +242,14 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('OPP TOV')).toBeVisible();
   await expect(page.getByText('OPP STL')).toBeVisible();
   await expect(page.getByText('OPP BLK')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'OPP_STL' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'OPP_BLK' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Traditional defensive columns' })).toHaveCount(0);
   await expect(page.getByText('OPP PF')).toHaveCount(0);
   await expect(page.getByText('Assists', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Backcourt PTS')).toHaveCount(0);
   await expect(page.getByText('Isolation PTS')).toHaveCount(0);
   await expect(page.getByText('1 row hidden near league average.')).toBeVisible();
-  await expect(page.getByText('+12% vs league')).toBeVisible();
-  await expect(page.getByText('-11% vs league')).toBeVisible();
+  await expect(page.getByText('+12.0% vs league')).toBeVisible();
+  await expect(page.getByText('-11.0% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toBeVisible();
   await expect(page.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();
@@ -259,7 +257,6 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText(/LeBron James · 31% ast/)).toBeVisible();
   await expect(page.getByText(/Austin Reaves · 40% FGA/)).toHaveCount(0);
   await expect(page.getByText(/Austin Reaves · 35% ast/)).toHaveCount(0);
-  await expect(page.getByText('15.2 per 48')).toBeVisible();
   await expect(page.getByText('2 targetable returned')).toBeVisible();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
   await expect(
@@ -280,12 +277,9 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toHaveCount(0);
-  await expect(page.getByText('13.9 per 48')).toBeVisible();
-  await expect(page.getByText('8.8 per 48')).toBeVisible();
-  await expect(page.getByText('5.7 per 48')).toBeVisible();
   await expect(page.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   await expect(page.getByText('OPP TOV')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toHaveCount(0);
   await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-legacy-traditional.png'),
@@ -295,7 +289,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   await expect(page.getByText('No Defense Sheet rows match these controls.')).toHaveCount(0);
   await page.getByRole('button', { name: 'TOV', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  await expect(page.getByText('OPP TOV')).toBeVisible();
   await page.getByRole('button', { name: 'AST', exact: true }).click();
   await expect(
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
@@ -305,9 +299,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
 
   await page.getByRole('button', { name: 'TOV', exact: true }).click();
   await expect(page.getByText('OPP TOV')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
   await expect(page.getByText('OPP STL')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'OPP_STL' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'PTS' }).click();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();
@@ -388,11 +380,6 @@ test('null relative percentages stay neutral when the matching league average is
     sigma_deviation: 1.4,
     rank: 1,
   };
-  candidate.league.defensive_columns.OPP_BLK.season.average_per_48 = 0;
-  candidate.teams.find((team) => team.tricode === 'BOS').defensive_columns.OPP_BLK.season = {
-    per_48: 2.5,
-    percent_vs_league_average: null,
-  };
   const consoleErrors = [];
   const failedResponses = [];
   page.on('console', (message) => {
@@ -407,8 +394,7 @@ test('null relative percentages stay neutral when the matching league average is
   await page.getByRole('button', { name: 'All deviations', exact: true }).click();
   await expect(page.getByText('Transition PTS')).toBeVisible();
   await expect(page.getByText('7.5', { exact: true })).toBeVisible();
-  await expect(page.getByText('2.5 per 48')).toBeVisible();
-  await expect(page.getByText('vs league: unavailable (not comparable)')).toHaveCount(2);
+  await expect(page.getByText('vs league: unavailable (not comparable)')).toHaveCount(1);
   await expect(page.getByText(/null%/)).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);

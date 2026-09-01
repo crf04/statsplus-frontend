@@ -165,8 +165,7 @@
 
 .defense-sheet > .section-heading,
 .defense-sheet > .hidden-count,
-.defense-sheet > .honest-empty,
-.defensive-columns {
+.defense-sheet > .honest-empty {
   grid-column: 1 / -1;
 }
 
@@ -198,7 +197,6 @@
 }
 
 .sheet-base,
-.defensive-columns,
 .player-rail,
 .injury-report {
   margin: 0;
@@ -208,8 +206,7 @@
   background: var(--ct-surface);
 }
 
-.sheet-base > h3,
-.defensive-columns > h3 {
+.sheet-base > h3 {
   margin: 0 0 8px;
   color: var(--ct-dim);
   font-size: 0.63rem;
@@ -308,25 +305,6 @@
   margin-top: 5px;
 }
 
-.defensive-column-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.defensive-column-grid article {
-  display: grid;
-  gap: 2px;
-  border-top: 1px solid var(--ct-line);
-  padding: 6px;
-}
-
-.defensive-column-grid h4 {
-  margin: 0;
-  font-size: 0.75rem;
-}
-
-.defensive-column-grid span,
 .injury-list small {
   color: var(--ct-dim);
   font-family: var(--ct-mono);
@@ -553,8 +531,7 @@
 
   .defense-sheet > .section-heading,
   .defense-sheet > .hidden-count,
-  .defense-sheet > .honest-empty,
-  .defensive-columns {
+  .defense-sheet > .honest-empty {
     grid-column: 1;
   }
 
@@ -570,9 +547,5 @@
 
   .row-stat {
     grid-template-columns: 24px minmax(75px, auto) minmax(110px, 1fr);
-  }
-
-  .defensive-column-grid {
-    grid-template-columns: 1fr;
   }
 }

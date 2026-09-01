@@ -83,8 +83,8 @@ const matchup = {
             sliceKey: 'transition',
             label: 'Transition',
             markets: ['PTS', 'FGA'],
-            season: value(18.4, 12, 1.4, 27),
-            last15: value(15.2, -8, -1.1, 5),
+            season: value(18.4, 12.34, 1.4, 27),
+            last15: value(15.2, -8.26, -1.1, 5),
           },
           {
             key: 'isolation',
@@ -275,8 +275,10 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(screen.getByText('Above-break three')).toBeVisible();
   expect(screen.queryByText('Isolation')).not.toBeInTheDocument();
   expect(screen.getByText('1 row hidden near league average.')).toBeVisible();
-  expect(screen.getByText('+12% vs league')).toBeVisible();
-  expect(screen.getByText('14.2 per 48')).toBeVisible();
+  expect(screen.getByText('+12.3% vs league')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
+  ).not.toBeInTheDocument();
   expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
@@ -287,7 +289,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   ).toBeVisible();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(screen.getByText('-8% vs league')).toBeVisible();
+  expect(screen.getByText('-8.3% vs league')).toBeVisible();
   expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 
@@ -302,6 +304,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   expect(screen.getByText('Isolation')).toBeVisible();
+  expect(screen.getByText('+4.0% vs league')).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 });
 
@@ -370,7 +373,9 @@ test('names an unavailable surface window while leaving available surfaces usabl
   expect(
     screen.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
-  expect(screen.getByText('12.9 per 48')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
+  ).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'AST' }));
   expect(
@@ -392,6 +397,13 @@ test('renders one relevant traditional unavailability notice for All and specifi
         label: 'Opponent rebounds',
         markets: ['REB'],
         season: value(45, -8, -1.2, 4),
+        last15: null,
+      },
+      {
+        key: 'opponent-turnovers',
+        label: 'Opponent turnovers',
+        markets: ['TOV'],
+        season: value(14.8, 10, 1.3, 25),
         last15: null,
       },
     ];
@@ -478,9 +490,9 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   expect(screen.getByTitle('Opponent rank 4/30 — 30 allows the most')).toBeVisible();
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
 
-  expect(screen.getByText('12.9 per 48')).toBeVisible();
-  expect(screen.getByText('7.8 per 48')).toBeVisible();
-  expect(screen.getByText('4.7 per 48')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
+  ).not.toBeInTheDocument();
   expect(screen.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   expect(screen.getByText('Opponent turnovers')).toBeVisible();
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
@@ -493,10 +505,10 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
   expect(screen.queryByText('Opponent rebounds unavailable for Last 15.')).not.toBeInTheDocument();
   expect(screen.getByText('Opponent turnovers')).toBeVisible();
-  expect(screen.getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
+  expect(screen.queryByRole('heading', { name: 'OPP_TOV' })).not.toBeInTheDocument();
 });
 
-test('renders governed traditional sheet rows alongside defensive columns', async () => {
+test('renders governed traditional sheet rows without duplicate defensive columns', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
     ['OPP_REB', 'Opponent rebounds', ['REB', 'PR', 'RA', 'PRA'], 45, -1.2],
@@ -529,18 +541,16 @@ test('renders governed traditional sheet rows alongside defensive columns', asyn
   expect(within(traditionalSheet).getByText('Opponent turnovers')).toBeVisible();
   expect(within(traditionalSheet).getByText('Opponent steals')).toBeVisible();
   expect(within(traditionalSheet).getByText('Opponent blocks')).toBeVisible();
-  const columns = screen
-    .getByRole('heading', { name: 'Traditional defensive columns' })
-    .closest('section');
-  expect(within(columns).getByRole('heading', { name: 'OPP_TOV' })).toBeVisible();
-  expect(within(columns).getByText('14.2 per 48')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'OPP_TOV' })).not.toBeInTheDocument();
 });
 
 test('renders neutral relative percentages for nonzero values without directional color', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
   boston.defenseSheet.playTypes[0].season = value(7.5, null, 1.4, 1);
-  boston.defensiveColumns.OPP_BLK.season = { per48: 2.5, percentVsLeagueAverage: null };
   fetchMatchup.mockResolvedValueOnce(candidate);
 
   render(
@@ -551,11 +561,6 @@ test('renders neutral relative percentages for nonzero values without directiona
     </MemoryRouter>,
   );
   await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  const blockColumn = screen.getByRole('heading', { name: 'OPP_BLK' }).closest('article');
-  expect(blockColumn).toHaveTextContent('2.5 per 48');
-  expect(blockColumn).toHaveTextContent('vs league: unavailable (not comparable)');
-  expect(blockColumn).not.toHaveTextContent('null%');
-
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   const transition = screen.getByText('Transition').closest('article');
   expect(transition).toHaveTextContent('7.5');

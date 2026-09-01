@@ -393,8 +393,6 @@ function DefenseSheet({
       section.legacyUnavailableRow ||
       (section.availability.status !== 'available' && section.relevant),
   );
-  const traditionalHasRelevantRows =
-    sections.find((section) => section.base === 'traditional')?.relevant ?? false;
   return (
     <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
       <div className="section-heading">
@@ -405,18 +403,11 @@ function DefenseSheet({
       <p className="hidden-count">
         {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
       </p>
-      <DefensiveColumns
-        columns={team.defensiveColumns}
-        market={market}
-        windowKey={windowKey}
-        availability={surfaceAvailability.traditional[windowKey]}
-        hasRelevantRows={traditionalHasRelevantRows}
-      />
       {visibleCount === 0 && !hasNamedUnavailable && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
       {sections.map(({ base, availability, relevant, legacyUnavailableRow, visibleRows }) =>
-        availability.status !== 'available' && relevant && base !== 'traditional' ? (
+        availability.status !== 'available' && relevant ? (
           <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
             <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
             <p className="honest-empty">
@@ -497,52 +488,6 @@ function DefenseSheet({
           </section>
         ) : null,
       )}
-    </section>
-  );
-}
-
-const DEFENSIVE_COLUMN_MARKETS = { OPP_TOV: 'TOV', OPP_STL: 'STL', OPP_BLK: 'BLK' };
-
-function DefensiveColumns({ columns, market, windowKey, availability, hasRelevantRows }) {
-  const visible = Object.entries(columns).filter(
-    ([key]) => market === 'All' || DEFENSIVE_COLUMN_MARKETS[key] === market,
-  );
-  if (availability.status !== 'available') {
-    if (visible.length === 0 && !hasRelevantRows) return null;
-    return (
-      <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
-        <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
-        <p className="honest-empty">
-          Traditional defense unavailable for{' '}
-          {WINDOWS.find((window) => window.key === windowKey)?.label}:{' '}
-          {availability.unavailableReason}.
-        </p>
-      </section>
-    );
-  }
-  if (visible.length === 0) return null;
-  return (
-    <section className="defensive-columns" aria-labelledby="defensive-columns-heading">
-      <h3 id="defensive-columns-heading">Traditional defensive columns</h3>
-      <div className="defensive-column-grid">
-        {visible.map(([key, windows]) => {
-          const value = windows[windowKey];
-          return (
-            <article key={key}>
-              <h4>{key}</h4>
-              <strong>{value.per48.toFixed(1)} per 48</strong>
-              {value.percentVsLeagueAverage === null ? (
-                <span>{UNAVAILABLE_RELATIVE_LABEL}</span>
-              ) : (
-                <span>
-                  {value.percentVsLeagueAverage > 0 ? '+' : ''}
-                  {value.percentVsLeagueAverage}% vs league
-                </span>
-              )}
-            </article>
-          );
-        })}
-      </div>
     </section>
   );
 }

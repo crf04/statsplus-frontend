@@ -23,6 +23,9 @@ import {
   mergeFilterSet,
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
+// PROTOTYPE (throwaway): `#proto=saved` opens the saved list straight away,
+// signed in or not, so the variants are one URL away from a cold start.
+import { isPrototypeActive } from './savedFilterSetsPrototype/prototypeMode';
 import useDocumentTitle from './useDocumentTitle';
 
 const listNames = (names) =>
@@ -69,7 +72,7 @@ const GameLogFilter = () => {
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
   const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
-  const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
+  const [showSavedFilterSets, setShowSavedFilterSets] = useState(isPrototypeActive);
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
   const teamsRef = useRef([]);
@@ -619,7 +622,7 @@ const GameLogFilter = () => {
 
       {/* Saving and the saved list belong to an account, so neither exists for
           a signed-out reader. */}
-      {isAuthenticated && (
+      {(isAuthenticated || isPrototypeActive()) && (
         <>
           <SaveFilterSetModal
             show={showSaveFilterSet}

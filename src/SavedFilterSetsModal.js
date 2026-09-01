@@ -7,6 +7,11 @@ import {
   fetchSavedFilterSets,
   renameSavedFilterSet,
 } from './savedFilterSetsApi';
+// PROTOTYPE (throwaway, branch prototype/saved-filter-sets-look): with
+// `#proto=saved` in the URL this modal renders the look-and-feel variants
+// instead of the shipped list. Delete this import and its use to remove.
+import SavedFilterSetsPrototype from './savedFilterSetsPrototype/SavedFilterSetsPrototype';
+import { isPrototypeActive } from './savedFilterSetsPrototype/prototypeMode';
 
 /*
  * The saved list is the same list wherever it is opened from: the Query Prompt,
@@ -72,6 +77,20 @@ const SavedFilterSetsModal = ({ show, onHide }) => {
     setRenamingId(savedFilterSet.id);
     setDraftName(savedFilterSet.name);
   };
+
+  // PROTOTYPE (throwaway): after the hooks, so the swap is lint-safe and the
+  // variants get whatever the real fetch returned.
+  if (isPrototypeActive()) {
+    return (
+      <SavedFilterSetsPrototype
+        show={show}
+        onHide={onHide}
+        savedFilterSets={savedFilterSets}
+        isLoading={isLoading}
+        error={error}
+      />
+    );
+  }
 
   return (
     <Modal

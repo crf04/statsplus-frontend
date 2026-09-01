@@ -25,10 +25,10 @@ signed in or not, with no backend running.
   delete confirms in place.
 - `#proto=saved&v=B` — **Grouped by player.** Player first, name second, with a
   filter field across names/players/filters and an explicit Manage toggle.
-- `#proto=saved&v=D` — **Filters first.** The player leads, the chips carry the
-  row at full size, and the saved name drops to a caption. The name is typed in
-  a hurry and the natural-language query is never stored, so the parameters are
-  the only reliable description of a link.
+- `#proto=saved&v=D` — **Filters first.** A's row order — name on top — with the
+  parameters brought up to full size instead of dim sub-text, and the player as
+  the leading chip. The natural-language query is never stored, so the
+  parameters are the only reliable description of a link.
 - `#proto=saved&v=C` — **Drawer + preview.** Right-hand drawer over a still
   visible Workspace; names on the left rail, the whole decoded Filter Set and
   the raw query string on the right, Open as one deliberate affordance.

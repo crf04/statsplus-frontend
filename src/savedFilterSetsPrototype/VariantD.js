@@ -1,11 +1,11 @@
 /*
  * PROTOTYPE — throwaway.
  *
- * D — Filters first. The saved name is typed in a hurry and the natural
- * language query is never stored, so neither reliably says what a link is.
- * The parameters always do. So the player leads, the chips carry the row at
- * full size, and the name drops to a caption — still there to search by and
- * rename, no longer pretending to be the description.
+ * D — Filters first. Same row order as A: the name you gave it is still what
+ * you read first. What changes is weight. The natural-language query is never
+ * stored and a name is typed in a hurry, so the parameters are the only
+ * reliable description of a link — they come up to full size and stop being
+ * dim sub-text under the name.
  */
 import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
@@ -53,13 +53,12 @@ const Row = ({ item, onOpen, onRename, onDelete }) => {
         aria-label={`Open saved Filter Set ${item.name}`}
         onClick={() => onOpen(item)}
       >
-        {/* A refused link decodes to no parameters at all, so its name is the
-            only thing left to identify it by and has to lead. */}
-        <span className="pd-lead">{described.player || item.name}</span>
+        <span className="pd-name">{item.name}</span>
         {described.refused ? (
           <span className="pa-refused">this link can no longer be opened</span>
         ) : (
           <span className="pd-chips">
+            {described.player && <span className="pd-player">{described.player}</span>}
             {described.chips.length === 0 && (
               <span className="proto-chip proto-chip-lg">every logged game</span>
             )}
@@ -73,7 +72,6 @@ const Row = ({ item, onOpen, onRename, onDelete }) => {
             ))}
           </span>
         )}
-        {described.player && <span className="pd-caption">{item.name}</span>}
       </button>
       {mode === 'confirm' ? (
         <div className="pa-actions pa-actions-open">

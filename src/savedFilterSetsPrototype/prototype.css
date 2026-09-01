@@ -538,21 +538,34 @@
   color: inherit;
 }
 
-.pd-lead {
+.pd-name {
   font-family: var(--ct-display);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  line-height: 1;
+  letter-spacing: 0.015em;
+  line-height: 1.1;
 }
 
-.pd-row:hover .pd-lead {
+.pd-row:hover .pd-name {
   color: var(--ct-gold);
+}
+
+/* The player is a parameter like any other, so it sits in the chip row — just
+   the one that identifies the link fastest, so it keeps the accent. */
+.pd-player {
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+  color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.14rem 0.55rem;
+  white-space: nowrap;
 }
 
 .pd-chips {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.3rem;
 }
@@ -572,12 +585,4 @@
 .proto-chip-lg.proto-chip-off {
   color: var(--ct-miss);
   border-color: transparent;
-}
-
-/* The name is still searchable and renameable; it just stops pretending to be
-   the description. */
-.pd-caption {
-  font-size: 0.72rem;
-  color: var(--ct-dim);
-  letter-spacing: 0.02em;
 }

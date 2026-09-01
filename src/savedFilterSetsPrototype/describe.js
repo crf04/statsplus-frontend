@@ -31,15 +31,17 @@ export const describeSavedFilterSet = (queryString) => {
   if (filters.location_filter && filters.location_filter !== 'Both') {
     chips.push({ key: 'location', label: filters.location_filter.toLowerCase() });
   }
-  // The opponent filter and its rank are one filter across two parameters, and
-  // the app's own badges show them paired, so a chip per opponent says the rank
-  // out loud rather than dropping half the filter.
-  filters['teams_against[]']?.forEach((team, index) => {
+  // Despite its name, teams_against[] carries a defensive category, not a team,
+  // and rank_filter[] is a league position whose sign is the whole meaning:
+  // positive counts from the best defenses, negative from the worst. A bare
+  // "(5)" hides that, so the chip says top or bottom out loud.
+  filters['teams_against[]']?.forEach((category, index) => {
     const rank = filters['rank_filter[]']?.[index];
-    chips.push({
-      key: `opp-${index}`,
-      label: rank === undefined ? `vs ${team}` : `vs ${team} (${rank})`,
-    });
+    const label =
+      rank === undefined
+        ? `vs ${category} D`
+        : `vs ${rank > 0 ? 'top' : 'bottom'} ${Math.abs(rank)} ${category} D`;
+    chips.push({ key: `opp-${index}`, label });
   });
   if (filters.minutes_filter) {
     const [low, high] = String(filters.minutes_filter).split(',');

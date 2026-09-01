@@ -8,9 +8,9 @@
 export const FIXTURE_SAVED_FILTER_SETS = [
   {
     id: 'fx-1',
-    name: 'Luka vs drop coverage',
+    name: 'Luka vs elite iso D',
     queryString:
-      'player_name=Luka+Doncic&season_filter=2025-26&teams_against%5B%5D=MIN&teams_against%5B%5D=OKC&rank_filter%5B%5D=5&rank_filter%5B%5D=12&minutes_filter=32,48',
+      'player_name=Luka+Doncic&season_filter=2025-26&teams_against%5B%5D=Isolation&rank_filter%5B%5D=5&minutes_filter=32,48',
   },
   {
     id: 'fx-2',
@@ -32,6 +32,13 @@ export const FIXTURE_SAVED_FILTER_SETS = [
     id: 'fx-5',
     name: 'Tatum home, heavy minutes',
     queryString: 'player_name=Jayson+Tatum&location_filter=Home&minutes_filter=36,48',
+  },
+  {
+    // A negative rank counts from the worst, and the chip has to say so.
+    id: 'fx-5b',
+    name: 'Ant vs bad transition D',
+    queryString:
+      'player_name=Anthony+Edwards&teams_against%5B%5D=Transition&rank_filter%5B%5D=-8&teams_against%5B%5D=Spotup&rank_filter%5B%5D=-10',
   },
   {
     id: 'fx-6',

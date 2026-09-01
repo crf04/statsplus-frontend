@@ -13,8 +13,15 @@ import {
   ListGroup,
 } from 'react-bootstrap';
 import ReactSlider from 'react-slider';
-import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
+import { opponentFilterLabel } from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
+import {
+  useDfProtoVariant,
+  DfProtoSwitcher,
+  VariantA as DfVariantA,
+  VariantB as DfVariantB,
+  VariantC as DfVariantC,
+} from './DefensiveFilterPrototype';
 
 const hasFilterValue = (value) => value !== null && value !== undefined && value !== '';
 
@@ -51,6 +58,7 @@ const FilterOptions = ({
   // defaults to the rest. Touched-ness is tracked rather than compared against
   // a copy of those defaults, which would drift from the API.
   const [touchedControls, setTouchedControls] = useState(() => new Set());
+  const dfProtoVariant = useDfProtoVariant();
 
   const markControlTouched = (control) => {
     setTouchedControls((previous) => {
@@ -651,53 +659,40 @@ const FilterOptions = ({
         </Form.Group>
         <Form.Group className="mb-4">
           <Form.Label htmlFor="defensive-filter">Defensive Filter:</Form.Label>
-          <InputGroup>
-            <Form.Select
-              id="defensive-filter"
-              value={selectedDefensiveFilter}
-              onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
-            >
-              <option value="None">None</option>
-              {OPPONENT_FILTERS.map((group) => (
-                <optgroup key={group.category} label={group.category}>
-                  {group.items.map((item) => (
-                    <option key={item.token} value={item.token}>
-                      {item.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </Form.Select>
-            <FormControl
-              id="defensive-filter-rank"
-              aria-label="Defensive filter rank"
-              type="text"
-              value={filterNumber}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || /^-?\d*$/.test(value)) {
-                  setFilterNumber(value);
-                }
-              }}
-              onBlur={() => {
-                if (filterNumber === '' || isNaN(parseInt(filterNumber))) {
-                  setFilterNumber('');
-                } else {
-                  setFilterNumber(parseInt(filterNumber).toString());
-                }
-              }}
-              placeholder="Number"
-              style={{ appearance: 'textfield' }}
+          {dfProtoVariant === 'B' ? (
+            <DfVariantB
+              selectedDefensiveFilter={selectedDefensiveFilter}
+              setSelectedDefensiveFilter={setSelectedDefensiveFilter}
+              filterNumber={filterNumber}
+              setFilterNumber={setFilterNumber}
+              canAddFilter={canAddFilter}
+              handleAddFilter={handleAddFilter}
+              activeFilters={activeFilters}
+              handleRemoveFilter={handleRemoveFilter}
             />
-            <Button
-              type="button"
-              variant="outline-primary"
-              onClick={handleAddFilter}
-              disabled={!canAddFilter}
-            >
-              Add
-            </Button>
-          </InputGroup>
+          ) : dfProtoVariant === 'C' ? (
+            <DfVariantC
+              selectedDefensiveFilter={selectedDefensiveFilter}
+              setSelectedDefensiveFilter={setSelectedDefensiveFilter}
+              filterNumber={filterNumber}
+              setFilterNumber={setFilterNumber}
+              canAddFilter={canAddFilter}
+              handleAddFilter={handleAddFilter}
+              activeFilters={activeFilters}
+              handleRemoveFilter={handleRemoveFilter}
+            />
+          ) : (
+            <DfVariantA
+              selectedDefensiveFilter={selectedDefensiveFilter}
+              setSelectedDefensiveFilter={setSelectedDefensiveFilter}
+              filterNumber={filterNumber}
+              setFilterNumber={setFilterNumber}
+              canAddFilter={canAddFilter}
+              handleAddFilter={handleAddFilter}
+              activeFilters={activeFilters}
+              handleRemoveFilter={handleRemoveFilter}
+            />
+          )}
           <div className="mt-2">
             {activeFilters.map((filter, index) => (
               <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
@@ -717,6 +712,7 @@ const FilterOptions = ({
             ))}
           </div>
         </Form.Group>
+        <DfProtoSwitcher />
         <Form.Group className="mb-4">
           <Button
             type="button"

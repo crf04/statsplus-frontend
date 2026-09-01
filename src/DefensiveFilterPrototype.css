@@ -1,0 +1,154 @@
+/*
+ * PROTOTYPE — throwaway, see branch prototype/defensive-filter-look
+ * Companion styles for DefensiveFilterPrototype.js. Reuses the app's design
+ * tokens from theme.css (--ct-*) so the variants look native to the panel.
+ */
+
+/* ---------- Variant B: category pills + chip grid ---------- */
+.dfproto-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dfproto-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+
+.dfproto-chip-added {
+  opacity: 0.8;
+}
+
+.dfproto-chip-added:hover {
+  opacity: 1;
+}
+
+.dfproto-status-line {
+  color: var(--ct-dim);
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.dfproto-rank-row {
+  display: flex;
+  gap: 8px;
+}
+
+.dfproto-rank-row .form-control {
+  flex: 1;
+}
+
+/* ---------- Variant C: searchable picker ---------- */
+.dfproto-search-wrapper {
+  position: relative;
+}
+
+.dfproto-results-panel {
+  position: absolute;
+  z-index: 1000;
+  width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  background: linear-gradient(135deg, var(--ct-surface) 0%, var(--ct-surface-2) 100%);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  margin-top: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dfproto-results-heading {
+  position: sticky;
+  top: 0;
+  background: var(--ct-surface-2);
+  color: var(--ct-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.dfproto-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ct-line);
+  color: var(--ct-text);
+  padding: 8px 12px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dfproto-result-item:hover,
+.dfproto-result-item.highlighted {
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold-hover);
+}
+
+.dfproto-result-item.added {
+  color: var(--ct-dim);
+}
+
+.dfproto-result-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ct-gold);
+}
+
+.dfproto-results-empty {
+  padding: 12px;
+  color: var(--ct-dim);
+  font-size: 14px;
+}
+
+/* ---------- Switcher bar: deliberately alien to the app palette ---------- */
+.dfproto-switcher {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #000;
+  border: 2px dashed #39ff14;
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: #39ff14;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  box-shadow: 0 0 16px rgba(57, 255, 20, 0.5);
+}
+
+.dfproto-switcher-btn {
+  background: transparent;
+  border: 1px solid #39ff14;
+  border-radius: 999px;
+  color: #39ff14;
+  width: 26px;
+  height: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dfproto-switcher-btn:hover {
+  background: #39ff14;
+  color: #000;
+}
+
+.dfproto-switcher-label {
+  white-space: nowrap;
+}

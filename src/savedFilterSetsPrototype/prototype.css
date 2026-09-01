@@ -508,3 +508,76 @@
   padding: 0 0.35rem;
   white-space: nowrap;
 }
+
+/* ---------- D: filters first ---------- */
+.pd-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 0.65rem;
+  border-bottom: 1px solid var(--ct-line);
+  border-left: 2px solid transparent;
+}
+
+.pd-row:hover,
+.pd-row:focus-within {
+  background: var(--ct-surface-2);
+  border-left-color: var(--ct-gold);
+}
+
+.pd-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.pd-lead {
+  font-family: var(--ct-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.pd-row:hover .pd-lead {
+  color: var(--ct-gold);
+}
+
+.pd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.proto-chip-lg {
+  font-size: 0.78rem;
+  padding: 0.14rem 0.55rem;
+  color: var(--ct-text);
+  border-color: var(--ct-line-strong);
+}
+
+.proto-chip-lg.proto-chip-on {
+  color: var(--ct-hit);
+  border-color: transparent;
+}
+
+.proto-chip-lg.proto-chip-off {
+  color: var(--ct-miss);
+  border-color: transparent;
+}
+
+/* The name is still searchable and renameable; it just stops pretending to be
+   the description. */
+.pd-caption {
+  font-size: 0.72rem;
+  color: var(--ct-dim);
+  letter-spacing: 0.02em;
+}

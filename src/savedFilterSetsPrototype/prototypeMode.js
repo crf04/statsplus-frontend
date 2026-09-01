@@ -9,12 +9,13 @@
  */
 import { useEffect, useState } from 'react';
 
-export const VARIANT_KEYS = ['A', 'B', 'C'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D'];
 
 export const VARIANT_NAMES = {
   A: 'Roster rows',
   B: 'Grouped by player',
   C: 'Drawer + preview',
+  D: 'Filters first',
 };
 
 const readHash = () =>

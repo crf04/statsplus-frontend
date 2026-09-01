@@ -83,8 +83,8 @@ const matchup = {
             sliceKey: 'transition',
             label: 'Transition',
             markets: ['PTS', 'FGA'],
-            season: value(18.4, 12, 1.4, 27),
-            last15: value(15.2, -8, -1.1, 5),
+            season: value(18.4, 12.34, 1.4, 27),
+            last15: value(15.2, -8.26, -1.1, 5),
           },
           {
             key: 'isolation',
@@ -275,7 +275,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(screen.getByText('Above-break three')).toBeVisible();
   expect(screen.queryByText('Isolation')).not.toBeInTheDocument();
   expect(screen.getByText('1 row hidden near league average.')).toBeVisible();
-  expect(screen.getByText('+12% vs league')).toBeVisible();
+  expect(screen.getByText('+12.3% vs league')).toBeVisible();
   expect(
     screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
   ).not.toBeInTheDocument();
@@ -289,7 +289,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   ).toBeVisible();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(screen.getByText('-8% vs league')).toBeVisible();
+  expect(screen.getByText('-8.3% vs league')).toBeVisible();
   expect(screen.getByText(/19% poss/)).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 
@@ -304,6 +304,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
   expect(screen.getByText('Isolation')).toBeVisible();
+  expect(screen.getByText('+4.0% vs league')).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 });
 

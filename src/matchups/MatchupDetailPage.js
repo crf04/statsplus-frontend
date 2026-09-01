@@ -459,7 +459,7 @@ function DefenseSheet({
                           ) : (
                             <span>
                               {stat.percentVsLeagueAverage > 0 ? '+' : ''}
-                              {stat.percentVsLeagueAverage}% vs league
+                              {stat.percentVsLeagueAverage.toFixed(1)}% vs league
                             </span>
                           )}
                           <span>

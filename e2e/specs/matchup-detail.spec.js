@@ -248,8 +248,8 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('Backcourt PTS')).toHaveCount(0);
   await expect(page.getByText('Isolation PTS')).toHaveCount(0);
   await expect(page.getByText('1 row hidden near league average.')).toBeVisible();
-  await expect(page.getByText('+12% vs league')).toBeVisible();
-  await expect(page.getByText('-11% vs league')).toBeVisible();
+  await expect(page.getByText('+12.0% vs league')).toBeVisible();
+  await expect(page.getByText('-11.0% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toBeVisible();
   await expect(page.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
   await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();

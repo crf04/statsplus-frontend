@@ -20,8 +20,9 @@ then open <http://localhost:5173/#proto=saved> — the list opens on load,
 signed in or not, with no backend running.
 
 - `#proto=saved&v=A` — **Roster rows.** Modal of dense two-line rows; the name
-  plus the link read back as a sentence. Whole row opens. Manage column appears
-  on hover; delete confirms in place.
+  plus the player and one chip per parameter the link carries, opponent chips
+  including their paired rank. Whole row opens. Manage column appears on hover;
+  delete confirms in place.
 - `#proto=saved&v=B` — **Grouped by player.** Player first, name second, with a
   filter field across names/players/filters and an explicit Manage toggle.
 - `#proto=saved&v=C` — **Drawer + preview.** Right-hand drawer over a still

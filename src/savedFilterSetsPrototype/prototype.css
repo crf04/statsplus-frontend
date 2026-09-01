@@ -206,8 +206,9 @@
 
 .pa-line {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
   font-size: 0.8rem;
   min-width: 0;
 }
@@ -219,13 +220,6 @@
   background: var(--ct-gold-soft);
   border-radius: var(--ct-radius-ctl);
   padding: 0.05rem 0.35rem;
-  white-space: nowrap;
-}
-
-.pa-sentence {
-  color: var(--ct-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -344,13 +338,13 @@
   color: var(--ct-gold);
 }
 
-.pb-chips {
+.proto-chips {
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
 }
 
-.pb-chip {
+.proto-chip {
   font-family: var(--ct-mono);
   font-size: 0.66rem;
   color: var(--ct-dim);
@@ -360,13 +354,13 @@
   white-space: nowrap;
 }
 
-.pb-chip-on {
+.proto-chip-on {
   color: var(--ct-hit);
   background: var(--ct-hit-soft);
   border-color: transparent;
 }
 
-.pb-chip-off {
+.proto-chip-off {
   color: var(--ct-miss);
   background: var(--ct-miss-soft);
   border-color: transparent;

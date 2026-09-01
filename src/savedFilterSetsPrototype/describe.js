@@ -31,9 +31,16 @@ export const describeSavedFilterSet = (queryString) => {
   if (filters.location_filter && filters.location_filter !== 'Both') {
     chips.push({ key: 'location', label: filters.location_filter.toLowerCase() });
   }
-  if (filters['teams_against[]']?.length) {
-    chips.push({ key: 'opp', label: `vs ${listNames(filters['teams_against[]'])}` });
-  }
+  // The opponent filter and its rank are one filter across two parameters, and
+  // the app's own badges show them paired, so a chip per opponent says the rank
+  // out loud rather than dropping half the filter.
+  filters['teams_against[]']?.forEach((team, index) => {
+    const rank = filters['rank_filter[]']?.[index];
+    chips.push({
+      key: `opp-${index}`,
+      label: rank === undefined ? `vs ${team}` : `vs ${team} (${rank})`,
+    });
+  });
   if (filters.minutes_filter) {
     const [low, high] = String(filters.minutes_filter).split(',');
     chips.push({ key: 'min', label: `${low}–${high} min` });
@@ -66,6 +73,5 @@ export const describeSavedFilterSet = (queryString) => {
     chips,
     // A link the app would refuse still deserves to be findable and deletable.
     refused: invalid.length > 0,
-    sentence: chips.length > 0 ? chips.map((chip) => chip.label).join(' · ') : 'every logged game',
   };
 };

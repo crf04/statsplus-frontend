@@ -2,10 +2,10 @@
  * PROTOTYPE — throwaway.
  *
  * A — Roster rows. A modal of dense two-line rows: the name in the display
- * face, and underneath it the link read back as a sentence. The whole row is
- * the open target; managing a row is a secondary column that only appears on
- * hover or focus, and deleting confirms in place rather than in a second
- * dialog.
+ * face, and underneath it the player and one chip per parameter the link
+ * carries. The whole row is the open target; managing a row is a secondary
+ * column that only appears on hover or focus, and deleting confirms in place
+ * rather than in a second dialog.
  */
 import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
@@ -51,9 +51,23 @@ const Row = ({ item, onOpen, onRename, onDelete }) => {
         <span className="pa-name">{item.name}</span>
         <span className="pa-line">
           {described.player ? <span className="pa-player">{described.player}</span> : null}
-          <span className={described.refused ? 'pa-refused' : 'pa-sentence'}>
-            {described.refused ? 'this link can no longer be opened' : described.sentence}
-          </span>
+          {described.refused ? (
+            <span className="pa-refused">this link can no longer be opened</span>
+          ) : (
+            <span className="proto-chips">
+              {described.chips.length === 0 && (
+                <span className="proto-chip">every logged game</span>
+              )}
+              {described.chips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className={`proto-chip${chip.tone ? ` proto-chip-${chip.tone}` : ''}`}
+                >
+                  {chip.label}
+                </span>
+              ))}
+            </span>
+          )}
         </span>
       </button>
       {mode === 'confirm' ? (

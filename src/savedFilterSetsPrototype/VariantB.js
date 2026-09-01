@@ -28,7 +28,9 @@ const VariantB = ({ show, onHide, items, isLoading, error, onOpen, onRename, onD
     const matching = described.filter(({ item, described: d }) =>
       needle === ''
         ? true
-        : `${item.name} ${d.player || ''} ${d.sentence}`.toLowerCase().includes(needle),
+        : `${item.name} ${d.player || ''} ${d.chips.map((chip) => chip.label).join(' ')}`
+            .toLowerCase()
+            .includes(needle),
     );
     const byPlayer = new Map();
     matching.forEach((entry) => {
@@ -121,14 +123,14 @@ const VariantB = ({ show, onHide, items, isLoading, error, onOpen, onRename, onD
                     <>
                       <button type="button" className="pb-open" onClick={() => onOpen(item)}>
                         <span className="pb-name">{item.name}</span>
-                        <span className="pb-chips">
+                        <span className="proto-chips">
                           {described.refused ? (
                             <em className="pa-refused">unopenable link</em>
                           ) : (
                             described.chips.map((chip) => (
                               <span
                                 key={chip.key}
-                                className={`pb-chip${chip.tone ? ` pb-chip-${chip.tone}` : ''}`}
+                                className={`proto-chip${chip.tone ? ` proto-chip-${chip.tone}` : ''}`}
                               >
                                 {chip.label}
                               </span>

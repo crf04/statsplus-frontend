@@ -104,12 +104,12 @@ const VariantC = ({ show, onHide, items, isLoading, error, onOpen, onRename, onD
                 ) : (
                   <div className="pc-badges">
                     {described.chips.length === 0 && (
-                      <span className="pb-chip">no filters — every logged game</span>
+                      <span className="proto-chip">no filters — every logged game</span>
                     )}
                     {described.chips.map((chip) => (
                       <span
                         key={chip.key}
-                        className={`pb-chip${chip.tone ? ` pb-chip-${chip.tone}` : ''}`}
+                        className={`proto-chip${chip.tone ? ` proto-chip-${chip.tone}` : ''}`}
                       >
                         {chip.label}
                       </span>

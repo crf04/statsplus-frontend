@@ -1,0 +1,161 @@
+/* The saved list, built on the design tokens in theme.css. */
+
+.saved-filter-sets-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.saved-filter-set-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 0.65rem;
+  border-bottom: 1px solid var(--ct-line);
+  border-left: 2px solid transparent;
+}
+
+.saved-filter-set-row:hover,
+.saved-filter-set-row:focus-within {
+  background: var(--ct-surface-2);
+  border-left-color: var(--ct-gold);
+}
+
+.saved-filter-set-row-confirming {
+  border-left-color: var(--ct-miss);
+  background: var(--ct-miss-soft);
+}
+
+.saved-filter-set-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.saved-filter-set-name {
+  font-family: var(--ct-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  line-height: 1.1;
+}
+
+.saved-filter-set-row:hover .saved-filter-set-name {
+  color: var(--ct-gold);
+}
+
+.saved-filter-set-parameters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.saved-filter-set-parameter {
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+  color: var(--ct-text);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 0.14rem 0.55rem;
+  white-space: nowrap;
+}
+
+/* The player is a parameter like any other, but it is the one that identifies
+   a Saved Filter Set fastest, so it leads and keeps the accent. */
+.saved-filter-set-player {
+  color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  border-color: transparent;
+}
+
+/* Green and red are reserved for semantic pairs; on-court and off-court
+   teammates are one, and must not be read for each other. */
+.saved-filter-set-parameter-on {
+  color: var(--ct-hit);
+  background: var(--ct-hit-soft);
+  border-color: transparent;
+}
+
+.saved-filter-set-parameter-off {
+  color: var(--ct-miss);
+  background: var(--ct-miss-soft);
+  border-color: transparent;
+}
+
+.saved-filter-set-refusal {
+  font-size: 0.8rem;
+  color: var(--ct-miss);
+  font-style: italic;
+}
+
+/* Hidden by opacity rather than by not being rendered, so the controls stay in
+   the accessibility tree and reachable by keyboard. */
+.saved-filter-set-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  opacity: 0;
+}
+
+.saved-filter-set-row:hover .saved-filter-set-actions,
+.saved-filter-set-row:focus-within .saved-filter-set-actions,
+.saved-filter-set-actions-shown {
+  opacity: 1;
+}
+
+/* A touch device never hovers, so hiding the actions there would hide them for
+   good. Show them always where there is no pointer to reveal them with. */
+@media (hover: none) {
+  .saved-filter-set-actions {
+    opacity: 1;
+  }
+}
+
+.saved-filter-set-action {
+  background: none;
+  border: 0;
+  color: var(--ct-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.3rem;
+}
+
+.saved-filter-set-action:hover,
+.saved-filter-set-action:focus-visible {
+  color: var(--ct-gold);
+}
+
+.saved-filter-set-action-danger:hover,
+.saved-filter-set-action-danger:focus-visible {
+  color: var(--ct-miss);
+}
+
+.saved-filter-set-confirm {
+  font-size: 0.72rem;
+  color: var(--ct-miss);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.saved-filter-set-rename {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.saved-filter-set-rename .form-control {
+  background: var(--ct-ink);
+  border-color: var(--ct-gold);
+  color: var(--ct-text);
+}

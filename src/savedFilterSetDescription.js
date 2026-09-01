@@ -1,4 +1,5 @@
 import { filterSetFromSearchParams } from './filterUtils';
+import { opponentFilterLabel } from './opponentFilters';
 
 /*
  * Describe a Saved Filter Set by the parameters it carries.
@@ -33,8 +34,8 @@ const describeSelfFilter = (stat, value) => {
  */
 export const describeDefensiveFilter = (category, rank) =>
   rank === undefined || rank === null
-    ? `vs ${category} D`
-    : `vs ${rank > 0 ? 'top' : 'bottom'} ${Math.abs(rank)} ${category} D`;
+    ? `vs ${opponentFilterLabel(category)} D`
+    : `vs ${rank > 0 ? 'top' : 'bottom'} ${Math.abs(rank)} ${opponentFilterLabel(category)} D`;
 
 /**
  * Read a saved query string back as the facts a list row shows.

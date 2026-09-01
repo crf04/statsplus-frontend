@@ -22,31 +22,6 @@ export const lineTypeOptions = [
   'TOV',
 ];
 
-export const defensiveOptions = [
-  'None',
-  'C&S 3s',
-  'C&S PTS',
-  'C&S 3A',
-  'PU 2s',
-  'PU 3s',
-  'PU PTS',
-  'Less Than 10 ft',
-  'PRRollMan',
-  'PRBallHandler',
-  'Isolation',
-  'Spotup',
-  'Transition',
-  'OPP_PTS',
-  'OPP_REB',
-  'OPP_AST',
-  'OPP_FTA',
-  'OPP_STOCKS',
-  'OPP_TOV',
-  'AtRimAssists',
-  'TwoPtAssists',
-  'ThreePtAssists',
-];
-
 export const RankCube = ({ rank }) => {
   const getColorForRank = (rank) => {
     const normalizedRank = (rank - 1) / 29;

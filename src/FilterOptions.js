@@ -13,7 +13,7 @@ import {
   ListGroup,
 } from 'react-bootstrap';
 import ReactSlider from 'react-slider';
-import { defensiveOptions } from './utils';
+import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
 
 const hasFilterValue = (value) => value !== null && value !== undefined && value !== '';
@@ -650,19 +650,27 @@ const FilterOptions = ({
           />
         </Form.Group>
         <Form.Group className="mb-4">
-          <Form.Label>Defensive Filter:</Form.Label>
+          <Form.Label htmlFor="defensive-filter">Defensive Filter:</Form.Label>
           <InputGroup>
             <Form.Select
+              id="defensive-filter"
               value={selectedDefensiveFilter}
               onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
             >
-              {defensiveOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
+              <option value="None">None</option>
+              {OPPONENT_FILTERS.map((group) => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.items.map((item) => (
+                    <option key={item.token} value={item.token}>
+                      {item.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </Form.Select>
             <FormControl
+              id="defensive-filter-rank"
+              aria-label="Defensive filter rank"
               type="text"
               value={filterNumber}
               onChange={(e) => {
@@ -693,10 +701,10 @@ const FilterOptions = ({
           <div className="mt-2">
             {activeFilters.map((filter, index) => (
               <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
-                {filter.filter} ({filter.number})
+                {opponentFilterLabel(filter.filter)} ({filter.number})
                 <Button
                   type="button"
-                  aria-label={`Remove ${filter.filter} filter`}
+                  aria-label={`Remove ${opponentFilterLabel(filter.filter)} filter`}
                   title="Remove filter"
                   variant="link"
                   size="sm"

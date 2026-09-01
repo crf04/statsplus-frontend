@@ -66,10 +66,12 @@ const SavedFilterSetRow = ({ savedFilterSet, isMutating, onOpen, onRename, onDel
       <li className="saved-filter-set-row">
         <Form
           className="saved-filter-set-rename"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
-            onRename(draftName.trim());
-            setInteraction(null);
+            // The form closes only once the backend has taken the name. A
+            // rejected rename keeps the field and what was typed in it, so a
+            // duplicate name is one edit away rather than a retype.
+            if (await onRename(draftName.trim())) setInteraction(null);
           }}
         >
           <Form.Control
@@ -202,8 +204,10 @@ const SavedFilterSetsModal = ({ show, onHide }) => {
     try {
       await mutate();
       await loadSavedFilterSets();
+      return true;
     } catch (mutationError) {
       setError(getRequestErrorMessage(mutationError, fallbackMessage));
+      return false;
     } finally {
       setIsMutating(false);
     }

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import {
@@ -47,10 +47,9 @@ test('lists saved Filter Sets in the order the backend returned them', async () 
   renderModal();
 
   const names = await screen.findAllByRole('button', { name: /Open saved Filter Set/ });
-  expect(names.map((button) => button.getAttribute('aria-label'))).toEqual([
-    'Open saved Filter Set Curry at home',
-    'Open saved Filter Set LeBron last 10',
-  ]);
+  expect(names).toHaveLength(2);
+  expect(names[0]).toHaveAccessibleName('Open saved Filter Set Curry at home');
+  expect(names[1]).toHaveAccessibleName('Open saved Filter Set LeBron last 10');
 });
 
 /*
@@ -74,21 +73,24 @@ test('describes a Saved Filter Set by every parameter its URL carries', async ()
   ]);
   renderModal();
 
-  const row = (await screen.findByRole('button', { name: /Open saved Filter Set/ })).closest('li');
-  [
-    'Luka Doncic',
-    '2025-26',
-    'last 10',
-    'away',
-    'vs top 5 Isolation D',
-    'vs bottom 8 Transition D',
-    '32–48 min',
-    'since 2026-02-01',
-    'with Kyrie Irving',
-    'without Anthony Davis',
-    'AST ≥ 8',
-    'PLAYTYPE_RTG 40–90',
-  ].forEach((parameter) => expect(within(row).getByText(parameter)).toBeVisible());
+  const row = await screen.findByRole('button', { name: /Open saved Filter Set/ });
+  expect(row).toHaveTextContent(
+    [
+      'everything at once',
+      'Luka Doncic',
+      '2025-26',
+      'last 10',
+      'away',
+      'vs top 5 Isolation D',
+      'vs bottom 8 Transition D',
+      '32–48 min',
+      'since 2026-02-01',
+      'with Kyrie Irving',
+      'without Anthony Davis',
+      'AST ≥ 8',
+      'PLAYTYPE_RTG 40–90',
+    ].join(''),
+  );
 });
 
 test('says a Filter Set with no parameters covers every logged game', async () => {
@@ -178,7 +180,24 @@ test('surfaces a duplicate-name conflict and keeps the item in the list', async 
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'You already have a saved set by that name.',
   );
-  expect(screen.getByRole('button', { name: 'Open saved Filter Set Curry at home' })).toBeVisible();
+  // The rejection is answerable in place: the field and the attempted name stay
+  // put, so fixing a duplicate is one edit rather than a retype.
+  expect(screen.getByLabelText('New name for Curry at home')).toHaveValue('LeBron last 10');
+});
+
+test('a rename the backend takes closes the field', async () => {
+  renameSavedFilterSet.mockResolvedValue(undefined);
+  renderModal();
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Rename Curry at home' }));
+  fireEvent.change(screen.getByLabelText('New name for Curry at home'), {
+    target: { value: 'Curry home splits' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+  });
+
+  expect(screen.queryByLabelText('New name for Curry at home')).not.toBeInTheDocument();
 });
 
 test('deletes an item once the row confirms, and reloads the list', async () => {

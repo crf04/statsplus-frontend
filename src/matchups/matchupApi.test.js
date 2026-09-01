@@ -1726,6 +1726,27 @@ test('accepts the home participant game-log matchup identity', () => {
   expect(() => decodeMatchup(withOneParticipant(candidate, homeParticipant))).not.toThrow();
 });
 
+test.each([
+  [
+    'a home participant carrying the away matchup form',
+    (candidate) => {
+      candidate.players[0].team_id = candidate.game.home_team.team_id;
+      candidate.players[0].tricode = candidate.game.home_team.tricode;
+      candidate.players[0].focal_game_line.matchup = 'LAL @ BOS';
+    },
+  ],
+  [
+    'an away participant carrying the home matchup form',
+    (candidate) => {
+      candidate.players[0].focal_game_line.matchup = 'BOS vs. LAL';
+    },
+  ],
+])('rejects %s', (_name, mutate) => {
+  const candidate = historicalPayload();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test('rejects participants that disagree about which game is focal', () => {
   const candidate = historicalPayload();
   const second = JSON.parse(JSON.stringify(candidate.players[0]));

@@ -21,6 +21,7 @@ import {
   VariantA as DfVariantA,
   VariantB as DfVariantB,
   VariantC as DfVariantC,
+  VariantD as DfVariantD,
 } from './DefensiveFilterPrototype';
 
 const hasFilterValue = (value) => value !== null && value !== undefined && value !== '';
@@ -672,6 +673,17 @@ const FilterOptions = ({
             />
           ) : dfProtoVariant === 'C' ? (
             <DfVariantC
+              selectedDefensiveFilter={selectedDefensiveFilter}
+              setSelectedDefensiveFilter={setSelectedDefensiveFilter}
+              filterNumber={filterNumber}
+              setFilterNumber={setFilterNumber}
+              canAddFilter={canAddFilter}
+              handleAddFilter={handleAddFilter}
+              activeFilters={activeFilters}
+              handleRemoveFilter={handleRemoveFilter}
+            />
+          ) : dfProtoVariant === 'D' ? (
+            <DfVariantD
               selectedDefensiveFilter={selectedDefensiveFilter}
               setSelectedDefensiveFilter={setSelectedDefensiveFilter}
               filterNumber={filterNumber}

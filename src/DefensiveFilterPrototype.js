@@ -1,25 +1,27 @@
 /*
  * PROTOTYPE — throwaway, see branch prototype/defensive-filter-look
- * Plan: Three variants of the defensive filter control, switchable via
+ * Plan: Four variants of the defensive filter control, switchable via
  * #dfproto=, inside the existing filter panel on /.
  *
- * Three structurally different presentations of the defensive-filter control
- * from src/FilterOptions.js, chosen at runtime by `#dfproto=A|B|C` in the URL
- * hash (never a query param — on `/` the query string is parsed as a Saved
- * Filter Set, and an unknown param makes the page refuse to load). Defaults
- * to A. Gated end-to-end on NODE_ENV !== 'production': in production this
- * module always resolves to variant A and the switcher bar never renders.
+ * Four structurally different presentations of the defensive-filter control
+ * from src/FilterOptions.js, chosen at runtime by `#dfproto=A|B|C|D` in the
+ * URL hash (never a query param — on `/` the query string is parsed as a
+ * Saved Filter Set, and an unknown param makes the page refuse to load).
+ * Defaults to A. Gated end-to-end on NODE_ENV !== 'production': in
+ * production this module always resolves to variant A and the switcher bar
+ * never renders.
  */
 import { useState, useEffect } from 'react';
 import { Form, FormControl, Button, InputGroup } from 'react-bootstrap';
 import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
 import './DefensiveFilterPrototype.css';
 
-const VARIANTS = ['A', 'B', 'C'];
+const VARIANTS = ['A', 'B', 'C', 'D'];
 const VARIANT_NAMES = {
   A: 'Grouped select',
   B: 'Category pills',
   C: 'Searchable picker',
+  D: 'Pills + select',
 };
 
 const CATEGORY_SHORT_LABELS = {
@@ -30,7 +32,7 @@ const CATEGORY_SHORT_LABELS = {
 };
 
 const parseVariantFromHash = () => {
-  const match = (window.location.hash || '').match(/dfproto=([ABC])/);
+  const match = (window.location.hash || '').match(/dfproto=([ABCD])/);
   return match ? match[1] : 'A';
 };
 
@@ -368,6 +370,95 @@ export const VariantC = ({
         )}
       </div>
       <InputGroup className="dfproto-rank-row">
+        <FormControl
+          id="defensive-filter-rank"
+          aria-label="Defensive filter rank"
+          type="text"
+          value={filterNumber}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === '' || /^-?\d*$/.test(value)) {
+              setFilterNumber(value);
+            }
+          }}
+          onBlur={() => {
+            if (filterNumber === '' || isNaN(parseInt(filterNumber))) {
+              setFilterNumber('');
+            } else {
+              setFilterNumber(parseInt(filterNumber).toString());
+            }
+          }}
+          placeholder="Number"
+          style={{ appearance: 'textfield' }}
+        />
+        <Button
+          type="button"
+          variant="outline-primary"
+          onClick={handleAddFilter}
+          disabled={!canAddFilter}
+        >
+          Add
+        </Button>
+      </InputGroup>
+    </div>
+  );
+};
+
+/**
+ * Variant D — VariantB's category pills on top of a VariantA-style select,
+ * scoped to the active category's 7-11 options (plus a leading None) so the
+ * select never needs scrolling. Switching category resets the selection to
+ * None unless the currently selected token already belongs to the new
+ * category.
+ */
+export const VariantD = ({
+  selectedDefensiveFilter,
+  setSelectedDefensiveFilter,
+  filterNumber,
+  setFilterNumber,
+  canAddFilter,
+  handleAddFilter,
+}) => {
+  const [activeCategory, setActiveCategory] = useState(OPPONENT_FILTERS[0].category);
+  const currentGroup = OPPONENT_FILTERS.find((group) => group.category === activeCategory);
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    const group = OPPONENT_FILTERS.find((g) => g.category === category);
+    const belongsToNewCategory = group.items.some((item) => item.token === selectedDefensiveFilter);
+    if (!belongsToNewCategory) {
+      setSelectedDefensiveFilter('None');
+    }
+  };
+
+  return (
+    <div>
+      <div className="dfproto-pill-row">
+        {OPPONENT_FILTERS.map((group) => (
+          <Button
+            key={group.category}
+            type="button"
+            size="sm"
+            variant={group.category === activeCategory ? 'primary' : 'outline-primary'}
+            onClick={() => handleCategoryChange(group.category)}
+          >
+            {CATEGORY_SHORT_LABELS[group.category] || group.category}
+          </Button>
+        ))}
+      </div>
+      <InputGroup>
+        <Form.Select
+          id="defensive-filter"
+          value={selectedDefensiveFilter}
+          onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
+        >
+          <option value="None">None</option>
+          {currentGroup.items.map((item) => (
+            <option key={item.token} value={item.token}>
+              {item.label}
+            </option>
+          ))}
+        </Form.Select>
         <FormControl
           id="defensive-filter-rank"
           aria-label="Defensive filter rank"

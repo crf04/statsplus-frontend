@@ -30,6 +30,9 @@ const DEFENSIVE_CATEGORY_PILL_LABELS = {
 
 const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
 
+const defensiveCategoryItems = (category) =>
+  OPPONENT_FILTERS.find((group) => group.category === category)?.items ?? [];
+
 const FilterOptions = ({
   playerList,
   onApplyFilters,
@@ -119,6 +122,7 @@ const FilterOptions = ({
   useEffect(() => {
     // Always reset all form fields to their defaults first
     setSelectedDefensiveFilter('None');
+    setActiveDefensiveCategory(DEFAULT_DEFENSIVE_CATEGORY);
     setFilterNumber('');
     setActiveFilters([]);
     setPlayerInput('');
@@ -280,7 +284,7 @@ const FilterOptions = ({
   // when the new category is the one it came from.
   const handleDefensiveCategoryChange = (category) => {
     setActiveDefensiveCategory(category);
-    const items = OPPONENT_FILTERS.find((group) => group.category === category).items;
+    const items = defensiveCategoryItems(category);
     if (!items.some((item) => item.token === selectedDefensiveFilter)) {
       setSelectedDefensiveFilter('None');
     }
@@ -699,13 +703,11 @@ const FilterOptions = ({
             onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
           >
             <option value="None">None</option>
-            {OPPONENT_FILTERS.find((group) => group.category === activeDefensiveCategory).items.map(
-              (item) => (
-                <option key={item.token} value={item.token}>
-                  {item.label}
-                </option>
-              ),
-            )}
+            {defensiveCategoryItems(activeDefensiveCategory).map((item) => (
+              <option key={item.token} value={item.token}>
+                {item.label}
+              </option>
+            ))}
           </Form.Select>
           <InputGroup>
             <FormControl

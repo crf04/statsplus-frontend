@@ -233,6 +233,33 @@ test('re-picking the category a selection belongs to leaves it selected', () => 
   expect(defensiveAddButton()).toBeEnabled();
 });
 
+// The pill state is form state like any other: the reset-all effect that runs
+// when a new applied-filters link arrives must snap it back to General too,
+// not just leave the last category from the previous player's panel active.
+const filterOptionsElement = (appliedFilters) => (
+  <FilterOptions
+    playerList={['LeBron James']}
+    onApplyFilters={jest.fn()}
+    selectedPlayer="LeBron James"
+    seasonGameLogs={[]}
+    seasonGameLogsLoading={false}
+    seasonGameLogsFailed={false}
+    onOpenSelfFilters={jest.fn()}
+    appliedFilters={appliedFilters}
+  />
+);
+
+test('a new applied-filters link resets the category pill back to General', () => {
+  const { rerender } = render(filterOptionsElement({}));
+
+  clickCategoryPill('Shot type');
+  expect(screen.getByRole('button', { name: 'Shot type' })).toHaveAttribute('aria-pressed', 'true');
+
+  rerender(filterOptionsElement({ player_name: 'LeBron James' }));
+
+  expect(screen.getByRole('button', { name: 'General' })).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('an added defensive filter wears its label, and applies as its token', () => {
   const onApplyFilters = renderPanel();
 

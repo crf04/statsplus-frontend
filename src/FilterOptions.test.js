@@ -127,55 +127,122 @@ const BACKEND_DEFENSIVE_FILTER_TOKENS = [
   'LongMidRangeAssists',
 ];
 
-test('the defensive dropdown offers the whole vocabulary, grouped and labelled', () => {
+// The pill labels, paired with the slice of the literal token list above that
+// each pill's category is expected to scope the select down to. The four slices
+// partition BACKEND_DEFENSIVE_FILTER_TOKENS in order, so together they still
+// account for the whole backend vocabulary.
+const DEFENSIVE_CATEGORY_PILLS = [
+  { pill: 'General', tokens: BACKEND_DEFENSIVE_FILTER_TOKENS.slice(0, 8) },
+  { pill: 'Shot type', tokens: BACKEND_DEFENSIVE_FILTER_TOKENS.slice(8, 17) },
+  { pill: 'Play type', tokens: BACKEND_DEFENSIVE_FILTER_TOKENS.slice(17, 28) },
+  { pill: 'Assists', tokens: BACKEND_DEFENSIVE_FILTER_TOKENS.slice(28) },
+];
+
+const defensiveSelect = () => screen.getByLabelText('Defensive Filter:');
+
+const clickCategoryPill = (name) => fireEvent.click(screen.getByRole('button', { name }));
+
+// The player search carries an "Add" of its own, so the defensive one is
+// reached through the input group it shares with the rank field.
+const defensiveAddButton = () =>
+  within(screen.getByLabelText('Defensive filter rank').closest('.input-group')).getByRole(
+    'button',
+    { name: 'Add' },
+  );
+
+const labelForToken = (token) =>
+  OPPONENT_FILTERS.flatMap((group) => group.items).find((item) => item.token === token).label;
+
+test('each category pill scopes the defensive dropdown to its own slice of the vocabulary', () => {
   renderPanel();
 
-  const select = screen.getByLabelText('Defensive Filter:');
-  const options = within(select).getAllByRole('option');
-
-  // The bare "None" option leads, and sits outside any optgroup.
-  expect(options[0].value).toBe('None');
-  expect(options[0].textContent).toBe('None');
-  expect(options[0].closest('optgroup')).toBeNull();
-
-  // The rest of the options, in order, are exactly the backend's tokens.
-  expect(options.slice(1).map((option) => option.value)).toEqual(BACKEND_DEFENSIVE_FILTER_TOKENS);
-
-  const groups = within(select).getAllByRole('group');
-  expect(groups.map((group) => group.getAttribute('label'))).toEqual([
-    'General defense',
-    'Shot type defense',
-    'Play type defense',
-    'Assists allowed',
-  ]);
-
-  options.slice(1).forEach((option) => {
-    expect(option.textContent).not.toBe('');
+  // Every category is reachable, and exactly one is active at a time.
+  DEFENSIVE_CATEGORY_PILLS.forEach(({ pill }) => {
+    expect(screen.getByRole('button', { name: pill })).toHaveAttribute('aria-pressed');
   });
-  expect(within(select).getByRole('option', { name: 'Points Allowed' }).value).toBe('OPP_PTS');
-  expect(within(select).getByRole('option', { name: 'Spot-Up' }).value).toBe('Spotup');
+  expect(screen.getByRole('button', { name: 'General' })).toHaveAttribute('aria-pressed', 'true');
 
-  // Kept alongside the literal assertions above: still checks the component
-  // renders every group and item the vocabulary module currently declares.
-  expect(groups.map((group) => group.getAttribute('label'))).toEqual(
-    OPPONENT_FILTERS.map((group) => group.category),
+  // The four slices together are the whole backend vocabulary, so no token is
+  // left unreachable by the scoping.
+  expect(DEFENSIVE_CATEGORY_PILLS.flatMap(({ tokens }) => tokens)).toEqual(
+    BACKEND_DEFENSIVE_FILTER_TOKENS,
   );
-  OPPONENT_FILTERS.forEach((group, index) => {
-    expect(
-      within(groups[index])
-        .getAllByRole('option')
-        .map((option) => [option.value, option.textContent]),
-    ).toEqual(group.items.map((item) => [item.token, item.label]));
+
+  DEFENSIVE_CATEGORY_PILLS.forEach(({ pill, tokens }) => {
+    clickCategoryPill(pill);
+
+    expect(screen.getByRole('button', { name: pill })).toHaveAttribute('aria-pressed', 'true');
+
+    // The select is flat and scoped: a leading "None", then this category's
+    // tokens in order, each under its human label.
+    const options = within(defensiveSelect()).getAllByRole('option');
+    expect(options.map((option) => option.value)).toEqual(['None', ...tokens]);
+    expect(options.map((option) => option.textContent)).toEqual([
+      'None',
+      ...tokens.map(labelForToken),
+    ]);
+    expect(within(defensiveSelect()).queryAllByRole('group')).toEqual([]);
   });
+
+  // Spot-checks that the labels above are the human names, not the tokens.
+  clickCategoryPill('General');
+  expect(within(defensiveSelect()).getByRole('option', { name: 'Points Allowed' }).value).toBe(
+    'OPP_PTS',
+  );
+  clickCategoryPill('Play type');
+  expect(within(defensiveSelect()).getByRole('option', { name: 'Spot-Up' }).value).toBe('Spotup');
+});
+
+// A select whose value names no option of its own falls back to showing the
+// first one, so reading "None" off the select is not on its own proof the
+// selection was dropped — the stale token could still be the one Add would
+// apply. Each leg below also asserts Add has nothing left to offer.
+test('switching category drops a selection the new category cannot show', () => {
+  renderPanel();
+
+  // A General token does not survive the move to Shot type.
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
+  expect(defensiveSelect().value).toBe('OPP_PTS');
+  expect(defensiveAddButton()).toBeEnabled();
+
+  clickCategoryPill('Shot type');
+
+  expect(defensiveSelect().value).toBe('None');
+  expect(defensiveAddButton()).toBeDisabled();
+
+  // Nor does a Shot type token survive the move back to General.
+  fireEvent.change(defensiveSelect(), { target: { value: 'C&S PTS' } });
+  expect(defensiveSelect().value).toBe('C&S PTS');
+  expect(defensiveAddButton()).toBeEnabled();
+
+  clickCategoryPill('General');
+
+  expect(defensiveSelect().value).toBe('None');
+  expect(defensiveAddButton()).toBeDisabled();
+});
+
+test('re-picking the category a selection belongs to leaves it selected', () => {
+  renderPanel();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
+  clickCategoryPill('General');
+
+  expect(defensiveSelect().value).toBe('OPP_PTS');
+  expect(defensiveAddButton()).toBeEnabled();
 });
 
 test('an added defensive filter wears its label, and applies as its token', () => {
   const onApplyFilters = renderPanel();
 
-  const select = screen.getByLabelText('Defensive Filter:');
-  fireEvent.change(select, { target: { value: 'OPP_PTS' } });
-  fireEvent.change(screen.getByPlaceholderText('Number'), { target: { value: '5' } });
-  fireEvent.click(within(select.closest('.input-group')).getByRole('button', { name: 'Add' }));
+  clickCategoryPill('General');
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  const rank = screen.getByLabelText('Defensive filter rank');
+  fireEvent.change(rank, { target: { value: '5' } });
+  // The player search carries an "Add" of its own, so this one is reached
+  // through the group it shares with the rank input.
+  fireEvent.click(within(rank.closest('.input-group')).getByRole('button', { name: 'Add' }));
 
   expect(screen.getByText('Points Allowed (5)')).toBeInTheDocument();
 

@@ -15,8 +15,20 @@ import {
 import ReactSlider from 'react-slider';
 import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
+import './FilterOptions.css';
 
 const hasFilterValue = (value) => value !== null && value !== undefined && value !== '';
+
+// The pills sit in a single row inside a narrow panel, so each category wears a
+// shortened name. A category without an entry falls back to its full name.
+const DEFENSIVE_CATEGORY_PILL_LABELS = {
+  'General defense': 'General',
+  'Shot type defense': 'Shot type',
+  'Play type defense': 'Play type',
+  'Assists allowed': 'Assists',
+};
+
+const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
 
 const FilterOptions = ({
   playerList,
@@ -29,6 +41,9 @@ const FilterOptions = ({
   appliedFilters,
 }) => {
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
+  const [activeDefensiveCategory, setActiveDefensiveCategory] = useState(
+    DEFAULT_DEFENSIVE_CATEGORY,
+  );
   const [filterNumber, setFilterNumber] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
@@ -258,6 +273,17 @@ const FilterOptions = ({
 
   const handleRemoveFilter = (index) => {
     setActiveFilters(activeFilters.filter((_, i) => i !== index));
+  };
+
+  // The select only ever offers one category, so a selection made under the old
+  // category would otherwise stay applied while invisible. It survives only
+  // when the new category is the one it came from.
+  const handleDefensiveCategoryChange = (category) => {
+    setActiveDefensiveCategory(category);
+    const items = OPPONENT_FILTERS.find((group) => group.category === category).items;
+    if (!items.some((item) => item.token === selectedDefensiveFilter)) {
+      setSelectedDefensiveFilter('None');
+    }
   };
 
   const handlePlayerSearchChange = (e) => {
@@ -651,26 +677,41 @@ const FilterOptions = ({
         </Form.Group>
         <Form.Group className="mb-4">
           <Form.Label htmlFor="defensive-filter">Defensive Filter:</Form.Label>
+          <div className="defensive-category-pills">
+            {OPPONENT_FILTERS.map((group) => (
+              <button
+                key={group.category}
+                type="button"
+                className={`defensive-category-pill${
+                  group.category === activeDefensiveCategory ? ' is-active' : ''
+                }`}
+                aria-pressed={group.category === activeDefensiveCategory}
+                onClick={() => handleDefensiveCategoryChange(group.category)}
+              >
+                {DEFENSIVE_CATEGORY_PILL_LABELS[group.category] || group.category}
+              </button>
+            ))}
+          </div>
+          <Form.Select
+            id="defensive-filter"
+            className="defensive-filter-select mb-2"
+            value={selectedDefensiveFilter}
+            onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
+          >
+            <option value="None">None</option>
+            {OPPONENT_FILTERS.find((group) => group.category === activeDefensiveCategory).items.map(
+              (item) => (
+                <option key={item.token} value={item.token}>
+                  {item.label}
+                </option>
+              ),
+            )}
+          </Form.Select>
           <InputGroup>
-            <Form.Select
-              id="defensive-filter"
-              value={selectedDefensiveFilter}
-              onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
-            >
-              <option value="None">None</option>
-              {OPPONENT_FILTERS.map((group) => (
-                <optgroup key={group.category} label={group.category}>
-                  {group.items.map((item) => (
-                    <option key={item.token} value={item.token}>
-                      {item.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </Form.Select>
             <FormControl
               id="defensive-filter-rank"
               aria-label="Defensive filter rank"
+              className="defensive-filter-rank"
               type="text"
               value={filterNumber}
               onChange={(e) => {
@@ -698,6 +739,9 @@ const FilterOptions = ({
               Add
             </Button>
           </InputGroup>
+          <div className="defensive-filter-rank-helper">
+            Positive rank = top defenses, negative = bottom
+          </div>
           <div className="mt-2">
             {activeFilters.map((filter, index) => (
               <Badge key={index} bg="primary" className="me-1 mb-1 p-2">

@@ -411,7 +411,8 @@ export const VariantC = ({
  * scoped to the active category's 7-11 options (plus a leading None) so the
  * select never needs scrolling. Switching category resets the selection to
  * None unless the currently selected token already belongs to the new
- * category.
+ * category. Pills, select, rank input and Add button are styled to read as
+ * one composed control.
  */
 export const VariantD = ({
   selectedDefensiveFilter,
@@ -434,13 +435,14 @@ export const VariantD = ({
   };
 
   return (
-    <div>
+    <div className="dfproto-d-composed">
       <div className="dfproto-pill-row">
         {OPPONENT_FILTERS.map((group) => (
           <Button
             key={group.category}
             type="button"
             size="sm"
+            className="dfproto-pill"
             variant={group.category === activeCategory ? 'primary' : 'outline-primary'}
             onClick={() => handleCategoryChange(group.category)}
           >
@@ -451,6 +453,7 @@ export const VariantD = ({
       <InputGroup>
         <Form.Select
           id="defensive-filter"
+          className="dfproto-select"
           value={selectedDefensiveFilter}
           onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
         >
@@ -464,6 +467,7 @@ export const VariantD = ({
         <FormControl
           id="defensive-filter-rank"
           aria-label="Defensive filter rank"
+          className="dfproto-rank-input"
           type="text"
           value={filterNumber}
           onChange={(e) => {
@@ -491,14 +495,15 @@ export const VariantD = ({
           Add
         </Button>
       </InputGroup>
+      <div className="dfproto-rank-helper">Positive rank = top defenses, negative = bottom</div>
     </div>
   );
 };
 
-// Both E and F replace the raw signed-number input with an explicit
-// Top/Bottom affordance. The signed string handleAddFilter/canAddFilter
-// expect is only ever produced here, via applyRank, and pushed through the
-// existing setFilterNumber setter — the parent's add/validate logic is
+// E and F replace the raw signed-number input with an explicit Top/Bottom
+// affordance. The signed string handleAddFilter/canAddFilter expect is only
+// ever produced here, via each variant's own applyRank, and pushed through
+// the existing setFilterNumber setter — the parent's add/validate logic is
 // untouched.
 const clampMagnitude = (value) => Math.min(30, Math.max(1, value));
 

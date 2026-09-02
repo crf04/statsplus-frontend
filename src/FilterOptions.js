@@ -696,20 +696,20 @@ const FilterOptions = ({
               </button>
             ))}
           </div>
-          <Form.Select
-            id="defensive-filter"
-            className="defensive-filter-select mb-2"
-            value={selectedDefensiveFilter}
-            onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
-          >
-            <option value="None">None</option>
-            {defensiveCategoryItems(activeDefensiveCategory).map((item) => (
-              <option key={item.token} value={item.token}>
-                {item.label}
-              </option>
-            ))}
-          </Form.Select>
           <InputGroup>
+            <Form.Select
+              id="defensive-filter"
+              className="defensive-filter-select"
+              value={selectedDefensiveFilter}
+              onChange={(e) => setSelectedDefensiveFilter(e.target.value)}
+            >
+              <option value="None">None</option>
+              {defensiveCategoryItems(activeDefensiveCategory).map((item) => (
+                <option key={item.token} value={item.token}>
+                  {item.label}
+                </option>
+              ))}
+            </Form.Select>
             <FormControl
               id="defensive-filter-rank"
               aria-label="Defensive filter rank"

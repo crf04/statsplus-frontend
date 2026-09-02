@@ -1,7 +1,8 @@
 /*
  * The defensive filter control: a row of category pills scoping a flat select,
- * then the rank input and its helper line. Colours come from the theme tokens
- * in theme.css so the control reads as part of the filter panel.
+ * then a single row combining the select, rank input, and Add button, and a
+ * helper line below. Colours come from the theme tokens in theme.css so the
+ * control reads as part of the filter panel.
  */
 
 .defensive-category-pills {

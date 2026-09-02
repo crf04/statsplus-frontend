@@ -29,7 +29,7 @@ describe('linkPreviewFor', () => {
           'player_name=Anthony+Edwards&teams_against[]=Transition&rank_filter[]=-8&teams_against[]=Spotup&rank_filter[]=10',
         ),
       ).description,
-    ).toBe('Vs bottom 8 Transition D, vs top 10 Spotup D. Explore on CourtAI.');
+    ).toBe('Vs bottom 8 Transition D, vs top 10 Spot-Up D. Explore on CourtAI.');
   });
 
   test('describes a bare player link as every logged game', () => {

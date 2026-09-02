@@ -1,0 +1,62 @@
+/*
+ * The defensive filter control: a row of category pills scoping a flat select,
+ * then a single row combining the select, rank input, and Add button, and a
+ * helper line below. Colours come from the theme tokens in theme.css so the
+ * control reads as part of the filter panel.
+ */
+
+.defensive-category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.defensive-category-pill {
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--ct-line);
+  color: var(--ct-dim);
+}
+
+.defensive-category-pill:hover {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold-hover);
+}
+
+.defensive-category-pill.is-active {
+  background: var(--ct-gold);
+  border-color: var(--ct-gold);
+  color: var(--ct-ink);
+}
+
+.defensive-category-pill.is-active:hover {
+  background: var(--ct-gold-hover);
+  border-color: var(--ct-gold-hover);
+  color: var(--ct-ink);
+}
+
+/*
+ * Bootstrap's own chevron is a fixed grey; this one carries the gold accent.
+ * `url()` cannot interpolate a custom property, so the stroke repeats the
+ * literal value of --ct-gold and has to be changed with it.
+ */
+.defensive-filter-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23e8a33d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 11px 7px;
+}
+
+/* A rank is at most two digits and a sign, so the input yields room to Add. */
+.defensive-filter-rank {
+  max-width: 96px;
+}
+
+.defensive-filter-rank-helper {
+  margin-top: 8px;
+  color: var(--ct-dim);
+  font-size: 11px;
+}

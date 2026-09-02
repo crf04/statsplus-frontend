@@ -40,65 +40,9 @@ export const OPPONENT_RANK_NOTE =
   'Use "top" for the best defenses and "bottom" for the worst. Bottom ranks are the better matchups for the player.';
 
 // The vocabulary is the backend's `SUPPORTED_TEAM_FILTERS`
-// (statsplus-backend app/models/catalogs.py), which is wider than the
-// frontend's own `defensiveOptions` dropdown in src/utils.js.
-export const OPPONENT_FILTERS = [
-  {
-    category: 'General defense',
-    items: [
-      { token: 'OPP_PTS', means: 'Overall defense' },
-      { token: 'OPP_REB', means: 'Rebounds allowed' },
-      { token: 'OPP_AST', means: 'Assists allowed' },
-      { token: 'OPP_STOCKS', means: 'Steals + blocks allowed' },
-      { token: 'OPP_STL', means: 'Steals allowed' },
-      { token: 'OPP_BLK', means: 'Blocks allowed' },
-      { token: 'OPP_FTA', means: 'Fouls (FT attempts)' },
-      { token: 'OPP_TOV', means: 'Turnovers forced' },
-    ],
-  },
-  {
-    category: 'Shot type defense',
-    items: [
-      { token: 'C&S PTS', means: 'Catch-and-shoot defense' },
-      { token: 'C&S 3s', means: 'Catch-and-shoot threes allowed' },
-      { token: 'C&S 3A', means: 'Catch-and-shoot 3PT attempts' },
-      { token: 'PU PTS', means: 'Pull-up shot defense' },
-      { token: 'PU 2s', means: 'Pull-up two defense' },
-      { token: 'PU 3s', means: 'Pull-up three defense' },
-      { token: 'Less Than 10 ft', means: 'Paint protection' },
-      { token: 'OPP_FG3M', means: 'Threes allowed' },
-      { token: 'OPP_FG3A', means: 'Three-point attempts allowed' },
-    ],
-  },
-  {
-    category: 'Play type defense',
-    items: [
-      { token: 'Transition', means: 'Fast-break defense' },
-      { token: 'Isolation', means: 'Iso defense' },
-      { token: 'Spotup', means: 'Spot-up defense' },
-      { token: 'Handoff', means: 'Handoff defense' },
-      { token: 'OffScreen', means: 'Off-screen defense' },
-      { token: 'Postup', means: 'Post-up defense' },
-      { token: 'PRBallHandler', means: 'Pick-and-roll ball-handler defense' },
-      { token: 'PRRollMan', means: 'Pick-and-roll roll-man defense' },
-      { token: 'Cut', means: 'Cutting defense' },
-      { token: 'OffRebound', means: 'Putback defense' },
-      { token: 'Misc', means: 'Everything the other play types do not cover' },
-    ],
-  },
-  {
-    category: 'Assists allowed',
-    items: [
-      { token: 'AtRimAssists', means: 'Assists on shots at the rim' },
-      { token: 'TwoPtAssists', means: 'Assists on two-point shots' },
-      { token: 'ThreePtAssists', means: 'Assists on three-point shots' },
-      { token: 'Arc3Assists', means: 'Assists on above-the-break threes' },
-      { token: 'Corner3Assists', means: 'Assists on corner threes' },
-      { token: 'ShortMidRangeAssists', means: 'Assists on short mid-range shots' },
-      { token: 'LongMidRangeAssists', means: 'Assists on long mid-range shots' },
-    ],
-  },
-];
+// (statsplus-backend app/models/catalogs.py); the grouped structure is shared
+// with the defensive filter dropdown and lives in src/opponentFilters.js.
+export { OPPONENT_FILTERS } from '../opponentFilters';
 
 export const STACKED_EXAMPLES = [
   'LeBron James games without Anthony Davis and with Austin Reaves last 15 games',

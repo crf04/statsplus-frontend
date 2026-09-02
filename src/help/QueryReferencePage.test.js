@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import QueryReferencePage from './QueryReferencePage';
 import { OPPONENT_FILTERS, KEYWORDS, STACKED_EXAMPLES } from './queryHelp';
-import { defensiveOptions } from '../utils';
+import { defensiveOptions } from '../opponentFilters';
 
 const renderPage = () =>
   render(

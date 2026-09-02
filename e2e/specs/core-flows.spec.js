@@ -320,7 +320,10 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   const defensiveFilter = page.getByPlaceholder('Number').locator('xpath=..');
-  await defensiveFilter.getByRole('combobox').selectOption('Isolation');
+  // Isolation and Transition are both Play type filters, and the category
+  // persists across the two selections below, so one pill click covers both.
+  await page.getByRole('button', { name: 'Play type' }).click();
+  await page.getByLabel('Defensive Filter:').selectOption('Isolation');
   await page.getByPlaceholder('Number').fill('5');
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
@@ -335,7 +338,10 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   // A filter is only addable with a usable rank. A blank rank would be stripped
   // on the way out and desynchronise rank_filter[] from teams_against[]; a rank
   // of zero asks for the top nothing and silently returns an empty table.
-  await defensiveFilter.getByRole('combobox').selectOption('Transition');
+  // Applying filters re-renders the panel from appliedFilters and resets the
+  // category pill back to its default, so it needs clicking again here.
+  await page.getByRole('button', { name: 'Play type' }).click();
+  await page.getByLabel('Defensive Filter:').selectOption('Transition');
   await page.getByPlaceholder('Number').fill('');
   await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
   await page.getByPlaceholder('Number').fill('0');

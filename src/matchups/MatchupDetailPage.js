@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
@@ -257,7 +258,16 @@ function PlayerRail({
                 className={`player-card${selectedId === serializedPlayerId ? ' selected' : ''}`}
               >
                 <div>
-                  <h3>{player.name}</h3>
+                  <h3>
+                    <Link
+                      aria-label={`${player.name} game logs`}
+                      className="player-game-logs"
+                      to={gameLogsPath}
+                    >
+                      {player.name}
+                      <ArrowUpRight size={11} strokeWidth={2.4} aria-hidden="true" />
+                    </Link>
+                  </h3>
                   <p>
                     {player.seasonScoring === null
                       ? 'Season scoring unavailable'
@@ -266,13 +276,6 @@ function PlayerRail({
                       ? ' · completed-season context'
                       : ''}
                   </p>
-                  <Link
-                    aria-label={`${player.name} game logs`}
-                    className="player-game-logs"
-                    to={gameLogsPath}
-                  >
-                    Game logs
-                  </Link>
                 </div>
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>

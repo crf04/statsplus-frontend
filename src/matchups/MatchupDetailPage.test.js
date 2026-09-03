@@ -232,7 +232,7 @@ beforeEach(() => {
   });
 });
 
-test('links every displayed player to that player’s game logs', async () => {
+test('links every displayed player name to that player’s game logs', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
       <Routes>
@@ -243,14 +243,14 @@ test('links every displayed player to that player’s game logs', async () => {
 
   const lebronCard = await screen.findByRole('article', { name: 'LeBron James player' });
   const reavesCard = screen.getByRole('article', { name: 'Austin Reaves player' });
-  expect(within(lebronCard).getByRole('link', { name: 'LeBron James game logs' })).toHaveAttribute(
-    'href',
-    '/?player_name=LeBron+James',
-  );
-  expect(within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
-    'href',
-    '/?player_name=Austin+Reaves',
-  );
+  const lebronLink = within(lebronCard).getByRole('link', { name: 'LeBron James game logs' });
+  const reavesLink = within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' });
+  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James');
+  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves');
+  // The name is the link: no second "Game logs" label on the card.
+  expect(lebronLink).toHaveTextContent('LeBron James');
+  expect(within(lebronCard).getByRole('heading', { level: 3 })).toContainElement(lebronLink);
+  expect(within(lebronCard).queryByText('Game logs')).not.toBeInTheDocument();
 });
 
 test('shows the matchup-detail preseason caveat only for preseason games', async () => {

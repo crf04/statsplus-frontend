@@ -7,6 +7,16 @@ import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
+// PROTOTYPE (throwaway, branch prototype/game-logs-link-look): with
+// `?proto=logs` in the URL the player card renders the game-logs link
+// variants instead of the shipped one. Delete these imports and the blocks
+// marked PROTOTYPE below to remove.
+import {
+  ProtoHeader,
+  ProtoFooter,
+  PrototypeSwitcher,
+} from './gameLogsLinkPrototype/GameLogsLinkPrototype';
+import { useVariant } from './gameLogsLinkPrototype/prototypeMode';
 import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
@@ -163,6 +173,7 @@ function PlayerRail({
   registerTrigger,
 }) {
   const [sortMode, setSortMode] = useState('season');
+  const proto = useVariant(); // PROTOTYPE (throwaway)
   useEffect(() => {
     if (market === 'All') setSortMode('season');
   }, [market]);
@@ -256,24 +267,34 @@ function PlayerRail({
                 aria-label={`${player.name} player`}
                 className={`player-card${selectedId === serializedPlayerId ? ' selected' : ''}`}
               >
-                <div>
-                  <h3>{player.name}</h3>
-                  <p>
-                    {player.seasonScoring === null
-                      ? 'Season scoring unavailable'
-                      : `${player.seasonScoring.toFixed(1)} PPG`}
-                    {historical && player.seasonScoring !== null
-                      ? ' · completed-season context'
-                      : ''}
-                  </p>
-                  <Link
-                    aria-label={`${player.name} game logs`}
-                    className="player-game-logs"
-                    to={gameLogsPath}
-                  >
-                    Game logs
-                  </Link>
-                </div>
+                {/* PROTOTYPE (throwaway) */}
+                {proto.active ? (
+                  <ProtoHeader
+                    variant={proto.variant}
+                    player={player}
+                    historical={historical}
+                    gameLogsPath={gameLogsPath}
+                  />
+                ) : (
+                  <div>
+                    <h3>{player.name}</h3>
+                    <p>
+                      {player.seasonScoring === null
+                        ? 'Season scoring unavailable'
+                        : `${player.seasonScoring.toFixed(1)} PPG`}
+                      {historical && player.seasonScoring !== null
+                        ? ' · completed-season context'
+                        : ''}
+                    </p>
+                    <Link
+                      aria-label={`${player.name} game logs`}
+                      className="player-game-logs"
+                      to={gameLogsPath}
+                    >
+                      Game logs
+                    </Link>
+                  </div>
+                )}
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>
                 )}
@@ -315,21 +336,31 @@ function PlayerRail({
                   </div>
                 )}
                 <Sparkline values={player.last10Minutes} playerName={player.name} />
-                <button
-                  ref={(node) => registerTrigger(serializedPlayerId, node)}
-                  type="button"
-                  className="select-player"
-                  aria-expanded={selectedId === serializedPlayerId}
-                  aria-controls="matchup-selection-card"
-                  onClick={() => onSelect(player)}
-                >
-                  {selectedId === serializedPlayerId ? 'Selected' : 'Open selection card'}
-                </button>
+                {/* PROTOTYPE (throwaway): the footer variant wraps the shipped button. */}
+                <ProtoFooter
+                  variant={proto.active ? proto.variant : null}
+                  player={player}
+                  gameLogsPath={gameLogsPath}
+                  selectButton={
+                    <button
+                      ref={(node) => registerTrigger(serializedPlayerId, node)}
+                      type="button"
+                      className="select-player"
+                      aria-expanded={selectedId === serializedPlayerId}
+                      aria-controls="matchup-selection-card"
+                      onClick={() => onSelect(player)}
+                    >
+                      {selectedId === serializedPlayerId ? 'Selected' : 'Open selection card'}
+                    </button>
+                  }
+                />
               </article>
             );
           })}
         </div>
       )}
+      {/* PROTOTYPE (throwaway) */}
+      {proto.active && <PrototypeSwitcher variant={proto.variant} onStep={proto.step} />}
     </aside>
   );
 }

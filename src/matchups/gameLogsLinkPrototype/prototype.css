@@ -1,0 +1,149 @@
+/* PROTOTYPE — throwaway. See ./README.md. */
+
+/* ---------- A: name is the link ---------- */
+.player-card h3 .pa-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--ct-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.player-card h3 .pa-name svg {
+  align-self: center;
+  color: var(--ct-gold);
+  opacity: 0.85;
+}
+
+.player-card h3 .pa-name:hover,
+.player-card h3 .pa-name:focus-visible {
+  color: var(--ct-gold);
+  border-bottom-color: var(--ct-gold);
+}
+
+/* ---------- B: arrow on the name row ---------- */
+.pb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.pb-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  color: var(--ct-dim);
+  text-decoration: none;
+}
+
+.pb-arrow:hover,
+.pb-arrow:focus-visible {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+
+/* ---------- C: footer action pair ---------- */
+.pc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.pc-actions .select-player {
+  margin-top: 0;
+}
+
+.pc-logs {
+  border: 1px solid transparent;
+  border-radius: var(--ct-radius-ctl);
+  padding: 4px 7px;
+  color: var(--ct-gold);
+  font-size: 0.6rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pc-logs span {
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+
+.pc-logs:hover,
+.pc-logs:focus-visible {
+  border-color: var(--ct-gold);
+}
+
+.pc-logs:hover span {
+  transform: translateX(2px);
+}
+
+/* ---------- D: logs tag by the score ---------- */
+.pd-line span:first-child {
+  margin-right: 6px;
+}
+
+.pd-tag {
+  display: inline-block;
+  vertical-align: 1px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 0 6px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.pd-tag:hover,
+.pd-tag:focus-visible {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+
+/* ---------- switcher: deliberately not part of the design ---------- */
+.proto-switcher {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f2f2f2;
+  color: #111;
+  border: 2px solid #111;
+  border-radius: 999px;
+  padding: 0.3rem 0.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  font:
+    600 12px/1 system-ui,
+    sans-serif;
+}
+
+.proto-switcher button {
+  background: #111;
+  color: #f2f2f2;
+  border: 0;
+  border-radius: 999px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+}
+
+.proto-switcher-label {
+  padding: 0 0.35rem;
+  white-space: nowrap;
+}

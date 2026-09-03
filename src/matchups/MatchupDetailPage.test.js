@@ -232,6 +232,27 @@ beforeEach(() => {
   });
 });
 
+test('links every displayed player to that player’s game logs', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  const lebronCard = await screen.findByRole('article', { name: 'LeBron James player' });
+  const reavesCard = screen.getByRole('article', { name: 'Austin Reaves player' });
+  expect(within(lebronCard).getByRole('link', { name: 'LeBron James game logs' })).toHaveAttribute(
+    'href',
+    '/?player_name=LeBron+James',
+  );
+  expect(within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+    'href',
+    '/?player_name=Austin+Reaves',
+  );
+});
+
 test('shows the matchup-detail preseason caveat only for preseason games', async () => {
   const regular = render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>

@@ -373,6 +373,13 @@
   font-size: 0.64rem;
 }
 
+.player-game-logs {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--ct-gold);
+  font-size: 0.62rem;
+}
+
 .select-player {
   margin-top: 5px;
   color: var(--ct-text);

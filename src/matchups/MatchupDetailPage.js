@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
+import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
@@ -246,6 +247,9 @@ function PlayerRail({
             const focalLine = player.focalGameLine;
             const unscored = market !== 'All' && scoreFor(player) === null;
             const missingInputs = unscored ? (windowScoreFor(player)?.missingInputs ?? []) : [];
+            const gameLogsPath = `/?${filterSetToSearchParams({
+              player_name: player.name,
+            })}`;
             return (
               <article
                 key={player.id}
@@ -262,6 +266,13 @@ function PlayerRail({
                       ? ' · completed-season context'
                       : ''}
                   </p>
+                  <Link
+                    aria-label={`${player.name} game logs`}
+                    className="player-game-logs"
+                    to={gameLogsPath}
+                  >
+                    Game logs
+                  </Link>
                 </div>
                 {injury && (
                   <span className="injury-badge">{injury.status || injury.rawStatus}</span>

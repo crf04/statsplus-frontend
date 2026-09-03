@@ -374,10 +374,24 @@
 }
 
 .player-game-logs {
-  display: inline-block;
-  margin-top: 2px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--ct-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.player-game-logs svg {
+  align-self: center;
   color: var(--ct-gold);
-  font-size: 0.62rem;
+  opacity: 0.85;
+}
+
+.player-game-logs:hover,
+.player-game-logs:focus-visible {
+  color: var(--ct-gold);
+  border-bottom-color: var(--ct-gold);
 }
 
 .select-player {

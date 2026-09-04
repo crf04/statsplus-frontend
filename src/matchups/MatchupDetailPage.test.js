@@ -301,7 +301,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
     screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
   ).not.toBeInTheDocument();
   expect(screen.getByText(/19% poss/)).toBeVisible();
-  expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
+  expect(screen.getByText('Austin Reaves · 18% poss · +1.2σ')).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
   expect(
     within(screen.getByRole('article', { name: 'LeBron James player' })).getByLabelText(
@@ -832,8 +832,8 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
 
   expect(screen.getByText('Restricted Area FGA').closest('article')).toHaveClass('selection-why');
   expect(screen.getByText('Catch and Shoot FG3A').closest('article')).toHaveClass('selection-why');
-  expect(screen.getByText(/LeBron James · 27% FGA/)).toBeVisible();
-  expect(screen.getByText(/LeBron James · 36% FGA/)).toBeVisible();
+  expect(screen.getByText('LeBron James · 27% FGA · +1.1σ')).toBeVisible();
+  expect(screen.getByText('LeBron James · 36% FGA · +1.2σ')).toBeVisible();
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {

@@ -211,6 +211,18 @@ test('decodes both delivered windows and preserves relative values', () => {
       }),
     }),
   );
+  expect(matchup.players[0].dietShares.playTypes[0]).toEqual({
+    key: 'Transition',
+    season: {
+      share: 0.19,
+      volume: 102,
+      gamesPlayed: 20,
+      volumeUnit: 'possessions',
+      volumePerGame: 5.1,
+      leagueAverageShare: 0.09,
+      sigmaDeviation: 1.3,
+    },
+  });
   expect(matchup.game).toEqual(
     expect.objectContaining({
       gameId: '0022500584',

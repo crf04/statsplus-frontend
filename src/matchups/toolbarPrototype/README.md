@@ -53,8 +53,8 @@ npx vite --host --config vite.proto.config.mjs
   the Defense Sheet.
 - `?proto=toolbar&v=D` — **Side tabs + tab strip.** Chris's pick after
   seeing A–C: A's sidebar team tabs (short, players stay high) with C's
-  underlined stat tab strip on top of the sheet. Window and deviation keep
-  A's labelled row underneath the strip.
+  underlined stat tab strip. Window and deviation come first as A's
+  labelled row; the strip sits last, directly on the sheet.
 
 ## What is real and what is not
 

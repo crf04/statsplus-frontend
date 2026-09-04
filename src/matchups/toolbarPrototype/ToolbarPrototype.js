@@ -256,14 +256,25 @@ function TabStrip({ markets, market, setMarket, historical }) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* D — A + C: side tabs in the sidebar, stat tab strip on the sheet, window  */
-/* and deviation as a labelled row under the strip.                          */
+/* D — A + C: side tabs in the sidebar; window and deviation as a labelled   */
+/* row, then the stat tab strip sitting directly on the sheet.               */
 /* ------------------------------------------------------------------------ */
 
 function StripAndLabelledRow(props) {
   const { markets, market, setMarket, historical } = props;
   return (
     <section className="detail-controls proto-d-controls" aria-label="Defense Sheet controls">
+      <div className="proto-a-row">
+        <div className="proto-a-group">
+          <span className="proto-label">Window</span>
+          <WindowButtons {...props} />
+        </div>
+        <div className="proto-a-group">
+          <span className="proto-label">Show</span>
+          <DeviationButtons {...props} />
+        </div>
+      </div>
+      <Notes {...props} />
       <div
         className="proto-c-tabs"
         role="group"
@@ -280,17 +291,6 @@ function StripAndLabelledRow(props) {
           </button>
         ))}
       </div>
-      <div className="proto-a-row">
-        <div className="proto-a-group">
-          <span className="proto-label">Window</span>
-          <WindowButtons {...props} />
-        </div>
-        <div className="proto-a-group">
-          <span className="proto-label">Show</span>
-          <DeviationButtons {...props} />
-        </div>
-      </div>
-      <Notes {...props} />
     </section>
   );
 }

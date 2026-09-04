@@ -125,7 +125,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.18, volumePerGame: 4 },
+            season: { share: 0.18, volumePerGame: 4, sigmaDeviation: 1.2 },
           },
         ],
       },
@@ -148,7 +148,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.19, volumePerGame: 5 },
+            season: { share: 0.19, volumePerGame: 5, sigmaDeviation: 1.3 },
           },
         ],
       },
@@ -301,7 +301,7 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
     screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
   ).not.toBeInTheDocument();
   expect(screen.getByText(/19% poss/)).toBeVisible();
-  expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
+  expect(screen.getByText('Austin Reaves · 18% poss · +1.2σ')).toBeVisible();
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
   expect(
     within(screen.getByRole('article', { name: 'LeBron James player' })).getByLabelText(
@@ -814,10 +814,10 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
   ];
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.dietShares.shotZones = [
-    { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1 } },
+    { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1, sigmaDeviation: 1.1 } },
   ];
   lebron.dietShares.shotTypes = [
-    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2 } },
+    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2, sigmaDeviation: 1.2 } },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
 
@@ -832,8 +832,8 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
 
   expect(screen.getByText('Restricted Area FGA').closest('article')).toHaveClass('selection-why');
   expect(screen.getByText('Catch and Shoot FG3A').closest('article')).toHaveClass('selection-why');
-  expect(screen.getByText(/LeBron James · 27% FGA/)).toBeVisible();
-  expect(screen.getByText(/LeBron James · 36% FGA/)).toBeVisible();
+  expect(screen.getByText('LeBron James · 27% FGA · +1.1σ')).toBeVisible();
+  expect(screen.getByText('LeBron James · 36% FGA · +1.2σ')).toBeVisible();
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {

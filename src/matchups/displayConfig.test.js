@@ -1,17 +1,28 @@
 import { formatFocalGameLine, shouldDisplayDietShare } from './displayConfig';
 
 test.each([
-  ['playTypes', { share: 0.15, volumePerGame: 0 }, true],
-  ['playTypes', { share: 0.149, volumePerGame: 9 }, false],
-  ['shotZones', { share: 0.25, volumePerGame: 0 }, true],
-  ['shotZones', { share: 0.249, volumePerGame: 9 }, false],
-  ['shotTypes', { share: 0.35, volumePerGame: 4 }, true],
-  ['shotTypes', { share: 0.4, volumePerGame: 3.99 }, false],
-  ['assistLocations', { share: 0.3, volumePerGame: 1 }, true],
-  ['assistLocations', { share: 0.35, volumePerGame: 0.99 }, false],
-])('%s gating returns %s for the named share and volume floors', (base, value, expected) => {
-  expect(shouldDisplayDietShare(base, value)).toBe(expected);
-});
+  ['playTypes', { sigmaDeviation: 1, volumePerGame: 1 }, true],
+  ['playTypes', { sigmaDeviation: 0.99, volumePerGame: 9 }, false],
+  ['playTypes', { sigmaDeviation: 9, volumePerGame: 0.99 }, false],
+  ['playTypes', { sigmaDeviation: null, volumePerGame: 9 }, false],
+  ['shotZones', { sigmaDeviation: 1, volumePerGame: 1 }, true],
+  ['shotZones', { sigmaDeviation: 0.99, volumePerGame: 9 }, false],
+  ['shotZones', { sigmaDeviation: 9, volumePerGame: 0.99 }, false],
+  ['shotZones', { sigmaDeviation: null, volumePerGame: 9 }, false],
+  ['shotTypes', { sigmaDeviation: 1, volumePerGame: 4 }, true],
+  ['shotTypes', { sigmaDeviation: 0.99, volumePerGame: 9 }, false],
+  ['shotTypes', { sigmaDeviation: 9, volumePerGame: 3.99 }, false],
+  ['shotTypes', { sigmaDeviation: null, volumePerGame: 9 }, false],
+  ['assistLocations', { sigmaDeviation: 1, volumePerGame: 1 }, true],
+  ['assistLocations', { sigmaDeviation: 0.99, volumePerGame: 9 }, false],
+  ['assistLocations', { sigmaDeviation: 9, volumePerGame: 0.99 }, false],
+  ['assistLocations', { sigmaDeviation: null, volumePerGame: 9 }, false],
+])(
+  '%s gating returns %s for the named sigma deviation and volume floors',
+  (base, value, expected) => {
+    expect(shouldDisplayDietShare(base, value)).toBe(expected);
+  },
+);
 
 const focalGameLine = {
   gameId: '0022501082',

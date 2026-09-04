@@ -280,13 +280,27 @@ const league = {
   ),
 };
 
-const dietShare = (key, seasonShare, volumePerGame = 5.1, volumeUnit = 'possessions') => ({
+// sigma_deviation is derived, never hand-picked: the boundary contract defines
+// it as (share - leagueAverageShare) / populationSigma over ONE population per
+// season/Base/slice, so every player sharing a (leagueAverageShare,
+// populationSigma) pair here must be mathematically consistent with the others.
+const dietShare = (
+  key,
+  seasonShare,
+  leagueAverageShare,
+  populationSigma,
+  volumePerGame = 5.1,
+  volumeUnit = 'possessions',
+) => ({
   key,
   season: {
     share: seasonShare,
     volume: volumePerGame * 20,
     games_played: 20,
     volume_unit: volumeUnit,
+    league_average_share: leagueAverageShare,
+    sigma_deviation:
+      Math.round(((seasonShare - leagueAverageShare) / populationSigma) * 1000) / 1000,
   },
 });
 
@@ -432,10 +446,23 @@ export const matchupPayload = {
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
-        play_types: [dietShare('Transition', 0.19), dietShare('Postup', 0.02)],
-        shot_zones: [dietShare('Restricted Area', 0.27, 5.1, 'field_goal_attempts')],
-        shot_types: [dietShare('Catch and Shoot', 0.36, 4.2, 'field_goal_attempts')],
-        assist_locations: [dietShare('AtRimAssists', 0.31, 1.1, 'assists')],
+        play_types: [
+          // Current-matchup Transition population: mean .09, pstdev .075.
+          // Above the sigma and volume floor: chip must render.
+          dietShare('Transition', 0.19, 0.09, 0.075),
+          // Current-matchup Postup population: mean .05, pstdev .1.
+          // Below league average: chip stays hidden by sigma.
+          dietShare('Postup', 0.02, 0.05, 0.1),
+        ],
+        // Current-matchup shot_zones Restricted Area population: mean .20, pstdev .06,
+        // shared with Austin's and Tatum's facts below.
+        shot_zones: [dietShare('Restricted Area', 0.27, 0.2, 0.06, 5.1, 'field_goal_attempts')],
+        // Current-matchup shot_types Catch and Shoot population: mean .24, pstdev .10,
+        // shared with Tatum's fact below.
+        shot_types: [dietShare('Catch and Shoot', 0.36, 0.24, 0.1, 4.2, 'field_goal_attempts')],
+        // Current-matchup assist_locations AtRimAssists population: mean .14, pstdev .12,
+        // shared with Austin's and Tatum's facts below.
+        assist_locations: [dietShare('AtRimAssists', 0.31, 0.14, 0.12, 1.1, 'assists')],
       },
       injury_badge_ref: null,
       scores: scores(COMPLETE_MARKETS, 0.12, -0.02),
@@ -452,12 +479,21 @@ export const matchupPayload = {
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,
         // so market-tab chip scoping remains observable at the browser seam.
-        play_types: [dietShare('Transition', 0.18)],
+        play_types: [dietShare('Transition', 0.18, 0.09, 0.075)],
         // Restricted Area is not an FG3A-compatible slice, and no shot-type
         // Diet fact exists, so FG3A has no contributing player evidence.
-        shot_zones: [dietShare('Restricted Area', 0.24, 5.1, 'field_goal_attempts')],
+        // This fact would have passed the OLD fixed share gate (>= 25% FGA),
+        // but sigma_deviation stays under the 1-sigma display floor against
+        // the same (mean .20, pstdev .06) population LeBron and Tatum use, so
+        // it is hidden by sigma, not by accident. If the display gate ever
+        // regresses to the fixed-share rule, this chip would render again and
+        // the "hidden" assertion below would fail.
+        shot_zones: [dietShare('Restricted Area', 0.25, 0.2, 0.06, 5.1, 'field_goal_attempts')],
         shot_types: [],
-        assist_locations: [dietShare('AtRimAssists', 0.35, 0.8, 'assists')],
+        // Above the sigma floor (against the shared mean .14, pstdev .12
+        // assist_locations population), but under the assist-locations volume
+        // floor (1/g): hidden by volume, not sigma.
+        assist_locations: [dietShare('AtRimAssists', 0.35, 0.14, 0.12, 0.8, 'assists')],
       },
       injury_badge_ref: 'injury-austin',
       scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08, {
@@ -474,10 +510,10 @@ export const matchupPayload = {
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {
-        play_types: [dietShare('Transition', 0.21)],
-        shot_zones: [dietShare('Restricted Area', 0.29, 5.1, 'field_goal_attempts')],
-        shot_types: [dietShare('Catch and Shoot', 0.39, 4.8, 'field_goal_attempts')],
-        assist_locations: [dietShare('AtRimAssists', 0.33, 1.2, 'assists')],
+        play_types: [dietShare('Transition', 0.21, 0.09, 0.075)],
+        shot_zones: [dietShare('Restricted Area', 0.29, 0.2, 0.06, 5.1, 'field_goal_attempts')],
+        shot_types: [dietShare('Catch and Shoot', 0.39, 0.24, 0.1, 4.8, 'field_goal_attempts')],
+        assist_locations: [dietShare('AtRimAssists', 0.33, 0.14, 0.12, 1.2, 'assists')],
       },
       injury_badge_ref: null,
       scores: scores(['PTS', 'FGA', 'FG3A', 'REB', 'BLK'], 0.15, 0.11),
@@ -774,10 +810,22 @@ export const historicalMatchupPayload = {
       focalStats: { PTS: 24, REB: 5, AST: 7, FGA: 18, FG3A: 6, TOV: 2 },
       scoreBase: 0.18,
       dietShares: {
-        play_types: [dietShare('Transition', 0.22), dietShare('Postup', 0.14)],
-        shot_zones: [dietShare('Restricted Area', 0.28, 5.4, 'field_goal_attempts')],
-        shot_types: [dietShare('Catch and Shoot', 0.34, 4.4, 'field_goal_attempts')],
-        assist_locations: [dietShare('AtRimAssists', 0.3, 1.2, 'assists')],
+        play_types: [
+          // Historical Transition population: mean .09, pstdev .10, shared
+          // with Giannis's fact below. Above the sigma and volume floor:
+          // chip must render.
+          dietShare('Transition', 0.22, 0.09, 0.1),
+          // Historical Postup population: mean .05, pstdev .15. Above league
+          // average but under the 1-sigma display floor: chip stays hidden.
+          dietShare('Postup', 0.14, 0.05, 0.15),
+        ],
+        // Historical shot_zones Restricted Area population: mean .21, pstdev
+        // .06, shared with Giannis's fact below.
+        shot_zones: [dietShare('Restricted Area', 0.28, 0.21, 0.06, 5.4, 'field_goal_attempts')],
+        shot_types: [dietShare('Catch and Shoot', 0.34, 0.24, 0.09, 4.4, 'field_goal_attempts')],
+        // Historical assist_locations AtRimAssists population: mean .14,
+        // pstdev .12, shared with Harden's and Giannis's facts below.
+        assist_locations: [dietShare('AtRimAssists', 0.3, 0.14, 0.12, 1.2, 'assists')],
       },
     }),
     historicalParticipant({
@@ -789,10 +837,10 @@ export const historicalMatchupPayload = {
       focalStats: { PTS: 19, REB: 4, AST: 11, FGA: 15, FG3A: 9, TOV: 4 },
       scoreBase: 0.26,
       dietShares: {
-        play_types: [dietShare('Isolation', 0.24)],
-        shot_zones: [dietShare('Above the Break 3', 0.31, 6.2, 'field_goal_attempts')],
+        play_types: [dietShare('Isolation', 0.24, 0.09, 0.125)],
+        shot_zones: [dietShare('Above the Break 3', 0.31, 0.21, 0.08, 6.2, 'field_goal_attempts')],
         shot_types: [],
-        assist_locations: [dietShare('AtRimAssists', 0.38, 1.9, 'assists')],
+        assist_locations: [dietShare('AtRimAssists', 0.38, 0.14, 0.12, 1.9, 'assists')],
       },
     }),
     historicalParticipant({
@@ -814,10 +862,10 @@ export const historicalMatchupPayload = {
       focalStats: { PTS: 33, REB: 14, AST: 6, FGA: 22, FG3A: 2, TOV: 3 },
       scoreBase: 0.21,
       dietShares: {
-        play_types: [dietShare('Transition', 0.26)],
-        shot_zones: [dietShare('Restricted Area', 0.41, 8.1, 'field_goal_attempts')],
+        play_types: [dietShare('Transition', 0.26, 0.09, 0.1)],
+        shot_zones: [dietShare('Restricted Area', 0.41, 0.21, 0.06, 8.1, 'field_goal_attempts')],
         shot_types: [],
-        assist_locations: [dietShare('AtRimAssists', 0.29, 1.4, 'assists')],
+        assist_locations: [dietShare('AtRimAssists', 0.29, 0.14, 0.12, 1.4, 'assists')],
       },
     }),
     historicalParticipant({

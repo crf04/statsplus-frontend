@@ -352,7 +352,9 @@ function DietShareChips({ players, base, sliceKey, market }) {
     <div className="diet-chips" role="group" aria-label="Players leaning on this slice">
       {chips.map(({ player, share }) => (
         <span key={player.id}>
-          {player.name} · {Math.round(share.share * 100)}% {SHARE_LABELS[base]}
+          {player.name} · {Math.round(share.share * 100)}% {SHARE_LABELS[base]} ·{' '}
+          {share.sigmaDeviation > 0 ? '+' : ''}
+          {share.sigmaDeviation.toFixed(1)}σ
         </span>
       ))}
     </div>

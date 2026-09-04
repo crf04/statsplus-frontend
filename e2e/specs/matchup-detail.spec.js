@@ -85,9 +85,9 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
       .getByText('Focal game LAC @ MIL · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST'),
   ).toBeVisible();
   await expect(page.getByText('21.4 PPG · completed-season context')).toBeVisible();
-  await expect(page.getByText(/Kawhi Leonard · 22% poss/)).toBeVisible();
-  await expect(page.getByText(/Kawhi Leonard · 28% FGA/)).toBeVisible();
-  await expect(page.getByText(/James Harden · 31% FGA/)).toBeVisible();
+  await expect(page.getByText('Kawhi Leonard · 22% poss · +1.3σ')).toBeVisible();
+  await expect(page.getByText('Kawhi Leonard · 28% FGA · +1.2σ')).toBeVisible();
+  await expect(page.getByText('James Harden · 31% FGA · +1.3σ')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('historical-matchup-desktop.png'),
     fullPage: true,
@@ -255,11 +255,14 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('+12.0% vs league')).toBeVisible();
   await expect(page.getByText('-11.0% vs league')).toBeVisible();
   await expect(page.getByText(/LeBron James · 19% poss/)).toBeVisible();
-  await expect(page.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
-  await expect(page.getByText(/LeBron James · 27% FGA/)).toBeVisible();
-  await expect(page.getByText(/LeBron James · 36% FGA/)).toBeVisible();
-  await expect(page.getByText(/LeBron James · 31% ast/)).toBeVisible();
-  await expect(page.getByText(/Austin Reaves · 40% FGA/)).toHaveCount(0);
+  await expect(page.getByText('Austin Reaves · 18% poss · +1.2σ')).toBeVisible();
+  await expect(page.getByText('LeBron James · 27% FGA · +1.2σ')).toBeVisible();
+  await expect(page.getByText('LeBron James · 36% FGA · +1.2σ')).toBeVisible();
+  await expect(page.getByText('LeBron James · 31% ast · +1.4σ')).toBeVisible();
+  // Would have passed the old fixed shot_zones gate (>= 25% FGA); hidden by
+  // sigma_deviation (0.83) under the shared population's 1-sigma floor.
+  await expect(page.getByText(/Austin Reaves · 25% FGA/)).toHaveCount(0);
+  // Above the assist_locations sigma floor; hidden by the volume floor.
   await expect(page.getByText(/Austin Reaves · 35% ast/)).toHaveCount(0);
   await expect(page.getByText('2 targetable returned')).toBeVisible();
   await expect(page.getByRole('article', { name: 'LeBron James player' })).toBeVisible();

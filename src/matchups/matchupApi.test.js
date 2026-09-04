@@ -398,6 +398,17 @@ test('ignores undisplayed additive rows from backend-projected Bases', () => {
         last_15: teamWindow,
       },
     },
+    {
+      base: 'play_types',
+      league: { key: 'Misc:PTS', season: leagueWindow, last_15: leagueWindow },
+      team: {
+        key: 'Misc:PTS',
+        label: 'Misc PTS',
+        markets: ['PTS', 'PA', 'PR', 'PRA'],
+        season: teamWindow,
+        last_15: teamWindow,
+      },
+    },
   ];
   extras.forEach(({ base, league, team }) => {
     candidate.league.defense_sheet[base].push(league);
@@ -412,6 +423,7 @@ test('ignores undisplayed additive rows from backend-projected Bases', () => {
   expect(decoded.league.defenseSheet.playTypes.map((row) => row.key)).not.toContain(
     'Backcourt:PTS',
   );
+  expect(decoded.league.defenseSheet.playTypes.map((row) => row.key)).not.toContain('Misc:PTS');
   expect(decoded.teams[0].defenseSheet.traditional.map((row) => row.key)).not.toContain('OPP_PF');
   expect(decoded.teams[0].defenseSheet.assistLocations.map((row) => row.key)).not.toContain(
     'Assists',
@@ -419,6 +431,7 @@ test('ignores undisplayed additive rows from backend-projected Bases', () => {
   expect(decoded.teams[0].defenseSheet.playTypes.map((row) => row.key)).not.toContain(
     'Backcourt:PTS',
   );
+  expect(decoded.teams[0].defenseSheet.playTypes.map((row) => row.key)).not.toContain('Misc:PTS');
 });
 
 test.each([

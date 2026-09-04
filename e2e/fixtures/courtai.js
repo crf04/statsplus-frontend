@@ -1324,7 +1324,7 @@ const applySelfFilters = (logs, url) =>
  * each other on screen. The two splits sit on opposite sides of the league
  * average, which keeps the comparison column honest in both directions.
  */
-export const traditionalTeamStats = {
+const traditionalTeamStats = {
   OPP_PTS: 112,
   OPP_PTS_RANK: 18,
   OPP_OREB: 10.62,

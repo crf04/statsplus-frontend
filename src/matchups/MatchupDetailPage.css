@@ -151,8 +151,14 @@
   overflow-x: auto;
   border-bottom: 1px solid var(--ct-line);
   scrollbar-width: none;
-  /* Fade the right edge so a cut-off tab reads as "more to the right". */
+  /* Fade the right edge so a cut-off tab reads as "more to the right". The
+     trailing spacer keeps the last tab clear of the fade at full scroll. */
   mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+
+.market-tabs::after {
+  content: '';
+  flex: 0 0 28px;
 }
 
 .market-tabs::-webkit-scrollbar {

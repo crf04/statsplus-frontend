@@ -706,6 +706,40 @@ test('the team switch heads the sidebar and the stat strip sits last on the shee
   ]);
 });
 
+// The decoder guarantees unique team ids, not unique tricodes, so the tabs
+// must follow ids: with a tricode collision each tab still reaches its own
+// team and flips the rail to the other side's players.
+test('team tabs follow team ids when both teams share a tricode', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.game.away = { ...candidate.game.away, teamId: 1, tricode: 'LAL' };
+  candidate.game.home = { ...candidate.game.home, teamId: 2, tricode: 'LAL' };
+  candidate.teams = candidate.teams.map((team) => ({ ...team, tricode: 'LAL' }));
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const rail = await screen.findByRole('complementary', { name: 'Season scoring order' });
+  const tabs = within(screen.getByRole('group', { name: 'Defense team' })).getAllByRole('button');
+  expect(tabs).toHaveLength(2);
+  const railNames = () =>
+    within(rail)
+      .getAllByRole('article', { name: /player/i })
+      .map((article) => article.getAttribute('aria-label'));
+  const pressedIndex = tabs.findIndex((tab) => tab.getAttribute('aria-pressed') === 'true');
+  expect(pressedIndex).not.toBe(-1);
+  const before = railNames();
+  await userEvent.click(tabs[1 - pressedIndex]);
+  expect(tabs[1 - pressedIndex]).toHaveAttribute('aria-pressed', 'true');
+  expect(tabs[pressedIndex]).toHaveAttribute('aria-pressed', 'false');
+  const after = railNames();
+  expect(after).not.toEqual(before);
+  expect(after.some((name) => before.includes(name))).toBe(false);
+});
+
 test('renders raw injury statuses and keeps the signed-out shell honest', async () => {
   const { unmount } = render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>

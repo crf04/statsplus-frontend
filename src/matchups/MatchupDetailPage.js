@@ -561,6 +561,33 @@ function InjuryReport({ injuries, now }) {
   );
 }
 
+// Away first, then home, so the tabs read the same way as the title.
+function TeamTabs({ matchup, defenseTeam, onSelect }) {
+  const tabs = [matchup.game.away, matchup.game.home]
+    .map((side) => matchup.teams.find((team) => team.teamId === side.teamId))
+    .filter(Boolean);
+  return (
+    <div className="team-tabs" role="group" aria-label="Defense team">
+      {tabs.map((team) => {
+        const opponent = matchup.teams.find((other) => other.teamId !== team.teamId);
+        return (
+          <button
+            type="button"
+            key={team.teamId}
+            aria-pressed={team.teamId === defenseTeam.teamId}
+            onClick={() => onSelect(team.teamId)}
+          >
+            <span className="team-tab-name">
+              {team.tricode} <small>defense</small>
+            </span>
+            {opponent && <span className="team-tab-sub">vs {opponent.tricode} players</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Detail({ matchup, gameId }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const now = useMinuteNow(true);
@@ -697,6 +724,7 @@ function Detail({ matchup, gameId }) {
       )}
       <div className="detail-grid">
         <div className="matchup-sidebar">
+          <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
           <p className="sheet-instruction">
             Tap a player to trace their rows across the sheet; use the score card for the full
             dossier.
@@ -730,8 +758,49 @@ function Detail({ matchup, gameId }) {
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">
+            <div className="control-row">
+              <div className="control-group">
+                <span className="control-label" aria-hidden="true">
+                  Window
+                </span>
+                <div className="segmented" role="group" aria-label="Stat window">
+                  {WINDOWS.map((item) => (
+                    <button
+                      type="button"
+                      aria-pressed={windowKey === item.key}
+                      disabled={item.key === 'last15' && last15Blocked}
+                      key={item.key}
+                      onClick={() => setWindowKey(item.key)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="control-group">
+                <span className="control-label" aria-hidden="true">
+                  Show
+                </span>
+                <div className="segmented" role="group" aria-label="Deviation filter">
+                  {DEVIATIONS.map((item) => (
+                    <button
+                      type="button"
+                      aria-pressed={deviation === item.value}
+                      key={item.value}
+                      onClick={() => setDeviation(item.value)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {windowSection?.context && (
+              <p className="window-context">{contextLabel(windowSection)}</p>
+            )}
+            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
             <div
-              className="segmented market-tabs"
+              className="market-tabs"
               role="group"
               aria-label={historical ? 'Stat category' : 'Market'}
             >
@@ -746,49 +815,6 @@ function Detail({ matchup, gameId }) {
                 </button>
               ))}
             </div>
-            <div className="control-row">
-              <div className="segmented" role="group" aria-label="Stat window">
-                {WINDOWS.map((item) => (
-                  <button
-                    type="button"
-                    aria-pressed={windowKey === item.key}
-                    disabled={item.key === 'last15' && last15Blocked}
-                    key={item.key}
-                    onClick={() => setWindowKey(item.key)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <div className="segmented" role="group" aria-label="Deviation filter">
-                {DEVIATIONS.map((item) => (
-                  <button
-                    type="button"
-                    aria-pressed={deviation === item.value}
-                    key={item.value}
-                    onClick={() => setDeviation(item.value)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <div className="team-toggle" role="group" aria-label="Defense team">
-                {matchup.teams.map((team) => (
-                  <button
-                    type="button"
-                    aria-pressed={team.teamId === defenseTeam.teamId}
-                    key={team.teamId}
-                    onClick={() => setTeamId(team.teamId)}
-                  >
-                    {team.tricode} defense
-                  </button>
-                ))}
-              </div>
-            </div>
-            {windowSection?.context && (
-              <p className="window-context">{contextLabel(windowSection)}</p>
-            )}
-            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
           </section>
           {selectedId && !selectedPlayer && (
             <p role="alert" className="selection-card">

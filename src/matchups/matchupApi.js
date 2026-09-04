@@ -77,7 +77,6 @@ const PLAY_TYPE_SLICES = new Set([
   'Cut',
   'Handoff',
   'OffScreen',
-  'Misc',
   'Postup',
 ]);
 const TWO_POINT_SHOT_ZONE_SLICES = new Set([

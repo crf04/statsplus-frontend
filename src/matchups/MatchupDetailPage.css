@@ -96,23 +96,35 @@
 }
 
 .control-row,
-.team-toggle,
+.control-group,
 .segmented {
   display: flex;
   flex-wrap: wrap;
-}
-
-.control-row {
-  gap: 10px;
   align-items: center;
 }
 
-.team-toggle,
+.control-row {
+  gap: 8px 22px;
+}
+
+.control-group {
+  gap: 6px 10px;
+}
+
+.control-label {
+  min-width: 46px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .segmented {
   gap: 0;
 }
 
-.team-toggle button,
 .segmented button {
   border: 1px solid var(--ct-line-strong);
   border-radius: 0;
@@ -124,30 +136,113 @@
   font-weight: 700;
 }
 
-.team-toggle button:first-child,
 .segmented button:first-child {
   border-radius: var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl);
 }
 
-.team-toggle button:last-child,
 .segmented button:last-child {
   border-radius: 0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0;
 }
 
+/* Stat categories sit directly on the Defense Sheet as an underlined strip. */
 .market-tabs {
-  gap: 4px;
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ct-line);
+  scrollbar-width: none;
 }
 
-.market-tabs button,
-.market-tabs button:first-child,
-.market-tabs button:last-child {
-  border-radius: 999px;
+.market-tabs::-webkit-scrollbar {
+  display: none;
 }
 
-.team-toggle button[aria-pressed='true'] {
-  border-color: var(--ct-gold);
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+.market-tabs button {
+  flex: 0 0 auto;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 6px 10px 7px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.market-tabs button:hover {
+  color: var(--ct-text);
+}
+
+.market-tabs button[aria-pressed='true'] {
+  border-bottom-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+/* The team switch heads the sidebar: it decides whose sheet and whose
+   players the page shows, so it sits above both. */
+.team-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+}
+
+.team-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border: 0;
+  border-top: 2px solid transparent;
+  padding: 9px 12px 10px;
+  background: transparent;
+  color: var(--ct-dim);
+  text-align: left;
+}
+
+.team-tabs button + button {
+  border-left: 1px solid var(--ct-line);
+}
+
+.team-tabs button:hover {
+  color: var(--ct-text);
+}
+
+.team-tabs button[aria-pressed='true'] {
+  border-top-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-text);
+}
+
+.team-tab-name {
+  font-family: var(--ct-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.team-tabs button[aria-pressed='true'] .team-tab-name {
+  color: var(--ct-gold);
+}
+
+.team-tab-name small {
+  margin-left: 2px;
+  font-family: var(--ct-sans);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.team-tab-sub {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.58rem;
 }
 
 .segmented button[aria-pressed='true'] {
@@ -542,6 +637,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .team-tabs,
   .sheet-instruction {
     grid-column: 1 / -1;
   }

@@ -11,6 +11,12 @@ import {
 } from './calendarDate';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
+// PROTOTYPE (throwaway, branch prototype/targets-look): with `?proto=targets`
+// the slate shows live Targets. Delete these imports and the PROTOTYPE blocks
+// below to remove.
+import { useVariant } from './prototype/targets/prototypeMode';
+import { useSlateTargets } from './prototype/targets/TargetsSlatePanel';
+import PrototypeSwitcher from './prototype/targets/PrototypeSwitcher';
 import './SlatePage.css';
 
 const formatTip = (date) =>
@@ -104,7 +110,7 @@ const groupByTip = (games) =>
       return groups;
     }, []);
 
-function GameRow({ game }) {
+function GameRow({ game, extra }) {
   const away = game.away.targetablePlayerCount;
   const home = game.home.targetablePlayerCount;
   const total = away + home;
@@ -176,11 +182,13 @@ function GameRow({ game }) {
           →
         </span>
       </Link>
+      {/* PROTOTYPE (throwaway) */}
+      {extra}
     </li>
   );
 }
 
-function SlateBoard({ games }) {
+function SlateBoard({ games, renderExtra }) {
   return (
     <ol className="slate-board">
       {groupByTip(games).map((group) => (
@@ -188,7 +196,7 @@ function SlateBoard({ games }) {
           <h2 className="slate-window-tip">{group.tip}</h2>
           <ul className="slate-rows">
             {group.games.map((game) => (
-              <GameRow key={game.gameId} game={game} />
+              <GameRow key={game.gameId} game={game} extra={renderExtra?.(game)} />
             ))}
           </ul>
         </li>
@@ -245,7 +253,17 @@ export default function SlatePage() {
     return () => controller.abort();
   }, [authLoading, isAuthenticated, requestedDate]);
 
-  const navigate = (nextDate) => setSearchParams(nextDate ? { date: nextDate } : {});
+  // PROTOTYPE (throwaway): keep proto params across date navigation.
+  const proto = useVariant();
+  const slateTargets = useSlateTargets(
+    proto.active && state.status === 'ready' ? state.slate.slateDate : null,
+    proto.variant,
+  );
+  const navigate = (nextDate) => {
+    const next = nextDate ? { date: nextDate } : {};
+    if (proto.active) Object.assign(next, { proto: 'targets', v: proto.variant });
+    setSearchParams(next);
+  };
 
   if (!authLoading && !isAuthenticated) {
     return (
@@ -321,16 +339,23 @@ export default function SlatePage() {
             />
           </div>
           <PoolSummary isPast={isPast} poolStatus={effectivePoolStatus} />
+          {/* PROTOTYPE (throwaway) */}
+          {proto.active && slateTargets.panel}
           {state.slate.games.length === 0 ? (
             <div className="empty-slate">
               <h2>No games on this slate.</h2>
               <p>Choose another date to keep browsing the season.</p>
             </div>
           ) : (
-            <SlateBoard games={state.slate.games} />
+            <SlateBoard
+              games={state.slate.games}
+              renderExtra={proto.active ? slateTargets.rowExtra : undefined}
+            />
           )}
         </>
       )}
+      {/* PROTOTYPE (throwaway) */}
+      {proto.active && <PrototypeSwitcher variant={proto.variant} onStep={proto.step} />}
     </main>
   );
 }

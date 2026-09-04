@@ -9,7 +9,13 @@ import SlatePage from './SlatePage';
 import MatchupDetailPage from './matchups/MatchupDetailPage';
 import OperationsPage from './operations/OperationsPage';
 import QueryReferencePage from './help/QueryReferencePage';
+// PROTOTYPE (throwaway, branch prototype/targets-look): a Targets page and
+// nav link, never in production. Delete these lines and the PROTOTYPE blocks
+// below to remove.
+import TargetsPrototypePage from './prototype/targets/TargetsPrototypePage';
 import './App.css';
+
+const PROTO = process.env.NODE_ENV !== 'production';
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -25,6 +31,8 @@ function AppNav() {
             Search
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
+          {/* PROTOTYPE (throwaway) */}
+          {PROTO && <NavLink to="/prototype/targets">Targets</NavLink>}
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
@@ -47,6 +55,8 @@ function App() {
               <Route path="/help" element={<QueryReferencePage />} />
               <Route path="/matchups" element={<SlatePage />} />
               <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+              {/* PROTOTYPE (throwaway) */}
+              {PROTO && <Route path="/prototype/targets" element={<TargetsPrototypePage />} />}
               <Route
                 path="/operations"
                 element={

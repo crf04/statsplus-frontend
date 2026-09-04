@@ -8,6 +8,12 @@ import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
+// PROTOTYPE (throwaway, branch prototype/targets-look): with `?proto=targets`
+// every Defense Sheet row can save a Target. Delete these imports and the
+// PROTOTYPE blocks below to remove.
+import { SaveAsTargetAction, CaptureSurface } from '../prototype/targets/TargetCapture';
+import { useVariant } from '../prototype/targets/prototypeMode';
+import PrototypeSwitcher from '../prototype/targets/PrototypeSwitcher';
 import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
@@ -490,6 +496,8 @@ function DefenseSheet({
                         sliceKey={row.sliceKey}
                         market={market}
                       />
+                      {/* PROTOTYPE (throwaway) */}
+                      <SaveAsTargetAction team={team} base={base} row={row} players={players} />
                     </article>
                   );
                 })}
@@ -592,6 +600,8 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
 
 function Detail({ matchup, gameId }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  // PROTOTYPE (throwaway)
+  const proto = useVariant();
   const now = useMinuteNow(true);
   const homeTricode = matchup.game.home.tricode;
   const initialTeam =
@@ -864,6 +874,9 @@ function Detail({ matchup, gameId }) {
           )}
         </div>
       </div>
+      {/* PROTOTYPE (throwaway) */}
+      <CaptureSurface />
+      {proto.active && <PrototypeSwitcher variant={proto.variant} onStep={proto.step} />}
     </>
   );
 }

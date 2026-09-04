@@ -1225,6 +1225,55 @@ test('separates the focal outcome from hindsight context in the historical dossi
   ]);
 });
 
+test('labels the rail Matchup Score order with completed-season context in historical mode', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  expect(
+    screen.getByRole('heading', { name: 'PTS Matchup Score order · completed-season context' }),
+  ).toBeVisible();
+});
+
+test('does not label the rail Matchup Score order in current mode', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
+  expect(screen.getByRole('heading', { name: 'PTS Matchup Score order' })).toBeVisible();
+  expect(screen.queryByText(/completed-season context/)).not.toBeInTheDocument();
+});
+
+test('labels the historical Score Matrix explainer with completed-season context', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup('/matchups/game-1?player=2544');
+
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  expect(screen.getByText(/The Score Matrix reflects completed-season context\./)).toBeVisible();
+});
+
+test('does not label the Score Matrix explainer in current mode', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  expect(screen.queryByText(/completed-season context/)).not.toBeInTheDocument();
+});
+
 test('selection request errors replace loading with an honest alert', async () => {
   fetchMatchupSelection.mockRejectedValueOnce(new Error('selection failed'));
   render(

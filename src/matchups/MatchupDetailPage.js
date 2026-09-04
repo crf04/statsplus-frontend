@@ -8,6 +8,12 @@ import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
+// PROTOTYPE (throwaway, branch prototype/matchup-toolbar-look): with
+// `?proto=toolbar` in the URL the Defense Sheet controls render in one of
+// three alternative placements. Delete these imports and the blocks marked
+// PROTOTYPE below to remove.
+import { VARIANTS, PrototypeSwitcher } from './toolbarPrototype/ToolbarPrototype';
+import { useVariant } from './toolbarPrototype/prototypeMode';
 import SelectionCard from './SelectionCard';
 import './MatchupDetailPage.css';
 
@@ -614,6 +620,27 @@ function Detail({ matchup, gameId }) {
     : null;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
+  // PROTOTYPE (throwaway)
+  const proto = useVariant();
+  const V = proto.active ? VARIANTS[proto.variant] : null;
+  const protoProps = {
+    matchup,
+    teams: matchup.teams,
+    defenseTeam,
+    opposingTeam,
+    setTeamId,
+    markets,
+    market,
+    setMarket,
+    windowKey,
+    setWindowKey,
+    deviation,
+    setDeviation,
+    last15Blocked,
+    last15Reason: last15Blocked ? sectionReason(last15Section) : null,
+    windowContext: windowSection?.context ? contextLabel(windowSection) : null,
+    historical,
+  };
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);
@@ -671,14 +698,21 @@ function Detail({ matchup, gameId }) {
       <header className="matchup-heading">
         <div>
           <Link to="/matchups">← Back to slate</Link>
-          <p className="matchup-eyebrow">
-            {historical
-              ? 'Historical Matchup · stored evidence'
-              : 'Open Team Sheets · live contract'}
-          </p>
-          <h1>
-            {matchup.game.away.tricode} @ {matchup.game.home.tricode}
-          </h1>
+          {/* PROTOTYPE (throwaway) */}
+          {V?.Title ? (
+            <V.Title {...protoProps} />
+          ) : (
+            <>
+              <p className="matchup-eyebrow">
+                {historical
+                  ? 'Historical Matchup · stored evidence'
+                  : 'Open Team Sheets · live contract'}
+              </p>
+              <h1>
+                {matchup.game.away.tricode} @ {matchup.game.home.tricode}
+              </h1>
+            </>
+          )}
         </div>
         {historical ? (
           <HistoricalEvidence sections={sections} />
@@ -697,6 +731,8 @@ function Detail({ matchup, gameId }) {
       )}
       <div className="detail-grid">
         <div className="matchup-sidebar">
+          {/* PROTOTYPE (throwaway) */}
+          {V?.SidebarTop && <V.SidebarTop {...protoProps} />}
           <p className="sheet-instruction">
             Tap a player to trace their rows across the sheet; use the score card for the full
             dossier.
@@ -729,67 +765,72 @@ function Detail({ matchup, gameId }) {
           />
         </div>
         <div className="matchup-workspace">
-          <section className="detail-controls" aria-label="Defense Sheet controls">
-            <div
-              className="segmented market-tabs"
-              role="group"
-              aria-label={historical ? 'Stat category' : 'Market'}
-            >
-              {markets.map((item) => (
-                <button
-                  type="button"
-                  aria-pressed={market === item}
-                  key={item}
-                  onClick={() => setMarket(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-            <div className="control-row">
-              <div className="segmented" role="group" aria-label="Stat window">
-                {WINDOWS.map((item) => (
+          {/* PROTOTYPE (throwaway) */}
+          {V?.Controls ? (
+            <V.Controls {...protoProps} />
+          ) : (
+            <section className="detail-controls" aria-label="Defense Sheet controls">
+              <div
+                className="segmented market-tabs"
+                role="group"
+                aria-label={historical ? 'Stat category' : 'Market'}
+              >
+                {markets.map((item) => (
                   <button
                     type="button"
-                    aria-pressed={windowKey === item.key}
-                    disabled={item.key === 'last15' && last15Blocked}
-                    key={item.key}
-                    onClick={() => setWindowKey(item.key)}
+                    aria-pressed={market === item}
+                    key={item}
+                    onClick={() => setMarket(item)}
                   >
-                    {item.label}
+                    {item}
                   </button>
                 ))}
               </div>
-              <div className="segmented" role="group" aria-label="Deviation filter">
-                {DEVIATIONS.map((item) => (
-                  <button
-                    type="button"
-                    aria-pressed={deviation === item.value}
-                    key={item.value}
-                    onClick={() => setDeviation(item.value)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+              <div className="control-row">
+                <div className="segmented" role="group" aria-label="Stat window">
+                  {WINDOWS.map((item) => (
+                    <button
+                      type="button"
+                      aria-pressed={windowKey === item.key}
+                      disabled={item.key === 'last15' && last15Blocked}
+                      key={item.key}
+                      onClick={() => setWindowKey(item.key)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="segmented" role="group" aria-label="Deviation filter">
+                  {DEVIATIONS.map((item) => (
+                    <button
+                      type="button"
+                      aria-pressed={deviation === item.value}
+                      key={item.value}
+                      onClick={() => setDeviation(item.value)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="team-toggle" role="group" aria-label="Defense team">
+                  {matchup.teams.map((team) => (
+                    <button
+                      type="button"
+                      aria-pressed={team.teamId === defenseTeam.teamId}
+                      key={team.teamId}
+                      onClick={() => setTeamId(team.teamId)}
+                    >
+                      {team.tricode} defense
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="team-toggle" role="group" aria-label="Defense team">
-                {matchup.teams.map((team) => (
-                  <button
-                    type="button"
-                    aria-pressed={team.teamId === defenseTeam.teamId}
-                    key={team.teamId}
-                    onClick={() => setTeamId(team.teamId)}
-                  >
-                    {team.tricode} defense
-                  </button>
-                ))}
-              </div>
-            </div>
-            {windowSection?.context && (
-              <p className="window-context">{contextLabel(windowSection)}</p>
-            )}
-            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
-          </section>
+              {windowSection?.context && (
+                <p className="window-context">{contextLabel(windowSection)}</p>
+              )}
+              {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
+            </section>
+          )}
           {selectedId && !selectedPlayer && (
             <p role="alert" className="selection-card">
               That player is not available in this matchup.
@@ -836,6 +877,8 @@ function Detail({ matchup, gameId }) {
           )}
         </div>
       </div>
+      {/* PROTOTYPE (throwaway) */}
+      {proto.active && <PrototypeSwitcher variant={proto.variant} onStep={proto.step} />}
     </>
   );
 }

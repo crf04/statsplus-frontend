@@ -1315,6 +1315,29 @@ const applySelfFilters = (logs, url) =>
     return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
   }, logs);
 
+/**
+ * The Traditional Opposing Team Profile, per-48 and ranked ascending so that
+ * rank 1 means the fewest allowed.
+ *
+ * The rebound split is canonical: the offensive and defensive values sum to the
+ * total the profile already published, so the three rows can never contradict
+ * each other on screen. The two splits sit on opposite sides of the league
+ * average, which keeps the comparison column honest in both directions.
+ */
+export const traditionalTeamStats = {
+  OPP_PTS: 112,
+  OPP_PTS_RANK: 18,
+  OPP_OREB: 10.62,
+  OPP_OREB_RANK: 7,
+  OPP_OREB_vs_avg_pct: -4.75,
+  OPP_DREB: 33.48,
+  OPP_DREB_RANK: 24,
+  OPP_DREB_vs_avg_pct: 3.86,
+  OPP_REB: 44.1,
+  OPP_REB_RANK: 19,
+  OPP_REB_vs_avg_pct: 1.72,
+};
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -1551,7 +1574,7 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/teams/stats') {
-      await route.fulfill({ json: { OPP_PTS: 112, OPP_PTS_RANK: 18 } });
+      await route.fulfill({ json: traditionalTeamStats });
       return;
     }
 

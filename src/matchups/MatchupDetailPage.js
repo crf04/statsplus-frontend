@@ -208,7 +208,7 @@ function PlayerRail({
         <p className="matchup-eyebrow">{historical ? 'Players in game' : 'Targetable players'}</p>
         <h2 id="player-rail-heading">
           {sortMode === 'score' && market !== 'All'
-            ? `${market} Matchup Score order`
+            ? `${market} Matchup Score order${historical ? ' · completed-season context' : ''}`
             : 'Season scoring order'}
         </h2>
         {targetableCount !== null && (

@@ -109,6 +109,9 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   await expect(players.first()).toHaveAccessibleName('James Harden player');
   await expect(players.last()).toHaveAccessibleName('Ivica Zubac player');
   await expect(
+    page.getByRole('heading', { name: 'PTS Matchup Score order · completed-season context' }),
+  ).toBeVisible();
+  await expect(
     page.getByText(
       'PTS Matchup Score unavailable: missing team_defense:play_types, player_diet:shot_zones.',
     ),
@@ -157,6 +160,7 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
   await expect(
     page.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
   ).toBeVisible();
+  await expect(page.getByText('The Score Matrix reflects completed-season context.')).toBeVisible();
   const matrix = page.getByRole('table', { name: 'Kawhi Leonard Score Matrix' });
   await expect(matrix.getByRole('columnheader', { name: 'Category' })).toBeVisible();
   await expect(matrix.getByRole('columnheader', { name: 'Market' })).toHaveCount(0);
@@ -307,6 +311,8 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await page.getByRole('button', { name: 'Matchup Score' }).click();
   const sortedPlayers = page.getByRole('article', { name: /player$/ });
   await expect(sortedPlayers.first()).toHaveAccessibleName('Austin Reaves player');
+  await expect(page.getByRole('heading', { name: 'PTS Matchup Score order' })).toBeVisible();
+  await expect(page.getByText(/completed-season context/)).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('matchup-detail-score-sort.png'),
     fullPage: true,

@@ -120,6 +120,7 @@ export default function SelectionCard({
           ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
+        {historical ? ' The Score Matrix reflects completed-season context.' : ''}
       </p>
       {player.focalGameLine && (
         <p className="focal-line">

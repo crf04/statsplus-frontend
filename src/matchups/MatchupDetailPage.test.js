@@ -48,8 +48,8 @@ const unavailableScore = (missingInputs) => ({
 const matchup = {
   game: {
     gameId: 'game-1',
-    away: { tricode: 'LAL' },
-    home: { tricode: 'BOS' },
+    away: { teamId: 1, tricode: 'LAL' },
+    home: { teamId: 2, tricode: 'BOS' },
     preseason: false,
   },
   experience: { mode: 'current', playerSource: 'player_pool', sections: null },
@@ -666,7 +666,7 @@ test('sorts the active market by delivered Matchup Score and scopes tabs to the 
   await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
   expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('Austin Reaves');
 
-  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
+  await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
   expect(await screen.findByRole('button', { name: 'REB' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'FGA' })).not.toBeInTheDocument();
   await waitFor(() =>
@@ -675,6 +675,69 @@ test('sorts the active market by delivered Matchup Score and scopes tabs to the 
       'true',
     ),
   );
+});
+
+test('the team switch heads the sidebar and the stat strip sits last on the sheet', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  const teamTabs = screen.getByRole('group', { name: 'Defense team' });
+  const sidebar = document.querySelector('.matchup-sidebar');
+  expect(sidebar.firstElementChild).toBe(teamTabs);
+  const tabs = within(teamTabs).getAllByRole('button');
+  expect(tabs.map((tab) => tab.textContent)).toEqual([
+    'LAL defensevs BOS players',
+    'BOS defensevs LAL players',
+  ]);
+  expect(tabs[1]).toHaveAttribute('aria-pressed', 'true');
+
+  const controls = screen.getByRole('region', { name: 'Defense Sheet controls' });
+  expect(within(controls).queryByRole('button', { name: /defense/ })).not.toBeInTheDocument();
+  const groups = within(controls).getAllByRole('group');
+  expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
+    'Stat window',
+    'Deviation filter',
+    'Market',
+  ]);
+});
+
+// The decoder guarantees unique team ids, not unique tricodes, so the tabs
+// must follow ids: with a tricode collision each tab still reaches its own
+// team and flips the rail to the other side's players.
+test('team tabs follow team ids when both teams share a tricode', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.game.away = { ...candidate.game.away, teamId: 1, tricode: 'LAL' };
+  candidate.game.home = { ...candidate.game.home, teamId: 2, tricode: 'LAL' };
+  candidate.teams = candidate.teams.map((team) => ({ ...team, tricode: 'LAL' }));
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const rail = await screen.findByRole('complementary', { name: 'Season scoring order' });
+  const tabs = within(screen.getByRole('group', { name: 'Defense team' })).getAllByRole('button');
+  expect(tabs).toHaveLength(2);
+  const railNames = () =>
+    within(rail)
+      .getAllByRole('article', { name: /player/i })
+      .map((article) => article.getAttribute('aria-label'));
+  const pressedIndex = tabs.findIndex((tab) => tab.getAttribute('aria-pressed') === 'true');
+  expect(pressedIndex).not.toBe(-1);
+  const before = railNames();
+  await userEvent.click(tabs[1 - pressedIndex]);
+  expect(tabs[1 - pressedIndex]).toHaveAttribute('aria-pressed', 'true');
+  expect(tabs[pressedIndex]).toHaveAttribute('aria-pressed', 'false');
+  const after = railNames();
+  expect(after).not.toEqual(before);
+  expect(after.some((name) => before.includes(name))).toBe(false);
 });
 
 test('renders raw injury statuses and keeps the signed-out shell honest', async () => {
@@ -808,8 +871,8 @@ test('player switches clamp the card stat and team toggles remain user-controlle
       }),
     ).toHaveAttribute('aria-pressed', 'true'),
   );
-  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
-  expect(screen.getByRole('button', { name: 'LAL defense' })).toHaveAttribute(
+  await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
+  expect(screen.getByRole('button', { name: /^LAL defense/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -977,7 +1040,7 @@ test('labels the historical rail Players in game and switches it with the defens
   expect(lebron).toHaveTextContent('25.4 PPG · completed-season context');
   expect(lebron).toHaveTextContent('Focal game LAL @ BOS · 31.0 MIN · 10.0 PTS · 11.0 FGA');
 
-  await userEvent.click(screen.getByRole('button', { name: 'LAL defense' }));
+  await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
   expect(await screen.findByRole('article', { name: 'Jayson Tatum player' })).toBeVisible();
   expect(screen.queryByRole('article', { name: 'LeBron James player' })).not.toBeInTheDocument();
 });

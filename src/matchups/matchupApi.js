@@ -27,6 +27,7 @@ const requireNumber = (value) => {
   return value;
 };
 const decodeRelativePercentage = (value) => (value === null ? null : requireNumber(value));
+const requireNumberOrNull = (value) => (value === null ? null : requireNumber(value));
 const requireInteger = (value) => {
   if (!Number.isInteger(value)) throw invalid();
   return value;
@@ -414,6 +415,8 @@ const decodeDietShares = (dietShares) => {
           const share = requireNumber(season.share);
           const volume = requireNumber(season.volume);
           if (share < 0 || volume < 0) throw invalid();
+          const leagueAverageShare = requireNumberOrNull(season.league_average_share);
+          const sigmaDeviation = requireNumberOrNull(season.sigma_deviation);
           return {
             key: requireString(entry.key),
             season: {
@@ -422,6 +425,8 @@ const decodeDietShares = (dietShares) => {
               gamesPlayed: season.games_played,
               volumeUnit: requireString(season.volume_unit),
               volumePerGame: volume / season.games_played,
+              leagueAverageShare,
+              sigmaDeviation,
             },
           };
         }),

@@ -125,7 +125,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.18, volumePerGame: 4 },
+            season: { share: 0.18, volumePerGame: 4, sigmaDeviation: 1.2 },
           },
         ],
       },
@@ -148,7 +148,7 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.19, volumePerGame: 5 },
+            season: { share: 0.19, volumePerGame: 5, sigmaDeviation: 1.3 },
           },
         ],
       },
@@ -814,10 +814,10 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
   ];
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.dietShares.shotZones = [
-    { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1 } },
+    { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1, sigmaDeviation: 1.1 } },
   ];
   lebron.dietShares.shotTypes = [
-    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2 } },
+    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2, sigmaDeviation: 1.2 } },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
 

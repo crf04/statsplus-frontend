@@ -139,6 +139,8 @@ const payload = {
               volume: 102,
               games_played: 20,
               volume_unit: 'possessions',
+              league_average_share: 0.09,
+              sigma_deviation: 1.3,
             },
           },
         ],
@@ -642,6 +644,9 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
           volume: 95,
           games_played: 20,
           volume_unit: 'possessions',
+          // Baseline population smaller than 2 players reports nulls.
+          league_average_share: null,
+          sigma_deviation: null,
         },
       },
     ],
@@ -666,6 +671,8 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
       gamesPlayed: 20,
       volumeUnit: 'possessions',
       volumePerGame: 4.75,
+      leagueAverageShare: null,
+      sigmaDeviation: null,
     },
   });
 });
@@ -921,6 +928,30 @@ test.each([
     'a Diet Share without its volume unit',
     (candidate) => {
       delete candidate.players[0].diet_shares.play_types[0].season.volume_unit;
+    },
+  ],
+  [
+    'a Diet Share missing league_average_share',
+    (candidate) => {
+      delete candidate.players[0].diet_shares.play_types[0].season.league_average_share;
+    },
+  ],
+  [
+    'a Diet Share missing sigma_deviation',
+    (candidate) => {
+      delete candidate.players[0].diet_shares.play_types[0].season.sigma_deviation;
+    },
+  ],
+  [
+    'a Diet Share with a non-numeric league_average_share',
+    (candidate) => {
+      candidate.players[0].diet_shares.play_types[0].season.league_average_share = '0.09';
+    },
+  ],
+  [
+    'a Diet Share with a non-numeric sigma_deviation',
+    (candidate) => {
+      candidate.players[0].diet_shares.play_types[0].season.sigma_deviation = '1.3';
     },
   ],
 ])('rejects %s', (_name, mutate) => {

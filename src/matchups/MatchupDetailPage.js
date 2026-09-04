@@ -563,12 +563,11 @@ function InjuryReport({ injuries, now }) {
 
 // Away first, then home, so the tabs read the same way as the title.
 function TeamTabs({ matchup, defenseTeam, onSelect }) {
-  const ordered = [matchup.game.away, matchup.game.home]
-    .map((side) => matchup.teams.find((team) => team.tricode === side.tricode))
+  const tabs = [matchup.game.away, matchup.game.home]
+    .map((side) => matchup.teams.find((team) => team.teamId === side.teamId))
     .filter(Boolean);
-  const tabs = ordered.length === matchup.teams.length ? ordered : matchup.teams;
   return (
-    <nav className="team-tabs" aria-label="Defense team">
+    <div className="team-tabs" role="group" aria-label="Defense team">
       {tabs.map((team) => {
         const opponent = matchup.teams.find((other) => other.teamId !== team.teamId);
         return (
@@ -585,7 +584,7 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
           </button>
         );
       })}
-    </nav>
+    </div>
   );
 }
 

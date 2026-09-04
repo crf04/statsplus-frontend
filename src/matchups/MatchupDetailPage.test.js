@@ -48,8 +48,8 @@ const unavailableScore = (missingInputs) => ({
 const matchup = {
   game: {
     gameId: 'game-1',
-    away: { tricode: 'LAL' },
-    home: { tricode: 'BOS' },
+    away: { teamId: 1, tricode: 'LAL' },
+    home: { teamId: 2, tricode: 'BOS' },
     preseason: false,
   },
   experience: { mode: 'current', playerSource: 'player_pool', sections: null },
@@ -686,7 +686,7 @@ test('the team switch heads the sidebar and the stat strip sits last on the shee
     </MemoryRouter>,
   );
   await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  const teamTabs = screen.getByRole('navigation', { name: 'Defense team' });
+  const teamTabs = screen.getByRole('group', { name: 'Defense team' });
   const sidebar = document.querySelector('.matchup-sidebar');
   expect(sidebar.firstElementChild).toBe(teamTabs);
   const tabs = within(teamTabs).getAllByRole('button');

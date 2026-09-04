@@ -7,12 +7,13 @@
  */
 import { useSearchParams } from 'react-router-dom';
 
-export const VARIANT_KEYS = ['A', 'B', 'C'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D'];
 
 export const VARIANT_NAMES = {
   A: 'Side tabs',
   B: 'Header switch',
   C: 'Sidebar control panel',
+  D: 'Side tabs + tab strip',
 };
 
 export const useVariant = () => {

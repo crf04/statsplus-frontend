@@ -22,7 +22,7 @@ for (const [label, w, h] of [
   ['phone', 390, 844],
 ]) {
   await page.setViewportSize({ width: w, height: h });
-  for (const v of ['A', 'B', 'C']) {
+  for (const v of ['A', 'B', 'C', 'D']) {
     await page.goto(`${base}/matchups/${gameId}?proto=toolbar&v=${v}`, {
       waitUntil: 'networkidle',
     });

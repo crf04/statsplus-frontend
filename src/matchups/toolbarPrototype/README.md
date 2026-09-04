@@ -10,7 +10,7 @@ changes what the whole page is about, yet it sits last in a row of filters.
 Where should the team switch live, and how should the remaining chip rows
 read?
 
-Three variants, rendered on the existing matchup route with live data,
+Four variants, rendered on the existing matchup route with live data,
 switchable from the floating bar at the bottom of the screen (or `←` / `→`).
 
 ## Run it
@@ -51,6 +51,10 @@ npx vite --host --config vite.proto.config.mjs
   stat categories as an underlined tab strip (text tabs with a gold
   underline on the active one, no pill borders) sitting directly on top of
   the Defense Sheet.
+- `?proto=toolbar&v=D` — **Side tabs + tab strip.** Chris's pick after
+  seeing A–C: A's sidebar team tabs (short, players stay high) with C's
+  underlined stat tab strip on top of the sheet. Window and deviation keep
+  A's labelled row underneath the strip.
 
 ## What is real and what is not
 

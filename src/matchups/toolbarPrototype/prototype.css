@@ -336,6 +336,10 @@
   gap: 0;
 }
 
+.proto-d-controls .proto-a-row {
+  padding: 0 2px;
+}
+
 .proto-c-tabs {
   display: flex;
   gap: 2px;

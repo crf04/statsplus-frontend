@@ -255,10 +255,51 @@ function TabStrip({ markets, market, setMarket, historical }) {
   );
 }
 
+/* ------------------------------------------------------------------------ */
+/* D — A + C: side tabs in the sidebar, stat tab strip on the sheet, window  */
+/* and deviation as a labelled row under the strip.                          */
+/* ------------------------------------------------------------------------ */
+
+function StripAndLabelledRow(props) {
+  const { markets, market, setMarket, historical } = props;
+  return (
+    <section className="detail-controls proto-d-controls" aria-label="Defense Sheet controls">
+      <div
+        className="proto-c-tabs"
+        role="group"
+        aria-label={historical ? 'Stat category' : 'Market'}
+      >
+        {markets.map((item) => (
+          <button
+            type="button"
+            aria-pressed={market === item}
+            key={item}
+            onClick={() => setMarket(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      <div className="proto-a-row">
+        <div className="proto-a-group">
+          <span className="proto-label">Window</span>
+          <WindowButtons {...props} />
+        </div>
+        <div className="proto-a-group">
+          <span className="proto-label">Show</span>
+          <DeviationButtons {...props} />
+        </div>
+      </div>
+      <Notes {...props} />
+    </section>
+  );
+}
+
 export const VARIANTS = {
   A: { Title: null, SidebarTop: SideTabs, Controls: LabelledControls },
   B: { Title: HeaderSwitchTitle, SidebarTop: null, Controls: OneLineControls },
   C: { Title: null, SidebarTop: ControlPanel, Controls: TabStrip },
+  D: { Title: null, SidebarTop: SideTabs, Controls: StripAndLabelledRow },
 };
 
 export { PrototypeSwitcher };

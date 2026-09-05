@@ -98,12 +98,16 @@ single integrated journey rather than splitting it across implementation-shaped 
 Target resolution is composed from those same two Matchups rather than canned, so the shares and
 Defense Sheet readings a Target shows are the ones the Matchup page shows for the same game.
 `0022500584` resolves on `2026-01-15` against the stored Player Pool and `0022501082` on
-`2026-03-29` against game-log participants; a Target naming any other team is idle. Two values the
-backend derives are recomputed rather than copied: whether a fit's Diet is thin, from the
-`games_played` and `volume` on each stored fact against the Matchup Score's floors, and the derived
-title. The slate route reports pool freshness that matches the evidence resolution reports for the
-same date — a fresh pool on the scheduled date, none on the completed one — so a journey never sees
-one route call a pool unavailable while the other lists players from it.
+`2026-03-29` against game-log participants; a Target naming any other team is idle. Values the
+backend derives are recomputed rather than copied: the derived title, and whether a fit's Diet is
+thin, from the `games_played` and `volume` on each stored fact against the Matchup Score's floors.
+A Target's backtest is composed the same way but league-wide and season-to-date. It reads every
+player either Matchup publishes, excludes the thin Diets rather than flagging them, derives its
+outcome columns from each Qualifier's slice, and averages a player's season over the games the
+game-log route serves for that player — so a backtest row and the Log Workspace that row hands off
+to show the same game. The slate route reports pool freshness that matches the evidence resolution
+reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
+journey never sees one route call a pool unavailable while the other lists players from it.
 
 Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts). A date the
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,

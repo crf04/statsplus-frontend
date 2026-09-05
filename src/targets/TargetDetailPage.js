@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { formatCalendarDate, formatTip } from '../calendarDate';
 import { getRequestErrorMessage } from '../gameLogsApi';
+import TargetBacktest from './TargetBacktest';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { TargetContext, TargetFitTable } from './TargetFits';
 import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
@@ -175,6 +176,7 @@ function TargetDetail({ target, resolved, entry, reload }) {
             </ul>
           </section>
           <FitsSection target={target} resolved={resolved} entry={entry} />
+          <TargetBacktest target={target} />
         </>
       )}
     </>

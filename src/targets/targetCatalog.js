@@ -109,6 +109,19 @@ export const formatShare = (share) => {
 };
 
 /*
+ * An observed share is an estimate from a season of shots, so it reads to the
+ * whole percent the Matchup's Diet chips use. A Qualifier's threshold is not:
+ * it is what was typed, and keeps the decimal its title was derived with.
+ */
+export const formatObservedShare = (share) => `${Math.round(share * 100)}%`;
+
+/*
+ * A figure read against a baseline carries its direction, whether the baseline
+ * is the league, a player's own season, or zero sigma.
+ */
+export const signed = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+
+/*
  * A Qualifier reads as a slice and the bound put on it. The card sets the bound
  * apart from the slice it applies to, so the two parts are published separately
  * and the flat form is built from them rather than spelled twice.

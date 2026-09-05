@@ -1,10 +1,12 @@
 import { apiClient } from '../config';
 import {
   createTarget,
+  decodeBacktest,
   decodeResolvedTargets,
   decodeTargets,
   deleteTarget,
   fetchResolvedTargets,
+  fetchTargetBacktest,
   fetchTargets,
   updateTarget,
 } from './targetsApi';
@@ -489,5 +491,174 @@ test('resolves against the Slate date the caller is showing, or the current one'
   expect(apiClient.get).toHaveBeenLastCalledWith('/api/user/targets/resolve', {
     params: {},
     signal: undefined,
+  });
+});
+
+/*
+ * The season-to-date backtest: the league-wide players who meet the Qualifiers
+ * and have faced the opponent, and their games in the outcome markets the
+ * Qualifiers' slices map to.
+ */
+const wireBacktest = {
+  success: true,
+  target: wireTarget,
+  season: '2025-26',
+  proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+  stat_columns: ['PTS', '3PM'],
+  players: [
+    {
+      canonical_id: 2544,
+      name: 'LeBron James',
+      team_id: 1610612747,
+      tricode: 'LAL',
+      season_scoring: 25.4,
+      shares: [
+        { base: 'shot_zones', slice_key: 'Corner 3', share: 0.44, league_average_share: 0.2 },
+      ],
+      season_averages: { PTS: 25.4, '3PM': 2 },
+      games: [
+        {
+          game_id: '0022500584',
+          game_date: '2026-01-12',
+          matchup: 'LAL vs. OKC',
+          minutes: 36,
+          stats: { PTS: 31, '3PM': 4 },
+        },
+      ],
+    },
+    {
+      canonical_id: 1628369,
+      name: 'Jayson Tatum',
+      team_id: 1610612738,
+      tricode: 'BOS',
+      season_scoring: 27.2,
+      shares: [
+        { base: 'shot_zones', slice_key: 'Corner 3', share: 0.41, league_average_share: 0.2 },
+      ],
+      season_averages: { PTS: 27.2, '3PM': 3 },
+      games: [
+        {
+          game_id: '0022500612',
+          game_date: '2025-12-19',
+          matchup: 'BOS @ OKC',
+          minutes: 38,
+          stats: { PTS: 24, '3PM': 2 },
+        },
+      ],
+    },
+  ],
+};
+
+test('decodes the backtest to the rows the table reads, in the backend order', () => {
+  expect(decodeBacktest(wireBacktest)).toEqual({
+    target: {
+      id: 7,
+      opponent: 'OKC',
+      title: 'OKC vs Corner 3 ≥ 40%',
+      note: 'Leaks the corner late.',
+      createdAt: '2026-04-08T15:12:00Z',
+      qualifiers: [
+        { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    },
+    proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+    statColumns: ['PTS', '3PM'],
+    // The backend orders the players by season scoring; a decoder that sorted
+    // or grouped them would put the table in an order nobody chose.
+    players: [
+      {
+        canonicalId: 2544,
+        name: 'LeBron James',
+        tricode: 'LAL',
+        shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+        seasonAverages: { PTS: 25.4, '3PM': 2 },
+        games: [{ gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } }],
+      },
+      {
+        canonicalId: 1628369,
+        name: 'Jayson Tatum',
+        tricode: 'BOS',
+        shares: [{ share: 0.41, leagueAverageShare: 0.2 }],
+        seasonAverages: { PTS: 27.2, '3PM': 3 },
+        games: [{ gameDate: '2025-12-19', stats: { PTS: 24, '3PM': 2 } }],
+      },
+    ],
+  });
+  expect(decodeBacktest(wireBacktest).players.map((player) => player.name)).toEqual([
+    'LeBron James',
+    'Jayson Tatum',
+  ]);
+
+  // Nobody qualifying, or nobody having faced the opponent, is a backtest with
+  // no players rather than a refusal.
+  expect(decodeBacktest({ ...wireBacktest, players: [] }).players).toEqual([]);
+});
+
+test('refuses a backtest whose rows would be read under the wrong heading', () => {
+  // The columns name every stat a row shows, so a game missing one would put a
+  // blank where an outcome belongs.
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      players: [
+        {
+          ...wireBacktest.players[0],
+          games: [{ ...wireBacktest.players[0].games[0], stats: { PTS: 31 } }],
+        },
+      ],
+    }),
+  ).toThrow(/invalid response/i);
+
+  // And the season average every game is read against is in the same columns.
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      players: [{ ...wireBacktest.players[0], season_averages: { PTS: 25.4 } }],
+    }),
+  ).toThrow(/invalid response/i);
+
+  // The shares are index-parallel with the Qualifiers, as a fit's are.
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      players: [{ ...wireBacktest.players[0], shares: [] }],
+    }),
+  ).toThrow(/invalid response/i);
+
+  // A player is in the backtest because they have faced the opponent, so one
+  // with no game is a row the table would silently drop.
+  expect(() =>
+    decodeBacktest({ ...wireBacktest, players: [{ ...wireBacktest.players[0], games: [] }] }),
+  ).toThrow(/invalid response/i);
+
+  // A backtest with no columns has no outcome to report.
+  expect(() => decodeBacktest({ ...wireBacktest, stat_columns: [] })).toThrow(/invalid response/i);
+
+  // The note that outcomes are proxies is the response's, never this page's.
+  expect(() => decodeBacktest({ ...wireBacktest, proxy: undefined })).toThrow(/invalid response/i);
+
+  // A date the calendar does not have cannot name a game that was played.
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      players: [
+        {
+          ...wireBacktest.players[0],
+          games: [{ ...wireBacktest.players[0].games[0], game_date: '2026-02-30' }],
+        },
+      ],
+    }),
+  ).toThrow(/invalid response/i);
+});
+
+test("reads one Target's backtest from the documented path", async () => {
+  apiClient.get.mockResolvedValue({ data: wireBacktest });
+  const controller = new AbortController();
+
+  await expect(fetchTargetBacktest({ id: 7, signal: controller.signal })).resolves.toEqual(
+    expect.objectContaining({ statColumns: ['PTS', '3PM'] }),
+  );
+  expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/7/backtest', {
+    signal: controller.signal,
   });
 });

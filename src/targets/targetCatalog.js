@@ -160,3 +160,14 @@ export const parseThresholdPercent = (percentText) => {
   if (!Number.isFinite(percent) || percent < 0 || percent > 100) return null;
   return Math.round(percent * 10) / 1000;
 };
+
+/*
+ * The inverse: a share that arrives from somewhere else — a stored Qualifier,
+ * a slice's league average — spelled as the percentage the field is typed in.
+ * Every share the form shows travels through here, so there is one conversion
+ * rule rather than one per caller. It rounds to the single decimal the parser
+ * keeps, except for a capture prefill, which asks for `whole` because a league
+ * average is a round number to argue with rather than a figure to reproduce.
+ */
+export const shareToThresholdPercent = (share, { whole = false } = {}) =>
+  String(whole ? Math.round(share * 100) : Math.round(share * 1000) / 10);

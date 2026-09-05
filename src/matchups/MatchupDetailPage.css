@@ -351,6 +351,29 @@
   font-weight: 650;
 }
 
+/* The capture action sits under the slice it would write a Qualifier for, so it
+   reads as part of the row rather than a fourth column competing with the
+   numbers. It stays quiet until the row is hovered or the action is focused. */
+.row-capture {
+  margin-top: 2px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sheet-row:hover .row-capture,
+.row-capture:hover,
+.row-capture:focus-visible {
+  color: var(--ct-gold);
+}
+
 .relative-over,
 .relative-under,
 .relative-neutral {

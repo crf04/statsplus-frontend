@@ -99,16 +99,23 @@ test('fetches the list from the documented path', async () => {
   });
 });
 
-test('creates a Target with the wire shape of its Qualifiers', async () => {
-  apiClient.post.mockResolvedValue({ data: { success: true } });
+/*
+ * Create is the one mutation that answers with a record. A surface that
+ * confirms a save by name shows the title the backend derived, so the created
+ * Target has to come back decoded rather than be inferred from what was sent.
+ */
+test('creates a Target with the wire shape of its Qualifiers and returns what was stored', async () => {
+  apiClient.post.mockResolvedValue({ data: { success: true, target: wireTarget } });
 
-  await createTarget({
-    opponent: 'OKC',
-    note: 'Leaks the corner late.',
-    qualifiers: [
-      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
-    ],
-  });
+  await expect(
+    createTarget({
+      opponent: 'OKC',
+      note: 'Leaks the corner late.',
+      qualifiers: [
+        { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    }),
+  ).resolves.toMatchObject({ id: 7, title: 'OKC vs Corner 3 ≥ 40%' });
 
   expect(apiClient.post).toHaveBeenCalledWith('/api/user/targets', {
     opponent: 'OKC',

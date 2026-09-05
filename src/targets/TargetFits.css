@@ -234,10 +234,14 @@
 }
 
 /* The player heads his own game rows, so it is read as a heading rather than
-   weighted like one. */
+   weighted like one: it keeps the type of the cell it used to be, and only the
+   column headings above it are set in the label face. */
 .target-backtest th[scope='rowgroup'] {
   padding: 6px 8px;
   border-bottom: 1px solid var(--ct-line);
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 400;
   letter-spacing: normal;
   text-transform: none;
@@ -337,6 +341,7 @@
   .target-fits td,
   .target-fits.is-dense td,
   .target-backtest th,
+  .target-backtest th[scope='rowgroup'],
   .target-backtest td {
     padding: 3px 4px;
   }

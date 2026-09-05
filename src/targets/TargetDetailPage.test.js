@@ -133,7 +133,7 @@ const backtest = {
       games: [
         { gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } },
         { gameDate: '2025-12-02', stats: { PTS: 22.5, '3PM': 1 } },
-        { gameDate: '2025-11-06', stats: { PTS: 25.4, '3PM': 2 } },
+        { gameDate: '2025-11-06', stats: { PTS: 25.44, '3PM': 2 } },
       ],
     },
   ],
@@ -585,7 +585,8 @@ test('an expanded backtest reads each game against the player’s own season ave
   expect(within(over).getByText('+5.6').closest('td')).toHaveClass('is-hit');
   expect(within(under).getByText('-2.9').closest('td')).toHaveClass('is-miss');
 
-  // A game that lands on the average is neither, and is coloured as neither.
+  // A game that lands on the average, at the precision the difference is read
+  // at, is neither — and is coloured as neither.
   const level = screen.getByRole('row', { name: /2025-11-06/ });
   expect(within(level).getAllByText('0.0')).toHaveLength(2);
   within(level)

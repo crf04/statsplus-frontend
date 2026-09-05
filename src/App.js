@@ -13,7 +13,7 @@ import QueryReferencePage from './help/QueryReferencePage';
 // nav link, never in production. Delete these lines and the PROTOTYPE blocks
 // below to remove.
 import TargetsPrototypePage from './prototype/targets/TargetsPrototypePage';
-import { PROTO_ENABLED } from './prototype/targets/prototypeMode';
+import { PROTO_ENABLED, PROTO_STANDALONE } from './prototype/targets/prototypeMode';
 import './App.css';
 
 const PROTO = PROTO_ENABLED;
@@ -28,11 +28,13 @@ function AppNav() {
           CourtAI
         </NavLink>
         <div className="app-links">
-          <NavLink to="/" end>
-            Search
-          </NavLink>
-          <NavLink to="/matchups">Matchups</NavLink>
-          {/* PROTOTYPE (throwaway) */}
+          {/* PROTOTYPE (throwaway): a standalone prototype build hides the app links. */}
+          {!PROTO_STANDALONE && (
+            <NavLink to="/" end>
+              Search
+            </NavLink>
+          )}
+          {!PROTO_STANDALONE && <NavLink to="/matchups">Matchups</NavLink>}
           {PROTO && <NavLink to="/prototype/targets">Targets</NavLink>}
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
@@ -52,7 +54,11 @@ function App() {
           <ProtectedRoute>
             <AppNav />
             <Routes>
-              <Route path="/" element={<GameLogFilter />} />
+              {/* PROTOTYPE (throwaway): standalone build lands on the Targets page. */}
+              <Route
+                path="/"
+                element={PROTO_STANDALONE ? <Navigate to="/prototype/targets" replace /> : <GameLogFilter />}
+              />
               <Route path="/help" element={<QueryReferencePage />} />
               <Route path="/matchups" element={<SlatePage />} />
               <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />

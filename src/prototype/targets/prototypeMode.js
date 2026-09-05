@@ -13,6 +13,10 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 export const PROTO_ENABLED =
   process.env.NODE_ENV !== 'production' || process.env.REACT_APP_PROTOTYPE === 'targets';
 
+/* A deployed prototype build is the Targets page and nothing else: `/` lands
+   on it and the nav only offers it. */
+export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'targets';
+
 export const VARIANT_KEYS = ['A', 'B', 'C'];
 
 export const VARIANT_NAMES = {

@@ -5,6 +5,7 @@ import {
   TARGET_SLICES,
   deriveTargetTitle,
   parseThresholdPercent,
+  shareToThresholdPercent,
 } from './targetCatalog';
 
 /*
@@ -42,7 +43,7 @@ export const targetToDraft = (target) => ({
     base: qualifier.base,
     sliceKey: qualifier.sliceKey,
     comparator: qualifier.comparator,
-    thresholdPercent: String(Math.round(qualifier.threshold * 1000) / 10),
+    thresholdPercent: shareToThresholdPercent(qualifier.threshold),
   })),
   note: target.note,
 });

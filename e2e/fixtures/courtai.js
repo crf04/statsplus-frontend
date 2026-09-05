@@ -449,7 +449,7 @@ export const matchupPayload = {
         play_types: [
           // Current-matchup Transition population: mean .09, pstdev .075.
           // Above the sigma and volume floor: chip must render.
-          dietShare('Transition', 0.19, 0.09, 0.075),
+          dietShare('Transition', 0.19, 0.0925, 0.075),
           // Current-matchup Postup population: mean .05, pstdev .1.
           // Below league average: chip stays hidden by sigma.
           dietShare('Postup', 0.02, 0.05, 0.1),
@@ -479,7 +479,7 @@ export const matchupPayload = {
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,
         // so market-tab chip scoping remains observable at the browser seam.
-        play_types: [dietShare('Transition', 0.18, 0.09, 0.075)],
+        play_types: [dietShare('Transition', 0.18, 0.0925, 0.075)],
         // Restricted Area is not an FG3A-compatible slice, and no shot-type
         // Diet fact exists, so FG3A has no contributing player evidence.
         // This fact would have passed the OLD fixed share gate (>= 25% FGA),
@@ -510,7 +510,7 @@ export const matchupPayload = {
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {
-        play_types: [dietShare('Transition', 0.21, 0.09, 0.075)],
+        play_types: [dietShare('Transition', 0.21, 0.0925, 0.075)],
         shot_zones: [dietShare('Restricted Area', 0.29, 0.2, 0.06, 5.1, 'field_goal_attempts')],
         shot_types: [dietShare('Catch and Shoot', 0.39, 0.24, 0.1, 4.8, 'field_goal_attempts')],
         assist_locations: [dietShare('AtRimAssists', 0.33, 0.14, 0.12, 1.2, 'assists')],
@@ -1417,7 +1417,10 @@ const BACKEND_SLICE_LABELS = {
   'Mid-Range': 'Mid-range',
   'Corner 3': 'Corner 3',
   'Above the Break 3': 'Above-break 3',
-  Transition: 'Transition',
+  // Deliberately not the page's wording for this slice. The title is the
+  // backend's to derive, so a surface that showed its own preview where it
+  // promised the stored title would read 'Transition' here and be wrong.
+  Transition: 'Transition offense',
   Isolation: 'Isolation',
   PRBallHandler: 'P&R ball handler',
   PRRollMan: 'P&R roll man',

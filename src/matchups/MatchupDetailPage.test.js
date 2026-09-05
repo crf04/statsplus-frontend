@@ -1,12 +1,14 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { createTarget } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import MatchupDetailPage from './MatchupDetailPage';
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
+jest.mock('../targets/targetsApi', () => ({ createTarget: jest.fn() }));
 
 const value = (allowedPer48, percentVsLeagueAverage, sigmaDeviation, rank) => ({
   allowedPer48,
@@ -69,7 +71,21 @@ const matchup = {
       teamId: 1,
       tricode: 'LAL',
       name: 'Los Angeles Lakers',
-      defenseSheet: { playTypes: [] },
+      defenseSheet: {
+        playTypes: [],
+        // Either team's sheet can be read, so either team's rows are
+        // capturable; the opponent a Target names is whichever sheet is open.
+        shotZones: [
+          {
+            key: 'Corner 3:FGA',
+            sliceKey: 'Corner 3',
+            label: 'Corner three',
+            markets: ['REB'],
+            season: value(9.4, 7, 1.1, 24),
+            last15: value(9.1, 5, 0.9, 21),
+          },
+        ],
+      },
       defensiveColumns,
     },
     {
@@ -79,7 +95,9 @@ const matchup = {
       defenseSheet: {
         playTypes: [
           {
-            key: 'transition',
+            // A sheet row's key pairs the slice with a stat, so a Qualifier
+            // written from `key` would name a slice the diet has never heard of.
+            key: 'transition:PTS',
             sliceKey: 'transition',
             label: 'Transition',
             markets: ['PTS', 'FGA'],
@@ -87,7 +105,7 @@ const matchup = {
             last15: value(15.2, -8.26, -1.1, 5),
           },
           {
-            key: 'isolation',
+            key: 'isolation:PTS',
             sliceKey: 'isolation',
             label: 'Isolation',
             markets: ['PTS'],
@@ -95,12 +113,24 @@ const matchup = {
             last15: value(8.4, 4, 0.5, 18),
           },
           {
-            key: 'above-break',
+            key: 'above-break:FG3A',
             sliceKey: 'above-break',
             label: 'Above-break three',
             markets: ['FG3A'],
             season: value(10.2, -11, -1.3, 3),
             last15: value(11, -6, -0.7, 9),
+          },
+        ],
+        // Traditional is a team-only base with no diet counterpart, so its rows
+        // are the ones a Qualifier can never be written from.
+        traditional: [
+          {
+            key: 'OPP_TOV',
+            sliceKey: 'OPP_TOV',
+            label: 'Opponent turnovers',
+            markets: ['TOV'],
+            season: value(14.2, 8, 1.2, 26),
+            last15: value(12.9, -3, -1.1, 6),
           },
         ],
       },
@@ -125,7 +155,12 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.18, volumePerGame: 4, sigmaDeviation: 1.2 },
+            season: {
+              share: 0.18,
+              volumePerGame: 4,
+              sigmaDeviation: 1.2,
+              leagueAverageShare: 0.094,
+            },
           },
         ],
       },
@@ -167,7 +202,22 @@ const matchup = {
       seasonScoring: 27.2,
       last10Minutes: [36, 37, 38],
       injuryBadgeRef: null,
-      dietShares: { playTypes: [] },
+      dietShares: {
+        playTypes: [],
+        // Under the display gate, so no chip renders. The league average is
+        // published on the fact either way, and capture reads it either way.
+        shotZones: [
+          {
+            key: 'Corner 3',
+            season: {
+              share: 0.14,
+              volumePerGame: 3.4,
+              sigmaDeviation: 0.4,
+              leagueAverageShare: 0.128,
+            },
+          },
+        ],
+      },
       scores: { REB: score(0.08) },
     },
   ],
@@ -1285,4 +1335,187 @@ test('selection request errors replace loading with an honest alert', async () =
   );
   expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load selection logs');
   expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
+});
+
+/*
+ * Capture is the reason a Defense Sheet row is worth reading twice: the row is
+ * the evidence, and the Target is the filter that evidence implies. These tests
+ * work the row action the way a reader does, so what they prove is the prefill,
+ * what the reader changed about it, and the sentence a refused save leaves.
+ *
+ * The stored title is deliberately unlike anything this page could derive, so a
+ * confirmation that quietly showed its own preview instead of the record the
+ * backend answered with could not pass.
+ */
+const storedTarget = (overrides = {}) => ({
+  id: 4,
+  opponent: 'BOS',
+  title: 'A title only the backend could have written',
+  note: '',
+  createdAt: '2026-01-15T12:00:00Z',
+  qualifiers: [],
+  ...overrides,
+});
+
+const openCapture = async (rowLabel) => {
+  await screen.findByRole('heading', { name: /Defense Sheet$/ });
+  const rowAction = screen.getByRole('button', { name: `Save ${rowLabel} as a Target` });
+  await userEvent.click(rowAction);
+  return { rowAction, dialog: await screen.findByRole('dialog') };
+};
+
+const thresholdField = (dialog, index = 1) =>
+  within(dialog).getByRole('spinbutton', { name: `Qualifier ${index} threshold percent` });
+
+test('prefills the capture form from the row and saves what the reader made of it', async () => {
+  createTarget.mockResolvedValue(storedTarget());
+  renderMatchup();
+
+  const { rowAction, dialog } = await openCapture('Transition');
+  expect(dialog).toHaveAttribute('aria-modal', 'true');
+  // The sheet is BOS's, so BOS is the opponent and it is not up for editing.
+  expect(within(dialog).getByText('BOS')).toBeVisible();
+  expect(within(dialog).queryByRole('combobox', { name: 'Opponent' })).not.toBeInTheDocument();
+  expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 diet base' })).toHaveValue(
+    'play_types',
+  );
+  // The row's slice, not its key, which also names the stat the row measures.
+  expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
+    'transition',
+  );
+  expect(within(dialog).getByRole('button', { name: 'At or above' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  // 9.4% league average, offered as the whole percent a reader would type.
+  expect(thresholdField(dialog)).toHaveValue(9);
+
+  // The prefill is a starting point: the threshold is the reader's to move and
+  // more Qualifiers can be added before saving.
+  await userEvent.clear(thresholdField(dialog));
+  await userEvent.type(thresholdField(dialog), '12');
+  await userEvent.click(within(dialog).getByRole('button', { name: '+ Add a Qualifier' }));
+  await userEvent.selectOptions(
+    within(dialog).getByRole('combobox', { name: 'Qualifier 2 slice' }),
+    'Corner 3',
+  );
+  await userEvent.type(thresholdField(dialog, 2), '40');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+
+  expect(createTarget).toHaveBeenCalledWith({
+    opponent: 'BOS',
+    note: '',
+    qualifiers: [
+      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.12 },
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  });
+  // The title is the backend's, so the confirmation says the one it derived.
+  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Go to Targets' })).toHaveAttribute('href', '/targets');
+
+  // Closing hands the keyboard back to the row the capture started from.
+  await userEvent.click(screen.getByRole('button', { name: 'Back to the Defense Sheet' }));
+  await waitFor(() => expect(rowAction).toHaveFocus());
+
+  // The same row opened again is a fresh capture, not the receipt for the last
+  // one, and Escape closes it as the dialog it is.
+  const reopened = await openCapture('Transition');
+  expect(thresholdField(reopened.dialog)).toHaveValue(9);
+  expect(screen.queryByText('A title only the backend could have written')).not.toBeInTheDocument();
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+});
+
+test('captures against whichever team’s sheet is open', async () => {
+  createTarget.mockResolvedValue(storedTarget({ opponent: 'LAL' }));
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
+  await screen.findByRole('heading', { name: 'LAL Defense Sheet' });
+
+  const { dialog } = await openCapture('Corner three');
+  expect(within(dialog).getByText('LAL')).toBeVisible();
+  expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
+    'Corner 3',
+  );
+  // 12.8%, read off a diet fact the display gate keeps off the sheet, offered
+  // as the whole percent the reader is meant to argue with.
+  expect(thresholdField(dialog)).toHaveValue(13);
+
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  expect(createTarget).toHaveBeenCalledWith({
+    opponent: 'LAL',
+    note: '',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.13 },
+    ],
+  });
+});
+
+test('leaves the threshold to be typed when the slice publishes no league average', async () => {
+  renderMatchup();
+
+  const { dialog } = await openCapture('Above-break three');
+  expect(thresholdField(dialog)).toHaveValue(null);
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  expect(
+    within(dialog).getByText('Every threshold must be a share between 0% and 100%.'),
+  ).toBeVisible();
+  expect(within(dialog).getByText(/no league average published for this slice/)).toBeVisible();
+
+  await userEvent.type(thresholdField(dialog), '32');
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeEnabled();
+});
+
+test('a save in flight cannot be sent twice', async () => {
+  let settle;
+  createTarget.mockReturnValue(
+    new Promise((resolve) => {
+      settle = () => resolve(storedTarget());
+    }),
+  );
+  renderMatchup();
+
+  const { dialog } = await openCapture('Transition');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  expect(createTarget).toHaveBeenCalledTimes(1);
+
+  await act(async () => settle());
+  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
+});
+
+test('a duplicate Target keeps the composed draft and says why it was refused', async () => {
+  createTarget.mockRejectedValue({
+    response: { data: { error: { message: 'You already have that Target for BOS.' } } },
+  });
+  renderMatchup();
+
+  const { dialog } = await openCapture('Transition');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+
+  // An untouched prefill is posted as the league average it was read from.
+  expect(createTarget).toHaveBeenCalledWith({
+    opponent: 'BOS',
+    note: '',
+    qualifiers: [
+      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+    ],
+  });
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+    'You already have that Target for BOS.',
+  );
+  expect(thresholdField(dialog)).toHaveValue(9);
+});
+
+test('offers no capture on a Traditional row, which has no diet counterpart', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  expect(screen.getByText('Opponent turnovers')).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Save Opponent turnovers as a Target' }),
+  ).not.toBeInTheDocument();
 });

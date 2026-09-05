@@ -47,6 +47,8 @@ const AppliedFilters = ({ filters }) => {
         return renderBadge(key, `${stat} <= ${max}`);
       }
       return renderBadge(key, `${min} <= ${stat} <= ${max}`);
+    } else if (key === 'opponent_tricode') {
+      return renderBadge(key, `vs ${value}`);
     } else if (key === 'location_filter') {
       return renderBadge(key, `Location: ${value}`);
     } else if (key === 'minutes_filter') {

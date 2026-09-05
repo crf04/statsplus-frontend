@@ -51,6 +51,7 @@ describe('filterSetFromSearchParams', () => {
         '&playstyle_RTG_min=80&playstyle_RTG_max=120' +
         '&players_on%5B%5D=Anthony+Davis&players_off%5B%5D=Austin+Reaves' +
         '&teams_against%5B%5D=Isolation&rank_filter%5B%5D=5' +
+        '&opponent_tricode=OKC' +
         '&self_filters%5BPTS%5D=20%2C60',
     );
 
@@ -62,6 +63,7 @@ describe('filterSetFromSearchParams', () => {
       date_filter: '2026-01-09',
       location_filter: 'Home',
       game_filter: 10,
+      opponent_tricode: 'OKC',
       playstyle_RTG_min: 80,
       playstyle_RTG_max: 120,
       'players_on[]': ['Anthony Davis'],
@@ -157,6 +159,27 @@ describe('filterSetFromSearchParams', () => {
     expect(filters['teams_against[]']).toEqual(['Arc3Assists']);
   });
 
+  test('canonicalises a specific opponent to the tricode the API reads', () => {
+    // Which tricodes exist is the API's vocabulary, but the case is not: a
+    // hand-typed link must produce the request the API honours.
+    const { filters, invalid } = decode('player_name=X&opponent_tricode=okc');
+
+    expect(invalid).toEqual([]);
+    expect(filters.opponent_tricode).toBe('OKC');
+  });
+
+  test.each([
+    ['opponent_tricode=Oklahoma+City', 'opponent_tricode'],
+    ['opponent_tricode=OK', 'opponent_tricode'],
+    ['opponent_tricode=OKC1', 'opponent_tricode'],
+    ['opponent_tricode=', 'opponent_tricode'],
+  ])('names %s as an opponent we cannot fix on', (query, expected) => {
+    const { filters, invalid } = decode(query);
+
+    expect(invalid).toContain(expected);
+    expect(filters).toEqual({});
+  });
+
   test('rejects a player named both present and absent', () => {
     // The API intersects on-games then subtracts off-games, so naming one
     // player in both returns an empty table with no error.
@@ -222,6 +245,7 @@ describe('filterSetToSearchParams', () => {
       date_filter: '2026-01-09',
       location_filter: 'Home',
       game_filter: 10,
+      opponent_tricode: 'OKC',
       playstyle_RTG_min: 80,
       playstyle_RTG_max: 120,
       'players_on[]': ['Anthony Davis'],

@@ -77,13 +77,14 @@ export const fetchTargets = async ({ signal } = {}) => {
 };
 
 /*
- * The mutations report success or throw; the caller reloads the list rather
- * than patching one in place, so the order and the derived titles shown are
- * always the backend's.
+ * Create answers with the stored Target and the rest report success or throw.
+ * Either way the list caller reloads rather than patching one in place, so the
+ * order and the derived titles shown are always the backend's.
  *
- * Create is the one mutation that answers with something: the stored Target,
- * carrying the title the backend derived. A surface that confirms a save by
- * name has to say that title rather than a locally guessed one (ADR 0001).
+ * What create returns is the record as stored, carrying the title the backend
+ * derived. A surface that confirms a save by name has to say that title rather
+ * than a locally guessed one. See crf04/statsplus
+ * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
 export const createTarget = async ({ opponent, qualifiers, note }) => {
   const response = await apiClient.post(targetsUrl(), {

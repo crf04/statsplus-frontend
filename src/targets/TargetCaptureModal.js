@@ -3,7 +3,7 @@ import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm from './TargetForm';
-import { targetSliceLabel } from './targetCatalog';
+import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
 
@@ -30,7 +30,9 @@ export const captureDraft = ({ opponent, base, sliceKey, leagueAverageShare }) =
          the field stays empty and the form keeps the save disabled until a
          share is typed. */
       thresholdPercent:
-        typeof leagueAverageShare === 'number' ? String(Math.round(leagueAverageShare * 100)) : '',
+        typeof leagueAverageShare === 'number'
+          ? shareToThresholdPercent(leagueAverageShare, { whole: true })
+          : '',
     },
   ],
   note: '',

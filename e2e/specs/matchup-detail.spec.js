@@ -793,6 +793,13 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   authenticatedPage: page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  // A Qualifier is written on the wire, not on the screen, so the journey reads
+  // the bodies the page actually posted rather than only the titles they earned.
+  const created = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/user/targets' && request.method() === 'POST')
+      created.push(request.postDataJSON());
+  });
   await installApiContract(page);
   await page.goto('/matchups/0022500584');
   await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
@@ -829,6 +836,20 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
 
   // The title in the confirmation is the one the backend derived and stored.
   await expect(dialog.getByText('BOS vs Restricted area ≥ 26%')).toBeVisible();
+  expect(created).toEqual([
+    {
+      opponent: 'BOS',
+      note: 'Rim leaks against big lineups.',
+      qualifiers: [
+        {
+          base: 'shot_zones',
+          slice_key: 'Restricted Area',
+          comparator: 'at_or_above',
+          threshold: 0.26,
+        },
+      ],
+    },
+  ]);
   await dialog.getByRole('button', { name: 'Back to the Defense Sheet' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(rowAction).toBeFocused();
@@ -842,12 +863,28 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  // A slice on a different base captures just as readily, and the link out of
-  // the confirmation lands on the Target that was just written.
+  // A slice on a different base captures just as readily. Its league average is
+  // 9.25%, so the prefill is the whole percent rather than the raw share, and
+  // the backend spells this slice differently from the page: the confirmation
+  // and the card both have to read the stored title, not the local preview.
   await page.getByRole('button', { name: 'Save Transition PTS as a Target' }).click();
   await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('play_types');
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('9');
+  await expect(dialog.getByText('BOS vs Transition ≥ 9%')).toBeVisible();
   await dialog.getByRole('button', { name: 'Save Target' }).click();
+  await expect(dialog.getByText('BOS vs Transition offense ≥ 9%')).toBeVisible();
+  expect(created[created.length - 1]).toEqual({
+    opponent: 'BOS',
+    note: '',
+    qualifiers: [
+      {
+        base: 'play_types',
+        slice_key: 'Transition',
+        comparator: 'at_or_above',
+        threshold: 0.09,
+      },
+    ],
+  });
   await dialog.getByRole('link', { name: 'Go to Targets' }).click();
 
   await expect(page).toHaveURL('/targets');
@@ -855,7 +892,9 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   const card = page.getByRole('link', { name: 'Open BOS vs Restricted area ≥ 26%' });
   await expect(card).toBeVisible();
   await expect(card).toContainText('Rim leaks against big lineups.');
-  await expect(page.getByRole('link', { name: 'Open BOS vs Transition ≥ 9%' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Open BOS vs Transition offense ≥ 9%' }),
+  ).toBeVisible();
 });
 
 test('capture stays reachable and the sheet stays unscrolled at a phone width', async ({

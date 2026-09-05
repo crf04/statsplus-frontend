@@ -6,8 +6,8 @@ import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
-import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
-import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
+import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import { findDietShare, formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import './MatchupDetailPage.css';
@@ -33,19 +33,6 @@ const SHARE_LABELS = {
   shotZones: 'FGA',
   shotTypes: 'FGA',
   assistLocations: 'ast',
-};
-/*
- * A Qualifier is written in the diet vocabulary, which names its bases as the
- * backend does. The sheet names the same bases in the shape the decoder hands
- * them over, so capture translates between the two. `traditional` is absent on
- * purpose: it is a team-only base with no diet counterpart, so no Qualifier can
- * be written from one of its rows.
- */
-const TARGET_BASE_BY_SHEET_BASE = {
-  playTypes: 'play_types',
-  shotZones: 'shot_zones',
-  shotTypes: 'shot_types',
-  assistLocations: 'assist_locations',
 };
 const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
 const SECTION_ORDER = [
@@ -383,8 +370,7 @@ function DietShareChips({ players, base, sliceKey, market }) {
  */
 const sliceLeagueAverageShare = (players, base, sliceKey) => {
   for (const player of players) {
-    const share = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season
-      ?.leagueAverageShare;
+    const share = findDietShare(player, base, sliceKey)?.leagueAverageShare;
     if (typeof share === 'number') return share;
   }
   return null;
@@ -492,7 +478,7 @@ function DefenseSheet({
                           {/* The row is the evidence, so the Target is captured
                               where it is read: this team as the opponent, this
                               slice as the Qualifier. */}
-                          {TARGET_BASE_BY_SHEET_BASE[base] && (
+                          {DIET_BASE_WIRE_NAMES[base] && (
                             <button
                               type="button"
                               className="row-capture"
@@ -500,7 +486,7 @@ function DefenseSheet({
                               onClick={() =>
                                 onCapture({
                                   opponent: team.tricode,
-                                  base: TARGET_BASE_BY_SHEET_BASE[base],
+                                  base: DIET_BASE_WIRE_NAMES[base],
                                   sliceKey: row.sliceKey,
                                   leagueAverageShare: sliceLeagueAverageShare(
                                     players,

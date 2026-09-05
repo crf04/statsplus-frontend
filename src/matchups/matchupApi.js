@@ -56,6 +56,20 @@ const MARKET_CATEGORIES = new Set([
 ]);
 
 const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+const DIET_BASES = DEFENSE_BASES.filter((base) => base !== 'traditional');
+
+/*
+ * The wire names a base in snake case and this decoder hands it over in camel
+ * case. A surface that has to write a base back to the wire — the base of a
+ * Qualifier, say — reads the pairing from here rather than spelling the four
+ * names a second time. `traditional` is absent because it is a team-only base
+ * with no player diet behind it, which is exactly what makes a Defense Sheet
+ * row on that base uncapturable.
+ */
+export const DIET_BASE_WIRE_NAMES = Object.fromEntries(
+  DIET_BASES.map((base) => [camelKey(base), base]),
+);
+
 const EXPERIENCE_MODES = ['historical', 'current'];
 const PLAYER_SOURCES = ['game_logs', 'player_pool'];
 const EXPERIENCE_SECTIONS = [
@@ -398,8 +412,10 @@ function decodeDefensiveColumns(columns, availability) {
 }
 
 const decodeDietShares = (dietShares) => {
-  const dietBases = DEFENSE_BASES.filter((base) => base !== 'traditional');
-  if (!isRecord(dietShares) || Object.keys(dietShares).sort().join() !== dietBases.sort().join())
+  if (
+    !isRecord(dietShares) ||
+    Object.keys(dietShares).sort().join() !== [...DIET_BASES].sort().join()
+  )
     throw invalid();
   return Object.fromEntries(
     Object.entries(dietShares).map(([base, entries]) => {

@@ -10,7 +10,11 @@
 .targets-page button:focus-visible,
 .targets-page a:focus-visible,
 .targets-page select:focus-visible,
-.targets-page input:focus-visible {
+.targets-page input:focus-visible,
+.target-capture button:focus-visible,
+.target-capture a:focus-visible,
+.target-capture select:focus-visible,
+.target-capture input:focus-visible {
   outline: 2px solid var(--ct-gold);
   outline-offset: 2px;
 }
@@ -257,6 +261,55 @@
 .target-ghost:hover:not(:disabled) {
   color: var(--ct-text);
   border-color: var(--ct-text);
+}
+
+/* --- capture from a Defense Sheet row --- */
+
+/* The capture dialog carries its own surface. The Log Workspace's dark card is
+   loaded with the workspace, and capture opens from the Matchup. */
+.target-capture {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  text-align: left;
+}
+
+.target-capture .modal-header,
+.target-capture .modal-body {
+  border-color: var(--ct-line);
+}
+
+.target-capture .target-form {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.target-capture-source {
+  margin: 0 0 12px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+}
+
+.target-capture-saved {
+  display: grid;
+  gap: 10px;
+}
+
+.target-capture-saved .target-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+/* The saved confirmation offers a link where the form offered a button, so the
+   link has to sit on the same line as one. */
+.target-capture-saved .target-primary {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 /* --- the card grid --- */

@@ -25,7 +25,13 @@ export const formatFocalGameLine = (focalGameLine, categories, { includeDate = f
     ...categories.map((category) => `${focalGameLine.stats[category].toFixed(1)} ${category}`),
   ].join(' · ');
 
+// One player's season diet fact for one slice, whether or not it is displayable.
+// Capture reads it for the league average the slice is measured against, which
+// the display gate has no say over.
+export const findDietShare = (player, base, sliceKey) =>
+  player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season || null;
+
 export const getDisplayableDietShare = (player, base, sliceKey) => {
-  const value = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season;
+  const value = findDietShare(player, base, sliceKey);
   return value && shouldDisplayDietShare(base, value) ? value : null;
 };

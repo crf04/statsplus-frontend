@@ -1,0 +1,436 @@
+/* The Targets page borrows the slate's page shell and adds the card grid, the
+   form, and the one-Target detail. */
+
+.targets-page {
+  text-align: left;
+}
+
+.target-label {
+  display: block;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.target-section-heading {
+  margin: 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.target-error {
+  margin: 10px 0 0;
+  border: 1px solid var(--ct-miss);
+  border-radius: var(--ct-radius-ctl);
+  padding: 8px 12px;
+  background: var(--ct-miss-soft);
+  font-size: 0.84rem;
+}
+
+/* --- the form --- */
+
+.target-new {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 24px;
+}
+
+.target-form {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  padding: 14px;
+  background: var(--ct-surface);
+}
+
+.target-form select,
+.target-form input {
+  min-height: 34px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  padding: 0 8px;
+  font-size: 0.82rem;
+}
+
+.target-form select {
+  font-family: var(--ct-mono);
+}
+
+.target-form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.target-form-opponent {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.target-form-opponent b {
+  font-family: var(--ct-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+}
+
+.target-form-preview {
+  flex: 1;
+  min-width: 220px;
+  display: grid;
+  gap: 4px;
+}
+
+.target-form-preview p {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 0.9rem;
+}
+
+.target-form-preview .target-title {
+  color: var(--ct-text);
+}
+
+.target-qualifier {
+  display: grid;
+  grid-template-columns: 140px minmax(140px, 1fr) auto 86px 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+/* One segmented pill, matching the defense sheet's window and market toggles:
+   the two comparators are one choice, not two loose buttons. */
+.target-comparator {
+  display: flex;
+  align-items: center;
+}
+
+.target-comparator button {
+  min-width: 34px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 0;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.target-comparator button:first-child {
+  border-radius: var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl);
+}
+
+.target-comparator button:last-child {
+  border-radius: 0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0;
+}
+
+.target-comparator button[aria-pressed='true'] {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.target-threshold {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+}
+
+.target-threshold input {
+  width: 58px;
+  text-align: right;
+  font-family: var(--ct-mono);
+}
+
+.target-remove {
+  border: 0;
+  background: transparent;
+  color: var(--ct-dim);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.target-remove:hover {
+  color: var(--ct-miss);
+}
+
+.target-add {
+  justify-self: start;
+  border: 1px dashed var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.target-add:hover {
+  color: var(--ct-gold);
+  border-color: var(--ct-gold);
+}
+
+.target-note {
+  display: grid;
+  gap: 4px;
+}
+
+.target-form-problem {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 0.78rem;
+}
+
+.target-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.target-primary {
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  padding: 0 14px;
+  min-height: 40px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.target-primary:hover:not(:disabled) {
+  background: var(--ct-gold);
+  color: #000;
+}
+
+.target-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.target-ghost {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 0 12px;
+  min-height: 40px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.target-ghost:hover:not(:disabled) {
+  color: var(--ct-text);
+  border-color: var(--ct-text);
+}
+
+/* --- the card grid --- */
+
+.target-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  height: 100%;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  padding: 14px 16px;
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  text-decoration: none;
+}
+
+.target-card:hover {
+  border-color: var(--ct-gold);
+  color: var(--ct-text);
+}
+
+.target-card-opponent {
+  font-family: var(--ct-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.target-card-qualifiers {
+  display: grid;
+  gap: 2px;
+  font-size: 0.88rem;
+}
+
+.target-card-qualifiers b {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-weight: 600;
+}
+
+.target-card-note {
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target-card-note.is-empty {
+  opacity: 0.5;
+}
+
+.target-card-go {
+  justify-self: end;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+}
+
+.target-card:hover .target-card-go {
+  color: var(--ct-gold);
+}
+
+/* --- one Target --- */
+
+.target-back {
+  margin: 0 0 12px;
+}
+
+.target-back a {
+  color: var(--ct-dim);
+  font-size: 0.84rem;
+  text-decoration: none;
+}
+
+.target-back a:hover {
+  color: var(--ct-gold);
+}
+
+.target-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.target-detail-head h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.1;
+}
+
+.target-detail-note {
+  margin: 8px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.86rem;
+}
+
+.target-detail-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.target-detail-actions button {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.target-detail-actions button:hover:not(:disabled) {
+  color: var(--ct-gold);
+  border-color: var(--ct-gold);
+}
+
+.target-confirm {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+}
+
+.target-detail-section {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.target-detail-qualifiers {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target-detail-qualifiers li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-left: 2px solid var(--ct-line-strong);
+  padding-left: 12px;
+}
+
+.target-detail-base {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.target-detail-qualifiers b {
+  font-size: 1rem;
+}
+
+.target-detail-qualifiers em {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  font-style: normal;
+}
+
+@media (max-width: 820px) {
+  .target-qualifier {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .target-comparator {
+    grid-column: 1;
+  }
+
+  .target-detail-head {
+    flex-direction: column;
+  }
+}

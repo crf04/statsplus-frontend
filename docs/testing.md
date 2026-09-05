@@ -95,6 +95,11 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests.
 
+Saved Filter Sets and Targets are account state rather than reference data, so the contract
+remembers what a page saved instead of replaying a fixed list. The Targets routes derive each
+title from the Qualifiers on every write, as the backend does, so a journey that edits a Target
+can assert the title followed it.
+
 ## CI and failure evidence
 
 The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical

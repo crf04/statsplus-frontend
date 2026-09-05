@@ -1,4 +1,8 @@
 import { expect, test as base } from '@playwright/test';
+// The Target title is derived, never stored (ADR 0001). The fixture stands in
+// for the backend that derives it, and borrows the app's slice vocabulary so
+// the two cannot disagree about how a Qualifier is spelled.
+import { deriveTargetTitle } from '../../src/targets/targetCatalog';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -1386,6 +1390,36 @@ const traditionalTeamStats = {
   OPP_REB_vs_avg_pct: 1.72,
 };
 
+// A Target is unique within an account by opponent plus its Qualifier set, so
+// the canonical form ignores the order the Qualifiers were typed in.
+const canonicalQualifiers = (qualifiers) =>
+  qualifiers
+    .map((q) => `${q.base}:${q.slice_key}:${q.comparator}:${q.threshold}`)
+    .sort()
+    .join('|');
+
+const isTargetQualifier = (qualifier) =>
+  Boolean(qualifier) &&
+  typeof qualifier.base === 'string' &&
+  typeof qualifier.slice_key === 'string' &&
+  ['at_or_above', 'at_or_below'].includes(qualifier.comparator) &&
+  typeof qualifier.threshold === 'number' &&
+  qualifier.threshold >= 0 &&
+  qualifier.threshold <= 1;
+
+const derivedTargetTitle = (target) =>
+  deriveTargetTitle({
+    opponent: target.opponent,
+    qualifiers: target.qualifiers.map((qualifier) => ({
+      base: qualifier.base,
+      sliceKey: qualifier.slice_key,
+      comparator: qualifier.comparator,
+      threshold: qualifier.threshold,
+    })),
+  });
+
+export const TARGET_LIMIT = 25;
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -1393,6 +1427,10 @@ export const installApiContract = async (page, overrides = {}) => {
   // show that saving, renaming, and deleting reach the same list.
   const savedFilterSets = [];
   let nextSavedFilterSetId = 0;
+  // Targets are account state too: the contract remembers what this page saved
+  // so that creating, editing, and deleting reach the same list.
+  const targets = [];
+  let nextTargetId = 0;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -1542,6 +1580,107 @@ export const installApiContract = async (page, overrides = {}) => {
       if (method === 'DELETE') {
         savedFilterSets.splice(index, 1);
         await route.fulfill({ json: { success: true } });
+        return;
+      }
+    }
+
+    const targetPath =
+      url.pathname === '/api/user/targets'
+        ? [url.pathname, undefined]
+        : url.pathname.match(/^\/api\/user\/targets\/(.+)$/);
+    if (targetPath) {
+      const [, targetId] = targetPath;
+      const method = request.method();
+      const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
+      const index = targets.findIndex((item) => String(item.id) === targetId);
+      const invalidInput = (message) =>
+        route.fulfill({ status: 400, json: { error: { code: 'invalid_input', message } } });
+      const conflict = (message) =>
+        route.fulfill({ status: 409, json: { error: { code: 'operation_conflict', message } } });
+
+      if (method === 'GET') {
+        await route.fulfill({ json: { success: true, targets } });
+        return;
+      }
+
+      if (method === 'POST') {
+        if (
+          typeof body?.opponent !== 'string' ||
+          !body.opponent ||
+          !Array.isArray(body.qualifiers) ||
+          body.qualifiers.length === 0 ||
+          !body.qualifiers.every(isTargetQualifier)
+        ) {
+          await invalidInput('A Target needs an opponent and at least one valid Qualifier.');
+          return;
+        }
+        const qualifiers = body.qualifiers.map((qualifier) => ({
+          base: qualifier.base,
+          slice_key: qualifier.slice_key,
+          comparator: qualifier.comparator,
+          threshold: qualifier.threshold,
+        }));
+        if (
+          targets.some(
+            (item) =>
+              item.opponent === body.opponent &&
+              canonicalQualifiers(item.qualifiers) === canonicalQualifiers(qualifiers),
+          )
+        ) {
+          await conflict(`You already have that Target for ${body.opponent}.`);
+          return;
+        }
+        if (targets.length >= TARGET_LIMIT) {
+          await conflict(`You have reached the limit of ${TARGET_LIMIT} Targets.`);
+          return;
+        }
+        nextTargetId += 1;
+        const created = {
+          id: nextTargetId,
+          opponent: body.opponent,
+          qualifiers,
+          note: body.note || '',
+          created_at: '2026-04-13T00:10:00Z',
+        };
+        // Newest-first is the list's contract, as it is for Saved Filter Sets.
+        targets.unshift({ ...created, title: derivedTargetTitle(created) });
+        await route.fulfill({ status: 201, json: { success: true, target: targets[0] } });
+        return;
+      }
+
+      if (index === -1) {
+        await route.fulfill({
+          status: 404,
+          json: { error: { code: 'resource_not_found', message: 'Target not found.' } },
+        });
+        return;
+      }
+
+      if (method === 'PATCH') {
+        if (!Array.isArray(body?.qualifiers) || !body.qualifiers.every(isTargetQualifier)) {
+          await invalidInput('Every Qualifier needs a slice, a comparator, and a share.');
+          return;
+        }
+        // Only the Qualifiers and the note move; the title follows the
+        // Qualifiers because it is derived from them.
+        const updated = {
+          ...targets[index],
+          qualifiers: body.qualifiers.map((qualifier) => ({
+            base: qualifier.base,
+            slice_key: qualifier.slice_key,
+            comparator: qualifier.comparator,
+            threshold: qualifier.threshold,
+          })),
+          note: body.note || '',
+        };
+        targets[index] = { ...updated, title: derivedTargetTitle(updated) };
+        await route.fulfill({ json: { success: true, target: targets[index] } });
+        return;
+      }
+
+      if (method === 'DELETE') {
+        targets.splice(index, 1);
+        await route.fulfill({ json: { success: true, message: 'Target deleted' } });
         return;
       }
     }

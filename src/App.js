@@ -8,6 +8,8 @@ import UserProfile from './components/Auth/UserProfile';
 import SlatePage from './SlatePage';
 import MatchupDetailPage from './matchups/MatchupDetailPage';
 import OperationsPage from './operations/OperationsPage';
+import TargetsPage from './targets/TargetsPage';
+import TargetDetailPage from './targets/TargetDetailPage';
 import QueryReferencePage from './help/QueryReferencePage';
 import './App.css';
 
@@ -25,6 +27,7 @@ function AppNav() {
             Search
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
+          <NavLink to="/targets">Targets</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
@@ -47,6 +50,8 @@ function App() {
               <Route path="/help" element={<QueryReferencePage />} />
               <Route path="/matchups" element={<SlatePage />} />
               <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+              <Route path="/targets" element={<TargetsPage />} />
+              <Route path="/targets/:targetId" element={<TargetDetailPage />} />
               <Route
                 path="/operations"
                 element={

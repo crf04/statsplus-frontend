@@ -265,6 +265,19 @@ export const filterSetFromSearchParams = (searchParams) => {
     const parsed = wholeNumber(value);
     return parsed !== null && parsed >= 1 ? parsed : null;
   });
+  /*
+   * One specific opponent, named by tricode, so a Direct Filter Set like "this
+   * player's games vs OKC" can be opened by link.
+   *
+   * Which tricodes exist is the API's vocabulary — an unknown one is its own
+   * `400 invalid_input` — so only the shape is checked here, as with
+   * `teams_against[]`. Case is not vocabulary though: canonicalising it is what
+   * keeps a hand-typed link producing the request the API reads.
+   */
+  readDecoded('opponent_tricode', (value) => {
+    const tricode = value.trim();
+    return /^[A-Za-z]{3}$/.test(tricode) ? tricode.toUpperCase() : null;
+  });
   // 0-200 is the API's own playtype rating domain and the slider now spans
   // exactly it, so a bound outside it is a value we cannot honour and names
   // itself rather than arriving as a range no control could show.
@@ -336,6 +349,7 @@ const SCALAR_FILTER_NAMES = [
   'date_filter',
   'location_filter',
   'game_filter',
+  'opponent_tricode',
   'playstyle_RTG_min',
   'playstyle_RTG_max',
 ];

@@ -1,5 +1,7 @@
-/* A Target resolved against a day: the readings and the fit table, shared by
-   the block under a Slate row and the Target's own page. */
+/* The two tables a Target is read through, and the readings above them: the
+   day's fits, shared by the block under a Slate row and the Target's own page,
+   and the season-to-date backtest on that page. The tables read alike, so they
+   are described once. */
 
 .target-empty {
   margin: 4px 0 0;
@@ -128,15 +130,17 @@
   color: var(--ct-dim);
 }
 
-/* --- the fit table --- */
+/* --- the tables --- */
 
-/* One column per Qualifier, so the table can outgrow a phone. It scrolls
-   inside its own bounds, as the Matchup's selection tables do. */
+/* One column per Qualifier, or per outcome market, so a table can outgrow a
+   phone. It scrolls inside its own bounds, as the Matchup's selection tables
+   do. */
 .target-fits-wrap {
   overflow-x: auto;
 }
 
-.target-fits {
+.target-fits,
+.target-backtest {
   width: 100%;
   min-width: 320px;
   margin-top: 8px;
@@ -152,7 +156,8 @@
   text-align: left;
 }
 
-.target-fits th {
+.target-fits th,
+.target-backtest th {
   padding: 4px 8px;
   border-bottom: 1px solid var(--ct-line-strong);
   color: var(--ct-dim);
@@ -164,19 +169,23 @@
   text-transform: uppercase;
 }
 
-.target-fits td {
+.target-fits td,
+.target-backtest td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--ct-line);
   vertical-align: top;
 }
 
-.target-fits .num {
+.target-fits .num,
+.target-backtest .num {
   font-family: var(--ct-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.target-fits td small {
+.target-fits td small,
+.target-backtest td small,
+.target-backtest th small {
   display: block;
   color: var(--ct-dim);
   font-size: 0.62rem;
@@ -189,6 +198,76 @@
 .target-fits.is-dense td {
   padding: 3px 6px;
   font-size: 0.74rem;
+}
+
+/* --- the backtest --- */
+
+/* The backtest is asked for rather than shown, so its control reads as one: a
+   dashed affordance that says which way it goes, like the form's own. */
+.target-backtest-toggle {
+  justify-self: start;
+  border: 1px dashed var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.target-backtest-toggle:hover {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.target-backtest-body {
+  display: grid;
+  gap: 10px;
+}
+
+.target-backtest-proxy {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+}
+
+/* The player heads his own game rows, so it is read as a heading rather than
+   weighted like one. */
+.target-backtest th[scope='rowgroup'] {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ct-line);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  vertical-align: top;
+}
+
+.target-backtest-player {
+  color: var(--ct-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.target-backtest-player:hover {
+  color: var(--ct-gold);
+}
+
+.target-backtest-date {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+}
+
+/* The distance from the player's own season average is the reading; the value
+   it was read from stays plain. */
+.target-backtest .is-hit small {
+  color: var(--ct-hit);
+}
+
+.target-backtest .is-miss small {
+  color: var(--ct-miss);
 }
 
 /* --- the block under a Slate row --- */
@@ -256,7 +335,9 @@
 
   .target-fits th,
   .target-fits td,
-  .target-fits.is-dense td {
+  .target-fits.is-dense td,
+  .target-backtest th,
+  .target-backtest td {
     padding: 3px 4px;
   }
 }

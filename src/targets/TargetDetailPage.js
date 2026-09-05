@@ -176,9 +176,7 @@ function TargetDetail({ target, resolved, entry, reload }) {
             </ul>
           </section>
           <FitsSection target={target} resolved={resolved} entry={entry} />
-          {/* The title is derived from the Qualifiers, so keying on it drops
-              a backtest the moment the criteria it was run for change. */}
-          <TargetBacktest key={target.title} target={target} />
+          <TargetBacktest target={target} />
         </>
       )}
     </>

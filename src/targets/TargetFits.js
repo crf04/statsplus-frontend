@@ -1,5 +1,5 @@
 import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
-import { formatQualifierParts } from './targetCatalog';
+import { formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
 import '../readings.css';
 import './TargetFits.css';
 
@@ -10,15 +10,6 @@ import './TargetFits.css';
  * own page shows the readings as well. Both render them the same way, so the
  * two surfaces cannot disagree about the same Target.
  */
-
-/*
- * An observed share is an estimate from a season of shots, so it reads to the
- * whole percent the Matchup's Diet chips use. A Qualifier's threshold is not:
- * it is what was typed, and keeps the decimal its title was derived with.
- */
-export const formatObservedShare = (share) => `${Math.round(share * 100)}%`;
-
-export const signed = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
 
 /*
  * The title is derived and stored by the backend, but a flat string cannot set

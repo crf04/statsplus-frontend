@@ -1363,12 +1363,19 @@ const leaguePlayers = [...matchupPayload.players, ...historicalMatchupPayload.pl
  * and the Log Workspace that row hands off to have to be reading the same
  * games. It is the shared season rewritten as that player's: their team, and
  * their own scoring, so two rows of one backtest table can never be confused.
+ *
+ * The shared season is LeBron's, and every other player's is shifted from it
+ * by the whole points their season scoring differs by. Keep his own scoring
+ * rounding to this number: the Log Workspace journeys read his logs unshifted
+ * and assert the points cell they arrive with.
  */
+const SHARED_SEASON_SCORING = 25;
+
 const leagueSeason = (player) =>
   gameLogs.map((log) => ({
     ...log,
     MATCHUP: log.MATCHUP.replace('LAL', player.tricode),
-    PTS: log.PTS + Math.round(player.season_scoring) - 25,
+    PTS: log.PTS + Math.round(player.season_scoring) - SHARED_SEASON_SCORING,
   }));
 
 const seasonsByPlayer = {
@@ -1687,7 +1694,6 @@ const sliceMarkets = (qualifier) => [
 const MARKET_STATS = {
   PTS: (log) => log.PTS,
   AST: (log) => log.AST,
-  REB: (log) => log.REB,
   '3PM': (log) => log.FG3M,
   PA: (log) => log.PTS + log.AST,
   PR: (log) => log.PTS + log.REB,

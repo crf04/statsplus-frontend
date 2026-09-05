@@ -133,9 +133,27 @@ const backtest = {
       games: [
         { gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } },
         { gameDate: '2025-12-02', stats: { PTS: 22.5, '3PM': 1 } },
+        { gameDate: '2025-11-06', stats: { PTS: 25.4, '3PM': 2 } },
       ],
     },
   ],
+};
+
+/*
+ * The same backtest as the backend would return it for a Target whose
+ * Qualifiers have since been edited: it carries the criteria it was actually
+ * run against, which are not the ones the page is holding.
+ */
+const backtestOfAnotherTarget = {
+  ...backtest,
+  target: {
+    ...target,
+    opponent: 'DEN',
+    title: 'DEN vs Mid-range ≥ 50%',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Mid-Range', comparator: 'at_or_above', threshold: 0.5 },
+    ],
+  },
 };
 
 const expandBacktest = async () => {
@@ -548,7 +566,7 @@ test('an expanded backtest reads each game against the player’s own season ave
 
   // The share that made him qualify, and the baseline his games are read
   // against, under the name that opens his games against this opponent.
-  const player = screen.getByRole('cell', { name: /LeBron James/ });
+  const player = screen.getByRole('rowheader', { name: /LeBron James/ });
   expect(player).toHaveTextContent('LAL · Corner 3 44%');
   expect(player).toHaveTextContent('season 25.4 PTS · 2.0 3PM');
 
@@ -566,6 +584,38 @@ test('an expanded backtest reads each game against the player’s own season ave
   expect(under).toHaveTextContent('-1.0');
   expect(within(over).getByText('+5.6').closest('td')).toHaveClass('is-hit');
   expect(within(under).getByText('-2.9').closest('td')).toHaveClass('is-miss');
+
+  // A game that lands on the average is neither, and is coloured as neither.
+  const level = screen.getByRole('row', { name: /2025-11-06/ });
+  expect(within(level).getAllByText('0.0')).toHaveLength(2);
+  within(level)
+    .getAllByText('0.0')
+    .forEach((difference) => {
+      expect(difference.closest('td')).not.toHaveClass('is-hit');
+      expect(difference.closest('td')).not.toHaveClass('is-miss');
+    });
+});
+
+/*
+ * A backtest travels with the Target it was run for. Labelling its rows from
+ * the page's Target instead would put criteria on a table that never used
+ * them — a backtest read before an edit, described by the edit.
+ */
+test('a backtest is labelled by the Target the backend ran it against', async () => {
+  fetchTargetBacktest.mockResolvedValue(backtestOfAnotherTarget);
+  renderDetail();
+  await expandBacktest();
+
+  expect(screen.getByRole('table', { name: 'Backtest for DEN vs Mid-range ≥ 50%' })).toBeVisible();
+  expect(screen.getByRole('rowheader', { name: /LeBron James/ })).toHaveTextContent(
+    'LAL · Mid-range 44%',
+  );
+  expect(screen.getByRole('link', { name: 'LeBron James games vs DEN' })).toHaveAttribute(
+    'href',
+    '/?player_name=LeBron+James&opponent_tricode=DEN',
+  );
+  // The heading names the Target being read, which is the page's own.
+  expect(screen.getByText('Backtest · season to date · vs OKC')).toBeVisible();
 });
 
 /*
@@ -583,11 +633,13 @@ test('a backtest row opens the Log Workspace with the player and the opponent fi
 });
 
 test('a backtest nobody has played into says so rather than showing an empty table', async () => {
-  fetchTargetBacktest.mockResolvedValue({ ...backtest, players: [] });
+  // Named after the opponent the backtest was run against, not the one the
+  // page happens to be showing.
+  fetchTargetBacktest.mockResolvedValue({ ...backtestOfAnotherTarget, players: [] });
   renderDetail();
   await expandBacktest();
 
-  expect(screen.getByText('Nobody qualifying has faced OKC yet.')).toBeVisible();
+  expect(screen.getByText('Nobody qualifying has faced DEN yet.')).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 

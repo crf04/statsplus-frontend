@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
-import { formatObservedShare, signed } from './TargetFits';
-import { formatQualifierParts } from './targetCatalog';
+import { formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
 import { useTargetBacktest } from './useTargets';
+import './TargetFits.css';
 
 /*
  * Whether the idea has cashed. The backtest is a league-wide game-log scan
@@ -35,7 +35,7 @@ function BacktestTable({ backtest }) {
     /* One column per outcome market, so a Target with several Qualifiers
        outgrows a phone. The table scrolls inside its own bounds, as the fit
        table does. */
-    <div className="target-backtest-wrap">
+    <div className="target-fits-wrap">
       <table className="target-backtest" aria-label={`Backtest for ${target.title}`}>
         <thead>
           <tr>
@@ -48,12 +48,14 @@ function BacktestTable({ backtest }) {
             ))}
           </tr>
         </thead>
-        <tbody>
-          {players.map((player) =>
-            player.games.map((game, index) => (
-              <tr key={`${player.canonicalId}-${game.gameDate}`}>
+        {/* One row group per player, so every game reads under the player who
+            played it rather than under the row above it. */}
+        {players.map((player) => (
+          <tbody key={player.canonicalId}>
+            {player.games.map((game, index) => (
+              <tr key={game.gameDate}>
                 {index === 0 && (
-                  <td rowSpan={player.games.length}>
+                  <th scope="rowgroup" rowSpan={player.games.length}>
                     <Link
                       aria-label={`${player.name} games vs ${target.opponent}`}
                       className="target-backtest-player"
@@ -80,22 +82,28 @@ function BacktestTable({ backtest }) {
                         .map((column) => `${player.seasonAverages[column].toFixed(1)} ${column}`)
                         .join(' · ')}
                     </small>
-                  </td>
+                  </th>
                 )}
                 <td className="target-backtest-date">{game.gameDate}</td>
                 {statColumns.map((column) => {
-                  const difference = game.stats[column] - player.seasonAverages[column];
+                  // Read at the precision it is shown at, so a game that lands
+                  // on the average is exactly zero rather than nearly zero.
+                  const difference =
+                    Math.round((game.stats[column] - player.seasonAverages[column]) * 10) / 10;
+                  // A game at the average is neither a hit nor a miss, and
+                  // says so by being coloured as neither.
+                  const tone = difference === 0 ? '' : difference > 0 ? ' is-hit' : ' is-miss';
                   return (
-                    <td className={`num is-${difference >= 0 ? 'hit' : 'miss'}`} key={column}>
+                    <td className={`num${tone}`} key={column}>
                       {game.stats[column].toFixed(1)}
                       <small>{signed(difference)}</small>
                     </td>
                   );
                 })}
               </tr>
-            )),
-          )}
-        </tbody>
+            ))}
+          </tbody>
+        ))}
       </table>
     </div>
   );
@@ -103,10 +111,7 @@ function BacktestTable({ backtest }) {
 
 export default function TargetBacktest({ target }) {
   const [open, setOpen] = useState(false);
-  // Nothing has been asked for at 0. A refused read is asked for again on the
-  // next open, because a backtest nobody can request again is a dead end.
-  const [attempt, setAttempt] = useState(0);
-  const { status, backtest, error } = useTargetBacktest(target.id, attempt);
+  const { status, backtest, error, read } = useTargetBacktest(target.id);
 
   const toggle = () => {
     if (open) {
@@ -114,22 +119,27 @@ export default function TargetBacktest({ target }) {
       return;
     }
     setOpen(true);
-    if (status === 'idle' || status === 'error') setAttempt((count) => count + 1);
+    // A backtest already in hand is kept rather than read again. A refused one
+    // is read again, because a backtest nobody can ask for twice is a dead end.
+    if (status === 'idle' || status === 'error') read();
   };
 
   return (
-    <section className="target-detail-section">
+    <section className="target-detail-section" aria-labelledby="backtest-heading">
+      <h2 id="backtest-heading" className="target-section-heading">
+        Backtest · season to date · vs {target.opponent}
+      </h2>
       <button
         type="button"
         className="target-backtest-toggle"
+        aria-controls="target-backtest-body"
         aria-expanded={open}
         onClick={toggle}
       >
         {open ? 'Collapse backtest' : 'Expand backtest'}
       </button>
       {open && (
-        <>
-          <p className="eyebrow">Backtest · season to date · vs {target.opponent}</p>
+        <div className="target-backtest-body" id="target-backtest-body">
           {status === 'loading' && <p role="status">Reading the season…</p>}
           {/* The backtest failing is its own failure. The Qualifiers, the
               readings and the fits above it are already on screen and stay
@@ -154,7 +164,7 @@ export default function TargetBacktest({ target }) {
               )}
             </>
           )}
-        </>
+        </div>
       )}
     </section>
   );

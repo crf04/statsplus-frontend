@@ -519,6 +519,26 @@ const wireBacktest = {
         },
       ],
     },
+    {
+      canonical_id: 1628369,
+      name: 'Jayson Tatum',
+      team_id: 1610612738,
+      tricode: 'BOS',
+      season_scoring: 27.2,
+      shares: [
+        { base: 'shot_zones', slice_key: 'Corner 3', share: 0.41, league_average_share: 0.2 },
+      ],
+      season_averages: { PTS: 27.2, '3PM': 3 },
+      games: [
+        {
+          game_id: '0022500612',
+          game_date: '2025-12-19',
+          matchup: 'BOS @ OKC',
+          minutes: 38,
+          stats: { PTS: 24, '3PM': 2 },
+        },
+      ],
+    },
   ],
 };
 
@@ -536,6 +556,8 @@ test('decodes the backtest to the rows the table reads, in the backend order', (
     },
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     statColumns: ['PTS', '3PM'],
+    // The backend orders the players by season scoring; a decoder that sorted
+    // or grouped them would put the table in an order nobody chose.
     players: [
       {
         canonicalId: 2544,
@@ -545,8 +567,20 @@ test('decodes the backtest to the rows the table reads, in the backend order', (
         seasonAverages: { PTS: 25.4, '3PM': 2 },
         games: [{ gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } }],
       },
+      {
+        canonicalId: 1628369,
+        name: 'Jayson Tatum',
+        tricode: 'BOS',
+        shares: [{ share: 0.41, leagueAverageShare: 0.2 }],
+        seasonAverages: { PTS: 27.2, '3PM': 3 },
+        games: [{ gameDate: '2025-12-19', stats: { PTS: 24, '3PM': 2 } }],
+      },
     ],
   });
+  expect(decodeBacktest(wireBacktest).players.map((player) => player.name)).toEqual([
+    'LeBron James',
+    'Jayson Tatum',
+  ]);
 
   // Nobody qualifying, or nobody having faced the opponent, is a backtest with
   // no players rather than a refusal.

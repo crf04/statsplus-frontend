@@ -13,13 +13,18 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => auth,
 }));
 
+/*
+ * The stored title is the backend's, and it is deliberately not the string
+ * these Qualifiers would derive. A card that displayed a locally derived title
+ * would pass a matching fixture and still be wrong.
+ */
 const targets = [
   {
     id: 7,
     opponent: 'OKC',
-    title: 'OKC vs Corner 3 ≥ 40%',
+    title: 'OKC vs Corner 3 ≥ 40% (v2)',
     note: 'Leaks the corner late.',
-    createdAt: '2026-04-08T15:12:00Z',
+    createdAt: '2026-04-08T23:30:00Z',
     qualifiers: [
       { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
     ],
@@ -27,9 +32,9 @@ const targets = [
   {
     id: 8,
     opponent: 'MIA',
-    title: 'MIA vs Restricted area ≤ 20%',
+    title: 'MIA vs Restricted area ≤ 20% (v2)',
     note: '',
-    createdAt: '2026-04-08T15:12:00Z',
+    createdAt: '2026-04-08T23:30:00Z',
     qualifiers: [
       {
         base: 'shot_zones',
@@ -48,6 +53,14 @@ const renderPage = () =>
     </MemoryRouter>,
   );
 
+const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40' } = {}) => {
+  fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: opponent } });
+  fireEvent.change(screen.getByLabelText('Qualifier 1 slice'), { target: { value: slice } });
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: percent },
+  });
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   auth.isAuthenticated = true;
@@ -56,17 +69,25 @@ beforeEach(() => {
   createTarget.mockResolvedValue(undefined);
 });
 
-test('shows every saved Target as a card carrying its derived title, Qualifiers, and note', async () => {
+test('shows every saved Target as a card carrying the stored title, Qualifiers, and note', async () => {
   renderPage();
 
   const cards = await screen.findAllByRole('link', { name: /^Open / });
   expect(cards).toHaveLength(2);
-  expect(cards[0]).toHaveAccessibleName('Open OKC vs Corner 3 ≥ 40%');
+  expect(cards[0]).toHaveAccessibleName('Open OKC vs Corner 3 ≥ 40% (v2)');
   expect(cards[0]).toHaveAttribute('href', '/targets/7');
   expect(cards[0]).toHaveTextContent('Corner 3 ≥ 40%');
   expect(cards[0]).toHaveTextContent('Leaks the corner late.');
+  expect(cards[1]).toHaveAccessibleName('Open MIA vs Restricted area ≤ 20% (v2)');
   expect(cards[1]).toHaveTextContent('No note');
   expect(screen.getByRole('heading', { name: '2 Targets' })).toBeInTheDocument();
+});
+
+test('counts one Target as a Target rather than as Targets', async () => {
+  fetchTargets.mockResolvedValue([targets[0]]);
+  renderPage();
+
+  expect(await screen.findByRole('heading', { name: '1 Target' })).toBeInTheDocument();
 });
 
 test('says so plainly when the account has no Targets yet', async () => {
@@ -81,33 +102,43 @@ test('previews the title the Qualifiers would derive', async () => {
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });
 
+  composeQualifier();
+  expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
+
+  // The backend writes a whole percent plainly and keeps one decimal when
+  // there is one, so the preview promises exactly what will be stored.
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '40.5' },
+  });
+  expect(screen.getByText('OKC vs Corner 3 ≥ 40.5%')).toBeInTheDocument();
+});
+
+test('the blank form is unsaveable until a threshold has been composed', async () => {
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+  const save = screen.getByRole('button', { name: 'Save Target' });
+
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(null);
+  expect(save).toBeDisabled();
+
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
     target: { value: '40' },
   });
-  fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: 'OKC' } });
-
-  expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
+  expect(save).toBeEnabled();
 });
 
 test('refuses to save a threshold outside the 0-100% share range', async () => {
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });
   const save = screen.getByRole('button', { name: 'Save Target' });
-  expect(save).toBeEnabled();
 
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
     target: { value: '140' },
   });
-
   expect(save).toBeDisabled();
   expect(
     screen.getByText('Every threshold must be a share between 0% and 100%.'),
   ).toBeInTheDocument();
-
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '' },
-  });
-  expect(save).toBeDisabled();
 
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
     target: { value: '0' },
@@ -129,13 +160,7 @@ test('saves several Qualifiers as one Target and reloads the list the backend re
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });
 
-  fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: 'NOP' } });
-  fireEvent.change(screen.getByLabelText('Qualifier 1 slice'), {
-    target: { value: 'Restricted Area' },
-  });
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '35' },
-  });
+  composeQualifier({ opponent: 'NOP', slice: 'Restricted Area', percent: '35' });
   fireEvent.click(screen.getByRole('button', { name: '+ Add a Qualifier' }));
   fireEvent.change(screen.getByLabelText('Qualifier 2 diet base'), {
     target: { value: 'play_types' },
@@ -168,8 +193,25 @@ test('saves several Qualifiers as one Target and reloads the list the backend re
   });
   expect(fetchTargets).toHaveBeenCalledTimes(2);
   // A saved Target leaves a blank form behind, ready for the next idea.
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(25);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(null);
   expect(screen.queryByLabelText('Qualifier 2 threshold percent')).not.toBeInTheDocument();
+});
+
+test('a note is stored without the whitespace it was typed with', async () => {
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+    target: { value: '  Zone late in the shot clock.  ' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  });
+
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({ note: 'Zone late in the shot clock.' }),
+  );
 });
 
 test('a refused duplicate reads as the backend explained it and keeps the draft', async () => {
@@ -184,7 +226,7 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });
 
-  fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: 'OKC' } });
+  composeQualifier();
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
   });
@@ -193,7 +235,38 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
     'You already have that Target for OKC.',
   );
   expect(screen.getByLabelText('Opponent')).toHaveValue('OKC');
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
   expect(fetchTargets).toHaveBeenCalledTimes(1);
+});
+
+/*
+ * A full account is refused by the same status as a duplicate but for a
+ * different reason, and only the backend knows the cap, so its sentence is the
+ * one the reader sees.
+ */
+test('a refused save against a full account reads as the backend explained it', async () => {
+  createTarget.mockRejectedValue({
+    response: {
+      status: 409,
+      data: {
+        error: {
+          code: 'operation_conflict',
+          message: 'You have reached the limit of 50 Targets.',
+        },
+      },
+    },
+  });
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  });
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'You have reached the limit of 50 Targets.',
+  );
 });
 
 test('a rejected list read stays readable rather than showing an empty account', async () => {

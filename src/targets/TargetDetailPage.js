@@ -4,6 +4,7 @@ import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
 import { deleteTarget, updateTarget } from './targetsApi';
+import TargetsSignedOut from './TargetsSignedOut';
 import { useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
@@ -133,12 +134,7 @@ export default function TargetDetailPage() {
   const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
 
   if (!authLoading && !isAuthenticated) {
-    return (
-      <main className="slate-page signed-out-slate">
-        <h1>Sign in to view your Targets</h1>
-        <p>Use the sign-in control in the navigation to load the Targets saved to your account.</p>
-      </main>
-    );
+    return <TargetsSignedOut />;
   }
 
   const target = targets.find((item) => String(item.id) === targetId);

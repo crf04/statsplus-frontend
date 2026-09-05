@@ -1,8 +1,4 @@
 import { expect, test as base } from '@playwright/test';
-// The Target title is derived, never stored (ADR 0001). The fixture stands in
-// for the backend that derives it, and borrows the app's slice vocabulary so
-// the two cannot disagree about how a Qualifier is spelled.
-import { deriveTargetTitle } from '../../src/targets/targetCatalog';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -1398,27 +1394,56 @@ const canonicalQualifiers = (qualifiers) =>
     .sort()
     .join('|');
 
-const isTargetQualifier = (qualifier) =>
-  Boolean(qualifier) &&
-  typeof qualifier.base === 'string' &&
-  typeof qualifier.slice_key === 'string' &&
-  ['at_or_above', 'at_or_below'].includes(qualifier.comparator) &&
-  typeof qualifier.threshold === 'number' &&
-  qualifier.threshold >= 0 &&
-  qualifier.threshold <= 1;
+/*
+ * The backend derives and stores the Target title; the frontend only ever
+ * displays it. So this stands in for the backend's derivation and deliberately
+ * keeps its own copy of the slice wording and the share format: if the page's
+ * title preview ever drifts from the backend's, a journey has to be able to
+ * see it. See crf04/statsplus
+ * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
+ */
+const BACKEND_SLICE_LABELS = {
+  'Restricted Area': 'Restricted area',
+  'In The Paint (Non-RA)': 'Paint (non-RA)',
+  'Mid-Range': 'Mid-range',
+  'Corner 3': 'Corner 3',
+  'Above the Break 3': 'Above-break 3',
+  Transition: 'Transition',
+  Isolation: 'Isolation',
+  PRBallHandler: 'P&R ball handler',
+  PRRollMan: 'P&R roll man',
+  Spotup: 'Spot up',
+  Cut: 'Cut',
+  Handoff: 'Handoff',
+  OffScreen: 'Off screen',
+  Postup: 'Post up',
+  OffRebound: 'Putback',
+  'Catch and Shoot': 'Catch & shoot',
+  Pullups: 'Pull-up',
+  'Less Than 10 ft': 'Inside 10 ft',
+  Arc3Assists: 'Arc 3 assists',
+  Corner3Assists: 'Corner 3 assists',
+  AtRimAssists: 'At-rim assists',
+  ShortMidRangeAssists: 'Short mid assists',
+  LongMidRangeAssists: 'Long mid assists',
+};
 
-const derivedTargetTitle = (target) =>
-  deriveTargetTitle({
-    opponent: target.opponent,
-    qualifiers: target.qualifiers.map((qualifier) => ({
-      base: qualifier.base,
-      sliceKey: qualifier.slice_key,
-      comparator: qualifier.comparator,
-      threshold: qualifier.threshold,
-    })),
-  });
+const backendShare = (share) => {
+  const percent = (share * 100).toFixed(1);
+  return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
+};
 
-export const TARGET_LIMIT = 25;
+const backendTargetTitle = ({ opponent, qualifiers }) =>
+  `${opponent} vs ${qualifiers
+    .map(
+      (qualifier) =>
+        `${BACKEND_SLICE_LABELS[qualifier.slice_key] || qualifier.slice_key} ${
+          qualifier.comparator === 'at_or_below' ? '≤' : '≥'
+        } ${backendShare(qualifier.threshold)}`,
+    )
+    .join(', ')}`;
+
+const TARGET_LIMIT = 50;
 
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
@@ -1584,17 +1609,18 @@ export const installApiContract = async (page, overrides = {}) => {
       }
     }
 
-    const targetPath =
-      url.pathname === '/api/user/targets'
-        ? [url.pathname, undefined]
-        : url.pathname.match(/^\/api\/user\/targets\/(.+)$/);
-    if (targetPath) {
-      const [, targetId] = targetPath;
+    const targetsMatch = url.pathname.match(/^\/api\/user\/targets(?:\/(.+))?$/);
+    if (targetsMatch) {
+      const [, targetId] = targetsMatch;
       const method = request.method();
       const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
       const index = targets.findIndex((item) => String(item.id) === targetId);
-      const invalidInput = (message) =>
-        route.fulfill({ status: 400, json: { error: { code: 'invalid_input', message } } });
+      const toStored = (qualifier) => ({
+        base: qualifier.base,
+        slice_key: qualifier.slice_key,
+        comparator: qualifier.comparator,
+        threshold: qualifier.threshold,
+      });
       const conflict = (message) =>
         route.fulfill({ status: 409, json: { error: { code: 'operation_conflict', message } } });
 
@@ -1604,22 +1630,7 @@ export const installApiContract = async (page, overrides = {}) => {
       }
 
       if (method === 'POST') {
-        if (
-          typeof body?.opponent !== 'string' ||
-          !body.opponent ||
-          !Array.isArray(body.qualifiers) ||
-          body.qualifiers.length === 0 ||
-          !body.qualifiers.every(isTargetQualifier)
-        ) {
-          await invalidInput('A Target needs an opponent and at least one valid Qualifier.');
-          return;
-        }
-        const qualifiers = body.qualifiers.map((qualifier) => ({
-          base: qualifier.base,
-          slice_key: qualifier.slice_key,
-          comparator: qualifier.comparator,
-          threshold: qualifier.threshold,
-        }));
+        const qualifiers = body.qualifiers.map(toStored);
         if (
           targets.some(
             (item) =>
@@ -1643,37 +1654,20 @@ export const installApiContract = async (page, overrides = {}) => {
           created_at: '2026-04-13T00:10:00Z',
         };
         // Newest-first is the list's contract, as it is for Saved Filter Sets.
-        targets.unshift({ ...created, title: derivedTargetTitle(created) });
+        targets.unshift({ ...created, title: backendTargetTitle(created) });
         await route.fulfill({ status: 201, json: { success: true, target: targets[0] } });
         return;
       }
 
-      if (index === -1) {
-        await route.fulfill({
-          status: 404,
-          json: { error: { code: 'resource_not_found', message: 'Target not found.' } },
-        });
-        return;
-      }
-
       if (method === 'PATCH') {
-        if (!Array.isArray(body?.qualifiers) || !body.qualifiers.every(isTargetQualifier)) {
-          await invalidInput('Every Qualifier needs a slice, a comparator, and a share.');
-          return;
-        }
         // Only the Qualifiers and the note move; the title follows the
         // Qualifiers because it is derived from them.
         const updated = {
           ...targets[index],
-          qualifiers: body.qualifiers.map((qualifier) => ({
-            base: qualifier.base,
-            slice_key: qualifier.slice_key,
-            comparator: qualifier.comparator,
-            threshold: qualifier.threshold,
-          })),
+          qualifiers: body.qualifiers.map(toStored),
           note: body.note || '',
         };
-        targets[index] = { ...updated, title: derivedTargetTitle(updated) };
+        targets[index] = { ...updated, title: backendTargetTitle(updated) };
         await route.fulfill({ json: { success: true, target: targets[index] } });
         return;
       }

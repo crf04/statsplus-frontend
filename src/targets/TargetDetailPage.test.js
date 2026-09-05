@@ -14,12 +14,18 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => auth,
 }));
 
+/*
+ * The title is the backend's and is deliberately not what these Qualifiers
+ * would derive, so displaying a locally derived title fails here. The instant
+ * is near midnight UTC, so a formatter reading it in local time would name the
+ * wrong day.
+ */
 const target = {
   id: 7,
   opponent: 'OKC',
-  title: 'OKC vs Corner 3 ≥ 40%',
+  title: 'OKC vs Corner 3 ≥ 40% (v2)',
   note: 'Leaks the corner late.',
-  createdAt: '2026-04-08T15:12:00Z',
+  createdAt: '2026-04-08T23:30:00Z',
   qualifiers: [
     { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
   ],
@@ -50,7 +56,9 @@ beforeEach(() => {
 test('shows one Target with its Qualifiers, note, creation date, and a way back', async () => {
   renderDetail();
 
-  expect(await screen.findByRole('heading', { name: 'OKC vs Corner 3 ≥ 40%' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: 'OKC vs Corner 3 ≥ 40% (v2)' }),
+  ).toBeInTheDocument();
   expect(screen.getByText('Target · set Apr 8, 2026')).toBeInTheDocument();
   expect(screen.getByText('Leaks the corner late.')).toBeInTheDocument();
   const qualifiers = screen.getAllByRole('listitem');
@@ -140,7 +148,41 @@ test('deleting asks first, then removes the Target and returns to the grid', asy
   });
 
   expect(deleteTarget).toHaveBeenCalledWith({ id: 7 });
-  expect(screen.getByTestId('location')).toHaveTextContent('/targets');
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
+});
+
+/*
+ * The slice vocabulary is the backend's. If a stored Target names a slice this
+ * page has no label for, a picker would quietly swap it for its first option
+ * and the edit would change a criterion nobody touched.
+ */
+test('an unrecognised slice is shown as stored rather than silently replaced', async () => {
+  fetchTargets.mockResolvedValue([
+    {
+      ...target,
+      qualifiers: [
+        { base: 'play_types', sliceKey: 'Misc', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    },
+  ]);
+  renderDetail();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+  const slice = screen.getByLabelText('Qualifier 1 slice');
+  expect(slice).toHaveValue('Misc');
+  expect(slice).toBeDisabled();
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  });
+
+  expect(updateTarget).toHaveBeenCalledWith(
+    expect.objectContaining({
+      qualifiers: [
+        { base: 'play_types', sliceKey: 'Misc', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    }),
+  );
 });
 
 test('signed out, the detail asks for sign-in the way the slate does', () => {

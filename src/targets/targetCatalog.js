@@ -98,7 +98,15 @@ export const targetSliceLabel = (base, sliceKey) =>
 export const comparatorSymbol = (comparator) =>
   TARGET_COMPARATORS.find((entry) => entry.key === comparator)?.symbol || comparator;
 
-export const formatShare = (share) => `${Math.round(share * 100)}%`;
+/*
+ * The backend writes a share as a whole percent when it is one and to a single
+ * decimal otherwise, so 0.4 reads 40% and 0.405 reads 40.5%. The preview has to
+ * spell it the same way or it would promise a title the backend will not store.
+ */
+export const formatShare = (share) => {
+  const percent = (share * 100).toFixed(1);
+  return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
+};
 
 export const formatQualifier = (qualifier) =>
   `${targetSliceLabel(qualifier.base, qualifier.sliceKey)} ${comparatorSymbol(
@@ -106,11 +114,12 @@ export const formatQualifier = (qualifier) =>
   )} ${formatShare(qualifier.threshold)}`;
 
 /*
- * The backend owns the stored title (ADR 0001), so this derivation exists only
- * to preview the title an unsaved draft would earn. It follows the documented
- * format: opponent tricode, "vs", then each Qualifier, comma-separated. The
- * slice wording is this page's, so if the backend spells a slice differently
- * the labels above are what has to move, never the saved title.
+ * The backend owns the stored title, so this derivation exists only to preview
+ * the title an unsaved draft would earn. It follows the documented format:
+ * opponent tricode, "vs", then each Qualifier, comma-separated. The slice
+ * wording is this page's, so if the backend spells a slice differently the
+ * labels above are what has to move, never the saved title. See crf04/statsplus
+ * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
 export const deriveTargetTitle = ({ opponent, qualifiers }) =>
   `${opponent} vs ${qualifiers.map(formatQualifier).join(', ')}`;

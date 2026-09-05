@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { blankTargetDraft } from './TargetForm';
-import { comparatorSymbol, formatShare, targetSliceLabel } from './targetCatalog';
+import { formatQualifier } from './targetCatalog';
 import { createTarget } from './targetsApi';
+import TargetsSignedOut from './TargetsSignedOut';
 import { useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
@@ -24,12 +25,7 @@ function TargetCard({ target }) {
         <span className="target-card-opponent">{target.opponent}</span>
         <span className="target-card-qualifiers">
           {target.qualifiers.map((qualifier, index) => (
-            <span key={index}>
-              {targetSliceLabel(qualifier.base, qualifier.sliceKey)}{' '}
-              <b>
-                {comparatorSymbol(qualifier.comparator)} {formatShare(qualifier.threshold)}
-              </b>
-            </span>
+            <b key={index}>{formatQualifier(qualifier)}</b>
           ))}
         </span>
         <span className={`target-card-note${target.note ? '' : ' is-empty'}`}>
@@ -50,12 +46,7 @@ export default function TargetsPage() {
   const [saveError, setSaveError] = useState(null);
 
   if (!authLoading && !isAuthenticated) {
-    return (
-      <main className="slate-page signed-out-slate">
-        <h1>Sign in to view your Targets</h1>
-        <p>Use the sign-in control in the navigation to load the Targets saved to your account.</p>
-      </main>
-    );
+    return <TargetsSignedOut />;
   }
 
   /*

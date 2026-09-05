@@ -7,11 +7,16 @@ import {
   parseThresholdPercent,
 } from './targetCatalog';
 
+/*
+ * A new Qualifier starts without a threshold. A pre-filled one would make the
+ * form saveable before anybody had composed anything, and the first Target of
+ * the day would be whatever the defaults happened to say.
+ */
 export const blankQualifier = () => ({
   base: 'shot_zones',
-  sliceKey: 'Corner 3',
+  sliceKey: TARGET_SLICES.shot_zones[0][0],
   comparator: 'at_or_above',
-  thresholdPercent: '25',
+  thresholdPercent: '',
 });
 
 export const blankTargetDraft = () => ({
@@ -37,7 +42,7 @@ export const targetToDraft = (target) => ({
     base: qualifier.base,
     sliceKey: qualifier.sliceKey,
     comparator: qualifier.comparator,
-    thresholdPercent: String(Math.round(qualifier.threshold * 100)),
+    thresholdPercent: String(Math.round(qualifier.threshold * 1000) / 10),
   })),
   note: target.note,
 });
@@ -135,17 +140,32 @@ export default function TargetForm({
               </option>
             ))}
           </select>
-          <select
-            aria-label={`Qualifier ${index + 1} slice`}
-            value={qualifier.sliceKey}
-            onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
-          >
-            {TARGET_SLICES[qualifier.base].map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+          {/* A stored Target can name a slice this page has no label for. A
+              picker would silently swap it for its first option, so an unknown
+              slice is shown as it was stored and left alone. */}
+          {TARGET_SLICES[qualifier.base].some(([key]) => key === qualifier.sliceKey) ? (
+            <select
+              aria-label={`Qualifier ${index + 1} slice`}
+              value={qualifier.sliceKey}
+              onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
+            >
+              {TARGET_SLICES[qualifier.base].map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              aria-label={`Qualifier ${index + 1} slice`}
+              className="target-unknown-slice"
+              value={qualifier.sliceKey}
+              disabled
+              readOnly
+            >
+              <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
+            </select>
+          )}
           <div
             className="target-comparator"
             role="group"
@@ -168,7 +188,7 @@ export default function TargetForm({
               type="number"
               min="0"
               max="100"
-              step="1"
+              step="0.1"
               aria-label={`Qualifier ${index + 1} threshold percent`}
               value={qualifier.thresholdPercent}
               onChange={(event) => patchQualifier(index, { thresholdPercent: event.target.value })}

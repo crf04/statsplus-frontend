@@ -59,6 +59,10 @@ test('decodes the list to what the UI needs, keeping the backend order', () => {
 
 test('refuses a response that is not the documented list', () => {
   expect(() => decodeTargets({ success: true })).toThrow(/invalid response/i);
+  // Every Target is opened by id, so a record without one cannot be reached.
+  expect(() => decodeTargets({ targets: [{ ...wireTarget, id: undefined }] })).toThrow(
+    /invalid response/i,
+  );
   // The title is the backend's to derive, so a record without one is unusable.
   expect(() => decodeTargets({ targets: [{ ...wireTarget, title: undefined }] })).toThrow(
     /invalid response/i,

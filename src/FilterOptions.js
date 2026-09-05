@@ -702,15 +702,12 @@ const FilterOptions = ({
                 vs {opponentTricode}
                 <Button
                   type="button"
-                  aria-label={`Remove ${opponentTricode} opponent filter`}
-                  title="Remove filter"
+                  aria-label={`Remove ${opponentTricode} opponent`}
+                  title="Remove opponent"
                   variant="link"
                   size="sm"
                   className="text-light p-0 ms-2"
-                  onClick={() => {
-                    setOpponentTricode('');
-                    markControlTouched('opponent_tricode');
-                  }}
+                  onClick={() => setOpponentTricode('')}
                 >
                   ×
                 </Button>

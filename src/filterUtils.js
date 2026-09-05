@@ -274,9 +274,10 @@ export const filterSetFromSearchParams = (searchParams) => {
    * `teams_against[]`. Case is not vocabulary though: canonicalising it is what
    * keeps a hand-typed link producing the request the API reads.
    */
-  readDecoded('opponent_tricode', (value) =>
-    /^[A-Za-z]{3}$/.test(value.trim()) ? value.trim().toUpperCase() : null,
-  );
+  readDecoded('opponent_tricode', (value) => {
+    const tricode = value.trim();
+    return /^[A-Za-z]{3}$/.test(tricode) ? tricode.toUpperCase() : null;
+  });
   // 0-200 is the API's own playtype rating domain and the slider now spans
   // exactly it, so a bound outside it is a value we cannot honour and names
   // itself rather than arriving as a range no control could show.

@@ -610,13 +610,13 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   // The opponent travels on the request, and the panel says which one is fixed.
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
   expect(gameLogRequests.at(-1).searchParams.get('opponent_tricode')).toBe('ATL');
-  await expect(page.getByRole('button', { name: 'Remove ATL opponent filter' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
 
   // Clearing it removes it from the URL and from the request that follows.
   const fixedRequestCount = gameLogRequests.length;
-  await page.getByRole('button', { name: 'Remove ATL opponent filter' }).click();
+  await page.getByRole('button', { name: 'Remove ATL opponent' }).click();
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 
   await expect(page).not.toHaveURL(/opponent_tricode/);

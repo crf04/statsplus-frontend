@@ -303,7 +303,7 @@ test('the panel shows the opponent the Filter Set fixes, and applies it unchange
 test('clearing the opponent applies a blank value instead of leaving it fixed', () => {
   const onApplyFilters = renderPanel({ player_name: 'LeBron James', opponent_tricode: 'OKC' });
 
-  fireEvent.click(screen.getByRole('button', { name: 'Remove OKC opponent filter' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Remove OKC opponent' }));
 
   expect(screen.queryByText(/vs OKC/)).not.toBeInTheDocument();
 
@@ -316,9 +316,16 @@ test('clearing the opponent applies a blank value instead of leaving it fixed', 
 });
 
 test('a panel opened without an opponent offers no opponent control at all', () => {
-  renderPanel({ player_name: 'LeBron James' });
+  const onApplyFilters = renderPanel({ player_name: 'LeBron James' });
 
   expect(screen.queryByText('Opponent:')).not.toBeInTheDocument();
+
+  applyFilters();
+
+  // Not merely absent from the panel: a Filter Set that never named an opponent
+  // must not acquire the parameter at all, not even as a blank one that would
+  // read as a cleared opponent.
+  expect(onApplyFilters).toHaveBeenCalledWith({ player_name: 'LeBron James' });
 });
 
 test('clearing a control applies a blank value instead of leaving the bound behind', () => {

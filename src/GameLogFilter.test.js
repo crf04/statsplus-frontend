@@ -286,6 +286,40 @@ test('a saved link we can no longer honour opens with the existing URL-entry ref
   expect(fetchGameLogsData).not.toHaveBeenCalled();
 });
 
+/*
+ * A saved Filter Set is stored as its query string, so replaying one is the
+ * URL-entry path taken from the list rather than the address bar. The opponent
+ * has to survive that round trip and reach the request, or a saved "vs OKC"
+ * would quietly reopen as the whole season.
+ */
+test('replays a saved Filter Set with its opponent still fixed', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    {
+      id: 3,
+      name: 'LeBron vs OKC',
+      queryString: 'player_name=LeBron+James&opponent_tricode=OKC',
+    },
+  ]);
+  renderGameLogFilter(['/']);
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open saved Filter Set LeBron vs OKC' }),
+  );
+
+  await waitFor(() =>
+    expect(fetchGameLogsData).toHaveBeenCalledWith(
+      expect.objectContaining({ player_name: 'LeBron James', opponent_tricode: 'OKC' }),
+      expect.anything(),
+    ),
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent(
+    '/?player_name=LeBron+James&opponent_tricode=OKC',
+  );
+});
+
 test('offers nothing to save until the URL carries a Filter Set', async () => {
   renderGameLogFilter(['/?browse=1']);
 

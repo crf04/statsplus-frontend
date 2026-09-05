@@ -1,41 +1,69 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
-import { fetchTargets } from './targetsApi';
+import { fetchResolvedTargets, fetchTargets } from './targetsApi';
+
+const LOAD_FAILURE = 'Unable to load your Targets. Please try again.';
+
+const EMPTY_LIST = { targets: [] };
+const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
 
 /*
- * Both Target surfaces read the same account-private list: the grid shows all
- * of it and the detail route picks one out of it, because the contract has no
- * single-Target read. A mutation reloads rather than patching in place, so the
- * derived titles on screen are always the ones the backend just derived.
+ * Each read returns the state it contributes, so the hook below can hold both
+ * without knowing which one it is holding.
  */
-export const useTargets = () => {
+const readList = ({ signal }) => fetchTargets({ signal }).then((targets) => ({ targets }));
+const readResolution = ({ date, signal }) => fetchResolvedTargets({ date, signal });
+
+/*
+ * One account-private read, in the two shapes the Target surfaces need. Both
+ * are read the same way — nothing before sign-in, one in-flight request that
+ * is abandoned when the page moves on, and a reload that refetches rather than
+ * patching in place, so what is on screen is always what the backend last
+ * returned.
+ */
+const useAccountRead = (read, empty, date) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [state, setState] = useState({ status: 'idle', targets: [], error: null });
+  const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
-      setState({ status: 'idle', targets: [], error: null });
+      setState({ status: 'idle', error: null, ...empty });
       return undefined;
     }
     const controller = new AbortController();
-    setState({ status: 'loading', targets: [], error: null });
-    fetchTargets({ signal: controller.signal })
-      .then((targets) => setState({ status: 'ready', targets, error: null }))
+    setState({ status: 'loading', error: null, ...empty });
+    read({ date, signal: controller.signal })
+      .then((data) => setState({ status: 'ready', error: null, ...data }))
       .catch((error) => {
         if (!isRequestCancelled(error)) {
           setState({
             status: 'error',
-            targets: [],
-            error: getRequestErrorMessage(error, 'Unable to load your Targets. Please try again.'),
+            error: getRequestErrorMessage(error, LOAD_FAILURE),
+            ...empty,
           });
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, reloadToken]);
+  }, [authLoading, isAuthenticated, date, read, empty, reloadToken]);
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
   return { authLoading, isAuthenticated, reload, ...state };
 };
+
+/*
+ * The account's Targets as records: what the grid lists, and what the detail
+ * route identifies one by. This is the read that keeps a Target manageable,
+ * so it never depends on the day resolving.
+ */
+export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
+
+/*
+ * The same Targets read against one Slate Date. The Slate passes the date it
+ * is showing so the blocks under its rows belong to the games above them; the
+ * other surfaces pass none, which is the Slate's own current date, and read
+ * the date back off the response rather than working it out a second time.
+ */
+export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);

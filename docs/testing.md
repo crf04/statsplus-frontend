@@ -95,6 +95,16 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests.
 
+Target resolution is composed from those same two Matchups rather than canned, so the shares and
+Defense Sheet readings a Target shows are the ones the Matchup page shows for the same game.
+`0022500584` resolves on `2026-01-15` against the stored Player Pool and `0022501082` on
+`2026-03-29` against game-log participants; a Target naming any other team is idle. Two values the
+backend derives are recomputed rather than copied: whether a fit's Diet is thin, from the
+`games_played` and `volume` on each stored fact against the Matchup Score's floors, and the derived
+title. The slate route reports pool freshness that matches the evidence resolution reports for the
+same date — a fresh pool on the scheduled date, none on the completed one — so a journey never sees
+one route call a pool unavailable while the other lists players from it.
+
 Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts). A date the
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
 so anything asserting a calendar day should use an instant near midnight UTC.

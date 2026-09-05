@@ -5,19 +5,16 @@ import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   formatCalendarDate,
+  formatTip,
   getTodaySlateDate,
   parseCalendarDate,
   shiftCalendarDate,
 } from './calendarDate';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
+import { SlateGameTargets } from './targets/TargetFits';
+import { useResolvedTargets } from './targets/useTargets';
 import './SlatePage.css';
-
-const formatTip = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(date));
 
 const surfaceStatusText = (name, surface, presentation, now) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt, now)}` : '';
@@ -104,7 +101,7 @@ const groupByTip = (games) =>
       return groups;
     }, []);
 
-function GameRow({ game }) {
+function GameRow({ game, extra }) {
   const away = game.away.targetablePlayerCount;
   const home = game.home.targetablePlayerCount;
   const total = away + home;
@@ -176,11 +173,14 @@ function GameRow({ game }) {
           →
         </span>
       </Link>
+      {/* The row itself is one link, so anything the game grows — today, the
+          Targets aimed at it — hangs beneath it rather than inside it. */}
+      {extra}
     </li>
   );
 }
 
-function SlateBoard({ games }) {
+function SlateBoard({ games, renderExtra }) {
   return (
     <ol className="slate-board">
       {groupByTip(games).map((group) => (
@@ -188,7 +188,7 @@ function SlateBoard({ games }) {
           <h2 className="slate-window-tip">{group.tip}</h2>
           <ul className="slate-rows">
             {group.games.map((game) => (
-              <GameRow key={game.gameId} game={game} />
+              <GameRow key={game.gameId} game={game} extra={renderExtra?.(game)} />
             ))}
           </ul>
         </li>
@@ -205,6 +205,14 @@ export default function SlatePage() {
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
+  /*
+   * The day's Targets are read for the date being viewed, so a block always
+   * belongs to the game row above it. The read is separate from the slate's:
+   * a Target that cannot be resolved says so on its own line and leaves the
+   * board intact.
+   */
+  const resolvedTargets = useResolvedTargets(requestedDate || undefined);
+  const liveEntries = resolvedTargets.entries.filter((entry) => entry.game);
   const now = useMinuteNow(state.status === 'ready');
   const slateDate =
     state.status === 'ready'
@@ -314,6 +322,18 @@ export default function SlatePage() {
             <span className="slate-count">
               {state.slate.games.length} {state.slate.games.length === 1 ? 'game' : 'games'}
             </span>
+            {resolvedTargets.status === 'ready' && (
+              <span className="slate-targets">
+                {liveEntries.length} {liveEntries.length === 1 ? 'Target' : 'Targets'} active
+                {' · '}
+                <Link to="/targets">All Targets →</Link>
+              </span>
+            )}
+            {resolvedTargets.status === 'error' && (
+              <span className="slate-targets is-unavailable">
+                Targets unavailable · <Link to="/targets">All Targets →</Link>
+              </span>
+            )}
             <Freshness
               freshness={state.slate.freshness}
               now={now}
@@ -327,7 +347,14 @@ export default function SlatePage() {
               <p>Choose another date to keep browsing the season.</p>
             </div>
           ) : (
-            <SlateBoard games={state.slate.games} />
+            <SlateBoard
+              games={state.slate.games}
+              renderExtra={(game) => (
+                <SlateGameTargets
+                  entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
+                />
+              )}
+            />
           )}
         </>
       )}

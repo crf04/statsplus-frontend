@@ -323,7 +323,7 @@ test('slate remains usable at a narrow viewport and from the keyboard', async ({
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Matchups' })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: 'Targets' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Targets', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: /CourtAI Test User/i })).toBeFocused();
   await page.keyboard.press('Tab');

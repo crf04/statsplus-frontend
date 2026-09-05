@@ -1457,6 +1457,191 @@ const backendTargetTitle = ({ opponent, qualifiers }) =>
 
 const TARGET_LIMIT = 50;
 
+/*
+ * Resolution composes the Slate for a date with the Matchup for each game a
+ * Target's opponent plays, so this contract resolves the account's Targets
+ * against its own two Matchups rather than replaying a canned answer. A
+ * journey then sees the shares, thin flags and Defense Sheet readings the
+ * Matchup page shows for the same game, which is the agreement the backend
+ * composes for. The scheduled game resolves against the stored Player Pool
+ * and the completed one against canonical game-log participants.
+ */
+const HISTORICAL_SLATE_DATE = '2026-03-29';
+const DEFAULT_SLATE_DATE = '2026-01-15';
+
+const RESOLVABLE_SLATES = {
+  [DEFAULT_SLATE_DATE]: {
+    matchup: matchupPayload,
+    availability: {
+      status: 'available',
+      source: 'player_pool',
+      context: 'current',
+      unavailable_reason: null,
+    },
+  },
+  [HISTORICAL_SLATE_DATE]: {
+    matchup: historicalMatchupPayload,
+    availability: {
+      status: 'available',
+      source: 'game_logs',
+      context: 'completed_season',
+      unavailable_reason: null,
+    },
+  },
+};
+
+const IDLE_AVAILABILITY = {
+  status: 'unavailable',
+  source: null,
+  context: null,
+  unavailable_reason: 'opponent_idle',
+};
+
+// A row key is the slice on its own when the slice and the statistic share a
+// name, and `slice:stat` otherwise.
+const namesSlice = (rowKey, sliceKey) => rowKey === sliceKey || rowKey.startsWith(`${sliceKey}:`);
+
+const resolvedContext = (qualifier, sheet, sheetLeague) => {
+  const leagueRows = Object.fromEntries(
+    (sheetLeague.defense_sheet[qualifier.base] || []).map((row) => [row.key, row]),
+  );
+  return {
+    base: qualifier.base,
+    slice_key: qualifier.slice_key,
+    label: BACKEND_SLICE_LABELS[qualifier.slice_key] || qualifier.slice_key,
+    // The window availability is the Matchup's own, so a Base that publishes
+    // no Last 15 carries no Last 15 value here either.
+    availability: sheetLeague.surface_availability[qualifier.base],
+    metrics: (sheet[qualifier.base] || [])
+      .filter((row) => namesSlice(row.key, qualifier.slice_key))
+      .map((row) => ({
+        key: row.key,
+        label: row.label,
+        markets: row.markets,
+        opponent: { season: row.season, last_15: row.last_15 },
+        league: {
+          season: leagueRows[row.key]?.season || null,
+          last_15: leagueRows[row.key]?.last_15 || null,
+        },
+      })),
+  };
+};
+
+// The Matchup Score's own thin floors: every fact in the Base needs the games,
+// and the Base's volume per game has to clear its floor.
+const THIN_MIN_GAMES = 5;
+const THIN_MIN_VOLUME_PER_GAME = {
+  play_types: 1,
+  shot_zones: 1,
+  shot_types: 4,
+  assist_locations: 1,
+};
+
+const thinBase = (base, facts) =>
+  facts.some((fact) => fact.season.games_played < THIN_MIN_GAMES) ||
+  facts.reduce((total, fact) => total + fact.season.volume / fact.season.games_played, 0) <
+    THIN_MIN_VOLUME_PER_GAME[base];
+
+const resolvedFit = (qualifiers, player) => {
+  const shares = [];
+  let thin = false;
+  for (const qualifier of qualifiers) {
+    const facts = player.diet_shares[qualifier.base] || [];
+    const fact = facts.find((item) => item.key === qualifier.slice_key);
+    // No stored share for the slice is not a share of zero, so the player is
+    // unjudged rather than judged to fit.
+    if (!fact) return null;
+    const meets =
+      qualifier.comparator === 'at_or_below'
+        ? fact.season.share <= qualifier.threshold
+        : fact.season.share >= qualifier.threshold;
+    if (!meets) return null;
+    shares.push({
+      base: qualifier.base,
+      slice_key: qualifier.slice_key,
+      share: fact.season.share,
+      league_average_share: fact.season.league_average_share,
+    });
+    thin = thin || thinBase(qualifier.base, facts);
+  }
+  return {
+    canonical_id: player.canonical_id,
+    name: player.name,
+    team_id: player.team_id,
+    tricode: player.tricode,
+    posted_markets: player.posted_markets,
+    injury_badge_ref: player.injury_badge_ref,
+    season_scoring: player.season_scoring,
+    thin,
+    shares,
+  };
+};
+
+const teamReference = (side) => ({
+  team_id: side.team_id,
+  tricode: side.tricode,
+  name: side.name,
+});
+
+const resolveTargets = (date, targets) => {
+  const slate = RESOLVABLE_SLATES[date];
+  const live = [];
+  const idle = [];
+  targets.forEach((target) => {
+    const game = slate?.matchup.game;
+    const sides =
+      game?.away_team.tricode === target.opponent
+        ? [game.away_team, game.home_team]
+        : game?.home_team.tricode === target.opponent
+          ? [game.home_team, game.away_team]
+          : null;
+    if (!sides) {
+      idle.push({
+        target,
+        game: null,
+        context: [],
+        availability: IDLE_AVAILABILITY,
+        players: [],
+      });
+      return;
+    }
+    const [opponent, opposing] = sides;
+    const sheet = slate.matchup.teams.find(
+      (team) => team.team_id === opponent.team_id,
+    ).defense_sheet;
+    live.push({
+      target,
+      game: {
+        game_id: game.game_id,
+        scheduled_at: game.scheduled_at,
+        status: game.status,
+        // Which side is at home is the game's; which one the Target is about
+        // is the Target's.
+        away: teamReference(game.away_team),
+        home: teamReference(game.home_team),
+        opponent: teamReference(opponent),
+        opposing_team: teamReference(opposing),
+      },
+      context: target.qualifiers.map((qualifier) =>
+        resolvedContext(qualifier, sheet, slate.matchup.league),
+      ),
+      availability: slate.availability,
+      // The Matchup orders its players by season scoring descending, so
+      // keeping its order is that ordering.
+      players: slate.matchup.players
+        .filter((player) => player.team_id !== opponent.team_id)
+        .map((player) => resolvedFit(target.qualifiers, player))
+        .filter(Boolean),
+    });
+  });
+  // Live Targets first, then idle, each keeping the list's newest-first order.
+  return { slate_date: date, targets: [...live, ...idle] };
+};
+
+const isCalendarDate = (value) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -1636,6 +1821,22 @@ export const installApiContract = async (page, overrides = {}) => {
       const conflict = (message) =>
         route.fulfill({ status: 409, json: { error: { code: 'operation_conflict', message } } });
 
+      // Day-scoped resolution, not a Target with the id "resolve".
+      if (targetId === 'resolve') {
+        const date = url.searchParams.get('date');
+        if (date !== null && !isCalendarDate(date)) {
+          await route.fulfill({
+            status: 400,
+            json: { error: { code: 'invalid_input', message: 'Enter a valid date.' } },
+          });
+          return;
+        }
+        await route.fulfill({
+          json: { success: true, ...resolveTargets(date || DEFAULT_SLATE_DATE, targets) },
+        });
+        return;
+      }
+
       if (method === 'GET') {
         await route.fulfill({ json: { success: true, targets } });
         return;
@@ -1738,8 +1939,21 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/games/slate') {
-      const date = url.searchParams.get('date') || '2026-01-15';
-      await route.fulfill({ json: slatePayload(date, [scheduleOnlySlateGame]) });
+      const date = url.searchParams.get('date') || DEFAULT_SLATE_DATE;
+      // The completed LAC @ MIL game is on its own date, so a Target aimed at
+      // either side of it resolves against game-log participants there. The
+      // pool freshness matches the evidence resolution reports for the same
+      // date: a stored Player Pool on the scheduled date, none on the
+      // completed one, where the participants are the game's own logs.
+      await route.fulfill({
+        json:
+          date === HISTORICAL_SLATE_DATE
+            ? slatePayload(date, [historicalGame])
+            : slatePayload(date, [scheduleOnlySlateGame], {
+                poolFreshnessStatus: 'fresh',
+                poolRetrievedAt: '2026-01-15T11:50:00Z',
+              }),
+      });
       return;
     }
 

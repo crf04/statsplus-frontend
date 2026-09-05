@@ -3,8 +3,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import SlatePage from './SlatePage';
 import { fetchSlate } from './slateApi';
+import { fetchResolvedTargets } from './targets/targetsApi';
 
 jest.mock('./slateApi', () => ({ fetchSlate: jest.fn() }));
+jest.mock('./targets/targetsApi', () => ({ fetchResolvedTargets: jest.fn() }));
 jest.mock('./contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false }),
 }));
@@ -49,6 +51,7 @@ const slate = {
 beforeEach(() => {
   jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00Z'));
   fetchSlate.mockResolvedValue(slate);
+  fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-01-15', entries: [] });
 });
 
 afterEach(() => {
@@ -296,7 +299,7 @@ test('opens Team Sheets from anywhere on the row', async () => {
   expect(row).toHaveAccessibleName(
     /^LAL @ BOS, .+, 9 targetable players, LAL 5, BOS 4, Open Team Sheets$/,
   );
-  expect(screen.getAllByRole('link')).toHaveLength(1);
+  expect(within(row.closest('li')).getAllByRole('link')).toHaveLength(1);
 });
 
 test.each([
@@ -481,4 +484,190 @@ test('uses the server slate date for the heading and historical pool state', asy
 
   expect(await screen.findByRole('heading', { name: 'Wednesday, January 14, 2026' })).toBeVisible();
   expect(screen.getByText(/current player pool is not displayed/i)).toBeVisible();
+});
+
+/*
+ * The day's Targets hang under the game rows they belong to. A resolved entry
+ * is what the resolve read returns for one Target on one date: the game its
+ * opponent plays, the opponent's readings on each Qualifier's slice, and the
+ * opposing players who meet every Qualifier.
+ */
+const corner3 = {
+  base: 'shot_zones',
+  sliceKey: 'Corner 3',
+  comparator: 'at_or_above',
+  threshold: 0.4,
+};
+
+const resolvedEntry = (overrides = {}) => ({
+  target: {
+    id: 7,
+    opponent: 'BOS',
+    title: 'BOS vs Corner 3 ≥ 40%',
+    note: '',
+    createdAt: '2026-01-10T00:10:00Z',
+    qualifiers: [corner3],
+  },
+  game: {
+    gameId: '0022500584',
+    scheduledAt: '2026-01-16T00:30:00.000Z',
+    status: { state: 'scheduled', label: 'Scheduled' },
+    away: { tricode: 'LAL' },
+    home: { tricode: 'BOS' },
+    opponent: { tricode: 'BOS' },
+    opposingTeam: { tricode: 'LAL' },
+  },
+  availability: { status: 'available', source: 'player_pool', unavailableReason: null },
+  context: [{ label: 'Corner 3', metrics: [] }],
+  players: [
+    {
+      canonicalId: 2544,
+      name: 'LeBron James',
+      tricode: 'LAL',
+      seasonScoring: 25.4,
+      thin: false,
+      shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+    },
+  ],
+  ...overrides,
+});
+
+const renderSlate = () =>
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+test('a game with a Target grows a block of its fits beneath the row', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [resolvedEntry()],
+  });
+
+  renderSlate();
+
+  const row = (await screen.findByRole('heading', { name: 'LAL @ BOS' })).closest('li');
+  const block = within(within(row).getByRole('article'));
+  // The Target, as its title is derived: the opponent, then the bound.
+  expect(block.getByText('BOS')).toBeVisible();
+  expect(block.getByText('≥ 40%')).toBeVisible();
+  expect(block.getByText('1')).toBeVisible();
+  expect(block.getByText('fit', { exact: false })).toBeVisible();
+  // One column per Qualifier, so a share is attributable to what demanded it.
+  expect(block.getByRole('columnheader', { name: 'Corner 3' })).toBeVisible();
+  // The share that made the player fit, against what the league does on it.
+  expect(block.getByText('LeBron James')).toBeVisible();
+  expect(block.getByText('44%')).toBeVisible();
+  expect(block.getByText('lg 20%')).toBeVisible();
+  expect(block.getByText('25.4')).toBeVisible();
+  // A stored Player Pool named these players, so there is no other evidence
+  // to name; only a completed game's participants are captioned.
+  expect(block.queryByText('from game logs')).not.toBeInTheDocument();
+  // The Slate says how many Targets the day has, and where all of them live.
+  expect(screen.getByText('1 Target active', { exact: false })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'All Targets →' })).toHaveAttribute('href', '/targets');
+  // The date being viewed is the date the Targets were resolved against.
+  await waitFor(() =>
+    expect(fetchResolvedTargets).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-01-15' }),
+    ),
+  );
+});
+
+test('a thin diet is flagged in the fit list rather than dropped from it', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [
+      resolvedEntry({
+        players: [
+          {
+            canonicalId: 1630559,
+            name: 'Austin Reaves',
+            tricode: 'LAL',
+            seasonScoring: 20.1,
+            thin: true,
+            shares: [{ share: 0.41, leagueAverageShare: null }],
+          },
+        ],
+      }),
+    ],
+  });
+
+  renderSlate();
+
+  expect(await screen.findByText('Austin Reaves')).toBeVisible();
+  expect(screen.getByText('thin')).toBeVisible();
+  // Nothing to compare against is not a league average of zero.
+  expect(screen.queryByText(/^lg /)).not.toBeInTheDocument();
+});
+
+test('an unavailable pool reads differently from nobody fitting', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [
+      resolvedEntry({ players: [] }),
+      resolvedEntry({
+        target: { ...resolvedEntry().target, id: 8, title: 'BOS vs Corner 3 ≥ 50%' },
+        availability: {
+          status: 'unavailable',
+          source: 'player_pool',
+          unavailableReason: 'player_pool_unavailable',
+        },
+        players: [],
+      }),
+    ],
+  });
+
+  renderSlate();
+
+  expect(await screen.findByText('No LAL player meets every Qualifier today.')).toBeVisible();
+  expect(screen.getByText(/LAL pool unavailable: player_pool_unavailable/)).toBeVisible();
+  expect(screen.getByText(/not the same as nobody fitting/)).toBeVisible();
+  // An unavailable pool has no count to state; a fitless one counts zero.
+  expect(screen.getByText('0')).toBeVisible();
+  expect(screen.getByText('2 Targets active', { exact: false })).toBeVisible();
+});
+
+test('an idle Target adds nothing to the board and counts as nothing active', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [
+      {
+        ...resolvedEntry(),
+        target: { ...resolvedEntry().target, id: 9, opponent: 'OKC' },
+        game: null,
+        availability: {
+          status: 'unavailable',
+          source: null,
+          unavailableReason: 'opponent_idle',
+        },
+        context: [],
+        players: [],
+      },
+    ],
+  });
+
+  renderSlate();
+
+  expect(await screen.findByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
+  expect(screen.getByText('0 Targets active', { exact: false })).toBeVisible();
+  expect(screen.queryByText('OKC')).not.toBeInTheDocument();
+});
+
+/*
+ * The Targets read is not the slate's. A slate that loaded is still worth
+ * reading, so a refused resolution says so on its own line instead of
+ * claiming that no Target is active today.
+ */
+test('a refused Targets read leaves the board standing and does not claim zero', async () => {
+  fetchResolvedTargets.mockRejectedValue({
+    response: { status: 503, data: { error: { message: 'Targets are unavailable.' } } },
+  });
+
+  renderSlate();
+
+  expect(await screen.findByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
+  expect(screen.getByText('Targets unavailable', { exact: false })).toBeVisible();
+  expect(screen.queryByText(/Targets active/)).not.toBeInTheDocument();
 });

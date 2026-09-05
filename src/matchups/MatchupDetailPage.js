@@ -7,9 +7,15 @@ import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
-import { findDietShare, formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
+import {
+  UNAVAILABLE_RELATIVE_LABEL,
+  findDietShare,
+  formatFocalGameLine,
+  getDisplayableDietShare,
+} from './displayConfig';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
+import '../readings.css';
 import './MatchupDetailPage.css';
 
 const WINDOWS = [
@@ -34,7 +40,6 @@ const SHARE_LABELS = {
   shotTypes: 'FGA',
   assistLocations: 'ast',
 };
-const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
 const SECTION_ORDER = [
   ['schedule', 'Schedule'],
   ['participants', 'Participants'],

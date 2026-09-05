@@ -1,8 +1,10 @@
 import { apiClient } from '../config';
 import {
   createTarget,
+  decodeResolvedTargets,
   decodeTargets,
   deleteTarget,
+  fetchResolvedTargets,
   fetchTargets,
   updateTarget,
 } from './targetsApi';
@@ -147,4 +149,345 @@ test('deletes one Target by id', async () => {
   await deleteTarget({ id: 7 });
 
   expect(apiClient.delete).toHaveBeenCalledWith('/api/user/targets/7');
+});
+
+const wireResolvedLive = {
+  target: wireTarget,
+  game: {
+    game_id: '0022500584',
+    scheduled_at: '2026-01-16T00:30:00Z',
+    status: { state: 'scheduled', label: 'Scheduled' },
+    away: { team_id: 1610612747, tricode: 'LAL', name: 'Los Angeles Lakers' },
+    home: { team_id: 1610612760, tricode: 'OKC', name: 'Oklahoma City Thunder' },
+    opponent: { team_id: 1610612760, tricode: 'OKC', name: 'Oklahoma City Thunder' },
+    opposing_team: { team_id: 1610612747, tricode: 'LAL', name: 'Los Angeles Lakers' },
+  },
+  context: [
+    {
+      base: 'shot_zones',
+      slice_key: 'Corner 3',
+      label: 'Corner 3',
+      availability: {
+        season: { status: 'available', unavailable_reason: null },
+        last_15: { status: 'available', unavailable_reason: null },
+      },
+      metrics: [
+        {
+          key: 'Corner 3:FGA',
+          label: 'Corner 3 FGA',
+          markets: ['FGA', 'FG3A'],
+          opponent: {
+            season: {
+              allowed_per_48: 9.4,
+              percent_vs_league_average: 9.7,
+              sigma_deviation: 1.2,
+              rank: 27,
+            },
+            last_15: {
+              allowed_per_48: 8.1,
+              percent_vs_league_average: -4.2,
+              sigma_deviation: -0.6,
+              rank: 11,
+            },
+          },
+          league: {
+            season: { average_allowed_per_48: 8.6, sigma: 0.7 },
+            last_15: { average_allowed_per_48: 8.5, sigma: 0.6 },
+          },
+        },
+      ],
+    },
+  ],
+  availability: {
+    status: 'available',
+    source: 'player_pool',
+    context: 'current',
+    unavailable_reason: null,
+  },
+  players: [
+    {
+      canonical_id: 2544,
+      name: 'LeBron James',
+      team_id: 1610612747,
+      tricode: 'LAL',
+      posted_markets: ['PTS'],
+      injury_badge_ref: null,
+      season_scoring: 25.4,
+      thin: false,
+      shares: [
+        { base: 'shot_zones', slice_key: 'Corner 3', share: 0.44, league_average_share: 0.2 },
+      ],
+    },
+  ],
+};
+
+const wireResolvedIdle = {
+  target: { ...wireTarget, id: 8, opponent: 'MIA' },
+  game: null,
+  context: [],
+  availability: {
+    status: 'unavailable',
+    source: null,
+    context: null,
+    unavailable_reason: 'opponent_idle',
+  },
+  players: [],
+};
+
+const resolvePayload = (targets) => ({ success: true, slate_date: '2026-01-15', targets });
+
+test('decodes a live Target into the readings and fits the day-scoped surfaces render', () => {
+  expect(decodeResolvedTargets(resolvePayload([wireResolvedLive]))).toEqual({
+    slateDate: '2026-01-15',
+    entries: [
+      {
+        target: expect.objectContaining({ id: 7, opponent: 'OKC' }),
+        game: {
+          gameId: '0022500584',
+          scheduledAt: '2026-01-16T00:30:00.000Z',
+          status: { state: 'scheduled', label: 'Scheduled' },
+          // Which side is at home, so a Target can name the game the way the
+          // Slate row does; and which side it is about, so it can name the
+          // pool it filtered.
+          away: { tricode: 'LAL' },
+          home: { tricode: 'OKC' },
+          opponent: { tricode: 'OKC' },
+          opposingTeam: { tricode: 'LAL' },
+        },
+        availability: { status: 'available', source: 'player_pool', unavailableReason: null },
+        context: [
+          {
+            label: 'Corner 3',
+            metrics: [
+              {
+                key: 'Corner 3:FGA',
+                label: 'Corner 3 FGA',
+                season: {
+                  allowedPer48: 9.4,
+                  percentVsLeagueAverage: 9.7,
+                  sigmaDeviation: 1.2,
+                  rank: 27,
+                },
+                last15: {
+                  allowedPer48: 8.1,
+                  percentVsLeagueAverage: -4.2,
+                  sigmaDeviation: -0.6,
+                  rank: 11,
+                },
+              },
+            ],
+          },
+        ],
+        players: [
+          {
+            canonicalId: 2544,
+            name: 'LeBron James',
+            tricode: 'LAL',
+            seasonScoring: 25.4,
+            thin: false,
+            shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+          },
+        ],
+      },
+    ],
+  });
+});
+
+test('an idle Target keeps its record and states that nothing named a pool', () => {
+  const { entries } = decodeResolvedTargets(resolvePayload([wireResolvedLive, wireResolvedIdle]));
+
+  // Live first, then idle: the order is the backend's and is not re-sorted.
+  expect(entries.map((entry) => entry.target.opponent)).toEqual(['OKC', 'MIA']);
+  expect(entries[1]).toMatchObject({
+    game: null,
+    context: [],
+    players: [],
+    availability: { status: 'unavailable', source: null, unavailableReason: 'opponent_idle' },
+  });
+});
+
+test('an unavailable window carries no reading, and a reading under one is refused', () => {
+  const playTypesLast15Unavailable = {
+    ...wireResolvedLive,
+    context: [
+      {
+        ...wireResolvedLive.context[0],
+        availability: {
+          season: { status: 'available', unavailable_reason: null },
+          last_15: { status: 'unavailable', unavailable_reason: 'provider_unsupported' },
+        },
+        metrics: [{ ...wireResolvedLive.context[0].metrics[0], opponent: { season: null } }],
+      },
+    ],
+  };
+
+  expect(() => decodeResolvedTargets(resolvePayload([playTypesLast15Unavailable]))).toThrow(
+    /invalid response/i,
+  );
+
+  const readings = decodeResolvedTargets(
+    resolvePayload([
+      {
+        ...playTypesLast15Unavailable,
+        context: [
+          {
+            ...playTypesLast15Unavailable.context[0],
+            metrics: [
+              {
+                ...wireResolvedLive.context[0].metrics[0],
+                opponent: {
+                  season: wireResolvedLive.context[0].metrics[0].opponent.season,
+                  last_15: null,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]),
+  ).entries[0].context[0].metrics[0];
+  expect(readings.season).toEqual({
+    allowedPer48: 9.4,
+    percentVsLeagueAverage: 9.7,
+    sigmaDeviation: 1.2,
+    rank: 27,
+  });
+  expect(readings.last15).toBeNull();
+
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...playTypesLast15Unavailable,
+          context: [
+            {
+              ...playTypesLast15Unavailable.context[0],
+              metrics: wireResolvedLive.context[0].metrics,
+            },
+          ],
+        },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+});
+
+test('refuses a resolution the day-scoped surfaces could not render honestly', () => {
+  expect(() => decodeResolvedTargets({ success: true, targets: [] })).toThrow(/invalid response/i);
+  expect(() =>
+    decodeResolvedTargets(resolvePayload([{ ...wireResolvedLive, game: undefined }])),
+  ).toThrow(/invalid response/i);
+
+  // The game chip names the sides; a game that does not say which is at home
+  // cannot be named the way the Slate row names it.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        { ...wireResolvedLive, game: { ...wireResolvedLive.game, home: undefined } },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  // The allowed figure leads every reading, so a row without one is unusable.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...wireResolvedLive,
+          context: [
+            {
+              ...wireResolvedLive.context[0],
+              metrics: [
+                {
+                  ...wireResolvedLive.context[0].metrics[0],
+                  opponent: {
+                    season: {
+                      percent_vs_league_average: 9.7,
+                      sigma_deviation: 1.2,
+                      rank: 27,
+                    },
+                    last_15: null,
+                  },
+                },
+              ],
+              availability: {
+                season: { status: 'available', unavailable_reason: null },
+                last_15: { status: 'unavailable', unavailable_reason: 'provider_unsupported' },
+              },
+            },
+          ],
+        },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  // Context is index-parallel with the Qualifiers, so a shorter list would
+  // show one Qualifier's readings under another.
+  expect(() =>
+    decodeResolvedTargets(resolvePayload([{ ...wireResolvedLive, context: [] }])),
+  ).toThrow(/invalid response/i);
+
+  // So are a fit's shares, which is what puts one column per Qualifier.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...wireResolvedLive,
+          players: [{ ...wireResolvedLive.players[0], shares: [] }],
+        },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  // An unavailable pool listing players would make the explicit unavailable
+  // line a lie about the list beside it.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...wireResolvedLive,
+          availability: {
+            status: 'unavailable',
+            source: 'player_pool',
+            context: 'current',
+            unavailable_reason: 'player_pool_unavailable',
+          },
+        },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...wireResolvedLive,
+          availability: { ...wireResolvedLive.availability, source: 'rotowire' },
+        },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  // A date the calendar does not have cannot be the day being shown.
+  expect(() => decodeResolvedTargets({ slate_date: '2026-02-30', targets: [] })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('resolves against the Slate date the caller is showing, or the current one', async () => {
+  apiClient.get.mockResolvedValue({ data: resolvePayload([]) });
+
+  await expect(fetchResolvedTargets({ date: '2026-01-15' })).resolves.toEqual({
+    slateDate: '2026-01-15',
+    entries: [],
+  });
+  expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/resolve', {
+    params: { date: '2026-01-15' },
+    signal: undefined,
+  });
+
+  await fetchResolvedTargets();
+  expect(apiClient.get).toHaveBeenLastCalledWith('/api/user/targets/resolve', {
+    params: {},
+    signal: undefined,
+  });
 });

@@ -345,20 +345,6 @@
   align-items: center;
 }
 
-.rank-pill {
-  display: inline-flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  background: hsl(calc((var(--rank) - 1) * 4.1) 78% 43%);
-  color: #fff;
-  font-family: var(--ct-mono);
-  font-size: 0.68rem;
-  font-weight: 800;
-}
-
 .row-stat h4 {
   margin: 0;
   font-size: 0.8rem;
@@ -614,14 +600,6 @@
 
 .selection-table-wrap .active-market-row {
   background: var(--ct-gold-soft);
-}
-
-.thin-flag {
-  display: block;
-  color: var(--ct-gold);
-  font-family: var(--ct-mono);
-  font-size: 0.55rem;
-  text-transform: uppercase;
 }
 
 .selection-logs {

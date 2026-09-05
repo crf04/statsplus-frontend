@@ -1,3 +1,8 @@
+// A Defense Sheet reading with no league comparison says so rather than
+// printing a relative figure it does not have. The Matchup sheet and a
+// Target's readings show the same rows, so they refuse in the same words.
+export const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
+
 export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
   playTypes: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 1 }),
   shotZones: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 1 }),

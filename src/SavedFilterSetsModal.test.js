@@ -64,6 +64,7 @@ test('describes a Saved Filter Set by every parameter its URL carries', async ()
       name: 'everything at once',
       queryString:
         'player_name=Luka+Doncic&season_filter=2025-26&game_filter=10&location_filter=Away' +
+        '&opponent_tricode=OKC' +
         '&teams_against%5B%5D=Isolation&rank_filter%5B%5D=5' +
         '&teams_against%5B%5D=Transition&rank_filter%5B%5D=-8' +
         '&minutes_filter=32,48&date_filter=2026-02-01' +
@@ -81,6 +82,7 @@ test('describes a Saved Filter Set by every parameter its URL carries', async ()
       '2025-26',
       'last 10',
       'away',
+      'vs OKC',
       'vs top 5 Isolation D',
       'vs bottom 8 Transition D',
       '32–48 min',

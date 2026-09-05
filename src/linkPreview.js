@@ -16,6 +16,7 @@ const describeFilters = (filters) => {
   if (filters.location_filter && filters.location_filter !== 'Both') {
     parts.push(`${filters.location_filter.toLowerCase()} games`);
   }
+  if (filters.opponent_tricode) parts.push(`vs ${filters.opponent_tricode}`);
   // The defensive filter is one condition across two parameters, and the rank's
   // sign is the whole meaning. Naming the category alone described a link as
   // asking about isolation defense in general when it asked for the best five.

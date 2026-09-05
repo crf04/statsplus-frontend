@@ -8,14 +8,14 @@ describe('linkPreviewFor', () => {
   test('names the player and the filters a link carries', () => {
     const preview = linkPreviewFor(
       new URLSearchParams(
-        'player_name=LeBron+James&season_filter=2024-25&game_filter=10&location_filter=Home&teams_against[]=Isolation&rank_filter[]=30',
+        'player_name=LeBron+James&season_filter=2024-25&game_filter=10&location_filter=Home&opponent_tricode=OKC&teams_against[]=Isolation&rank_filter[]=30',
       ),
     );
 
     expect(preview).toEqual({
       title: 'LeBron James Game Logs | CourtAI',
       description:
-        '2024-25 season, last 10 games, home games, vs top 30 Isolation D. Explore on CourtAI.',
+        '2024-25 season, last 10 games, home games, vs OKC, vs top 30 Isolation D. Explore on CourtAI.',
     });
   });
 

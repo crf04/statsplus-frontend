@@ -8,6 +8,12 @@ test('renders an explicit default-valued parameter as a badge', () => {
   expect(screen.getByText('0 <= MIN <= 48')).toBeVisible();
 });
 
+test('names the one opponent a Filter Set is fixed to', () => {
+  render(<AppliedFilters filters={{ opponent_tricode: 'OKC' }} />);
+
+  expect(screen.getByText('vs OKC')).toBeVisible();
+});
+
 test('renders one badge per recognised parameter', () => {
   render(
     <AppliedFilters

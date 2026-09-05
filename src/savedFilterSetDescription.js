@@ -58,6 +58,9 @@ export const describeSavedFilterSet = (queryString) => {
   if (filters.location_filter && filters.location_filter !== 'Both') {
     add('location_filter', filters.location_filter.toLowerCase());
   }
+  // One specific opponent, not a defensive rank bucket: the tricode is the
+  // whole description, so it is spelled exactly as the link fixed it.
+  if (filters.opponent_tricode) add('opponent_tricode', `vs ${filters.opponent_tricode}`);
   filters['teams_against[]']?.forEach((category, index) => {
     add(
       `teams_against[]-${index}`,

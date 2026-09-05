@@ -590,6 +590,41 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
   await expect(page.getByText('GAMES <= 10')).toHaveCount(0);
 });
 
+/*
+ * A Direct Filter Set can fix one specific opponent, which is how a Target will
+ * hand off into the Log Workspace: "this player's games vs ATL" is a link.
+ */
+test('@critical a link fixing one opponent narrows the read, and the panel can clear it', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/?player_name=LeBron+James&opponent_tricode=ATL');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  // The opponent travels on the request, and the panel says which one is fixed.
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  expect(gameLogRequests.at(-1).searchParams.get('opponent_tricode')).toBe('ATL');
+  await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
+
+  // Clearing it removes it from the URL and from the request that follows.
+  const fixedRequestCount = gameLogRequests.length;
+  await page.getByRole('button', { name: 'Remove ATL opponent' }).click();
+  await page.getByRole('button', { name: 'Apply Filters' }).click();
+
+  await expect(page).not.toHaveURL(/opponent_tricode/);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(fixedRequestCount);
+  expect(gameLogRequests.at(-1).searchParams.has('opponent_tricode')).toBe(false);
+  await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toBeVisible();
+});
+
 test('@critical Back out of the workspace returns to the Query Prompt', async ({
   authenticatedPage: page,
 }) => {

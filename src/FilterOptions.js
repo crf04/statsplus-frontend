@@ -54,6 +54,7 @@ const FilterOptions = ({
   const [activePlayers, setActivePlayers] = useState([]);
   const [playerSuggestions, setPlayerSuggestions] = useState([]);
   const [activePlayerSuggestionIndex, setActivePlayerSuggestionIndex] = useState(0);
+  const [opponentTricode, setOpponentTricode] = useState('');
   const [locationFilter, setLocationFilter] = useState('Both');
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
   const [dateFilter, setDateFilter] = useState('');
@@ -128,6 +129,7 @@ const FilterOptions = ({
     setPlayerInput('');
     setPlayerStatus('on');
     setActivePlayers([]);
+    setOpponentTricode('');
     setLocationFilter('Both');
     setMinutesFilter([0, 48]);
     setDateFilter('');
@@ -155,6 +157,12 @@ const FilterOptions = ({
       if (appliedFilters.location_filter) {
         setLocationFilter(appliedFilters.location_filter);
         prepopulatedControls.add('location_filter');
+      }
+
+      // Pre-populate the one specific opponent the Filter Set fixes
+      if (appliedFilters.opponent_tricode) {
+        setOpponentTricode(appliedFilters.opponent_tricode);
+        prepopulatedControls.add('opponent_tricode');
       }
 
       // Pre-populate date filter
@@ -418,6 +426,9 @@ const FilterOptions = ({
       filterParams['teams_against[]'] = activeFilters.map((filter) => filter.filter);
       filterParams['rank_filter[]'] = activeFilters.map((filter) => filter.number);
     }
+    if (touchedControls.has('opponent_tricode')) {
+      filterParams.opponent_tricode = opponentTricode || null;
+    }
     if (touchedControls.has('location_filter')) {
       filterParams.location_filter = locationFilter;
     }
@@ -679,6 +690,31 @@ const FilterOptions = ({
             onChange={handleMinutesFilterChange}
           />
         </Form.Group>
+        {/* A specific opponent only ever arrives with the Filter Set — from a
+            link, or from a Target handing off into the Log Workspace — so the
+            panel names the opponent in force and offers the way out of it
+            rather than a picker for choosing one. */}
+        {opponentTricode && (
+          <Form.Group className="mb-4">
+            <Form.Label>Opponent:</Form.Label>
+            <div>
+              <Badge bg="primary" className="me-1 mb-1 p-2">
+                vs {opponentTricode}
+                <Button
+                  type="button"
+                  aria-label={`Remove ${opponentTricode} opponent`}
+                  title="Remove opponent"
+                  variant="link"
+                  size="sm"
+                  className="text-light p-0 ms-2"
+                  onClick={() => setOpponentTricode('')}
+                >
+                  ×
+                </Button>
+              </Badge>
+            </div>
+          </Form.Group>
+        )}
         <Form.Group className="mb-4">
           <Form.Label htmlFor="defensive-filter">Defensive Filter:</Form.Label>
           <div className="defensive-category-pills">

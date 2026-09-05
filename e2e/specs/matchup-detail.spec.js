@@ -565,7 +565,7 @@ test('matchup detail is usable at a narrow viewport with keyboard-only controls'
   await page.getByRole('button', { name: 'All', exact: true }).focus();
   await expect(page.getByRole('button', { name: 'All', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'PTS' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'PTS', exact: true })).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
@@ -780,4 +780,105 @@ test('selection request failure renders an honest handled error', async ({ page 
   await expect(page.getByText('Loading selection logs…')).toHaveCount(0);
   expect(failedResponses).toHaveLength(1);
   await page.screenshot({ path: testInfo.outputPath('selection-error.png'), fullPage: true });
+});
+
+/*
+ * Capture is why a Defense Sheet row is worth reading twice: the row is the
+ * evidence and the Target is the filter it implies. One journey follows that
+ * from the row to the card the Targets page then holds, so the prefill, the
+ * derived title, and the duplicate rule are all proved against the contract
+ * rather than against the page's own idea of them.
+ */
+test('@critical a Defense Sheet row becomes a Target the Targets page then holds', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await installApiContract(page);
+  await page.goto('/matchups/0022500584');
+  await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+
+  const rowAction = page.getByRole('button', { name: 'Save Restricted Area FGA as a Target' });
+  await rowAction.click();
+
+  // BOS owns the sheet, so BOS is the opponent and it is not up for editing.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('BOS', { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel('Opponent')).toHaveCount(0);
+  await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
+  await expect(dialog.getByLabel('Qualifier 1 slice')).toHaveValue('Restricted Area');
+  await expect(dialog.getByRole('button', { name: 'At or above' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  // 20% is the league average this row is already being read against.
+  await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
+  await expect(dialog.getByText('BOS vs Restricted area ≥ 20%')).toBeVisible();
+  // The dialog is fixed to the viewport, so a full-page capture would show the
+  // page it floats over; its fade is finished rather than waited out.
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-capture.png'),
+    animations: 'disabled',
+  });
+
+  // The prefill is a starting point: the threshold is the reader's to move.
+  await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
+  await dialog
+    .getByLabel('Note · optional, never the title')
+    .fill('Rim leaks against big lineups.');
+  await dialog.getByRole('button', { name: 'Save Target' }).click();
+
+  // The title in the confirmation is the one the backend derived and stored.
+  await expect(dialog.getByText('BOS vs Restricted area ≥ 26%')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Back to the Defense Sheet' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(rowAction).toBeFocused();
+
+  // The same row saved again is the duplicate the account already holds.
+  await rowAction.click();
+  await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
+  await dialog.getByRole('button', { name: 'Save Target' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('You already have that Target for BOS.');
+  await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('26');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  // A slice on a different base captures just as readily, and the link out of
+  // the confirmation lands on the Target that was just written.
+  await page.getByRole('button', { name: 'Save Transition PTS as a Target' }).click();
+  await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('play_types');
+  await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('9');
+  await dialog.getByRole('button', { name: 'Save Target' }).click();
+  await dialog.getByRole('link', { name: 'Go to Targets' }).click();
+
+  await expect(page).toHaveURL('/targets');
+  await expect(page.getByRole('heading', { name: '2 Targets', exact: true })).toBeVisible();
+  const card = page.getByRole('link', { name: 'Open BOS vs Restricted area ≥ 26%' });
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Rim leaks against big lineups.');
+  await expect(page.getByRole('link', { name: 'Open BOS vs Transition ≥ 9%' })).toBeVisible();
+});
+
+test('capture stays reachable and the sheet stays unscrolled at a phone width', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await installApiContract(page);
+  await page.goto('/matchups/0022500584');
+  await expect(page.getByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: /as a Target$/ })).not.toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+
+  await page.getByRole('button', { name: 'Save Restricted Area FGA as a Target' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-capture-narrow.png'),
+    animations: 'disabled',
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 });

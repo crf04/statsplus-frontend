@@ -9,6 +9,7 @@ import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { formatFocalGameLine, getDisplayableDietShare } from './displayConfig';
 import SelectionCard from './SelectionCard';
+import TargetCaptureModal from '../targets/TargetCaptureModal';
 import './MatchupDetailPage.css';
 
 const WINDOWS = [
@@ -32,6 +33,19 @@ const SHARE_LABELS = {
   shotZones: 'FGA',
   shotTypes: 'FGA',
   assistLocations: 'ast',
+};
+/*
+ * A Qualifier is written in the diet vocabulary, which names its bases as the
+ * backend does. The sheet names the same bases in the shape the decoder hands
+ * them over, so capture translates between the two. `traditional` is absent on
+ * purpose: it is a team-only base with no diet counterpart, so no Qualifier can
+ * be written from one of its rows.
+ */
+const TARGET_BASE_BY_SHEET_BASE = {
+  playTypes: 'play_types',
+  shotZones: 'shot_zones',
+  shotTypes: 'shot_types',
+  assistLocations: 'assist_locations',
 };
 const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
 const SECTION_ORDER = [
@@ -361,6 +375,21 @@ function DietShareChips({ players, base, sliceKey, market }) {
   );
 }
 
+/*
+ * The league average a slice is read against is published on the diet fact
+ * itself, so it is the same number for every player who has that slice. Any one
+ * of them answers for the slice; a slice nobody in the pool has, or one the
+ * backend publishes no league average for, has no line to start a Target from.
+ */
+const sliceLeagueAverageShare = (players, base, sliceKey) => {
+  for (const player of players) {
+    const share = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season
+      ?.leagueAverageShare;
+    if (typeof share === 'number') return share;
+  }
+  return null;
+};
+
 function DefenseSheet({
   team,
   players,
@@ -370,6 +399,7 @@ function DefenseSheet({
   selectedPlayer,
   surfaceAvailability,
   provenance,
+  onCapture,
 }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
@@ -459,6 +489,30 @@ function DefenseSheet({
                         </span>
                         <div>
                           <h4>{row.label}</h4>
+                          {/* The row is the evidence, so the Target is captured
+                              where it is read: this team as the opponent, this
+                              slice as the Qualifier. */}
+                          {TARGET_BASE_BY_SHEET_BASE[base] && (
+                            <button
+                              type="button"
+                              className="row-capture"
+                              aria-label={`Save ${row.label} as a Target`}
+                              onClick={() =>
+                                onCapture({
+                                  opponent: team.tricode,
+                                  base: TARGET_BASE_BY_SHEET_BASE[base],
+                                  sliceKey: row.sliceKey,
+                                  leagueAverageShare: sliceLeagueAverageShare(
+                                    players,
+                                    base,
+                                    row.sliceKey,
+                                  ),
+                                })
+                              }
+                            >
+                              Save as Target
+                            </button>
+                          )}
                         </div>
                         <div
                           className={
@@ -609,6 +663,7 @@ function Detail({ matchup, gameId }) {
     data: null,
     error: null,
   });
+  const [capture, setCapture] = useState(null);
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
@@ -860,10 +915,12 @@ function Detail({ matchup, gameId }) {
                   ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
                   : null
               }
+              onCapture={setCapture}
             />
           )}
         </div>
       </div>
+      <TargetCaptureModal capture={capture} onHide={() => setCapture(null)} />
     </>
   );
 }

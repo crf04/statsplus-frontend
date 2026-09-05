@@ -80,13 +80,18 @@ export const fetchTargets = async ({ signal } = {}) => {
  * The mutations report success or throw; the caller reloads the list rather
  * than patching one in place, so the order and the derived titles shown are
  * always the backend's.
+ *
+ * Create is the one mutation that answers with something: the stored Target,
+ * carrying the title the backend derived. A surface that confirms a save by
+ * name has to say that title rather than a locally guessed one (ADR 0001).
  */
 export const createTarget = async ({ opponent, qualifiers, note }) => {
-  await apiClient.post(targetsUrl(), {
+  const response = await apiClient.post(targetsUrl(), {
     opponent,
     qualifiers: qualifiers.map(encodeQualifier),
     note,
   });
+  return decodeTarget(response.data?.target);
 };
 
 /*

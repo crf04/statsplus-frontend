@@ -2,11 +2,13 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { createTarget } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import MatchupDetailPage from './MatchupDetailPage';
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
+jest.mock('../targets/targetsApi', () => ({ createTarget: jest.fn() }));
 
 const value = (allowedPer48, percentVsLeagueAverage, sigmaDeviation, rank) => ({
   allowedPer48,
@@ -103,6 +105,18 @@ const matchup = {
             last15: value(11, -6, -0.7, 9),
           },
         ],
+        // Traditional is a team-only base with no diet counterpart, so its rows
+        // are the ones a Qualifier can never be written from.
+        traditional: [
+          {
+            key: 'OPP_TOV',
+            sliceKey: 'OPP_TOV',
+            label: 'Opponent turnovers',
+            markets: ['TOV'],
+            season: value(14.2, 8, 1.2, 26),
+            last15: value(12.9, -3, -1.1, 6),
+          },
+        ],
       },
       defensiveColumns,
     },
@@ -125,7 +139,12 @@ const matchup = {
         playTypes: [
           {
             key: 'transition',
-            season: { share: 0.18, volumePerGame: 4, sigmaDeviation: 1.2 },
+            season: {
+              share: 0.18,
+              volumePerGame: 4,
+              sigmaDeviation: 1.2,
+              leagueAverageShare: 0.094,
+            },
           },
         ],
       },
@@ -1285,4 +1304,126 @@ test('selection request errors replace loading with an honest alert', async () =
   );
   expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load selection logs');
   expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
+});
+
+/*
+ * Capture is the reason a Defense Sheet row is worth reading twice: the row is
+ * the evidence, and the Target is the filter that evidence implies. These tests
+ * work the row action the way a reader does, so what they prove is the prefill,
+ * the edit, and the sentence a refused save leaves behind.
+ */
+test('prefills the capture form from the row and saves the Target it composes', async () => {
+  createTarget.mockResolvedValue({
+    id: 4,
+    opponent: 'BOS',
+    title: 'BOS vs Transition ≥ 9%, Corner 3 ≥ 40%',
+    note: '',
+    createdAt: '2026-01-15T12:00:00Z',
+    qualifiers: [],
+  });
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  const rowAction = screen.getByRole('button', { name: 'Save Transition as a Target' });
+  await userEvent.click(rowAction);
+
+  const dialog = await screen.findByRole('dialog');
+  expect(dialog).toHaveAttribute('aria-modal', 'true');
+  // The sheet is BOS's, so BOS is the opponent and it is not up for editing.
+  expect(within(dialog).getByText('BOS')).toBeVisible();
+  expect(within(dialog).queryByRole('combobox', { name: 'Opponent' })).not.toBeInTheDocument();
+  expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 diet base' })).toHaveValue(
+    'play_types',
+  );
+  expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
+    'transition',
+  );
+  expect(within(dialog).getByRole('button', { name: 'At or above' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  // 9.4% league average, offered as the whole percent a reader would type.
+  expect(
+    within(dialog).getByRole('spinbutton', { name: 'Qualifier 1 threshold percent' }),
+  ).toHaveValue(9);
+
+  // The prefill is a starting point: more Qualifiers can be added before saving.
+  await userEvent.click(within(dialog).getByRole('button', { name: '+ Add a Qualifier' }));
+  await userEvent.selectOptions(
+    within(dialog).getByRole('combobox', { name: 'Qualifier 2 slice' }),
+    'Corner 3',
+  );
+  await userEvent.type(
+    within(dialog).getByRole('spinbutton', { name: 'Qualifier 2 threshold percent' }),
+    '40',
+  );
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+
+  expect(createTarget).toHaveBeenCalledWith({
+    opponent: 'BOS',
+    note: '',
+    qualifiers: [
+      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  });
+  // The title is the backend's, so the confirmation says the one it derived.
+  expect(await screen.findByText('BOS vs Transition ≥ 9%, Corner 3 ≥ 40%')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Go to Targets' })).toHaveAttribute('href', '/targets');
+
+  // Closing hands the keyboard back to the row the capture started from.
+  await userEvent.click(screen.getByRole('button', { name: 'Back to the Defense Sheet' }));
+  await waitFor(() => expect(rowAction).toHaveFocus());
+});
+
+test('leaves the threshold to be typed when the slice publishes no league average', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Save Above-break three as a Target' }));
+
+  const dialog = await screen.findByRole('dialog');
+  expect(
+    within(dialog).getByRole('spinbutton', { name: 'Qualifier 1 threshold percent' }),
+  ).toHaveValue(null);
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  expect(
+    within(dialog).getByText('Every threshold must be a share between 0% and 100%.'),
+  ).toBeVisible();
+  expect(within(dialog).getByText(/no league average published for this slice/)).toBeVisible();
+
+  await userEvent.type(
+    within(dialog).getByRole('spinbutton', { name: 'Qualifier 1 threshold percent' }),
+    '32',
+  );
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeEnabled();
+});
+
+test('a duplicate Target keeps the composed draft and says why it was refused', async () => {
+  createTarget.mockRejectedValue({
+    response: { data: { error: { message: 'You already have that Target for BOS.' } } },
+  });
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Save Transition as a Target' }));
+  const dialog = await screen.findByRole('dialog');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+    'You already have that Target for BOS.',
+  );
+  expect(
+    within(dialog).getByRole('spinbutton', { name: 'Qualifier 1 threshold percent' }),
+  ).toHaveValue(9);
+});
+
+test('offers no capture on a Traditional row, which has no diet counterpart', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  expect(screen.getByText('Opponent turnovers')).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Save Opponent turnovers as a Target' }),
+  ).not.toBeInTheDocument();
 });

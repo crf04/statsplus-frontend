@@ -1,5 +1,6 @@
 import { apiClient, getApiUrl } from '../config';
 import { isCalendarDate } from '../calendarDate';
+import { isRecord, strictDecoders } from '../decoding';
 import { TARGET_COMPARATORS } from './targetCatalog';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
@@ -70,24 +71,14 @@ export const decodeTargets = (payload = {}) => {
  * opposing players who meet every Qualifier.
  *
  * Only what the Slate blocks and the Target detail render is decoded. The
- * response also carries the allowed-per-48 value, the league aggregate behind
- * each reading, each row's markets, posted markets and injury badge refs;
- * nothing on these two surfaces shows them, and decoding a value no one reads
- * would claim a guarantee no test could make.
+ * response also carries the league aggregate behind each reading, each row's
+ * markets, posted markets and injury badge refs; nothing on these two surfaces
+ * shows them, and decoding a value no one reads would claim a guarantee no
+ * test could make.
  */
-const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-
-const requireString = (value) => {
-  if (typeof value !== 'string' || !value) throw createInvalidResponseError();
-  return value;
-};
-
-const requireNumber = (value) => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) throw createInvalidResponseError();
-  return value;
-};
-
-const requireNumberOrNull = (value) => (value === null ? null : requireNumber(value));
+const { requireString, requireNumber, requireNumberOrNull } = strictDecoders(
+  createInvalidResponseError,
+);
 
 /*
  * A side is named by its tricode alone: that is what a Target is written in
@@ -107,6 +98,11 @@ const decodeGame = (game) => {
     gameId: requireString(game.game_id),
     scheduledAt: scheduledAt.toISOString(),
     status: { state: requireString(game.status.state), label: requireString(game.status.label) },
+    // Which side is at home is the game's own fact, and is what lets a Target
+    // name the game the way the Slate row does. Which side the Target is
+    // about, and which one it filters, is the Target's.
+    away: decodeSide(game.away),
+    home: decodeSide(game.home),
     opponent: decodeSide(game.opponent),
     opposingTeam: decodeSide(game.opposing_team),
   };
@@ -157,6 +153,7 @@ const decodeReading = (value, availability) => {
   }
   if (!isRecord(value)) throw createInvalidResponseError();
   return {
+    allowedPer48: requireNumber(value.allowed_per_48),
     percentVsLeagueAverage: requireNumberOrNull(value.percent_vs_league_average),
     sigmaDeviation: requireNumber(value.sigma_deviation),
     rank: requireNumber(value.rank),

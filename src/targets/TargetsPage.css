@@ -288,6 +288,25 @@
   color: var(--ct-text);
 }
 
+/* The opponent, and what today makes of the Target, on one line. */
+.target-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.target-card-today {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.target-card-today.has-fits {
+  color: var(--ct-hit);
+}
+
 .target-card-opponent {
   font-family: var(--ct-display);
   font-size: 1.9rem;

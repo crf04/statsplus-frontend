@@ -1,10 +1,11 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import TargetsPage from './TargetsPage';
-import { createTarget, fetchTargets } from './targetsApi';
+import { createTarget, fetchResolvedTargets, fetchTargets } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargets: jest.fn(),
+  fetchResolvedTargets: jest.fn(),
   createTarget: jest.fn(),
 }));
 
@@ -46,6 +47,47 @@ const targets = [
   },
 ];
 
+/*
+ * What today makes of each saved Target, read against the current Slate Date.
+ * The first has a game and one fit; the second's opponent is not playing.
+ */
+const resolution = {
+  slateDate: '2026-04-09',
+  entries: [
+    {
+      target: targets[0],
+      game: {
+        gameId: '0022500584',
+        scheduledAt: '2026-04-09T23:30:00.000Z',
+        status: { state: 'scheduled', label: 'Scheduled' },
+        away: { tricode: 'LAL' },
+        home: { tricode: 'OKC' },
+        opponent: { tricode: 'OKC' },
+        opposingTeam: { tricode: 'LAL' },
+      },
+      availability: { status: 'available', source: 'player_pool', unavailableReason: null },
+      context: [{ label: 'Corner 3', metrics: [] }],
+      players: [
+        {
+          canonicalId: 2544,
+          name: 'LeBron James',
+          tricode: 'LAL',
+          seasonScoring: 25.4,
+          thin: false,
+          shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+        },
+      ],
+    },
+    {
+      target: targets[1],
+      game: null,
+      availability: { status: 'unavailable', source: null, unavailableReason: 'opponent_idle' },
+      context: [],
+      players: [],
+    },
+  ],
+};
+
 const renderPage = () =>
   render(
     <MemoryRouter initialEntries={['/targets']}>
@@ -66,6 +108,7 @@ beforeEach(() => {
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargets.mockResolvedValue(targets);
+  fetchResolvedTargets.mockResolvedValue(resolution);
   createTarget.mockResolvedValue(undefined);
 });
 
@@ -316,4 +359,45 @@ test('signed out, the page asks for sign-in the way the slate does', () => {
 
   expect(screen.getByRole('heading', { name: 'Sign in to view your Targets' })).toBeInTheDocument();
   expect(fetchTargets).not.toHaveBeenCalled();
+});
+
+test('a card says what today makes of its Target', async () => {
+  renderPage();
+
+  const live = await screen.findByRole('link', { name: 'Open OKC vs Corner 3 ≥ 40% (v2)' });
+  expect(within(live).getByText('1 fit today')).toBeVisible();
+  const idle = screen.getByRole('link', { name: 'Open MIA vs Restricted area ≤ 20% (v2)' });
+  expect(within(idle).getByText('no game today')).toBeVisible();
+  // The count is the current Slate Date's, which the page does not name.
+  expect(fetchResolvedTargets).toHaveBeenCalledWith(expect.objectContaining({ date: undefined }));
+});
+
+/*
+ * The count is a second read over the same list. A day that will not resolve
+ * costs the cards their counts and nothing else: the Targets are still there
+ * to read and open.
+ */
+test('a refused resolution leaves the cards standing without a count', async () => {
+  fetchResolvedTargets.mockRejectedValue({
+    response: { status: 503, data: { error: { message: 'Targets are unavailable.' } } },
+  });
+
+  renderPage();
+
+  expect(
+    await screen.findByRole('link', { name: 'Open OKC vs Corner 3 ≥ 40% (v2)' }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/fit today/)).not.toBeInTheDocument();
+  expect(screen.queryByText('no game today')).not.toBeInTheDocument();
+});
+
+test('a live Target nobody fits says so rather than staying silent', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [{ ...resolution.entries[0], players: [] }, resolution.entries[1]],
+  });
+
+  renderPage();
+
+  expect(await screen.findByText('0 fit today')).toBeVisible();
 });

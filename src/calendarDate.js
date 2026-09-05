@@ -30,3 +30,14 @@ export const formatCalendarDate = (date) =>
     year: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));
+
+/*
+ * A tip time is a clock reading of an instant rather than a calendar date, and
+ * is shown in the reader's own zone: the Slate row and a Target's game chip
+ * name the same game, so they read it the same way.
+ */
+export const formatTip = (scheduledAt) =>
+  new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(scheduledAt));

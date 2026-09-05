@@ -5,16 +5,29 @@ import TargetForm, { blankTargetDraft } from './TargetForm';
 import { formatQualifierParts } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useTargets } from './useTargets';
+import { useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
 /*
- * A card carries only what tells one Target from another: the opponent it is
- * about, the Qualifiers a player has to meet, and the note explaining why it
- * was set. Everything else lives on the Target's own route.
+ * How today answers one Target, in the few words a card has room for. A
+ * resolution that has not arrived says nothing rather than guessing at zero.
  */
-function TargetCard({ target }) {
+const describeToday = (entry) => {
+  if (!entry) return null;
+  if (!entry.game) return 'no game today';
+  if (entry.availability.status !== 'available') return 'pool unavailable';
+  return `${entry.players.length} fit today`;
+};
+
+/*
+ * A card carries only what tells one Target from another: the opponent it is
+ * about, the Qualifiers a player has to meet, the note explaining why it was
+ * set, and what today makes of it. Everything else lives on the Target's own
+ * route.
+ */
+function TargetCard({ target, entry }) {
+  const today = describeToday(entry);
   return (
     <li>
       <Link
@@ -22,7 +35,14 @@ function TargetCard({ target }) {
         to={`/targets/${target.id}`}
         aria-label={`Open ${target.title}`}
       >
-        <span className="target-card-opponent">{target.opponent}</span>
+        <span className="target-card-head">
+          <span className="target-card-opponent">{target.opponent}</span>
+          {today && (
+            <span className={`target-card-today${entry.players.length ? ' has-fits' : ''}`}>
+              {today}
+            </span>
+          )}
+        </span>
         <span className="target-card-qualifiers">
           {target.qualifiers.map((qualifier, index) => {
             const { label, value } = formatQualifierParts(qualifier);
@@ -46,6 +66,12 @@ function TargetCard({ target }) {
 
 export default function TargetsPage() {
   const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
+  /*
+   * What each Target is worth today, read for the current Slate Date. It is a
+   * second read over the same list, so a day that will not resolve costs the
+   * cards their counts and nothing else.
+   */
+  const resolved = useResolvedTargets();
   const [draft, setDraft] = useState(blankTargetDraft);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -65,6 +91,7 @@ export default function TargetsPage() {
       await createTarget(request);
       setDraft(blankTargetDraft());
       reload();
+      resolved.reload();
     } catch (requestError) {
       setSaveError(
         getRequestErrorMessage(requestError, 'Unable to save this Target. Please try again.'),
@@ -118,7 +145,11 @@ export default function TargetsPage() {
         ) : (
           <ul className="target-grid">
             {targets.map((target) => (
-              <TargetCard key={target.id} target={target} />
+              <TargetCard
+                key={target.id}
+                target={target}
+                entry={resolved.entries.find((entry) => entry.target.id === target.id) || null}
+              />
             ))}
           </ul>
         ))}

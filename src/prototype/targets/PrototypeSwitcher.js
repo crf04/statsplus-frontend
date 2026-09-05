@@ -3,7 +3,7 @@
  * design under evaluation. Never rendered in a production build.
  */
 import { useEffect } from 'react';
-import { VARIANT_NAMES } from './prototypeMode';
+import { PROTO_ENABLED, VARIANT_NAMES } from './prototypeMode';
 
 const isTyping = () => {
   const el = document.activeElement;
@@ -27,7 +27,7 @@ export default function PrototypeSwitcher({ variant, onStep }) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onStep]);
-  if (process.env.NODE_ENV === 'production') return null;
+  if (!PROTO_ENABLED) return null;
   return (
     <div className="proto-switcher" role="group" aria-label="Prototype variant switcher">
       <button type="button" onClick={() => onStep(-1)} aria-label="Previous variant">

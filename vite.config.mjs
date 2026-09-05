@@ -19,6 +19,8 @@ const legacyEnvironmentKeys = [
   'REACT_APP_FIREBASE_STORAGE_BUCKET',
   'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
   'REACT_APP_FIREBASE_APP_ID',
+  // PROTOTYPE (throwaway, branch prototype/targets-look): enables the prototype in a production build.
+  'REACT_APP_PROTOTYPE',
 ];
 
 const viteEnvironmentAliases = {
@@ -38,6 +40,7 @@ const viteEnvironmentAliases = {
   REACT_APP_FIREBASE_STORAGE_BUCKET: 'VITE_FIREBASE_STORAGE_BUCKET',
   REACT_APP_FIREBASE_MESSAGING_SENDER_ID: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
   REACT_APP_FIREBASE_APP_ID: 'VITE_FIREBASE_APP_ID',
+  REACT_APP_PROTOTYPE: 'VITE_PROTOTYPE',
 };
 
 export default defineConfig(({ mode }) => {

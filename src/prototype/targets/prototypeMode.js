@@ -8,6 +8,11 @@
  */
 import { useLocation, useSearchParams } from 'react-router-dom';
 
+/* Dev builds always; a deployed preview only when built with
+   REACT_APP_PROTOTYPE=targets. A stray merge cannot ship it. */
+export const PROTO_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.REACT_APP_PROTOTYPE === 'targets';
+
 export const VARIANT_KEYS = ['A', 'B', 'C'];
 
 export const VARIANT_NAMES = {
@@ -27,7 +32,7 @@ export const useVariant = () => {
   const { pathname } = useLocation();
   const onPage = pathname.startsWith(PAGE_PATH);
   const active =
-    process.env.NODE_ENV !== 'production' && (onPage || searchParams.get('proto') === 'targets');
+    PROTO_ENABLED && (onPage || searchParams.get('proto') === 'targets');
   const key = (searchParams.get('v') || 'A').toUpperCase();
   const variant = VARIANT_KEYS.includes(key) ? key : 'A';
   const step = (delta) => {

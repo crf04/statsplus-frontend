@@ -13,9 +13,10 @@ import QueryReferencePage from './help/QueryReferencePage';
 // nav link, never in production. Delete these lines and the PROTOTYPE blocks
 // below to remove.
 import TargetsPrototypePage from './prototype/targets/TargetsPrototypePage';
+import { PROTO_ENABLED } from './prototype/targets/prototypeMode';
 import './App.css';
 
-const PROTO = process.env.NODE_ENV !== 'production';
+const PROTO = PROTO_ENABLED;
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();

@@ -173,8 +173,13 @@ const underGame = (live) => (game) => {
   );
 };
 
+/* Verdict 2026-09-04: Chris picked C for the slate. The slate is locked to
+   C; the switcher letter now only drives the Targets page. */
+const SLATE_VARIANT = 'C';
+
 export default function SlatePrototypePage() {
-  const { variant, step } = useVariant();
+  const { variant: pageVariant, step } = useVariant();
+  const variant = SLATE_VARIANT;
   const [searchParams, setSearchParams] = useSearchParams();
   const date = parseCalendarDate(searchParams.get('date')) || DEMO_DATE;
   const { targets } = useTargetsStore();
@@ -246,7 +251,7 @@ export default function SlatePrototypePage() {
           </div>
         </>
       )}
-      <PrototypeSwitcher variant={variant} onStep={step} />
+      <PrototypeSwitcher variant={pageVariant} onStep={step} />
     </main>
   );
 }

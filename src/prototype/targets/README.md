@@ -26,6 +26,12 @@ then sign in and open:
 - `/matchups?date=2026-04-10&proto=targets&v=A` — the Slate panel
 - `/matchups/0022501174?proto=targets&v=A` — capture from a sheet row (NOP @ BOS)
 
+## Verdict so far
+
+- **Slate: C** (fits under the game rows) — Chris, 2026-09-04. The slate is
+  locked to C in the code; the switcher now only drives the Targets page.
+- Targets page: open.
+
 ## Variants (second round, after Chris's "keep them separate")
 
 The slate page owns *today*: a partial-screen region of the Targets active on

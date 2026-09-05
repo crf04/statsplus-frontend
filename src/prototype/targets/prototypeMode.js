@@ -20,9 +20,9 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'targets';
 export const VARIANT_KEYS = ['A', 'B', 'C'];
 
 export const VARIANT_NAMES = {
-  A: 'Slate: top region · card expands in place',
-  B: 'Slate: side column · card opens its own page',
-  C: 'Slate: under games · card opens a side drawer',
+  A: 'Targets: card expands in place',
+  B: 'Targets: card opens its own page',
+  C: 'Targets: card opens a side drawer',
 };
 
 export const SLATE_PATH = '/prototype/matchups';

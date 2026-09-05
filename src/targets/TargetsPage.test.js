@@ -116,6 +116,29 @@ test('previews the title the Qualifiers would derive', async () => {
   expect(screen.getByText('OKC vs Corner 3 ≥ 40.5%')).toBeInTheDocument();
 });
 
+/*
+ * The title is written to one decimal, so a share carrying more than one would
+ * be stored as a number the title does not say. The preview and the saved
+ * Target have to agree about what was composed.
+ */
+test('a threshold is stored at the same precision the title reads it at', async () => {
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier({ percent: '6.25' });
+  expect(screen.getByText('OKC vs Corner 3 ≥ 6.3%')).toBeInTheDocument();
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  });
+
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({
+      qualifiers: [expect.objectContaining({ threshold: 0.063 })],
+    }),
+  );
+});
+
 test('the blank form is unsaveable until a threshold has been composed', async () => {
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });

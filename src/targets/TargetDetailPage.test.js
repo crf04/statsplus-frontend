@@ -17,8 +17,8 @@ jest.mock('../contexts/AuthContext', () => ({
 /*
  * The title is the backend's and is deliberately not what these Qualifiers
  * would derive, so displaying a locally derived title fails here. The instant
- * is near midnight UTC, so a formatter reading it in local time would name the
- * wrong day.
+ * is near midnight UTC, and the suite runs in a zone east of UTC, so a
+ * formatter reading it in local time names the wrong day.
  */
 const target = {
   id: 7,

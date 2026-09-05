@@ -1659,6 +1659,16 @@ export const installApiContract = async (page, overrides = {}) => {
         return;
       }
 
+      // A Target another session already deleted is gone for this one too, and
+      // splicing at -1 would quietly remove the oldest Target instead.
+      if (index === -1) {
+        await route.fulfill({
+          status: 404,
+          json: { error: { code: 'resource_not_found', message: 'Target not found.' } },
+        });
+        return;
+      }
+
       if (method === 'PATCH') {
         // Only the Qualifiers and the note move; the title follows the
         // Qualifiers because it is derived from them.

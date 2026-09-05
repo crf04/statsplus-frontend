@@ -28,8 +28,9 @@ const decodeQualifier = (item) => {
 };
 
 /*
- * The title is derived by the backend and never stored or edited here
- * (ADR 0001), so it arrives with the record rather than being rebuilt from it.
+ * The title is derived by the backend and never stored or edited here, so it
+ * arrives with the record rather than being rebuilt from it. See
+ * crf04/statsplus docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
 const decodeTarget = (item) => {
   if (!item || typeof item !== 'object') throw createInvalidResponseError();

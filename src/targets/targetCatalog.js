@@ -135,13 +135,15 @@ export const deriveTargetTitle = ({ opponent, qualifiers }) =>
   `${opponent} vs ${qualifiers.map(formatQualifier).join(', ')}`;
 
 /*
- * A threshold is typed as a whole percentage and stored as a 0–1 share. A blank
- * or out-of-range entry has no share, which is what keeps the draft unsaveable.
+ * A threshold is typed as a percentage and stored as a 0–1 share, rounded to
+ * the single decimal the title is written at so that what was previewed is
+ * what gets stored. A blank or out-of-range entry has no share, which is what
+ * keeps the draft unsaveable.
  */
 export const parseThresholdPercent = (percentText) => {
   const trimmed = String(percentText).trim();
   if (!trimmed) return null;
   const percent = Number(trimmed);
   if (!Number.isFinite(percent) || percent < 0 || percent > 100) return null;
-  return Math.round(percent * 100) / 10000;
+  return Math.round(percent * 10) / 1000;
 };

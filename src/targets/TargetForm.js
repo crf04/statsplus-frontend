@@ -161,7 +161,6 @@ export default function TargetForm({
               className="target-unknown-slice"
               value={qualifier.sliceKey}
               disabled
-              readOnly
             >
               <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
             </select>
@@ -183,12 +182,15 @@ export default function TargetForm({
               </button>
             ))}
           </div>
+          {/* A step would let the browser refuse a share the form had just
+              previewed as a title. The parser is the only judge of a threshold,
+              and it rounds to the decimal the title is written at. */}
           <span className="target-threshold">
             <input
               type="number"
               min="0"
               max="100"
-              step="0.1"
+              step="any"
               aria-label={`Qualifier ${index + 1} threshold percent`}
               value={qualifier.thresholdPercent}
               onChange={(event) => patchQualifier(index, { thresholdPercent: event.target.value })}

@@ -20,7 +20,11 @@ const seed = (opponent, qualifiers, note = '') => ({
 });
 
 const SEEDS = [
-  seed('BOS', [['shotZones', 'Corner 3', 'at_or_above', 0.2]], 'BOS switches everything and leaves the corner late.'),
+  seed(
+    'BOS',
+    [['shotZones', 'Corner 3', 'at_or_above', 0.2]],
+    'BOS switches everything and leaves the corner late.',
+  ),
   seed(
     'NOP',
     [
@@ -29,9 +33,17 @@ const SEEDS = [
     ],
     'No rim protection when Missi sits; they also give up leak-outs.',
   ),
-  seed('MIA', [['shotZones', 'Restricted Area', 'at_or_below', 0.2]], 'Zone walls off the rim. Who scores without it?'),
+  seed(
+    'MIA',
+    [['shotZones', 'Restricted Area', 'at_or_below', 0.2]],
+    'Zone walls off the rim. Who scores without it?',
+  ),
   seed('DEN', [['shotTypes', 'Pullups', 'at_or_above', 0.3]]),
-  seed('OKC', [['assistLocations', 'Corner3Assists', 'at_or_above', 0.2]], 'Corner-3 creators vs the scramble.'),
+  seed(
+    'OKC',
+    [['assistLocations', 'Corner3Assists', 'at_or_above', 0.2]],
+    'Corner-3 creators vs the scramble.',
+  ),
 ];
 
 let state = { targets: SEEDS, draft: null, toast: null };
@@ -75,6 +87,7 @@ export const removeTarget = (id) => set({ targets: state.targets.filter((t) => t
 
 /* Capture draft shared between the sheet rows and the capture surface. */
 export const openDraft = (draft) => set({ draft });
-export const patchDraft = (patch) => set({ draft: state.draft ? { ...state.draft, ...patch } : null });
+export const patchDraft = (patch) =>
+  set({ draft: state.draft ? { ...state.draft, ...patch } : null });
 export const closeDraft = () => set({ draft: null });
 export const dismissToast = () => set({ toast: null });

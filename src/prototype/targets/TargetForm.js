@@ -4,13 +4,22 @@ import { BASES, SLICES, TEAMS } from './catalog';
 import { COMPARATOR_SYMBOL, emptyQualifier, titleOf } from './targetsStore';
 import { Title } from './shared';
 
-export default function TargetForm({ draft, onChange, onSave, onCancel, saveLabel = 'Save Target', compact = false }) {
+export default function TargetForm({
+  draft,
+  onChange,
+  onSave,
+  onCancel,
+  saveLabel = 'Save Target',
+  compact = false,
+}) {
   const setQ = (i, patch) =>
     onChange({ qualifiers: draft.qualifiers.map((q, j) => (j === i ? { ...q, ...patch } : q)) });
   const valid =
     draft.opponent &&
     draft.qualifiers.length > 0 &&
-    draft.qualifiers.every((q) => Number.isFinite(q.threshold) && q.threshold >= 0 && q.threshold <= 1);
+    draft.qualifiers.every(
+      (q) => Number.isFinite(q.threshold) && q.threshold >= 0 && q.threshold <= 1,
+    );
   return (
     <form
       className={`tp-form${compact ? ' is-compact' : ''}`}
@@ -23,26 +32,50 @@ export default function TargetForm({ draft, onChange, onSave, onCancel, saveLabe
         <label>
           <span className="proto-label">Opponent</span>
           <select value={draft.opponent} onChange={(e) => onChange({ opponent: e.target.value })}>
-            {TEAMS.map((t) => <option key={t}>{t}</option>)}
+            {TEAMS.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
           </select>
         </label>
         <div className="tp-form-preview">
           <span className="proto-label">Title (derived)</span>
-          {valid ? <Title target={draft} as="p" /> : <p className="honest-empty">Complete the Qualifiers.</p>}
+          {valid ? (
+            <Title target={draft} as="p" />
+          ) : (
+            <p className="honest-empty">Complete the Qualifiers.</p>
+          )}
         </div>
       </div>
       <span className="proto-label">Qualifiers · a player must meet every one</span>
       {draft.qualifiers.map((q, i) => (
         <div className="tp-qualifier" key={i}>
-          <select value={q.base} onChange={(e) => setQ(i, { base: e.target.value, sliceKey: SLICES[e.target.value][0][0] })}>
-            {BASES.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
+          <select
+            value={q.base}
+            onChange={(e) =>
+              setQ(i, { base: e.target.value, sliceKey: SLICES[e.target.value][0][0] })
+            }
+          >
+            {BASES.map((b) => (
+              <option key={b.key} value={b.key}>
+                {b.label}
+              </option>
+            ))}
           </select>
           <select value={q.sliceKey} onChange={(e) => setQ(i, { sliceKey: e.target.value })}>
-            {SLICES[q.base].map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            {SLICES[q.base].map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
           </select>
           <div className="segmented tp-cmp" role="group" aria-label="Comparator">
             {Object.entries(COMPARATOR_SYMBOL).map(([key, sym]) => (
-              <button type="button" key={key} aria-pressed={q.comparator === key} onClick={() => setQ(i, { comparator: key })}>
+              <button
+                type="button"
+                key={key}
+                aria-pressed={q.comparator === key}
+                onClick={() => setQ(i, { comparator: key })}
+              >
                 {sym}
               </button>
             ))}
@@ -69,15 +102,28 @@ export default function TargetForm({ draft, onChange, onSave, onCancel, saveLabe
           </button>
         </div>
       ))}
-      <button type="button" className="tp-add" onClick={() => onChange({ qualifiers: [...draft.qualifiers, emptyQualifier()] })}>
+      <button
+        type="button"
+        className="tp-add"
+        onClick={() => onChange({ qualifiers: [...draft.qualifiers, emptyQualifier()] })}
+      >
         + Add a Qualifier
       </button>
       <label className="tp-note">
         <span className="proto-label">Note (optional, never the title)</span>
-        <input value={draft.note || ''} placeholder="Why you set this" onChange={(e) => onChange({ note: e.target.value })} />
+        <input
+          value={draft.note || ''}
+          placeholder="Why you set this"
+          onChange={(e) => onChange({ note: e.target.value })}
+        />
       </label>
       <div className="tp-form-actions">
-        <button type="submit" className="tp-primary" disabled={!valid} title={valid ? titleOf(draft) : undefined}>
+        <button
+          type="submit"
+          className="tp-primary"
+          disabled={!valid}
+          title={valid ? titleOf(draft) : undefined}
+        >
           {saveLabel}
         </button>
         {onCancel && (

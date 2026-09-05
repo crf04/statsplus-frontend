@@ -4,9 +4,30 @@
  * context are live data. The backtest is a stub: no endpoint exists yet.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { fetchSlate } from '../../slateApi';
-import { fetchMatchup } from '../../matchups/matchupApi';
+import { decodeSlate, fetchSlate as fetchLiveSlate } from '../../slateApi';
+import { decodeMatchup, fetchMatchup as fetchLiveMatchup } from '../../matchups/matchupApi';
 import { THIN_VOLUME, baseOf, marketsFor } from './catalog';
+import { DEMO_DATE, PROTO_STANDALONE } from './prototypeMode';
+import mockSlate from './mock/slate.json';
+import mock1172 from './mock/matchup-0022501172.json';
+import mock1174 from './mock/matchup-0022501174.json';
+import mock1182 from './mock/matchup-0022501182.json';
+
+/* Standalone build: captured production payloads for 2026-04-10, decoded by
+   the real decoders. No sign-in, no network. Other dates are empty slates. */
+const MOCK_MATCHUPS = { '0022501172': mock1172, '0022501174': mock1174, '0022501182': mock1182 };
+const fetchSlate = (date) =>
+  PROTO_STANDALONE
+    ? Promise.resolve(
+        decodeSlate(date === DEMO_DATE ? mockSlate : { ...mockSlate, slate_date: date, games: [] }),
+      )
+    : fetchLiveSlate(date);
+const fetchMatchup = (gameId) =>
+  PROTO_STANDALONE
+    ? MOCK_MATCHUPS[gameId]
+      ? Promise.resolve(decodeMatchup(MOCK_MATCHUPS[gameId]))
+      : Promise.reject(new Error('no mock for this game'))
+    : fetchLiveMatchup(gameId);
 
 const matchupCache = new Map();
 const loadMatchup = (gameId) => {
@@ -50,7 +71,10 @@ export const evaluate = (target, game, matchup) => {
   const poolOk = historical
     ? matchup.experience.sections.participants.status === 'available'
     : !['missing', 'unavailable'].includes(matchup.freshness.pool.status);
-  const context = target.qualifiers.map((q) => ({ qualifier: q, rows: contextRows(opponentTeam, q) }));
+  const context = target.qualifiers.map((q) => ({
+    qualifier: q,
+    rows: contextRows(opponentTeam, q),
+  }));
   const players = poolOk
     ? matchup.players
         .filter((player) => player.teamId === opposingTeam?.teamId)
@@ -59,7 +83,12 @@ export const evaluate = (target, game, matchup) => {
             const entry = shareEntry(player, q);
             return { qualifier: q, entry, meets: meets(entry, q), thin: isThin(entry, q) };
           });
-          return { player, shares, fits: shares.every((s) => s.meets), thin: shares.some((s) => s.thin) };
+          return {
+            player,
+            shares,
+            fits: shares.every((s) => s.meets),
+            thin: shares.some((s) => s.thin),
+          };
         })
         .filter((row) => row.fits)
         .sort((a, b) => (b.player.seasonScoring ?? -1) - (a.player.seasonScoring ?? -1))
@@ -106,7 +135,11 @@ export const useResolvedTargets = (date, targets) => {
   const gameIds = useMemo(
     () =>
       slateState.slate
-        ? [...new Set(targets.map((t) => gameFor(slateState.slate, t.opponent)?.gameId).filter(Boolean))]
+        ? [
+            ...new Set(
+              targets.map((t) => gameFor(slateState.slate, t.opponent)?.gameId).filter(Boolean),
+            ),
+          ]
         : [],
     [slateState.slate, targets],
   );
@@ -127,12 +160,18 @@ export const useResolvedTargets = (date, targets) => {
       targets.map((target) => {
         const game = gameFor(slateState.slate, target.opponent);
         const matchup = game ? matchups[game.gameId] : null;
-        if (matchup?.failed) return { target, game, players: [], context: [], availability: 'error' };
+        if (matchup?.failed)
+          return { target, game, players: [], context: [], availability: 'error' };
         return evaluate(target, game, matchup);
       }),
     [targets, slateState.slate, matchups],
   );
-  return { ...slateState, results, live: results.filter((r) => r.game), idle: results.filter((r) => !r.game) };
+  return {
+    ...slateState,
+    results,
+    live: results.filter((r) => r.game),
+    idle: results.filter((r) => !r.game),
+  };
 };
 
 /* ---- Backtest stub ------------------------------------------------------ */
@@ -140,7 +179,9 @@ export const useResolvedTargets = (date, targets) => {
 // the layout. Replace with the real read from statsplus-backend#246.
 const noise = (seed, i) => 0.65 + ((seed * 7 + i * 13) % 70) / 100;
 export const stubBacktest = (result) => {
-  const markets = [...new Set(result.target.qualifiers.flatMap((q) => marketsFor(q.base, q.sliceKey)))];
+  const markets = [
+    ...new Set(result.target.qualifiers.flatMap((q) => marketsFor(q.base, q.sliceKey))),
+  ];
   const baseline = { PTS: (p) => p.seasonScoring ?? 12, '3PM': () => 2.1, AST: () => 4.2 };
   const rows = result.players
     .filter((row) => !row.thin)
@@ -155,5 +196,9 @@ export const stubBacktest = (result) => {
       }));
       return { player, shares, season, games };
     });
-  return { markets, rows, proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.' };
+  return {
+    markets,
+    rows,
+    proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+  };
 };

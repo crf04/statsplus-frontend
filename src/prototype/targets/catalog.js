@@ -48,7 +48,8 @@ export const sliceLabel = (base, sliceKey) =>
 /* Box-score proxies the matchup already maps to each slice. */
 export const marketsFor = (base, sliceKey) => {
   const b = baseOf(base)?.key;
-  if (b === 'shotZones') return ['Corner 3', 'Above the Break 3'].includes(sliceKey) ? ['PTS', '3PM'] : ['PTS'];
+  if (b === 'shotZones')
+    return ['Corner 3', 'Above the Break 3'].includes(sliceKey) ? ['PTS', '3PM'] : ['PTS'];
   if (b === 'shotTypes') return sliceKey === 'Less Than 10 ft' ? ['PTS'] : ['PTS', '3PM'];
   if (b === 'assistLocations') return ['AST'];
   return ['PTS'];
@@ -58,7 +59,34 @@ export const marketsFor = (base, sliceKey) => {
 export const THIN_VOLUME = { shotZones: 1, playTypes: 1, shotTypes: 4, assistLocations: 1 };
 
 export const TEAMS = [
-  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW',
-  'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK',
-  'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS',
+  'ATL',
+  'BOS',
+  'BKN',
+  'CHA',
+  'CHI',
+  'CLE',
+  'DAL',
+  'DEN',
+  'DET',
+  'GSW',
+  'HOU',
+  'IND',
+  'LAC',
+  'LAL',
+  'MEM',
+  'MIA',
+  'MIL',
+  'MIN',
+  'NOP',
+  'NYK',
+  'OKC',
+  'ORL',
+  'PHI',
+  'PHX',
+  'POR',
+  'SAC',
+  'SAS',
+  'TOR',
+  'UTA',
+  'WAS',
 ];

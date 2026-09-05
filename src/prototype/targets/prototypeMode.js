@@ -35,8 +35,7 @@ export const useVariant = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { pathname } = useLocation();
   const onPage = pathname.startsWith(PAGE_PATH);
-  const active =
-    PROTO_ENABLED && (onPage || searchParams.get('proto') === 'targets');
+  const active = PROTO_ENABLED && (onPage || searchParams.get('proto') === 'targets');
   const key = (searchParams.get('v') || 'A').toUpperCase();
   const variant = VARIANT_KEYS.includes(key) ? key : 'A';
   const step = (delta) => {

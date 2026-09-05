@@ -5,6 +5,17 @@ import { filterSetToSearchParams } from '../../filterUtils';
 import { sliceLabel } from './catalog';
 import { COMPARATOR_SYMBOL, qualifierLabel, titleOf, unitOf } from './targetsStore';
 import { stubBacktest } from './resolveTargets';
+import { PROTO_STANDALONE } from './prototypeMode';
+
+/* Standalone build has nowhere to link to. */
+export const MaybeLink = ({ to, children, ...rest }) =>
+  PROTO_STANDALONE ? (
+    <span {...rest}>{children}</span>
+  ) : (
+    <Link to={to} {...rest}>
+      {children}
+    </Link>
+  );
 
 export const pct = (share) => `${Math.round(share * 100)}%`;
 export const signed = (n, digits = 1) => `${n > 0 ? '+' : ''}${n.toFixed(digits)}`;
@@ -22,7 +33,10 @@ export function Title({ target, as: Tag = 'h3', className = '' }) {
         {target.qualifiers.map((q, i) => (
           <span key={i}>
             {i > 0 && <em> & </em>}
-            {sliceLabel(q.base, q.sliceKey)} <b>{COMPARATOR_SYMBOL[q.comparator]} {pct(q.threshold)}</b>
+            {sliceLabel(q.base, q.sliceKey)}{' '}
+            <b>
+              {COMPARATOR_SYMBOL[q.comparator]} {pct(q.threshold)}
+            </b>
           </span>
         ))}
       </span>
@@ -33,10 +47,19 @@ export function Title({ target, as: Tag = 'h3', className = '' }) {
 /* One defense-sheet reading: rank pill + % vs league + σ, for one window. */
 export function Reading({ stat, windowLabel }) {
   if (!stat) return <span className="tp-reading is-empty">{windowLabel}: n/a</span>;
-  const tone = stat.percentVsLeagueAverage === null ? 'neutral' : stat.percentVsLeagueAverage < 0 ? 'under' : 'over';
+  const tone =
+    stat.percentVsLeagueAverage === null
+      ? 'neutral'
+      : stat.percentVsLeagueAverage < 0
+        ? 'under'
+        : 'over';
   return (
     <span className={`tp-reading is-${tone}`}>
-      <span className="rank-pill" style={{ '--rank': stat.rank }} title={`Rank ${stat.rank}/30 — 30 allows the most`}>
+      <span
+        className="rank-pill"
+        style={{ '--rank': stat.rank }}
+        title={`Rank ${stat.rank}/30 — 30 allows the most`}
+      >
         {stat.rank}
       </span>
       <span className="tp-reading-window">{windowLabel}</span>
@@ -53,7 +76,9 @@ export function Context({ item, compact = false }) {
   const { qualifier, rows } = item;
   return (
     <div className={`tp-context${compact ? ' is-compact' : ''}`}>
-      <span className="tp-context-q">{qualifierLabel(qualifier)} <em>{unitOf(qualifier)}</em></span>
+      <span className="tp-context-q">
+        {qualifierLabel(qualifier)} <em>{unitOf(qualifier)}</em>
+      </span>
       {rows.length === 0 ? (
         <span className="honest-empty">No sheet row for this slice.</span>
       ) : (
@@ -72,25 +97,42 @@ export function Context({ item, compact = false }) {
 export const logsPath = (player) => `/?${filterSetToSearchParams({ player_name: player.name })}`;
 
 export function Availability({ result }) {
-  if (result.availability === 'loading') return <p className="honest-empty">Loading {result.game.away.tricode} @ {result.game.home.tricode}…</p>;
-  if (result.availability === 'error') return <p className="honest-empty">Matchup failed to load.</p>;
+  if (result.availability === 'loading')
+    return (
+      <p className="honest-empty">
+        Loading {result.game.away.tricode} @ {result.game.home.tricode}…
+      </p>
+    );
+  if (result.availability === 'error')
+    return <p className="honest-empty">Matchup failed to load.</p>;
   if (result.availability === 'unavailable')
-    return <p className="honest-empty tp-unavailable">{result.opposingTeam?.tricode} pool unavailable — this is not “nobody qualifies”.</p>;
+    return (
+      <p className="honest-empty tp-unavailable">
+        {result.opposingTeam?.tricode} pool unavailable — this is not “nobody qualifies”.
+      </p>
+    );
   if (result.players.length === 0)
-    return <p className="honest-empty">No {result.opposingTeam?.tricode} player fits. {result.poolSize} in pool.</p>;
+    return (
+      <p className="honest-empty">
+        No {result.opposingTeam?.tricode} player fits. {result.poolSize} in pool.
+      </p>
+    );
   return null;
 }
 
 /* Fit table: one row per qualifying player, one share column per Qualifier. */
 export function FitTable({ result, dense = false }) {
-  if (result.availability !== 'available' || result.players.length === 0) return <Availability result={result} />;
+  if (result.availability !== 'available' || result.players.length === 0)
+    return <Availability result={result} />;
   return (
     <table className={`tp-fits${dense ? ' is-dense' : ''}`}>
       <thead>
         <tr>
           <th>Player</th>
           {result.target.qualifiers.map((q, i) => (
-            <th key={i} className="num">{sliceLabel(q.base, q.sliceKey)}</th>
+            <th key={i} className="num">
+              {sliceLabel(q.base, q.sliceKey)}
+            </th>
           ))}
           <th className="num">PPG</th>
           {!dense && <th>Markets</th>}
@@ -100,21 +142,35 @@ export function FitTable({ result, dense = false }) {
         {result.players.map(({ player, shares, thin }) => (
           <tr key={player.id} className={thin ? 'is-thin' : ''}>
             <td>
-              <Link to={logsPath(player)} className="tp-player">{player.name}</Link>
+              <MaybeLink to={logsPath(player)} className="tp-player">
+                {player.name}
+              </MaybeLink>
               <small>{player.tricode}</small>
-              {thin && <span className="thin-flag" title="Thin diet sample">thin</span>}
+              {thin && (
+                <span className="thin-flag" title="Thin diet sample">
+                  thin
+                </span>
+              )}
             </td>
             {shares.map((s, i) => (
               <td key={i} className="num">
                 <b>{pct(s.entry.share)}</b>
-                {s.entry.leagueAverageShare !== null && <small>lg {pct(s.entry.leagueAverageShare)}</small>}
+                {s.entry.leagueAverageShare !== null && (
+                  <small>lg {pct(s.entry.leagueAverageShare)}</small>
+                )}
               </td>
             ))}
-            <td className="num">{player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}</td>
+            <td className="num">
+              {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}
+            </td>
             {!dense && (
               <td>
                 <span className="market-chips">
-                  {player.postedMarkets.length ? player.postedMarkets.map((m) => <span key={m}>{m}</span>) : <span>game logs</span>}
+                  {player.postedMarkets.length ? (
+                    player.postedMarkets.map((m) => <span key={m}>{m}</span>)
+                  ) : (
+                    <span>game logs</span>
+                  )}
                 </span>
               </td>
             )}
@@ -127,14 +183,15 @@ export function FitTable({ result, dense = false }) {
 
 /* Chips instead of a table, for the denser layouts. */
 export function FitChips({ result }) {
-  if (result.availability !== 'available' || result.players.length === 0) return <Availability result={result} />;
+  if (result.availability !== 'available' || result.players.length === 0)
+    return <Availability result={result} />;
   return (
     <div className="diet-chips tp-fit-chips">
       {result.players.map(({ player, shares, thin }) => (
-        <Link key={player.id} to={logsPath(player)} className={thin ? 'is-thin' : ''}>
+        <MaybeLink key={player.id} to={logsPath(player)} className={thin ? 'is-thin' : ''}>
           {player.name} · {shares.map((s) => pct(s.entry.share)).join(' / ')}
           {thin ? ' · thin' : ''}
-        </Link>
+        </MaybeLink>
       ))}
     </div>
   );
@@ -145,7 +202,9 @@ export function Backtest({ result, open = true }) {
   return (
     <div className="tp-backtest" hidden={!open}>
       <div className="tp-backtest-head">
-        <span className="matchup-eyebrow">Backtest · season to date · vs {result.target.opponent}</span>
+        <span className="matchup-eyebrow">
+          Backtest · season to date · vs {result.target.opponent}
+        </span>
         <span className="tp-stub">STUB — synthetic rows until backend#246</span>
       </div>
       <p className="honest-empty">{bt.proxy} Thin diets excluded.</p>
@@ -157,7 +216,11 @@ export function Backtest({ result, open = true }) {
             <tr>
               <th>Player</th>
               <th>Game</th>
-              {bt.markets.map((m) => <th key={m} className="num">{m}</th>)}
+              {bt.markets.map((m) => (
+                <th key={m} className="num">
+                  {m}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -166,8 +229,12 @@ export function Backtest({ result, open = true }) {
                 <tr key={`${player.id}-${i}`}>
                   {i === 0 && (
                     <td rowSpan={games.length}>
-                      <Link to={logsPath(player)} className="tp-player">{player.name}</Link>
-                      <small>season {bt.markets.map((m) => `${season[m].toFixed(1)} ${m}`).join(' · ')}</small>
+                      <MaybeLink to={logsPath(player)} className="tp-player">
+                        {player.name}
+                      </MaybeLink>
+                      <small>
+                        season {bt.markets.map((m) => `${season[m].toFixed(1)} ${m}`).join(' · ')}
+                      </small>
                     </td>
                   )}
                   <td className="mono">{g.date}</td>

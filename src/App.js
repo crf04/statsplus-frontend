@@ -39,7 +39,8 @@ function AppNav() {
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
-          {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
+          {/* PROTOTYPE (throwaway): standalone build has no sign-in. */}
+          {!PROTO_STANDALONE && (isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />)}
         </div>
       </nav>
     </header>
@@ -51,38 +52,55 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <div className="App">
-          <ProtectedRoute>
-            <AppNav />
-            <Routes>
-              {/* PROTOTYPE (throwaway): standalone build lands on the Targets page. */}
-              <Route
-                path="/"
-                element={PROTO_STANDALONE ? <Navigate to="/prototype/targets" replace /> : <GameLogFilter />}
-              />
-              <Route path="/help" element={<QueryReferencePage />} />
-              <Route path="/matchups" element={<SlatePage />} />
-              <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-              {/* PROTOTYPE (throwaway) */}
-              {PROTO && <Route path="/prototype/targets" element={<TargetsPrototypePage />} />}
-              <Route
-                path="/operations"
-                element={
-                  <AdminProtectedRoute>
-                    <OperationsPage />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/operations"
-                element={
-                  <AdminProtectedRoute>
-                    <OperationsPage />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ProtectedRoute>
+          {/* PROTOTYPE (throwaway): standalone build is only the Targets page, unauthenticated. */}
+          {PROTO_STANDALONE ? (
+            <>
+              <AppNav />
+              <Routes>
+                <Route path="/prototype/targets" element={<TargetsPrototypePage />} />
+                <Route path="*" element={<Navigate to="/prototype/targets" replace />} />
+              </Routes>
+            </>
+          ) : (
+            <ProtectedRoute>
+              <AppNav />
+              <Routes>
+                {/* PROTOTYPE (throwaway): standalone build lands on the Targets page. */}
+                <Route
+                  path="/"
+                  element={
+                    PROTO_STANDALONE ? (
+                      <Navigate to="/prototype/targets" replace />
+                    ) : (
+                      <GameLogFilter />
+                    )
+                  }
+                />
+                <Route path="/help" element={<QueryReferencePage />} />
+                <Route path="/matchups" element={<SlatePage />} />
+                <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+                {/* PROTOTYPE (throwaway) */}
+                {PROTO && <Route path="/prototype/targets" element={<TargetsPrototypePage />} />}
+                <Route
+                  path="/operations"
+                  element={
+                    <AdminProtectedRoute>
+                      <OperationsPage />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/operations"
+                  element={
+                    <AdminProtectedRoute>
+                      <OperationsPage />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </ProtectedRoute>
+          )}
         </div>
       </BrowserRouter>
     </AuthProvider>

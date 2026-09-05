@@ -1363,6 +1363,15 @@ const applySelfFilters = (logs, url) =>
     return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
   }, logs);
 
+// The real endpoint restricts the read to games against one specific opponent
+// when it is sent a tricode. The contract has to restrict too, or a journey
+// cannot tell a Filter Set fixed to one opponent from the whole season.
+const applyOpponentTricode = (logs, url) => {
+  const tricode = url.searchParams.get('opponent_tricode');
+  if (!tricode) return logs;
+  return logs.filter((log) => log.MATCHUP.endsWith(` ${tricode}`));
+};
+
 /**
  * The Traditional Opposing Team Profile, per-48 and ranked ascending so that
  * rank 1 means the fewest allowed.
@@ -1716,8 +1725,8 @@ export const installApiContract = async (page, overrides = {}) => {
     if (url.pathname === '/api/games/game_logs') {
       await route.fulfill({
         json: {
-          game_logs: applySelfFilters(
-            seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs,
+          game_logs: applyOpponentTricode(
+            applySelfFilters(seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs, url),
             url,
           ),
           averages: [averages],

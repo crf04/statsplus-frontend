@@ -1,11 +1,18 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
-import { deleteTarget, fetchResolvedTargets, fetchTargets, updateTarget } from './targetsApi';
+import {
+  deleteTarget,
+  fetchResolvedTargets,
+  fetchTargetBacktest,
+  fetchTargets,
+  updateTarget,
+} from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargets: jest.fn(),
   fetchResolvedTargets: jest.fn(),
+  fetchTargetBacktest: jest.fn(),
   updateTarget: jest.fn(),
   deleteTarget: jest.fn(),
 }));
@@ -106,6 +113,38 @@ const liveOn = (slateDate, record = target, overrides = {}) => ({
  * window labels. Asserting on the Qualifier as a whole would pass if Season
  * and L15 swapped values.
  */
+/*
+ * The season behind the Target: every league-wide player who meets the
+ * Qualifiers and has faced the opponent, with the outcome markets the
+ * Qualifier's slice maps to. It travels with the Target the backend ran it
+ * for, so the shares are labelled by those Qualifiers rather than the page's.
+ */
+const backtest = {
+  target,
+  proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+  statColumns: ['PTS', '3PM'],
+  players: [
+    {
+      canonicalId: 2544,
+      name: 'LeBron James',
+      tricode: 'LAL',
+      shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+      seasonAverages: { PTS: 25.4, '3PM': 2 },
+      games: [
+        { gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } },
+        { gameDate: '2025-12-02', stats: { PTS: 22.5, '3PM': 1 } },
+      ],
+    },
+  ],
+};
+
+const expandBacktest = async () => {
+  const toggle = await screen.findByRole('button', { name: 'Expand backtest' });
+  await act(async () => {
+    fireEvent.click(toggle);
+  });
+};
+
 const readingFor = (window) => within(screen.getByText(window).closest('.target-reading'));
 
 const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
@@ -129,6 +168,7 @@ beforeEach(() => {
   fetchResolvedTargets.mockResolvedValue(idleOn('2026-04-09'));
   updateTarget.mockResolvedValue(undefined);
   deleteTarget.mockResolvedValue(undefined);
+  fetchTargetBacktest.mockResolvedValue(backtest);
 });
 
 test('shows one Target with its Qualifiers, note, creation date, and a way back', async () => {
@@ -453,4 +493,125 @@ test('a refused list read is the failure that stops the page', async () => {
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Targets are unavailable.');
   expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+});
+
+/*
+ * The backtest is a league-wide game-log scan, so the page that can be opened
+ * to read a Target must not pay for one nobody asked for.
+ */
+test('the backtest is not read until the disclosure is opened, and is read once', async () => {
+  let publish;
+  fetchTargetBacktest.mockReturnValue(
+    new Promise((resolve) => {
+      publish = resolve;
+    }),
+  );
+  renderDetail();
+
+  const toggle = await screen.findByRole('button', { name: 'Expand backtest' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+
+  fireEvent.click(toggle);
+  expect(fetchTargetBacktest).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }));
+  expect(screen.getByText('Reading the season…')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Collapse backtest' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+
+  await act(async () => {
+    publish(backtest);
+  });
+  expect(
+    screen.getByRole('table', { name: 'Backtest for OKC vs Corner 3 ≥ 40% (v2)' }),
+  ).toBeVisible();
+
+  // A backtest already in hand is kept rather than read a second time.
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse backtest' }));
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  await expandBacktest();
+  expect(screen.getByRole('table')).toBeVisible();
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
+});
+
+test('an expanded backtest reads each game against the player’s own season average', async () => {
+  renderDetail();
+  await expandBacktest();
+
+  expect(screen.getByText('Backtest · season to date · vs OKC')).toBeVisible();
+  // Reading "points" as "corner 3s made" is exactly the mistake the note
+  // exists to prevent, so it is shown rather than implied.
+  expect(
+    screen.getByText('Outcomes are box-score proxies; there are no per-game slice splits.'),
+  ).toBeVisible();
+
+  // The share that made him qualify, and the baseline his games are read
+  // against, under the name that opens his games against this opponent.
+  const player = screen.getByRole('cell', { name: /LeBron James/ });
+  expect(player).toHaveTextContent('LAL · Corner 3 44%');
+  expect(player).toHaveTextContent('season 25.4 PTS · 2.0 3PM');
+
+  // One row per game, one cell per outcome market, each carrying how far the
+  // game was from that average and in which direction.
+  const over = screen.getByRole('row', { name: /2026-01-12/ });
+  expect(over).toHaveTextContent('31.0');
+  expect(over).toHaveTextContent('+5.6');
+  expect(over).toHaveTextContent('4.0');
+  expect(over).toHaveTextContent('+2.0');
+  const under = screen.getByRole('row', { name: /2025-12-02/ });
+  expect(under).toHaveTextContent('22.5');
+  expect(under).toHaveTextContent('-2.9');
+  expect(under).toHaveTextContent('1.0');
+  expect(under).toHaveTextContent('-1.0');
+  expect(within(over).getByText('+5.6').closest('td')).toHaveClass('is-hit');
+  expect(within(under).getByText('-2.9').closest('td')).toHaveClass('is-miss');
+});
+
+/*
+ * The team-side Target hands off to the player-side tools: a row is that
+ * player's games against that opponent, so following it opens exactly those.
+ */
+test('a backtest row opens the Log Workspace with the player and the opponent fixed', async () => {
+  renderDetail();
+  await expandBacktest();
+
+  expect(screen.getByRole('link', { name: 'LeBron James games vs OKC' })).toHaveAttribute(
+    'href',
+    '/?player_name=LeBron+James&opponent_tricode=OKC',
+  );
+});
+
+test('a backtest nobody has played into says so rather than showing an empty table', async () => {
+  fetchTargetBacktest.mockResolvedValue({ ...backtest, players: [] });
+  renderDetail();
+  await expandBacktest();
+
+  expect(screen.getByText('Nobody qualifying has faced OKC yet.')).toBeVisible();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+/*
+ * The backtest is a third read over the Target. Losing it costs the season
+ * behind the idea and nothing else.
+ */
+test('a refused backtest leaves the rest of the Target intact and can be asked for again', async () => {
+  fetchTargetBacktest.mockRejectedValue({
+    response: { status: 503, data: { error: { message: 'The backtest is unavailable.' } } },
+  });
+  renderDetail();
+  await expandBacktest();
+
+  expect(screen.getByRole('alert')).toHaveTextContent('The backtest is unavailable.');
+  expect(screen.getByRole('heading', { name: 'OKC vs Corner 3 ≥ 40% (v2)' })).toBeInTheDocument();
+  expect(screen.getByText('Corner 3 ≥ 40%')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+
+  // A backtest nobody can request again would be a dead end, so opening it
+  // after a refusal asks for it again.
+  fetchTargetBacktest.mockResolvedValue(backtest);
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse backtest' }));
+  await expandBacktest();
+  expect(screen.getByRole('table')).toBeVisible();
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
 });

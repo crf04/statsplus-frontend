@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
-import { fetchResolvedTargets, fetchTargets } from './targetsApi';
+import { fetchResolvedTargets, fetchTargetBacktest, fetchTargets } from './targetsApi';
 
 const LOAD_FAILURE = 'Unable to load your Targets. Please try again.';
+const BACKTEST_FAILURE = 'Unable to load this backtest. Please try again.';
 
 const EMPTY_LIST = { targets: [] };
 const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
@@ -67,3 +68,34 @@ export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
  * the date back off the response rather than working it out a second time.
  */
 export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
+
+/*
+ * The backtest is the one read over a Target that costs a league-wide game-log
+ * scan, so it is not made on arrival like the two above: `attempt` is 0 until
+ * a reader opens the disclosure, and rises again only when a reader who was
+ * refused opens it again. A backtest already in hand is kept while the
+ * disclosure is closed rather than read a second time.
+ */
+export const useTargetBacktest = (id, attempt) => {
+  const [state, setState] = useState({ status: 'idle', error: null, backtest: null });
+
+  useEffect(() => {
+    if (attempt === 0) return undefined;
+    const controller = new AbortController();
+    setState({ status: 'loading', error: null, backtest: null });
+    fetchTargetBacktest({ id, signal: controller.signal })
+      .then((backtest) => setState({ status: 'ready', error: null, backtest }))
+      .catch((error) => {
+        if (!isRequestCancelled(error)) {
+          setState({
+            status: 'error',
+            error: getRequestErrorMessage(error, BACKTEST_FAILURE),
+            backtest: null,
+          });
+        }
+      });
+    return () => controller.abort();
+  }, [id, attempt]);
+
+  return state;
+};

@@ -1348,8 +1348,32 @@ export const curryGameLogs = gameLogs.map((log, index) => ({
   PTS: index === 0 ? 42 : 18,
 }));
 
+/*
+ * Every player either Matchup publishes, which is this contract's whole
+ * league. A Target's backtest reads league-wide rather than from the day's
+ * opposing pool, so it needs a league to read.
+ */
+const leaguePlayers = [...matchupPayload.players, ...historicalMatchupPayload.players].filter(
+  (player, index, all) =>
+    all.findIndex((other) => other.canonical_id === player.canonical_id) === index,
+);
+
+/*
+ * Each of them has a season in the game-log route too, because a backtest row
+ * and the Log Workspace that row hands off to have to be reading the same
+ * games. It is the shared season rewritten as that player's: their team, and
+ * their own scoring, so two rows of one backtest table can never be confused.
+ */
+const leagueSeason = (player) =>
+  gameLogs.map((log) => ({
+    ...log,
+    MATCHUP: log.MATCHUP.replace('LAL', player.tricode),
+    PTS: log.PTS + Math.round(player.season_scoring) - 25,
+  }));
+
 const seasonsByPlayer = {
   'Stephen Curry': curryGameLogs,
+  ...Object.fromEntries(leaguePlayers.map((player) => [player.name, leagueSeason(player)])),
 };
 
 // The real endpoint narrows the season by the self filters it is sent. The
@@ -1635,6 +1659,92 @@ const resolveTargets = (date, targets) => {
   return { slate_date: date, targets: [...live, ...idle] };
 };
 
+/*
+ * The backtest is season-to-date and league-wide rather than day-scoped: every
+ * player the league publishes whose Diet meets every Qualifier and is not
+ * thin, and the games in their season played against the Target's opponent. A
+ * Target whose opponent is idle today still has one.
+ *
+ * The columns are the outcome markets each Qualifier's slice maps to, deduped
+ * in Qualifier order, and every figure is read off the same game log the Log
+ * Workspace serves, so a row and the handoff it links to cannot disagree.
+ */
+const SLICE_MARKETS = {
+  play_types: ['PTS', 'PA', 'PR', 'PRA'],
+  assist_locations: ['AST', 'PA', 'RA', 'PRA'],
+  shot_zones: ['PTS'],
+  shot_types: ['PTS'],
+};
+
+const THREE_POINT_SLICES = ['Corner 3', 'Above the Break 3'];
+
+const sliceMarkets = (qualifier) => [
+  ...(SLICE_MARKETS[qualifier.base] || ['PTS']),
+  ...(THREE_POINT_SLICES.includes(qualifier.slice_key) ? ['3PM'] : []),
+];
+
+// Box-score proxies: what a game log holds is the closest thing to a slice.
+const MARKET_STATS = {
+  PTS: (log) => log.PTS,
+  AST: (log) => log.AST,
+  REB: (log) => log.REB,
+  '3PM': (log) => log.FG3M,
+  PA: (log) => log.PTS + log.AST,
+  PR: (log) => log.PTS + log.REB,
+  RA: (log) => log.REB + log.AST,
+  PRA: (log) => log.PTS + log.REB + log.AST,
+};
+
+const seasonAverage = (season, market) =>
+  Math.round(
+    (season.reduce((total, log) => total + MARKET_STATS[market](log), 0) / season.length) * 10,
+  ) / 10;
+
+const backtestPlayer = (target, statColumns, player) => {
+  const fit = resolvedFit(target.qualifiers, player);
+  // A thin Diet is excluded from the longer view rather than flagged in it, so
+  // the sample is not polluted by a diet nobody should lean on.
+  if (!fit || fit.thin) return null;
+  const season = seasonsByPlayer[player.name] || [];
+  const games = season.filter((log) => log.MATCHUP.endsWith(` ${target.opponent}`));
+  if (games.length === 0) return null;
+  return {
+    canonical_id: player.canonical_id,
+    name: player.name,
+    team_id: player.team_id,
+    tricode: player.tricode,
+    season_scoring: player.season_scoring,
+    shares: fit.shares,
+    season_averages: Object.fromEntries(
+      statColumns.map((market) => [market, seasonAverage(season, market)]),
+    ),
+    games: games.map((log) => ({
+      // The contract's game logs carry no game id of their own, so one is
+      // composed from the player and the day they played.
+      game_id: `${player.canonical_id}-${log.GAME_DATE}`,
+      game_date: log.GAME_DATE,
+      matchup: log.MATCHUP,
+      minutes: log.MIN,
+      stats: Object.fromEntries(statColumns.map((market) => [market, MARKET_STATS[market](log)])),
+    })),
+  };
+};
+
+const backtestTarget = (target) => {
+  const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
+  return {
+    target,
+    season: '2025-26',
+    proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+    stat_columns: statColumns,
+    players: leaguePlayers
+      .map((player) => backtestPlayer(target, statColumns, player))
+      .filter(Boolean)
+      // Season scoring descending, as every player list the product shows is.
+      .sort((first, second) => second.season_scoring - first.season_scoring),
+  };
+};
+
 const isCalendarDate = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
@@ -1831,6 +1941,22 @@ export const installApiContract = async (page, overrides = {}) => {
         await route.fulfill({
           json: { success: true, ...resolveTargets(date || DEFAULT_SLATE_DATE, targets) },
         });
+        return;
+      }
+
+      // The season-to-date backtest of one Target, not a Target whose id ends
+      // in "/backtest".
+      const backtestId = targetId?.match(/^(.+)\/backtest$/)?.[1];
+      if (backtestId !== undefined && method === 'GET') {
+        const target = targets.find((item) => String(item.id) === backtestId);
+        if (!target) {
+          await route.fulfill({
+            status: 404,
+            json: { error: { code: 'resource_not_found', message: 'Target not found.' } },
+          });
+          return;
+        }
+        await route.fulfill({ json: { success: true, ...backtestTarget(target) } });
         return;
       }
 

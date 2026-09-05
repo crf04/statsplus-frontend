@@ -253,6 +253,75 @@ export const decodeResolvedTargets = (payload = {}) => {
   };
 };
 
+/*
+ * The season-to-date backtest is a third read over the same Target: every
+ * player league-wide whose diet meets the Qualifiers, and their games against
+ * the opponent. Its columns are outcome markets the Matchup already maps to
+ * the Qualifiers' slices, so every stat a row shows is named by
+ * `stat_columns` and nothing else is read out of a game.
+ *
+ * The season label, the team id, the game id, the minutes and the matchup
+ * string arrive too and are shown nowhere, so they are not decoded.
+ */
+const decodeStats = (stats, statColumns) => {
+  if (!isRecord(stats)) throw createInvalidResponseError();
+  return Object.fromEntries(statColumns.map((column) => [column, requireNumber(stats[column])]));
+};
+
+const decodeBacktestGame = (game, statColumns) => {
+  if (!isRecord(game) || !isCalendarDate(game.game_date)) throw createInvalidResponseError();
+  return { gameDate: game.game_date, stats: decodeStats(game.stats, statColumns) };
+};
+
+/*
+ * A player is in the backtest because they have faced the opponent, so one
+ * with no game is a response whose table would quietly drop a row. The shares
+ * are index-parallel with the Qualifiers, as a fit's are.
+ */
+const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
+  if (
+    !isRecord(player) ||
+    !Array.isArray(player.games) ||
+    player.games.length === 0 ||
+    !Array.isArray(player.shares) ||
+    player.shares.length !== qualifierCount
+  ) {
+    throw createInvalidResponseError();
+  }
+  return {
+    canonicalId: requireNumber(player.canonical_id),
+    name: requireString(player.name),
+    tricode: requireString(player.tricode),
+    shares: player.shares.map(decodeShare),
+    seasonAverages: decodeStats(player.season_averages, statColumns),
+    games: player.games.map((game) => decodeBacktestGame(game, statColumns)),
+  };
+};
+
+export const decodeBacktest = (payload = {}) => {
+  if (
+    !isRecord(payload) ||
+    !Array.isArray(payload.stat_columns) ||
+    payload.stat_columns.length === 0 ||
+    !Array.isArray(payload.players)
+  ) {
+    throw createInvalidResponseError();
+  }
+  // The Target travels with its own backtest, so the rows are labelled by the
+  // Qualifiers the backend actually ran rather than by whatever the page
+  // happens to be holding.
+  const target = decodeTarget(payload.target);
+  const statColumns = payload.stat_columns.map(requireString);
+  return {
+    target,
+    proxy: requireString(payload.proxy),
+    statColumns,
+    players: payload.players.map((player) =>
+      decodeBacktestPlayer(player, statColumns, target.qualifiers.length),
+    ),
+  };
+};
+
 const encodeQualifier = (qualifier) => ({
   base: qualifier.base,
   slice_key: qualifier.sliceKey,
@@ -278,6 +347,17 @@ export const fetchResolvedTargets = async ({ date, signal } = {}) => {
     signal,
   });
   return decodeResolvedTargets(response.data);
+};
+
+/*
+ * The league-wide game-log scan the day view exists to avoid, so it is only
+ * ever requested by a reader who asked for it.
+ */
+export const fetchTargetBacktest = async ({ id, signal } = {}) => {
+  const response = await apiClient.get(targetsUrl(`/${encodeURIComponent(id)}/backtest`), {
+    signal,
+  });
+  return decodeBacktest(response.data);
 };
 
 /*

@@ -203,6 +203,11 @@ test('@critical a saved Target reads live under its game and on its own page', a
   await expect(page.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
   await page.screenshot({ path: testInfo.outputPath('target-detail-live.png'), fullPage: true });
 
+  // Nobody in the league has faced BOS this season, which is stated rather
+  // than left as an empty table.
+  await page.getByRole('button', { name: 'Expand backtest' }).click();
+  await expect(page.getByText('Nobody qualifying has faced BOS yet.')).toBeVisible();
+
   // An idle Target still manages, and says which day it has no game on.
   await page.getByRole('link', { name: '← All Targets' }).click();
   await page.getByRole('link', { name: /^Open OKC vs Corner 3/ }).click();
@@ -257,4 +262,72 @@ test('the fits under a Slate row read at a phone width', async ({ authenticatedP
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+});
+
+/*
+ * The backtest is the season behind the idea. It is a league-wide game-log
+ * scan rather than a day-scoped read, so it costs something to ask for and is
+ * never asked for until a reader opens it — and it reads the same games the
+ * Log Workspace serves, which is what makes a row worth following.
+ */
+test('@critical a backtest is read on demand and hands off into the Log Workspace', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await installApiContract(page);
+  const backtestRequests = [];
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith('/backtest')) backtestRequests.push(url);
+    if (url.pathname === '/api/games/game_logs') gameLogRequests.push(url);
+  });
+  await page.goto('/targets');
+
+  // ATL is on every player's season in the contract and plays on no slate, so
+  // this Target is idle today and has a backtest all the same.
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: '30',
+  });
+  await saveTarget(page);
+  await page.getByRole('link', { name: /^Open ATL vs At-rim assists/ }).click();
+
+  await expect(page.getByText(/ATL has no game on/)).toBeVisible();
+  expect(backtestRequests).toHaveLength(0);
+
+  await page.getByRole('button', { name: 'Expand backtest' }).click();
+  const backtest = page.getByRole('table', { name: /^Backtest for ATL vs At-rim assists/ });
+  await expect(backtest).toBeVisible();
+  expect(backtestRequests).toHaveLength(1);
+  await expect(page.getByText('Backtest · season to date · vs ATL')).toBeVisible();
+  await expect(page.getByText(/box-score proxies/)).toBeVisible();
+
+  // League-wide and ordered by season scoring, so the first row is not the
+  // player the day's Matchup happens to lead with.
+  const rows = backtest.getByRole('row');
+  await expect(rows.nth(1)).toContainText('Jayson Tatum');
+  // Each game against ATL in the markets the Qualifier's slice maps to, read
+  // against that player's own season average.
+  const tatum = backtest.getByRole('row', { name: /Jayson Tatum/ });
+  await expect(tatum).toContainText('BOS · At-rim assists 33%');
+  await expect(tatum).toContainText('season 8.5 AST · 39.5 PA · 16.0 RA · 47.0 PRA');
+  await expect(tatum).toContainText('2025-01-10');
+  await expect(tatum).toContainText('42.0');
+  await expect(tatum).toContainText('+2.5');
+  // A thin Diet is excluded from the longer view, though the Matchup and the
+  // day's fits still list him.
+  await expect(backtest.getByRole('row', { name: /Austin Reaves/ })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('target-backtest.png'), fullPage: true });
+
+  // Following a row opens exactly the games that row is about.
+  await backtest.getByRole('link', { name: 'LeBron James games vs ATL' }).click();
+  await expect(page).toHaveURL('/?player_name=LeBron+James&opponent_tricode=ATL');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  expect(gameLogRequests.at(-1).searchParams.get('opponent_tricode')).toBe('ATL');
+  expect(gameLogRequests.at(-1).searchParams.get('player_name')).toBe('LeBron James');
+  await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
 });

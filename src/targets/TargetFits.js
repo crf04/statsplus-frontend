@@ -16,9 +16,9 @@ import './TargetFits.css';
  * whole percent the Matchup's Diet chips use. A Qualifier's threshold is not:
  * it is what was typed, and keeps the decimal its title was derived with.
  */
-const formatObservedShare = (share) => `${Math.round(share * 100)}%`;
+export const formatObservedShare = (share) => `${Math.round(share * 100)}%`;
 
-const signed = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+export const signed = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
 
 /*
  * The title is derived and stored by the backend, but a flat string cannot set

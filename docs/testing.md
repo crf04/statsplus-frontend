@@ -101,8 +101,10 @@ Defense Sheet readings a Target shows are the ones the Matchup page shows for th
 `2026-03-29` against game-log participants; a Target naming any other team is idle. Two values the
 backend derives are recomputed rather than copied: whether a fit's Diet is thin, from the
 `games_played` and `volume` on each stored fact against the Matchup Score's floors, and the derived
-title. The slate route reports pool freshness that matches the evidence resolution reports for the
-same date — a fresh pool on the scheduled date, none on the completed one — so a journey never sees
+title. A Target's backtest is composed the same way but league-wide and season-to-date: it reads
+every player either Matchup publishes against the season the game-log route serves for that player,
+so a backtest row and the Log Workspace that row hands off to show the same game. The slate route
+reports pool freshness that matches the evidence resolution reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a journey never sees
 one route call a pool unavailable while the other lists players from it.
 
 Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts). A date the

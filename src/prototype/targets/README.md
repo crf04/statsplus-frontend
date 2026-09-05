@@ -30,7 +30,8 @@ then sign in and open:
 
 - **Slate: C** (fits under the game rows) — Chris, 2026-09-04. The slate is
   locked to C in the code; the switcher now only drives the Targets page.
-- Targets page: open.
+- **Targets page: B** (card opens its own page) — Chris, 2026-09-04. Default
+  variant is now B.
 
 ## Variants (second round, after Chris's "keep them separate")
 

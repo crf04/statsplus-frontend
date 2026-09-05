@@ -1,10 +1,10 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
-import { deleteTarget, fetchTargets, updateTarget } from './targetsApi';
+import { deleteTarget, fetchResolvedTargets, updateTarget } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
-  fetchTargets: jest.fn(),
+  fetchResolvedTargets: jest.fn(),
   updateTarget: jest.fn(),
   deleteTarget: jest.fn(),
 }));
@@ -31,6 +31,71 @@ const target = {
   ],
 };
 
+/*
+ * The page reads one Target as it resolves against the current Slate Date, so
+ * every fixture below is a resolution: the Target, the game its opponent
+ * plays that day, the readings on the Qualifier's slice, and the fits.
+ */
+const idleOn = (slateDate, record = target) => ({
+  slateDate,
+  entries: [
+    {
+      target: record,
+      game: null,
+      availability: { status: 'unavailable', source: null, unavailableReason: 'opponent_idle' },
+      context: [],
+      players: [],
+    },
+  ],
+});
+
+const reading = (rank, percentVsLeagueAverage, sigmaDeviation) => ({
+  rank,
+  percentVsLeagueAverage,
+  sigmaDeviation,
+});
+
+const liveOn = (slateDate, record = target, overrides = {}) => ({
+  slateDate,
+  entries: [
+    {
+      target: record,
+      game: {
+        gameId: '0022500584',
+        scheduledAt: '2026-04-09T23:30:00.000Z',
+        status: { state: 'scheduled', label: 'Scheduled' },
+        opponent: { tricode: 'OKC' },
+        opposingTeam: { tricode: 'LAL' },
+      },
+      availability: { status: 'available', source: 'player_pool', unavailableReason: null },
+      context: [
+        {
+          label: 'Corner 3',
+          metrics: [
+            {
+              key: 'Corner 3:FGA',
+              label: 'Corner 3 FGA',
+              season: reading(27, 9.7, 1.2),
+              last15: reading(11, -4.2, -0.6),
+            },
+          ],
+        },
+      ],
+      players: [
+        {
+          canonicalId: 2544,
+          name: 'LeBron James',
+          tricode: 'LAL',
+          seasonScoring: 25.4,
+          thin: false,
+          shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+        },
+      ],
+      ...overrides,
+    },
+  ],
+});
+
 const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
 
 const renderDetail = (path = '/targets/7') =>
@@ -48,7 +113,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   auth.isAuthenticated = true;
   auth.loading = false;
-  fetchTargets.mockResolvedValue([target]);
+  fetchResolvedTargets.mockResolvedValue(idleOn('2026-04-09'));
   updateTarget.mockResolvedValue(undefined);
   deleteTarget.mockResolvedValue(undefined);
 });
@@ -91,16 +156,16 @@ test('editing changes the Qualifiers and the note, and the backend re-derives th
     target: { value: 'Zone walls off the corner instead.' },
   });
 
-  fetchTargets.mockResolvedValue([
-    {
+  fetchResolvedTargets.mockResolvedValue(
+    idleOn('2026-04-09', {
       ...target,
       title: 'OKC vs Corner 3 ≤ 45%',
       note: 'Zone walls off the corner instead.',
       qualifiers: [
         { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_below', threshold: 0.45 },
       ],
-    },
-  ]);
+    }),
+  );
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
   });
@@ -157,14 +222,14 @@ test('deleting asks first, then removes the Target and returns to the grid', asy
  * and the edit would change a criterion nobody touched.
  */
 test('an unrecognised slice is shown as stored rather than silently replaced', async () => {
-  fetchTargets.mockResolvedValue([
-    {
+  fetchResolvedTargets.mockResolvedValue(
+    idleOn('2026-04-09', {
       ...target,
       qualifiers: [
         { base: 'play_types', sliceKey: 'Misc', comparator: 'at_or_above', threshold: 0.4 },
       ],
-    },
-  ]);
+    }),
+  );
   renderDetail();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
 
@@ -190,5 +255,115 @@ test('signed out, the detail asks for sign-in the way the slate does', () => {
   renderDetail();
 
   expect(screen.getByRole('heading', { name: 'Sign in to view your Targets' })).toBeInTheDocument();
-  expect(fetchTargets).not.toHaveBeenCalled();
+  expect(fetchResolvedTargets).not.toHaveBeenCalled();
+});
+
+test('a live Target reads its opponent in both windows and lists the fits', async () => {
+  fetchResolvedTargets.mockResolvedValue(liveOn('2026-04-09'));
+
+  renderDetail();
+
+  // Every Defense Sheet row on the Qualifier's slice, in both windows.
+  const qualifier = (await screen.findAllByRole('listitem'))[0];
+  expect(qualifier).toHaveTextContent('Corner 3 FGA');
+  expect(qualifier).toHaveTextContent('Season');
+  expect(qualifier).toHaveTextContent('+9.7% vs league');
+  expect(qualifier).toHaveTextContent('+1.2σ');
+  expect(qualifier).toHaveTextContent('L15');
+  expect(qualifier).toHaveTextContent('-4.2% vs league');
+  expect(qualifier).toHaveTextContent('-0.6σ');
+  // The rank pill carries the reading the Matchup's does.
+  expect(
+    within(qualifier).getByTitle('Opponent rank 27/30 — 30 allows the most'),
+  ).toHaveTextContent('27');
+
+  // The fits, headed by the game they came from.
+  expect(screen.getByRole('link', { name: 'LAL vs OKC' })).toHaveAttribute(
+    'href',
+    '/matchups/0022500584',
+  );
+  expect(screen.getByText('LeBron James')).toBeVisible();
+  expect(screen.getByText('44%')).toBeVisible();
+  expect(screen.getByText('lg 20%')).toBeVisible();
+  expect(screen.getByText('25.4')).toBeVisible();
+  expect(screen.queryByText(/has no game on/)).not.toBeInTheDocument();
+  // The detail resolves against the current Slate Date rather than one it
+  // works out for itself.
+  expect(fetchResolvedTargets).toHaveBeenCalledWith(expect.objectContaining({ date: undefined }));
+});
+
+test('a window the opponent publishes nothing for reads as unavailable, not as zero', async () => {
+  fetchResolvedTargets.mockResolvedValue(
+    liveOn('2026-04-09', target, {
+      context: [
+        {
+          label: 'Corner 3',
+          metrics: [
+            {
+              key: 'Corner 3:FGA',
+              label: 'Corner 3 FGA',
+              season: reading(27, 9.7, 1.2),
+              last15: null,
+            },
+          ],
+        },
+      ],
+    }),
+  );
+
+  renderDetail();
+
+  expect(await screen.findByText('n/a', { exact: false })).toBeVisible();
+  expect(screen.getByText('+9.7% vs league')).toBeVisible();
+  expect(screen.queryByText('0.0σ')).not.toBeInTheDocument();
+});
+
+test('an unavailable pool is stated instead of an empty fit list', async () => {
+  fetchResolvedTargets.mockResolvedValue(
+    liveOn('2026-04-09', target, {
+      availability: {
+        status: 'unavailable',
+        source: 'player_pool',
+        unavailableReason: 'player_pool_unavailable',
+      },
+      players: [],
+    }),
+  );
+
+  renderDetail();
+
+  expect(await screen.findByText(/LAL pool unavailable: player_pool_unavailable/)).toBeVisible();
+  expect(screen.getByText(/not the same as nobody fitting/)).toBeVisible();
+});
+
+test('a completed game names the evidence that listed its participants', async () => {
+  fetchResolvedTargets.mockResolvedValue(
+    liveOn('2026-04-09', target, {
+      game: {
+        gameId: '0022501082',
+        scheduledAt: '2026-04-09T23:30:00.000Z',
+        status: { state: 'final', label: 'Final' },
+        opponent: { tricode: 'OKC' },
+        opposingTeam: { tricode: 'LAL' },
+      },
+      availability: { status: 'available', source: 'game_logs', unavailableReason: null },
+    }),
+  );
+
+  renderDetail();
+
+  expect(await screen.findByText('Final')).toBeVisible();
+  expect(screen.getByText('from game logs')).toBeVisible();
+});
+
+test('an idle Target keeps its Qualifiers and says which day it has no game on', async () => {
+  fetchResolvedTargets.mockResolvedValue(idleOn('2026-04-09'));
+
+  renderDetail();
+
+  expect(await screen.findByText('OKC has no game on Thursday, April 9, 2026.')).toBeVisible();
+  // No game means no game-scoped window, so there is no reading to show.
+  expect(screen.getByText('Corner 3 ≥ 40%')).toBeVisible();
+  expect(screen.queryByText(/vs league/)).not.toBeInTheDocument();
+  expect(screen.queryByText('Season')).not.toBeInTheDocument();
 });

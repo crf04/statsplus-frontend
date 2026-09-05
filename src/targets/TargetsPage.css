@@ -410,13 +410,55 @@
   list-style: none;
 }
 
+/* One Qualifier: what it demands of a player, then how the opponent is
+   defending that slice right now. */
 .target-detail-qualifiers li {
+  display: grid;
+  gap: 6px;
+  border-left: 2px solid var(--ct-line-strong);
+  padding-left: 12px;
+}
+
+.target-detail-qualifier-head {
   display: flex;
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
-  border-left: 2px solid var(--ct-line-strong);
-  padding-left: 12px;
+}
+
+/* The game the fits come from. It links to the Matchup, which is where the
+   sides, the tip time, and the rest of the Defense Sheet are stated. */
+.target-game-chip {
+  display: inline-flex;
+  justify-self: start;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-family: var(--ct-mono);
+  font-size: 0.74rem;
+}
+
+.target-game-chip a {
+  color: var(--ct-text);
+  text-decoration: none;
+}
+
+.target-game-chip:hover {
+  border-color: var(--ct-gold);
+}
+
+.target-game-chip:hover a {
+  color: var(--ct-gold);
+}
+
+.target-game-chip small,
+.target-game-chip em {
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+  font-style: normal;
 }
 
 .target-detail-base {

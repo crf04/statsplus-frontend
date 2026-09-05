@@ -1,0 +1,247 @@
+/* A Target resolved against a day: the readings and the fit table, shared by
+   the block under a Slate row and the Target's own page. */
+
+.target-empty {
+  margin: 4px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+}
+
+/* --- the title, weighted so the team reads first --- */
+
+.target-live-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  line-height: 1.1;
+}
+
+.target-live-team {
+  font-family: var(--ct-display);
+  font-size: 1.5em;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.target-live-vs {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.6em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.target-live-qualifiers {
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.target-live-qualifiers b {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-weight: 600;
+}
+
+.target-live-qualifiers em {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.85em;
+  font-style: normal;
+}
+
+/* --- one Defense Sheet reading --- */
+
+.target-context {
+  display: grid;
+  gap: 4px;
+}
+
+.target-context-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.target-context-label {
+  min-width: 140px;
+  color: var(--ct-dim);
+  font-size: 0.72rem;
+}
+
+.target-reading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The same pill the Matchup Defense Sheet uses: 1 allows the least, 30 the
+   most, so the hue is the reading rather than decoration. */
+.target-reading .rank-pill {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: hsl(calc((var(--rank) - 1) * 4.1) 78% 43%);
+  color: #fff;
+  font-family: var(--ct-mono);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.target-reading-window {
+  color: var(--ct-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.target-reading strong {
+  font-weight: 600;
+}
+
+.target-reading small {
+  color: var(--ct-dim);
+}
+
+.target-reading.is-over strong {
+  color: var(--ct-hit);
+}
+
+.target-reading.is-under strong {
+  color: var(--ct-miss);
+}
+
+.target-reading.is-empty {
+  color: var(--ct-dim);
+}
+
+/* --- the fit table --- */
+
+.target-fits {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.target-fits th {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--ct-line-strong);
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.target-fits td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ct-line);
+  vertical-align: top;
+}
+
+.target-fits .num {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.target-fits td small {
+  display: block;
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+}
+
+.target-fits tr.is-thin td {
+  color: var(--ct-dim);
+}
+
+.target-fits .thin-flag {
+  display: block;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+}
+
+.target-fits.is-dense {
+  max-width: 640px;
+}
+
+.target-fits.is-dense td {
+  padding: 3px 6px;
+  font-size: 0.74rem;
+}
+
+/* --- the block under a Slate row --- */
+
+.target-under {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px 12px;
+  padding-left: 12px;
+  border-left: 2px solid var(--ct-hit-soft);
+}
+
+.target-under-item {
+  display: grid;
+  gap: 2px;
+}
+
+.target-under-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.target-under-head .target-live-title {
+  font-size: 0.84rem;
+}
+
+.target-live-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ct-hit);
+  box-shadow: 0 0 0 3px var(--ct-hit-soft);
+}
+
+.target-under-count {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.target-under-count b {
+  color: var(--ct-text);
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .target-under {
+    margin-left: 0;
+    padding-left: 8px;
+  }
+
+  .target-context-label {
+    min-width: 0;
+  }
+
+  .target-fits th,
+  .target-fits td,
+  .target-fits.is-dense td {
+    padding: 3px 4px;
+  }
+}

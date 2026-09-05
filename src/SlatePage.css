@@ -147,6 +147,25 @@
   font-size: 0.72rem;
 }
 
+/* How many Targets the day has, and the way to the page that holds them all. */
+.slate-targets {
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+}
+
+.slate-targets a {
+  color: var(--ct-dim);
+  text-decoration: none;
+}
+
+.slate-targets a:hover {
+  color: var(--ct-gold);
+}
+
+.slate-targets.is-unavailable {
+  color: var(--ct-dim);
+}
+
 .freshness {
   display: flex;
   flex-wrap: wrap;

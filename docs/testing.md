@@ -99,6 +99,12 @@ Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
 so anything asserting a calendar day should use an instant near midnight UTC.
 
+Target resolution is composed rather than canned: the contract resolves whatever Targets the account
+has saved against those same two Matchups, so the shares, thin flags, and Defense Sheet readings a
+Target shows are the ones the Matchup page shows for the same game. `0022500584` resolves on
+`2026-01-15` against the Player Pool and `0022501082` on `2026-03-29` against game-log participants;
+a Target naming any other team is idle.
+
 Saved Filter Sets and Targets are account state rather than reference data, so the contract
 remembers what a page saved instead of replaying a fixed list. The Targets routes derive each
 title from the Qualifiers on every write, as the backend does, so a journey that edits a Target can

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { formatCalendarDate } from '../calendarDate';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { targetToDraft } from './TargetForm';
+import { TargetContext, TargetFitTable } from './TargetFits';
 import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useTargets } from './useTargets';
+import { useResolvedTargets } from './useResolvedTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -21,7 +23,41 @@ const formatCreated = (createdAt) =>
     timeZone: 'UTC',
   }).format(new Date(createdAt));
 
-function TargetDetail({ target, reload }) {
+const formatTip = (scheduledAt) =>
+  new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(scheduledAt));
+
+function FitsSection({ entry, slateDate }) {
+  const { game, target } = entry;
+  return (
+    <section className="target-detail-section" aria-labelledby="fits-heading">
+      <h2 id="fits-heading" className="target-section-heading">
+        Fits · the opposing players who meet every Qualifier
+      </h2>
+      {game ? (
+        <>
+          <p className="target-game-chip">
+            <Link to={`/matchups/${game.gameId}`}>
+              {game.opposingTeam.tricode} vs {game.opponent.tricode}
+            </Link>
+            <small>{formatTip(game.scheduledAt)}</small>
+            {game.status.state !== 'scheduled' && <em>{game.status.label}</em>}
+          </p>
+          <TargetFitTable entry={entry} />
+        </>
+      ) : (
+        <p className="target-empty">
+          {target.opponent} has no game on {formatCalendarDate(slateDate)}.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function TargetDetail({ entry, slateDate, reload }) {
+  const { target } = entry;
   const navigate = useNavigate();
   const [draft, setDraft] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -110,20 +146,29 @@ function TargetDetail({ target, reload }) {
           onCancel={() => setDraft(null)}
         />
       ) : (
-        <section className="target-detail-section" aria-labelledby="qualifiers-heading">
-          <h2 id="qualifiers-heading" className="target-section-heading">
-            Qualifiers · a player must meet every one
-          </h2>
-          <ul className="target-detail-qualifiers">
-            {target.qualifiers.map((qualifier, index) => (
-              <li key={index}>
-                <span className="target-detail-base">{targetBaseLabel(qualifier.base)}</span>
-                <b>{formatQualifier(qualifier)}</b>
-                <em>{findTargetBase(qualifier.base)?.unit}</em>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <>
+          <section className="target-detail-section" aria-labelledby="qualifiers-heading">
+            <h2 id="qualifiers-heading" className="target-section-heading">
+              Qualifiers · a player must meet every one
+            </h2>
+            <ul className="target-detail-qualifiers">
+              {target.qualifiers.map((qualifier, index) => (
+                <li key={index}>
+                  <div className="target-detail-qualifier-head">
+                    <span className="target-detail-base">{targetBaseLabel(qualifier.base)}</span>
+                    <b>{formatQualifier(qualifier)}</b>
+                    <em>{findTargetBase(qualifier.base)?.unit}</em>
+                  </div>
+                  {/* Context is index-parallel with the Qualifiers, and empty
+                      when the opponent is idle: there is no game-scoped window
+                      to read a defense from on a day with no game. */}
+                  {entry.context[index] && <TargetContext context={entry.context[index]} />}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <FitsSection entry={entry} slateDate={slateDate} />
+        </>
       )}
     </>
   );
@@ -131,13 +176,19 @@ function TargetDetail({ target, reload }) {
 
 export default function TargetDetailPage() {
   const { targetId } = useParams();
-  const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
+  /*
+   * One read serves the whole page: a Target and the day it is being read
+   * against arrive together, so the Qualifiers on screen and the readings
+   * beside them can never describe different Targets.
+   */
+  const { authLoading, isAuthenticated, status, entries, slateDate, error, reload } =
+    useResolvedTargets();
 
   if (!authLoading && !isAuthenticated) {
     return <TargetsSignedOut />;
   }
 
-  const target = targets.find((item) => String(item.id) === targetId);
+  const entry = entries.find((item) => String(item.target.id) === targetId);
 
   return (
     <main className="slate-page targets-page">
@@ -147,8 +198,8 @@ export default function TargetDetailPage() {
       {status === 'loading' && <p role="status">Loading this Target…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' &&
-        (target ? (
-          <TargetDetail target={target} reload={reload} />
+        (entry ? (
+          <TargetDetail entry={entry} slateDate={slateDate} reload={reload} />
         ) : (
           <div className="empty-slate">
             <h2>That Target is gone.</h2>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { blankTargetDraft } from './TargetForm';
-import { formatQualifier } from './targetCatalog';
+import { formatQualifierParts } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { useTargets } from './useTargets';
@@ -24,9 +24,14 @@ function TargetCard({ target }) {
       >
         <span className="target-card-opponent">{target.opponent}</span>
         <span className="target-card-qualifiers">
-          {target.qualifiers.map((qualifier, index) => (
-            <b key={index}>{formatQualifier(qualifier)}</b>
-          ))}
+          {target.qualifiers.map((qualifier, index) => {
+            const { label, value } = formatQualifierParts(qualifier);
+            return (
+              <span key={index}>
+                {label} <b>{value}</b>
+              </span>
+            );
+          })}
         </span>
         <span className={`target-card-note${target.note ? '' : ' is-empty'}`}>
           {target.note || 'No note'}

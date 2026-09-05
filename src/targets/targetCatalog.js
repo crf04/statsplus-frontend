@@ -108,10 +108,20 @@ export const formatShare = (share) => {
   return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
 };
 
-export const formatQualifier = (qualifier) =>
-  `${targetSliceLabel(qualifier.base, qualifier.sliceKey)} ${comparatorSymbol(
-    qualifier.comparator,
-  )} ${formatShare(qualifier.threshold)}`;
+/*
+ * A Qualifier reads as a slice and the bound put on it. The card sets the bound
+ * apart from the slice it applies to, so the two parts are published separately
+ * and the flat form is built from them rather than spelled twice.
+ */
+export const formatQualifierParts = (qualifier) => ({
+  label: targetSliceLabel(qualifier.base, qualifier.sliceKey),
+  value: `${comparatorSymbol(qualifier.comparator)} ${formatShare(qualifier.threshold)}`,
+});
+
+export const formatQualifier = (qualifier) => {
+  const { label, value } = formatQualifierParts(qualifier);
+  return `${label} ${value}`;
+};
 
 /*
  * The backend owns the stored title, so this derivation exists only to preview

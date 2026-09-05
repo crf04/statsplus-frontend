@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import TargetsPage from './TargetsPage';
 import { createTarget, fetchTargets } from './targetsApi';
@@ -77,6 +77,9 @@ test('shows every saved Target as a card carrying the stored title, Qualifiers, 
   expect(cards[0]).toHaveAccessibleName('Open OKC vs Corner 3 ≥ 40% (v2)');
   expect(cards[0]).toHaveAttribute('href', '/targets/7');
   expect(cards[0]).toHaveTextContent('Corner 3 ≥ 40%');
+  // The bound is set apart from the slice it applies to, not run together
+  // with it, so a card can be scanned for the number alone.
+  expect(within(cards[0]).getByText('≥ 40%').tagName).toBe('B');
   expect(cards[0]).toHaveTextContent('Leaks the corner late.');
   expect(cards[1]).toHaveAccessibleName('Open MIA vs Restricted area ≤ 20% (v2)');
   expect(cards[1]).toHaveTextContent('No note');

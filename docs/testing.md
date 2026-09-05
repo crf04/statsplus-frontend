@@ -95,6 +95,17 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests.
 
+Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts). A date the
+product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
+so anything asserting a calendar day should use an instant near midnight UTC.
+
+Saved Filter Sets and Targets are account state rather than reference data, so the contract
+remembers what a page saved instead of replaying a fixed list. The Targets routes derive each
+title from the Qualifiers on every write, as the backend does, so a journey that edits a Target can
+assert the title followed it. That derivation is the fixture's own and deliberately shares no code
+with the page's title preview: the fixture stands in for the backend at the HTTP seam, so a preview
+that drifted from it has to be able to fail a journey.
+
 ## CI and failure evidence
 
 The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical

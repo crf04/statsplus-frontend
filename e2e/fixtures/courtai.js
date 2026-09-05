@@ -1395,6 +1395,65 @@ const traditionalTeamStats = {
   OPP_REB_vs_avg_pct: 1.72,
 };
 
+// A Target is unique within an account by opponent plus its Qualifier set, so
+// the canonical form ignores the order the Qualifiers were typed in.
+const canonicalQualifiers = (qualifiers) =>
+  qualifiers
+    .map((q) => `${q.base}:${q.slice_key}:${q.comparator}:${q.threshold}`)
+    .sort()
+    .join('|');
+
+/*
+ * The backend derives and stores the Target title; the frontend only ever
+ * displays it. So this stands in for the backend's derivation and deliberately
+ * keeps its own copy of the slice wording and the share format: if the page's
+ * title preview ever drifts from the backend's, a journey has to be able to
+ * see it. See crf04/statsplus
+ * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
+ */
+const BACKEND_SLICE_LABELS = {
+  'Restricted Area': 'Restricted area',
+  'In The Paint (Non-RA)': 'Paint (non-RA)',
+  'Mid-Range': 'Mid-range',
+  'Corner 3': 'Corner 3',
+  'Above the Break 3': 'Above-break 3',
+  Transition: 'Transition',
+  Isolation: 'Isolation',
+  PRBallHandler: 'P&R ball handler',
+  PRRollMan: 'P&R roll man',
+  Spotup: 'Spot up',
+  Cut: 'Cut',
+  Handoff: 'Handoff',
+  OffScreen: 'Off screen',
+  Postup: 'Post up',
+  OffRebound: 'Putback',
+  'Catch and Shoot': 'Catch & shoot',
+  Pullups: 'Pull-up',
+  'Less Than 10 ft': 'Inside 10 ft',
+  Arc3Assists: 'Arc 3 assists',
+  Corner3Assists: 'Corner 3 assists',
+  AtRimAssists: 'At-rim assists',
+  ShortMidRangeAssists: 'Short mid assists',
+  LongMidRangeAssists: 'Long mid assists',
+};
+
+const backendShare = (share) => {
+  const percent = (share * 100).toFixed(1);
+  return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
+};
+
+const backendTargetTitle = ({ opponent, qualifiers }) =>
+  `${opponent} vs ${qualifiers
+    .map(
+      (qualifier) =>
+        `${BACKEND_SLICE_LABELS[qualifier.slice_key] || qualifier.slice_key} ${
+          qualifier.comparator === 'at_or_below' ? '≤' : '≥'
+        } ${backendShare(qualifier.threshold)}`,
+    )
+    .join(', ')}`;
+
+const TARGET_LIMIT = 50;
+
 export const installApiContract = async (page, overrides = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -1402,6 +1461,10 @@ export const installApiContract = async (page, overrides = {}) => {
   // show that saving, renaming, and deleting reach the same list.
   const savedFilterSets = [];
   let nextSavedFilterSetId = 0;
+  // Targets are account state too: the contract remembers what this page saved
+  // so that creating, editing, and deleting reach the same list.
+  const targets = [];
+  let nextTargetId = 0;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -1551,6 +1614,86 @@ export const installApiContract = async (page, overrides = {}) => {
       if (method === 'DELETE') {
         savedFilterSets.splice(index, 1);
         await route.fulfill({ json: { success: true } });
+        return;
+      }
+    }
+
+    const targetsMatch = url.pathname.match(/^\/api\/user\/targets(?:\/(.+))?$/);
+    if (targetsMatch) {
+      const [, targetId] = targetsMatch;
+      const method = request.method();
+      const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
+      const index = targets.findIndex((item) => String(item.id) === targetId);
+      const toStored = (qualifier) => ({
+        base: qualifier.base,
+        slice_key: qualifier.slice_key,
+        comparator: qualifier.comparator,
+        threshold: qualifier.threshold,
+      });
+      const conflict = (message) =>
+        route.fulfill({ status: 409, json: { error: { code: 'operation_conflict', message } } });
+
+      if (method === 'GET') {
+        await route.fulfill({ json: { success: true, targets } });
+        return;
+      }
+
+      if (method === 'POST') {
+        const qualifiers = body.qualifiers.map(toStored);
+        if (
+          targets.some(
+            (item) =>
+              item.opponent === body.opponent &&
+              canonicalQualifiers(item.qualifiers) === canonicalQualifiers(qualifiers),
+          )
+        ) {
+          await conflict(`You already have that Target for ${body.opponent}.`);
+          return;
+        }
+        if (targets.length >= TARGET_LIMIT) {
+          await conflict(`You have reached the limit of ${TARGET_LIMIT} Targets.`);
+          return;
+        }
+        nextTargetId += 1;
+        const created = {
+          id: nextTargetId,
+          opponent: body.opponent,
+          qualifiers,
+          note: body.note || '',
+          created_at: '2026-04-13T00:10:00Z',
+        };
+        // Newest-first is the list's contract, as it is for Saved Filter Sets.
+        targets.unshift({ ...created, title: backendTargetTitle(created) });
+        await route.fulfill({ status: 201, json: { success: true, target: targets[0] } });
+        return;
+      }
+
+      // A Target another session already deleted is gone for this one too, and
+      // splicing at -1 would quietly remove the oldest Target instead.
+      if (index === -1) {
+        await route.fulfill({
+          status: 404,
+          json: { error: { code: 'resource_not_found', message: 'Target not found.' } },
+        });
+        return;
+      }
+
+      if (method === 'PATCH') {
+        // Only the Qualifiers and the note move; the title follows the
+        // Qualifiers because it is derived from them.
+        const updated = {
+          ...targets[index],
+          qualifiers: body.qualifiers.map(toStored),
+          note: body.note || '',
+        };
+        targets[index] = { ...updated, title: backendTargetTitle(updated) };
+        await route.fulfill({ json: { success: true, target: targets[index] } });
+        return;
+      }
+
+      if (method === 'DELETE') {
+        targets.splice(index, 1);
+        await route.fulfill({ json: { success: true, message: 'Target deleted' } });
         return;
       }
     }

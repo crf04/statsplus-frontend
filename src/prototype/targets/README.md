@@ -26,22 +26,30 @@ then sign in and open:
 - `/matchups?date=2026-04-10&proto=targets&v=A` — the Slate panel
 - `/matchups/0022501174?proto=targets&v=A` — capture from a sheet row (NOP @ BOS)
 
-## Variants
+## Variants (second round, after Chris's "keep them separate")
 
-- **A — Ledger / strip / inline.** Page reads like the Slate: one block per
-  live Target with title, game chip, context under a left rule, a fit table,
-  and a backtest disclosure; idle Targets as plain rows below. Slate gets a
-  bordered strip above the board. A sheet row expands into the form.
-- **B — Board / ribbon / modal.** Page is a two-column workspace like the
-  matchup detail: a rail of Targets on the left (live dot, fit count), the
-  selected Target on the right with context cards, fit table, and backtest
-  always open. Slate gets a sticky ribbon of chips under the header. A sheet
-  row opens a modal.
-- **C — Game-first / sub-lines / builder.** Page is organised by the day's
-  games, Targets as cards under each, fits as chips, backtest in a `details`;
-  idle Targets in a collapsed bench. Slate rows grow a sub-line per Target. On
-  the matchup, sheet rows *add Qualifiers* to a sticky builder drawer, so a
-  multi-slice Target is built by tapping rows and saved once.
+The slate page owns *today*: a partial-screen region of the Targets active on
+that date with the players who fit. The Targets page owns the *definitions*:
+every Target irrespective of game, with notes, edit/delete, and the backtest.
+
+The Targets page is always a grid of cards with the basics (opponent,
+Qualifiers, note, today's fit count). The letter changes how a card opens:
+
+- **A — top region / expand in place.** Slate: a bordered region above the
+  board, one tile per active Target with compact context and fit chips.
+  Targets: the card stretches to a full row and the detail unfolds under it.
+- **B — side column / own page.** Slate: board on the left, sticky column on
+  the right listing active Targets with a name-and-share line per fit.
+  Targets: the card is a link to `/prototype/targets/:id`.
+- **C — under games / side drawer.** Slate: each game row that has a Target
+  grows a block underneath with a dense fit table. Targets: a drawer slides
+  in from the right over the grid.
+
+The detail shows every Qualifier with the opponent's live defense-sheet
+context, the fits for the loaded game, and the backtest, plus edit/delete.
+
+Standalone routes: `/prototype/matchups?v=A` and `/prototype/targets?v=A`.
+The first round (page-with-live-and-idle) is in git history before this commit.
 
 ## What is real and what is not
 

@@ -13,6 +13,7 @@ import QueryReferencePage from './help/QueryReferencePage';
 // nav link, never in production. Delete these lines and the PROTOTYPE blocks
 // below to remove.
 import TargetsPrototypePage from './prototype/targets/TargetsPrototypePage';
+import SlatePrototypePage from './prototype/targets/SlatePrototypePage';
 import { PROTO_ENABLED, PROTO_STANDALONE } from './prototype/targets/prototypeMode';
 import './App.css';
 
@@ -34,7 +35,11 @@ function AppNav() {
               Search
             </NavLink>
           )}
-          {!PROTO_STANDALONE && <NavLink to="/matchups">Matchups</NavLink>}
+          {PROTO_STANDALONE ? (
+            <NavLink to="/prototype/matchups">Matchups</NavLink>
+          ) : (
+            <NavLink to="/matchups">Matchups</NavLink>
+          )}
           {PROTO && <NavLink to="/prototype/targets">Targets</NavLink>}
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
@@ -57,12 +62,14 @@ function App() {
             <>
               <AppNav />
               <Routes>
+                <Route path="/prototype/matchups" element={<SlatePrototypePage />} />
                 <Route path="/prototype/targets" element={<TargetsPrototypePage />} />
+                <Route path="/prototype/targets/:targetId" element={<TargetsPrototypePage />} />
                 <Route
                   path="*"
                   element={
                     <Navigate
-                      to={{ pathname: '/prototype/targets', search: window.location.search }}
+                      to={{ pathname: '/prototype/matchups', search: window.location.search }}
                       replace
                     />
                   }

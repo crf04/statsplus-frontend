@@ -58,7 +58,15 @@ function App() {
               <AppNav />
               <Routes>
                 <Route path="/prototype/targets" element={<TargetsPrototypePage />} />
-                <Route path="*" element={<Navigate to="/prototype/targets" replace />} />
+                <Route
+                  path="*"
+                  element={
+                    <Navigate
+                      to={{ pathname: '/prototype/targets', search: window.location.search }}
+                      replace
+                    />
+                  }
+                />
               </Routes>
             </>
           ) : (

@@ -1612,6 +1612,10 @@ const resolveTargets = (date, targets) => {
         game_id: game.game_id,
         scheduled_at: game.scheduled_at,
         status: game.status,
+        // Which side is at home is the game's; which one the Target is about
+        // is the Target's.
+        away: teamReference(game.away_team),
+        home: teamReference(game.home_team),
         opponent: teamReference(opponent),
         opposing_team: teamReference(opposing),
       },
@@ -1934,11 +1938,18 @@ export const installApiContract = async (page, overrides = {}) => {
     if (url.pathname === '/api/games/slate') {
       const date = url.searchParams.get('date') || DEFAULT_SLATE_DATE;
       // The completed LAC @ MIL game is on its own date, so a Target aimed at
-      // either side of it resolves against game-log participants there.
+      // either side of it resolves against game-log participants there. The
+      // pool freshness matches the evidence resolution reports for the same
+      // date: a stored Player Pool on the scheduled date, none on the
+      // completed one, where the participants are the game's own logs.
       await route.fulfill({
-        json: slatePayload(date, [
-          date === HISTORICAL_SLATE_DATE ? historicalGame : scheduleOnlySlateGame,
-        ]),
+        json:
+          date === HISTORICAL_SLATE_DATE
+            ? slatePayload(date, [historicalGame])
+            : slatePayload(date, [scheduleOnlySlateGame], {
+                poolFreshnessStatus: 'fresh',
+                poolRetrievedAt: '2026-01-15T11:50:00Z',
+              }),
       });
       return;
     }

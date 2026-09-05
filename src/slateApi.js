@@ -1,5 +1,6 @@
 import { apiClient, getApiUrl } from './config';
 import { isCalendarDate } from './calendarDate';
+import { isRecord } from './decoding';
 import {
   derivePoolStatusFromProviders,
   deriveScheduleStatus,
@@ -9,7 +10,6 @@ import {
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
 const MISSING_TEAM_NAME_SENTINEL = 'None';
-const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const decodeRetrievedAt = (value) => {
   if (value === null) return null;

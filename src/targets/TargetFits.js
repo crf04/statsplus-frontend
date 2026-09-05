@@ -1,4 +1,6 @@
+import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
 import { formatQualifierParts } from './targetCatalog';
+import '../readings.css';
 import './TargetFits.css';
 
 /*
@@ -45,8 +47,9 @@ export function TargetTitle({ target }) {
 
 /*
  * One window of one Defense Sheet row, read as the Matchup reads it: the rank
- * against the league, how far from average the concession is, and by how many
- * sigma. A window its Base does not publish says so rather than reading zero.
+ * against the league, what the opponent allows per 48, how far that is from
+ * league average, and by how many sigma. A window its Base does not publish
+ * says so rather than reading zero.
  */
 function Reading({ reading, window }) {
   if (!reading) {
@@ -72,9 +75,12 @@ function Reading({ reading, window }) {
         {reading.rank}
       </span>
       <span className="target-reading-window">{window}</span>
+      {/* The allowed figure leads, as it does on the Matchup sheet: the
+          relative readings beside it are ways of reading that number. */}
+      <b>{reading.allowedPer48.toFixed(1)}</b>
       <strong>
         {reading.percentVsLeagueAverage === null
-          ? 'vs league: unavailable'
+          ? UNAVAILABLE_RELATIVE_LABEL
           : `${signed(reading.percentVsLeagueAverage)}% vs league`}
       </strong>
       <small>{signed(reading.sigmaDeviation)}σ</small>
@@ -123,50 +129,57 @@ export function TargetFitTable({ entry, dense = false }) {
     );
   }
   return (
-    <table className={`target-fits${dense ? ' is-dense' : ''}`}>
-      {/* A completed game has no Player Pool to read, so its participants are
-          the game's own logs, as they are on the Matchup. */}
-      {availability.source === 'game_logs' && <caption>from game logs</caption>}
-      <thead>
-        <tr>
-          <th>Player</th>
-          {target.qualifiers.map((qualifier, index) => (
-            <th className="num" key={index}>
-              {formatQualifierParts(qualifier).label}
-            </th>
-          ))}
-          <th className="num">PPG</th>
-        </tr>
-      </thead>
-      <tbody>
-        {players.map((player) => (
-          <tr className={player.thin ? 'is-thin' : undefined} key={player.canonicalId}>
-            <td>
-              <b>{player.name}</b>
-              <small>{player.tricode}</small>
-              {/* A thin diet is flagged rather than dropped, so this list never
-                  disagrees with the Matchup about who is in the game. */}
-              {player.thin && (
-                <span className="thin-flag" title="Thin Diet evidence">
-                  thin
-                </span>
-              )}
-            </td>
-            {player.shares.map((share, index) => (
-              <td className="num" key={index}>
-                <b>{formatObservedShare(share.share)}</b>
-                {share.leagueAverageShare !== null && (
-                  <small>lg {formatObservedShare(share.leagueAverageShare)}</small>
+    /* One column per Qualifier, so a Target with several outgrows a phone.
+       The table scrolls inside its own bounds rather than the page. */
+    <div className="target-fits-wrap">
+      <table
+        className={`target-fits${dense ? ' is-dense' : ''}`}
+        aria-label={`Fits for ${target.title}`}
+      >
+        {/* A completed game has no Player Pool to read, so its participants are
+            the game's own logs, as they are on the Matchup. */}
+        {availability.source === 'game_logs' && <caption>from game logs</caption>}
+        <thead>
+          <tr>
+            <th>Player</th>
+            {target.qualifiers.map((qualifier, index) => (
+              <th className="num" key={index}>
+                {formatQualifierParts(qualifier).label}
+              </th>
+            ))}
+            <th className="num">PPG</th>
+          </tr>
+        </thead>
+        <tbody>
+          {players.map((player) => (
+            <tr className={player.thin ? 'is-thin' : undefined} key={player.canonicalId}>
+              <td>
+                <b>{player.name}</b>
+                <small>{player.tricode}</small>
+                {/* A thin diet is flagged rather than dropped, so this list
+                    never disagrees with the Matchup about who is in the game. */}
+                {player.thin && (
+                  <span className="thin-flag" title="Thin Diet evidence">
+                    thin
+                  </span>
                 )}
               </td>
-            ))}
-            <td className="num">
-              {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              {player.shares.map((share, index) => (
+                <td className="num" key={index}>
+                  <b>{formatObservedShare(share.share)}</b>
+                  {share.leagueAverageShare !== null && (
+                    <small>lg {formatObservedShare(share.leagueAverageShare)}</small>
+                  )}
+                </td>
+              ))}
+              <td className="num">
+                {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

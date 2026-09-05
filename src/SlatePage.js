@@ -5,6 +5,7 @@ import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   formatCalendarDate,
+  formatTip,
   getTodaySlateDate,
   parseCalendarDate,
   shiftCalendarDate,
@@ -12,14 +13,8 @@ import {
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
-import { useResolvedTargets } from './targets/useResolvedTargets';
+import { useResolvedTargets } from './targets/useTargets';
 import './SlatePage.css';
-
-const formatTip = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(date));
 
 const surfaceStatusText = (name, surface, presentation, now) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt, now)}` : '';

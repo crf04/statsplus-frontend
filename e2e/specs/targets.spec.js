@@ -156,6 +156,13 @@ test('@critical a saved Target reads live under its game and on its own page', a
   await composeTarget(page, { opponent: 'OKC', slice: 'Corner 3', percent: '40' });
   await saveTarget(page);
   await expect(page.getByRole('heading', { name: '3 Targets', exact: true })).toBeVisible();
+  // Each card says what today makes of its Target before it is opened.
+  await expect(
+    page.getByRole('link', { name: /^Open BOS vs At-rim assists/ }).getByText('2 fit today'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: /^Open OKC vs Corner 3/ }).getByText('no game today'),
+  ).toBeVisible();
 
   await page.goto('/matchups?date=2026-01-15');
 
@@ -183,10 +190,16 @@ test('@critical a saved Target reads live under its game and on its own page', a
   await page.getByRole('link', { name: /^Open BOS vs At-rim assists/ }).click();
   // The opponent's live readings on the slice, in both windows.
   await expect(page.getByText('AtRimAssists', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('+13.0% vs league')).toBeVisible();
-  await expect(page.getByText('+1.5σ')).toBeVisible();
-  await expect(page.getByText('+9.0% vs league')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'LAL vs BOS' })).toBeVisible();
+  // The allowed figure leads each reading, with its window beside it.
+  const season = page.locator('.target-reading', { hasText: 'Season' });
+  await expect(season).toContainText('12.0');
+  await expect(season).toContainText('+13.0% vs league');
+  await expect(season).toContainText('+1.5σ');
+  const last15 = page.locator('.target-reading', { hasText: 'L15' });
+  await expect(last15).toContainText('11.0');
+  await expect(last15).toContainText('+9.0% vs league');
+  // The game reads the way the Slate row reads it.
+  await expect(page.getByRole('link', { name: 'LAL @ BOS' })).toBeVisible();
   await expect(page.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
   await page.screenshot({ path: testInfo.outputPath('target-detail-live.png'), fullPage: true });
 

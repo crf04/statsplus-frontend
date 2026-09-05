@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { formatCalendarDate } from '../calendarDate';
+import { formatCalendarDate, formatTip } from '../calendarDate';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { TargetContext, TargetFitTable } from './TargetFits';
 import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useResolvedTargets } from './useResolvedTargets';
+import { useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -23,41 +23,48 @@ const formatCreated = (createdAt) =>
     timeZone: 'UTC',
   }).format(new Date(createdAt));
 
-const formatTip = (scheduledAt) =>
-  new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(scheduledAt));
-
-function FitsSection({ entry, slateDate }) {
-  const { game, target } = entry;
+/*
+ * What today says about this Target. It is a second read over the Target
+ * itself, so when it fails the Target is still here to read and manage: the
+ * readings are what is missing, and the page says so rather than disappearing.
+ */
+function FitsSection({ target, resolved, entry }) {
+  const { game } = entry || {};
   return (
     <section className="target-detail-section" aria-labelledby="fits-heading">
       <h2 id="fits-heading" className="target-section-heading">
         Fits · the opposing players who meet every Qualifier
       </h2>
-      {game ? (
-        <>
-          <p className="target-game-chip">
-            <Link to={`/matchups/${game.gameId}`}>
-              {game.opposingTeam.tricode} vs {game.opponent.tricode}
-            </Link>
-            <small>{formatTip(game.scheduledAt)}</small>
-            {game.status.state !== 'scheduled' && <em>{game.status.label}</em>}
-          </p>
-          <TargetFitTable entry={entry} />
-        </>
-      ) : (
+      {resolved.status === 'loading' && <p role="status">Reading today's slate…</p>}
+      {(resolved.status === 'error' || (resolved.status === 'ready' && !entry)) && (
         <p className="target-empty">
-          {target.opponent} has no game on {formatCalendarDate(slateDate)}.
+          Live readings unavailable.{resolved.error ? ` ${resolved.error}` : ''}
         </p>
       )}
+      {entry &&
+        (game ? (
+          <>
+            <p className="target-game-chip">
+              {/* The game reads as the Slate row reads it, and leads to the
+                  Matchup the readings were composed from. */}
+              <Link to={`/matchups/${game.gameId}`}>
+                {game.away.tricode} @ {game.home.tricode}
+              </Link>
+              <small>{formatTip(game.scheduledAt)}</small>
+              {game.status.state !== 'scheduled' && <em>{game.status.label}</em>}
+            </p>
+            <TargetFitTable entry={entry} />
+          </>
+        ) : (
+          <p className="target-empty">
+            {target.opponent} has no game on {formatCalendarDate(resolved.slateDate)}.
+          </p>
+        ))}
     </section>
   );
 }
 
-function TargetDetail({ entry, slateDate, reload }) {
-  const { target } = entry;
+function TargetDetail({ target, resolved, entry, reload }) {
   const navigate = useNavigate();
   const [draft, setDraft] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -162,12 +169,12 @@ function TargetDetail({ entry, slateDate, reload }) {
                   {/* Context is index-parallel with the Qualifiers, and empty
                       when the opponent is idle: there is no game-scoped window
                       to read a defense from on a day with no game. */}
-                  {entry.context[index] && <TargetContext context={entry.context[index]} />}
+                  {entry?.context[index] && <TargetContext context={entry.context[index]} />}
                 </li>
               ))}
             </ul>
           </section>
-          <FitsSection entry={entry} slateDate={slateDate} />
+          <FitsSection target={target} resolved={resolved} entry={entry} />
         </>
       )}
     </>
@@ -177,18 +184,24 @@ function TargetDetail({ entry, slateDate, reload }) {
 export default function TargetDetailPage() {
   const { targetId } = useParams();
   /*
-   * One read serves the whole page: a Target and the day it is being read
-   * against arrive together, so the Qualifiers on screen and the readings
-   * beside them can never describe different Targets.
+   * Two reads, and only one of them decides whether this page works. The list
+   * is what the Target is: without it there is nothing to show, edit, or
+   * delete. The resolution is what today says about it, and is layered on
+   * top, so a day that will not resolve costs the readings and nothing else.
    */
-  const { authLoading, isAuthenticated, status, entries, slateDate, error, reload } =
-    useResolvedTargets();
+  const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
+  const resolved = useResolvedTargets();
 
   if (!authLoading && !isAuthenticated) {
     return <TargetsSignedOut />;
   }
 
-  const entry = entries.find((item) => String(item.target.id) === targetId);
+  const target = targets.find((item) => String(item.id) === targetId);
+  const entry = resolved.entries.find((item) => String(item.target.id) === targetId) || null;
+  const reloadBoth = () => {
+    reload();
+    resolved.reload();
+  };
 
   return (
     <main className="slate-page targets-page">
@@ -198,8 +211,8 @@ export default function TargetDetailPage() {
       {status === 'loading' && <p role="status">Loading this Target…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' &&
-        (entry ? (
-          <TargetDetail entry={entry} slateDate={slateDate} reload={reload} />
+        (target ? (
+          <TargetDetail target={target} resolved={resolved} entry={entry} reload={reloadBoth} />
         ) : (
           <div className="empty-slate">
             <h2>That Target is gone.</h2>

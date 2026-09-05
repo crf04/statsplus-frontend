@@ -512,6 +512,8 @@ const resolvedEntry = (overrides = {}) => ({
     gameId: '0022500584',
     scheduledAt: '2026-01-16T00:30:00.000Z',
     status: { state: 'scheduled', label: 'Scheduled' },
+    away: { tricode: 'LAL' },
+    home: { tricode: 'BOS' },
     opponent: { tricode: 'BOS' },
     opposingTeam: { tricode: 'LAL' },
   },
@@ -559,6 +561,9 @@ test('a game with a Target grows a block of its fits beneath the row', async () 
   expect(block.getByText('44%')).toBeVisible();
   expect(block.getByText('lg 20%')).toBeVisible();
   expect(block.getByText('25.4')).toBeVisible();
+  // A stored Player Pool named these players, so there is no other evidence
+  // to name; only a completed game's participants are captioned.
+  expect(block.queryByText('from game logs')).not.toBeInTheDocument();
   // The Slate says how many Targets the day has, and where all of them live.
   expect(screen.getByText('1 Target active', { exact: false })).toBeVisible();
   expect(screen.getByRole('link', { name: 'All Targets →' })).toHaveAttribute('href', '/targets');

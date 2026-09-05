@@ -1,0 +1,28 @@
+/* Presentation shared by every surface that shows a Defense Sheet reading or
+   the evidence behind a Diet share. The Matchup owns these readings; a Target
+   shows the same ones, so they are defined once and imported by both. */
+
+/* Opponent rank against the league: 1 allows the least, 30 the most, so the
+   hue is the reading rather than decoration. */
+.rank-pill {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: hsl(calc((var(--rank) - 1) * 4.1) 78% 43%);
+  color: #fff;
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+/* A Diet too slight to lean on is flagged, never dropped. */
+.thin-flag {
+  display: block;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+}

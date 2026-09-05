@@ -150,6 +150,8 @@ const wireResolvedLive = {
     game_id: '0022500584',
     scheduled_at: '2026-01-16T00:30:00Z',
     status: { state: 'scheduled', label: 'Scheduled' },
+    away: { team_id: 1610612747, tricode: 'LAL', name: 'Los Angeles Lakers' },
+    home: { team_id: 1610612760, tricode: 'OKC', name: 'Oklahoma City Thunder' },
     opponent: { team_id: 1610612760, tricode: 'OKC', name: 'Oklahoma City Thunder' },
     opposing_team: { team_id: 1610612747, tricode: 'LAL', name: 'Los Angeles Lakers' },
   },
@@ -237,6 +239,11 @@ test('decodes a live Target into the readings and fits the day-scoped surfaces r
           gameId: '0022500584',
           scheduledAt: '2026-01-16T00:30:00.000Z',
           status: { state: 'scheduled', label: 'Scheduled' },
+          // Which side is at home, so a Target can name the game the way the
+          // Slate row does; and which side it is about, so it can name the
+          // pool it filtered.
+          away: { tricode: 'LAL' },
+          home: { tricode: 'OKC' },
           opponent: { tricode: 'OKC' },
           opposingTeam: { tricode: 'LAL' },
         },
@@ -248,8 +255,18 @@ test('decodes a live Target into the readings and fits the day-scoped surfaces r
               {
                 key: 'Corner 3:FGA',
                 label: 'Corner 3 FGA',
-                season: { percentVsLeagueAverage: 9.7, sigmaDeviation: 1.2, rank: 27 },
-                last15: { percentVsLeagueAverage: -4.2, sigmaDeviation: -0.6, rank: 11 },
+                season: {
+                  allowedPer48: 9.4,
+                  percentVsLeagueAverage: 9.7,
+                  sigmaDeviation: 1.2,
+                  rank: 27,
+                },
+                last15: {
+                  allowedPer48: 8.1,
+                  percentVsLeagueAverage: -4.2,
+                  sigmaDeviation: -0.6,
+                  rank: 11,
+                },
               },
             ],
           },
@@ -322,7 +339,12 @@ test('an unavailable window carries no reading, and a reading under one is refus
       },
     ]),
   ).entries[0].context[0].metrics[0];
-  expect(readings.season.rank).toBe(27);
+  expect(readings.season).toEqual({
+    allowedPer48: 9.4,
+    percentVsLeagueAverage: 9.7,
+    sigmaDeviation: 1.2,
+    rank: 27,
+  });
   expect(readings.last15).toBeNull();
 
   expect(() =>
@@ -346,6 +368,49 @@ test('refuses a resolution the day-scoped surfaces could not render honestly', (
   expect(() => decodeResolvedTargets({ success: true, targets: [] })).toThrow(/invalid response/i);
   expect(() =>
     decodeResolvedTargets(resolvePayload([{ ...wireResolvedLive, game: undefined }])),
+  ).toThrow(/invalid response/i);
+
+  // The game chip names the sides; a game that does not say which is at home
+  // cannot be named the way the Slate row names it.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        { ...wireResolvedLive, game: { ...wireResolvedLive.game, home: undefined } },
+      ]),
+    ),
+  ).toThrow(/invalid response/i);
+
+  // The allowed figure leads every reading, so a row without one is unusable.
+  expect(() =>
+    decodeResolvedTargets(
+      resolvePayload([
+        {
+          ...wireResolvedLive,
+          context: [
+            {
+              ...wireResolvedLive.context[0],
+              metrics: [
+                {
+                  ...wireResolvedLive.context[0].metrics[0],
+                  opponent: {
+                    season: {
+                      percent_vs_league_average: 9.7,
+                      sigma_deviation: 1.2,
+                      rank: 27,
+                    },
+                    last_15: null,
+                  },
+                },
+              ],
+              availability: {
+                season: { status: 'available', unavailable_reason: null },
+                last_15: { status: 'unavailable', unavailable_reason: 'provider_unsupported' },
+              },
+            },
+          ],
+        },
+      ]),
+    ),
   ).toThrow(/invalid response/i);
 
   // Context is index-parallel with the Qualifiers, so a shorter list would

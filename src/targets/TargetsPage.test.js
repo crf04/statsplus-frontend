@@ -915,3 +915,22 @@ test('leaving the list aborts its scan and never starts the next', async () => {
   await act(async () => finish(preview));
   expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
 });
+
+test('fit shares are labelled with the resolved criteria when the list read differs', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        target: {
+          ...targets[0],
+          qualifiers: [{ ...targets[0].qualifiers[0], sliceKey: 'Restricted Area' }],
+        },
+      },
+    ],
+  });
+  renderPage(false);
+  const fits = await screen.findByRole('region', { name: 'Playing tonight' });
+  expect(within(fits).getByRole('listitem')).toHaveTextContent('Restricted area 44%');
+  expect(within(fits).getByRole('listitem')).not.toHaveTextContent('Corner 3');
+});

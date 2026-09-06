@@ -60,7 +60,7 @@ function TargetCard({ target, entry, read }) {
                     {player.shares
                       .map(
                         (share, index) =>
-                          `${formatQualifierParts(target.qualifiers[index]).label} ${formatObservedShare(share.share)}`,
+                          `${formatQualifierParts(entry.target.qualifiers[index]).label} ${formatObservedShare(share.share)}`,
                       )
                       .join(' · ')}{' '}
                     · {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)} ppg

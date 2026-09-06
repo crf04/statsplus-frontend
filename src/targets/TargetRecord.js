@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
+import { signed } from './targetCatalog';
 import './TargetRecord.css';
 
 const number = (value) => (value == null ? '—' : value.toFixed(1));
-const signed = (value) => (value == null ? '—' : `${value > 0 ? '+' : ''}${number(value)}`);
+const formatMargin = (value) => (value == null ? '—' : signed(value));
 
 // Keep full precision through grading and arithmetic; round only for display.
 function recordGames(backtest, columns) {
@@ -75,7 +76,7 @@ export default function TargetRecord({
             <>
               <span>{column}</span>
               <b>{rate} hit</b>
-              <small>{signed(mean)} mean margin</small>
+              <small>{formatMargin(mean)} mean margin</small>
             </>
           );
           return (
@@ -104,7 +105,7 @@ export default function TargetRecord({
           aria-label={`${games.length} games, oldest to newest, graded by ${gradedBy} margin`}
         >
           {games.map((row) => {
-            const label = `${row.game.gameDate} · ${row.player.name} · ${number(row.game.stats[gradedBy])} ${gradedBy} · season ${number(row.player.seasonAverages[gradedBy])} · ${signed(row.margins[gradedBy])} margin`;
+            const label = `${row.game.gameDate} · ${row.player.name} · ${number(row.game.stats[gradedBy])} ${gradedBy} · season ${number(row.player.seasonAverages[gradedBy])} · ${formatMargin(row.margins[gradedBy])} margin`;
             return (
               <li
                 key={row.key}
@@ -169,7 +170,7 @@ export function TargetGameRows({
               <span>
                 {number(row.game.stats[gradedBy])} {gradedBy} vs{' '}
                 {number(row.player.seasonAverages[gradedBy])} season avg ·{' '}
-                {signed(row.margins[gradedBy])} margin
+                {formatMargin(row.margins[gradedBy])} margin
               </span>
               <small>
                 {columns

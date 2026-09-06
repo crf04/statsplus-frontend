@@ -4246,3 +4246,60 @@ a.pt-today.is-live:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ===== round 5e: who fits tonight, on the card ===== */
+
+.pt-g-fits {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--ct-line);
+  padding-top: 10px;
+}
+
+.pt-g-fits .target-label b {
+  color: var(--ct-dim);
+  font-weight: 700;
+}
+
+.pt-g-fits .target-label b.has-fits {
+  color: var(--ct-hit);
+}
+
+.pt-g-fits ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-g-fits li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+}
+
+.pt-g-fits li b {
+  font-weight: 600;
+}
+
+.pt-g-fits li small {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+}
+
+.pt-g-fits li.is-thin {
+  border-style: dashed;
+  color: var(--ct-dim);
+}
+
+.pt-g-fits-empty {
+  color: var(--ct-dim);
+  font-size: 0.78rem;
+}

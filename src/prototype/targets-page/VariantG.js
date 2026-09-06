@@ -9,6 +9,7 @@
  */
 import { useState } from 'react';
 import { LabEvidence, savedLab, useLab } from './lab';
+import { formatObservedShare } from '../../targets/targetCatalog';
 import { ConditionsEditor } from './conditions';
 import { isLive } from './shared';
 import {
@@ -70,6 +71,40 @@ function ReadCriteria({ target }) {
   );
 }
 
+/* Who fits tonight: the opposing players meeting every Qualifier, with the
+   share that got them in. One line on the card; the Matchup has the rest. */
+function FitsTonight({ entry }) {
+  if (!entry?.game) return null;
+  const { availability, players, game } = entry;
+  return (
+    <div className="pt-g-fits">
+      <span className="target-label">
+        Playing tonight · {game.opposingTeam.tricode}
+        {availability.status === 'available' && (
+          <b className={players.length ? ' has-fits' : ''}> {players.length} fit</b>
+        )}
+      </span>
+      {availability.status !== 'available' ? (
+        <span className="pt-g-fits-empty">pool unavailable</span>
+      ) : players.length === 0 ? (
+        <span className="pt-g-fits-empty">nobody meets every Qualifier</span>
+      ) : (
+        <ul>
+          {players.map((player) => (
+            <li key={player.canonicalId} className={player.thin ? 'is-thin' : undefined}>
+              <b>{player.name}</b>
+              <small>
+                {player.shares.map((share) => formatObservedShare(share.share)).join(' · ')}
+                {player.seasonScoring !== null && ` · ${player.seasonScoring.toFixed(1)} ppg`}
+              </small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function TargetSection({ item, read }) {
   const { target } = item;
   return (
@@ -85,6 +120,7 @@ function TargetSection({ item, read }) {
           )}
         </div>
       </header>
+      <FitsTonight entry={item.entry} />
       <LabEvidence lab={savedLab(read)} games={false} boxId={target.id} />
     </section>
   );

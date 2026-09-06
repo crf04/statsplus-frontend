@@ -30,13 +30,19 @@ describe('gameLogsApi', () => {
   test('decodes JSON-string and object payloads once and reverses logs for display', () => {
     expect(
       decodeGameLogsResponse({
-        game_logs: JSON.stringify([{ GAME_ID: 1 }, { GAME_ID: 2 }]),
+        game_logs: JSON.stringify([
+          { GAME_ID: 1, WL: 'W', TOV: 3 },
+          { GAME_ID: 2, WL: 'L', TOV: 2 },
+        ]),
         averages: JSON.stringify([{ PTS: 20 }]),
         season_averages: [{ PTS: 21 }],
         next_game: 'Boston Celtics',
       }),
     ).toEqual({
-      gameLogs: [{ GAME_ID: 2 }, { GAME_ID: 1 }],
+      gameLogs: [
+        { GAME_ID: 2, WL: 'L', TOV: 2 },
+        { GAME_ID: 1, WL: 'W', TOV: 3 },
+      ],
       averages: [{ PTS: 20 }, { PTS: 21 }],
       nextGame: 'Boston Celtics',
     });

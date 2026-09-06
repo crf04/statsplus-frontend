@@ -3,6 +3,7 @@ import { Card } from 'react-bootstrap';
 import './GameLogFilter.css';
 import AppliedFilters from './AppliedFilters';
 import { numericOrZero, toFiniteNumber } from './numberUtils';
+import { formatGameLogDate } from './calendarDate';
 
 const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
   const [sortField, setSortField] = useState('GAME_DATE');
@@ -44,15 +45,6 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     return averages;
   }, [gameLogs]);
 
-  const formatDate = (dateValue) => {
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('en-US', {
-      month: 'numeric',
-      day: 'numeric',
-    });
-  };
-
   const getPerformanceColor = (value, columnId) => {
     const numericValue = toFiniteNumber(value);
     const average = toFiniteNumber(playerAverages[columnId]);
@@ -62,7 +54,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     let ratio = numericValue / average;
 
     // For turnovers and fouls, lower is better — invert the scale
-    if (columnId === 'TO' || columnId === 'PF') {
+    if (columnId === 'TOV' || columnId === 'PF') {
       ratio = 2 - ratio;
     }
 
@@ -148,7 +140,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
   const columns = [
     { key: 'GAME_DATE', label: 'Date', width: '60px' },
     { key: 'MATCHUP', label: 'OPP', width: '50px' },
-    { key: 'W/L', label: 'W/L', width: '35px' },
+    { key: 'WL', label: 'W/L', width: '35px' },
     { key: 'MIN', label: 'MIN', width: '40px' },
     { key: 'PTS', label: 'PTS', width: '40px' },
     { key: 'FGM', label: 'FGM', width: '40px' },
@@ -163,7 +155,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     { key: 'AST', label: 'AST', width: '40px' },
     { key: 'STL', label: 'STL', width: '40px' },
     { key: 'BLK', label: 'BLK', width: '40px' },
-    { key: 'TO', label: 'TO', width: '35px' },
+    { key: 'TOV', label: 'TOV', width: '35px' },
     { key: 'PRA', label: 'PRA', width: '45px' },
     { key: 'PR', label: 'PR', width: '40px' },
     { key: 'PA', label: 'PA', width: '40px' },
@@ -254,7 +246,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                             'AST',
                             'STL',
                             'BLK',
-                            'TO',
+                            'TOV',
                             'PRA',
                             'PR',
                             'PA',
@@ -265,12 +257,12 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                         }}
                       >
                         {col.key === 'GAME_DATE'
-                          ? formatDate(value)
+                          ? formatGameLogDate(value)
                           : col.key === 'MATCHUP'
                             ? typeof value === 'string'
                               ? value.split(' ')[2] || 'N/A'
                               : 'N/A'
-                            : col.key === 'W/L'
+                            : col.key === 'WL'
                               ? value || '-'
                               : col.key === 'MIN'
                                 ? numericValue === null

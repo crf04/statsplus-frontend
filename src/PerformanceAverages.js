@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Row, Col, Card, ToggleButtonGroup, ToggleButton } from 'react-bootstrap';
 import AppliedFilters from './AppliedFilters';
-import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
+import { formatNumber, formatPercent, numericOrZero, toFiniteNumber } from './numberUtils';
 
 const PerformanceAverages = ({ averages, appliedFilters }) => {
   const [activeCategory, setActiveCategory] = useState('Shooting');
@@ -88,25 +88,32 @@ const PerformanceAverages = ({ averages, appliedFilters }) => {
     const CompactStatCard = ({ statName, filteredVal, seasonVal }) => {
       const per36Filtered = calculatePer36(filteredVal, displayFilteredAvg.MIN);
       const per36Season = calculatePer36(seasonVal, displaySeasonAvg.MIN);
+      const isPercentage = statName === 'FG_PCT';
+      const comparisonFiltered = isPercentage ? filteredVal : per36Filtered;
+      const comparisonSeason = isPercentage ? seasonVal : per36Season;
 
       return (
         <div className="compact-stat-card">
           <div className="compact-stat-header">
             <span className="compact-stat-name">{statName}</span>
             <span className="compact-comparison-icon">
-              {getComparisonIcon(per36Filtered, per36Season, statName)}
+              {getComparisonIcon(comparisonFiltered, comparisonSeason, statName)}
             </span>
           </div>
           <div className="compact-stat-values">
             <div className="compact-versus-row">
               <span
                 className="compact-value-filtered"
-                style={{ color: getStatColor(per36Filtered, per36Season, statName) }}
+                style={{ color: getStatColor(comparisonFiltered, comparisonSeason, statName) }}
               >
-                {formatNumber(per36Filtered, 1)}
+                {isPercentage
+                  ? formatPercent(comparisonFiltered, 1)
+                  : formatNumber(per36Filtered, 1)}
               </span>
               <span className="compact-versus">vs</span>
-              <span className="compact-value-season">{formatNumber(per36Season, 1)}</span>
+              <span className="compact-value-season">
+                {isPercentage ? formatPercent(comparisonSeason, 1) : formatNumber(per36Season, 1)}
+              </span>
             </div>
           </div>
         </div>

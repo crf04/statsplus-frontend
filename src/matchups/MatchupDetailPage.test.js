@@ -1571,6 +1571,39 @@ test('a save in flight cannot be sent twice', async () => {
   expect(await screen.findByText('One Target')).toBeVisible();
 });
 
+/*
+ * A save answered after the dialog was dismissed is nobody's any more. Acting
+ * on it would open a Target the reader had moved on from, over whatever they
+ * were composing next.
+ */
+test('a save that resolves after the dialog was dismissed does not navigate', async () => {
+  let settle;
+  createTarget.mockReturnValue(
+    new Promise((resolve) => {
+      settle = () => resolve(storedTarget());
+    }),
+  );
+  renderMatchup();
+
+  const { dialog } = await openCapture('Transition');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  // Another row, another draft, before the first save answers.
+  const next = (await openCapture('Above-break three')).dialog;
+  await userEvent.type(thresholdField(next), '32');
+  await act(async () => settle());
+
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1$/);
+  expect(screen.queryByText('One Target')).not.toBeInTheDocument();
+  expect(screen.getByRole('dialog')).toBeVisible();
+  expect(thresholdField(screen.getByRole('dialog'))).toHaveValue(32);
+  expect(
+    within(screen.getByRole('dialog')).getByRole('button', { name: 'Save Target' }),
+  ).toBeEnabled();
+});
+
 test('a duplicate Target keeps the composed draft and says why it was refused', async () => {
   createTarget.mockRejectedValue({
     response: { data: { error: { message: 'You already have that Target for BOS.' } } },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
@@ -47,6 +47,18 @@ export const captureDraft = ({ opponent, base, sliceKey, leagueAverageShare }) =
 export default function TargetCaptureModal({ capture, onHide }) {
   const navigate = useNavigate();
   const [state, setState] = useState({ capture: null, draft: null, saving: false, error: null });
+  // The capture that is open right now, kept where a save that started under
+  // an earlier one can see it: a save whose answer arrives after the dialog
+  // was dismissed, or after another row opened a fresh capture, is not this
+  // reader's any more and must not act on their behalf.
+  const live = useRef(capture);
+  live.current = capture;
+  useEffect(
+    () => () => {
+      live.current = null;
+    },
+    [],
+  );
 
   if (capture && capture !== state.capture) {
     setState({ capture, draft: captureDraft(capture), saving: false, error: null });
@@ -61,11 +73,14 @@ export default function TargetCaptureModal({ capture, onHide }) {
    * worth keeping, not a retype.
    */
   const save = async (request) => {
+    const started = capture;
     setState((current) => ({ ...current, saving: true, error: null }));
     try {
       const target = await createTarget(request);
+      if (live.current !== started) return;
       navigate(`/targets/${target.id}`);
     } catch (requestError) {
+      if (live.current !== started) return;
       setState((current) => ({
         ...current,
         saving: false,

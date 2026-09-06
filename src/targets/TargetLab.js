@@ -12,9 +12,11 @@ import './TargetFits.css';
 const describeLab = ({ valid, status, pending }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
   if (status === 'loading') return 'Reading the season…';
+  // A refusal is the answer to the draft in hand, so it outranks the draft
+  // having moved on; the next read replaces both.
+  if (status === 'error') return 'Backtest not updated.';
   if (pending) return 'Draft changed · reading shortly…';
   if (status === 'ready') return 'Backtest up to date.';
-  if (status === 'error') return 'Backtest not updated.';
   return '';
 };
 

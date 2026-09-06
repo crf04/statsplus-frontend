@@ -132,7 +132,8 @@ const preview = {
 
 const storedTarget = { ...targets[0], id: 9, title: 'A title only the backend could have written' };
 
-const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+// A plain span, so the Lab's status line is the page's one live region.
+const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;
 
 const renderPage = () =>
   render(
@@ -151,6 +152,17 @@ const settle = () =>
   act(async () => {
     jest.advanceTimersByTime(600);
   });
+
+/*
+ * The Lab's one live region: what a screen reader is told. It has to be a
+ * status role of its own, and sit outside the busy results, or nothing is
+ * announced while they load.
+ */
+const labStatus = () => {
+  const status = screen.getByRole('status');
+  expect(status.closest('[aria-busy]')).toBeNull();
+  return status;
+};
 
 const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40' } = {}) => {
   fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: opponent } });
@@ -517,7 +529,7 @@ test('editing the note is not a new draft, so the Lab does not read again', asyn
   expect(result).not.toHaveClass('is-stale');
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('Backtest up to date.')).toBeVisible();
+  expect(labStatus()).toHaveTextContent('Backtest up to date.');
 });
 
 /*
@@ -572,7 +584,7 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
   await screen.findAllByRole('link', { name: /^Open / });
 
   // The blank form: a threshold has not been typed.
-  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+  expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
 
@@ -609,7 +621,7 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
     target: { value: '' },
   });
-  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+  expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
   expect(result).toHaveClass('is-stale');
   expect(summaryItem('Players')).toHaveTextContent('2');
   expect(screen.getByRole('table')).toBeInTheDocument();
@@ -700,7 +712,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   // Stale from the edit, before the read has even started — and said aloud,
   // since a dimmed table is silent to a screen reader.
   expect(result).toHaveClass('is-stale');
-  expect(screen.getByText('Draft changed · reading shortly…')).toBeVisible();
+  expect(labStatus()).toHaveTextContent('Draft changed · reading shortly…');
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
 
   await settle();
@@ -708,8 +720,9 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
     expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.41 })] }),
   );
-  expect(screen.getByText('Reading the season…')).toBeVisible();
   expect(result).toHaveAttribute('aria-busy', 'true');
+  // Announced from outside the busy results, or it would not be announced.
+  expect(labStatus()).toHaveTextContent('Reading the season…');
   expect(result).toHaveClass('is-stale');
   expect(summaryItem('Players')).toHaveTextContent('2');
   expect(screen.getByRole('table')).toBeInTheDocument();
@@ -719,7 +732,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   });
   expect(result).not.toHaveClass('is-stale');
   expect(result).toHaveAttribute('aria-busy', 'false');
-  expect(screen.getByText('Backtest up to date.')).toBeVisible();
+  expect(labStatus()).toHaveTextContent('Backtest up to date.');
   expect(summaryItem('Players')).toHaveTextContent('1');
   expect(summaryItem('Games')).toHaveTextContent('3');
 });
@@ -743,16 +756,31 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
   await settle();
 
   expect(screen.getByRole('alert')).toHaveTextContent('That slice is not evaluable.');
+  // The refusal is the answer to this draft, and is what the status says
+  // until the next read replaces it — not that a read is coming.
+  expect(labStatus()).toHaveTextContent('Backtest not updated.');
+  await settle();
+  expect(labStatus()).toHaveTextContent('Backtest not updated.');
   expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
   expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
   const save = screen.getByRole('button', { name: 'Save Target' });
   expect(save).toBeEnabled();
 
+  // An edit after a refusal is read again, and recovers.
+  fetchTargetPreview.mockResolvedValue(preview);
+  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  expect(labStatus()).toHaveTextContent('Backtest not updated.');
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(labStatus()).toHaveTextContent('Backtest up to date.');
+  expect(summaryItem('Players')).toHaveTextContent('2');
+
   await act(async () => {
     fireEvent.click(save);
   });
   expect(createTarget).toHaveBeenCalledWith(
-    expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.4 })] }),
+    expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.41 })] }),
   );
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/9$/);
 });

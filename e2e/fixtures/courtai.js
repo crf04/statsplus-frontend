@@ -1442,34 +1442,50 @@ const canonicalQualifiers = (qualifiers) =>
  * see it. See crf04/statsplus
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
-const BACKEND_SLICE_LABELS = {
-  'Restricted Area': 'Restricted area',
-  'In The Paint (Non-RA)': 'Paint (non-RA)',
-  'Mid-Range': 'Mid-range',
-  'Corner 3': 'Corner 3',
-  'Above the Break 3': 'Above-break 3',
-  // Deliberately not the page's wording for this slice. The title is the
-  // backend's to derive, so a surface that showed its own preview where it
-  // promised the stored title would read 'Transition' here and be wrong.
-  Transition: 'Transition offense',
-  Isolation: 'Isolation',
-  PRBallHandler: 'P&R ball handler',
-  PRRollMan: 'P&R roll man',
-  Spotup: 'Spot up',
-  Cut: 'Cut',
-  Handoff: 'Handoff',
-  OffScreen: 'Off screen',
-  Postup: 'Post up',
-  OffRebound: 'Putback',
-  'Catch and Shoot': 'Catch & shoot',
-  Pullups: 'Pull-up',
-  'Less Than 10 ft': 'Inside 10 ft',
-  Arc3Assists: 'Arc 3 assists',
-  Corner3Assists: 'Corner 3 assists',
-  AtRimAssists: 'At-rim assists',
-  ShortMidRangeAssists: 'Short mid assists',
-  LongMidRangeAssists: 'Long mid assists',
+const BACKEND_BASE_SLICE_LABELS = {
+  shot_zones: {
+    'Restricted Area': 'Restricted area',
+    'In The Paint (Non-RA)': 'Paint (non-RA)',
+    'Mid-Range': 'Mid-range',
+    'Corner 3': 'Corner 3',
+    'Above the Break 3': 'Above-break 3',
+  },
+  play_types: {
+    // Deliberately not the page's wording for this slice. The title is the
+    // backend's to derive, so a surface that showed its own preview where it
+    // promised the stored title would read 'Transition' here and be wrong.
+    Transition: 'Transition offense',
+    Isolation: 'Isolation',
+    PRBallHandler: 'P&R ball handler',
+    PRRollMan: 'P&R roll man',
+    Spotup: 'Spot up',
+    Cut: 'Cut',
+    Handoff: 'Handoff',
+    OffScreen: 'Off screen',
+    Postup: 'Post up',
+    OffRebound: 'Putback',
+  },
+  shot_types: {
+    'Catch and Shoot': 'Catch & shoot',
+    Pullups: 'Pull-up',
+    'Less Than 10 ft': 'Inside 10 ft',
+  },
+  assist_locations: {
+    Arc3Assists: 'Arc 3 assists',
+    Corner3Assists: 'Corner 3 assists',
+    AtRimAssists: 'At-rim assists',
+    ShortMidRangeAssists: 'Short mid assists',
+    LongMidRangeAssists: 'Long mid assists',
+  },
 };
+
+const BACKEND_SLICE_LABELS = Object.assign({}, ...Object.values(BACKEND_BASE_SLICE_LABELS));
+
+// A slice is a slice of one base: 'Transition' is a play type and nothing
+// else, and an inherited key like `toString` is a slice of nothing.
+const knownSlice = (base, sliceKey) =>
+  Object.hasOwn(BACKEND_BASE_SLICE_LABELS, base) &&
+  Object.hasOwn(BACKEND_BASE_SLICE_LABELS[base], sliceKey);
 
 const backendShare = (share) => {
   const percent = (share * 100).toFixed(1);
@@ -1810,8 +1826,7 @@ const invalidTargetBody = (body) =>
   body.qualifiers.length > TARGET_QUALIFIER_LIMIT ||
   body.qualifiers.some(
     (qualifier) =>
-      !SLICE_MARKETS[qualifier.base] ||
-      !BACKEND_SLICE_LABELS[qualifier.slice_key] ||
+      !knownSlice(qualifier.base, qualifier.slice_key) ||
       !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
       typeof qualifier.threshold !== 'number' ||
       qualifier.threshold < 0 ||

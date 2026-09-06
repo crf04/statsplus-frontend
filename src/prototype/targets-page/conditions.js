@@ -10,6 +10,7 @@
  * The minutes come from a capture of every team's game logs for the season;
  * a signed-in build has no such read yet.
  */
+import { useState } from 'react';
 import rosters from './mock/rosters.json';
 
 export const blankConditions = () => ({ defender: null, from: '', to: '' });
@@ -83,49 +84,81 @@ export const describeConditions = (tricode, conditions) => {
   return { text: parts.join(' · '), kept: kept.length, total: dates.length };
 };
 
-/* The editor: one defender line and one window line, each off until set. */
+const PRESETS = [
+  ['', 'Whole season'],
+  ['2026-01-01', 'Since Jan 1'],
+  ['2026-02-01', 'Since Feb 1'],
+  ['2026-03-01', 'Since Mar 1'],
+  ['custom', 'Custom dates'],
+];
+
+/*
+ * The editor, drawn the way a Qualifier is drawn: a row per Condition with a
+ * quiet label and a loud pick on the first line, the bound on the second,
+ * and a dashed "+ only when" to add one. A Condition not yet added is not a
+ * row, so the card reads as exactly what it filters by.
+ */
 export function ConditionsEditor({ opponent, conditions, onChange }) {
   const team = rosterFor(opponent);
   const defender = conditions.defender;
+  const [windowOpen, setWindowOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const hasWindow = windowOpen || Boolean(conditions.from || conditions.to);
   const setDefender = (patch) =>
     onChange({ defender: { ...(defender || { comparator: 'under', minutes: 20 }), ...patch } });
+  const preset =
+    PRESETS.some(([value]) => value === conditions.from) && !conditions.to
+      ? conditions.from
+      : 'custom';
+  const under = !defender || defender.comparator === 'under';
   return (
     <div className="pt-cond">
-      <span className="target-label">Only games where</span>
-      <div className="pt-cond-row">
-        <select
-          aria-label="Defender"
-          className="pt-cond-who"
-          value={defender ? String(defender.playerId) : ''}
-          onChange={(event) => {
-            if (!event.target.value) {
-              onChange({ defender: null });
-              return;
-            }
-            const row = team.players.find(([id]) => String(id) === event.target.value);
-            setDefender({ playerId: row[0], name: row[1] });
-          }}
-        >
-          <option value="">any {opponent} lineup</option>
-          {(team?.players || []).map(([id, name, played, average]) => (
-            <option key={id} value={id}>
-              {name} · {average} min · {played} gp
-            </option>
-          ))}
-        </select>
-        {defender && (
-          <>
-            <span className="pt-cond-word">plays</span>
+      {defender && (
+        <div className="pt-qualifier is-slider is-cond">
+          <div className="pt-q-slice">
+            <span className="pt-q-base is-static">Defender</span>
             <select
-              aria-label="Minutes comparator"
-              className="pt-cond-cmp"
-              value={defender.comparator}
-              onChange={(event) => setDefender({ comparator: event.target.value })}
+              aria-label="Defender"
+              className="pt-q-key"
+              value={String(defender.playerId)}
+              onChange={(event) => {
+                const row = team.players.find(([id]) => String(id) === event.target.value);
+                setDefender({ playerId: row[0], name: row[1] });
+              }}
             >
-              <option value="under">under</option>
-              <option value="at_least">at least</option>
+              {(team?.players || []).map(([id, name, played, average]) => (
+                <option key={id} value={id}>
+                  {name} · {average} min · {played} gp
+                </option>
+              ))}
             </select>
-            <span className="pt-cond-min">
+            <button
+              type="button"
+              className="pt-remove"
+              aria-label="Remove the defender Condition"
+              onClick={() => onChange({ defender: null })}
+            >
+              ×
+            </button>
+          </div>
+          <div className="pt-q-slider">
+            <button
+              type="button"
+              className="pt-q-flip is-word"
+              aria-label={under ? 'Under; press for at least' : 'At least; press for under'}
+              onClick={() => setDefender({ comparator: under ? 'at_least' : 'under' })}
+            >
+              {under ? 'under' : 'at least'}
+            </button>
+            <span className="pt-q-range">
+              <i
+                className="pt-q-fill"
+                style={
+                  under
+                    ? { left: 0, width: `${(defender.minutes / 42) * 100}%` }
+                    : { left: `${(defender.minutes / 42) * 100}%`, right: 0 }
+                }
+              />
               <input
                 type="range"
                 min="0"
@@ -135,41 +168,102 @@ export function ConditionsEditor({ opponent, conditions, onChange }) {
                 value={defender.minutes}
                 onChange={(event) => setDefender({ minutes: Number(event.target.value) })}
               />
-              <b>{defender.minutes} min</b>
+              <b className="pt-q-value" style={{ left: `${(defender.minutes / 42) * 100}%` }}>
+                {defender.minutes} min
+              </b>
             </span>
-          </>
-        )}
-      </div>
-      {defender && defender.comparator === 'under' && (
-        <small className="pt-cond-note">
-          games {defender.name.split(' ').slice(-1)[0]} sat out count as 0 min
-        </small>
+            <span className="pt-q-unit">{under ? 'incl. sat out' : 'on the floor'}</span>
+          </div>
+        </div>
       )}
-      <div className="pt-cond-row">
-        <span className="pt-cond-word">between</span>
-        <input
-          type="date"
-          aria-label="From date"
-          value={conditions.from}
-          onChange={(event) => onChange({ from: event.target.value })}
-        />
-        <span className="pt-cond-word">and</span>
-        <input
-          type="date"
-          aria-label="To date"
-          value={conditions.to}
-          onChange={(event) => onChange({ to: event.target.value })}
-        />
-        {(conditions.from || conditions.to) && (
-          <button
-            type="button"
-            className="pt-cond-clear"
-            onClick={() => onChange({ from: '', to: '' })}
-          >
-            whole season
+      {hasWindow && (
+        <div className="pt-qualifier is-slider is-cond">
+          <div className="pt-q-slice">
+            <span className="pt-q-base is-static">Window</span>
+            <select
+              aria-label="Date window"
+              className="pt-q-key"
+              value={preset}
+              onChange={(event) => {
+                if (event.target.value === 'custom') {
+                  setWindowOpen(true);
+                  return;
+                }
+                onChange({ from: event.target.value, to: '' });
+              }}
+            >
+              {PRESETS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="pt-remove"
+              aria-label="Remove the date window"
+              onClick={() => {
+                setWindowOpen(false);
+                onChange({ from: '', to: '' });
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div className="pt-cond-dates">
+            <input
+              type="date"
+              aria-label="From date"
+              value={conditions.from}
+              onChange={(event) => onChange({ from: event.target.value })}
+            />
+            <span className="pt-q-unit">to</span>
+            <input
+              type="date"
+              aria-label="To date"
+              value={conditions.to}
+              onChange={(event) => onChange({ to: event.target.value })}
+            />
+          </div>
+        </div>
+      )}
+      {(!defender || !hasWindow) &&
+        (adding ? (
+          <span className="pt-cond-add-menu" role="group" aria-label="Add a Condition">
+            {!defender && (
+              <button
+                type="button"
+                className="pt-add"
+                onClick={() => {
+                  const [id, name] = team?.players[0] || [];
+                  if (id) setDefender({ playerId: id, name });
+                  setAdding(false);
+                }}
+              >
+                a defender&apos;s minutes
+              </button>
+            )}
+            {!hasWindow && (
+              <button
+                type="button"
+                className="pt-add"
+                onClick={() => {
+                  setWindowOpen(true);
+                  setAdding(false);
+                }}
+              >
+                a date window
+              </button>
+            )}
+            <button type="button" className="pt-cond-clear" onClick={() => setAdding(false)}>
+              cancel
+            </button>
+          </span>
+        ) : (
+          <button type="button" className="pt-add" onClick={() => setAdding(true)}>
+            + only when
           </button>
-        )}
-      </div>
+        ))}
     </div>
   );
 }

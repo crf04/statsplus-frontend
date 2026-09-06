@@ -4144,3 +4144,59 @@ a.pt-today.is-live:hover {
 .pt-cond-chip small {
   color: var(--ct-dim);
 }
+
+/* ===== round 5b: Conditions drawn as Qualifier rows ===== */
+
+.pt-cond {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pt-qualifier .pt-q-base.is-static {
+  border-bottom-color: transparent;
+  cursor: default;
+}
+
+.pt-q-flip.is-word {
+  min-width: 0;
+  font-family: var(--ct-sans);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pt-cond-dates {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.pt-qualifier .pt-cond-dates input[type='date'] {
+  min-height: 30px;
+  border: 0;
+  border-bottom: 1px solid var(--ct-line-strong);
+  border-radius: 0;
+  padding: 2px;
+  background: transparent;
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 0.9rem;
+  color-scheme: dark;
+}
+
+.pt-qualifier .pt-cond-dates input[type='date']:focus {
+  outline: 0;
+  border-bottom-color: var(--ct-gold);
+}
+
+.pt-cond-add-menu {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-cond .pt-add {
+  justify-self: start;
+}

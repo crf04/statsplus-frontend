@@ -3512,3 +3512,28 @@ a.pt-today.is-live:hover {
 .pt-j-criteria {
   margin-top: 0;
 }
+
+/* ===== round 4h: the league average beside a threshold ===== */
+
+.pt-lg {
+  margin-left: 6px;
+  border: 0;
+  border-bottom: 1px dotted var(--ct-dim);
+  padding: 0 1px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pt-lg:hover {
+  border-bottom-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.pt-c-line .pt-lg {
+  font-size: 0.55em;
+  vertical-align: baseline;
+}

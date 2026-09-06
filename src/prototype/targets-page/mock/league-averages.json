@@ -1,0 +1,37 @@
+{
+  "captured": "2026-09-04 fixture of /api/matchups/0022501174, season window",
+  "shares": {
+    "shot_zones": {
+      "Above the Break 3": 0.3195,
+      "Corner 3": 0.1056,
+      "In The Paint (Non-RA)": 0.2009,
+      "Mid-Range": 0.098,
+      "Restricted Area": 0.2759
+    },
+    "play_types": {
+      "Cut": 0.0798,
+      "Handoff": 0.0598,
+      "Isolation": 0.082,
+      "Misc": 0.0546,
+      "OffRebound": 0.0652,
+      "OffScreen": 0.0556,
+      "Postup": 0.0749,
+      "PRBallHandler": 0.1775,
+      "PRRollMan": 0.0765,
+      "Spotup": 0.2565,
+      "Transition": 0.1873
+    },
+    "shot_types": {
+      "Catch and Shoot": 0.3241,
+      "Less Than 10 ft": 0.4191,
+      "Pullups": 0.251
+    },
+    "assist_locations": {
+      "Arc3Assists": 0.2866,
+      "AtRimAssists": 0.3696,
+      "Corner3Assists": 0.1341,
+      "LongMidRangeAssists": 0.0454,
+      "ShortMidRangeAssists": 0.1657
+    }
+  }
+}

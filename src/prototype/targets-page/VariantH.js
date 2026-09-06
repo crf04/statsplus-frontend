@@ -20,6 +20,7 @@ import {
   nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
 import { LabEvidence, savedLab, useLab } from './lab';
+import { LeagueHint } from './leagueAverages';
 import { ProtoLink, TodayIndicator, useDraft } from './shared';
 import { percent, summarise } from './history';
 
@@ -139,6 +140,11 @@ export function Sentence({ editor, lockOpponent = false }) {
               </button>
             </span>
             <span className="pt-c-word">% {findTargetBase(qualifier.base)?.unit}</span>
+            <LeagueHint
+              base={qualifier.base}
+              sliceKey={qualifier.sliceKey}
+              onUse={(thresholdPercent) => patchQualifier(index, { thresholdPercent })}
+            />
             {draft.qualifiers.length > 1 && (
               <button
                 type="button"

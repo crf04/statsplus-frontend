@@ -25,6 +25,7 @@ import {
   nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
+import { LeagueHint } from './leagueAverages';
 import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { useBacktests } from './history';
@@ -281,6 +282,11 @@ export function QualifierFields({ qualifier, index, onPatch, onRemove }) {
           +
         </button>
         <span>%</span>
+        <LeagueHint
+          base={qualifier.base}
+          sliceKey={qualifier.sliceKey}
+          onUse={(thresholdPercent) => onPatch({ thresholdPercent })}
+        />
       </span>
       {onRemove && (
         <button

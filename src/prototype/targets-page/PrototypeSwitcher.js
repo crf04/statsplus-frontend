@@ -17,7 +17,13 @@ const isTyping = () => {
   );
 };
 
-export default function PrototypeSwitcher({ variant, date, onStep, onDate }) {
+export default function PrototypeSwitcher({
+  variant,
+  names = VARIANT_NAMES,
+  date,
+  onStep,
+  onDate,
+}) {
   useEffect(() => {
     const onKeyDown = (event) => {
       if (isTyping()) return;
@@ -34,7 +40,7 @@ export default function PrototypeSwitcher({ variant, date, onStep, onDate }) {
         ←
       </button>
       <span className="proto-switcher-label">
-        {variant} — {VARIANT_NAMES[variant]}
+        {variant} — {names[variant]}
       </span>
       <button type="button" onClick={() => onStep(1)} aria-label="Next variant">
         →

@@ -10,6 +10,9 @@ import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalo
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { useResolvedTargets, useTargets } from './useTargets';
+// PROTOTYPE — throwaway gate, see src/prototype/targets-page/README.md.
+import TargetDetailPrototypePage from '../prototype/targets-page/TargetDetailPrototypePage';
+import { useDetailPrototype } from '../prototype/targets-page/prototypeMode';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -189,7 +192,7 @@ function TargetDetail({ target, resolved, entry, reload }) {
   );
 }
 
-export default function TargetDetailPage() {
+function TargetDetailPageShipped() {
   const { targetId } = useParams();
   /*
    * Two reads, and only one of them decides whether this page works. The list
@@ -229,4 +232,12 @@ export default function TargetDetailPage() {
         ))}
     </main>
   );
+}
+
+/* PROTOTYPE — throwaway. `?proto=targets` swaps the shipped page for the
+   variants; without it, or in a production build, this is the page above. */
+export default function TargetDetailPage() {
+  const proto = useDetailPrototype();
+  if (proto.active) return <TargetDetailPrototypePage proto={proto} />;
+  return <TargetDetailPageShipped />;
 }

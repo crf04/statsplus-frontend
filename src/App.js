@@ -36,7 +36,8 @@ function PrototypeApp() {
       </header>
       <Routes>
         <Route path="/targets" element={<TargetsPage />} />
-        <Route path="*" element={<Navigate to="/targets?proto=targets&v=A" replace />} />
+        <Route path="/targets/:targetId" element={<TargetDetailPage />} />
+        <Route path="*" element={<Navigate to="/targets?proto=targets&v=G" replace />} />
       </Routes>
     </>
   );

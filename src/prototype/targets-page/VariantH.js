@@ -25,7 +25,7 @@ import { percent, summarise } from './history';
 
 export const NAME = 'Bench';
 
-function Sentence({ editor }) {
+export function Sentence({ editor, lockOpponent = false }) {
   const { draft, patch, patchQualifier, addQualifier, removeQualifier } = editor;
   const flip = (qualifier) =>
     qualifier.comparator === TARGET_COMPARATORS[0].key
@@ -35,18 +35,22 @@ function Sentence({ editor }) {
     <div className="pt-h-sentence">
       <p className="pt-c-line">
         <span className="pt-c-word">Against</span>
-        <select
-          className="pt-c-blank is-opp"
-          aria-label="Opponent"
-          value={draft.opponent}
-          onChange={(event) => patch({ opponent: event.target.value })}
-        >
-          {NBA_TEAM_TRICODES.map((tricode) => (
-            <option key={tricode} value={tricode}>
-              {tricode}
-            </option>
-          ))}
-        </select>
+        {lockOpponent ? (
+          <b className="pt-h-read is-opp">{draft.opponent}</b>
+        ) : (
+          <select
+            className="pt-c-blank is-opp"
+            aria-label="Opponent"
+            value={draft.opponent}
+            onChange={(event) => patch({ opponent: event.target.value })}
+          >
+            {NBA_TEAM_TRICODES.map((tricode) => (
+              <option key={tricode} value={tricode}>
+                {tricode}
+              </option>
+            ))}
+          </select>
+        )}
         <span className="pt-c-word">, a player fits when</span>
         {draft.qualifiers.map((qualifier, index) => (
           <span className="pt-c-clause" key={index}>

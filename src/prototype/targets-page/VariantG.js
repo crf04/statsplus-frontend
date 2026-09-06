@@ -86,17 +86,9 @@ function TargetSection({ item, read }) {
   );
 }
 
-function DraftSection({ onSave }) {
-  const [open, setOpen] = useState(false);
+function DraftSection({ onSave, onClose }) {
   const editor = useDraft();
   const lab = useLab(editor.draft, null, null);
-  if (!open) {
-    return (
-      <button type="button" className="pt-g-new" onClick={() => setOpen(true)}>
-        <b>+</b> New Target <small>the criteria first, the season beneath them as you type</small>
-      </button>
-    );
-  }
   return (
     <section className="pt-g-section is-draft">
       <p className="eyebrow">Draft Target</p>
@@ -110,12 +102,12 @@ function DraftSection({ onSave }) {
             onClick={() => {
               onSave(editor.request);
               editor.reset();
-              setOpen(false);
+              onClose();
             }}
           >
             Save Target
           </button>
-          <button type="button" className="target-ghost" onClick={() => setOpen(false)}>
+          <button type="button" className="target-ghost" onClick={onClose}>
             Cancel
           </button>
         </div>
@@ -127,28 +119,45 @@ function DraftSection({ onSave }) {
 
 export default function VariantG({ data }) {
   const { list, items, backtests, saveLocally } = data;
+  const [composing, setComposing] = useState(false);
   return (
     <main className="slate-page targets-page pt-g">
       <header className="pt-g-page-head">
-        <p className="eyebrow">Targets</p>
-        <h1>
-          {list.status === 'ready'
-            ? `${items.length} ${items.length === 1 ? 'Target' : 'Targets'}`
-            : 'Targets'}
-        </h1>
-        <p className="pt-g-sub">
-          The criteria, and what the season says about each. Editing lives on a Target&apos;s own
-          page; composing a new one lives here, with the season reading beneath it.
-        </p>
+        <div>
+          <p className="eyebrow">Targets</p>
+          <h1>
+            {list.status === 'ready'
+              ? `${items.length} ${items.length === 1 ? 'Target' : 'Targets'}`
+              : 'Targets'}
+          </h1>
+          <p className="pt-g-sub">
+            The criteria, and what the season says about each. Editing lives on a Target&apos;s own
+            page.
+          </p>
+        </div>
+        <button
+          type="button"
+          className={`pt-b-new${composing ? ' is-active' : ''}`}
+          aria-expanded={composing}
+          onClick={() => setComposing(!composing)}
+        >
+          + New Target
+        </button>
       </header>
 
-      <DraftSection onSave={saveLocally} />
+      {composing && <DraftSection onSave={saveLocally} onClose={() => setComposing(false)} />}
 
       {list.status === 'loading' && <p role="status">Loading your Targets…</p>}
       {list.status === 'error' && <p role="alert">{list.error}</p>}
-      {items.map((item) => (
-        <TargetSection key={item.target.id} item={item} read={backtests[String(item.target.id)]} />
-      ))}
+      <div className="pt-g-grid">
+        {items.map((item) => (
+          <TargetSection
+            key={item.target.id}
+            item={item}
+            read={backtests[String(item.target.id)]}
+          />
+        ))}
+      </div>
     </main>
   );
 }

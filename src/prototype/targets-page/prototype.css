@@ -2917,3 +2917,356 @@ a.pt-today.is-live:hover {
   border-radius: 50%;
   background: var(--ct-hit);
 }
+
+/* ===== round 4: the edit screen ===== */
+
+.pt-d-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pt-d-head .eyebrow {
+  margin: 0;
+}
+
+.pt-d-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--ct-line);
+  padding: 10px 0;
+}
+
+.pt-d-actions.is-dirty {
+  border-color: var(--ct-gold);
+}
+
+.pt-d-actions.is-compact {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pt-d-actions-title {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--ct-mono);
+  font-size: 0.74rem;
+}
+
+.pt-d-actions-title.is-pending {
+  color: var(--ct-dim);
+}
+
+.pt-d-actions-buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-d-actions-buttons small {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+}
+
+.target-ghost.is-danger:hover:not(:disabled) {
+  border-color: var(--ct-miss);
+  color: var(--ct-miss);
+}
+
+/* I — Worksheet */
+
+.pt-i-criteria {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  padding: 16px 20px;
+  background: var(--ct-surface);
+}
+
+.pt-i-actions {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 12px 0 18px;
+  background: var(--ct-ink);
+}
+
+.pt-i-lab {
+  display: grid;
+}
+
+/* J — Workbench */
+
+.pt-j {
+  display: grid;
+  grid-template-columns: minmax(360px, 5fr) minmax(0, 6fr);
+  gap: 0 36px;
+  align-items: start;
+}
+
+.pt-j-bench {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-right: 4px;
+}
+
+.pt-j-bench .target-back {
+  margin: 0;
+}
+
+.pt-j-bench .pt-c-line {
+  font-size: 1.35rem;
+}
+
+.pt-j-games {
+  min-width: 0;
+  transition: opacity 120ms ease;
+}
+
+.pt-j-games.is-stale {
+  opacity: 0.45;
+}
+
+.pt-j-games .pt-lab-games li {
+  grid-template-columns: 10px 52px minmax(120px, 1fr) minmax(100px, 1fr) 52px;
+}
+
+.pt-j-games .pt-lab-g-rest {
+  grid-column: 3 / -1;
+}
+
+/* K — Players */
+
+.pt-k-head,
+.pt-k-player {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(160px, 2fr) 52px 64px 20px;
+  gap: 14px;
+  align-items: center;
+}
+
+.pt-k-head {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--ct-line-strong);
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pt-k-head span:nth-child(3),
+.pt-k-head span:nth-child(4) {
+  text-align: right;
+}
+
+.pt-k-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-k-row {
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.pt-k-row.is-open {
+  background: var(--ct-surface);
+}
+
+.pt-k-player {
+  width: 100%;
+  border: 0;
+  padding: 7px 4px;
+  background: transparent;
+  color: var(--ct-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pt-k-player:hover {
+  background: rgba(232, 163, 61, 0.05);
+}
+
+.pt-k-who {
+  display: grid;
+  min-width: 0;
+}
+
+.pt-k-who b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pt-k-who small {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+}
+
+.pt-k-strip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.pt-k-strip i {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.pt-k-rec,
+.pt-k-mean {
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.pt-k-mean {
+  font-weight: 700;
+}
+
+.pt-k-caret {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  text-align: center;
+}
+
+.pt-k-row.is-open .pt-k-caret {
+  color: var(--ct-gold);
+}
+
+.pt-k-games {
+  display: grid;
+  margin: 0;
+  padding: 0 4px 10px 18px;
+  list-style: none;
+}
+
+.pt-k-games li {
+  display: grid;
+  grid-template-columns: 10px 52px minmax(0, 1fr) 52px;
+  gap: 12px;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+
+.pt-k-games li i {
+  align-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+@media (max-width: 820px) {
+  .pt-j {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .pt-j-bench {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .pt-k-head {
+    display: none;
+  }
+
+  .pt-k-player {
+    grid-template-columns: minmax(0, 1fr) 44px 56px 16px;
+  }
+
+  .pt-k-strip {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ===== round 3e: two cards per row, New in the top right ===== */
+
+.pt-g-page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+}
+
+.pt-g-page-head .pt-b-new {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 0.76rem;
+}
+
+.pt-g-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pt-g-grid .pt-g-section {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.pt-g-grid .pt-g-head {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pt-g-grid .pt-g-actions {
+  justify-items: start;
+  grid-auto-flow: column;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pt-g-grid .pt-g-actions .pt-today {
+  margin-bottom: 0;
+}
+
+.pt-g-grid .pt-g-opp {
+  font-size: 2.2rem;
+}
+
+.pt-g-grid .pt-lab-summary {
+  gap: 8px 14px;
+}
+
+@media (max-width: 820px) {
+  .pt-g-page-head {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .pt-g-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* the indicator and the way in sit in the card's top-right corner */
+.pt-g-grid .pt-g-actions {
+  order: -1;
+  justify-content: end;
+  justify-items: end;
+  gap: 14px;
+  margin-bottom: -6px;
+}

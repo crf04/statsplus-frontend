@@ -7,7 +7,7 @@
  * edited with. Layout stays in the variants.
  */
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { formatTip } from '../../calendarDate';
 import {
   blankQualifier,
@@ -67,6 +67,19 @@ const useResolved = PROTO_STANDALONE ? useMockResolved : useResolvedTargets;
 
 /* In the standalone build there is nowhere for a link to go. */
 export function ProtoLink({ to, children, ...rest }) {
+  const [searchParams] = useSearchParams();
+  if (to.startsWith('/targets/')) {
+    const next = new URLSearchParams();
+    next.set('proto', 'targets');
+    ['v', 'dv', 'date'].forEach((name) => {
+      if (searchParams.get(name)) next.set(name, searchParams.get(name));
+    });
+    return (
+      <Link to={`${to}?${next.toString()}`} {...rest}>
+        {children}
+      </Link>
+    );
+  }
   if (PROTO_STANDALONE) return <span {...rest}>{children}</span>;
   return (
     <Link to={to} {...rest}>

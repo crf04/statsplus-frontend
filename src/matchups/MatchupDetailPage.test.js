@@ -1,14 +1,17 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { createTarget } from '../targets/targetsApi';
+import { createTarget, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import MatchupDetailPage from './MatchupDetailPage';
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
-jest.mock('../targets/targetsApi', () => ({ createTarget: jest.fn() }));
+jest.mock('../targets/targetsApi', () => ({
+  createTarget: jest.fn(),
+  fetchTargetPreview: jest.fn(),
+}));
 
 const value = (allowedPer48, percentVsLeagueAverage, sigmaDeviation, rank) => ({
   allowedPer48,
@@ -255,6 +258,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchMatchup.mockResolvedValue(matchup);
+  fetchTargetPreview.mockResolvedValue(capturePreview);
   fetchMatchupSelection.mockResolvedValue({
     playerId: 2544,
     h2h: {
@@ -995,12 +999,16 @@ const historicalMatchup = () => {
   return candidate;
 };
 
+const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+
 const renderMatchup = (path = '/matchups/game-1') =>
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+        <Route path="/targets/:targetId" element={<p>One Target</p>} />
       </Routes>
+      <LocationProbe />
     </MemoryRouter>,
   );
 
@@ -1357,6 +1365,50 @@ const storedTarget = (overrides = {}) => ({
   ...overrides,
 });
 
+/*
+ * The season behind the capture's draft, as the Lab beneath the dialog's form
+ * reads it. Nobody qualifying has faced BOS, so the strip is the only figure.
+ */
+const capturePreview = {
+  target: {
+    opponent: 'BOS',
+    title: 'BOS vs Transition offense ≥ 9%',
+    note: '',
+    qualifiers: [
+      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+    ],
+  },
+  proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+  statColumns: ['PTS'],
+  summary: {
+    players: 2,
+    games: 4,
+    columns: { PTS: { meanDifference: 3.1, overAverageShare: 0.75 } },
+  },
+  players: [
+    {
+      canonicalId: 2544,
+      name: 'LeBron James',
+      tricode: 'LAL',
+      shares: [{ share: 0.12, leagueAverageShare: 0.094 }],
+      seasonAverages: { PTS: 25.4 },
+      games: [{ gameDate: '2026-01-12', stats: { PTS: 31 } }],
+    },
+  ],
+  today: {
+    game: {
+      gameId: 'game-1',
+      scheduledAt: '2026-01-16T00:30:00.000Z',
+      status: { state: 'scheduled', label: 'Scheduled' },
+      away: { tricode: 'LAL' },
+      home: { tricode: 'BOS' },
+      opponent: { tricode: 'BOS' },
+      opposingTeam: { tricode: 'LAL' },
+    },
+    fitCount: 3,
+  },
+};
+
 const openCapture = async (rowLabel) => {
   await screen.findByRole('heading', { name: /Defense Sheet$/ });
   const rowAction = screen.getByRole('button', { name: `Save ${rowLabel} as a Target` });
@@ -1390,17 +1442,28 @@ test('prefills the capture form from the row and saves what the reader made of i
   // 9.4% league average, offered as the whole percent a reader would type.
   expect(thresholdField(dialog)).toHaveValue(9);
 
-  // The prefill is a starting point: the threshold is the reader's to move and
-  // more Qualifiers can be added before saving.
-  await userEvent.clear(thresholdField(dialog));
-  await userEvent.type(thresholdField(dialog), '12');
-  await userEvent.click(within(dialog).getByRole('button', { name: '+ Add a Qualifier' }));
+  // Closing hands the keyboard back to the row the capture started from, and
+  // Escape closes it as the dialog it is.
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  await waitFor(() => expect(rowAction).toHaveFocus());
+  await openCapture('Transition');
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  // The same row opened again is a fresh capture. The prefill is a starting
+  // point: the threshold is the reader's to move and more Qualifiers can be
+  // added before saving.
+  const reopened = (await openCapture('Transition')).dialog;
+  expect(thresholdField(reopened)).toHaveValue(9);
+  await userEvent.clear(thresholdField(reopened));
+  await userEvent.type(thresholdField(reopened), '12');
+  await userEvent.click(within(reopened).getByRole('button', { name: '+ Add a Qualifier' }));
   await userEvent.selectOptions(
-    within(dialog).getByRole('combobox', { name: 'Qualifier 2 slice' }),
+    within(reopened).getByRole('combobox', { name: 'Qualifier 2 slice' }),
     'Corner 3',
   );
-  await userEvent.type(thresholdField(dialog, 2), '40');
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  await userEvent.type(thresholdField(reopened, 2), '40');
+  await userEvent.click(within(reopened).getByRole('button', { name: 'Save Target' }));
 
   expect(createTarget).toHaveBeenCalledWith({
     opponent: 'BOS',
@@ -1410,21 +1473,42 @@ test('prefills the capture form from the row and saves what the reader made of i
       { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
     ],
   });
-  // The title is the backend's, so the confirmation says the one it derived.
-  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Go to Targets' })).toHaveAttribute('href', '/targets');
+  // The saved draft is the record, and opens on its own page: the one the
+  // backend stored, by the id it answered with.
+  expect(await screen.findByText('One Target')).toBeVisible();
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/4$/);
+});
 
-  // Closing hands the keyboard back to the row the capture started from.
-  await userEvent.click(screen.getByRole('button', { name: 'Back to the Defense Sheet' }));
-  await waitFor(() => expect(rowAction).toHaveFocus());
+/*
+ * A Target born from a Defense Sheet row is tuned right there: the Lab reads
+ * the prefilled draft beneath the dialog's form, against the season the row
+ * prompted a look at.
+ */
+test('the capture dialog reads the prefilled draft live beneath its form', async () => {
+  renderMatchup();
 
-  // The same row opened again is a fresh capture, not the receipt for the last
-  // one, and Escape closes it as the dialog it is.
-  const reopened = await openCapture('Transition');
-  expect(thresholdField(reopened.dialog)).toHaveValue(9);
-  expect(screen.queryByText('A title only the backend could have written')).not.toBeInTheDocument();
-  await userEvent.keyboard('{Escape}');
-  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  const { dialog } = await openCapture('Transition');
+  expect(within(dialog).getByText('Lab · Backtest · season to date · vs BOS')).toBeVisible();
+  // The prefill is a complete draft, so it is read without a keystroke.
+  const strip = await within(dialog).findByRole(
+    'list',
+    { name: 'Backtest summary' },
+    { timeout: 3000 },
+  );
+  expect(fetchTargetPreview).toHaveBeenCalledWith(
+    expect.objectContaining({
+      opponent: 'BOS',
+      qualifiers: [
+        { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+      ],
+    }),
+  );
+  expect(within(strip).getByRole('listitem', { name: 'Players' })).toHaveTextContent('2');
+  expect(within(strip).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+3.1');
+  expect(within(dialog).getByText(/fit tonight/)).toHaveTextContent('3 fit tonight vs BOS');
+  expect(
+    within(dialog).getByRole('table', { name: 'Backtest for BOS vs Transition offense ≥ 9%' }),
+  ).toBeVisible();
 });
 
 test('captures against whichever team’s sheet is open', async () => {
@@ -1484,7 +1568,40 @@ test('a save in flight cannot be sent twice', async () => {
   expect(createTarget).toHaveBeenCalledTimes(1);
 
   await act(async () => settle());
-  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
+  expect(await screen.findByText('One Target')).toBeVisible();
+});
+
+/*
+ * A save answered after the dialog was dismissed is nobody's any more. Acting
+ * on it would open a Target the reader had moved on from, over whatever they
+ * were composing next.
+ */
+test('a save that resolves after the dialog was dismissed does not navigate', async () => {
+  let settle;
+  createTarget.mockReturnValue(
+    new Promise((resolve) => {
+      settle = () => resolve(storedTarget());
+    }),
+  );
+  renderMatchup();
+
+  const { dialog } = await openCapture('Transition');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  // Another row, another draft, before the first save answers.
+  const next = (await openCapture('Above-break three')).dialog;
+  await userEvent.type(thresholdField(next), '32');
+  await act(async () => settle());
+
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1$/);
+  expect(screen.queryByText('One Target')).not.toBeInTheDocument();
+  expect(screen.getByRole('dialog')).toBeVisible();
+  expect(thresholdField(screen.getByRole('dialog'))).toHaveValue(32);
+  expect(
+    within(screen.getByRole('dialog')).getByRole('button', { name: 'Save Target' }),
+  ).toBeEnabled();
 });
 
 test('a duplicate Target keeps the composed draft and says why it was refused', async () => {

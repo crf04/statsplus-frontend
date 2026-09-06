@@ -171,3 +171,14 @@ export const parseThresholdPercent = (percentText) => {
  */
 export const shareToThresholdPercent = (share, { whole = false } = {}) =>
   String(whole ? Math.round(share * 100) : Math.round(share * 1000) / 10);
+
+/*
+ * A threshold moved by the stepper or the arrow keys: one whole percent from
+ * where it is, clamped to the share range and kept at the decimal the parser
+ * keeps. A blank field is nudged from zero, so the first press puts a number
+ * where there was none rather than doing nothing.
+ */
+export const nudgeThresholdPercent = (percentText, delta) => {
+  const current = Number(String(percentText).trim()) || 0;
+  return String(Math.min(100, Math.max(0, Math.round((current + delta) * 10) / 10)));
+};

@@ -1,14 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
-import { fetchResolvedTargets, fetchTargetBacktest, fetchTargets } from './targetsApi';
+import {
+  fetchResolvedTargets,
+  fetchTargetBacktest,
+  fetchTargetPreview,
+  fetchTargets,
+} from './targetsApi';
 
 const LOAD_FAILURE = 'Unable to load your Targets. Please try again.';
 const BACKTEST_FAILURE = 'Unable to load this backtest. Please try again.';
+const PREVIEW_FAILURE = 'Unable to read the season for this draft. Please try again.';
 
 const EMPTY_LIST = { targets: [] };
 const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
 const EMPTY_BACKTEST = { backtest: null };
+
+/*
+ * How long a draft has to hold still before the Lab reads it. Long enough that
+ * typing "35" is one request rather than two, short enough to feel like the
+ * table answered the keystroke.
+ */
+export const PREVIEW_DELAY_MS = 600;
 
 /*
  * Each read returns the state it contributes, so the hook below can hold any
@@ -89,4 +102,80 @@ export const useTargetBacktest = (id) => {
   });
   // The first reload of a read that has never run is that read.
   return { ...state, read: reload };
+};
+
+const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
+
+/*
+ * What a Draft Target is evaluated by: the opponent and the Qualifiers. The
+ * note is never part of the evidence, so editing it is not a new draft.
+ */
+const previewKey = (request) =>
+  request ? JSON.stringify({ opponent: request.opponent, qualifiers: request.qualifiers }) : null;
+
+/*
+ * The season behind a Draft Target, read while it is composed. The draft is
+ * compared by value, so a re-render is not a new draft and neither is retyping
+ * the same threshold; a changed one is read only once it has held still for
+ * the delay, so several quick edits are one request. The moment the draft
+ * changes, whatever was in flight for the old one is abandoned, and a late
+ * answer from it is never shown.
+ *
+ * What was last read stays in hand — through the next edit, an incomplete
+ * draft, and a refusal — so a keystroke never blanks the screen; it is dropped
+ * only when the account signs out or the host goes away. `pending` says the
+ * draft has moved on from what was last read, whether or not the read has
+ * started; the caller shows the result dimmed until it is current again.
+ */
+export const useTargetPreview = (request) => {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const key = previewKey(request);
+  const [state, setState] = useState(EMPTY_PREVIEW);
+  // The draft the result in hand was read for, kept where the effect can see
+  // it without re-running for it: a draft typed back to what was last read is
+  // not a new draft either.
+  const readKey = useRef(null);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) {
+      readKey.current = null;
+      setState(EMPTY_PREVIEW);
+      return undefined;
+    }
+    if (key === null || key === readKey.current) {
+      // Nothing to read, and the read that was under way was abandoned when
+      // the draft moved. What was last read stays.
+      setState((current) => ({
+        ...current,
+        status: current.preview ? 'ready' : 'idle',
+        error: null,
+      }));
+      return undefined;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setState((current) => ({ ...current, status: 'loading', error: null }));
+      fetchTargetPreview({ ...JSON.parse(key), signal: controller.signal })
+        .then((preview) => {
+          if (controller.signal.aborted) return;
+          readKey.current = key;
+          setState({ status: 'ready', error: null, preview, key });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted || isRequestCancelled(error)) return;
+          setState((current) => ({
+            ...current,
+            status: 'error',
+            error: getRequestErrorMessage(error, PREVIEW_FAILURE),
+          }));
+        });
+    }, PREVIEW_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [key, authLoading, isAuthenticated]);
+
+  const { key: shownKey, ...read } = state;
+  return { ...read, pending: key !== shownKey };
 };

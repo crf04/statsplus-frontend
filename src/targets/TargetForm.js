@@ -4,6 +4,7 @@ import {
   TARGET_COMPARATORS,
   TARGET_SLICES,
   deriveTargetTitle,
+  nudgeThresholdPercent,
   parseThresholdPercent,
   shareToThresholdPercent,
 } from './targetCatalog';
@@ -185,8 +186,21 @@ export default function TargetForm({
           </div>
           {/* A step would let the browser refuse a share the form had just
               previewed as a title. The parser is the only judge of a threshold,
-              and it rounds to the decimal the title is written at. */}
+              and it rounds to the decimal the title is written at. Tuning is a
+              series of small moves, so the steppers and the arrow keys nudge
+              by one whole percent. */}
           <span className="target-threshold">
+            <button
+              type="button"
+              aria-label={`Qualifier ${index + 1} threshold down 1%`}
+              onClick={() =>
+                patchQualifier(index, {
+                  thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, -1),
+                })
+              }
+            >
+              −
+            </button>
             <input
               type="number"
               min="0"
@@ -195,8 +209,27 @@ export default function TargetForm({
               aria-label={`Qualifier ${index + 1} threshold percent`}
               value={qualifier.thresholdPercent}
               onChange={(event) => patchQualifier(index, { thresholdPercent: event.target.value })}
+              onKeyDown={(event) => {
+                const delta = { ArrowUp: 1, ArrowDown: -1 }[event.key];
+                if (!delta) return;
+                event.preventDefault();
+                patchQualifier(index, {
+                  thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, delta),
+                });
+              }}
             />
             <span>%</span>
+            <button
+              type="button"
+              aria-label={`Qualifier ${index + 1} threshold up 1%`}
+              onClick={() =>
+                patchQualifier(index, {
+                  thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, 1),
+                })
+              }
+            >
+              +
+            </button>
           </span>
           <button
             type="button"

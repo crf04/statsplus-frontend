@@ -5,6 +5,7 @@ import {
   deleteTarget,
   fetchResolvedTargets,
   fetchTargetBacktest,
+  fetchTargetPreview,
   fetchTargets,
   updateTarget,
 } from './targetsApi';
@@ -13,6 +14,7 @@ jest.mock('./targetsApi', () => ({
   fetchTargets: jest.fn(),
   fetchResolvedTargets: jest.fn(),
   fetchTargetBacktest: jest.fn(),
+  fetchTargetPreview: jest.fn(),
   updateTarget: jest.fn(),
   deleteTarget: jest.fn(),
 }));
@@ -123,6 +125,16 @@ const backtest = {
   target,
   proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
   statColumns: ['PTS', '3PM'],
+  // The backend's arithmetic over the three games below: +5.6, -2.9 and 0.0
+  // in points, two of three at or over.
+  summary: {
+    players: 1,
+    games: 3,
+    columns: {
+      PTS: { meanDifference: 0.913, overAverageShare: 0.667 },
+      '3PM': { meanDifference: 0.333, overAverageShare: 0.667 },
+    },
+  },
   players: [
     {
       canonicalId: 2544,
@@ -156,6 +168,35 @@ const backtestOfAnotherTarget = {
   },
 };
 
+/*
+ * What the Lab reads for the edit form's draft. It is the season behind the
+ * draft rather than the saved Target, so it is deliberately not the saved
+ * backtest above: a Lab that showed the saved one would pass a shared fixture.
+ */
+const preview = {
+  ...backtest,
+  target: {
+    opponent: 'OKC',
+    title: 'OKC vs Corner 3 ≥ 40%',
+    note: '',
+    qualifiers: target.qualifiers,
+  },
+  summary: {
+    players: 3,
+    games: 8,
+    columns: {
+      PTS: { meanDifference: 1.5, overAverageShare: 0.5 },
+      '3PM': { meanDifference: 0.2, overAverageShare: 0.5 },
+    },
+  },
+  today: null,
+};
+
+const summaryItem = (label) =>
+  within(screen.getByRole('list', { name: 'Backtest summary' })).getByRole('listitem', {
+    name: label,
+  });
+
 const expandBacktest = async () => {
   const toggle = await screen.findByRole('button', { name: 'Expand backtest' });
   await act(async () => {
@@ -187,6 +228,11 @@ beforeEach(() => {
   updateTarget.mockResolvedValue(undefined);
   deleteTarget.mockResolvedValue(undefined);
   fetchTargetBacktest.mockResolvedValue(backtest);
+  fetchTargetPreview.mockResolvedValue(preview);
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 test('shows one Target with its Qualifiers, note, creation date, and a way back', async () => {
@@ -636,12 +682,28 @@ test('a backtest row opens the Log Workspace with the player and the opponent fi
 test('a backtest nobody has played into says so rather than showing an empty table', async () => {
   // Named after the opponent the backtest was run against, not the one the
   // page happens to be showing.
-  fetchTargetBacktest.mockResolvedValue({ ...backtestOfAnotherTarget, players: [] });
+  fetchTargetBacktest.mockResolvedValue({
+    ...backtestOfAnotherTarget,
+    players: [],
+    summary: {
+      players: 0,
+      games: 0,
+      columns: {
+        PTS: { meanDifference: null, overAverageShare: null },
+        '3PM': { meanDifference: null, overAverageShare: null },
+      },
+    },
+  });
   renderDetail();
   await expandBacktest();
 
   expect(screen.getByText('Nobody qualifying has faced DEN yet.')).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  // The summary still leads: zero is the number that moved.
+  expect(summaryItem('Players')).toHaveTextContent('0');
+  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('PTS')).toHaveTextContent('—');
+  expect(summaryItem('PTS')).toHaveTextContent('— of games over');
 });
 
 /*
@@ -667,4 +729,81 @@ test('a refused backtest leaves the rest of the Target intact and can be asked f
   await expandBacktest();
   expect(screen.getByRole('table')).toBeVisible();
   expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+});
+
+/*
+ * The summary the backend computed leads the games it summarises, so the
+ * saved detail and the Lab show the same numbers for the same Target.
+ */
+test('an expanded backtest leads with its summary, read at one decimal', async () => {
+  renderDetail();
+  await expandBacktest();
+
+  expect(summaryItem('Players')).toHaveTextContent('1');
+  expect(summaryItem('Games')).toHaveTextContent('3');
+  expect(summaryItem('PTS')).toHaveTextContent('+0.9');
+  expect(summaryItem('PTS')).toHaveTextContent('67% of games over');
+  expect(within(summaryItem('PTS')).getByText('+0.9')).toHaveClass('is-hit');
+  expect(summaryItem('3PM')).toHaveTextContent('+0.3');
+  // The strip sits above the table it summarises.
+  const strip = screen.getByRole('list', { name: 'Backtest summary' });
+  expect(strip.compareDocumentPosition(screen.getByRole('table'))).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+});
+
+test('a summary that lands on the average is coloured as neither a hit nor a miss', async () => {
+  fetchTargetBacktest.mockResolvedValue({
+    ...backtest,
+    summary: {
+      ...backtest.summary,
+      columns: {
+        PTS: { meanDifference: -0.04, overAverageShare: 0.5 },
+        '3PM': { meanDifference: -1.2, overAverageShare: 0 },
+      },
+    },
+  });
+  renderDetail();
+  await expandBacktest();
+
+  const level = within(summaryItem('PTS')).getByText('0.0');
+  expect(level).not.toHaveClass('is-hit');
+  expect(level).not.toHaveClass('is-miss');
+  expect(within(summaryItem('3PM')).getByText('-1.2')).toHaveClass('is-miss');
+  expect(summaryItem('3PM')).toHaveTextContent('0% of games over');
+});
+
+/*
+ * Editing is tuning too: the Lab reads the draft's season beneath the edit
+ * form, in place of the saved sections, and is gone again once the form is.
+ */
+test('the edit form reads the draft live beneath it', async () => {
+  jest.useFakeTimers();
+  renderDetail();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+  // The saved Target's own backtest waits behind the form.
+  expect(screen.queryByRole('button', { name: 'Expand backtest' })).not.toBeInTheDocument();
+  expect(screen.getByText('Lab · Backtest · season to date · vs OKC')).toBeVisible();
+  // The stored Qualifiers are a complete draft, so the Lab reads it as it is.
+  await act(async () => {
+    jest.advanceTimersByTime(600);
+  });
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  expect(fetchTargetPreview).toHaveBeenCalledWith(
+    expect.objectContaining({
+      opponent: 'OKC',
+      qualifiers: [
+        { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    }),
+  );
+  expect(summaryItem('Players')).toHaveTextContent('3');
+  expect(summaryItem('Games')).toHaveTextContent('8');
+  // OKC is idle on the fixture's day, so there is no tonight to speak of.
+  expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByText(/^Lab · /)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Expand backtest' })).toBeInTheDocument();
 });

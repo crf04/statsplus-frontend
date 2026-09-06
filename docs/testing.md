@@ -105,7 +105,10 @@ A Target's backtest is composed the same way but league-wide and season-to-date.
 player either Matchup publishes, excludes the thin Diets rather than flagging them, derives its
 outcome columns from each Qualifier's slice, and averages a player's season over the games the
 game-log route serves for that player — so a backtest row and the Log Workspace that row hands off
-to show the same game. The slate route reports pool freshness that matches the evidence resolution
+to show the same game. Its summary is the contract's own arithmetic over those games. The preview a
+Draft Target's Lab reads is the same composition for a Target that is stored nowhere, with a `today`
+block resolved against the current Slate date; it refuses a missing bearer, an unknown base or slice,
+and more than ten Qualifiers with the backend's envelopes. The slate route reports pool freshness that matches the evidence resolution
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
 journey never sees one route call a pool unavailable while the other lists players from it.
 

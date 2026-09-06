@@ -34,29 +34,31 @@ const decodeQualifier = (item) => {
  * arrives with the record rather than being rebuilt from it. See
  * crf04/statsplus docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
-const decodeTarget = (item) => {
+const decodeDraftTarget = (item) => {
   if (!item || typeof item !== 'object') throw createInvalidResponseError();
-  const { id, opponent, title, note, created_at: createdAt, qualifiers } = item;
-  const hasId = typeof id === 'string' || typeof id === 'number';
+  const { opponent, title, note, qualifiers } = item;
   if (
-    !hasId ||
     typeof opponent !== 'string' ||
     typeof title !== 'string' ||
-    typeof createdAt !== 'string' ||
     !Array.isArray(qualifiers) ||
     qualifiers.length === 0 ||
     (note !== null && note !== undefined && typeof note !== 'string')
   ) {
     throw createInvalidResponseError();
   }
-  return {
-    id,
-    opponent,
-    title,
-    note: note || '',
-    createdAt,
-    qualifiers: qualifiers.map(decodeQualifier),
-  };
+  return { opponent, title, note: note || '', qualifiers: qualifiers.map(decodeQualifier) };
+};
+
+/*
+ * A saved Target is a Draft Target with a record behind it: the id it is
+ * opened by and the day it was set.
+ */
+const decodeTarget = (item) => {
+  const draft = decodeDraftTarget(item);
+  const { id, created_at: createdAt } = item;
+  const hasId = typeof id === 'string' || typeof id === 'number';
+  if (!hasId || typeof createdAt !== 'string') throw createInvalidResponseError();
+  return { id, ...draft, createdAt };
 };
 
 export const decodeTargets = (payload = {}) => {
@@ -298,7 +300,38 @@ const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
   };
 };
 
-export const decodeBacktest = (payload = {}) => {
+/*
+ * The summary is the backend's arithmetic over every listed game, in the same
+ * columns as the table: the mean signed difference from the player's season
+ * average, and the share of games at or above it. A column with no game to
+ * average has no figure, which is null rather than zero.
+ */
+const decodeSummaryColumn = (column) => {
+  if (!isRecord(column)) throw createInvalidResponseError();
+  const overAverageShare = requireNumberOrNull(column.over_average_share);
+  if (overAverageShare !== null && (overAverageShare < 0 || overAverageShare > 1)) {
+    throw createInvalidResponseError();
+  }
+  return { meanDifference: requireNumberOrNull(column.mean_difference), overAverageShare };
+};
+
+const decodeSummary = (summary, statColumns) => {
+  if (!isRecord(summary) || !isRecord(summary.columns)) throw createInvalidResponseError();
+  return {
+    players: requireNumber(summary.players),
+    games: requireNumber(summary.games),
+    columns: Object.fromEntries(
+      statColumns.map((column) => [column, decodeSummaryColumn(summary.columns[column])]),
+    ),
+  };
+};
+
+/*
+ * Everything a backtest carries besides the Target it was run for. The saved
+ * read and the Draft Target preview share it, which is what makes the Lab show
+ * exactly what the detail will show after saving.
+ */
+const decodeBacktestBody = (payload, target) => {
   if (
     !isRecord(payload) ||
     !Array.isArray(payload.stat_columns) ||
@@ -307,18 +340,49 @@ export const decodeBacktest = (payload = {}) => {
   ) {
     throw createInvalidResponseError();
   }
-  // The Target travels with its own backtest, so the rows are labelled by the
-  // Qualifiers the backend actually ran rather than by whatever the page
-  // happens to be holding.
-  const target = decodeTarget(payload.target);
   const statColumns = payload.stat_columns.map(requireString);
   return {
     target,
     proxy: requireString(payload.proxy),
     statColumns,
+    summary: decodeSummary(payload.summary, statColumns),
     players: payload.players.map((player) =>
       decodeBacktestPlayer(player, statColumns, target.qualifiers.length),
     ),
+  };
+};
+
+export const decodeBacktest = (payload = {}) => {
+  if (!isRecord(payload)) throw createInvalidResponseError();
+  // The Target travels with its own backtest, so the rows are labelled by the
+  // Qualifiers the backend actually ran rather than by whatever the page
+  // happens to be holding.
+  return decodeBacktestBody(payload, decodeTarget(payload.target));
+};
+
+/*
+ * Whether the draft fires on the current Slate date: null when the opponent
+ * is idle, else the game and how many opposing players meet every Qualifier
+ * by the resolve rule. A game without a count, or a count without a game, is
+ * half an answer.
+ */
+const decodeToday = (today) => {
+  if (today === null) return null;
+  if (!isRecord(today)) throw createInvalidResponseError();
+  const game = decodeGame(today.game);
+  if (game === null) throw createInvalidResponseError();
+  return { game, fitCount: requireNumber(today.fit_count) };
+};
+
+/*
+ * The preview is the backtest of a Draft Target: the same shape, with the
+ * validated draft echoed back in place of a stored record, plus `today`.
+ */
+export const decodePreview = (payload = {}) => {
+  if (!isRecord(payload) || payload.today === undefined) throw createInvalidResponseError();
+  return {
+    ...decodeBacktestBody(payload, decodeDraftTarget(payload.target)),
+    today: decodeToday(payload.today),
   };
 };
 
@@ -358,6 +422,20 @@ export const fetchTargetBacktest = async ({ id, signal } = {}) => {
     signal,
   });
   return decodeBacktest(response.data);
+};
+
+/*
+ * The same scan for a Target that is not saved: the create body goes up and
+ * the backtest comes back, with nothing stored. The Lab asks for this after
+ * every settled edit, so the read is abortable by the edit after it.
+ */
+export const fetchTargetPreview = async ({ opponent, qualifiers, note, signal } = {}) => {
+  const response = await apiClient.post(
+    getApiUrl('TARGET_PREVIEW'),
+    { opponent, qualifiers: qualifiers.map(encodeQualifier), note },
+    { signal },
+  );
+  return decodePreview(response.data);
 };
 
 /*

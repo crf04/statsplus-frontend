@@ -1468,34 +1468,50 @@ const canonicalQualifiers = (qualifiers) =>
  * see it. See crf04/statsplus
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
-const BACKEND_SLICE_LABELS = {
-  'Restricted Area': 'Restricted area',
-  'In The Paint (Non-RA)': 'Paint (non-RA)',
-  'Mid-Range': 'Mid-range',
-  'Corner 3': 'Corner 3',
-  'Above the Break 3': 'Above-break 3',
-  // Deliberately not the page's wording for this slice. The title is the
-  // backend's to derive, so a surface that showed its own preview where it
-  // promised the stored title would read 'Transition' here and be wrong.
-  Transition: 'Transition offense',
-  Isolation: 'Isolation',
-  PRBallHandler: 'P&R ball handler',
-  PRRollMan: 'P&R roll man',
-  Spotup: 'Spot up',
-  Cut: 'Cut',
-  Handoff: 'Handoff',
-  OffScreen: 'Off screen',
-  Postup: 'Post up',
-  OffRebound: 'Putback',
-  'Catch and Shoot': 'Catch & shoot',
-  Pullups: 'Pull-up',
-  'Less Than 10 ft': 'Inside 10 ft',
-  Arc3Assists: 'Arc 3 assists',
-  Corner3Assists: 'Corner 3 assists',
-  AtRimAssists: 'At-rim assists',
-  ShortMidRangeAssists: 'Short mid assists',
-  LongMidRangeAssists: 'Long mid assists',
+const BACKEND_BASE_SLICE_LABELS = {
+  shot_zones: {
+    'Restricted Area': 'Restricted area',
+    'In The Paint (Non-RA)': 'Paint (non-RA)',
+    'Mid-Range': 'Mid-range',
+    'Corner 3': 'Corner 3',
+    'Above the Break 3': 'Above-break 3',
+  },
+  play_types: {
+    // Deliberately not the page's wording for this slice. The title is the
+    // backend's to derive, so a surface that showed its own preview where it
+    // promised the stored title would read 'Transition' here and be wrong.
+    Transition: 'Transition offense',
+    Isolation: 'Isolation',
+    PRBallHandler: 'P&R ball handler',
+    PRRollMan: 'P&R roll man',
+    Spotup: 'Spot up',
+    Cut: 'Cut',
+    Handoff: 'Handoff',
+    OffScreen: 'Off screen',
+    Postup: 'Post up',
+    OffRebound: 'Putback',
+  },
+  shot_types: {
+    'Catch and Shoot': 'Catch & shoot',
+    Pullups: 'Pull-up',
+    'Less Than 10 ft': 'Inside 10 ft',
+  },
+  assist_locations: {
+    Arc3Assists: 'Arc 3 assists',
+    Corner3Assists: 'Corner 3 assists',
+    AtRimAssists: 'At-rim assists',
+    ShortMidRangeAssists: 'Short mid assists',
+    LongMidRangeAssists: 'Long mid assists',
+  },
 };
+
+const BACKEND_SLICE_LABELS = Object.assign({}, ...Object.values(BACKEND_BASE_SLICE_LABELS));
+
+// A slice is a slice of one base: 'Transition' is a play type and nothing
+// else, and an inherited key like `toString` is a slice of nothing.
+const knownSlice = (base, sliceKey) =>
+  Object.hasOwn(BACKEND_BASE_SLICE_LABELS, base) &&
+  Object.hasOwn(BACKEND_BASE_SLICE_LABELS[base], sliceKey);
 
 const backendShare = (share) => {
   const percent = (share * 100).toFixed(1);
@@ -1765,18 +1781,90 @@ const backtestPlayer = (target, statColumns, player) => {
   };
 };
 
+/*
+ * The backend's arithmetic over every listed game, so the Lab and the saved
+ * detail read the same figures: per market, the mean signed distance from
+ * each player's own season average and the share of games at or above it. A
+ * market with no game to average has no figure.
+ */
+const backtestSummary = (players, statColumns) => {
+  const games = players.flatMap((player) => player.games.map((game) => ({ player, game })));
+  return {
+    players: players.length,
+    games: games.length,
+    columns: Object.fromEntries(
+      statColumns.map((market) => {
+        const differences = games.map(
+          ({ player, game }) => game.stats[market] - player.season_averages[market],
+        );
+        if (differences.length === 0) {
+          return [market, { mean_difference: null, over_average_share: null }];
+        }
+        return [
+          market,
+          {
+            mean_difference:
+              Math.round(
+                (differences.reduce((total, value) => total + value, 0) / differences.length) * 100,
+              ) / 100,
+            over_average_share:
+              Math.round(
+                (differences.filter((value) => value >= 0).length / differences.length) * 1000,
+              ) / 1000,
+          },
+        ];
+      }),
+    ),
+  };
+};
+
 const backtestTarget = (target) => {
   const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
+  const players = leaguePlayers
+    .map((player) => backtestPlayer(target, statColumns, player))
+    .filter(Boolean)
+    // Season scoring descending, as every player list the product shows is.
+    .sort((first, second) => second.season_scoring - first.season_scoring);
   return {
     target,
     season: '2025-26',
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     stat_columns: statColumns,
-    players: leaguePlayers
-      .map((player) => backtestPlayer(target, statColumns, player))
-      .filter(Boolean)
-      // Season scoring descending, as every player list the product shows is.
-      .sort((first, second) => second.season_scoring - first.season_scoring),
+    summary: backtestSummary(players, statColumns),
+    players,
+  };
+};
+
+/*
+ * The preview is the backtest of a Draft Target, which is stored nowhere: the
+ * same composition over the same league, with the draft echoed back under its
+ * derived title and no id, plus whether it fires on the current Slate date.
+ * The body is validated as create would validate it; the account cap and the
+ * duplicate rule do not apply.
+ */
+const TARGET_QUALIFIER_LIMIT = 10;
+
+const invalidTargetBody = (body) =>
+  !body ||
+  typeof body.opponent !== 'string' ||
+  !Array.isArray(body.qualifiers) ||
+  body.qualifiers.length === 0 ||
+  body.qualifiers.length > TARGET_QUALIFIER_LIMIT ||
+  body.qualifiers.some(
+    (qualifier) =>
+      !knownSlice(qualifier.base, qualifier.slice_key) ||
+      !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
+      typeof qualifier.threshold !== 'number' ||
+      qualifier.threshold < 0 ||
+      qualifier.threshold > 1,
+  );
+
+const previewTarget = (draft) => {
+  const target = { ...draft, title: backendTargetTitle(draft) };
+  const [entry] = resolveTargets(DEFAULT_SLATE_DATE, [target]).targets;
+  return {
+    ...backtestTarget(target),
+    today: entry.game ? { game: entry.game, fit_count: entry.players.length } : null,
   };
 };
 
@@ -1975,6 +2063,44 @@ export const installApiContract = async (page, overrides = {}) => {
         }
         await route.fulfill({
           json: { success: true, ...resolveTargets(date || DEFAULT_SLATE_DATE, targets) },
+        });
+        return;
+      }
+
+      // The backtest of a Draft Target, not a Target with the id "preview".
+      // A league-wide scan is not an open resource, so it refuses a missing
+      // bearer before it reads the body.
+      if (targetId === 'preview' && method === 'POST') {
+        if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+          await route.fulfill({
+            status: 401,
+            json: {
+              error: { code: 'authentication_required', message: 'Sign in to preview a Target.' },
+            },
+          });
+          return;
+        }
+        if (invalidTargetBody(body)) {
+          await route.fulfill({
+            status: 400,
+            json: {
+              error: {
+                code: 'invalid_input',
+                message: `Each of at most ${TARGET_QUALIFIER_LIMIT} Qualifiers needs a known base and slice, a comparator, and a threshold between 0 and 1.`,
+              },
+            },
+          });
+          return;
+        }
+        await route.fulfill({
+          json: {
+            success: true,
+            ...previewTarget({
+              opponent: body.opponent,
+              qualifiers: body.qualifiers.map(toStored),
+              note: body.note || '',
+            }),
+          },
         });
         return;
       }

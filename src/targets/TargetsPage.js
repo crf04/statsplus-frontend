@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { blankTargetDraft } from './TargetForm';
+import TargetLab from './TargetLab';
 import { formatQualifierParts } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
@@ -65,7 +66,8 @@ function TargetCard({ target, entry }) {
 }
 
 export default function TargetsPage() {
-  const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
+  const navigate = useNavigate();
+  const { authLoading, isAuthenticated, status, targets, error } = useTargets();
   /*
    * What each Target is worth today, read for the current Slate Date. It is a
    * second read over the same list, so a day that will not resolve costs the
@@ -81,17 +83,17 @@ export default function TargetsPage() {
   }
 
   /*
-   * A refused save keeps the draft exactly as it was typed: a duplicate or a
-   * full account is one edit away from a Target worth keeping, not a retype.
+   * A saved draft becomes the record and opens on its own page, where the
+   * evidence the Lab showed reads the same. A refused save keeps the draft
+   * exactly as it was typed: a duplicate or a full account is one edit away
+   * from a Target worth keeping, not a retype.
    */
   const save = async (request) => {
     setSaving(true);
     setSaveError(null);
     try {
-      await createTarget(request);
-      setDraft(blankTargetDraft());
-      reload();
-      resolved.reload();
+      const target = await createTarget(request);
+      navigate(`/targets/${target.id}`);
     } catch (requestError) {
       setSaveError(
         getRequestErrorMessage(requestError, 'Unable to save this Target. Please try again.'),
@@ -132,6 +134,7 @@ export default function TargetsPage() {
             {saveError}
           </p>
         )}
+        <TargetLab draft={draft} />
       </section>
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}

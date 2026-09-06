@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { beginStatPreferenceRead } from './useStatPreferences';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
   fetchDietBaselines,
@@ -35,7 +36,14 @@ export const PREVIEW_DELAY_MS = 600;
  * of them without knowing which one it is holding. What a read is scoped by —
  * a Slate Date, a Target id, or nothing at all — travels as one opaque value.
  */
-const readList = ({ signal }) => fetchTargets({ signal }).then((targets) => ({ targets }));
+const readList = async ({ signal, userId }) => {
+  const preferences = beginStatPreferenceRead(userId);
+  try {
+    return { targets: preferences.reconcile(await fetchTargets({ signal })) };
+  } finally {
+    preferences.release();
+  }
+};
 const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope, signal });
 
 /*
@@ -55,7 +63,8 @@ const useAccountRead = (
   scope,
   { lazy = false, failure = LOAD_FAILURE, keepPrevious = false } = {},
 ) => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
+  const owner = useRef();
   const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [requests, setRequests] = useState(lazy ? 0 : 1);
 
@@ -65,12 +74,14 @@ const useAccountRead = (
       return undefined;
     }
     const controller = new AbortController();
+    const sameOwner = owner.current === currentUser?.uid;
+    owner.current = currentUser?.uid;
     setState((current) => ({
-      ...(keepPrevious ? current : empty),
+      ...(keepPrevious && sameOwner ? current : empty),
       status: 'loading',
       error: null,
     }));
-    read({ scope, signal: controller.signal })
+    read({ scope, signal: controller.signal, userId: currentUser?.uid })
       .then(
         (data) => !controller.signal.aborted && setState({ status: 'ready', error: null, ...data }),
       )
@@ -84,7 +95,17 @@ const useAccountRead = (
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests, keepPrevious]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    scope,
+    read,
+    empty,
+    failure,
+    requests,
+    keepPrevious,
+    currentUser?.uid,
+  ]);
 
   const reload = useCallback(() => setRequests((count) => count + 1), []);
 

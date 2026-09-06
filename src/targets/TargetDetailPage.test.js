@@ -458,3 +458,32 @@ test('revisiting a settled Target reads fresh server preferences', async () => {
   expect(screen.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   expect(screen.queryByRole('button', { name: /^3PM / })).not.toBeInTheDocument();
 });
+
+test('a destination read started before the preference save cannot restore the old lens', async () => {
+  auth.currentUser = { uid: 'stat-slow-destination-reader' };
+  let finishSave, finishRead;
+  updateTarget.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+  );
+  const view = renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  view.unmount();
+  fetchTargets.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishRead = resolve;
+      }),
+  );
+  renderDetail();
+  await act(async () => {});
+  await act(async () => finishSave());
+  await act(async () => jest.advanceTimersByTime(0));
+  await act(async () => finishRead([target]));
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('button', { name: /^3PM / })).toHaveAttribute('aria-pressed', 'true');
+});

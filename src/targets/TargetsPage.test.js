@@ -962,13 +962,19 @@ test('fit shares are labelled with the resolved criteria when the list read diff
 test('list cards read each Target’s persisted columns and grading independently', async () => {
   auth.currentUser = { uid: 'list-stat-reader' };
   fetchTargets.mockResolvedValue([
-    { ...targets[0], statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } },
+    { ...targets[0], statPreferences: { columns: ['PTS', 'PTS/36'], gradedBy: 'PTS/36' } },
     targets[1],
   ]);
   fetchTargetBacktest.mockResolvedValue(preview);
   renderPage(false);
   const first = await screen.findByRole('article', { name: targets[0].title });
   expect(await within(first).findByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  const summary = within(first).getByRole('list', { name: 'Backtest summary' });
+  expect(within(summary).getByRole('listitem', { name: 'PTS', exact: true })).toBeVisible();
+  expect(within(summary).getByRole('listitem', { name: 'PTS/36', exact: true })).toBeVisible();
+  expect(
+    within(summary).queryByRole('listitem', { name: '3PM', exact: true }),
+  ).not.toBeInTheDocument();
   const second = screen.getByRole('article', { name: targets[1].title });
   expect(await within(second).findByRole('list', { name: /graded by PTS margin/ })).toBeVisible();
 });
@@ -1029,4 +1035,24 @@ test('one page shares one roster read across same-opponent chips and count lines
   renderPage(false);
   await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
   expect(fetchSeasonMinutes).toHaveBeenCalledTimes(2);
+});
+
+test('leaving a page aborts its shared in-flight roster request', async () => {
+  fetchTargets.mockResolvedValue([
+    {
+      ...targets[0],
+      conditions: {
+        defender: { playerId: 27, comparator: 'under', minutes: 8 },
+        from: null,
+        to: null,
+      },
+    },
+  ]);
+  fetchSeasonMinutes.mockImplementationOnce(() => new Promise(() => {}));
+  const page = renderPage(false);
+  await waitFor(() => expect(fetchSeasonMinutes).toHaveBeenCalledTimes(1));
+  const signal = fetchSeasonMinutes.mock.calls[0][0].signal;
+  expect(signal.aborted).toBe(false);
+  page.unmount();
+  expect(signal.aborted).toBe(true);
 });

@@ -178,7 +178,7 @@ export function TargetGameRows({
   const newest = [...games].reverse();
   return (
     <section className="target-game-rows" aria-label="Backtest games">
-      <h2 className="target-section-heading target-games-heading">
+      <h2 className="target-games-heading">
         <span>Games</span>
         <small>
           {games.length} · newest first · graded on {gradedBy}

@@ -201,6 +201,14 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
       )}
       {hasWindow && (
         <div className="target-condition">
+          {roster.status === 'error' && !defender && (
+            <p role="alert">
+              {roster.error}{' '}
+              <button type="button" onClick={roster.reload}>
+                Retry roster
+              </button>
+            </p>
+          )}
           <div className="target-condition-head">
             <span className="target-label">Window</span>
             <select

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { act, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { TargetConditionSummary } from './TargetConditions';
@@ -99,13 +99,14 @@ test('changing opponent clears the defender and ignores the old roster response'
   });
   fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: 'BOS' } });
   expect(await screen.findByRole('option', { name: /New Defender/ })).toBeInTheDocument();
-  oldRoster({
-    season: '2025-26',
-    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
-  });
-  await waitFor(() =>
-    expect(screen.queryByRole('option', { name: /Rudy Gobert/ })).not.toBeInTheDocument(),
+  await act(async () =>
+    oldRoster({
+      season: '2025-26',
+      players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+    }),
   );
+  expect(screen.getByRole('option', { name: /New Defender/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Rudy Gobert/ })).not.toBeInTheDocument();
 });
 
 test('a selected defender cannot carry over to a different opponent', async () => {
@@ -123,4 +124,15 @@ test('a selected defender cannot carry over to a different opponent', async () =
   await screen.findByRole('option', { name: /New Defender/ });
   expect(screen.getByLabelText('Defender')).toHaveValue('');
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
+});
+
+test('a window-only roster failure explains why its season presets are unavailable', async () => {
+  fetchSeasonMinutes.mockRejectedValueOnce(new Error('Roster unavailable.'));
+  render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Roster unavailable.');
+  expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Retry roster' }));
+  await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
 });

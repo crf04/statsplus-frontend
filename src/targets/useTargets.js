@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
@@ -192,13 +200,50 @@ export const useDietBaselines = () =>
     failure: 'League averages unavailable.',
   });
 
+const RosterReadContext = createContext(null);
+
+// A page owns its roster reads. Multiple cards for the same opponent share the
+// request and result, and leaving the page aborts and releases every read.
+export function SeasonMinutesProvider({ children, resetKey, enabled = true }) {
+  const { currentUser, isAuthenticated, loading } = useAuth();
+  const reads = useMemo(() => {
+    const requests = new Map();
+    const controllers = new Set();
+    return {
+      read: ({ scope }) => {
+        if (!scope || !enabled) return Promise.resolve(EMPTY_ROSTER);
+        if (requests.has(scope)) return requests.get(scope);
+        const controller = new AbortController();
+        controllers.add(controller);
+        const request = fetchSeasonMinutes({ opponent: scope, signal: controller.signal })
+          .then((data) => ({ ...data, opponent: scope }))
+          .catch((error) => {
+            if (requests.get(scope) === request) requests.delete(scope);
+            throw error;
+          })
+          .finally(() => controllers.delete(controller));
+        requests.set(scope, request);
+        return request;
+      },
+      dispose: () => {
+        controllers.forEach((controller) => controller.abort());
+        requests.clear();
+      },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Account and route identities bound this cache lifetime.
+  }, [currentUser?.uid, isAuthenticated, loading, resetKey, enabled]);
+  useEffect(() => () => reads.dispose(), [reads]);
+  return <RosterReadContext.Provider value={reads.read}>{children}</RosterReadContext.Provider>;
+}
+
 const EMPTY_ROSTER = { season: null, players: [], opponent: null };
 const readRoster = async ({ scope, signal }) =>
   scope
     ? { ...(await fetchSeasonMinutes({ opponent: scope, signal })), opponent: scope }
     : EMPTY_ROSTER;
 export const useSeasonMinutes = (opponent) => {
-  const read = useAccountRead(readRoster, EMPTY_ROSTER, opponent, {
+  const sharedRead = useContext(RosterReadContext);
+  const read = useAccountRead(sharedRead || readRoster, EMPTY_ROSTER, opponent, {
     failure: 'Unable to load the season roster.',
   });
   return {

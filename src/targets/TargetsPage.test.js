@@ -999,3 +999,34 @@ test('a pending resolution states that today is being read rather than unavailab
   expect(within(card).getByText('Reading today’s activity…')).toBeVisible();
   expect(within(card).queryByText('Today’s activity unavailable')).not.toBeInTheDocument();
 });
+
+test('one page shares one roster read across same-opponent chips and count lines, then releases it', async () => {
+  const conditioned = {
+    ...targets[0],
+    conditions: {
+      defender: { playerId: 27, comparator: 'under', minutes: 8 },
+      from: null,
+      to: null,
+    },
+  };
+  fetchTargets.mockResolvedValue([
+    conditioned,
+    { ...conditioned, id: 88, title: 'Another same-opponent Target' },
+  ]);
+  fetchTargetBacktest.mockResolvedValue({
+    ...preview,
+    target: conditioned,
+    gamesConsidered: { kept: 3, played: 10 },
+  });
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
+  });
+  const page = renderPage(false);
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  expect(fetchSeasonMinutes).toHaveBeenCalledTimes(1);
+  page.unmount();
+  renderPage(false);
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  expect(fetchSeasonMinutes).toHaveBeenCalledTimes(2);
+});

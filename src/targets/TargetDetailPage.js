@@ -7,7 +7,7 @@ import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useTargets } from './useTargets';
+import { SeasonMinutesProvider, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 import './TargetWorkbench.css';
@@ -108,7 +108,7 @@ function TargetDetail({ target, reload }) {
     </>
   );
 }
-export default function TargetDetailPage() {
+function TargetDetailContent() {
   const { targetId } = useParams();
   const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets({
     keepPrevious: true,
@@ -130,5 +130,14 @@ export default function TargetDetailPage() {
           </div>
         ))}
     </main>
+  );
+}
+
+export default function TargetDetailPage() {
+  const { targetId } = useParams();
+  return (
+    <SeasonMinutesProvider resetKey={targetId}>
+      <TargetDetailContent />
+    </SeasonMinutesProvider>
   );
 }

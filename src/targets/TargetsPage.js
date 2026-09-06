@@ -11,7 +11,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useResolvedTargets, useTargets } from './useTargets';
+import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -142,7 +142,7 @@ function useListBacktests(targets, enabled) {
   return reads;
 }
 
-export default function TargetsPage() {
+function TargetsPageContent() {
   const navigate = useNavigate();
   const { authLoading, isAuthenticated, status, targets, error } = useTargets();
   /*
@@ -268,5 +268,13 @@ export default function TargetsPage() {
           </ul>
         ))}
     </main>
+  );
+}
+
+export default function TargetsPage() {
+  return (
+    <SeasonMinutesProvider>
+      <TargetsPageContent />
+    </SeasonMinutesProvider>
   );
 }

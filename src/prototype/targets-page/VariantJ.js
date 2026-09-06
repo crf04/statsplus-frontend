@@ -31,10 +31,12 @@ export default function VariantJ({ item, read, listPath }) {
           <Link to={listPath}>← All Targets</Link>
         </p>
         <DetailHead target={target} entry={entry} />
+        {/* The card is the criteria and its actions; the title it derives is
+            the card's own reading, so it is not repeated beneath it. */}
         <section className="pt-i-criteria pt-j-criteria">
           <CriteriaForm editor={state.editor} />
+          <EditorActions state={state} compact title={false} />
         </section>
-        <EditorActions state={state} compact />
         <div
           className={`pt-lab${lab.stale ? ' is-stale' : ''}`}
           aria-busy={lab.status === 'loading'}

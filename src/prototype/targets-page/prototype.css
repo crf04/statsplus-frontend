@@ -3401,3 +3401,22 @@ a.pt-today.is-live:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ===== round 4d: the criteria card carries its own actions ===== */
+
+.pt-j-criteria .pt-d-actions {
+  justify-content: end;
+  margin-top: 12px;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 0;
+  padding: 10px 0 0;
+}
+
+.pt-j-criteria .pt-d-actions.is-dirty {
+  border-top-color: var(--ct-gold);
+}
+
+.pt-j-criteria .pt-d-actions-title {
+  flex: 1;
+  min-width: 0;
+}

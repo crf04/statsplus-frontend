@@ -94,13 +94,17 @@ export function CriteriaForm({ editor, opponentLocked = true }) {
 }
 
 /* Save, Revert and Delete, with the derived title as it stands. */
-export function EditorActions({ state, compact = false }) {
+export function EditorActions({ state, compact = false, title: showTitle = true }) {
   const { editor, dirty, title, note, save, revert, confirming, askDelete, keep, remove } = state;
   return (
     <div className={`pt-d-actions${compact ? ' is-compact' : ''}${dirty ? ' is-dirty' : ''}`}>
-      <span className={`pt-d-actions-title${editor.valid ? '' : ' is-pending'}`}>
-        {editor.valid ? title : editor.problem}
-      </span>
+      {showTitle ? (
+        <span className={`pt-d-actions-title${editor.valid ? '' : ' is-pending'}`}>
+          {editor.valid ? title : editor.problem}
+        </span>
+      ) : (
+        !editor.valid && <span className="pt-d-actions-title is-pending">{editor.problem}</span>
+      )}
       <span className="pt-d-actions-buttons">
         {dirty ? (
           <>

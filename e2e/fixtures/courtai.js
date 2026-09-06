@@ -1,4 +1,5 @@
 import { expect, test as base } from '@playwright/test';
+import statCatalogue from '../../src/targets/targetStatCatalogue.json';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -11,6 +12,9 @@ export const gameLogs = [
     MIN: 36,
     PTS: 31,
     REB: 8,
+    OREB: 2,
+    DREB: 6,
+    PF: 2,
     AST: 9,
     STL: 1,
     BLK: 1,
@@ -31,6 +35,9 @@ export const gameLogs = [
     MIN: 34,
     PTS: 27,
     REB: 7,
+    OREB: 1,
+    DREB: 6,
+    PF: 3,
     AST: 8,
     STL: 2,
     BLK: 0,
@@ -1751,6 +1758,35 @@ const seasonAverage = (season, market) =>
     (season.reduce((total, log) => total + MARKET_STATS[market](log), 0) / season.length) * 10,
   ) / 10;
 
+const boxLine = (log) => ({
+  points: log.PTS,
+  rebounds: log.REB,
+  assists: log.AST,
+  minutes: log.MIN,
+  field_goals_made: log.FGM,
+  field_goals_attempted: log.FGA,
+  threes_made: log.FG3M,
+  threes_attempted: log.FG3A,
+  free_throws_made: log.FTM,
+  free_throws_attempted: log.FTA,
+  steals: log.STL,
+  blocks: log.BLK,
+  turnovers: log.TOV,
+  offensive_rebounds: log.OREB,
+  defensive_rebounds: log.DREB,
+  fouls: log.PF,
+});
+const seasonTotals = (season) =>
+  season
+    .map(boxLine)
+    .reduce(
+      (totals, line) =>
+        Object.fromEntries(
+          Object.entries(line).map(([field, value]) => [field, (totals[field] || 0) + value]),
+        ),
+      {},
+    );
+
 const backtestPlayer = (target, statColumns, player) => {
   const fit = resolvedFit(target.qualifiers, player);
   // A thin Diet is excluded from the longer view rather than flagged in it, so
@@ -1766,6 +1802,8 @@ const backtestPlayer = (target, statColumns, player) => {
     tricode: player.tricode,
     season_scoring: player.season_scoring,
     shares: fit.shares,
+    season_totals: seasonTotals(season),
+    season_games: season.length,
     season_averages: Object.fromEntries(
       statColumns.map((market) => [market, seasonAverage(season, market)]),
     ),
@@ -1776,6 +1814,7 @@ const backtestPlayer = (target, statColumns, player) => {
       game_date: log.GAME_DATE,
       matchup: log.MATCHUP,
       minutes: log.MIN,
+      line: boxLine(log),
       stats: Object.fromEntries(statColumns.map((market) => [market, MARKET_STATS[market](log)])),
     })),
   };
@@ -2086,6 +2125,22 @@ export const installApiContract = async (page, overrides = {}) => {
       const [, targetId] = targetsMatch;
       const method = request.method();
       const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
+      if (body && body.stat_preferences != null) {
+        const prefs = body.stat_preferences;
+        if (
+          !Array.isArray(prefs.columns) ||
+          !prefs.columns.length ||
+          new Set(prefs.columns).size !== prefs.columns.length ||
+          prefs.columns.some((key) => !statCatalogue.includes(key)) ||
+          !prefs.columns.includes(prefs.graded_by)
+        ) {
+          await route.fulfill({
+            status: 400,
+            json: { error: { code: 'invalid_input', message: 'Invalid stat preferences.' } },
+          });
+          return;
+        }
+      }
       const index = targets.findIndex((item) => String(item.id) === targetId);
       const toStored = (qualifier) => ({
         base: qualifier.base,
@@ -2144,6 +2199,7 @@ export const installApiContract = async (page, overrides = {}) => {
               opponent: body.opponent,
               qualifiers: body.qualifiers.map(toStored),
               note: body.note || '',
+              stat_preferences: body.stat_preferences ?? null,
             }),
           },
         });
@@ -2193,6 +2249,7 @@ export const installApiContract = async (page, overrides = {}) => {
           opponent: body.opponent,
           qualifiers,
           note: body.note || '',
+          stat_preferences: body.stat_preferences ?? null,
           created_at: '2026-04-13T00:10:00Z',
         };
         // Newest-first is the list's contract, as it is for Saved Filter Sets.
@@ -2216,8 +2273,11 @@ export const installApiContract = async (page, overrides = {}) => {
         // Qualifiers because it is derived from them.
         const updated = {
           ...targets[index],
-          qualifiers: body.qualifiers.map(toStored),
-          note: body.note || '',
+          ...(body.qualifiers !== undefined ? { qualifiers: body.qualifiers.map(toStored) } : {}),
+          ...(body.note !== undefined ? { note: body.note || '' } : {}),
+          ...(body.stat_preferences !== undefined
+            ? { stat_preferences: body.stat_preferences }
+            : {}),
         };
         targets[index] = { ...updated, title: backendTargetTitle(updated) };
         await route.fulfill({ json: { success: true, target: targets[index] } });

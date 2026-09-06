@@ -101,3 +101,49 @@
 .target-game-rows small {
   color: var(--ct-dim);
 }
+
+.target-stat-picker {
+  position: relative;
+  justify-self: end;
+}
+.target-stat-picker > button {
+  border: 0;
+  background: transparent;
+  color: var(--ct-dim);
+  font: inherit;
+  cursor: pointer;
+}
+.target-stat-options {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  width: min(340px, 80vw);
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 8px 24px #0002;
+}
+.target-stat-options fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 12px;
+}
+.target-stat-options legend {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.target-stat-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 0.75rem var(--ct-mono);
+}
+.target-stat-save {
+  font-size: 0.7rem;
+  color: var(--ct-dim);
+}

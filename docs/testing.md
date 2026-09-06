@@ -169,3 +169,12 @@ nullable league shares; absent shares omit the tick. Browser tests adjust the
 native range control using keyboard arrows through `setTargetThreshold`.
 The workbench reads the draft automatically, preserves stale evidence during
 changes, and keeps Save/Revert separate from selecting the grading column.
+
+The Target record derives selected stat columns from full game lines and season totals,
+using `season_games` only for box-score season averages. Per-36 and efficiency baselines
+use ratios of totals; zero denominators remain unavailable. UI hit rates count strictly
+positive margins and treat zero as a push, while the additive legacy API summary retains
+its at-or-above definition. The fixture supplies both from the same game logs. Stat
+preferences use independent PATCH requests, with account-scoped serialization and a
+captured-user check before bearer attachment; React tests exercise navigation flushes,
+retry, criteria-save remounts, and account isolation.

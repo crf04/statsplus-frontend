@@ -244,3 +244,133 @@ test('games page newest first and the selected summary column grades both surfac
   fireEvent.click(screen.getByRole('button', { name: 'Show all 25 games' }));
   expect(within(rows).getAllByRole('listitem')).toHaveLength(25);
 });
+
+test('the stat picker persists its lens separately from criteria and reads it back', async () => {
+  auth.currentUser = { uid: 'stat-picker-reader' };
+  fetchTargets.mockResolvedValue([
+    { ...target, statPreferences: { columns: ['PTS'], gradedBy: 'PTS' } },
+  ]);
+  const view = renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: 'stats ▾' }));
+  expect(screen.getByRole('group', { name: 'Box score' })).toBeVisible();
+  expect(screen.getByRole('group', { name: 'Per 36 minutes' })).toBeVisible();
+  expect(screen.getByRole('group', { name: 'Efficiency' })).toBeVisible();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'PTS/36' }));
+  fireEvent.click(screen.getByRole('button', { name: /^PTS\/36 / }));
+  expect(screen.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+  expect(updateTarget).not.toHaveBeenCalled();
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(updateTarget).toHaveBeenCalledTimes(1);
+  expect(updateTarget).toHaveBeenCalledWith({
+    id: 7,
+    statPreferences: { columns: ['PTS', 'PTS/36'], gradedBy: 'PTS/36' },
+    expectedUserId: 'stat-picker-reader',
+  });
+  fireEvent.click(screen.getByRole('checkbox', { name: 'PTS', exact: true }));
+  expect(screen.queryByRole('button', { name: /^PTS / })).not.toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: 'PTS/36' })).toBeDisabled();
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(updateTarget.mock.calls[1][0].statPreferences).toEqual({
+    columns: ['PTS/36'],
+    gradedBy: 'PTS/36',
+  });
+  view.unmount();
+  // A real reload starts a fresh page/account session and seeds from the API.
+  auth.currentUser = { uid: 'stat-picker-reloaded' };
+  fetchTargets.mockResolvedValue([
+    { ...target, statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } },
+  ]);
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+});
+
+test('route cleanup flushes the newest preference and serializes changes across remounts', async () => {
+  auth.currentUser = { uid: 'stat-navigation-reader' };
+  let finishFirst;
+  updateTarget.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishFirst = resolve;
+      }),
+  );
+  const view = renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  // Leave before the debounce: the write starts and remembers the original id.
+  view.unmount();
+  expect(updateTarget).toHaveBeenCalledTimes(1);
+  expect(updateTarget.mock.calls[0][0]).toEqual({
+    id: 7,
+    statPreferences: { columns: ['PTS', '3PM'], gradedBy: '3PM' },
+    expectedUserId: 'stat-navigation-reader',
+  });
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('button', { name: /^3PM / })).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByRole('button', { name: /^PTS / }));
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(updateTarget).toHaveBeenCalledTimes(1);
+  await act(async () => finishFirst());
+  expect(updateTarget).toHaveBeenCalledTimes(2);
+  expect(updateTarget.mock.calls[1][0].statPreferences.gradedBy).toBe('PTS');
+  expect(screen.getByRole('button', { name: /^PTS / })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('a failed stats save is retryable without changing criteria', async () => {
+  auth.currentUser = { uid: 'stat-retry-reader' };
+  updateTarget.mockRejectedValueOnce(new Error('Stats could not save.'));
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(screen.getByRole('alert')).toHaveTextContent('Stats could not save.');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry saving stats' }));
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(updateTarget).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+});
+
+test('criteria save remounts do not reset a pending grading choice', async () => {
+  auth.currentUser = { uid: 'stat-criteria-reader' };
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+    target: { value: 'Updated note' },
+  });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('button', { name: /^3PM / })).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    updateTarget.mock.calls.some(([request]) => request.statPreferences?.gradedBy === '3PM'),
+  ).toBe(true);
+  expect(
+    updateTarget.mock.calls.find(([request]) => request.note === 'Updated note')[0],
+  ).not.toHaveProperty('statPreferences');
+});
+
+test('another account never sees the previous account’s optimistic grading', async () => {
+  auth.currentUser = { uid: 'stat-account-one' };
+  const first = renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  first.unmount();
+  auth.currentUser = { uid: 'stat-account-two' };
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('button', { name: /^PTS / })).toHaveAttribute('aria-pressed', 'true');
+  expect(updateTarget.mock.calls[0][0].expectedUserId).toBe('stat-account-one');
+});

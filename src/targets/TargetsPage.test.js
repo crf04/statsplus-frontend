@@ -934,3 +934,44 @@ test('fit shares are labelled with the resolved criteria when the list read diff
   expect(within(fits).getByRole('listitem')).toHaveTextContent('Restricted area 44%');
   expect(within(fits).getByRole('listitem')).not.toHaveTextContent('Corner 3');
 });
+
+test('list cards read each Target’s persisted columns and grading independently', async () => {
+  auth.currentUser = { uid: 'list-stat-reader' };
+  fetchTargets.mockResolvedValue([
+    { ...targets[0], statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } },
+    targets[1],
+  ]);
+  fetchTargetBacktest.mockResolvedValue(preview);
+  renderPage(false);
+  const first = await screen.findByRole('article', { name: targets[0].title });
+  expect(await within(first).findByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  const second = screen.getByRole('article', { name: targets[1].title });
+  expect(await within(second).findByRole('list', { name: /graded by PTS margin/ })).toBeVisible();
+});
+
+test('a composer’s stat choice is saved only with the new Target', async () => {
+  auth.currentUser = { uid: 'composer-stat-reader' };
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+  fireEvent.click(screen.getByRole('button', { name: 'stats ▾' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'PTS/36' }));
+  fireEvent.click(screen.getByRole('button', { name: /^PTS\/36 / }));
+  expect(createTarget).not.toHaveBeenCalled();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save Target' })));
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({
+      statPreferences: { columns: ['PTS', '3PM', 'PTS/36'], gradedBy: 'PTS/36' },
+    }),
+  );
+});
+
+test('a pending resolution states that today is being read rather than unavailable', async () => {
+  fetchResolvedTargets.mockImplementation(() => new Promise(() => {}));
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  expect(within(card).getByText('Reading today’s activity…')).toBeVisible();
+  expect(within(card).queryByText('Today’s activity unavailable')).not.toBeInTheDocument();
+});

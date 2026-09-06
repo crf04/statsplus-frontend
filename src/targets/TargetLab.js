@@ -28,13 +28,23 @@ const describeLab = ({ valid, status, pending }) => {
  * and Save is the form's own — the Lab never touches it, so a slow or refused
  * read never blocks saving.
  */
-export default function TargetLab({ draft, workbench = false, children }) {
-  const [gradedBy, setGradedBy] = useState(null);
+export default function TargetLab({
+  draft,
+  workbench = false,
+  children,
+  preferences,
+  onPreferencesChange,
+}) {
+  const [localPreferences, setLocalPreferences] = useState(null);
   const { valid, request } = describeDraft(draft);
   const { status, preview, error, pending, retry } = useTargetPreview(valid ? request : null);
   // The result on screen describes the draft it was read for; the moment the
   // draft moves on, the result is stale, whether or not the read has begun.
   const stale = pending || status !== 'ready';
+  const chosen = preferences ?? localPreferences;
+  const columns = chosen?.columns ?? preview?.statColumns ?? [];
+  const gradedBy = chosen?.gradedBy ?? columns[0];
+  const changePreferences = onPreferencesChange ?? setLocalPreferences;
 
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
@@ -63,8 +73,10 @@ export default function TargetLab({ draft, workbench = false, children }) {
           >
             <TargetRecord
               backtest={preview}
-              gradedBy={preview.statColumns.includes(gradedBy) ? gradedBy : preview.statColumns[0]}
-              onGrade={setGradedBy}
+              columns={columns}
+              gradedBy={gradedBy}
+              onGrade={(column) => changePreferences({ columns, gradedBy: column })}
+              onPreferencesChange={changePreferences}
             >
               {/* Season to date is the evidence; whether the idea is actionable
                 tonight is one line, present only when the opponent plays. */}
@@ -82,10 +94,7 @@ export default function TargetLab({ draft, workbench = false, children }) {
           className={`target-lab-games${stale ? ' is-stale' : ''}`}
           aria-busy={status === 'loading'}
         >
-          <TargetGameRows
-            backtest={preview}
-            gradedBy={preview.statColumns.includes(gradedBy) ? gradedBy : preview.statColumns[0]}
-          />
+          <TargetGameRows backtest={preview} columns={columns} gradedBy={gradedBy} />
         </div>
       )}
     </section>

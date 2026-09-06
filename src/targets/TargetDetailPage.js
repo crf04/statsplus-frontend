@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { targetToDraft } from './TargetForm';
 import TargetLab from './TargetLab';
+import useStatPreferences from './useStatPreferences';
+import { StatSaveStatus } from './StatPicker';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { useTargets } from './useTargets';
@@ -12,6 +14,7 @@ import './TargetWorkbench.css';
 
 function TargetDetail({ target, reload }) {
   const navigate = useNavigate();
+  const stats = useStatPreferences(target);
   const [draft, setDraft] = useState(() => targetToDraft(target));
   const [saved, setSaved] = useState(() => targetToDraft(target));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -75,7 +78,13 @@ function TargetDetail({ target, reload }) {
         </p>
       )}
       <div className="target-workbench">
-        <TargetLab draft={draft} workbench>
+        <TargetLab
+          draft={draft}
+          workbench
+          preferences={stats.preferences}
+          onPreferencesChange={stats.onChange}
+        >
+          <StatSaveStatus state={stats} />
           <TargetForm
             draft={draft}
             title={dirty ? undefined : target.title}

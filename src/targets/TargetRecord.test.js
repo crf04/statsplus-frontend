@@ -63,3 +63,32 @@ test('grades intermediate margins against the record’s p90, without letting an
   expect(screen.getByRole('listitem', { name: /2026-01-07/ })).toHaveClass('grade-hit-3');
   expect(screen.getByRole('listitem', { name: /2026-01-11/ })).toHaveClass('grade-hit-4');
 });
+
+test('a zero-minute game is absent from per36 arithmetic and never graded as zero production', () => {
+  render(
+    <TargetRecord
+      columns={['PTS/36']}
+      gradedBy="PTS/36"
+      backtest={{
+        ...backtest,
+        players: [
+          {
+            ...backtest.players[0],
+            seasonTotals: { points: 30, minutes: 60 },
+            seasonGames: 2,
+            games: [
+              { gameDate: '2026-01-01', line: { points: 12, minutes: 24 } },
+              { gameDate: '2026-01-02', line: { points: 0, minutes: 0 } },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS/36' });
+  expect(summary).toHaveTextContent('0% hit');
+  expect(summary).toHaveTextContent('0.0 mean margin');
+  const absent = screen.getByRole('listitem', { name: /2026-01-02/ });
+  expect(absent).toHaveClass('grade-unavailable');
+  expect(absent).toHaveAttribute('title', expect.stringContaining('— PTS/36'));
+});

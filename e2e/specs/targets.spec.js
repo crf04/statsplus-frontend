@@ -208,3 +208,31 @@ test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }
     true,
   );
 });
+
+test('@critical a Target remembers PTS/36 across reload and its collection card', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, { opponent: 'ATL', slice: 'Restricted Area', percent: 30 });
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      response.url().includes('/api/user/targets/') &&
+      response.request().postDataJSON().stat_preferences?.graded_by === 'PTS/36',
+  );
+  await page.getByRole('button', { name: /^PTS\/36 / }).click();
+  await saved;
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  await page.getByRole('link', { name: '← All Targets' }).click();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  await expect(
+    page.getByRole('article').getByRole('listitem', { name: 'PTS/36', exact: true }),
+  ).toBeVisible();
+});

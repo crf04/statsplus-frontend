@@ -5,6 +5,8 @@ import { formatTip } from '../calendarDate';
 import TargetForm, { blankTargetDraft } from './TargetForm';
 import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
+import useStatPreferences from './useStatPreferences';
+import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
@@ -12,8 +14,11 @@ import { useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
-function TargetCard({ target, entry, read }) {
+function TargetCard({ target, entry, read, resolutionStatus }) {
   const game = entry?.game;
+  const stats = useStatPreferences(target);
+  const columns = stats.preferences?.columns ?? read?.backtest?.statColumns ?? [];
+  const gradedBy = stats.preferences?.gradedBy ?? columns[0];
   return (
     <li>
       <article className="target-card" aria-label={target.title}>
@@ -27,7 +32,11 @@ function TargetCard({ target, entry, read }) {
               <span className="target-card-today">no game today</span>
             )
           ) : (
-            <span>Today’s activity unavailable</span>
+            <span>
+              {resolutionStatus === 'loading' || resolutionStatus === 'idle'
+                ? 'Reading today’s activity…'
+                : 'Today’s activity unavailable'}
+            </span>
           )}
           <Link className="target-card-go" to={`/targets/${target.id}`}>
             Edit →
@@ -74,7 +83,16 @@ function TargetCard({ target, entry, read }) {
         <section aria-label="Backtest">
           <p className="target-backtest-proxy">Backtest · season to date</p>
           {read?.status === 'ready' ? (
-            <TargetRecord backtest={read.backtest} />
+            <>
+              <TargetRecord
+                backtest={read.backtest}
+                columns={columns}
+                gradedBy={gradedBy}
+                onGrade={(column) => stats.onChange({ columns, gradedBy: column })}
+                onPreferencesChange={stats.onChange}
+              />
+              <StatSaveStatus state={stats} />
+            </>
           ) : (
             <p className="target-empty">{read?.error || 'Reading the season…'}</p>
           )}
@@ -129,6 +147,7 @@ export default function TargetsPage() {
   const resolved = useResolvedTargets();
   const reads = useListBacktests(targets, status === 'ready' && isAuthenticated);
   const [draft, setDraft] = useState(blankTargetDraft);
+  const [draftPreferences, setDraftPreferences] = useState(null);
   const [composing, setComposing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -147,7 +166,10 @@ export default function TargetsPage() {
     setSaving(true);
     setSaveError(null);
     try {
-      const target = await createTarget(request);
+      const target = await createTarget({
+        ...request,
+        ...(draftPreferences ? { statPreferences: draftPreferences } : {}),
+      });
       setComposing(false);
       navigate(`/targets/${target.id}`);
     } catch (requestError) {
@@ -198,7 +220,11 @@ export default function TargetsPage() {
               {saveError}
             </p>
           )}
-          <TargetLab draft={draft} />
+          <TargetLab
+            draft={draft}
+            preferences={draftPreferences}
+            onPreferencesChange={setDraftPreferences}
+          />
           <button
             type="button"
             disabled={saving}
@@ -206,6 +232,7 @@ export default function TargetsPage() {
               setComposing(false);
               setDraft(blankTargetDraft());
               setSaveError(null);
+              setDraftPreferences(null);
             }}
           >
             Cancel
@@ -228,6 +255,7 @@ export default function TargetsPage() {
                 key={target.id}
                 target={target}
                 read={reads[target.id]}
+                resolutionStatus={resolved.status}
                 entry={resolved.entries.find((entry) => entry.target.id === target.id) || null}
               />
             ))}

@@ -11,6 +11,17 @@ const apiClient = axios.create({
 // Request interceptor to add authentication token
 apiClient.interceptors.request.use(
   async (config) => {
+    // A deferred account write must not pick up the next account's bearer.
+    if (config.expectedUserId !== undefined) {
+      const e2eUser =
+        process.env.NODE_ENV !== 'production' &&
+        process.env.REACT_APP_E2E_MODE === 'true' &&
+        typeof window !== 'undefined' &&
+        window.localStorage.getItem('courtai:e2e-authenticated') === 'true';
+      const currentId = e2eUser ? 'courtai-e2e-user' : auth?.currentUser?.uid;
+      if (currentId !== config.expectedUserId)
+        throw new axios.CanceledError('The account changed before this write.');
+    }
     try {
       const e2eTokenAvailable =
         process.env.NODE_ENV !== 'production' &&

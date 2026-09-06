@@ -9,6 +9,7 @@ import PrototypeSwitcher from './PrototypeSwitcher';
 import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
+import { PROTO_STANDALONE } from './prototypeMode';
 import { useTargetsPrototypeData } from './shared';
 import './prototype.css';
 
@@ -27,7 +28,7 @@ export default function TargetsPrototypePage({ proto }) {
         variant={proto.variant}
         date={proto.date}
         onStep={proto.step}
-        onDate={proto.setDate}
+        onDate={PROTO_STANDALONE ? null : proto.setDate}
       />
     </>
   );

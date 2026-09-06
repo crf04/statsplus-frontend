@@ -8,7 +8,6 @@
  * the ledger, the way a sheet grows: press it, fill the same columns, save.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { formatCalendarDate } from '../../calendarDate';
 import { TargetContext, TargetFitTable } from '../../targets/TargetFits';
 import { deriveTargetTitle, formatQualifier } from '../../targets/targetCatalog';
@@ -22,6 +21,7 @@ import {
   isLive,
   shortDate,
   useDraft,
+  ProtoLink,
 } from './shared';
 
 export const NAME = 'Ledger';
@@ -77,7 +77,7 @@ function LedgerRow({ item, slateDate, open, onToggle }) {
             </p>
           )}
           <p className="pt-a-actions">
-            {!target.local && <Link to={`/targets/${target.id}`}>Open the Target →</Link>}
+            {!target.local && <ProtoLink to={`/targets/${target.id}`}>Open the Target →</ProtoLink>}
             <span>set {shortDate(target.createdAt.slice(0, 10))}</span>
           </p>
         </div>

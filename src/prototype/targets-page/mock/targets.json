@@ -1,0 +1,59 @@
+{
+  "success": true,
+  "targets": [
+    {
+      "created_at": "2026-09-05T17:18:44.981799+00:00",
+      "id": 3,
+      "note": "Zone walls off the rim. Who scores without it?",
+      "opponent": "MIA",
+      "qualifiers": [
+        {
+          "base": "shot_zones",
+          "comparator": "at_or_below",
+          "slice_key": "Restricted Area",
+          "threshold": 0.2
+        }
+      ],
+      "title": "MIA vs Restricted area \u2264 20%",
+      "updated_at": "2026-09-05T17:18:44.981799+00:00"
+    },
+    {
+      "created_at": "2026-09-05T17:18:44.534875+00:00",
+      "id": 2,
+      "note": "No rim protection when Missi sits.",
+      "opponent": "NOP",
+      "qualifiers": [
+        {
+          "base": "shot_zones",
+          "comparator": "at_or_above",
+          "slice_key": "Restricted Area",
+          "threshold": 0.35
+        },
+        {
+          "base": "play_types",
+          "comparator": "at_or_above",
+          "slice_key": "Transition",
+          "threshold": 0.15
+        }
+      ],
+      "title": "NOP vs Restricted area \u2265 35%, Transition \u2265 15%",
+      "updated_at": "2026-09-05T17:18:44.534875+00:00"
+    },
+    {
+      "created_at": "2026-09-05T17:18:44.332853+00:00",
+      "id": 1,
+      "note": "BOS switches everything and leaves the corner late.",
+      "opponent": "BOS",
+      "qualifiers": [
+        {
+          "base": "shot_zones",
+          "comparator": "at_or_above",
+          "slice_key": "Corner 3",
+          "threshold": 0.2
+        }
+      ],
+      "title": "BOS vs Corner 3 \u2265 20%",
+      "updated_at": "2026-09-05T17:18:44.332853+00:00"
+    }
+  ]
+}

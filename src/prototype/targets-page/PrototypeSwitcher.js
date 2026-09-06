@@ -39,12 +39,14 @@ export default function PrototypeSwitcher({ variant, date, onStep, onDate }) {
       <button type="button" onClick={() => onStep(1)} aria-label="Next variant">
         →
       </button>
-      <input
-        type="date"
-        aria-label="Slate date to resolve against"
-        value={date || ''}
-        onChange={(event) => onDate(event.target.value)}
-      />
+      {onDate && (
+        <input
+          type="date"
+          aria-label="Slate date to resolve against"
+          value={date || ''}
+          onChange={(event) => onDate(event.target.value)}
+        />
+      )}
     </div>
   );
 }

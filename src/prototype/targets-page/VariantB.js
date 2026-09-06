@@ -8,7 +8,6 @@
  * title preview is the pane's own headline, growing as the draft does.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { TargetContext, TargetFitTable } from '../../targets/TargetFits';
 import {
   deriveTargetTitle,
@@ -26,6 +25,7 @@ import {
   isLive,
   shortDate,
   useDraft,
+  ProtoLink,
 } from './shared';
 
 export const NAME = 'Desk';
@@ -131,7 +131,7 @@ function Reading({ item, slateDate, resolved }) {
 
       {!target.local && (
         <p className="pt-b-actions">
-          <Link to={`/targets/${target.id}`}>Open the full page →</Link>
+          <ProtoLink to={`/targets/${target.id}`}>Open the full page →</ProtoLink>
           <span>edit · delete · season backtest live there</span>
         </p>
       )}

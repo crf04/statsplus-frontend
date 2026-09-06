@@ -1,0 +1,398 @@
+{
+  "slate_date": "2026-04-10",
+  "success": true,
+  "targets": [
+    {
+      "availability": {
+        "context": "completed_season",
+        "source": "game_logs",
+        "status": "available",
+        "unavailable_reason": null
+      },
+      "context": [
+        {
+          "availability": {
+            "last_15": {
+              "status": "unavailable",
+              "unavailable_reason": "publication_cutoff_after_as_of"
+            },
+            "season": {
+              "reason": "season_complete_snapshot",
+              "status": "available",
+              "unavailable_reason": null
+            }
+          },
+          "base": "shot_zones",
+          "label": "Restricted area",
+          "metrics": [
+            {
+              "key": "Restricted Area:FGA",
+              "label": "Restricted Area FGA",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 133.406667, "sigma": 9.29114 }
+              },
+              "markets": ["FGA", "FG2A"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 136.3,
+                  "percent_vs_league_average": 2.168807,
+                  "rank": 20,
+                  "sigma_deviation": 0.311408
+                }
+              }
+            },
+            {
+              "key": "Restricted Area:FGM",
+              "label": "Restricted Area FGM",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 89.663333, "sigma": 8.816934 }
+              },
+              "markets": ["PTS"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 89.3,
+                  "percent_vs_league_average": -0.40522,
+                  "rank": 16,
+                  "sigma_deviation": -0.041209
+                }
+              }
+            }
+          ],
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "game": {
+        "away": { "name": "None", "team_id": 1610612748, "tricode": "MIA" },
+        "game_id": "0022501172",
+        "home": { "name": "None", "team_id": 1610612764, "tricode": "WAS" },
+        "opponent": { "name": "None", "team_id": 1610612748, "tricode": "MIA" },
+        "opposing_team": { "name": "None", "team_id": 1610612764, "tricode": "WAS" },
+        "scheduled_at": "2026-04-10T23:00:00+00:00",
+        "status": { "label": "Final", "state": "final" }
+      },
+      "players": [
+        {
+          "canonical_id": 1642267,
+          "injury_badge_ref": null,
+          "name": "Bub Carrington",
+          "posted_markets": [],
+          "season_scoring": 10.707317,
+          "shares": [
+            {
+              "base": "shot_zones",
+              "league_average_share": 0.275917,
+              "share": 0.076923,
+              "slice_key": "Restricted Area"
+            }
+          ],
+          "team_id": 1610612764,
+          "thin": false,
+          "tricode": "WAS"
+        },
+        {
+          "canonical_id": 1641778,
+          "injury_badge_ref": null,
+          "name": "Leaky Black",
+          "posted_markets": [],
+          "season_scoring": 7.066667,
+          "shares": [
+            {
+              "base": "shot_zones",
+              "league_average_share": 0.275917,
+              "share": 0.145631,
+              "slice_key": "Restricted Area"
+            }
+          ],
+          "team_id": 1610612764,
+          "thin": false,
+          "tricode": "WAS"
+        }
+      ],
+      "target": {
+        "created_at": "2026-09-05T17:18:44.981799+00:00",
+        "id": 3,
+        "note": "Zone walls off the rim. Who scores without it?",
+        "opponent": "MIA",
+        "qualifiers": [
+          {
+            "base": "shot_zones",
+            "comparator": "at_or_below",
+            "slice_key": "Restricted Area",
+            "threshold": 0.2
+          }
+        ],
+        "title": "MIA vs Restricted area \u2264 20%",
+        "updated_at": "2026-09-05T17:18:44.981799+00:00"
+      }
+    },
+    {
+      "availability": {
+        "context": "completed_season",
+        "source": "game_logs",
+        "status": "available",
+        "unavailable_reason": null
+      },
+      "context": [
+        {
+          "availability": {
+            "last_15": {
+              "status": "unavailable",
+              "unavailable_reason": "publication_cutoff_after_as_of"
+            },
+            "season": {
+              "reason": "season_complete_snapshot",
+              "status": "available",
+              "unavailable_reason": null
+            }
+          },
+          "base": "shot_zones",
+          "label": "Restricted area",
+          "metrics": [
+            {
+              "key": "Restricted Area:FGA",
+              "label": "Restricted Area FGA",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 133.406667, "sigma": 9.29114 }
+              },
+              "markets": ["FGA", "FG2A"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 117.5,
+                  "percent_vs_league_average": -11.923442,
+                  "rank": 2,
+                  "sigma_deviation": -1.712025
+                }
+              }
+            },
+            {
+              "key": "Restricted Area:FGM",
+              "label": "Restricted Area FGM",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 89.663333, "sigma": 8.816934 }
+              },
+              "markets": ["PTS"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 79.2,
+                  "percent_vs_league_average": -11.669579,
+                  "rank": 4,
+                  "sigma_deviation": -1.186732
+                }
+              }
+            }
+          ],
+          "slice_key": "Restricted Area"
+        },
+        {
+          "availability": {
+            "last_15": {
+              "status": "unavailable",
+              "unavailable_reason": "provider_window_unsupported"
+            },
+            "season": {
+              "reason": "season_complete_snapshot",
+              "status": "available",
+              "unavailable_reason": null
+            }
+          },
+          "base": "play_types",
+          "label": "Transition",
+          "metrics": [
+            {
+              "key": "Transition:POSS",
+              "label": "Transition POSS",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 20.062774, "sigma": 1.678221 }
+              },
+              "markets": ["PTS"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 21.958248,
+                  "percent_vs_league_average": 9.447718,
+                  "rank": 27,
+                  "sigma_deviation": 1.129454
+                }
+              }
+            },
+            {
+              "key": "Transition:PTS",
+              "label": "Transition PTS",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 22.787454, "sigma": 2.2291 }
+              },
+              "markets": ["PTS", "PA", "PR", "PRA"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 25.521011,
+                  "percent_vs_league_average": 11.995883,
+                  "rank": 28,
+                  "sigma_deviation": 1.226305
+                }
+              }
+            }
+          ],
+          "slice_key": "Transition"
+        }
+      ],
+      "game": {
+        "away": { "name": "None", "team_id": 1610612740, "tricode": "NOP" },
+        "game_id": "0022501174",
+        "home": { "name": "None", "team_id": 1610612738, "tricode": "BOS" },
+        "opponent": { "name": "None", "team_id": 1610612740, "tricode": "NOP" },
+        "opposing_team": { "name": "None", "team_id": 1610612738, "tricode": "BOS" },
+        "scheduled_at": "2026-04-10T23:30:00+00:00",
+        "status": { "label": "Final", "state": "final" }
+      },
+      "players": [
+        {
+          "canonical_id": 1641775,
+          "injury_badge_ref": null,
+          "name": "Jordan Walsh",
+          "posted_markets": [],
+          "season_scoring": 5.352941,
+          "shares": [
+            {
+              "base": "shot_zones",
+              "league_average_share": 0.275917,
+              "share": 0.389513,
+              "slice_key": "Restricted Area"
+            },
+            {
+              "base": "play_types",
+              "league_average_share": 0.187263,
+              "share": 0.194,
+              "slice_key": "Transition"
+            }
+          ],
+          "team_id": 1610612738,
+          "thin": false,
+          "tricode": "BOS"
+        }
+      ],
+      "target": {
+        "created_at": "2026-09-05T17:18:44.534875+00:00",
+        "id": 2,
+        "note": "No rim protection when Missi sits.",
+        "opponent": "NOP",
+        "qualifiers": [
+          {
+            "base": "shot_zones",
+            "comparator": "at_or_above",
+            "slice_key": "Restricted Area",
+            "threshold": 0.35
+          },
+          {
+            "base": "play_types",
+            "comparator": "at_or_above",
+            "slice_key": "Transition",
+            "threshold": 0.15
+          }
+        ],
+        "title": "NOP vs Restricted area \u2265 35%, Transition \u2265 15%",
+        "updated_at": "2026-09-05T17:18:44.534875+00:00"
+      }
+    },
+    {
+      "availability": {
+        "context": "completed_season",
+        "source": "game_logs",
+        "status": "available",
+        "unavailable_reason": null
+      },
+      "context": [
+        {
+          "availability": {
+            "last_15": {
+              "status": "unavailable",
+              "unavailable_reason": "publication_cutoff_after_as_of"
+            },
+            "season": {
+              "reason": "season_complete_snapshot",
+              "status": "available",
+              "unavailable_reason": null
+            }
+          },
+          "base": "shot_zones",
+          "label": "Corner 3",
+          "metrics": [
+            {
+              "key": "Corner 3:FGA",
+              "label": "Corner 3 FGA",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 102.29, "sigma": 8.375335 }
+              },
+              "markets": ["FGA", "FG3A"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 112.2,
+                  "percent_vs_league_average": 9.688142,
+                  "rank": 26,
+                  "sigma_deviation": 1.183236
+                }
+              }
+            },
+            {
+              "key": "Corner 3:FGM",
+              "label": "Corner 3 FGM",
+              "league": {
+                "last_15": null,
+                "season": { "average_allowed_per_48": 39.566667, "sigma": 3.445996 }
+              },
+              "markets": ["PTS", "3PM"],
+              "opponent": {
+                "last_15": null,
+                "season": {
+                  "allowed_per_48": 40.8,
+                  "percent_vs_league_average": 3.117102,
+                  "rank": 18,
+                  "sigma_deviation": 0.357903
+                }
+              }
+            }
+          ],
+          "slice_key": "Corner 3"
+        }
+      ],
+      "game": {
+        "away": { "name": "None", "team_id": 1610612740, "tricode": "NOP" },
+        "game_id": "0022501174",
+        "home": { "name": "None", "team_id": 1610612738, "tricode": "BOS" },
+        "opponent": { "name": "None", "team_id": 1610612738, "tricode": "BOS" },
+        "opposing_team": { "name": "None", "team_id": 1610612740, "tricode": "NOP" },
+        "scheduled_at": "2026-04-10T23:30:00+00:00",
+        "status": { "label": "Final", "state": "final" }
+      },
+      "players": [],
+      "target": {
+        "created_at": "2026-09-05T17:18:44.332853+00:00",
+        "id": 1,
+        "note": "BOS switches everything and leaves the corner late.",
+        "opponent": "BOS",
+        "qualifiers": [
+          {
+            "base": "shot_zones",
+            "comparator": "at_or_above",
+            "slice_key": "Corner 3",
+            "threshold": 0.2
+          }
+        ],
+        "title": "BOS vs Corner 3 \u2265 20%",
+        "updated_at": "2026-09-05T17:18:44.332853+00:00"
+      }
+    }
+  ]
+}

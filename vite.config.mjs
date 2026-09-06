@@ -11,6 +11,8 @@ const legacyEnvironmentKeys = [
   'REACT_APP_ENABLE_ERROR_REPORTING',
   'REACT_APP_DEBUG',
   'REACT_APP_API_TIMEOUT',
+  // PROTOTYPE (throwaway): enables a standalone prototype build.
+  'REACT_APP_PROTOTYPE',
   'REACT_APP_NL_QUERY_TIMEOUT',
   'REACT_APP_E2E_MODE',
   'REACT_APP_FIREBASE_API_KEY',

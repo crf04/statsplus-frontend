@@ -19,12 +19,48 @@ import {
   formatQualifierParts,
 } from '../../targets/targetCatalog';
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
+import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
+import { PROTO_STANDALONE } from './prototypeMode';
+import targetsMock from './mock/targets.json';
+import resolveMock from './mock/resolve-2026-04-10.json';
+
+/* Standalone: the production payloads captured on 2026-09-06 stand in for
+   the two reads, decoded by the real decoders so the shapes cannot drift. */
+const noop = () => {};
+const MOCK_LIST = {
+  status: 'ready',
+  error: null,
+  authLoading: false,
+  isAuthenticated: true,
+  reload: noop,
+  targets: decodeTargets(targetsMock),
+};
+const MOCK_RESOLVED = {
+  status: 'ready',
+  error: null,
+  reload: noop,
+  ...decodeResolvedTargets(resolveMock),
+};
+const useMockTargets = () => MOCK_LIST;
+const useMockResolved = () => MOCK_RESOLVED;
+const useList = PROTO_STANDALONE ? useMockTargets : useTargets;
+const useResolved = PROTO_STANDALONE ? useMockResolved : useResolvedTargets;
+
+/* In the standalone build there is nowhere for a link to go. */
+export function ProtoLink({ to, children, ...rest }) {
+  if (PROTO_STANDALONE) return <span {...rest}>{children}</span>;
+  return (
+    <Link to={to} {...rest}>
+      {children}
+    </Link>
+  );
+}
 
 let localSequence = 0;
 
 export const useTargetsPrototypeData = (date) => {
-  const list = useTargets();
-  const resolved = useResolvedTargets(date);
+  const list = useList();
+  const resolved = useResolved(date);
   const [extras, setExtras] = useState([]);
 
   const items = useMemo(() => {
@@ -223,9 +259,9 @@ export function QualifierChips({ target }) {
 export function GameLine({ game }) {
   return (
     <span className="pt-game">
-      <Link to={`/matchups/${game.gameId}`}>
+      <ProtoLink to={`/matchups/${game.gameId}`}>
         {game.away.tricode} @ {game.home.tricode}
-      </Link>
+      </ProtoLink>
       <small>{formatTip(game.scheduledAt)}</small>
       {game.status.state !== 'scheduled' && <em>{game.status.label}</em>}
     </span>

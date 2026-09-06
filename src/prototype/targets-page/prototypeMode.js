@@ -13,6 +13,13 @@ import { useSearchParams } from 'react-router-dom';
 export const PROTO_ENABLED =
   process.env.NODE_ENV !== 'production' || process.env.REACT_APP_PROTOTYPE === 'targets-page';
 
+/* A deployed prototype build is the Targets page and nothing else: no
+   sign-in, captured production payloads, links inert. */
+export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'targets-page';
+
+/* The captured day: MIA, NOP and BOS all played, so every seed Target is live. */
+export const DEMO_DATE = '2026-04-10';
+
 export const VARIANT_KEYS = ['A', 'B', 'C'];
 
 export const VARIANT_NAMES = {
@@ -23,10 +30,10 @@ export const VARIANT_NAMES = {
 
 export const useTargetsPrototype = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const active = PROTO_ENABLED && searchParams.get('proto') === 'targets';
+  const active = PROTO_ENABLED && (PROTO_STANDALONE || searchParams.get('proto') === 'targets');
   const key = (searchParams.get('v') || 'A').toUpperCase();
   const variant = VARIANT_KEYS.includes(key) ? key : 'A';
-  const date = searchParams.get('date') || undefined;
+  const date = PROTO_STANDALONE ? DEMO_DATE : searchParams.get('date') || undefined;
   const update = (patch) => {
     const next = new URLSearchParams(searchParams);
     next.set('proto', 'targets');

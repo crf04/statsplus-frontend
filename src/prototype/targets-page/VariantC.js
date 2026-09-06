@@ -6,7 +6,6 @@
  * wait underneath as one quiet line each. The composer is a sentence with
  * blanks in it, so writing a Target reads the way its title will.
  */
-import { Link } from 'react-router-dom';
 import { formatCalendarDate } from '../../calendarDate';
 import {
   TARGET_BASES,
@@ -18,7 +17,7 @@ import {
   formatObservedShare,
   formatQualifierParts,
 } from '../../targets/targetCatalog';
-import { GameLine, QualifierChips, isLive, useDraft } from './shared';
+import { GameLine, ProtoLink, QualifierChips, isLive, useDraft } from './shared';
 import { NBA_TEAM_TRICODES } from '../../targets/targetCatalog';
 
 export const NAME = 'Board';
@@ -207,9 +206,9 @@ function Tile({ item }) {
         <p className="target-empty">No {game.opposingTeam.tricode} player meets every Qualifier.</p>
       )}
       {target.note && <p className="pt-c-tile-note">{target.note}</p>}
-      <Link className="pt-c-tile-go" to={`/targets/${target.id}`}>
+      <ProtoLink className="pt-c-tile-go" to={`/targets/${target.id}`}>
         Open →
-      </Link>
+      </ProtoLink>
     </li>
   );
 }
@@ -271,12 +270,12 @@ export default function VariantC({ data }) {
                     <em>{target.note || 'unsaved · this session only'}</em>
                   </span>
                 ) : (
-                  <Link className="pt-c-idle-row" to={`/targets/${target.id}`}>
+                  <ProtoLink className="pt-c-idle-row" to={`/targets/${target.id}`}>
                     <b>{target.opponent}</b>
                     <QualifierChips target={target} />
                     <em>{target.note}</em>
                     <span aria-hidden="true">→</span>
-                  </Link>
+                  </ProtoLink>
                 )}
               </li>
             ))}

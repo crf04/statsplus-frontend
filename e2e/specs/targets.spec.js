@@ -9,14 +9,18 @@ const composeTarget = async (page, { opponent, base, slice, percent, note }) => 
 };
 
 /*
- * A saved Target leaves a blank form behind. Composing the next one before
- * that reset lands would be typing into a draft about to be replaced, so this
- * waits for the blank form the reset produces.
+ * Saving opens the new Target on its own page, so composing the next one means
+ * going back to the grid and its blank form.
  */
 const saveTarget = async (page) => {
   await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(page.getByLabel('Qualifier 1 threshold percent')).toHaveValue('');
 };
+
+const summaryItem = (scope, label) =>
+  scope.getByRole('list', { name: 'Backtest summary' }).getByRole('listitem', { name: label });
 
 test('@critical authenticated user creates, opens, edits, and deletes a Target', async ({
   authenticatedPage: page,
@@ -41,13 +45,17 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   await page.screenshot({ path: testInfo.outputPath('targets-form.png'), fullPage: true });
   await page.getByRole('button', { name: 'Save Target' }).click();
 
+  // The saved draft is the record, and opens on its own page.
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'OKC vs Corner 3 ≥ 40%' })).toBeVisible();
+  await page.getByRole('link', { name: '← All Targets' }).click();
   const okcCard = page.getByRole('link', { name: 'Open OKC vs Corner 3 ≥ 40%' });
   await expect(okcCard).toBeVisible();
   await expect(page.getByRole('heading', { name: '1 Target', exact: true })).toBeVisible();
   await expect(okcCard).toContainText('Switches everything and leaves the corner late.');
 
-  // A saved Target leaves a blank form behind, so the same idea has to be
-  // typed again to be refused as the duplicate it is.
+  // The grid has a blank form, so the same idea has to be typed again to be
+  // refused as the duplicate it is.
   await expect(page.getByLabel('Qualifier 1 threshold percent')).toHaveValue('');
   await composeTarget(page, { opponent: 'OKC', slice: 'Corner 3', percent: '40' });
   await page.getByRole('button', { name: 'Save Target' }).click();
@@ -57,7 +65,7 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   // A second Target, so that opening one is a choice between two rather than
   // whatever the account happens to hold.
   await composeTarget(page, { opponent: 'MIA', slice: 'Restricted Area', percent: '22' });
-  await page.getByRole('button', { name: 'Save Target' }).click();
+  await saveTarget(page);
   await expect(page.getByRole('heading', { name: '2 Targets', exact: true })).toBeVisible();
   const cards = page.getByRole('link', { name: /^Open / });
   await expect(cards).toHaveCount(2);
@@ -96,7 +104,12 @@ test('the Targets page reads and works at a phone width', async ({ authenticated
   await page.goto('/targets');
 
   await composeTarget(page, { opponent: 'BOS', slice: 'Mid-Range', percent: '30' });
-  await page.getByRole('button', { name: 'Save Target' }).click();
+  // The Lab reads beneath the form at this width too, without widening it.
+  await expect(page.getByText(/fit tonight vs BOS/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await saveTarget(page);
   await expect(page.getByRole('link', { name: 'Open BOS vs Mid-range ≥ 30%' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
@@ -330,4 +343,78 @@ test('@critical a backtest is read on demand and hands off into the Log Workspac
   expect(gameLogRequests.at(-1).searchParams.get('opponent_tricode')).toBe('ATL');
   expect(gameLogRequests.at(-1).searchParams.get('player_name')).toBe('LeBron James');
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
+});
+
+/*
+ * The Lab: composing a Target while watching its Backtest. The draft is read
+ * once it holds still, a nudged threshold moves the strip, tonight is one line
+ * that comes and goes with the opponent's game, and the saved Target's own
+ * page reads the same summary the Lab did — nothing was stored until Save.
+ */
+test('@critical the Lab reads a draft live, and the saved Target reads the same', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await installApiContract(page);
+  const previewRequests = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/user/targets/preview')
+      previewRequests.push(request.postDataJSON());
+  });
+  await page.goto('/targets');
+
+  // A blank draft is not sent anywhere.
+  await expect(page.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+  expect(previewRequests).toHaveLength(0);
+
+  // ATL is on every player's season and plays on no slate: a backtest with
+  // rows and no tonight. Four players with a Diet worth leaning on clear 30%
+  // of at-rim assists, each with one game against ATL.
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: '30',
+  });
+  const strip = page.getByRole('list', { name: 'Backtest summary' });
+  await expect(summaryItem(page, 'Players')).toHaveText(/4$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/4$/);
+  await expect(page.getByText(/box-score proxies/)).toBeVisible();
+  await expect(page.getByText(/fit tonight/)).toHaveCount(0);
+  const table = page.getByRole('table', { name: 'Backtest for ATL vs At-rim assists ≥ 30%' });
+  await expect(table.getByRole('row', { name: /Kawhi Leonard/ })).toBeVisible();
+  // Composing was several edits and one read, made once the draft held still.
+  expect(previewRequests).toHaveLength(1);
+  expect(previewRequests[0].qualifiers[0].threshold).toBe(0.3);
+
+  // One nudge up drops the player sitting exactly on 30%, and the strip says so.
+  await page.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }).click();
+  await expect(page.getByLabel('Qualifier 1 threshold percent')).toHaveValue('31');
+  await expect(summaryItem(page, 'Players')).toHaveText(/3$/);
+  await expect(
+    page.getByRole('table', { name: 'Backtest for ATL vs At-rim assists ≥ 31%' }),
+  ).toBeVisible();
+  await expect(page.getByRole('row', { name: /Kawhi Leonard/ })).toHaveCount(0);
+  await expect.poll(() => previewRequests.length).toBe(2);
+  expect(previewRequests[1].qualifiers[0].threshold).toBe(0.31);
+  await page.screenshot({ path: testInfo.outputPath('targets-lab.png'), fullPage: true });
+
+  // BOS plays tonight and nobody has faced them yet: tonight, and no table.
+  await page.getByLabel('Opponent').selectOption('BOS');
+  await expect(page.getByText('2 fit tonight vs BOS')).toBeVisible();
+  await expect(page.getByText('Nobody qualifying has faced BOS yet.')).toBeVisible();
+  await expect(strip).toHaveCount(0);
+
+  await page.getByLabel('Opponent').selectOption('ATL');
+  await expect(summaryItem(page, 'Players')).toHaveText(/3$/);
+  await expect(page.getByText(/fit tonight/)).toHaveCount(0);
+  const labSummary = await strip.textContent();
+
+  // Save, and the Target's own page reads the summary the Lab did.
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'ATL vs At-rim assists ≥ 31%' })).toBeVisible();
+  await page.getByRole('button', { name: 'Expand backtest' }).click();
+  await expect(page.getByRole('list', { name: 'Backtest summary' })).toHaveText(labSummary);
+  await expect(page.getByRole('row', { name: /Kawhi Leonard/ })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('target-detail-summary.png'), fullPage: true });
 });

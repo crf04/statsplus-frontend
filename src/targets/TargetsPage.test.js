@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import TargetsPage from './TargetsPage';
-import { createTarget, fetchResolvedTargets, fetchTargets } from './targetsApi';
+import { createTarget, fetchResolvedTargets, fetchTargetPreview, fetchTargets } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargets: jest.fn(),
   fetchResolvedTargets: jest.fn(),
+  fetchTargetPreview: jest.fn(),
   createTarget: jest.fn(),
 }));
 
@@ -88,12 +89,68 @@ const resolution = {
   ],
 };
 
+/*
+ * What the Lab reads for a draft: the backtest a saved Target would have, with
+ * the draft echoed back under its derived title, and whether it fires tonight.
+ * The figures are the backend's; the strip reads them at one decimal and
+ * colours them by direction.
+ */
+const preview = {
+  target: {
+    opponent: 'OKC',
+    title: 'OKC vs Corner 3 ≥ 40%',
+    note: '',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  },
+  proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
+  statColumns: ['PTS', '3PM'],
+  summary: {
+    players: 2,
+    games: 5,
+    columns: {
+      PTS: { meanDifference: 2.46, overAverageShare: 0.6 },
+      '3PM': { meanDifference: -0.8, overAverageShare: 0.4 },
+    },
+  },
+  players: [
+    {
+      canonicalId: 2544,
+      name: 'LeBron James',
+      tricode: 'LAL',
+      shares: [{ share: 0.44, leagueAverageShare: 0.2 }],
+      seasonAverages: { PTS: 25.4, '3PM': 2 },
+      games: [{ gameDate: '2026-01-12', stats: { PTS: 31, '3PM': 4 } }],
+    },
+  ],
+  today: {
+    game: resolution.entries[0].game,
+    fitCount: 1,
+  },
+};
+
+const storedTarget = { ...targets[0], id: 9, title: 'A title only the backend could have written' };
+
+const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+
 const renderPage = () =>
   render(
     <MemoryRouter initialEntries={['/targets']}>
       <TargetsPage />
+      <LocationProbe />
     </MemoryRouter>,
   );
+
+const summaryItem = (label) =>
+  within(screen.getByRole('list', { name: 'Backtest summary' })).getByRole('listitem', {
+    name: label,
+  });
+
+const settle = () =>
+  act(async () => {
+    jest.advanceTimersByTime(600);
+  });
 
 const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40' } = {}) => {
   fireEvent.change(screen.getByLabelText('Opponent'), { target: { value: opponent } });
@@ -109,7 +166,12 @@ beforeEach(() => {
   auth.loading = false;
   fetchTargets.mockResolvedValue(targets);
   fetchResolvedTargets.mockResolvedValue(resolution);
-  createTarget.mockResolvedValue(undefined);
+  fetchTargetPreview.mockResolvedValue(preview);
+  createTarget.mockResolvedValue(storedTarget);
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 test('shows every saved Target as a card carrying the stored title, Qualifiers, and note', async () => {
@@ -225,7 +287,7 @@ test('refuses to save a Target with no Qualifier at all', async () => {
   expect(screen.getByText('Add at least one Qualifier before saving.')).toBeInTheDocument();
 });
 
-test('saves several Qualifiers as one Target and reloads the list the backend returns', async () => {
+test('saves several Qualifiers as one Target and opens the Target the backend stored', async () => {
   renderPage();
   await screen.findAllByRole('link', { name: /^Open / });
 
@@ -260,10 +322,8 @@ test('saves several Qualifiers as one Target and reloads the list the backend re
       { base: 'play_types', sliceKey: 'Transition', comparator: 'at_or_below', threshold: 0.15 },
     ],
   });
-  expect(fetchTargets).toHaveBeenCalledTimes(2);
-  // A saved Target leaves a blank form behind, ready for the next idea.
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(null);
-  expect(screen.queryByLabelText('Qualifier 2 threshold percent')).not.toBeInTheDocument();
+  // The tuned draft is now the record, and its own page is where it reads.
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/9$/);
 });
 
 test('a note is stored without the whitespace it was typed with', async () => {
@@ -400,4 +460,235 @@ test('a live Target nobody fits says so rather than staying silent', async () =>
   renderPage();
 
   expect(await screen.findByText('0 fit today')).toBeVisible();
+});
+
+/*
+ * The Lab: the season behind the draft, read while it is composed. It is the
+ * one read on this page that fires on a keystroke, so the first thing to prove
+ * is that it waits — several quick edits are one request, made once the draft
+ * has held still — and that a half-typed draft is never sent at all.
+ */
+test('the Lab reads a draft once it has held still, so several quick edits are one read', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+  act(() => {
+    jest.advanceTimersByTime(300);
+  });
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '42' },
+  });
+  act(() => {
+    jest.advanceTimersByTime(500);
+  });
+  // 800 ms since the first edit, 500 ms since the last: still nothing.
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  expect(fetchTargetPreview).toHaveBeenCalledWith(
+    expect.objectContaining({
+      opponent: 'OKC',
+      note: '',
+      qualifiers: [
+        { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.42 },
+      ],
+    }),
+  );
+});
+
+test('an incomplete draft asks for nothing and says what to complete', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  // The blank form: a threshold has not been typed.
+  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+  await settle();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+
+  // A threshold outside the share range is not a threshold either.
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '140' },
+  });
+  await settle();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+
+  // And a draft with no Qualifier at all has nothing to evaluate.
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
+  await settle();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+});
+
+test('the Lab leads with the summary and whether the draft fires tonight, then the games', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  await settle();
+
+  expect(screen.getByText('Lab · Backtest · season to date · vs OKC')).toBeVisible();
+  expect(
+    screen.getByText('Outcomes are box-score proxies; there are no per-game slice splits.'),
+  ).toBeVisible();
+  // Tonight, in one line, from the resolve rule the backend applied.
+  expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
+
+  // The strip: how many players and games, then per market the mean signed
+  // distance from the players' own averages, coloured by direction, and the
+  // share of games over.
+  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(summaryItem('Games')).toHaveTextContent('5');
+  expect(summaryItem('PTS')).toHaveTextContent('+2.5');
+  expect(summaryItem('PTS')).toHaveTextContent('60% of games over');
+  expect(within(summaryItem('PTS')).getByText('+2.5')).toHaveClass('is-hit');
+  expect(summaryItem('3PM')).toHaveTextContent('-0.8');
+  expect(summaryItem('3PM')).toHaveTextContent('40% of games over');
+  expect(within(summaryItem('3PM')).getByText('-0.8')).toHaveClass('is-miss');
+
+  // The same table the saved detail shows, labelled by the draft's title.
+  expect(screen.getByRole('table', { name: 'Backtest for OKC vs Corner 3 ≥ 40%' })).toBeVisible();
+  expect(screen.getByRole('row', { name: /2026-01-12/ })).toHaveTextContent('+5.6');
+  expect(
+    screen.queryByText('Complete the Qualifiers to see the Backtest.'),
+  ).not.toBeInTheDocument();
+});
+
+test('the tonight line is absent when the opponent has no game', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockResolvedValue({ ...preview, today: null });
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  await settle();
+
+  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
+});
+
+/*
+ * A keystroke never blanks the screen. The result on screen describes the
+ * draft it was read for, so once the draft moves on it reads as stale, and
+ * stays until the next answer replaces it.
+ */
+test('a nudged draft keeps the last result on screen, dimmed, until the next one lands', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+  composeQualifier();
+  await settle();
+  const result = screen
+    .getByRole('list', { name: 'Backtest summary' })
+    .closest('.target-lab-result');
+  expect(result).not.toHaveClass('is-stale');
+
+  let publish;
+  fetchTargetPreview.mockReturnValue(
+    new Promise((resolve) => {
+      publish = resolve;
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  // Stale from the edit, before the read has even started.
+  expect(result).toHaveClass('is-stale');
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.41 })] }),
+  );
+  expect(screen.getByText('Reading the season…')).toBeVisible();
+  expect(result).toHaveClass('is-stale');
+  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(screen.getByRole('table')).toBeInTheDocument();
+
+  await act(async () => {
+    publish({ ...preview, summary: { ...preview.summary, players: 1, games: 3 } });
+  });
+  expect(result).not.toHaveClass('is-stale');
+  expect(screen.queryByText('Reading the season…')).not.toBeInTheDocument();
+  expect(summaryItem('Players')).toHaveTextContent('1');
+  expect(summaryItem('Games')).toHaveTextContent('3');
+});
+
+/*
+ * The Lab is evidence, not a gate. A read the backend refuses says so and
+ * leaves the form and Save exactly as they were.
+ */
+test('a refused read says so and leaves the draft and Save usable', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockRejectedValue({
+    response: {
+      status: 400,
+      data: { error: { code: 'invalid_input', message: 'That slice is not evaluable.' } },
+    },
+  });
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  await settle();
+
+  expect(screen.getByRole('alert')).toHaveTextContent('That slice is not evaluable.');
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
+  expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
+  const save = screen.getByRole('button', { name: 'Save Target' });
+  expect(save).toBeEnabled();
+
+  await act(async () => {
+    fireEvent.click(save);
+  });
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.4 })] }),
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/9$/);
+});
+
+/*
+ * Tuning is a series of small moves: one whole percent either way, from the
+ * steppers or the arrow keys, clamped to the share range and keeping whatever
+ * decimal was typed.
+ */
+test('the steppers and the arrow keys move a threshold by one percent', async () => {
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+  const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
+  const up = screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' });
+  const down = screen.getByRole('button', { name: 'Qualifier 1 threshold down 1%' });
+
+  composeQualifier();
+  fireEvent.click(up);
+  expect(threshold).toHaveValue(41);
+  // The title follows the nudge, as it follows typing.
+  expect(screen.getByText('OKC vs Corner 3 ≥ 41%')).toBeInTheDocument();
+  fireEvent.click(down);
+  fireEvent.click(down);
+  expect(threshold).toHaveValue(39);
+
+  fireEvent.keyDown(threshold, { key: 'ArrowUp' });
+  expect(threshold).toHaveValue(40);
+  fireEvent.keyDown(threshold, { key: 'ArrowDown' });
+  fireEvent.keyDown(threshold, { key: 'ArrowDown' });
+  expect(threshold).toHaveValue(38);
+
+  // A decimal keeps its decimal; the bounds hold; a blank field starts at zero.
+  fireEvent.change(threshold, { target: { value: '40.5' } });
+  fireEvent.click(up);
+  expect(threshold).toHaveValue(41.5);
+  fireEvent.change(threshold, { target: { value: '100' } });
+  fireEvent.click(up);
+  expect(threshold).toHaveValue(100);
+  fireEvent.change(threshold, { target: { value: '0' } });
+  fireEvent.click(down);
+  expect(threshold).toHaveValue(0);
+  fireEvent.change(threshold, { target: { value: '' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowUp' });
+  expect(threshold).toHaveValue(1);
 });

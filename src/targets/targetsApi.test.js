@@ -2,11 +2,13 @@ import { apiClient } from '../config';
 import {
   createTarget,
   decodeBacktest,
+  decodePreview,
   decodeResolvedTargets,
   decodeTargets,
   deleteTarget,
   fetchResolvedTargets,
   fetchTargetBacktest,
+  fetchTargetPreview,
   fetchTargets,
   updateTarget,
 } from './targetsApi';
@@ -505,6 +507,17 @@ const wireBacktest = {
   season: '2025-26',
   proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
   stat_columns: ['PTS', '3PM'],
+  // The summary is the backend's arithmetic over every listed game, so the
+  // saved detail and the Lab read the same numbers: +5.6 and -3.2 in points
+  // average +1.2, and one of the two games was over.
+  summary: {
+    players: 2,
+    games: 2,
+    columns: {
+      PTS: { mean_difference: 1.2, over_average_share: 0.5 },
+      '3PM': { mean_difference: 0.5, over_average_share: 0.5 },
+    },
+  },
   players: [
     {
       canonical_id: 2544,
@@ -563,6 +576,14 @@ test('decodes the backtest to the rows the table reads, in the backend order', (
     },
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     statColumns: ['PTS', '3PM'],
+    summary: {
+      players: 2,
+      games: 2,
+      columns: {
+        PTS: { meanDifference: 1.2, overAverageShare: 0.5 },
+        '3PM': { meanDifference: 0.5, overAverageShare: 0.5 },
+      },
+    },
     // The backend orders the players by season scoring; a decoder that sorted
     // or grouped them would put the table in an order nobody chose.
     players: [
@@ -649,6 +670,122 @@ test('refuses a backtest whose rows would be read under the wrong heading', () =
       ],
     }),
   ).toThrow(/invalid response/i);
+
+  // The summary is computed by the backend so that the Lab and the saved
+  // detail agree; a backtest without one, or one that skips a column the
+  // table shows, would leave the strip to guess.
+  expect(() => decodeBacktest({ ...wireBacktest, summary: undefined })).toThrow(
+    /invalid response/i,
+  );
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      summary: { ...wireBacktest.summary, columns: { PTS: wireBacktest.summary.columns.PTS } },
+    }),
+  ).toThrow(/invalid response/i);
+  // A share of games is a share.
+  expect(() =>
+    decodeBacktest({
+      ...wireBacktest,
+      summary: {
+        ...wireBacktest.summary,
+        columns: {
+          ...wireBacktest.summary.columns,
+          PTS: { mean_difference: 1.2, over_average_share: 50 },
+        },
+      },
+    }),
+  ).toThrow(/invalid response/i);
+});
+
+/*
+ * A Draft Target is evaluated exactly as a saved one would be, so its preview
+ * is the backtest shape with two differences: the Target echoed back is the
+ * validated draft with its derived title and no id, and `today` says whether
+ * the draft fires on the current Slate date.
+ */
+const wireDraft = {
+  opponent: 'OKC',
+  title: 'OKC vs Corner 3 ≥ 40%',
+  note: '',
+  qualifiers: wireTarget.qualifiers,
+};
+
+const wirePreview = {
+  ...wireBacktest,
+  target: wireDraft,
+  today: { game: wireResolvedLive.game, fit_count: 2 },
+};
+
+test('decodes a preview to the backtest the Lab reads, plus whether it fires tonight', () => {
+  const preview = decodePreview(wirePreview);
+  expect(preview.target).toEqual({
+    opponent: 'OKC',
+    title: 'OKC vs Corner 3 ≥ 40%',
+    note: '',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  });
+  expect(preview.summary).toEqual(decodeBacktest(wireBacktest).summary);
+  expect(preview.players).toEqual(decodeBacktest(wireBacktest).players);
+  expect(preview.today).toEqual({
+    game: {
+      gameId: '0022500584',
+      scheduledAt: '2026-01-16T00:30:00.000Z',
+      status: { state: 'scheduled', label: 'Scheduled' },
+      away: { tricode: 'LAL' },
+      home: { tricode: 'OKC' },
+      opponent: { tricode: 'OKC' },
+      opposingTeam: { tricode: 'LAL' },
+    },
+    fitCount: 2,
+  });
+
+  // An opponent with no game on the Slate date has no tonight to speak of.
+  expect(decodePreview({ ...wirePreview, today: null }).today).toBeNull();
+});
+
+test('refuses a preview that could not honestly say whether the draft fires', () => {
+  // A game without a count, or a count without a game, is half an answer.
+  expect(() => decodePreview({ ...wirePreview, today: { game: wireResolvedLive.game } })).toThrow(
+    /invalid response/i,
+  );
+  expect(() => decodePreview({ ...wirePreview, today: { game: null, fit_count: 2 } })).toThrow(
+    /invalid response/i,
+  );
+  expect(() => decodePreview({ ...wirePreview, today: undefined })).toThrow(/invalid response/i);
+  // The draft's title is the backend's to derive, as a saved Target's is.
+  expect(() =>
+    decodePreview({ ...wirePreview, target: { ...wireDraft, title: undefined } }),
+  ).toThrow(/invalid response/i);
+});
+
+test('previews a draft at the documented path with the create body', async () => {
+  apiClient.post.mockResolvedValue({ data: wirePreview });
+  const controller = new AbortController();
+
+  await expect(
+    fetchTargetPreview({
+      opponent: 'OKC',
+      note: '',
+      qualifiers: [
+        { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+      signal: controller.signal,
+    }),
+  ).resolves.toEqual(expect.objectContaining({ today: expect.objectContaining({ fitCount: 2 }) }));
+  expect(apiClient.post).toHaveBeenCalledWith(
+    '/api/user/targets/preview',
+    {
+      opponent: 'OKC',
+      note: '',
+      qualifiers: [
+        { base: 'shot_zones', slice_key: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      ],
+    },
+    { signal: controller.signal },
+  );
 });
 
 test("reads one Target's backtest from the documented path", async () => {

@@ -109,6 +109,69 @@ function BacktestTable({ backtest }) {
   );
 }
 
+/*
+ * The number that moves when a threshold is nudged, one glance away: how many
+ * players and games the table below holds, and per outcome market the mean
+ * signed distance from the players' own season averages and the share of games
+ * at or above them. The mean is read at the precision the table reads a game
+ * at, so a season that lands on the average is exactly zero and coloured as
+ * neither a hit nor a miss.
+ */
+function BacktestSummary({ summary, statColumns }) {
+  return (
+    <ul className="target-summary" aria-label="Backtest summary">
+      <li aria-label="Players">
+        <span className="target-label">Players</span>
+        <b className="num">{summary.players}</b>
+      </li>
+      <li aria-label="Games">
+        <span className="target-label">Games</span>
+        <b className="num">{summary.games}</b>
+      </li>
+      {statColumns.map((column) => {
+        const { meanDifference, overAverageShare } = summary.columns[column];
+        const difference = meanDifference === null ? null : Math.round(meanDifference * 10) / 10;
+        const tone = !difference ? '' : difference > 0 ? ' is-hit' : ' is-miss';
+        return (
+          <li aria-label={column} key={column}>
+            <span className="target-label">{column} · vs season avg</span>
+            <b className={`num${tone}`}>{difference === null ? '—' : signed(difference)}</b>
+            <small>
+              {overAverageShare === null ? '—' : formatObservedShare(overAverageShare)} of games
+              over
+            </small>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/*
+ * One backtest, read out: the proxy note, the summary, then the games. The
+ * saved detail and the Lab both show a backtest through this, so a Draft
+ * Target reads exactly as it will once saved.
+ */
+export function BacktestEvidence({ backtest, children }) {
+  return (
+    <>
+      {/* Box-score outcomes are the closest thing to a slice the game logs
+          hold, and saying so is the difference between reading "points" and
+          reading "corner 3s made". */}
+      <p className="target-backtest-proxy">{backtest.proxy}</p>
+      {children}
+      {backtest.players.length === 0 ? (
+        <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
+      ) : (
+        <>
+          <BacktestSummary summary={backtest.summary} statColumns={backtest.statColumns} />
+          <BacktestTable backtest={backtest} />
+        </>
+      )}
+    </>
+  );
+}
+
 export default function TargetBacktest({ target }) {
   const [open, setOpen] = useState(false);
   const { status, backtest, error, read } = useTargetBacktest(target.id);
@@ -149,21 +212,7 @@ export default function TargetBacktest({ target }) {
               {error}
             </p>
           )}
-          {status === 'ready' && (
-            <>
-              {/* Box-score outcomes are the closest thing to a slice the game
-                  logs hold, and saying so is the difference between reading
-                  "points" and reading "corner 3s made". */}
-              <p className="target-backtest-proxy">{backtest.proxy}</p>
-              {backtest.players.length === 0 ? (
-                <p className="target-empty">
-                  Nobody qualifying has faced {backtest.target.opponent} yet.
-                </p>
-              ) : (
-                <BacktestTable backtest={backtest} />
-              )}
-            </>
-          )}
+          {status === 'ready' && <BacktestEvidence backtest={backtest} />}
         </div>
       )}
     </section>

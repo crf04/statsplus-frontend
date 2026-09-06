@@ -3,6 +3,7 @@ import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm from './TargetForm';
+import TargetLab from './TargetLab';
 import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
@@ -90,7 +91,8 @@ export default function TargetCaptureModal({ capture, onHide }) {
       show={Boolean(capture)}
       onHide={onHide}
       centered
-      size="lg"
+      // Wide enough for the Lab's table beneath the form.
+      size="xl"
       contentClassName="target-capture"
       aria-labelledby="target-capture-title"
     >
@@ -138,6 +140,9 @@ export default function TargetCaptureModal({ capture, onHide }) {
                   {error}
                 </p>
               )}
+              {/* A Target born from a Defense Sheet row is tuned right here,
+                  against the season the row prompted a look at. */}
+              <TargetLab draft={draft} />
             </>
           )
         )}

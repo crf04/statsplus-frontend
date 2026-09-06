@@ -820,6 +820,10 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   // 20% is the league average this row is already being read against.
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
   await expect(dialog.getByText('BOS vs Restricted area ≥ 20%')).toBeVisible();
+  // The Lab reads the prefilled draft beneath the form: BOS plays tonight and
+  // nobody qualifying has faced them yet.
+  await expect(dialog.getByText(/fit tonight vs BOS/)).toBeVisible();
+  await expect(dialog.getByText('Nobody qualifying has faced BOS yet.')).toBeVisible();
   // The dialog is fixed to the viewport, so a full-page capture would show the
   // page it floats over; its fade is finished rather than waited out.
   await page.screenshot({
@@ -913,6 +917,7 @@ test('capture stays reachable and the sheet stays unscrolled at a phone width', 
   await page.getByRole('button', { name: 'Save Restricted Area FGA as a Target' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
+  await expect(dialog.getByText(/fit tonight vs BOS/)).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('matchup-capture-narrow.png'),
     animations: 'disabled',

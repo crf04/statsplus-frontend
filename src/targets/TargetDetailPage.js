@@ -4,6 +4,7 @@ import { formatCalendarDate, formatTip } from '../calendarDate';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetBacktest from './TargetBacktest';
 import TargetForm, { targetToDraft } from './TargetForm';
+import TargetLab from './TargetLab';
 import { TargetContext, TargetFitTable } from './TargetFits';
 import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
 import { deleteTarget, updateTarget } from './targetsApi';
@@ -144,15 +145,20 @@ function TargetDetail({ target, resolved, entry, reload }) {
       )}
 
       {draft ? (
-        <TargetForm
-          draft={draft}
-          busy={busy}
-          lockOpponent
-          submitLabel="Save changes"
-          onChange={(patch) => setDraft({ ...draft, ...patch })}
-          onSubmit={save}
-          onCancel={() => setDraft(null)}
-        />
+        <>
+          <TargetForm
+            draft={draft}
+            busy={busy}
+            lockOpponent
+            submitLabel="Save changes"
+            onChange={(patch) => setDraft({ ...draft, ...patch })}
+            onSubmit={save}
+            onCancel={() => setDraft(null)}
+          />
+          {/* Editing is tuning too: the draft's season reads beneath the form
+              while the saved sections wait behind it. */}
+          <TargetLab draft={draft} />
+        </>
       ) : (
         <>
           <section className="target-detail-section" aria-labelledby="qualifiers-heading">

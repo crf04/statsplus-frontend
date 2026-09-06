@@ -1739,18 +1739,86 @@ const backtestPlayer = (target, statColumns, player) => {
   };
 };
 
+/*
+ * The backend's arithmetic over every listed game, so the Lab and the saved
+ * detail read the same figures: per market, the mean signed distance from
+ * each player's own season average and the share of games at or above it. A
+ * market with no game to average has no figure.
+ */
+const backtestSummary = (players, statColumns) => {
+  const games = players.flatMap((player) => player.games.map((game) => ({ player, game })));
+  return {
+    players: players.length,
+    games: games.length,
+    columns: Object.fromEntries(
+      statColumns.map((market) => {
+        const differences = games.map(
+          ({ player, game }) => game.stats[market] - player.season_averages[market],
+        );
+        if (differences.length === 0) {
+          return [market, { mean_difference: null, over_average_share: null }];
+        }
+        return [
+          market,
+          {
+            mean_difference:
+              Math.round(
+                (differences.reduce((total, value) => total + value, 0) / differences.length) * 100,
+              ) / 100,
+            over_average_share:
+              Math.round(
+                (differences.filter((value) => value >= 0).length / differences.length) * 1000,
+              ) / 1000,
+          },
+        ];
+      }),
+    ),
+  };
+};
+
 const backtestTarget = (target) => {
   const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
+  const players = leaguePlayers
+    .map((player) => backtestPlayer(target, statColumns, player))
+    .filter(Boolean)
+    // Season scoring descending, as every player list the product shows is.
+    .sort((first, second) => second.season_scoring - first.season_scoring);
   return {
     target,
     season: '2025-26',
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     stat_columns: statColumns,
-    players: leaguePlayers
-      .map((player) => backtestPlayer(target, statColumns, player))
-      .filter(Boolean)
-      // Season scoring descending, as every player list the product shows is.
-      .sort((first, second) => second.season_scoring - first.season_scoring),
+    summary: backtestSummary(players, statColumns),
+    players,
+  };
+};
+
+/*
+ * The preview is the backtest of a Draft Target, which is stored nowhere: the
+ * same composition over the same league, with the draft echoed back under its
+ * derived title and no id, plus whether it fires on the current Slate date.
+ * The body is validated as create would validate it; the account cap and the
+ * duplicate rule do not apply.
+ */
+const invalidTargetBody = (body) =>
+  !body ||
+  typeof body.opponent !== 'string' ||
+  !Array.isArray(body.qualifiers) ||
+  body.qualifiers.length === 0 ||
+  body.qualifiers.some(
+    (qualifier) =>
+      !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
+      typeof qualifier.threshold !== 'number' ||
+      qualifier.threshold < 0 ||
+      qualifier.threshold > 1,
+  );
+
+const previewTarget = (draft) => {
+  const target = { ...draft, title: backendTargetTitle(draft) };
+  const [entry] = resolveTargets(DEFAULT_SLATE_DATE, [target]).targets;
+  return {
+    ...backtestTarget(target),
+    today: entry.game ? { game: entry.game, fit_count: entry.players.length } : null,
   };
 };
 
@@ -1949,6 +2017,33 @@ export const installApiContract = async (page, overrides = {}) => {
         }
         await route.fulfill({
           json: { success: true, ...resolveTargets(date || DEFAULT_SLATE_DATE, targets) },
+        });
+        return;
+      }
+
+      // The backtest of a Draft Target, not a Target with the id "preview".
+      if (targetId === 'preview' && method === 'POST') {
+        if (invalidTargetBody(body)) {
+          await route.fulfill({
+            status: 400,
+            json: {
+              error: {
+                code: 'invalid_input',
+                message: 'Every Qualifier needs a comparator and a threshold between 0 and 1.',
+              },
+            },
+          });
+          return;
+        }
+        await route.fulfill({
+          json: {
+            success: true,
+            ...previewTarget({
+              opponent: body.opponent,
+              qualifiers: body.qualifiers.map(toStored),
+              note: body.note || '',
+            }),
+          },
         });
         return;
       }

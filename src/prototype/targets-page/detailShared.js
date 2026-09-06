@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { deriveTargetTitle } from '../../targets/targetCatalog';
 import { useLab } from './lab';
-import { OpponentSelect, QualifierFields, TodayIndicator, useDraft } from './shared';
+import { AddMenu, OpponentSelect, QualifierFields, TodayIndicator, useDraft } from './shared';
 import { ConditionsEditor } from './conditions';
 
 export const formatSet = (createdAt) =>
@@ -81,14 +81,12 @@ export function CriteriaForm({ editor, opponentLocked = true }) {
             onRemove={draft.qualifiers.length > 1 ? () => removeQualifier(index) : null}
           />
         ))}
-        <button type="button" className="pt-add" onClick={addQualifier}>
-          + and
-        </button>
       </div>
       <ConditionsEditor
         opponent={draft.opponent}
         conditions={draft.conditions}
         onChange={editor.patchConditions}
+        addSlot={(adders) => <AddMenu onQualifier={addQualifier} conditions={adders} />}
       />
       <label className="pt-g-note">
         <span className="target-label">Why</span>

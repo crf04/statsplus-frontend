@@ -95,14 +95,13 @@ const PRESETS = [
 /*
  * The editor, drawn the way a Qualifier is drawn: a row per Condition with a
  * quiet label and a loud pick on the first line, the bound on the second,
- * and a dashed "+ only when" to add one. A Condition not yet added is not a
+ * and the card's own "+ and" to add one. A Condition not yet added is not a
  * row, so the card reads as exactly what it filters by.
  */
-export function ConditionsEditor({ opponent, conditions, onChange }) {
+export function ConditionsEditor({ opponent, conditions, onChange, addSlot = null }) {
   const team = rosterFor(opponent);
   const defender = conditions.defender;
   const [windowOpen, setWindowOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
   const hasWindow = windowOpen || Boolean(conditions.from || conditions.to);
   const setDefender = (patch) =>
     onChange({ defender: { ...(defender || { comparator: 'under', minutes: 20 }), ...patch } });
@@ -227,43 +226,16 @@ export function ConditionsEditor({ opponent, conditions, onChange }) {
           </div>
         </div>
       )}
-      {(!defender || !hasWindow) &&
-        (adding ? (
-          <span className="pt-cond-add-menu" role="group" aria-label="Add a Condition">
-            {!defender && (
-              <button
-                type="button"
-                className="pt-add"
-                onClick={() => {
-                  const [id, name] = team?.players[0] || [];
-                  if (id) setDefender({ playerId: id, name });
-                  setAdding(false);
-                }}
-              >
-                a defender&apos;s minutes
-              </button>
-            )}
-            {!hasWindow && (
-              <button
-                type="button"
-                className="pt-add"
-                onClick={() => {
-                  setWindowOpen(true);
-                  setAdding(false);
-                }}
-              >
-                a date window
-              </button>
-            )}
-            <button type="button" className="pt-cond-clear" onClick={() => setAdding(false)}>
-              cancel
-            </button>
-          </span>
-        ) : (
-          <button type="button" className="pt-add" onClick={() => setAdding(true)}>
-            + only when
-          </button>
-        ))}
+      {addSlot &&
+        addSlot({
+          canDefender: !defender,
+          canWindow: !hasWindow,
+          addDefender: () => {
+            const [id, name] = team?.players[0] || [];
+            if (id) setDefender({ playerId: id, name });
+          },
+          addWindow: () => setWindowOpen(true),
+        })}
     </div>
   );
 }

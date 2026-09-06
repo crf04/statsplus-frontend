@@ -12,6 +12,7 @@ import { LabEvidence, savedLab, useLab } from './lab';
 import { ConditionsEditor } from './conditions';
 import { isLive } from './shared';
 import {
+  AddMenu,
   OpponentSelect,
   ProtoLink,
   QualifierChips,
@@ -37,14 +38,12 @@ function Criteria({ editor }) {
             onRemove={draft.qualifiers.length > 1 ? () => removeQualifier(index) : null}
           />
         ))}
-        <button type="button" className="pt-add" onClick={addQualifier}>
-          + and
-        </button>
       </div>
       <ConditionsEditor
         opponent={draft.opponent}
         conditions={draft.conditions}
         onChange={editor.patchConditions}
+        addSlot={(adders) => <AddMenu onQualifier={addQualifier} conditions={adders} />}
       />
       <label className="pt-g-note">
         <span className="target-label">Why</span>

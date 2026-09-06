@@ -4200,3 +4200,14 @@ a.pt-today.is-live:hover {
 .pt-cond .pt-add {
   justify-self: start;
 }
+
+.pt-add-menu {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-cond:empty {
+  display: none;
+}

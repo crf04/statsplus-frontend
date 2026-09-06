@@ -569,6 +569,46 @@ export function QualifierFields(props) {
   return <QualifierTrack {...props} />;
 }
 
+/*
+ * One "+ and" for everything a Target can be narrowed by: another Qualifier,
+ * a defender's minutes, a date window. Opens into the choices, and the ones
+ * already present are not offered again.
+ */
+export function AddMenu({ onQualifier, conditions }) {
+  const [open, setOpen] = useState(false);
+  const pick = (action) => {
+    action();
+    setOpen(false);
+  };
+  if (!open) {
+    return (
+      <button type="button" className="pt-add" onClick={() => setOpen(true)}>
+        + and
+      </button>
+    );
+  }
+  return (
+    <span className="pt-add-menu" role="group" aria-label="Add">
+      <button type="button" className="pt-add" onClick={() => pick(onQualifier)}>
+        a Qualifier
+      </button>
+      {conditions?.canDefender && (
+        <button type="button" className="pt-add" onClick={() => pick(conditions.addDefender)}>
+          a defender&apos;s minutes
+        </button>
+      )}
+      {conditions?.canWindow && (
+        <button type="button" className="pt-add" onClick={() => pick(conditions.addWindow)}>
+          a date window
+        </button>
+      )}
+      <button type="button" className="pt-cond-clear" onClick={() => setOpen(false)}>
+        cancel
+      </button>
+    </span>
+  );
+}
+
 /* --- small read-only pieces --- */
 
 export function QualifierChips({ target }) {

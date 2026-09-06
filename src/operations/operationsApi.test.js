@@ -73,6 +73,24 @@ const diagnostics = {
   ],
 };
 
+const projectionDiagnostics = {
+  providers: [
+    {
+      provider: 'dabble',
+      last_poll_at: '2026-04-13T00:00:00Z',
+      last_changed_snapshot_at: '2026-04-13T00:00:00Z',
+      freshness_seconds: 30,
+      failure: { last_at: null, reason: null, consecutive: 0 },
+      backoff: { active: false, until: null },
+      active_count: 18,
+      unresolved_count: 0,
+    },
+  ],
+  active_count: 18,
+  unresolved_count: 0,
+  lease: { active: false, fence: 4, expires_at: null },
+};
+
 test('decodes the bounded diagnostics contract into safe UI fields', () => {
   expect(decodeOperationsDiagnostics(diagnostics)).toMatchObject({
     cycles: [{ cycleId: 'cycle-1', status: 'attention' }],
@@ -81,6 +99,57 @@ test('decodes the bounded diagnostics contract into safe UI fields', () => {
     usage: [{ limits: { pollCount: 100 }, concurrencyRetryAfterSeconds: 30 }],
     jobs: [{ action: 'composition.retry', status: 'queued' }],
   });
+});
+
+test('accepts and discards the optional documented projection diagnostics', () => {
+  const payload = {
+    ...diagnostics,
+    projections: {
+      ...projectionDiagnostics,
+      providers: [
+        {
+          ...projectionDiagnostics.providers[0],
+          future_extension: {
+            secret: 'never-returned',
+            raw_payload: { player_id: 7 },
+          },
+        },
+      ],
+      future_extension: { credential: 'never-returned' },
+    },
+  };
+  const decoded = decodeOperationsDiagnostics(payload);
+
+  expect(decoded).toMatchObject({
+    cycles: [{ cycleId: 'cycle-1' }],
+    jobs: [{ action: 'composition.retry' }],
+  });
+  expect(decoded).not.toHaveProperty('projections');
+  expect(JSON.stringify(decoded)).not.toContain('never-returned');
+});
+
+test.each([
+  'collector.create',
+  'publication.rebuild',
+  'publication.family_rollback',
+  'publication.repair_group.promote',
+])('accepts %s audit jobs in diagnostics', (action) => {
+  const payload = {
+    ...diagnostics,
+    jobs: [
+      {
+        ...diagnostics.jobs[0],
+        action,
+        resource: 'publication-2',
+        status: 'succeeded',
+        completed_at: '2026-04-13T00:06:00Z',
+      },
+    ],
+  };
+
+  expect(decodeOperationsDiagnostics(payload).jobs).toMatchObject([
+    { action, resource: 'publication-2', status: 'succeeded' },
+  ]);
 });
 
 test.each([

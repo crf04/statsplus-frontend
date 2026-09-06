@@ -1,0 +1,2974 @@
+{
+  "players": [
+    {
+      "canonical_id": 1628384,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501168",
+          "matchup": "NYK vs. BOS",
+          "minutes": 36.166667,
+          "stats": { "3PM": 3.0, "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500018",
+          "matchup": "NYK vs. BOS",
+          "minutes": 29.116667,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "OG Anunoby",
+      "season_averages": { "3PM": 2.343284, "PTS": 16.686567 },
+      "season_scoring": 16.686567,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.246269,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1628969,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501168",
+          "matchup": "NYK vs. BOS",
+          "minutes": 30.866667,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-02-08",
+          "game_id": "0022500757",
+          "matchup": "NYK @ BOS",
+          "minutes": 30.4,
+          "stats": { "3PM": 1.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-12-02",
+          "game_id": "0022500320",
+          "matchup": "NYK @ BOS",
+          "minutes": 33.583333,
+          "stats": { "3PM": 8.0, "PTS": 35.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500018",
+          "matchup": "NYK vs. BOS",
+          "minutes": 36.05,
+          "stats": { "3PM": 2.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Mikal Bridges",
+      "season_averages": { "3PM": 1.902439, "PTS": 14.402439 },
+      "season_scoring": 14.402439,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.206646,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1628381,
+      "games": [
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500493",
+          "matchup": "LAC vs. BOS",
+          "minutes": 28.883333,
+          "stats": { "3PM": 3.0, "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500233",
+          "matchup": "LAC @ BOS",
+          "minutes": 30.283333,
+          "stats": { "3PM": 1.0, "PTS": 17.0 }
+        }
+      ],
+      "name": "John Collins",
+      "season_averages": { "3PM": 1.289855, "PTS": 13.550725 },
+      "season_scoring": 13.550725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.201821,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1641739,
+      "games": [
+        {
+          "game_date": "2026-01-26",
+          "game_id": "0022500660",
+          "matchup": "POR @ BOS",
+          "minutes": 36.216667,
+          "stats": { "3PM": 3.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-28",
+          "game_id": "0022500444",
+          "matchup": "POR vs. BOS",
+          "minutes": 35.066667,
+          "stats": { "3PM": 4.0, "PTS": 20.0 }
+        }
+      ],
+      "name": "Toumani Camara",
+      "season_averages": { "3PM": 2.670732, "PTS": 13.414634 },
+      "season_scoring": 13.414634,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.207632,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631108,
+      "games": [
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500908",
+          "matchup": "DAL @ BOS",
+          "minutes": 28.75,
+          "stats": { "3PM": 4.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500721",
+          "matchup": "DAL vs. BOS",
+          "minutes": 30.416667,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Max Christie",
+      "season_averages": { "3PM": 2.337662, "PTS": 12.272727 },
+      "season_scoring": 12.272727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.227586,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1629130,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500017",
+          "matchup": "DET vs. BOS",
+          "minutes": 31.516667,
+          "stats": { "3PM": 5.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501222",
+          "matchup": "DET @ BOS",
+          "minutes": 25.85,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500060",
+          "matchup": "DET @ BOS",
+          "minutes": 29.516667,
+          "stats": { "3PM": 3.0, "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500106",
+          "matchup": "DET vs. BOS",
+          "minutes": 29.85,
+          "stats": { "3PM": 2.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Duncan Robinson",
+      "season_averages": { "3PM": 2.857143, "PTS": 12.194805 },
+      "season_scoring": 12.194805,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.213467,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1630541,
+      "games": [
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500799",
+          "matchup": "GSW vs. BOS",
+          "minutes": 22.716667,
+          "stats": { "3PM": 3.0, "PTS": 11.0 }
+        }
+      ],
+      "name": "Moses Moody",
+      "season_averages": { "3PM": 2.516667, "PTS": 12.133333 },
+      "season_scoring": 12.133333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.247756,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1630577,
+      "games": [
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500942",
+          "matchup": "SAS vs. BOS",
+          "minutes": 26.8,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500545",
+          "matchup": "SAS @ BOS",
+          "minutes": 34.883333,
+          "stats": { "3PM": 2.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Julian Champagnie",
+      "season_averages": { "3PM": 2.378049, "PTS": 11.109756 },
+      "season_scoring": 11.109756,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.271408,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1631106,
+      "games": [
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500728",
+          "matchup": "HOU vs. BOS",
+          "minutes": 27.633333,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-01",
+          "game_id": "0022500146",
+          "matchup": "HOU @ BOS",
+          "minutes": 20.05,
+          "stats": { "3PM": 4.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Tari Eason",
+      "season_averages": { "3PM": 1.55, "PTS": 10.45 },
+      "season_scoring": 10.45,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.222798,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1631260,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 30.866667,
+          "stats": { "3PM": 5.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2026-03-02",
+          "game_id": "0022500880",
+          "matchup": "MIL vs. BOS",
+          "minutes": 18.416667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500702",
+          "matchup": "MIL @ BOS",
+          "minutes": 29.25,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "AJ Green",
+      "season_averages": { "3PM": 2.974359, "PTS": 10.371795 },
+      "season_scoring": 10.371795,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.245955,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1630533,
+      "games": [
+        {
+          "game_date": "2026-02-27",
+          "game_id": "0022500859",
+          "matchup": "BKN @ BOS",
+          "minutes": 17.066667,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-01-23",
+          "game_id": "0022500637",
+          "matchup": "BKN vs. BOS",
+          "minutes": 32.683333,
+          "stats": { "3PM": 1.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-11-21",
+          "game_id": "0022500049",
+          "matchup": "BKN @ BOS",
+          "minutes": 15.65,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500250",
+          "matchup": "BKN vs. BOS",
+          "minutes": 27.333333,
+          "stats": { "3PM": 2.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Ziaire Williams",
+      "season_averages": { "3PM": 1.535714, "PTS": 10.232143 },
+      "season_scoring": 10.232143,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.21709,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 203084,
+      "games": [
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500545",
+          "matchup": "SAS @ BOS",
+          "minutes": 26.316667,
+          "stats": { "3PM": 1.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Harrison Barnes",
+      "season_averages": { "3PM": 1.805195, "PTS": 9.961039 },
+      "season_scoring": 9.961039,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.335652,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1641783,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501186",
+          "matchup": "ORL @ BOS",
+          "minutes": 23.633333,
+          "stats": { "3PM": 0.0, "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500277",
+          "matchup": "ORL @ BOS",
+          "minutes": 23.25,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-09",
+          "game_id": "0022500193",
+          "matchup": "ORL vs. BOS",
+          "minutes": 22.966667,
+          "stats": { "3PM": 2.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500028",
+          "matchup": "ORL vs. BOS",
+          "minutes": 17.766667,
+          "stats": { "3PM": 3.0, "PTS": 11.0 }
+        }
+      ],
+      "name": "Tristan da Silva",
+      "season_averages": { "3PM": 1.558442, "PTS": 9.896104 },
+      "season_scoring": 9.896104,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.2,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1630695,
+      "games": [
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500621",
+          "matchup": "IND @ BOS",
+          "minutes": 17.0,
+          "stats": { "3PM": 0.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-01-12",
+          "game_id": "0022500559",
+          "matchup": "IND vs. BOS",
+          "minutes": 12.833333,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500426",
+          "matchup": "IND vs. BOS",
+          "minutes": 17.816667,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        }
+      ],
+      "name": "Micah Potter",
+      "season_averages": { "3PM": 1.510638, "PTS": 9.744681 },
+      "season_scoring": 9.744681,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.266212,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1629004,
+      "games": [
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500158",
+          "matchup": "UTA @ BOS",
+          "minutes": 29.333333,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        }
+      ],
+      "name": "Svi Mykhailiuk",
+      "season_averages": { "3PM": 1.96, "PTS": 9.38 },
+      "season_scoring": 9.38,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.281768,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1629013,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501168",
+          "matchup": "NYK vs. BOS",
+          "minutes": 18.95,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-02-08",
+          "game_id": "0022500757",
+          "matchup": "NYK @ BOS",
+          "minutes": 27.8,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500018",
+          "matchup": "NYK vs. BOS",
+          "minutes": 13.883333,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Landry Shamet",
+      "season_averages": { "3PM": 2.019608, "PTS": 9.313725 },
+      "season_scoring": 9.313725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.324176,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1630171,
+      "games": [
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500647",
+          "matchup": "CHI vs. BOS",
+          "minutes": 27.05,
+          "stats": { "3PM": 2.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500503",
+          "matchup": "CHI @ BOS",
+          "minutes": 24.866667,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Isaac Okoro",
+      "season_averages": { "3PM": 1.15873, "PTS": 9.269841 },
+      "season_scoring": 9.269841,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.27451,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1627752,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 24.75,
+          "stats": { "3PM": 4.0, "PTS": 18.0 }
+        }
+      ],
+      "name": "Taurean Prince",
+      "season_averages": { "3PM": 2.346154, "PTS": 9.192308 },
+      "season_scoring": 9.192308,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.366492,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1631323,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501106",
+          "matchup": "MIA vs. BOS",
+          "minutes": 4.95,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-02-06",
+          "game_id": "0022500741",
+          "matchup": "MIA @ BOS",
+          "minutes": 19.466667,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "MIA vs. BOS",
+          "minutes": 16.8,
+          "stats": { "3PM": 0.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "MIA @ BOS",
+          "minutes": 30.466667,
+          "stats": { "3PM": 4.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Simone Fontecchio",
+      "season_averages": { "3PM": 1.757143, "PTS": 8.528571 },
+      "season_scoring": 8.528571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.204255,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 203110,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022500999",
+          "matchup": "GSW @ BOS",
+          "minutes": 31.966667,
+          "stats": { "3PM": 3.0, "PTS": 13.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500799",
+          "matchup": "GSW vs. BOS",
+          "minutes": 18.55,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Draymond Green",
+      "season_averages": { "3PM": 1.485294, "PTS": 8.382353 },
+      "season_scoring": 8.382353,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.219959,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1631222,
+      "games": [
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500823",
+          "matchup": "LAL vs. BOS",
+          "minutes": 24.05,
+          "stats": { "3PM": 0.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500338",
+          "matchup": "LAL @ BOS",
+          "minutes": 20.816667,
+          "stats": { "3PM": 0.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Jake LaRavia",
+      "season_averages": { "3PM": 0.95122, "PTS": 8.219512 },
+      "season_scoring": 8.219512,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.241379,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1641842,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500017",
+          "matchup": "DET vs. BOS",
+          "minutes": 12.316667,
+          "stats": { "3PM": 0.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501222",
+          "matchup": "DET @ BOS",
+          "minutes": 14.466667,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500060",
+          "matchup": "DET @ BOS",
+          "minutes": 14.333333,
+          "stats": { "3PM": 0.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500106",
+          "matchup": "DET vs. BOS",
+          "minutes": 19.216667,
+          "stats": { "3PM": 0.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Ronald Holland II",
+      "season_averages": { "3PM": 0.641026, "PTS": 8.205128 },
+      "season_scoring": 8.205128,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.21875,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1629018,
+      "games": [
+        {
+          "game_date": "2026-03-02",
+          "game_id": "0022500880",
+          "matchup": "MIL vs. BOS",
+          "minutes": 1.866667,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500702",
+          "matchup": "MIL @ BOS",
+          "minutes": 25.166667,
+          "stats": { "3PM": 2.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501206",
+          "matchup": "MIL vs. BOS",
+          "minutes": 27.783333,
+          "stats": { "3PM": 3.0, "PTS": 13.0 }
+        }
+      ],
+      "name": "Gary Trent Jr.",
+      "season_averages": { "3PM": 1.892308, "PTS": 8.138462 },
+      "season_scoring": 8.138462,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.219873,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1631466,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022500999",
+          "matchup": "GSW @ BOS",
+          "minutes": 4.583333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Nate Williams",
+      "season_averages": { "3PM": 0.928571, "PTS": 8.0 },
+      "season_scoring": 8.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.204545,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1642266,
+      "games": [
+        {
+          "game_date": "2026-04-05",
+          "game_id": "0022501132",
+          "matchup": "TOR @ BOS",
+          "minutes": 32.05,
+          "stats": { "3PM": 4.0, "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500532",
+          "matchup": "TOR @ BOS",
+          "minutes": 31.433333,
+          "stats": { "3PM": 5.0, "PTS": 19.0 }
+        },
+        {
+          "game_date": "2025-12-20",
+          "game_id": "0022500388",
+          "matchup": "TOR vs. BOS",
+          "minutes": 15.183333,
+          "stats": { "3PM": 2.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-12-07",
+          "game_id": "0022500358",
+          "matchup": "TOR vs. BOS",
+          "minutes": 11.883333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Ja'Kobe Walter",
+      "season_averages": { "3PM": 1.527778, "PTS": 7.513889 },
+      "season_scoring": 7.513889,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.29703,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1641707,
+      "games": [
+        {
+          "game_date": "2026-03-20",
+          "game_id": "0022501019",
+          "matchup": "MEM vs. BOS",
+          "minutes": 28.55,
+          "stats": { "3PM": 0.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-30",
+          "game_id": "0022500459",
+          "matchup": "UTA vs. BOS",
+          "minutes": 17.416667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500158",
+          "matchup": "UTA @ BOS",
+          "minutes": 13.833333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Taylor Hendricks",
+      "season_averages": { "3PM": 1.067797, "PTS": 7.423729 },
+      "season_scoring": 7.423729,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.233803,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1642364,
+      "games": [
+        {
+          "game_date": "2026-03-14",
+          "game_id": "0022500971",
+          "matchup": "WAS @ BOS",
+          "minutes": 23.533333,
+          "stats": { "3PM": 2.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-12-04",
+          "game_id": "0022500334",
+          "matchup": "WAS vs. BOS",
+          "minutes": 18.45,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Jamir Watkins",
+      "season_averages": { "3PM": 0.94, "PTS": 7.36 },
+      "season_scoring": 7.36,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.236486,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1641767,
+      "games": [
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500621",
+          "matchup": "IND @ BOS",
+          "minutes": 20.716667,
+          "stats": { "3PM": 2.0, "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-01-12",
+          "game_id": "0022500559",
+          "matchup": "IND vs. BOS",
+          "minutes": 23.2,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Ben Sheppard",
+      "season_averages": { "3PM": 1.292308, "PTS": 7.061538 },
+      "season_scoring": 7.061538,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.217054,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1629684,
+      "games": [
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501149",
+          "matchup": "CHA @ BOS",
+          "minutes": 25.666667,
+          "stats": { "3PM": 3.0, "PTS": 9.0 }
+        }
+      ],
+      "name": "Grant Williams",
+      "season_averages": { "3PM": 1.444444, "PTS": 7.0 },
+      "season_scoring": 7.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.26776,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1630679,
+      "games": [
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500426",
+          "matchup": "IND vs. BOS",
+          "minutes": 26.316667,
+          "stats": { "3PM": 3.0, "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500403",
+          "matchup": "IND @ BOS",
+          "minutes": 33.583333,
+          "stats": { "3PM": 3.0, "PTS": 13.0 }
+        }
+      ],
+      "name": "Ethan Thompson",
+      "season_averages": { "3PM": 1.1875, "PTS": 6.96875 },
+      "season_scoring": 6.96875,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.244898,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1629750,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500017",
+          "matchup": "DET vs. BOS",
+          "minutes": 7.266667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501222",
+          "matchup": "DET @ BOS",
+          "minutes": 14.166667,
+          "stats": { "3PM": 2.0, "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500060",
+          "matchup": "DET @ BOS",
+          "minutes": 9.716667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500106",
+          "matchup": "DET vs. BOS",
+          "minutes": 16.833333,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Javonte Green",
+      "season_averages": { "3PM": 1.146341, "PTS": 6.939024 },
+      "season_scoring": 6.939024,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.241546,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1631165,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500921",
+          "matchup": "CLE vs. BOS",
+          "minutes": 24.066667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-30",
+          "game_id": "0022500689",
+          "matchup": "SAC @ BOS",
+          "minutes": 19.816667,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-01-01",
+          "game_id": "0022500474",
+          "matchup": "SAC vs. BOS",
+          "minutes": 26.966667,
+          "stats": { "3PM": 3.0, "PTS": 16.0 }
+        }
+      ],
+      "name": "Keon Ellis",
+      "season_averages": { "3PM": 1.263889, "PTS": 6.666667 },
+      "season_scoring": 6.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.242188,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 203083,
+      "games": [
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500874",
+          "matchup": "PHI @ BOS",
+          "minutes": 32.05,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-11",
+          "game_id": "0022500209",
+          "matchup": "PHI vs. BOS",
+          "minutes": 33.333333,
+          "stats": { "3PM": 0.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500021",
+          "matchup": "PHI vs. BOS",
+          "minutes": 11.7,
+          "stats": { "3PM": 1.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500083",
+          "matchup": "PHI @ BOS",
+          "minutes": 2.716667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Andre Drummond",
+      "season_averages": { "3PM": 0.507937, "PTS": 6.396825 },
+      "season_scoring": 6.396825,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.228487,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1628975,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501186",
+          "matchup": "ORL @ BOS",
+          "minutes": 14.6,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500503",
+          "matchup": "CHI @ BOS",
+          "minutes": 11.766667,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Jevon Carter",
+      "season_averages": { "3PM": 1.471698, "PTS": 6.396226 },
+      "season_scoring": 6.396226,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.221498,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1642954,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022500999",
+          "matchup": "GSW @ BOS",
+          "minutes": 25.15,
+          "stats": { "3PM": 0.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500799",
+          "matchup": "GSW vs. BOS",
+          "minutes": 24.4,
+          "stats": { "3PM": 3.0, "PTS": 17.0 }
+        }
+      ],
+      "name": "Will Richard",
+      "season_averages": { "3PM": 1.028986, "PTS": 6.391304 },
+      "season_scoring": 6.391304,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.283237,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1627936,
+      "games": [
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501054",
+          "matchup": "OKC @ BOS",
+          "minutes": 21.233333,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500959",
+          "matchup": "OKC vs. BOS",
+          "minutes": 22.833333,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Alex Caruso",
+      "season_averages": { "3PM": 0.946429, "PTS": 6.214286 },
+      "season_scoring": 6.214286,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.273333,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1642857,
+      "games": [
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "MIA vs. BOS",
+          "minutes": 27.35,
+          "stats": { "3PM": 3.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "MIA @ BOS",
+          "minutes": 35.6,
+          "stats": { "3PM": 5.0, "PTS": 17.0 }
+        }
+      ],
+      "name": "Kasparas Jaku\u010dionis",
+      "season_averages": { "3PM": 1.245283, "PTS": 6.188679 },
+      "season_scoring": 6.188679,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.210084,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1641772,
+      "games": [
+        {
+          "game_date": "2025-11-30",
+          "game_id": "0022500302",
+          "matchup": "CLE vs. BOS",
+          "minutes": 22.366667,
+          "stats": { "3PM": 0.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Nae'Qwan Tomlin",
+      "season_averages": { "3PM": 0.421875, "PTS": 5.84375 },
+      "season_scoring": 5.84375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.232484,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1642346,
+      "games": [
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500839",
+          "matchup": "PHX vs. BOS",
+          "minutes": 25.033333,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Ryan Dunn",
+      "season_averages": { "3PM": 0.8, "PTS": 5.814286 },
+      "season_scoring": 5.814286,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.328729,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1631200,
+      "games": [
+        {
+          "game_date": "2025-12-28",
+          "game_id": "0022500444",
+          "matchup": "POR vs. BOS",
+          "minutes": 30.433333,
+          "stats": { "3PM": 0.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Kris Murray",
+      "season_averages": { "3PM": 0.596491, "PTS": 5.807018 },
+      "season_scoring": 5.807018,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.257246,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1629731,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500921",
+          "matchup": "CLE vs. BOS",
+          "minutes": 20.566667,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-30",
+          "game_id": "0022500302",
+          "matchup": "CLE vs. BOS",
+          "minutes": 20.316667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500128",
+          "matchup": "CLE @ BOS",
+          "minutes": 17.6,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Dean Wade",
+      "season_averages": { "3PM": 1.20339, "PTS": 5.79661 },
+      "season_scoring": 5.79661,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.284173,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1631255,
+      "games": [
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500117",
+          "matchup": "NOP vs. BOS",
+          "minutes": 3.266667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Karlo Matkovi\u0107",
+      "season_averages": { "3PM": 0.612903, "PTS": 5.677419 },
+      "season_scoring": 5.677419,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.204255,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1627824,
+      "games": [
+        {
+          "game_date": "2026-02-11",
+          "game_id": "0022500778",
+          "matchup": "CHI @ BOS",
+          "minutes": 25.283333,
+          "stats": { "3PM": 2.0, "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-12-02",
+          "game_id": "0022500320",
+          "matchup": "NYK @ BOS",
+          "minutes": 7.95,
+          "stats": { "3PM": 0.0, "PTS": 1.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500018",
+          "matchup": "NYK vs. BOS",
+          "minutes": 13.133333,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Guerschon Yabusele",
+      "season_averages": { "3PM": 1.029851, "PTS": 5.567164 },
+      "season_scoring": 5.567164,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.217949,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1642461,
+      "games": [
+        {
+          "game_date": "2026-02-25",
+          "game_id": "0022500847",
+          "matchup": "DEN vs. BOS",
+          "minutes": 25.816667,
+          "stats": { "3PM": 1.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500520",
+          "matchup": "DEN @ BOS",
+          "minutes": 9.1,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Spencer Jones",
+      "season_averages": { "3PM": 0.890625, "PTS": 5.5 },
+      "season_scoring": 5.5,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.351145,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1628988,
+      "games": [
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500728",
+          "matchup": "HOU vs. BOS",
+          "minutes": 10.883333,
+          "stats": { "3PM": 1.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-01",
+          "game_id": "0022500146",
+          "matchup": "HOU @ BOS",
+          "minutes": 7.516667,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Aaron Holiday",
+      "season_averages": { "3PM": 1.175439, "PTS": 5.473684 },
+      "season_scoring": 5.473684,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.210317,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1631250,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 33.35,
+          "stats": { "3PM": 4.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-03-02",
+          "game_id": "0022500880",
+          "matchup": "MIL vs. BOS",
+          "minutes": 15.1,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500702",
+          "matchup": "MIL @ BOS",
+          "minutes": 18.133333,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501206",
+          "matchup": "MIL vs. BOS",
+          "minutes": 1.883333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Pete Nance",
+      "season_averages": { "3PM": 1.06383, "PTS": 5.404255 },
+      "season_scoring": 5.404255,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.216495,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1642883,
+      "games": [
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501149",
+          "matchup": "CHA @ BOS",
+          "minutes": 18.9,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501085",
+          "matchup": "CHA vs. BOS",
+          "minutes": 22.383333,
+          "stats": { "3PM": 3.0, "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500894",
+          "matchup": "CHA @ BOS",
+          "minutes": 17.0,
+          "stats": { "3PM": 1.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Sion James",
+      "season_averages": { "3PM": 1.012195, "PTS": 5.378049 },
+      "season_scoring": 5.378049,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.237197,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1631288,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501186",
+          "matchup": "ORL @ BOS",
+          "minutes": 15.65,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500277",
+          "matchup": "ORL @ BOS",
+          "minutes": 16.483333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Jamal Cain",
+      "season_averages": { "3PM": 0.7, "PTS": 5.375 },
+      "season_scoring": 5.375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.263158,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1629726,
+      "games": [
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500403",
+          "matchup": "IND @ BOS",
+          "minutes": 1.0,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Garrison Mathews",
+      "season_averages": { "3PM": 1.133333, "PTS": 5.2 },
+      "season_scoring": 5.2,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.326923,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642854,
+      "games": [
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "ATL vs. BOS",
+          "minutes": 9.05,
+          "stats": { "3PM": 1.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Asa Newell",
+      "season_averages": { "3PM": 0.659091, "PTS": 5.159091 },
+      "season_scoring": 5.159091,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.284024,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642277,
+      "games": [
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500621",
+          "matchup": "IND @ BOS",
+          "minutes": 23.183333,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-01-12",
+          "game_id": "0022500559",
+          "matchup": "IND vs. BOS",
+          "minutes": 15.766667,
+          "stats": { "3PM": 0.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500426",
+          "matchup": "IND vs. BOS",
+          "minutes": 18.366667,
+          "stats": { "3PM": 2.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500403",
+          "matchup": "IND @ BOS",
+          "minutes": 23.066667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Johnny Furphy",
+      "season_averages": { "3PM": 0.657143, "PTS": 5.142857 },
+      "season_scoring": 5.142857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.201342,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1631321,
+      "games": [
+        {
+          "game_date": "2026-01-26",
+          "game_id": "0022500660",
+          "matchup": "POR @ BOS",
+          "minutes": 24.766667,
+          "stats": { "3PM": 0.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-12-28",
+          "game_id": "0022500444",
+          "matchup": "POR vs. BOS",
+          "minutes": 22.383333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Sidy Cissoko",
+      "season_averages": { "3PM": 0.786667, "PTS": 5.106667 },
+      "season_scoring": 5.106667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.275449,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1630534,
+      "games": [
+        {
+          "game_date": "2026-02-27",
+          "game_id": "0022500859",
+          "matchup": "BKN @ BOS",
+          "minutes": 7.783333,
+          "stats": { "3PM": 2.0, "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-12-20",
+          "game_id": "0022500388",
+          "matchup": "TOR vs. BOS",
+          "minutes": 27.133333,
+          "stats": { "3PM": 0.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-07",
+          "game_id": "0022500358",
+          "matchup": "TOR vs. BOS",
+          "minutes": 22.233333,
+          "stats": { "3PM": 1.0, "PTS": 11.0 }
+        }
+      ],
+      "name": "Ochai Agbaji",
+      "season_averages": { "3PM": 0.548387, "PTS": 5.064516 },
+      "season_scoring": 5.064516,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.203571,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 201144,
+      "games": [
+        {
+          "game_date": "2025-11-29",
+          "game_id": "0022500293",
+          "matchup": "MIN vs. BOS",
+          "minutes": 17.466667,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Mike Conley",
+      "season_averages": { "3PM": 1.037037, "PTS": 4.537037 },
+      "season_scoring": 4.537037,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.223256,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1629006,
+      "games": [
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500728",
+          "matchup": "HOU vs. BOS",
+          "minutes": 16.633333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-01",
+          "game_id": "0022500146",
+          "matchup": "HOU @ BOS",
+          "minutes": 21.016667,
+          "stats": { "3PM": 3.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Josh Okogie",
+      "season_averages": { "3PM": 0.794872, "PTS": 4.525641 },
+      "season_scoring": 4.525641,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.367347,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1643007,
+      "games": [
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500426",
+          "matchup": "IND vs. BOS",
+          "minutes": 6.7,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500403",
+          "matchup": "IND @ BOS",
+          "minutes": 0.683333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Taelon Peter",
+      "season_averages": { "3PM": 1.078947, "PTS": 4.5 },
+      "season_scoring": 4.5,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.208861,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1631243,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501092",
+          "matchup": "ATL vs. BOS",
+          "minutes": 11.7,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501067",
+          "matchup": "ATL @ BOS",
+          "minutes": 10.266667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-28",
+          "game_id": "0022500673",
+          "matchup": "ATL @ BOS",
+          "minutes": 18.55,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "ATL vs. BOS",
+          "minutes": 18.966667,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Mouhamed Gueye",
+      "season_averages": { "3PM": 0.519481, "PTS": 4.441558 },
+      "season_scoring": 4.441558,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.303448,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1629020,
+      "games": [
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500823",
+          "matchup": "LAL vs. BOS",
+          "minutes": 11.016667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Jarred Vanderbilt",
+      "season_averages": { "3PM": 0.446154, "PTS": 4.430769 },
+      "season_scoring": 4.430769,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.3875,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1629723,
+      "games": [
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500216",
+          "matchup": "MEM @ BOS",
+          "minutes": 5.9,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "John Konchar",
+      "season_averages": { "3PM": 0.5, "PTS": 4.428571 },
+      "season_scoring": 4.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.241206,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1629216,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501092",
+          "matchup": "ATL vs. BOS",
+          "minutes": 14.316667,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501067",
+          "matchup": "ATL @ BOS",
+          "minutes": 12.433333,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500338",
+          "matchup": "LAL @ BOS",
+          "minutes": 29.633333,
+          "stats": { "3PM": 4.0, "PTS": 18.0 }
+        }
+      ],
+      "name": "Gabe Vincent",
+      "season_averages": { "3PM": 1.113208, "PTS": 4.358491 },
+      "season_scoring": 4.358491,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.217593,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642853,
+      "games": [
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500986",
+          "matchup": "PHX @ BOS",
+          "minutes": 14.75,
+          "stats": { "3PM": 0.0, "PTS": 1.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500839",
+          "matchup": "PHX vs. BOS",
+          "minutes": 20.616667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Rasheer Fleming",
+      "season_averages": { "3PM": 0.818182, "PTS": 4.327273 },
+      "season_scoring": 4.327273,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.362791,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1631133,
+      "games": [
+        {
+          "game_date": "2025-11-11",
+          "game_id": "0022500209",
+          "matchup": "PHI vs. BOS",
+          "minutes": 10.35,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500021",
+          "matchup": "PHI vs. BOS",
+          "minutes": 11.45,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500083",
+          "matchup": "PHI @ BOS",
+          "minutes": 18.95,
+          "stats": { "3PM": 0.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Jabari Walker",
+      "season_averages": { "3PM": 0.5, "PTS": 4.3125 },
+      "season_scoring": 4.3125,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.248826,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1630182,
+      "games": [
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501149",
+          "matchup": "CHA @ BOS",
+          "minutes": 7.45,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501085",
+          "matchup": "CHA vs. BOS",
+          "minutes": 17.95,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500894",
+          "matchup": "CHA @ BOS",
+          "minutes": 20.583333,
+          "stats": { "3PM": 1.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Josh Green",
+      "season_averages": { "3PM": 1.0, "PTS": 4.293103 },
+      "season_scoring": 4.293103,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.464088,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1642862,
+      "games": [
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501085",
+          "matchup": "CHA vs. BOS",
+          "minutes": 10.9,
+          "stats": { "3PM": 1.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Liam McNeeley",
+      "season_averages": { "3PM": 0.774194, "PTS": 4.258065 },
+      "season_scoring": 4.258065,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.231579,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1630639,
+      "games": [
+        {
+          "game_date": "2026-04-05",
+          "game_id": "0022501132",
+          "matchup": "TOR @ BOS",
+          "minutes": 5.6,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500532",
+          "matchup": "TOR @ BOS",
+          "minutes": 5.833333,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-07",
+          "game_id": "0022500358",
+          "matchup": "TOR vs. BOS",
+          "minutes": 13.45,
+          "stats": { "3PM": 2.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "A.J. Lawson",
+      "season_averages": { "3PM": 0.791667, "PTS": 4.208333 },
+      "season_scoring": 4.208333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.410256,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642868,
+      "games": [
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500942",
+          "matchup": "SAS vs. BOS",
+          "minutes": 13.366667,
+          "stats": { "3PM": 2.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Carter Bryant",
+      "season_averages": { "3PM": 0.732394, "PTS": 4.197183 },
+      "season_scoring": 4.197183,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.271698,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1641740,
+      "games": [
+        {
+          "game_date": "2026-03-22",
+          "game_id": "0022501035",
+          "matchup": "MIN @ BOS",
+          "minutes": 12.483333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-29",
+          "game_id": "0022500293",
+          "matchup": "MIN vs. BOS",
+          "minutes": 11.816667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Jaylen Clark",
+      "season_averages": { "3PM": 0.485294, "PTS": 4.044118 },
+      "season_scoring": 4.044118,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.264317,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 201587,
+      "games": [
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500493",
+          "matchup": "LAC vs. BOS",
+          "minutes": 16.266667,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500233",
+          "matchup": "LAC @ BOS",
+          "minutes": 20.283333,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Nicolas Batum",
+      "season_averages": { "3PM": 1.243243, "PTS": 3.959459 },
+      "season_scoring": 3.959459,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.441176,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1628997,
+      "games": [
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500908",
+          "matchup": "DAL @ BOS",
+          "minutes": 16.216667,
+          "stats": { "3PM": 0.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500721",
+          "matchup": "DAL vs. BOS",
+          "minutes": 29.1,
+          "stats": { "3PM": 1.0, "PTS": 13.0 }
+        }
+      ],
+      "name": "Caleb Martin",
+      "season_averages": { "3PM": 0.344828, "PTS": 3.913793 },
+      "season_scoring": 3.913793,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.201058,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1626204,
+      "games": [
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500128",
+          "matchup": "CLE @ BOS",
+          "minutes": 13.816667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Larry Nance Jr.",
+      "season_averages": { "3PM": 0.6, "PTS": 3.742857 },
+      "season_scoring": 3.742857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.258065,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1631207,
+      "games": [
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500503",
+          "matchup": "CHI @ BOS",
+          "minutes": 4.916667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Dalen Terry",
+      "season_averages": { "3PM": 0.5, "PTS": 3.666667 },
+      "season_scoring": 3.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.212903,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1629599,
+      "games": [
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500986",
+          "matchup": "PHX @ BOS",
+          "minutes": 4.1,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500839",
+          "matchup": "PHX vs. BOS",
+          "minutes": 22.816667,
+          "stats": { "3PM": 0.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500702",
+          "matchup": "MIL @ BOS",
+          "minutes": 3.533333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501206",
+          "matchup": "MIL vs. BOS",
+          "minutes": 1.883333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Amir Coffey",
+      "season_averages": { "3PM": 0.369565, "PTS": 3.23913 },
+      "season_scoring": 3.23913,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.221239,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1630828,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 4.45,
+          "stats": { "3PM": 0.0, "PTS": 1.0 }
+        }
+      ],
+      "name": "Alex Antetokounmpo",
+      "season_averages": { "3PM": 0.333333, "PTS": 3.166667 },
+      "season_scoring": 3.166667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.375,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1642419,
+      "games": [
+        {
+          "game_date": "2026-04-05",
+          "game_id": "0022501132",
+          "matchup": "TOR @ BOS",
+          "minutes": 1.133333,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500532",
+          "matchup": "TOR @ BOS",
+          "minutes": 11.616667,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-12-20",
+          "game_id": "0022500388",
+          "matchup": "TOR vs. BOS",
+          "minutes": 6.45,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Jamison Battle",
+      "season_averages": { "3PM": 0.57377, "PTS": 3.147541 },
+      "season_scoring": 3.147541,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.208333,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642939,
+      "games": [
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500721",
+          "matchup": "DAL vs. BOS",
+          "minutes": 12.1,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Miles Kelly",
+      "season_averages": { "3PM": 0.714286, "PTS": 3.071429 },
+      "season_scoring": 3.071429,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.454545,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1641763,
+      "games": [
+        {
+          "game_date": "2026-03-22",
+          "game_id": "0022501035",
+          "matchup": "MIN @ BOS",
+          "minutes": 1.366667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500503",
+          "matchup": "CHI @ BOS",
+          "minutes": 13.233333,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Julian Phillips",
+      "season_averages": { "3PM": 0.416667, "PTS": 2.916667 },
+      "season_scoring": 2.916667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.363636,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1641810,
+      "games": [
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500894",
+          "matchup": "CHA @ BOS",
+          "minutes": 4.6,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Antonio Reeves",
+      "season_averages": { "3PM": 0.7, "PTS": 2.7 },
+      "season_scoring": 2.7,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.3,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 203914,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 14.8,
+          "stats": { "3PM": 1.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-03-02",
+          "game_id": "0022500880",
+          "matchup": "MIL vs. BOS",
+          "minutes": 12.65,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501206",
+          "matchup": "MIL vs. BOS",
+          "minutes": 32.566667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Gary Harris",
+      "season_averages": { "3PM": 0.583333, "PTS": 2.666667 },
+      "season_scoring": 2.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.375,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1626192,
+      "games": [
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501149",
+          "matchup": "CHA @ BOS",
+          "minutes": 2.483333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501085",
+          "matchup": "CHA vs. BOS",
+          "minutes": 3.866667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500894",
+          "matchup": "CHA @ BOS",
+          "minutes": 13.633333,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Pat Connaughton",
+      "season_averages": { "3PM": 0.5, "PTS": 2.619048 },
+      "season_scoring": 2.619048,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.211765,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1628371,
+      "games": [
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500277",
+          "matchup": "ORL @ BOS",
+          "minutes": 4.883333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-09",
+          "game_id": "0022500193",
+          "matchup": "ORL vs. BOS",
+          "minutes": 4.433333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500028",
+          "matchup": "ORL vs. BOS",
+          "minutes": 4.5,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Jonathan Isaac",
+      "season_averages": { "3PM": 0.134615, "PTS": 2.576923 },
+      "season_scoring": 2.576923,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.247706,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1630322,
+      "games": [
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500545",
+          "matchup": "SAS @ BOS",
+          "minutes": 4.2,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Lindy Waters III",
+      "season_averages": { "3PM": 0.675, "PTS": 2.375 },
+      "season_scoring": 2.375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.261364,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1641748,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501126",
+          "matchup": "MIL vs. BOS",
+          "minutes": 9.966667,
+          "stats": { "3PM": 1.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2026-03-02",
+          "game_id": "0022500880",
+          "matchup": "MIL vs. BOS",
+          "minutes": 4.783333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500702",
+          "matchup": "MIL @ BOS",
+          "minutes": 8.266667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501206",
+          "matchup": "MIL vs. BOS",
+          "minutes": 1.883333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Andre Jackson Jr.",
+      "season_averages": { "3PM": 0.3125, "PTS": 2.354167 },
+      "season_scoring": 2.354167,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.218487,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1642404,
+      "games": [
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500106",
+          "matchup": "DET vs. BOS",
+          "minutes": 5.333333,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Chaz Lanier",
+      "season_averages": { "3PM": 0.558824, "PTS": 2.352941 },
+      "season_scoring": 2.352941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.202247,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1631216,
+      "games": [
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "ATL vs. BOS",
+          "minutes": 4.916667,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Caleb Houstan",
+      "season_averages": { "3PM": 0.611111, "PTS": 2.333333 },
+      "season_scoring": 2.333333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.269231,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 201145,
+      "games": [
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500728",
+          "matchup": "HOU vs. BOS",
+          "minutes": 5.65,
+          "stats": { "3PM": 1.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-11-01",
+          "game_id": "0022500146",
+          "matchup": "HOU @ BOS",
+          "minutes": 7.516667,
+          "stats": { "3PM": 2.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Jeff Green",
+      "season_averages": { "3PM": 0.4, "PTS": 2.233333 },
+      "season_scoring": 2.233333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.220588,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1629162,
+      "games": [
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500942",
+          "matchup": "SAS vs. BOS",
+          "minutes": 0.666667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Jordan McLaughlin",
+      "season_averages": { "3PM": 0.386364, "PTS": 2.022727 },
+      "season_scoring": 2.022727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.240506,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1642384,
+      "games": [
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500728",
+          "matchup": "HOU vs. BOS",
+          "minutes": 5.65,
+          "stats": { "3PM": 0.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Isaiah Crawford",
+      "season_averages": { "3PM": 0.214286, "PTS": 2.0 },
+      "season_scoring": 2.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.375,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1642359,
+      "games": [
+        {
+          "game_date": "2026-02-08",
+          "game_id": "0022500757",
+          "matchup": "NYK @ BOS",
+          "minutes": 3.516667,
+          "stats": { "3PM": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Pac\u00f4me Dadiet",
+      "season_averages": { "3PM": 0.241379, "PTS": 1.655172 },
+      "season_scoring": 1.655172,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.105614,
+          "share": 0.25,
+          "slice_key": "Corner 3"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    }
+  ],
+  "proxy": "Outcomes are box-score proxies for the Qualifier slices, not slice-level results. Each stat column is a market the Matchup's defense sheet already maps to a Qualifier's slice, so a Corner 3 Qualifier reads as points and threes rather than as corner threes made.",
+  "season": "2025-26",
+  "stat_columns": ["PTS", "3PM"],
+  "success": true,
+  "summary": {
+    "columns": {
+      "3PM": { "mean_difference": 0.068785, "over_average_share": 0.427835 },
+      "PTS": { "mean_difference": -0.26412, "over_average_share": 0.427835 }
+    },
+    "games": 194,
+    "players": 88
+  },
+  "target": {
+    "created_at": "2026-09-05T17:18:44.332853+00:00",
+    "id": 1,
+    "note": "BOS switches everything and leaves the corner late.",
+    "opponent": "BOS",
+    "qualifiers": [
+      {
+        "base": "shot_zones",
+        "comparator": "at_or_above",
+        "slice_key": "Corner 3",
+        "threshold": 0.2
+      }
+    ],
+    "title": "BOS vs Corner 3 \u2265 20%",
+    "updated_at": "2026-09-05T17:18:44.332853+00:00"
+  }
+}

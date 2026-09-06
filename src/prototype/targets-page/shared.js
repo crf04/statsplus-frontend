@@ -21,28 +21,41 @@ import {
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
 import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
 import { PROTO_STANDALONE } from './prototypeMode';
+import { useBacktests } from './history';
 import targetsMock from './mock/targets.json';
 import resolveMock from './mock/resolve-2026-04-10.json';
 
 /* Standalone: the production payloads captured on 2026-09-06 stand in for
-   the two reads, decoded by the real decoders so the shapes cannot drift. */
+   the two reads, decoded on first use by the real decoders so the shapes
+   cannot drift (and so the shipped page's tests, which mock the API module,
+   can still load this file). */
 const noop = () => {};
-const MOCK_LIST = {
-  status: 'ready',
-  error: null,
-  authLoading: false,
-  isAuthenticated: true,
-  reload: noop,
-  targets: decodeTargets(targetsMock),
+let mockList = null;
+let mockResolved = null;
+const useMockTargets = () => {
+  if (!mockList) {
+    mockList = {
+      status: 'ready',
+      error: null,
+      authLoading: false,
+      isAuthenticated: true,
+      reload: noop,
+      targets: decodeTargets(targetsMock),
+    };
+  }
+  return mockList;
 };
-const MOCK_RESOLVED = {
-  status: 'ready',
-  error: null,
-  reload: noop,
-  ...decodeResolvedTargets(resolveMock),
+const useMockResolved = () => {
+  if (!mockResolved) {
+    mockResolved = {
+      status: 'ready',
+      error: null,
+      reload: noop,
+      ...decodeResolvedTargets(resolveMock),
+    };
+  }
+  return mockResolved;
 };
-const useMockTargets = () => MOCK_LIST;
-const useMockResolved = () => MOCK_RESOLVED;
 const useList = PROTO_STANDALONE ? useMockTargets : useTargets;
 const useResolved = PROTO_STANDALONE ? useMockResolved : useResolvedTargets;
 
@@ -62,6 +75,7 @@ export const useTargetsPrototypeData = (date) => {
   const list = useList();
   const resolved = useResolved(date);
   const [extras, setExtras] = useState([]);
+  const backtests = useBacktests(list.targets);
 
   const items = useMemo(() => {
     const byId = new Map(resolved.entries.map((entry) => [String(entry.target.id), entry]));
@@ -91,7 +105,7 @@ export const useTargetsPrototypeData = (date) => {
     ]);
   };
 
-  return { list, resolved, items, saveLocally, slateDate: resolved.slateDate };
+  return { list, resolved, items, backtests, saveLocally, slateDate: resolved.slateDate };
 };
 
 export const isLive = (item) => Boolean(item.entry?.game);

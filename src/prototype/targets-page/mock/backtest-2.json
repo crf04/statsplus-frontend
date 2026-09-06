@@ -1,0 +1,2391 @@
+{
+  "players": [
+    {
+      "canonical_id": 1641705,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500654",
+          "matchup": "SAS vs. NOP",
+          "minutes": 31.35,
+          "stats": { "PA": 16.0, "PR": 32.0, "PRA": 32.0, "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500188",
+          "matchup": "SAS vs. NOP",
+          "minutes": 32.45,
+          "stats": { "PA": 21.0, "PR": 36.0, "PRA": 39.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500095",
+          "matchup": "SAS @ NOP",
+          "minutes": 32.283333,
+          "stats": { "PA": 31.0, "PR": 40.0, "PRA": 42.0, "PTS": 29.0 }
+        }
+      ],
+      "name": "Victor Wembanyama",
+      "season_averages": { "PA": 28.109375, "PR": 36.5, "PRA": 39.609375, "PTS": 25.0 },
+      "season_scoring": 25.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.357407,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.182,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1630166,
+      "games": [
+        {
+          "game_date": "2026-04-02",
+          "game_id": "0022501118",
+          "matchup": "POR vs. NOP",
+          "minutes": 37.233333,
+          "stats": { "PA": 33.0, "PR": 34.0, "PRA": 41.0, "PTS": 26.0 }
+        },
+        {
+          "game_date": "2026-01-02",
+          "game_id": "0022500482",
+          "matchup": "POR @ NOP",
+          "minutes": 38.4,
+          "stats": { "PA": 45.0, "PR": 41.0, "PRA": 52.0, "PTS": 34.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501207",
+          "matchup": "POR @ NOP",
+          "minutes": 31.95,
+          "stats": { "PA": 22.0, "PR": 22.0, "PRA": 28.0, "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500219",
+          "matchup": "POR @ NOP",
+          "minutes": 34.933333,
+          "stats": { "PA": 34.0, "PR": 33.0, "PRA": 35.0, "PTS": 32.0 }
+        }
+      ],
+      "name": "Deni Avdija",
+      "season_averages": { "PA": 30.909091, "PR": 31.106061, "PRA": 37.80303, "PTS": 24.212121 },
+      "season_scoring": 24.212121,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.361842,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.178,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631094,
+      "games": [
+        {
+          "game_date": "2026-04-05",
+          "game_id": "0022501138",
+          "matchup": "ORL @ NOP",
+          "minutes": 38.033333,
+          "stats": { "PA": 29.0, "PR": 39.0, "PRA": 45.0, "PTS": 23.0 }
+        },
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500548",
+          "matchup": "ORL vs. NOP",
+          "minutes": 39.366667,
+          "stats": { "PA": 31.0, "PR": 31.0, "PRA": 39.0, "PTS": 23.0 }
+        }
+      ],
+      "name": "Paolo Banchero",
+      "season_averages": { "PA": 27.388889, "PR": 30.597222, "PRA": 35.777778, "PTS": 22.208333 },
+      "season_scoring": 22.208333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.361979,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.188,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 2544,
+      "games": [
+        {
+          "game_date": "2026-03-03",
+          "game_id": "0022500891",
+          "matchup": "LAL vs. NOP",
+          "minutes": 33.466667,
+          "stats": { "PA": 28.0, "PR": 28.0, "PRA": 35.0, "PTS": 21.0 }
+        },
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500514",
+          "matchup": "LAL @ NOP",
+          "minutes": 33.15,
+          "stats": { "PA": 38.0, "PR": 38.0, "PRA": 46.0, "PTS": 30.0 }
+        }
+      ],
+      "name": "LeBron James",
+      "season_averages": { "PA": 28.133333, "PR": 27.0, "PRA": 34.2, "PTS": 20.933333 },
+      "season_scoring": 20.933333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.369967,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.267,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1626157,
+      "games": [
+        {
+          "game_date": "2026-03-24",
+          "game_id": "0022501048",
+          "matchup": "NYK vs. NOP",
+          "minutes": 24.383333,
+          "stats": { "PA": 22.0, "PR": 35.0, "PRA": 36.0, "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500454",
+          "matchup": "NYK @ NOP",
+          "minutes": 29.966667,
+          "stats": { "PA": 16.0, "PR": 24.0, "PRA": 28.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Karl-Anthony Towns",
+      "season_averages": { "PA": 23.066667, "PR": 31.906667, "PRA": 34.92, "PTS": 20.053333 },
+      "season_scoring": 20.053333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.477713,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.152,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 202710,
+      "games": [
+        {
+          "game_date": "2025-11-29",
+          "game_id": "0022500298",
+          "matchup": "GSW vs. NOP",
+          "minutes": 37.233333,
+          "stats": { "PA": 34.0, "PR": 32.0, "PRA": 42.0, "PTS": 24.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500237",
+          "matchup": "GSW @ NOP",
+          "minutes": 31.25,
+          "stats": { "PA": 28.0, "PR": 21.0, "PRA": 31.0, "PTS": 18.0 }
+        }
+      ],
+      "name": "Jimmy Butler III",
+      "season_averages": { "PA": 24.868421, "PR": 25.552632, "PRA": 30.421053, "PTS": 20.0 },
+      "season_scoring": 20.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.428571,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.172,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1641708,
+      "games": [
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501088",
+          "matchup": "HOU @ NOP",
+          "minutes": 34.916667,
+          "stats": { "PA": 19.0, "PR": 22.0, "PRA": 27.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-03-13",
+          "game_id": "0022500964",
+          "matchup": "HOU vs. NOP",
+          "minutes": 40.266667,
+          "stats": { "PA": 31.0, "PR": 35.0, "PRA": 43.0, "PTS": 23.0 }
+        },
+        {
+          "game_date": "2026-01-18",
+          "game_id": "0022500604",
+          "matchup": "HOU vs. NOP",
+          "minutes": 40.083333,
+          "stats": { "PA": 26.0, "PR": 28.0, "PRA": 34.0, "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-12-18",
+          "game_id": "0022500375",
+          "matchup": "HOU @ NOP",
+          "minutes": 40.583333,
+          "stats": { "PA": 27.0, "PR": 29.0, "PRA": 33.0, "PTS": 23.0 }
+        }
+      ],
+      "name": "Amen Thompson",
+      "season_averages": { "PA": 23.582278, "PR": 26.037975, "PRA": 31.35443, "PTS": 18.265823 },
+      "season_scoring": 18.265823,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.488015,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.218,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1630596,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501025",
+          "matchup": "CLE @ NOP",
+          "minutes": 30.433333,
+          "stats": { "PA": 21.0, "PR": 26.0, "PRA": 29.0, "PTS": 18.0 }
+        }
+      ],
+      "name": "Evan Mobley",
+      "season_averages": { "PA": 21.753846, "PR": 27.169231, "PRA": 30.769231, "PTS": 18.153846 },
+      "season_scoring": 18.153846,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.462704,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.151,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1631096,
+      "games": [
+        {
+          "game_date": "2026-01-27",
+          "game_id": "0022500667",
+          "matchup": "OKC vs. NOP",
+          "minutes": 32.983333,
+          "stats": { "PA": 23.0, "PR": 34.0, "PRA": 37.0, "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-11-17",
+          "game_id": "0022500247",
+          "matchup": "OKC @ NOP",
+          "minutes": 32.816667,
+          "stats": { "PA": 26.0, "PR": 35.0, "PRA": 35.0, "PTS": 26.0 }
+        }
+      ],
+      "name": "Chet Holmgren",
+      "season_averages": { "PA": 18.782609, "PR": 26.028986, "PRA": 27.695652, "PTS": 17.115942 },
+      "season_scoring": 17.115942,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.39923,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.155,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1628384,
+      "games": [
+        {
+          "game_date": "2026-03-24",
+          "game_id": "0022501048",
+          "matchup": "NYK vs. NOP",
+          "minutes": 39.633333,
+          "stats": { "PA": 25.0, "PR": 25.0, "PRA": 29.0, "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500454",
+          "matchup": "NYK @ NOP",
+          "minutes": 37.083333,
+          "stats": { "PA": 24.0, "PR": 34.0, "PRA": 35.0, "PTS": 23.0 }
+        }
+      ],
+      "name": "OG Anunoby",
+      "season_averages": { "PA": 18.850746, "PR": 21.925373, "PRA": 24.089552, "PTS": 16.686567 },
+      "season_scoring": 16.686567,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.350746,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.215,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1642264,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500654",
+          "matchup": "SAS vs. NOP",
+          "minutes": 28.85,
+          "stats": { "PA": 10.0, "PR": 9.0, "PRA": 14.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-08",
+          "game_id": "0022500366",
+          "matchup": "SAS @ NOP",
+          "minutes": 23.05,
+          "stats": { "PA": 23.0, "PR": 23.0, "PRA": 28.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500188",
+          "matchup": "SAS vs. NOP",
+          "minutes": 35.066667,
+          "stats": { "PA": 28.0, "PR": 18.0, "PRA": 32.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500095",
+          "matchup": "SAS @ NOP",
+          "minutes": 33.433333,
+          "stats": { "PA": 22.0, "PR": 21.0, "PRA": 27.0, "PTS": 16.0 }
+        }
+      ],
+      "name": "Stephon Castle",
+      "season_averages": { "PA": 24.0, "PR": 21.897059, "PRA": 29.294118, "PTS": 16.602941 },
+      "season_scoring": 16.602941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.372093,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.229,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1641824,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500466",
+          "matchup": "CHI vs. NOP",
+          "minutes": 27.016667,
+          "stats": { "PA": 21.0, "PR": 25.0, "PRA": 27.0, "PTS": 19.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501223",
+          "matchup": "CHI vs. NOP",
+          "minutes": 23.583333,
+          "stats": { "PA": 12.0, "PR": 15.0, "PRA": 18.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500289",
+          "matchup": "CHI @ NOP",
+          "minutes": 21.233333,
+          "stats": { "PA": 10.0, "PR": 14.0, "PRA": 14.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Matas Buzelis",
+      "season_averages": { "PA": 18.311688, "PR": 22.064935, "PRA": 24.116883, "PTS": 16.25974 },
+      "season_scoring": 16.25974,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.362409,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.269,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1630245,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500466",
+          "matchup": "CHI vs. NOP",
+          "minutes": 24.666667,
+          "stats": { "PA": 18.0, "PR": 16.0, "PRA": 22.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500289",
+          "matchup": "CHI @ NOP",
+          "minutes": 32.166667,
+          "stats": { "PA": 29.0, "PR": 30.0, "PRA": 31.0, "PTS": 28.0 }
+        }
+      ],
+      "name": "Ayo Dosunmu",
+      "season_averages": { "PA": 18.42029, "PR": 18.246377, "PRA": 21.855072, "PTS": 14.811594 },
+      "season_scoring": 14.811594,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.419571,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.337,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1630200,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500466",
+          "matchup": "CHI vs. NOP",
+          "minutes": 27.083333,
+          "stats": { "PA": 32.0, "PR": 22.0, "PRA": 34.0, "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501223",
+          "matchup": "CHI vs. NOP",
+          "minutes": 24.266667,
+          "stats": { "PA": 11.0, "PR": 8.0, "PRA": 13.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500289",
+          "matchup": "CHI @ NOP",
+          "minutes": 27.65,
+          "stats": { "PA": 21.0, "PR": 12.0, "PRA": 23.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Tre Jones",
+      "season_averages": { "PA": 19.446154, "PR": 17.2, "PRA": 22.584615, "PTS": 14.061538 },
+      "season_scoring": 14.061538,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.525122,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.246,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1628381,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501012",
+          "matchup": "LAC @ NOP",
+          "minutes": 27.533333,
+          "stats": { "PA": 19.0, "PR": 26.0, "PRA": 27.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501005",
+          "matchup": "LAC @ NOP",
+          "minutes": 24.266667,
+          "stats": { "PA": 20.0, "PR": 25.0, "PRA": 27.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500877",
+          "matchup": "LAC vs. NOP",
+          "minutes": 24.583333,
+          "stats": { "PA": 16.0, "PR": 22.0, "PRA": 23.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500027",
+          "matchup": "LAC vs. NOP",
+          "minutes": 18.833333,
+          "stats": { "PA": 15.0, "PR": 17.0, "PRA": 18.0, "PTS": 14.0 }
+        }
+      ],
+      "name": "John Collins",
+      "season_averages": { "PA": 14.565217, "PR": 18.869565, "PRA": 19.884058, "PTS": 13.550725 },
+      "season_scoring": 13.550725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.368741,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.186,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1629640,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500654",
+          "matchup": "SAS vs. NOP",
+          "minutes": 27.516667,
+          "stats": { "PA": 16.0, "PR": 17.0, "PRA": 18.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-12-08",
+          "game_id": "0022500366",
+          "matchup": "SAS @ NOP",
+          "minutes": 16.716667,
+          "stats": { "PA": 14.0, "PR": 18.0, "PRA": 20.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500188",
+          "matchup": "SAS vs. NOP",
+          "minutes": 19.5,
+          "stats": { "PA": 16.0, "PR": 20.0, "PRA": 24.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500095",
+          "matchup": "SAS @ NOP",
+          "minutes": 19.233333,
+          "stats": { "PA": 9.0, "PR": 18.0, "PRA": 19.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Keldon Johnson",
+      "season_averages": { "PA": 14.536585, "PR": 18.560976, "PRA": 19.914634, "PTS": 13.182927 },
+      "season_scoring": 13.182927,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.412798,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.222,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1630314,
+      "games": [
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500988",
+          "matchup": "DAL @ NOP",
+          "minutes": 5.183333,
+          "stats": { "PA": 1.0, "PR": 0.0, "PRA": 1.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500404",
+          "matchup": "DAL @ NOP",
+          "minutes": 14.7,
+          "stats": { "PA": 6.0, "PR": 7.0, "PRA": 9.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-21",
+          "game_id": "0022500052",
+          "matchup": "DAL vs. NOP",
+          "minutes": 28.333333,
+          "stats": { "PA": 17.0, "PR": 10.0, "PRA": 22.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-11-05",
+          "game_id": "0022500177",
+          "matchup": "DAL vs. NOP",
+          "minutes": 18.716667,
+          "stats": { "PA": 13.0, "PR": 11.0, "PRA": 14.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Brandon Williams",
+      "season_averages": { "PA": 16.893939, "PR": 15.909091, "PRA": 19.787879, "PTS": 13.015152 },
+      "season_scoring": 13.015152,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.405844,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.214,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1628398,
+      "games": [
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500807",
+          "matchup": "MIL @ NOP",
+          "minutes": 25.05,
+          "stats": { "PA": 18.0, "PR": 17.0, "PRA": 21.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-02-04",
+          "game_id": "0022500729",
+          "matchup": "MIL vs. NOP",
+          "minutes": 30.983333,
+          "stats": { "PA": 16.0, "PR": 13.0, "PRA": 22.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Kyle Kuzma",
+      "season_averages": { "PA": 15.652174, "PR": 17.521739, "PRA": 20.188406, "PTS": 12.985507 },
+      "season_scoring": 12.985507,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.366279,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.254,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1641713,
+      "games": [
+        {
+          "game_date": "2026-01-30",
+          "game_id": "0022500691",
+          "matchup": "MEM @ NOP",
+          "minutes": 18.416667,
+          "stats": { "PA": 9.0, "PR": 12.0, "PRA": 17.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-01-23",
+          "game_id": "0022500639",
+          "matchup": "MEM vs. NOP",
+          "minutes": 22.583333,
+          "stats": { "PA": 16.0, "PR": 19.0, "PRA": 20.0, "PTS": 15.0 }
+        }
+      ],
+      "name": "GG Jackson",
+      "season_averages": { "PA": 13.945455, "PR": 16.745455, "PRA": 18.218182, "PTS": 12.472727 },
+      "season_scoring": 12.472727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389864,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.247,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1631128,
+      "games": [
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500134",
+          "matchup": "DEN vs. NOP",
+          "minutes": 27.15,
+          "stats": { "PA": 21.0, "PR": 23.0, "PRA": 27.0, "PTS": 17.0 }
+        }
+      ],
+      "name": "Christian Braun",
+      "season_averages": { "PA": 14.681818, "PR": 16.75, "PRA": 19.477273, "PTS": 11.954545 },
+      "season_scoring": 11.954545,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.485861,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.336,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1630700,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "ATL vs. NOP",
+          "minutes": 35.433333,
+          "stats": { "PA": 21.0, "PR": 21.0, "PRA": 29.0, "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "ATL @ NOP",
+          "minutes": 30.766667,
+          "stats": { "PA": 18.0, "PR": 22.0, "PRA": 26.0, "PTS": 14.0 }
+        }
+      ],
+      "name": "Dyson Daniels",
+      "season_averages": { "PA": 17.776316, "PR": 18.684211, "PRA": 24.605263, "PTS": 11.855263 },
+      "season_scoring": 11.855263,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.482625,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.243,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642844,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500654",
+          "matchup": "SAS vs. NOP",
+          "minutes": 16.766667,
+          "stats": { "PA": 8.0, "PR": 11.0, "PRA": 14.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-08",
+          "game_id": "0022500366",
+          "matchup": "SAS @ NOP",
+          "minutes": 25.85,
+          "stats": { "PA": 28.0, "PR": 25.0, "PRA": 31.0, "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500095",
+          "matchup": "SAS @ NOP",
+          "minutes": 25.6,
+          "stats": { "PA": 16.0, "PR": 18.0, "PRA": 21.0, "PTS": 13.0 }
+        }
+      ],
+      "name": "Dylan Harper",
+      "season_averages": { "PA": 15.637681, "PR": 15.173913, "PRA": 19.028986, "PTS": 11.782609 },
+      "season_scoring": 11.782609,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.456489,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.252,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1631109,
+      "games": [
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500434",
+          "matchup": "PHX @ NOP",
+          "minutes": 10.616667,
+          "stats": { "PA": 10.0, "PR": 18.0, "PRA": 18.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500429",
+          "matchup": "PHX @ NOP",
+          "minutes": 27.083333,
+          "stats": { "PA": 26.0, "PR": 37.0, "PRA": 39.0, "PTS": 24.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500204",
+          "matchup": "PHX vs. NOP",
+          "minutes": 20.233333,
+          "stats": { "PA": 3.0, "PR": 8.0, "PRA": 9.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Mark Williams",
+      "season_averages": { "PA": 12.633333, "PR": 19.6, "PRA": 20.566667, "PTS": 11.666667 },
+      "season_scoring": 11.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.705479,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.151,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1641796,
+      "games": [
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "MIA vs. NOP",
+          "minutes": 25.583333,
+          "stats": { "PA": 22.0, "PR": 19.0, "PRA": 25.0, "PTS": 16.0 }
+        }
+      ],
+      "name": "Pelle Larsson",
+      "season_averages": { "PA": 14.8, "PR": 14.914286, "PRA": 18.285714, "PTS": 11.428571 },
+      "season_scoring": 11.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.382826,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.289,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1630572,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501071",
+          "matchup": "TOR vs. NOP",
+          "minutes": 21.4,
+          "stats": { "PA": 20.0, "PR": 27.0, "PRA": 29.0, "PTS": 18.0 }
+        },
+        {
+          "game_date": "2026-03-11",
+          "game_id": "0022500948",
+          "matchup": "TOR @ NOP",
+          "minutes": 21.233333,
+          "stats": { "PA": 9.0, "PR": 13.0, "PRA": 14.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Sandro Mamukelashvili",
+      "season_averages": { "PA": 13.05, "PR": 16.1, "PRA": 17.9875, "PTS": 11.1625 },
+      "season_scoring": 11.1625,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.375594,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.217,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642276,
+      "games": [
+        {
+          "game_date": "2026-02-11",
+          "game_id": "0022500784",
+          "matchup": "MIA @ NOP",
+          "minutes": 27.633333,
+          "stats": { "PA": 16.0, "PR": 28.0, "PRA": 28.0, "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "MIA vs. NOP",
+          "minutes": 24.633333,
+          "stats": { "PA": 17.0, "PR": 28.0, "PRA": 29.0, "PTS": 16.0 }
+        }
+      ],
+      "name": "Kel'el Ware",
+      "season_averages": { "PA": 11.779221, "PR": 20.064935, "PRA": 20.792208, "PTS": 11.051948 },
+      "season_scoring": 11.051948,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.479199,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.183,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1630188,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500466",
+          "matchup": "CHI vs. NOP",
+          "minutes": 26.333333,
+          "stats": { "PA": 15.0, "PR": 28.0, "PRA": 29.0, "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501223",
+          "matchup": "CHI vs. NOP",
+          "minutes": 12.333333,
+          "stats": { "PA": 7.0, "PR": 6.0, "PRA": 7.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500289",
+          "matchup": "CHI @ NOP",
+          "minutes": 26.35,
+          "stats": { "PA": 14.0, "PR": 19.0, "PRA": 20.0, "PTS": 13.0 }
+        }
+      ],
+      "name": "Jalen Smith",
+      "season_averages": { "PA": 11.433962, "PR": 16.90566, "PRA": 18.132075, "PTS": 10.207547 },
+      "season_scoring": 10.207547,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.368812,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.188,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1627884,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501012",
+          "matchup": "LAC @ NOP",
+          "minutes": 33.65,
+          "stats": { "PA": 25.0, "PR": 26.0, "PRA": 29.0, "PTS": 22.0 }
+        },
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501005",
+          "matchup": "LAC @ NOP",
+          "minutes": 29.0,
+          "stats": { "PA": 7.0, "PR": 6.0, "PRA": 9.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500877",
+          "matchup": "LAC vs. NOP",
+          "minutes": 28.216667,
+          "stats": { "PA": 17.0, "PR": 19.0, "PRA": 19.0, "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500027",
+          "matchup": "LAC vs. NOP",
+          "minutes": 28.7,
+          "stats": { "PA": 17.0, "PR": 19.0, "PRA": 20.0, "PTS": 16.0 }
+        }
+      ],
+      "name": "Derrick Jones Jr.",
+      "season_averages": { "PA": 11.46, "PR": 13.54, "PRA": 14.92, "PTS": 10.08 },
+      "season_scoring": 10.08,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.408971,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.207,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1641765,
+      "games": [
+        {
+          "game_date": "2026-01-30",
+          "game_id": "0022500691",
+          "matchup": "MEM @ NOP",
+          "minutes": 11.95,
+          "stats": { "PA": 2.0, "PR": 4.0, "PRA": 4.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500085",
+          "matchup": "MEM vs. NOP",
+          "minutes": 15.466667,
+          "stats": { "PA": 10.0, "PR": 15.0, "PRA": 15.0, "PTS": 10.0 }
+        }
+      ],
+      "name": "Olivier-Maxence Prosper",
+      "season_averages": { "PA": 10.962264, "PR": 13.528302, "PRA": 14.490566, "PTS": 10.0 },
+      "season_scoring": 10.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.431429,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.26,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1641757,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501012",
+          "matchup": "LAC @ NOP",
+          "minutes": 37.05,
+          "stats": { "PA": 16.0, "PR": 19.0, "PRA": 24.0, "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501005",
+          "matchup": "LAC @ NOP",
+          "minutes": 23.35,
+          "stats": { "PA": 14.0, "PR": 16.0, "PRA": 17.0, "PTS": 13.0 }
+        },
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500877",
+          "matchup": "LAC vs. NOP",
+          "minutes": 32.216667,
+          "stats": { "PA": 27.0, "PR": 21.0, "PRA": 29.0, "PTS": 19.0 }
+        }
+      ],
+      "name": "Jordan Miller",
+      "season_averages": { "PA": 12.233333, "PR": 13.0, "PRA": 15.266667, "PTS": 9.966667 },
+      "season_scoring": 9.966667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.398496,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.166,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1641709,
+      "games": [
+        {
+          "game_date": "2026-03-26",
+          "game_id": "0022501064",
+          "matchup": "DET vs. NOP",
+          "minutes": 28.966667,
+          "stats": { "PA": 11.0, "PR": 15.0, "PRA": 15.0, "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500624",
+          "matchup": "DET @ NOP",
+          "minutes": 28.283333,
+          "stats": { "PA": 15.0, "PR": 21.0, "PRA": 24.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Ausar Thompson",
+      "season_averages": { "PA": 13.0, "PR": 15.60274, "PRA": 18.726027, "PTS": 9.876712 },
+      "season_scoring": 9.876712,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.551127,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.244,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1630171,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500466",
+          "matchup": "CHI vs. NOP",
+          "minutes": 35.616667,
+          "stats": { "PA": 26.0, "PR": 29.0, "PRA": 31.0, "PTS": 24.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501223",
+          "matchup": "CHI vs. NOP",
+          "minutes": 23.516667,
+          "stats": { "PA": 6.0, "PR": 8.0, "PRA": 9.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Isaac Okoro",
+      "season_averages": { "PA": 10.857143, "PR": 12.015873, "PRA": 13.603175, "PTS": 9.269841 },
+      "season_scoring": 9.269841,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.442266,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.27,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1630611,
+      "games": [
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500838",
+          "matchup": "GSW @ NOP",
+          "minutes": 39.333333,
+          "stats": { "PA": 19.0, "PR": 27.0, "PRA": 31.0, "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500237",
+          "matchup": "GSW @ NOP",
+          "minutes": 4.716667,
+          "stats": { "PA": 3.0, "PR": 3.0, "PRA": 3.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Gui Santos",
+      "season_averages": { "PA": 11.529412, "PR": 13.102941, "PRA": 15.441176, "PTS": 9.191176 },
+      "season_scoring": 9.191176,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.371739,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.158,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1631245,
+      "games": [
+        {
+          "game_date": "2026-01-16",
+          "game_id": "0022500588",
+          "matchup": "IND vs. NOP",
+          "minutes": 11.466667,
+          "stats": { "PA": 13.0, "PR": 14.0, "PRA": 15.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-20",
+          "game_id": "0022500389",
+          "matchup": "IND @ NOP",
+          "minutes": 17.033333,
+          "stats": { "PA": 3.0, "PR": 4.0, "PRA": 5.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Quenton Jackson",
+      "season_averages": { "PA": 12.0, "PR": 11.469388, "PRA": 14.326531, "PTS": 9.142857 },
+      "season_scoring": 9.142857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.405488,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.293,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642874,
+      "games": [
+        {
+          "game_date": "2026-01-14",
+          "game_id": "0022500574",
+          "matchup": "BKN @ NOP",
+          "minutes": 16.15,
+          "stats": { "PA": 6.0, "PR": 10.0, "PRA": 11.0, "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500350",
+          "matchup": "BKN vs. NOP",
+          "minutes": 18.816667,
+          "stats": { "PA": 9.0, "PR": 11.0, "PRA": 13.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Danny Wolf",
+      "season_averages": { "PA": 11.140351, "PR": 13.842105, "PRA": 16.070175, "PTS": 8.912281 },
+      "season_scoring": 8.912281,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.354545,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.184,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1630551,
+      "games": [
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500534",
+          "matchup": "WAS vs. NOP",
+          "minutes": 21.633333,
+          "stats": { "PA": 16.0, "PR": 21.0, "PRA": 25.0, "PTS": 12.0 }
+        }
+      ],
+      "name": "Justin Champagnie",
+      "season_averages": { "PA": 9.869565, "PR": 14.217391, "PRA": 15.434783, "PTS": 8.652174 },
+      "season_scoring": 8.652174,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.502165,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.215,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1642867,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501071",
+          "matchup": "TOR vs. NOP",
+          "minutes": 12.183333,
+          "stats": { "PA": 9.0, "PR": 11.0, "PRA": 11.0, "PTS": 9.0 }
+        }
+      ],
+      "name": "Collin Murray-Boyles",
+      "season_averages": { "PA": 10.350877, "PR": 13.491228, "PRA": 15.350877, "PTS": 8.491228 },
+      "season_scoring": 8.491228,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.678363,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.207,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1641842,
+      "games": [
+        {
+          "game_date": "2026-03-26",
+          "game_id": "0022501064",
+          "matchup": "DET vs. NOP",
+          "minutes": 19.116667,
+          "stats": { "PA": 6.0, "PR": 9.0, "PRA": 13.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500624",
+          "matchup": "DET @ NOP",
+          "minutes": 18.316667,
+          "stats": { "PA": 8.0, "PR": 8.0, "PRA": 10.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Ronald Holland II",
+      "season_averages": { "PA": 9.423077, "PR": 12.24359, "PRA": 13.461538, "PTS": 8.205128 },
+      "season_scoring": 8.205128,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.397059,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.251,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1630536,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500925",
+          "matchup": "WAS @ NOP",
+          "minutes": 9.716667,
+          "stats": { "PA": 9.0, "PR": 6.0, "PRA": 10.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Sharife Cooper",
+      "season_averages": { "PA": 11.146341, "PR": 10.219512, "PRA": 13.243902, "PTS": 8.121951 },
+      "season_scoring": 8.121951,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.380567,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.199,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1628971,
+      "games": [
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500567",
+          "matchup": "DEN @ NOP",
+          "minutes": 24.25,
+          "stats": { "PA": 6.0, "PR": 8.0, "PRA": 10.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-19",
+          "game_id": "0022500260",
+          "matchup": "DEN @ NOP",
+          "minutes": 27.016667,
+          "stats": { "PA": 16.0, "PR": 15.0, "PRA": 19.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500134",
+          "matchup": "DEN vs. NOP",
+          "minutes": 18.566667,
+          "stats": { "PA": 7.0, "PR": 9.0, "PRA": 11.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Bruce Brown",
+      "season_averages": { "PA": 10.036585, "PR": 11.792683, "PRA": 13.914634, "PTS": 7.914634 },
+      "season_scoring": 7.914634,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.40613,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.232,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1631131,
+      "games": [
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501153",
+          "matchup": "UTA @ NOP",
+          "minutes": 21.016667,
+          "stats": { "PA": 12.0, "PR": 19.0, "PRA": 19.0, "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500867",
+          "matchup": "UTA vs. NOP",
+          "minutes": 9.05,
+          "stats": { "PA": 0.0, "PR": 3.0, "PRA": 3.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-26",
+          "game_id": "0022500856",
+          "matchup": "UTA vs. NOP",
+          "minutes": 9.616667,
+          "stats": { "PA": 8.0, "PR": 10.0, "PRA": 10.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Oscar Tshiebwe",
+      "season_averages": { "PA": 9.0, "PR": 14.444444, "PRA": 15.62963, "PTS": 7.814815 },
+      "season_scoring": 7.814815,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.648276,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.177,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1631230,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500812",
+          "matchup": "PHI @ NOP",
+          "minutes": 28.933333,
+          "stats": { "PA": 9.0, "PR": 14.0, "PRA": 14.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500699",
+          "matchup": "PHI vs. NOP",
+          "minutes": 28.216667,
+          "stats": { "PA": 8.0, "PR": 11.0, "PRA": 11.0, "PTS": 8.0 }
+        }
+      ],
+      "name": "Dominick Barlow",
+      "season_averages": { "PA": 8.901408, "PR": 12.464789, "PRA": 13.690141, "PTS": 7.676056 },
+      "season_scoring": 7.676056,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.571429,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.215,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1642879,
+      "games": [
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500350",
+          "matchup": "BKN vs. NOP",
+          "minutes": 20.233333,
+          "stats": { "PA": 11.0, "PR": 8.0, "PRA": 12.0, "PTS": 7.0 }
+        }
+      ],
+      "name": "Ben Saraf",
+      "season_averages": { "PA": 10.840909, "PR": 9.636364, "PRA": 12.931818, "PTS": 7.545455 },
+      "season_scoring": 7.545455,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.425743,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.156,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1627780,
+      "games": [
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500838",
+          "matchup": "GSW @ NOP",
+          "minutes": 11.5,
+          "stats": { "PA": 6.0, "PR": 7.0, "PRA": 9.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-29",
+          "game_id": "0022500298",
+          "matchup": "GSW vs. NOP",
+          "minutes": 25.05,
+          "stats": { "PA": 22.0, "PR": 30.0, "PRA": 33.0, "PTS": 19.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500237",
+          "matchup": "GSW @ NOP",
+          "minutes": 12.05,
+          "stats": { "PA": 0.0, "PR": 3.0, "PRA": 3.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Gary Payton II",
+      "season_averages": { "PA": 9.178082, "PR": 11.123288, "PRA": 12.808219, "PTS": 7.493151 },
+      "season_scoring": 7.493151,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.537349,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.167,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1630570,
+      "games": [
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500699",
+          "matchup": "PHI vs. NOP",
+          "minutes": 16.783333,
+          "stats": { "PA": 9.0, "PR": 11.0, "PRA": 15.0, "PTS": 5.0 }
+        }
+      ],
+      "name": "Trendon Watford",
+      "season_averages": { "PA": 9.018868, "PR": 9.830189, "PRA": 12.320755, "PTS": 6.528302 },
+      "season_scoring": 6.528302,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.425373,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.203,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1641772,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501025",
+          "matchup": "CLE @ NOP",
+          "minutes": 3.883333,
+          "stats": { "PA": 0.0, "PR": 0.0, "PRA": 0.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500412",
+          "matchup": "CLE vs. NOP",
+          "minutes": 3.816667,
+          "stats": { "PA": 2.0, "PR": 2.0, "PRA": 2.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Nae'Qwan Tomlin",
+      "season_averages": { "PA": 6.671875, "PR": 8.75, "PRA": 9.578125, "PTS": 5.84375 },
+      "season_scoring": 5.84375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.525478,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.214,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1642346,
+      "games": [
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500912",
+          "matchup": "PHX vs. NOP",
+          "minutes": 12.583333,
+          "stats": { "PA": 4.0, "PR": 4.0, "PRA": 5.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500429",
+          "matchup": "PHX @ NOP",
+          "minutes": 21.166667,
+          "stats": { "PA": 10.0, "PR": 17.0, "PRA": 18.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500204",
+          "matchup": "PHX vs. NOP",
+          "minutes": 23.566667,
+          "stats": { "PA": 5.0, "PR": 6.0, "PRA": 9.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Ryan Dunn",
+      "season_averages": { "PA": 7.285714, "PR": 10.057143, "PRA": 11.528571, "PTS": 5.814286 },
+      "season_scoring": 5.814286,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.375691,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.212,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1631200,
+      "games": [
+        {
+          "game_date": "2026-04-02",
+          "game_id": "0022501118",
+          "matchup": "POR vs. NOP",
+          "minutes": 20.15,
+          "stats": { "PA": 4.0, "PR": 6.0, "PRA": 7.0, "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-02",
+          "game_id": "0022500482",
+          "matchup": "POR @ NOP",
+          "minutes": 26.0,
+          "stats": { "PA": 9.0, "PR": 10.0, "PRA": 13.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-11",
+          "game_id": "0022501207",
+          "matchup": "POR @ NOP",
+          "minutes": 28.55,
+          "stats": { "PA": 8.0, "PR": 16.0, "PRA": 17.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500219",
+          "matchup": "POR @ NOP",
+          "minutes": 22.4,
+          "stats": { "PA": 7.0, "PR": 13.0, "PRA": 14.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "Kris Murray",
+      "season_averages": { "PA": 7.22807, "PR": 9.421053, "PRA": 10.842105, "PTS": 5.807018 },
+      "season_scoring": 5.807018,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.48913,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.243,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1630545,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501195",
+          "matchup": "MIN vs. NOP",
+          "minutes": 34.666667,
+          "stats": { "PA": 31.0, "PR": 30.0, "PRA": 35.0, "PTS": 26.0 }
+        },
+        {
+          "game_date": "2025-12-04",
+          "game_id": "0022500337",
+          "matchup": "MIN @ NOP",
+          "minutes": 9.183333,
+          "stats": { "PA": 7.0, "PR": 8.0, "PRA": 8.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-12-02",
+          "game_id": "0022500321",
+          "matchup": "MIN @ NOP",
+          "minutes": 7.866667,
+          "stats": { "PA": 3.0, "PR": 2.0, "PRA": 3.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Terrence Shannon Jr.",
+      "season_averages": { "PA": 6.488372, "PR": 6.744186, "PRA": 7.627907, "PTS": 5.604651 },
+      "season_scoring": 5.604651,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.362573,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.239,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1641775,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501174",
+          "matchup": "BOS vs. NOP",
+          "minutes": 22.0,
+          "stats": { "PA": 8.0, "PR": 8.0, "PRA": 10.0, "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500117",
+          "matchup": "BOS @ NOP",
+          "minutes": 1.4,
+          "stats": { "PA": 0.0, "PR": 0.0, "PRA": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Jordan Walsh",
+      "season_averages": { "PA": 6.147059, "PR": 9.352941, "PRA": 10.147059, "PTS": 5.352941 },
+      "season_scoring": 5.352941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389513,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.194,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1642854,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "ATL vs. NOP",
+          "minutes": 7.033333,
+          "stats": { "PA": 3.0, "PR": 3.0, "PRA": 4.0, "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "ATL @ NOP",
+          "minutes": 2.6,
+          "stats": { "PA": 0.0, "PR": 0.0, "PRA": 0.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Asa Newell",
+      "season_averages": { "PA": 5.75, "PR": 7.340909, "PRA": 7.931818, "PTS": 5.159091 },
+      "season_scoring": 5.159091,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.443787,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.213,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642277,
+      "games": [
+        {
+          "game_date": "2026-01-16",
+          "game_id": "0022500588",
+          "matchup": "IND vs. NOP",
+          "minutes": 28.633333,
+          "stats": { "PA": 9.0, "PR": 11.0, "PRA": 13.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-12-20",
+          "game_id": "0022500389",
+          "matchup": "IND @ NOP",
+          "minutes": 23.2,
+          "stats": { "PA": 18.0, "PR": 20.0, "PRA": 20.0, "PTS": 18.0 }
+        }
+      ],
+      "name": "Johnny Furphy",
+      "season_averages": { "PA": 6.314286, "PR": 9.514286, "PRA": 10.685714, "PTS": 5.142857 },
+      "season_scoring": 5.142857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.416107,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.284,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1631243,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "ATL vs. NOP",
+          "minutes": 31.35,
+          "stats": { "PA": 16.0, "PR": 21.0, "PRA": 27.0, "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "ATL @ NOP",
+          "minutes": 26.833333,
+          "stats": { "PA": 3.0, "PR": 9.0, "PRA": 9.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Mouhamed Gueye",
+      "season_averages": { "PA": 5.337662, "PR": 8.012987, "PRA": 8.909091, "PTS": 4.441558 },
+      "season_scoring": 4.441558,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.362069,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.189,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1629020,
+      "games": [
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500514",
+          "matchup": "LAL @ NOP",
+          "minutes": 29.366667,
+          "stats": { "PA": 11.0, "PR": 15.0, "PRA": 19.0, "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-14",
+          "game_id": "0022500045",
+          "matchup": "LAL @ NOP",
+          "minutes": 11.316667,
+          "stats": { "PA": 4.0, "PR": 5.0, "PRA": 6.0, "PTS": 3.0 }
+        }
+      ],
+      "name": "Jarred Vanderbilt",
+      "season_averages": { "PA": 5.723077, "PR": 8.923077, "PRA": 10.215385, "PTS": 4.430769 },
+      "season_scoring": 4.430769,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.5,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.19,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1631133,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500812",
+          "matchup": "PHI @ NOP",
+          "minutes": 16.383333,
+          "stats": { "PA": 10.0, "PR": 15.0, "PRA": 16.0, "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500699",
+          "matchup": "PHI vs. NOP",
+          "minutes": 8.133333,
+          "stats": { "PA": 0.0, "PR": 2.0, "PRA": 2.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Jabari Walker",
+      "season_averages": { "PA": 4.84375, "PR": 7.3125, "PRA": 7.84375, "PTS": 4.3125 },
+      "season_scoring": 4.3125,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.464789,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.175,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1628997,
+      "games": [
+        {
+          "game_date": "2025-12-22",
+          "game_id": "0022500404",
+          "matchup": "DAL @ NOP",
+          "minutes": 16.766667,
+          "stats": { "PA": 7.0, "PR": 6.0, "PRA": 9.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-21",
+          "game_id": "0022500052",
+          "matchup": "DAL vs. NOP",
+          "minutes": 8.15,
+          "stats": { "PA": 1.0, "PR": 0.0, "PRA": 1.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-05",
+          "game_id": "0022500177",
+          "matchup": "DAL vs. NOP",
+          "minutes": 4.233333,
+          "stats": { "PA": 0.0, "PR": 1.0, "PRA": 1.0, "PTS": 0.0 }
+        }
+      ],
+      "name": "Caleb Martin",
+      "season_averages": { "PA": 5.310345, "PR": 6.37931, "PRA": 7.775862, "PTS": 3.913793 },
+      "season_scoring": 3.913793,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.359788,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.269,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1631218,
+      "games": [
+        {
+          "game_date": "2026-03-11",
+          "game_id": "0022500948",
+          "matchup": "TOR @ NOP",
+          "minutes": 3.216667,
+          "stats": { "PA": 2.0, "PR": 4.0, "PRA": 6.0, "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500237",
+          "matchup": "GSW @ NOP",
+          "minutes": 3.033333,
+          "stats": { "PA": 3.0, "PR": 3.0, "PRA": 4.0, "PTS": 2.0 }
+        }
+      ],
+      "name": "Trayce Jackson-Davis",
+      "season_averages": { "PA": 4.150943, "PR": 6.150943, "PRA": 6.886792, "PTS": 3.415094 },
+      "season_scoring": 3.415094,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.861789,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.171,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642358,
+      "games": [
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500988",
+          "matchup": "DAL @ NOP",
+          "minutes": 12.183333,
+          "stats": { "PA": 5.0, "PR": 6.0, "PRA": 7.0, "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500534",
+          "matchup": "WAS vs. NOP",
+          "minutes": 15.916667,
+          "stats": { "PA": 7.0, "PR": 12.0, "PRA": 13.0, "PTS": 6.0 }
+        }
+      ],
+      "name": "AJ Johnson",
+      "season_averages": { "PA": 4.3125, "PR": 4.479167, "PRA": 5.458333, "PTS": 3.333333 },
+      "season_scoring": 3.333333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.4375,
+          "slice_key": "Restricted Area"
+        },
+        {
+          "base": "play_types",
+          "league_average_share": 0.187263,
+          "share": 0.343,
+          "slice_key": "Transition"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    }
+  ],
+  "proxy": "Outcomes are box-score proxies for the Qualifier slices, not slice-level results. Each stat column is a market the Matchup's defense sheet already maps to a Qualifier's slice, so a Corner 3 Qualifier reads as points and threes rather than as corner threes made.",
+  "season": "2025-26",
+  "stat_columns": ["PTS", "PA", "PR", "PRA"],
+  "success": true,
+  "summary": {
+    "columns": {
+      "PA": { "mean_difference": 0.554491, "over_average_share": 0.532847 },
+      "PR": { "mean_difference": 0.623998, "over_average_share": 0.50365 },
+      "PRA": { "mean_difference": 0.99841, "over_average_share": 0.554745 },
+      "PTS": { "mean_difference": 0.180079, "over_average_share": 0.547445 }
+    },
+    "games": 137,
+    "players": 58
+  },
+  "target": {
+    "created_at": "2026-09-05T17:18:44.534875+00:00",
+    "id": 2,
+    "note": "No rim protection when Missi sits.",
+    "opponent": "NOP",
+    "qualifiers": [
+      {
+        "base": "shot_zones",
+        "comparator": "at_or_above",
+        "slice_key": "Restricted Area",
+        "threshold": 0.35
+      },
+      {
+        "base": "play_types",
+        "comparator": "at_or_above",
+        "slice_key": "Transition",
+        "threshold": 0.15
+      }
+    ],
+    "title": "NOP vs Restricted area \u2265 35%, Transition \u2265 15%",
+    "updated_at": "2026-09-05T17:18:44.534875+00:00"
+  }
+}

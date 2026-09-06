@@ -9,11 +9,14 @@ import PrototypeSwitcher from './PrototypeSwitcher';
 import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
+import VariantD from './VariantD';
+import VariantE from './VariantE';
+import VariantF from './VariantF';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { useTargetsPrototypeData } from './shared';
 import './prototype.css';
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC };
+const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD, E: VariantE, F: VariantF };
 
 export default function TargetsPrototypePage({ proto }) {
   const data = useTargetsPrototypeData(proto.date);

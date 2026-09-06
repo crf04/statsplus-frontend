@@ -1,0 +1,4342 @@
+{
+  "players": [
+    {
+      "canonical_id": 1629029,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501010",
+          "matchup": "LAL @ MIA",
+          "minutes": 37.6,
+          "stats": { "PTS": 60.0 }
+        },
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500155",
+          "matchup": "LAL vs. MIA",
+          "minutes": 38.316667,
+          "stats": { "PTS": 29.0 }
+        }
+      ],
+      "name": "Luka Don\u010di\u0107",
+      "season_averages": { "PTS": 33.484375 },
+      "season_scoring": 33.484375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.111874,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 202695,
+      "games": [
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500313",
+          "matchup": "LAC @ MIA",
+          "minutes": 30.416667,
+          "stats": { "PTS": 36.0 }
+        },
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 37.15,
+          "stats": { "PTS": 27.0 }
+        }
+      ],
+      "name": "Kawhi Leonard",
+      "season_averages": { "PTS": 27.892308 },
+      "season_scoring": 27.892308,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.162162,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 201939,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 27.8,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Stephen Curry",
+      "season_averages": { "PTS": 26.55814 },
+      "season_scoring": 26.55814,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.152691,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1626164,
+      "games": [
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500564",
+          "matchup": "PHX @ MIA",
+          "minutes": 39.666667,
+          "stats": { "PTS": 24.0 }
+        }
+      ],
+      "name": "Devin Booker",
+      "season_averages": { "PTS": 26.0625 },
+      "season_scoring": 26.0625,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.162907,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1628973,
+      "games": [
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500398",
+          "matchup": "NYK vs. MIA",
+          "minutes": 38.183333,
+          "stats": { "PTS": 47.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500108",
+          "matchup": "NYK @ MIA",
+          "minutes": 35.066667,
+          "stats": { "PTS": 37.0 }
+        }
+      ],
+      "name": "Jalen Brunson",
+      "season_averages": { "PTS": 26.040541 },
+      "season_scoring": 26.040541,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.142373,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 201142,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501027",
+          "matchup": "HOU vs. MIA",
+          "minutes": 36.933333,
+          "stats": { "PTS": 27.0 }
+        },
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500864",
+          "matchup": "HOU @ MIA",
+          "minutes": 37.233333,
+          "stats": { "PTS": 32.0 }
+        }
+      ],
+      "name": "Kevin Durant",
+      "season_averages": { "PTS": 25.974359 },
+      "season_scoring": 25.974359,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.093023,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1627750,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500450",
+          "matchup": "DEN @ MIA",
+          "minutes": 34.783333,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-11-05",
+          "game_id": "0022500178",
+          "matchup": "DEN vs. MIA",
+          "minutes": 33.6,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Jamal Murray",
+      "season_averages": { "PTS": 25.4 },
+      "season_scoring": 25.4,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.170965,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1641718,
+      "games": [
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500649",
+          "matchup": "UTA vs. MIA",
+          "minutes": 36.166667,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Keyonte George",
+      "season_averages": { "PTS": 23.611111 },
+      "season_scoring": 23.611111,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.153235,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 201935,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501068",
+          "matchup": "CLE vs. MIA",
+          "minutes": 29.5,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501055",
+          "matchup": "CLE vs. MIA",
+          "minutes": 42.5,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500313",
+          "matchup": "LAC @ MIA",
+          "minutes": 19.85,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 38.833333,
+          "stats": { "PTS": 29.0 }
+        }
+      ],
+      "name": "James Harden",
+      "season_averages": { "PTS": 23.6 },
+      "season_scoring": 23.6,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.185218,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1627742,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501165",
+          "matchup": "TOR vs. MIA",
+          "minutes": 36.616667,
+          "stats": { "PTS": 38.0 }
+        },
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501151",
+          "matchup": "TOR vs. MIA",
+          "minutes": 29.3,
+          "stats": { "PTS": 23.0 }
+        },
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500414",
+          "matchup": "TOR @ MIA",
+          "minutes": 29.25,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501227",
+          "matchup": "TOR @ MIA",
+          "minutes": 37.8,
+          "stats": { "PTS": 28.0 }
+        }
+      ],
+      "name": "Brandon Ingram",
+      "season_averages": { "PTS": 21.493506 },
+      "season_scoring": 21.493506,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.171584,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1628415,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500655",
+          "matchup": "PHX vs. MIA",
+          "minutes": 36.433333,
+          "stats": { "PTS": 26.0 }
+        },
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500564",
+          "matchup": "PHX @ MIA",
+          "minutes": 35.833333,
+          "stats": { "PTS": 25.0 }
+        }
+      ],
+      "name": "Dillon Brooks",
+      "season_averages": { "PTS": 20.196429 },
+      "season_scoring": 20.196429,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.116788,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1641706,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 26.35,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500909",
+          "matchup": "CHA vs. MIA",
+          "minutes": 33.7,
+          "stats": { "PTS": 22.0 }
+        }
+      ],
+      "name": "Brandon Miller",
+      "season_averages": { "PTS": 20.169231 },
+      "season_scoring": 20.169231,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.149425,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1630163,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 33.116667,
+          "stats": { "PTS": 30.0 }
+        },
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500909",
+          "matchup": "CHA vs. MIA",
+          "minutes": 32.95,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-10-28",
+          "game_id": "0022500124",
+          "matchup": "CHA @ MIA",
+          "minutes": 28.483333,
+          "stats": { "PTS": 20.0 }
+        }
+      ],
+      "name": "LaMelo Ball",
+      "season_averages": { "PTS": 20.069444 },
+      "season_scoring": 20.069444,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.142283,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1629660,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500813",
+          "matchup": "MEM @ MIA",
+          "minutes": 22.35,
+          "stats": { "PTS": 17.0 }
+        }
+      ],
+      "name": "Ty Jerome",
+      "season_averages": { "PTS": 19.666667 },
+      "season_scoring": 19.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.139535,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1628991,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500763",
+          "matchup": "UTA @ MIA",
+          "minutes": 24.9,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500094",
+          "matchup": "MEM vs. MIA",
+          "minutes": 21.383333,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Jaren Jackson Jr.",
+      "season_averages": { "PTS": 19.395833 },
+      "season_scoring": 19.395833,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.193324,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1629636,
+      "games": [
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500201",
+          "matchup": "CLE @ MIA",
+          "minutes": 18.95,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Darius Garland",
+      "season_averages": { "PTS": 18.777778 },
+      "season_scoring": 18.777778,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.193452,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 203468,
+      "games": [
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500805",
+          "matchup": "ATL vs. MIA",
+          "minutes": 27.433333,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "ATL @ MIA",
+          "minutes": 26.4,
+          "stats": { "PTS": 26.0 }
+        }
+      ],
+      "name": "CJ McCollum",
+      "season_averages": { "PTS": 18.736842 },
+      "season_scoring": 18.736842,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.17591,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642851,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 23.616667,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500909",
+          "matchup": "CHA vs. MIA",
+          "minutes": 33.866667,
+          "stats": { "PTS": 27.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500033",
+          "matchup": "CHA @ MIA",
+          "minutes": 40.116667,
+          "stats": { "PTS": 30.0 }
+        },
+        {
+          "game_date": "2025-10-28",
+          "game_id": "0022500124",
+          "matchup": "CHA @ MIA",
+          "minutes": 27.233333,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Kon Knueppel",
+      "season_averages": { "PTS": 18.493827 },
+      "season_scoring": 18.493827,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.178209,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 201942,
+      "games": [
+        {
+          "game_date": "2026-01-20",
+          "game_id": "0022500619",
+          "matchup": "SAC vs. MIA",
+          "minutes": 34.95,
+          "stats": { "PTS": 23.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500354",
+          "matchup": "SAC @ MIA",
+          "minutes": 39.816667,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "DeMar DeRozan",
+      "season_averages": { "PTS": 18.428571 },
+      "season_scoring": 18.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.116418,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1629027,
+      "games": [
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500423",
+          "matchup": "ATL vs. MIA",
+          "minutes": 32.016667,
+          "stats": { "PTS": 30.0 }
+        }
+      ],
+      "name": "Trae Young",
+      "season_averages": { "PTS": 17.933333 },
+      "season_scoring": 17.933333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.180791,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 202331,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501091",
+          "matchup": "PHI @ MIA",
+          "minutes": 34.733333,
+          "stats": { "PTS": 19.0 }
+        },
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500275",
+          "matchup": "PHI vs. MIA",
+          "minutes": 20.216667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Paul George",
+      "season_averages": { "PTS": 17.324324 },
+      "season_scoring": 17.324324,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.132554,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1630202,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501106",
+          "matchup": "BOS @ MIA",
+          "minutes": 31.15,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-02-06",
+          "game_id": "0022500741",
+          "matchup": "BOS vs. MIA",
+          "minutes": 35.616667,
+          "stats": { "PTS": 24.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "BOS @ MIA",
+          "minutes": 24.016667,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "BOS vs. MIA",
+          "minutes": 26.866667,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Payton Pritchard",
+      "season_averages": { "PTS": 17.025316 },
+      "season_scoring": 17.025316,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.128323,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1629614,
+      "games": [
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501083",
+          "matchup": "IND vs. MIA",
+          "minutes": 36.35,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500543",
+          "matchup": "IND vs. MIA",
+          "minutes": 29.016667,
+          "stats": { "PTS": 29.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500436",
+          "matchup": "IND @ MIA",
+          "minutes": 34.283333,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Andrew Nembhard",
+      "season_averages": { "PTS": 16.947368 },
+      "season_scoring": 16.947368,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.177955,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1628960,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500655",
+          "matchup": "PHX vs. MIA",
+          "minutes": 34.666667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500564",
+          "matchup": "PHX @ MIA",
+          "minutes": 26.616667,
+          "stats": { "PTS": 25.0 }
+        }
+      ],
+      "name": "Grayson Allen",
+      "season_averages": { "PTS": 16.490196 },
+      "season_scoring": 16.490196,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.133433,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1628401,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501106",
+          "matchup": "BOS @ MIA",
+          "minutes": 34.416667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-02-06",
+          "game_id": "0022500741",
+          "matchup": "BOS vs. MIA",
+          "minutes": 41.266667,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "BOS @ MIA",
+          "minutes": 36.15,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "BOS vs. MIA",
+          "minutes": 35.666667,
+          "stats": { "PTS": 33.0 }
+        }
+      ],
+      "name": "Derrick White",
+      "season_averages": { "PTS": 16.454545 },
+      "season_scoring": 16.454545,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.097473,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1630193,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501165",
+          "matchup": "TOR vs. MIA",
+          "minutes": 23.183333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501151",
+          "matchup": "TOR vs. MIA",
+          "minutes": 17.583333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500414",
+          "matchup": "TOR @ MIA",
+          "minutes": 35.466667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501227",
+          "matchup": "TOR @ MIA",
+          "minutes": 34.416667,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Immanuel Quickley",
+      "season_averages": { "PTS": 16.428571 },
+      "season_scoring": 16.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.121547,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 201950,
+      "games": [
+        {
+          "game_date": "2026-01-22",
+          "game_id": "0022500634",
+          "matchup": "POR vs. MIA",
+          "minutes": 18.95,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500187",
+          "matchup": "POR @ MIA",
+          "minutes": 34.916667,
+          "stats": { "PTS": 18.0 }
+        }
+      ],
+      "name": "Jrue Holiday",
+      "season_averages": { "PTS": 16.320755 },
+      "season_scoring": 16.320755,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.176305,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631095,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501027",
+          "matchup": "HOU vs. MIA",
+          "minutes": 39.883333,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Jabari Smith Jr.",
+      "season_averages": { "PTS": 15.779221 },
+      "season_scoring": 15.779221,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.177436,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1641729,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500763",
+          "matchup": "UTA @ MIA",
+          "minutes": 22.25,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500649",
+          "matchup": "UTA vs. MIA",
+          "minutes": 23.4,
+          "stats": { "PTS": 23.0 }
+        }
+      ],
+      "name": "Brice Sensabaugh",
+      "season_averages": { "PTS": 14.88 },
+      "season_scoring": 14.88,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.157526,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1642273,
+      "games": [
+        {
+          "game_date": "2026-02-08",
+          "game_id": "0022500758",
+          "matchup": "WAS vs. MIA",
+          "minutes": 19.1,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Kyshawn George",
+      "season_averages": { "PTS": 14.791667 },
+      "season_scoring": 14.791667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.197574,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1629014,
+      "games": [
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "BOS @ MIA",
+          "minutes": 34.3,
+          "stats": { "PTS": 39.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "BOS vs. MIA",
+          "minutes": 28.883333,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Anfernee Simons",
+      "season_averages": { "PTS": 14.272727 },
+      "season_scoring": 14.272727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.091049,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1631099,
+      "games": [
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500354",
+          "matchup": "SAC @ MIA",
+          "minutes": 32.4,
+          "stats": { "PTS": 16.0 }
+        }
+      ],
+      "name": "Keegan Murray",
+      "season_averages": { "PTS": 13.956522 },
+      "season_scoring": 13.956522,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.12,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1630170,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501041",
+          "matchup": "SAS @ MIA",
+          "minutes": 21.033333,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-30",
+          "game_id": "0022500141",
+          "matchup": "SAS vs. MIA",
+          "minutes": 37.2,
+          "stats": { "PTS": 17.0 }
+        }
+      ],
+      "name": "Devin Vassell",
+      "season_averages": { "PTS": 13.910448 },
+      "season_scoring": 13.910448,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.099338,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1641764,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 29.566667,
+          "stats": { "PTS": 24.0 }
+        },
+        {
+          "game_date": "2025-11-19",
+          "game_id": "0022500257",
+          "matchup": "GSW @ MIA",
+          "minutes": 34.45,
+          "stats": { "PTS": 20.0 }
+        }
+      ],
+      "name": "Brandin Podziemski",
+      "season_averages": { "PTS": 13.817073 },
+      "season_scoring": 13.817073,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.19746,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1630174,
+      "games": [
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500543",
+          "matchup": "IND vs. MIA",
+          "minutes": 27.216667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500436",
+          "matchup": "IND @ MIA",
+          "minutes": 19.2,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Aaron Nesmith",
+      "season_averages": { "PTS": 13.8 },
+      "season_scoring": 13.8,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.185547,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642846,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500763",
+          "matchup": "UTA @ MIA",
+          "minutes": 36.55,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500649",
+          "matchup": "UTA vs. MIA",
+          "minutes": 28.216667,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Ace Bailey",
+      "season_averages": { "PTS": 13.791667 },
+      "season_scoring": 13.791667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.19843,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1630591,
+      "games": [
+        {
+          "game_date": "2026-03-14",
+          "game_id": "0022500972",
+          "matchup": "ORL @ MIA",
+          "minutes": 34.183333,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-01-28",
+          "game_id": "0022500674",
+          "matchup": "ORL @ MIA",
+          "minutes": 29.166667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-12-09",
+          "game_id": "0022501201",
+          "matchup": "ORL vs. MIA",
+          "minutes": 31.0,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500339",
+          "matchup": "ORL vs. MIA",
+          "minutes": 28.433333,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500081",
+          "matchup": "ORL vs. MIA",
+          "minutes": 16.5,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Jalen Suggs",
+      "season_averages": { "PTS": 13.789474 },
+      "season_scoring": 13.789474,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.192604,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1629631,
+      "games": [
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500217",
+          "matchup": "CLE @ MIA",
+          "minutes": 28.35,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500201",
+          "matchup": "CLE @ MIA",
+          "minutes": 35.266667,
+          "stats": { "PTS": 23.0 }
+        }
+      ],
+      "name": "De'Andre Hunter",
+      "season_averages": { "PTS": 13.666667 },
+      "season_scoring": 13.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.153693,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1626171,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 26.216667,
+          "stats": { "PTS": 19.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500837",
+          "matchup": "MIL vs. MIA",
+          "minutes": 24.2,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 20.85,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Bobby Portis",
+      "season_averages": { "PTS": 13.656716 },
+      "season_scoring": 13.656716,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.134667,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1629675,
+      "games": [
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500513",
+          "matchup": "MIN vs. MIA",
+          "minutes": 24.516667,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500486",
+          "matchup": "MIN @ MIA",
+          "minutes": 25.05,
+          "stats": { "PTS": 29.0 }
+        }
+      ],
+      "name": "Naz Reid",
+      "season_averages": { "PTS": 13.584416 },
+      "season_scoring": 13.584416,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.186207,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1642263,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501027",
+          "matchup": "HOU vs. MIA",
+          "minutes": 36.616667,
+          "stats": { "PTS": 23.0 }
+        },
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500864",
+          "matchup": "HOU @ MIA",
+          "minutes": 35.783333,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Reed Sheppard",
+      "season_averages": { "PTS": 13.536585 },
+      "season_scoring": 13.536585,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.105708,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 203501,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500450",
+          "matchup": "DEN @ MIA",
+          "minutes": 28.333333,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-05",
+          "game_id": "0022500178",
+          "matchup": "DEN vs. MIA",
+          "minutes": 24.416667,
+          "stats": { "PTS": 18.0 }
+        }
+      ],
+      "name": "Tim Hardaway Jr.",
+      "season_averages": { "PTS": 13.4875 },
+      "season_scoring": 13.4875,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.097561,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1630560,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 16.083333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500837",
+          "matchup": "MIL vs. MIA",
+          "minutes": 19.583333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Cam Thomas",
+      "season_averages": { "PTS": 13.47619 },
+      "season_scoring": 13.47619,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.163043,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1629673,
+      "games": [
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "NOP @ MIA",
+          "minutes": 24.6,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Jordan Poole",
+      "season_averages": { "PTS": 13.435897 },
+      "season_scoring": 13.435897,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.198198,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1630241,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501068",
+          "matchup": "CLE vs. MIA",
+          "minutes": 26.733333,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501055",
+          "matchup": "CLE vs. MIA",
+          "minutes": 28.7,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500217",
+          "matchup": "CLE @ MIA",
+          "minutes": 20.633333,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500201",
+          "matchup": "CLE @ MIA",
+          "minutes": 32.633333,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Sam Merrill",
+      "season_averages": { "PTS": 12.75 },
+      "season_scoring": 12.75,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.103306,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1631221,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500655",
+          "matchup": "PHX vs. MIA",
+          "minutes": 30.666667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500564",
+          "matchup": "PHX @ MIA",
+          "minutes": 24.266667,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Collin Gillespie",
+      "season_averages": { "PTS": 12.65 },
+      "season_scoring": 12.65,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.068884,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1642377,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500813",
+          "matchup": "MEM @ MIA",
+          "minutes": 27.083333,
+          "stats": { "PTS": 25.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500094",
+          "matchup": "MEM vs. MIA",
+          "minutes": 22.483333,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Jaylen Wells",
+      "season_averages": { "PTS": 12.536232 },
+      "season_scoring": 12.536232,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.186246,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1628370,
+      "games": [
+        {
+          "game_date": "2026-01-20",
+          "game_id": "0022500619",
+          "matchup": "SAC vs. MIA",
+          "minutes": 29.816667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500354",
+          "matchup": "SAC @ MIA",
+          "minutes": 17.45,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Malik Monk",
+      "season_averages": { "PTS": 12.451613 },
+      "season_scoring": 12.451613,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.140823,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1631108,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500332",
+          "matchup": "DAL vs. MIA",
+          "minutes": 32.366667,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500286",
+          "matchup": "DAL @ MIA",
+          "minutes": 30.033333,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Max Christie",
+      "season_averages": { "PTS": 12.272727 },
+      "season_scoring": 12.272727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.172414,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1641730,
+      "games": [
+        {
+          "game_date": "2026-03-05",
+          "game_id": "0022500901",
+          "matchup": "BKN @ MIA",
+          "minutes": 33.816667,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2026-03-03",
+          "game_id": "0022500886",
+          "matchup": "BKN @ MIA",
+          "minutes": 27.333333,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-12-18",
+          "game_id": "0022500373",
+          "matchup": "BKN vs. MIA",
+          "minutes": 26.2,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Noah Clowney",
+      "season_averages": { "PTS": 12.257576 },
+      "season_scoring": 12.257576,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.169572,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1642848,
+      "games": [
+        {
+          "game_date": "2026-04-04",
+          "game_id": "0022501129",
+          "matchup": "WAS @ MIA",
+          "minutes": 25.216667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500938",
+          "matchup": "WAS @ MIA",
+          "minutes": 22.633333,
+          "stats": { "PTS": 17.0 }
+        }
+      ],
+      "name": "Tre Johnson",
+      "season_averages": { "PTS": 12.233333 },
+      "season_scoring": 12.233333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.097372,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1628978,
+      "games": [
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500513",
+          "matchup": "MIN vs. MIA",
+          "minutes": 30.516667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500486",
+          "matchup": "MIN @ MIA",
+          "minutes": 30.966667,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Donte DiVincenzo",
+      "season_averages": { "PTS": 12.195122 },
+      "season_scoring": 12.195122,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.135329,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1629130,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500923",
+          "matchup": "DET @ MIA",
+          "minutes": 23.916667,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-01",
+          "game_id": "0022500472",
+          "matchup": "DET vs. MIA",
+          "minutes": 20.316667,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-29",
+          "game_id": "0022500296",
+          "matchup": "DET @ MIA",
+          "minutes": 31.866667,
+          "stats": { "PTS": 18.0 }
+        }
+      ],
+      "name": "Duncan Robinson",
+      "season_averages": { "PTS": 12.194805 },
+      "season_scoring": 12.194805,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.104585,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1630541,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 29.2,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-11-19",
+          "game_id": "0022500257",
+          "matchup": "GSW @ MIA",
+          "minutes": 35.7,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Moses Moody",
+      "season_averages": { "PTS": 12.133333 },
+      "season_scoring": 12.133333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.157989,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1630540,
+      "games": [
+        {
+          "game_date": "2025-11-17",
+          "game_id": "0022500244",
+          "matchup": "NYK @ MIA",
+          "minutes": 38.733333,
+          "stats": { "PTS": 25.0 }
+        },
+        {
+          "game_date": "2025-11-14",
+          "game_id": "0022500039",
+          "matchup": "NYK vs. MIA",
+          "minutes": 29.916667,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Miles McBride",
+      "season_averages": { "PTS": 11.97561 },
+      "season_scoring": 11.97561,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.091584,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1626167,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 21.5,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500837",
+          "matchup": "MIL vs. MIA",
+          "minutes": 18.783333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 31.25,
+          "stats": { "PTS": 24.0 }
+        }
+      ],
+      "name": "Myles Turner",
+      "season_averages": { "PTS": 11.915493 },
+      "season_scoring": 11.915493,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.188854,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 202691,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500332",
+          "matchup": "DAL vs. MIA",
+          "minutes": 26.283333,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500286",
+          "matchup": "DAL @ MIA",
+          "minutes": 20.133333,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Klay Thompson",
+      "season_averages": { "PTS": 11.73913 },
+      "season_scoring": 11.73913,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.065934,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1629060,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501010",
+          "matchup": "LAL @ MIA",
+          "minutes": 17.55,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500155",
+          "matchup": "LAL vs. MIA",
+          "minutes": 30.966667,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Rui Hachimura",
+      "season_averages": { "PTS": 11.470588 },
+      "season_scoring": 11.470588,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.19263,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1629622,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501068",
+          "matchup": "CLE vs. MIA",
+          "minutes": 22.816667,
+          "stats": { "PTS": 29.0 }
+        }
+      ],
+      "name": "Max Strus",
+      "season_averages": { "PTS": 11.166667 },
+      "season_scoring": 11.166667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.160377,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1630577,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501041",
+          "matchup": "SAS @ MIA",
+          "minutes": 21.95,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-10-30",
+          "game_id": "0022500141",
+          "matchup": "SAS vs. MIA",
+          "minutes": 30.55,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Julian Champagnie",
+      "season_averages": { "PTS": 11.109756 },
+      "season_scoring": 11.109756,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.164006,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1642285,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500813",
+          "matchup": "MEM @ MIA",
+          "minutes": 20.916667,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500094",
+          "matchup": "MEM vs. MIA",
+          "minutes": 14.866667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Cam Spencer",
+      "season_averages": { "PTS": 11.083333 },
+      "season_scoring": 11.083333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.079137,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1630198,
+      "games": [
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500597",
+          "matchup": "OKC @ MIA",
+          "minutes": 19.15,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500553",
+          "matchup": "OKC vs. MIA",
+          "minutes": 18.816667,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Isaiah Joe",
+      "season_averages": { "PTS": 11.056338 },
+      "season_scoring": 11.056338,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.092081,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1642267,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501172",
+          "matchup": "WAS vs. MIA",
+          "minutes": 33.933333,
+          "stats": { "PTS": 30.0 }
+        },
+        {
+          "game_date": "2026-04-04",
+          "game_id": "0022501129",
+          "matchup": "WAS @ MIA",
+          "minutes": 26.916667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500938",
+          "matchup": "WAS @ MIA",
+          "minutes": 35.966667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-02-08",
+          "game_id": "0022500758",
+          "matchup": "WAS vs. MIA",
+          "minutes": 28.65,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Bub Carrington",
+      "season_averages": { "PTS": 10.707317 },
+      "season_scoring": 10.707317,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.076923,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1631126,
+      "games": [
+        {
+          "game_date": "2026-01-22",
+          "game_id": "0022500634",
+          "matchup": "POR vs. MIA",
+          "minutes": 33.5,
+          "stats": { "PTS": 20.0 }
+        }
+      ],
+      "name": "Caleb Love",
+      "season_averages": { "PTS": 10.387755 },
+      "season_scoring": 10.387755,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.183673,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631260,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 15.483333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500837",
+          "matchup": "MIL vs. MIA",
+          "minutes": 27.583333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 36.266667,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "AJ Green",
+      "season_averages": { "PTS": 10.371795 },
+      "season_scoring": 10.371795,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.030744,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1642856,
+      "games": [
+        {
+          "game_date": "2025-12-18",
+          "game_id": "0022500373",
+          "matchup": "BKN vs. MIA",
+          "minutes": 27.866667,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Egor D\u00ebmin",
+      "season_averages": { "PTS": 10.307692 },
+      "season_scoring": 10.307692,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.13363,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1626156,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500332",
+          "matchup": "DAL vs. MIA",
+          "minutes": 15.266667,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500286",
+          "matchup": "DAL @ MIA",
+          "minutes": 9.766667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "D'Angelo Russell",
+      "season_averages": { "PTS": 10.153846 },
+      "season_scoring": 10.153846,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.116379,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 203084,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501041",
+          "matchup": "SAS @ MIA",
+          "minutes": 21.783333,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-10-30",
+          "game_id": "0022500141",
+          "matchup": "SAS vs. MIA",
+          "minutes": 30.666667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Harrison Barnes",
+      "season_averages": { "PTS": 9.961039 },
+      "season_scoring": 9.961039,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.186087,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1626220,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500655",
+          "matchup": "PHX vs. MIA",
+          "minutes": 31.433333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500564",
+          "matchup": "PHX @ MIA",
+          "minutes": 32.133333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Royce O'Neale",
+      "season_averages": { "PTS": 9.807692 },
+      "season_scoring": 9.807692,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.080128,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1629004,
+      "games": [
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500649",
+          "matchup": "UTA vs. MIA",
+          "minutes": 17.233333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Svi Mykhailiuk",
+      "season_averages": { "PTS": 9.38 },
+      "season_scoring": 9.38,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.176796,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 204456,
+      "games": [
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501083",
+          "matchup": "IND vs. MIA",
+          "minutes": 18.266667,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500543",
+          "matchup": "IND vs. MIA",
+          "minutes": 16.65,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "T.J. McConnell",
+      "season_averages": { "PTS": 9.375 },
+      "season_scoring": 9.375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.175556,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 203935,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501010",
+          "matchup": "LAL @ MIA",
+          "minutes": 27.516667,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500155",
+          "matchup": "LAL vs. MIA",
+          "minutes": 26.683333,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Marcus Smart",
+      "season_averages": { "PTS": 9.33871 },
+      "season_scoring": 9.33871,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.132353,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1629013,
+      "games": [
+        {
+          "game_date": "2025-11-17",
+          "game_id": "0022500244",
+          "matchup": "NYK @ MIA",
+          "minutes": 39.433333,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-11-14",
+          "game_id": "0022500039",
+          "matchup": "NYK vs. MIA",
+          "minutes": 37.25,
+          "stats": { "PTS": 36.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500108",
+          "matchup": "NYK @ MIA",
+          "minutes": 15.55,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Landry Shamet",
+      "season_averages": { "PTS": 9.313725 },
+      "season_scoring": 9.313725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.167582,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1630573,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501106",
+          "matchup": "BOS @ MIA",
+          "minutes": 28.666667,
+          "stats": { "PTS": 23.0 }
+        },
+        {
+          "game_date": "2026-02-06",
+          "game_id": "0022500741",
+          "matchup": "BOS vs. MIA",
+          "minutes": 35.3,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "BOS @ MIA",
+          "minutes": 29.216667,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "BOS vs. MIA",
+          "minutes": 25.233333,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Sam Hauser",
+      "season_averages": { "PTS": 9.217949 },
+      "season_scoring": 9.217949,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.046589,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1627752,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 14.8,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Taurean Prince",
+      "season_averages": { "PTS": 9.192308 },
+      "season_scoring": 9.192308,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.089005,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1630702,
+      "games": [
+        {
+          "game_date": "2026-04-04",
+          "game_id": "0022501129",
+          "matchup": "WAS @ MIA",
+          "minutes": 24.733333,
+          "stats": { "PTS": 19.0 }
+        },
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500938",
+          "matchup": "WAS @ MIA",
+          "minutes": 23.0,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500286",
+          "matchup": "DAL @ MIA",
+          "minutes": 4.8,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Jaden Hardy",
+      "season_averages": { "PTS": 9.175439 },
+      "season_scoring": 9.175439,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.135198,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1642363,
+      "games": [
+        {
+          "game_date": "2026-01-20",
+          "game_id": "0022500619",
+          "matchup": "SAC vs. MIA",
+          "minutes": 24.35,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500354",
+          "matchup": "SAC @ MIA",
+          "minutes": 18.016667,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Nique Clifford",
+      "season_averages": { "PTS": 8.6 },
+      "season_scoring": 8.6,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.186242,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1630249,
+      "games": [
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500423",
+          "matchup": "ATL vs. MIA",
+          "minutes": 21.716667,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "V\u00edt Krej\u010d\u00ed",
+      "season_averages": { "PTS": 8.461538 },
+      "season_scoring": 8.461538,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.102564,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 201572,
+      "games": [
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 14.566667,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Brook Lopez",
+      "season_averages": { "PTS": 8.453333 },
+      "season_scoring": 8.453333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.169742,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 203484,
+      "games": [
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500094",
+          "matchup": "MEM vs. MIA",
+          "minutes": 23.066667,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Kentavious Caldwell-Pope",
+      "season_averages": { "PTS": 8.392157 },
+      "season_scoring": 8.392157,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.155738,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1628379,
+      "games": [
+        {
+          "game_date": "2026-03-19",
+          "game_id": "0022501010",
+          "matchup": "LAL @ MIA",
+          "minutes": 13.35,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "ATL @ MIA",
+          "minutes": 23.083333,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Luke Kennard",
+      "season_averages": { "PTS": 8.358974 },
+      "season_scoring": 8.358974,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.14447,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1629652,
+      "games": [
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500597",
+          "matchup": "OKC @ MIA",
+          "minutes": 21.866667,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500553",
+          "matchup": "OKC vs. MIA",
+          "minutes": 19.333333,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Luguentz Dort",
+      "season_averages": { "PTS": 8.347826 },
+      "season_scoring": 8.347826,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.122137,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 201143,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 19.033333,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Al Horford",
+      "season_averages": { "PTS": 8.266667 },
+      "season_scoring": 8.266667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.141975,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1643018,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 2.85,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "LJ Cryer",
+      "season_averages": { "PTS": 8.222222 },
+      "season_scoring": 8.222222,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.034188,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 203078,
+      "games": [
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 20.15,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Bradley Beal",
+      "season_averages": { "PTS": 8.166667 },
+      "season_scoring": 8.166667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.1875,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1629018,
+      "games": [
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 34.683333,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Gary Trent Jr.",
+      "season_averages": { "PTS": 8.138462 },
+      "season_scoring": 8.138462,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.042283,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1642383,
+      "games": [
+        {
+          "game_date": "2026-02-21",
+          "game_id": "0022500813",
+          "matchup": "MEM @ MIA",
+          "minutes": 25.466667,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-01-24",
+          "game_id": "0022500649",
+          "matchup": "UTA vs. MIA",
+          "minutes": 15.066667,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Walter Clayton Jr.",
+      "season_averages": { "PTS": 7.797101 },
+      "season_scoring": 7.797101,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.175705,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1642366,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 21.266667,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-19",
+          "game_id": "0022500257",
+          "matchup": "GSW @ MIA",
+          "minutes": 26.316667,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Quinten Post",
+      "season_averages": { "PTS": 7.656716 },
+      "season_scoring": 7.656716,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.177677,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1631172,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500957",
+          "matchup": "MIL @ MIA",
+          "minutes": 13.966667,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500837",
+          "matchup": "MIL vs. MIA",
+          "minutes": 22.433333,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Ousmane Dieng",
+      "season_averages": { "PTS": 7.561404 },
+      "season_scoring": 7.561404,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.165829,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1631246,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500763",
+          "matchup": "UTA @ MIA",
+          "minutes": 15.1,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Vince Williams Jr.",
+      "season_averages": { "PTS": 7.5 },
+      "season_scoring": 7.5,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.136986,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1626166,
+      "games": [
+        {
+          "game_date": "2026-02-26",
+          "game_id": "0022500849",
+          "matchup": "PHI vs. MIA",
+          "minutes": 16.483333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Cameron Payne",
+      "season_averages": { "PTS": 7.409091 },
+      "season_scoring": 7.409091,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.134228,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1630631,
+      "games": [
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "NOP @ MIA",
+          "minutes": 19.733333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Jose Alvarado",
+      "season_averages": { "PTS": 7.391304 },
+      "season_scoring": 7.391304,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.164811,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1642920,
+      "games": [
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500313",
+          "matchup": "LAC @ MIA",
+          "minutes": 25.966667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Kobe Sanders",
+      "season_averages": { "PTS": 7.279412 },
+      "season_scoring": 7.279412,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.177083,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1631119,
+      "games": [
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500597",
+          "matchup": "OKC @ MIA",
+          "minutes": 17.816667,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500553",
+          "matchup": "OKC vs. MIA",
+          "minutes": 14.483333,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Jaylin Williams",
+      "season_averages": { "PTS": 7.215385 },
+      "season_scoring": 7.215385,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.133523,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1630311,
+      "games": [
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500612",
+          "matchup": "GSW vs. MIA",
+          "minutes": 13.383333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-19",
+          "game_id": "0022500257",
+          "matchup": "GSW @ MIA",
+          "minutes": 32.116667,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Pat Spencer",
+      "season_averages": { "PTS": 7.212121 },
+      "season_scoring": 7.212121,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.190367,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1641778,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501172",
+          "matchup": "WAS vs. MIA",
+          "minutes": 31.7,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-04-04",
+          "game_id": "0022501129",
+          "matchup": "WAS @ MIA",
+          "minutes": 4.35,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Leaky Black",
+      "season_averages": { "PTS": 7.066667 },
+      "season_scoring": 7.066667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.145631,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1629684,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 18.866667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500909",
+          "matchup": "CHA vs. MIA",
+          "minutes": 18.883333,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Grant Williams",
+      "season_averages": { "PTS": 7.0 },
+      "season_scoring": 7.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.087432,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1630679,
+      "games": [
+        {
+          "game_date": "2026-03-29",
+          "game_id": "0022501083",
+          "matchup": "IND vs. MIA",
+          "minutes": 9.933333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-10",
+          "game_id": "0022500543",
+          "matchup": "IND vs. MIA",
+          "minutes": 4.333333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500436",
+          "matchup": "IND @ MIA",
+          "minutes": 11.816667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Ethan Thompson",
+      "season_averages": { "PTS": 6.96875 },
+      "season_scoring": 6.96875,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.168367,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1630175,
+      "games": [
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 11.133333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Cole Anthony",
+      "season_averages": { "PTS": 6.685714 },
+      "season_scoring": 6.685714,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.194805,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1631165,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501068",
+          "matchup": "CLE vs. MIA",
+          "minutes": 24.5,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501055",
+          "matchup": "CLE vs. MIA",
+          "minutes": 36.866667,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500354",
+          "matchup": "SAC @ MIA",
+          "minutes": 8.983333,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Keon Ellis",
+      "season_averages": { "PTS": 6.666667 },
+      "season_scoring": 6.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.158854,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1642347,
+      "games": [
+        {
+          "game_date": "2026-04-09",
+          "game_id": "0022501165",
+          "matchup": "TOR vs. MIA",
+          "minutes": 21.65,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-04-07",
+          "game_id": "0022501151",
+          "matchup": "TOR vs. MIA",
+          "minutes": 23.55,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500414",
+          "matchup": "TOR @ MIA",
+          "minutes": 19.0,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-12-15",
+          "game_id": "0022501227",
+          "matchup": "TOR @ MIA",
+          "minutes": 23.316667,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Jamal Shead",
+      "season_averages": { "PTS": 6.646341 },
+      "season_scoring": 6.646341,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.188492,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642948,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500332",
+          "matchup": "DAL vs. MIA",
+          "minutes": 33.933333,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-24",
+          "game_id": "0022500286",
+          "matchup": "DAL @ MIA",
+          "minutes": 16.75,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Ryan Nembhard",
+      "season_averages": { "PTS": 6.616667 },
+      "season_scoring": 6.616667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.125641,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1628975,
+      "games": [
+        {
+          "game_date": "2026-03-14",
+          "game_id": "0022500972",
+          "matchup": "ORL @ MIA",
+          "minutes": 16.133333,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500692",
+          "matchup": "CHI @ MIA",
+          "minutes": 20.116667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-11-21",
+          "game_id": "0022500051",
+          "matchup": "CHI vs. MIA",
+          "minutes": 18.133333,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Jevon Carter",
+      "season_averages": { "PTS": 6.396226 },
+      "season_scoring": 6.396226,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.081433,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1642348,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501091",
+          "matchup": "PHI @ MIA",
+          "minutes": 0.6,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500275",
+          "matchup": "PHI vs. MIA",
+          "minutes": 32.483333,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Justin Edwards",
+      "season_averages": { "PTS": 6.03125 },
+      "season_scoring": 6.03125,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.2,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1631248,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501106",
+          "matchup": "BOS @ MIA",
+          "minutes": 17.8,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-02-06",
+          "game_id": "0022500741",
+          "matchup": "BOS vs. MIA",
+          "minutes": 18.633333,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500580",
+          "matchup": "BOS @ MIA",
+          "minutes": 4.966667,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500381",
+          "matchup": "BOS vs. MIA",
+          "minutes": 5.733333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Baylor Scheierman",
+      "season_averages": { "PTS": 5.545455 },
+      "season_scoring": 5.545455,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.084084,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1630544,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 3.55,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500033",
+          "matchup": "CHA @ MIA",
+          "minutes": 35.383333,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-10-28",
+          "game_id": "0022500124",
+          "matchup": "CHA @ MIA",
+          "minutes": 26.883333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Tre Mann",
+      "season_averages": { "PTS": 5.490566 },
+      "season_scoring": 5.490566,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.151815,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1628988,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501027",
+          "matchup": "HOU vs. MIA",
+          "minutes": 13.3,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500864",
+          "matchup": "HOU @ MIA",
+          "minutes": 8.5,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Aaron Holiday",
+      "season_averages": { "PTS": 5.473684 },
+      "season_scoring": 5.473684,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.087302,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1641725,
+      "games": [
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "NOP @ MIA",
+          "minutes": 2.4,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Trey Alexander",
+      "season_averages": { "PTS": 5.222222 },
+      "season_scoring": 5.222222,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.162162,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1629618,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500450",
+          "matchup": "DEN @ MIA",
+          "minutes": 6.416667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Jalen Pickett",
+      "season_averages": { "PTS": 5.2 },
+      "season_scoring": 5.2,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.137931,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1631204,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500923",
+          "matchup": "DET @ MIA",
+          "minutes": 19.483333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-01",
+          "game_id": "0022500472",
+          "matchup": "DET vs. MIA",
+          "minutes": 23.9,
+          "stats": { "PTS": 18.0 }
+        }
+      ],
+      "name": "Marcus Sasser",
+      "season_averages": { "PTS": 5.184211 },
+      "season_scoring": 5.184211,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.135593,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1641722,
+      "games": [
+        {
+          "game_date": "2026-01-04",
+          "game_id": "0022500497",
+          "matchup": "NOP @ MIA",
+          "minutes": 2.4,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Jordan Hawkins",
+      "season_averages": { "PTS": 5.058824 },
+      "season_scoring": 5.058824,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.120623,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1628366,
+      "games": [
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500217",
+          "matchup": "CLE @ MIA",
+          "minutes": 20.466667,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500201",
+          "matchup": "CLE @ MIA",
+          "minutes": 19.5,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Lonzo Ball",
+      "season_averages": { "PTS": 4.571429 },
+      "season_scoring": 4.571429,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.102273,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 201144,
+      "games": [
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500513",
+          "matchup": "MIN vs. MIA",
+          "minutes": 15.316667,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500486",
+          "matchup": "MIN @ MIA",
+          "minutes": 14.666667,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Mike Conley",
+      "season_averages": { "PTS": 4.537037 },
+      "season_scoring": 4.537037,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.074419,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1643007,
+      "games": [
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500436",
+          "matchup": "IND @ MIA",
+          "minutes": 3.466667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Taelon Peter",
+      "season_averages": { "PTS": 4.5 },
+      "season_scoring": 4.5,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.158228,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642278,
+      "games": [
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500398",
+          "matchup": "NYK vs. MIA",
+          "minutes": 22.183333,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-26",
+          "game_id": "0022500108",
+          "matchup": "NYK @ MIA",
+          "minutes": 9.783333,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Tyler Kolek",
+      "season_averages": { "PTS": 4.419355 },
+      "season_scoring": 4.419355,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.197581,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1642484,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501189",
+          "matchup": "ATL @ MIA",
+          "minutes": 26.616667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "RayJ Dennis",
+      "season_averages": { "PTS": 4.352941 },
+      "season_scoring": 4.352941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.144578,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1630182,
+      "games": [
+        {
+          "game_date": "2026-03-17",
+          "game_id": "0022500991",
+          "matchup": "CHA vs. MIA",
+          "minutes": 14.433333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-03-06",
+          "game_id": "0022500909",
+          "matchup": "CHA vs. MIA",
+          "minutes": 13.85,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Josh Green",
+      "season_averages": { "PTS": 4.293103 },
+      "season_scoring": 4.293103,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.165746,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1642862,
+      "games": [
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500033",
+          "matchup": "CHA @ MIA",
+          "minutes": 19.3,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-10-28",
+          "game_id": "0022500124",
+          "matchup": "CHA @ MIA",
+          "minutes": 10.9,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Liam McNeeley",
+      "season_averages": { "PTS": 4.258065 },
+      "season_scoring": 4.258065,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.147368,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1642261,
+      "games": [
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500155",
+          "matchup": "LAL vs. MIA",
+          "minutes": 11.55,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Dalton Knecht",
+      "season_averages": { "PTS": 4.222222 },
+      "season_scoring": 4.222222,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.188482,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 201587,
+      "games": [
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500313",
+          "matchup": "LAC @ MIA",
+          "minutes": 20.216667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 6.85,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Nicolas Batum",
+      "season_averages": { "PTS": 3.959459 },
+      "season_scoring": 3.959459,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.008403,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1641747,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500450",
+          "matchup": "DEN @ MIA",
+          "minutes": 8.266667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "DaRon Holmes II",
+      "season_averages": { "PTS": 3.72 },
+      "season_scoring": 3.72,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.196721,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1630811,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501189",
+          "matchup": "ATL @ MIA",
+          "minutes": 32.116667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500805",
+          "matchup": "ATL vs. MIA",
+          "minutes": 3.3,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "ATL @ MIA",
+          "minutes": 1.383333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500423",
+          "matchup": "ATL vs. MIA",
+          "minutes": 2.766667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Keaton Wallace",
+      "season_averages": { "PTS": 3.509434 },
+      "season_scoring": 3.509434,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.052632,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612737,
+      "tricode": "ATL"
+    },
+    {
+      "canonical_id": 1642530,
+      "games": [
+        {
+          "game_date": "2026-02-01",
+          "game_id": "0022500705",
+          "matchup": "CHI @ MIA",
+          "minutes": 26.7,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500692",
+          "matchup": "CHI @ MIA",
+          "minutes": 11.0,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Yuki Kawamura",
+      "season_averages": { "PTS": 3.444444 },
+      "season_scoring": 3.444444,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.115385,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1627827,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501027",
+          "matchup": "HOU vs. MIA",
+          "minutes": 13.933333,
+          "stats": { "PTS": 1.0 }
+        },
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500864",
+          "matchup": "HOU @ MIA",
+          "minutes": 15.5,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Dorian Finney-Smith",
+      "season_averages": { "PTS": 3.324324 },
+      "season_scoring": 3.324324,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.189394,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1626145,
+      "games": [
+        {
+          "game_date": "2026-01-28",
+          "game_id": "0022500674",
+          "matchup": "ORL @ MIA",
+          "minutes": 19.416667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-09",
+          "game_id": "0022501201",
+          "matchup": "ORL vs. MIA",
+          "minutes": 16.983333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500339",
+          "matchup": "ORL vs. MIA",
+          "minutes": 15.966667,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500081",
+          "matchup": "ORL vs. MIA",
+          "minutes": 23.5,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Tyus Jones",
+      "season_averages": { "PTS": 2.970149 },
+      "season_scoring": 2.970149,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.091743,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 101108,
+      "games": [
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500313",
+          "matchup": "LAC @ MIA",
+          "minutes": 14.75,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-03",
+          "game_id": "0022500164",
+          "matchup": "LAC vs. MIA",
+          "minutes": 13.766667,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Chris Paul",
+      "season_averages": { "PTS": 2.9375 },
+      "season_scoring": 2.9375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.071429,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1641871,
+      "games": [
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500187",
+          "matchup": "POR @ MIA",
+          "minutes": 11.616667,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Duop Reath",
+      "season_averages": { "PTS": 2.9375 },
+      "season_scoring": 2.9375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.189189,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1642355,
+      "games": [
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500155",
+          "matchup": "LAL vs. MIA",
+          "minutes": 18.05,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Bronny James",
+      "season_averages": { "PTS": 2.904762 },
+      "season_scoring": 2.904762,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.13913,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1642938,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500450",
+          "matchup": "DEN @ MIA",
+          "minutes": 6.416667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Curtis Jones",
+      "season_averages": { "PTS": 2.9 },
+      "season_scoring": 2.9,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.074074,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 203914,
+      "games": [
+        {
+          "game_date": "2025-11-26",
+          "game_id": "0022500062",
+          "matchup": "MIL @ MIA",
+          "minutes": 18.6,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Gary Harris",
+      "season_averages": { "PTS": 2.666667 },
+      "season_scoring": 2.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.163462,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1630322,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501041",
+          "matchup": "SAS @ MIA",
+          "minutes": 2.866667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Lindy Waters III",
+      "season_averages": { "PTS": 2.375 },
+      "season_scoring": 2.375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.056818,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1642404,
+      "games": [
+        {
+          "game_date": "2026-03-08",
+          "game_id": "0022500923",
+          "matchup": "DET @ MIA",
+          "minutes": 8.2,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Chaz Lanier",
+      "season_averages": { "PTS": 2.352941 },
+      "season_scoring": 2.352941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.022472,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 201145,
+      "games": [
+        {
+          "game_date": "2026-02-28",
+          "game_id": "0022500864",
+          "matchup": "HOU @ MIA",
+          "minutes": 11.983333,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jeff Green",
+      "season_averages": { "PTS": 2.233333 },
+      "season_scoring": 2.233333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.147059,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1630548,
+      "games": [
+        {
+          "game_date": "2026-01-06",
+          "game_id": "0022500513",
+          "matchup": "MIN vs. MIA",
+          "minutes": 4.666667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Johnny Juzang",
+      "season_averages": { "PTS": 2.047619 },
+      "season_scoring": 2.047619,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.131579,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1628502,
+      "games": [
+        {
+          "game_date": "2026-01-25",
+          "game_id": "0022500655",
+          "matchup": "PHX vs. MIA",
+          "minutes": 2.7,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Nigel Hayes-Davis",
+      "season_averages": { "PTS": 1.259259 },
+      "season_scoring": 1.259259,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.086957,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    }
+  ],
+  "proxy": "Outcomes are box-score proxies for the Qualifier slices, not slice-level results. Each stat column is a market the Matchup's defense sheet already maps to a Qualifier's slice, so a Corner 3 Qualifier reads as points and threes rather than as corner threes made.",
+  "season": "2025-26",
+  "stat_columns": ["PTS"],
+  "success": true,
+  "summary": {
+    "columns": { "PTS": { "mean_difference": 0.836832, "over_average_share": 0.531599 } },
+    "games": 269,
+    "players": 135
+  },
+  "target": {
+    "created_at": "2026-09-05T17:18:44.981799+00:00",
+    "id": 3,
+    "note": "Zone walls off the rim. Who scores without it?",
+    "opponent": "MIA",
+    "qualifiers": [
+      {
+        "base": "shot_zones",
+        "comparator": "at_or_below",
+        "slice_key": "Restricted Area",
+        "threshold": 0.2
+      }
+    ],
+    "title": "MIA vs Restricted area \u2264 20%",
+    "updated_at": "2026-09-05T17:18:44.981799+00:00"
+  }
+}

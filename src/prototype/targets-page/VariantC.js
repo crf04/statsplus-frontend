@@ -24,7 +24,7 @@ export const NAME = 'Board';
 
 const SHOWN_FITS = 6;
 
-function SentenceComposer({ onSave }) {
+export function SentenceComposer({ onSave }) {
   const {
     draft,
     patch,

@@ -18,9 +18,16 @@ steps variants and sets the date; `←`/`→` also step.
 | --- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | A   | Ledger | One row per Target in a dense ledger; a row opens in place to show the day's readings and fits; the composer is the empty row at the foot.    |
 | B   | Desk   | A rail of Targets on the left, one Target read in full on the right; "New" swaps the pane for the composer.                                   |
+| D   | Record | History-first ledger: hit rate, mean margin and a strip of every game per Target; a row opens into the leaderboard of who cashed.             |
+| E   | Season | History-first timeline: one axis Oct → now, a lane per Target, every game a tick; receipts feed under it; small composer at the foot.         |
+| F   | Report | History-first reports: a written verdict, a margin strip chart per stat column, the top five players; sentence composer.                      |
 | C   | Board  | Today's live Targets as scoreboard tiles, idle ones as a quiet list; the composer is a sentence you fill in, which is also the derived title. |
 
-Reads are real (`/api/user/targets`, `/resolve`). Saving is a stub: a Target
+Second round (Chris, 2026-09-06): "less about the upcoming game, more about
+history; the upcoming stuff is on the matchups page" → D, E, F, built on the
+backtest read (`/<id>/backtest`, one per Target, up front).
+
+Reads are real (`/api/user/targets`, `/resolve`, `/<id>/backtest`). Saving is a stub: a Target
 composed here is kept in memory for the session, marked _unsaved_, and never
 sent to the backend.
 

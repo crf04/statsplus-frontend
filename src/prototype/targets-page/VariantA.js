@@ -86,7 +86,7 @@ function LedgerRow({ item, slateDate, open, onToggle }) {
   );
 }
 
-function ComposeRow({ onSave, onCancel }) {
+export function ComposeRow({ onSave, onCancel }) {
   const { draft, patch, patchQualifier, addQualifier, removeQualifier, valid, problem, request } =
     useDraft();
   return (

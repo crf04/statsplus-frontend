@@ -81,20 +81,11 @@ export default function TargetRecord({
             ? margins.filter((margin) => margin > 0).length / margins.length
             : null;
           const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
+          const roundedMean = mean === null ? null : Math.round(mean * 10) / 10;
           const label = (
             <>
               <small>{column}</small>
-              <b
-                className={
-                  hitShare === null
-                    ? undefined
-                    : hitShare > 0.5
-                      ? 'is-hit'
-                      : hitShare < 0.5
-                        ? 'is-miss'
-                        : undefined
-                }
-              >
+              <b className={roundedMean > 0 ? 'is-hit' : roundedMean < 0 ? 'is-miss' : undefined}>
                 {rate}
                 <span className="visually-hidden"> hit</span>
               </b>

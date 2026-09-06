@@ -24,7 +24,8 @@ test('the record grades all games oldest first and states games, hit rate and me
   expect(within(summary).getByRole('listitem', { name: 'Games' })).toHaveTextContent('3');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('33%');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+2.0');
-  expect(within(summary).getByText('33%')).toHaveClass('is-miss');
+  // The prototype colors by mean margin, even when fewer than half the games hit.
+  expect(within(summary).getByText('33%')).toHaveClass('is-hit');
   expect(within(summary).queryByRole('listitem', { name: 'Players' })).not.toBeInTheDocument();
   const cells = within(screen.getByRole('list', { name: /oldest to newest/ })).getAllByRole(
     'listitem',

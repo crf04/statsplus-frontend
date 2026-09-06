@@ -3,7 +3,7 @@
 Throwaway. Never merge this directory into master; it lives on the branch
 `prototype/targets-page-look` as the primary source for whichever look wins.
 
-## Verdict (Chris, 2026-09-06)
+## Verdict (Chris, 2026-09-06) · spec: crf04/statsplus#59
 
 - **List page: G "Sheet".** Two read-only criteria cards per row, "+ New Target"
   top right (the composer is the Lab), game-today chip and "Edit →" in each

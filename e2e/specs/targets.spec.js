@@ -235,8 +235,6 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
   await expect(page.getByText(/1 of 4 opponent games kept/)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
-  await page.getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
   const savedLens = page.waitForResponse(
@@ -246,6 +244,8 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   );
   await page.getByRole('button', { name: /^PTS\/36 / }).click();
   await savedLens;
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');

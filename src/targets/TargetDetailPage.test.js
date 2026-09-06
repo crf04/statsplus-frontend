@@ -295,7 +295,7 @@ test('an unknown stored slice remains untouched when another field is saved', as
   await open();
   expect(screen.getByLabelText('Qualifier 1 slice')).toHaveValue('Unknown');
   expect(screen.getByLabelText('Qualifier 1 slice')).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
     target: { value: 'Edited note' },
   });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
@@ -412,7 +412,7 @@ test('criteria save remounts do not reset a pending grading choice', async () =>
   await act(async () => {});
   await act(async () => jest.advanceTimersByTime(600));
   fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
-  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
     target: { value: 'Updated note' },
   });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));

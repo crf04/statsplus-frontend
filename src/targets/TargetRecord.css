@@ -67,9 +67,19 @@
 .target-grade-key > span {
   margin: 0 6px;
 }
-.target-grade-key small {
+.target-proxy-note {
   margin-left: 12px;
   font-size: 0.62rem;
+}
+.target-proxy-note summary {
+  cursor: pointer;
+}
+.target-proxy-note p {
+  margin: 6px 0 0;
+}
+.target-proxy-note summary:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
 }
 .target-record .target-summary {
   align-items: stretch;

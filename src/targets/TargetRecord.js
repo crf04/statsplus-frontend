@@ -152,7 +152,10 @@ export default function TargetRecord({
           <i key={tone} className={`grade-${tone}`} aria-hidden="true" />
         ))}
         <span>beat by more</span>
-        <small title={backtest.proxy}>{gradedBy} vs the player’s own season average</small>
+        <details className="target-proxy-note">
+          <summary>{gradedBy} vs the player’s own season average</summary>
+          <p>{backtest.proxy}</p>
+        </details>
       </div>
     </div>
   );

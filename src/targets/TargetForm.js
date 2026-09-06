@@ -237,7 +237,7 @@ export default function TargetForm({
         <label className="target-note">
           <span className="target-label">Why</span>
           <input
-            aria-label="Note · optional, never the title"
+            aria-label="Why · optional, never the title"
             value={draft.note}
             placeholder="optional, never the title"
             maxLength={280}

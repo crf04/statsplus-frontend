@@ -9,7 +9,7 @@ const composeTarget = async (page, { opponent, base = 'shot_zones', slice, perce
   await page.getByLabel('Qualifier 1 diet base').selectOption(base);
   await page.getByLabel('Qualifier 1 slice').selectOption(slice);
   await setTargetThreshold(page, percent);
-  if (note) await page.getByLabel('Note · optional, never the title').fill(note);
+  if (note) await page.getByLabel('Why · optional, never the title').fill(note);
 };
 const saveTarget = async (page) => {
   await page.getByRole('button', { name: 'Save Target' }).click();
@@ -326,4 +326,43 @@ test('@critical a Target remembers PTS/36 across reload and its collection card'
   await expect(
     page.getByRole('article').getByRole('listitem', { name: 'PTS/36', exact: true }),
   ).toBeVisible();
+});
+
+test('desktop workbench exposes every stats group without scrolling a hidden bench', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^4games$/);
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  for (const stat of ['FGA', 'PTS/36', 'PTS/FGA']) {
+    const checkbox = page.getByRole('checkbox', { name: stat, exact: true });
+    const box = await checkbox.boundingBox();
+    // Click the rendered position: locator.click would scroll a clipped ancestor
+    // and conceal the hidden-scroll-container defect this journey guards.
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(checkbox).toBeChecked();
+    if (stat !== 'PTS/FGA') {
+      const selectedBox = await checkbox.boundingBox();
+      await page.mouse.click(
+        selectedBox.x + selectedBox.width / 2,
+        selectedBox.y + selectedBox.height / 2,
+      );
+      await expect(checkbox).not.toBeChecked();
+    }
+  }
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  const explanation = page.getByText(/vs the player’s own season average/, { exact: false });
+  await explanation.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText(/Outcomes are box-score proxies/)).toBeVisible();
 });

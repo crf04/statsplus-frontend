@@ -15,17 +15,12 @@ function channelFor(key, target, userId) {
   let timer;
   let running = false;
   let readPins = 0;
-  let releaseTimer;
+  let version = 0;
   const listeners = new Set();
-  // A criteria-save reload can remount after its request microtasks. Give that
-  // same action one turn to reattach before a later visit seeds a fresh channel.
   const releaseIfUnused = () => {
-    clearTimeout(releaseTimer);
-    releaseTimer = setTimeout(() => {
-      if (!listeners.size && !pending && !running && !readPins && channels.get(key) === channel) {
-        channels.delete(key);
-      }
-    }, 0);
+    if (!listeners.size && !pending && !running && !readPins && channels.get(key) === channel) {
+      channels.delete(key);
+    }
   };
   const publish = (patch) => {
     snapshot = { ...snapshot, ...patch };
@@ -57,6 +52,7 @@ function channelFor(key, target, userId) {
     releaseIfUnused();
   };
   const change = (preferences) => {
+    version += 1;
     pending = preferences;
     publish({ preferences, status: 'pending', error: null });
     clearTimeout(timer);
@@ -66,7 +62,15 @@ function channelFor(key, target, userId) {
     userId,
     holdForRead: () => {
       readPins += 1;
+      const startedVersion = version;
+      const wasPending = Boolean(pending || running);
       return {
+        reconcile: (record) =>
+          String(record.id) === String(target.id) &&
+          (wasPending || version !== startedVersion) &&
+          snapshot.status !== 'error'
+            ? { ...record, statPreferences: snapshot.preferences }
+            : record,
         release: () => {
           readPins -= 1;
           releaseIfUnused();
@@ -75,7 +79,6 @@ function channelFor(key, target, userId) {
     },
     getSnapshot: () => snapshot,
     subscribe: (notify) => {
-      clearTimeout(releaseTimer);
       listeners.add(notify);
       return () => {
         listeners.delete(notify);
@@ -90,12 +93,14 @@ function channelFor(key, target, userId) {
 }
 
 // A GET that began before a local write settled may return the older snapshot.
-// Keep its channels alive until the destination can subscribe to those choices.
+// Carry any choice that raced the read on its result before releasing the channel.
 export const beginStatPreferenceRead = (userId) => {
   const held = [...channels.values()]
     .filter((channel) => channel.userId === userId)
     .map((channel) => channel.holdForRead());
   return {
+    reconcile: (targets) =>
+      targets.map((target) => held.reduce((record, read) => read.reconcile(record), target)),
     release: () => held.forEach((read) => read.release()),
   };
 };

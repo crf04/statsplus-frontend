@@ -39,7 +39,7 @@ export const PREVIEW_DELAY_MS = 600;
 const readList = async ({ signal, userId }) => {
   const preferences = beginStatPreferenceRead(userId);
   try {
-    return { targets: await fetchTargets({ signal }) };
+    return { targets: preferences.reconcile(await fetchTargets({ signal })) };
   } finally {
     preferences.release();
   }

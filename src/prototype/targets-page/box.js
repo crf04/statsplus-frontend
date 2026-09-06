@@ -10,6 +10,7 @@
  */
 import { useState } from 'react';
 import { summarise } from './history';
+import { applyConditions } from './conditions';
 import box1 from './mock/box-1.json';
 import box2 from './mock/box-2.json';
 import box3 from './mock/box-3.json';
@@ -49,12 +50,29 @@ export const boxFor = (targetId) => BOXES[String(targetId)] || null;
  * the box score does not have for a player reads as the proxy value if it is
  * one, else the player is left out of that column's games.
  */
+const recount = (backtest) => {
+  const record = summarise(backtest);
+  return {
+    ...backtest,
+    summary: {
+      players: backtest.players.length,
+      games: record.games.length,
+      columns: Object.fromEntries(
+        record.columns.map((column) => [
+          column.column,
+          { meanDifference: column.mean, overAverageShare: column.rate },
+        ]),
+      ),
+    },
+  };
+};
+
 export const withStats = (backtest, box, shown) => {
   if (!backtest) return null;
   const columns = shown.filter(
     (name) => backtest.statColumns.includes(name) || box?.stats.includes(name),
   );
-  if (columns.length === 0) return backtest;
+  if (columns.length === 0) return recount(backtest);
   const players = backtest.players
     .map((player) => {
       const entry = box?.players[String(player.canonicalId)];
@@ -96,14 +114,15 @@ export const withStats = (backtest, box, shown) => {
  * Which stats are shown and which one the grid is graded by. Starts on the
  * proxies the backend sent; the reader adds and drops stats from there.
  */
-export const useShownStats = (backtest, boxId) => {
+export const useShownStats = (backtest, boxId, conditions = null) => {
   const box = boxFor(boxId);
+  const filtered = applyConditions(backtest, conditions);
   const [shown, setShown] = useState(null);
   const [graded, setGraded] = useState(null);
-  const proxies = backtest?.statColumns || [];
+  const proxies = filtered?.statColumns || [];
   const chosen = shown || proxies;
   const available = box ? STAT_CATALOGUE.map(([name]) => name) : proxies;
-  const shownBacktest = withStats(backtest, box, chosen);
+  const shownBacktest = withStats(filtered, box, chosen);
   const columns = shownBacktest?.statColumns || [];
   const column = columns.includes(graded) ? graded : columns[0];
   const toggle = (name) => {

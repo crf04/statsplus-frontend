@@ -14,6 +14,7 @@ import { useTargetPreview } from '../../targets/useTargets';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { monthDay, signedDelta, summarise, toneOf } from './history';
 import { STAT_CATALOGUE, useShownStats } from './box';
+import { blankConditions, describeConditions } from './conditions';
 import previewSample from './mock/preview-sample.json';
 
 /* What a Target is evaluated by. The note is never part of the evidence. */
@@ -74,14 +75,20 @@ const usePreview = PROTO_STANDALONE ? useMockPreview : useLivePreview;
  */
 export const useLab = (draft, saved, savedRead) => {
   const { valid, request, problem } = describeDraft(draft);
+  const conditions = draft.conditions || null;
   const key = valid ? criteriaKey(request) : null;
-  const unchanged = saved ? key === savedKey(saved) : false;
-  const preview = usePreview(valid && !unchanged ? request : null);
+  const unchanged =
+    saved &&
+    key === savedKey(saved) &&
+    JSON.stringify(conditions) === JSON.stringify(saved.conditions || blankConditions());
+  const criteriaMoved = !saved || key !== savedKey(saved);
+  const preview = usePreview(valid && criteriaMoved ? request : null);
   if (unchanged) {
     return {
       valid,
       problem,
       dirty: false,
+      conditions,
       status: savedRead?.status || 'loading',
       backtest: savedRead?.status === 'ready' ? savedRead.backtest : null,
       stale: false,
@@ -92,6 +99,19 @@ export const useLab = (draft, saved, savedRead) => {
           : savedRead?.status === 'error'
             ? 'The season did not read.'
             : 'Reading the season…',
+    };
+  }
+  if (!criteriaMoved) {
+    return {
+      valid,
+      problem,
+      dirty: valid,
+      conditions,
+      status: savedRead?.status || 'loading',
+      backtest: savedRead?.status === 'ready' ? savedRead.backtest : null,
+      stale: false,
+      sample: false,
+      line: 'Backtest · season to date · under these Conditions',
     };
   }
   const stale = preview.pending || preview.status !== 'ready';
@@ -107,6 +127,7 @@ export const useLab = (draft, saved, savedRead) => {
     valid,
     problem,
     dirty: Boolean(saved) && valid,
+    conditions,
     status: preview.status,
     backtest: preview.preview || (savedRead?.status === 'ready' ? savedRead.backtest : null),
     stale,
@@ -317,8 +338,19 @@ export function GameList({ record, column }) {
  * The whole of the Lab beneath one set of criteria: the status line, the
  * summary with the stat column to grade by, the graded grid, the games.
  */
+export function ConditionLine({ backtest, conditions }) {
+  const described = backtest ? describeConditions(backtest.target.opponent, conditions) : null;
+  if (!described) return null;
+  return (
+    <p className="pt-lab-cond">
+      <b>{described.text}</b> · {described.kept} of {described.total} {backtest.target.opponent}{' '}
+      games count
+    </p>
+  );
+}
+
 export function LabEvidence({ lab, games = true, boxId = null }) {
-  const stats = useShownStats(lab.backtest, boxId);
+  const stats = useShownStats(lab.backtest, boxId, lab.conditions);
   const { backtest, column } = stats;
   const record = useMemo(() => (backtest ? summarise(backtest) : null), [backtest]);
   if (!backtest || !record) {
@@ -327,6 +359,7 @@ export function LabEvidence({ lab, games = true, boxId = null }) {
   return (
     <div className={`pt-lab${lab.stale ? ' is-stale' : ''}`} aria-busy={lab.status === 'loading'}>
       <p className="pt-lab-line">{lab.line}</p>
+      <ConditionLine backtest={backtest} conditions={lab.conditions} />
       <SummaryLine backtest={backtest} column={column} onColumn={stats.setColumn} stats={stats} />
       {record.games.length === 0 ? (
         <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>

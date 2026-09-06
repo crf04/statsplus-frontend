@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { deriveTargetTitle } from '../../targets/targetCatalog';
 import { useLab } from './lab';
 import { OpponentSelect, QualifierFields, TodayIndicator, useDraft } from './shared';
+import { ConditionsEditor } from './conditions';
 
 export const formatSet = (createdAt) =>
   new Intl.DateTimeFormat(undefined, {
@@ -33,7 +34,12 @@ export const useTargetEditor = (target, read, listPath) => {
   const [note, setNote] = useState(null);
   const lab = useLab(editor.draft, savedAs, read);
   const save = () => {
-    setSavedAs({ ...savedAs, ...editor.request, title: deriveTargetTitle(editor.request) });
+    setSavedAs({
+      ...savedAs,
+      ...editor.request,
+      conditions: editor.draft.conditions,
+      title: deriveTargetTitle(editor.request),
+    });
     setNote('Saved for this session only · nothing was sent to the backend');
   };
   const revert = () => editor.reset(savedAs);
@@ -79,6 +85,11 @@ export function CriteriaForm({ editor, opponentLocked = true }) {
           + and
         </button>
       </div>
+      <ConditionsEditor
+        opponent={draft.opponent}
+        conditions={draft.conditions}
+        onChange={editor.patchConditions}
+      />
       <label className="pt-g-note">
         <span className="target-label">Why</span>
         <input

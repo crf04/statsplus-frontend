@@ -27,6 +27,7 @@ import {
 } from '../../targets/targetCatalog';
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
 import { LeagueHint, leagueAveragePercent } from './leagueAverages';
+import { blankConditions } from './conditions';
 import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { useBacktests } from './history';
@@ -118,6 +119,7 @@ export const useTargetsPrototypeData = (date) => {
         opponent: request.opponent,
         qualifiers: request.qualifiers,
         note: request.note,
+        conditions: request.conditions || null,
         title: deriveTargetTitle(request),
         createdAt: new Date().toISOString(),
         local: true,
@@ -163,7 +165,10 @@ export const formatCreated = (createdAt) =>
 /* --- a draft, and the controls that edit one --- */
 
 export const useDraft = (initial) => {
-  const [draft, setDraft] = useState(() => (initial ? targetToDraft(initial) : blankTargetDraft()));
+  const [draft, setDraft] = useState(() => ({
+    ...(initial ? targetToDraft(initial) : blankTargetDraft()),
+    conditions: initial?.conditions || blankConditions(),
+  }));
   const patch = (fields) => setDraft((current) => ({ ...current, ...fields }));
   const patchQualifier = (index, fields) =>
     setDraft((current) => ({
@@ -179,13 +184,20 @@ export const useDraft = (initial) => {
       ...current,
       qualifiers: current.qualifiers.filter((_, position) => position !== index),
     }));
-  const reset = (target) => setDraft(target ? targetToDraft(target) : blankTargetDraft());
+  const reset = (target) =>
+    setDraft({
+      ...(target ? targetToDraft(target) : blankTargetDraft()),
+      conditions: target?.conditions || blankConditions(),
+    });
+  const patchConditions = (fields) =>
+    setDraft((current) => ({ ...current, conditions: { ...current.conditions, ...fields } }));
   return {
     draft,
     patch,
     patchQualifier,
     addQualifier,
     removeQualifier,
+    patchConditions,
     reset,
     ...describeDraft(draft),
   };

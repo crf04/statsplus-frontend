@@ -67,7 +67,7 @@ export default function VariantK({ item, read, listPath }) {
   const { target } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
-  const stats = useShownStats(lab.backtest, target.id);
+  const stats = useShownStats(lab.backtest, target.id, lab.conditions);
   const { backtest, column } = stats;
   const [openId, setOpenId] = useState(null);
   const record = useMemo(

@@ -9,6 +9,7 @@
  */
 import { useState } from 'react';
 import { LabEvidence, savedLab, useLab } from './lab';
+import { ConditionsEditor } from './conditions';
 import { isLive } from './shared';
 import {
   OpponentSelect,
@@ -40,6 +41,11 @@ function Criteria({ editor }) {
           + and
         </button>
       </div>
+      <ConditionsEditor
+        opponent={draft.opponent}
+        conditions={draft.conditions}
+        onChange={editor.patchConditions}
+      />
       <label className="pt-g-note">
         <span className="target-label">Why</span>
         <input
@@ -99,7 +105,7 @@ function DraftSection({ onSave, onClose }) {
             className="target-primary"
             disabled={!editor.valid}
             onClick={() => {
-              onSave(editor.request);
+              onSave({ ...editor.request, conditions: editor.draft.conditions });
               editor.reset();
               onClose();
             }}

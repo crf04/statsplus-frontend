@@ -55,6 +55,13 @@ their games, captured from the production database. A signed-in build without
 that capture can only offer the proxies; shipping this means the backtest
 response carrying the box score.
 
+Conditions (Chris, 2026-09-06): "players with high rim rate against MIN when
+Gobert doesn't play" → a defender-minutes Condition (games he sat out count as
+0 min) and a date window, on the criteria card; they filter the Backtest's
+games on the client. Every team's per-game minutes are in `mock/rosters.json`
+(captured from the production database). Shipping this means the backtest and
+preview reads taking Conditions as input and the Target storing them.
+
 Qualifier drawings `q=1|2|3` (track, slider, line). **Verdict (Chris, 2026-09-06): 2, the slider; now the default.**
 
 League-average hint beside every threshold (Chris, 2026-09-06): `lg 28%`, press

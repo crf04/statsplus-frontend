@@ -9,7 +9,7 @@
  */
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
+import { ConditionLine, GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
 import { summarise } from './history';
 import { useShownStats } from './box';
 import { CriteriaForm, DeleteAction, EditorActions, useTargetEditor } from './detailShared';
@@ -20,7 +20,7 @@ export default function VariantJ({ item, read, listPath }) {
   const { target } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
-  const stats = useShownStats(lab.backtest, target.id);
+  const stats = useShownStats(lab.backtest, target.id, lab.conditions);
   const { backtest, column } = stats;
   const record = useMemo(() => (backtest ? summarise(backtest) : null), [backtest]);
 
@@ -46,6 +46,7 @@ export default function VariantJ({ item, read, listPath }) {
           aria-busy={lab.status === 'loading'}
         >
           <p className="pt-lab-line">{lab.line}</p>
+          <ConditionLine backtest={backtest} conditions={lab.conditions} />
           {backtest && record && (
             <>
               <SummaryLine

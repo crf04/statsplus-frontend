@@ -3450,3 +3450,18 @@ a.pt-today.is-live:hover {
   display: inline-flex;
   align-items: center;
 }
+
+/* ===== round 4f: quieter head ===== */
+
+.pt-g-active {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+.pt-g-page-head {
+  margin-bottom: 16px;
+}

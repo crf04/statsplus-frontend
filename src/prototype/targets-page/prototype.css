@@ -2837,3 +2837,83 @@ a.pt-c-idle-row:hover span {
   font-size: 0.9rem;
   font-weight: 400;
 }
+
+/* ===== round 3d: is there a game today ===== */
+
+.pt-today {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pt-today.is-idle {
+  opacity: 0.6;
+}
+
+.pt-today.is-live {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 3px 10px 3px 8px;
+  color: var(--ct-text);
+}
+
+.pt-today.is-live i {
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ct-hit);
+  box-shadow: 0 0 0 3px var(--ct-hit-soft);
+}
+
+.pt-today.is-live b {
+  font-weight: 700;
+}
+
+.pt-today.is-live small {
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+a.pt-today.is-live:hover {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.pt-g-actions .pt-today {
+  margin-bottom: 4px;
+}
+
+.pt-h-bench-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.pt-h-bench-head .eyebrow {
+  margin: 0;
+}
+
+.pt-h-item-opp {
+  position: relative;
+}
+
+.pt-h-item-dot {
+  position: absolute;
+  top: -2px;
+  margin-left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ct-hit);
+}

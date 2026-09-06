@@ -9,7 +9,14 @@
  */
 import { useState } from 'react';
 import { LabEvidence, savedLab, useLab } from './lab';
-import { OpponentSelect, ProtoLink, QualifierChips, QualifierFields, useDraft } from './shared';
+import {
+  OpponentSelect,
+  ProtoLink,
+  QualifierChips,
+  QualifierFields,
+  TodayIndicator,
+  useDraft,
+} from './shared';
 
 export const NAME = 'Sheet';
 
@@ -66,6 +73,7 @@ function TargetSection({ item, read }) {
       <header className="pt-g-head">
         <ReadCriteria target={target} />
         <div className="pt-g-actions">
+          <TodayIndicator entry={item.entry} />
           {target.local ? (
             <small>unsaved · this session only</small>
           ) : (

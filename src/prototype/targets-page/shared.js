@@ -300,6 +300,27 @@ export function QualifierChips({ target }) {
   );
 }
 
+/*
+ * Whether the opponent plays today, and nothing more: the Matchups page owns
+ * the game itself. A live Target gets a dot and the game, an idle one a
+ * quiet line, so the absence reads as an answer rather than a gap.
+ */
+export function TodayIndicator({ entry }) {
+  if (!entry) return null;
+  if (!entry.game) return <span className="pt-today is-idle">no game today</span>;
+  const { game } = entry;
+  return (
+    <ProtoLink className="pt-today is-live" to={`/matchups/${game.gameId}`}>
+      <i aria-hidden="true" />
+      game today
+      <b>
+        {game.away.tricode} @ {game.home.tricode}
+      </b>
+      <small>{formatTip(game.scheduledAt)}</small>
+    </ProtoLink>
+  );
+}
+
 export function GameLine({ game }) {
   return (
     <span className="pt-game">

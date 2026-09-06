@@ -20,7 +20,7 @@ import {
   nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
 import { LabEvidence, savedLab, useLab } from './lab';
-import { ProtoLink, useDraft } from './shared';
+import { ProtoLink, TodayIndicator, useDraft } from './shared';
 import { percent, summarise } from './history';
 
 export const NAME = 'Bench';
@@ -200,7 +200,10 @@ function SavedBench({ item, read }) {
   const { target } = item;
   return (
     <section className="pt-h-bench">
-      <p className="eyebrow">Target · on the bench</p>
+      <div className="pt-h-bench-head">
+        <p className="eyebrow">Target · on the bench</p>
+        <TodayIndicator entry={item.entry} />
+      </div>
       <ReadSentence target={target} />
       <div className="pt-h-actions">
         <span className="pt-h-title">{target.title}</span>
@@ -279,7 +282,10 @@ export default function VariantH({ data }) {
                   aria-current={current === entry.target.id ? 'true' : undefined}
                   onClick={() => setSelected(entry.target.id)}
                 >
-                  <span className="pt-h-item-opp">{entry.target.opponent}</span>
+                  <span className="pt-h-item-opp">
+                    {entry.target.opponent}
+                    {entry.entry?.game && <i className="pt-h-item-dot" aria-hidden="true" />}
+                  </span>
                   <span className="pt-h-item-quals">
                     {entry.target.qualifiers.map((qualifier, index) => {
                       const { label, value } = formatQualifierParts(qualifier);

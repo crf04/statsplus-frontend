@@ -167,17 +167,21 @@
 }
 .target-games-heading {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 12px;
-  padding-bottom: 10px;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--ct-line);
-}
-.target-games-heading small {
-  font-size: 0.62rem;
-  font-weight: 400;
+  color: var(--ct-text);
+  font: 600 1.4rem var(--ct-display);
   letter-spacing: 0;
   text-transform: none;
+}
+.target-games-heading small {
+  color: var(--ct-dim);
+  font: 0.66rem var(--ct-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .target-game-rows > button {
   margin-top: 6px;

@@ -83,7 +83,7 @@ test('list and workbench fit a phone width', async ({ authenticatedPage: page })
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await expect(summaryItem(page, 'Games')).toHaveText(/4$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^4games$/);
   await saveTarget(page);
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -177,9 +177,9 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await expect(summaryItem(page, 'Games')).toHaveText(/4$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^4games$/);
   await page.getByRole('slider').press('ArrowRight');
-  await expect(summaryItem(page, 'Games')).toHaveText(/3$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^3games$/);
   const summary = await page.getByRole('list', { name: 'Backtest summary' }).textContent();
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
@@ -226,13 +226,13 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   });
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
-  await expect(summaryItem(page, 'Games')).toHaveText(/4$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^4games$/);
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a defender’s minutes' }).click();
   await page
     .getByLabel('Defender', { exact: true })
     .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
-  await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^1games$/);
   await expect(page.getByText(/1 of 4 opponent games kept/)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
   await page.getByRole('button', { name: 'stats ▾' }).click();
@@ -249,7 +249,7 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.reload();
   await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');
-  await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^1games$/);
   const cardRead = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
@@ -258,7 +258,7 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.getByRole('link', { name: '← All Targets' }).click();
   expect((await cardRead).status()).toBe(200);
   const savedCard = card(page, 'ATL vs At-rim assists ≥ 30%');
-  await expect(summaryItem(savedCard, 'Games')).toHaveText(/1$/);
+  await expect(summaryItem(savedCard, 'Games')).toHaveText(/^1games$/);
   await expect(
     savedCard.getByRole('list', { name: /1 games, oldest to newest, graded by PTS\/36 margin/ }),
   ).toBeVisible();
@@ -269,7 +269,7 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a date window' }).click();
   await page.getByLabel('From', { exact: true }).fill('2025-01-11');
-  await expect(summaryItem(page, 'Games')).toHaveText(/0$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/^0games$/);
   await expect(page.getByText(/0 of 4 opponent games kept/)).toBeVisible();
 });
 

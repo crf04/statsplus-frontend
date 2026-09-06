@@ -41,27 +41,43 @@ export const captureDraft = ({ opponent, base, sliceKey, leagueAverageShare }) =
 
 /*
  * The modal stays mounted so that closing it hands focus back to the row action
- * that opened it. Each capture is a fresh object, so a new one resets the draft
- * and clears whatever the last save said.
+ * that opened it. Every opening is counted, so each one — a fresh capture or
+ * the same row again — starts from its prefill with nothing left over from the
+ * last, and a save that started under an earlier opening can tell.
  */
 export default function TargetCaptureModal({ capture, onHide }) {
   const navigate = useNavigate();
-  const [state, setState] = useState({ capture: null, draft: null, saving: false, error: null });
-  // The capture that is open right now, kept where a save that started under
-  // an earlier one can see it: a save whose answer arrives after the dialog
-  // was dismissed, or after another row opened a fresh capture, is not this
-  // reader's any more and must not act on their behalf.
-  const live = useRef(capture);
-  live.current = capture;
+  const [state, setState] = useState({
+    opening: 0,
+    capture: null,
+    draft: null,
+    saving: false,
+    error: null,
+  });
+  const shown = useRef(undefined);
+  const opening = useRef(0);
+  if (capture !== shown.current) {
+    shown.current = capture;
+    opening.current += 1;
+  }
+  // Going away is one more opening nobody will save under.
   useEffect(
     () => () => {
-      live.current = null;
+      opening.current += 1;
     },
     [],
   );
 
-  if (capture && capture !== state.capture) {
-    setState({ capture, draft: captureDraft(capture), saving: false, error: null });
+  // The opened capture is kept for the dialog's own use: the body is still
+  // drawn while the dialog fades out after the prop has gone.
+  if (capture && state.opening !== opening.current) {
+    setState({
+      opening: opening.current,
+      capture,
+      draft: captureDraft(capture),
+      saving: false,
+      error: null,
+    });
   }
 
   const { draft, saving, error } = state;
@@ -73,14 +89,16 @@ export default function TargetCaptureModal({ capture, onHide }) {
    * worth keeping, not a retype.
    */
   const save = async (request) => {
-    const started = capture;
+    // A save answered after this opening was dismissed, or after the row was
+    // opened again, is nobody's any more and acts on no one's behalf.
+    const started = opening.current;
     setState((current) => ({ ...current, saving: true, error: null }));
     try {
       const target = await createTarget(request);
-      if (live.current !== started) return;
+      if (opening.current !== started) return;
       navigate(`/targets/${target.id}`);
     } catch (requestError) {
-      if (live.current !== started) return;
+      if (opening.current !== started) return;
       setState((current) => ({
         ...current,
         saving: false,

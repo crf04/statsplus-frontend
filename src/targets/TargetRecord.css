@@ -79,7 +79,7 @@
   min-width: 0;
   align-content: center;
 }
-.target-record .target-summary button {
+.target-record .target-summary > li > button {
   display: grid;
   gap: 1px;
   border: 1px solid transparent;
@@ -90,14 +90,14 @@
   text-align: left;
   cursor: pointer;
 }
-.target-record .target-summary button:hover {
+.target-record .target-summary > li > button:hover {
   border-color: var(--ct-line-strong);
 }
-.target-record .target-summary button[aria-pressed='true'] {
+.target-record .target-summary > li > button[aria-pressed='true'] {
   border-color: var(--ct-gold);
   background: var(--ct-gold-soft);
 }
-.target-record .target-summary button[aria-pressed='true'] > small:first-child {
+.target-record .target-summary > li > button[aria-pressed='true'] > small:first-child {
   color: var(--ct-gold);
 }
 .target-record .target-summary-picker {
@@ -111,8 +111,9 @@
 }
 .target-game-rows li {
   display: grid;
-  grid-template-columns: 10px 42px minmax(100px, 1fr) minmax(100px, 1fr) 44px;
-  gap: 4px 12px;
+  grid-template-columns: 10px 52px minmax(120px, 1fr) minmax(100px, 1fr) 52px;
+  gap: 12px;
+  min-height: 44px;
   align-items: baseline;
   padding: 6px 4px;
   border-bottom: 1px solid var(--ct-line);
@@ -127,6 +128,7 @@
 .target-game-rows time {
   color: var(--ct-dim);
   font: 0.66rem var(--ct-mono);
+  white-space: nowrap;
 }
 .target-game-who a {
   font-weight: 600;
@@ -192,10 +194,10 @@
   color: var(--ct-dim);
   font: 0.68rem var(--ct-mono);
 }
-@media (max-width: 620px) {
+@media (max-width: 819px) {
   .target-game-rows li {
-    grid-template-columns: 8px 38px minmax(0, 1fr) 44px;
-    gap: 4px 8px;
+    grid-template-columns: 10px 48px minmax(0, 1fr) 48px;
+    gap: 12px;
   }
   .target-game-line {
     grid-column: 3;

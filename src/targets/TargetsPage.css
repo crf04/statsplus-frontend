@@ -568,12 +568,24 @@
   letter-spacing: 0.015em;
 }
 .target-new-button {
-  border: 1px solid var(--ct-line-strong);
+  min-height: 40px;
+  flex: 0 0 auto;
+  border: 1px solid var(--ct-gold);
   border-radius: var(--ct-radius-ctl);
-  padding: 8px 16px;
-  background: transparent;
+  padding: 6px 12px;
+  background: var(--ct-gold-soft);
   color: var(--ct-gold);
-  font: 0.74rem var(--ct-mono);
+  font: 0.72rem var(--ct-mono);
+  cursor: pointer;
+}
+.target-new-button:hover:not(:disabled) {
+  background: var(--ct-gold);
+  color: var(--ct-ink);
+}
+.target-workbench-top .target-detail-actions button {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 0.72rem;
 }
 .target-form-opponent {
   margin-bottom: 10px;

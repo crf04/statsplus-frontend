@@ -12,6 +12,7 @@ const gameDateFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 const number = (value) => (value == null ? '—' : value.toFixed(1));
+const gameNumber = (value) => (value == null ? '—' : Number(value.toFixed(1)).toString());
 const formatMargin = (value) => (value == null ? '—' : signed(value));
 
 // Keep full precision through grading and arithmetic; round only for display.
@@ -200,7 +201,7 @@ export function TargetGameRows({
               <small>{row.player.tricode}</small>
             </span>
             <span className="target-game-line">
-              <b>{number(gameStat(row.game, gradedBy))}</b> {gradedBy}
+              <b>{gameNumber(gameStat(row.game, gradedBy))}</b> {gradedBy}
               <small> vs {number(seasonStat(row.player, gradedBy))}</small>
             </span>
             <span
@@ -214,7 +215,7 @@ export function TargetGameRows({
                 .filter((column) => column !== gradedBy)
                 .map((column) => (
                   <span key={column}>
-                    {column} {number(gameStat(row.game, column))}{' '}
+                    {column} {gameNumber(gameStat(row.game, column))}{' '}
                     <em
                       className={
                         row.margins[column] > 0

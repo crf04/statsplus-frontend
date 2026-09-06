@@ -241,7 +241,7 @@ test('games page newest first and the selected summary column grades both surfac
   const rows = screen.getByRole('region', { name: 'Backtest games' });
   expect(within(rows).getAllByRole('listitem')).toHaveLength(12);
   expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('Jan 25');
-  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('3PM 0.0');
+  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('3PM 0');
   expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('LeBron James');
   const grid = screen.getByRole('list', { name: /25 games, oldest to newest, graded by PTS/ });
   expect(within(grid).getAllByRole('listitem')[0]).toHaveClass('grade-hit-4');

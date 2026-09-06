@@ -540,7 +540,8 @@ export const CRITERIA_STYLES = { 1: 'Track', 2: 'Slider', 3: 'Line' };
 
 export const useCriteriaStyle = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const style = CRITERIA_STYLES[searchParams.get('q')] ? searchParams.get('q') : '1';
+  // Chris's verdict (2026-09-06): the slider.
+  const style = CRITERIA_STYLES[searchParams.get('q')] ? searchParams.get('q') : '2';
   const setStyle = (next) => {
     const params = new URLSearchParams(searchParams);
     params.set('q', next);

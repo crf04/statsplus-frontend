@@ -55,6 +55,8 @@ their games, captured from the production database. A signed-in build without
 that capture can only offer the proxies; shipping this means the backtest
 response carrying the box score.
 
+Qualifier drawings `q=1|2|3` (track, slider, line). **Verdict (Chris, 2026-09-06): 2, the slider; now the default.**
+
 League-average hint beside every threshold (Chris, 2026-09-06): `lg 28%`, press
 to use it. Table in `mock/league-averages.json`, lifted from a Matchup payload;
 shipping it means a read of the diet baselines.

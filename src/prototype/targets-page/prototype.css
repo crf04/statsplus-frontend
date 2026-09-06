@@ -3979,3 +3979,10 @@ a.pt-today.is-live:hover {
   font-size: 0.9rem;
   opacity: 0.6;
 }
+
+.pt-q-range input[type='range'] {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}

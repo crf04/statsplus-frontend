@@ -1,84 +1,29 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { formatCalendarDate, formatTip } from '../calendarDate';
 import { getRequestErrorMessage } from '../gameLogsApi';
-import TargetBacktest from './TargetBacktest';
 import TargetForm, { targetToDraft } from './TargetForm';
 import TargetLab from './TargetLab';
-import { TargetContext, TargetFitTable } from './TargetFits';
-import { findTargetBase, formatQualifier, targetBaseLabel } from './targetCatalog';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { useResolvedTargets, useTargets } from './useTargets';
+import { useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
+import './TargetWorkbench.css';
 
-/*
- * A Target records the day an idea was had, so the date it was created is the
- * calendar date of that instant rather than a clock reading.
- */
-const formatCreated = (createdAt) =>
-  new Intl.DateTimeFormat(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(createdAt));
-
-/*
- * What today says about this Target. It is a second read over the Target
- * itself, so when it fails the Target is still here to read and manage: the
- * readings are what is missing, and the page says so rather than disappearing.
- */
-function FitsSection({ target, resolved, entry }) {
-  const { game } = entry || {};
-  return (
-    <section className="target-detail-section" aria-labelledby="fits-heading">
-      <h2 id="fits-heading" className="target-section-heading">
-        Fits · the opposing players who meet every Qualifier
-      </h2>
-      {resolved.status === 'loading' && <p role="status">Reading today's slate…</p>}
-      {(resolved.status === 'error' || (resolved.status === 'ready' && !entry)) && (
-        <p className="target-empty">
-          Live readings unavailable.{resolved.error ? ` ${resolved.error}` : ''}
-        </p>
-      )}
-      {entry &&
-        (game ? (
-          <>
-            <p className="target-game-chip">
-              {/* The game reads as the Slate row reads it, and leads to the
-                  Matchup the readings were composed from. */}
-              <Link to={`/matchups/${game.gameId}`}>
-                {game.away.tricode} @ {game.home.tricode}
-              </Link>
-              <small>{formatTip(game.scheduledAt)}</small>
-              {game.status.state !== 'scheduled' && <em>{game.status.label}</em>}
-            </p>
-            <TargetFitTable entry={entry} />
-          </>
-        ) : (
-          <p className="target-empty">
-            {target.opponent} has no game on {formatCalendarDate(resolved.slateDate)}.
-          </p>
-        ))}
-    </section>
-  );
-}
-
-function TargetDetail({ target, resolved, entry, reload }) {
+function TargetDetail({ target, reload }) {
   const navigate = useNavigate();
-  const [draft, setDraft] = useState(null);
+  const [draft, setDraft] = useState(() => targetToDraft(target));
+  const [saved, setSaved] = useState(() => targetToDraft(target));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const save = async (request) => {
     setBusy(true);
     setError(null);
     try {
       await updateTarget({ id: target.id, qualifiers: request.qualifiers, note: request.note });
-      setDraft(null);
+      setSaved(draft);
       reload();
     } catch (requestError) {
       setError(
@@ -88,7 +33,6 @@ function TargetDetail({ target, resolved, entry, reload }) {
       setBusy(false);
     }
   };
-
   const remove = async () => {
     setBusy(true);
     setError(null);
@@ -103,21 +47,14 @@ function TargetDetail({ target, resolved, entry, reload }) {
       );
     }
   };
-
   return (
     <>
-      <header className="target-detail-head">
-        <div className="target-detail-title">
-          <p className="eyebrow">Target · set {formatCreated(target.createdAt)}</p>
-          <h1>{target.title}</h1>
-          {target.note && <p className="target-detail-note">{target.note}</p>}
-        </div>
-        {/* Deleting is not undoable, so it asks before it acts rather than
-            removing a Target on the press that reached for it. */}
+      <div className="target-workbench-top">
+        <Link to="/targets">← All Targets</Link>
         <div className="target-detail-actions">
           {confirmingDelete ? (
             <>
-              <span className="target-confirm">Delete this Target?</span>
+              <span>Delete this Target?</span>
               <button type="button" disabled={busy} onClick={remove}>
                 Yes, delete
               </button>
@@ -126,103 +63,51 @@ function TargetDetail({ target, resolved, entry, reload }) {
               </button>
             </>
           ) : (
-            <>
-              <button type="button" disabled={busy} onClick={() => setDraft(targetToDraft(target))}>
-                Edit
-              </button>
-              <button type="button" disabled={busy} onClick={() => setConfirmingDelete(true)}>
-                Delete
-              </button>
-            </>
+            <button type="button" disabled={busy} onClick={() => setConfirmingDelete(true)}>
+              Delete
+            </button>
           )}
         </div>
-      </header>
-
+      </div>
       {error && (
         <p className="target-error" role="alert">
           {error}
         </p>
       )}
-
-      {draft ? (
-        <>
+      <div className="target-workbench">
+        <TargetLab draft={draft} workbench>
           <TargetForm
             draft={draft}
+            title={dirty ? undefined : target.title}
             busy={busy}
             lockOpponent
             submitLabel="Save changes"
+            showActions={dirty}
+            cancelLabel="Revert"
             onChange={(patch) => setDraft({ ...draft, ...patch })}
             onSubmit={save}
-            onCancel={() => setDraft(null)}
+            onCancel={() => setDraft(saved)}
           />
-          {/* Editing is tuning too: the draft's season reads beneath the form
-              while the saved sections wait behind it. */}
-          <TargetLab draft={draft} />
-        </>
-      ) : (
-        <>
-          <section className="target-detail-section" aria-labelledby="qualifiers-heading">
-            <h2 id="qualifiers-heading" className="target-section-heading">
-              Qualifiers · a player must meet every one
-            </h2>
-            <ul className="target-detail-qualifiers">
-              {target.qualifiers.map((qualifier, index) => (
-                <li key={index}>
-                  <div className="target-detail-qualifier-head">
-                    <span className="target-detail-base">{targetBaseLabel(qualifier.base)}</span>
-                    <b>{formatQualifier(qualifier)}</b>
-                    <em>{findTargetBase(qualifier.base)?.unit}</em>
-                  </div>
-                  {/* Context is index-parallel with the Qualifiers, and empty
-                      when the opponent is idle: there is no game-scoped window
-                      to read a defense from on a day with no game. */}
-                  {entry?.context[index] && <TargetContext context={entry.context[index]} />}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <FitsSection target={target} resolved={resolved} entry={entry} />
-          <TargetBacktest target={target} />
-        </>
-      )}
+        </TargetLab>
+      </div>
     </>
   );
 }
-
 export default function TargetDetailPage() {
   const { targetId } = useParams();
-  /*
-   * Two reads, and only one of them decides whether this page works. The list
-   * is what the Target is: without it there is nothing to show, edit, or
-   * delete. The resolution is what today says about it, and is layered on
-   * top, so a day that will not resolve costs the readings and nothing else.
-   */
   const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
-  const resolved = useResolvedTargets();
-
-  if (!authLoading && !isAuthenticated) {
-    return <TargetsSignedOut />;
-  }
-
+  if (!authLoading && !isAuthenticated) return <TargetsSignedOut />;
   const target = targets.find((item) => String(item.id) === targetId);
-  const entry = resolved.entries.find((item) => String(item.target.id) === targetId) || null;
-  const reloadBoth = () => {
-    reload();
-    resolved.reload();
-  };
-
   return (
     <main className="slate-page targets-page">
-      <p className="target-back">
-        <Link to="/targets">← All Targets</Link>
-      </p>
       {status === 'loading' && <p role="status">Loading this Target…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' &&
         (target ? (
-          <TargetDetail target={target} resolved={resolved} entry={entry} reload={reloadBoth} />
+          <TargetDetail key={target.id} target={target} reload={reload} />
         ) : (
           <div className="empty-slate">
+            <Link to="/targets">← All Targets</Link>
             <h2>That Target is gone.</h2>
             <p>It was deleted, or it belongs to another account.</p>
           </div>

@@ -21,6 +21,7 @@ const config = {
     TEAM_STATS: '/api/teams/stats',
     NL_QUERY: '/api/nl-query',
     SAVED_FILTER_SETS: '/api/user/saved-filter-sets',
+    DIET_BASELINES: '/api/diet/baselines',
     TARGETS: '/api/user/targets',
     TARGET_PREVIEW: '/api/user/targets/preview',
   },

@@ -1,3 +1,4 @@
+import { setTargetThreshold } from '../fixtures/targetControls';
 import {
   expect,
   HISTORICAL_GAME_ID,
@@ -813,10 +814,9 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   await expect(dialog.getByLabel('Opponent')).toHaveCount(0);
   await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
   await expect(dialog.getByLabel('Qualifier 1 slice')).toHaveValue('Restricted Area');
-  await expect(dialog.getByRole('button', { name: 'At or above' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(
+    dialog.getByRole('button', { name: 'At or above; switch to at or below' }),
+  ).toBeVisible();
   // 20% is the league average this row is already being read against.
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
   await expect(dialog.getByText('BOS vs Restricted area ≥ 20%')).toBeVisible();
@@ -838,7 +838,7 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
 
   // The prefill is a starting point: the threshold is the reader's to move.
   await rowAction.click();
-  await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
+  await setTargetThreshold(dialog, 26);
   await dialog
     .getByLabel('Note · optional, never the title')
     .fill('Rim leaks against big lineups.');
@@ -866,7 +866,7 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   // The same row saved again is the duplicate the account already holds.
   await page.goto('/matchups/0022500584');
   await rowAction.click();
-  await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
+  await setTargetThreshold(dialog, 26);
   await dialog.getByRole('button', { name: 'Save Target' }).click();
   await expect(dialog.getByRole('alert')).toContainText('You already have that Target for BOS.');
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('26');
@@ -899,13 +899,11 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   await page.getByRole('link', { name: '← All Targets' }).click();
 
   await expect(page).toHaveURL('/targets');
-  await expect(page.getByRole('heading', { name: '2 Targets', exact: true })).toBeVisible();
-  const card = page.getByRole('link', { name: 'Open BOS vs Restricted area ≥ 26%' });
+  await expect(page.getByText('2 Targets active today')).toBeVisible();
+  const card = page.getByRole('article', { name: 'BOS vs Restricted area ≥ 26%' });
   await expect(card).toBeVisible();
   await expect(card).toContainText('Rim leaks against big lineups.');
-  await expect(
-    page.getByRole('link', { name: 'Open BOS vs Transition offense ≥ 9%' }),
-  ).toBeVisible();
+  await expect(page.getByRole('article', { name: 'BOS vs Transition offense ≥ 9%' })).toBeVisible();
 });
 
 test('capture stays reachable and the sheet stays unscrolled at a phone width', async ({

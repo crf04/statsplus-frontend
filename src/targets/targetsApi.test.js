@@ -1,6 +1,8 @@
 import { apiClient } from '../config';
 import {
   createTarget,
+  decodeDietBaselines,
+  fetchDietBaselines,
   decodeBacktest,
   decodePreview,
   decodeResolvedTargets,
@@ -16,7 +18,11 @@ import {
 jest.mock('../config', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
   getApiUrl: (name) =>
-    ({ TARGETS: '/api/user/targets', TARGET_PREVIEW: '/api/user/targets/preview' })[name],
+    ({
+      TARGETS: '/api/user/targets',
+      TARGET_PREVIEW: '/api/user/targets/preview',
+      DIET_BASELINES: '/api/diet/baselines',
+    })[name],
 }));
 
 const wireTarget = {
@@ -799,4 +805,21 @@ test("reads one Target's backtest from the documented path", async () => {
   expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/7/backtest', {
     signal: controller.signal,
   });
+});
+
+test('league baselines decode shares, preserve absent slices and use authenticated transport', async () => {
+  const payload = {
+    season: '2025-26',
+    captured_at: '2026-04-09T00:00:00Z',
+    shares: { shot_zones: { 'Corner 3': 0.23, Unknown: null } },
+  };
+  expect(decodeDietBaselines(payload).shares).toEqual(payload.shares);
+  for (const value of [-1, 1.1, '0.2', Infinity])
+    expect(() =>
+      decodeDietBaselines({ ...payload, shares: { shot_zones: { bad: value } } }),
+    ).toThrow(/invalid response/);
+  expect(() => decodeDietBaselines({ shares: [] })).toThrow(/invalid response/);
+  apiClient.get.mockResolvedValue({ data: payload });
+  await fetchDietBaselines();
+  expect(apiClient.get).toHaveBeenCalledWith('/api/diet/baselines', { signal: undefined });
 });

@@ -162,3 +162,10 @@ and test the acceptance criteria. A useful exploratory pass includes:
 
 Exploratory findings should become a focused automated regression test when they represent stable,
 repeatable behavior.
+
+Targets use the same league-scaled Qualifier slider in the composer, capture
+modal and workbench. The authenticated `/api/diet/baselines` fixture includes
+nullable league shares; absent shares omit the tick. Browser tests adjust the
+native range control using keyboard arrows through `setTargetThreshold`.
+The workbench reads the draft automatically, preserves stale evidence during
+changes, and keeps Save/Revert separate from selecting the grading column.

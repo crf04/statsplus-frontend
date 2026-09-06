@@ -2036,6 +2036,51 @@ export const installApiContract = async (page, overrides = {}) => {
       }
     }
 
+    if (url.pathname === '/api/diet/baselines') {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'authentication_required', message: 'Authentication required.' } },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          season: '2025-26',
+          captured_at: '2026-01-15T00:00:00Z',
+          shares: {
+            shot_zones: {
+              'Restricted Area': 0.3,
+              'In The Paint (Non-RA)': 0.16,
+              'Mid-Range': 0.12,
+              'Corner 3': 0.1,
+              'Above the Break 3': 0.32,
+            },
+            play_types: {
+              Isolation: 0.08,
+              Transition: 0.0925,
+              PRBallHandler: 0.2,
+              PRRollMan: 0.07,
+              Spotup: 0.2,
+              Cut: 0.05,
+              Handoff: 0.05,
+              OffScreen: 0.05,
+              Postup: 0.05,
+              OffRebound: null,
+            },
+            shot_types: { 'Catch and Shoot': 0.35, Pullups: 0.25, 'Less Than 10 ft': 0.4 },
+            assist_locations: {
+              AtRimAssists: 0.14,
+              Arc3Assists: 0.35,
+              Corner3Assists: 0.2,
+              ShortMidRangeAssists: 0.2,
+              LongMidRangeAssists: 0.11,
+            },
+          },
+        },
+      });
+      return;
+    }
     const targetsMatch = url.pathname.match(/^\/api\/user\/targets(?:\/(.+))?$/);
     if (targetsMatch) {
       const [, targetId] = targetsMatch;
@@ -2070,7 +2115,7 @@ export const installApiContract = async (page, overrides = {}) => {
       // The backtest of a Draft Target, not a Target with the id "preview".
       // A league-wide scan is not an open resource, so it refuses a missing
       // bearer before it reads the body.
-      if (targetId === 'preview' && method === 'POST') {
+      if (url.pathname === '/api/user/targets/preview' && method === 'POST') {
         if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
           await route.fulfill({
             status: 401,
@@ -2121,7 +2166,7 @@ export const installApiContract = async (page, overrides = {}) => {
         return;
       }
 
-      if (method === 'GET') {
+      if (url.pathname === '/api/user/targets' && method === 'GET') {
         await route.fulfill({ json: { success: true, targets } });
         return;
       }

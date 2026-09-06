@@ -6,12 +6,14 @@ import {
   fetchResolvedTargets,
   fetchTargetPreview,
   fetchTargets,
+  fetchDietBaselines,
   fetchTargetBacktest,
 } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargetBacktest: jest.fn(),
   fetchTargets: jest.fn(),
+  fetchDietBaselines: jest.fn(),
   fetchResolvedTargets: jest.fn(),
   fetchTargetPreview: jest.fn(),
   createTarget: jest.fn(),
@@ -170,7 +172,7 @@ const settle = () =>
  * announced while they load.
  */
 const labStatus = () => {
-  const status = screen.getByRole('status');
+  const status = within(screen.getByRole('region', { name: /Lab · Backtest/ })).getByRole('status');
   expect(status.closest('[aria-busy]')).toBeNull();
   return status;
 };
@@ -185,6 +187,7 @@ const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40'
 
 beforeEach(() => {
   jest.clearAllMocks();
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargetBacktest.mockImplementation(() => new Promise(() => {}));
@@ -276,7 +279,7 @@ test('the blank form is unsaveable until a threshold has been composed', async (
   await screen.findAllByRole('article');
   const save = screen.getByRole('button', { name: 'Save Target' });
 
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(null);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('0');
   expect(save).toBeDisabled();
 
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
@@ -285,23 +288,16 @@ test('the blank form is unsaveable until a threshold has been composed', async (
   expect(save).toBeEnabled();
 });
 
-test('refuses to save a threshold outside the 0-100% share range', async () => {
+test('slider tuning cannot set a threshold outside the share range', async () => {
   renderPage();
   await screen.findAllByRole('article');
-  const save = screen.getByRole('button', { name: 'Save Target' });
-
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '140' },
-  });
-  expect(save).toBeDisabled();
-  expect(
-    screen.getByText('Every threshold must be a share between 0% and 100%.'),
-  ).toBeInTheDocument();
-
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '0' },
-  });
-  expect(save).toBeEnabled();
+  const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
+  fireEvent.change(threshold, { target: { value: '100' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(Number(threshold.value)).toBeLessThanOrEqual(100);
+  fireEvent.change(threshold, { target: { value: '0' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('0');
 });
 
 test('refuses to save a Target with no Qualifier at all', async () => {
@@ -319,7 +315,7 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
   await screen.findAllByRole('article');
 
   composeQualifier({ opponent: 'NOP', slice: 'Restricted Area', percent: '35' });
-  fireEvent.click(screen.getByRole('button', { name: '+ Add a Qualifier' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.change(screen.getByLabelText('Qualifier 2 diet base'), {
     target: { value: 'play_types' },
   });
@@ -327,7 +323,7 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
   fireEvent.change(screen.getByLabelText('Qualifier 2 threshold percent'), {
     target: { value: '15' },
   });
-  fireEvent.click(screen.getAllByRole('button', { name: 'At or below' })[1]);
+  fireEvent.click(screen.getAllByRole('button', { name: 'At or above; switch to at or below' })[1]);
   fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
     target: { value: 'No rim protection when Missi sits.' },
   });
@@ -391,7 +387,7 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
     'You already have that Target for OKC.',
   );
   expect(screen.getByLabelText('Opponent')).toHaveValue('OKC');
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('40');
   expect(fetchTargets).toHaveBeenCalledTimes(1);
 });
 
@@ -588,9 +584,9 @@ test('a read for a draft that has moved on is abandoned, and its late answer is 
   expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
   expect(fetchTargetPreview.mock.calls[1][0].qualifiers[0].threshold).toBe(0.45);
   await act(async () => {
-    publishers[1]({ ...preview, summary: { ...preview.summary, players: 7 } });
+    publishers[1]({ ...preview, players: [] });
   });
-  expect(summaryItem('Players')).toHaveTextContent('7');
+  expect(summaryItem('Games')).toHaveTextContent('0');
 });
 
 test('an incomplete draft asks for nothing and says what to complete', async () => {
@@ -600,13 +596,6 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
 
   // The blank form: a threshold has not been typed.
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
-  await settle();
-  expect(fetchTargetPreview).not.toHaveBeenCalled();
-
-  // A threshold outside the share range is not a threshold either.
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '140' },
-  });
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
 
@@ -633,21 +622,18 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
     .closest('.target-lab-result');
   expect(result).not.toHaveClass('is-stale');
 
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
 
   // Typed whole again as it was, it is the draft that was read: current, not
   // re-read.
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '40' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  composeQualifier();
   expect(result).not.toHaveClass('is-stale');
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
@@ -668,21 +654,17 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
   // Tonight, in one line, from the resolve rule the backend applied.
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
 
-  // The strip: how many players and games, then per market the mean signed
-  // distance from the players' own averages, coloured by direction, and the
-  // share of games over.
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(summaryItem('Games')).toHaveTextContent('5');
-  expect(summaryItem('PTS')).toHaveTextContent('+2.5');
-  expect(summaryItem('PTS')).toHaveTextContent('60% of games over');
-  expect(within(summaryItem('PTS')).getByText('+2.5')).toHaveClass('is-hit');
-  expect(summaryItem('3PM')).toHaveTextContent('-0.8');
-  expect(summaryItem('3PM')).toHaveTextContent('40% of games over');
-  expect(within(summaryItem('3PM')).getByText('-0.8')).toHaveClass('is-miss');
-
-  // The same table the saved detail shows, labelled by the draft's title.
-  expect(screen.getByRole('table', { name: 'Backtest for OKC vs Corner 3 ≥ 40%' })).toBeVisible();
-  expect(screen.getByRole('row', { name: /2026-01-12/ })).toHaveTextContent('+5.6');
+  // Read the actual game's margin against this player's season, not the legacy proxy summary.
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('PTS')).toHaveTextContent('+5.6 mean margin');
+  expect(summaryItem('PTS')).toHaveTextContent('100% hit');
+  expect(summaryItem('3PM')).toHaveTextContent('+2.0 mean margin');
+  expect(summaryItem('3PM')).toHaveTextContent('100% hit');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
+  expect(screen.getByRole('listitem', { name: /2026-01-12/ })).toHaveAttribute(
+    'title',
+    expect.stringContaining('+5.6 margin'),
+  );
   expect(
     screen.queryByText('Complete the Qualifiers to see the Backtest.'),
   ).not.toBeInTheDocument();
@@ -697,7 +679,7 @@ test('the tonight line is absent when the opponent has no game', async () => {
   composeQualifier();
   await settle();
 
-  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(summaryItem('Games')).toHaveTextContent('1');
   expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
 });
 
@@ -723,7 +705,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
       publish = resolve;
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  fireEvent.keyDown(screen.getByLabelText('Qualifier 1 threshold percent'), { key: 'ArrowRight' });
   // Stale from the edit, before the read has even started — and said aloud,
   // since a dimmed table is silent to a screen reader.
   expect(result).toHaveClass('is-stale');
@@ -739,17 +721,17 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   // Announced from outside the busy results, or it would not be announced.
   expect(labStatus()).toHaveTextContent('Reading the season…');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
 
   await act(async () => {
-    publish({ ...preview, summary: { ...preview.summary, players: 1, games: 3 } });
+    publish({ ...preview, players: [] });
   });
   expect(result).not.toHaveClass('is-stale');
   expect(result).toHaveAttribute('aria-busy', 'false');
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Players')).toHaveTextContent('1');
-  expect(summaryItem('Games')).toHaveTextContent('3');
+  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('Games')).toHaveTextContent('0');
 });
 
 /*
@@ -776,20 +758,20 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
   await settle();
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('40');
   expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
   const save = screen.getByRole('button', { name: 'Save Target' });
   expect(save).toBeEnabled();
 
   // An edit after a refusal is read again, and recovers.
   fetchTargetPreview.mockResolvedValue(preview);
-  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  fireEvent.keyDown(screen.getByLabelText('Qualifier 1 threshold percent'), { key: 'ArrowRight' });
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(summaryItem('Games')).toHaveTextContent('1');
 
   await act(async () => {
     fireEvent.click(save);
@@ -805,41 +787,38 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
  * steppers or the arrow keys, clamped to the share range and keeping whatever
  * decimal was typed.
  */
-test('the steppers and the arrow keys move a threshold by one percent', async () => {
+test('the arrow keys move a threshold by one percent', async () => {
   renderPage();
   await screen.findAllByRole('article');
   const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
-  const up = screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' });
-  const down = screen.getByRole('button', { name: 'Qualifier 1 threshold down 1%' });
 
   composeQualifier();
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(41);
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('41');
   // The title follows the nudge, as it follows typing.
   expect(screen.getByText('OKC vs Corner 3 ≥ 41%')).toBeInTheDocument();
-  fireEvent.click(down);
-  fireEvent.click(down);
-  expect(threshold).toHaveValue(39);
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('39');
 
   fireEvent.keyDown(threshold, { key: 'ArrowUp' });
-  expect(threshold).toHaveValue(40);
+  expect(threshold).toHaveValue('40');
   fireEvent.keyDown(threshold, { key: 'ArrowDown' });
   fireEvent.keyDown(threshold, { key: 'ArrowDown' });
-  expect(threshold).toHaveValue(38);
+  expect(threshold).toHaveValue('38');
 
   // A decimal keeps its decimal; the bounds hold; a blank field starts at zero.
   fireEvent.change(threshold, { target: { value: '40.5' } });
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(41.5);
-  fireEvent.change(threshold, { target: { value: '100' } });
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(100);
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('41.5');
+  for (let step = 0; step < 100; step += 1) fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('100');
   fireEvent.change(threshold, { target: { value: '0' } });
-  fireEvent.click(down);
-  expect(threshold).toHaveValue(0);
-  fireEvent.change(threshold, { target: { value: '' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('0');
+  fireEvent.change(threshold, { target: { value: '0' } });
   fireEvent.keyDown(threshold, { key: 'ArrowUp' });
-  expect(threshold).toHaveValue(1);
+  expect(threshold).toHaveValue('1');
 });
 
 test('the collection opens with an active-today line and a deliberately closed composer', async () => {

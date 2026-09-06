@@ -2,19 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
+  fetchDietBaselines,
   fetchResolvedTargets,
-  fetchTargetBacktest,
   fetchTargetPreview,
   fetchTargets,
 } from './targetsApi';
 
 const LOAD_FAILURE = 'Unable to load your Targets. Please try again.';
-const BACKTEST_FAILURE = 'Unable to load this backtest. Please try again.';
 const PREVIEW_FAILURE = 'Unable to read the season for this draft. Please try again.';
 
 const EMPTY_LIST = { targets: [] };
 const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
-const EMPTY_BACKTEST = { backtest: null };
 
 /*
  * How long a draft has to hold still before the Lab reads it. Long enough that
@@ -30,8 +28,6 @@ export const PREVIEW_DELAY_MS = 600;
  */
 const readList = ({ signal }) => fetchTargets({ signal }).then((targets) => ({ targets }));
 const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope, signal });
-const readBacktest = ({ scope, signal }) =>
-  fetchTargetBacktest({ id: scope, signal }).then((backtest) => ({ backtest }));
 
 /*
  * One account-private read, in the three shapes the Target surfaces need. All
@@ -90,20 +86,6 @@ export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
  */
 export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
 
-/*
- * The season behind one Target, which costs a league-wide game-log scan and so
- * is the one read here that waits to be asked for. Reading it again after a
- * refusal asks again; a backtest already in hand is kept rather than re-read.
- */
-export const useTargetBacktest = (id) => {
-  const { reload, ...state } = useAccountRead(readBacktest, EMPTY_BACKTEST, id, {
-    lazy: true,
-    failure: BACKTEST_FAILURE,
-  });
-  // The first reload of a read that has never run is that read.
-  return { ...state, read: reload };
-};
-
 const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
 
 /*
@@ -131,6 +113,7 @@ export const useTargetPreview = (request) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const key = previewKey(request);
   const [state, setState] = useState(EMPTY_PREVIEW);
+  const [attempt, setAttempt] = useState(0);
   // The draft the result in hand was read for, kept where the effect can see
   // it without re-running for it: a draft typed back to what was last read is
   // not a new draft either.
@@ -174,8 +157,19 @@ export const useTargetPreview = (request) => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [key, authLoading, isAuthenticated]);
+  }, [key, authLoading, isAuthenticated, attempt]);
 
   const { key: shownKey, ...read } = state;
-  return { ...read, pending: key !== shownKey };
+  const retry = useCallback(() => {
+    readKey.current = null;
+    setAttempt((value) => value + 1);
+  }, []);
+  return { ...read, pending: key !== shownKey, retry };
 };
+
+const EMPTY_BASELINES = { shares: {} };
+const readBaselines = ({ signal }) => fetchDietBaselines({ signal });
+export const useDietBaselines = () =>
+  useAccountRead(readBaselines, EMPTY_BASELINES, undefined, {
+    failure: 'League averages unavailable.',
+  });

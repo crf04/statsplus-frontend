@@ -471,3 +471,26 @@ export const updateTarget = async ({ id, qualifiers, note }) => {
 export const deleteTarget = async ({ id }) => {
   await apiClient.delete(targetsUrl(`/${encodeURIComponent(id)}`));
 };
+
+export const decodeDietBaselines = (payload) => {
+  if (!isRecord(payload) || !isRecord(payload.shares)) throw createInvalidResponseError();
+  const shares = {};
+  for (const [base, slices] of Object.entries(payload.shares)) {
+    if (!isRecord(slices)) throw createInvalidResponseError();
+    shares[base] = {};
+    for (const [slice, share] of Object.entries(slices)) {
+      if (
+        share !== null &&
+        (typeof share !== 'number' || !Number.isFinite(share) || share < 0 || share > 1)
+      )
+        throw createInvalidResponseError();
+      shares[base][slice] = share;
+    }
+  }
+  return { shares };
+};
+
+export const fetchDietBaselines = async ({ signal } = {}) => {
+  const response = await apiClient.get(getApiUrl('DIET_BASELINES'), { signal });
+  return decodeDietBaselines(response.data);
+};

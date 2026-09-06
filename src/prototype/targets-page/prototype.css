@@ -3537,3 +3537,16 @@ a.pt-today.is-live:hover {
   font-size: 0.55em;
   vertical-align: baseline;
 }
+
+.pt-threshold .pt-lg {
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-bottom: 1px dotted var(--ct-dim);
+  border-radius: 0;
+  padding: 0 1px;
+}
+
+.pt-threshold .pt-lg:hover {
+  border-bottom-color: var(--ct-gold);
+}

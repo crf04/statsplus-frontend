@@ -15,7 +15,6 @@ function channelFor(key, target, userId) {
   let timer;
   let running = false;
   let readPins = 0;
-  let version = 0;
   let releaseTimer;
   const listeners = new Set();
   // A criteria-save reload can remount after its request microtasks. Give that
@@ -58,7 +57,6 @@ function channelFor(key, target, userId) {
     releaseIfUnused();
   };
   const change = (preferences) => {
-    version += 1;
     pending = preferences;
     publish({ preferences, status: 'pending', error: null });
     clearTimeout(timer);
@@ -68,15 +66,7 @@ function channelFor(key, target, userId) {
     userId,
     holdForRead: () => {
       readPins += 1;
-      const startedVersion = version;
-      const wasPending = Boolean(pending || running);
       return {
-        reconcile: (record) =>
-          String(record.id) === String(target.id) &&
-          (wasPending || version !== startedVersion) &&
-          snapshot.status !== 'error'
-            ? { ...record, statPreferences: snapshot.preferences }
-            : record,
         release: () => {
           readPins -= 1;
           releaseIfUnused();
@@ -100,14 +90,12 @@ function channelFor(key, target, userId) {
 }
 
 // A GET that began before a local write settled may return the older snapshot.
-// Keep that read's channels alive and reconcile only choices that raced it.
+// Keep its channels alive until the destination can subscribe to those choices.
 export const beginStatPreferenceRead = (userId) => {
   const held = [...channels.values()]
     .filter((channel) => channel.userId === userId)
     .map((channel) => channel.holdForRead());
   return {
-    reconcile: (targets) =>
-      targets.map((target) => held.reduce((record, read) => read.reconcile(record), target)),
     release: () => held.forEach((read) => read.release()),
   };
 };

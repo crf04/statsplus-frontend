@@ -1,8 +1,8 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { createTarget, fetchTargetPreview } from '../targets/targetsApi';
+import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import MatchupDetailPage from './MatchupDetailPage';
 
@@ -10,6 +10,7 @@ jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
 jest.mock('../targets/targetsApi', () => ({
   createTarget: jest.fn(),
+  fetchDietBaselines: jest.fn(),
   fetchTargetPreview: jest.fn(),
 }));
 
@@ -259,6 +260,7 @@ beforeEach(() => {
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchMatchup.mockResolvedValue(matchup);
   fetchTargetPreview.mockResolvedValue(capturePreview);
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
   fetchMatchupSelection.mockResolvedValue({
     playerId: 2544,
     h2h: {
@@ -1417,7 +1419,7 @@ const openCapture = async (rowLabel) => {
 };
 
 const thresholdField = (dialog, index = 1) =>
-  within(dialog).getByRole('spinbutton', { name: `Qualifier ${index} threshold percent` });
+  within(dialog).getByRole('slider', { name: `Qualifier ${index} threshold percent` });
 
 test('prefills the capture form from the row and saves what the reader made of it', async () => {
   createTarget.mockResolvedValue(storedTarget());
@@ -1435,12 +1437,11 @@ test('prefills the capture form from the row and saves what the reader made of i
   expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
     'transition',
   );
-  expect(within(dialog).getByRole('button', { name: 'At or above' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  expect(
+    within(dialog).getByRole('button', { name: 'At or above; switch to at or below' }),
+  ).toBeVisible();
   // 9.4% league average, offered as the whole percent a reader would type.
-  expect(thresholdField(dialog)).toHaveValue(9);
+  expect(thresholdField(dialog)).toHaveValue('9');
 
   // Closing hands the keyboard back to the row the capture started from, and
   // Escape closes it as the dialog it is.
@@ -1454,15 +1455,15 @@ test('prefills the capture form from the row and saves what the reader made of i
   // point: the threshold is the reader's to move and more Qualifiers can be
   // added before saving.
   const reopened = (await openCapture('Transition')).dialog;
-  expect(thresholdField(reopened)).toHaveValue(9);
-  await userEvent.clear(thresholdField(reopened));
-  await userEvent.type(thresholdField(reopened), '12');
-  await userEvent.click(within(reopened).getByRole('button', { name: '+ Add a Qualifier' }));
+  expect(thresholdField(reopened)).toHaveValue('9');
+  fireEvent.change(thresholdField(reopened), { target: { value: '12' } });
+  await userEvent.click(within(reopened).getByRole('button', { name: '+ and' }));
+  await userEvent.click(within(reopened).getByRole('button', { name: 'a Qualifier' }));
   await userEvent.selectOptions(
     within(reopened).getByRole('combobox', { name: 'Qualifier 2 slice' }),
     'Corner 3',
   );
-  await userEvent.type(thresholdField(reopened, 2), '40');
+  fireEvent.change(thresholdField(reopened, 2), { target: { value: '40' } });
   await userEvent.click(within(reopened).getByRole('button', { name: 'Save Target' }));
 
   expect(createTarget).toHaveBeenCalledWith({
@@ -1503,11 +1504,11 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
       ],
     }),
   );
-  expect(within(strip).getByRole('listitem', { name: 'Players' })).toHaveTextContent('2');
-  expect(within(strip).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+3.1');
+  expect(within(strip).getByRole('listitem', { name: 'Games' })).toHaveTextContent('1');
+  expect(within(strip).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+5.6');
   expect(within(dialog).getByText(/fit tonight/)).toHaveTextContent('3 fit tonight vs BOS');
   expect(
-    within(dialog).getByRole('table', { name: 'Backtest for BOS vs Transition offense ≥ 9%' }),
+    within(dialog).getByRole('list', { name: '1 games, oldest to newest, graded by PTS margin' }),
   ).toBeVisible();
 });
 
@@ -1526,7 +1527,7 @@ test('captures against whichever team’s sheet is open', async () => {
   );
   // 12.8%, read off a diet fact the display gate keeps off the sheet, offered
   // as the whole percent the reader is meant to argue with.
-  expect(thresholdField(dialog)).toHaveValue(13);
+  expect(thresholdField(dialog)).toHaveValue('13');
 
   await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
   expect(createTarget).toHaveBeenCalledWith({
@@ -1542,14 +1543,15 @@ test('leaves the threshold to be typed when the slice publishes no league averag
   renderMatchup();
 
   const { dialog } = await openCapture('Above-break three');
-  expect(thresholdField(dialog)).toHaveValue(null);
+  expect(thresholdField(dialog)).toHaveValue('0');
+  expect(thresholdField(dialog)).toHaveAttribute('aria-valuetext', 'Choose a threshold');
   expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
   expect(
     within(dialog).getByText('Every threshold must be a share between 0% and 100%.'),
   ).toBeVisible();
   expect(within(dialog).getByText(/no league average published for this slice/)).toBeVisible();
 
-  await userEvent.type(thresholdField(dialog), '32');
+  fireEvent.change(thresholdField(dialog), { target: { value: '32' } });
   expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeEnabled();
 });
 
@@ -1592,13 +1594,13 @@ test('a save that resolves after the dialog was dismissed does not navigate', as
 
   // Another row, another draft, before the first save answers.
   const next = (await openCapture('Above-break three')).dialog;
-  await userEvent.type(thresholdField(next), '32');
+  fireEvent.change(thresholdField(next), { target: { value: '32' } });
   await act(async () => settle());
 
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1$/);
   expect(screen.queryByText('One Target')).not.toBeInTheDocument();
   expect(screen.getByRole('dialog')).toBeVisible();
-  expect(thresholdField(screen.getByRole('dialog'))).toHaveValue(32);
+  expect(thresholdField(screen.getByRole('dialog'))).toHaveValue('32');
   expect(
     within(screen.getByRole('dialog')).getByRole('button', { name: 'Save Target' }),
   ).toBeEnabled();
@@ -1624,7 +1626,7 @@ test('a duplicate Target keeps the composed draft and says why it was refused', 
   expect(await within(dialog).findByRole('alert')).toHaveTextContent(
     'You already have that Target for BOS.',
   );
-  expect(thresholdField(dialog)).toHaveValue(9);
+  expect(thresholdField(dialog)).toHaveValue('9');
 });
 
 test('offers no capture on a Traditional row, which has no diet counterpart', async () => {

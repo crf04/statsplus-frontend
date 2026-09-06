@@ -3,6 +3,27 @@
 Throwaway. Never merge this directory into master; it lives on the branch
 `prototype/targets-page-look` as the primary source for whichever look wins.
 
+## Verdict (Chris, 2026-09-06)
+
+- **List page: G "Sheet".** Two read-only criteria cards per row, "+ New Target"
+  top right (the composer is the Lab), game-today chip and "Edit →" in each
+  card's corner, "Playing tonight" fits as pills, then the Backtest as a
+  games-count strip and a margin-graded grid. No game logs on the list.
+- **Edit screen: J "Workbench".** Criteria card left with Save/Revert in its
+  footer, "← All Targets" and Delete on one top row, summary and graded grid
+  under the card, date-ordered game logs on the right.
+- **Qualifier drawing: slider (`q=2`)** on a league-scaled track with the
+  league tick. **Conditions** (defender minutes incl. sat-out games; date
+  window) drawn as the same rows, all added through one "+ and".
+- **Stats:** picker over box score, per-36 and efficiency groups; the choice
+  sticks to the Target. Summary says games, not players.
+- **Lab:** live on change, no button; Save explicit for the Target.
+
+Not shipped from here. What the backend needs before folding in: Conditions on
+the Target and in the backtest/preview reads; the backtest carrying the box
+line and minutes (or the derived columns); a diet-baseline read for league
+averages; stat preferences on the Target record.
+
 **Question:** what should `/targets` look like now that Targets resolve
 against a day and open into their own page? The shipped page is a form on top
 of a card grid: the composer takes the first screen, the collection is below

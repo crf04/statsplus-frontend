@@ -913,6 +913,7 @@ test('leaving the Workspace cancels a season still in flight', async ({
   // The slowest endpoint in the application does not keep working for a
   // workspace nobody is in any more.
   await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page.getByRole('heading', { name: 'CourtAI', exact: true })).toBeVisible();
   await expect(page.getByRole('textbox')).toBeVisible();
   await expect.poll(() => cancelledSeasonRequests).toEqual(['LeBron James']);
   release();

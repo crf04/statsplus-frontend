@@ -1168,6 +1168,23 @@ export const operationsPayload = {
       concurrency_retry_after_seconds: 30,
     },
   ],
+  projections: {
+    providers: [
+      {
+        provider: 'dabble',
+        last_poll_at: '2026-04-13T00:00:00Z',
+        last_changed_snapshot_at: '2026-04-13T00:00:00Z',
+        freshness_seconds: 30,
+        failure: { last_at: null, reason: null, consecutive: 0 },
+        backoff: { active: false, until: null },
+        active_count: 18,
+        unresolved_count: 0,
+      },
+    ],
+    active_count: 18,
+    unresolved_count: 0,
+    lease: { active: false, fence: 4, expires_at: null },
+  },
   jobs: [
     {
       job_id: 'job-e2e-1',
@@ -1177,6 +1194,15 @@ export const operationsPayload = {
       created_at: '2026-04-13T00:00:00Z',
       completed_at: '2026-04-13T00:02:00Z',
       error_code: 'provider_unavailable',
+    },
+    {
+      job_id: 'job-e2e-collector-create',
+      action: 'collector.create',
+      resource: 'collector-e2e-2',
+      status: 'succeeded',
+      created_at: '2026-04-13T00:01:00Z',
+      completed_at: '2026-04-13T00:01:30Z',
+      error_code: null,
     },
   ],
 };

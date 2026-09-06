@@ -6,8 +6,12 @@ control-plane diagnostics from `GET /api/admin/collection/diagnostics`:
 collection cycles, registered publication streams and their bounded freshness
 evidence, Collector identity/release/last-seen state, alerts, reconciliation
 items, validation states, usage counters and limits, retry timing, and durable
-operator jobs. Validation counts and timestamps are not part of the contract,
-so the page labels those dimensions unavailable instead of inferring them.
+operator jobs, including legacy collector creation history observed in
+production. The optional projection diagnostics block is accepted as a
+backend extension and deliberately omitted from the decoded UI DTO, so the
+page does not render a projection section. Validation counts and timestamps
+are not part of the contract, so the page labels those dimensions unavailable
+instead of inferring them.
 
 ## Permissions and failure states
 
@@ -18,11 +22,14 @@ user sees a forbidden state. If Firebase cannot initialize or refresh claims,
 the page fails closed and offers a permission-check retry; it never loads
 diagnostics with an unverified identity.
 
-The browser requests and decodes only the stable safe-field diagnostics
-contract. Unknown fields (including unsupported checksum fields), malformed
-timestamps/counts, unknown statuses/actions, and fields associated with secrets, credentials, raw
-provider responses, payloads, player facts, databases, or exceptions are
-rejected at the API seam.
+The browser discards the optional `projections` subtree without inspecting
+its contents. For the remaining diagnostics, unknown top-level or nested
+fields (including unsupported checksum fields), malformed timestamps/counts,
+unknown statuses/actions, and fields associated with secrets, credentials,
+raw provider responses, payloads, player facts, databases, or exceptions are
+rejected at the API seam. The decoder accepts the
+legacy `collector.create` audit action observed in production history alongside
+the backend-documented operator actions.
 
 ## Operator actions
 

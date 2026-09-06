@@ -35,6 +35,10 @@ const KNOWN_JOB_ACTIONS = new Set([
   'bootstrap.start',
   'collector.revoke',
   'collector.rotate',
+  'collector.create',
+  'publication.rebuild',
+  'publication.family_rollback',
+  'publication.repair_group.promote',
   'reconciliation.resolve',
 ]);
 const FORBIDDEN_KEY =
@@ -444,7 +448,17 @@ const decodeList = (value, decoder, label) => {
 export const decodeOperationsDiagnostics = (payload) => {
   assertKeys(
     payload,
-    ['cycles', 'streams', 'collectors', 'alerts', 'reconciliation', 'validation', 'usage', 'jobs'],
+    [
+      'cycles',
+      'streams',
+      'collectors',
+      'alerts',
+      'reconciliation',
+      'validation',
+      'usage',
+      'jobs',
+      'projections',
+    ],
     ['cycles', 'streams', 'collectors', 'alerts', 'reconciliation', 'validation', 'usage', 'jobs'],
     'The operations diagnostics response is invalid.',
   );

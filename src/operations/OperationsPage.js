@@ -37,6 +37,10 @@ const actionLabels = {
   'bootstrap.start': 'Start catalog bootstrap',
   'collector.revoke': 'Revoke Collector',
   'collector.rotate': 'Rotate Collector',
+  'collector.create': 'Create Collector',
+  'publication.rebuild': 'Rebuild publication',
+  'publication.family_rollback': 'Rollback publication family',
+  'publication.repair_group.promote': 'Promote repair group',
   'reconciliation.resolve': 'Resolve reconciliation item',
 };
 

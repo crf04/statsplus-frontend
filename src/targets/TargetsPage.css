@@ -657,3 +657,79 @@
     min-width: 0;
   }
 }
+
+/* The collection keeps the criteria and season record together. */
+.targets-page > .slate-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.targets-active {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 0.86rem;
+}
+.target-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.target-grid > li {
+  min-width: 0;
+}
+.target-card {
+  gap: 16px;
+  padding: 20px;
+}
+.target-card-head {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.target-card .target-card-go {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.target-card .target-card-note {
+  white-space: normal;
+  margin: 0;
+}
+.target-card-qualifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.target-card-qualifiers > span {
+  padding: 4px 8px;
+  border: 1px solid var(--ct-line);
+  border-radius: 5px;
+}
+.target-fit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.target-fit-pills li {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 0.72rem;
+}
+.target-fit-pills li.is-thin {
+  border-style: dashed;
+}
+.targets-page .target-new {
+  border: 1px dashed var(--ct-line-strong);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+@media (max-width: 819px) {
+  .target-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .target-card {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,103 @@
+.target-record {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.target-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13px, 1fr));
+  gap: 3px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.target-record-grid li {
+  aspect-ratio: 1;
+  border-radius: 2px;
+}
+.target-record-grid li:focus {
+  outline: 2px solid var(--ct-text);
+  outline-offset: 2px;
+}
+.grade-hit-1 {
+  background: #b7d2bb;
+}
+.grade-hit-2 {
+  background: #81b28a;
+}
+.grade-hit-3 {
+  background: #4c8d5a;
+}
+.grade-hit-4 {
+  background: #236936;
+}
+.grade-miss-1 {
+  background: #e8c4be;
+}
+.grade-miss-2 {
+  background: #d7958a;
+}
+.grade-miss-3 {
+  background: #c36252;
+}
+.grade-miss-4 {
+  background: #a33424;
+}
+.grade-neutral {
+  background: #d4d0c5;
+}
+.grade-unavailable {
+  background: transparent;
+  border: 1px dashed var(--ct-dim);
+}
+.target-grade-key {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+}
+.target-grade-key i {
+  width: 9px;
+  height: 9px;
+}
+.target-grade-key small {
+  flex-basis: 100%;
+}
+.target-record .target-summary button {
+  display: grid;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.target-record .target-summary button[aria-pressed='true'] {
+  color: var(--ct-hit);
+}
+.target-game-rows ol {
+  padding: 0;
+  list-style: none;
+}
+.target-game-rows li {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ct-line);
+}
+.target-game-rows li > i {
+  width: 10px;
+  min-width: 10px;
+  border-radius: 2px;
+}
+.target-game-rows li > div {
+  display: grid;
+  gap: 3px;
+  font-size: 0.8rem;
+}
+.target-game-rows time,
+.target-game-rows small {
+  color: var(--ct-dim);
+}

@@ -1,50 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
+import { formatTip } from '../calendarDate';
 import TargetForm, { blankTargetDraft } from './TargetForm';
 import TargetLab from './TargetLab';
-import { formatQualifierParts } from './targetCatalog';
-import { createTarget } from './targetsApi';
+import TargetRecord from './TargetRecord';
+import { formatQualifierParts, formatObservedShare } from './targetCatalog';
+import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
-/*
- * How today answers one Target, in the few words a card has room for. A
- * resolution that has not arrived says nothing rather than guessing at zero.
- */
-const describeToday = (entry) => {
-  if (!entry) return null;
-  if (!entry.game) return 'no game today';
-  if (entry.availability.status !== 'available') return 'pool unavailable';
-  return `${entry.players.length} fit today`;
-};
-
-/*
- * A card carries only what tells one Target from another: the opponent it is
- * about, the Qualifiers a player has to meet, the note explaining why it was
- * set, and what today makes of it. Everything else lives on the Target's own
- * route.
- */
-function TargetCard({ target, entry }) {
-  const today = describeToday(entry);
+function TargetCard({ target, entry, read }) {
+  const game = entry?.game;
   return (
     <li>
-      <Link
-        className="target-card"
-        to={`/targets/${target.id}`}
-        aria-label={`Open ${target.title}`}
-      >
-        <span className="target-card-head">
-          <span className="target-card-opponent">{target.opponent}</span>
-          {today && (
-            <span className={`target-card-today${entry.players.length ? ' has-fits' : ''}`}>
-              {today}
-            </span>
+      <article className="target-card" aria-label={target.title}>
+        <div className="target-card-head">
+          {entry ? (
+            game ? (
+              <Link className="target-game-chip" to={`/matchups/${game.gameId}`}>
+                {game.away.tricode} @ {game.home.tricode} · {formatTip(game.scheduledAt)}
+              </Link>
+            ) : (
+              <span className="target-card-today">no game today</span>
+            )
+          ) : (
+            <span>Today’s activity unavailable</span>
           )}
-        </span>
-        <span className="target-card-qualifiers">
+          <Link className="target-card-go" to={`/targets/${target.id}`}>
+            Edit →
+          </Link>
+        </div>
+        <span className="target-card-opponent">{target.opponent}</span>
+        <div className="target-card-qualifiers">
           {target.qualifiers.map((qualifier, index) => {
             const { label, value } = formatQualifierParts(qualifier);
             return (
@@ -53,16 +43,79 @@ function TargetCard({ target, entry }) {
               </span>
             );
           })}
-        </span>
-        <span className={`target-card-note${target.note ? '' : ' is-empty'}`}>
-          {target.note || 'No note'}
-        </span>
-        <span className="target-card-go" aria-hidden="true">
-          Open →
-        </span>
-      </Link>
+        </div>
+        {target.note && <p className="target-card-note">{target.note}</p>}
+        {game && (
+          <section aria-label="Playing tonight">
+            <h3 className="target-section-heading">Playing tonight</h3>
+            {entry.availability.status !== 'available' ? (
+              <p className="target-empty">pool unavailable</p>
+            ) : entry.players.length === 0 ? (
+              <p className="target-empty">nobody meets every Qualifier</p>
+            ) : (
+              <ul className="target-fit-pills">
+                {entry.players.map((player) => (
+                  <li key={player.canonicalId} className={player.thin ? 'is-thin' : undefined}>
+                    <b>{player.name}</b> ·{' '}
+                    {player.shares
+                      .map(
+                        (share, index) =>
+                          `${formatQualifierParts(target.qualifiers[index]).label} ${formatObservedShare(share.share)}`,
+                      )
+                      .join(' · ')}{' '}
+                    · {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)} ppg
+                    {player.thin && <small> · thin evidence</small>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+        <section aria-label="Backtest">
+          <p className="target-backtest-proxy">Backtest · season to date</p>
+          {read?.status === 'ready' ? (
+            <TargetRecord backtest={read.backtest} />
+          ) : (
+            <p className="target-empty">{read?.error || 'Reading the season…'}</p>
+          )}
+        </section>
+      </article>
     </li>
   );
+}
+
+// The league-wide scans are queued; a refusal does not strand later cards.
+function useListBacktests(targets, enabled) {
+  const [reads, setReads] = useState({});
+  useEffect(() => {
+    if (!enabled) {
+      setReads({});
+      return undefined;
+    }
+    const controller = new AbortController();
+    setReads({});
+    (async () => {
+      for (const target of targets) {
+        if (controller.signal.aborted) return;
+        try {
+          const backtest = await fetchTargetBacktest({ id: target.id, signal: controller.signal });
+          if (controller.signal.aborted) return;
+          setReads((current) => ({ ...current, [target.id]: { status: 'ready', backtest } }));
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          setReads((current) => ({
+            ...current,
+            [target.id]: {
+              status: 'error',
+              error: getRequestErrorMessage(error, 'Unable to read this Backtest.'),
+            },
+          }));
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [targets, enabled]);
+  return reads;
 }
 
 export default function TargetsPage() {
@@ -74,7 +127,9 @@ export default function TargetsPage() {
    * cards their counts and nothing else.
    */
   const resolved = useResolvedTargets();
+  const reads = useListBacktests(targets, status === 'ready' && isAuthenticated);
   const [draft, setDraft] = useState(blankTargetDraft);
+  const [composing, setComposing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
@@ -93,6 +148,7 @@ export default function TargetsPage() {
     setSaveError(null);
     try {
       const target = await createTarget(request);
+      setComposing(false);
       navigate(`/targets/${target.id}`);
     } catch (requestError) {
       setSaveError(
@@ -108,34 +164,54 @@ export default function TargetsPage() {
       <section className="slate-heading">
         <div className="slate-title">
           <p className="eyebrow">Targets</p>
-          <h1>
-            {status === 'ready'
-              ? `${targets.length} ${targets.length === 1 ? 'Target' : 'Targets'}`
-              : 'Targets'}
-          </h1>
-        </div>
-      </section>
-      <div className="slate-status">
-        <span className="slate-count">one opponent and the Qualifiers a player must meet</span>
-      </div>
-
-      <section className="target-new" aria-labelledby="new-target-heading">
-        <h2 id="new-target-heading" className="target-section-heading">
-          New Target
-        </h2>
-        <TargetForm
-          draft={draft}
-          busy={saving}
-          onChange={(patch) => setDraft({ ...draft, ...patch })}
-          onSubmit={save}
-        />
-        {saveError && (
-          <p className="target-error" role="alert">
-            {saveError}
+          <p className="targets-active">
+            {resolved.status === 'ready'
+              ? (() => {
+                  const count = resolved.entries.filter((entry) => entry.game).length;
+                  return count
+                    ? `${count} ${count === 1 ? 'Target' : 'Targets'} active today`
+                    : 'No Targets active today';
+                })()
+              : resolved.status === 'error'
+                ? 'Today’s activity unavailable'
+                : 'Reading today’s activity…'}
           </p>
-        )}
-        <TargetLab draft={draft} />
+        </div>
+        <button type="button" onClick={() => setComposing(true)} disabled={composing}>
+          + New Target
+        </button>
       </section>
+
+      {composing && (
+        <section className="target-new" aria-labelledby="new-target-heading">
+          <h2 id="new-target-heading" className="target-section-heading">
+            New Target
+          </h2>
+          <TargetForm
+            draft={draft}
+            busy={saving}
+            onChange={(patch) => setDraft({ ...draft, ...patch })}
+            onSubmit={save}
+          />
+          {saveError && (
+            <p className="target-error" role="alert">
+              {saveError}
+            </p>
+          )}
+          <TargetLab draft={draft} />
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => {
+              setComposing(false);
+              setDraft(blankTargetDraft());
+              setSaveError(null);
+            }}
+          >
+            Cancel
+          </button>
+        </section>
+      )}
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
@@ -143,7 +219,7 @@ export default function TargetsPage() {
         (targets.length === 0 ? (
           <div className="empty-slate">
             <h2>No Targets yet.</h2>
-            <p>Save one above to turn a read on a defense into a reusable player filter.</p>
+            <p>Choose + New Target to save a read on a defense.</p>
           </div>
         ) : (
           <ul className="target-grid">
@@ -151,6 +227,7 @@ export default function TargetsPage() {
               <TargetCard
                 key={target.id}
                 target={target}
+                read={reads[target.id]}
                 entry={resolved.entries.find((entry) => entry.target.id === target.id) || null}
               />
             ))}

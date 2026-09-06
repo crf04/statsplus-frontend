@@ -20,7 +20,7 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'targets-pag
 /* The captured day: MIA, NOP and BOS all played, so every seed Target is live. */
 export const DEMO_DATE = '2026-04-10';
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 export const VARIANT_NAMES = {
   A: 'Ledger — rows that open in place, compose row at the foot',
@@ -29,6 +29,8 @@ export const VARIANT_NAMES = {
   D: 'Record — hit rate and every game, a ledger of the season',
   E: 'Season — one timeline, a lane per Target, receipts under it',
   F: 'Report — a verdict, a margin distribution, who cashed',
+  G: 'Sheet — criteria as sections, the Lab beneath each',
+  H: 'Bench — criteria as a sentence, one on the bench at a time',
 };
 
 export const useTargetsPrototype = () => {

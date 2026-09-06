@@ -1,0 +1,4467 @@
+{
+  "players": [
+    {
+      "canonical_id": 203507,
+      "games": [
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500897",
+          "matchup": "MIL vs. ATL",
+          "minutes": 26.216667,
+          "stats": { "PTS": 24.0 }
+        },
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500014",
+          "matchup": "MIL @ ATL",
+          "minutes": 29.616667,
+          "stats": { "PTS": 21.0 }
+        }
+      ],
+      "name": "Giannis Antetokounmpo",
+      "season_averages": { "PTS": 27.583333 },
+      "season_scoring": 27.583333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.672241,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1641705,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 21.466667,
+          "stats": { "PTS": 26.0 }
+        }
+      ],
+      "name": "Victor Wembanyama",
+      "season_averages": { "PTS": 25.0 },
+      "season_scoring": 25.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.357407,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1631094,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501107",
+          "matchup": "ORL vs. ATL",
+          "minutes": 26.3,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500983",
+          "matchup": "ORL @ ATL",
+          "minutes": 33.366667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-11-04",
+          "game_id": "0022500166",
+          "matchup": "ORL @ ATL",
+          "minutes": 36.85,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500090",
+          "matchup": "ORL vs. ATL",
+          "minutes": 35.616667,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Paolo Banchero",
+      "season_averages": { "PTS": 22.208333 },
+      "season_scoring": 22.208333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.361979,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1629627,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 31.433333,
+          "stats": { "PTS": 22.0 }
+        }
+      ],
+      "name": "Zion Williamson",
+      "season_averages": { "PTS": 21.0 },
+      "season_scoring": 21.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.679058,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 2544,
+      "games": [
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500569",
+          "matchup": "LAL vs. ATL",
+          "minutes": 32.583333,
+          "stats": { "PTS": 31.0 }
+        }
+      ],
+      "name": "LeBron James",
+      "season_averages": { "PTS": 20.933333 },
+      "season_scoring": 20.933333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.369967,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1630578,
+      "games": [
+        {
+          "game_date": "2026-03-20",
+          "game_id": "0022501018",
+          "matchup": "HOU vs. ATL",
+          "minutes": 31.733333,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2026-01-29",
+          "game_id": "0022500682",
+          "matchup": "HOU @ ATL",
+          "minutes": 27.916667,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Alperen Sengun",
+      "season_averages": { "PTS": 20.361111 },
+      "season_scoring": 20.361111,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.388246,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1626157,
+      "games": [
+        {
+          "game_date": "2026-04-06",
+          "game_id": "0022501143",
+          "matchup": "NYK @ ATL",
+          "minutes": 31.95,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500435",
+          "matchup": "NYK @ ATL",
+          "minutes": 29.8,
+          "stats": { "PTS": 36.0 }
+        }
+      ],
+      "name": "Karl-Anthony Towns",
+      "season_averages": { "PTS": 20.053333 },
+      "season_scoring": 20.053333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.477713,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 202710,
+      "games": [
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500556",
+          "matchup": "GSW vs. ATL",
+          "minutes": 33.7,
+          "stats": { "PTS": 30.0 }
+        }
+      ],
+      "name": "Jimmy Butler III",
+      "season_averages": { "PTS": 20.0 },
+      "season_scoring": 20.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.428571,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1631105,
+      "games": [
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501051",
+          "matchup": "DET vs. ATL",
+          "minutes": 42.05,
+          "stats": { "PTS": 26.0 }
+        },
+        {
+          "game_date": "2025-12-12",
+          "game_id": "0022501210",
+          "matchup": "DET vs. ATL",
+          "minutes": 24.266667,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500309",
+          "matchup": "DET vs. ATL",
+          "minutes": 32.316667,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500251",
+          "matchup": "DET @ ATL",
+          "minutes": 28.883333,
+          "stats": { "PTS": 24.0 }
+        }
+      ],
+      "name": "Jalen Duren",
+      "season_averages": { "PTS": 19.5 },
+      "season_scoring": 19.5,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.682441,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1641708,
+      "games": [
+        {
+          "game_date": "2026-03-20",
+          "game_id": "0022501018",
+          "matchup": "HOU vs. ATL",
+          "minutes": 33.95,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-01-29",
+          "game_id": "0022500682",
+          "matchup": "HOU @ ATL",
+          "minutes": 35.0,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Amen Thompson",
+      "season_averages": { "PTS": 18.265823 },
+      "season_scoring": 18.265823,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.488015,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1630596,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501173",
+          "matchup": "CLE @ ATL",
+          "minutes": 21.766667,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-04-08",
+          "game_id": "0022501158",
+          "matchup": "CLE vs. ATL",
+          "minutes": 35.65,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2025-11-28",
+          "game_id": "0022500069",
+          "matchup": "CLE @ ATL",
+          "minutes": 33.633333,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500151",
+          "matchup": "CLE vs. ATL",
+          "minutes": 34.55,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Evan Mobley",
+      "season_averages": { "PTS": 18.153846 },
+      "season_scoring": 18.153846,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.462704,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1631096,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500455",
+          "matchup": "OKC vs. ATL",
+          "minutes": 30.5,
+          "stats": { "PTS": 24.0 }
+        },
+        {
+          "game_date": "2025-10-25",
+          "game_id": "0022500101",
+          "matchup": "OKC @ ATL",
+          "minutes": 27.216667,
+          "stats": { "PTS": 31.0 }
+        }
+      ],
+      "name": "Chet Holmgren",
+      "season_averages": { "PTS": 17.115942 },
+      "season_scoring": 17.115942,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.39923,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1631114,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500455",
+          "matchup": "OKC vs. ATL",
+          "minutes": 32.9,
+          "stats": { "PTS": 20.0 }
+        }
+      ],
+      "name": "Jalen Williams",
+      "season_averages": { "PTS": 17.060606 },
+      "season_scoring": 17.060606,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.35426,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1628384,
+      "games": [
+        {
+          "game_date": "2026-04-06",
+          "game_id": "0022501143",
+          "matchup": "NYK @ ATL",
+          "minutes": 36.933333,
+          "stats": { "PTS": 22.0 }
+        },
+        {
+          "game_date": "2026-01-02",
+          "game_id": "0022500479",
+          "matchup": "NYK vs. ATL",
+          "minutes": 34.983333,
+          "stats": { "PTS": 19.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500435",
+          "matchup": "NYK @ ATL",
+          "minutes": 38.183333,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "OG Anunoby",
+      "season_averages": { "PTS": 16.686567 },
+      "season_scoring": 16.686567,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.350746,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1642264,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 23.916667,
+          "stats": { "PTS": 17.0 }
+        }
+      ],
+      "name": "Stephon Castle",
+      "season_averages": { "PTS": 16.602941 },
+      "season_scoring": 16.602941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.372093,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1642259,
+      "games": [
+        {
+          "game_date": "2025-11-25",
+          "game_id": "0022500057",
+          "matchup": "WAS vs. ATL",
+          "minutes": 37.65,
+          "stats": { "PTS": 27.0 }
+        }
+      ],
+      "name": "Alex Sarr",
+      "season_averages": { "PTS": 16.270833 },
+      "season_scoring": 16.270833,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.35061,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1641824,
+      "games": [
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 18.4,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 28.866667,
+          "stats": { "PTS": 28.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500115",
+          "matchup": "CHI vs. ATL",
+          "minutes": 32.35,
+          "stats": { "PTS": 16.0 }
+        }
+      ],
+      "name": "Matas Buzelis",
+      "season_averages": { "PTS": 16.25974 },
+      "season_scoring": 16.25974,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.362409,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1627734,
+      "games": [
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500223",
+          "matchup": "SAC vs. ATL",
+          "minutes": 26.4,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Domantas Sabonis",
+      "season_averages": { "PTS": 15.842105 },
+      "season_scoring": 15.842105,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.565611,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1628386,
+      "games": [
+        {
+          "game_date": "2026-04-08",
+          "game_id": "0022501158",
+          "matchup": "CLE vs. ATL",
+          "minutes": 29.116667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-28",
+          "game_id": "0022500069",
+          "matchup": "CLE @ ATL",
+          "minutes": 27.983333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Jarrett Allen",
+      "season_averages": { "PTS": 15.357143 },
+      "season_scoring": 15.357143,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.539773,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1630245,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500765",
+          "matchup": "MIN vs. ATL",
+          "minutes": 29.833333,
+          "stats": { "PTS": 21.0 }
+        },
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 16.166667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 16.666667,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500115",
+          "matchup": "CHI vs. ATL",
+          "minutes": 26.85,
+          "stats": { "PTS": 21.0 }
+        }
+      ],
+      "name": "Ayo Dosunmu",
+      "season_averages": { "PTS": 14.811594 },
+      "season_scoring": 14.811594,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.419571,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1642847,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 26.6,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 31.433333,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Jeremiah Fears",
+      "season_averages": { "PTS": 14.256098 },
+      "season_scoring": 14.256098,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.39662,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1627826,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500327",
+          "matchup": "LAC @ ATL",
+          "minutes": 33.016667,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500206",
+          "matchup": "LAC vs. ATL",
+          "minutes": 30.116667,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Ivica Zubac",
+      "season_averages": { "PTS": 14.104167 },
+      "season_scoring": 14.104167,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.545643,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1630200,
+      "games": [
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 23.483333,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 22.933333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500115",
+          "matchup": "CHI vs. ATL",
+          "minutes": 30.7,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Tre Jones",
+      "season_averages": { "PTS": 14.061538 },
+      "season_scoring": 14.061538,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.525122,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1628381,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500327",
+          "matchup": "LAC @ ATL",
+          "minutes": 32.216667,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500206",
+          "matchup": "LAC vs. ATL",
+          "minutes": 31.366667,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "John Collins",
+      "season_averages": { "PTS": 13.550725 },
+      "season_scoring": 13.550725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.368741,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1629640,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 16.133333,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-11-20",
+          "game_id": "0022500267",
+          "matchup": "SAS vs. ATL",
+          "minutes": 32.133333,
+          "stats": { "PTS": 25.0 }
+        }
+      ],
+      "name": "Keldon Johnson",
+      "season_averages": { "PTS": 13.182927 },
+      "season_scoring": 13.182927,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.412798,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1630314,
+      "games": [
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500939",
+          "matchup": "DAL @ ATL",
+          "minutes": 17.6,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Brandon Williams",
+      "season_averages": { "PTS": 13.015152 },
+      "season_scoring": 13.015152,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.405844,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1628398,
+      "games": [
+        {
+          "game_date": "2026-03-14",
+          "game_id": "0022500970",
+          "matchup": "MIL @ ATL",
+          "minutes": 24.033333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500897",
+          "matchup": "MIL vs. ATL",
+          "minutes": 21.716667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-01-19",
+          "game_id": "0022500014",
+          "matchup": "MIL @ ATL",
+          "minutes": 30.5,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Kyle Kuzma",
+      "season_averages": { "PTS": 12.985507 },
+      "season_scoring": 12.985507,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.366279,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1641713,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501037",
+          "matchup": "MEM @ ATL",
+          "minutes": 30.233333,
+          "stats": { "PTS": 26.0 }
+        },
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500623",
+          "matchup": "MEM vs. ATL",
+          "minutes": 20.75,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "GG Jackson",
+      "season_averages": { "PTS": 12.472727 },
+      "season_scoring": 12.472727,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389864,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1629028,
+      "games": [
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500569",
+          "matchup": "LAL vs. ATL",
+          "minutes": 30.85,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500185",
+          "matchup": "LAL @ ATL",
+          "minutes": 19.9,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Deandre Ayton",
+      "season_averages": { "PTS": 12.458333 },
+      "season_scoring": 12.458333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.519135,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1642270,
+      "games": [
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500873",
+          "matchup": "POR @ ATL",
+          "minutes": 30.6,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500585",
+          "matchup": "POR vs. ATL",
+          "minutes": 28.416667,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Donovan Clingan",
+      "season_averages": { "PTS": 12.12987 },
+      "season_scoring": 12.12987,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.538012,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631128,
+      "games": [
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500537",
+          "matchup": "DEN vs. ATL",
+          "minutes": 24.783333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Christian Braun",
+      "season_averages": { "PTS": 11.954545 },
+      "season_scoring": 11.954545,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.485861,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1628976,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501107",
+          "matchup": "ORL vs. ATL",
+          "minutes": 25.083333,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500983",
+          "matchup": "ORL @ ATL",
+          "minutes": 28.166667,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-11-04",
+          "game_id": "0022500166",
+          "matchup": "ORL @ ATL",
+          "minutes": 29.983333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500090",
+          "matchup": "ORL vs. ATL",
+          "minutes": 31.116667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Wendell Carter Jr.",
+      "season_averages": { "PTS": 11.820513 },
+      "season_scoring": 11.820513,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.387755,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1642844,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 18.433333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Dylan Harper",
+      "season_averages": { "PTS": 11.782609 },
+      "season_scoring": 11.782609,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.456489,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1629651,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501122",
+          "matchup": "BKN vs. ATL",
+          "minutes": 24.916667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500956",
+          "matchup": "BKN @ ATL",
+          "minutes": 20.883333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500818",
+          "matchup": "BKN @ ATL",
+          "minutes": 30.55,
+          "stats": { "PTS": 15.0 }
+        },
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500130",
+          "matchup": "BKN vs. ATL",
+          "minutes": 28.566667,
+          "stats": { "PTS": 18.0 }
+        }
+      ],
+      "name": "Nic Claxton",
+      "season_averages": { "PTS": 11.73913 },
+      "season_scoring": 11.73913,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.602058,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1642852,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 18.633333,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 32.316667,
+          "stats": { "PTS": 20.0 }
+        }
+      ],
+      "name": "Derik Queen",
+      "season_averages": { "PTS": 11.703704 },
+      "season_scoring": 11.703704,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.5,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1631109,
+      "games": [
+        {
+          "game_date": "2026-01-23",
+          "game_id": "0022500636",
+          "matchup": "PHX @ ATL",
+          "minutes": 20.916667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500239",
+          "matchup": "PHX vs. ATL",
+          "minutes": 28.083333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Mark Williams",
+      "season_averages": { "PTS": 11.666667 },
+      "season_scoring": 11.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.705479,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1641796,
+      "games": [
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500805",
+          "matchup": "MIA @ ATL",
+          "minutes": 31.916667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "MIA vs. ATL",
+          "minutes": 35.75,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500423",
+          "matchup": "MIA @ ATL",
+          "minutes": 29.666667,
+          "stats": { "PTS": 21.0 }
+        }
+      ],
+      "name": "Pelle Larsson",
+      "season_averages": { "PTS": 11.428571 },
+      "season_scoring": 11.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.382826,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1630572,
+      "games": [
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500504",
+          "matchup": "TOR vs. ATL",
+          "minutes": 22.533333,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500488",
+          "matchup": "TOR vs. ATL",
+          "minutes": 31.933333,
+          "stats": { "PTS": 13.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500030",
+          "matchup": "TOR @ ATL",
+          "minutes": 20.716667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500082",
+          "matchup": "TOR @ ATL",
+          "minutes": 17.15,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Sandro Mamukelashvili",
+      "season_averages": { "PTS": 11.1625 },
+      "season_scoring": 11.1625,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.375594,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1642276,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501189",
+          "matchup": "MIA vs. ATL",
+          "minutes": 29.166667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500805",
+          "matchup": "MIA @ ATL",
+          "minutes": 18.083333,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "MIA vs. ATL",
+          "minutes": 17.783333,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-12-26",
+          "game_id": "0022500423",
+          "matchup": "MIA @ ATL",
+          "minutes": 32.6,
+          "stats": { "PTS": 16.0 }
+        }
+      ],
+      "name": "Kel'el Ware",
+      "season_averages": { "PTS": 11.051948 },
+      "season_scoring": 11.051948,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.479199,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 203497,
+      "games": [
+        {
+          "game_date": "2026-02-09",
+          "game_id": "0022500765",
+          "matchup": "MIN vs. ATL",
+          "minutes": 32.516667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500463",
+          "matchup": "MIN @ ATL",
+          "minutes": 28.45,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Rudy Gobert",
+      "season_averages": { "PTS": 10.907895 },
+      "season_scoring": 10.907895,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.863544,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 203994,
+      "games": [
+        {
+          "game_date": "2025-11-13",
+          "game_id": "0022500227",
+          "matchup": "UTA vs. ATL",
+          "minutes": 28.166667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Jusuf Nurki\u0107",
+      "season_averages": { "PTS": 10.902439 },
+      "season_scoring": 10.902439,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.368715,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1627751,
+      "games": [
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500030",
+          "matchup": "TOR @ ATL",
+          "minutes": 25.216667,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500082",
+          "matchup": "TOR @ ATL",
+          "minutes": 22.366667,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Jakob Poeltl",
+      "season_averages": { "PTS": 10.717391 },
+      "season_scoring": 10.717391,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.66129,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1629111,
+      "games": [
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500623",
+          "matchup": "MEM vs. ATL",
+          "minutes": 27.85,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Jock Landale",
+      "season_averages": { "PTS": 10.558824 },
+      "season_scoring": 10.558824,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.381387,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1628963,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501006",
+          "matchup": "DAL vs. ATL",
+          "minutes": 16.0,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500939",
+          "matchup": "DAL @ ATL",
+          "minutes": 20.65,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500351",
+          "matchup": "WAS vs. ATL",
+          "minutes": 19.233333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Marvin Bagley III",
+      "season_averages": { "PTS": 10.45 },
+      "season_scoring": 10.45,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.627737,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1629674,
+      "games": [
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501067",
+          "matchup": "BOS vs. ATL",
+          "minutes": 27.566667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "BOS @ ATL",
+          "minutes": 23.633333,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Neemias Queta",
+      "season_averages": { "PTS": 10.210526 },
+      "season_scoring": 10.210526,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.665331,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1630188,
+      "games": [
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 11.733333,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 13.2,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500115",
+          "matchup": "CHI vs. ATL",
+          "minutes": 7.2,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Jalen Smith",
+      "season_averages": { "PTS": 10.207547 },
+      "season_scoring": 10.207547,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.368812,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1630173,
+      "games": [
+        {
+          "game_date": "2026-03-28",
+          "game_id": "0022501078",
+          "matchup": "SAC @ ATL",
+          "minutes": 20.183333,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500223",
+          "matchup": "SAC vs. ATL",
+          "minutes": 19.966667,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Precious Achiuwa",
+      "season_averages": { "PTS": 10.082192 },
+      "season_scoring": 10.082192,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.466555,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1627884,
+      "games": [
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500206",
+          "matchup": "LAC vs. ATL",
+          "minutes": 33.3,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "Derrick Jones Jr.",
+      "season_averages": { "PTS": 10.08 },
+      "season_scoring": 10.08,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.408971,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1630191,
+      "games": [
+        {
+          "game_date": "2025-12-12",
+          "game_id": "0022501210",
+          "matchup": "DET vs. ATL",
+          "minutes": 21.15,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500309",
+          "matchup": "DET vs. ATL",
+          "minutes": 25.066667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500251",
+          "matchup": "DET @ ATL",
+          "minutes": 26.166667,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Isaiah Stewart",
+      "season_averages": { "PTS": 10.017241 },
+      "season_scoring": 10.017241,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.462687,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1641765,
+      "games": [
+        {
+          "game_date": "2026-03-23",
+          "game_id": "0022501037",
+          "matchup": "MEM @ ATL",
+          "minutes": 25.133333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Olivier-Maxence Prosper",
+      "season_averages": { "PTS": 10.0 },
+      "season_scoring": 10.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.431429,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1641709,
+      "games": [
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501051",
+          "matchup": "DET vs. ATL",
+          "minutes": 37.066667,
+          "stats": { "PTS": 18.0 }
+        },
+        {
+          "game_date": "2025-12-12",
+          "game_id": "0022501210",
+          "matchup": "DET vs. ATL",
+          "minutes": 21.1,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500309",
+          "matchup": "DET vs. ATL",
+          "minutes": 29.616667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500251",
+          "matchup": "DET @ ATL",
+          "minutes": 23.733333,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Ausar Thompson",
+      "season_averages": { "PTS": 9.876712 },
+      "season_scoring": 9.876712,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.551127,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1628380,
+      "games": [
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 17.666667,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 15.983333,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Zach Collins",
+      "season_averages": { "PTS": 9.7 },
+      "season_scoring": 9.7,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.4375,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1629655,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501006",
+          "matchup": "DAL vs. ATL",
+          "minutes": 22.383333,
+          "stats": { "PTS": 24.0 }
+        },
+        {
+          "game_date": "2026-03-10",
+          "game_id": "0022500939",
+          "matchup": "DAL @ ATL",
+          "minutes": 25.35,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Daniel Gafford",
+      "season_averages": { "PTS": 9.527273 },
+      "season_scoring": 9.527273,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.797468,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1630171,
+      "games": [
+        {
+          "game_date": "2025-12-23",
+          "game_id": "0022500411",
+          "matchup": "CHI @ ATL",
+          "minutes": 22.083333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-12-21",
+          "game_id": "0022500396",
+          "matchup": "CHI @ ATL",
+          "minutes": 18.583333,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-10-27",
+          "game_id": "0022500115",
+          "matchup": "CHI vs. ATL",
+          "minutes": 24.283333,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Isaac Okoro",
+      "season_averages": { "PTS": 9.269841 },
+      "season_scoring": 9.269841,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.442266,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612741,
+      "tricode": "CHI"
+    },
+    {
+      "canonical_id": 1628392,
+      "games": [
+        {
+          "game_date": "2025-10-25",
+          "game_id": "0022500101",
+          "matchup": "OKC @ ATL",
+          "minutes": 29.016667,
+          "stats": { "PTS": 14.0 }
+        }
+      ],
+      "name": "Isaiah Hartenstein",
+      "season_averages": { "PTS": 9.191489 },
+      "season_scoring": 9.191489,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.597973,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1630611,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501026",
+          "matchup": "GSW @ ATL",
+          "minutes": 23.7,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500556",
+          "matchup": "GSW vs. ATL",
+          "minutes": 15.983333,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Gui Santos",
+      "season_averages": { "PTS": 9.191176 },
+      "season_scoring": 9.191176,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.371739,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1641715,
+      "games": [
+        {
+          "game_date": "2025-11-25",
+          "game_id": "0022500057",
+          "matchup": "WAS vs. ATL",
+          "minutes": 9.65,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Cam Whitmore",
+      "season_averages": { "PTS": 9.190476 },
+      "season_scoring": 9.190476,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.431953,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1631245,
+      "games": [
+        {
+          "game_date": "2026-01-26",
+          "game_id": "0022500659",
+          "matchup": "IND @ ATL",
+          "minutes": 1.433333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500020",
+          "matchup": "IND vs. ATL",
+          "minutes": 22.266667,
+          "stats": { "PTS": 15.0 }
+        }
+      ],
+      "name": "Quenton Jackson",
+      "season_averages": { "PTS": 9.142857 },
+      "season_scoring": 9.142857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.405488,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642874,
+      "games": [
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500956",
+          "matchup": "BKN @ ATL",
+          "minutes": 28.166667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500818",
+          "matchup": "BKN @ ATL",
+          "minutes": 18.433333,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Danny Wolf",
+      "season_averages": { "PTS": 8.912281 },
+      "season_scoring": 8.912281,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.354545,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 202685,
+      "games": [
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500340",
+          "matchup": "DEN @ ATL",
+          "minutes": 12.016667,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Jonas Valan\u010di\u016bnas",
+      "season_averages": { "PTS": 8.723077 },
+      "season_scoring": 8.723077,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.417949,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1630549,
+      "games": [
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500818",
+          "matchup": "BKN @ ATL",
+          "minutes": 17.383333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500130",
+          "matchup": "BKN vs. ATL",
+          "minutes": 19.383333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Day'Ron Sharpe",
+      "season_averages": { "PTS": 8.709677 },
+      "season_scoring": 8.709677,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.671348,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1630551,
+      "games": [
+        {
+          "game_date": "2026-02-26",
+          "game_id": "0022500850",
+          "matchup": "WAS @ ATL",
+          "minutes": 19.916667,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500832",
+          "matchup": "WAS @ ATL",
+          "minutes": 15.333333,
+          "stats": { "PTS": 14.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500351",
+          "matchup": "WAS vs. ATL",
+          "minutes": 32.166667,
+          "stats": { "PTS": 16.0 }
+        },
+        {
+          "game_date": "2025-11-25",
+          "game_id": "0022500057",
+          "matchup": "WAS vs. ATL",
+          "minutes": 17.433333,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Justin Champagnie",
+      "season_averages": { "PTS": 8.652174 },
+      "season_scoring": 8.652174,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.502165,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1642867,
+      "games": [
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500504",
+          "matchup": "TOR vs. ATL",
+          "minutes": 31.083333,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500488",
+          "matchup": "TOR vs. ATL",
+          "minutes": 25.95,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-11-07",
+          "game_id": "0022500030",
+          "matchup": "TOR @ ATL",
+          "minutes": 17.55,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Collin Murray-Boyles",
+      "season_averages": { "PTS": 8.491228 },
+      "season_scoring": 8.491228,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.678363,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1641842,
+      "games": [
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501051",
+          "matchup": "DET vs. ATL",
+          "minutes": 12.483333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-12-12",
+          "game_id": "0022501210",
+          "matchup": "DET vs. ATL",
+          "minutes": 24.55,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-01",
+          "game_id": "0022500309",
+          "matchup": "DET vs. ATL",
+          "minutes": 17.416667,
+          "stats": { "PTS": 17.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500251",
+          "matchup": "DET @ ATL",
+          "minutes": 18.566667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Ronald Holland II",
+      "season_averages": { "PTS": 8.205128 },
+      "season_scoring": 8.205128,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.397059,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1643052,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501122",
+          "matchup": "BKN vs. ATL",
+          "minutes": 22.566667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500956",
+          "matchup": "BKN @ ATL",
+          "minutes": 20.05,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Chaney Johnson",
+      "season_averages": { "PTS": 8.176471 },
+      "season_scoring": 8.176471,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.468085,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1630536,
+      "games": [
+        {
+          "game_date": "2026-02-26",
+          "game_id": "0022500850",
+          "matchup": "WAS @ ATL",
+          "minutes": 14.283333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500832",
+          "matchup": "WAS @ ATL",
+          "minutes": 16.916667,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2025-11-25",
+          "game_id": "0022500057",
+          "matchup": "WAS vs. ATL",
+          "minutes": 2.55,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Sharife Cooper",
+      "season_averages": { "PTS": 8.121951 },
+      "season_scoring": 8.121951,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.380567,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1631121,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 36.833333,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 19.983333,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Bryce McGowens",
+      "season_averages": { "PTS": 8.095238 },
+      "season_scoring": 8.095238,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.375527,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1630568,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501092",
+          "matchup": "BOS @ ATL",
+          "minutes": 28.216667,
+          "stats": { "PTS": 20.0 }
+        },
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501067",
+          "matchup": "BOS vs. ATL",
+          "minutes": 15.05,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-01-28",
+          "game_id": "0022500673",
+          "matchup": "BOS vs. ATL",
+          "minutes": 23.866667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "BOS @ ATL",
+          "minutes": 12.366667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Luka Garza",
+      "season_averages": { "PTS": 8.072464 },
+      "season_scoring": 8.072464,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.422969,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1630286,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501122",
+          "matchup": "BKN vs. ATL",
+          "minutes": 7.7,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Trevon Scott",
+      "season_averages": { "PTS": 8.0 },
+      "season_scoring": 8.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.36,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1631466,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501026",
+          "matchup": "GSW @ ATL",
+          "minutes": 28.666667,
+          "stats": { "PTS": 19.0 }
+        }
+      ],
+      "name": "Nate Williams",
+      "season_averages": { "PTS": 8.0 },
+      "season_scoring": 8.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.386364,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1628971,
+      "games": [
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500537",
+          "matchup": "DEN vs. ATL",
+          "minutes": 23.716667,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500340",
+          "matchup": "DEN @ ATL",
+          "minutes": 32.283333,
+          "stats": { "PTS": 13.0 }
+        }
+      ],
+      "name": "Bruce Brown",
+      "season_averages": { "PTS": 7.914634 },
+      "season_scoring": 7.914634,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.40613,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1631217,
+      "games": [
+        {
+          "game_date": "2026-02-07",
+          "game_id": "0022500751",
+          "matchup": "CHA @ ATL",
+          "minutes": 32.183333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-12-18",
+          "game_id": "0022500371",
+          "matchup": "CHA vs. ATL",
+          "minutes": 17.566667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-11-23",
+          "game_id": "0022500276",
+          "matchup": "CHA @ ATL",
+          "minutes": 25.35,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Moussa Diabat\u00e9",
+      "season_averages": { "PTS": 7.876712 },
+      "season_scoring": 7.876712,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.749311,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1631159,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500463",
+          "matchup": "MIN @ ATL",
+          "minutes": 7.866667,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Leonard Miller",
+      "season_averages": { "PTS": 7.847826 },
+      "season_scoring": 7.847826,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.519084,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1631131,
+      "games": [
+        {
+          "game_date": "2026-02-05",
+          "game_id": "0022500735",
+          "matchup": "UTA @ ATL",
+          "minutes": 9.933333,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Oscar Tshiebwe",
+      "season_averages": { "PTS": 7.814815 },
+      "season_scoring": 7.814815,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.648276,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612762,
+      "tricode": "UTA"
+    },
+    {
+      "canonical_id": 1630194,
+      "games": [
+        {
+          "game_date": "2026-03-25",
+          "game_id": "0022501051",
+          "matchup": "DET vs. ATL",
+          "minutes": 10.95,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-12",
+          "game_id": "0022501210",
+          "matchup": "DET vs. ATL",
+          "minutes": 4.95,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-18",
+          "game_id": "0022500251",
+          "matchup": "DET @ ATL",
+          "minutes": 8.85,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Paul Reed",
+      "season_averages": { "PTS": 7.753846 },
+      "season_scoring": 7.753846,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.548673,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612765,
+      "tricode": "DET"
+    },
+    {
+      "canonical_id": 1631230,
+      "games": [
+        {
+          "game_date": "2026-03-07",
+          "game_id": "0022500917",
+          "matchup": "PHI @ ATL",
+          "minutes": 26.116667,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500794",
+          "matchup": "PHI vs. ATL",
+          "minutes": 22.316667,
+          "stats": { "PTS": 1.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501217",
+          "matchup": "PHI @ ATL",
+          "minutes": 27.166667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-11-30",
+          "game_id": "0022500304",
+          "matchup": "PHI vs. ATL",
+          "minutes": 45.0,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Dominick Barlow",
+      "season_averages": { "PTS": 7.676056 },
+      "season_scoring": 7.676056,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.571429,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1641750,
+      "games": [
+        {
+          "game_date": "2026-02-11",
+          "game_id": "0022500775",
+          "matchup": "CHA vs. ATL",
+          "minutes": 23.966667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-02-07",
+          "game_id": "0022500751",
+          "matchup": "CHA @ ATL",
+          "minutes": 15.066667,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-12-18",
+          "game_id": "0022500371",
+          "matchup": "CHA vs. ATL",
+          "minutes": 27.316667,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Ryan Kalkbrenner",
+      "season_averages": { "PTS": 7.550725 },
+      "season_scoring": 7.550725,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.838488,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1642879,
+      "games": [
+        {
+          "game_date": "2026-04-03",
+          "game_id": "0022501122",
+          "matchup": "BKN vs. ATL",
+          "minutes": 24.55,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-12",
+          "game_id": "0022500956",
+          "matchup": "BKN @ ATL",
+          "minutes": 30.65,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-10-29",
+          "game_id": "0022500130",
+          "matchup": "BKN vs. ATL",
+          "minutes": 12.433333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Ben Saraf",
+      "season_averages": { "PTS": 7.545455 },
+      "season_scoring": 7.545455,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.425743,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1629637,
+      "games": [
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500185",
+          "matchup": "LAL @ ATL",
+          "minutes": 16.816667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jaxson Hayes",
+      "season_averages": { "PTS": 7.530303 },
+      "season_scoring": 7.530303,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.801527,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1627780,
+      "games": [
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500556",
+          "matchup": "GSW vs. ATL",
+          "minutes": 16.25,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Gary Payton II",
+      "season_averages": { "PTS": 7.493151 },
+      "season_scoring": 7.493151,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.537349,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 1629021,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501107",
+          "matchup": "ORL vs. ATL",
+          "minutes": 7.5,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500983",
+          "matchup": "ORL @ ATL",
+          "minutes": 14.35,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Moritz Wagner",
+      "season_averages": { "PTS": 6.861111 },
+      "season_scoring": 6.861111,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389744,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1629057,
+      "games": [
+        {
+          "game_date": "2026-01-15",
+          "game_id": "0022500585",
+          "matchup": "POR vs. ATL",
+          "minutes": 19.55,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Robert Williams III",
+      "season_averages": { "PTS": 6.728814 },
+      "season_scoring": 6.728814,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.756,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1630543,
+      "games": [
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500698",
+          "matchup": "IND vs. ATL",
+          "minutes": 6.016667,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-26",
+          "game_id": "0022500659",
+          "matchup": "IND @ ATL",
+          "minutes": 12.316667,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500020",
+          "matchup": "IND vs. ATL",
+          "minutes": 27.05,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Isaiah Jackson",
+      "season_averages": { "PTS": 6.727273 },
+      "season_scoring": 6.727273,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.755274,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1628436,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 17.616667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-20",
+          "game_id": "0022500267",
+          "matchup": "SAS vs. ATL",
+          "minutes": 22.983333,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Luke Kornet",
+      "season_averages": { "PTS": 6.529412 },
+      "season_scoring": 6.529412,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.852941,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1630570,
+      "games": [
+        {
+          "game_date": "2026-03-07",
+          "game_id": "0022500917",
+          "matchup": "PHI @ ATL",
+          "minutes": 18.616667,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500794",
+          "matchup": "PHI vs. ATL",
+          "minutes": 16.266667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Trendon Watford",
+      "season_averages": { "PTS": 6.528302 },
+      "season_scoring": 6.528302,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.425373,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1642345,
+      "games": [
+        {
+          "game_date": "2026-01-23",
+          "game_id": "0022500636",
+          "matchup": "PHX @ ATL",
+          "minutes": 27.083333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500239",
+          "matchup": "PHX vs. ATL",
+          "minutes": 5.25,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Oso Ighodaro",
+      "season_averages": { "PTS": 6.47561 },
+      "season_scoring": 6.47561,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.606557,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 203083,
+      "games": [
+        {
+          "game_date": "2026-03-07",
+          "game_id": "0022500917",
+          "matchup": "PHI @ ATL",
+          "minutes": 18.933333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500794",
+          "matchup": "PHI vs. ATL",
+          "minutes": 27.883333,
+          "stats": { "PTS": 10.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501217",
+          "matchup": "PHI @ ATL",
+          "minutes": 19.8,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-11-30",
+          "game_id": "0022500304",
+          "matchup": "PHI vs. ATL",
+          "minutes": 5.983333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Andre Drummond",
+      "season_averages": { "PTS": 6.396825 },
+      "season_scoring": 6.396825,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.581602,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1629048,
+      "games": [
+        {
+          "game_date": "2026-04-01",
+          "game_id": "0022501107",
+          "matchup": "ORL vs. ATL",
+          "minutes": 15.416667,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-03-16",
+          "game_id": "0022500983",
+          "matchup": "ORL @ ATL",
+          "minutes": 5.483333,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-04",
+          "game_id": "0022500166",
+          "matchup": "ORL @ ATL",
+          "minutes": 12.9,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500090",
+          "matchup": "ORL vs. ATL",
+          "minutes": 16.883333,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Goga Bitadze",
+      "season_averages": { "PTS": 5.859375 },
+      "season_scoring": 5.859375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.817778,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1629646,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501092",
+          "matchup": "BOS @ ATL",
+          "minutes": 5.866667,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Charles Bassey",
+      "season_averages": { "PTS": 5.846154 },
+      "season_scoring": 5.846154,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.617021,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1641772,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501173",
+          "matchup": "CLE @ ATL",
+          "minutes": 18.983333,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-28",
+          "game_id": "0022500069",
+          "matchup": "CLE @ ATL",
+          "minutes": 11.083333,
+          "stats": { "PTS": 5.0 }
+        }
+      ],
+      "name": "Nae'Qwan Tomlin",
+      "season_averages": { "PTS": 5.84375 },
+      "season_scoring": 5.84375,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.525478,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1630264,
+      "games": [
+        {
+          "game_date": "2026-02-26",
+          "game_id": "0022500850",
+          "matchup": "WAS @ ATL",
+          "minutes": 31.183333,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2026-02-24",
+          "game_id": "0022500832",
+          "matchup": "WAS @ ATL",
+          "minutes": 24.35,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500351",
+          "matchup": "WAS vs. ATL",
+          "minutes": 1.5,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Anthony Gill",
+      "season_averages": { "PTS": 5.836364 },
+      "season_scoring": 5.836364,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.511628,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1642346,
+      "games": [
+        {
+          "game_date": "2026-01-23",
+          "game_id": "0022500636",
+          "matchup": "PHX @ ATL",
+          "minutes": 14.8,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500239",
+          "matchup": "PHX vs. ATL",
+          "minutes": 23.916667,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Ryan Dunn",
+      "season_averages": { "PTS": 5.814286 },
+      "season_scoring": 5.814286,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.375691,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1631200,
+      "games": [
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500873",
+          "matchup": "POR @ ATL",
+          "minutes": 4.333333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Kris Murray",
+      "season_averages": { "PTS": 5.807018 },
+      "season_scoring": 5.807018,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.48913,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1641738,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500327",
+          "matchup": "LAC @ ATL",
+          "minutes": 12.85,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-11-10",
+          "game_id": "0022500206",
+          "matchup": "LAC vs. ATL",
+          "minutes": 15.533333,
+          "stats": { "PTS": 9.0 }
+        }
+      ],
+      "name": "Kobe Brown",
+      "season_averages": { "PTS": 5.786885 },
+      "season_scoring": 5.786885,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.380074,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1642382,
+      "games": [
+        {
+          "game_date": "2025-12-29",
+          "game_id": "0022500455",
+          "matchup": "OKC vs. ATL",
+          "minutes": 10.75,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2025-10-25",
+          "game_id": "0022500101",
+          "matchup": "OKC @ ATL",
+          "minutes": 2.066667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Branden Carlson",
+      "season_averages": { "PTS": 5.761905 },
+      "season_scoring": 5.761905,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.424731,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612760,
+      "tricode": "OKC"
+    },
+    {
+      "canonical_id": 1630208,
+      "games": [
+        {
+          "game_date": "2025-11-16",
+          "game_id": "0022500239",
+          "matchup": "PHX vs. ATL",
+          "minutes": 13.883333,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Nick Richards",
+      "season_averages": { "PTS": 5.75 },
+      "season_scoring": 5.75,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.606965,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612756,
+      "tricode": "PHX"
+    },
+    {
+      "canonical_id": 1642274,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 24.416667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 20.583333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Yves Missi",
+      "season_averages": { "PTS": 5.712121 },
+      "season_scoring": 5.712121,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.748299,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1631255,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 13.466667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Karlo Matkovi\u0107",
+      "season_averages": { "PTS": 5.677419 },
+      "season_scoring": 5.677419,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.489362,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1629011,
+      "games": [
+        {
+          "game_date": "2026-04-06",
+          "game_id": "0022501143",
+          "matchup": "NYK @ ATL",
+          "minutes": 19.633333,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2025-12-27",
+          "game_id": "0022500435",
+          "matchup": "NYK @ ATL",
+          "minutes": 18.2,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Mitchell Robinson",
+      "season_averages": { "PTS": 5.666667 },
+      "season_scoring": 5.666667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.985437,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1642928,
+      "games": [
+        {
+          "game_date": "2026-03-28",
+          "game_id": "0022501078",
+          "matchup": "SAC @ ATL",
+          "minutes": 18.983333,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Dylan Cardwell",
+      "season_averages": { "PTS": 5.409091 },
+      "season_scoring": 5.409091,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.52514,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1641775,
+      "games": [
+        {
+          "game_date": "2026-03-30",
+          "game_id": "0022501092",
+          "matchup": "BOS @ ATL",
+          "minutes": 31.316667,
+          "stats": { "PTS": 8.0 }
+        },
+        {
+          "game_date": "2026-03-27",
+          "game_id": "0022501067",
+          "matchup": "BOS vs. ATL",
+          "minutes": 27.45,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-01-28",
+          "game_id": "0022500673",
+          "matchup": "BOS vs. ATL",
+          "minutes": 20.9,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "BOS @ ATL",
+          "minutes": 10.566667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Jordan Walsh",
+      "season_averages": { "PTS": 5.352941 },
+      "season_scoring": 5.352941,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389513,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612738,
+      "tricode": "BOS"
+    },
+    {
+      "canonical_id": 1629234,
+      "games": [
+        {
+          "game_date": "2025-11-12",
+          "game_id": "0022500223",
+          "matchup": "SAC vs. ATL",
+          "minutes": 6.716667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Drew Eubanks",
+      "season_averages": { "PTS": 5.214286 },
+      "season_scoring": 5.214286,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.403846,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612758,
+      "tricode": "SAC"
+    },
+    {
+      "canonical_id": 1642277,
+      "games": [
+        {
+          "game_date": "2026-01-31",
+          "game_id": "0022500698",
+          "matchup": "IND vs. ATL",
+          "minutes": 12.916667,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-26",
+          "game_id": "0022500659",
+          "matchup": "IND @ ATL",
+          "minutes": 18.45,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Johnny Furphy",
+      "season_averages": { "PTS": 5.142857 },
+      "season_scoring": 5.142857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.416107,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1630534,
+      "games": [
+        {
+          "game_date": "2026-02-22",
+          "game_id": "0022500818",
+          "matchup": "BKN @ ATL",
+          "minutes": 14.15,
+          "stats": { "PTS": 6.0 }
+        },
+        {
+          "game_date": "2026-01-05",
+          "game_id": "0022500504",
+          "matchup": "TOR vs. ATL",
+          "minutes": 5.633333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-03",
+          "game_id": "0022500488",
+          "matchup": "TOR vs. ATL",
+          "minutes": 4.183333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500082",
+          "matchup": "TOR @ ATL",
+          "minutes": 19.95,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Ochai Agbaji",
+      "season_averages": { "PTS": 5.064516 },
+      "season_scoring": 5.064516,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.410714,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612751,
+      "tricode": "BKN"
+    },
+    {
+      "canonical_id": 1630579,
+      "games": [
+        {
+          "game_date": "2026-03-14",
+          "game_id": "0022500970",
+          "matchup": "MIL @ ATL",
+          "minutes": 25.466667,
+          "stats": { "PTS": 7.0 }
+        },
+        {
+          "game_date": "2026-03-04",
+          "game_id": "0022500897",
+          "matchup": "MIL vs. ATL",
+          "minutes": 22.716667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jericho Sims",
+      "season_averages": { "PTS": 4.985075 },
+      "season_scoring": 4.985075,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.881081,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612749,
+      "tricode": "MIL"
+    },
+    {
+      "canonical_id": 1641737,
+      "games": [
+        {
+          "game_date": "2026-03-07",
+          "game_id": "0022500917",
+          "matchup": "PHI @ ATL",
+          "minutes": 29.066667,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500794",
+          "matchup": "PHI vs. ATL",
+          "minutes": 19.666667,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2025-11-30",
+          "game_id": "0022500304",
+          "matchup": "PHI vs. ATL",
+          "minutes": 22.016667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Adem Bona",
+      "season_averages": { "PTS": 4.84507 },
+      "season_scoring": 4.84507,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.836364,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1631104,
+      "games": [
+        {
+          "game_date": "2026-03-01",
+          "game_id": "0022500873",
+          "matchup": "POR @ ATL",
+          "minutes": 19.633333,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Blake Wesley",
+      "season_averages": { "PTS": 4.774194 },
+      "season_scoring": 4.774194,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.435484,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612757,
+      "tricode": "POR"
+    },
+    {
+      "canonical_id": 1631103,
+      "games": [
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500351",
+          "matchup": "WAS vs. ATL",
+          "minutes": 14.483333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-25",
+          "game_id": "0022500057",
+          "matchup": "WAS vs. ATL",
+          "minutes": 8.483333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Malaki Branham",
+      "season_averages": { "PTS": 4.571429 },
+      "season_scoring": 4.571429,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.384615,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612764,
+      "tricode": "WAS"
+    },
+    {
+      "canonical_id": 1641790,
+      "games": [
+        {
+          "game_date": "2026-02-11",
+          "game_id": "0022500775",
+          "matchup": "CHA vs. ATL",
+          "minutes": 16.8,
+          "stats": { "PTS": 11.0 }
+        }
+      ],
+      "name": "PJ Hall",
+      "season_averages": { "PTS": 4.526316 },
+      "season_scoring": 4.526316,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.711864,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    },
+    {
+      "canonical_id": 1629020,
+      "games": [
+        {
+          "game_date": "2026-01-13",
+          "game_id": "0022500569",
+          "matchup": "LAL vs. ATL",
+          "minutes": 15.55,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500185",
+          "matchup": "LAL @ ATL",
+          "minutes": 28.35,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "Jarred Vanderbilt",
+      "season_averages": { "PTS": 4.430769 },
+      "season_scoring": 4.430769,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.5,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1629723,
+      "games": [
+        {
+          "game_date": "2026-01-21",
+          "game_id": "0022500623",
+          "matchup": "MEM vs. ATL",
+          "minutes": 20.783333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "John Konchar",
+      "season_averages": { "PTS": 4.428571 },
+      "season_scoring": 4.428571,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.38191,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612763,
+      "tricode": "MEM"
+    },
+    {
+      "canonical_id": 1631133,
+      "games": [
+        {
+          "game_date": "2026-03-07",
+          "game_id": "0022500917",
+          "matchup": "PHI @ ATL",
+          "minutes": 17.4,
+          "stats": { "PTS": 9.0 }
+        },
+        {
+          "game_date": "2026-02-19",
+          "game_id": "0022500794",
+          "matchup": "PHI vs. ATL",
+          "minutes": 10.266667,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-12-14",
+          "game_id": "0022501217",
+          "matchup": "PHI @ ATL",
+          "minutes": 17.383333,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jabari Walker",
+      "season_averages": { "PTS": 4.3125 },
+      "season_scoring": 4.3125,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.464789,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612755,
+      "tricode": "PHI"
+    },
+    {
+      "canonical_id": 1642877,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 29.466667,
+          "stats": { "PTS": 11.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 27.0,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Micah Peavy",
+      "season_averages": { "PTS": 4.295082 },
+      "season_scoring": 4.295082,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.389091,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1642949,
+      "games": [
+        {
+          "game_date": "2025-12-03",
+          "game_id": "0022500327",
+          "matchup": "LAC @ ATL",
+          "minutes": 2.6,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Yanic Konan Niederh\u00e4user",
+      "season_averages": { "PTS": 4.292683 },
+      "season_scoring": 4.292683,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.68,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612746,
+      "tricode": "LAC"
+    },
+    {
+      "canonical_id": 1642352,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501189",
+          "matchup": "MIA vs. ATL",
+          "minutes": 25.35,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2026-02-20",
+          "game_id": "0022500805",
+          "matchup": "MIA @ ATL",
+          "minutes": 2.716667,
+          "stats": { "PTS": 5.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "MIA vs. ATL",
+          "minutes": 1.383333,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Keshad Johnson",
+      "season_averages": { "PTS": 4.25 },
+      "season_scoring": 4.25,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.442308,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1642400,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501173",
+          "matchup": "CLE @ ATL",
+          "minutes": 12.0,
+          "stats": { "PTS": 7.0 }
+        }
+      ],
+      "name": "Tristan Enaruna",
+      "season_averages": { "PTS": 4.111111 },
+      "season_scoring": 4.111111,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.535714,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1628396,
+      "games": [
+        {
+          "game_date": "2025-10-31",
+          "game_id": "0022500020",
+          "matchup": "IND vs. ATL",
+          "minutes": 4.666667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Tony Bradley",
+      "season_averages": { "PTS": 4.05 },
+      "season_scoring": 4.05,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.589744,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612754,
+      "tricode": "IND"
+    },
+    {
+      "canonical_id": 1642866,
+      "games": [
+        {
+          "game_date": "2025-12-31",
+          "game_id": "0022500463",
+          "matchup": "MIN @ ATL",
+          "minutes": 7.866667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Joan Beringer",
+      "season_averages": { "PTS": 3.9 },
+      "season_scoring": 3.9,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.877551,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612750,
+      "tricode": "MIN"
+    },
+    {
+      "canonical_id": 1630209,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501026",
+          "matchup": "GSW @ ATL",
+          "minutes": 15.116667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Omer Yurtseven",
+      "season_averages": { "PTS": 3.777778 },
+      "season_scoring": 3.777778,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.461538,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 203991,
+      "games": [
+        {
+          "game_date": "2026-03-20",
+          "game_id": "0022501018",
+          "matchup": "HOU vs. ATL",
+          "minutes": 13.783333,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-01-29",
+          "game_id": "0022500682",
+          "matchup": "HOU @ ATL",
+          "minutes": 17.85,
+          "stats": { "PTS": 10.0 }
+        }
+      ],
+      "name": "Clint Capela",
+      "season_averages": { "PTS": 3.76 },
+      "season_scoring": 3.76,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.735683,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1626204,
+      "games": [
+        {
+          "game_date": "2026-04-10",
+          "game_id": "0022501173",
+          "matchup": "CLE @ ATL",
+          "minutes": 16.483333,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-28",
+          "game_id": "0022500069",
+          "matchup": "CLE @ ATL",
+          "minutes": 9.933333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-02",
+          "game_id": "0022500151",
+          "matchup": "CLE vs. ATL",
+          "minutes": 24.533333,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Larry Nance Jr.",
+      "season_averages": { "PTS": 3.742857 },
+      "season_scoring": 3.742857,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.354839,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    {
+      "canonical_id": 1630192,
+      "games": [
+        {
+          "game_date": "2026-01-09",
+          "game_id": "0022500537",
+          "matchup": "DEN vs. ATL",
+          "minutes": 20.7,
+          "stats": { "PTS": 12.0 }
+        },
+        {
+          "game_date": "2025-12-05",
+          "game_id": "0022500340",
+          "matchup": "DEN @ ATL",
+          "minutes": 8.116667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Zeke Nnaji",
+      "season_averages": { "PTS": 3.653846 },
+      "season_scoring": 3.653846,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.496689,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612743,
+      "tricode": "DEN"
+    },
+    {
+      "canonical_id": 1631110,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 10.033333,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2025-11-20",
+          "game_id": "0022500267",
+          "matchup": "SAS vs. ATL",
+          "minutes": 21.833333,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Jeremy Sochan",
+      "season_averages": { "PTS": 3.636364 },
+      "season_scoring": 3.636364,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.488372,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1631218,
+      "games": [
+        {
+          "game_date": "2026-01-11",
+          "game_id": "0022500556",
+          "matchup": "GSW vs. ATL",
+          "minutes": 3.266667,
+          "stats": { "PTS": 6.0 }
+        }
+      ],
+      "name": "Trayce Jackson-Davis",
+      "season_averages": { "PTS": 3.415094 },
+      "season_scoring": 3.415094,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.861789,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 203939,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501006",
+          "matchup": "DAL vs. ATL",
+          "minutes": 2.65,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Dwight Powell",
+      "season_averages": { "PTS": 3.333333 },
+      "season_scoring": 3.333333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.841584,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1642358,
+      "games": [
+        {
+          "game_date": "2026-03-18",
+          "game_id": "0022501006",
+          "matchup": "DAL vs. ATL",
+          "minutes": 9.516667,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2025-12-06",
+          "game_id": "0022500351",
+          "matchup": "WAS vs. ATL",
+          "minutes": 1.5,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "AJ Johnson",
+      "season_averages": { "PTS": 3.333333 },
+      "season_scoring": 3.333333,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.4375,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612742,
+      "tricode": "DAL"
+    },
+    {
+      "canonical_id": 1642502,
+      "games": [
+        {
+          "game_date": "2026-03-21",
+          "game_id": "0022501026",
+          "matchup": "GSW @ ATL",
+          "minutes": 9.266667,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Malevy Leons",
+      "season_averages": { "PTS": 3.32 },
+      "season_scoring": 3.32,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.458333,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612744,
+      "tricode": "GSW"
+    },
+    {
+      "canonical_id": 203482,
+      "games": [
+        {
+          "game_date": "2025-12-19",
+          "game_id": "0022500383",
+          "matchup": "SAS @ ATL",
+          "minutes": 8.05,
+          "stats": { "PTS": 4.0 }
+        },
+        {
+          "game_date": "2025-11-20",
+          "game_id": "0022500267",
+          "matchup": "SAS vs. ATL",
+          "minutes": 12.916667,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Kelly Olynyk",
+      "season_averages": { "PTS": 3.243902 },
+      "season_scoring": 3.243902,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.364583,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1642357,
+      "games": [
+        {
+          "game_date": "2025-11-20",
+          "game_id": "0022500267",
+          "matchup": "SAS vs. ATL",
+          "minutes": 18.55,
+          "stats": { "PTS": 12.0 }
+        }
+      ],
+      "name": "David Jones Garcia",
+      "season_averages": { "PTS": 2.909091 },
+      "season_scoring": 2.909091,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.56,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612759,
+      "tricode": "SAS"
+    },
+    {
+      "canonical_id": 1626172,
+      "games": [
+        {
+          "game_date": "2026-01-07",
+          "game_id": "0022500519",
+          "matchup": "NOP @ ATL",
+          "minutes": 4.95,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-11-22",
+          "game_id": "0022500270",
+          "matchup": "NOP vs. ATL",
+          "minutes": 14.05,
+          "stats": { "PTS": 2.0 }
+        }
+      ],
+      "name": "Kevon Looney",
+      "season_averages": { "PTS": 2.809524 },
+      "season_scoring": 2.809524,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.6,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612740,
+      "tricode": "NOP"
+    },
+    {
+      "canonical_id": 1630256,
+      "games": [
+        {
+          "game_date": "2026-01-29",
+          "game_id": "0022500682",
+          "matchup": "HOU @ ATL",
+          "minutes": 19.216667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jae'Sean Tate",
+      "season_averages": { "PTS": 2.804348 },
+      "season_scoring": 2.804348,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.385321,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612745,
+      "tricode": "HOU"
+    },
+    {
+      "canonical_id": 1628371,
+      "games": [
+        {
+          "game_date": "2025-11-04",
+          "game_id": "0022500166",
+          "matchup": "ORL @ ATL",
+          "minutes": 8.883333,
+          "stats": { "PTS": 2.0 }
+        },
+        {
+          "game_date": "2025-10-24",
+          "game_id": "0022500090",
+          "matchup": "ORL vs. ATL",
+          "minutes": 0.15,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Jonathan Isaac",
+      "season_averages": { "PTS": 2.576923 },
+      "season_scoring": 2.576923,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.46789,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612753,
+      "tricode": "ORL"
+    },
+    {
+      "canonical_id": 1630574,
+      "games": [
+        {
+          "game_date": "2026-01-02",
+          "game_id": "0022500479",
+          "matchup": "NYK vs. ATL",
+          "minutes": 28.366667,
+          "stats": { "PTS": 8.0 }
+        }
+      ],
+      "name": "Ariel Hukporti",
+      "season_averages": { "PTS": 2.166667 },
+      "season_scoring": 2.166667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.6125,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "canonical_id": 1628467,
+      "games": [
+        {
+          "game_date": "2025-11-08",
+          "game_id": "0022500185",
+          "matchup": "LAL @ ATL",
+          "minutes": 14.45,
+          "stats": { "PTS": 1.0 }
+        }
+      ],
+      "name": "Maxi Kleber",
+      "season_averages": { "PTS": 2.0 },
+      "season_scoring": 2.0,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.39726,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612747,
+      "tricode": "LAL"
+    },
+    {
+      "canonical_id": 1642443,
+      "games": [
+        {
+          "game_date": "2026-04-12",
+          "game_id": "0022501189",
+          "matchup": "MIA vs. ATL",
+          "minutes": 2.8,
+          "stats": { "PTS": 3.0 }
+        },
+        {
+          "game_date": "2026-02-03",
+          "game_id": "0022500720",
+          "matchup": "MIA vs. ATL",
+          "minutes": 1.383333,
+          "stats": { "PTS": 3.0 }
+        }
+      ],
+      "name": "Jahmir Young",
+      "season_averages": { "PTS": 1.785714 },
+      "season_scoring": 1.785714,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.36,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612748,
+      "tricode": "MIA"
+    },
+    {
+      "canonical_id": 1642367,
+      "games": [
+        {
+          "game_date": "2025-10-22",
+          "game_id": "0022500082",
+          "matchup": "TOR @ ATL",
+          "minutes": 10.766667,
+          "stats": { "PTS": 4.0 }
+        }
+      ],
+      "name": "Jonathan Mogbo",
+      "season_averages": { "PTS": 1.525 },
+      "season_scoring": 1.525,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.681818,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612761,
+      "tricode": "TOR"
+    },
+    {
+      "canonical_id": 1630214,
+      "games": [
+        {
+          "game_date": "2026-02-11",
+          "game_id": "0022500775",
+          "matchup": "CHA vs. ATL",
+          "minutes": 1.2,
+          "stats": { "PTS": 0.0 }
+        },
+        {
+          "game_date": "2026-01-17",
+          "game_id": "0022500594",
+          "matchup": "BOS @ ATL",
+          "minutes": 4.916667,
+          "stats": { "PTS": 0.0 }
+        }
+      ],
+      "name": "Xavier Tillman",
+      "season_averages": { "PTS": 1.466667 },
+      "season_scoring": 1.466667,
+      "shares": [
+        {
+          "base": "shot_zones",
+          "league_average_share": 0.275917,
+          "share": 0.369565,
+          "slice_key": "Restricted Area"
+        }
+      ],
+      "team_id": 1610612766,
+      "tricode": "CHA"
+    }
+  ],
+  "proxy": "Outcomes are box-score proxies for the Qualifier slices, not slice-level results. Each stat column is a market the Matchup's defense sheet already maps to a Qualifier's slice, so a Corner 3 Qualifier reads as points and threes rather than as corner threes made.",
+  "season": "2025-26",
+  "stat_columns": ["PTS"],
+  "success": true,
+  "summary": {
+    "columns": { "PTS": { "mean_difference": -0.087523, "over_average_share": 0.429078 } },
+    "games": 282,
+    "players": 137
+  },
+  "target": {
+    "note": null,
+    "opponent": "ATL",
+    "qualifiers": [
+      {
+        "base": "shot_zones",
+        "comparator": "at_or_above",
+        "slice_key": "Restricted Area",
+        "threshold": 0.35
+      }
+    ],
+    "title": "ATL vs Restricted area \u2265 35%"
+  },
+  "today": null
+}

@@ -12,11 +12,22 @@ import VariantC from './VariantC';
 import VariantD from './VariantD';
 import VariantE from './VariantE';
 import VariantF from './VariantF';
+import VariantG from './VariantG';
+import VariantH from './VariantH';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { useTargetsPrototypeData } from './shared';
 import './prototype.css';
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD, E: VariantE, F: VariantF };
+const VARIANTS = {
+  A: VariantA,
+  B: VariantB,
+  C: VariantC,
+  D: VariantD,
+  E: VariantE,
+  F: VariantF,
+  G: VariantG,
+  H: VariantH,
+};
 
 export default function TargetsPrototypePage({ proto }) {
   const data = useTargetsPrototypeData(proto.date);

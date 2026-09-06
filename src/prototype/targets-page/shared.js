@@ -9,7 +9,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatTip } from '../../calendarDate';
-import { blankQualifier, blankTargetDraft, describeDraft } from '../../targets/TargetForm';
+import {
+  blankQualifier,
+  blankTargetDraft,
+  describeDraft,
+  targetToDraft,
+} from '../../targets/TargetForm';
 import {
   NBA_TEAM_TRICODES,
   TARGET_BASES,
@@ -17,6 +22,7 @@ import {
   TARGET_SLICES,
   deriveTargetTitle,
   formatQualifierParts,
+  nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
 import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
@@ -141,8 +147,8 @@ export const formatCreated = (createdAt) =>
 
 /* --- a draft, and the controls that edit one --- */
 
-export const useDraft = () => {
-  const [draft, setDraft] = useState(blankTargetDraft);
+export const useDraft = (initial) => {
+  const [draft, setDraft] = useState(() => (initial ? targetToDraft(initial) : blankTargetDraft()));
   const patch = (fields) => setDraft((current) => ({ ...current, ...fields }));
   const patchQualifier = (index, fields) =>
     setDraft((current) => ({
@@ -158,7 +164,7 @@ export const useDraft = () => {
       ...current,
       qualifiers: current.qualifiers.filter((_, position) => position !== index),
     }));
-  const reset = () => setDraft(blankTargetDraft());
+  const reset = (target) => setDraft(target ? targetToDraft(target) : blankTargetDraft());
   return {
     draft,
     patch,
@@ -228,6 +234,15 @@ export function QualifierFields({ qualifier, index, onPatch, onRemove }) {
         ))}
       </span>
       <span className="pt-threshold">
+        <button
+          type="button"
+          aria-label={`Qualifier ${index + 1} threshold down 1%`}
+          onClick={() =>
+            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, -1) })
+          }
+        >
+          −
+        </button>
         <input
           type="number"
           min="0"
@@ -236,7 +251,22 @@ export function QualifierFields({ qualifier, index, onPatch, onRemove }) {
           aria-label={`Qualifier ${index + 1} threshold percent`}
           value={qualifier.thresholdPercent}
           onChange={(event) => onPatch({ thresholdPercent: event.target.value })}
+          onKeyDown={(event) => {
+            const delta = { ArrowUp: 1, ArrowDown: -1 }[event.key];
+            if (!delta) return;
+            event.preventDefault();
+            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, delta) });
+          }}
         />
+        <button
+          type="button"
+          aria-label={`Qualifier ${index + 1} threshold up 1%`}
+          onClick={() =>
+            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, 1) })
+          }
+        >
+          +
+        </button>
         <span>%</span>
       </span>
       {onRemove && (

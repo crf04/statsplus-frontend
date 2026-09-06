@@ -179,3 +179,12 @@ current BOS fixture treats Porzingis as out, so its Slate Fits exercise both
 sides of the minutes comparator. Decoder and UI tests also cover absent legacy
 Conditions, malformed dates/counts, partial PATCH clearing, opponent changes,
 and preservation of the workbench's grading and paging through Save.
+
+The Target record derives selected stat columns from full game lines and season totals,
+using `season_games` only for box-score season averages. Per-36 and efficiency baselines
+use ratios of totals; zero denominators remain unavailable. UI hit rates count strictly
+positive margins and treat zero as a push, while the additive legacy API summary retains
+its at-or-above definition. The fixture supplies both from the same game logs. Stat
+preferences use independent PATCH requests, with account-scoped serialization and a
+captured-user check before bearer attachment; React tests exercise navigation flushes,
+retry, criteria-save remounts, and account isolation.

@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
+import { gameStat, seasonStat } from './statValues';
+import StatPicker from './StatPicker';
+import { signed } from './targetCatalog';
 import './TargetRecord.css';
 
 const number = (value) => (value == null ? '—' : value.toFixed(1));
-const signed = (value) => (value == null ? '—' : `${value > 0 ? '+' : ''}${number(value)}`);
+const formatMargin = (value) => (value == null ? '—' : signed(value));
 
 // Keep full precision through grading and arithmetic; round only for display.
 function recordGames(backtest, columns) {
@@ -16,8 +19,8 @@ function recordGames(backtest, columns) {
         key: `${player.canonicalId}-${game.gameDate}-${index}`,
         margins: Object.fromEntries(
           columns.map((column) => {
-            const value = game.stats[column];
-            const average = player.seasonAverages[column];
+            const value = gameStat(game, column);
+            const average = seasonStat(player, column);
             return [
               column,
               Number.isFinite(value) && Number.isFinite(average) ? value - average : null,
@@ -49,6 +52,7 @@ export default function TargetRecord({
   columns = backtest.statColumns,
   gradedBy = columns[0],
   onGrade,
+  onPreferencesChange,
   children,
 }) {
   const games = recordGames(backtest, columns);
@@ -75,7 +79,7 @@ export default function TargetRecord({
             <>
               <span>{column}</span>
               <b>{rate} hit</b>
-              <small>{signed(mean)} mean margin</small>
+              <small>{formatMargin(mean)} mean margin</small>
             </>
           );
           return (
@@ -95,6 +99,9 @@ export default function TargetRecord({
           );
         })}
       </ul>
+      {onPreferencesChange && (
+        <StatPicker columns={columns} gradedBy={gradedBy} onChange={onPreferencesChange} />
+      )}
       {children}
       {games.length === 0 ? (
         <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
@@ -104,7 +111,7 @@ export default function TargetRecord({
           aria-label={`${games.length} games, oldest to newest, graded by ${gradedBy} margin`}
         >
           {games.map((row) => {
-            const label = `${row.game.gameDate} · ${row.player.name} · ${number(row.game.stats[gradedBy])} ${gradedBy} · season ${number(row.player.seasonAverages[gradedBy])} · ${signed(row.margins[gradedBy])} margin`;
+            const label = `${row.game.gameDate} · ${row.player.name} · ${number(gameStat(row.game, gradedBy))} ${gradedBy} · season ${number(seasonStat(row.player, gradedBy))} · ${formatMargin(row.margins[gradedBy])} margin`;
             return (
               <li
                 key={row.key}
@@ -167,14 +174,14 @@ export function TargetGameRows({
                 · {row.player.tricode}
               </b>
               <span>
-                {number(row.game.stats[gradedBy])} {gradedBy} vs{' '}
-                {number(row.player.seasonAverages[gradedBy])} season avg ·{' '}
-                {signed(row.margins[gradedBy])} margin
+                {number(gameStat(row.game, gradedBy))} {gradedBy} vs{' '}
+                {number(seasonStat(row.player, gradedBy))} season avg ·{' '}
+                {formatMargin(row.margins[gradedBy])} margin
               </span>
               <small>
                 {columns
                   .filter((column) => column !== gradedBy)
-                  .map((column) => `${number(row.game.stats[column])} ${column}`)
+                  .map((column) => `${number(gameStat(row.game, column))} ${column}`)
                   .join(' · ')}
               </small>
             </div>

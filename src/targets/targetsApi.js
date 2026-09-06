@@ -1,6 +1,8 @@
 import { apiClient, getApiUrl } from '../config';
 import { isCalendarDate } from '../calendarDate';
 import { isRecord, strictDecoders } from '../decoding';
+import catalogue from './targetStatCatalogue.json';
+import { BOX_FIELDS } from './statValues';
 import { TARGET_COMPARATORS } from './targetCatalog';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
@@ -90,6 +92,22 @@ const decodeQualifier = (item) => {
  * arrives with the record rather than being rebuilt from it. See
  * crf04/statsplus docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
+const decodeStatPreferences = (value) => {
+  if (value === null) return null;
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.columns) ||
+    value.columns.length === 0 ||
+    new Set(value.columns).size !== value.columns.length ||
+    value.columns.some((key) => !catalogue.includes(key)) ||
+    !value.columns.includes(value.graded_by)
+  )
+    throw createInvalidResponseError();
+  return { columns: value.columns, gradedBy: value.graded_by };
+};
+const encodeStatPreferences = (value) =>
+  value === null ? null : { columns: value.columns, graded_by: value.gradedBy };
+
 const decodeDraftTarget = (item) => {
   if (!item || typeof item !== 'object') throw createInvalidResponseError();
   const { opponent, title, note, qualifiers } = item;
@@ -108,6 +126,9 @@ const decodeDraftTarget = (item) => {
     note: note || '',
     qualifiers: qualifiers.map(decodeQualifier),
     ...(item.conditions !== undefined ? { conditions: decodeConditions(item.conditions) } : {}),
+    ...(item.stat_preferences !== undefined
+      ? { statPreferences: decodeStatPreferences(item.stat_preferences) }
+      : {}),
   };
 };
 
@@ -322,19 +343,29 @@ export const decodeResolvedTargets = (payload = {}) => {
  * player league-wide whose diet meets the Qualifiers, and their games against
  * the opponent. Its columns are outcome markets the Matchup already maps to
  * the Qualifiers' slices, so every stat a row shows is named by
- * `stat_columns` and nothing else is read out of a game.
- *
- * The season label, the team id, the game id, the minutes and the matchup
- * string arrive too and are shown nowhere, so they are not decoded.
+ * `stat_columns`. Full lines and season totals also support the chosen stat
+ * columns; absent legacy evidence stays absent rather than becoming zero.
  */
 const decodeStats = (stats, statColumns) => {
   if (!isRecord(stats)) throw createInvalidResponseError();
   return Object.fromEntries(statColumns.map((column) => [column, requireNumber(stats[column])]));
 };
 
+const decodeBoxLine = (line) => {
+  if (line === null) return null;
+  if (!isRecord(line)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    Object.values(BOX_FIELDS).map((field) => [field, requireNumber(line[field])]),
+  );
+};
+
 const decodeBacktestGame = (game, statColumns) => {
   if (!isRecord(game) || !isCalendarDate(game.game_date)) throw createInvalidResponseError();
-  return { gameDate: game.game_date, stats: decodeStats(game.stats, statColumns) };
+  return {
+    gameDate: game.game_date,
+    stats: decodeStats(game.stats, statColumns),
+    ...(game.line !== undefined ? { line: decodeBoxLine(game.line) } : {}),
+  };
 };
 
 /*
@@ -343,6 +374,11 @@ const decodeBacktestGame = (game, statColumns) => {
  * are index-parallel with the Qualifiers, as a fit's are.
  */
 const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
+  if (
+    player?.season_games !== undefined &&
+    (!Number.isInteger(player.season_games) || player.season_games < 0)
+  )
+    throw createInvalidResponseError();
   if (
     !isRecord(player) ||
     !Array.isArray(player.games) ||
@@ -358,6 +394,12 @@ const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
     tricode: requireString(player.tricode),
     shares: player.shares.map(decodeShare),
     seasonAverages: decodeStats(player.season_averages, statColumns),
+    ...(player.season_totals !== undefined
+      ? { seasonTotals: decodeBoxLine(player.season_totals) }
+      : {}),
+    ...(player.season_games !== undefined
+      ? { seasonGames: requireNumber(player.season_games) }
+      : {}),
     games: player.games.map((game) => decodeBacktestGame(game, statColumns)),
   };
 };
@@ -501,6 +543,7 @@ export const fetchTargetPreview = async ({
   qualifiers,
   note,
   conditions,
+  statPreferences,
   signal,
 } = {}) => {
   const response = await apiClient.post(
@@ -510,6 +553,9 @@ export const fetchTargetPreview = async ({
       qualifiers: qualifiers.map(encodeQualifier),
       note,
       ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
+      ...(statPreferences !== undefined
+        ? { stat_preferences: encodeStatPreferences(statPreferences) }
+        : {}),
     },
     { signal },
   );
@@ -526,26 +572,42 @@ export const fetchTargetPreview = async ({
  * than a locally guessed one. See crf04/statsplus
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
-export const createTarget = async ({ opponent, qualifiers, note, conditions }) => {
+export const createTarget = async ({ opponent, qualifiers, note, conditions, statPreferences }) => {
   const response = await apiClient.post(targetsUrl(), {
     opponent,
     qualifiers: qualifiers.map(encodeQualifier),
     note,
     ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
+    ...(statPreferences !== undefined
+      ? { stat_preferences: encodeStatPreferences(statPreferences) }
+      : {}),
   });
   return decodeTarget(response.data?.target);
 };
 
 /*
- * Only the Qualifiers and the note are editable. The opponent is what the
+ * Criteria and presentation preferences patch independently. The opponent is what the
  * Target is about, so changing it would make a different Target.
  */
-export const updateTarget = async ({ id, qualifiers, note, conditions }) => {
-  await apiClient.patch(targetsUrl(`/${encodeURIComponent(id)}`), {
+export const updateTarget = async ({
+  id,
+  qualifiers,
+  note,
+  conditions,
+  statPreferences,
+  expectedUserId,
+}) => {
+  const body = {
     ...(qualifiers !== undefined ? { qualifiers: qualifiers.map(encodeQualifier) } : {}),
     ...(note !== undefined ? { note } : {}),
     ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
-  });
+    ...(statPreferences !== undefined
+      ? { stat_preferences: encodeStatPreferences(statPreferences) }
+      : {}),
+  };
+  const url = targetsUrl(`/${encodeURIComponent(id)}`);
+  if (expectedUserId !== undefined) await apiClient.patch(url, body, { expectedUserId });
+  else await apiClient.patch(url, body);
 };
 
 export const deleteTarget = async ({ id }) => {

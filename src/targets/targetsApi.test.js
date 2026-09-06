@@ -923,3 +923,92 @@ test('the authenticated roster read preserves minutes order and refuses malforme
     signal: controller.signal,
   });
 });
+
+test('stat-only PATCH preserves omitted criteria and encodes the preference independently', async () => {
+  await updateTarget({ id: 7, statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } });
+  expect(apiClient.patch).toHaveBeenCalledWith('/api/user/targets/7', {
+    stat_preferences: { columns: ['PTS/36'], graded_by: 'PTS/36' },
+  });
+  await updateTarget({ id: 7, statPreferences: null });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
+    stat_preferences: null,
+  });
+});
+
+const fullLine = {
+  points: 20,
+  rebounds: 7,
+  assists: 5,
+  field_goals_made: 7,
+  field_goals_attempted: 14,
+  threes_made: 2,
+  threes_attempted: 5,
+  free_throws_made: 4,
+  free_throws_attempted: 4,
+  steals: 1,
+  blocks: 1,
+  turnovers: 2,
+  offensive_rebounds: 1,
+  defensive_rebounds: 6,
+  fouls: 3,
+  minutes: 30,
+};
+test('decodes the full line, season totals and stat preference in saved and preview responses', () => {
+  const extended = {
+    ...wireBacktest,
+    target: {
+      ...wireBacktest.target,
+      stat_preferences: { columns: ['PTS/36', 'FG%'], graded_by: 'PTS/36' },
+    },
+    players: [
+      {
+        ...wireBacktest.players[0],
+        season_totals: fullLine,
+        season_games: 1,
+        games: [{ ...wireBacktest.players[0].games[0], line: fullLine }],
+      },
+    ],
+  };
+  const decoded = decodeBacktest(extended);
+  expect(decoded.target.statPreferences).toEqual({
+    columns: ['PTS/36', 'FG%'],
+    gradedBy: 'PTS/36',
+  });
+  expect(decoded.players[0]).toEqual(
+    expect.objectContaining({ seasonTotals: fullLine, seasonGames: 1 }),
+  );
+  expect(decoded.players[0].games[0].line).toEqual(fullLine);
+  expect(decodePreview({ ...extended, today: null }).target.statPreferences).toEqual(
+    decoded.target.statPreferences,
+  );
+  expect(
+    decodeTargets({ targets: [{ ...wireTarget, stat_preferences: null }] })[0].statPreferences,
+  ).toBeNull();
+  expect(() =>
+    decodeBacktest({
+      ...extended,
+      players: [{ ...extended.players[0], season_totals: { ...fullLine, points: '20' } }],
+    }),
+  ).toThrow(/invalid response/);
+  expect(() =>
+    decodeBacktest({
+      ...extended,
+      players: [
+        {
+          ...extended.players[0],
+          games: [{ ...extended.players[0].games[0], line: { ...fullLine, minutes: undefined } }],
+        },
+      ],
+    }),
+  ).toThrow(/invalid response/);
+});
+test.each([
+  { columns: [], graded_by: 'PTS' },
+  { columns: ['invented'], graded_by: 'invented' },
+  { columns: ['PTS'], graded_by: 'AST' },
+  { columns: ['PTS', 'PTS'], graded_by: 'PTS' },
+])('refuses malformed stat preferences %j', (stat_preferences) => {
+  expect(() => decodeTargets({ targets: [{ ...wireTarget, stat_preferences }] })).toThrow(
+    /invalid response/,
+  );
+});

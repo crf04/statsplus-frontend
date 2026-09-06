@@ -237,10 +237,31 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  const savedLens = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      response.request().postDataJSON()?.stat_preferences?.graded_by === 'PTS/36',
+  );
+  await page.getByRole('button', { name: /^PTS\/36 / }).click();
+  await savedLens;
   await page.reload();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');
   await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
+  const cardRead = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' &&
+      /\/targets\/\d+\/backtest$/.test(new URL(response.url()).pathname),
+  );
   await page.getByRole('link', { name: '← All Targets' }).click();
+  expect((await cardRead).status()).toBe(200);
+  const savedCard = card(page, 'ATL vs At-rim assists ≥ 30%');
+  await expect(summaryItem(savedCard, 'Games')).toHaveText(/1$/);
+  await expect(
+    savedCard.getByRole('list', { name: /1 games, oldest to newest, graded by PTS\/36 margin/ }),
+  ).toBeVisible();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
     'Clint Capela under 10 min',
   );
@@ -277,4 +298,32 @@ test('Slate fits honor a defender who is out and an inclusive date window', asyn
   await saveTarget(page);
   await page.goto('/matchups?date=2026-01-15');
   await expect(page.getByText('No LAL player meets every Qualifier today.')).toBeVisible();
+});
+
+test('@critical a Target remembers PTS/36 across reload and its collection card', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, { opponent: 'ATL', slice: 'Restricted Area', percent: 30 });
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      response.url().includes('/api/user/targets/') &&
+      response.request().postDataJSON().stat_preferences?.graded_by === 'PTS/36',
+  );
+  await page.getByRole('button', { name: /^PTS\/36 / }).click();
+  await saved;
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  await page.getByRole('link', { name: '← All Targets' }).click();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  await expect(
+    page.getByRole('article').getByRole('listitem', { name: 'PTS/36', exact: true }),
+  ).toBeVisible();
 });

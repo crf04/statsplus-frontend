@@ -238,10 +238,7 @@ export function SummaryLine({ backtest, column, onColumn, stats = null }) {
   const { summary, statColumns } = backtest;
   return (
     <div className="pt-lab-summary">
-      <span>
-        <b>{summary.players}</b> <small>players</small>
-      </span>
-      <span>
+      <span title={`${summary.players} players`}>
         <b>{summary.games}</b> <small>games</small>
       </span>
       {statColumns.map((name) => {

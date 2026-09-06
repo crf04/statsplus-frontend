@@ -2,6 +2,9 @@ import { apiClient } from '../config';
 import {
   createTarget,
   decodeDietBaselines,
+  decodeConditions,
+  decodeSeasonMinutes,
+  fetchSeasonMinutes,
   fetchDietBaselines,
   decodeBacktest,
   decodePreview,
@@ -22,6 +25,7 @@ jest.mock('../config', () => ({
       TARGETS: '/api/user/targets',
       TARGET_PREVIEW: '/api/user/targets/preview',
       DIET_BASELINES: '/api/diet/baselines',
+      TEAM_SEASON_MINUTES: '/api/teams',
     })[name],
 }));
 
@@ -822,4 +826,100 @@ test('league baselines decode shares, preserve absent slices and use authenticat
   apiClient.get.mockResolvedValue({ data: payload });
   await fetchDietBaselines();
   expect(apiClient.get).toHaveBeenCalledWith('/api/diet/baselines', { signal: undefined });
+});
+
+const wireConditions = {
+  defender: { player_id: 27, comparator: 'under', minutes: 8 },
+  from: '2026-01-01',
+  to: null,
+};
+test('Conditions and games considered survive every Target read without fabricating legacy counts', () => {
+  const conditions = {
+    ...wireConditions,
+    defender: { playerId: 27, comparator: 'under', minutes: 8 },
+  };
+  expect(
+    decodeTargets({ targets: [{ ...wireTarget, conditions: wireConditions }] })[0].conditions,
+  ).toEqual(conditions);
+  expect(
+    decodeBacktest({
+      ...wireBacktest,
+      target: { ...wireTarget, conditions: wireConditions },
+      games_considered: { kept: 3, played: 10 },
+    }).gamesConsidered,
+  ).toEqual({ kept: 3, played: 10 });
+  expect(
+    decodePreview({
+      ...wirePreview,
+      target: { ...wirePreview.target, conditions: wireConditions },
+      games_considered: { kept: 3, played: 10 },
+    }).target.conditions,
+  ).toEqual(conditions);
+  expect(
+    decodeResolvedTargets(
+      resolvePayload([
+        { ...wireResolvedLive, target: { ...wireTarget, conditions: wireConditions } },
+      ]),
+    ).entries[0].target.conditions,
+  ).toEqual(conditions);
+  expect(decodeBacktest(wireBacktest).gamesConsidered).toBeUndefined();
+  expect(() =>
+    decodeBacktest({ ...wireBacktest, target: { ...wireTarget, conditions: wireConditions } }),
+  ).toThrow(/invalid response/);
+  for (const games_considered of [
+    { kept: 11, played: 10 },
+    { kept: -1, played: 10 },
+    { kept: 1.2, played: 10 },
+    null,
+  ])
+    expect(() => decodeBacktest({ ...wireBacktest, games_considered })).toThrow(/invalid response/);
+  for (const condition of [
+    { ...wireConditions, from: '2026-02-30' },
+    { ...wireConditions, to: '2025-01-01' },
+    { ...wireConditions, defender: { ...wireConditions.defender, minutes: 49 } },
+    { ...wireConditions, defender: { ...wireConditions.defender, player_id: '27' } },
+  ])
+    expect(() => decodeConditions(condition)).toThrow(/invalid response/);
+});
+test('Conditions patch independently and explicit null clears without touching criteria', async () => {
+  apiClient.patch.mockResolvedValue({ data: { success: true } });
+  await updateTarget({ id: 7, conditions: null });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', { conditions: null });
+  const conditions = {
+    ...wireConditions,
+    defender: { playerId: 27, comparator: 'under', minutes: 8 },
+  };
+  await updateTarget({ id: 7, conditions });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
+    conditions: wireConditions,
+  });
+  apiClient.post.mockResolvedValue({ data: wirePreview });
+  await fetchTargetPreview({
+    opponent: 'OKC',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+    conditions,
+  });
+  expect(apiClient.post.mock.calls.at(-1)[1].conditions).toEqual(wireConditions);
+});
+test('the authenticated roster read preserves minutes order and refuses malformed rows', async () => {
+  const payload = {
+    season: '2025-26',
+    players: [{ player_id: 27, name: 'Rudy Gobert', games_played: 60, average_minutes: 32 }],
+  };
+  expect(decodeSeasonMinutes(payload)).toEqual({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+  });
+  for (const average_minutes of [-1, '32', NaN])
+    expect(() =>
+      decodeSeasonMinutes({ ...payload, players: [{ ...payload.players[0], average_minutes }] }),
+    ).toThrow(/invalid response/);
+  apiClient.get.mockResolvedValue({ data: payload });
+  const controller = new AbortController();
+  await fetchSeasonMinutes({ opponent: 'MIN', signal: controller.signal });
+  expect(apiClient.get).toHaveBeenCalledWith('/api/teams/MIN/season-minutes', {
+    signal: controller.signal,
+  });
 });

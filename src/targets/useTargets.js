@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
   fetchDietBaselines,
+  fetchSeasonMinutes,
   fetchResolvedTargets,
   fetchTargetPreview,
   fetchTargets,
@@ -40,7 +41,12 @@ const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope
  * starts at zero and stays there until `reload` raises it, which is what keeps
  * a read nobody has asked for off the wire.
  */
-const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILURE } = {}) => {
+const useAccountRead = (
+  read,
+  empty,
+  scope,
+  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false } = {},
+) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [requests, setRequests] = useState(lazy ? 0 : 1);
@@ -51,11 +57,17 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
       return undefined;
     }
     const controller = new AbortController();
-    setState({ status: 'loading', error: null, ...empty });
+    setState((current) => ({
+      ...(keepPrevious ? current : empty),
+      status: 'loading',
+      error: null,
+    }));
     read({ scope, signal: controller.signal })
-      .then((data) => setState({ status: 'ready', error: null, ...data }))
+      .then(
+        (data) => !controller.signal.aborted && setState({ status: 'ready', error: null, ...data }),
+      )
       .catch((error) => {
-        if (!isRequestCancelled(error)) {
+        if (!controller.signal.aborted && !isRequestCancelled(error)) {
           setState({
             status: 'error',
             error: getRequestErrorMessage(error, failure),
@@ -64,7 +76,7 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests]);
+  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests, keepPrevious]);
 
   const reload = useCallback(() => setRequests((count) => count + 1), []);
 
@@ -76,7 +88,7 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
  * route identifies one by. This is the read that keeps a Target manageable,
  * so it never depends on the day resolving.
  */
-export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
+export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, undefined, options);
 
 /*
  * The same Targets read against one Slate Date. The Slate passes the date it
@@ -93,7 +105,13 @@ const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
  * note is never part of the evidence, so editing it is not a new draft.
  */
 const previewKey = (request) =>
-  request ? JSON.stringify({ opponent: request.opponent, qualifiers: request.qualifiers }) : null;
+  request
+    ? JSON.stringify({
+        opponent: request.opponent,
+        qualifiers: request.qualifiers,
+        ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+      })
+    : null;
 
 /*
  * The season behind a Draft Target, read while it is composed. The draft is
@@ -173,3 +191,19 @@ export const useDietBaselines = () =>
   useAccountRead(readBaselines, EMPTY_BASELINES, undefined, {
     failure: 'League averages unavailable.',
   });
+
+const EMPTY_ROSTER = { season: null, players: [], opponent: null };
+const readRoster = async ({ scope, signal }) =>
+  scope
+    ? { ...(await fetchSeasonMinutes({ opponent: scope, signal })), opponent: scope }
+    : EMPTY_ROSTER;
+export const useSeasonMinutes = (opponent) => {
+  const read = useAccountRead(readRoster, EMPTY_ROSTER, opponent, {
+    failure: 'Unable to load the season roster.',
+  });
+  return {
+    ...read,
+    season: read.opponent === opponent ? read.season : null,
+    players: read.opponent === opponent ? read.players : [],
+  };
+};

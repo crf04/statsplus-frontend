@@ -1,3 +1,4 @@
+import { TargetConditionSummary } from './TargetConditions';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
@@ -44,6 +45,7 @@ function TargetCard({ target, entry, read }) {
             );
           })}
         </div>
+        <TargetConditionSummary target={target} compact />
         {target.note && <p className="target-card-note">{target.note}</p>}
         {game && (
           <section aria-label="Playing tonight">
@@ -74,7 +76,13 @@ function TargetCard({ target, entry, read }) {
         <section aria-label="Backtest">
           <p className="target-backtest-proxy">Backtest · season to date</p>
           {read?.status === 'ready' ? (
-            <TargetRecord backtest={read.backtest} />
+            <>
+              <TargetConditionSummary
+                target={read.backtest.target}
+                gamesConsidered={read.backtest.gamesConsidered}
+              />
+              <TargetRecord backtest={read.backtest} />
+            </>
           ) : (
             <p className="target-empty">{read?.error || 'Reading the season…'}</p>
           )}

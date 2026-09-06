@@ -4,6 +4,7 @@ import TargetDetailPage from './TargetDetailPage';
 import {
   deleteTarget,
   fetchDietBaselines,
+  fetchSeasonMinutes,
   fetchTargetPreview,
   fetchTargets,
   updateTarget,
@@ -12,6 +13,7 @@ import {
 jest.mock('./targetsApi', () => ({
   fetchTargets: jest.fn(),
   fetchDietBaselines: jest.fn(),
+  fetchSeasonMinutes: jest.fn(),
   fetchTargetPreview: jest.fn(),
   updateTarget: jest.fn(),
   deleteTarget: jest.fn(),
@@ -94,6 +96,10 @@ beforeEach(() => {
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargets.mockResolvedValue([target]);
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
+  });
   fetchTargetPreview.mockResolvedValue({ ...backtest, today: null });
   fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Corner 3': 0.2 } } });
   updateTarget.mockResolvedValue(undefined);
@@ -243,4 +249,62 @@ test('games page newest first and the selected summary column grades both surfac
   expect(within(rows).getAllByRole('listitem')[0].querySelector('i')).toHaveClass('grade-miss-4');
   fireEvent.click(screen.getByRole('button', { name: 'Show all 25 games' }));
   expect(within(rows).getAllByRole('listitem')).toHaveLength(25);
+});
+
+test('Conditions dirty the workbench, ride the preview and survive Save without resetting its lens or paging', async () => {
+  const games = Array.from({ length: 25 }, (_, i) => ({
+    gameDate: `2026-01-${String(i + 1).padStart(2, '0')}`,
+    stats: { PTS: 30, '3PM': 0 },
+  }));
+  fetchTargetPreview.mockResolvedValue({
+    ...backtest,
+    today: null,
+    players: [{ ...backtest.players[0], games }],
+  });
+  await open();
+  fireEvent.click(screen.getByRole('button', { name: /^3PM/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show all 25 games' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  await screen.findByRole('option', { name: /Rudy Gobert/ });
+  fireEvent.change(screen.getByLabelText('Defender'), { target: { value: '27' } });
+  const conditions = {
+    defender: { playerId: 27, comparator: 'under', minutes: 10 },
+    from: null,
+    to: null,
+  };
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(expect.objectContaining({ conditions }));
+  fetchTargets.mockResolvedValue([{ ...target, conditions }]);
+  const calls = fetchTargetPreview.mock.calls.length;
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
+  expect(updateTarget).toHaveBeenLastCalledWith(expect.objectContaining({ conditions }));
+  expect(screen.getByRole('button', { name: 'Show first 20 games' })).toBeVisible();
+  expect(screen.getByRole('list', { name: /graded by 3PM/ })).toBeVisible();
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(calls);
+  expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+});
+test('an unknown stored slice remains untouched when another field is saved', async () => {
+  fetchTargets.mockResolvedValue([
+    { ...target, qualifiers: [{ ...target.qualifiers[0], sliceKey: 'Unknown' }] },
+  ]);
+  await open();
+  expect(screen.getByLabelText('Qualifier 1 slice')).toHaveValue('Unknown');
+  expect(screen.getByLabelText('Qualifier 1 slice')).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+    target: { value: 'Edited note' },
+  });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
+  expect(updateTarget).toHaveBeenCalledWith(
+    expect.objectContaining({ qualifiers: [expect.objectContaining({ sliceKey: 'Unknown' })] }),
+  );
+});
+test('a refused Target list shows the backend error', async () => {
+  fetchTargets.mockRejectedValue({
+    response: { data: { error: { message: 'Targets unavailable.' } } },
+  });
+  renderDetail();
+  expect(await screen.findByRole('alert')).toHaveTextContent('Targets unavailable.');
 });

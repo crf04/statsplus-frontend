@@ -169,3 +169,13 @@ nullable league shares; absent shares omit the tick. Browser tests adjust the
 native range control using keyboard arrows through `setTargetThreshold`.
 The workbench reads the draft automatically, preserves stale evidence during
 changes, and keeps Save/Revert separate from selecting the grading column.
+
+Conditions travel with the draft and saved Target. The fixture's opponent
+season logs supply both roster minutes and the games-considered denominator;
+a missing defender line counts as zero minutes. The Conditions journey keeps
+ATL's game against BOS while excluding the games Capela played, then verifies
+the saved card's Backtest GET and an inclusive date-window exclusion. The
+current BOS fixture treats Porzingis as out, so its Slate Fits exercise both
+sides of the minutes comparator. Decoder and UI tests also cover absent legacy
+Conditions, malformed dates/counts, partial PATCH clearing, opponent changes,
+and preservation of the workbench's grading and paging through Save.

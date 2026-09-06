@@ -7,6 +7,62 @@ const createInvalidResponseError = () => new Error('The Targets API returned an 
 
 const comparators = new Set(TARGET_COMPARATORS.map((entry) => entry.key));
 
+export const decodeConditions = (conditions) => {
+  if (conditions === null) return null;
+  if (!isRecord(conditions)) throw createInvalidResponseError();
+  const { defender, from, to } = conditions;
+  if (
+    (from !== null && !isCalendarDate(from)) ||
+    (to !== null && !isCalendarDate(to)) ||
+    (from && to && from > to)
+  )
+    throw createInvalidResponseError();
+  let decodedDefender = null;
+  if (defender !== null) {
+    if (
+      !isRecord(defender) ||
+      !Number.isInteger(defender.player_id) ||
+      defender.player_id <= 0 ||
+      !['under', 'at_least'].includes(defender.comparator) ||
+      typeof defender.minutes !== 'number' ||
+      !Number.isFinite(defender.minutes) ||
+      defender.minutes < 0 ||
+      defender.minutes > 48
+    )
+      throw createInvalidResponseError();
+    decodedDefender = {
+      playerId: defender.player_id,
+      comparator: defender.comparator,
+      minutes: defender.minutes,
+    };
+  }
+  return { defender: decodedDefender, from, to };
+};
+const encodeConditions = (conditions) =>
+  conditions === null
+    ? null
+    : {
+        ...conditions,
+        defender: conditions.defender
+          ? {
+              player_id: conditions.defender.playerId,
+              comparator: conditions.defender.comparator,
+              minutes: conditions.defender.minutes,
+            }
+          : null,
+      };
+const decodeGamesConsidered = (games) => {
+  if (
+    !isRecord(games) ||
+    !Number.isInteger(games.kept) ||
+    !Number.isInteger(games.played) ||
+    games.kept < 0 ||
+    games.played < games.kept
+  )
+    throw createInvalidResponseError();
+  return { kept: games.kept, played: games.played };
+};
+
 /*
  * A Qualifier is one criterion: a diet slice, a comparator, and a share
  * threshold in the 0–1 range. A player fits a Target only by meeting every one
@@ -46,7 +102,13 @@ const decodeDraftTarget = (item) => {
   ) {
     throw createInvalidResponseError();
   }
-  return { opponent, title, note: note || '', qualifiers: qualifiers.map(decodeQualifier) };
+  return {
+    opponent,
+    title,
+    note: note || '',
+    qualifiers: qualifiers.map(decodeQualifier),
+    ...(item.conditions !== undefined ? { conditions: decodeConditions(item.conditions) } : {}),
+  };
 };
 
 /*
@@ -332,6 +394,8 @@ const decodeSummary = (summary, statColumns) => {
  * exactly what the detail will show after saving.
  */
 const decodeBacktestBody = (payload, target) => {
+  if (target.conditions && payload?.games_considered === undefined)
+    throw createInvalidResponseError();
   if (
     !isRecord(payload) ||
     !Array.isArray(payload.stat_columns) ||
@@ -343,6 +407,9 @@ const decodeBacktestBody = (payload, target) => {
   const statColumns = payload.stat_columns.map(requireString);
   return {
     target,
+    ...(payload.games_considered !== undefined
+      ? { gamesConsidered: decodeGamesConsidered(payload.games_considered) }
+      : {}),
     proxy: requireString(payload.proxy),
     statColumns,
     summary: decodeSummary(payload.summary, statColumns),
@@ -429,10 +496,21 @@ export const fetchTargetBacktest = async ({ id, signal } = {}) => {
  * the backtest comes back, with nothing stored. The Lab asks for this after
  * every settled edit, so the read is abortable by the edit after it.
  */
-export const fetchTargetPreview = async ({ opponent, qualifiers, note, signal } = {}) => {
+export const fetchTargetPreview = async ({
+  opponent,
+  qualifiers,
+  note,
+  conditions,
+  signal,
+} = {}) => {
   const response = await apiClient.post(
     getApiUrl('TARGET_PREVIEW'),
-    { opponent, qualifiers: qualifiers.map(encodeQualifier), note },
+    {
+      opponent,
+      qualifiers: qualifiers.map(encodeQualifier),
+      note,
+      ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
+    },
     { signal },
   );
   return decodePreview(response.data);
@@ -448,11 +526,12 @@ export const fetchTargetPreview = async ({ opponent, qualifiers, note, signal } 
  * than a locally guessed one. See crf04/statsplus
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
-export const createTarget = async ({ opponent, qualifiers, note }) => {
+export const createTarget = async ({ opponent, qualifiers, note, conditions }) => {
   const response = await apiClient.post(targetsUrl(), {
     opponent,
     qualifiers: qualifiers.map(encodeQualifier),
     note,
+    ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
   });
   return decodeTarget(response.data?.target);
 };
@@ -461,10 +540,11 @@ export const createTarget = async ({ opponent, qualifiers, note }) => {
  * Only the Qualifiers and the note are editable. The opponent is what the
  * Target is about, so changing it would make a different Target.
  */
-export const updateTarget = async ({ id, qualifiers, note }) => {
+export const updateTarget = async ({ id, qualifiers, note, conditions }) => {
   await apiClient.patch(targetsUrl(`/${encodeURIComponent(id)}`), {
-    qualifiers: qualifiers.map(encodeQualifier),
-    note,
+    ...(qualifiers !== undefined ? { qualifiers: qualifiers.map(encodeQualifier) } : {}),
+    ...(note !== undefined ? { note } : {}),
+    ...(conditions !== undefined ? { conditions: encodeConditions(conditions) } : {}),
   });
 };
 
@@ -493,4 +573,42 @@ export const decodeDietBaselines = (payload) => {
 export const fetchDietBaselines = async ({ signal } = {}) => {
   const response = await apiClient.get(getApiUrl('DIET_BASELINES'), { signal });
   return decodeDietBaselines(response.data);
+};
+
+export const decodeSeasonMinutes = (payload) => {
+  if (
+    !isRecord(payload) ||
+    typeof payload.season !== 'string' ||
+    !/^\d{4}-\d{2}$/.test(payload.season) ||
+    !Array.isArray(payload.players)
+  )
+    throw createInvalidResponseError();
+  const players = payload.players.map((player) => {
+    if (
+      !isRecord(player) ||
+      !Number.isInteger(player.player_id) ||
+      player.player_id <= 0 ||
+      typeof player.name !== 'string' ||
+      !Number.isInteger(player.games_played) ||
+      player.games_played < 0 ||
+      typeof player.average_minutes !== 'number' ||
+      !Number.isFinite(player.average_minutes) ||
+      player.average_minutes < 0
+    )
+      throw createInvalidResponseError();
+    return {
+      playerId: player.player_id,
+      name: player.name,
+      gamesPlayed: player.games_played,
+      averageMinutes: player.average_minutes,
+    };
+  });
+  return { season: payload.season, players };
+};
+export const fetchSeasonMinutes = async ({ opponent, signal }) => {
+  const response = await apiClient.get(
+    `${getApiUrl('TEAM_SEASON_MINUTES')}/${encodeURIComponent(opponent)}/season-minutes`,
+    { signal },
+  );
+  return decodeSeasonMinutes(response.data);
 };

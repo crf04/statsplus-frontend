@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
-import TargetForm, { targetToDraft } from './TargetForm';
+import TargetForm, { targetToDraft, targetDraftToRequest } from './TargetForm';
 import TargetLab from './TargetLab';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
@@ -17,12 +17,18 @@ function TargetDetail({ target, reload }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const dirty =
+    JSON.stringify(targetDraftToRequest(draft)) !== JSON.stringify(targetDraftToRequest(saved));
   const save = async (request) => {
     setBusy(true);
     setError(null);
     try {
-      await updateTarget({ id: target.id, qualifiers: request.qualifiers, note: request.note });
+      await updateTarget({
+        id: target.id,
+        qualifiers: request.qualifiers,
+        note: request.note,
+        ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+      });
       setSaved(draft);
       reload();
     } catch (requestError) {
@@ -95,14 +101,16 @@ function TargetDetail({ target, reload }) {
 }
 export default function TargetDetailPage() {
   const { targetId } = useParams();
-  const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets();
+  const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets({
+    keepPrevious: true,
+  });
   if (!authLoading && !isAuthenticated) return <TargetsSignedOut />;
   const target = targets.find((item) => String(item.id) === targetId);
   return (
     <main className="slate-page targets-page">
       {status === 'loading' && <p role="status">Loading this Target…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
-      {status === 'ready' &&
+      {(target || status === 'ready') &&
         (target ? (
           <TargetDetail key={target.id} target={target} reload={reload} />
         ) : (

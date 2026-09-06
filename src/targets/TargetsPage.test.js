@@ -8,10 +8,12 @@ import {
   fetchTargets,
   fetchDietBaselines,
   fetchTargetBacktest,
+  fetchSeasonMinutes,
 } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargetBacktest: jest.fn(),
+  fetchSeasonMinutes: jest.fn(),
   fetchTargets: jest.fn(),
   fetchDietBaselines: jest.fn(),
   fetchResolvedTargets: jest.fn(),
@@ -316,6 +318,7 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
 
   composeQualifier({ opponent: 'NOP', slice: 'Restricted Area', percent: '35' });
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a Qualifier' }));
   fireEvent.change(screen.getByLabelText('Qualifier 2 diet base'), {
     target: { value: 'play_types' },
   });
@@ -633,6 +636,7 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
   // Typed whole again as it was, it is the draft that was read: current, not
   // re-read.
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a Qualifier' }));
   composeQualifier();
   expect(result).not.toHaveClass('is-stale');
   await settle();
@@ -914,4 +918,24 @@ test('leaving the list aborts its scan and never starts the next', async () => {
   expect(signal.aborted).toBe(true);
   await act(async () => finish(preview));
   expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
+});
+
+test('saved cards show their Condition as a read-only chip', async () => {
+  fetchTargets.mockResolvedValue([
+    {
+      ...targets[0],
+      conditions: {
+        defender: { playerId: 27, comparator: 'under', minutes: 8 },
+        from: null,
+        to: null,
+      },
+    },
+  ]);
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
+  });
+  renderPage(false);
+  expect(await screen.findByText(/Rudy Gobert under 8 min/)).toHaveClass('target-condition-chip');
+  expect(screen.queryByLabelText('Defender')).not.toBeInTheDocument();
 });

@@ -10,6 +10,12 @@ import {
 } from './targetCatalog';
 import { useDietBaselines } from './useTargets';
 import './TargetWorkbench.css';
+import {
+  TargetAddMenu,
+  TargetConditionRows,
+  normalizeConditions,
+  validConditions,
+} from './TargetConditions';
 
 /*
  * A new Qualifier starts without a threshold. A pre-filled one would make the
@@ -38,6 +44,7 @@ export const targetDraftToRequest = (draft) => ({
     threshold: parseThresholdPercent(qualifier.thresholdPercent),
   })),
   note: draft.note.trim(),
+  ...(draft.conditions !== undefined ? { conditions: normalizeConditions(draft.conditions) } : {}),
 });
 
 export const targetToDraft = (target) => ({
@@ -49,6 +56,7 @@ export const targetToDraft = (target) => ({
     thresholdPercent: shareToThresholdPercent(qualifier.threshold),
   })),
   note: target.note,
+  ...(target.conditions !== undefined ? { conditions: target.conditions } : {}),
 });
 
 /*
@@ -60,6 +68,12 @@ export const describeDraft = (draft) => {
   if (draft.qualifiers.length === 0) {
     return { valid: false, problem: 'Add at least one Qualifier before saving.' };
   }
+  if (!validConditions(draft.conditions))
+    return {
+      valid: false,
+      problem:
+        'Choose a defender and a valid minutes threshold; the date window must run from earlier to later.',
+    };
   const request = targetDraftToRequest(draft);
   if (request.qualifiers.some((qualifier) => qualifier.threshold === null)) {
     return { valid: false, problem: 'Every threshold must be a share between 0% and 100%.' };
@@ -108,7 +122,19 @@ export default function TargetForm({
               <span className="target-label">Opponent</span>
               <select
                 value={draft.opponent}
-                onChange={(event) => onChange({ opponent: event.target.value })}
+                onChange={(event) =>
+                  onChange({
+                    opponent: event.target.value,
+                    ...(draft.conditions?.defender
+                      ? {
+                          conditions: {
+                            ...draft.conditions,
+                            defender: { ...draft.conditions.defender, playerId: null },
+                          },
+                        }
+                      : {}),
+                  })
+                }
               >
                 {NBA_TEAM_TRICODES.map((tricode) => (
                   <option key={tricode} value={tricode}>
@@ -194,13 +220,19 @@ export default function TargetForm({
             </button>
           </div>
         ))}
-        <button
-          type="button"
-          className="target-add"
-          onClick={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
-        >
-          + and
-        </button>
+        {baselines.status === 'error' && (
+          <small className="target-baselines-unavailable">League averages unavailable.</small>
+        )}
+        <TargetConditionRows
+          opponent={draft.opponent}
+          conditions={draft.conditions}
+          onChange={(conditions) => onChange({ conditions })}
+        />
+        <TargetAddMenu
+          conditions={draft.conditions}
+          onChange={(conditions) => onChange({ conditions })}
+          onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
+        />
 
         <label className="target-note">
           <span className="target-label">Note · optional, never the title</span>
@@ -258,12 +290,16 @@ function QualifierSlider({ qualifier, index, leagueShare, onChange }) {
           type="range"
           min="0"
           max={ceiling}
-          step="any"
+          step="0.1"
           aria-label={`Qualifier ${index + 1} threshold percent`}
           aria-valuetext={qualifier.thresholdPercent === '' ? 'Choose a threshold' : `${value}%`}
           value={value}
           onChange={(event) =>
-            onChange({ thresholdPercent: String(Math.min(100, Number(event.target.value))) })
+            onChange({
+              thresholdPercent: String(
+                Math.min(100, Number(Number(event.target.value).toFixed(1))),
+              ),
+            })
           }
           onKeyDown={(event) => {
             const delta = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[event.key];

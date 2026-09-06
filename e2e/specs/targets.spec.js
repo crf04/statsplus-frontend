@@ -37,6 +37,10 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
     note: 'Leaves the corner late.',
   });
   await expect(page.getByText('league 10%')).toBeVisible();
+  const track = await page.getByRole('slider').boundingBox();
+  const value = await page.getByText('40%', { exact: true }).boundingBox();
+  expect(track.height).toBeLessThanOrEqual(8);
+  expect(value.y + value.height).toBeLessThan(track.y);
   await saveTarget(page);
   await expect(card(page, 'OKC vs Corner 3 ≥ 40%')).toContainText('Leaves the corner late.');
   await expect(page.getByText('No Targets active today')).toBeVisible();
@@ -207,4 +211,70 @@ test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+});
+
+test('@critical a defender Condition narrows the Lab, persists, and appears on the list', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(summaryItem(page, 'Games')).toHaveText(/4$/);
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a defender’s minutes' }).click();
+  await page
+    .getByLabel('Defender', { exact: true })
+    .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
+  await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
+  await expect(page.getByText(/1 of 4 opponent games kept/)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');
+  await expect(summaryItem(page, 'Games')).toHaveText(/1$/);
+  await page.getByRole('link', { name: '← All Targets' }).click();
+  await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
+    'Clint Capela under 10 min',
+  );
+  await openTarget(page, 'ATL vs At-rim assists ≥ 30%');
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a date window' }).click();
+  await page.getByLabel('From', { exact: true }).fill('2025-01-11');
+  await expect(summaryItem(page, 'Games')).toHaveText(/0$/);
+  await expect(page.getByText(/0 of 4 opponent games kept/)).toBeVisible();
+});
+
+test('Slate fits honor a defender who is out and an inclusive date window', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'BOS',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a defender’s minutes' }).click();
+  await page.getByLabel('Defender', { exact: true }).selectOption('204001');
+  await expect(page.getByText('2 fit tonight vs BOS')).toBeVisible();
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a date window' }).click();
+  await page.getByLabel('From', { exact: true }).fill('2026-01-15');
+  await page.getByLabel('Through', { exact: true }).fill('2026-01-15');
+  await expect(page.getByText('2 fit tonight vs BOS')).toBeVisible();
+  await page.getByRole('button', { name: 'Under; switch to at least' }).click();
+  await expect(page.getByText('0 fit tonight vs BOS')).toBeVisible();
+  await saveTarget(page);
+  await page.goto('/matchups?date=2026-01-15');
+  await expect(page.getByText('No LAL player meets every Qualifier today.')).toBeVisible();
 });

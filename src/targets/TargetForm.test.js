@@ -54,3 +54,11 @@ test('changing the slice moves its league tick and an absent baseline never beco
   expect(screen.queryByText(/^league /)).not.toBeInTheDocument();
   expect(screen.getByRole('slider')).toHaveValue('40');
 });
+
+test('a pointer threshold is displayed at the precision that will be saved', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
+  render(<Form />);
+  fireEvent.change(screen.getByRole('slider'), { target: { value: '25.930123' } });
+  expect(screen.getByRole('slider')).toHaveValue('25.9');
+  expect(screen.getByText('25.9%')).toBeVisible();
+});

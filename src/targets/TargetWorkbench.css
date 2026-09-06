@@ -151,3 +151,70 @@
   margin: 0;
   min-width: 0;
 }
+
+.target-form .target-slider-track input[type='range'] {
+  padding: 0;
+  min-height: 0;
+  height: 6px;
+  border: 0;
+  box-sizing: border-box;
+}
+.target-condition {
+  border-top: 1px solid #293343;
+  padding: 18px 0;
+}
+.target-condition-head {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 10px;
+}
+.target-condition-head select {
+  min-width: 0;
+  width: 100%;
+}
+.target-condition .target-comparator-toggle {
+  flex-basis: 52px;
+  font-size: 12px;
+}
+.target-date-window {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+.target-date-window label {
+  min-width: 0;
+  flex: 1;
+  font-size: 11px;
+}
+.target-date-window input {
+  width: 100%;
+  min-width: 0;
+  display: block;
+}
+.target-add-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+.target-condition-summary {
+  color: #b6c6bb;
+  font-size: 12px;
+  margin: 8px 0;
+}
+.target-baselines-unavailable {
+  display: block;
+  color: #95a0b1;
+}
+
+.target-condition-chip {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid #3e5147;
+  border-radius: 4px;
+}
+
+.target-condition-summary.is-stale {
+  opacity: 0.45;
+}

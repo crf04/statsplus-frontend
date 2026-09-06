@@ -210,7 +210,7 @@ function SavedBench({ item, read }) {
           <ProtoLink to={`/targets/${target.id}`}>Open · edit there →</ProtoLink>
         )}
       </div>
-      <LabEvidence lab={savedLab(read)} />
+      <LabEvidence lab={savedLab(read)} games={false} />
     </section>
   );
 }

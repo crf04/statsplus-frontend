@@ -273,7 +273,7 @@ export function GameList({ record, column }) {
  * The whole of the Lab beneath one set of criteria: the status line, the
  * summary with the stat column to grade by, the graded grid, the games.
  */
-export function LabEvidence({ lab }) {
+export function LabEvidence({ lab, games = true }) {
   const [chosen, setChosen] = useState(null);
   const { backtest } = lab;
   const record = useMemo(() => (backtest ? summarise(backtest) : null), [backtest]);
@@ -291,7 +291,9 @@ export function LabEvidence({ lab }) {
         <>
           <GradedGrid record={record} column={column} />
           <GradeKey column={column} />
-          <GameList record={record} column={column} />
+          {/* The game logs are the Target's own page's; the main page stops at the
+              grid. The draft Lab keeps them, because a draft has no page yet. */}
+          {games && <GameList record={record} column={column} />}
         </>
       )}
     </div>

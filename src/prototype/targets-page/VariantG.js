@@ -73,7 +73,7 @@ function TargetSection({ item, read }) {
           )}
         </div>
       </header>
-      <LabEvidence lab={savedLab(read)} />
+      <LabEvidence lab={savedLab(read)} games={false} />
     </section>
   );
 }

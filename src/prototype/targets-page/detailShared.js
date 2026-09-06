@@ -66,7 +66,6 @@ export function CriteriaForm({ editor, opponentLocked = true }) {
         <OpponentSelect big value={draft.opponent} onChange={(opponent) => patch({ opponent })} />
       )}
       <div className="pt-g-quals">
-        <span className="target-label">A player must meet every one</span>
         {draft.qualifiers.map((qualifier, index) => (
           <QualifierFields
             key={index}
@@ -106,7 +105,7 @@ export function EditorActions({ state, compact = false, title: showTitle = true 
         !editor.valid && <span className="pt-d-actions-title is-pending">{editor.problem}</span>
       )}
       <span className="pt-d-actions-buttons">
-        {dirty ? (
+        {dirty && (
           <>
             <button
               type="button"
@@ -120,7 +119,8 @@ export function EditorActions({ state, compact = false, title: showTitle = true 
               Revert
             </button>
           </>
-        ) : confirming ? (
+        )}
+        {confirming ? (
           <>
             <span className="target-confirm">Delete this Target?</span>
             <button type="button" className="target-ghost is-danger" onClick={remove}>

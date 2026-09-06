@@ -9,6 +9,7 @@
  */
 import { useState } from 'react';
 import { LabEvidence, savedLab, useLab } from './lab';
+import { isLive } from './shared';
 import {
   OpponentSelect,
   ProtoLink,
@@ -26,7 +27,6 @@ function Criteria({ editor }) {
     <div className="pt-g-criteria">
       <OpponentSelect big value={draft.opponent} onChange={(opponent) => patch({ opponent })} />
       <div className="pt-g-quals">
-        <span className="target-label">A player must meet every one</span>
         {draft.qualifiers.map((qualifier, index) => (
           <QualifierFields
             key={index}
@@ -58,7 +58,6 @@ function ReadCriteria({ target }) {
     <div className="pt-g-criteria is-read">
       <span className="pt-g-opp">{target.opponent}</span>
       <div className="pt-g-quals">
-        <span className="target-label">A player must meet every one</span>
         <QualifierChips target={target} />
         {target.note && <p className="pt-g-why">{target.note}</p>}
       </div>
@@ -120,19 +119,20 @@ function DraftSection({ onSave, onClose }) {
 export default function VariantG({ data }) {
   const { list, items, backtests, saveLocally } = data;
   const [composing, setComposing] = useState(false);
+  const live = items.filter(isLive).length;
   return (
     <main className="slate-page targets-page pt-g">
       <header className="pt-g-page-head">
         <div>
           <p className="eyebrow">Targets</p>
-          <h1>
-            {list.status === 'ready'
-              ? `${items.length} ${items.length === 1 ? 'Target' : 'Targets'}`
-              : 'Targets'}
-          </h1>
-          <p className="pt-g-sub">
-            The criteria, and what the season says about each. Editing lives on a Target&apos;s own
-            page.
+          <p className="pt-g-active">
+            {list.status !== 'ready'
+              ? 'Loading…'
+              : data.resolved.status !== 'ready'
+                ? `${items.length} ${items.length === 1 ? 'Target' : 'Targets'}`
+                : live === 0
+                  ? 'No Targets active today'
+                  : `${live} ${live === 1 ? 'Target' : 'Targets'} active today`}
           </p>
         </div>
         <button

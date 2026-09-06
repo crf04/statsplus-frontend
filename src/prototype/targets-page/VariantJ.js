@@ -12,12 +12,12 @@ import { Link } from 'react-router-dom';
 import { GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
 import { summarise } from './history';
 import { useShownStats } from './box';
-import { CriteriaForm, DetailHead, EditorActions, useTargetEditor } from './detailShared';
+import { CriteriaForm, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Workbench';
 
 export default function VariantJ({ item, read, listPath }) {
-  const { target, entry } = item;
+  const { target } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
   const stats = useShownStats(lab.backtest, target.id);
@@ -30,7 +30,6 @@ export default function VariantJ({ item, read, listPath }) {
         <p className="target-back">
           <Link to={listPath}>← All Targets</Link>
         </p>
-        <DetailHead target={target} entry={entry} />
         {/* The card is the criteria and its actions; the title it derives is
             the card's own reading, so it is not repeated beneath it. */}
         <section className="pt-i-criteria pt-j-criteria">

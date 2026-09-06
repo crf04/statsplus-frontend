@@ -8,19 +8,18 @@
  */
 import { Link } from 'react-router-dom';
 import { LabEvidence } from './lab';
-import { CriteriaForm, DetailHead, EditorActions, useTargetEditor } from './detailShared';
+import { CriteriaForm, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Worksheet';
 
 export default function VariantI({ item, read, listPath }) {
-  const { target, entry } = item;
+  const { target } = item;
   const state = useTargetEditor(target, read, listPath);
   return (
     <main className="slate-page targets-page pt-i">
       <p className="target-back">
         <Link to={listPath}>← All Targets</Link>
       </p>
-      <DetailHead target={target} entry={entry} />
       <section className="pt-i-criteria">
         <CriteriaForm editor={state.editor} />
       </section>

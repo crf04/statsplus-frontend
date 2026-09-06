@@ -11,7 +11,7 @@ import { useShownStats } from './box';
 import { Link } from 'react-router-dom';
 import { SummaryLine, gradeOf, gradeScale } from './lab';
 import { monthDay, percent, signedDelta, summarise, toneOf } from './history';
-import { CriteriaForm, DetailHead, EditorActions, useTargetEditor } from './detailShared';
+import { CriteriaForm, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Players';
 
@@ -64,7 +64,7 @@ function PlayerRow({ row, column, scale, open, onToggle }) {
 }
 
 export default function VariantK({ item, read, listPath }) {
-  const { target, entry } = item;
+  const { target } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
   const stats = useShownStats(lab.backtest, target.id);
@@ -87,7 +87,6 @@ export default function VariantK({ item, read, listPath }) {
       <p className="target-back">
         <Link to={listPath}>← All Targets</Link>
       </p>
-      <DetailHead target={target} entry={entry} />
       <section className="pt-i-criteria">
         <CriteriaForm editor={state.editor} />
       </section>

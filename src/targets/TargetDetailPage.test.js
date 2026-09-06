@@ -476,8 +476,9 @@ test('a destination read started before the preference save cannot restore the o
   fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
   view.unmount();
   fetchTargets.mockImplementation(
-    () =>
-      new Promise((resolve) => {
+    ({ signal }) =>
+      new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
         finishRead = resolve;
       }),
   );

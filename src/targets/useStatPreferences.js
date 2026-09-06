@@ -4,8 +4,8 @@ import { getRequestErrorMessage } from '../gameLogsApi';
 import { updateTarget } from './targetsApi';
 
 export const STAT_SAVE_DELAY = 400;
-// A channel survives route remounts: an older list read cannot overwrite the
-// choice made while that read was in flight. Keys include the signed-in account.
+// Keep in-flight choices across route remounts, but release settled channels
+// after their last view leaves so a later visit reads fresh account state.
 const channels = new Map();
 
 function channelFor(key, target, userId) {
@@ -14,7 +14,18 @@ function channelFor(key, target, userId) {
   let pending = null;
   let timer;
   let running = false;
+  let releaseTimer;
   const listeners = new Set();
+  // A criteria-save reload can remount after its request microtasks. Give that
+  // same action one turn to reattach before a later visit seeds a fresh channel.
+  const releaseIfUnused = () => {
+    clearTimeout(releaseTimer);
+    releaseTimer = setTimeout(() => {
+      if (!listeners.size && !pending && !running && channels.get(key) === channel) {
+        channels.delete(key);
+      }
+    }, 0);
+  };
   const publish = (patch) => {
     snapshot = { ...snapshot, ...patch };
     listeners.forEach((notify) => notify());
@@ -42,6 +53,7 @@ function channelFor(key, target, userId) {
       }
     }
     running = false;
+    releaseIfUnused();
   };
   const change = (preferences) => {
     pending = preferences;
@@ -52,6 +64,7 @@ function channelFor(key, target, userId) {
   const channel = {
     getSnapshot: () => snapshot,
     subscribe: (notify) => {
+      clearTimeout(releaseTimer);
       listeners.add(notify);
       return () => {
         listeners.delete(notify);

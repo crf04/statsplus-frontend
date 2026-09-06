@@ -438,3 +438,23 @@ test('another account never sees the previous account’s optimistic grading', a
   expect(screen.getByRole('button', { name: /^PTS / })).toHaveAttribute('aria-pressed', 'true');
   expect(updateTarget.mock.calls[0][0].expectedUserId).toBe('stat-account-one');
 });
+
+test('revisiting a settled Target reads fresh server preferences', async () => {
+  auth.currentUser = { uid: 'stat-fresh-reader' };
+  const view = renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
+  await act(async () => jest.advanceTimersByTime(400));
+  expect(updateTarget).toHaveBeenCalledTimes(1);
+  view.unmount();
+  await act(async () => jest.advanceTimersByTime(0));
+  fetchTargets.mockResolvedValue([
+    { ...target, statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } },
+  ]);
+  renderDetail();
+  await act(async () => {});
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  expect(screen.queryByRole('button', { name: /^3PM / })).not.toBeInTheDocument();
+});

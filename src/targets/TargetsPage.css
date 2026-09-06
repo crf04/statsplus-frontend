@@ -617,3 +617,17 @@
 .target-card-criteria .target-card-note {
   grid-column: 2;
 }
+
+@media (max-width: 820px) {
+  .targets-page > .slate-heading {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .target-card-criteria {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .target-card-criteria .target-card-note {
+    grid-column: 1;
+  }
+}

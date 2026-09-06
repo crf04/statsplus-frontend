@@ -21,11 +21,12 @@ import {
   TARGET_COMPARATORS,
   TARGET_SLICES,
   deriveTargetTitle,
+  findTargetBase,
   formatQualifierParts,
   nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
 import { useResolvedTargets, useTargets } from '../../targets/useTargets';
-import { LeagueHint } from './leagueAverages';
+import { LeagueHint, leagueAveragePercent } from './leagueAverages';
 import { decodeResolvedTargets, decodeTargets } from '../../targets/targetsApi';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { useBacktests } from './history';
@@ -72,7 +73,7 @@ export function ProtoLink({ to, children, ...rest }) {
   if (to.startsWith('/targets/')) {
     const next = new URLSearchParams();
     next.set('proto', 'targets');
-    ['v', 'dv', 'date'].forEach((name) => {
+    ['v', 'dv', 'date', 'q'].forEach((name) => {
       if (searchParams.get(name)) next.set(name, searchParams.get(name));
     });
     return (
@@ -207,87 +208,319 @@ export function OpponentSelect({ value, onChange, className, big = false }) {
   );
 }
 
-export function QualifierFields({ qualifier, index, onPatch, onRemove }) {
+/*
+ * One Qualifier as a row that reads top to bottom: which slice, then the
+ * bound on it, then where that bound sits against the league on a track. The
+ * track is the hint: the league average is a tick, the threshold a marker,
+ * and the side of it a player has to be on is shaded.
+ */
+function QualifierTrack({ qualifier, index, onPatch, onRemove }) {
+  const unit = findTargetBase(qualifier.base)?.unit || '';
+  const league = leagueAveragePercent(qualifier.base, qualifier.sliceKey);
+  const threshold = Number(qualifier.thresholdPercent);
+  const hasThreshold = qualifier.thresholdPercent !== '' && Number.isFinite(threshold);
+  const top = Math.max(
+    60,
+    Math.ceil((Math.max(hasThreshold ? threshold : 0, league || 0) + 10) / 10) * 10,
+  );
+  const at = (value) => `${Math.min(100, Math.max(0, (value / top) * 100))}%`;
+  const above = qualifier.comparator === 'at_or_above';
+  const nudge = (delta) =>
+    onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, delta) });
   return (
     <div className="pt-qualifier">
-      <select
-        aria-label={`Qualifier ${index + 1} diet base`}
-        value={qualifier.base}
-        onChange={(event) =>
-          onPatch({ base: event.target.value, sliceKey: TARGET_SLICES[event.target.value][0][0] })
-        }
-      >
-        {TARGET_BASES.map((base) => (
-          <option key={base.key} value={base.key}>
-            {base.label}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label={`Qualifier ${index + 1} slice`}
-        value={qualifier.sliceKey}
-        onChange={(event) => onPatch({ sliceKey: event.target.value })}
-      >
-        {TARGET_SLICES[qualifier.base].map(([key, label]) => (
-          <option key={key} value={key}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <span className="pt-comparator" role="group" aria-label={`Qualifier ${index + 1} comparator`}>
-        {TARGET_COMPARATORS.map((comparator) => (
+      <div className="pt-q-slice">
+        <select
+          aria-label={`Qualifier ${index + 1} diet base`}
+          className="pt-q-base"
+          value={qualifier.base}
+          onChange={(event) =>
+            onPatch({ base: event.target.value, sliceKey: TARGET_SLICES[event.target.value][0][0] })
+          }
+        >
+          {TARGET_BASES.map((base) => (
+            <option key={base.key} value={base.key}>
+              {base.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={`Qualifier ${index + 1} slice`}
+          className="pt-q-key"
+          value={qualifier.sliceKey}
+          onChange={(event) => onPatch({ sliceKey: event.target.value })}
+        >
+          {TARGET_SLICES[qualifier.base].map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {onRemove && (
           <button
             type="button"
-            key={comparator.key}
-            aria-label={comparator.label}
-            aria-pressed={qualifier.comparator === comparator.key}
-            onClick={() => onPatch({ comparator: comparator.key })}
+            className="pt-remove"
+            aria-label={`Remove Qualifier ${index + 1}`}
+            onClick={onRemove}
           >
-            {comparator.symbol}
+            ×
           </button>
-        ))}
-      </span>
-      <span className="pt-threshold">
-        <button
-          type="button"
-          aria-label={`Qualifier ${index + 1} threshold down 1%`}
-          onClick={() =>
-            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, -1) })
-          }
+        )}
+      </div>
+      <div className="pt-q-bound">
+        <span
+          className="pt-comparator"
+          role="group"
+          aria-label={`Qualifier ${index + 1} comparator`}
         >
-          −
-        </button>
-        <input
-          type="number"
-          min="0"
-          max="100"
-          step="any"
-          aria-label={`Qualifier ${index + 1} threshold percent`}
-          value={qualifier.thresholdPercent}
-          onChange={(event) => onPatch({ thresholdPercent: event.target.value })}
-          onKeyDown={(event) => {
-            const delta = { ArrowUp: 1, ArrowDown: -1 }[event.key];
-            if (!delta) return;
-            event.preventDefault();
-            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, delta) });
-          }}
-        />
-        <button
-          type="button"
-          aria-label={`Qualifier ${index + 1} threshold up 1%`}
-          onClick={() =>
-            onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, 1) })
-          }
-        >
-          +
-        </button>
-        <span>%</span>
+          {TARGET_COMPARATORS.map((comparator) => (
+            <button
+              type="button"
+              key={comparator.key}
+              aria-label={comparator.label}
+              aria-pressed={qualifier.comparator === comparator.key}
+              onClick={() => onPatch({ comparator: comparator.key })}
+            >
+              {comparator.symbol}
+            </button>
+          ))}
+        </span>
+        <span className="pt-threshold">
+          <button
+            type="button"
+            aria-label={`Qualifier ${index + 1} threshold down 1%`}
+            onClick={() => nudge(-1)}
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="any"
+            placeholder="—"
+            aria-label={`Qualifier ${index + 1} threshold percent`}
+            value={qualifier.thresholdPercent}
+            onChange={(event) => onPatch({ thresholdPercent: event.target.value })}
+            onKeyDown={(event) => {
+              const delta = { ArrowUp: 1, ArrowDown: -1 }[event.key];
+              if (!delta) return;
+              event.preventDefault();
+              nudge(delta);
+            }}
+          />
+          <button
+            type="button"
+            aria-label={`Qualifier ${index + 1} threshold up 1%`}
+            onClick={() => nudge(1)}
+          >
+            +
+          </button>
+        </span>
+        <span className="pt-q-unit">% {unit}</span>
         <LeagueHint
           base={qualifier.base}
           sliceKey={qualifier.sliceKey}
           onUse={(thresholdPercent) => onPatch({ thresholdPercent })}
         />
-      </span>
+      </div>
+      <div className="pt-q-track" aria-hidden="true">
+        {hasThreshold && (
+          <i
+            className="pt-q-fill"
+            style={above ? { left: at(threshold), right: 0 } : { left: 0, width: at(threshold) }}
+          />
+        )}
+        {league !== null && (
+          <i className="pt-q-league" style={{ left: at(league) }}>
+            <small>lg</small>
+          </i>
+        )}
+        {hasThreshold && <i className="pt-q-mark" style={{ left: at(threshold) }} />}
+        <small className="pt-q-scale">{top}%</small>
+      </div>
+    </div>
+  );
+}
+
+/*
+ * Idea 2 — Slider. The threshold is the handle on a league-scaled track;
+ * drag it, or step it with the keys. The comparator is one toggle that flips
+ * which side of the handle shades. Nothing is typed.
+ */
+function QualifierSlider({ qualifier, index, onPatch, onRemove }) {
+  const unit = findTargetBase(qualifier.base)?.unit || '';
+  const league = leagueAveragePercent(qualifier.base, qualifier.sliceKey);
+  const threshold = Number(qualifier.thresholdPercent);
+  const hasThreshold = qualifier.thresholdPercent !== '' && Number.isFinite(threshold);
+  const top = Math.max(
+    60,
+    Math.ceil((Math.max(hasThreshold ? threshold : 0, league || 0) + 10) / 10) * 10,
+  );
+  const at = (value) => `${Math.min(100, Math.max(0, (value / top) * 100))}%`;
+  const above = qualifier.comparator === 'at_or_above';
+  return (
+    <div className="pt-qualifier is-slider">
+      <div className="pt-q-slice">
+        <select
+          aria-label={`Qualifier ${index + 1} diet base`}
+          className="pt-q-base"
+          value={qualifier.base}
+          onChange={(event) =>
+            onPatch({ base: event.target.value, sliceKey: TARGET_SLICES[event.target.value][0][0] })
+          }
+        >
+          {TARGET_BASES.map((base) => (
+            <option key={base.key} value={base.key}>
+              {base.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label={`Qualifier ${index + 1} slice`}
+          className="pt-q-key"
+          value={qualifier.sliceKey}
+          onChange={(event) => onPatch({ sliceKey: event.target.value })}
+        >
+          {TARGET_SLICES[qualifier.base].map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {onRemove && (
+          <button
+            type="button"
+            className="pt-remove"
+            aria-label={`Remove Qualifier ${index + 1}`}
+            onClick={onRemove}
+          >
+            ×
+          </button>
+        )}
+      </div>
+      <div className="pt-q-slider">
+        <button
+          type="button"
+          className="pt-q-flip"
+          aria-label={
+            above ? 'At or above; press for at or below' : 'At or below; press for at or above'
+          }
+          onClick={() => onPatch({ comparator: above ? 'at_or_below' : 'at_or_above' })}
+        >
+          {above ? '≥' : '≤'}
+        </button>
+        <span className="pt-q-range">
+          {hasThreshold && (
+            <i
+              className="pt-q-fill"
+              style={above ? { left: at(threshold), right: 0 } : { left: 0, width: at(threshold) }}
+            />
+          )}
+          {league !== null && (
+            <i className="pt-q-league" style={{ left: at(league) }}>
+              <small>lg {league}%</small>
+            </i>
+          )}
+          <input
+            type="range"
+            min="0"
+            max={top}
+            step="1"
+            aria-label={`Qualifier ${index + 1} threshold percent`}
+            value={hasThreshold ? threshold : 0}
+            onChange={(event) => onPatch({ thresholdPercent: event.target.value })}
+          />
+          {hasThreshold && (
+            <b className="pt-q-value" style={{ left: at(threshold) }}>
+              {threshold}%
+            </b>
+          )}
+        </span>
+        <span className="pt-q-unit">{unit}</span>
+      </div>
+    </div>
+  );
+}
+
+/*
+ * Idea 3 — Line. One dense line per Qualifier, no boxes: the slice as one
+ * grouped pick, the bound typed, and the distance from the league average
+ * said in words beside it. The shape of a filter chip rather than a form.
+ */
+function QualifierLine({ qualifier, index, onPatch, onRemove }) {
+  const league = leagueAveragePercent(qualifier.base, qualifier.sliceKey);
+  const threshold = Number(qualifier.thresholdPercent);
+  const hasThreshold = qualifier.thresholdPercent !== '' && Number.isFinite(threshold);
+  const gap = hasThreshold && league !== null ? Math.round(threshold - league) : null;
+  const nudge = (delta) =>
+    onPatch({ thresholdPercent: nudgeThresholdPercent(qualifier.thresholdPercent, delta) });
+  return (
+    <div className="pt-qualifier is-line">
+      <select
+        aria-label={`Qualifier ${index + 1} slice`}
+        className="pt-q-pick"
+        value={`${qualifier.base}|${qualifier.sliceKey}`}
+        onChange={(event) => {
+          const [base, sliceKey] = event.target.value.split('|');
+          onPatch({ base, sliceKey });
+        }}
+      >
+        {TARGET_BASES.map((base) => (
+          <optgroup key={base.key} label={base.label}>
+            {TARGET_SLICES[base.key].map(([key, label]) => (
+              <option key={key} value={`${base.key}|${key}`}>
+                {label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <span className="pt-q-word">share</span>
+      <select
+        aria-label={`Qualifier ${index + 1} comparator`}
+        className="pt-q-cmp"
+        value={qualifier.comparator}
+        onChange={(event) => onPatch({ comparator: event.target.value })}
+      >
+        {TARGET_COMPARATORS.map((comparator) => (
+          <option key={comparator.key} value={comparator.key}>
+            {comparator.symbol}
+          </option>
+        ))}
+      </select>
+      <input
+        className="pt-q-num"
+        type="number"
+        min="0"
+        max="100"
+        step="any"
+        placeholder="—"
+        aria-label={`Qualifier ${index + 1} threshold percent`}
+        value={qualifier.thresholdPercent}
+        onChange={(event) => onPatch({ thresholdPercent: event.target.value })}
+        onKeyDown={(event) => {
+          const delta = { ArrowUp: 1, ArrowDown: -1 }[event.key];
+          if (!delta) return;
+          event.preventDefault();
+          nudge(delta);
+        }}
+      />
+      <span className="pt-q-word">%</span>
+      {league !== null && (
+        <button
+          type="button"
+          className="pt-q-gap"
+          title="League-average share · press to use it"
+          onClick={() => onPatch({ thresholdPercent: String(league) })}
+        >
+          {gap === null
+            ? `lg ${league}%`
+            : gap === 0
+              ? 'at league'
+              : `${gap > 0 ? '+' : ''}${gap} vs lg ${league}%`}
+        </button>
+      )}
       {onRemove && (
         <button
           type="button"
@@ -300,6 +533,27 @@ export function QualifierFields({ qualifier, index, onPatch, onRemove }) {
       )}
     </div>
   );
+}
+
+/* Which drawing of a Qualifier: `q=1` track (default), `2` slider, `3` line. */
+export const CRITERIA_STYLES = { 1: 'Track', 2: 'Slider', 3: 'Line' };
+
+export const useCriteriaStyle = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const style = CRITERIA_STYLES[searchParams.get('q')] ? searchParams.get('q') : '1';
+  const setStyle = (next) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('q', next);
+    setSearchParams(params, { replace: true });
+  };
+  return { style, setStyle };
+};
+
+export function QualifierFields(props) {
+  const { style } = useCriteriaStyle();
+  if (style === '2') return <QualifierSlider {...props} />;
+  if (style === '3') return <QualifierLine {...props} />;
+  return <QualifierTrack {...props} />;
 }
 
 /* --- small read-only pieces --- */

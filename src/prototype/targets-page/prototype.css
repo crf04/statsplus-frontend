@@ -3550,3 +3550,432 @@ a.pt-today.is-live:hover {
 .pt-threshold .pt-lg:hover {
   border-bottom-color: var(--ct-gold);
 }
+
+/* ===== round 4i: the Qualifier row, redrawn ===== */
+
+.pt-qualifier,
+.pt-j-criteria .pt-qualifier {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 10px 12px 12px;
+  background: var(--ct-surface-2);
+}
+
+.pt-qualifier:focus-within {
+  border-color: var(--ct-line-strong);
+}
+
+.pt-q-slice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+}
+
+/* The selects read as words, not boxes: the base quiet, the slice loud. */
+.pt-qualifier .pt-q-base,
+.pt-qualifier .pt-q-key {
+  min-height: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  padding: 2px 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pt-qualifier .pt-q-base {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pt-qualifier .pt-q-key {
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.pt-qualifier .pt-q-base:hover,
+.pt-qualifier .pt-q-key:hover {
+  border-bottom-color: var(--ct-line-strong);
+}
+
+.pt-qualifier .pt-q-base:focus,
+.pt-qualifier .pt-q-key:focus {
+  outline: 0;
+  border-bottom-color: var(--ct-gold);
+}
+
+.pt-q-slice .pt-remove {
+  grid-column: 3;
+  margin-top: -4px;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.pt-q-slice .pt-remove:hover {
+  opacity: 1;
+}
+
+.pt-q-bound {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-q-bound .pt-comparator button {
+  min-width: 30px;
+  padding: 4px 9px;
+  font-size: 0.74rem;
+}
+
+.pt-q-bound .pt-threshold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface);
+}
+
+.pt-q-bound .pt-threshold button {
+  min-width: 26px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 0;
+  color: var(--ct-dim);
+  font-size: 0.85rem;
+}
+
+.pt-q-bound .pt-threshold button:hover {
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.pt-q-bound .pt-threshold input {
+  width: 52px;
+  min-height: 30px;
+  border: 0;
+  border-left: 1px solid var(--ct-line);
+  border-right: 1px solid var(--ct-line);
+  border-radius: 0;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.pt-q-bound .pt-threshold input::-webkit-outer-spin-button,
+.pt-q-bound .pt-threshold input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.pt-q-bound .pt-threshold input:focus {
+  outline: 0;
+  background: var(--ct-gold-soft);
+}
+
+.pt-q-unit {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+}
+
+.pt-q-bound .pt-lg {
+  margin-left: auto;
+}
+
+/* The track: 0 to a round ceiling, the league a tick, the threshold a
+   marker, the qualifying side shaded. */
+.pt-q-track {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+
+.pt-q-fill {
+  position: absolute;
+  top: 5px;
+  bottom: 0;
+  background: var(--ct-gold-soft);
+  border-top: 1px solid rgba(232, 163, 61, 0.35);
+}
+
+.pt-q-league {
+  position: absolute;
+  top: 3px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--ct-dim);
+}
+
+.pt-q-league small {
+  position: absolute;
+  top: -8px;
+  left: 3px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pt-q-mark {
+  position: absolute;
+  top: 2px;
+  bottom: -2px;
+  width: 3px;
+  border-radius: 1px;
+  background: var(--ct-gold);
+  transform: translateX(-1px);
+}
+
+.pt-q-scale {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.52rem;
+}
+
+/* the composer's own rows use the same drawing; drop the old column overrides */
+.pt-j-criteria .pt-comparator,
+.pt-j-criteria .pt-threshold,
+.pt-j-criteria .pt-remove {
+  grid-column: auto;
+  margin-top: 0;
+}
+
+.pt-g-quals,
+.pt-a-compose-quals,
+.pt-e-compose-quals {
+  gap: 8px;
+}
+
+@media (max-width: 820px) {
+  .pt-qualifier {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== round 4j: three drawings of a Qualifier ===== */
+
+.proto-switcher-q {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.proto-switcher-q button {
+  min-width: 22px;
+  background: #333;
+  color: #ddd;
+  font-size: 11px;
+}
+
+.proto-switcher-q button.is-on {
+  background: #b6ff3b;
+  color: #000;
+}
+
+/* 2 — slider */
+
+.pt-q-slider {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding-top: 14px;
+}
+
+.pt-q-flip {
+  min-width: 34px;
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  padding: 4px 8px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pt-q-range {
+  position: relative;
+  display: block;
+  height: 22px;
+}
+
+.pt-q-range .pt-q-fill {
+  top: 9px;
+  height: 4px;
+  border: 0;
+  border-radius: 2px;
+  background: rgba(232, 163, 61, 0.45);
+}
+
+.pt-q-range .pt-q-league {
+  top: 4px;
+  bottom: 4px;
+  z-index: 1;
+}
+
+.pt-q-range .pt-q-league small {
+  top: 16px;
+  left: -8px;
+  white-space: nowrap;
+}
+
+.pt-q-range input[type='range'] {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pt-q-range input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ct-line-strong);
+}
+
+.pt-q-range input[type='range']::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid var(--ct-ink);
+  border-radius: 50%;
+  background: var(--ct-gold);
+  cursor: grab;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pt-q-range input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ct-line-strong);
+}
+
+.pt-q-range input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ct-ink);
+  border-radius: 50%;
+  background: var(--ct-gold);
+  cursor: grab;
+}
+
+.pt-q-value {
+  position: absolute;
+  top: -14px;
+  transform: translateX(-50%);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pt-qualifier.is-slider {
+  padding-bottom: 20px;
+}
+
+/* 3 — line */
+
+.pt-qualifier.is-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--ct-line);
+  border-radius: 0;
+  padding: 6px 0 10px;
+  background: transparent;
+}
+
+.pt-qualifier.is-line select,
+.pt-qualifier.is-line input {
+  min-height: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ct-line-strong);
+  border-radius: 0;
+  padding: 2px 2px;
+  background: transparent;
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.pt-qualifier.is-line select:focus,
+.pt-qualifier.is-line input:focus {
+  outline: 0;
+  border-bottom-color: var(--ct-gold);
+}
+
+.pt-qualifier.is-line .pt-q-cmp {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+}
+
+.pt-qualifier.is-line .pt-q-num {
+  width: 3.4ch;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-weight: 700;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.pt-qualifier.is-line .pt-q-num::-webkit-outer-spin-button,
+.pt-qualifier.is-line .pt-q-num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.pt-q-word {
+  color: var(--ct-dim);
+  font-size: 0.9rem;
+}
+
+.pt-q-gap {
+  margin-left: auto;
+  border: 0;
+  border-bottom: 1px dotted var(--ct-dim);
+  padding: 0 1px;
+  background: transparent;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pt-q-gap:hover {
+  border-bottom-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.pt-qualifier.is-line .pt-remove {
+  font-size: 0.9rem;
+  opacity: 0.6;
+}

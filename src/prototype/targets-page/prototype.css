@@ -3420,3 +3420,33 @@ a.pt-today.is-live:hover {
   flex: 1;
   min-width: 0;
 }
+
+/* ===== round 4e: the card's top row, aligned ===== */
+
+.pt-g-grid .pt-g-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.pt-g-grid .pt-g-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  white-space: nowrap;
+}
+
+.pt-g-grid .pt-g-actions .pt-today.is-live {
+  padding: 2px 10px 2px 8px;
+  line-height: 1.4;
+}
+
+.pt-g-grid .pt-g-actions .pt-today.is-idle {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+}

@@ -79,6 +79,9 @@ function channelFor(key, target, userId) {
     },
     getSnapshot: () => snapshot,
     subscribe: (notify) => {
+      // StrictMode can subscribe again after its effect cleanup evicted this
+      // otherwise idle channel. Restore the active view's channel on attachment.
+      channels.set(key, channel);
       listeners.add(notify);
       return () => {
         listeners.delete(notify);

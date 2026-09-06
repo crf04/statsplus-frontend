@@ -1,3 +1,4 @@
+import { Fragment, StrictMode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
@@ -79,7 +80,7 @@ const backtest = {
 
 const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
 
-const renderDetail = (path = '/targets/7') =>
+const renderDetail = (path = '/targets/7', wrapper = Fragment) =>
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
@@ -88,6 +89,7 @@ const renderDetail = (path = '/targets/7') =>
       </Routes>
       <LocationProbe />
     </MemoryRouter>,
+    { wrapper },
   );
 
 beforeEach(() => {
@@ -468,18 +470,18 @@ test('a destination read started before the preference save cannot restore the o
         finishSave = resolve;
       }),
   );
-  const view = renderDetail();
+  const view = renderDetail('/targets/7', StrictMode);
   await act(async () => {});
   await act(async () => jest.advanceTimersByTime(600));
   fireEvent.click(screen.getByRole('button', { name: /^3PM / }));
   view.unmount();
-  fetchTargets.mockImplementationOnce(
+  fetchTargets.mockImplementation(
     () =>
       new Promise((resolve) => {
         finishRead = resolve;
       }),
   );
-  renderDetail();
+  renderDetail('/targets/7', StrictMode);
   await act(async () => {});
   await act(async () => finishSave());
   await act(async () => jest.advanceTimersByTime(0));

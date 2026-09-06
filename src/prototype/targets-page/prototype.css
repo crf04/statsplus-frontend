@@ -3465,3 +3465,50 @@ a.pt-today.is-live:hover {
 .pt-g-page-head {
   margin-bottom: 16px;
 }
+
+/* ===== round 4g: one top row, columns aligned beneath it ===== */
+
+.pt-j {
+  grid-template-rows: auto 1fr;
+}
+
+.pt-j-top {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--ct-line);
+  padding-bottom: 10px;
+}
+
+.pt-j-top .target-back {
+  margin: 0;
+}
+
+.pt-d-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-d-delete small {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+}
+
+.pt-j-bench {
+  top: 0;
+}
+
+.pt-j-games .pt-e-section-head {
+  margin-top: 0;
+  padding-top: 0;
+  line-height: 1;
+}
+
+.pt-j-criteria {
+  margin-top: 0;
+}

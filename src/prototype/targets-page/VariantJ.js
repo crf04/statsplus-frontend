@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
 import { summarise } from './history';
 import { useShownStats } from './box';
-import { CriteriaForm, EditorActions, useTargetEditor } from './detailShared';
+import { CriteriaForm, DeleteAction, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Workbench';
 
@@ -26,15 +26,20 @@ export default function VariantJ({ item, read, listPath }) {
 
   return (
     <main className="slate-page targets-page pt-j">
-      <aside className="pt-j-bench">
+      {/* One row across both columns: the way back and Delete. Everything
+          under it starts on the same line. */}
+      <div className="pt-j-top">
         <p className="target-back">
           <Link to={listPath}>← All Targets</Link>
         </p>
+        <DeleteAction state={state} />
+      </div>
+      <aside className="pt-j-bench">
         {/* The card is the criteria and its actions; the title it derives is
             the card's own reading, so it is not repeated beneath it. */}
         <section className="pt-i-criteria pt-j-criteria">
           <CriteriaForm editor={state.editor} />
-          <EditorActions state={state} compact title={false} />
+          <EditorActions state={state} compact title={false} del={false} />
         </section>
         <div
           className={`pt-lab${lab.stale ? ' is-stale' : ''}`}

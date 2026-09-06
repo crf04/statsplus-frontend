@@ -92,9 +92,38 @@ export function CriteriaForm({ editor, opponentLocked = true }) {
   );
 }
 
-/* Save, Revert and Delete, with the derived title as it stands. */
-export function EditorActions({ state, compact = false, title: showTitle = true }) {
-  const { editor, dirty, title, note, save, revert, confirming, askDelete, keep, remove } = state;
+/* Delete, asking first. Lives wherever the layout puts it. */
+export function DeleteAction({ state }) {
+  const { note, confirming, askDelete, keep, remove } = state;
+  return (
+    <span className="pt-d-delete">
+      {confirming ? (
+        <>
+          <span className="target-confirm">Delete this Target?</span>
+          <button type="button" className="target-ghost is-danger" onClick={remove}>
+            Yes, delete
+          </button>
+          <button type="button" className="target-ghost" onClick={keep}>
+            Keep it
+          </button>
+        </>
+      ) : (
+        <>
+          {note && <small>{note}</small>}
+          <button type="button" className="target-ghost" onClick={askDelete}>
+            Delete
+          </button>
+        </>
+      )}
+    </span>
+  );
+}
+
+/* Save and Revert, only while the draft has moved; Delete too unless the
+   layout has put it elsewhere. */
+export function EditorActions({ state, compact = false, title: showTitle = true, del = true }) {
+  const { editor, dirty, title, save, revert } = state;
+  if (!dirty && !del && editor.valid) return null;
   return (
     <div className={`pt-d-actions${compact ? ' is-compact' : ''}${dirty ? ' is-dirty' : ''}`}>
       {showTitle ? (
@@ -120,24 +149,7 @@ export function EditorActions({ state, compact = false, title: showTitle = true 
             </button>
           </>
         )}
-        {confirming ? (
-          <>
-            <span className="target-confirm">Delete this Target?</span>
-            <button type="button" className="target-ghost is-danger" onClick={remove}>
-              Yes, delete
-            </button>
-            <button type="button" className="target-ghost" onClick={keep}>
-              Keep it
-            </button>
-          </>
-        ) : (
-          <>
-            {note && <small>{note}</small>}
-            <button type="button" className="target-ghost" onClick={askDelete}>
-              Delete
-            </button>
-          </>
-        )}
+        {del && <DeleteAction state={state} />}
       </span>
     </div>
   );

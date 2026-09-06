@@ -2800,3 +2800,40 @@ a.pt-c-idle-row:hover span {
     display: none;
   }
 }
+
+/* ===== round 3b: saved criteria are read-only on the page ===== */
+
+.pt-g-criteria.is-read {
+  align-items: center;
+}
+
+.pt-g-why {
+  margin: 4px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.8rem;
+}
+
+.pt-g-criteria.is-read .pt-chip {
+  font-size: 1rem;
+}
+
+.pt-h-sentence.is-read {
+  border-color: var(--ct-line);
+}
+
+.pt-h-read {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+
+.pt-h-read.is-opp {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.pt-h-read.is-note {
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.9rem;
+  font-weight: 400;
+}

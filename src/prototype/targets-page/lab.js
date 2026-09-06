@@ -114,6 +114,24 @@ export const useLab = (draft, saved, savedRead) => {
   };
 };
 
+/* The evidence for a saved Target as it was read: nothing to compare, nothing
+   stale. The main page shows criteria this way and never edits them. */
+export const savedLab = (read) => ({
+  valid: true,
+  problem: null,
+  dirty: false,
+  status: read?.status || 'loading',
+  backtest: read?.status === 'ready' ? read.backtest : null,
+  stale: false,
+  sample: false,
+  line:
+    read?.status === 'ready'
+      ? 'Backtest · season to date'
+      : read?.status === 'error'
+        ? 'The season did not read.'
+        : 'Reading the season…',
+});
+
 /* --- grading --- */
 
 /*

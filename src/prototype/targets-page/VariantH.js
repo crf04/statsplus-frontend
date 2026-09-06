@@ -2,9 +2,10 @@
  * PROTOTYPE — throwaway. See ./README.md.
  *
  * H — Bench. One set of criteria on the bench at a time. The rail lists every
- * Target by its criteria; the bench reads the chosen one as a sentence with
- * the blanks live, and the Lab beneath answers each edit. "New" puts an empty
- * sentence on the bench.
+ * Target by its criteria; the bench reads the chosen one as a sentence, fixed,
+ * with its Backtest beneath. "New" puts an empty sentence on the bench with
+ * the blanks live, and that is the Lab: the season re-reads as they are filled.
+ * Editing a saved Target happens on its own page.
  */
 import { useState } from 'react';
 import {
@@ -18,7 +19,7 @@ import {
   formatQualifierParts,
   nudgeThresholdPercent,
 } from '../../targets/targetCatalog';
-import { LabEvidence, useLab } from './lab';
+import { LabEvidence, savedLab, useLab } from './lab';
 import { ProtoLink, useDraft } from './shared';
 import { percent, summarise } from './history';
 
@@ -165,23 +166,61 @@ function Sentence({ editor }) {
   );
 }
 
-function Bench({ item, read, onSaveNew }) {
-  const saved = item?.target || null;
-  const editor = useDraft(saved || undefined);
-  const [savedAs, setSavedAs] = useState(saved);
-  const lab = useLab(editor.draft, savedAs, read);
-  const [note, setNote] = useState(null);
-  const save = () => {
-    if (savedAs) {
-      setSavedAs({ ...savedAs, ...editor.request, title: deriveTargetTitle(editor.request) });
-      setNote('Saved for this session only · nothing was sent to the backend');
-    } else {
-      onSaveNew(editor.request);
-    }
-  };
+function ReadSentence({ target }) {
+  return (
+    <div className="pt-h-sentence is-read">
+      <p className="pt-c-line">
+        <span className="pt-c-word">Against</span>
+        <b className="pt-h-read is-opp">{target.opponent}</b>
+        <span className="pt-c-word">, a player fits when</span>
+        {target.qualifiers.map((qualifier, index) => {
+          const { label, value } = formatQualifierParts(qualifier);
+          return (
+            <span className="pt-c-clause" key={index}>
+              {index > 0 && <span className="pt-c-word is-and">and</span>}
+              <b className="pt-h-read">{label}</b>
+              <span className="pt-c-word">is</span>
+              <b className="pt-h-read">{value}</b>
+              <span className="pt-c-word">{findTargetBase(qualifier.base)?.unit}</span>
+            </span>
+          );
+        })}
+      </p>
+      {target.note && (
+        <p className="pt-c-line is-note">
+          <span className="pt-c-word">because</span>
+          <span className="pt-h-read is-note">{target.note}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SavedBench({ item, read }) {
+  const { target } = item;
   return (
     <section className="pt-h-bench">
-      <p className="eyebrow">{savedAs ? 'Target · on the bench' : 'Draft Target'}</p>
+      <p className="eyebrow">Target · on the bench</p>
+      <ReadSentence target={target} />
+      <div className="pt-h-actions">
+        <span className="pt-h-title">{target.title}</span>
+        {target.local ? (
+          <small>unsaved · this session only</small>
+        ) : (
+          <ProtoLink to={`/targets/${target.id}`}>Open · edit there →</ProtoLink>
+        )}
+      </div>
+      <LabEvidence lab={savedLab(read)} />
+    </section>
+  );
+}
+
+function DraftBench({ onSaveNew }) {
+  const editor = useDraft();
+  const lab = useLab(editor.draft, null, null);
+  return (
+    <section className="pt-h-bench">
+      <p className="eyebrow">Draft Target · the Lab</p>
       <Sentence editor={editor} />
       <div className="pt-h-actions">
         {editor.valid ? (
@@ -189,27 +228,14 @@ function Bench({ item, read, onSaveNew }) {
         ) : (
           <span className="pt-h-title is-pending">{editor.problem}</span>
         )}
-        {savedAs ? (
-          lab.dirty ? (
-            <>
-              <button type="button" className="target-primary" disabled={!lab.valid} onClick={save}>
-                Save changes
-              </button>
-              <button type="button" className="target-ghost" onClick={() => editor.reset(savedAs)}>
-                Revert
-              </button>
-            </>
-          ) : (
-            <>
-              {note && <small>{note}</small>}
-              {!savedAs.local && <ProtoLink to={`/targets/${savedAs.id}`}>Open →</ProtoLink>}
-            </>
-          )
-        ) : (
-          <button type="button" className="target-primary" disabled={!editor.valid} onClick={save}>
-            Save Target
-          </button>
-        )}
+        <button
+          type="button"
+          className="target-primary"
+          disabled={!editor.valid}
+          onClick={() => onSaveNew(editor.request)}
+        >
+          Save Target
+        </button>
       </div>
       {editor.valid ? <LabEvidence lab={lab} /> : null}
     </section>
@@ -284,15 +310,17 @@ export default function VariantH({ data }) {
           })}
         </ul>
       </aside>
-      <Bench
-        key={current}
-        item={item}
-        read={item ? backtests[String(item.target.id)] : null}
-        onSaveNew={(request) => {
-          saveLocally(request);
-          setSelected(null);
-        }}
-      />
+      {item ? (
+        <SavedBench key={current} item={item} read={backtests[String(item.target.id)]} />
+      ) : (
+        <DraftBench
+          key="new"
+          onSaveNew={(request) => {
+            saveLocally(request);
+            setSelected(null);
+          }}
+        />
+      )}
     </main>
   );
 }

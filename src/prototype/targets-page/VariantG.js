@@ -2,26 +2,22 @@
  * PROTOTYPE — throwaway. See ./README.md.
  *
  * G — Sheet. The page is the criteria. Every Target is a section whose header
- * is its Qualifiers, editable in place; the Lab is the evidence beneath each
- * one and re-reads the moment the criteria move. A new Target is the same
- * section, empty, at the top. Nothing about today is on this page.
+ * is its Qualifiers, read-only; the Backtest is the evidence beneath each.
+ * Only a new Target is composed here, and that is where the Lab is: the same
+ * section, empty, at the top, re-reading as the draft moves. Editing a saved
+ * Target happens on its own page. Nothing about today is on this page.
  */
 import { useState } from 'react';
-import { deriveTargetTitle } from '../../targets/targetCatalog';
-import { LabEvidence, useLab } from './lab';
-import { OpponentSelect, ProtoLink, QualifierFields, useDraft } from './shared';
+import { LabEvidence, savedLab, useLab } from './lab';
+import { OpponentSelect, ProtoLink, QualifierChips, QualifierFields, useDraft } from './shared';
 
 export const NAME = 'Sheet';
 
-function Criteria({ editor, locked = false }) {
+function Criteria({ editor }) {
   const { draft, patch, patchQualifier, addQualifier, removeQualifier } = editor;
   return (
     <div className="pt-g-criteria">
-      {locked ? (
-        <span className="pt-g-opp">{draft.opponent}</span>
-      ) : (
-        <OpponentSelect big value={draft.opponent} onChange={(opponent) => patch({ opponent })} />
-      )}
+      <OpponentSelect big value={draft.opponent} onChange={(opponent) => patch({ opponent })} />
       <div className="pt-g-quals">
         <span className="target-label">A player must meet every one</span>
         {draft.qualifiers.map((qualifier, index) => (
@@ -50,38 +46,34 @@ function Criteria({ editor, locked = false }) {
   );
 }
 
+function ReadCriteria({ target }) {
+  return (
+    <div className="pt-g-criteria is-read">
+      <span className="pt-g-opp">{target.opponent}</span>
+      <div className="pt-g-quals">
+        <span className="target-label">A player must meet every one</span>
+        <QualifierChips target={target} />
+        {target.note && <p className="pt-g-why">{target.note}</p>}
+      </div>
+    </div>
+  );
+}
+
 function TargetSection({ item, read }) {
   const { target } = item;
-  const editor = useDraft(target);
-  const [savedAs, setSavedAs] = useState(target);
-  const lab = useLab(editor.draft, savedAs, read);
-  const [note, setNote] = useState(null);
-  const save = () => {
-    // Stub: the edit is kept for this session only.
-    setSavedAs({ ...savedAs, ...editor.request, title: deriveTargetTitle(editor.request) });
-    setNote('Saved for this session only · nothing was sent to the backend');
-  };
   return (
-    <section className={`pt-g-section${lab.dirty ? ' is-dirty' : ''}`}>
+    <section className="pt-g-section">
       <header className="pt-g-head">
-        <Criteria editor={editor} locked />
+        <ReadCriteria target={target} />
         <div className="pt-g-actions">
-          {lab.dirty ? (
-            <>
-              <button type="button" className="target-primary" disabled={!lab.valid} onClick={save}>
-                Save changes
-              </button>
-              <button type="button" className="target-ghost" onClick={() => editor.reset(savedAs)}>
-                Revert
-              </button>
-            </>
+          {target.local ? (
+            <small>unsaved · this session only</small>
           ) : (
-            !target.local && <ProtoLink to={`/targets/${target.id}`}>Open →</ProtoLink>
+            <ProtoLink to={`/targets/${target.id}`}>Open · edit there →</ProtoLink>
           )}
-          {note && !lab.dirty && <small>{note}</small>}
         </div>
       </header>
-      <LabEvidence lab={lab} />
+      <LabEvidence lab={savedLab(read)} />
     </section>
   );
 }
@@ -137,8 +129,8 @@ export default function VariantG({ data }) {
             : 'Targets'}
         </h1>
         <p className="pt-g-sub">
-          The criteria, and what the season says about each. Edit a threshold and the season
-          re-reads beneath it.
+          The criteria, and what the season says about each. Editing lives on a Target&apos;s own
+          page; composing a new one lives here, with the season reading beneath it.
         </p>
       </header>
 

@@ -7,6 +7,9 @@ import { formatQualifierParts } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { useResolvedTargets, useTargets } from './useTargets';
+// PROTOTYPE — throwaway gate, see src/prototype/targets-page/README.md.
+import TargetsPrototypePage from '../prototype/targets-page/TargetsPrototypePage';
+import { useTargetsPrototype } from '../prototype/targets-page/prototypeMode';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -65,7 +68,7 @@ function TargetCard({ target, entry }) {
   );
 }
 
-export default function TargetsPage() {
+function TargetsPageShipped() {
   const navigate = useNavigate();
   const { authLoading, isAuthenticated, status, targets, error } = useTargets();
   /*
@@ -158,4 +161,12 @@ export default function TargetsPage() {
         ))}
     </main>
   );
+}
+
+/* PROTOTYPE — throwaway. `?proto=targets` swaps the shipped page for the
+   variants; without it, or in a production build, this is the page above. */
+export default function TargetsPage() {
+  const proto = useTargetsPrototype();
+  if (proto.active) return <TargetsPrototypePage proto={proto} />;
+  return <TargetsPageShipped />;
 }

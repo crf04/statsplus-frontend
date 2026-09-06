@@ -7,6 +7,7 @@
  * strip of their own games; a row opens to list those games.
  */
 import { useMemo, useState } from 'react';
+import { useShownStats } from './box';
 import { Link } from 'react-router-dom';
 import { SummaryLine, gradeOf, gradeScale } from './lab';
 import { monthDay, percent, signedDelta, summarise, toneOf } from './history';
@@ -66,21 +67,18 @@ export default function VariantK({ item, read, listPath }) {
   const { target, entry } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
-  const [chosen, setChosen] = useState(null);
+  const stats = useShownStats(lab.backtest, target.id);
+  const { backtest, column } = stats;
   const [openId, setOpenId] = useState(null);
-  const column =
-    lab.backtest && lab.backtest.statColumns.includes(chosen)
-      ? chosen
-      : lab.backtest?.statColumns[0];
   const record = useMemo(
     () =>
-      lab.backtest
+      backtest
         ? summarise({
-            ...lab.backtest,
-            statColumns: [column, ...lab.backtest.statColumns.filter((name) => name !== column)],
+            ...backtest,
+            statColumns: [column, ...backtest.statColumns.filter((name) => name !== column)],
           })
         : null,
-    [lab.backtest, column],
+    [backtest, column],
   );
   const scale = record ? gradeScale(record.games, column) : 1;
 
@@ -101,9 +99,14 @@ export default function VariantK({ item, read, listPath }) {
         aria-busy={lab.status === 'loading'}
       >
         <p className="pt-lab-line">{lab.line}</p>
-        {lab.backtest && record && (
+        {backtest && record && (
           <>
-            <SummaryLine backtest={lab.backtest} column={column} onColumn={setChosen} />
+            <SummaryLine
+              backtest={backtest}
+              column={column}
+              onColumn={stats.setColumn}
+              stats={stats}
+            />
             {record.leaderboard.length === 0 ? (
               <p className="target-empty">Nobody qualifying has faced {target.opponent} yet.</p>
             ) : (

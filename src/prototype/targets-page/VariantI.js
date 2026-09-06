@@ -28,7 +28,7 @@ export default function VariantI({ item, read, listPath }) {
         <EditorActions state={state} />
       </div>
       <section className="pt-i-lab">
-        <LabEvidence lab={state.lab} />
+        <LabEvidence lab={state.lab} boxId={target.id} />
       </section>
     </main>
   );

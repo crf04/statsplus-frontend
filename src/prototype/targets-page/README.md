@@ -46,6 +46,15 @@ here and nowhere else; the criteria are always live, the Lab reads beneath.
 | J   | Workbench | Two columns: the criteria (form controls), actions, summary and grid pinned on the left; the games as a long list on the right. **Verdict (Chris, 2026-09-06): this layout, with I's criteria; now the default `dv`.** |
 | K   | Players   | Criteria on top; evidence grouped by player, ranked by margin, each with a graded strip; a row opens into its games.                                                                                                   |
 
+Stats picker (Chris, 2026-09-06: "select the stats that show up like PTS, PR,
+FGA"): the summary strip's `stats ▾` toggles any of 21 box-score stats as
+columns; the grid grades by whichever column is pressed. The backend only
+sends the proxy columns, so `mock/box-<id>.json` holds every Backtest player's
+2025-26 regular-season box score vs the opponent plus season averages over all
+their games, captured from the production database. A signed-in build without
+that capture can only offer the proxies; shipping this means the backtest
+response carrying the box score.
+
 Reads are real (`/api/user/targets`, `/resolve`, `/<id>/backtest`, `/preview`). Saving is a stub: a Target
 composed here is kept in memory for the session, marked _unsaved_, and never
 sent to the backend.

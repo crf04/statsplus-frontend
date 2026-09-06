@@ -7,10 +7,11 @@
  * The right one is the games, newest first, as long as they run. Tune on the
  * left, watch the right answer.
  */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
 import { summarise } from './history';
+import { useShownStats } from './box';
 import { CriteriaForm, DetailHead, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Workbench';
@@ -19,12 +20,9 @@ export default function VariantJ({ item, read, listPath }) {
   const { target, entry } = item;
   const state = useTargetEditor(target, read, listPath);
   const { lab } = state;
-  const [chosen, setChosen] = useState(null);
-  const record = useMemo(() => (lab.backtest ? summarise(lab.backtest) : null), [lab.backtest]);
-  const column =
-    lab.backtest && lab.backtest.statColumns.includes(chosen)
-      ? chosen
-      : lab.backtest?.statColumns[0];
+  const stats = useShownStats(lab.backtest, target.id);
+  const { backtest, column } = stats;
+  const record = useMemo(() => (backtest ? summarise(backtest) : null), [backtest]);
 
   return (
     <main className="slate-page targets-page pt-j">
@@ -42,9 +40,14 @@ export default function VariantJ({ item, read, listPath }) {
           aria-busy={lab.status === 'loading'}
         >
           <p className="pt-lab-line">{lab.line}</p>
-          {lab.backtest && record && (
+          {backtest && record && (
             <>
-              <SummaryLine backtest={lab.backtest} column={column} onColumn={setChosen} />
+              <SummaryLine
+                backtest={backtest}
+                column={column}
+                onColumn={stats.setColumn}
+                stats={stats}
+              />
               {record.games.length > 0 && (
                 <>
                   <GradedGrid record={record} column={column} />

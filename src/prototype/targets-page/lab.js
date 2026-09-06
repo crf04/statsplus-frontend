@@ -13,6 +13,7 @@ import { decodePreview } from '../../targets/targetsApi';
 import { useTargetPreview } from '../../targets/useTargets';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { monthDay, signedDelta, summarise, toneOf } from './history';
+import { STAT_CATALOGUE, useShownStats } from './box';
 import previewSample from './mock/preview-sample.json';
 
 /* What a Target is evaluated by. The note is never part of the evidence. */
@@ -188,7 +189,52 @@ export function GradedGrid({ record, column }) {
   );
 }
 
-export function SummaryLine({ backtest, column, onColumn }) {
+/* Which stats show as columns: the proxies to begin with, then whatever the
+   reader adds. One toggle per stat in the catalogue. */
+export function StatPicker({ stats }) {
+  const [open, setOpen] = useState(false);
+  if (!stats) return null;
+  return (
+    <span className="pt-stat-picker">
+      <button
+        type="button"
+        className="pt-stat-picker-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        title={stats.canChoose ? 'Choose the stats shown' : 'Only the proxy columns are available'}
+      >
+        stats ▾
+      </button>
+      {open && (
+        <span className="pt-stat-picker-menu" role="group" aria-label="Stats shown">
+          {stats.available.map((name) => {
+            const label = STAT_CATALOGUE.find(([key]) => key === name)?.[1] || name;
+            const on = stats.shown.includes(name);
+            return (
+              <button
+                type="button"
+                key={name}
+                className={`pt-stat-chip${on ? ' is-on' : ''}`}
+                aria-pressed={on}
+                onClick={() => stats.toggle(name)}
+              >
+                <b>{name}</b>
+                <small>{label}</small>
+              </button>
+            );
+          })}
+          {!stats.canChoose && (
+            <small className="pt-stat-picker-note">
+              more stats need the box score behind the games; the deployed prototype has it captured
+            </small>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export function SummaryLine({ backtest, column, onColumn, stats = null }) {
   const { summary, statColumns } = backtest;
   return (
     <div className="pt-lab-summary">
@@ -218,6 +264,7 @@ export function SummaryLine({ backtest, column, onColumn }) {
           </button>
         );
       })}
+      <StatPicker stats={stats} />
     </div>
   );
 }
@@ -273,18 +320,17 @@ export function GameList({ record, column }) {
  * The whole of the Lab beneath one set of criteria: the status line, the
  * summary with the stat column to grade by, the graded grid, the games.
  */
-export function LabEvidence({ lab, games = true }) {
-  const [chosen, setChosen] = useState(null);
-  const { backtest } = lab;
+export function LabEvidence({ lab, games = true, boxId = null }) {
+  const stats = useShownStats(lab.backtest, boxId);
+  const { backtest, column } = stats;
   const record = useMemo(() => (backtest ? summarise(backtest) : null), [backtest]);
   if (!backtest || !record) {
     return <p className="pt-lab-line">{lab.line}</p>;
   }
-  const column = backtest.statColumns.includes(chosen) ? chosen : backtest.statColumns[0];
   return (
     <div className={`pt-lab${lab.stale ? ' is-stale' : ''}`} aria-busy={lab.status === 'loading'}>
       <p className="pt-lab-line">{lab.line}</p>
-      <SummaryLine backtest={backtest} column={column} onColumn={setChosen} />
+      <SummaryLine backtest={backtest} column={column} onColumn={stats.setColumn} stats={stats} />
       {record.games.length === 0 ? (
         <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
       ) : (

@@ -46,6 +46,11 @@ here and nowhere else; the criteria are always live, the Lab reads beneath.
 | J   | Workbench | Two columns: the criteria (form controls), actions, summary and grid pinned on the left; the games as a long list on the right. **Verdict (Chris, 2026-09-06): this layout, with I's criteria; now the default `dv`.** |
 | K   | Players   | Criteria on top; evidence grouped by player, ranked by margin, each with a graded strip; a row opens into its games.                                                                                                   |
 
+The stat choice sticks to the Target (Chris, 2026-09-06: "I want it to stick"):
+`statPrefs.js` keeps shown columns and the graded column per Target id in
+localStorage, read by the list card and the edit screen alike. Shipped: two
+fields on the Target record, saved on change.
+
 Stats picker (Chris, 2026-09-06: "select the stats that show up like PTS, PR,
 FGA"): the summary strip's `stats ▾` toggles any of 21 box-score stats as
 columns; the grid grades by whichever column is pressed. The backend only

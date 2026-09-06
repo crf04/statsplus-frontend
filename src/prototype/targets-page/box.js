@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { summarise } from './history';
 import { applyConditions } from './conditions';
+import { useStatPrefs } from './statPrefs';
 import box1 from './mock/box-1.json';
 import box2 from './mock/box-2.json';
 import box3 from './mock/box-3.json';
@@ -186,8 +187,14 @@ export const withStats = (backtest, box, shown) => {
 export const useShownStats = (backtest, boxId, conditions = null) => {
   const box = boxFor(boxId);
   const filtered = applyConditions(backtest, conditions);
-  const [shown, setShown] = useState(null);
-  const [graded, setGraded] = useState(null);
+  // A saved Target's choice sticks to the Target; a draft's lives with the draft.
+  const prefs = useStatPrefs(boxId);
+  const [localShown, setLocalShown] = useState(null);
+  const [localGraded, setLocalGraded] = useState(null);
+  const shown = boxId ? prefs.shown : localShown;
+  const setShown = boxId ? prefs.setShown : setLocalShown;
+  const graded = boxId ? prefs.column : localGraded;
+  const setGraded = boxId ? prefs.setColumn : setLocalGraded;
   const proxies = filtered?.statColumns || [];
   const chosen = shown || proxies;
   const available = box ? STAT_CATALOGUE.map(([name]) => name) : proxies;

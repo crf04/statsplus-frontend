@@ -40,11 +40,11 @@ Fourth round (Chris, 2026-09-06): "prototype the edit screen" → I, J, K on the
 real `/targets/:id` route, keyed by `dv` (`?proto=targets&dv=I`). Editing lives
 here and nowhere else; the criteria are always live, the Lab reads beneath.
 
-| Key | Name      | Structure                                                                                                            |
-| --- | --------- | -------------------------------------------------------------------------------------------------------------------- |
-| I   | Worksheet | One column: criteria (form controls), actions, then the Lab in full — summary, graded grid, every game newest first. |
-| J   | Workbench | Two columns: the sentence, actions, summary and grid pinned on the left; the games as a long list on the right.      |
-| K   | Players   | Criteria on top; evidence grouped by player, ranked by margin, each with a graded strip; a row opens into its games. |
+| Key | Name      | Structure                                                                                                                                                                                                              |
+| --- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I   | Worksheet | One column: criteria (form controls), actions, then the Lab in full — summary, graded grid, every game newest first.                                                                                                   |
+| J   | Workbench | Two columns: the criteria (form controls), actions, summary and grid pinned on the left; the games as a long list on the right. **Verdict (Chris, 2026-09-06): this layout, with I's criteria; now the default `dv`.** |
+| K   | Players   | Criteria on top; evidence grouped by player, ranked by margin, each with a graded strip; a row opens into its games.                                                                                                   |
 
 Reads are real (`/api/user/targets`, `/resolve`, `/<id>/backtest`, `/preview`). Saving is a stub: a Target
 composed here is kept in memory for the session, marked _unsaved_, and never

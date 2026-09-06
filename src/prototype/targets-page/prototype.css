@@ -3270,3 +3270,40 @@ a.pt-today.is-live:hover {
   gap: 14px;
   margin-bottom: -6px;
 }
+
+/* ===== round 4b: Workbench with the Worksheet's criteria ===== */
+
+.pt-j-criteria {
+  padding: 14px 16px;
+}
+
+.pt-j-criteria .pt-g-criteria {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.pt-j-criteria .pt-g-opp {
+  font-size: 2.2rem;
+}
+
+.pt-j-criteria .pt-qualifier {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.pt-j-criteria .pt-comparator {
+  grid-column: 1;
+}
+
+.pt-j-criteria .pt-threshold {
+  grid-column: 2;
+}
+
+.pt-j-criteria .pt-remove {
+  grid-column: 2;
+  justify-self: end;
+  margin-top: -34px;
+}
+
+.pt-j-criteria .pt-g-note {
+  grid-column: 1;
+}

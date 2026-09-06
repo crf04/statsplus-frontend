@@ -1,8 +1,9 @@
 /*
  * PROTOTYPE — throwaway. See ./README.md.
  *
- * J — Workbench. Two columns. The left one stays put: the criteria as a
- * sentence with live blanks, the actions, the summary and the graded grid.
+ * J — Workbench. Two columns. The left one stays put: the criteria as form
+ * controls (Chris's pick over the sentence), the actions, the summary and the
+ * graded grid.
  * The right one is the games, newest first, as long as they run. Tune on the
  * left, watch the right answer.
  */
@@ -10,8 +11,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GameList, GradeKey, GradedGrid, SummaryLine } from './lab';
 import { summarise } from './history';
-import { Sentence } from './VariantH';
-import { DetailHead, EditorActions, useTargetEditor } from './detailShared';
+import { CriteriaForm, DetailHead, EditorActions, useTargetEditor } from './detailShared';
 
 export const NAME = 'Workbench';
 
@@ -33,7 +33,9 @@ export default function VariantJ({ item, read, listPath }) {
           <Link to={listPath}>← All Targets</Link>
         </p>
         <DetailHead target={target} entry={entry} />
-        <Sentence editor={state.editor} lockOpponent />
+        <section className="pt-i-criteria pt-j-criteria">
+          <CriteriaForm editor={state.editor} />
+        </section>
         <EditorActions state={state} compact />
         <div
           className={`pt-lab${lab.stale ? ' is-stale' : ''}`}

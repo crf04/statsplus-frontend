@@ -17,6 +17,45 @@ import box3 from './mock/box-3.json';
 
 const BOXES = { 1: box1, 2: box2, 3: box3 };
 
+/*
+ * Beyond the box score: the same stats per 36 minutes, and shooting
+ * efficiency, for a read that a big night of minutes cannot inflate. A game
+ * is rated from its own line; a season from the ratio of the season
+ * averages, which is the ratio of the totals.
+ */
+const per36 = (name) => (line) => (line.MIN > 0 ? (line[name] / line.MIN) * 36 : null);
+const ratio = (top, bottom) => (line) =>
+  line[bottom] > 0 ? (line[top] / line[bottom]) * 100 : null;
+
+export const DERIVED = {
+  'PTS/36': per36('PTS'),
+  'REB/36': per36('REB'),
+  'AST/36': per36('AST'),
+  '3PM/36': per36('3PM'),
+  '3PA/36': per36('3PA'),
+  'FGA/36': per36('FGA'),
+  'FTA/36': per36('FTA'),
+  'STL/36': per36('STL'),
+  'BLK/36': per36('BLK'),
+  'TOV/36': per36('TOV'),
+  'PRA/36': per36('PRA'),
+  'PR/36': per36('PR'),
+  'PA/36': per36('PA'),
+  'FG%': ratio('FGM', 'FGA'),
+  '3P%': ratio('3PM', '3PA'),
+  'TS%': (line) => {
+    const attempts = line.FGA + 0.44 * line.FTA;
+    return attempts > 0 ? (line.PTS / (2 * attempts)) * 100 : null;
+  },
+  'PTS/FGA': (line) => (line.FGA > 0 ? line.PTS / line.FGA : null),
+};
+
+export const STAT_GROUPS = [
+  { key: 'box', label: 'Box score' },
+  { key: 'per36', label: 'Per 36 minutes' },
+  { key: 'eff', label: 'Efficiency' },
+];
+
 export const STAT_CATALOGUE = [
   ['PTS', 'points'],
   ['REB', 'rebounds'],
@@ -39,7 +78,33 @@ export const STAT_CATALOGUE = [
   ['RA', 'rebounds + assists'],
   ['PRA', 'points + rebounds + assists'],
   ['SB', 'steals + blocks'],
+  ['PTS/36', 'points per 36', 'per36'],
+  ['REB/36', 'rebounds per 36', 'per36'],
+  ['AST/36', 'assists per 36', 'per36'],
+  ['3PM/36', 'threes per 36', 'per36'],
+  ['3PA/36', 'three attempts per 36', 'per36'],
+  ['FGA/36', 'attempts per 36', 'per36'],
+  ['FTA/36', 'free throw attempts per 36', 'per36'],
+  ['STL/36', 'steals per 36', 'per36'],
+  ['BLK/36', 'blocks per 36', 'per36'],
+  ['TOV/36', 'turnovers per 36', 'per36'],
+  ['PRA/36', 'P+R+A per 36', 'per36'],
+  ['PR/36', 'P+R per 36', 'per36'],
+  ['PA/36', 'P+A per 36', 'per36'],
+  ['FG%', 'field goal %', 'eff'],
+  ['3P%', 'three point %', 'eff'],
+  ['TS%', 'true shooting %', 'eff'],
+  ['PTS/FGA', 'points per attempt', 'eff'],
 ];
+
+const round1 = (value) => (value === null ? null : Math.round(value * 10) / 10);
+
+/* A stat for one line: straight from the box score, or derived from it. */
+const statOf = (name, line) => {
+  if (!line) return null;
+  if (DERIVED[name]) return round1(DERIVED[name](line));
+  return line[name] ?? null;
+};
 
 export const boxFor = (targetId) => BOXES[String(targetId)] || null;
 
@@ -70,21 +135,25 @@ const recount = (backtest) => {
 export const withStats = (backtest, box, shown) => {
   if (!backtest) return null;
   const columns = shown.filter(
-    (name) => backtest.statColumns.includes(name) || box?.stats.includes(name),
+    (name) =>
+      backtest.statColumns.includes(name) || box?.stats.includes(name) || (box && DERIVED[name]),
   );
   if (columns.length === 0) return recount(backtest);
   const players = backtest.players
     .map((player) => {
       const entry = box?.players[String(player.canonicalId)];
       const seasonAverages = Object.fromEntries(
-        columns.map((name) => [name, player.seasonAverages[name] ?? entry?.season[name] ?? null]),
+        columns.map((name) => [
+          name,
+          player.seasonAverages[name] ?? statOf(name, entry?.season) ?? null,
+        ]),
       );
       if (Object.values(seasonAverages).some((value) => value === null)) return null;
       const games = player.games
         .map((game) => {
           const line = entry?.games[game.gameDate];
           const stats = Object.fromEntries(
-            columns.map((name) => [name, game.stats[name] ?? line?.[name] ?? null]),
+            columns.map((name) => [name, game.stats[name] ?? statOf(name, line) ?? null]),
           );
           if (Object.values(stats).some((value) => value === null)) return null;
           return { ...game, stats };

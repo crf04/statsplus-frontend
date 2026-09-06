@@ -13,7 +13,7 @@ import { decodePreview } from '../../targets/targetsApi';
 import { useTargetPreview } from '../../targets/useTargets';
 import { PROTO_STANDALONE } from './prototypeMode';
 import { monthDay, signedDelta, summarise, toneOf } from './history';
-import { STAT_CATALOGUE, useShownStats } from './box';
+import { STAT_CATALOGUE, STAT_GROUPS, useShownStats } from './box';
 import { blankConditions, describeConditions } from './conditions';
 import previewSample from './mock/preview-sample.json';
 
@@ -228,20 +228,32 @@ export function StatPicker({ stats }) {
       </button>
       {open && (
         <span className="pt-stat-picker-menu" role="group" aria-label="Stats shown">
-          {stats.available.map((name) => {
-            const label = STAT_CATALOGUE.find(([key]) => key === name)?.[1] || name;
-            const on = stats.shown.includes(name);
+          {STAT_GROUPS.map((group) => {
+            const names = stats.available.filter((name) => {
+              const entry = STAT_CATALOGUE.find(([key]) => key === name);
+              return (entry?.[2] || 'box') === group.key;
+            });
+            if (names.length === 0) return null;
             return (
-              <button
-                type="button"
-                key={name}
-                className={`pt-stat-chip${on ? ' is-on' : ''}`}
-                aria-pressed={on}
-                onClick={() => stats.toggle(name)}
-              >
-                <b>{name}</b>
-                <small>{label}</small>
-              </button>
+              <span className="pt-stat-group" key={group.key}>
+                <small className="pt-stat-group-label">{group.label}</small>
+                {names.map((name) => {
+                  const label = STAT_CATALOGUE.find(([key]) => key === name)?.[1] || name;
+                  const on = stats.shown.includes(name);
+                  return (
+                    <button
+                      type="button"
+                      key={name}
+                      className={`pt-stat-chip${on ? ' is-on' : ''}`}
+                      aria-pressed={on}
+                      onClick={() => stats.toggle(name)}
+                    >
+                      <b>{name}</b>
+                      <small>{label}</small>
+                    </button>
+                  );
+                })}
+              </span>
             );
           })}
           {!stats.canChoose && (

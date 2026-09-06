@@ -239,9 +239,9 @@ test('games page newest first and the selected summary column grades both surfac
   });
   await open();
   const rows = screen.getByRole('region', { name: 'Backtest games' });
-  expect(within(rows).getAllByRole('listitem')).toHaveLength(20);
-  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('2026-01-25');
-  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('0.0 3PM');
+  expect(within(rows).getAllByRole('listitem')).toHaveLength(12);
+  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('Jan 25');
+  expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('3PM 0.0');
   expect(within(rows).getAllByRole('listitem')[0]).toHaveTextContent('LeBron James');
   const grid = screen.getByRole('list', { name: /25 games, oldest to newest, graded by PTS/ });
   expect(within(grid).getAllByRole('listitem')[0]).toHaveClass('grade-hit-4');
@@ -282,7 +282,7 @@ test('Conditions dirty the workbench, ride the preview and survive Save without 
   const calls = fetchTargetPreview.mock.calls.length;
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
   expect(updateTarget).toHaveBeenLastCalledWith(expect.objectContaining({ conditions }));
-  expect(screen.getByRole('button', { name: 'Show first 20 games' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Show first 12 games' })).toBeVisible();
   expect(screen.getByRole('list', { name: /graded by 3PM/ })).toBeVisible();
   await act(async () => jest.advanceTimersByTime(600));
   expect(fetchTargetPreview).toHaveBeenCalledTimes(calls);

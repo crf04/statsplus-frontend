@@ -51,7 +51,7 @@ export default function TargetLab({
     <section className="target-lab" aria-labelledby="target-lab-heading">
       <div className="target-lab-left">
         {children}
-        <h2 id="target-lab-heading" className="target-section-heading">
+        <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
           Lab · Backtest · season to date · vs {draft.opponent}
         </h2>
         <p role="status" className="target-lab-status">

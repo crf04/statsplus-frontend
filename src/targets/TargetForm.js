@@ -114,12 +114,12 @@ export default function TargetForm({
         <div className="target-form-row">
           {lockOpponent ? (
             <p className="target-form-opponent">
-              <span className="target-label">Opponent</span>
+              <span className="target-label visually-hidden">Opponent</span>
               <b>{draft.opponent}</b>
             </p>
           ) : (
             <label className="target-form-opponent">
-              <span className="target-label">Opponent</span>
+              <span className="target-label visually-hidden">Opponent</span>
               <select
                 value={draft.opponent}
                 onChange={(event) =>
@@ -145,7 +145,7 @@ export default function TargetForm({
             </label>
           )}
           {/* Stored titles remain authoritative until the criteria move. */}
-          <div className="target-form-preview">
+          <div className="target-form-preview visually-hidden">
             {!title && (
               <span className="target-label">Title preview · derived from the Qualifiers</span>
             )}
@@ -235,10 +235,11 @@ export default function TargetForm({
         />
 
         <label className="target-note">
-          <span className="target-label">Note · optional, never the title</span>
+          <span className="target-label">Why</span>
           <input
+            aria-label="Note · optional, never the title"
             value={draft.note}
-            placeholder="Why you set this"
+            placeholder="optional, never the title"
             maxLength={280}
             onChange={(event) => onChange({ note: event.target.value })}
           />

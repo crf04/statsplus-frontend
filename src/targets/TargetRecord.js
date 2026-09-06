@@ -6,6 +6,11 @@ import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
 import './TargetRecord.css';
 
+const gameDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
 const number = (value) => (value == null ? '—' : value.toFixed(1));
 const formatMargin = (value) => (value == null ? '—' : signed(value));
 
@@ -59,11 +64,10 @@ export default function TargetRecord({
   const scale = scaleFor(games, gradedBy);
   return (
     <div className="target-record">
-      <p className="target-backtest-proxy">{backtest.proxy}</p>
       <ul className="target-summary" aria-label="Backtest summary">
         <li aria-label="Games">
-          <span className="target-label">Games</span>
           <b>{games.length}</b>
+          <small>games</small>
         </li>
         {columns.map((column) => {
           const margins = games
@@ -72,14 +76,28 @@ export default function TargetRecord({
           const mean = margins.length
             ? margins.reduce((total, margin) => total + margin, 0) / margins.length
             : null;
-          const rate = margins.length
-            ? `${Math.round((margins.filter((margin) => margin > 0).length / margins.length) * 100)}%`
-            : '—';
+          const hitShare = margins.length
+            ? margins.filter((margin) => margin > 0).length / margins.length
+            : null;
+          const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
           const label = (
             <>
-              <span>{column}</span>
-              <b>{rate} hit</b>
-              <small>{formatMargin(mean)} mean margin</small>
+              <small>{column}</small>
+              <b
+                className={
+                  hitShare === null
+                    ? undefined
+                    : hitShare > 0.5
+                      ? 'is-hit'
+                      : hitShare < 0.5
+                        ? 'is-miss'
+                        : undefined
+                }
+              >
+                {rate}
+                <span className="visually-hidden"> hit</span>
+              </b>
+              <small>{formatMargin(mean)} avg</small>
             </>
           );
           return (
@@ -98,10 +116,12 @@ export default function TargetRecord({
             </li>
           );
         })}
+        {onPreferencesChange && (
+          <li className="target-summary-picker">
+            <StatPicker columns={columns} gradedBy={gradedBy} onChange={onPreferencesChange} />
+          </li>
+        )}
       </ul>
-      {onPreferencesChange && (
-        <StatPicker columns={columns} gradedBy={gradedBy} onChange={onPreferencesChange} />
-      )}
       {children}
       {games.length === 0 ? (
         <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
@@ -140,7 +160,7 @@ export default function TargetRecord({
           <i key={tone} className={`grade-${tone}`} aria-hidden="true" />
         ))}
         <span>beat by more</span>
-        <small>{gradedBy} vs the player’s own season average</small>
+        <small title={backtest.proxy}>{gradedBy} vs the player’s own season average</small>
       </div>
     </div>
   );
@@ -157,40 +177,64 @@ export function TargetGameRows({
   const newest = [...games].reverse();
   return (
     <section className="target-game-rows" aria-label="Backtest games">
-      <h2 className="target-section-heading">Games · newest first</h2>
+      <h2 className="target-section-heading target-games-heading">
+        <span>Games</span>
+        <small>
+          {games.length} · newest first · graded on {gradedBy}
+        </small>
+      </h2>
       <ol>
-        {(expanded ? newest : newest.slice(0, 20)).map((row) => (
+        {(expanded ? newest : newest.slice(0, 12)).map((row) => (
           <li key={row.key}>
             <i className={grade(row.margins[gradedBy], scale)} aria-hidden="true" />
-            <div>
-              <time>{row.game.gameDate}</time>
-              <b>
-                <Link
-                  aria-label={`${row.player.name} games vs ${backtest.target.opponent}`}
-                  to={`/?${filterSetToSearchParams({ player_name: row.player.name, opponent_tricode: backtest.target.opponent })}`}
-                >
-                  {row.player.name}
-                </Link>{' '}
-                · {row.player.tricode}
-              </b>
-              <span>
-                {number(gameStat(row.game, gradedBy))} {gradedBy} vs{' '}
-                {number(seasonStat(row.player, gradedBy))} season avg ·{' '}
-                {formatMargin(row.margins[gradedBy])} margin
-              </span>
-              <small>
-                {columns
-                  .filter((column) => column !== gradedBy)
-                  .map((column) => `${number(gameStat(row.game, column))} ${column}`)
-                  .join(' · ')}
-              </small>
-            </div>
+            <time dateTime={row.game.gameDate}>
+              {gameDateFormatter.format(new Date(`${row.game.gameDate}T12:00:00Z`))}
+            </time>
+            <span className="target-game-who">
+              <Link
+                aria-label={`${row.player.name} games vs ${backtest.target.opponent}`}
+                to={`/?${filterSetToSearchParams({ player_name: row.player.name, opponent_tricode: backtest.target.opponent })}`}
+              >
+                {row.player.name}
+              </Link>{' '}
+              <small>{row.player.tricode}</small>
+            </span>
+            <span className="target-game-line">
+              <b>{number(gameStat(row.game, gradedBy))}</b> {gradedBy}
+              <small> vs {number(seasonStat(row.player, gradedBy))}</small>
+            </span>
+            <span
+              className={`target-game-margin ${row.margins[gradedBy] > 0 ? 'is-hit' : row.margins[gradedBy] < 0 ? 'is-miss' : ''}`}
+              aria-label="margin"
+            >
+              {formatMargin(row.margins[gradedBy])}
+            </span>
+            <span className="target-game-rest">
+              {columns
+                .filter((column) => column !== gradedBy)
+                .map((column) => (
+                  <span key={column}>
+                    {column} {number(gameStat(row.game, column))}{' '}
+                    <em
+                      className={
+                        row.margins[column] > 0
+                          ? 'is-hit'
+                          : row.margins[column] < 0
+                            ? 'is-miss'
+                            : undefined
+                      }
+                    >
+                      {formatMargin(row.margins[column])}
+                    </em>
+                  </span>
+                ))}
+            </span>
           </li>
         ))}
       </ol>
-      {games.length > 20 && (
+      {games.length > 12 && (
         <button type="button" onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Show first 20 games' : `Show all ${games.length} games`}
+          {expanded ? 'Show first 12 games' : `Show all ${games.length} games`}
         </button>
       )}
     </section>

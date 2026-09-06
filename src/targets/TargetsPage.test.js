@@ -653,16 +653,16 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
 
   expect(screen.getByText('Lab · Backtest · season to date · vs OKC')).toBeVisible();
   expect(
-    screen.getByText('Outcomes are box-score proxies; there are no per-game slice splits.'),
+    screen.getByTitle('Outcomes are box-score proxies; there are no per-game slice splits.'),
   ).toBeVisible();
   // Tonight, in one line, from the resolve rule the backend applied.
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
 
   // Read the actual game's margin against this player's season, not the legacy proxy summary.
   expect(summaryItem('Games')).toHaveTextContent('1');
-  expect(summaryItem('PTS')).toHaveTextContent('+5.6 mean margin');
+  expect(summaryItem('PTS')).toHaveTextContent('+5.6 avg');
   expect(summaryItem('PTS')).toHaveTextContent('100% hit');
-  expect(summaryItem('3PM')).toHaveTextContent('+2.0 mean margin');
+  expect(summaryItem('3PM')).toHaveTextContent('+2.0 avg');
   expect(summaryItem('3PM')).toHaveTextContent('100% hit');
   expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
   expect(screen.getByRole('listitem', { name: /2026-01-12/ })).toHaveAttribute(

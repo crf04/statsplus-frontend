@@ -24,6 +24,7 @@ test('the record grades all games oldest first and states games, hit rate and me
   expect(within(summary).getByRole('listitem', { name: 'Games' })).toHaveTextContent('3');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('33%');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+2.0');
+  expect(within(summary).getByText('33%')).toHaveClass('is-miss');
   expect(within(summary).queryByRole('listitem', { name: 'Players' })).not.toBeInTheDocument();
   const cells = within(screen.getByRole('list', { name: /oldest to newest/ })).getAllByRole(
     'listitem',
@@ -87,7 +88,7 @@ test('a zero-minute game is absent from per36 arithmetic and never graded as zer
   );
   const summary = screen.getByRole('listitem', { name: 'PTS/36' });
   expect(summary).toHaveTextContent('0% hit');
-  expect(summary).toHaveTextContent('0.0 mean margin');
+  expect(summary).toHaveTextContent('0.0 avg');
   const absent = screen.getByRole('listitem', { name: /2026-01-02/ });
   expect(absent).toHaveClass('grade-unavailable');
   expect(absent).toHaveAttribute('title', expect.stringContaining('— PTS/36'));

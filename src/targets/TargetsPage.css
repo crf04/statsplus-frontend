@@ -102,7 +102,8 @@
 
 .target-form-opponent b {
   font-family: var(--ct-display);
-  font-size: 1.4rem;
+  font-size: 2.2rem;
+  line-height: 0.9;
   letter-spacing: 0.02em;
 }
 
@@ -250,7 +251,7 @@
   padding: 0;
   list-style: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .target-card {
@@ -262,8 +263,8 @@
   background: var(--ct-surface);
   color: var(--ct-text);
   text-decoration: none;
-  gap: 16px;
-  padding: 20px;
+  gap: 14px;
+  padding: 16px 20px 18px;
 }
 
 .target-card:hover {
@@ -293,14 +294,14 @@
 
 .target-card-opponent {
   font-family: var(--ct-display);
-  font-size: 1.9rem;
+  font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
 }
 
 .target-card-qualifiers {
-  font-size: 0.88rem;
+  font-size: 1rem;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -511,9 +512,7 @@
   margin: 0;
 }
 .target-card-qualifiers > span {
-  padding: 4px 8px;
-  border: 1px solid var(--ct-line);
-  border-radius: 5px;
+  padding: 0;
 }
 .target-fit-pills {
   display: flex;
@@ -544,4 +543,65 @@
   .target-card {
     padding: 16px;
   }
+}
+
+.target-card-criteria {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+.target-card-head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ct-line);
+}
+.target-card .target-card-go {
+  color: var(--ct-gold);
+  font-size: 0.7rem;
+}
+.targets-page > .slate-heading {
+  margin-bottom: 16px;
+}
+.targets-active {
+  color: var(--ct-text);
+  font: 600 1.3rem var(--ct-display);
+  letter-spacing: 0.015em;
+}
+.target-new-button {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--ct-gold);
+  font: 0.74rem var(--ct-mono);
+}
+.target-form-opponent {
+  margin-bottom: 10px;
+}
+.target-note {
+  margin-top: 10px;
+}
+.target-note input {
+  min-height: 30px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ct-dim);
+}
+.target-note input:hover,
+.target-note input:focus {
+  border-color: var(--ct-line-strong);
+  background: var(--ct-surface-2);
+}
+.target-form-actions {
+  justify-content: end;
+  margin-top: 12px;
+  border-top: 1px solid var(--ct-gold);
+  padding-top: 10px;
+}
+.target-lab-status {
+  margin-bottom: 12px;
+}
+
+.target-card-criteria .target-card-note {
+  grid-column: 2;
 }

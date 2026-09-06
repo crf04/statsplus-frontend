@@ -43,19 +43,21 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
             Edit →
           </Link>
         </div>
-        <span className="target-card-opponent">{target.opponent}</span>
-        <div className="target-card-qualifiers">
-          {target.qualifiers.map((qualifier, index) => {
-            const { label, value } = formatQualifierParts(qualifier);
-            return (
-              <span key={index}>
-                {label} <b>{value}</b>
-              </span>
-            );
-          })}
+        <div className="target-card-criteria">
+          <span className="target-card-opponent">{target.opponent}</span>
+          <div className="target-card-qualifiers">
+            {target.qualifiers.map((qualifier, index) => {
+              const { label, value } = formatQualifierParts(qualifier);
+              return (
+                <span key={index}>
+                  {label} <b>{value}</b>
+                </span>
+              );
+            })}
+          </div>
+          {target.note && <p className="target-card-note">{target.note}</p>}
         </div>
         <TargetConditionSummary target={target} compact />
-        {target.note && <p className="target-card-note">{target.note}</p>}
         {game && (
           <section aria-label="Playing tonight">
             <h3 className="target-section-heading">Playing tonight</h3>
@@ -205,7 +207,12 @@ function TargetsPageContent() {
                 : 'Reading today’s activity…'}
           </p>
         </div>
-        <button type="button" onClick={() => setComposing(true)} disabled={composing}>
+        <button
+          className="target-new-button"
+          type="button"
+          onClick={() => setComposing(true)}
+          disabled={composing}
+        >
           + New Target
         </button>
       </section>

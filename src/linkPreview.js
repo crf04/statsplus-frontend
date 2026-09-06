@@ -3,8 +3,6 @@ import { describeDefensiveFilter } from './savedFilterSetDescription';
 
 export const SITE_NAME = 'CourtAI';
 export const DEFAULT_TITLE = 'CourtAI | NBA Game Log Analytics';
-export const DEFAULT_DESCRIPTION =
-  'CourtAI helps explore NBA player game logs with advanced filters, natural language search, and performance analytics.';
 
 const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;

@@ -741,10 +741,4 @@ export const operationsApi = {
     postMutation('resolveReconciliation', { itemId }, { reason }, options),
 };
 
-// Keep the API seam easy to discover for feature components and tests while
-// retaining one implementation and one decoder.
-export const decodeDiagnostics = decodeOperationsDiagnostics;
-export const fetchOperationsDiagnostics = (options) => operationsApi.getDiagnostics(options);
-export const fetchCollectionDiagnostics = fetchOperationsDiagnostics;
-
 export { CYCLE_STATUSES, JOB_STATUSES };

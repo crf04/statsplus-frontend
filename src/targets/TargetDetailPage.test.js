@@ -682,12 +682,28 @@ test('a backtest row opens the Log Workspace with the player and the opponent fi
 test('a backtest nobody has played into says so rather than showing an empty table', async () => {
   // Named after the opponent the backtest was run against, not the one the
   // page happens to be showing.
-  fetchTargetBacktest.mockResolvedValue({ ...backtestOfAnotherTarget, players: [] });
+  fetchTargetBacktest.mockResolvedValue({
+    ...backtestOfAnotherTarget,
+    players: [],
+    summary: {
+      players: 0,
+      games: 0,
+      columns: {
+        PTS: { meanDifference: null, overAverageShare: null },
+        '3PM': { meanDifference: null, overAverageShare: null },
+      },
+    },
+  });
   renderDetail();
   await expandBacktest();
 
   expect(screen.getByText('Nobody qualifying has faced DEN yet.')).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  // The summary still leads: zero is the number that moved.
+  expect(summaryItem('Players')).toHaveTextContent('0');
+  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('PTS')).toHaveTextContent('—');
+  expect(summaryItem('PTS')).toHaveTextContent('— of games over');
 });
 
 /*
@@ -777,7 +793,6 @@ test('the edit form reads the draft live beneath it', async () => {
   expect(fetchTargetPreview).toHaveBeenCalledWith(
     expect.objectContaining({
       opponent: 'OKC',
-      note: 'Leaks the corner late.',
       qualifiers: [
         { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
       ],

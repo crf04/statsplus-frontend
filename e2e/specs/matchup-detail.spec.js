@@ -831,15 +831,23 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
     animations: 'disabled',
   });
 
+  // Closing hands the keyboard back to the row the capture started from.
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(rowAction).toBeFocused();
+
   // The prefill is a starting point: the threshold is the reader's to move.
+  await rowAction.click();
   await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
   await dialog
     .getByLabel('Note · optional, never the title')
     .fill('Rim leaks against big lineups.');
   await dialog.getByRole('button', { name: 'Save Target' }).click();
 
-  // The title in the confirmation is the one the backend derived and stored.
-  await expect(dialog.getByText('BOS vs Restricted area ≥ 26%')).toBeVisible();
+  // The saved draft is the record, and opens on its own page under the title
+  // the backend derived and stored.
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'BOS vs Restricted area ≥ 26%' })).toBeVisible();
   expect(created).toEqual([
     {
       opponent: 'BOS',
@@ -854,11 +862,9 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
       ],
     },
   ]);
-  await dialog.getByRole('button', { name: 'Back to the Defense Sheet' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(rowAction).toBeFocused();
 
   // The same row saved again is the duplicate the account already holds.
+  await page.goto('/matchups/0022500584');
   await rowAction.click();
   await dialog.getByLabel('Qualifier 1 threshold percent').fill('26');
   await dialog.getByRole('button', { name: 'Save Target' }).click();
@@ -876,7 +882,8 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('9');
   await expect(dialog.getByText('BOS vs Transition ≥ 9%')).toBeVisible();
   await dialog.getByRole('button', { name: 'Save Target' }).click();
-  await expect(dialog.getByText('BOS vs Transition offense ≥ 9%')).toBeVisible();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'BOS vs Transition offense ≥ 9%' })).toBeVisible();
   expect(created[created.length - 1]).toEqual({
     opponent: 'BOS',
     note: '',
@@ -889,7 +896,7 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
       },
     ],
   });
-  await dialog.getByRole('link', { name: 'Go to Targets' }).click();
+  await page.getByRole('link', { name: '← All Targets' }).click();
 
   await expect(page).toHaveURL('/targets');
   await expect(page.getByRole('heading', { name: '2 Targets', exact: true })).toBeVisible();

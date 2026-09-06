@@ -431,7 +431,7 @@ export const fetchTargetBacktest = async ({ id, signal } = {}) => {
  */
 export const fetchTargetPreview = async ({ opponent, qualifiers, note, signal } = {}) => {
   const response = await apiClient.post(
-    targetsUrl('/preview'),
+    getApiUrl('TARGET_PREVIEW'),
     { opponent, qualifiers: qualifiers.map(encodeQualifier), note },
     { signal },
   );

@@ -1800,13 +1800,18 @@ const backtestTarget = (target) => {
  * The body is validated as create would validate it; the account cap and the
  * duplicate rule do not apply.
  */
+const TARGET_QUALIFIER_LIMIT = 10;
+
 const invalidTargetBody = (body) =>
   !body ||
   typeof body.opponent !== 'string' ||
   !Array.isArray(body.qualifiers) ||
   body.qualifiers.length === 0 ||
+  body.qualifiers.length > TARGET_QUALIFIER_LIMIT ||
   body.qualifiers.some(
     (qualifier) =>
+      !SLICE_MARKETS[qualifier.base] ||
+      !BACKEND_SLICE_LABELS[qualifier.slice_key] ||
       !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
       typeof qualifier.threshold !== 'number' ||
       qualifier.threshold < 0 ||
@@ -2022,14 +2027,25 @@ export const installApiContract = async (page, overrides = {}) => {
       }
 
       // The backtest of a Draft Target, not a Target with the id "preview".
+      // A league-wide scan is not an open resource, so it refuses a missing
+      // bearer before it reads the body.
       if (targetId === 'preview' && method === 'POST') {
+        if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+          await route.fulfill({
+            status: 401,
+            json: {
+              error: { code: 'authentication_required', message: 'Sign in to preview a Target.' },
+            },
+          });
+          return;
+        }
         if (invalidTargetBody(body)) {
           await route.fulfill({
             status: 400,
             json: {
               error: {
                 code: 'invalid_input',
-                message: 'Every Qualifier needs a comparator and a threshold between 0 and 1.',
+                message: `Each of at most ${TARGET_QUALIFIER_LIMIT} Qualifiers needs a known base and slice, a comparator, and a threshold between 0 and 1.`,
               },
             },
           });

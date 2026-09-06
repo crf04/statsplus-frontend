@@ -398,11 +398,14 @@ test('@critical the Lab reads a draft live, and the saved Target reads the same'
   expect(previewRequests[1].qualifiers[0].threshold).toBe(0.31);
   await page.screenshot({ path: testInfo.outputPath('targets-lab.png'), fullPage: true });
 
-  // BOS plays tonight and nobody has faced them yet: tonight, and no table.
+  // BOS plays tonight and nobody has faced them yet: tonight, a summary of
+  // nothing, and no table.
   await page.getByLabel('Opponent').selectOption('BOS');
   await expect(page.getByText('2 fit tonight vs BOS')).toBeVisible();
   await expect(page.getByText('Nobody qualifying has faced BOS yet.')).toBeVisible();
-  await expect(strip).toHaveCount(0);
+  await expect(summaryItem(page, 'Players')).toHaveText(/0$/);
+  await expect(summaryItem(page, 'AST')).toContainText('—');
+  await expect(page.getByRole('table')).toHaveCount(0);
 
   await page.getByLabel('Opponent').selectOption('ATL');
   await expect(summaryItem(page, 'Players')).toHaveText(/3$/);

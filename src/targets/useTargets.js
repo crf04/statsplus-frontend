@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
@@ -15,7 +15,6 @@ const PREVIEW_FAILURE = 'Unable to read the season for this draft. Please try ag
 const EMPTY_LIST = { targets: [] };
 const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
 const EMPTY_BACKTEST = { backtest: null };
-const EMPTY_PREVIEW = { preview: null };
 
 /*
  * How long a draft has to hold still before the Lab reads it. Long enough that
@@ -33,8 +32,6 @@ const readList = ({ signal }) => fetchTargets({ signal }).then((targets) => ({ t
 const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope, signal });
 const readBacktest = ({ scope, signal }) =>
   fetchTargetBacktest({ id: scope, signal }).then((backtest) => ({ backtest }));
-const readPreview = ({ scope, signal }) =>
-  fetchTargetPreview({ ...scope, signal }).then((preview) => ({ preview }));
 
 /*
  * One account-private read, in the three shapes the Target surfaces need. All
@@ -45,42 +42,33 @@ const readPreview = ({ scope, signal }) =>
  *
  * A `lazy` read makes no request until it is asked for: its request count
  * starts at zero and stays there until `reload` raises it, which is what keeps
- * a read nobody has asked for off the wire. A `skip`ped read has nothing to
- * ask about yet and holds the empty state until it does. A read that `keep`s
- * shows what it last returned while the next answer is on its way, rather
- * than blanking on every request.
+ * a read nobody has asked for off the wire.
  */
-const useAccountRead = (
-  read,
-  empty,
-  scope,
-  { lazy = false, skip = false, keep = false, failure = LOAD_FAILURE } = {},
-) => {
+const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILURE } = {}) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [requests, setRequests] = useState(lazy ? 0 : 1);
 
   useEffect(() => {
-    if (skip || requests === 0 || authLoading || !isAuthenticated) {
+    if (requests === 0 || authLoading || !isAuthenticated) {
       setState({ status: 'idle', error: null, ...empty });
       return undefined;
     }
     const controller = new AbortController();
-    const held = (current) => (keep ? current : { ...current, ...empty });
-    setState((current) => ({ ...held(current), status: 'loading', error: null }));
+    setState({ status: 'loading', error: null, ...empty });
     read({ scope, signal: controller.signal })
       .then((data) => setState({ status: 'ready', error: null, ...data }))
       .catch((error) => {
         if (!isRequestCancelled(error)) {
-          setState((current) => ({
-            ...held(current),
+          setState({
             status: 'error',
             error: getRequestErrorMessage(error, failure),
-          }));
+            ...empty,
+          });
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests, skip, keep]);
+  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests]);
 
   const reload = useCallback(() => setRequests((count) => count + 1), []);
 
@@ -116,33 +104,78 @@ export const useTargetBacktest = (id) => {
   return { ...state, read: reload };
 };
 
+const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
+
+/*
+ * What a Draft Target is evaluated by: the opponent and the Qualifiers. The
+ * note is never part of the evidence, so editing it is not a new draft.
+ */
+const previewKey = (request) =>
+  request ? JSON.stringify({ opponent: request.opponent, qualifiers: request.qualifiers }) : null;
+
 /*
  * The season behind a Draft Target, read while it is composed. The draft is
  * compared by value, so a re-render is not a new draft and neither is retyping
  * the same threshold; a changed one is read only once it has held still for
- * the delay, so several quick edits are one request. Nothing is asked about a
- * draft that is not complete, and what was last read stays in hand, to be
- * shown dimmed, until the next answer lands. `pending` says the draft has
- * moved on from what was last read, whether or not the read has started.
+ * the delay, so several quick edits are one request. The moment the draft
+ * changes, whatever was in flight for the old one is abandoned, and a late
+ * answer from it is never shown.
+ *
+ * What was last read stays in hand — through the next edit, an incomplete
+ * draft, and a refusal — so a keystroke never blanks the screen; it is dropped
+ * only when the account signs out or the host goes away. `pending` says the
+ * draft has moved on from what was last read, whether or not the read has
+ * started; the caller shows the result dimmed until it is current again.
  */
 export const useTargetPreview = (request) => {
-  const key = request ? JSON.stringify(request) : null;
-  const [settled, setSettled] = useState(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const key = previewKey(request);
+  const [state, setState] = useState(EMPTY_PREVIEW);
+  // The draft the result in hand was read for, kept where the effect can see
+  // it without re-running for it: a draft typed back to what was last read is
+  // not a new draft either.
+  const readKey = useRef(null);
 
   useEffect(() => {
-    if (key === null) {
-      setSettled(null);
+    if (authLoading || !isAuthenticated) {
+      readKey.current = null;
+      setState(EMPTY_PREVIEW);
       return undefined;
     }
-    const timer = setTimeout(() => setSettled(key), PREVIEW_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [key]);
+    if (key === null || key === readKey.current) {
+      // Nothing to read, and the read that was under way was abandoned when
+      // the draft moved. What was last read stays.
+      setState((current) => ({
+        ...current,
+        status: current.preview ? 'ready' : 'idle',
+        error: null,
+      }));
+      return undefined;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setState((current) => ({ ...current, status: 'loading', error: null }));
+      fetchTargetPreview({ ...JSON.parse(key), signal: controller.signal })
+        .then((preview) => {
+          if (controller.signal.aborted) return;
+          readKey.current = key;
+          setState({ status: 'ready', error: null, preview, key });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted || isRequestCancelled(error)) return;
+          setState((current) => ({
+            ...current,
+            status: 'error',
+            error: getRequestErrorMessage(error, PREVIEW_FAILURE),
+          }));
+        });
+    }, PREVIEW_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [key, authLoading, isAuthenticated]);
 
-  const scope = useMemo(() => (settled === null ? null : JSON.parse(settled)), [settled]);
-  const state = useAccountRead(readPreview, EMPTY_PREVIEW, scope, {
-    skip: scope === null,
-    keep: true,
-    failure: PREVIEW_FAILURE,
-  });
-  return { ...state, pending: key !== settled };
+  const { key: shownKey, ...read } = state;
+  return { ...read, pending: key !== shownKey };
 };

@@ -492,12 +492,78 @@ test('the Lab reads a draft once it has held still, so several quick edits are o
   expect(fetchTargetPreview).toHaveBeenCalledWith(
     expect.objectContaining({
       opponent: 'OKC',
-      note: '',
       qualifiers: [
         { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.42 },
       ],
     }),
   );
+  // The note is never part of the evidence, so it is not sent for evaluation.
+  expect(fetchTargetPreview.mock.calls[0][0]).not.toHaveProperty('note');
+});
+
+test('editing the note is not a new draft, so the Lab does not read again', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+  composeQualifier();
+  await settle();
+  const result = screen
+    .getByRole('list', { name: 'Backtest summary' })
+    .closest('.target-lab-result');
+
+  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+    target: { value: 'Leaks the corner late.' },
+  });
+  expect(result).not.toHaveClass('is-stale');
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('Backtest up to date.')).toBeVisible();
+});
+
+/*
+ * The draft can move on while a read for the old one is still in flight —
+ * waiting on a token, say. That read is abandoned the moment the draft
+ * changes, and if its answer arrives anyway it is not the draft's and is not
+ * shown.
+ */
+test('a read for a draft that has moved on is abandoned, and its late answer is not shown', async () => {
+  jest.useFakeTimers();
+  const publishers = [];
+  fetchTargetPreview.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        publishers.push(resolve);
+      }),
+  );
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+
+  composeQualifier();
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  const first = fetchTargetPreview.mock.calls[0][0].signal;
+  expect(first.aborted).toBe(false);
+
+  // Edited again before the first answer: the first read is abandoned at once.
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '45' },
+  });
+  expect(first.aborted).toBe(true);
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    publishers[0](preview);
+  });
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+
+  // The second read is the draft's, and its answer is the one shown.
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
+  expect(fetchTargetPreview.mock.calls[1][0].qualifiers[0].threshold).toBe(0.45);
+  await act(async () => {
+    publishers[1]({ ...preview, summary: { ...preview.summary, players: 7 } });
+  });
+  expect(summaryItem('Players')).toHaveTextContent('7');
 });
 
 test('an incomplete draft asks for nothing and says what to complete', async () => {
@@ -522,6 +588,42 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
   expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+});
+
+/*
+ * A keystroke never blanks the screen, and clearing a field to retype it is a
+ * keystroke. The evidence that was on screen stays, dimmed, under the line
+ * that says what would make the draft whole again.
+ */
+test('a draft that stops being complete keeps the last evidence, dimmed', async () => {
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('link', { name: /^Open / });
+  composeQualifier();
+  await settle();
+  const result = screen
+    .getByRole('list', { name: 'Backtest summary' })
+    .closest('.target-lab-result');
+  expect(result).not.toHaveClass('is-stale');
+
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '' },
+  });
+  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeVisible();
+  expect(result).toHaveClass('is-stale');
+  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(screen.getByRole('table')).toBeInTheDocument();
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+
+  // Typed whole again as it was, it is the draft that was read: current, not
+  // re-read.
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '40' },
+  });
+  expect(result).not.toHaveClass('is-stale');
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
 });
 
 test('the Lab leads with the summary and whether the draft fires tonight, then the games', async () => {
@@ -595,8 +697,10 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
     }),
   );
   fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
-  // Stale from the edit, before the read has even started.
+  // Stale from the edit, before the read has even started — and said aloud,
+  // since a dimmed table is silent to a screen reader.
   expect(result).toHaveClass('is-stale');
+  expect(screen.getByText('Draft changed · reading shortly…')).toBeVisible();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
 
   await settle();
@@ -605,6 +709,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
     expect.objectContaining({ qualifiers: [expect.objectContaining({ threshold: 0.41 })] }),
   );
   expect(screen.getByText('Reading the season…')).toBeVisible();
+  expect(result).toHaveAttribute('aria-busy', 'true');
   expect(result).toHaveClass('is-stale');
   expect(summaryItem('Players')).toHaveTextContent('2');
   expect(screen.getByRole('table')).toBeInTheDocument();
@@ -613,7 +718,8 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
     publish({ ...preview, summary: { ...preview.summary, players: 1, games: 3 } });
   });
   expect(result).not.toHaveClass('is-stale');
-  expect(screen.queryByText('Reading the season…')).not.toBeInTheDocument();
+  expect(result).toHaveAttribute('aria-busy', 'false');
+  expect(screen.getByText('Backtest up to date.')).toBeVisible();
   expect(summaryItem('Players')).toHaveTextContent('1');
   expect(summaryItem('Games')).toHaveTextContent('3');
 });

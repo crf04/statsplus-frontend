@@ -15,7 +15,8 @@ import {
 
 jest.mock('../config', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
-  getApiUrl: (name) => `/api/user/${name.toLowerCase()}`,
+  getApiUrl: (name) =>
+    ({ TARGETS: '/api/user/targets', TARGET_PREVIEW: '/api/user/targets/preview' })[name],
 }));
 
 const wireTarget = {

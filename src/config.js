@@ -22,6 +22,7 @@ const config = {
     NL_QUERY: '/api/nl-query',
     SAVED_FILTER_SETS: '/api/user/saved-filter-sets',
     TARGETS: '/api/user/targets',
+    TARGET_PREVIEW: '/api/user/targets/preview',
   },
 
   // Application settings

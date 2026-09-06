@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
@@ -999,12 +999,16 @@ const historicalMatchup = () => {
   return candidate;
 };
 
+const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+
 const renderMatchup = (path = '/matchups/game-1') =>
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+        <Route path="/targets/:targetId" element={<p>One Target</p>} />
       </Routes>
+      <LocationProbe />
     </MemoryRouter>,
   );
 
@@ -1438,17 +1442,28 @@ test('prefills the capture form from the row and saves what the reader made of i
   // 9.4% league average, offered as the whole percent a reader would type.
   expect(thresholdField(dialog)).toHaveValue(9);
 
-  // The prefill is a starting point: the threshold is the reader's to move and
-  // more Qualifiers can be added before saving.
-  await userEvent.clear(thresholdField(dialog));
-  await userEvent.type(thresholdField(dialog), '12');
-  await userEvent.click(within(dialog).getByRole('button', { name: '+ Add a Qualifier' }));
+  // Closing hands the keyboard back to the row the capture started from, and
+  // Escape closes it as the dialog it is.
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  await waitFor(() => expect(rowAction).toHaveFocus());
+  await openCapture('Transition');
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+  // The same row opened again is a fresh capture. The prefill is a starting
+  // point: the threshold is the reader's to move and more Qualifiers can be
+  // added before saving.
+  const reopened = (await openCapture('Transition')).dialog;
+  expect(thresholdField(reopened)).toHaveValue(9);
+  await userEvent.clear(thresholdField(reopened));
+  await userEvent.type(thresholdField(reopened), '12');
+  await userEvent.click(within(reopened).getByRole('button', { name: '+ Add a Qualifier' }));
   await userEvent.selectOptions(
-    within(dialog).getByRole('combobox', { name: 'Qualifier 2 slice' }),
+    within(reopened).getByRole('combobox', { name: 'Qualifier 2 slice' }),
     'Corner 3',
   );
-  await userEvent.type(thresholdField(dialog, 2), '40');
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  await userEvent.type(thresholdField(reopened, 2), '40');
+  await userEvent.click(within(reopened).getByRole('button', { name: 'Save Target' }));
 
   expect(createTarget).toHaveBeenCalledWith({
     opponent: 'BOS',
@@ -1458,21 +1473,10 @@ test('prefills the capture form from the row and saves what the reader made of i
       { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
     ],
   });
-  // The title is the backend's, so the confirmation says the one it derived.
-  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Go to Targets' })).toHaveAttribute('href', '/targets');
-
-  // Closing hands the keyboard back to the row the capture started from.
-  await userEvent.click(screen.getByRole('button', { name: 'Back to the Defense Sheet' }));
-  await waitFor(() => expect(rowAction).toHaveFocus());
-
-  // The same row opened again is a fresh capture, not the receipt for the last
-  // one, and Escape closes it as the dialog it is.
-  const reopened = await openCapture('Transition');
-  expect(thresholdField(reopened.dialog)).toHaveValue(9);
-  expect(screen.queryByText('A title only the backend could have written')).not.toBeInTheDocument();
-  await userEvent.keyboard('{Escape}');
-  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  // The saved draft is the record, and opens on its own page: the one the
+  // backend stored, by the id it answered with.
+  expect(await screen.findByText('One Target')).toBeVisible();
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/4$/);
 });
 
 /*
@@ -1564,7 +1568,7 @@ test('a save in flight cannot be sent twice', async () => {
   expect(createTarget).toHaveBeenCalledTimes(1);
 
   await act(async () => settle());
-  expect(await screen.findByText('A title only the backend could have written')).toBeVisible();
+  expect(await screen.findByText('One Target')).toBeVisible();
 });
 
 test('a duplicate Target keeps the composed draft and says why it was refused', async () => {

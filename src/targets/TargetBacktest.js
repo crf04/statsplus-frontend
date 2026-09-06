@@ -150,7 +150,9 @@ function BacktestSummary({ summary, statColumns }) {
 /*
  * One backtest, read out: the proxy note, the summary, then the games. The
  * saved detail and the Lab both show a backtest through this, so a Draft
- * Target reads exactly as it will once saved.
+ * Target reads exactly as it will once saved. The summary leads even when
+ * there is nothing to summarise: zero players and zero games is the number
+ * that moved when a threshold was nudged too far.
  */
 export function BacktestEvidence({ backtest, children }) {
   return (
@@ -160,13 +162,11 @@ export function BacktestEvidence({ backtest, children }) {
           reading "corner 3s made". */}
       <p className="target-backtest-proxy">{backtest.proxy}</p>
       {children}
+      <BacktestSummary summary={backtest.summary} statColumns={backtest.statColumns} />
       {backtest.players.length === 0 ? (
         <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
       ) : (
-        <>
-          <BacktestSummary summary={backtest.summary} statColumns={backtest.statColumns} />
-          <BacktestTable backtest={backtest} />
-        </>
+        <BacktestTable backtest={backtest} />
       )}
     </>
   );

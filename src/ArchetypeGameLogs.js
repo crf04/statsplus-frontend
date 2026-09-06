@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Table, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { formatGameLogDate } from './calendarDate';
 
 const ArchetypeGameLogs = ({ gameLogs }) => {
   const [showAll, setShowAll] = useState(false);
@@ -30,7 +31,7 @@ const ArchetypeGameLogs = ({ gameLogs }) => {
     const rawDataRow = (
       <tr key={`${log.PLAYER_NAME}-${log.GAME_DATE}-raw`}>
         <td>{`${log.PLAYER_NAME[0]}. ${log.PLAYER_NAME.split(' ')[1]}`}</td>
-        <td>{new Date(log.GAME_DATE).toLocaleDateString()}</td>
+        <td>{formatGameLogDate(log.GAME_DATE, { includeYear: true })}</td>
         <td>{Math.round(log.MIN)}</td>
         <td>{log.FGM}</td>
         <td>{log.FGA}</td>

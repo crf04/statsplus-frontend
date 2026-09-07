@@ -1,3 +1,4 @@
+import { historicalDate, readRevisit } from '../revisitCache';
 import {
   createContext,
   useCallback,
@@ -44,7 +45,12 @@ const readList = async ({ signal, userId }) => {
     preferences.release();
   }
 };
-const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope, signal });
+const readResolution = ({ scope, signal, userId, bypass }) => {
+  const load = () => fetchResolvedTargets({ date: scope, signal });
+  return historicalDate(scope)
+    ? readRevisit('resolution', userId, scope, load, { signal, bypass })
+    : load();
+};
 
 /*
  * One account-private read, in the three shapes the Target surfaces need. All
@@ -65,6 +71,7 @@ const useAccountRead = (
 ) => {
   const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
   const owner = useRef();
+  const bypassNext = useRef(false);
   const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [requests, setRequests] = useState(lazy ? 0 : 1);
 
@@ -81,7 +88,9 @@ const useAccountRead = (
       status: 'loading',
       error: null,
     }));
-    read({ scope, signal: controller.signal, userId: currentUser?.uid })
+    const bypass = bypassNext.current;
+    bypassNext.current = false;
+    read({ scope, signal: controller.signal, userId: currentUser?.uid, bypass })
       .then(
         (data) => !controller.signal.aborted && setState({ status: 'ready', error: null, ...data }),
       )
@@ -107,7 +116,10 @@ const useAccountRead = (
     currentUser?.uid,
   ]);
 
-  const reload = useCallback(() => setRequests((count) => count + 1), []);
+  const reload = useCallback(() => {
+    bypassNext.current = true;
+    setRequests((count) => count + 1);
+  }, []);
 
   return { authLoading, isAuthenticated, reload, ...state };
 };

@@ -1,3 +1,4 @@
+import { clearRevisitCaches } from './revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
@@ -344,4 +345,22 @@ test('does not name a tab after a link it refuses', async () => {
 
   expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
   expect(document.title).toBe('CourtAI | NBA Game Log Analytics');
+});
+
+test('returning to a full Filter Set reuses results and reapplying it refreshes', async () => {
+  clearRevisitCaches();
+  mockAuthState.currentUser = { uid: 'alice' };
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
+  renderGameLogFilter(['/gamelogs?player_name=Stephen+Curry&game_filter=10']);
+  const countFiltered = () =>
+    fetchGameLogsData.mock.calls.filter(([params]) => params.game_filter).length;
+  await waitFor(() => expect(countFiltered()).toBe(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(countFiltered()).toBe(2));
+  fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('game_filter=10'));
+  expect(countFiltered()).toBe(2);
+  mockFilterPatch = { game_filter: 10 };
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(countFiltered()).toBe(3));
 });

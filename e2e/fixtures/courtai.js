@@ -1,4 +1,5 @@
 import { expect, test as base } from '@playwright/test';
+import statCatalogue from '../../src/targets/targetStatCatalogue.json';
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -11,6 +12,9 @@ export const gameLogs = [
     MIN: 36,
     PTS: 31,
     REB: 8,
+    OREB: 2,
+    DREB: 6,
+    PF: 2,
     AST: 9,
     STL: 1,
     BLK: 1,
@@ -31,6 +35,9 @@ export const gameLogs = [
     MIN: 34,
     PTS: 27,
     REB: 7,
+    OREB: 1,
+    DREB: 6,
+    PF: 3,
     AST: 8,
     STL: 2,
     BLK: 0,
@@ -1656,6 +1663,79 @@ const teamReference = (side) => ({
   name: side.name,
 });
 
+// Opponent season logs are shared by roster, Conditions and games-considered.
+// An omitted defender line means he sat out that team game: zero minutes.
+const CONDITION_ROSTERS = {
+  ATL: [{ player_id: 203991, name: 'Clint Capela', games_played: 3, average_minutes: 28 }],
+  BOS: [{ player_id: 204001, name: 'Kristaps Porzingis', games_played: 2, average_minutes: 30 }],
+};
+const CONDITION_GAMES = {
+  ATL: ['LAL', 'BOS', 'LAC', 'MIL'].map((against, index) => ({
+    date: '2025-01-10',
+    against,
+    minutes: index === 1 ? {} : { 203991: 28 },
+  })),
+  BOS: [{ date: DEFAULT_SLATE_DATE, against: 'LAL', minutes: {} }],
+};
+const conditionCounts = (target, game) => {
+  const condition = target.conditions;
+  if (!condition) return true;
+  if ((condition.from && game.date < condition.from) || (condition.to && game.date > condition.to))
+    return false;
+  if (!condition.defender) return true;
+  const minutes = game.minutes[condition.defender.player_id] || 0;
+  return condition.defender.comparator === 'under'
+    ? minutes < condition.defender.minutes
+    : minutes >= condition.defender.minutes;
+};
+const opponentGames = (opponent) =>
+  CONDITION_GAMES[opponent] || [
+    ...new Map(
+      leaguePlayers.flatMap((player) =>
+        (seasonsByPlayer[player.name] || [])
+          .filter((log) => log.MATCHUP.endsWith(` ${opponent}`))
+          .map((log) => [
+            `${player.tricode}-${log.GAME_DATE}`,
+            { date: log.GAME_DATE, against: player.tricode, minutes: {} },
+          ]),
+      ),
+    ).values(),
+  ];
+const countsSeasonLog = (target, log, player) => {
+  const game = opponentGames(target.opponent).find(
+    (item) => item.date === log.GAME_DATE && item.against === player.tricode,
+  );
+  return conditionCounts(target, game || { date: log.GAME_DATE, minutes: {} });
+};
+const validSlateDate = (value) =>
+  typeof value === 'string' &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  Number.isFinite(Date.parse(value)) &&
+  new Date(value).toISOString().slice(0, 10) === value;
+const validFixtureConditions = (conditions, opponent) => {
+  if (conditions === undefined || conditions === null) return true;
+  if (typeof conditions !== 'object' || Array.isArray(conditions)) return false;
+  const { from, to, defender } = conditions;
+  if (
+    (from !== null && !validSlateDate(from)) ||
+    (to !== null && !validSlateDate(to)) ||
+    (from && to && from > to)
+  )
+    return false;
+  return (
+    defender === null ||
+    (defender &&
+      (CONDITION_ROSTERS[opponent] || []).some(
+        (player) => player.player_id === defender.player_id,
+      ) &&
+      ['under', 'at_least'].includes(defender.comparator) &&
+      typeof defender.minutes === 'number' &&
+      Number.isFinite(defender.minutes) &&
+      defender.minutes >= 0 &&
+      defender.minutes <= 48)
+  );
+};
+
 const resolveTargets = (date, targets) => {
   const slate = RESOLVABLE_SLATES[date];
   const live = [];
@@ -1703,6 +1783,15 @@ const resolveTargets = (date, targets) => {
       // keeping its order is that ordering.
       players: slate.matchup.players
         .filter((player) => player.team_id !== opponent.team_id)
+        .filter(() =>
+          conditionCounts(
+            target,
+            opponentGames(target.opponent).find((item) => item.date === date) || {
+              date,
+              minutes: {},
+            },
+          ),
+        )
         .map((player) => resolvedFit(target.qualifiers, player))
         .filter(Boolean),
     });
@@ -1751,13 +1840,44 @@ const seasonAverage = (season, market) =>
     (season.reduce((total, log) => total + MARKET_STATS[market](log), 0) / season.length) * 10,
   ) / 10;
 
+const boxLine = (log) => ({
+  points: log.PTS,
+  rebounds: log.REB,
+  assists: log.AST,
+  minutes: log.MIN,
+  field_goals_made: log.FGM,
+  field_goals_attempted: log.FGA,
+  threes_made: log.FG3M,
+  threes_attempted: log.FG3A,
+  free_throws_made: log.FTM,
+  free_throws_attempted: log.FTA,
+  steals: log.STL,
+  blocks: log.BLK,
+  turnovers: log.TOV,
+  offensive_rebounds: log.OREB,
+  defensive_rebounds: log.DREB,
+  fouls: log.PF,
+});
+const seasonTotals = (season) =>
+  season
+    .map(boxLine)
+    .reduce(
+      (totals, line) =>
+        Object.fromEntries(
+          Object.entries(line).map(([field, value]) => [field, (totals[field] || 0) + value]),
+        ),
+      {},
+    );
+
 const backtestPlayer = (target, statColumns, player) => {
   const fit = resolvedFit(target.qualifiers, player);
   // A thin Diet is excluded from the longer view rather than flagged in it, so
   // the sample is not polluted by a diet nobody should lean on.
   if (!fit || fit.thin) return null;
   const season = seasonsByPlayer[player.name] || [];
-  const games = season.filter((log) => log.MATCHUP.endsWith(` ${target.opponent}`));
+  const games = season.filter(
+    (log) => log.MATCHUP.endsWith(` ${target.opponent}`) && countsSeasonLog(target, log, player),
+  );
   if (games.length === 0) return null;
   return {
     canonical_id: player.canonical_id,
@@ -1766,6 +1886,8 @@ const backtestPlayer = (target, statColumns, player) => {
     tricode: player.tricode,
     season_scoring: player.season_scoring,
     shares: fit.shares,
+    season_totals: seasonTotals(season),
+    season_games: season.length,
     season_averages: Object.fromEntries(
       statColumns.map((market) => [market, seasonAverage(season, market)]),
     ),
@@ -1776,6 +1898,7 @@ const backtestPlayer = (target, statColumns, player) => {
       game_date: log.GAME_DATE,
       matchup: log.MATCHUP,
       minutes: log.MIN,
+      line: boxLine(log),
       stats: Object.fromEntries(statColumns.map((market) => [market, MARKET_STATS[market](log)])),
     })),
   };
@@ -1828,6 +1951,10 @@ const backtestTarget = (target) => {
   return {
     target,
     season: '2025-26',
+    games_considered: {
+      kept: opponentGames(target.opponent).filter((game) => conditionCounts(target, game)).length,
+      played: opponentGames(target.opponent).length,
+    },
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     stat_columns: statColumns,
     summary: backtestSummary(players, statColumns),
@@ -2036,11 +2163,87 @@ export const installApiContract = async (page, overrides = {}) => {
       }
     }
 
+    const rosterMatch = url.pathname.match(/^\/api\/teams\/([A-Z]{3})\/season-minutes$/);
+    if (rosterMatch) {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'authentication_required', message: 'Authentication required.' } },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: { season: '2025-26', players: CONDITION_ROSTERS[rosterMatch[1]] || [] },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/diet/baselines') {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'authentication_required', message: 'Authentication required.' } },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          season: '2025-26',
+          captured_at: '2026-01-15T00:00:00Z',
+          shares: {
+            shot_zones: {
+              'Restricted Area': 0.3,
+              'In The Paint (Non-RA)': 0.16,
+              'Mid-Range': 0.12,
+              'Corner 3': 0.1,
+              'Above the Break 3': 0.32,
+            },
+            play_types: {
+              Isolation: 0.08,
+              Transition: 0.0925,
+              PRBallHandler: 0.2,
+              PRRollMan: 0.07,
+              Spotup: 0.2,
+              Cut: 0.05,
+              Handoff: 0.05,
+              OffScreen: 0.05,
+              Postup: 0.05,
+              OffRebound: null,
+            },
+            shot_types: { 'Catch and Shoot': 0.35, Pullups: 0.25, 'Less Than 10 ft': 0.4 },
+            assist_locations: {
+              AtRimAssists: 0.14,
+              Arc3Assists: 0.35,
+              Corner3Assists: 0.2,
+              ShortMidRangeAssists: 0.2,
+              LongMidRangeAssists: 0.11,
+            },
+          },
+        },
+      });
+      return;
+    }
     const targetsMatch = url.pathname.match(/^\/api\/user\/targets(?:\/(.+))?$/);
     if (targetsMatch) {
       const [, targetId] = targetsMatch;
       const method = request.method();
       const body = ['POST', 'PATCH'].includes(method) ? request.postDataJSON() : null;
+      if (body && body.stat_preferences != null) {
+        const prefs = body.stat_preferences;
+        if (
+          !Array.isArray(prefs.columns) ||
+          !prefs.columns.length ||
+          new Set(prefs.columns).size !== prefs.columns.length ||
+          prefs.columns.some((key) => !statCatalogue.includes(key)) ||
+          !prefs.columns.includes(prefs.graded_by)
+        ) {
+          await route.fulfill({
+            status: 400,
+            json: { error: { code: 'invalid_input', message: 'Invalid stat preferences.' } },
+          });
+          return;
+        }
+      }
       const index = targets.findIndex((item) => String(item.id) === targetId);
       const toStored = (qualifier) => ({
         base: qualifier.base,
@@ -2070,7 +2273,7 @@ export const installApiContract = async (page, overrides = {}) => {
       // The backtest of a Draft Target, not a Target with the id "preview".
       // A league-wide scan is not an open resource, so it refuses a missing
       // bearer before it reads the body.
-      if (targetId === 'preview' && method === 'POST') {
+      if (url.pathname === '/api/user/targets/preview' && method === 'POST') {
         if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
           await route.fulfill({
             status: 401,
@@ -2080,7 +2283,7 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
-        if (invalidTargetBody(body)) {
+        if (invalidTargetBody(body) || !validFixtureConditions(body.conditions, body.opponent)) {
           await route.fulfill({
             status: 400,
             json: {
@@ -2099,6 +2302,8 @@ export const installApiContract = async (page, overrides = {}) => {
               opponent: body.opponent,
               qualifiers: body.qualifiers.map(toStored),
               note: body.note || '',
+              conditions: body.conditions || null,
+              stat_preferences: body.stat_preferences ?? null,
             }),
           },
         });
@@ -2121,8 +2326,19 @@ export const installApiContract = async (page, overrides = {}) => {
         return;
       }
 
-      if (method === 'GET') {
+      if (url.pathname === '/api/user/targets' && method === 'GET') {
         await route.fulfill({ json: { success: true, targets } });
+        return;
+      }
+
+      if (
+        (method === 'POST' || method === 'PATCH') &&
+        !validFixtureConditions(body.conditions, body.opponent || targets[index]?.opponent)
+      ) {
+        await route.fulfill({
+          status: 400,
+          json: { error: { code: 'invalid_input', message: 'Invalid Conditions.' } },
+        });
         return;
       }
 
@@ -2148,6 +2364,8 @@ export const installApiContract = async (page, overrides = {}) => {
           opponent: body.opponent,
           qualifiers,
           note: body.note || '',
+          conditions: body.conditions || null,
+          stat_preferences: body.stat_preferences ?? null,
           created_at: '2026-04-13T00:10:00Z',
         };
         // Newest-first is the list's contract, as it is for Saved Filter Sets.
@@ -2171,8 +2389,12 @@ export const installApiContract = async (page, overrides = {}) => {
         // Qualifiers because it is derived from them.
         const updated = {
           ...targets[index],
-          qualifiers: body.qualifiers.map(toStored),
-          note: body.note || '',
+          ...(body.qualifiers !== undefined ? { qualifiers: body.qualifiers.map(toStored) } : {}),
+          ...(body.note !== undefined ? { note: body.note || '' } : {}),
+          ...(body.conditions !== undefined ? { conditions: body.conditions } : {}),
+          ...(body.stat_preferences !== undefined
+            ? { stat_preferences: body.stat_preferences }
+            : {}),
         };
         targets[index] = { ...updated, title: backendTargetTitle(updated) };
         await route.fulfill({ json: { success: true, target: targets[index] } });

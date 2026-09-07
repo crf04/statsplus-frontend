@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm from './TargetForm';
 import TargetLab from './TargetLab';
+import { SeasonMinutesProvider } from './useTargets';
 import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
@@ -45,7 +46,7 @@ export const captureDraft = ({ opponent, base, sliceKey, leagueAverageShare }) =
  * the same row again — starts from its prefill with nothing left over from the
  * last, and a save that started under an earlier opening can tell.
  */
-export default function TargetCaptureModal({ capture, onHide }) {
+function TargetCaptureContent({ capture, onHide }) {
   const navigate = useNavigate();
   const [state, setState] = useState({
     opening: 0,
@@ -157,5 +158,13 @@ export default function TargetCaptureModal({ capture, onHide }) {
         )}
       </Modal.Body>
     </Modal>
+  );
+}
+
+export default function TargetCaptureModal(props) {
+  return (
+    <SeasonMinutesProvider resetKey={props.capture} enabled={Boolean(props.capture)}>
+      <TargetCaptureContent {...props} />
+    </SeasonMinutesProvider>
   );
 }

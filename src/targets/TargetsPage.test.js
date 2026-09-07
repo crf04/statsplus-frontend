@@ -1,10 +1,21 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import TargetsPage from './TargetsPage';
-import { createTarget, fetchResolvedTargets, fetchTargetPreview, fetchTargets } from './targetsApi';
+import {
+  createTarget,
+  fetchResolvedTargets,
+  fetchTargetPreview,
+  fetchTargets,
+  fetchDietBaselines,
+  fetchTargetBacktest,
+  fetchSeasonMinutes,
+} from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
+  fetchTargetBacktest: jest.fn(),
+  fetchSeasonMinutes: jest.fn(),
   fetchTargets: jest.fn(),
+  fetchDietBaselines: jest.fn(),
   fetchResolvedTargets: jest.fn(),
   fetchTargetPreview: jest.fn(),
   createTarget: jest.fn(),
@@ -135,13 +146,17 @@ const storedTarget = { ...targets[0], id: 9, title: 'A title only the backend co
 // A plain span, so the Lab's status line is the page's one live region.
 const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;
 
-const renderPage = () =>
-  render(
+const renderPage = (compose = true) => {
+  const result = render(
     <MemoryRouter initialEntries={['/targets']}>
       <TargetsPage />
       <LocationProbe />
     </MemoryRouter>,
   );
+  if (compose && screen.queryByRole('button', { name: '+ New Target' }))
+    fireEvent.click(screen.getByRole('button', { name: '+ New Target' }));
+  return result;
+};
 
 const summaryItem = (label) =>
   within(screen.getByRole('list', { name: 'Backtest summary' })).getByRole('listitem', {
@@ -159,7 +174,7 @@ const settle = () =>
  * announced while they load.
  */
 const labStatus = () => {
-  const status = screen.getByRole('status');
+  const status = within(screen.getByRole('region', { name: /Lab · Backtest/ })).getByRole('status');
   expect(status.closest('[aria-busy]')).toBeNull();
   return status;
 };
@@ -174,8 +189,10 @@ const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40'
 
 beforeEach(() => {
   jest.clearAllMocks();
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
   auth.isAuthenticated = true;
   auth.loading = false;
+  fetchTargetBacktest.mockImplementation(() => new Promise(() => {}));
   fetchTargets.mockResolvedValue(targets);
   fetchResolvedTargets.mockResolvedValue(resolution);
   fetchTargetPreview.mockResolvedValue(preview);
@@ -189,25 +206,28 @@ afterEach(() => {
 test('shows every saved Target as a card carrying the stored title, Qualifiers, and note', async () => {
   renderPage();
 
-  const cards = await screen.findAllByRole('link', { name: /^Open / });
+  const cards = await screen.findAllByRole('article');
   expect(cards).toHaveLength(2);
-  expect(cards[0]).toHaveAccessibleName('Open OKC vs Corner 3 ≥ 40% (v2)');
-  expect(cards[0]).toHaveAttribute('href', '/targets/7');
+  expect(cards[0]).toHaveAccessibleName('OKC vs Corner 3 ≥ 40% (v2)');
+  expect(within(cards[0]).getByRole('link', { name: 'Edit →' })).toHaveAttribute(
+    'href',
+    '/targets/7',
+  );
   expect(cards[0]).toHaveTextContent('Corner 3 ≥ 40%');
   // The bound is set apart from the slice it applies to, not run together
   // with it, so a card can be scanned for the number alone.
   expect(within(cards[0]).getByText('≥ 40%').tagName).toBe('B');
   expect(cards[0]).toHaveTextContent('Leaks the corner late.');
-  expect(cards[1]).toHaveAccessibleName('Open MIA vs Restricted area ≤ 20% (v2)');
-  expect(cards[1]).toHaveTextContent('No note');
-  expect(screen.getByRole('heading', { name: '2 Targets' })).toBeInTheDocument();
+  expect(cards[1]).toHaveAccessibleName('MIA vs Restricted area ≤ 20% (v2)');
+  expect(cards[1]).not.toHaveTextContent('No note');
+  expect(screen.getByText('1 Target active today')).toBeInTheDocument();
 });
 
 test('counts one Target as a Target rather than as Targets', async () => {
   fetchTargets.mockResolvedValue([targets[0]]);
   renderPage();
 
-  expect(await screen.findByRole('heading', { name: '1 Target' })).toBeInTheDocument();
+  expect(await screen.findByText('1 Target active today')).toBeInTheDocument();
 });
 
 test('says so plainly when the account has no Targets yet', async () => {
@@ -215,12 +235,12 @@ test('says so plainly when the account has no Targets yet', async () => {
   renderPage();
 
   expect(await screen.findByRole('heading', { name: 'No Targets yet.' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: '0 Targets' })).toBeInTheDocument();
+  expect(screen.getByText('1 Target active today')).toBeInTheDocument();
 });
 
 test('previews the title the Qualifiers would derive', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
@@ -240,7 +260,7 @@ test('previews the title the Qualifiers would derive', async () => {
  */
 test('a threshold is stored at the same precision the title reads it at', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier({ percent: '6.25' });
   expect(screen.getByText('OKC vs Corner 3 ≥ 6.3%')).toBeInTheDocument();
@@ -258,10 +278,10 @@ test('a threshold is stored at the same precision the title reads it at', async 
 
 test('the blank form is unsaveable until a threshold has been composed', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
   const save = screen.getByRole('button', { name: 'Save Target' });
 
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(null);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('0');
   expect(save).toBeDisabled();
 
   fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
@@ -270,28 +290,21 @@ test('the blank form is unsaveable until a threshold has been composed', async (
   expect(save).toBeEnabled();
 });
 
-test('refuses to save a threshold outside the 0-100% share range', async () => {
+test('slider tuning cannot set a threshold outside the share range', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
-  const save = screen.getByRole('button', { name: 'Save Target' });
-
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '140' },
-  });
-  expect(save).toBeDisabled();
-  expect(
-    screen.getByText('Every threshold must be a share between 0% and 100%.'),
-  ).toBeInTheDocument();
-
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '0' },
-  });
-  expect(save).toBeEnabled();
+  await screen.findAllByRole('article');
+  const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
+  fireEvent.change(threshold, { target: { value: '100' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(Number(threshold.value)).toBeLessThanOrEqual(100);
+  fireEvent.change(threshold, { target: { value: '0' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('0');
 });
 
 test('refuses to save a Target with no Qualifier at all', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
 
@@ -301,10 +314,11 @@ test('refuses to save a Target with no Qualifier at all', async () => {
 
 test('saves several Qualifiers as one Target and opens the Target the backend stored', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier({ opponent: 'NOP', slice: 'Restricted Area', percent: '35' });
-  fireEvent.click(screen.getByRole('button', { name: '+ Add a Qualifier' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a Qualifier' }));
   fireEvent.change(screen.getByLabelText('Qualifier 2 diet base'), {
     target: { value: 'play_types' },
   });
@@ -312,8 +326,8 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
   fireEvent.change(screen.getByLabelText('Qualifier 2 threshold percent'), {
     target: { value: '15' },
   });
-  fireEvent.click(screen.getAllByRole('button', { name: 'At or below' })[1]);
-  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+  fireEvent.click(screen.getAllByRole('button', { name: 'At or above; switch to at or below' })[1]);
+  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
     target: { value: 'No rim protection when Missi sits.' },
   });
 
@@ -340,10 +354,10 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
 
 test('a note is stored without the whitespace it was typed with', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
-  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
     target: { value: '  Zone late in the shot clock.  ' },
   });
   await act(async () => {
@@ -365,7 +379,7 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
     },
   });
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await act(async () => {
@@ -376,7 +390,7 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
     'You already have that Target for OKC.',
   );
   expect(screen.getByLabelText('Opponent')).toHaveValue('OKC');
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('40');
   expect(fetchTargets).toHaveBeenCalledTimes(1);
 });
 
@@ -398,7 +412,7 @@ test('a refused save against a full account reads as the backend explained it', 
     },
   });
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await act(async () => {
@@ -436,9 +450,9 @@ test('signed out, the page asks for sign-in the way the slate does', () => {
 test('a card says what today makes of its Target', async () => {
   renderPage();
 
-  const live = await screen.findByRole('link', { name: 'Open OKC vs Corner 3 ≥ 40% (v2)' });
-  expect(within(live).getByText('1 fit today')).toBeVisible();
-  const idle = screen.getByRole('link', { name: 'Open MIA vs Restricted area ≤ 20% (v2)' });
+  const live = await screen.findByRole('article', { name: 'OKC vs Corner 3 ≥ 40% (v2)' });
+  expect(within(live).getByText(/LeBron James/)).toBeVisible();
+  const idle = screen.getByRole('article', { name: 'MIA vs Restricted area ≤ 20% (v2)' });
   expect(within(idle).getByText('no game today')).toBeVisible();
   // The count is the current Slate Date's, which the page does not name.
   expect(fetchResolvedTargets).toHaveBeenCalledWith(expect.objectContaining({ date: undefined }));
@@ -457,7 +471,7 @@ test('a refused resolution leaves the cards standing without a count', async () 
   renderPage();
 
   expect(
-    await screen.findByRole('link', { name: 'Open OKC vs Corner 3 ≥ 40% (v2)' }),
+    await screen.findByRole('article', { name: 'OKC vs Corner 3 ≥ 40% (v2)' }),
   ).toBeInTheDocument();
   expect(screen.queryByText(/fit today/)).not.toBeInTheDocument();
   expect(screen.queryByText('no game today')).not.toBeInTheDocument();
@@ -471,7 +485,7 @@ test('a live Target nobody fits says so rather than staying silent', async () =>
 
   renderPage();
 
-  expect(await screen.findByText('0 fit today')).toBeVisible();
+  expect(await screen.findByText('nobody meets every Qualifier')).toBeVisible();
 });
 
 /*
@@ -483,7 +497,7 @@ test('a live Target nobody fits says so rather than staying silent', async () =>
 test('the Lab reads a draft once it has held still, so several quick edits are one read', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
@@ -516,14 +530,14 @@ test('the Lab reads a draft once it has held still, so several quick edits are o
 test('editing the note is not a new draft, so the Lab does not read again', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
   composeQualifier();
   await settle();
   const result = screen
     .getByRole('list', { name: 'Backtest summary' })
     .closest('.target-lab-result');
 
-  fireEvent.change(screen.getByLabelText('Note · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
     target: { value: 'Leaks the corner late.' },
   });
   expect(result).not.toHaveClass('is-stale');
@@ -548,7 +562,7 @@ test('a read for a draft that has moved on is abandoned, and its late answer is 
       }),
   );
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await settle();
@@ -573,25 +587,18 @@ test('a read for a draft that has moved on is abandoned, and its late answer is 
   expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
   expect(fetchTargetPreview.mock.calls[1][0].qualifiers[0].threshold).toBe(0.45);
   await act(async () => {
-    publishers[1]({ ...preview, summary: { ...preview.summary, players: 7 } });
+    publishers[1]({ ...preview, players: [] });
   });
-  expect(summaryItem('Players')).toHaveTextContent('7');
+  expect(summaryItem('Games')).toHaveTextContent('0');
 });
 
 test('an incomplete draft asks for nothing and says what to complete', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   // The blank form: a threshold has not been typed.
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
-  await settle();
-  expect(fetchTargetPreview).not.toHaveBeenCalled();
-
-  // A threshold outside the share range is not a threshold either.
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '140' },
-  });
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
 
@@ -610,7 +617,7 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
 test('a draft that stops being complete keeps the last evidence, dimmed', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
   composeQualifier();
   await settle();
   const result = screen
@@ -618,21 +625,19 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
     .closest('.target-lab-result');
   expect(result).not.toHaveClass('is-stale');
 
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
 
   // Typed whole again as it was, it is the draft that was read: current, not
   // re-read.
-  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
-    target: { value: '40' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a Qualifier' }));
+  composeQualifier();
   expect(result).not.toHaveClass('is-stale');
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
@@ -641,33 +646,30 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
 test('the Lab leads with the summary and whether the draft fires tonight, then the games', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await settle();
 
   expect(screen.getByText('Lab · Backtest · season to date · vs OKC')).toBeVisible();
+  fireEvent.click(screen.getByText('PTS vs the player’s own season average'));
   expect(
     screen.getByText('Outcomes are box-score proxies; there are no per-game slice splits.'),
   ).toBeVisible();
   // Tonight, in one line, from the resolve rule the backend applied.
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
 
-  // The strip: how many players and games, then per market the mean signed
-  // distance from the players' own averages, coloured by direction, and the
-  // share of games over.
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(summaryItem('Games')).toHaveTextContent('5');
-  expect(summaryItem('PTS')).toHaveTextContent('+2.5');
-  expect(summaryItem('PTS')).toHaveTextContent('60% of games over');
-  expect(within(summaryItem('PTS')).getByText('+2.5')).toHaveClass('is-hit');
-  expect(summaryItem('3PM')).toHaveTextContent('-0.8');
-  expect(summaryItem('3PM')).toHaveTextContent('40% of games over');
-  expect(within(summaryItem('3PM')).getByText('-0.8')).toHaveClass('is-miss');
-
-  // The same table the saved detail shows, labelled by the draft's title.
-  expect(screen.getByRole('table', { name: 'Backtest for OKC vs Corner 3 ≥ 40%' })).toBeVisible();
-  expect(screen.getByRole('row', { name: /2026-01-12/ })).toHaveTextContent('+5.6');
+  // Read the actual game's margin against this player's season, not the legacy proxy summary.
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('PTS')).toHaveTextContent('+5.6 avg');
+  expect(summaryItem('PTS')).toHaveTextContent('100% hit');
+  expect(summaryItem('3PM')).toHaveTextContent('+2.0 avg');
+  expect(summaryItem('3PM')).toHaveTextContent('100% hit');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
+  expect(screen.getByRole('listitem', { name: /2026-01-12/ })).toHaveAttribute(
+    'title',
+    expect.stringContaining('+5.6 margin'),
+  );
   expect(
     screen.queryByText('Complete the Qualifiers to see the Backtest.'),
   ).not.toBeInTheDocument();
@@ -677,12 +679,12 @@ test('the tonight line is absent when the opponent has no game', async () => {
   jest.useFakeTimers();
   fetchTargetPreview.mockResolvedValue({ ...preview, today: null });
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await settle();
 
-  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(summaryItem('Games')).toHaveTextContent('1');
   expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
 });
 
@@ -694,7 +696,7 @@ test('the tonight line is absent when the opponent has no game', async () => {
 test('a nudged draft keeps the last result on screen, dimmed, until the next one lands', async () => {
   jest.useFakeTimers();
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
   composeQualifier();
   await settle();
   const result = screen
@@ -708,7 +710,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
       publish = resolve;
     }),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  fireEvent.keyDown(screen.getByLabelText('Qualifier 1 threshold percent'), { key: 'ArrowRight' });
   // Stale from the edit, before the read has even started — and said aloud,
   // since a dimmed table is silent to a screen reader.
   expect(result).toHaveClass('is-stale');
@@ -724,17 +726,17 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   // Announced from outside the busy results, or it would not be announced.
   expect(labStatus()).toHaveTextContent('Reading the season…');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Players')).toHaveTextContent('2');
-  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
 
   await act(async () => {
-    publish({ ...preview, summary: { ...preview.summary, players: 1, games: 3 } });
+    publish({ ...preview, players: [] });
   });
   expect(result).not.toHaveClass('is-stale');
   expect(result).toHaveAttribute('aria-busy', 'false');
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Players')).toHaveTextContent('1');
-  expect(summaryItem('Games')).toHaveTextContent('3');
+  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('Games')).toHaveTextContent('0');
 });
 
 /*
@@ -750,7 +752,7 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
     },
   });
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
 
   composeQualifier();
   await settle();
@@ -761,20 +763,20 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
   await settle();
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
-  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue(40);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('40');
   expect(screen.getByText('OKC vs Corner 3 ≥ 40%')).toBeInTheDocument();
   const save = screen.getByRole('button', { name: 'Save Target' });
   expect(save).toBeEnabled();
 
   // An edit after a refusal is read again, and recovers.
   fetchTargetPreview.mockResolvedValue(preview);
-  fireEvent.click(screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' }));
+  fireEvent.keyDown(screen.getByLabelText('Qualifier 1 threshold percent'), { key: 'ArrowRight' });
   expect(labStatus()).toHaveTextContent('Backtest not updated.');
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Players')).toHaveTextContent('2');
+  expect(summaryItem('Games')).toHaveTextContent('1');
 
   await act(async () => {
     fireEvent.click(save);
@@ -790,39 +792,268 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
  * steppers or the arrow keys, clamped to the share range and keeping whatever
  * decimal was typed.
  */
-test('the steppers and the arrow keys move a threshold by one percent', async () => {
+test('the arrow keys move a threshold by one percent', async () => {
   renderPage();
-  await screen.findAllByRole('link', { name: /^Open / });
+  await screen.findAllByRole('article');
   const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
-  const up = screen.getByRole('button', { name: 'Qualifier 1 threshold up 1%' });
-  const down = screen.getByRole('button', { name: 'Qualifier 1 threshold down 1%' });
 
   composeQualifier();
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(41);
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('41');
   // The title follows the nudge, as it follows typing.
   expect(screen.getByText('OKC vs Corner 3 ≥ 41%')).toBeInTheDocument();
-  fireEvent.click(down);
-  fireEvent.click(down);
-  expect(threshold).toHaveValue(39);
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('39');
 
   fireEvent.keyDown(threshold, { key: 'ArrowUp' });
-  expect(threshold).toHaveValue(40);
+  expect(threshold).toHaveValue('40');
   fireEvent.keyDown(threshold, { key: 'ArrowDown' });
   fireEvent.keyDown(threshold, { key: 'ArrowDown' });
-  expect(threshold).toHaveValue(38);
+  expect(threshold).toHaveValue('38');
 
   // A decimal keeps its decimal; the bounds hold; a blank field starts at zero.
   fireEvent.change(threshold, { target: { value: '40.5' } });
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(41.5);
-  fireEvent.change(threshold, { target: { value: '100' } });
-  fireEvent.click(up);
-  expect(threshold).toHaveValue(100);
+  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('41.5');
+  for (let step = 0; step < 100; step += 1) fireEvent.keyDown(threshold, { key: 'ArrowRight' });
+  expect(threshold).toHaveValue('100');
   fireEvent.change(threshold, { target: { value: '0' } });
-  fireEvent.click(down);
-  expect(threshold).toHaveValue(0);
-  fireEvent.change(threshold, { target: { value: '' } });
+  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
+  expect(threshold).toHaveValue('0');
+  fireEvent.change(threshold, { target: { value: '0' } });
   fireEvent.keyDown(threshold, { key: 'ArrowUp' });
-  expect(threshold).toHaveValue(1);
+  expect(threshold).toHaveValue('1');
+});
+
+test('the collection opens with an active-today line and a deliberately closed composer', async () => {
+  renderPage(false);
+  expect(await screen.findByText('1 Target active today')).toBeVisible();
+  expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Opponent')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '+ New Target' }));
+  expect(screen.getByLabelText('Opponent')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByLabelText('Opponent')).not.toBeInTheDocument();
+});
+
+test('cards state tonight’s fits as pills and keep criteria and logs read-only', async () => {
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  expect(within(card).getByRole('link', { name: /LAL @ OKC/ })).toHaveAttribute(
+    'href',
+    '/matchups/0022500584',
+  );
+  expect(within(card).getByRole('link', { name: 'Edit →' })).toHaveAttribute('href', '/targets/7');
+  expect(within(card).getByRole('listitem')).toHaveTextContent('44%');
+  expect(within(card).getByRole('listitem')).toHaveTextContent('25.4 ppg');
+  expect(within(card).queryByRole('spinbutton')).not.toBeInTheDocument();
+  expect(within(card).queryByRole('table')).not.toBeInTheDocument();
+});
+
+test('Backtests read one at a time and a failed card does not strand the next', async () => {
+  let rejectFirst;
+  fetchTargetBacktest
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve, reject) => {
+          rejectFirst = reject;
+        }),
+    )
+    .mockResolvedValueOnce(preview);
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(1));
+  expect(fetchTargetBacktest.mock.calls[0][0].id).toBe(7);
+  await act(async () => rejectFirst(new Error('failed')));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  expect(fetchTargetBacktest.mock.calls[1][0].id).toBe(8);
+  expect(await screen.findByText('failed')).toBeVisible();
+  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+test('unavailable pools are explicit, while idle Targets do not count as active', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      { ...resolution.entries[0], availability: { status: 'unavailable' }, players: [] },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  expect(await screen.findByText('pool unavailable')).toBeVisible();
+  expect(screen.queryByText('nobody meets every Qualifier')).not.toBeInTheDocument();
+  expect(screen.getByText('1 Target active today')).toBeVisible();
+});
+
+test('no active Targets says so without calling an unresolved read zero', async () => {
+  fetchResolvedTargets.mockResolvedValue({ ...resolution, entries: [resolution.entries[1]] });
+  renderPage(false);
+  expect(await screen.findByText('No Targets active today')).toBeVisible();
+});
+
+test('thin evidence stays visible as a dashed fit pill', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      { ...resolution.entries[0], players: [{ ...resolution.entries[0].players[0], thin: true }] },
+    ],
+  });
+  renderPage(false);
+  expect(await screen.findByText(/thin evidence/)).toBeVisible();
+  expect(screen.getByText('LeBron James').closest('li')).toHaveClass('is-thin');
+});
+
+test('leaving the list aborts its scan and never starts the next', async () => {
+  let finish;
+  fetchTargetBacktest.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const view = renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(1));
+  const signal = fetchTargetBacktest.mock.calls[0][0].signal;
+  view.unmount();
+  expect(signal.aborted).toBe(true);
+  await act(async () => finish(preview));
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
+});
+
+test('saved cards show their Condition as a read-only chip', async () => {
+  fetchTargets.mockResolvedValue([
+    {
+      ...targets[0],
+      conditions: {
+        defender: { playerId: 27, comparator: 'under', minutes: 8 },
+        from: null,
+        to: null,
+      },
+    },
+  ]);
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
+  });
+  renderPage(false);
+  expect(await screen.findByText(/Rudy Gobert under 8 min/)).toHaveClass('target-condition-chip');
+  expect(screen.queryByLabelText('Defender')).not.toBeInTheDocument();
+});
+
+test('fit shares are labelled with the resolved criteria when the list read differs', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        target: {
+          ...targets[0],
+          qualifiers: [{ ...targets[0].qualifiers[0], sliceKey: 'Restricted Area' }],
+        },
+      },
+    ],
+  });
+  renderPage(false);
+  const fits = await screen.findByRole('region', { name: 'Playing tonight' });
+  expect(within(fits).getByRole('listitem')).toHaveTextContent('Restricted area 44%');
+  expect(within(fits).getByRole('listitem')).not.toHaveTextContent('Corner 3');
+});
+
+test('list cards read each Target’s persisted columns and grading independently', async () => {
+  auth.currentUser = { uid: 'list-stat-reader' };
+  fetchTargets.mockResolvedValue([
+    { ...targets[0], statPreferences: { columns: ['PTS', 'PTS/36'], gradedBy: 'PTS/36' } },
+    targets[1],
+  ]);
+  fetchTargetBacktest.mockResolvedValue(preview);
+  renderPage(false);
+  const first = await screen.findByRole('article', { name: targets[0].title });
+  expect(await within(first).findByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  const summary = within(first).getByRole('list', { name: 'Backtest summary' });
+  expect(within(summary).getByRole('listitem', { name: 'PTS', exact: true })).toBeVisible();
+  expect(within(summary).getByRole('listitem', { name: 'PTS/36', exact: true })).toBeVisible();
+  expect(
+    within(summary).queryByRole('listitem', { name: '3PM', exact: true }),
+  ).not.toBeInTheDocument();
+  const second = screen.getByRole('article', { name: targets[1].title });
+  expect(await within(second).findByRole('list', { name: /graded by PTS margin/ })).toBeVisible();
+});
+
+test('a composer’s stat choice is saved only with the new Target', async () => {
+  auth.currentUser = { uid: 'composer-stat-reader' };
+  jest.useFakeTimers();
+  renderPage();
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+  fireEvent.click(screen.getByRole('button', { name: 'stats ▾' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'PTS/36' }));
+  fireEvent.click(screen.getByRole('button', { name: /^PTS\/36 / }));
+  expect(createTarget).not.toHaveBeenCalled();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save Target' })));
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({
+      statPreferences: { columns: ['PTS', '3PM', 'PTS/36'], gradedBy: 'PTS/36' },
+    }),
+  );
+});
+
+test('a pending resolution states that today is being read rather than unavailable', async () => {
+  fetchResolvedTargets.mockImplementation(() => new Promise(() => {}));
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  expect(within(card).getByText('Reading today’s activity…')).toBeVisible();
+  expect(within(card).queryByText('Today’s activity unavailable')).not.toBeInTheDocument();
+});
+
+test('one page shares one roster read across same-opponent chips and count lines, then releases it', async () => {
+  const conditioned = {
+    ...targets[0],
+    conditions: {
+      defender: { playerId: 27, comparator: 'under', minutes: 8 },
+      from: null,
+      to: null,
+    },
+  };
+  fetchTargets.mockResolvedValue([
+    conditioned,
+    { ...conditioned, id: 88, title: 'Another same-opponent Target' },
+  ]);
+  fetchTargetBacktest.mockResolvedValue({
+    ...preview,
+    target: conditioned,
+    gamesConsidered: { kept: 3, played: 10 },
+  });
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
+  });
+  const page = renderPage(false);
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  expect(fetchSeasonMinutes).toHaveBeenCalledTimes(1);
+  page.unmount();
+  renderPage(false);
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  expect(fetchSeasonMinutes).toHaveBeenCalledTimes(2);
+});
+
+test('leaving a page aborts its shared in-flight roster request', async () => {
+  fetchTargets.mockResolvedValue([
+    {
+      ...targets[0],
+      conditions: {
+        defender: { playerId: 27, comparator: 'under', minutes: 8 },
+        from: null,
+        to: null,
+      },
+    },
+  ]);
+  fetchSeasonMinutes.mockImplementationOnce(() => new Promise(() => {}));
+  const page = renderPage(false);
+  await waitFor(() => expect(fetchSeasonMinutes).toHaveBeenCalledTimes(1));
+  const signal = fetchSeasonMinutes.mock.calls[0][0].signal;
+  expect(signal.aborted).toBe(false);
+  page.unmount();
+  expect(signal.aborted).toBe(true);
 });

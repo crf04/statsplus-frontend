@@ -1,6 +1,11 @@
 import { apiClient } from '../config';
 import {
   createTarget,
+  decodeDietBaselines,
+  decodeConditions,
+  decodeSeasonMinutes,
+  fetchSeasonMinutes,
+  fetchDietBaselines,
   decodeBacktest,
   decodePreview,
   decodeResolvedTargets,
@@ -16,7 +21,12 @@ import {
 jest.mock('../config', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
   getApiUrl: (name) =>
-    ({ TARGETS: '/api/user/targets', TARGET_PREVIEW: '/api/user/targets/preview' })[name],
+    ({
+      TARGETS: '/api/user/targets',
+      TARGET_PREVIEW: '/api/user/targets/preview',
+      DIET_BASELINES: '/api/diet/baselines',
+      TEAM_SEASON_MINUTES: '/api/teams',
+    })[name],
 }));
 
 const wireTarget = {
@@ -799,4 +809,206 @@ test("reads one Target's backtest from the documented path", async () => {
   expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/7/backtest', {
     signal: controller.signal,
   });
+});
+
+test('league baselines decode shares, preserve absent slices and use authenticated transport', async () => {
+  const payload = {
+    season: '2025-26',
+    captured_at: '2026-04-09T00:00:00Z',
+    shares: { shot_zones: { 'Corner 3': 0.23, Unknown: null } },
+  };
+  expect(decodeDietBaselines(payload).shares).toEqual(payload.shares);
+  for (const value of [-1, 1.1, '0.2', Infinity])
+    expect(() =>
+      decodeDietBaselines({ ...payload, shares: { shot_zones: { bad: value } } }),
+    ).toThrow(/invalid response/);
+  expect(() => decodeDietBaselines({ shares: [] })).toThrow(/invalid response/);
+  apiClient.get.mockResolvedValue({ data: payload });
+  await fetchDietBaselines();
+  expect(apiClient.get).toHaveBeenCalledWith('/api/diet/baselines', { signal: undefined });
+});
+
+const wireConditions = {
+  defender: { player_id: 27, comparator: 'under', minutes: 8 },
+  from: '2026-01-01',
+  to: null,
+};
+test('Conditions and games considered survive every Target read without fabricating legacy counts', () => {
+  const conditions = {
+    ...wireConditions,
+    defender: { playerId: 27, comparator: 'under', minutes: 8 },
+  };
+  expect(
+    decodeTargets({ targets: [{ ...wireTarget, conditions: wireConditions }] })[0].conditions,
+  ).toEqual(conditions);
+  expect(
+    decodeBacktest({
+      ...wireBacktest,
+      target: { ...wireTarget, conditions: wireConditions },
+      games_considered: { kept: 3, played: 10 },
+    }).gamesConsidered,
+  ).toEqual({ kept: 3, played: 10 });
+  expect(
+    decodePreview({
+      ...wirePreview,
+      target: { ...wirePreview.target, conditions: wireConditions },
+      games_considered: { kept: 3, played: 10 },
+    }).target.conditions,
+  ).toEqual(conditions);
+  expect(
+    decodeResolvedTargets(
+      resolvePayload([
+        { ...wireResolvedLive, target: { ...wireTarget, conditions: wireConditions } },
+      ]),
+    ).entries[0].target.conditions,
+  ).toEqual(conditions);
+  expect(decodeBacktest(wireBacktest).gamesConsidered).toBeUndefined();
+  expect(() =>
+    decodeBacktest({ ...wireBacktest, target: { ...wireTarget, conditions: wireConditions } }),
+  ).toThrow(/invalid response/);
+  for (const games_considered of [
+    { kept: 11, played: 10 },
+    { kept: -1, played: 10 },
+    { kept: 1.2, played: 10 },
+    null,
+  ])
+    expect(() => decodeBacktest({ ...wireBacktest, games_considered })).toThrow(/invalid response/);
+  for (const condition of [
+    { ...wireConditions, from: '2026-02-30' },
+    { ...wireConditions, to: '2025-01-01' },
+    { ...wireConditions, defender: { ...wireConditions.defender, minutes: 49 } },
+    { ...wireConditions, defender: { ...wireConditions.defender, player_id: '27' } },
+  ])
+    expect(() => decodeConditions(condition)).toThrow(/invalid response/);
+});
+test('Conditions patch independently and explicit null clears without touching criteria', async () => {
+  apiClient.patch.mockResolvedValue({ data: { success: true } });
+  await updateTarget({ id: 7, conditions: null });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', { conditions: null });
+  const conditions = {
+    ...wireConditions,
+    defender: { playerId: 27, comparator: 'under', minutes: 8 },
+  };
+  await updateTarget({ id: 7, conditions });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
+    conditions: wireConditions,
+  });
+  apiClient.post.mockResolvedValue({ data: wirePreview });
+  await fetchTargetPreview({
+    opponent: 'OKC',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+    conditions,
+  });
+  expect(apiClient.post.mock.calls.at(-1)[1].conditions).toEqual(wireConditions);
+});
+test('the authenticated roster read preserves minutes order and refuses malformed rows', async () => {
+  const payload = {
+    season: '2025-26',
+    players: [{ player_id: 27, name: 'Rudy Gobert', games_played: 60, average_minutes: 32 }],
+  };
+  expect(decodeSeasonMinutes(payload)).toEqual({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+  });
+  for (const average_minutes of [-1, '32', NaN])
+    expect(() =>
+      decodeSeasonMinutes({ ...payload, players: [{ ...payload.players[0], average_minutes }] }),
+    ).toThrow(/invalid response/);
+  apiClient.get.mockResolvedValue({ data: payload });
+  const controller = new AbortController();
+  await fetchSeasonMinutes({ opponent: 'MIN', signal: controller.signal });
+  expect(apiClient.get).toHaveBeenCalledWith('/api/teams/MIN/season-minutes', {
+    signal: controller.signal,
+  });
+});
+
+test('stat-only PATCH preserves omitted criteria and encodes the preference independently', async () => {
+  await updateTarget({ id: 7, statPreferences: { columns: ['PTS/36'], gradedBy: 'PTS/36' } });
+  expect(apiClient.patch).toHaveBeenCalledWith('/api/user/targets/7', {
+    stat_preferences: { columns: ['PTS/36'], graded_by: 'PTS/36' },
+  });
+  await updateTarget({ id: 7, statPreferences: null });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
+    stat_preferences: null,
+  });
+});
+
+const fullLine = {
+  points: 20,
+  rebounds: 7,
+  assists: 5,
+  field_goals_made: 7,
+  field_goals_attempted: 14,
+  threes_made: 2,
+  threes_attempted: 5,
+  free_throws_made: 4,
+  free_throws_attempted: 4,
+  steals: 1,
+  blocks: 1,
+  turnovers: 2,
+  offensive_rebounds: 1,
+  defensive_rebounds: 6,
+  fouls: 3,
+  minutes: 30,
+};
+test('decodes the full line, season totals and stat preference in saved and preview responses', () => {
+  const extended = {
+    ...wireBacktest,
+    target: {
+      ...wireBacktest.target,
+      stat_preferences: { columns: ['PTS/36', 'FG%'], graded_by: 'PTS/36' },
+    },
+    players: [
+      {
+        ...wireBacktest.players[0],
+        season_totals: fullLine,
+        season_games: 1,
+        games: [{ ...wireBacktest.players[0].games[0], line: fullLine }],
+      },
+    ],
+  };
+  const decoded = decodeBacktest(extended);
+  expect(decoded.target.statPreferences).toEqual({
+    columns: ['PTS/36', 'FG%'],
+    gradedBy: 'PTS/36',
+  });
+  expect(decoded.players[0]).toEqual(
+    expect.objectContaining({ seasonTotals: fullLine, seasonGames: 1 }),
+  );
+  expect(decoded.players[0].games[0].line).toEqual(fullLine);
+  expect(decodePreview({ ...extended, today: null }).target.statPreferences).toEqual(
+    decoded.target.statPreferences,
+  );
+  expect(
+    decodeTargets({ targets: [{ ...wireTarget, stat_preferences: null }] })[0].statPreferences,
+  ).toBeNull();
+  expect(() =>
+    decodeBacktest({
+      ...extended,
+      players: [{ ...extended.players[0], season_totals: { ...fullLine, points: '20' } }],
+    }),
+  ).toThrow(/invalid response/);
+  expect(() =>
+    decodeBacktest({
+      ...extended,
+      players: [
+        {
+          ...extended.players[0],
+          games: [{ ...extended.players[0].games[0], line: { ...fullLine, minutes: undefined } }],
+        },
+      ],
+    }),
+  ).toThrow(/invalid response/);
+});
+test.each([
+  { columns: [], graded_by: 'PTS' },
+  { columns: ['invented'], graded_by: 'invented' },
+  { columns: ['PTS'], graded_by: 'AST' },
+  { columns: ['PTS', 'PTS'], graded_by: 'PTS' },
+])('refuses malformed stat preferences %j', (stat_preferences) => {
+  expect(() => decodeTargets({ targets: [{ ...wireTarget, stat_preferences }] })).toThrow(
+    /invalid response/,
+  );
 });

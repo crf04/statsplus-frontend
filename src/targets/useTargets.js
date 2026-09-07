@@ -1,20 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { beginStatPreferenceRead } from './useStatPreferences';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
+  fetchDietBaselines,
+  fetchSeasonMinutes,
   fetchResolvedTargets,
-  fetchTargetBacktest,
   fetchTargetPreview,
   fetchTargets,
 } from './targetsApi';
 
 const LOAD_FAILURE = 'Unable to load your Targets. Please try again.';
-const BACKTEST_FAILURE = 'Unable to load this backtest. Please try again.';
 const PREVIEW_FAILURE = 'Unable to read the season for this draft. Please try again.';
 
 const EMPTY_LIST = { targets: [] };
 const EMPTY_RESOLUTION = { slateDate: null, entries: [] };
-const EMPTY_BACKTEST = { backtest: null };
 
 /*
  * How long a draft has to hold still before the Lab reads it. Long enough that
@@ -28,10 +36,15 @@ export const PREVIEW_DELAY_MS = 600;
  * of them without knowing which one it is holding. What a read is scoped by —
  * a Slate Date, a Target id, or nothing at all — travels as one opaque value.
  */
-const readList = ({ signal }) => fetchTargets({ signal }).then((targets) => ({ targets }));
+const readList = async ({ signal, userId }) => {
+  const preferences = beginStatPreferenceRead(userId);
+  try {
+    return { targets: preferences.reconcile(await fetchTargets({ signal })) };
+  } finally {
+    preferences.release();
+  }
+};
 const readResolution = ({ scope, signal }) => fetchResolvedTargets({ date: scope, signal });
-const readBacktest = ({ scope, signal }) =>
-  fetchTargetBacktest({ id: scope, signal }).then((backtest) => ({ backtest }));
 
 /*
  * One account-private read, in the three shapes the Target surfaces need. All
@@ -44,8 +57,14 @@ const readBacktest = ({ scope, signal }) =>
  * starts at zero and stays there until `reload` raises it, which is what keeps
  * a read nobody has asked for off the wire.
  */
-const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILURE } = {}) => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+const useAccountRead = (
+  read,
+  empty,
+  scope,
+  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false } = {},
+) => {
+  const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
+  const owner = useRef();
   const [state, setState] = useState({ status: 'idle', error: null, ...empty });
   const [requests, setRequests] = useState(lazy ? 0 : 1);
 
@@ -55,11 +74,19 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
       return undefined;
     }
     const controller = new AbortController();
-    setState({ status: 'loading', error: null, ...empty });
-    read({ scope, signal: controller.signal })
-      .then((data) => setState({ status: 'ready', error: null, ...data }))
+    const sameOwner = owner.current === currentUser?.uid;
+    owner.current = currentUser?.uid;
+    setState((current) => ({
+      ...(keepPrevious && sameOwner ? current : empty),
+      status: 'loading',
+      error: null,
+    }));
+    read({ scope, signal: controller.signal, userId: currentUser?.uid })
+      .then(
+        (data) => !controller.signal.aborted && setState({ status: 'ready', error: null, ...data }),
+      )
       .catch((error) => {
-        if (!isRequestCancelled(error)) {
+        if (!controller.signal.aborted && !isRequestCancelled(error)) {
           setState({
             status: 'error',
             error: getRequestErrorMessage(error, failure),
@@ -68,7 +95,17 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, scope, read, empty, failure, requests]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    scope,
+    read,
+    empty,
+    failure,
+    requests,
+    keepPrevious,
+    currentUser?.uid,
+  ]);
 
   const reload = useCallback(() => setRequests((count) => count + 1), []);
 
@@ -80,7 +117,7 @@ const useAccountRead = (read, empty, scope, { lazy = false, failure = LOAD_FAILU
  * route identifies one by. This is the read that keeps a Target manageable,
  * so it never depends on the day resolving.
  */
-export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
+export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, undefined, options);
 
 /*
  * The same Targets read against one Slate Date. The Slate passes the date it
@@ -90,20 +127,6 @@ export const useTargets = () => useAccountRead(readList, EMPTY_LIST);
  */
 export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
 
-/*
- * The season behind one Target, which costs a league-wide game-log scan and so
- * is the one read here that waits to be asked for. Reading it again after a
- * refusal asks again; a backtest already in hand is kept rather than re-read.
- */
-export const useTargetBacktest = (id) => {
-  const { reload, ...state } = useAccountRead(readBacktest, EMPTY_BACKTEST, id, {
-    lazy: true,
-    failure: BACKTEST_FAILURE,
-  });
-  // The first reload of a read that has never run is that read.
-  return { ...state, read: reload };
-};
-
 const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
 
 /*
@@ -111,7 +134,13 @@ const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
  * note is never part of the evidence, so editing it is not a new draft.
  */
 const previewKey = (request) =>
-  request ? JSON.stringify({ opponent: request.opponent, qualifiers: request.qualifiers }) : null;
+  request
+    ? JSON.stringify({
+        opponent: request.opponent,
+        qualifiers: request.qualifiers,
+        ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+      })
+    : null;
 
 /*
  * The season behind a Draft Target, read while it is composed. The draft is
@@ -131,6 +160,7 @@ export const useTargetPreview = (request) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const key = previewKey(request);
   const [state, setState] = useState(EMPTY_PREVIEW);
+  const [attempt, setAttempt] = useState(0);
   // The draft the result in hand was read for, kept where the effect can see
   // it without re-running for it: a draft typed back to what was last read is
   // not a new draft either.
@@ -174,8 +204,72 @@ export const useTargetPreview = (request) => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [key, authLoading, isAuthenticated]);
+  }, [key, authLoading, isAuthenticated, attempt]);
 
   const { key: shownKey, ...read } = state;
-  return { ...read, pending: key !== shownKey };
+  const retry = useCallback(() => {
+    readKey.current = null;
+    setAttempt((value) => value + 1);
+  }, []);
+  return { ...read, pending: key !== shownKey, retry };
+};
+
+const EMPTY_BASELINES = { shares: {} };
+const readBaselines = ({ signal }) => fetchDietBaselines({ signal });
+export const useDietBaselines = () =>
+  useAccountRead(readBaselines, EMPTY_BASELINES, undefined, {
+    failure: 'League averages unavailable.',
+  });
+
+const RosterReadContext = createContext(null);
+
+// A page owns its roster reads. Multiple cards for the same opponent share the
+// request and result, and leaving the page aborts and releases every read.
+export function SeasonMinutesProvider({ children, resetKey, enabled = true }) {
+  const { currentUser, isAuthenticated, loading } = useAuth();
+  const reads = useMemo(() => {
+    const requests = new Map();
+    const controllers = new Set();
+    return {
+      read: ({ scope }) => {
+        if (!scope || !enabled) return Promise.resolve(EMPTY_ROSTER);
+        if (requests.has(scope)) return requests.get(scope);
+        const controller = new AbortController();
+        controllers.add(controller);
+        const request = fetchSeasonMinutes({ opponent: scope, signal: controller.signal })
+          .then((data) => ({ ...data, opponent: scope }))
+          .catch((error) => {
+            if (requests.get(scope) === request) requests.delete(scope);
+            throw error;
+          })
+          .finally(() => controllers.delete(controller));
+        requests.set(scope, request);
+        return request;
+      },
+      dispose: () => {
+        controllers.forEach((controller) => controller.abort());
+        requests.clear();
+      },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Account and route identities bound this cache lifetime.
+  }, [currentUser?.uid, isAuthenticated, loading, resetKey, enabled]);
+  useEffect(() => () => reads.dispose(), [reads]);
+  return <RosterReadContext.Provider value={reads.read}>{children}</RosterReadContext.Provider>;
+}
+
+const EMPTY_ROSTER = { season: null, players: [], opponent: null };
+const readRoster = async ({ scope, signal }) =>
+  scope
+    ? { ...(await fetchSeasonMinutes({ opponent: scope, signal })), opponent: scope }
+    : EMPTY_ROSTER;
+export const useSeasonMinutes = (opponent) => {
+  const sharedRead = useContext(RosterReadContext);
+  const read = useAccountRead(sharedRead || readRoster, EMPTY_ROSTER, opponent, {
+    failure: 'Unable to load the season roster.',
+  });
+  return {
+    ...read,
+    season: read.opponent === opponent ? read.season : null,
+    players: read.opponent === opponent ? read.players : [],
+  };
 };

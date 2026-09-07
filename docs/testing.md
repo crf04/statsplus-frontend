@@ -188,3 +188,13 @@ its at-or-above definition. The fixture supplies both from the same game logs. S
 preferences use independent PATCH requests, with account-scoped serialization and a
 captured-user check before bearer attachment; React tests exercise navigation flushes,
 retry, criteria-save remounts, and account isolation.
+
+TargetRecord’s headline is an aggregate absolute difference with a separate relative change
+label (`vs baseline`). Raw box-score columns use the mean of matched game minus season-average
+values and report `<STAT>/game`; per-36 columns compare production at each appearance’s minutes
+and weight by valid minutes; efficiency columns weight FG%, 3P%, TS%, and PTS/FGA by their
+respective attempts/exposure. Each aggregate excludes rows with missing values or invalid
+denominators and reports its eligible player-game count when it is smaller than the displayed
+sample. The hit rate remains a separate strictly-positive individual-margin measure. The sample
+strip reports displayed player-games and total minutes only when every displayed line has a finite
+nonnegative minute value; otherwise it says that minutes are unavailable or incomplete.

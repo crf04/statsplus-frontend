@@ -1504,7 +1504,7 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
       ],
     }),
   );
-  expect(within(strip).getByRole('listitem', { name: 'Games' })).toHaveTextContent('1');
+  expect(within(strip).getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('1');
   expect(within(strip).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+5.6');
   expect(within(dialog).getByText(/fit tonight/)).toHaveTextContent('3 fit tonight vs BOS');
   expect(

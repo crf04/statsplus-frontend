@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import TargetRecord from './TargetRecord';
 const backtest = {
   target: { opponent: 'OKC' },
@@ -18,14 +18,14 @@ const backtest = {
     },
   ],
 };
-test('the record grades all games oldest first and states games, hit rate and mean margin', () => {
+test('the record grades all games oldest first and states the aggregate, hit rate and margin', () => {
   render(<TargetRecord backtest={backtest} />);
   const summary = screen.getByRole('list', { name: 'Backtest summary' });
-  expect(within(summary).getByRole('listitem', { name: 'Games' })).toHaveTextContent('3');
+  expect(within(summary).getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('3');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('33%');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+2.0');
-  // The prototype colors by mean margin, even when fewer than half the games hit.
-  expect(within(summary).getByText('33%')).toHaveClass('is-hit');
+  // The aggregate headline is positive, even when fewer than half the games hit.
+  expect(within(summary).getByText('+2.0 PTS/game')).toHaveClass('is-hit');
   expect(within(summary).queryByRole('listitem', { name: 'Players' })).not.toBeInTheDocument();
   const cells = within(screen.getByRole('list', { name: /oldest to newest/ })).getAllByRole(
     'listitem',
@@ -37,6 +37,14 @@ test('the record grades all games oldest first and states games, hit rate and me
   expect(cells[2]).toHaveAttribute('title', expect.stringContaining('Player One'));
   expect(screen.getByText(/PTS vs the player/)).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+test('the stats picker closes on Escape', () => {
+  render(<TargetRecord backtest={backtest} onPreferencesChange={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: 'stats ▾' }));
+  expect(screen.getByRole('group', { name: 'Stats picker' })).toBeInTheDocument();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(screen.queryByRole('group', { name: 'Stats picker' })).not.toBeInTheDocument();
 });
 
 test('grades intermediate margins against the record’s p90, without letting an outlier flatten them', () => {
@@ -88,9 +96,392 @@ test('a zero-minute game is absent from per36 arithmetic and never graded as zer
     />,
   );
   const summary = screen.getByRole('listitem', { name: 'PTS/36' });
-  expect(summary).toHaveTextContent('0% hit');
-  expect(summary).toHaveTextContent('0.0 avg');
+  expect(summary).toHaveTextContent('0%');
+  expect(summary).toHaveTextContent('0.0 PTS/36');
+  expect(summary).toHaveTextContent('1 of 2 player-games used');
   const absent = screen.getByRole('listitem', { name: /2026-01-02/ });
   expect(absent).toHaveClass('grade-unavailable');
   expect(absent).toHaveAttribute('title', expect.stringContaining('— PTS/36'));
+});
+
+const line = ({
+  points,
+  minutes,
+  fieldGoalsMade = 0,
+  fieldGoalsAttempted = 0,
+  threesMade = 0,
+  threesAttempted = 0,
+  freeThrowsAttempted = 0,
+}) => ({
+  points,
+  minutes,
+  field_goals_made: fieldGoalsMade,
+  field_goals_attempted: fieldGoalsAttempted,
+  threes_made: threesMade,
+  threes_attempted: threesAttempted,
+  free_throws_attempted: freeThrowsAttempted,
+});
+
+const player = ({ name, seasonPoints, seasonMinutes = 30, gamePoints, gameMinutes = 30 }) => ({
+  canonicalId: name,
+  name,
+  tricode: 'LAL',
+  seasonTotals: line({ points: seasonPoints, minutes: seasonMinutes }),
+  seasonGames: 1,
+  games: [{ gameDate: '2026-01-01', line: line({ points: gamePoints, minutes: gameMinutes }) }],
+});
+
+const renderPointsRecord = (players, columns = ['PTS']) =>
+  render(
+    <TargetRecord
+      backtest={{ ...backtest, statColumns: columns, players }}
+      columns={columns}
+      gradedBy={columns[0]}
+    />,
+  );
+
+test.each([
+  {
+    name: 'same point gain at different starting levels',
+    players: [
+      player({ name: 'A', seasonPoints: 10, gamePoints: 15 }),
+      player({ name: 'B', seasonPoints: 25, gamePoints: 30 }),
+    ],
+    headline: '+5.0 PTS/game',
+    relative: '+28.6% vs baseline',
+  },
+  {
+    name: 'a small baseline does not dominate the aggregate percentage',
+    players: [
+      player({ name: 'A', seasonPoints: 1, gamePoints: 3 }),
+      player({ name: 'B', seasonPoints: 25, gamePoints: 30 }),
+    ],
+    headline: '+3.5 PTS/game',
+    relative: '+26.9% vs baseline',
+  },
+])('$name', ({ players, headline, relative }) => {
+  renderPointsRecord(players);
+  const summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent(headline);
+  expect(summary).toHaveTextContent(relative);
+  expect(summary).toHaveTextContent('Hit rate 100%');
+  expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent(
+    '2 player-games',
+  );
+});
+
+test('the raw and minutes-adjusted views keep the same reduced-minute game distinct', () => {
+  const reducedMinutes = player({
+    name: 'A',
+    seasonPoints: 20,
+    seasonMinutes: 30,
+    gamePoints: 10,
+    gameMinutes: 15,
+  });
+  const { rerender } = renderPointsRecord([reducedMinutes]);
+  let summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('-10.0 PTS/game');
+  expect(within(summary).getByText('-10.0 PTS/game')).toHaveClass('is-miss');
+  expect(summary).toHaveTextContent('-50% vs baseline');
+
+  rerender(
+    <TargetRecord
+      backtest={{ ...backtest, statColumns: ['PTS/36'], players: [reducedMinutes] }}
+      columns={['PTS/36']}
+      gradedBy="PTS/36"
+    />,
+  );
+  summary = screen.getByRole('listitem', { name: 'PTS/36' });
+  expect(summary).toHaveTextContent('0.0 PTS/36');
+  expect(summary).toHaveTextContent('0% vs baseline');
+});
+
+test('minutes weighting keeps a short hot cameo from dominating a full appearance', () => {
+  renderPointsRecord(
+    [
+      player({ name: 'A', seasonPoints: 18, seasonMinutes: 36, gamePoints: 3, gameMinutes: 2 }),
+      player({ name: 'B', seasonPoints: 18, seasonMinutes: 36, gamePoints: 18, gameMinutes: 36 }),
+    ],
+    ['PTS/36'],
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS/36' });
+  expect(summary).toHaveTextContent('+1.9 PTS/36');
+  expect(summary).toHaveTextContent('+10.5% vs baseline');
+  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('38.0 minutes');
+});
+
+test('efficiency aggregates use each column’s exposure and identify percentage-point units', () => {
+  const season = line({
+    points: 60,
+    minutes: 90,
+    fieldGoalsMade: 27,
+    fieldGoalsAttempted: 60,
+    threesMade: 18,
+    threesAttempted: 30,
+    freeThrowsAttempted: 20,
+  });
+  const games = [
+    {
+      gameDate: '2026-01-01',
+      line: line({
+        points: 30,
+        minutes: 30,
+        fieldGoalsMade: 12,
+        fieldGoalsAttempted: 30,
+        threesMade: 9,
+        threesAttempted: 15,
+        freeThrowsAttempted: 0,
+      }),
+    },
+    {
+      gameDate: '2026-01-02',
+      line: line({
+        points: 10,
+        minutes: 30,
+        fieldGoalsMade: 2,
+        fieldGoalsAttempted: 4,
+        threesMade: 1,
+        threesAttempted: 2,
+        freeThrowsAttempted: 10,
+      }),
+    },
+  ];
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        statColumns: ['FG%', '3P%', 'TS%', 'PTS/FGA'],
+        players: [
+          {
+            ...player({ name: 'A', seasonPoints: 60, gamePoints: 30 }),
+            seasonTotals: season,
+            seasonGames: 2,
+            games,
+          },
+        ],
+      }}
+      columns={['FG%', '3P%', 'TS%', 'PTS/FGA']}
+      gradedBy="FG%"
+    />,
+  );
+  expect(screen.getByRole('listitem', { name: 'FG%' })).toHaveTextContent('-3.8 pp');
+  expect(screen.getByRole('listitem', { name: 'FG%' })).toHaveTextContent('-8.5% vs baseline');
+  expect(screen.getByRole('listitem', { name: '3P%' })).toHaveTextContent('-1.2 pp');
+  expect(screen.getByRole('listitem', { name: '3P%' })).toHaveTextContent('-2% vs baseline');
+  expect(screen.getByRole('listitem', { name: 'TS%' })).toHaveTextContent('+8.5 pp');
+  expect(screen.getByRole('listitem', { name: 'TS%' })).toHaveTextContent('+19.4% vs baseline');
+  expect(
+    within(screen.getByRole('listitem', { name: 'PTS/FGA' })).getByText('+0.2 PTS/FGA', {
+      exact: true,
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('listitem', { name: 'PTS/FGA' })).toHaveTextContent('+17.6% vs baseline');
+});
+
+test('distinct player baselines remain distinct across multiple games', () => {
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        players: [
+          {
+            ...player({ name: 'A', seasonPoints: 10, gamePoints: 15 }),
+            games: [
+              { gameDate: '2026-01-01', stats: { PTS: 15 } },
+              { gameDate: '2026-01-02', stats: { PTS: 5 } },
+            ],
+          },
+          {
+            ...player({ name: 'B', seasonPoints: 30, gamePoints: 40 }),
+            games: [{ gameDate: '2026-01-01', stats: { PTS: 40 } }],
+          },
+        ],
+      }}
+    />,
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('+3.3 PTS/game');
+  expect(summary).toHaveTextContent('+20% vs baseline');
+  expect(summary).toHaveTextContent('Hit rate 67%');
+});
+
+test('per36 weighting keeps distinct player rates and unequal appearances separate', () => {
+  const playerA = {
+    ...player({ name: 'A', seasonPoints: 18, seasonMinutes: 36, gamePoints: 3, gameMinutes: 2 }),
+    games: [{ gameDate: '2026-01-01', line: line({ points: 3, minutes: 2 }) }],
+  };
+  const playerB = {
+    ...player({ name: 'B', seasonPoints: 48, seasonMinutes: 72, gamePoints: 24, gameMinutes: 36 }),
+    games: [
+      { gameDate: '2026-01-02', line: line({ points: 24, minutes: 36 }) },
+      { gameDate: '2026-01-03', line: line({ points: 24, minutes: 36 }) },
+    ],
+  };
+  renderPointsRecord([playerA, playerB], ['PTS/36']);
+  const summary = screen.getByRole('listitem', { name: 'PTS/36' });
+  expect(summary).toHaveTextContent('+1.0 PTS/36');
+  expect(summary).toHaveTextContent('+4.1% vs baseline');
+  expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent(
+    '3 player-games',
+  );
+  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('74.0 minutes');
+});
+
+test('rounds aggregate values before choosing a sign, so a tiny negative is not negative zero', () => {
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        players: [
+          {
+            ...backtest.players[0],
+            seasonAverages: { PTS: 10 },
+            games: [{ gameDate: '2026-01-01', stats: { PTS: 9.96 } }],
+          },
+        ],
+      }}
+    />,
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('0.0 PTS/game');
+  expect(summary).not.toHaveTextContent('-0.0');
+});
+
+test('zero expected production keeps the absolute result and drops relative change', () => {
+  renderPointsRecord([player({ name: 'A', seasonPoints: 0, gamePoints: 3 })]);
+  const summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('+3.0 PTS/game');
+  expect(summary).toHaveTextContent('— vs baseline');
+});
+
+test('missing game values reduce aggregate evidence without changing the valid hit-rate sample', () => {
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        players: [
+          {
+            ...backtest.players[0],
+            seasonAverages: { PTS: 10 },
+            games: [
+              { gameDate: '2026-01-01', stats: { PTS: 15 } },
+              { gameDate: '2026-01-02', stats: {} },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('+5.0 PTS/game');
+  expect(summary).toHaveTextContent('+50% vs baseline');
+  expect(summary).toHaveTextContent('Hit rate 100%');
+  expect(summary).toHaveTextContent('1 of 2 player-games used');
+  expect(screen.getByRole('listitem', { name: /2026-01-02/ })).toHaveClass('grade-unavailable');
+});
+
+test('an efficiency denominator of zero excludes that game from the aggregate', () => {
+  const season = line({
+    points: 20,
+    minutes: 60,
+    fieldGoalsMade: 10,
+    fieldGoalsAttempted: 20,
+  });
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        statColumns: ['FG%'],
+        players: [
+          {
+            ...player({ name: 'A', seasonPoints: 20, gamePoints: 10 }),
+            seasonTotals: season,
+            games: [
+              {
+                gameDate: '2026-01-01',
+                line: line({ points: 10, minutes: 30, fieldGoalsMade: 5, fieldGoalsAttempted: 10 }),
+              },
+              {
+                gameDate: '2026-01-02',
+                line: line({ points: 0, minutes: 30, fieldGoalsMade: 0, fieldGoalsAttempted: 0 }),
+              },
+            ],
+          },
+        ],
+      }}
+      columns={['FG%']}
+      gradedBy="FG%"
+    />,
+  );
+  const summary = screen.getByRole('listitem', { name: 'FG%' });
+  expect(summary).toHaveTextContent('0.0 pp');
+  expect(summary).toHaveTextContent('1 of 2 player-games used');
+  expect(screen.getByRole('listitem', { name: /2026-01-02/ })).toHaveClass('grade-unavailable');
+});
+
+test('missing minutes and legacy rates remain visible individually but leave aggregates unavailable', () => {
+  const { rerender } = render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        players: [
+          {
+            ...backtest.players[0],
+            seasonAverages: { PTS: 20 },
+            games: [{ gameDate: '2026-01-01', stats: { PTS: 25 } }],
+          },
+        ],
+      }}
+    />,
+  );
+  let summary = screen.getByRole('listitem', { name: 'PTS' });
+  expect(summary).toHaveTextContent('+5.0 PTS/game');
+  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent(
+    'minutes unavailable/incomplete',
+  );
+
+  rerender(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        statColumns: ['FG%'],
+        players: [
+          {
+            ...backtest.players[0],
+            seasonAverages: { 'FG%': 50 },
+            games: [{ gameDate: '2026-01-01', stats: { 'FG%': 60 } }],
+          },
+        ],
+      }}
+      columns={['FG%']}
+      gradedBy="FG%"
+    />,
+  );
+  summary = screen.getByRole('listitem', { name: 'FG%' });
+  expect(summary).toHaveTextContent('— pp');
+  expect(summary).toHaveTextContent('Hit rate 100% · 1 player-games');
+  expect(summary).toHaveTextContent('0 of 1 player-games used');
+  expect(screen.getByRole('listitem', { name: /2026-01-01/ })).toHaveAttribute(
+    'title',
+    expect.stringContaining('+10.0 margin'),
+  );
+});
+
+test('zero minutes is a valid sample total while the per36 column excludes that row', () => {
+  renderPointsRecord(
+    [player({ name: 'A', seasonPoints: 20, seasonMinutes: 30, gamePoints: 10, gameMinutes: 0 })],
+    ['PTS/36'],
+  );
+  const summary = screen.getByRole('listitem', { name: 'PTS/36' });
+  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('0.0 minutes');
+  expect(summary).toHaveTextContent('— PTS/36');
+  expect(summary).toHaveTextContent('0 of 1 player-games used');
+});
+
+test('an empty record has no aggregate evidence', () => {
+  render(<TargetRecord backtest={{ ...backtest, players: [] }} />);
+  expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('0');
+  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent(/^0\.0 minutes$/);
+  expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— PTS/game');
+  expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— vs baseline');
 });

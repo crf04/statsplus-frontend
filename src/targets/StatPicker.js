@@ -1,10 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { STAT_GROUPS } from './statValues';
 
 export default function StatPicker({ columns, gradedBy, onChange }) {
   const [open, setOpen] = useState(false);
+  const pickerRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnPointerDown = (event) => {
+      if (!pickerRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeOnKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnPointerDown);
+    document.addEventListener('keydown', closeOnKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnPointerDown);
+      document.removeEventListener('keydown', closeOnKeyDown);
+    };
+  }, [open]);
   return (
-    <div className="target-stat-picker">
+    <div className="target-stat-picker" ref={pickerRef}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
         stats ▾
       </button>

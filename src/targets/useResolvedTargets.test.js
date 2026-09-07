@@ -15,16 +15,16 @@ beforeEach(() => {
 });
 test('historical revisits reuse decoded evidence while reload bypasses it', async () => {
   const { result, rerender } = renderHook(({ date }) => useResolvedTargets(date), {
-    initialProps: { date: '2020-01-01' },
+    initialProps: { date: '2020-01-03' },
   });
   await waitFor(() => expect(result.current.status).toBe('ready'));
   const originalEntries = result.current.entries;
   rerender({ date: '2020-01-02' });
   await waitFor(() => expect(result.current.status).toBe('ready'));
-  rerender({ date: '2020-01-01' });
+  rerender({ date: '2020-01-03' });
   await waitFor(() => expect(result.current.status).toBe('ready'));
   expect(fetchResolvedTargets).toHaveBeenCalledTimes(2);
-  expect(result.current.slateDate).toBe('2020-01-01');
+  expect(result.current.slateDate).toBe('2020-01-03');
   expect(result.current.entries).toBe(originalEntries);
   act(() => result.current.reload());
   await waitFor(() => expect(fetchResolvedTargets).toHaveBeenCalledTimes(3));

@@ -439,7 +439,7 @@ const GameLogFilter = () => {
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
       if (authLoading || !isAuthenticated) return { ok: false, reason: 'authentication' };
-      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: false });
+      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: !selectedTeam });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.

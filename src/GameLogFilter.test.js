@@ -378,6 +378,8 @@ test.each([
   { isAuthenticated: true, loading: true },
 ])('unchanged Apply waits for settled authentication: %j', async (authState) => {
   mockAuthState = authState;
+  fetchGameLogsData.mockRejectedValue(new Error('unauthenticated'));
+
   mockFilterPatch = { game_filter: 10 };
   renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
   await act(async () =>
@@ -401,4 +403,18 @@ test('unchanged Apply refreshes logs while preserving the comparison opponent', 
   );
   expect(fetchGameLogsData).toHaveBeenCalledTimes(before + 1);
   expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Denver Nuggets');
+});
+
+test('unchanged Apply recovers from an initial failure with a default comparison opponent', async () => {
+  mockFilterPatch = { game_filter: 10 };
+  fetchGameLogsData.mockRejectedValue(new Error('initial failure'));
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await screen.findByText('request failed');
+  expect(screen.getByTestId('comparison-opponent')).toBeEmptyDOMElement();
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(screen.queryByText('request failed')).not.toBeInTheDocument();
+  expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics');
 });

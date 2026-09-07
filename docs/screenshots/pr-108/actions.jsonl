@@ -1,0 +1,12 @@
+{"action":"historical-slate-back","viewport":"desktop","readyMs":112,"requests":[{"path":"/api/games/slate","query":"?date=2026-04-10"}]}
+{"action":"last-ten-revisit","viewport":"desktop","readyMs":859,"requests":[]}
+{"action":"independent-profile-category","viewport":"desktop","category":"Shooting Type","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Shooting+Type"}]}
+{"action":"independent-profile-category","viewport":"desktop","category":"Zone Shooting","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Zone+Shooting"}]}
+{"action":"independent-profile-category","viewport":"desktop","category":"Archetype","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Archetype&opp_team=Denver+Nuggets"}]}
+{"action":"route-download-recovery","viewport":"desktop","navigationPreserved":true,"reloadRecovered":true}
+{"action":"historical-slate-back","viewport":"phone","readyMs":101,"requests":[{"path":"/api/games/slate","query":"?date=2026-04-10"}]}
+{"action":"last-ten-revisit","viewport":"phone","readyMs":41,"requests":[]}
+{"action":"independent-profile-category","viewport":"phone","category":"Shooting Type","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Shooting+Type"}]}
+{"action":"independent-profile-category","viewport":"phone","category":"Zone Shooting","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Zone+Shooting"}]}
+{"action":"independent-profile-category","viewport":"phone","category":"Archetype","requests":[{"path":"/api/players/profile","query":"?player_name=LeBron+James&category=Archetype&opp_team=Denver+Nuggets"}]}
+{"action":"route-download-recovery","viewport":"phone","navigationPreserved":true,"reloadRecovered":true}

@@ -180,6 +180,13 @@ sides of the minutes comparator. Decoder and UI tests also cover absent legacy
 Conditions, malformed dates/counts, partial PATCH clearing, opponent changes,
 and preservation of the workbench's grading and paging through Save.
 
+The same Target fixture applies the optional player-game minutes threshold to
+each retained appearance. Its browser journey sets the strict `> 36` boundary
+to an accurate empty result, returns to `> 35`, and checks create, revert,
+reload, stat-preference persistence, and the compact saved summary.
+`games_considered` remains the opponent-game denominator while player-games and
+summaries follow the retained appearances.
+
 The Target record derives selected stat columns from full game lines and season totals,
 using `season_games` only for box-score season averages. Per-36 and efficiency baselines
 use ratios of totals; zero denominators remain unavailable. UI hit rates count strictly

@@ -13,11 +13,16 @@ const comparators = new Set(TARGET_COMPARATORS.map((entry) => entry.key));
 export const decodeConditions = (conditions) => {
   if (conditions === null) return null;
   if (!isRecord(conditions)) throw createInvalidResponseError();
-  const { defender, from, to } = conditions;
+  const { defender, from, to, player_minutes: playerMinutes = null } = conditions;
   if (
     (from !== null && !isCalendarDate(from)) ||
     (to !== null && !isCalendarDate(to)) ||
     (from && to && from > to)
+  )
+    throw createInvalidResponseError();
+  if (
+    playerMinutes !== null &&
+    (!Number.isInteger(playerMinutes) || playerMinutes < 0 || playerMinutes > 48)
   )
     throw createInvalidResponseError();
   let decodedDefender = null;
@@ -39,13 +44,12 @@ export const decodeConditions = (conditions) => {
       minutes: defender.minutes,
     };
   }
-  return { defender: decodedDefender, from, to };
+  return { defender: decodedDefender, from, to, playerMinutes };
 };
 const encodeConditions = (conditions) =>
   conditions === null
     ? null
     : {
-        ...conditions,
         defender: conditions.defender
           ? {
               player_id: conditions.defender.playerId,
@@ -53,6 +57,11 @@ const encodeConditions = (conditions) =>
               minutes: conditions.defender.minutes,
             }
           : null,
+        from: conditions.from ?? null,
+        to: conditions.to ?? null,
+        ...(conditions.playerMinutes !== undefined
+          ? { player_minutes: conditions.playerMinutes }
+          : {}),
       };
 const decodeGamesConsidered = (games) => {
   if (

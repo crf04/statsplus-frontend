@@ -64,6 +64,58 @@ test('one add menu offers each Condition once and saves defender and season-wind
   fireEvent.change(screen.getByLabelText('Through'), { target: { value: '2025-12-01' } });
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
 });
+test('a player game minutes Condition defaults to a strict backtest threshold and can be removed', async () => {
+  render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  expect(screen.getByLabelText('Player game minutes')).toHaveValue(10);
+  expect(screen.getByText(/strictly greater than 10 minutes in the backtest/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
+  expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  expect(screen.getByRole('button', { name: 'a player’s game minutes' })).toBeVisible();
+});
+test('an incomplete player game minutes threshold remains invalid until filled', () => {
+  render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '' } });
+  expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  expect(
+    screen.getByText('Player game minutes must be an integer from 0 through 48.'),
+  ).toBeVisible();
+  expect(screen.getByText('Enter an integer threshold from 0 through 48 minutes.')).toBeVisible();
+  expect(screen.queryByText(/strictly greater than\s+minutes/)).not.toBeInTheDocument();
+});
+test('a player game minutes Condition is included in the saved draft and compact summary', async () => {
+  render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '0' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({
+      conditions: {
+        defender: null,
+        from: null,
+        to: null,
+        playerMinutes: 0,
+      },
+    }),
+  );
+  render(
+    <TargetConditionSummary
+      compact
+      target={{
+        ...target,
+        conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
+      }}
+    />,
+  );
+  expect(screen.getByText(/player game minutes > 10 min \(backtest only\)/)).toHaveClass(
+    'target-condition-chip',
+  );
+});
 test('a Condition line names the defender and the count of opponent games kept', async () => {
   render(
     <TargetConditionSummary

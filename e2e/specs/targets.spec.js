@@ -273,6 +273,102 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await expect(page.getByText(/0 of 4 opponent games kept/)).toBeVisible();
 });
 
+test('@critical a player game minutes Condition filters appearances, persists, and can revert', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a player’s game minutes' }).click();
+  const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
+  await expect(playerMinutes).toHaveValue('10');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await playerMinutes.fill('36');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(page.getByText(/4 of 4 opponent games kept/)).toBeVisible();
+  await expect(
+    page.getByText('No qualifying appearances match these backtest conditions.'),
+  ).toBeVisible();
+  await expect(page.getByText(/player game minutes > 36 min \(backtest only\)/)).toBeVisible();
+  await playerMinutes.fill('35');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(playerMinutes).toHaveValue('35');
+  await expect(page.getByText(/player game minutes > 35 min \(backtest only\)/)).toBeVisible();
+  await playerMinutes.fill('36');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await page.getByRole('button', { name: 'Revert' }).click();
+  await expect(playerMinutes).toHaveValue('35');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await page.getByRole('button', { name: 'stats ▾' }).click();
+  await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  const savedLens = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      response.request().postDataJSON()?.stat_preferences?.graded_by === 'PTS/36',
+  );
+  await page.getByRole('button', { name: /^PTS\/36 / }).click();
+  await savedLens;
+  await page.reload();
+  await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveValue('35');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await page.getByRole('link', { name: '← All Targets' }).click();
+  await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
+    'player game minutes > 35 min (backtest only)',
+  );
+});
+
+test('@critical a saved player game minutes Condition can be cleared while a date Condition remains', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a player’s game minutes' }).click();
+  const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
+  await playerMinutes.fill('36');
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a date window' }).click();
+  await page.getByLabel('From', { exact: true }).fill('2025-01-10');
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
+  await expect(playerMinutes).toHaveValue('36');
+  await page.getByRole('button', { name: 'Remove player game minutes Condition' }).click();
+  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveCount(0);
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  const clearedConditions = page.waitForRequest(
+    (request) =>
+      request.method() === 'PATCH' && request.postDataJSON()?.conditions?.from === '2025-01-10',
+  );
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect((await clearedConditions).postDataJSON().conditions).toEqual({
+    defender: null,
+    from: '2025-01-10',
+    to: null,
+  });
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
+  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveCount(0);
+  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+});
+
 test('Slate fits honor a defender who is out and an inclusive date window', async ({
   authenticatedPage: page,
 }) => {

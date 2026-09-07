@@ -1705,7 +1705,13 @@ const countsSeasonLog = (target, log, player) => {
   const game = opponentGames(target.opponent).find(
     (item) => item.date === log.GAME_DATE && item.against === player.tricode,
   );
-  return conditionCounts(target, game || { date: log.GAME_DATE, minutes: {} });
+  if (!conditionCounts(target, game || { date: log.GAME_DATE, minutes: {} })) return false;
+  const threshold = target.conditions?.player_minutes;
+  return (
+    threshold === null ||
+    threshold === undefined ||
+    (typeof log.MIN === 'number' && Number.isFinite(log.MIN) && log.MIN > threshold)
+  );
 };
 const validSlateDate = (value) =>
   typeof value === 'string' &&
@@ -1715,14 +1721,14 @@ const validSlateDate = (value) =>
 const validFixtureConditions = (conditions, opponent) => {
   if (conditions === undefined || conditions === null) return true;
   if (typeof conditions !== 'object' || Array.isArray(conditions)) return false;
-  const { from, to, defender } = conditions;
+  const { from, to, defender, player_minutes: playerMinutes } = conditions;
   if (
     (from !== null && !validSlateDate(from)) ||
     (to !== null && !validSlateDate(to)) ||
     (from && to && from > to)
   )
     return false;
-  return (
+  const validDefender =
     defender === null ||
     (defender &&
       (CONDITION_ROSTERS[opponent] || []).some(
@@ -1732,9 +1738,17 @@ const validFixtureConditions = (conditions, opponent) => {
       typeof defender.minutes === 'number' &&
       Number.isFinite(defender.minutes) &&
       defender.minutes >= 0 &&
-      defender.minutes <= 48)
-  );
+      defender.minutes <= 48);
+  const validPlayerMinutes =
+    playerMinutes === null ||
+    playerMinutes === undefined ||
+    (Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48);
+  return validDefender && validPlayerMinutes;
 };
+const canonicalFixtureConditions = (conditions) =>
+  conditions === undefined || conditions === null
+    ? null
+    : { ...conditions, player_minutes: conditions.player_minutes ?? null };
 
 const resolveTargets = (date, targets) => {
   const slate = RESOLVABLE_SLATES[date];
@@ -2302,7 +2316,7 @@ export const installApiContract = async (page, overrides = {}) => {
               opponent: body.opponent,
               qualifiers: body.qualifiers.map(toStored),
               note: body.note || '',
-              conditions: body.conditions || null,
+              conditions: canonicalFixtureConditions(body.conditions),
               stat_preferences: body.stat_preferences ?? null,
             }),
           },
@@ -2364,7 +2378,7 @@ export const installApiContract = async (page, overrides = {}) => {
           opponent: body.opponent,
           qualifiers,
           note: body.note || '',
-          conditions: body.conditions || null,
+          conditions: canonicalFixtureConditions(body.conditions),
           stat_preferences: body.stat_preferences ?? null,
           created_at: '2026-04-13T00:10:00Z',
         };
@@ -2391,7 +2405,9 @@ export const installApiContract = async (page, overrides = {}) => {
           ...targets[index],
           ...(body.qualifiers !== undefined ? { qualifiers: body.qualifiers.map(toStored) } : {}),
           ...(body.note !== undefined ? { note: body.note || '' } : {}),
-          ...(body.conditions !== undefined ? { conditions: body.conditions } : {}),
+          ...(body.conditions !== undefined
+            ? { conditions: canonicalFixtureConditions(body.conditions) }
+            : {}),
           ...(body.stat_preferences !== undefined
             ? { stat_preferences: body.stat_preferences }
             : {}),

@@ -1,3 +1,4 @@
+import { clearRevisitCaches, readRevisit } from '../revisitCache';
 import { apiClient } from '../config';
 import {
   createTarget,
@@ -1012,3 +1013,37 @@ test.each([
     /invalid response/,
   );
 });
+
+test.each(['create', 'update', 'preferences', 'delete'])(
+  'successful %s invalidates resolution revisits and late reads',
+  async (mutation) => {
+    clearRevisitCaches();
+    const load = jest.fn().mockResolvedValue('fresh');
+    await readRevisit('resolution', 'alice', 'cached', load);
+    let finish;
+    const pending = readRevisit(
+      'resolution',
+      'alice',
+      'pending',
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    apiClient.post.mockResolvedValue({ data: { target: wireTarget } });
+    apiClient.patch.mockResolvedValue({});
+    apiClient.delete.mockResolvedValue({});
+    if (mutation === 'create') await createTarget({ opponent: 'OKC', qualifiers: [] });
+    else if (mutation === 'delete') await deleteTarget({ id: 7 });
+    else
+      await updateTarget({
+        id: 7,
+        ...(mutation === 'preferences' ? { statPreferences: null } : { note: 'new' }),
+      });
+    finish('stale');
+    await pending;
+    await readRevisit('resolution', 'alice', 'cached', load);
+    await readRevisit('resolution', 'alice', 'pending', load);
+    expect(load).toHaveBeenCalledTimes(3);
+  },
+);

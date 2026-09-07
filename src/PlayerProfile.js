@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Card, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
@@ -12,80 +12,81 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const requestIdRef = useRef(0);
-
-  const fetchProfileData = useCallback(() => {
-    const requestId = ++requestIdRef.current;
-
-    if (selectedPlayer !== 'None') {
-      setLoading(true);
-      setError(null);
-
-      const playerRequest = apiClient.get(getApiUrl('PLAYER_PROFILE'), {
-        params: {
-          player_name: selectedPlayer,
-          category: selectedProfile,
-          opp_team: selectedTeam,
-        },
-      });
-
-      const teamRequest = selectedTeam
-        ? apiClient.get(getApiUrl('TEAM_STATS'), {
-            params: {
-              category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
-              team: selectedTeam,
-            },
-          })
-        : Promise.resolve({ data: null });
-
-      Promise.all([playerRequest, teamRequest])
-        .then(([playerResponse, teamResponse]) => {
-          if (requestId !== requestIdRef.current) return;
-
-          if (playerResponse.data && Object.keys(playerResponse.data).length > 0) {
-            setPlayerData(playerResponse.data);
-          } else {
-            setPlayerData(null);
-            setError('No data available for this player');
-          }
-
-          if (teamResponse.data && Object.keys(teamResponse.data).length > 0) {
-            setTeamData(teamResponse.data);
-          } else if (selectedTeam) {
-            setTeamData(null);
-            setError((prevError) =>
-              prevError
-                ? `${prevError}. No data available for this team`
-                : 'No data available for this team',
-            );
-          } else {
-            setTeamData(null);
-          }
-        })
-        .catch((error) => {
-          if (requestId !== requestIdRef.current) return;
-          console.error('Error fetching data:', error.response?.status || error.message);
-          setPlayerData(null);
-          setTeamData(null);
-          setError('Failed to fetch data. Please try again.');
-        })
-        .finally(() => {
-          if (requestId !== requestIdRef.current) return;
-          setLoading(false);
-        });
-    } else {
-      setPlayerData(null);
-      setTeamData(null);
-      setLoading(false);
-      setError(null);
-    }
-  }, [selectedPlayer, selectedTeam, selectedProfile]);
+  const [playerLoading, setPlayerLoading] = useState(false);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [playerError, setPlayerError] = useState(null);
+  const [teamError, setTeamError] = useState(null);
+  const profileOpponent = selectedProfile === 'Archetype' ? selectedTeam : undefined;
+  const hasPlayer = selectedPlayer !== 'None';
+  const teamCategory =
+    selectedProfile === 'Playtypes'
+      ? 'Playtypes'
+      : selectedProfile === 'assists'
+        ? 'Assists'
+        : null;
+  const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
 
   useEffect(() => {
-    fetchProfileData();
-  }, [fetchProfileData]);
+    const controller = new AbortController();
+    setPlayerData(null);
+    setPlayerError(null);
+    setPlayerLoading(hasPlayer);
+    if (hasPlayer) {
+      apiClient
+        .get(getApiUrl('PLAYER_PROFILE'), {
+          params: {
+            player_name: selectedPlayer,
+            category: selectedProfile,
+            opp_team: profileOpponent,
+          },
+          signal: controller.signal,
+        })
+        .then(({ data }) => {
+          if (controller.signal.aborted) return;
+          if (data && Object.keys(data).length > 0) setPlayerData(data);
+          else setPlayerError('No data available for this player');
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setPlayerError('Failed to fetch data. Please try again.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setPlayerLoading(false);
+        });
+    }
+    return () => controller.abort();
+  }, [selectedPlayer, selectedProfile, profileOpponent, hasPlayer]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setTeamData(null);
+    setTeamError(null);
+    setTeamLoading(Boolean(comparisonTeam));
+    if (comparisonTeam) {
+      apiClient
+        .get(getApiUrl('TEAM_STATS'), {
+          params: {
+            category: teamCategory,
+            team: comparisonTeam,
+          },
+          signal: controller.signal,
+        })
+        .then(({ data }) => {
+          if (controller.signal.aborted) return;
+          if (data && Object.keys(data).length > 0) setTeamData(data);
+          else setTeamError('No data available for this team');
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setTeamError('Failed to fetch data. Please try again.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setTeamLoading(false);
+        });
+    }
+    return () => controller.abort();
+  }, [teamCategory, comparisonTeam]);
+
+  const loading = playerLoading || (Boolean(teamCategory) && teamLoading);
+  const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join(' ');
 
   const renderAssistProfile = () => {
     if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {

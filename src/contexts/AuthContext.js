@@ -7,6 +7,7 @@ import {
   getIdToken,
   getIdTokenResult,
 } from 'firebase/auth';
+import { clearRevisitCaches } from '../revisitCache';
 import { auth, googleProvider } from '../firebase/config';
 
 // Create the Auth Context
@@ -116,6 +117,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
+        clearRevisitCaches();
         currentUserRef.current = e2eUser;
         setCurrentUser(e2eUser);
         await refreshAdminClaims(e2eUser);
@@ -144,6 +146,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
 
   // Sign out
   const logout = async () => {
+    clearRevisitCaches();
     try {
       setError(null);
       if (isE2EMode) {
@@ -187,6 +190,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     }
 
     if (!authClient) {
+      clearRevisitCaches();
       setCurrentUser(null);
       currentUserRef.current = null;
       setLoading(false);
@@ -204,6 +208,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     const unsubscribe = authStateListener(
       authClient,
       async (user) => {
+        if (currentUserRef.current?.uid !== user?.uid) clearRevisitCaches();
         currentUserRef.current = user;
         setCurrentUser(user);
         setLoading(false);
@@ -212,6 +217,8 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       },
       (authError) => {
         console.error('Authentication state error:', authError);
+        clearRevisitCaches();
+        currentUserRef.current = null;
         setCurrentUser(null);
         setLoading(false);
         setAdminState({

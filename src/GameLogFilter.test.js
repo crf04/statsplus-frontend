@@ -1,3 +1,4 @@
+import { clearRevisitCaches } from './revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
@@ -48,7 +49,15 @@ jest.mock('./FilterOptions', () => ({
 }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
-jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
+jest.mock('./OpposingTeamProfile', () => ({
+  __esModule: true,
+  default: ({ selectedTeam, setSelectedTeam }) => (
+    <div>
+      <output data-testid="comparison-opponent">{selectedTeam}</output>
+      <button onClick={() => setSelectedTeam('Denver Nuggets')}>Compare Denver</button>
+    </div>
+  ),
+}));
 jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
@@ -344,4 +353,68 @@ test('does not name a tab after a link it refuses', async () => {
 
   expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
   expect(document.title).toBe('CourtAI | NBA Game Log Analytics');
+});
+
+test('returning to a full Filter Set reuses results and reapplying it refreshes', async () => {
+  clearRevisitCaches();
+  mockAuthState.currentUser = { uid: 'alice' };
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
+  renderGameLogFilter(['/gamelogs?player_name=Stephen+Curry&game_filter=10']);
+  const countFiltered = () =>
+    fetchGameLogsData.mock.calls.filter(([params]) => params.game_filter).length;
+  await waitFor(() => expect(countFiltered()).toBe(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(countFiltered()).toBe(2));
+  fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('game_filter=10'));
+  expect(countFiltered()).toBe(2);
+  mockFilterPatch = { game_filter: 10 };
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(countFiltered()).toBe(3));
+});
+
+test.each([
+  { isAuthenticated: false, loading: false },
+  { isAuthenticated: true, loading: true },
+])('unchanged Apply waits for settled authentication: %j', async (authState) => {
+  mockAuthState = authState;
+  fetchGameLogsData.mockRejectedValue(new Error('unauthenticated'));
+
+  mockFilterPatch = { game_filter: 10 };
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
+  expect(screen.queryByText('request failed')).not.toBeInTheDocument();
+});
+
+test('unchanged Apply refreshes logs while preserving the comparison opponent', async () => {
+  mockFilterPatch = { game_filter: 10 };
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await waitFor(() =>
+    expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics'),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Compare Denver' }));
+  const before = fetchGameLogsData.mock.calls.length;
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(fetchGameLogsData).toHaveBeenCalledTimes(before + 1);
+  expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Denver Nuggets');
+});
+
+test('unchanged Apply recovers from an initial failure with a default comparison opponent', async () => {
+  mockFilterPatch = { game_filter: 10 };
+  fetchGameLogsData.mockRejectedValue(new Error('initial failure'));
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await screen.findByText('request failed');
+  expect(screen.getByTestId('comparison-opponent')).toBeEmptyDOMElement();
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(screen.queryByText('request failed')).not.toBeInTheDocument();
+  expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics');
 });

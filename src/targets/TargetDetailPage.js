@@ -87,6 +87,7 @@ function TargetDetail({ target, reload }) {
         <TargetLab
           draft={draft}
           workbench
+          immediateInitialPreview
           preferences={stats.preferences}
           onPreferencesChange={stats.onChange}
         >

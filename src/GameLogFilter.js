@@ -1,3 +1,4 @@
+import { readRevisit } from './revisitCache';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
@@ -29,7 +30,7 @@ const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
 const GameLogFilter = () => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
@@ -229,52 +230,61 @@ const GameLogFilter = () => {
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
   // cancelled and ignored when their promises settle.
-  const requestGameLogs = useCallback((params, { updateSelectedTeam = true } = {}) => {
-    const previousRequest = gameLogsRequestRef.current;
-    previousRequest.controller?.abort();
+  const requestGameLogs = useCallback(
+    (params, { updateSelectedTeam = true, bypass = false } = {}) => {
+      const previousRequest = gameLogsRequestRef.current;
+      previousRequest.controller?.abort();
 
-    const requestId = previousRequest.id + 1;
-    const controller = new AbortController();
-    gameLogsRequestRef.current = { id: requestId, controller };
-    setIsGameLogsLoading(true);
-    setGameLogsError(null);
-    // The badges above the table already describe the Filter Set just
-    // requested, so whatever is still on screen belongs to nobody. Clearing
-    // at the start is what keeps that true while the request is in flight and
-    // if it never arrives, rather than only once it does.
-    setGameLogs([]);
-    setAverages([]);
+      const requestId = previousRequest.id + 1;
+      const controller = new AbortController();
+      gameLogsRequestRef.current = { id: requestId, controller };
+      setIsGameLogsLoading(true);
+      setGameLogsError(null);
+      // The badges above the table already describe the Filter Set just
+      // requested, so whatever is still on screen belongs to nobody. Clearing
+      // at the start is what keeps that true while the request is in flight and
+      // if it never arrives, rather than only once it does.
+      setGameLogs([]);
+      setAverages([]);
 
-    return fetchGameLogsData(params, { signal: controller.signal })
-      .then((data) => {
-        if (gameLogsRequestRef.current.id !== requestId) {
-          return { stale: true };
-        }
+      return readRevisit(
+        'logs',
+        currentUser?.uid,
+        params,
+        () => fetchGameLogsData(params, { signal: controller.signal }),
+        { signal: controller.signal, bypass },
+      )
+        .then((data) => {
+          if (gameLogsRequestRef.current.id !== requestId) {
+            return { stale: true };
+          }
 
-        setGameLogs(data.gameLogs);
-        setAverages(data.averages);
-        if (updateSelectedTeam) {
-          setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
-        }
-        return { ok: true, data };
-      })
-      .catch((error) => {
-        const stale = gameLogsRequestRef.current.id !== requestId;
-        if (stale || isRequestCancelled(error)) {
-          return { stale, cancelled: true };
-        }
+          setGameLogs(data.gameLogs);
+          setAverages(data.averages);
+          if (updateSelectedTeam) {
+            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
+          }
+          return { ok: true, data };
+        })
+        .catch((error) => {
+          const stale = gameLogsRequestRef.current.id !== requestId;
+          if (stale || isRequestCancelled(error)) {
+            return { stale, cancelled: true };
+          }
 
-        setGameLogsError(
-          getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
-        );
-        return { ok: false, error };
-      })
-      .finally(() => {
-        if (gameLogsRequestRef.current.id === requestId) {
-          setIsGameLogsLoading(false);
-        }
-      });
-  }, []);
+          setGameLogsError(
+            getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
+          );
+          return { ok: false, error };
+        })
+        .finally(() => {
+          if (gameLogsRequestRef.current.id === requestId) {
+            setIsGameLogsLoading(false);
+          }
+        });
+    },
+    [currentUser?.uid],
+  );
 
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
@@ -382,9 +392,8 @@ const GameLogFilter = () => {
   ]);
 
   /*
-   * Applying writes the Filter Set to the URL and stops there. The URL effect
-   * above owns the request, so there is one path from "what the user asked
-   * for" to "what the API is sent", and it runs through the address bar.
+   * Applying a changed Filter Set writes it to the URL for the effect above
+   * to request. Reapplying the current Filter Set explicitly refreshes it.
    *
    * The write patches rather than replaces: the panel emits only the controls
    * the user touched, so a parameter it has no control for — a season that
@@ -429,7 +438,9 @@ const GameLogFilter = () => {
     const nextSearch = filterSetToSearchParams(nextFilters);
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
-      return { ok: false, reason: 'unchanged' };
+      if (authLoading || !isAuthenticated) return { ok: false, reason: 'authentication' };
+      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: !selectedTeam });
+      return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.
     setSearchParams(nextSearch, { replace: false });

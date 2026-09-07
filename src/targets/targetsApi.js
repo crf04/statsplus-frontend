@@ -1,3 +1,4 @@
+import { invalidateTargetResolutions } from '../revisitCache';
 import { apiClient, getApiUrl } from '../config';
 import { isCalendarDate } from '../calendarDate';
 import { isRecord, strictDecoders } from '../decoding';
@@ -582,6 +583,7 @@ export const createTarget = async ({ opponent, qualifiers, note, conditions, sta
       ? { stat_preferences: encodeStatPreferences(statPreferences) }
       : {}),
   });
+  invalidateTargetResolutions();
   return decodeTarget(response.data?.target);
 };
 
@@ -608,10 +610,12 @@ export const updateTarget = async ({
   const url = targetsUrl(`/${encodeURIComponent(id)}`);
   if (expectedUserId !== undefined) await apiClient.patch(url, body, { expectedUserId });
   else await apiClient.patch(url, body);
+  invalidateTargetResolutions();
 };
 
 export const deleteTarget = async ({ id }) => {
   await apiClient.delete(targetsUrl(`/${encodeURIComponent(id)}`));
+  invalidateTargetResolutions();
 };
 
 export const decodeDietBaselines = (payload) => {

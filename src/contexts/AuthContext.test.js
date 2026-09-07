@@ -1,3 +1,4 @@
+import { readRevisit } from '../revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { getIdTokenResult, onIdTokenChanged } from 'firebase/auth';
 import { AuthProvider, useAuth } from './AuthContext';
@@ -106,4 +107,33 @@ test('reports claim refresh and Firebase listener errors', async () => {
     expect(screen.getByTestId('admin-error')).toHaveTextContent('listener failed'),
   );
   expect(screen.getByTestId('user')).toHaveTextContent('signed-out');
+});
+
+test('auth listener clears cached results and fences pending reads with no consuming page mounted', async () => {
+  let listener;
+  onIdTokenChanged.mockImplementation((_auth, next) => {
+    listener = next;
+    return jest.fn();
+  });
+  renderProvider();
+  await act(async () => listener({ uid: 'alice' }));
+  const load = jest.fn().mockResolvedValue('cached');
+  await readRevisit('logs', 'alice', 'done', load);
+  let finish;
+  const pending = readRevisit(
+    'logs',
+    'alice',
+    'pending',
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await act(async () => listener(null));
+  finish('old');
+  await pending;
+  await act(async () => listener({ uid: 'alice' }));
+  await readRevisit('logs', 'alice', 'done', load);
+  await readRevisit('logs', 'alice', 'pending', load);
+  expect(load).toHaveBeenCalledTimes(3);
 });

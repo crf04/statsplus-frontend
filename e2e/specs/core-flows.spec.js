@@ -137,27 +137,41 @@ test('@critical a shared link reproduces a prose query with no language model', 
 
 test('@critical Back undoes the last filter change', async ({ authenticatedPage: page }) => {
   const gameLogRequests = [];
-  page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
-      gameLogRequests.push(new URL(request.url()));
-    }
+  // Make the two Filter Sets observably different at the HTTP seam.
+  await page.route('**/api/games/game_logs*', async (route) => {
+    const url = new URL(route.request().url());
+    gameLogRequests.push(url);
+    await route.fulfill({
+      json: {
+        game_logs: url.searchParams.get('game_filter') === '1' ? gameLogs.slice(0, 1) : gameLogs,
+        averages: [averages],
+        season_averages: [averages],
+        next_game: 'Atlanta Hawks',
+      },
+    });
   });
 
   await page.goto('/?player_name=LeBron+James');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
+  await page.getByLabel('Last N games:').fill('1');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
-  await expect(page).toHaveURL(/game_filter=5/);
-  await expect(page.getByText('GAMES <= 5').first()).toBeVisible();
+  await expect(page).toHaveURL(/game_filter=1/);
+  await expect(page.getByText('GAMES <= 1').first()).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
+  expect(gameLogRequests.at(-1).searchParams.get('game_filter')).toBe('1');
+  const requestsBeforeBack = gameLogRequests.length;
 
   await page.goBack();
   await expect(page).not.toHaveURL(/game_filter/);
   await expect(page).toHaveURL(/player_name=LeBron\+James/);
-  // Undoing has to undo the view, not just the address bar.
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
-  expect(gameLogRequests.at(-1).searchParams.has('game_filter')).toBe(false);
-  await expect(page.getByText('GAMES <= 5')).toHaveCount(0);
+  // Cached navigation must restore the table as well as its URL and badges.
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByText('GAMES <= 1')).toHaveCount(0);
+  expect(gameLogRequests).toHaveLength(requestsBeforeBack);
 });
 
 test('@critical leaving is one action however many filters were applied', async ({

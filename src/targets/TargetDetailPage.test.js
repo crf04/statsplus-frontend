@@ -2,6 +2,8 @@ import { Fragment, StrictMode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
+import TargetLab from './TargetLab';
+import { targetToDraft } from './TargetForm';
 import {
   deleteTarget,
   fetchDietBaselines,
@@ -113,6 +115,23 @@ const open = async () => {
   await screen.findByLabelText('Qualifier 1 threshold percent');
   await act(async () => jest.advanceTimersByTime(600));
 };
+test('a newly composed valid Target retains its initial typing debounce', async () => {
+  render(<TargetLab draft={targetToDraft(target)} />);
+  await act(async () => jest.advanceTimersByTime(599));
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+  await act(async () => jest.advanceTimersByTime(1));
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+});
+test('a saved Target reads immediately, then debounces edits', async () => {
+  renderDetail();
+  await act(async () => {});
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  await act(async () => jest.advanceTimersByTime(599));
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
+  await act(async () => jest.advanceTimersByTime(1));
+  expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
+});
 test('the workbench opens live with a dirty-only footer and reverts without saving', async () => {
   await open();
   expect(screen.getByRole('link', { name: '← All Targets' })).toHaveAttribute('href', '/targets');

@@ -1,8 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { Component, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
-import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import './App.css';
@@ -14,6 +14,37 @@ const OperationsPage = lazy(() => import('./operations/OperationsPage'));
 const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
+
+class RouteErrorBoundary extends Component {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div role="alert">
+          <p>Could not load this page.</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            Reload page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function RouteContent({ children }) {
+  const { pathname } = useLocation();
+  return (
+    <RouteErrorBoundary key={pathname}>
+      <Suspense fallback={<p role="status">Loading page…</p>}>{children}</Suspense>
+    </RouteErrorBoundary>
+  );
+}
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -47,7 +78,7 @@ function App() {
         <div className="App">
           <ProtectedRoute>
             <AppNav />
-            <Suspense fallback={<p role="status">Loading page…</p>}>
+            <RouteContent>
               <Routes>
                 <Route path="/" element={<GameLogFilter />} />
                 <Route path="/help" element={<QueryReferencePage />} />
@@ -73,7 +104,7 @@ function App() {
                 />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Suspense>
+            </RouteContent>
           </ProtectedRoute>
         </div>
       </BrowserRouter>

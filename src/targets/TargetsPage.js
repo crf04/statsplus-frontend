@@ -110,7 +110,7 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
   );
 }
 
-// The league-wide scans are queued; a refusal does not strand later cards.
+// The league-wide scans are queued two at a time; a refusal does not strand later cards.
 function useListBacktests(targets, enabled) {
   const [reads, setReads] = useState({});
   useEffect(() => {
@@ -119,26 +119,33 @@ function useListBacktests(targets, enabled) {
       return undefined;
     }
     const controller = new AbortController();
+    let nextIndex = 0;
     setReads({});
-    (async () => {
-      for (const target of targets) {
-        if (controller.signal.aborted) return;
-        try {
-          const backtest = await fetchTargetBacktest({ id: target.id, signal: controller.signal });
-          if (controller.signal.aborted) return;
-          setReads((current) => ({ ...current, [target.id]: { status: 'ready', backtest } }));
-        } catch (error) {
-          if (controller.signal.aborted) return;
-          setReads((current) => ({
-            ...current,
-            [target.id]: {
-              status: 'error',
-              error: getRequestErrorMessage(error, 'Unable to read this Backtest.'),
-            },
-          }));
-        }
-      }
-    })();
+    const readNext = () => {
+      if (controller.signal.aborted || nextIndex >= targets.length) return;
+      const target = targets[nextIndex];
+      nextIndex += 1;
+      fetchTargetBacktest({ id: target.id, signal: controller.signal })
+        .then(
+          (backtest) => {
+            if (controller.signal.aborted) return;
+            setReads((current) => ({ ...current, [target.id]: { status: 'ready', backtest } }));
+          },
+          (error) => {
+            if (controller.signal.aborted) return;
+            setReads((current) => ({
+              ...current,
+              [target.id]: {
+                status: 'error',
+                error: getRequestErrorMessage(error, 'Unable to read this Backtest.'),
+              },
+            }));
+          },
+        )
+        .finally(readNext);
+    };
+    readNext();
+    readNext();
     return () => controller.abort();
   }, [targets, enabled]);
   return reads;

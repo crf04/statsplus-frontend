@@ -59,6 +59,22 @@ const targets = [
   },
 ];
 
+const queuedTargets = [
+  ...targets,
+  { ...targets[0], id: 10, title: 'CHI vs Corner 3 ≥ 40% (v2)' },
+  { ...targets[1], id: 11, title: 'PHX vs Restricted area ≤ 20% (v2)' },
+];
+
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+};
+
 /*
  * What today makes of each saved Target, read against the current Slate Date.
  * The first has a game and one fit; the second's opponent is not playing.
@@ -851,25 +867,46 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
   expect(within(card).queryByRole('table')).not.toBeInTheDocument();
 });
 
-test('Backtests read one at a time and a failed card does not strand the next', async () => {
-  let rejectFirst;
-  fetchTargetBacktest
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve, reject) => {
-          rejectFirst = reject;
-        }),
-    )
-    .mockResolvedValueOnce(preview);
+test('Backtests start two reads and refill the queue when one settles', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
+  const reads = [deferred(), deferred(), deferred()];
+  fetchTargetBacktest.mockImplementation(
+    ({ id }) => reads[id === 7 ? 0 : id === 8 ? 1 : 2].promise,
+  );
   renderPage(false);
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(1));
-  expect(fetchTargetBacktest.mock.calls[0][0].id).toBe(7);
-  await act(async () => rejectFirst(new Error('failed')));
+
   await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
-  expect(fetchTargetBacktest.mock.calls[1][0].id).toBe(8);
-  expect(await screen.findByText('failed')).toBeVisible();
-  expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8]);
+  expect(screen.queryByRole('article', { name: queuedTargets[2].title })).toBeInTheDocument();
+
+  await act(async () => reads[1].resolve(preview));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(3));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10]);
+  expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(1);
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+test('a failed Backtest frees a slot for every queued card', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets);
+  const reads = new Map(queuedTargets.map((target) => [target.id, deferred()]));
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
+  renderPage(false);
+
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  await act(async () => reads.get(7).reject(new Error('failed 7')));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(3));
+  await act(async () => reads.get(8).reject(new Error('failed 8')));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(4));
+
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10, 11]);
+  expect(await screen.findByText('failed 7')).toBeVisible();
+  expect(await screen.findByText('failed 8')).toBeVisible();
+
+  await act(async () => {
+    reads.get(10).resolve(preview);
+    reads.get(11).resolve(preview);
+  });
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
 });
 
 test('unavailable pools are explicit, while idle Targets do not count as active', async () => {
@@ -904,21 +941,140 @@ test('thin evidence stays visible as a dashed fit pill', async () => {
   expect(screen.getByText('LeBron James').closest('li')).toHaveClass('is-thin');
 });
 
-test('leaving the list aborts its scan and never starts the next', async () => {
-  let finish;
-  fetchTargetBacktest.mockImplementationOnce(
-    () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  );
+test('signing out aborts active reads and leaves queued cards untouched', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
+  const reads = [deferred(), deferred()];
+  fetchTargetBacktest
+    .mockImplementationOnce(() => reads[0].promise)
+    .mockImplementationOnce(() => reads[1].promise);
   const view = renderPage(false);
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(1));
-  const signal = fetchTargetBacktest.mock.calls[0][0].signal;
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  const signals = fetchTargetBacktest.mock.calls.map(([request]) => request.signal);
+
+  auth.isAuthenticated = false;
+  await act(async () => {
+    view.rerender(
+      <MemoryRouter initialEntries={['/targets']}>
+        <TargetsPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+  });
+
+  expect(signals.every((signal) => signal.aborted)).toBe(true);
+  expect(
+    await screen.findByRole('heading', { name: 'Sign in to view your Targets' }),
+  ).toBeVisible();
+  await act(async () => {
+    reads[0].resolve(preview);
+    reads[1].resolve(preview);
+  });
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('article')).not.toBeInTheDocument();
+});
+
+test('late old reads cannot overwrite a fresh authenticated read after sign-in', async () => {
+  const oldReads = [deferred(), deferred()];
+  const freshReads = [deferred(), deferred()];
+  const freshBacktest = {
+    ...preview,
+    players: [
+      {
+        ...preview.players[0],
+        games: [
+          ...preview.players[0].games,
+          { gameDate: '2026-01-13', stats: { PTS: 29, '3PM': 3 } },
+        ],
+      },
+    ],
+  };
+  const reads = [...oldReads, ...freshReads];
+  let nextRead = 0;
+  fetchTargetBacktest.mockImplementation(() => reads[nextRead++].promise);
+  const view = renderPage(false);
+
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  const oldSignals = fetchTargetBacktest.mock.calls.map(([request]) => request.signal);
+
+  auth.isAuthenticated = false;
+  await act(async () => {
+    view.rerender(
+      <MemoryRouter initialEntries={['/targets']}>
+        <TargetsPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+  });
+  expect(
+    await screen.findByRole('heading', { name: 'Sign in to view your Targets' }),
+  ).toBeVisible();
+  expect(oldSignals.every((signal) => signal.aborted)).toBe(true);
+
+  auth.isAuthenticated = true;
+  await act(async () => {
+    view.rerender(
+      <MemoryRouter initialEntries={['/targets']}>
+        <TargetsPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+  });
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(4));
+
+  await act(async () => {
+    freshReads[0].resolve(freshBacktest);
+    freshReads[1].resolve(freshBacktest);
+  });
+  const firstCard = await screen.findByRole('article', { name: targets[0].title });
+  const secondCard = screen.getByRole('article', { name: targets[1].title });
+  expect(
+    within(within(firstCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
+      'listitem',
+      {
+        name: 'Games',
+      },
+    ),
+  ).toHaveTextContent(/2\s*games/);
+  expect(
+    within(within(secondCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
+      'listitem',
+      { name: 'Games' },
+    ),
+  ).toHaveTextContent(/2\s*games/);
+
+  await act(async () => {
+    oldReads[0].resolve(preview);
+    oldReads[1].reject(new Error('stale old failure'));
+  });
+  expect(
+    within(within(firstCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
+      'listitem',
+      {
+        name: 'Games',
+      },
+    ),
+  ).toHaveTextContent(/2\s*games/);
+  expect(screen.queryByText('stale old failure')).not.toBeInTheDocument();
+});
+
+test('unmounting the list aborts both active reads and never starts the queue', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
+  const reads = [deferred(), deferred()];
+  fetchTargetBacktest
+    .mockImplementationOnce(() => reads[0].promise)
+    .mockImplementationOnce(() => reads[1].promise);
+  const view = renderPage(false);
+
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  const signals = fetchTargetBacktest.mock.calls.map(([request]) => request.signal);
   view.unmount();
-  expect(signal.aborted).toBe(true);
-  await act(async () => finish(preview));
-  expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
+
+  expect(signals.every((signal) => signal.aborted)).toBe(true);
+  await act(async () => {
+    reads[0].resolve(preview);
+    reads[1].resolve(preview);
+  });
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
 });
 
 test('saved cards show their Condition as a read-only chip', async () => {

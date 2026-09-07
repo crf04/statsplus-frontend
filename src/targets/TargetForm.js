@@ -68,12 +68,23 @@ export const describeDraft = (draft) => {
   if (draft.qualifiers.length === 0) {
     return { valid: false, problem: 'Add at least one Qualifier before saving.' };
   }
-  if (!validConditions(draft.conditions))
+  if (!validConditions(draft.conditions)) {
+    const playerMinutes = draft.conditions?.playerMinutes;
+    if (
+      playerMinutes !== null &&
+      playerMinutes !== undefined &&
+      (!Number.isInteger(playerMinutes) || playerMinutes < 0 || playerMinutes > 48)
+    )
+      return {
+        valid: false,
+        problem: 'Player game minutes must be an integer from 0 through 48.',
+      };
     return {
       valid: false,
       problem:
         'Choose a defender and a valid minutes threshold; the date window must run from earlier to later.',
     };
+  }
   const request = targetDraftToRequest(draft);
   if (request.qualifiers.some((qualifier) => qualifier.threshold === null)) {
     return { valid: false, problem: 'Every threshold must be a share between 0% and 100%.' };

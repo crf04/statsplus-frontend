@@ -47,6 +47,21 @@ test('the stats picker closes on Escape', () => {
   expect(screen.queryByRole('group', { name: 'Stats picker' })).not.toBeInTheDocument();
 });
 
+test('an empty player-minutes result explains that appearances were filtered', () => {
+  render(
+    <TargetRecord
+      backtest={{
+        ...backtest,
+        target: { ...backtest.target, conditions: { playerMinutes: 36 } },
+        players: [],
+      }}
+    />,
+  );
+  expect(
+    screen.getByText('No qualifying appearances match these backtest conditions.'),
+  ).toBeVisible();
+});
+
 test('grades intermediate margins against the record’s p90, without letting an outlier flatten them', () => {
   // Eleven absolute margins: 0,1,2,3,3,4,5,6,7,8,40. P90 is 8,
   // so +3 and -3 occupy step 2 (not floor's step 1); max scaling

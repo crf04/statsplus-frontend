@@ -833,11 +833,14 @@ const wireConditions = {
   defender: { player_id: 27, comparator: 'under', minutes: 8 },
   from: '2026-01-01',
   to: null,
+  player_minutes: 10,
 };
 test('Conditions and games considered survive every Target read without fabricating legacy counts', () => {
   const conditions = {
-    ...wireConditions,
+    from: wireConditions.from,
+    to: wireConditions.to,
     defender: { playerId: 27, comparator: 'under', minutes: 8 },
+    playerMinutes: 10,
   };
   expect(
     decodeTargets({ targets: [{ ...wireTarget, conditions: wireConditions }] })[0].conditions,
@@ -879,16 +882,28 @@ test('Conditions and games considered survive every Target read without fabricat
     { ...wireConditions, to: '2025-01-01' },
     { ...wireConditions, defender: { ...wireConditions.defender, minutes: 49 } },
     { ...wireConditions, defender: { ...wireConditions.defender, player_id: '27' } },
+    { ...wireConditions, player_minutes: -1 },
+    { ...wireConditions, player_minutes: 49 },
+    { ...wireConditions, player_minutes: 10.5 },
+    { ...wireConditions, player_minutes: '10' },
   ])
     expect(() => decodeConditions(condition)).toThrow(/invalid response/);
+  expect(decodeConditions({ defender: null, from: null, to: null })).toEqual({
+    defender: null,
+    from: null,
+    to: null,
+    playerMinutes: null,
+  });
 });
 test('Conditions patch independently and explicit null clears without touching criteria', async () => {
   apiClient.patch.mockResolvedValue({ data: { success: true } });
   await updateTarget({ id: 7, conditions: null });
   expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', { conditions: null });
   const conditions = {
-    ...wireConditions,
+    from: wireConditions.from,
+    to: wireConditions.to,
     defender: { playerId: 27, comparator: 'under', minutes: 8 },
+    playerMinutes: 10,
   };
   await updateTarget({ id: 7, conditions });
   expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
@@ -900,6 +915,23 @@ test('Conditions patch independently and explicit null clears without touching c
     qualifiers: [
       { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
     ],
+    conditions,
+  });
+  expect(apiClient.post.mock.calls.at(-1)[1].conditions).toEqual(wireConditions);
+  await updateTarget({
+    id: 7,
+    conditions: { defender: null, from: '2026-01-01', to: null, playerMinutes: null },
+  });
+  expect(apiClient.patch).toHaveBeenLastCalledWith('/api/user/targets/7', {
+    conditions: { defender: null, from: '2026-01-01', to: null, player_minutes: null },
+  });
+  apiClient.post.mockResolvedValue({ data: { target: wireTarget } });
+  await createTarget({
+    opponent: 'OKC',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+    note: '',
     conditions,
   });
   expect(apiClient.post.mock.calls.at(-1)[1].conditions).toEqual(wireConditions);

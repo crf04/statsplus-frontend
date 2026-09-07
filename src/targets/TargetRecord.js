@@ -186,7 +186,12 @@ export default function TargetRecord({
       </ul>
       {children}
       {games.length === 0 ? (
-        <p className="target-empty">Nobody qualifying has faced {backtest.target.opponent} yet.</p>
+        <p className="target-empty">
+          {backtest.target.conditions?.playerMinutes !== null &&
+          backtest.target.conditions?.playerMinutes !== undefined
+            ? 'No qualifying appearances match these backtest conditions.'
+            : `Nobody qualifying has faced ${backtest.target.opponent} yet.`}
+        </p>
       ) : (
         <ul
           className="target-record-grid"

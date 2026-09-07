@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
 
-export const emptyConditions = () => ({ defender: null, from: null, to: null });
+export const emptyConditions = () => ({
+  defender: null,
+  from: null,
+  to: null,
+  playerMinutes: null,
+});
 export const normalizeConditions = (conditions) => {
   if (!conditions) return null;
   const normalized = {
@@ -10,11 +15,18 @@ export const normalizeConditions = (conditions) => {
     from: conditions.from || null,
     to: conditions.to || null,
   };
-  return normalized.defender || normalized.from || normalized.to ? normalized : null;
+  if (conditions.playerMinutes !== null && conditions.playerMinutes !== undefined)
+    normalized.playerMinutes = conditions.playerMinutes;
+  return normalized.defender ||
+    normalized.from ||
+    normalized.to ||
+    normalized.playerMinutes !== undefined
+    ? normalized
+    : null;
 };
 export const validConditions = (conditions) => {
   if (!conditions) return true;
-  const { defender, from, to } = conditions;
+  const { defender, from, to, playerMinutes } = conditions;
   return (
     (!defender ||
       (Number.isInteger(defender.playerId) &&
@@ -24,6 +36,9 @@ export const validConditions = (conditions) => {
         Number.isFinite(defender.minutes) &&
         defender.minutes >= 0 &&
         defender.minutes <= 48)) &&
+    (playerMinutes === null ||
+      playerMinutes === undefined ||
+      (Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48)) &&
     (!from || isCalendarDate(from)) &&
     (!to || isCalendarDate(to)) &&
     (!from || !to || from <= to)
@@ -33,6 +48,8 @@ export const validConditions = (conditions) => {
 export function TargetAddMenu({ conditions, onQualifier, onChange }) {
   const [open, setOpen] = useState(false);
   const hasWindow = conditions && (conditions.from !== null || conditions.to !== null);
+  const hasPlayerMinutes =
+    conditions?.playerMinutes !== null && conditions?.playerMinutes !== undefined;
   const choose = (callback) => {
     callback();
     setOpen(false);
@@ -68,6 +85,16 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
               a defender’s minutes
             </button>
           )}
+          {!hasPlayerMinutes && (
+            <button
+              type="button"
+              onClick={() =>
+                choose(() => onChange({ ...emptyConditions(), ...conditions, playerMinutes: 10 }))
+              }
+            >
+              a player’s game minutes
+            </button>
+          )}
           {!hasWindow && (
             <button
               type="button"
@@ -85,11 +112,14 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
 }
 
 export function TargetConditionRows({ opponent, conditions, onChange }) {
-  const roster = useSeasonMinutes(conditions ? opponent : null);
+  const needsRoster =
+    conditions && (conditions.defender || conditions.from !== null || conditions.to !== null);
+  const roster = useSeasonMinutes(needsRoster ? opponent : null);
   const [customWindow, setCustomWindow] = useState(false);
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
+  const playerMinutes = conditions.playerMinutes ?? null;
   const hasWindow = conditions.from !== null || conditions.to !== null;
   const endYear = roster.season ? Number(roster.season.slice(0, 4)) + 1 : null;
   const preset = conditions.to
@@ -199,6 +229,42 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
           <small>Games he sat out count as 0 min.</small>
         </div>
       )}
+      {playerMinutes !== null && (
+        <div className="target-condition">
+          <div className="target-condition-head">
+            <span className="target-label">Backtest games</span>
+            <label className="target-player-minutes-control">
+              <span>Player game minutes &gt;</span>
+              <input
+                type="number"
+                min="0"
+                max="48"
+                step="1"
+                aria-label="Player game minutes"
+                value={playerMinutes}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  patch({ playerMinutes: value === '' ? '' : Number(value) });
+                }}
+              />
+              <span>min</span>
+            </label>
+            <button
+              type="button"
+              className="target-remove"
+              aria-label="Remove player game minutes Condition"
+              onClick={() => patch({ playerMinutes: null })}
+            >
+              ×
+            </button>
+          </div>
+          <small>
+            {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
+              ? `Keep appearances strictly greater than ${playerMinutes} minutes in the backtest.`
+              : 'Enter an integer threshold from 0 through 48 minutes.'}
+          </small>
+        </div>
+      )}
       {hasWindow && (
         <div className="target-condition">
           {roster.status === 'error' && !defender && (
@@ -286,11 +352,14 @@ export function TargetConditionSummary({
   const conditions = normalizeConditions(target.conditions);
   const roster = useSeasonMinutes(conditions?.defender ? target.opponent : null);
   if (!conditions) return null;
-  const { defender, from, to } = conditions;
+  const { defender, from, to, playerMinutes } = conditions;
   const player = roster.players.find((player) => player.playerId === defender?.playerId);
   const words = [
     defender
       ? `${player?.name || `Player ${defender.playerId}`} ${defender.comparator === 'under' ? 'under' : 'at least'} ${defender.minutes} min (sat out = 0)`
+      : null,
+    playerMinutes !== null && playerMinutes !== undefined
+      ? `player game minutes > ${playerMinutes} min (backtest only)`
       : null,
     from ? `from ${from}` : null,
     to ? `through ${to}` : null,

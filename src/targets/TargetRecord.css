@@ -268,6 +268,12 @@
   gap: 5px;
   font: 0.75rem var(--ct-mono);
 }
+@media (min-width: 820px) {
+  .target-stat-options {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+}
 .target-stat-save {
   font-size: 0.7rem;
   color: var(--ct-dim);
@@ -275,4 +281,41 @@
 
 .target-game-rest:empty {
   display: none;
+}
+
+.target-record .target-summary-sample {
+  flex: 0 0 auto;
+}
+.target-record .target-summary-stat {
+  flex: 1 1 100px;
+}
+.target-record .target-summary-stat > button {
+  width: 100%;
+}
+.target-summary-hit b {
+  font-size: inherit;
+  line-height: inherit;
+}
+.target-summary-break {
+  display: none;
+}
+@media (max-width: 620px) {
+  .target-record .target-summary-break {
+    display: block;
+    flex: 0 0 100%;
+    width: 0;
+    min-width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .target-record .target-summary-stat {
+    flex: 1 1 calc(50% - 7px);
+    min-width: calc(50% - 7px);
+  }
+  .target-record .target-summary-stat > button > b,
+  .target-record .target-summary-stat > b {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
 }

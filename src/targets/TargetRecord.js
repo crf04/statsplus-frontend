@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
-import { gameStat, seasonStat } from './statValues';
+import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
 import './TargetRecord.css';
@@ -14,6 +14,59 @@ const gameDateFormatter = new Intl.DateTimeFormat('en-US', {
 const number = (value) => (value == null ? '—' : value.toFixed(1));
 const gameNumber = (value) => (value == null ? '—' : Number(value.toFixed(1)).toString());
 const formatMargin = (value) => (value == null ? '—' : signed(value));
+
+const rounded = (value) => {
+  if (!Number.isFinite(value)) return null;
+  const display = Number(value.toFixed(1));
+  return Object.is(display, -0) ? 0 : display;
+};
+const formatAggregateNumber = (value) => {
+  const display = rounded(value);
+  return display === null ? '—' : `${display > 0 ? '+' : ''}${display.toFixed(1)}`;
+};
+const formatAggregatePercent = (value) => {
+  const display = rounded(value);
+  if (display === null) return '—';
+  const text = display.toFixed(1).replace(/\.0$/, '');
+  return `${display > 0 ? '+' : ''}${text}%`;
+};
+const unitFor = (column) => {
+  if (column.endsWith('/36')) return `${column}`;
+  if (column.endsWith('%')) return 'pp';
+  if (column === 'PTS/FGA') return 'PTS/FGA';
+  return `${column}/game`;
+};
+
+const aggregateColumn = (games, column) => {
+  const evidence = games
+    .map((row) => aggregateEvidence(row.game, row.player, column))
+    .filter(Boolean);
+  if (evidence.length === 0) return { difference: null, relative: null, count: 0 };
+
+  const excess = evidence.reduce((total, item) => total + item.excess, 0);
+  const expected = evidence.reduce((total, item) => total + item.expectedProduction, 0);
+  // Evidence kind and multiplier are homogeneous for each selected column.
+  const first = evidence[0];
+  const difference =
+    first.kind === 'weighted'
+      ? (excess / evidence.reduce((total, item) => total + item.weight, 0)) * first.multiplier
+      : excess / evidence.length;
+  const relative = expected === 0 ? null : (excess / expected) * 100;
+  return {
+    difference: Number.isFinite(difference) ? difference : null,
+    relative: relative === null || Number.isFinite(relative) ? relative : null,
+    count: evidence.length,
+  };
+};
+
+const sampleMinutes = (games) => {
+  if (games.length === 0) return 0;
+  if (games.some((row) => !Number.isFinite(row.game.line?.minutes) || row.game.line.minutes < 0)) {
+    return null;
+  }
+  const total = games.reduce((sum, row) => sum + row.game.line.minutes, 0);
+  return Number.isFinite(total) ? total : null;
+};
 
 // Keep full precision through grading and arithmetic; round only for display.
 function recordGames(backtest, columns) {
@@ -63,37 +116,54 @@ export default function TargetRecord({
 }) {
   const games = recordGames(backtest, columns);
   const scale = scaleFor(games, gradedBy);
+  const minutes = sampleMinutes(games);
   return (
     <div className="target-record">
       <ul className="target-summary" aria-label="Backtest summary">
-        <li aria-label="Games">
-          <b>{games.length}</b>
-          <small>games</small>
+        <li className="target-summary-sample" aria-label="Player-games">
+          <b>{games.length}</b> <small>player-games</small>
         </li>
+        <li className="target-summary-sample" aria-label="Minutes">
+          <b>{minutes === null ? '—' : number(minutes)}</b>{' '}
+          <small>{minutes === null ? 'minutes unavailable/incomplete' : 'minutes'}</small>
+        </li>
+        <li className="target-summary-break" aria-hidden="true" />
         {columns.map((column) => {
           const margins = games
             .map((row) => row.margins[column])
             .filter((margin) => margin !== null);
-          const mean = margins.length
-            ? margins.reduce((total, margin) => total + margin, 0) / margins.length
-            : null;
+          const aggregate = aggregateColumn(games, column);
           const hitShare = margins.length
             ? margins.filter((margin) => margin > 0).length / margins.length
             : null;
           const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
-          const roundedMean = mean === null ? null : Math.round(mean * 10) / 10;
+          const roundedDifference = rounded(aggregate.difference);
+          const aggregateHeadline = `${formatAggregateNumber(aggregate.difference)} ${unitFor(column)}`;
+          const aggregateRelative = `${formatAggregatePercent(aggregate.relative)} vs baseline`;
+          const aggregateCount =
+            aggregate.count < games.length
+              ? `${aggregate.count} of ${games.length} player-games used`
+              : null;
           const label = (
             <>
               <small>{column}</small>
-              <b className={roundedMean > 0 ? 'is-hit' : roundedMean < 0 ? 'is-miss' : undefined}>
-                {rate}
-                <span className="visually-hidden"> hit</span>
+              <b
+                className={
+                  roundedDifference > 0 ? 'is-hit' : roundedDifference < 0 ? 'is-miss' : undefined
+                }
+              >
+                {aggregateHeadline}
               </b>
-              <small>{formatMargin(mean)} avg</small>
+              <small>{aggregateRelative}</small>
+              <small className="target-summary-hit">
+                Hit rate <b>{rate}</b>
+                {margins.length !== aggregate.count ? ` · ${margins.length} player-games` : ''}
+              </small>
+              {aggregateCount && <small>{aggregateCount}</small>}
             </>
           );
           return (
-            <li aria-label={column} key={column}>
+            <li className="target-summary-stat" aria-label={column} key={column}>
               {onGrade ? (
                 <button
                   type="button"

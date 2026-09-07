@@ -605,7 +605,7 @@ test('a read for a draft that has moved on is abandoned, and its late answer is 
   await act(async () => {
     publishers[1]({ ...preview, players: [] });
   });
-  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('Player-games')).toHaveTextContent('0');
 });
 
 test('an incomplete draft asks for nothing and says what to complete', async () => {
@@ -644,7 +644,7 @@ test('a draft that stops being complete keeps the last evidence, dimmed', async 
   fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('Player-games')).toHaveTextContent('1');
   expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
   await settle();
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
@@ -676,11 +676,11 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
 
   // Read the actual game's margin against this player's season, not the legacy proxy summary.
-  expect(summaryItem('Games')).toHaveTextContent('1');
-  expect(summaryItem('PTS')).toHaveTextContent('+5.6 avg');
-  expect(summaryItem('PTS')).toHaveTextContent('100% hit');
-  expect(summaryItem('3PM')).toHaveTextContent('+2.0 avg');
-  expect(summaryItem('3PM')).toHaveTextContent('100% hit');
+  expect(summaryItem('Player-games')).toHaveTextContent('1');
+  expect(summaryItem('PTS')).toHaveTextContent('+5.6 PTS/game');
+  expect(summaryItem('PTS')).toHaveTextContent('Hit rate 100%');
+  expect(summaryItem('3PM')).toHaveTextContent('+2.0 3PM/game');
+  expect(summaryItem('3PM')).toHaveTextContent('Hit rate 100%');
   expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeVisible();
   expect(screen.getByRole('listitem', { name: /2026-01-12/ })).toHaveAttribute(
     'title',
@@ -700,7 +700,7 @@ test('the tonight line is absent when the opponent has no game', async () => {
   composeQualifier();
   await settle();
 
-  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('Player-games')).toHaveTextContent('1');
   expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
 });
 
@@ -742,7 +742,7 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   // Announced from outside the busy results, or it would not be announced.
   expect(labStatus()).toHaveTextContent('Reading the season…');
   expect(result).toHaveClass('is-stale');
-  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('Player-games')).toHaveTextContent('1');
   expect(screen.getByRole('list', { name: /oldest to newest/ })).toBeInTheDocument();
 
   await act(async () => {
@@ -751,8 +751,8 @@ test('a nudged draft keeps the last result on screen, dimmed, until the next one
   expect(result).not.toHaveClass('is-stale');
   expect(result).toHaveAttribute('aria-busy', 'false');
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Games')).toHaveTextContent('0');
-  expect(summaryItem('Games')).toHaveTextContent('0');
+  expect(summaryItem('Player-games')).toHaveTextContent('0');
+  expect(summaryItem('Player-games')).toHaveTextContent('0');
 });
 
 /*
@@ -792,7 +792,7 @@ test('a refused read says so and leaves the draft and Save usable', async () => 
   expect(fetchTargetPreview).toHaveBeenCalledTimes(2);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
-  expect(summaryItem('Games')).toHaveTextContent('1');
+  expect(summaryItem('Player-games')).toHaveTextContent('1');
 
   await act(async () => {
     fireEvent.click(save);
@@ -1031,16 +1031,16 @@ test('late old reads cannot overwrite a fresh authenticated read after sign-in',
     within(within(firstCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
       'listitem',
       {
-        name: 'Games',
+        name: 'Player-games',
       },
     ),
-  ).toHaveTextContent(/2\s*games/);
+  ).toHaveTextContent(/2\s*player-games/);
   expect(
     within(within(secondCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
       'listitem',
-      { name: 'Games' },
+      { name: 'Player-games' },
     ),
-  ).toHaveTextContent(/2\s*games/);
+  ).toHaveTextContent(/2\s*player-games/);
 
   await act(async () => {
     oldReads[0].resolve(preview);
@@ -1050,10 +1050,10 @@ test('late old reads cannot overwrite a fresh authenticated read after sign-in',
     within(within(firstCard).getByRole('list', { name: 'Backtest summary' })).getByRole(
       'listitem',
       {
-        name: 'Games',
+        name: 'Player-games',
       },
     ),
-  ).toHaveTextContent(/2\s*games/);
+  ).toHaveTextContent(/2\s*player-games/);
   expect(screen.queryByText('stale old failure')).not.toBeInTheDocument();
 });
 

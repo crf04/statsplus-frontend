@@ -49,7 +49,15 @@ jest.mock('./FilterOptions', () => ({
 }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
-jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
+jest.mock('./OpposingTeamProfile', () => ({
+  __esModule: true,
+  default: ({ selectedTeam, setSelectedTeam }) => (
+    <div>
+      <output data-testid="comparison-opponent">{selectedTeam}</output>
+      <button onClick={() => setSelectedTeam('Denver Nuggets')}>Compare Denver</button>
+    </div>
+  ),
+}));
 jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
@@ -363,4 +371,34 @@ test('returning to a full Filter Set reuses results and reapplying it refreshes'
   mockFilterPatch = { game_filter: 10 };
   fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
   await waitFor(() => expect(countFiltered()).toBe(3));
+});
+
+test.each([
+  { isAuthenticated: false, loading: false },
+  { isAuthenticated: true, loading: true },
+])('unchanged Apply waits for settled authentication: %j', async (authState) => {
+  mockAuthState = authState;
+  mockFilterPatch = { game_filter: 10 };
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
+  expect(screen.queryByText('request failed')).not.toBeInTheDocument();
+});
+
+test('unchanged Apply refreshes logs while preserving the comparison opponent', async () => {
+  mockFilterPatch = { game_filter: 10 };
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await waitFor(() =>
+    expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics'),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Compare Denver' }));
+  const before = fetchGameLogsData.mock.calls.length;
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+  );
+  expect(fetchGameLogsData).toHaveBeenCalledTimes(before + 1);
+  expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Denver Nuggets');
 });

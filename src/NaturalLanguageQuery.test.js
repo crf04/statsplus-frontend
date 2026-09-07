@@ -60,9 +60,9 @@ describe('NaturalLanguageQuery', () => {
     );
   });
 
-  test('finishes loading for a synchronous unchanged application without showing an error', async () => {
+  test('finishes loading for a synchronous successful application without showing an error', async () => {
     apiClient.post.mockResolvedValue({ data: { player_name: 'LeBron James' } });
-    const onFiltersApplied = jest.fn(() => ({ ok: false, reason: 'unchanged' }));
+    const onFiltersApplied = jest.fn(() => ({ ok: true }));
 
     render(
       <MemoryRouter>

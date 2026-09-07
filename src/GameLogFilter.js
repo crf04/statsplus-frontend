@@ -392,9 +392,8 @@ const GameLogFilter = () => {
   ]);
 
   /*
-   * Applying writes the Filter Set to the URL and stops there. The URL effect
-   * above owns the request, so there is one path from "what the user asked
-   * for" to "what the API is sent", and it runs through the address bar.
+   * Applying a changed Filter Set writes it to the URL for the effect above
+   * to request. Reapplying the current Filter Set explicitly refreshes it.
    *
    * The write patches rather than replaces: the panel emits only the controls
    * the user touched, so a parameter it has no control for — a season that
@@ -439,7 +438,8 @@ const GameLogFilter = () => {
     const nextSearch = filterSetToSearchParams(nextFilters);
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
-      requestGameLogs(nextFilters, { bypass: true });
+      if (authLoading || !isAuthenticated) return { ok: false, reason: 'authentication' };
+      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: false });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.

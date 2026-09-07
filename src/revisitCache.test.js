@@ -59,7 +59,7 @@ test('never caches rejected or aborted reads', async () => {
 });
 test('only explicit historical Slate calendar days qualify', () => {
   expect(historicalDate('2026-09-05')).toBe(true);
-  for (const date of [undefined, '2026-09-06', '2026-09-07', 'bad'])
+  for (const date of [undefined, '2026-09-06', '2026-09-07', 'bad', '', '2020-1-5'])
     expect(historicalDate(date)).toBe(false);
 });
 

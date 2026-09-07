@@ -98,13 +98,18 @@ test('changing comparison cannot clear a player failure', async () => {
   expect(screen.getByText('Failed to fetch data. Please try again.')).toBeVisible();
 });
 
-test('simultaneous player and comparison failures show one failure message', async () => {
-  apiClient.get.mockRejectedValue(new Error('Offline'));
+test.each([
+  ['rejected', 'Failed to fetch data. Please try again.'],
+  ['empty', 'Failed to fetch data. Please try again. No data available for this team'],
+])('player failure and %s comparison show clear failure messages', async (comparison, message) => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'TEAM_STATS' && comparison === 'empty'
+      ? Promise.resolve({ data: null })
+      : Promise.reject(new Error('Offline')),
+  );
   render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
   await act(async () => {});
-  expect(
-    screen.getByText('Failed to fetch data. Please try again.', { exact: true }),
-  ).toBeVisible();
+  expect(screen.getByText(message, { exact: true })).toBeVisible();
 });
 
 test.each([

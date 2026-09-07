@@ -86,7 +86,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   }, [teamCategory, comparisonTeam]);
 
   const loading = playerLoading || (Boolean(teamCategory) && teamLoading);
-  const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join('. ');
+  const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join(' ');
 
   const renderAssistProfile = () => {
     if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {

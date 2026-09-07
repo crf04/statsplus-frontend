@@ -24,10 +24,14 @@ test.each(['Playtypes', 'Assists', 'Shooting Type', 'Zone Shooting'])(
     rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
     await act(async () => {});
     expect(apiClient.get.mock.calls.filter(([url]) => url === 'PLAYER_PROFILE')).toHaveLength(0);
-    expect(apiClient.get).toHaveBeenCalledWith(
-      'TEAM_STATS',
-      expect.objectContaining({ params: expect.objectContaining({ team: 'NYK' }) }),
-    );
+    if (category === 'Playtypes' || category === 'Assists') {
+      expect(apiClient.get).toHaveBeenCalledWith(
+        'TEAM_STATS',
+        expect.objectContaining({ params: expect.objectContaining({ team: 'NYK' }) }),
+      );
+    } else {
+      expect(apiClient.get).not.toHaveBeenCalled();
+    }
   },
 );
 
@@ -92,4 +96,33 @@ test('changing comparison cannot clear a player failure', async () => {
   rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
   await act(async () => {});
   expect(screen.getByText('Failed to fetch data. Please try again.')).toBeVisible();
+});
+
+test('simultaneous player and comparison failures show one failure message', async () => {
+  apiClient.get.mockRejectedValue(new Error('Offline'));
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  expect(
+    screen.getByText('Failed to fetch data. Please try again.', { exact: true }),
+  ).toBeVisible();
+});
+
+test.each([
+  ['Archetype', 'Archetype logs'],
+  ['Shooting Type', 'Jump Shot'],
+  ['Zone Shooting', 'Restricted Area'],
+])('%s renders without unused comparison requests or failures', async (category, content) => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'TEAM_STATS'
+      ? Promise.reject(new Error('Comparison unavailable'))
+      : Promise.resolve({ data: [{ SHOT_TYPE: 'Jump Shot' }] }),
+  );
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  apiClient.get.mockClear();
+  fireEvent.click(screen.getByLabelText(category));
+  await act(async () => {});
+  expect(apiClient.get.mock.calls.filter(([url]) => url === 'TEAM_STATS')).toHaveLength(0);
+  expect(screen.getByText(content)).toBeVisible();
+  expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
 });

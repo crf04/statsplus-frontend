@@ -18,6 +18,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [teamError, setTeamError] = useState(null);
   const profileOpponent = selectedProfile === 'Archetype' ? selectedTeam : undefined;
   const hasPlayer = selectedPlayer !== 'None';
+  const teamCategory =
+    selectedProfile === 'Playtypes'
+      ? 'Playtypes'
+      : selectedProfile === 'assists'
+        ? 'Assists'
+        : null;
+  const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,13 +60,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     const controller = new AbortController();
     setTeamData(null);
     setTeamError(null);
-    setTeamLoading(hasPlayer && Boolean(selectedTeam));
-    if (hasPlayer && selectedTeam) {
+    setTeamLoading(Boolean(comparisonTeam));
+    if (comparisonTeam) {
       apiClient
         .get(getApiUrl('TEAM_STATS'), {
           params: {
-            category: selectedProfile === 'Playtypes' ? 'Playtypes' : 'Assists',
-            team: selectedTeam,
+            category: teamCategory,
+            team: comparisonTeam,
           },
           signal: controller.signal,
         })
@@ -76,10 +83,10 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         });
     }
     return () => controller.abort();
-  }, [hasPlayer, selectedProfile, selectedTeam]);
+  }, [teamCategory, comparisonTeam]);
 
-  const loading = playerLoading || teamLoading;
-  const error = [playerError, teamError].filter(Boolean).join('. ');
+  const loading = playerLoading || (Boolean(teamCategory) && teamLoading);
+  const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join('. ');
 
   const renderAssistProfile = () => {
     if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {

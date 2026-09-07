@@ -32,13 +32,16 @@ const describeLab = ({ valid, status, pending }) => {
 export default function TargetLab({
   draft,
   workbench = false,
+  immediateInitialPreview = false,
   children,
   preferences,
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
   const { valid, request } = describeDraft(draft);
-  const { status, preview, error, pending, retry } = useTargetPreview(valid ? request : null);
+  const { status, preview, error, pending, retry } = useTargetPreview(valid ? request : null, {
+    immediateInitial: immediateInitialPreview,
+  });
   // The result on screen describes the draft it was read for; the moment the
   // draft moves on, the result is stale, whether or not the read has begun.
   const stale = pending || status !== 'ready';

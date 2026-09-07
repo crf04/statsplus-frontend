@@ -156,7 +156,7 @@ const previewKey = (request) =>
  * draft has moved on from what was last read, whether or not the read has
  * started; the caller shows the result dimmed until it is current again.
  */
-export const useTargetPreview = (request) => {
+export const useTargetPreview = (request, { immediateInitial = false } = {}) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const key = previewKey(request);
   const [state, setState] = useState(EMPTY_PREVIEW);
@@ -165,12 +165,16 @@ export const useTargetPreview = (request) => {
   // it without re-running for it: a draft typed back to what was last read is
   // not a new draft either.
   const readKey = useRef(null);
+  const initialRead = useRef({ key: null, changed: false });
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
       readKey.current = null;
       setState(EMPTY_PREVIEW);
       return undefined;
+    }
+    if (initialRead.current.key !== null && initialRead.current.key !== key) {
+      initialRead.current.changed = true;
     }
     if (key === null || key === readKey.current) {
       // Nothing to read, and the read that was under way was abandoned when
@@ -183,7 +187,8 @@ export const useTargetPreview = (request) => {
       return undefined;
     }
     const controller = new AbortController();
-    const timer = setTimeout(() => {
+    if (initialRead.current.key === null) initialRead.current.key = key;
+    const load = () => {
       setState((current) => ({ ...current, status: 'loading', error: null }));
       fetchTargetPreview({ ...JSON.parse(key), signal: controller.signal })
         .then((preview) => {
@@ -199,12 +204,17 @@ export const useTargetPreview = (request) => {
             error: getRequestErrorMessage(error, PREVIEW_FAILURE),
           }));
         });
-    }, PREVIEW_DELAY_MS);
+    };
+    // A saved Target already has settled criteria. StrictMode may replay this
+    // effect, so eligibility follows the initial key rather than effect count.
+    const immediate = immediateInitial && !initialRead.current.changed && attempt === 0;
+    const timer = immediate ? undefined : setTimeout(load, PREVIEW_DELAY_MS);
+    if (immediate) load();
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [key, authLoading, isAuthenticated, attempt]);
+  }, [key, authLoading, isAuthenticated, attempt, immediateInitial]);
 
   const { key: shownKey, ...read } = state;
   const retry = useCallback(() => {

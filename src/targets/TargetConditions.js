@@ -133,33 +133,38 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
    * counts, so they share one card. With a window present the floor takes its
    * own row beneath the preset; alone, it sits in the card's head.
    */
-  const minutesControl = (
-    <label className="target-player-minutes-control">
-      <span>Player game minutes &gt;</span>
-      <input
-        type="number"
-        min="0"
-        max="48"
-        step="1"
-        aria-label="Player game minutes"
-        value={playerMinutes ?? ''}
-        onChange={(event) => {
-          const value = event.target.value;
-          patch({ playerMinutes: value === '' ? '' : Number(value) });
-        }}
-      />
-      <span>min</span>
-    </label>
-  );
-  const removeMinutes = (
-    <button
-      type="button"
-      className="target-remove"
-      aria-label="Remove player game minutes Condition"
-      onClick={() => patch({ playerMinutes: null })}
-    >
-      ×
-    </button>
+  const minutesRow = (
+    <div className="target-minutes-row">
+      <span className="target-minutes-name">Player game minutes</span>
+      {/* The rule is carried in words by the note below, so the glyph is decoration. */}
+      <span className="target-minutes-comparator" aria-hidden="true">
+        &gt;
+      </span>
+      <label className="target-player-minutes-control">
+        <input
+          type="number"
+          min="0"
+          max="48"
+          step="1"
+          aria-label="Player game minutes"
+          value={playerMinutes ?? ''}
+          onChange={(event) => {
+            const value = event.target.value;
+            patch({ playerMinutes: value === '' ? '' : Number(value) });
+          }}
+        />
+        <span>min</span>
+      </label>
+      <small className="target-minutes-unit">per appearance</small>
+      <button
+        type="button"
+        className="target-remove"
+        aria-label="Remove player game minutes Condition"
+        onClick={() => patch({ playerMinutes: null })}
+      >
+        ×
+      </button>
+    </div>
   );
   return (
     <>
@@ -272,9 +277,9 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               </button>
             </p>
           )}
-          <div className="target-condition-head">
+          <div className={`target-condition-head${hasWindow ? '' : ' is-heading'}`}>
             <span className="target-label">Backtest games</span>
-            {hasWindow ? (
+            {hasWindow && (
               <select
                 aria-label="Window preset"
                 value={customWindow ? 'custom' : preset}
@@ -299,10 +304,8 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
                 </option>
                 <option value="custom">Custom dates</option>
               </select>
-            ) : (
-              minutesControl
             )}
-            {hasWindow ? (
+            {hasWindow && (
               <button
                 type="button"
                 className="target-remove"
@@ -311,20 +314,13 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               >
                 ×
               </button>
-            ) : (
-              removeMinutes
             )}
           </div>
-          {hasWindow && playerMinutes !== null && (
-            <div className="target-minutes-row">
-              {minutesControl}
-              {removeMinutes}
-            </div>
-          )}
+          {playerMinutes !== null && minutesRow}
           {playerMinutes !== null && (
             <small>
               {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
-                ? `Keep appearances strictly greater than ${playerMinutes} minutes in the backtest.`
+                ? `Appearances of ${playerMinutes} min or less sit out the Backtest.`
                 : 'Enter an integer threshold from 0 through 48 minutes.'}
             </small>
           )}

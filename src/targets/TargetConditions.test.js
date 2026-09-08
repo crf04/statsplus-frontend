@@ -69,7 +69,7 @@ test('a player game minutes Condition defaults to a strict backtest threshold an
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
   expect(screen.getByLabelText('Player game minutes')).toHaveValue(10);
-  expect(screen.getByText(/strictly greater than 10 minutes in the backtest/)).toBeVisible();
+  expect(screen.getByText('Appearances of 10 min or less sit out the Backtest.')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
   expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
@@ -85,7 +85,7 @@ test('an incomplete player game minutes threshold remains invalid until filled',
     screen.getByText('Player game minutes must be an integer from 0 through 48.'),
   ).toBeVisible();
   expect(screen.getByText('Enter an integer threshold from 0 through 48 minutes.')).toBeVisible();
-  expect(screen.queryByText(/strictly greater than\s+minutes/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Appearances of\s+min or less/)).not.toBeInTheDocument();
 });
 test('a player game minutes Condition is saved and reads as a Backtest note, not a chip', async () => {
   render(<Form />);

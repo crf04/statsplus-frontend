@@ -202,12 +202,44 @@
   min-width: 0;
   width: 100%;
 }
+/* With no window the head is a bare card heading, so the label gets the row. */
+.target-condition-head.is-heading {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* The minutes floor takes the Qualifier's rhythm: the name it sets, the
+   comparator in the gold chip, the figure, then the unit it is counted in. */
 .target-minutes-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 26px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
+}
+.target-minutes-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.target-minutes-comparator {
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  padding: 3px 9px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+  font: 700 0.85rem var(--ct-mono);
+}
+.target-minutes-unit {
+  color: var(--ct-dim);
+  font-size: 11px;
+}
+.target-minutes-row .target-remove {
+  margin-left: auto;
+}
+/* Too narrow for the unit to share the row, and the note below already says
+   what the figure counts. */
+@media (max-width: 560px) {
+  .target-minutes-unit {
+    display: none;
+  }
 }
 .target-player-minutes-control {
   display: flex;
@@ -216,8 +248,15 @@
   min-width: 0;
 }
 .target-player-minutes-control input {
-  width: 70px;
+  width: 62px;
   min-width: 0;
+  color: var(--ct-gold);
+  font: 700 0.95rem var(--ct-mono);
+  text-align: center;
+}
+.target-player-minutes-control > span {
+  color: var(--ct-dim);
+  font-size: 11px;
 }
 .target-condition .target-comparator-toggle {
   flex-basis: 52px;

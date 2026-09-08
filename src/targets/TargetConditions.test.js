@@ -193,3 +193,33 @@ test('a window-only roster failure explains why its season presets are unavailab
   fireEvent.click(screen.getByRole('button', { name: 'Retry roster' }));
   await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
 });
+
+test('the minutes floor and the date window share one Backtest games card', async () => {
+  const { container } = render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  const cards = [...container.querySelectorAll('.target-condition')].filter((card) =>
+    card.querySelector('[aria-label="Player game minutes"], [aria-label="Window preset"]'),
+  );
+  expect(cards).toHaveLength(1);
+  expect(cards[0].querySelector('[aria-label="Player game minutes"]')).toBeTruthy();
+  expect(cards[0].querySelector('[aria-label="Window preset"]')).toBeTruthy();
+  expect(cards[0]).toHaveTextContent('Backtest games');
+  expect(cards[0]).not.toHaveTextContent('Window');
+});
+
+test('removing the window leaves the minutes floor in the same card', async () => {
+  const { container } = render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Remove window Condition' }));
+  expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
+  const card = container.querySelector('.target-condition:has([aria-label="Player game minutes"])');
+  expect(card).toHaveTextContent('Backtest games');
+  fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
+  expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
+});

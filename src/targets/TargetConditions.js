@@ -128,6 +128,39 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
       ? 'whole'
       : ['01', '02', '03'].find((month) => conditions.from === `${endYear}-${month}-01`) ||
         'custom';
+  /*
+   * The minutes floor and the date window both scope which games the Backtest
+   * counts, so they share one card. With a window present the floor takes its
+   * own row beneath the preset; alone, it sits in the card's head.
+   */
+  const minutesControl = (
+    <label className="target-player-minutes-control">
+      <span>Player game minutes &gt;</span>
+      <input
+        type="number"
+        min="0"
+        max="48"
+        step="1"
+        aria-label="Player game minutes"
+        value={playerMinutes ?? ''}
+        onChange={(event) => {
+          const value = event.target.value;
+          patch({ playerMinutes: value === '' ? '' : Number(value) });
+        }}
+      />
+      <span>min</span>
+    </label>
+  );
+  const removeMinutes = (
+    <button
+      type="button"
+      className="target-remove"
+      aria-label="Remove player game minutes Condition"
+      onClick={() => patch({ playerMinutes: null })}
+    >
+      ×
+    </button>
+  );
   return (
     <>
       {defender && (
@@ -229,43 +262,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
           <small>Games he sat out count as 0 min.</small>
         </div>
       )}
-      {playerMinutes !== null && (
-        <div className="target-condition">
-          <div className="target-condition-head">
-            <span className="target-label">Backtest games</span>
-            <label className="target-player-minutes-control">
-              <span>Player game minutes &gt;</span>
-              <input
-                type="number"
-                min="0"
-                max="48"
-                step="1"
-                aria-label="Player game minutes"
-                value={playerMinutes}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  patch({ playerMinutes: value === '' ? '' : Number(value) });
-                }}
-              />
-              <span>min</span>
-            </label>
-            <button
-              type="button"
-              className="target-remove"
-              aria-label="Remove player game minutes Condition"
-              onClick={() => patch({ playerMinutes: null })}
-            >
-              ×
-            </button>
-          </div>
-          <small>
-            {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
-              ? `Keep appearances strictly greater than ${playerMinutes} minutes in the backtest.`
-              : 'Enter an integer threshold from 0 through 48 minutes.'}
-          </small>
-        </div>
-      )}
-      {hasWindow && (
+      {(hasWindow || playerMinutes !== null) && (
         <div className="target-condition">
           {roster.status === 'error' && !defender && (
             <p role="alert">
@@ -276,65 +273,88 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
             </p>
           )}
           <div className="target-condition-head">
-            <span className="target-label">Window</span>
-            <select
-              aria-label="Window preset"
-              value={customWindow ? 'custom' : preset}
-              onChange={(event) => {
-                const value = event.target.value;
-                setCustomWindow(value === 'custom');
-                if (value === 'whole') patch({ from: '', to: '' });
-                else if (value === 'custom')
-                  patch({ from: conditions.from || '', to: conditions.to || '' });
-                else patch({ from: `${endYear}-${value}-01`, to: '' });
-              }}
-            >
-              <option value="whole">Whole season</option>
-              <option value="01" disabled={!endYear}>
-                Since Jan 1
-              </option>
-              <option value="02" disabled={!endYear}>
-                Since Feb 1
-              </option>
-              <option value="03" disabled={!endYear}>
-                Since Mar 1
-              </option>
-              <option value="custom">Custom dates</option>
-            </select>
-            <button
-              type="button"
-              className="target-remove"
-              aria-label="Remove window Condition"
-              onClick={() => patch({ from: null, to: null })}
-            >
-              ×
-            </button>
-          </div>
-          <div className="target-date-window">
-            <label>
-              From
-              <input
-                type="date"
-                value={conditions.from || ''}
+            <span className="target-label">Backtest games</span>
+            {hasWindow ? (
+              <select
+                aria-label="Window preset"
+                value={customWindow ? 'custom' : preset}
                 onChange={(event) => {
-                  setCustomWindow(true);
-                  patch({ from: event.target.value });
+                  const value = event.target.value;
+                  setCustomWindow(value === 'custom');
+                  if (value === 'whole') patch({ from: '', to: '' });
+                  else if (value === 'custom')
+                    patch({ from: conditions.from || '', to: conditions.to || '' });
+                  else patch({ from: `${endYear}-${value}-01`, to: '' });
                 }}
-              />
-            </label>
-            <label>
-              Through
-              <input
-                type="date"
-                value={conditions.to || ''}
-                onChange={(event) => {
-                  setCustomWindow(true);
-                  patch({ to: event.target.value });
-                }}
-              />
-            </label>
+              >
+                <option value="whole">Whole season</option>
+                <option value="01" disabled={!endYear}>
+                  Since Jan 1
+                </option>
+                <option value="02" disabled={!endYear}>
+                  Since Feb 1
+                </option>
+                <option value="03" disabled={!endYear}>
+                  Since Mar 1
+                </option>
+                <option value="custom">Custom dates</option>
+              </select>
+            ) : (
+              minutesControl
+            )}
+            {hasWindow ? (
+              <button
+                type="button"
+                className="target-remove"
+                aria-label="Remove window Condition"
+                onClick={() => patch({ from: null, to: null })}
+              >
+                ×
+              </button>
+            ) : (
+              removeMinutes
+            )}
           </div>
-          {!endYear && (
+          {hasWindow && playerMinutes !== null && (
+            <div className="target-minutes-row">
+              {minutesControl}
+              {removeMinutes}
+            </div>
+          )}
+          {playerMinutes !== null && (
+            <small>
+              {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
+                ? `Keep appearances strictly greater than ${playerMinutes} minutes in the backtest.`
+                : 'Enter an integer threshold from 0 through 48 minutes.'}
+            </small>
+          )}
+          {hasWindow && (
+            <div className="target-date-window">
+              <label>
+                From
+                <input
+                  type="date"
+                  value={conditions.from || ''}
+                  onChange={(event) => {
+                    setCustomWindow(true);
+                    patch({ from: event.target.value });
+                  }}
+                />
+              </label>
+              <label>
+                Through
+                <input
+                  type="date"
+                  value={conditions.to || ''}
+                  onChange={(event) => {
+                    setCustomWindow(true);
+                    patch({ to: event.target.value });
+                  }}
+                />
+              </label>
+            </div>
+          )}
+          {hasWindow && !endYear && (
             <small>Season presets become available when the roster read returns its season.</small>
           )}
         </div>

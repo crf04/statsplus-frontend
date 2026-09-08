@@ -9,10 +9,8 @@ phone 390×844, full page.
   `Backtest · season to date · excludes games ≤ 15 min`. The record header
   shows `player-games` with no minutes tile, and no Condition line is repeated
   beneath the heading.
-- `workbench-*` — `/targets/10`, the same Target. The Qualifier and the
-  opponent Conditions sit above `+ and`; below it a `BACKTEST` section holds
-  the standing minutes floor. The Lab goes straight from `Backtest up to date.`
-  to the evidence.
-
-The floor is always on screen. Empty reads `off` and applies nothing; a figure
-sets the floor.
+- `workbench-*` — `/targets/10`, the same Target. Two cards: the opponent card
+  holding the Qualifier, the Conditions and Why, and a separate `BACKTEST`
+  card holding the standing minutes floor. The Save row sits beneath both.
+- `workbench-off-desktop` — `/targets/9`, a Target with no floor saved. The
+  Backtest card is still there, reading `off`.

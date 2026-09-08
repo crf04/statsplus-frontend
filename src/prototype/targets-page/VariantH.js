@@ -220,7 +220,7 @@ function SavedBench({ item, read }) {
         {target.local ? (
           <small>unsaved · this session only</small>
         ) : (
-          <ProtoLink to={`/targets/${target.id}`}>Edit →</ProtoLink>
+          <ProtoLink to={`/targets/${target.id}`}>View Details / Edit</ProtoLink>
         )}
       </div>
       <LabEvidence lab={savedLab(read)} games={false} />

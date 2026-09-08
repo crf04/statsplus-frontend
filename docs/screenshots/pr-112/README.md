@@ -9,9 +9,10 @@ phone 390×844, full page.
   `Backtest · season to date · excludes games ≤ 15 min`. The record header
   shows `player-games` with no minutes tile, and no Condition line is repeated
   beneath the heading.
-- `workbench-*` — `/targets/10`, the same Target. The minutes floor has its own `BACKTEST GAMES` card, separate from the opponent-scoping Conditions; the Lab below goes straight from `Backtest up to date.` to the evidence.
-  holds the minutes floor; the Lab below goes straight from
-  `Backtest up to date.` to the evidence.
+- `workbench-*` — `/targets/10`, the same Target. The minutes floor has its own
+  `BACKTEST GAMES` card, apart from the Conditions that scope the opponent's
+  games. The Lab below goes straight from `Backtest up to date.` to the
+  evidence.
 
-That Target has no date window saved, so no Window card is shown. When one is added it sits in its own card beneath the minutes floor.
-alone. With a window the preset takes the card head and the floor drops to its
+That Target has no date window saved, so no Window card appears. Adding one
+gives it a separate card beneath the minutes floor.

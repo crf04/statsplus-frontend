@@ -1,7 +1,7 @@
 import { act, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
-import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
+import { TargetConditionSummary, backtestMinutesNote, validConditions } from './TargetConditions';
 import { fetchDietBaselines, fetchSeasonMinutes } from './targetsApi';
 jest.mock('./targetsApi', () => ({ fetchDietBaselines: jest.fn(), fetchSeasonMinutes: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
@@ -65,37 +65,46 @@ test('the add menu offers only the opponent Conditions, and saves them', async (
   fireEvent.change(screen.getByLabelText('Through'), { target: { value: '2025-12-01' } });
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
 });
-test('the Backtest section always shows the minutes floor, off until a figure is set', () => {
+test('the floor stands at its first stop, reading any, until the track is moved', () => {
   render(<Form />);
   const floor = screen.getByLabelText('Player game minutes');
   expect(floor).toBeVisible();
-  expect(floor).toHaveValue(null);
-  expect(
-    screen.getByText('Every appearance counts. Set a floor to leave the short ones out.'),
-  ).toBeVisible();
+  expect(floor).toHaveValue('-1');
+  expect(floor).toHaveAttribute('aria-valuetext', 'any');
+  expect(screen.getByText('any')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeEnabled();
   fireEvent.change(floor, { target: { value: '15' } });
-  expect(screen.getByText('Appearances of 15 min or less sit out the Backtest.')).toBeVisible();
-  fireEvent.change(floor, { target: { value: '' } });
-  expect(
-    screen.getByText('Every appearance counts. Set a floor to leave the short ones out.'),
-  ).toBeVisible();
-  expect(screen.getByRole('button', { name: 'Save Target' })).toBeEnabled();
+  expect(floor).toHaveAttribute('aria-valuetext', 'over 15 minutes');
+  expect(screen.getByText('15 min')).toBeVisible();
 });
-test('an emptied floor saves as no Condition rather than blocking the save', () => {
+
+test('the first stop is kept apart from a floor of zero', () => {
+  render(<Form />);
+  const floor = screen.getByLabelText('Player game minutes');
+  fireEvent.change(floor, { target: { value: '0' } });
+  expect(floor).toHaveAttribute('aria-valuetext', 'over 0 minutes');
+  expect(screen.getByText('0 min')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({
+      conditions: { defender: null, from: null, to: null, playerMinutes: 0 },
+    }),
+  );
+});
+test('sliding back to the first stop saves no Condition rather than blocking the save', () => {
   render(<Form />);
   const floor = screen.getByLabelText('Player game minutes');
   fireEvent.change(floor, { target: { value: '15' } });
-  fireEvent.change(floor, { target: { value: '' } });
+  fireEvent.change(floor, { target: { value: '-1' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ conditions: null }));
 });
 
-test('a fractional floor is refused with a reason', () => {
-  render(<Form />);
-  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '1.5' } });
-  expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
-  expect(screen.getByText('Enter a whole number of minutes from 0 through 48.')).toBeVisible();
+// The track cannot produce one, but a stored Target can still carry one.
+test('a stored fractional floor is refused', () => {
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 1.5 })).toBe(false);
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 49 })).toBe(false);
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 15 })).toBe(true);
 });
 test('a player game minutes floor is saved and reads as a Backtest note, not a chip', async () => {
   render(<Form />);
@@ -221,5 +230,5 @@ test('removing the window leaves the Backtest section standing', () => {
   fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '15' } });
   fireEvent.click(screen.getByRole('button', { name: 'Remove window Condition' }));
   expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Player game minutes')).toHaveValue(15);
+  expect(screen.getByLabelText('Player game minutes')).toHaveValue('15');
 });

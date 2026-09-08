@@ -47,18 +47,20 @@ test('changing the slice moves its league tick and an absent baseline never beco
   expect(await screen.findByText('league 23%')).toBeVisible();
   fireEvent.change(screen.getByLabelText('Qualifier 1 slice'), { target: { value: 'Mid-Range' } });
   expect(screen.getByText('league 61%')).toBeVisible();
-  expect(screen.getByRole('slider')).toHaveAttribute('max', '70');
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveAttribute('max', '70');
   fireEvent.change(screen.getByLabelText('Qualifier 1 slice'), {
     target: { value: 'Restricted Area' },
   });
   expect(screen.queryByText(/^league /)).not.toBeInTheDocument();
-  expect(screen.getByRole('slider')).toHaveValue('40');
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveValue('40');
 });
 
 test('a pointer threshold is displayed at the precision that will be saved', async () => {
   fetchDietBaselines.mockResolvedValue({ shares: {} });
   render(<Form />);
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '25.930123' } });
-  expect(screen.getByRole('slider')).toHaveValue('25.9');
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '25.930123' },
+  });
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveValue('25.9');
   expect(screen.getByText('25.9%')).toBeVisible();
 });

@@ -18,6 +18,15 @@ const saveTarget = async (page) => {
 };
 const openTarget = async (page, title) =>
   card(page, title).getByRole('link', { name: /Edit/ }).click();
+// A range input refuses fill(), so the floor is set the way a drag would leave it.
+const setFloor = async (page, minutes) => {
+  await page.getByRole('slider', { name: 'Player game minutes' }).evaluate((input, value) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, String(value));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, minutes);
+};
+
 const summaryItem = (scope, label) =>
   scope.getByRole('list', { name: 'Backtest summary' }).getByRole('listitem', { name: label });
 
@@ -27,7 +36,7 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   await installApiContract(page);
   await page.goto('/targets');
   await expect(page.getByRole('heading', { name: 'No Targets yet.' })).toBeVisible();
-  await expect(page.getByRole('slider')).toHaveCount(0);
+  await expect(page.getByRole('slider', { name: /threshold percent/ })).toHaveCount(0);
   await page.getByRole('button', { name: '+ New Target' }).click();
   await expect(page.getByRole('button', { name: 'Save Target' })).toBeDisabled();
   await composeTarget(page, {
@@ -37,7 +46,7 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
     note: 'Leaves the corner late.',
   });
   await expect(page.getByText('league 10%')).toBeVisible();
-  const track = await page.getByRole('slider').boundingBox();
+  const track = await page.getByRole('slider', { name: /threshold percent/ }).boundingBox();
   const value = await page.getByText('40%', { exact: true }).boundingBox();
   expect(track.height).toBeLessThanOrEqual(8);
   expect(value.y + value.height).toBeLessThan(track.y);
@@ -52,10 +61,10 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   await expect(page.getByRole('article')).toHaveCount(2);
   await openTarget(page, 'OKC vs Corner 3 ≥ 40%');
   await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
-  await page.getByRole('slider').press('ArrowRight');
-  await expect(page.getByRole('slider')).toHaveValue('41');
+  await page.getByRole('slider', { name: /threshold percent/ }).press('ArrowRight');
+  await expect(page.getByRole('slider', { name: /threshold percent/ })).toHaveValue('41');
   await page.getByRole('button', { name: 'Revert' }).click();
-  await expect(page.getByRole('slider')).toHaveValue('40');
+  await expect(page.getByRole('slider', { name: /threshold percent/ })).toHaveValue('40');
   await page.getByRole('button', { name: 'At or above; switch to at or below' }).click();
   await setTargetThreshold(page, 18);
   await page.getByRole('button', { name: 'Save changes' }).click();
@@ -65,7 +74,7 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   await openTarget(page, 'OKC vs Corner 3 ≤ 18%');
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('button', { name: 'Keep it' }).click();
-  await expect(page.getByRole('slider')).toBeVisible();
+  await expect(page.getByRole('slider', { name: /threshold percent/ })).toBeVisible();
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('button', { name: 'Yes, delete' }).click();
   await expect(page).toHaveURL('/targets');
@@ -178,7 +187,7 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
     percent: 30,
   });
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
-  await page.getByRole('slider').press('ArrowRight');
+  await page.getByRole('slider', { name: /threshold percent/ }).press('ArrowRight');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^3 player-games$/);
   const summary = await page.getByRole('list', { name: 'Backtest summary' }).textContent();
   await page.getByRole('button', { name: 'Save Target' }).click();
@@ -282,15 +291,15 @@ test('@critical a player game minutes Condition filters appearances, persists, a
     slice: 'AtRimAssists',
     percent: 30,
   });
-  const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
-  await expect(playerMinutes).toHaveValue('');
+  const playerMinutes = page.getByRole('slider', { name: 'Player game minutes' });
+  await expect(playerMinutes).toHaveAttribute('aria-valuetext', 'any');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
-  await playerMinutes.fill('36');
+  await setFloor(page, 36);
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
   await expect(
     page.getByText('No qualifying appearances match these backtest conditions.'),
   ).toBeVisible();
-  await playerMinutes.fill('35');
+  await setFloor(page, 35);
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
@@ -298,7 +307,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   // The workbench already carries the Condition in its own control, so the Lab
   // does not restate it beneath the evidence.
   await expect(page.getByText(/min \(backtest only\)/)).toHaveCount(0);
-  await playerMinutes.fill('36');
+  await setFloor(page, 36);
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
   await page.getByRole('button', { name: 'Revert' }).click();
   await expect(playerMinutes).toHaveValue('35');
@@ -314,7 +323,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   await savedLens;
   await page.reload();
   await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
-  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveValue('35');
+  await expect(page.getByRole('slider', { name: 'Player game minutes' })).toHaveValue('35');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
@@ -333,8 +342,8 @@ test('@critical a saved player game minutes floor can be cleared while a date Co
     slice: 'AtRimAssists',
     percent: 30,
   });
-  const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
-  await playerMinutes.fill('36');
+  const playerMinutes = page.getByRole('slider', { name: 'Player game minutes' });
+  await setFloor(page, 36);
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a date window' }).click();
   await page.getByLabel('From', { exact: true }).fill('2025-01-10');
@@ -343,7 +352,7 @@ test('@critical a saved player game minutes floor can be cleared while a date Co
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
   await expect(playerMinutes).toHaveValue('36');
-  await playerMinutes.fill('');
+  await setFloor(page, -1);
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   const clearedConditions = page.waitForRequest(
     (request) =>
@@ -358,7 +367,10 @@ test('@critical a saved player game minutes floor can be cleared while a date Co
   await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
   await page.reload();
   await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
-  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveValue('');
+  await expect(page.getByRole('slider', { name: 'Player game minutes' })).toHaveAttribute(
+    'aria-valuetext',
+    'any',
+  );
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
 });
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BacktestSampleProvider, countAppearances } from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import { useTargetPreview } from './useTargets';
@@ -52,7 +53,9 @@ export default function TargetLab({
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
       <div className="target-lab-left">
-        {children}
+        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
+          {children}
+        </BacktestSampleProvider>
         <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
           Lab · Backtest · season to date · vs {draft.opponent}
         </h2>

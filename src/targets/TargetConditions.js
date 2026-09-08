@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
+import { useBacktestSample } from './backtestSample';
+
+// The track's first stop, left of every real floor, meaning no floor at all.
+const NO_FLOOR = -1;
+const FLOOR_CEILING = 48;
 
 export const emptyConditions = () => ({
   defender: null,
@@ -302,44 +307,53 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
  */
 export function TargetBacktestRows({ conditions, onChange }) {
   const playerMinutes = conditions?.playerMinutes ?? null;
+  const sample = useBacktestSample();
+  /*
+   * The floor is only ever a minimum, so the track needs no comparator to flip
+   * and no upper handle. Its first stop is left of zero and means no floor at
+   * all, which keeps that apart from a floor of zero — the one that drops the
+   * games a player was listed for but did not play.
+   */
+  const position = playerMinutes ?? NO_FLOOR;
   return (
-    <>
-      <div className="target-minutes-row">
-        <span className="target-minutes-name">Player game minutes</span>
-        {/* The rule is carried in words by the note below, so the glyph is decoration. */}
-        <span className="target-minutes-comparator" aria-hidden="true">
-          &gt;
-        </span>
-        <label className="target-player-minutes-control">
-          <input
-            type="number"
-            min="0"
-            max="48"
-            step="1"
-            placeholder="off"
-            aria-label="Player game minutes"
-            value={playerMinutes ?? ''}
-            onChange={(event) => {
-              const value = event.target.value;
-              onChange({
-                ...emptyConditions(),
-                ...conditions,
-                playerMinutes: value === '' ? null : Number(value),
-              });
-            }}
-          />
-          <span>min</span>
-        </label>
-        <small className="target-minutes-unit">per appearance</small>
+    <div className="target-minutes-row">
+      <span className="target-minutes-mark" aria-hidden="true">
+        &gt;
+      </span>
+      <div
+        className="target-slider-track"
+        style={{
+          '--threshold-position': `${((position - NO_FLOOR) / (FLOOR_CEILING - NO_FLOOR)) * 100}%`,
+        }}
+      >
+        <output className="target-slider-value">
+          {playerMinutes === null ? 'any' : `${playerMinutes} min`}
+        </output>
+        <input
+          type="range"
+          min={NO_FLOOR}
+          max={FLOOR_CEILING}
+          step="1"
+          aria-label="Player game minutes"
+          aria-valuetext={playerMinutes === null ? 'any' : `over ${playerMinutes} minutes`}
+          value={position}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            onChange({
+              ...emptyConditions(),
+              ...conditions,
+              playerMinutes: value === NO_FLOOR ? null : value,
+            });
+          }}
+        />
       </div>
-      <small>
-        {playerMinutes === null
-          ? 'Every appearance counts. Set a floor to leave the short ones out.'
-          : Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
-            ? `Appearances of ${playerMinutes} min or less sit out the Backtest.`
-            : 'Enter a whole number of minutes from 0 through 48.'}
-      </small>
-    </>
+      <small className="target-slider-unit">per game</small>
+      {sample?.appearances !== null && sample?.appearances !== undefined && (
+        <small className={`target-minutes-kept${sample.stale ? ' is-stale' : ''}`}>
+          {sample.appearances} appearances kept
+        </small>
+      )}
+    </div>
   );
 }
 

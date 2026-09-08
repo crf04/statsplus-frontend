@@ -126,7 +126,9 @@ test('a saved Target reads immediately, then debounces edits', async () => {
   renderDetail();
   await act(async () => {});
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '45' },
+  });
   await act(async () => jest.advanceTimersByTime(599));
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
   await act(async () => jest.advanceTimersByTime(1));
@@ -140,7 +142,7 @@ test('the workbench opens live with a dirty-only footer and reverts without savi
   expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
   expect(screen.queryByText(/Target · set/)).not.toBeInTheDocument();
-  const slider = screen.getByRole('slider');
+  const slider = screen.getByRole('slider', { name: /threshold percent/ });
   fireEvent.change(slider, { target: { value: '45' } });
   expect(screen.getByRole('button', { name: 'Save changes' })).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Revert' }));
@@ -150,11 +152,13 @@ test('the workbench opens live with a dirty-only footer and reverts without savi
 });
 test('saving sends edited criteria explicitly and keeps a refused draft editable', async () => {
   await open();
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '45' },
+  });
   updateTarget.mockRejectedValueOnce(new Error('Unavailable'));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
   expect(screen.getByRole('alert')).toBeVisible();
-  expect(screen.getByRole('slider')).toHaveValue('45');
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveValue('45');
   expect(updateTarget).toHaveBeenCalledWith({
     id: 7,
     note: target.note,
@@ -177,7 +181,9 @@ test('the Lab reads automatically and retains dimmed evidence while criteria mov
   expect(fetchTargetPreview).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Expand backtest' })).not.toBeInTheDocument();
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '45' },
+  });
   expect(
     screen.getByRole('list', { name: 'Backtest summary' }).closest('.target-lab-result'),
   ).toHaveClass('is-stale');
@@ -195,12 +201,14 @@ test('missing and signed-out Targets are still explicit states', async () => {
 
 test('a successful save refreshes the stored record and clears the dirty footer', async () => {
   await open();
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '45' },
+  });
   fetchTargets.mockResolvedValue([
     { ...target, qualifiers: [{ ...target.qualifiers[0], threshold: 0.45 }] },
   ]);
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save changes' })));
-  expect(await screen.findByRole('slider')).toHaveValue('45');
+  expect(await screen.findByRole('slider', { name: /threshold percent/ })).toHaveValue('45');
   expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
 });
 test('a delete refusal leaves the Target editable', async () => {
@@ -211,7 +219,7 @@ test('a delete refusal leaves the Target editable', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' })));
   expect(screen.getByRole('alert')).toHaveTextContent('Deletion unavailable.');
-  expect(screen.getByRole('slider')).toBeEnabled();
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
 });
 test('a failed season read stays retryable without losing the criteria', async () => {
@@ -220,7 +228,7 @@ test('a failed season read stays retryable without losing the criteria', async (
   });
   await open();
   expect(screen.getByRole('alert')).toHaveTextContent('Season unavailable.');
-  expect(screen.getByRole('slider')).toHaveValue('40');
+  expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveValue('40');
   fireEvent.click(screen.getByRole('button', { name: 'Retry backtest' }));
   await act(async () => jest.advanceTimersByTime(600));
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeVisible();
@@ -235,10 +243,14 @@ test('a late superseded preview never replaces the latest evidence', async () =>
         finishOld = resolve;
       }),
   );
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '45' },
+  });
   await act(async () => jest.advanceTimersByTime(600));
   const oldSignal = fetchTargetPreview.mock.calls[1][0].signal;
-  fireEvent.change(screen.getByRole('slider'), { target: { value: '46' } });
+  fireEvent.change(screen.getByRole('slider', { name: /threshold percent/ }), {
+    target: { value: '46' },
+  });
   expect(oldSignal.aborted).toBe(true);
   fetchTargetPreview.mockResolvedValueOnce({ ...backtest, today: null, players: [] });
   await act(async () => jest.advanceTimersByTime(600));
@@ -508,4 +520,13 @@ test('a destination read started before the preference save cannot restore the o
   await act(async () => finishRead([target]));
   await act(async () => jest.advanceTimersByTime(600));
   expect(screen.getByRole('button', { name: /^3PM / })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the floor reports the appearances the Lab’s read kept, and dims while it is stale', async () => {
+  await open();
+  // Three game rows across the fixture's one player.
+  expect(screen.getByText('3 appearances kept')).toBeVisible();
+  expect(screen.getByText('3 appearances kept')).not.toHaveClass('is-stale');
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '20' } });
+  expect(screen.getByText('3 appearances kept')).toHaveClass('is-stale');
 });

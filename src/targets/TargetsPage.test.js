@@ -860,7 +860,10 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
     'href',
     '/matchups/0022500584',
   );
-  expect(within(card).getByRole('link', { name: 'View Details / Edit' })).toHaveAttribute('href', '/targets/7');
+  expect(within(card).getByRole('link', { name: 'View Details / Edit' })).toHaveAttribute(
+    'href',
+    '/targets/7',
+  );
   expect(within(card).getByRole('listitem')).toHaveTextContent('44%');
   expect(within(card).getByRole('listitem')).toHaveTextContent('25.4 ppg');
   expect(within(card).queryByRole('spinbutton')).not.toBeInTheDocument();

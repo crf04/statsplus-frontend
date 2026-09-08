@@ -320,7 +320,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
-    'player game minutes > 35 min (backtest only)',
+    'Backtest · season to date · excludes games ≤ 35 min',
   );
 });
 

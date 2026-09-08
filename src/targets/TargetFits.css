@@ -233,6 +233,12 @@
   font-size: 0.76rem;
 }
 
+/* The minutes floor is data about the read, so its number is set in the
+   figure face the rest of the evidence uses. */
+.target-backtest-note {
+  font-family: var(--ct-mono);
+}
+
 /* The player heads his own game rows, so it is read as a heading rather than
    weighted like one: it keeps the type of the cell it used to be, and only the
    column headings above it are set in the label face. */

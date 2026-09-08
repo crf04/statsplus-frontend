@@ -1,7 +1,7 @@
 import { act, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
-import { TargetConditionSummary } from './TargetConditions';
+import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
 import { fetchDietBaselines, fetchSeasonMinutes } from './targetsApi';
 jest.mock('./targetsApi', () => ({ fetchDietBaselines: jest.fn(), fetchSeasonMinutes: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
@@ -87,7 +87,7 @@ test('an incomplete player game minutes threshold remains invalid until filled',
   expect(screen.getByText('Enter an integer threshold from 0 through 48 minutes.')).toBeVisible();
   expect(screen.queryByText(/strictly greater than\s+minutes/)).not.toBeInTheDocument();
 });
-test('a player game minutes Condition is included in the saved draft and compact summary', async () => {
+test('a player game minutes Condition is saved and reads as a Backtest note, not a chip', async () => {
   render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
@@ -103,17 +103,23 @@ test('a player game minutes Condition is included in the saved draft and compact
       },
     }),
   );
-  const { container } = render(
-    <TargetConditionSummary
-      target={{
-        ...target,
-        conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
-      }}
-    />,
-  );
-  expect(container.querySelector('.target-condition-chip')).toHaveTextContent(
-    'player game minutes > 10 min (backtest only)',
-  );
+  const conditioned = {
+    ...target,
+    conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
+  };
+  expect(backtestMinutesNote(conditioned)).toBe('excludes games \u2264 10 min');
+  const { container } = render(<TargetConditionSummary target={conditioned} />);
+  expect(container.querySelector('.target-condition-chip')).toBeNull();
+});
+
+test('a Target with no player game minutes Condition has no Backtest note', () => {
+  expect(backtestMinutesNote(target)).toBeNull();
+  expect(
+    backtestMinutesNote({
+      ...target,
+      conditions: { defender: null, from: '2026-01-01', to: null },
+    }),
+  ).toBeNull();
 });
 test('a Condition chip names the defender once the roster read resolves', async () => {
   const { container } = render(

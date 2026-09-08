@@ -343,11 +343,23 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   );
 }
 
+/*
+ * The minutes floor scopes which appearances the Backtest counts rather than
+ * describing the Target itself, so it reads as a note on the Backtest line and
+ * stays out of the Condition chip.
+ */
+export const backtestMinutesNote = (target) => {
+  const playerMinutes = normalizeConditions(target.conditions)?.playerMinutes;
+  return playerMinutes === null || playerMinutes === undefined
+    ? null
+    : `excludes games ≤ ${playerMinutes} min`;
+};
+
 export function TargetConditionSummary({ target }) {
   const conditions = normalizeConditions(target.conditions);
   const roster = useSeasonMinutes(conditions?.defender ? target.opponent : null);
   if (!conditions) return null;
-  const { defender, from, to, playerMinutes } = conditions;
+  const { defender, from, to } = conditions;
   const player = roster.players.find((player) => player.playerId === defender?.playerId);
   // Each Condition reads as a name and the threshold it holds to, so the card
   // can set the threshold apart the way a Qualifier's share is set apart.
@@ -357,15 +369,10 @@ export function TargetConditionSummary({ target }) {
       value: `${defender.minutes} min`,
       tail: ' (sat out = 0)',
     },
-    playerMinutes !== null &&
-      playerMinutes !== undefined && {
-        label: 'player game minutes >',
-        value: `${playerMinutes} min`,
-        tail: ' (backtest only)',
-      },
     from && { label: 'from', value: from, tail: '' },
     to && { label: 'through', value: to, tail: '' },
   ].filter(Boolean);
+  if (parts.length === 0) return null;
   return (
     <p className="target-condition-chip">
       {parts.map((part) => (

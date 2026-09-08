@@ -54,10 +54,10 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
                 </span>
               );
             })}
+            <TargetConditionSummary target={target} />
           </div>
           {target.note && <p className="target-card-note">{target.note}</p>}
         </div>
-        <TargetConditionSummary target={target} compact />
         {game && (
           <section aria-label="Playing tonight">
             <h3 className="target-section-heading">Playing tonight</h3>
@@ -88,10 +88,6 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
           <p className="target-backtest-proxy">Backtest · season to date</p>
           {read?.status === 'ready' ? (
             <>
-              <TargetConditionSummary
-                target={read.backtest.target}
-                gamesConsidered={read.backtest.gamesConsidered}
-              />
               <TargetRecord
                 backtest={read.backtest}
                 columns={columns}

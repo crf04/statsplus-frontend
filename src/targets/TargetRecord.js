@@ -59,15 +59,6 @@ const aggregateColumn = (games, column) => {
   };
 };
 
-const sampleMinutes = (games) => {
-  if (games.length === 0) return 0;
-  if (games.some((row) => !Number.isFinite(row.game.line?.minutes) || row.game.line.minutes < 0)) {
-    return null;
-  }
-  const total = games.reduce((sum, row) => sum + row.game.line.minutes, 0);
-  return Number.isFinite(total) ? total : null;
-};
-
 // Keep full precision through grading and arithmetic; round only for display.
 function recordGames(backtest, columns) {
   return backtest.players
@@ -116,16 +107,11 @@ export default function TargetRecord({
 }) {
   const games = recordGames(backtest, columns);
   const scale = scaleFor(games, gradedBy);
-  const minutes = sampleMinutes(games);
   return (
     <div className="target-record">
       <ul className="target-summary" aria-label="Backtest summary">
         <li className="target-summary-sample" aria-label="Player-games">
           <b>{games.length}</b> <small>player-games</small>
-        </li>
-        <li className="target-summary-sample" aria-label="Minutes">
-          <b>{minutes === null ? '—' : number(minutes)}</b>{' '}
-          <small>{minutes === null ? 'minutes unavailable/incomplete' : 'minutes'}</small>
         </li>
         <li className="target-summary-break" aria-hidden="true" />
         {columns.map((column) => {

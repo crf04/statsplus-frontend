@@ -1092,8 +1092,11 @@ test('saved cards show their Condition as a read-only chip', async () => {
     season: '2025-26',
     players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
   });
-  renderPage(false);
-  expect(await screen.findByText(/Rudy Gobert under 8 min/)).toHaveClass('target-condition-chip');
+  const { container } = renderPage(false);
+  await screen.findByText(/Rudy Gobert under/);
+  expect(container.querySelector('.target-condition-chip')).toHaveTextContent(
+    'Rudy Gobert under 8 min (sat out = 0)',
+  );
   expect(screen.queryByLabelText('Defender')).not.toBeInTheDocument();
 });
 
@@ -1163,7 +1166,7 @@ test('a pending resolution states that today is being read rather than unavailab
   expect(within(card).queryByText('Today’s activity unavailable')).not.toBeInTheDocument();
 });
 
-test('one page shares one roster read across same-opponent chips and count lines, then releases it', async () => {
+test('one page shares one roster read across same-opponent chips, then releases it', async () => {
   const conditioned = {
     ...targets[0],
     conditions: {
@@ -1186,11 +1189,14 @@ test('one page shares one roster read across same-opponent chips and count lines
     players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
   });
   const page = renderPage(false);
-  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  const chips = (container) => container.querySelectorAll('.target-condition-chip');
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under/)).toHaveLength(2));
+  expect(chips(page.container)).toHaveLength(2);
   expect(fetchSeasonMinutes).toHaveBeenCalledTimes(1);
   page.unmount();
-  renderPage(false);
-  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under 8 min/)).toHaveLength(4));
+  const next = renderPage(false);
+  await waitFor(() => expect(screen.getAllByText(/Rudy Gobert under/)).toHaveLength(2));
+  expect(chips(next.container)).toHaveLength(2);
   expect(fetchSeasonMinutes).toHaveBeenCalledTimes(2);
 });
 

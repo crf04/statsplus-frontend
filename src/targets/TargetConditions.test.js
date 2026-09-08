@@ -103,21 +103,20 @@ test('a player game minutes Condition is included in the saved draft and compact
       },
     }),
   );
-  render(
+  const { container } = render(
     <TargetConditionSummary
-      compact
       target={{
         ...target,
         conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
       }}
     />,
   );
-  expect(screen.getByText(/player game minutes > 10 min \(backtest only\)/)).toHaveClass(
-    'target-condition-chip',
+  expect(container.querySelector('.target-condition-chip')).toHaveTextContent(
+    'player game minutes > 10 min (backtest only)',
   );
 });
-test('a Condition line names the defender and the count of opponent games kept', async () => {
-  render(
+test('a Condition chip names the defender once the roster read resolves', async () => {
+  const { container } = render(
     <TargetConditionSummary
       target={{
         ...target,
@@ -127,11 +126,11 @@ test('a Condition line names the defender and the count of opponent games kept',
           to: null,
         },
       }}
-      gamesConsidered={{ kept: 3, played: 10 }}
     />,
   );
-  expect(await screen.findByText(/Rudy Gobert under 8 min/)).toHaveTextContent(
-    '3 of 10 opponent games kept',
+  await screen.findByText(/Rudy Gobert under/);
+  expect(container.querySelector('.target-condition-chip')).toHaveTextContent(
+    'Rudy Gobert under 8 min (sat out = 0)',
   );
 });
 test('changing opponent clears the defender and ignores the old roster response', async () => {

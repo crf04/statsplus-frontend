@@ -233,7 +233,6 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
     .getByLabel('Defender', { exact: true })
     .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^1 player-games$/);
-  await expect(page.getByText(/1 of 4 opponent games kept/)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
@@ -270,7 +269,6 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.getByRole('button', { name: 'a date window' }).click();
   await page.getByLabel('From', { exact: true }).fill('2025-01-11');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
-  await expect(page.getByText(/0 of 4 opponent games kept/)).toBeVisible();
 });
 
 test('@critical a player game minutes Condition filters appearances, persists, and can revert', async ({
@@ -291,17 +289,17 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await playerMinutes.fill('36');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
-  await expect(page.getByText(/4 of 4 opponent games kept/)).toBeVisible();
   await expect(
     page.getByText('No qualifying appearances match these backtest conditions.'),
   ).toBeVisible();
-  await expect(page.getByText(/player game minutes > 36 min \(backtest only\)/)).toBeVisible();
   await playerMinutes.fill('35');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await expect(playerMinutes).toHaveValue('35');
-  await expect(page.getByText(/player game minutes > 35 min \(backtest only\)/)).toBeVisible();
+  // The workbench already carries the Condition in its own control, so the Lab
+  // does not restate it beneath the evidence.
+  await expect(page.getByText(/min \(backtest only\)/)).toHaveCount(0);
   await playerMinutes.fill('36');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
   await page.getByRole('button', { name: 'Revert' }).click();

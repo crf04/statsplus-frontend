@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
-import { TargetConditionSummary } from './TargetConditions';
 import { describeDraft } from './TargetForm';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
@@ -60,13 +59,6 @@ export default function TargetLab({
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending })}
         </p>
-        {preview && (
-          <TargetConditionSummary
-            target={preview.target}
-            gamesConsidered={preview.gamesConsidered}
-            stale={stale}
-          />
-        )}
         {status === 'error' && (
           <p className="target-error" role="alert">
             {error}

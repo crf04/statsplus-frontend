@@ -343,36 +343,37 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   );
 }
 
-export function TargetConditionSummary({
-  target,
-  gamesConsidered,
-  compact = false,
-  stale = false,
-}) {
+export function TargetConditionSummary({ target }) {
   const conditions = normalizeConditions(target.conditions);
   const roster = useSeasonMinutes(conditions?.defender ? target.opponent : null);
   if (!conditions) return null;
   const { defender, from, to, playerMinutes } = conditions;
   const player = roster.players.find((player) => player.playerId === defender?.playerId);
-  const words = [
-    defender
-      ? `${player?.name || `Player ${defender.playerId}`} ${defender.comparator === 'under' ? 'under' : 'at least'} ${defender.minutes} min (sat out = 0)`
-      : null,
-    playerMinutes !== null && playerMinutes !== undefined
-      ? `player game minutes > ${playerMinutes} min (backtest only)`
-      : null,
-    from ? `from ${from}` : null,
-    to ? `through ${to}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  // Each Condition reads as a name and the threshold it holds to, so the card
+  // can set the threshold apart the way a Qualifier's share is set apart.
+  const parts = [
+    defender && {
+      label: `${player?.name || `Player ${defender.playerId}`} ${defender.comparator === 'under' ? 'under' : 'at least'}`,
+      value: `${defender.minutes} min`,
+      tail: ' (sat out = 0)',
+    },
+    playerMinutes !== null &&
+      playerMinutes !== undefined && {
+        label: 'player game minutes >',
+        value: `${playerMinutes} min`,
+        tail: ' (backtest only)',
+      },
+    from && { label: 'from', value: from, tail: '' },
+    to && { label: 'through', value: to, tail: '' },
+  ].filter(Boolean);
   return (
-    <p
-      className={`target-condition-summary${compact ? ' target-condition-chip' : ''}${stale ? ' is-stale' : ''}`}
-    >
-      {words}
-      {gamesConsidered &&
-        ` · ${gamesConsidered.kept} of ${gamesConsidered.played} opponent games kept`}
+    <p className="target-condition-chip">
+      {parts.map((part) => (
+        <span key={part.label}>
+          {part.label} <b>{part.value}</b>
+          {part.tail}
+        </span>
+      ))}
     </p>
   );
 }

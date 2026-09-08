@@ -237,23 +237,14 @@
   gap: 8px;
   padding: 8px 0;
 }
-.target-condition-summary {
-  color: #b6c6bb;
-  font-size: 12px;
-  margin: 8px 0;
-}
 .target-baselines-unavailable {
   display: block;
   color: var(--ct-dim);
 }
 
+/* On a Target card a Condition sits beside the Qualifiers and reads like them. */
 .target-condition-chip {
-  display: inline-block;
-  padding: 3px 7px;
-  border: 1px solid #3e5147;
-  border-radius: 4px;
-}
-
-.target-condition-summary.is-stale {
-  opacity: 0.45;
+  display: contents;
+  color: var(--ct-text);
+  font-size: 1rem;
 }

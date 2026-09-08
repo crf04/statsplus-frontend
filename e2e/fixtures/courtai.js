@@ -1820,39 +1820,71 @@ const resolveTargets = (date, targets) => {
  * thin, and the games in their season played against the Target's opponent. A
  * Target whose opponent is idle today still has one.
  *
- * The columns are the outcome markets each Qualifier's slice maps to, deduped
- * in Qualifier order, and every figure is read off the same game log the Log
- * Workspace serves, so a row and the handoff it links to cannot disagree.
+ * The columns are the Target defaults for each Qualifier, deduped in Qualifier
+ * order. Every figure is read off the same game log the Log Workspace serves,
+ * so a row and the handoff it links to cannot disagree.
  */
 const SLICE_MARKETS = {
-  play_types: ['PTS', 'PA', 'PR', 'PRA'],
-  assist_locations: ['AST', 'PA', 'RA', 'PRA'],
-  shot_zones: ['PTS'],
-  shot_types: ['PTS'],
+  play_types: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
+  assist_locations: ['AST', 'AST/36'],
+  shot_types: ['PTS', 'PTS/36', 'FGA', 'FGA/36'],
 };
 
 const THREE_POINT_SLICES = ['Corner 3', 'Above the Break 3'];
+const TWO_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', 'FG2A', 'FG2A/36'];
+const THREE_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', '3PA', '3PA/36'];
 
-const sliceMarkets = (qualifier) => [
-  ...(SLICE_MARKETS[qualifier.base] || ['PTS']),
-  ...(THREE_POINT_SLICES.includes(qualifier.slice_key) ? ['3PM'] : []),
-];
+const sliceMarkets = (qualifier) =>
+  qualifier.base === 'shot_zones'
+    ? THREE_POINT_SLICES.includes(qualifier.slice_key)
+      ? THREE_POINT_SHOT_ZONE_STATS
+      : TWO_POINT_SHOT_ZONE_STATS
+    : SLICE_MARKETS[qualifier.base] || ['PTS'];
 
 // Box-score proxies: what a game log holds is the closest thing to a slice.
 const MARKET_STATS = {
   PTS: (log) => log.PTS,
   AST: (log) => log.AST,
   '3PM': (log) => log.FG3M,
+  FGA: (log) => log.FGA,
+  FG2A: (log) =>
+    Number.isFinite(log.FGA) && Number.isFinite(log.FG3A) ? log.FGA - log.FG3A : null,
+  '3PA': (log) => log.FG3A,
   PA: (log) => log.PTS + log.AST,
   PR: (log) => log.PTS + log.REB,
   RA: (log) => log.REB + log.AST,
   PRA: (log) => log.PTS + log.REB + log.AST,
 };
 
-const seasonAverage = (season, market) =>
-  Math.round(
-    (season.reduce((total, log) => total + MARKET_STATS[market](log), 0) / season.length) * 10,
-  ) / 10;
+const per36 = (value, minutes) =>
+  Number.isFinite(value) && Number.isFinite(minutes) && minutes > 0 ? (value / minutes) * 36 : null;
+
+Object.assign(MARKET_STATS, {
+  'PTS/36': (log) => per36(MARKET_STATS.PTS(log), log.MIN),
+  'FGA/36': (log) => per36(MARKET_STATS.FGA(log), log.MIN),
+  'FG2A/36': (log) => per36(MARKET_STATS.FG2A(log), log.MIN),
+  '3PA/36': (log) => per36(MARKET_STATS['3PA'](log), log.MIN),
+  'AST/36': (log) => per36(MARKET_STATS.AST(log), log.MIN),
+});
+
+const seasonAverage = (season, market) => {
+  if (market.endsWith('/36')) {
+    const productionValues = season.map((log) => MARKET_STATS[market.slice(0, -3)](log));
+    const minutesValues = season.map((log) => log.MIN);
+    if (
+      !productionValues.every(Number.isFinite) ||
+      !minutesValues.every(Number.isFinite) ||
+      productionValues.length === 0
+    )
+      return null;
+    const production = productionValues.reduce((total, value) => total + value, 0);
+    const minutes = minutesValues.reduce((total, value) => total + value, 0);
+    return per36(production, minutes);
+  }
+  const values = season.map((log) => MARKET_STATS[market](log));
+  if (!values.every(Number.isFinite) || values.length === 0) return null;
+  return Math.round((values.reduce((total, value) => total + value, 0) / values.length) * 10) / 10;
+};
 
 const boxLine = (log) => ({
   points: log.PTS,
@@ -1924,16 +1956,20 @@ const backtestPlayer = (target, statColumns, player) => {
  * each player's own season average and the share of games at or above it. A
  * market with no game to average has no figure.
  */
-const backtestSummary = (players, statColumns) => {
+export const backtestSummary = (players, statColumns) => {
   const games = players.flatMap((player) => player.games.map((game) => ({ player, game })));
   return {
     players: players.length,
     games: games.length,
     columns: Object.fromEntries(
       statColumns.map((market) => {
-        const differences = games.map(
-          ({ player, game }) => game.stats[market] - player.season_averages[market],
-        );
+        const differences = games
+          .filter(
+            ({ player, game }) =>
+              Number.isFinite(game.stats[market]) &&
+              Number.isFinite(player.season_averages[market]),
+          )
+          .map(({ player, game }) => game.stats[market] - player.season_averages[market]);
         if (differences.length === 0) {
           return [market, { mean_difference: null, over_average_share: null }];
         }

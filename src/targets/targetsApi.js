@@ -358,7 +358,14 @@ export const decodeResolvedTargets = (payload = {}) => {
  */
 const decodeStats = (stats, statColumns) => {
   if (!isRecord(stats)) throw createInvalidResponseError();
-  return Object.fromEntries(statColumns.map((column) => [column, requireNumber(stats[column])]));
+  return Object.fromEntries(
+    statColumns.map((column) => [
+      column,
+      column === 'FG2A' || column.endsWith('/36')
+        ? requireNumberOrNull(stats[column])
+        : requireNumber(stats[column]),
+    ]),
+  );
 };
 
 const decodeBoxLine = (line) => {

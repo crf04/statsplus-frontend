@@ -72,8 +72,10 @@
   background: var(--ct-surface);
 }
 
+/* The range sliders paint their own rail; the shared control skin would flatten
+   it to the card behind them. */
 .target-form select,
-.target-form input {
+.target-form input:not([type='range']) {
   min-height: 34px;
   border: 1px solid var(--ct-line-strong);
   border-radius: var(--ct-radius-ctl);

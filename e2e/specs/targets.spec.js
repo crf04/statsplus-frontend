@@ -41,6 +41,9 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   const value = await page.getByText('40%', { exact: true }).boundingBox();
   expect(track.height).toBeLessThanOrEqual(8);
   expect(value.y + value.height).toBeLessThan(track.y);
+  // The rail is what places the threshold against the league mark, so it has to
+  // stay painted rather than take the card colour from the shared control skin.
+  await expect(page.getByRole('slider')).toHaveCSS('background-image', /linear-gradient/);
   await saveTarget(page);
   await expect(card(page, 'OKC vs Corner 3 ≥ 40%')).toContainText('Leaves the corner late.');
   await expect(page.getByText('No Targets active today')).toBeVisible();

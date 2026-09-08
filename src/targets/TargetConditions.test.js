@@ -1,7 +1,7 @@
 import { act, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
-import { TargetConditionSummary } from './TargetConditions';
+import { TargetConditionSummary, backtestMinutesNote, validConditions } from './TargetConditions';
 import { fetchDietBaselines, fetchSeasonMinutes } from './targetsApi';
 jest.mock('./targetsApi', () => ({ fetchDietBaselines: jest.fn(), fetchSeasonMinutes: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
@@ -33,9 +33,10 @@ beforeEach(() => {
     players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
   });
 });
-test('one add menu offers each Condition once and saves defender and season-window criteria', async () => {
+test('the add menu offers only the opponent Conditions, and saves them', async () => {
   render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  expect(screen.queryByRole('button', { name: 'a player’s game minutes' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
   expect(screen.getByText('Games he sat out count as 0 min.')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
@@ -64,33 +65,49 @@ test('one add menu offers each Condition once and saves defender and season-wind
   fireEvent.change(screen.getByLabelText('Through'), { target: { value: '2025-12-01' } });
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
 });
-test('a player game minutes Condition defaults to a strict backtest threshold and can be removed', async () => {
+test('the floor stands at its first stop, reading any, until the track is moved', () => {
   render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
-  expect(screen.getByLabelText('Player game minutes')).toHaveValue(10);
-  expect(screen.getByText(/strictly greater than 10 minutes in the backtest/)).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
-  expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  expect(screen.getByRole('button', { name: 'a player’s game minutes' })).toBeVisible();
+  const floor = screen.getByLabelText('Player game minutes');
+  expect(floor).toBeVisible();
+  expect(floor).toHaveValue('-1');
+  expect(floor).toHaveAttribute('aria-valuetext', 'any');
+  expect(screen.getByText('any')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Save Target' })).toBeEnabled();
+  fireEvent.change(floor, { target: { value: '15' } });
+  expect(floor).toHaveAttribute('aria-valuetext', 'over 15 minutes');
+  expect(screen.getByText('15 min')).toBeVisible();
 });
-test('an incomplete player game minutes threshold remains invalid until filled', () => {
+
+test('the first stop is kept apart from a floor of zero', () => {
   render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
-  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '' } });
-  expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
-  expect(
-    screen.getByText('Player game minutes must be an integer from 0 through 48.'),
-  ).toBeVisible();
-  expect(screen.getByText('Enter an integer threshold from 0 through 48 minutes.')).toBeVisible();
-  expect(screen.queryByText(/strictly greater than\s+minutes/)).not.toBeInTheDocument();
+  const floor = screen.getByLabelText('Player game minutes');
+  fireEvent.change(floor, { target: { value: '0' } });
+  expect(floor).toHaveAttribute('aria-valuetext', 'over 0 minutes');
+  expect(screen.getByText('0 min')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({
+      conditions: { defender: null, from: null, to: null, playerMinutes: 0 },
+    }),
+  );
 });
-test('a player game minutes Condition is included in the saved draft and compact summary', async () => {
+test('sliding back to the first stop saves no Condition rather than blocking the save', () => {
   render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  const floor = screen.getByLabelText('Player game minutes');
+  fireEvent.change(floor, { target: { value: '15' } });
+  fireEvent.change(floor, { target: { value: '-1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ conditions: null }));
+});
+
+// The track cannot produce one, but a stored Target can still carry one.
+test('a stored fractional floor is refused', () => {
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 1.5 })).toBe(false);
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 49 })).toBe(false);
+  expect(validConditions({ defender: null, from: null, to: null, playerMinutes: 15 })).toBe(true);
+});
+test('a player game minutes floor is saved and reads as a Backtest note, not a chip', async () => {
+  render(<Form />);
   fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '0' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
   expect(save).toHaveBeenCalledWith(
@@ -103,21 +120,25 @@ test('a player game minutes Condition is included in the saved draft and compact
       },
     }),
   );
-  render(
-    <TargetConditionSummary
-      compact
-      target={{
-        ...target,
-        conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
-      }}
-    />,
-  );
-  expect(screen.getByText(/player game minutes > 10 min \(backtest only\)/)).toHaveClass(
-    'target-condition-chip',
-  );
+  const conditioned = {
+    ...target,
+    conditions: { defender: null, from: null, to: null, playerMinutes: 10 },
+  };
+  expect(backtestMinutesNote(conditioned)).toBe('excludes games \u2264 10 min');
+  const { container } = render(<TargetConditionSummary target={conditioned} />);
+  expect(container.querySelector('.target-condition-chip')).toBeNull();
 });
-test('a Condition line names the defender and the count of opponent games kept', async () => {
-  render(
+test('a Target with no player game minutes Condition has no Backtest note', () => {
+  expect(backtestMinutesNote(target)).toBeNull();
+  expect(
+    backtestMinutesNote({
+      ...target,
+      conditions: { defender: null, from: '2026-01-01', to: null },
+    }),
+  ).toBeNull();
+});
+test('a Condition chip names the defender once the roster read resolves', async () => {
+  const { container } = render(
     <TargetConditionSummary
       target={{
         ...target,
@@ -127,11 +148,11 @@ test('a Condition line names the defender and the count of opponent games kept',
           to: null,
         },
       }}
-      gamesConsidered={{ kept: 3, played: 10 }}
     />,
   );
-  expect(await screen.findByText(/Rudy Gobert under 8 min/)).toHaveTextContent(
-    '3 of 10 opponent games kept',
+  await screen.findByText(/Rudy Gobert under/);
+  expect(container.querySelector('.target-condition-chip')).toHaveTextContent(
+    'Rudy Gobert under 8 min (sat out = 0)',
   );
 });
 test('changing opponent clears the defender and ignores the old roster response', async () => {
@@ -187,4 +208,27 @@ test('a window-only roster failure explains why its season presets are unavailab
   expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: 'Retry roster' }));
   await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
+});
+
+test('the minutes floor sits in its own card, apart from the opponent filters', () => {
+  const { container } = render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  const backtest = screen.getByRole('region', { name: 'Backtest' });
+  expect(backtest).toHaveClass('target-form-card');
+  expect(backtest.querySelector('[aria-label="Player game minutes"]')).toBeTruthy();
+  const teamCard = container.querySelector('.target-form-card:has([aria-label="Window preset"])');
+  expect(teamCard).not.toBe(backtest);
+  expect(teamCard.querySelector('[aria-label="Player game minutes"]')).toBeNull();
+  expect(backtest.contains(teamCard)).toBe(false);
+  expect(teamCard.contains(backtest)).toBe(false);
+});
+test('removing the window leaves the Backtest section standing', () => {
+  render(<Form />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '15' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Remove window Condition' }));
+  expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Player game minutes')).toHaveValue('15');
 });

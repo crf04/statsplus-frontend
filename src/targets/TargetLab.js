@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { BacktestSampleProvider, countAppearances } from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
-import { TargetConditionSummary } from './TargetConditions';
 import { describeDraft } from './TargetForm';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
@@ -53,20 +53,15 @@ export default function TargetLab({
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
       <div className="target-lab-left">
-        {children}
+        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
+          {children}
+        </BacktestSampleProvider>
         <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
           Lab · Backtest · season to date · vs {draft.opponent}
         </h2>
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending })}
         </p>
-        {preview && (
-          <TargetConditionSummary
-            target={preview.target}
-            gamesConsidered={preview.gamesConsidered}
-            stale={stale}
-          />
-        )}
         {status === 'error' && (
           <p className="target-error" role="alert">
             {error}

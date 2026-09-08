@@ -1,4 +1,4 @@
-import { TargetConditionSummary } from './TargetConditions';
+import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
@@ -20,6 +20,7 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
   const stats = useStatPreferences(target);
   const columns = stats.preferences?.columns ?? read?.backtest?.statColumns ?? [];
   const gradedBy = stats.preferences?.gradedBy ?? columns[0];
+  const minutesNote = backtestMinutesNote(target);
   return (
     <li>
       <article className="target-card" aria-label={target.title}>
@@ -54,10 +55,10 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
                 </span>
               );
             })}
+            <TargetConditionSummary target={target} />
           </div>
           {target.note && <p className="target-card-note">{target.note}</p>}
         </div>
-        <TargetConditionSummary target={target} compact />
         {game && (
           <section aria-label="Playing tonight">
             <h3 className="target-section-heading">Playing tonight</h3>
@@ -85,13 +86,12 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
           </section>
         )}
         <section aria-label="Backtest">
-          <p className="target-backtest-proxy">Backtest · season to date</p>
+          <p className="target-backtest-proxy">
+            Backtest · season to date
+            {minutesNote && <span className="target-backtest-note"> · {minutesNote}</span>}
+          </p>
           {read?.status === 'ready' ? (
             <>
-              <TargetConditionSummary
-                target={read.backtest.target}
-                gamesConsidered={read.backtest.gamesConsidered}
-              />
               <TargetRecord
                 backtest={read.backtest}
                 columns={columns}

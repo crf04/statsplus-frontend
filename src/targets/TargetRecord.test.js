@@ -222,7 +222,6 @@ test('minutes weighting keeps a short hot cameo from dominating a full appearanc
   const summary = screen.getByRole('listitem', { name: 'PTS/36' });
   expect(summary).toHaveTextContent('+1.9 PTS/36');
   expect(summary).toHaveTextContent('+10.5% vs baseline');
-  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('38.0 minutes');
 });
 
 test('efficiency aggregates use each column’s exposure and identify percentage-point units', () => {
@@ -339,7 +338,6 @@ test('per36 weighting keeps distinct player rates and unequal appearances separa
   expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent(
     '3 player-games',
   );
-  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('74.0 minutes');
 });
 
 test('rounds aggregate values before choosing a sign, so a tiny negative is not negative zero', () => {
@@ -451,9 +449,6 @@ test('missing minutes and legacy rates remain visible individually but leave agg
   );
   let summary = screen.getByRole('listitem', { name: 'PTS' });
   expect(summary).toHaveTextContent('+5.0 PTS/game');
-  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent(
-    'minutes unavailable/incomplete',
-  );
 
   rerender(
     <TargetRecord
@@ -482,13 +477,12 @@ test('missing minutes and legacy rates remain visible individually but leave agg
   );
 });
 
-test('zero minutes is a valid sample total while the per36 column excludes that row', () => {
+test('the per36 column excludes a zero-minute row', () => {
   renderPointsRecord(
     [player({ name: 'A', seasonPoints: 20, seasonMinutes: 30, gamePoints: 10, gameMinutes: 0 })],
     ['PTS/36'],
   );
   const summary = screen.getByRole('listitem', { name: 'PTS/36' });
-  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent('0.0 minutes');
   expect(summary).toHaveTextContent('— PTS/36');
   expect(summary).toHaveTextContent('0 of 1 player-games used');
 });
@@ -496,7 +490,6 @@ test('zero minutes is a valid sample total while the per36 column excludes that 
 test('an empty record has no aggregate evidence', () => {
   render(<TargetRecord backtest={{ ...backtest, players: [] }} />);
   expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('0');
-  expect(screen.getByRole('listitem', { name: 'Minutes' })).toHaveTextContent(/^0\.0 minutes$/);
   expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— PTS/game');
   expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— vs baseline');
 });

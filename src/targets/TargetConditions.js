@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
+import { useBacktestSample } from './backtestSample';
+
+// The track's first stop, left of every real floor, meaning no floor at all.
+const NO_FLOOR = -1;
+const FLOOR_CEILING = 48;
 
 export const emptyConditions = () => ({
   defender: null,
@@ -48,8 +53,6 @@ export const validConditions = (conditions) => {
 export function TargetAddMenu({ conditions, onQualifier, onChange }) {
   const [open, setOpen] = useState(false);
   const hasWindow = conditions && (conditions.from !== null || conditions.to !== null);
-  const hasPlayerMinutes =
-    conditions?.playerMinutes !== null && conditions?.playerMinutes !== undefined;
   const choose = (callback) => {
     callback();
     setOpen(false);
@@ -85,16 +88,6 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
               a defender’s minutes
             </button>
           )}
-          {!hasPlayerMinutes && (
-            <button
-              type="button"
-              onClick={() =>
-                choose(() => onChange({ ...emptyConditions(), ...conditions, playerMinutes: 10 }))
-              }
-            >
-              a player’s game minutes
-            </button>
-          )}
           {!hasWindow && (
             <button
               type="button"
@@ -119,7 +112,6 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
-  const playerMinutes = conditions.playerMinutes ?? null;
   const hasWindow = conditions.from !== null || conditions.to !== null;
   const endYear = roster.season ? Number(roster.season.slice(0, 4)) + 1 : null;
   const preset = conditions.to
@@ -229,42 +221,6 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
           <small>Games he sat out count as 0 min.</small>
         </div>
       )}
-      {playerMinutes !== null && (
-        <div className="target-condition">
-          <div className="target-condition-head">
-            <span className="target-label">Backtest games</span>
-            <label className="target-player-minutes-control">
-              <span>Player game minutes &gt;</span>
-              <input
-                type="number"
-                min="0"
-                max="48"
-                step="1"
-                aria-label="Player game minutes"
-                value={playerMinutes}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  patch({ playerMinutes: value === '' ? '' : Number(value) });
-                }}
-              />
-              <span>min</span>
-            </label>
-            <button
-              type="button"
-              className="target-remove"
-              aria-label="Remove player game minutes Condition"
-              onClick={() => patch({ playerMinutes: null })}
-            >
-              ×
-            </button>
-          </div>
-          <small>
-            {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
-              ? `Keep appearances strictly greater than ${playerMinutes} minutes in the backtest.`
-              : 'Enter an integer threshold from 0 through 48 minutes.'}
-          </small>
-        </div>
-      )}
       {hasWindow && (
         <div className="target-condition">
           {roster.status === 'error' && !defender && (
@@ -343,36 +299,102 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   );
 }
 
-export function TargetConditionSummary({
-  target,
-  gamesConsidered,
-  compact = false,
-  stale = false,
-}) {
+/*
+ * The Backtest section. The Qualifiers and Conditions above say which opponent
+ * games a Target is read against; this says which of the player's appearances
+ * in those games count. It is always on screen because it always applies —
+ * empty simply means no floor, which is the answer for most Targets.
+ */
+export function TargetBacktestRows({ conditions, onChange }) {
+  const playerMinutes = conditions?.playerMinutes ?? null;
+  const sample = useBacktestSample();
+  /*
+   * The floor is only ever a minimum, so the track needs no comparator to flip
+   * and no upper handle. Its first stop is left of zero and means no floor at
+   * all, which keeps that apart from a floor of zero — the one that drops the
+   * games a player was listed for but did not play.
+   */
+  const position = playerMinutes ?? NO_FLOOR;
+  return (
+    <div className="target-minutes-row">
+      <span className="target-minutes-mark" aria-hidden="true">
+        &gt;
+      </span>
+      <div
+        className="target-slider-track"
+        style={{
+          '--threshold-position': `${((position - NO_FLOOR) / (FLOOR_CEILING - NO_FLOOR)) * 100}%`,
+        }}
+      >
+        <output className="target-slider-value">
+          {playerMinutes === null ? 'any' : `${playerMinutes} min`}
+        </output>
+        <input
+          type="range"
+          min={NO_FLOOR}
+          max={FLOOR_CEILING}
+          step="1"
+          aria-label="Player game minutes"
+          aria-valuetext={playerMinutes === null ? 'any' : `over ${playerMinutes} minutes`}
+          value={position}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            onChange({
+              ...emptyConditions(),
+              ...conditions,
+              playerMinutes: value === NO_FLOOR ? null : value,
+            });
+          }}
+        />
+      </div>
+      <small className="target-slider-unit">per game</small>
+      {sample?.appearances !== null && sample?.appearances !== undefined && (
+        <small className={`target-minutes-kept${sample.stale ? ' is-stale' : ''}`}>
+          {sample.appearances} appearances kept
+        </small>
+      )}
+    </div>
+  );
+}
+
+/*
+ * The minutes floor scopes which appearances the Backtest counts rather than
+ * describing the Target itself, so it reads as a note on the Backtest line and
+ * stays out of the Condition chip.
+ */
+export const backtestMinutesNote = (target) => {
+  const playerMinutes = normalizeConditions(target.conditions)?.playerMinutes;
+  return playerMinutes === null || playerMinutes === undefined
+    ? null
+    : `excludes games ≤ ${playerMinutes} min`;
+};
+
+export function TargetConditionSummary({ target }) {
   const conditions = normalizeConditions(target.conditions);
   const roster = useSeasonMinutes(conditions?.defender ? target.opponent : null);
   if (!conditions) return null;
-  const { defender, from, to, playerMinutes } = conditions;
+  const { defender, from, to } = conditions;
   const player = roster.players.find((player) => player.playerId === defender?.playerId);
-  const words = [
-    defender
-      ? `${player?.name || `Player ${defender.playerId}`} ${defender.comparator === 'under' ? 'under' : 'at least'} ${defender.minutes} min (sat out = 0)`
-      : null,
-    playerMinutes !== null && playerMinutes !== undefined
-      ? `player game minutes > ${playerMinutes} min (backtest only)`
-      : null,
-    from ? `from ${from}` : null,
-    to ? `through ${to}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  // Each Condition reads as a name and the threshold it holds to, so the card
+  // can set the threshold apart the way a Qualifier's share is set apart.
+  const parts = [
+    defender && {
+      label: `${player?.name || `Player ${defender.playerId}`} ${defender.comparator === 'under' ? 'under' : 'at least'}`,
+      value: `${defender.minutes} min`,
+      tail: ' (sat out = 0)',
+    },
+    from && { label: 'from', value: from, tail: '' },
+    to && { label: 'through', value: to, tail: '' },
+  ].filter(Boolean);
+  if (parts.length === 0) return null;
   return (
-    <p
-      className={`target-condition-summary${compact ? ' target-condition-chip' : ''}${stale ? ' is-stale' : ''}`}
-    >
-      {words}
-      {gamesConsidered &&
-        ` · ${gamesConsidered.kept} of ${gamesConsidered.played} opponent games kept`}
+    <p className="target-condition-chip">
+      {parts.map((part) => (
+        <span key={part.label}>
+          {part.label} <b>{part.value}</b>
+          {part.tail}
+        </span>
+      ))}
     </p>
   );
 }

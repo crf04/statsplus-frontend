@@ -33,9 +33,10 @@ beforeEach(() => {
     players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
   });
 });
-test('one add menu offers each Condition once and saves defender and season-window criteria', async () => {
+test('the add menu offers only the opponent Conditions, and saves them', async () => {
   render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  expect(screen.queryByRole('button', { name: 'a player’s game minutes' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
   expect(screen.getByText('Games he sat out count as 0 min.')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
@@ -64,33 +65,40 @@ test('one add menu offers each Condition once and saves defender and season-wind
   fireEvent.change(screen.getByLabelText('Through'), { target: { value: '2025-12-01' } });
   expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
 });
-test('a player game minutes Condition defaults to a strict backtest threshold and can be removed', async () => {
+test('the Backtest section always shows the minutes floor, off until a figure is set', () => {
   render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
-  expect(screen.getByLabelText('Player game minutes')).toHaveValue(10);
-  expect(screen.getByText('Appearances of 10 min or less sit out the Backtest.')).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
-  expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  expect(screen.getByRole('button', { name: 'a player’s game minutes' })).toBeVisible();
-});
-test('an incomplete player game minutes threshold remains invalid until filled', () => {
-  render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
-  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '' } });
-  expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  const floor = screen.getByLabelText('Player game minutes');
+  expect(floor).toBeVisible();
+  expect(floor).toHaveValue(null);
   expect(
-    screen.getByText('Player game minutes must be an integer from 0 through 48.'),
+    screen.getByText('Every appearance counts. Set a floor to leave the short ones out.'),
   ).toBeVisible();
-  expect(screen.getByText('Enter an integer threshold from 0 through 48 minutes.')).toBeVisible();
-  expect(screen.queryByText(/Appearances of\s+min or less/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Save Target' })).toBeEnabled();
+  fireEvent.change(floor, { target: { value: '15' } });
+  expect(screen.getByText('Appearances of 15 min or less sit out the Backtest.')).toBeVisible();
+  fireEvent.change(floor, { target: { value: '' } });
+  expect(
+    screen.getByText('Every appearance counts. Set a floor to leave the short ones out.'),
+  ).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Save Target' })).toBeEnabled();
 });
-test('a player game minutes Condition is saved and reads as a Backtest note, not a chip', async () => {
+test('an emptied floor saves as no Condition rather than blocking the save', () => {
   render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+  const floor = screen.getByLabelText('Player game minutes');
+  fireEvent.change(floor, { target: { value: '15' } });
+  fireEvent.change(floor, { target: { value: '' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ conditions: null }));
+});
+
+test('a fractional floor is refused with a reason', () => {
+  render(<Form />);
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '1.5' } });
+  expect(screen.getByRole('button', { name: 'Save Target' })).toBeDisabled();
+  expect(screen.getByText('Enter a whole number of minutes from 0 through 48.')).toBeVisible();
+});
+test('a player game minutes floor is saved and reads as a Backtest note, not a chip', async () => {
+  render(<Form />);
   fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '0' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save Target' }));
   expect(save).toHaveBeenCalledWith(
@@ -111,7 +119,6 @@ test('a player game minutes Condition is saved and reads as a Backtest note, not
   const { container } = render(<TargetConditionSummary target={conditioned} />);
   expect(container.querySelector('.target-condition-chip')).toBeNull();
 });
-
 test('a Target with no player game minutes Condition has no Backtest note', () => {
   expect(backtestMinutesNote(target)).toBeNull();
   expect(
@@ -194,34 +201,23 @@ test('a window-only roster failure explains why its season presets are unavailab
   await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
 });
 
-test('the minutes floor and the date window keep separate cards', async () => {
+test('the minutes floor sits in the Backtest section, outside the Conditions stack', () => {
   const { container } = render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
-  const minutesCard = container.querySelector(
-    '.target-condition:has([aria-label="Player game minutes"])',
-  );
+  const backtest = container.querySelector('.target-form-section');
+  expect(backtest.querySelector('[aria-label="Player game minutes"]')).toBeTruthy();
+  expect(backtest.querySelector('[aria-label="Window preset"]')).toBeNull();
   const windowCard = container.querySelector('.target-condition:has([aria-label="Window preset"])');
-  expect(minutesCard).not.toBe(windowCard);
-  expect(minutesCard.querySelector('[aria-label="Window preset"]')).toBeNull();
   expect(windowCard.querySelector('[aria-label="Player game minutes"]')).toBeNull();
-  expect(minutesCard).toHaveTextContent('Backtest games');
-  expect(windowCard).toHaveTextContent('Window');
+  expect(backtest.contains(windowCard)).toBe(false);
 });
-
-test('removing the window leaves the minutes floor in its own card', async () => {
-  const { container } = render(<Form />);
-  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
-  fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
+test('removing the window leaves the Backtest section standing', () => {
+  render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '15' } });
   fireEvent.click(screen.getByRole('button', { name: 'Remove window Condition' }));
   expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
-  expect(
-    container.querySelector('.target-condition:has([aria-label="Player game minutes"])'),
-  ).toHaveTextContent('Backtest games');
-  fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
-  expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Player game minutes')).toHaveValue(15);
 });

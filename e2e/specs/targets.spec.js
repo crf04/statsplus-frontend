@@ -282,10 +282,8 @@ test('@critical a player game minutes Condition filters appearances, persists, a
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await page.getByRole('button', { name: '+ and' }).click();
-  await page.getByRole('button', { name: 'a player’s game minutes' }).click();
   const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
-  await expect(playerMinutes).toHaveValue('10');
+  await expect(playerMinutes).toHaveValue('');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await playerMinutes.fill('36');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
@@ -324,7 +322,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   );
 });
 
-test('@critical a saved player game minutes Condition can be cleared while a date Condition remains', async ({
+test('@critical a saved player game minutes floor can be cleared while a date Condition remains', async ({
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
@@ -335,8 +333,6 @@ test('@critical a saved player game minutes Condition can be cleared while a dat
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await page.getByRole('button', { name: '+ and' }).click();
-  await page.getByRole('button', { name: 'a player’s game minutes' }).click();
   const playerMinutes = page.getByRole('spinbutton', { name: 'Player game minutes' });
   await playerMinutes.fill('36');
   await page.getByRole('button', { name: '+ and' }).click();
@@ -347,8 +343,7 @@ test('@critical a saved player game minutes Condition can be cleared while a dat
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
   await expect(playerMinutes).toHaveValue('36');
-  await page.getByRole('button', { name: 'Remove player game minutes Condition' }).click();
-  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveCount(0);
+  await playerMinutes.fill('');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   const clearedConditions = page.waitForRequest(
     (request) =>
@@ -363,7 +358,7 @@ test('@critical a saved player game minutes Condition can be cleared while a dat
   await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
   await page.reload();
   await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
-  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveCount(0);
+  await expect(page.getByRole('spinbutton', { name: 'Player game minutes' })).toHaveValue('');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
 });
 

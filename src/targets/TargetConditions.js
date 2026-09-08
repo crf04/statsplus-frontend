@@ -48,8 +48,6 @@ export const validConditions = (conditions) => {
 export function TargetAddMenu({ conditions, onQualifier, onChange }) {
   const [open, setOpen] = useState(false);
   const hasWindow = conditions && (conditions.from !== null || conditions.to !== null);
-  const hasPlayerMinutes =
-    conditions?.playerMinutes !== null && conditions?.playerMinutes !== undefined;
   const choose = (callback) => {
     callback();
     setOpen(false);
@@ -85,16 +83,6 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
               a defender’s minutes
             </button>
           )}
-          {!hasPlayerMinutes && (
-            <button
-              type="button"
-              onClick={() =>
-                choose(() => onChange({ ...emptyConditions(), ...conditions, playerMinutes: 10 }))
-              }
-            >
-              a player’s game minutes
-            </button>
-          )}
           {!hasWindow && (
             <button
               type="button"
@@ -119,7 +107,6 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
-  const playerMinutes = conditions.playerMinutes ?? null;
   const hasWindow = conditions.from !== null || conditions.to !== null;
   const endYear = roster.season ? Number(roster.season.slice(0, 4)) + 1 : null;
   const preset = conditions.to
@@ -128,44 +115,6 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
       ? 'whole'
       : ['01', '02', '03'].find((month) => conditions.from === `${endYear}-${month}-01`) ||
         'custom';
-  /*
-   * The minutes floor and the date window both scope which games the Backtest
-   * counts, so they share one card. With a window present the floor takes its
-   * own row beneath the preset; alone, it sits in the card's head.
-   */
-  const minutesRow = (
-    <div className="target-minutes-row">
-      <span className="target-minutes-name">Player game minutes</span>
-      {/* The rule is carried in words by the note below, so the glyph is decoration. */}
-      <span className="target-minutes-comparator" aria-hidden="true">
-        &gt;
-      </span>
-      <label className="target-player-minutes-control">
-        <input
-          type="number"
-          min="0"
-          max="48"
-          step="1"
-          aria-label="Player game minutes"
-          value={playerMinutes ?? ''}
-          onChange={(event) => {
-            const value = event.target.value;
-            patch({ playerMinutes: value === '' ? '' : Number(value) });
-          }}
-        />
-        <span>min</span>
-      </label>
-      <small className="target-minutes-unit">per appearance</small>
-      <button
-        type="button"
-        className="target-remove"
-        aria-label="Remove player game minutes Condition"
-        onClick={() => patch({ playerMinutes: null })}
-      >
-        ×
-      </button>
-    </div>
-  );
   return (
     <>
       {defender && (
@@ -267,19 +216,6 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
           <small>Games he sat out count as 0 min.</small>
         </div>
       )}
-      {playerMinutes !== null && (
-        <div className="target-condition">
-          <div className="target-condition-head is-heading">
-            <span className="target-label">Backtest games</span>
-          </div>
-          {minutesRow}
-          <small>
-            {Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
-              ? `Appearances of ${playerMinutes} min or less sit out the Backtest.`
-              : 'Enter an integer threshold from 0 through 48 minutes.'}
-          </small>
-        </div>
-      )}
       {hasWindow && (
         <div className="target-condition">
           {roster.status === 'error' && !defender && (
@@ -355,6 +291,58 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
         </div>
       )}
     </>
+  );
+}
+
+/*
+ * The Backtest section. The Qualifiers and Conditions above say which opponent
+ * games a Target is read against; this says which of the player's appearances
+ * in those games count. It is always on screen because it always applies —
+ * empty simply means no floor, which is the answer for most Targets.
+ */
+export function TargetBacktestRows({ conditions, onChange }) {
+  const playerMinutes = conditions?.playerMinutes ?? null;
+  return (
+    <div className="target-condition">
+      <div className="target-condition-head is-heading">
+        <span className="target-label">Games</span>
+      </div>
+      <div className="target-minutes-row">
+        <span className="target-minutes-name">Player game minutes</span>
+        {/* The rule is carried in words by the note below, so the glyph is decoration. */}
+        <span className="target-minutes-comparator" aria-hidden="true">
+          &gt;
+        </span>
+        <label className="target-player-minutes-control">
+          <input
+            type="number"
+            min="0"
+            max="48"
+            step="1"
+            placeholder="off"
+            aria-label="Player game minutes"
+            value={playerMinutes ?? ''}
+            onChange={(event) => {
+              const value = event.target.value;
+              onChange({
+                ...emptyConditions(),
+                ...conditions,
+                playerMinutes: value === '' ? null : Number(value),
+              });
+            }}
+          />
+          <span>min</span>
+        </label>
+        <small className="target-minutes-unit">per appearance</small>
+      </div>
+      <small>
+        {playerMinutes === null
+          ? 'Every appearance counts. Set a floor to leave the short ones out.'
+          : Number.isInteger(playerMinutes) && playerMinutes >= 0 && playerMinutes <= 48
+            ? `Appearances of ${playerMinutes} min or less sit out the Backtest.`
+            : 'Enter a whole number of minutes from 0 through 48.'}
+      </small>
+    </div>
   );
 }
 

@@ -12,6 +12,7 @@ import { useDietBaselines } from './useTargets';
 import './TargetWorkbench.css';
 import {
   TargetAddMenu,
+  TargetBacktestRows,
   TargetConditionRows,
   normalizeConditions,
   validConditions,
@@ -244,6 +245,14 @@ export default function TargetForm({
           onChange={(conditions) => onChange({ conditions })}
           onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
         />
+
+        <section className="target-form-section" aria-label="Backtest">
+          <span className="target-label target-section-label">Backtest</span>
+          <TargetBacktestRows
+            conditions={draft.conditions}
+            onChange={(conditions) => onChange({ conditions })}
+          />
+        </section>
 
         <label className="target-note">
           <span className="target-label">Why</span>

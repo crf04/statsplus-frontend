@@ -194,23 +194,24 @@ test('a window-only roster failure explains why its season presets are unavailab
   await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
 });
 
-test('the minutes floor and the date window share one Backtest games card', async () => {
+test('the minutes floor and the date window keep separate cards', async () => {
   const { container } = render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
-  const cards = [...container.querySelectorAll('.target-condition')].filter((card) =>
-    card.querySelector('[aria-label="Player game minutes"], [aria-label="Window preset"]'),
+  const minutesCard = container.querySelector(
+    '.target-condition:has([aria-label="Player game minutes"])',
   );
-  expect(cards).toHaveLength(1);
-  expect(cards[0].querySelector('[aria-label="Player game minutes"]')).toBeTruthy();
-  expect(cards[0].querySelector('[aria-label="Window preset"]')).toBeTruthy();
-  expect(cards[0]).toHaveTextContent('Backtest games');
-  expect(cards[0]).not.toHaveTextContent('Window');
+  const windowCard = container.querySelector('.target-condition:has([aria-label="Window preset"])');
+  expect(minutesCard).not.toBe(windowCard);
+  expect(minutesCard.querySelector('[aria-label="Window preset"]')).toBeNull();
+  expect(windowCard.querySelector('[aria-label="Player game minutes"]')).toBeNull();
+  expect(minutesCard).toHaveTextContent('Backtest games');
+  expect(windowCard).toHaveTextContent('Window');
 });
 
-test('removing the window leaves the minutes floor in the same card', async () => {
+test('removing the window leaves the minutes floor in its own card', async () => {
   const { container } = render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a player’s game minutes' }));
@@ -218,8 +219,9 @@ test('removing the window leaves the minutes floor in the same card', async () =
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
   fireEvent.click(screen.getByRole('button', { name: 'Remove window Condition' }));
   expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
-  const card = container.querySelector('.target-condition:has([aria-label="Player game minutes"])');
-  expect(card).toHaveTextContent('Backtest games');
+  expect(
+    container.querySelector('.target-condition:has([aria-label="Player game minutes"])'),
+  ).toHaveTextContent('Backtest games');
   fireEvent.click(screen.getByRole('button', { name: 'Remove player game minutes Condition' }));
   expect(screen.queryByLabelText('Player game minutes')).not.toBeInTheDocument();
 });

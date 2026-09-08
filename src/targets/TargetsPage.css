@@ -59,6 +59,13 @@
 .target-form {
   display: grid;
   gap: 10px;
+}
+
+/* The form is more than one thing: what the Target asks of the opponent, and
+   how the Backtest is read. Each gets its own card. */
+.target-form-card {
+  display: grid;
+  gap: 10px;
   border: 1px solid var(--ct-line-strong);
   border-radius: var(--ct-radius-card);
   padding: 14px;

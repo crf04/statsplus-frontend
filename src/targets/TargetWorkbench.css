@@ -18,6 +18,8 @@
 }
 .target-workbench .target-form {
   margin: 0 0 12px;
+}
+.target-workbench .target-form-card {
   padding: 14px 16px;
 }
 .target-form .target-qualifier {
@@ -295,13 +297,6 @@
   font-size: 1rem;
 }
 
-/* The Qualifiers and Conditions above choose the opponent games; the Backtest
-   section chooses which appearances in them count, so it is set apart. */
-.target-form-section {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--ct-line);
-}
 .target-section-label {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }

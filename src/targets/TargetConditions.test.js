@@ -201,16 +201,18 @@ test('a window-only roster failure explains why its season presets are unavailab
   await waitFor(() => expect(screen.getByRole('option', { name: 'Since Jan 1' })).toBeEnabled());
 });
 
-test('the minutes floor sits in the Backtest section, outside the Conditions stack', () => {
+test('the minutes floor sits in its own card, apart from the opponent filters', () => {
   const { container } = render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
-  const backtest = container.querySelector('.target-form-section');
+  const backtest = screen.getByRole('region', { name: 'Backtest' });
+  expect(backtest).toHaveClass('target-form-card');
   expect(backtest.querySelector('[aria-label="Player game minutes"]')).toBeTruthy();
-  expect(backtest.querySelector('[aria-label="Window preset"]')).toBeNull();
-  const windowCard = container.querySelector('.target-condition:has([aria-label="Window preset"])');
-  expect(windowCard.querySelector('[aria-label="Player game minutes"]')).toBeNull();
-  expect(backtest.contains(windowCard)).toBe(false);
+  const teamCard = container.querySelector('.target-form-card:has([aria-label="Window preset"])');
+  expect(teamCard).not.toBe(backtest);
+  expect(teamCard.querySelector('[aria-label="Player game minutes"]')).toBeNull();
+  expect(backtest.contains(teamCard)).toBe(false);
+  expect(teamCard.contains(backtest)).toBe(false);
 });
 test('removing the window leaves the Backtest section standing', () => {
   render(<Form />);

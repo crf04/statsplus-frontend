@@ -123,147 +123,149 @@ export default function TargetForm({
       }}
     >
       <fieldset disabled={busy} className="target-form-fields">
-        <div className="target-form-row">
-          {lockOpponent ? (
-            <p className="target-form-opponent">
-              <span className="target-label visually-hidden">Opponent</span>
-              <b>{draft.opponent}</b>
-            </p>
-          ) : (
-            <label className="target-form-opponent">
-              <span className="target-label visually-hidden">Opponent</span>
+        <div className="target-form-card">
+          <div className="target-form-row">
+            {lockOpponent ? (
+              <p className="target-form-opponent">
+                <span className="target-label visually-hidden">Opponent</span>
+                <b>{draft.opponent}</b>
+              </p>
+            ) : (
+              <label className="target-form-opponent">
+                <span className="target-label visually-hidden">Opponent</span>
+                <select
+                  value={draft.opponent}
+                  onChange={(event) =>
+                    onChange({
+                      opponent: event.target.value,
+                      ...(draft.conditions?.defender
+                        ? {
+                            conditions: {
+                              ...draft.conditions,
+                              defender: { ...draft.conditions.defender, playerId: null },
+                            },
+                          }
+                        : {}),
+                    })
+                  }
+                >
+                  {NBA_TEAM_TRICODES.map((tricode) => (
+                    <option key={tricode} value={tricode}>
+                      {tricode}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {/* Stored titles remain authoritative until the criteria move. */}
+            <div className="target-form-preview visually-hidden">
+              {!title && (
+                <span className="target-label">Title preview · derived from the Qualifiers</span>
+              )}
+              {valid ? (
+                <h1 className="target-title">{title || deriveTargetTitle(request)}</h1>
+              ) : (
+                <p>Complete the Qualifiers to see the title.</p>
+              )}
+            </div>
+          </div>
+
+          {draft.qualifiers.map((qualifier, index) => (
+            <div className="target-qualifier" key={index}>
               <select
-                value={draft.opponent}
+                aria-label={`Qualifier ${index + 1} diet base`}
+                value={qualifier.base}
                 onChange={(event) =>
-                  onChange({
-                    opponent: event.target.value,
-                    ...(draft.conditions?.defender
-                      ? {
-                          conditions: {
-                            ...draft.conditions,
-                            defender: { ...draft.conditions.defender, playerId: null },
-                          },
-                        }
-                      : {}),
+                  patchQualifier(index, {
+                    base: event.target.value,
+                    sliceKey: TARGET_SLICES[event.target.value][0][0],
                   })
                 }
               >
-                {NBA_TEAM_TRICODES.map((tricode) => (
-                  <option key={tricode} value={tricode}>
-                    {tricode}
+                {TARGET_BASES.map((base) => (
+                  <option key={base.key} value={base.key}>
+                    {base.label}
                   </option>
                 ))}
               </select>
-            </label>
+              {/* A stored Target can name a slice this page has no label for. A
+                picker would silently swap it for its first option, so an unknown
+                slice is shown as it was stored and left alone. */}
+              {TARGET_SLICES[qualifier.base].some(([key]) => key === qualifier.sliceKey) ? (
+                <select
+                  aria-label={`Qualifier ${index + 1} slice`}
+                  value={qualifier.sliceKey}
+                  onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
+                >
+                  {TARGET_SLICES[qualifier.base].map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  aria-label={`Qualifier ${index + 1} slice`}
+                  className="target-unknown-slice"
+                  value={qualifier.sliceKey}
+                  disabled
+                >
+                  <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
+                </select>
+              )}
+              <QualifierSlider
+                qualifier={qualifier}
+                index={index}
+                leagueShare={baselines.shares[qualifier.base]?.[qualifier.sliceKey]}
+                onChange={(patch) => patchQualifier(index, patch)}
+              />
+              <button
+                type="button"
+                className="target-remove"
+                aria-label={`Remove Qualifier ${index + 1}`}
+                onClick={() =>
+                  onChange({
+                    qualifiers: draft.qualifiers.filter((_, position) => position !== index),
+                  })
+                }
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {baselines.status === 'error' && (
+            <small className="target-baselines-unavailable">League averages unavailable.</small>
           )}
-          {/* Stored titles remain authoritative until the criteria move. */}
-          <div className="target-form-preview visually-hidden">
-            {!title && (
-              <span className="target-label">Title preview · derived from the Qualifiers</span>
-            )}
-            {valid ? (
-              <h1 className="target-title">{title || deriveTargetTitle(request)}</h1>
-            ) : (
-              <p>Complete the Qualifiers to see the title.</p>
-            )}
-          </div>
+          <TargetConditionRows
+            opponent={draft.opponent}
+            conditions={draft.conditions}
+            onChange={(conditions) => onChange({ conditions })}
+          />
+          <TargetAddMenu
+            conditions={draft.conditions}
+            onChange={(conditions) => onChange({ conditions })}
+            onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
+          />
+
+          <label className="target-note">
+            <span className="target-label">Why</span>
+            <input
+              aria-label="Why · optional, never the title"
+              value={draft.note}
+              placeholder="optional, never the title"
+              maxLength={280}
+              onChange={(event) => onChange({ note: event.target.value })}
+            />
+          </label>
         </div>
 
-        {draft.qualifiers.map((qualifier, index) => (
-          <div className="target-qualifier" key={index}>
-            <select
-              aria-label={`Qualifier ${index + 1} diet base`}
-              value={qualifier.base}
-              onChange={(event) =>
-                patchQualifier(index, {
-                  base: event.target.value,
-                  sliceKey: TARGET_SLICES[event.target.value][0][0],
-                })
-              }
-            >
-              {TARGET_BASES.map((base) => (
-                <option key={base.key} value={base.key}>
-                  {base.label}
-                </option>
-              ))}
-            </select>
-            {/* A stored Target can name a slice this page has no label for. A
-              picker would silently swap it for its first option, so an unknown
-              slice is shown as it was stored and left alone. */}
-            {TARGET_SLICES[qualifier.base].some(([key]) => key === qualifier.sliceKey) ? (
-              <select
-                aria-label={`Qualifier ${index + 1} slice`}
-                value={qualifier.sliceKey}
-                onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
-              >
-                {TARGET_SLICES[qualifier.base].map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <select
-                aria-label={`Qualifier ${index + 1} slice`}
-                className="target-unknown-slice"
-                value={qualifier.sliceKey}
-                disabled
-              >
-                <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
-              </select>
-            )}
-            <QualifierSlider
-              qualifier={qualifier}
-              index={index}
-              leagueShare={baselines.shares[qualifier.base]?.[qualifier.sliceKey]}
-              onChange={(patch) => patchQualifier(index, patch)}
-            />
-            <button
-              type="button"
-              className="target-remove"
-              aria-label={`Remove Qualifier ${index + 1}`}
-              onClick={() =>
-                onChange({
-                  qualifiers: draft.qualifiers.filter((_, position) => position !== index),
-                })
-              }
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        {baselines.status === 'error' && (
-          <small className="target-baselines-unavailable">League averages unavailable.</small>
-        )}
-        <TargetConditionRows
-          opponent={draft.opponent}
-          conditions={draft.conditions}
-          onChange={(conditions) => onChange({ conditions })}
-        />
-        <TargetAddMenu
-          conditions={draft.conditions}
-          onChange={(conditions) => onChange({ conditions })}
-          onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
-        />
-
-        <section className="target-form-section" aria-label="Backtest">
+        <section className="target-form-card" aria-label="Backtest">
           <span className="target-label target-section-label">Backtest</span>
           <TargetBacktestRows
             conditions={draft.conditions}
             onChange={(conditions) => onChange({ conditions })}
           />
         </section>
-
-        <label className="target-note">
-          <span className="target-label">Why</span>
-          <input
-            aria-label="Why · optional, never the title"
-            value={draft.note}
-            placeholder="optional, never the title"
-            maxLength={280}
-            onChange={(event) => onChange({ note: event.target.value })}
-          />
-        </label>
 
         {!valid && <p className="target-form-problem">{problem}</p>}
         {showActions && (

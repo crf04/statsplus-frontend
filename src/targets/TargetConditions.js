@@ -303,10 +303,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
 export function TargetBacktestRows({ conditions, onChange }) {
   const playerMinutes = conditions?.playerMinutes ?? null;
   return (
-    <div className="target-condition">
-      <div className="target-condition-head is-heading">
-        <span className="target-label">Games</span>
-      </div>
+    <>
       <div className="target-minutes-row">
         <span className="target-minutes-name">Player game minutes</span>
         {/* The rule is carried in words by the note below, so the glyph is decoration. */}
@@ -342,7 +339,7 @@ export function TargetBacktestRows({ conditions, onChange }) {
             ? `Appearances of ${playerMinutes} min or less sit out the Backtest.`
             : 'Enter a whole number of minutes from 0 through 48.'}
       </small>
-    </div>
+    </>
   );
 }
 

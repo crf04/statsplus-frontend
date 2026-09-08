@@ -41,7 +41,7 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
             </span>
           )}
           <Link className="target-card-go" to={`/targets/${target.id}`}>
-            Edit →
+            View Details / Edit
           </Link>
         </div>
         <div className="target-card-criteria">

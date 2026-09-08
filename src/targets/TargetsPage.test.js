@@ -225,7 +225,7 @@ test('shows every saved Target as a card carrying the stored title, Qualifiers, 
   const cards = await screen.findAllByRole('article');
   expect(cards).toHaveLength(2);
   expect(cards[0]).toHaveAccessibleName('OKC vs Corner 3 ≥ 40% (v2)');
-  expect(within(cards[0]).getByRole('link', { name: 'Edit →' })).toHaveAttribute(
+  expect(within(cards[0]).getByRole('link', { name: 'View Details / Edit' })).toHaveAttribute(
     'href',
     '/targets/7',
   );
@@ -860,7 +860,7 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
     'href',
     '/matchups/0022500584',
   );
-  expect(within(card).getByRole('link', { name: 'Edit →' })).toHaveAttribute('href', '/targets/7');
+  expect(within(card).getByRole('link', { name: 'View Details / Edit' })).toHaveAttribute('href', '/targets/7');
   expect(within(card).getByRole('listitem')).toHaveTextContent('44%');
   expect(within(card).getByRole('listitem')).toHaveTextContent('25.4 ppg');
   expect(within(card).queryByRole('spinbutton')).not.toBeInTheDocument();

@@ -31,6 +31,15 @@ const combinations = {
   PRA: ['PTS', 'REB', 'AST'],
   SB: ['STL', 'BLK'],
 };
+const derivedStats = {
+  FG2A: (line) => {
+    const fieldGoalsAttempted = lineStat(line, 'FGA');
+    const threesAttempted = lineStat(line, '3PA');
+    return Number.isFinite(fieldGoalsAttempted) && Number.isFinite(threesAttempted)
+      ? fieldGoalsAttempted - threesAttempted
+      : null;
+  },
+};
 const ratio = (numerator, denominator, multiplier = 1) =>
   Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0
     ? (numerator / denominator) * multiplier
@@ -70,6 +79,7 @@ function lineStat(line, key) {
     const values = combinations[key].map((part) => lineStat(line, part));
     return values.every(Number.isFinite) ? values.reduce((sum, value) => sum + value, 0) : null;
   }
+  if (derivedStats[key]) return derivedStats[key](line);
   const value = line[BOX_FIELDS[key]];
   return Number.isFinite(value) ? value : null;
 }

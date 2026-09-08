@@ -112,6 +112,14 @@ and more than ten Qualifiers with the backend's envelopes. The slate route repor
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
 journey never sees one route call a pool unavailable while the other lists players from it.
 
+Targets without saved stat preferences use these default `stat_columns`, in Qualifier order with
+duplicates removed: any play type uses `PTS`, `FGA`, `PTS/36`, `FGA/36`; a two-point shot zone uses
+`PTS`, `PTS/36`, `FG2A`, `FG2A/36`; a three-point shot zone uses `PTS`, `PTS/36`, `3PA`, `3PA/36`;
+any shot type uses `PTS`, `PTS/36`, `FGA`, `FGA/36`; and any assist location uses `AST`, `AST/36`.
+The `FG2A` value is two-point attempts (`FGA - 3PA`), and `/36` values use the player's total
+production divided by total minutes. Saved explicit preferences continue to control the displayed
+columns and grading column.
+
 Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts). A date the
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
 so anything asserting a calendar day should use an instant near midnight UTC.

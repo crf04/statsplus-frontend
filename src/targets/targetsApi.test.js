@@ -710,6 +710,49 @@ test('refuses a backtest whose rows would be read under the wrong heading', () =
   ).toThrow(/invalid response/i);
 });
 
+test('accepts unavailable derived and per36 values while keeping ordinary stats strict', () => {
+  const nullable = {
+    ...wireBacktest,
+    stat_columns: ['PTS', 'FG2A', 'PTS/36'],
+    summary: {
+      ...wireBacktest.summary,
+      columns: {
+        PTS: { mean_difference: 0, over_average_share: 0 },
+        FG2A: { mean_difference: null, over_average_share: null },
+        'PTS/36': { mean_difference: null, over_average_share: null },
+      },
+    },
+    players: wireBacktest.players.map((player) => ({
+      ...player,
+      season_averages: { PTS: 25.4, FG2A: null, 'PTS/36': null },
+      games: player.games.map((game) => ({
+        ...game,
+        stats: { PTS: 31, FG2A: null, 'PTS/36': null },
+      })),
+    })),
+  };
+
+  expect(decodeBacktest(nullable).players[0]).toEqual(
+    expect.objectContaining({
+      seasonAverages: { PTS: 25.4, FG2A: null, 'PTS/36': null },
+      games: [expect.objectContaining({ stats: { PTS: 31, FG2A: null, 'PTS/36': null } })],
+    }),
+  );
+  expect(() =>
+    decodeBacktest({
+      ...nullable,
+      players: nullable.players.map((player) => ({
+        ...player,
+        season_averages: { PTS: null, FG2A: null, 'PTS/36': null },
+        games: player.games.map((game) => ({
+          ...game,
+          stats: { PTS: null, FG2A: null, 'PTS/36': null },
+        })),
+      })),
+    }),
+  ).toThrow(/invalid response/i);
+});
+
 /*
  * A Draft Target is evaluated exactly as a saved one would be, so its preview
  * is the backtest shape with two differences: the Target echoed back is the

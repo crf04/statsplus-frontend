@@ -1,4 +1,4 @@
-import { expect, installApiContract, test } from '../fixtures/courtai';
+import { backtestSummary, expect, installApiContract, test } from '../fixtures/courtai';
 import { setTargetThreshold } from '../fixtures/targetControls';
 
 const card = (page, title) => page.getByRole('article', { name: title });
@@ -52,7 +52,10 @@ test('@critical authenticated user creates, opens, edits, and deletes a Target',
   expect(value.y + value.height).toBeLessThan(track.y);
   // The rail is what places the threshold against the league mark, so it has to
   // stay painted rather than take the card colour from the shared control skin.
-  await expect(page.getByRole('slider')).toHaveCSS('background-image', /linear-gradient/);
+  await expect(page.getByRole('slider', { name: 'Qualifier 1 threshold percent' })).toHaveCSS(
+    'background-image',
+    /linear-gradient/,
+  );
   await saveTarget(page);
   await expect(card(page, 'OKC vs Corner 3 ≥ 40%')).toContainText('Leaves the corner late.');
   await expect(page.getByText('No Targets active today')).toBeVisible();
@@ -176,6 +179,65 @@ test('completed-game Targets use canonical game-log participants on the Slate', 
   await expect(row.getByText('from game logs')).toBeVisible();
 });
 
+test('Target defaults follow each Qualifier base and keep their declared order', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  const cases = [
+    {
+      base: 'play_types',
+      slice: 'Transition',
+      expected: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
+    },
+    {
+      base: 'shot_zones',
+      slice: 'Restricted Area',
+      expected: ['PTS', 'PTS/36', 'FG2A', 'FG2A/36'],
+    },
+    {
+      base: 'shot_zones',
+      slice: 'Corner 3',
+      expected: ['PTS', 'PTS/36', '3PA', '3PA/36'],
+    },
+    {
+      base: 'shot_types',
+      slice: 'Catch and Shoot',
+      expected: ['PTS', 'PTS/36', 'FGA', 'FGA/36'],
+    },
+    { base: 'assist_locations', slice: 'AtRimAssists', expected: ['AST', 'AST/36'] },
+  ];
+
+  for (const { base, slice, expected } of cases) {
+    await page.goto('/targets');
+    await composeTarget(page, { opponent: 'OKC', base, slice, percent: 10 });
+    const summary = page.getByRole('list', { name: 'Backtest summary' });
+    await expect(summary).toBeVisible();
+    await expect
+      .poll(() =>
+        summary
+          .getByRole('listitem')
+          .evaluateAll((items) =>
+            items.map((item) => item.getAttribute('aria-label')).filter(Boolean),
+          ),
+      )
+      .toEqual(['Player-games', ...expected]);
+  }
+});
+
+test('Target fixture summaries omit unavailable stat pairs', () => {
+  const players = [
+    { season_averages: { FG2A: 5 }, games: [{ stats: { FG2A: null } }] },
+    { season_averages: { FG2A: null }, games: [{ stats: { FG2A: 10 } }] },
+    { season_averages: { FG2A: 5 }, games: [{ stats: { FG2A: 7 } }] },
+  ];
+
+  expect(backtestSummary(players, ['FG2A'])).toEqual({
+    players: 3,
+    games: 3,
+    columns: { FG2A: { mean_difference: 2, over_average_share: 1 } },
+  });
+});
+
 test('@critical the Lab reads on change and the workbench preserves its evidence and log handoff', async ({
   authenticatedPage: page,
 }) => {
@@ -199,8 +261,8 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   const games = page.getByRole('region', { name: 'Backtest games' });
   await expect(games.getByRole('listitem')).toHaveCount(3);
   await expect(games).not.toContainText('Austin Reaves');
-  await page.getByRole('button', { name: /^PA / }).click();
-  await expect(page.getByRole('list', { name: /graded by PA margin/ })).toBeVisible();
+  await page.getByRole('button', { name: /^AST\/36 / }).click();
+  await expect(page.getByRole('list', { name: /graded by AST\/36 margin/ })).toBeVisible();
   await games.getByRole('link', { name: 'LeBron James games vs ATL' }).click();
   await expect(page).toHaveURL('/?player_name=LeBron+James&opponent_tricode=ATL');
   await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
@@ -248,6 +310,7 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  await page.getByRole('button', { name: 'stats ▾' }).click();
   const savedLens = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
@@ -317,6 +380,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  await page.getByRole('button', { name: 'stats ▾' }).click();
   const savedLens = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
@@ -414,6 +478,7 @@ test('@critical a Target remembers PTS/36 across reload and its collection card'
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
+  await page.getByRole('button', { name: 'stats ▾' }).click();
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&

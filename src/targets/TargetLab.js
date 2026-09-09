@@ -33,7 +33,6 @@ export default function TargetLab({
   draft,
   workbench = false,
   sideBacktest = false,
-  backtestControls,
   immediateInitialPreview = false,
   children,
   preferences,
@@ -116,7 +115,6 @@ export default function TargetLab({
         <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
           <div className="target-context-editor-column">{children}</div>
           <div className="target-context-backtest-column">
-            {backtestControls}
             {evidence}
             {games}
           </div>

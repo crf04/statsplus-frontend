@@ -386,9 +386,6 @@
 .target-context-backtest-column {
   min-width: 0;
 }
-.target-context-backtest-column > .target-form-card {
-  margin-bottom: 12px;
-}
 .target-context-backtest-column .target-lab-games {
   margin-top: 24px;
 }
@@ -401,4 +398,33 @@
 
 .target-workbench.target-context-edit-workbench {
   display: block;
+}
+
+.target-form .target-qualifier:has(.target-qualifier-opponent) {
+  padding-bottom: 10px;
+}
+.target-qualifier-opponent {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  border-top: 1px solid var(--ct-line);
+  padding-top: 9px;
+  margin-top: 5px;
+  color: var(--ct-dim);
+  font: 11px var(--ct-mono);
+}
+.target-qualifier-opponent-label {
+  flex: 1 1 150px;
+}
+.target-qualifier-opponent b {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .target-qualifier-opponent-label {
+    flex: 1 0 100%;
+  }
 }

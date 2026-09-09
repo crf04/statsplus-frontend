@@ -1016,3 +1016,70 @@ export default function TeamContextPrototype({
     </>
   );
 }
+
+// Inline evidence is read independently of the browsing panel's selected category.
+export function QualifierOpponentContext({ team, opponent, qualifier, teamsLoading }) {
+  const category = {
+    play_types: 'Playtypes',
+    shot_zones: 'Zone Shooting',
+    assist_locations: 'Assists',
+    shot_types: 'Shooting Type',
+  }[qualifier.base];
+  const [profile, setProfile] = useState(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!team || !category) return undefined;
+    const controller = new AbortController();
+    setProfile(null);
+    setFailed(false);
+    apiClient
+      .get(getApiUrl('TEAM_STATS'), {
+        params: { team, category },
+        signal: controller.signal,
+      })
+      .then(({ data }) => setProfile(parseStats(data)))
+      .catch((error) => {
+        if (!isRequestCancelled(error)) setFailed(true);
+      });
+    return () => controller.abort();
+  }, [team, category]);
+  const row =
+    category &&
+    statRowsFor(category, profile).find(
+      (item) =>
+        item.targetBase === qualifier.base &&
+        item.targetSlice === qualifier.sliceKey &&
+        (qualifier.base !== 'shot_types' || item.rawKey === 'PTS'),
+    );
+  const metric =
+    qualifier.base === 'play_types'
+      ? 'PPP allowed'
+      : qualifier.base === 'shot_types'
+        ? 'Points allowed /48'
+        : qualifier.base === 'shot_zones'
+          ? 'FGA allowed /48'
+          : 'Assists allowed';
+  return (
+    <div className="target-qualifier-opponent" aria-label={`${opponent} opponent context`}>
+      <span className="target-qualifier-opponent-label">
+        {opponent} · {metric}
+      </span>
+      {row ? (
+        <>
+          <span title="League rank: 1 is lowest, 30 is highest">
+            <b>{Number.isFinite(row.rank) ? `#${Math.round(row.rank)}` : '—'}</b> rank · 1 lowest
+          </span>
+          <span>
+            <b>{formatLeagueComparison(category, row)}</b> vs avg
+          </span>
+        </>
+      ) : (
+        <span>
+          {failed || profile || (!team && !teamsLoading)
+            ? 'Context unavailable'
+            : 'Loading context…'}
+        </span>
+      )}
+    </div>
+  );
+}

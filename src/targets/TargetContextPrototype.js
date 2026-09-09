@@ -3,9 +3,9 @@ import { Modal } from 'react-bootstrap';
 import { useSearchParams } from 'react-router-dom';
 import TargetForm, { blankTargetDraft } from './TargetForm';
 import TargetLab from './TargetLab';
-import { TargetBacktestRows } from './TargetConditions';
 import {
   codeForTeam,
+  QualifierOpponentContext,
   qualifierFor,
   ReadControls,
   SourceNote,
@@ -172,7 +172,15 @@ function TargetContextLayouts({
       submitLabel={submitLabel}
       showActions={showActions}
       cancelLabel={cancelLabel}
-      showBacktestControls={!workbench}
+      qualifierContext={(qualifier) => (
+        <QualifierOpponentContext
+          key={`${draft.opponent}:${qualifier.base}`}
+          team={read.teams.find((team) => codeForTeam(team) === draft.opponent)}
+          opponent={draft.opponent}
+          teamsLoading={read.teamsState === 'loading'}
+          qualifier={qualifier}
+        />
+      )}
       highlightedQualifierIndex={highlightedQualifierIndex}
       onChange={onChange}
       onSubmit={onSubmit}
@@ -195,19 +203,6 @@ function TargetContextLayouts({
       draft={draft}
       workbench={workbench}
       sideBacktest={workbench}
-      backtestControls={
-        workbench && (
-          <section className="target-form-card" aria-label="Backtest">
-            <h2 className="target-section-heading">Backtest</h2>
-            <fieldset disabled={busy} className="target-form-fields">
-              <TargetBacktestRows
-                conditions={draft.conditions}
-                onChange={(conditions) => onChange({ conditions })}
-              />
-            </fieldset>
-          </section>
-        )
-      }
       immediateInitialPreview={immediateInitialPreview}
       preferences={preferences}
       onPreferencesChange={onPreferencesChange}

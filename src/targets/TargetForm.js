@@ -105,7 +105,7 @@ export default function TargetForm({
   cancelLabel = 'Cancel',
   title,
   highlightedQualifierIndex = null,
-  showBacktestControls = true,
+  qualifierContext,
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
@@ -224,6 +224,7 @@ export default function TargetForm({
                 leagueShare={baselines.shares[qualifier.base]?.[qualifier.sliceKey]}
                 onChange={(patch) => patchQualifier(index, patch)}
               />
+              {qualifierContext?.(qualifier)}
               <button
                 type="button"
                 className="target-remove"
@@ -264,15 +265,13 @@ export default function TargetForm({
           </label>
         </div>
 
-        {showBacktestControls && (
-          <section className="target-form-card" aria-label="Backtest">
-            <span className="target-label target-section-label">Backtest</span>
-            <TargetBacktestRows
-              conditions={draft.conditions}
-              onChange={(conditions) => onChange({ conditions })}
-            />
-          </section>
-        )}
+        <section className="target-form-card" aria-label="Backtest">
+          <span className="target-label target-section-label">Backtest</span>
+          <TargetBacktestRows
+            conditions={draft.conditions}
+            onChange={(conditions) => onChange({ conditions })}
+          />
+        </section>
 
         {!valid && <p className="target-form-problem">{problem}</p>}
         {showActions && (

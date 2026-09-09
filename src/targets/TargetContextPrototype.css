@@ -376,6 +376,29 @@
   margin-bottom: 12px;
 }
 
-.target-context-edit-workbench.target-workbench .target-lab-left {
-  position: static;
+.target-workbench.target-context-edit-workbench .target-context-side-backtest {
+  display: grid;
+  grid-template-columns: minmax(360px, 5fr) minmax(0, 6fr);
+  gap: 36px;
+  align-items: start;
+}
+.target-context-editor-column,
+.target-context-backtest-column {
+  min-width: 0;
+}
+.target-context-backtest-column > .target-form-card {
+  margin-bottom: 12px;
+}
+.target-context-backtest-column .target-lab-games {
+  margin-top: 24px;
+}
+@media (max-width: 819px) {
+  .target-workbench.target-context-edit-workbench .target-context-side-backtest {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+.target-workbench.target-context-edit-workbench {
+  display: block;
 }

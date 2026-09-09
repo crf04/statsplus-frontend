@@ -13,7 +13,7 @@ Throwaway continuation on `prototype/targets-team-context`, following the list-p
 - **A — Inline table:** a compact collapsible opponent-context table above the qualifiers.
 - **B — Split context panel:** opponent stats beside the form on desktop, stacked on a phone.
 
-The create modal offers both options. The edit route now shares one collapsible context panel beneath the qualifiers, closed initially, and preserves the original game-by-game backtest column. The selected draft opponent controls the stats. Adding a stat appends a qualifier with an empty threshold; selecting an existing qualifier highlights it without changing its threshold. Saves and stat selections stay in memory.
+The create modal offers both options. The edit route now shares one collapsible context panel beneath the qualifiers, closed initially, and places the complete backtest beside the editor: minutes controls, status, summary, and game rows. The selected draft opponent controls the stats. Adding a stat appends a qualifier with an empty threshold; selecting an existing qualifier highlights it without changing its threshold. Saves and stat selections stay in memory.
 
 Run `npm run prototype:team-context` with the normal development Firebase/API configuration.
 
@@ -39,7 +39,7 @@ Cross-vendor review identified the Clippers display-name mismatch; opponent look
 
 No production promotion and no tracker publication. QA Vite server stopped after capture.
 
-## Edit backtest correction
+## Earlier edit backtest correction (superseded below)
 
 User: “The context panel is blocking the backtest on the edit page isn't it” → “yes go ahead and fix”.
 
@@ -50,3 +50,15 @@ Completion gate: lint, formatting, 683 unit tests, production build, and 107 bro
 Independent cross-vendor review prompted the normal-scroll correction and removal of the inert edit switcher. Internal horizontal scrolling is intentional for the narrow stats table; adding a qualifier retains the established focus behavior.
 
 Follow-up review confirmed the restored workbench and unchanged create layouts. Resolved its gallery-label and CSS-specificity findings; the bounded context table scroll remains intentional.
+
+## Full backtest beside the editor
+
+User clarification (unedited): “where is the backtest, it should be on the side”.
+
+The complete backtest now occupies the right column: minutes control, preview status, summary and hit rates, then game rows. The qualifier editor and collapsible opponent context occupy the left column. On phones these columns stack. Existing create options and normal routes retain their layout.
+
+Verified frontend `a12914147f7e8d2e950d38668d4751e8c789ac9c` plus this correction in the same prototype worktree. Full completion gate passed: lint, formatting, 683 unit tests, production build, 107 browser tests (2 deployment-only skips). Live authenticated ORL edit checks at desktop 1440×900 and phone 390×844 confirm the backtest is alongside the editor on desktop, expanding context preserves its position, and results remain reachable without document overflow.
+
+Changing the relocated minutes slider to 20 triggered a successful real preview request with `conditions.player_minutes: 20` and returned the backtest to its up-to-date state on both viewports. Zero account writes; owned QA server stopped.
+
+Independent review confirmed the side layout, preserved sample provider, and unchanged normal/create rendering. Restored 12px spacing below the moved controls. On phones, editor actions intentionally remain with the editor before the stacked backtest; they still save the shared draft including minutes changes. Live capture confirms the moved slider renders correctly and updates its request.

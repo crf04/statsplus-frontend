@@ -105,6 +105,7 @@ export default function TargetForm({
   cancelLabel = 'Cancel',
   title,
   highlightedQualifierIndex = null,
+  showBacktestControls = true,
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
@@ -263,13 +264,15 @@ export default function TargetForm({
           </label>
         </div>
 
-        <section className="target-form-card" aria-label="Backtest">
-          <span className="target-label target-section-label">Backtest</span>
-          <TargetBacktestRows
-            conditions={draft.conditions}
-            onChange={(conditions) => onChange({ conditions })}
-          />
-        </section>
+        {showBacktestControls && (
+          <section className="target-form-card" aria-label="Backtest">
+            <span className="target-label target-section-label">Backtest</span>
+            <TargetBacktestRows
+              conditions={draft.conditions}
+              onChange={(conditions) => onChange({ conditions })}
+            />
+          </section>
+        )}
 
         {!valid && <p className="target-form-problem">{problem}</p>}
         {showActions && (

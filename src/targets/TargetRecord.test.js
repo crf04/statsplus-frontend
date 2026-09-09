@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import TargetRecord from './TargetRecord';
+import * as statValues from './statValues';
 const backtest = {
   target: { opponent: 'OKC' },
   statColumns: ['PTS'],
@@ -37,6 +38,25 @@ test('the record grades all games oldest first and states the aggregate, hit rat
   expect(cells[2]).toHaveAttribute('title', expect.stringContaining('Player One'));
   expect(screen.getByText(/PTS vs the player/)).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+
+/*
+ * The full arithmetic over every player-game used to run on every render, not
+ * just the ones that changed the backtest, columns or graded column. A render
+ * caused by anything else — a sibling prop, a parent re-render — should reuse
+ * the memoized games and per-column aggregates rather than redo them.
+ * aggregateEvidence is only ever called from that aggregate arithmetic (never
+ * from the per-row grid labels), so its call count isolates the memoization.
+ */
+test('a re-render that changes nothing the record reads from does not recompute the aggregates', () => {
+  const aggregateSpy = jest.spyOn(statValues, 'aggregateEvidence');
+  const { rerender } = render(<TargetRecord backtest={backtest} />);
+  const callsAfterFirstRender = aggregateSpy.mock.calls.length;
+  expect(callsAfterFirstRender).toBeGreaterThan(0);
+
+  rerender(<TargetRecord backtest={backtest}>{'an unrelated child'}</TargetRecord>);
+  expect(aggregateSpy).toHaveBeenCalledTimes(callsAfterFirstRender);
+  aggregateSpy.mockRestore();
 });
 
 test('the stats picker closes on Escape', () => {

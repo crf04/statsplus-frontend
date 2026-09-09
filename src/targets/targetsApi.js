@@ -2,6 +2,7 @@ import { invalidateTargetResolutions } from '../revisitCache';
 import { apiClient, getApiUrl } from '../config';
 import { isCalendarDate } from '../calendarDate';
 import { isRecord, strictDecoders } from '../decoding';
+import { TARGET_READ_TIMEOUT } from '../apiSettings';
 import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
 import { TARGET_COMPARATORS } from './targetCatalog';
@@ -546,6 +547,7 @@ export const fetchResolvedTargets = async ({ date, signal } = {}) => {
 export const fetchTargetBacktest = async ({ id, signal } = {}) => {
   const response = await apiClient.get(targetsUrl(`/${encodeURIComponent(id)}/backtest`), {
     signal,
+    timeout: TARGET_READ_TIMEOUT,
   });
   return decodeBacktest(response.data);
 };
@@ -574,7 +576,7 @@ export const fetchTargetPreview = async ({
         ? { stat_preferences: encodeStatPreferences(statPreferences) }
         : {}),
     },
-    { signal },
+    { signal, timeout: TARGET_READ_TIMEOUT },
   );
   return decodePreview(response.data);
 };

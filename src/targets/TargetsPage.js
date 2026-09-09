@@ -1,7 +1,7 @@
 import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
 import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { formatTip } from '../calendarDate';
 import TargetForm, { blankTargetDraft } from './TargetForm';
@@ -12,6 +12,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
+import TeamContextPrototype, { TEAM_CONTEXT_VARIANTS } from './TeamContextPrototype';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
@@ -154,14 +155,23 @@ function useListBacktests(targets, enabled) {
 
 function TargetsPageContent() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { authLoading, isAuthenticated, status, targets, error } = useTargets();
+  const requestedVariant = searchParams.get('variant');
+  const prototypeVariant =
+    process.env.NODE_ENV !== 'production' && Object.hasOwn(TEAM_CONTEXT_VARIANTS, requestedVariant)
+      ? requestedVariant
+      : null;
   /*
    * What each Target is worth today, read for the current Slate Date. It is a
    * second read over the same list, so a day that will not resolve costs the
    * cards their counts and nothing else.
    */
   const resolved = useResolvedTargets();
-  const reads = useListBacktests(targets, status === 'ready' && isAuthenticated);
+  const reads = useListBacktests(
+    targets,
+    status === 'ready' && isAuthenticated && !prototypeVariant,
+  );
   const [draft, setDraft] = useState(blankTargetDraft);
   const [draftPreferences, setDraftPreferences] = useState(null);
   const [composing, setComposing] = useState(false);
@@ -209,6 +219,18 @@ function TargetsPageContent() {
       setSaving(false);
     }
   };
+
+  if (prototypeVariant) {
+    return (
+      <TeamContextPrototype
+        variant={prototypeVariant}
+        targets={targets}
+        targetStatus={status}
+        targetError={error}
+        resolved={resolved}
+      />
+    );
+  }
 
   return (
     <main className="slate-page targets-page">

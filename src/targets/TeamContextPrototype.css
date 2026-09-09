@@ -1,0 +1,913 @@
+/* Throwaway team-context exploration. The shared Targets shell and tokens keep
+   the prototype close enough to the product to judge density and hierarchy. */
+
+.team-context-page {
+  padding-bottom: 112px;
+}
+
+.team-context-page button:focus-visible,
+.team-context-page a:focus-visible,
+.team-context-page select:focus-visible,
+.team-context-page input:focus-visible,
+.team-context-switcher button:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.team-context-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--ct-line);
+  padding-bottom: 16px;
+}
+
+.team-context-heading h1 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  line-height: 0.96;
+}
+
+.team-context-heading p:not(.eyebrow) {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.team-context-heading-note {
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.team-context-heading-meta {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 5px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.team-context-heading-meta b {
+  color: var(--ct-gold);
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
+.team-context-state-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin: -4px 0 16px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.team-context-state-line span + span::before,
+.team-context-state-line b + span::before {
+  margin-right: 14px;
+  color: var(--ct-line-strong);
+  content: '·';
+}
+
+.team-context-state-line b {
+  color: var(--ct-gold);
+  font-weight: 500;
+}
+
+.team-context-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.team-context-layout-a {
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.7fr);
+  align-items: start;
+}
+
+.team-context-layout-b {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.78fr);
+  align-items: start;
+}
+
+.team-context-layout-c {
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.72fr);
+  align-items: start;
+}
+
+.team-context-main-panel,
+.team-context-inspector,
+.team-context-rank-panel,
+.team-context-targets {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: rgba(22, 19, 13, 0.88);
+}
+
+.team-context-main-panel,
+.team-context-rank-panel {
+  min-width: 0;
+  padding: 20px;
+}
+
+.team-context-identity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.team-context-identity h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  line-height: 0.98;
+}
+
+.team-context-identity strong {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.team-context-eyebrow {
+  display: block;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.team-context-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--ct-line);
+  padding: 14px 0;
+}
+
+.team-context-controls.is-compact {
+  grid-template-columns: 1fr;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.team-context-controls > .team-context-category-tabs {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.team-context-controls.is-compact > .team-context-team-select,
+.team-context-controls.is-compact > .team-context-category-tabs {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+.team-context-team-select {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.61rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.team-context-team-select select {
+  min-height: 38px;
+  max-width: 100%;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  padding: 0 9px;
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.team-context-team-select select {
+  font-family: var(--ct-mono);
+  font-size: 0.74rem;
+}
+
+.team-context-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+}
+
+.team-context-category-tabs button,
+.team-context-button,
+.team-context-use,
+.team-context-inspector-action {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: transparent;
+  color: var(--ct-dim);
+  cursor: pointer;
+  font-family: var(--ct-mono);
+}
+
+.team-context-category-tabs button {
+  min-height: 31px;
+  padding: 0 9px;
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
+.team-context-category-tabs button:hover,
+.team-context-category-tabs button.is-active {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.team-context-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 12px 0 16px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.team-context-source span + span::before {
+  margin-right: 14px;
+  color: var(--ct-line-strong);
+  content: '·';
+}
+
+.team-context-read-status {
+  margin: 14px 0 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+}
+
+.team-context-read-status.is-error {
+  color: #f0a4a4;
+}
+
+.team-context-table-wrap {
+  position: relative;
+  overflow-x: auto;
+  margin: 0 -20px -20px;
+  padding: 0 20px 20px;
+}
+
+.team-context-table {
+  width: 100%;
+  min-width: 610px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.team-context-table th,
+.team-context-table td {
+  border-bottom: 1px solid var(--ct-line);
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.team-context-table thead th {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.59rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.team-context-table thead th:first-child,
+.team-context-table tbody th {
+  padding-left: 0;
+}
+
+.team-context-table thead th:last-child,
+.team-context-table tbody td:last-child {
+  padding-right: 0;
+  text-align: right;
+}
+
+.team-context-table thead th small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ct-dim);
+  font-size: 0.54rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.team-context-table tbody tr:hover {
+  background: rgba(232, 163, 61, 0.04);
+}
+
+.team-context-table tbody th {
+  color: var(--ct-text);
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+
+.team-context-table tbody th small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.57rem;
+  font-weight: 400;
+}
+
+.team-context-value {
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.team-context-value b {
+  color: var(--ct-gold);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.team-context-value small {
+  color: var(--ct-dim);
+  font-size: 0.57rem;
+}
+
+.team-context-rank {
+  display: inline-flex;
+  min-width: 2.3em;
+  justify-content: center;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 3px 6px;
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 0.63rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.team-context-rank.is-missing {
+  color: var(--ct-dim);
+}
+
+.team-context-vs,
+.team-context-rank-delta {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.team-context-use {
+  padding: 5px 8px;
+  color: var(--ct-gold);
+  font-size: 0.58rem;
+  white-space: nowrap;
+}
+
+.team-context-use:hover,
+.team-context-button:hover,
+.team-context-inspector-action:hover {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold-hover);
+}
+
+.team-context-targets {
+  min-width: 0;
+  padding: 18px;
+}
+
+.team-context-section-head,
+.team-context-rank-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.team-context-section-head h2,
+.team-context-rank-head h2 {
+  margin: 4px 0 0;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.team-context-button {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  font-size: 0.62rem;
+}
+
+.team-context-button.is-primary {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
+.team-context-target-activity {
+  margin: 10px 0 16px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+}
+
+.team-context-target-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-context-target-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--ct-line);
+  padding: 12px 0;
+}
+
+.team-context-target-list li:last-child {
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.team-context-target-list li.is-prototype {
+  border-left: 2px solid var(--ct-gold);
+  padding-left: 8px;
+}
+
+.team-context-target-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.team-context-target-copy b {
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.team-context-target-copy span,
+.team-context-target-copy small {
+  overflow: hidden;
+  color: var(--ct-dim);
+  font-size: 0.66rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+
+.team-context-target-copy small {
+  color: var(--ct-gold);
+}
+
+.team-context-target-list a,
+.team-context-held {
+  flex: 0 0 auto;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.team-context-target-list a:hover {
+  color: var(--ct-gold-hover);
+}
+
+.team-context-held {
+  color: var(--ct-dim);
+  font-size: 0.56rem;
+}
+
+.team-context-empty-targets {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  border-top: 1px solid var(--ct-line);
+  padding: 20px 0 5px;
+}
+
+.team-context-empty-targets > span {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+}
+
+.team-context-empty-targets p {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+}
+
+/* Variant B: a narrow, persistent inspector makes the selected team the tool
+   beside the Targets list. */
+.team-context-inspector {
+  position: sticky;
+  top: 14px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.team-context-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.team-context-inspector-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ct-hit);
+  box-shadow: 0 0 0 4px var(--ct-hit-soft);
+}
+
+.team-context-inspector .team-context-identity {
+  margin-bottom: 12px;
+}
+
+.team-context-inspector .team-context-identity h2 {
+  font-size: 1.8rem;
+}
+
+.team-context-inspector .team-context-source {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.team-context-inspector .team-context-source span + span::before {
+  display: none;
+}
+
+.team-context-bars {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-context-bars-legend {
+  margin: 0 0 8px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.57rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.team-context-bars li {
+  border-top: 1px solid var(--ct-line);
+  padding-top: 12px;
+}
+
+.team-context-bar-head,
+.team-context-bar-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+}
+
+.team-context-bar-head span {
+  overflow: hidden;
+  color: var(--ct-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-context-bar-head b {
+  flex: 0 0 auto;
+  color: var(--ct-gold);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.team-context-bar-track {
+  height: 5px;
+  margin: 8px 0 7px;
+  border-radius: 999px;
+  background: var(--ct-line);
+  overflow: hidden;
+}
+
+.team-context-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ct-gold);
+}
+
+.team-context-bar-foot {
+  align-items: center;
+  color: var(--ct-dim);
+  font-size: 0.57rem;
+}
+
+.team-context-bar-foot .team-context-rank {
+  min-width: 0;
+  padding: 2px 5px;
+  font-size: 0.56rem;
+}
+
+.team-context-bar-foot .team-context-use {
+  margin-left: auto;
+  padding: 3px 6px;
+  font-size: 0.54rem;
+}
+
+.team-context-inspector-action {
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px 12px;
+  color: var(--ct-gold);
+  font-size: 0.64rem;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.team-context-inspector-action span {
+  float: right;
+  font-size: 1rem;
+}
+
+/* Variant C: the rank board gives the league ordering visual priority. */
+.team-context-rank-head h2 {
+  max-width: 460px;
+}
+
+.team-context-rank-explainer {
+  max-width: 700px;
+  margin: 12px 0 16px;
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.team-context-rankboard {
+  display: grid;
+  gap: 7px;
+  margin: 0 -20px -20px;
+  padding: 0 20px 20px;
+}
+
+.team-context-rank-card {
+  display: grid;
+  grid-template-columns: 42px minmax(150px, 1fr) minmax(86px, auto) 62px auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--ct-line);
+  padding: 10px 0;
+}
+
+.team-context-rank-number {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-context-rank-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-context-rank-copy span {
+  overflow: hidden;
+  color: var(--ct-text);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-context-rank-copy small {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.56rem;
+}
+
+.team-context-rank-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  white-space: nowrap;
+}
+
+.team-context-rank-value b {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.team-context-rank-value small {
+  color: var(--ct-dim);
+  font-size: 0.55rem;
+}
+
+.team-context-shooting-table {
+  min-width: 620px;
+}
+
+.team-context-shooting-table .team-context-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.team-context-shooting-table .team-context-rank {
+  margin-left: 4px;
+}
+
+.team-context-composer-note {
+  margin: 0 0 10px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.team-context-switcher {
+  position: fixed;
+  z-index: 2050;
+  bottom: 18px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(13, 11, 7, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.64rem;
+  white-space: nowrap;
+}
+
+.team-context-switcher button {
+  width: 36px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--ct-gold);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.team-context-switcher button:hover {
+  background: var(--ct-gold-soft);
+}
+
+.team-context-switcher button:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.team-context-switcher button:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.team-context-switcher span {
+  border-right: 1px solid var(--ct-line);
+  border-left: 1px solid var(--ct-line);
+  padding: 0 12px;
+}
+
+.team-context-switcher b {
+  color: var(--ct-gold);
+  font-weight: 600;
+}
+
+@media (max-width: 980px) {
+  .team-context-layout-a,
+  .team-context-layout-b,
+  .team-context-layout-c {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-context-targets {
+    order: 2;
+  }
+
+  .team-context-inspector {
+    position: static;
+    order: 1;
+  }
+
+  .team-context-layout-b .team-context-targets {
+    order: 2;
+  }
+}
+
+@media (max-width: 720px) {
+  .team-context-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .team-context-heading-meta {
+    display: none;
+    justify-items: start;
+  }
+
+  .team-context-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .team-context-category-tabs {
+    order: 3;
+  }
+
+  .team-context-rank-card {
+    grid-template-columns: 35px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .team-context-rank-value {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .team-context-rank-delta {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .team-context-rank-card .team-context-use {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-context-page {
+    width: min(100% - 20px, 1160px);
+    padding-top: 26px;
+  }
+
+  .team-context-main-panel,
+  .team-context-rank-panel {
+    padding: 15px;
+  }
+
+  .team-context-table-wrap,
+  .team-context-rankboard {
+    margin-right: -15px;
+    margin-left: -15px;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .team-context-switcher {
+    bottom: 10px;
+  }
+
+  .team-context-switcher span {
+    padding: 0 8px;
+  }
+}

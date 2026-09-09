@@ -4,13 +4,16 @@ import { isCalendarDate, getTodaySlateDate } from './calendarDate';
 const entries = new Map();
 let session = 0;
 let resolutions = 0;
+// Both a Target's resolution and its backtest read stale unless a write to
+// the Target invalidates them together.
+const FENCED_KINDS = new Set(['resolution', 'backtest']);
 export const clearRevisitCaches = () => {
   session += 1;
   entries.clear();
 };
 export const invalidateTargetResolutions = () => {
   resolutions += 1;
-  for (const [key, entry] of entries) if (entry.kind === 'resolution') entries.delete(key);
+  for (const [key, entry] of entries) if (FENCED_KINDS.has(entry.kind)) entries.delete(key);
 };
 export const historicalDate = (date) => isCalendarDate(date) && date < getTodaySlateDate();
 
@@ -32,7 +35,7 @@ export const readRevisit = async (
   if (
     !signal?.aborted &&
     session === capturedSession &&
-    (kind !== 'resolution' || resolutions === capturedResolutions)
+    (!FENCED_KINDS.has(kind) || resolutions === capturedResolutions)
   ) {
     entries.set(key, { kind, data, at: Date.now() });
     while (entries.size > 32) entries.delete(entries.keys().next().value);

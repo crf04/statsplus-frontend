@@ -1,7 +1,10 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import TargetsPage from './TargetsPage';
+import TargetsPage, { BACKTEST_CONCURRENCY } from './TargetsPage';
+import { clearRevisitCaches, invalidateTargetResolutions } from '../revisitCache';
+import TargetRecord from './TargetRecord';
+import { useTargets } from './useTargets';
 import {
   createTarget,
   fetchResolvedTargets,
@@ -21,6 +24,20 @@ jest.mock('./targetsApi', () => ({
   fetchTargetPreview: jest.fn(),
   createTarget: jest.fn(),
 }));
+
+// Wraps the real implementation so its call count can prove which cards
+// re-rendered, without changing what any test sees on screen.
+jest.mock('./TargetRecord', () => {
+  const actual = jest.requireActual('./TargetRecord');
+  return { __esModule: true, ...actual, default: jest.fn(actual.default) };
+});
+
+// Wraps the real hook so the option the page passes it is directly
+// observable, without changing what any test sees on screen.
+jest.mock('./useTargets', () => {
+  const actual = jest.requireActual('./useTargets');
+  return { __esModule: true, ...actual, useTargets: jest.fn(actual.useTargets) };
+});
 
 const auth = { isAuthenticated: true, loading: false };
 jest.mock('../contexts/AuthContext', () => ({
@@ -64,6 +81,8 @@ const queuedTargets = [
   ...targets,
   { ...targets[0], id: 10, title: 'CHI vs Corner 3 ≥ 40% (v2)' },
   { ...targets[1], id: 11, title: 'PHX vs Restricted area ≤ 20% (v2)' },
+  { ...targets[0], id: 12, title: 'DAL vs Corner 3 ≥ 40% (v2)' },
+  { ...targets[1], id: 13, title: 'BOS vs Restricted area ≤ 20% (v2)' },
 ];
 
 const deferred = () => {
@@ -206,6 +225,7 @@ const composeQualifier = ({ opponent = 'OKC', slice = 'Corner 3', percent = '40'
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearRevisitCaches();
   fetchDietBaselines.mockResolvedValue({ shares: {} });
   auth.isAuthenticated = true;
   auth.loading = false;
@@ -936,21 +956,29 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
   expect(within(card).queryByRole('table')).not.toBeInTheDocument();
 });
 
-test('Backtests start two reads and refill the queue when one settles', async () => {
-  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
-  const reads = [deferred(), deferred(), deferred()];
-  fetchTargetBacktest.mockImplementation(
-    ({ id }) => reads[id === 7 ? 0 : id === 8 ? 1 : 2].promise,
+test('Backtests start BACKTEST_CONCURRENCY reads at once and refill the queue when one settles', async () => {
+  expect(BACKTEST_CONCURRENCY).toBe(4);
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
+  const reads = new Map(
+    queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1).map((target) => [target.id, deferred()]),
   );
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
   renderPage(false);
 
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
-  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8]);
-  expect(screen.queryByRole('article', { name: queuedTargets[2].title })).toBeInTheDocument();
+  // Exactly the concurrency limit fires up front — proving the cap is
+  // respected — while the extra queued card waits its turn.
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10, 11]);
+  expect(
+    screen.queryByRole('article', { name: queuedTargets[BACKTEST_CONCURRENCY].title }),
+  ).toBeInTheDocument();
+  expect(fetchTargetBacktest).not.toHaveBeenCalledWith(
+    expect.objectContaining({ id: queuedTargets[BACKTEST_CONCURRENCY].id }),
+  );
 
-  await act(async () => reads[1].resolve(preview));
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(3));
-  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10]);
+  await act(async () => reads.get(8).resolve(preview));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY + 1));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10, 11, 12]);
   expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(1);
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
@@ -961,19 +989,21 @@ test('a failed Backtest frees a slot for every queued card', async () => {
   fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
   renderPage(false);
 
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
   await act(async () => reads.get(7).reject(new Error('failed 7')));
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(3));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY + 1));
   await act(async () => reads.get(8).reject(new Error('failed 8')));
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(4));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY + 2));
 
-  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10, 11]);
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([
+    7, 8, 10, 11, 12, 13,
+  ]);
   expect(await screen.findByText('failed 7')).toBeVisible();
   expect(await screen.findByText('failed 8')).toBeVisible();
 
   await act(async () => {
-    reads.get(10).resolve(preview);
-    reads.get(11).resolve(preview);
+    reads.get(12).resolve(preview);
+    reads.get(13).resolve(preview);
   });
   expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
 });
@@ -1011,13 +1041,13 @@ test('thin evidence stays visible as a dashed fit pill', async () => {
 });
 
 test('signing out aborts active reads and leaves queued cards untouched', async () => {
-  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
-  const reads = [deferred(), deferred()];
-  fetchTargetBacktest
-    .mockImplementationOnce(() => reads[0].promise)
-    .mockImplementationOnce(() => reads[1].promise);
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
+  const reads = new Map(
+    queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1).map((target) => [target.id, deferred()]),
+  );
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
   const view = renderPage(false);
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
   const signals = fetchTargetBacktest.mock.calls.map(([request]) => request.signal);
 
   auth.isAuthenticated = false;
@@ -1035,10 +1065,10 @@ test('signing out aborts active reads and leaves queued cards untouched', async 
     await screen.findByRole('heading', { name: 'Sign in to view your Targets' }),
   ).toBeVisible();
   await act(async () => {
-    reads[0].resolve(preview);
-    reads[1].resolve(preview);
+    for (const read of reads.values()) read.resolve(preview);
   });
-  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+  // The queued card beyond the concurrency limit was never touched either.
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY);
   expect(screen.queryByRole('article')).not.toBeInTheDocument();
 });
 
@@ -1126,24 +1156,23 @@ test('late old reads cannot overwrite a fresh authenticated read after sign-in',
   expect(screen.queryByText('stale old failure')).not.toBeInTheDocument();
 });
 
-test('unmounting the list aborts both active reads and never starts the queue', async () => {
-  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
-  const reads = [deferred(), deferred()];
-  fetchTargetBacktest
-    .mockImplementationOnce(() => reads[0].promise)
-    .mockImplementationOnce(() => reads[1].promise);
+test('unmounting the list aborts every active read and never starts the queue', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
+  const reads = new Map(
+    queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1).map((target) => [target.id, deferred()]),
+  );
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
   const view = renderPage(false);
 
-  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
   const signals = fetchTargetBacktest.mock.calls.map(([request]) => request.signal);
   view.unmount();
 
   expect(signals.every((signal) => signal.aborted)).toBe(true);
   await act(async () => {
-    reads[0].resolve(preview);
-    reads[1].resolve(preview);
+    for (const read of reads.values()) read.resolve(preview);
   });
-  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY);
 });
 
 test('saved cards show their Condition as a read-only chip', async () => {
@@ -1287,4 +1316,73 @@ test('leaving a page aborts its shared in-flight roster request', async () => {
   expect(signal.aborted).toBe(false);
   page.unmount();
   expect(signal.aborted).toBe(true);
+});
+
+/*
+ * Settling one card's Backtest re-renders TargetsPageContent, which used to
+ * re-render every card and recompute every already-ready TargetRecord along
+ * with it. Memoizing the card should skip the cards whose own read did not
+ * change.
+ */
+test('settling one Backtest does not re-render cards whose own Backtest already finished', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets);
+  const reads = new Map(queuedTargets.map((target) => [target.id, deferred()]));
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
+  renderPage(false);
+
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
+  await act(async () => reads.get(7).resolve(preview));
+  await waitFor(() =>
+    expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(1),
+  );
+  await act(async () => reads.get(8).resolve(preview));
+  await waitFor(() =>
+    expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2),
+  );
+  TargetRecord.mockClear();
+
+  await act(async () => reads.get(10).resolve(preview));
+  await waitFor(() =>
+    expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(3),
+  );
+
+  // Only the newly ready card's TargetRecord renders. Without the memo, the
+  // two already-settled cards would render theirs again too, for three.
+  expect(TargetRecord).toHaveBeenCalledTimes(1);
+});
+
+/*
+ * TargetDetailPage already keeps the previous read on screen while it
+ * reloads by passing keepPrevious; the list page did not. This pins that the
+ * list's own read is asked to do the same, so a revisit does not blank the
+ * page for what will very likely be the same list again.
+ */
+test('the list read is asked to keep the previous list on screen while it reloads', async () => {
+  renderPage(false);
+  await screen.findAllByRole('article');
+  expect(useTargets).toHaveBeenCalledWith(expect.objectContaining({ keepPrevious: true }));
+});
+
+/*
+ * The revisit cache is the fix for "every visit refetches every Backtest":
+ * a second mount within the 30 s window should read the cache rather than
+ * re-scanning the league, and a Target write should bust that cache so the
+ * next revisit is honest again.
+ */
+test('a revisit within the cache window reuses a Backtest, and a Target write busts it', async () => {
+  auth.currentUser = { uid: 'revisit-reader' };
+  fetchTargetBacktest.mockResolvedValue(preview);
+
+  const first = renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  first.unmount();
+
+  const second = renderPage(false);
+  await screen.findAllByRole('list', { name: 'Backtest summary' });
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+  second.unmount();
+
+  invalidateTargetResolutions();
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(4));
 });

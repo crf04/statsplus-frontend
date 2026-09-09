@@ -830,6 +830,8 @@ test('previews a draft at the documented path with the create body', async () =>
       signal: controller.signal,
     }),
   ).resolves.toEqual(expect.objectContaining({ today: expect.objectContaining({ fitCount: 2 }) }));
+  // A league-wide scan is slower than the default request budget even on a
+  // warm backend, so it gets a longer, explicit timeout.
   expect(apiClient.post).toHaveBeenCalledWith(
     '/api/user/targets/preview',
     {
@@ -839,11 +841,11 @@ test('previews a draft at the documented path with the create body', async () =>
         { base: 'shot_zones', slice_key: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
       ],
     },
-    { signal: controller.signal },
+    { signal: controller.signal, timeout: 20000 },
   );
 });
 
-test("reads one Target's backtest from the documented path", async () => {
+test("reads one Target's backtest from the documented path with a cold-start-safe timeout", async () => {
   apiClient.get.mockResolvedValue({ data: wireBacktest });
   const controller = new AbortController();
 
@@ -852,6 +854,7 @@ test("reads one Target's backtest from the documented path", async () => {
   );
   expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/7/backtest', {
     signal: controller.signal,
+    timeout: 20000,
   });
 });
 
@@ -1120,5 +1123,26 @@ test.each(['create', 'update', 'preferences', 'delete'])(
     await readRevisit('resolution', 'alice', 'cached', load);
     await readRevisit('resolution', 'alice', 'pending', load);
     expect(load).toHaveBeenCalledTimes(3);
+  },
+);
+
+test.each(['create', 'update', 'preferences', 'delete'])(
+  'successful %s also invalidates cached Backtests',
+  async (mutation) => {
+    clearRevisitCaches();
+    const load = jest.fn().mockResolvedValue('fresh');
+    await readRevisit('backtest', 'alice', 7, load);
+    apiClient.post.mockResolvedValue({ data: { target: wireTarget } });
+    apiClient.patch.mockResolvedValue({});
+    apiClient.delete.mockResolvedValue({});
+    if (mutation === 'create') await createTarget({ opponent: 'OKC', qualifiers: [] });
+    else if (mutation === 'delete') await deleteTarget({ id: 7 });
+    else
+      await updateTarget({
+        id: 7,
+        ...(mutation === 'preferences' ? { statPreferences: null } : { note: 'new' }),
+      });
+    await readRevisit('backtest', 'alice', 7, load);
+    expect(load).toHaveBeenCalledTimes(2);
   },
 );

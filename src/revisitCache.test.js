@@ -33,19 +33,33 @@ test('expires at 30 seconds and bounds retained results to 32', async () => {
   await read(0, load);
   expect(load).toHaveBeenCalledTimes(35);
 });
-test.each(['logout', 'mutation'])('%s fences late resolution responses', async (kind) => {
+test.each([
+  ['logout', 'resolution'],
+  ['mutation', 'resolution'],
+  ['logout', 'backtest'],
+  ['mutation', 'backtest'],
+])('%s fences a late %s response', async (trigger, kind) => {
   let finish;
   const pending = new Promise((resolve) => {
     finish = resolve;
   });
   const load = jest.fn().mockReturnValueOnce(pending).mockResolvedValue('new');
-  const run = () => readRevisit('resolution', 'alice', '2026-01-01', load);
+  const run = () => readRevisit(kind, 'alice', '2026-01-01', load);
   const flight = run();
-  if (kind === 'logout') clearRevisitCaches();
+  if (trigger === 'logout') clearRevisitCaches();
   else invalidateTargetResolutions();
   finish('old');
   await flight;
   expect(await run()).toBe('new');
+  expect(load).toHaveBeenCalledTimes(2);
+});
+test('invalidateTargetResolutions also clears a cached Backtest', async () => {
+  const load = jest.fn().mockResolvedValue('fresh');
+  await readRevisit('backtest', 'alice', 7, load);
+  expect(await readRevisit('backtest', 'alice', 7, load)).toBe('fresh');
+  expect(load).toHaveBeenCalledTimes(1);
+  invalidateTargetResolutions();
+  await readRevisit('backtest', 'alice', 7, load);
   expect(load).toHaveBeenCalledTimes(2);
 });
 test('never caches rejected or aborted reads', async () => {

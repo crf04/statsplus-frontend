@@ -47,9 +47,14 @@ const readList = async ({ signal, userId }) => {
 };
 const readResolution = ({ scope, signal, userId, bypass }) => {
   const load = () => fetchResolvedTargets({ date: scope, signal });
-  return historicalDate(scope)
-    ? readRevisit('resolution', userId, scope, load, { signal, bypass })
-    : load();
+  if (historicalDate(scope))
+    return readRevisit('resolution', userId, scope, load, { signal, bypass });
+  // An absent scope is the Slate's own current date, read as often as every
+  // surface that shows it revisits — cached under one identity rather than
+  // the (unknown here) date it will turn out to be.
+  if (scope === undefined)
+    return readRevisit('resolution', userId, 'current', load, { signal, bypass });
+  return load();
 };
 
 /*

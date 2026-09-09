@@ -1125,3 +1125,24 @@ test.each(['create', 'update', 'preferences', 'delete'])(
     expect(load).toHaveBeenCalledTimes(3);
   },
 );
+
+test.each(['create', 'update', 'preferences', 'delete'])(
+  'successful %s also invalidates cached Backtests',
+  async (mutation) => {
+    clearRevisitCaches();
+    const load = jest.fn().mockResolvedValue('fresh');
+    await readRevisit('backtest', 'alice', 7, load);
+    apiClient.post.mockResolvedValue({ data: { target: wireTarget } });
+    apiClient.patch.mockResolvedValue({});
+    apiClient.delete.mockResolvedValue({});
+    if (mutation === 'create') await createTarget({ opponent: 'OKC', qualifiers: [] });
+    else if (mutation === 'delete') await deleteTarget({ id: 7 });
+    else
+      await updateTarget({
+        id: 7,
+        ...(mutation === 'preferences' ? { statPreferences: null } : { note: 'new' }),
+      });
+    await readRevisit('backtest', 'alice', 7, load);
+    expect(load).toHaveBeenCalledTimes(2);
+  },
+);

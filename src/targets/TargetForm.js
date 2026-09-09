@@ -104,6 +104,7 @@ export default function TargetForm({
   showActions = true,
   cancelLabel = 'Cancel',
   title,
+  highlightedQualifierIndex = null,
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
@@ -171,7 +172,10 @@ export default function TargetForm({
           </div>
 
           {draft.qualifiers.map((qualifier, index) => (
-            <div className="target-qualifier" key={index}>
+            <div
+              className={`target-qualifier${highlightedQualifierIndex === index ? ' is-highlighted' : ''}`}
+              key={index}
+            >
               <select
                 aria-label={`Qualifier ${index + 1} diet base`}
                 value={qualifier.base}

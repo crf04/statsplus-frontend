@@ -1,0 +1,372 @@
+/* Throwaway composer exploration. The form stays recognizably native while
+   the two layouts change where the live opponent read sits. */
+
+.target-new-layer .modal-dialog.target-context-modal-dialog {
+  width: 95vw;
+  max-width: 1120px !important;
+}
+
+.target-new-layer .modal-dialog.target-context-modal-dialog-a {
+  max-width: 760px !important;
+}
+
+.target-new-layer .modal-dialog.target-context-modal-dialog-b {
+  max-width: 1120px !important;
+}
+
+.target-context-modal .modal-header,
+.target-context-modal .modal-body,
+.target-context-modal .modal-footer {
+  border-color: var(--ct-line);
+}
+
+.target-context-modal .modal-body {
+  min-height: 0;
+}
+
+.target-context-modal .modal-footer {
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+.target-context-modal-tag {
+  margin-left: 6px;
+  color: var(--ct-gold);
+  font: 0.58rem var(--ct-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.target-context-prototype-note {
+  margin: 0 0 12px;
+  color: var(--ct-dim);
+  font: 0.64rem/1.45 var(--ct-mono);
+}
+
+.target-context-layout {
+  display: grid;
+  align-items: start;
+  gap: 16px;
+}
+
+.target-context-layout-a {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.target-context-layout-b {
+  grid-template-columns: minmax(0, 1fr) minmax(350px, 0.76fr);
+}
+
+.target-context-form-column,
+.target-context-panel {
+  min-width: 0;
+}
+
+.target-context-form-column .target-lab {
+  margin-top: 0;
+}
+
+.target-context-layout-a .target-lab-left {
+  width: 100%;
+  max-width: 760px;
+}
+
+.target-context-form-column .target-form {
+  margin-bottom: 12px;
+}
+
+.target-context-form-column .target-form-card {
+  padding: 14px;
+}
+
+.target-context-form-column .target-form-actions {
+  margin-top: 10px;
+}
+
+.target-context-a-form-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.target-context-form-column .target-qualifier.is-highlighted {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 2px var(--ct-gold-soft);
+}
+
+.target-context-panel {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: rgba(22, 19, 13, 0.9);
+  color: var(--ct-text);
+}
+
+.target-context-panel-a {
+  overflow: hidden;
+}
+
+.target-context-panel-a > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.target-context-panel-a > summary::-webkit-details-marker {
+  display: none;
+}
+
+.target-context-panel-a > summary::after {
+  flex: 0 0 auto;
+  color: var(--ct-gold);
+  content: '+';
+  font: 1rem var(--ct-mono);
+}
+
+.target-context-panel-a[open] > summary::after {
+  content: '−';
+}
+
+.target-context-panel-a > summary:hover {
+  background: var(--ct-gold-soft);
+}
+
+.target-context-panel-a > summary > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.target-context-panel-a > summary b {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.target-context-summary-meta {
+  color: var(--ct-dim);
+  font: 0.6rem var(--ct-mono);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.target-context-panel-b {
+  position: sticky;
+  top: 14px;
+  padding: 16px;
+}
+
+.target-context-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.target-context-panel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ct-hit);
+  box-shadow: 0 0 0 4px var(--ct-hit-soft);
+}
+
+.target-context-panel-body {
+  min-width: 0;
+  padding: 0 14px 14px;
+}
+
+.target-context-panel-b .target-context-panel-body {
+  padding: 0;
+}
+
+.target-context-panel .team-context-identity {
+  margin-bottom: 12px;
+}
+
+.target-context-opponent-line {
+  margin: 0 0 9px;
+  color: var(--ct-dim);
+  font: 0.68rem var(--ct-mono);
+}
+
+.target-context-opponent-line b {
+  color: var(--ct-gold);
+  font-size: 0.8rem;
+}
+
+.target-context-panel .team-context-controls {
+  margin: 0 0 10px;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.target-context-panel .team-context-controls.is-no-team > .team-context-category-tabs {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+.target-context-panel .team-context-source {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+
+.target-context-panel .team-context-source span + span::before {
+  display: none;
+}
+
+.target-context-panel .team-context-read-status {
+  margin: 10px 0 0;
+}
+
+.target-context-panel .team-context-compact-wrap {
+  margin: 0 -14px -14px;
+  padding: 0 14px 14px;
+}
+
+.target-context-panel-a[open] .target-context-panel-body {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.target-context-panel-a .team-context-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.target-context-panel-b .team-context-compact-wrap {
+  margin: 0 -16px -16px;
+  padding: 0 16px 16px;
+}
+
+.target-context-panel .team-context-compact-table {
+  min-width: 430px;
+}
+
+.target-context-panel .team-context-compact-table th,
+.target-context-panel .team-context-compact-table td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.target-context-panel-a .team-context-compact-table th,
+.target-context-panel-a .team-context-compact-table td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.target-context-panel .team-context-compact-table tbody th {
+  font-size: 0.75rem;
+}
+
+.target-context-panel .team-context-compact-table .team-context-value b {
+  font-size: 0.8rem;
+}
+
+.target-context-panel .team-context-compact-vs {
+  display: block;
+  margin-top: 2px;
+  color: var(--ct-dim);
+  font-size: 0.54rem;
+}
+
+.target-context-panel .team-context-use {
+  padding: 4px 7px;
+  font-size: 0.56rem;
+}
+
+.target-context-switcher {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(13, 11, 7, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--ct-dim);
+  font: 0.64rem var(--ct-mono);
+  white-space: nowrap;
+}
+
+.target-context-switcher-page {
+  position: fixed;
+  z-index: 2050;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.target-context-switcher button {
+  width: 36px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--ct-gold);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.target-context-switcher button:hover {
+  background: var(--ct-gold-soft);
+}
+
+.target-context-switcher button:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.target-context-switcher button:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.target-context-switcher span {
+  border-right: 1px solid var(--ct-line);
+  border-left: 1px solid var(--ct-line);
+  padding: 0 12px;
+}
+
+.target-context-switcher b {
+  color: var(--ct-gold);
+  font-weight: 600;
+}
+
+.target-context-switcher-footer {
+  box-shadow: none;
+}
+
+@media (max-width: 980px) {
+  .target-context-layout-b {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .target-context-panel-b {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .target-context-panel-a > summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .target-context-summary-meta {
+    text-align: left;
+  }
+
+  .target-context-panel-a > summary::after {
+    position: absolute;
+    right: 16px;
+  }
+
+  .target-context-switcher-page {
+    bottom: 10px;
+  }
+}

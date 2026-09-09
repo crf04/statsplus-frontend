@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm, { targetToDraft, targetDraftToRequest } from './TargetForm';
 import TargetLab from './TargetLab';
@@ -7,22 +7,40 @@ import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
+import {
+  contextPrototypeVariantFor,
+  TargetContextEditor,
+  TargetContextPageSwitcher,
+} from './TargetContextPrototype';
 import { SeasonMinutesProvider, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 import './TargetWorkbench.css';
 
-function TargetDetail({ target, reload }) {
+function TargetDetail({ target, reload, prototypeVariant }) {
   const navigate = useNavigate();
   const stats = useStatPreferences(target);
   const [draft, setDraft] = useState(() => targetToDraft(target));
   const [saved, setSaved] = useState(() => targetToDraft(target));
+  const [prototypePreferences, setPrototypePreferences] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const dirty =
     JSON.stringify(targetDraftToRequest(draft)) !== JSON.stringify(targetDraftToRequest(saved));
   const save = async (request) => {
+    if (prototypeVariant) {
+      const nextDraft = targetToDraft({
+        ...target,
+        qualifiers: request.qualifiers,
+        note: request.note,
+        ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+      });
+      setDraft(nextDraft);
+      setSaved(nextDraft);
+      setError(null);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -61,7 +79,11 @@ function TargetDetail({ target, reload }) {
       <div className="target-workbench-top">
         <Link to="/targets">← All Targets</Link>
         <div className="target-detail-actions">
-          {confirmingDelete ? (
+          {prototypeVariant ? (
+            <span className="target-context-read-only-badge">
+              Read-only prototype · saves stay in this session
+            </span>
+          ) : confirmingDelete ? (
             <>
               <span>Delete this Target?</span>
               <button type="button" disabled={busy} onClick={remove}>
@@ -83,34 +105,54 @@ function TargetDetail({ target, reload }) {
           {error}
         </p>
       )}
-      <div className="target-workbench">
-        <TargetLab
+      {prototypeVariant ? (
+        <TargetContextEditor
+          variant={prototypeVariant}
           draft={draft}
-          workbench
-          immediateInitialPreview
-          preferences={stats.preferences}
-          onPreferencesChange={stats.onChange}
-        >
-          <StatSaveStatus state={stats} />
-          <TargetForm
+          title={prototypeVariant ? undefined : dirty ? undefined : target.title}
+          busy={busy}
+          submitLabel="Save changes"
+          showActions={dirty}
+          cancelLabel="Revert"
+          lockOpponent
+          preferences={prototypePreferences ?? stats.preferences}
+          onPreferencesChange={setPrototypePreferences}
+          onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+          onSubmit={save}
+          onCancel={() => setDraft(saved)}
+        />
+      ) : (
+        <div className="target-workbench">
+          <TargetLab
             draft={draft}
-            title={dirty ? undefined : target.title}
-            busy={busy}
-            lockOpponent
-            submitLabel="Save changes"
-            showActions={dirty}
-            cancelLabel="Revert"
-            onChange={(patch) => setDraft({ ...draft, ...patch })}
-            onSubmit={save}
-            onCancel={() => setDraft(saved)}
-          />
-        </TargetLab>
-      </div>
+            workbench
+            immediateInitialPreview
+            preferences={stats.preferences}
+            onPreferencesChange={stats.onChange}
+          >
+            <StatSaveStatus state={stats} />
+            <TargetForm
+              draft={draft}
+              title={dirty ? undefined : target.title}
+              busy={busy}
+              lockOpponent
+              submitLabel="Save changes"
+              showActions={dirty}
+              cancelLabel="Revert"
+              onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              onSubmit={save}
+              onCancel={() => setDraft(saved)}
+            />
+          </TargetLab>
+        </div>
+      )}
     </>
   );
 }
 function TargetDetailContent() {
   const { targetId } = useParams();
+  const [searchParams] = useSearchParams();
+  const prototypeVariant = contextPrototypeVariantFor(searchParams);
   const { authLoading, isAuthenticated, status, targets, error, reload } = useTargets({
     keepPrevious: true,
   });
@@ -122,7 +164,12 @@ function TargetDetailContent() {
       {status === 'error' && <p role="alert">{error}</p>}
       {(target || status === 'ready') &&
         (target ? (
-          <TargetDetail key={target.id} target={target} reload={reload} />
+          <TargetDetail
+            key={target.id}
+            target={target}
+            reload={reload}
+            prototypeVariant={prototypeVariant}
+          />
         ) : (
           <div className="empty-slate">
             <Link to="/targets">← All Targets</Link>
@@ -130,6 +177,7 @@ function TargetDetailContent() {
             <p>It was deleted, or it belongs to another account.</p>
           </div>
         ))}
+      {prototypeVariant && target && <TargetContextPageSwitcher current={prototypeVariant} />}
     </main>
   );
 }

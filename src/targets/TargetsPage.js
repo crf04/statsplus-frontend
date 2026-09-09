@@ -9,20 +9,41 @@ import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
-import { formatQualifierParts, formatObservedShare } from './targetCatalog';
+import { deriveTargetTitle, formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import TeamContextPrototype, { TEAM_CONTEXT_VARIANTS } from './TeamContextPrototype';
+import {
+  contextPrototypeVariantFor,
+  isTargetContextPrototypeRequested,
+  TargetContextComposer,
+  TargetContextPageSwitcher,
+} from './TargetContextPrototype';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 
-function TargetCard({ target, entry, read, resolutionStatus }) {
+function TargetCard({
+  target,
+  entry,
+  read,
+  resolutionStatus,
+  prototypeMode = false,
+  prototypeVariant,
+}) {
   const game = entry?.game;
   const stats = useStatPreferences(target);
-  const columns = stats.preferences?.columns ?? read?.backtest?.statColumns ?? [];
-  const gradedBy = stats.preferences?.gradedBy ?? columns[0];
+  const [localPreferences, setLocalPreferences] = useState(null);
+  const preferences = prototypeMode
+    ? (localPreferences ?? target.statPreferences)
+    : stats.preferences;
+  const onPreferencesChange = prototypeMode ? setLocalPreferences : stats.onChange;
+  const columns = preferences?.columns ?? read?.backtest?.statColumns ?? [];
+  const gradedBy = preferences?.gradedBy ?? columns[0];
   const minutesNote = backtestMinutesNote(target);
+  const editHref = prototypeMode
+    ? `/targets/${target.id}?contextPrototype=1&variant=${prototypeVariant}`
+    : `/targets/${target.id}`;
   return (
     <li>
       <article className="target-card" aria-label={target.title}>
@@ -42,7 +63,7 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
                 : 'Today’s activity unavailable'}
             </span>
           )}
-          <Link className="target-card-go" to={`/targets/${target.id}`}>
+          <Link className="target-card-go" to={editHref}>
             View Details / Edit
           </Link>
         </div>
@@ -98,15 +119,42 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
                 backtest={read.backtest}
                 columns={columns}
                 gradedBy={gradedBy}
-                onGrade={(column) => stats.onChange({ columns, gradedBy: column })}
-                onPreferencesChange={stats.onChange}
+                onGrade={(column) => onPreferencesChange({ columns, gradedBy: column })}
+                onPreferencesChange={onPreferencesChange}
               />
-              <StatSaveStatus state={stats} />
+              {!prototypeMode && <StatSaveStatus state={stats} />}
             </>
           ) : (
             <p className="target-empty">{read?.error || 'Reading the season…'}</p>
           )}
         </section>
+      </article>
+    </li>
+  );
+}
+
+function PrototypeTargetCard({ target }) {
+  return (
+    <li>
+      <article className="target-card target-card-prototype" aria-label={target.title}>
+        <div className="target-card-head">
+          <span>Saved in this session</span>
+          <span className="target-card-go">prototype</span>
+        </div>
+        <div className="target-card-criteria">
+          <span className="target-card-opponent">{target.opponent}</span>
+          <div className="target-card-qualifiers">
+            {target.qualifiers.map((qualifier, index) => {
+              const { label, value } = formatQualifierParts(qualifier);
+              return (
+                <span key={index}>
+                  {label} <b>{value}</b>
+                </span>
+              );
+            })}
+          </div>
+          {target.note && <p className="target-card-note">{target.note}</p>}
+        </div>
       </article>
     </li>
   );
@@ -158,8 +206,12 @@ function TargetsPageContent() {
   const [searchParams] = useSearchParams();
   const { authLoading, isAuthenticated, status, targets, error } = useTargets();
   const requestedVariant = searchParams.get('variant');
+  const contextPrototypeRequested = isTargetContextPrototypeRequested(searchParams);
+  const contextPrototypeVariant = contextPrototypeVariantFor(searchParams);
   const prototypeVariant =
-    process.env.NODE_ENV !== 'production' && Object.hasOwn(TEAM_CONTEXT_VARIANTS, requestedVariant)
+    !contextPrototypeRequested &&
+    process.env.NODE_ENV !== 'production' &&
+    Object.hasOwn(TEAM_CONTEXT_VARIANTS, requestedVariant)
       ? requestedVariant
       : null;
   /*
@@ -174,7 +226,10 @@ function TargetsPageContent() {
   );
   const [draft, setDraft] = useState(blankTargetDraft);
   const [draftPreferences, setDraftPreferences] = useState(null);
-  const [composing, setComposing] = useState(false);
+  const [prototypeTargets, setPrototypeTargets] = useState([]);
+  const [composing, setComposing] = useState(() =>
+    Boolean(contextPrototypeVariant && searchParams.get('compose') === '1'),
+  );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
@@ -205,6 +260,19 @@ function TargetsPageContent() {
     setSaving(true);
     setSaveError(null);
     try {
+      if (contextPrototypeVariant) {
+        setPrototypeTargets((current) => [
+          {
+            ...request,
+            id: `prototype-${Date.now()}`,
+            title: deriveTargetTitle(request),
+            createdAt: new Date().toISOString(),
+          },
+          ...current,
+        ]);
+        resetComposer();
+        return;
+      }
       const target = await createTarget({
         ...request,
         ...(draftPreferences ? { statPreferences: draftPreferences } : {}),
@@ -255,65 +323,87 @@ function TargetsPageContent() {
         </button>
       </section>
 
-      <Modal
-        show={composing}
-        onHide={dismissComposer}
-        centered
-        scrollable
-        backdrop="static"
-        className="target-new-layer"
-        dialogClassName="target-new-dialog"
-        contentClassName="target-new-modal"
-        backdropClassName="target-new-backdrop"
-        aria-labelledby="new-target-heading"
-      >
-        <Modal.Header closeButton closeVariant="white">
-          <Modal.Title as="h2" className="h5 mb-0" id="new-target-heading">
-            New Target
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <TargetForm
-            draft={draft}
-            busy={saving}
-            onChange={(patch) => setDraft({ ...draft, ...patch })}
-            onSubmit={save}
-            onCancel={dismissComposer}
-          />
-          {saveError && (
-            <p className="target-error" role="alert">
-              {saveError}
-            </p>
-          )}
-          <TargetLab
-            draft={draft}
-            preferences={draftPreferences}
-            onPreferencesChange={setDraftPreferences}
-          />
-        </Modal.Body>
-      </Modal>
+      {contextPrototypeVariant ? (
+        <TargetContextComposer
+          open={composing}
+          draft={draft}
+          variant={contextPrototypeVariant}
+          busy={saving}
+          onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+          onSubmit={save}
+          onCancel={dismissComposer}
+          preferences={draftPreferences}
+          onPreferencesChange={setDraftPreferences}
+        />
+      ) : (
+        <Modal
+          show={composing}
+          onHide={dismissComposer}
+          centered
+          scrollable
+          backdrop="static"
+          className="target-new-layer"
+          dialogClassName="target-new-dialog"
+          contentClassName="target-new-modal"
+          backdropClassName="target-new-backdrop"
+          aria-labelledby="new-target-heading"
+        >
+          <Modal.Header closeButton closeVariant="white">
+            <Modal.Title as="h2" className="h5 mb-0" id="new-target-heading">
+              New Target
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <TargetForm
+              draft={draft}
+              busy={saving}
+              onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              onSubmit={save}
+              onCancel={dismissComposer}
+            />
+            {saveError && (
+              <p className="target-error" role="alert">
+                {saveError}
+              </p>
+            )}
+            <TargetLab
+              draft={draft}
+              preferences={draftPreferences}
+              onPreferencesChange={setDraftPreferences}
+            />
+          </Modal.Body>
+        </Modal>
+      )}
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
       {status === 'ready' &&
-        (targets.length === 0 ? (
+        (targets.length + prototypeTargets.length === 0 ? (
           <div className="empty-slate">
             <h2>No Targets yet.</h2>
             <p>Choose + New Target to save a read on a defense.</p>
           </div>
         ) : (
           <ul className="target-grid">
+            {prototypeTargets.map((target) => (
+              <PrototypeTargetCard key={target.id} target={target} />
+            ))}
             {targets.map((target) => (
               <TargetCard
                 key={target.id}
                 target={target}
                 read={reads[target.id]}
                 resolutionStatus={resolved.status}
+                prototypeMode={Boolean(contextPrototypeVariant)}
+                prototypeVariant={contextPrototypeVariant}
                 entry={resolved.entries.find((entry) => entry.target.id === target.id) || null}
               />
             ))}
           </ul>
         ))}
+      {contextPrototypeVariant && !composing && (
+        <TargetContextPageSwitcher current={contextPrototypeVariant} />
+      )}
     </main>
   );
 }

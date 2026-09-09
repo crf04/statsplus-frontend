@@ -164,7 +164,10 @@ const parseStats = (payload) => {
   throw new Error('The team stats endpoint returned an invalid response.');
 };
 
-const codeForTeam = (name) => TEAM_CODES[name] || (name === 'LA Clippers' ? 'LAC' : null);
+export const codeForTeam = (name) => TEAM_CODES[name] || (name === 'LA Clippers' ? 'LAC' : null);
+
+export const teamNameForCode = (code) =>
+  Object.entries(TEAM_CODES).find(([, tricode]) => tricode === code)?.[0] || null;
 
 const formatNumber = (value, digits = 1) => {
   if (!Number.isFinite(value)) return '—';
@@ -180,7 +183,7 @@ const formatSignedPercent = (value) => {
   return `${sign}${value.toFixed(1).replace(/\.0$/, '')}%`;
 };
 
-const statRowsFor = (category, payload) => {
+export const statRowsFor = (category, payload) => {
   const data = payload?.[0];
   if (!data) return [];
   if (category === 'Shooting Type') {
@@ -228,24 +231,24 @@ const statRowsFor = (category, payload) => {
   );
 };
 
-const formatValue = (category, row) => {
+export const formatValue = (category, row) => {
   if (category === 'Playtypes' || category === 'Assists') return `${formatNumber(row.value, 2)}×`;
   if (row.rawKey.endsWith('_PCT')) return formatPercent(row.value);
   return formatNumber(row.value, 1);
 };
 
-const unitForRow = (category, row) => {
+export const unitForRow = (category, row) => {
   if (category === 'Playtypes' || category === 'Assists') return 'index';
   if (row.rawKey.endsWith('_PCT')) return '%';
   return row.unit || '/48';
 };
 
-const formatLeagueComparison = (category, row) =>
+export const formatLeagueComparison = (category, row) =>
   category === 'Playtypes' || category === 'Assists'
     ? formatSignedPercent((row.value - 1) * 100)
     : formatSignedPercent(row.vsAverage);
 
-const qualifierFor = (category, row) => {
+export const qualifierFor = (category, row) => {
   if (!row?.targetBase || !row.targetSlice) return null;
   return {
     ...blankQualifier(),
@@ -254,7 +257,7 @@ const qualifierFor = (category, row) => {
   };
 };
 
-function useTeamContextRead() {
+export function useTeamContextRead() {
   const [teams, setTeams] = useState([]);
   const [teamsState, setTeamsState] = useState('loading');
   const [teamsError, setTeamsError] = useState(null);
@@ -315,7 +318,7 @@ function useTeamContextRead() {
   }, [category, selectedTeam]);
 
   const config = CATEGORY_CONFIG[category];
-  const sourcePeriod = 'Stored whole-season snapshot · refresh date unavailable';
+  const sourcePeriod = 'Stored whole-season snapshot';
   return {
     category,
     config,
@@ -332,7 +335,7 @@ function useTeamContextRead() {
   };
 }
 
-function TeamSelector({ teams, selectedTeam, onChange }) {
+function TeamSelector({ teams, selectedTeam, onChange, disabled = false }) {
   return (
     <label className="team-context-team-select">
       <span>Opponent team</span>
@@ -340,7 +343,7 @@ function TeamSelector({ teams, selectedTeam, onChange }) {
         aria-label="Opponent team"
         value={selectedTeam}
         onChange={(event) => onChange(event.target.value)}
-        disabled={!teams.length}
+        disabled={disabled || !teams.length}
       >
         {!teams.length && <option value="">No teams available</option>}
         {teams.map((team) => (
@@ -371,11 +374,26 @@ function CategoryTabs({ category, onChange }) {
   );
 }
 
-function ReadControls({ read, compact = false }) {
+export function ReadControls({
+  read,
+  compact = false,
+  lockTeam = false,
+  hideTeam = false,
+  onTeamChange,
+}) {
   const { category, setCategory, selectedTeam, setSelectedTeam, teams } = read;
   return (
-    <div className={`team-context-controls${compact ? ' is-compact' : ''}`}>
-      <TeamSelector teams={teams} selectedTeam={selectedTeam} onChange={setSelectedTeam} />
+    <div
+      className={`team-context-controls${compact ? ' is-compact' : ''}${hideTeam ? ' is-no-team' : ''}`}
+    >
+      {!hideTeam && (
+        <TeamSelector
+          teams={teams}
+          selectedTeam={selectedTeam}
+          onChange={onTeamChange || setSelectedTeam}
+          disabled={lockTeam}
+        />
+      )}
       <CategoryTabs category={category} onChange={setCategory} />
     </div>
   );
@@ -408,17 +426,17 @@ function RankBadge({ rank }) {
   );
 }
 
-function UseTargetButton({ row, onUse }) {
+function UseTargetButton({ row, onUse, label = 'Use in Target' }) {
   const available = Boolean(row?.targetBase && row?.targetSlice);
   if (!available) return null;
   return (
     <button type="button" className="team-context-use" onClick={() => onUse(row)}>
-      Use in Target
+      {label}
     </button>
   );
 }
 
-function TeamIdentity({ read, eyebrow = 'Opponent context' }) {
+export function TeamIdentity({ read, eyebrow = 'Opponent context' }) {
   const code = codeForTeam(read.selectedTeam) || '—';
   return (
     <div className="team-context-identity">
@@ -595,16 +613,71 @@ function ShootingTypeTable({ read, onUse }) {
   );
 }
 
-function StatsSurface({ read, mode, onUse }) {
+export function CompactStatsTable({ read, onUse }) {
+  const rows = statRowsFor(read.category, read.stats);
+  const config = read.config;
+  return (
+    <div className="team-context-table-wrap team-context-compact-wrap">
+      <table className="team-context-table team-context-compact-table">
+        <thead>
+          <tr>
+            <th scope="col">Metric</th>
+            <th scope="col">
+              Opponent value <small>{config.unit}</small>
+            </th>
+            <th scope="col">Rank</th>
+            <th scope="col">
+              <span className="visually-hidden">Target action</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.key}>
+              <th scope="row">
+                <span>{row.label}</span>
+                {row.sublabel && <small>{row.sublabel}</small>}
+              </th>
+              <td className="team-context-value">
+                <b>{formatValue(read.category, row)}</b>{' '}
+                <small>{unitForRow(read.category, row)}</small>
+                <small className="team-context-compact-vs">
+                  {formatLeagueComparison(read.category, row)} vs league
+                </small>
+              </td>
+              <td>
+                <RankBadge rank={row.rank} />
+              </td>
+              <td>
+                <UseTargetButton row={row} onUse={onUse} label="Add" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function StatsSurface({ read, mode, onUse }) {
   if (read.statsState !== 'ready' || read.teamsState !== 'ready') return <ReadStatus read={read} />;
   if (!statRowsFor(read.category, read.stats).length) return <ReadStatus read={read} />;
+  if (mode === 'compact') return <CompactStatsTable read={read} onUse={onUse} />;
   if (mode === 'bars') return <StatBars read={read} onUse={onUse} />;
   if (mode === 'rankboard') return <LeagueLens read={read} onUse={onUse} />;
   if (read.category === 'Shooting Type') return <ShootingTypeTable read={read} onUse={onUse} />;
   return <TableStats read={read} onUse={onUse} />;
 }
 
-function SourceNote({ read }) {
+export function SourceNote({ read, compact = false }) {
+  if (compact) {
+    return (
+      <p className="team-context-source">
+        <span>{read.config.note}</span>
+        <span>{read.sourcePeriod}</span>
+      </p>
+    );
+  }
   return (
     <p className="team-context-source">
       <span>{read.config.description}</span>

@@ -1,5 +1,6 @@
 import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
 import { useEffect, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { formatTip } from '../calendarDate';
@@ -171,6 +172,19 @@ function TargetsPageContent() {
     return <TargetsSignedOut />;
   }
 
+  const resetComposer = () => {
+    setComposing(false);
+    setDraft(blankTargetDraft());
+    setSaveError(null);
+    setDraftPreferences(null);
+  };
+
+  // Keep dismissal aligned with the old Cancel action while a save is in flight.
+  const dismissComposer = () => {
+    if (saving) return;
+    resetComposer();
+  };
+
   /*
    * A saved draft becomes the record and opens on its own page, where the
    * evidence the Lab showed reads the same. A refused save keeps the draft
@@ -185,7 +199,7 @@ function TargetsPageContent() {
         ...request,
         ...(draftPreferences ? { statPreferences: draftPreferences } : {}),
       });
-      setComposing(false);
+      resetComposer();
       navigate(`/targets/${target.id}`);
     } catch (requestError) {
       setSaveError(
@@ -214,26 +228,35 @@ function TargetsPageContent() {
                 : 'Reading today’s activity…'}
           </p>
         </div>
-        <button
-          className="target-new-button"
-          type="button"
-          onClick={() => setComposing(true)}
-          disabled={composing}
-        >
+        <button className="target-new-button" type="button" onClick={() => setComposing(true)}>
           + New Target
         </button>
       </section>
 
-      {composing && (
-        <section className="target-new" aria-labelledby="new-target-heading">
-          <h2 id="new-target-heading" className="target-section-heading">
+      <Modal
+        show={composing}
+        onHide={dismissComposer}
+        centered
+        scrollable
+        backdrop="static"
+        className="target-new-layer"
+        dialogClassName="target-new-dialog"
+        contentClassName="target-new-modal"
+        backdropClassName="target-new-backdrop"
+        aria-labelledby="new-target-heading"
+      >
+        <Modal.Header closeButton closeVariant="white">
+          <Modal.Title as="h2" className="h5 mb-0" id="new-target-heading">
             New Target
-          </h2>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           <TargetForm
             draft={draft}
             busy={saving}
             onChange={(patch) => setDraft({ ...draft, ...patch })}
             onSubmit={save}
+            onCancel={dismissComposer}
           />
           {saveError && (
             <p className="target-error" role="alert">
@@ -245,20 +268,8 @@ function TargetsPageContent() {
             preferences={draftPreferences}
             onPreferencesChange={setDraftPreferences}
           />
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => {
-              setComposing(false);
-              setDraft(blankTargetDraft());
-              setSaveError(null);
-              setDraftPreferences(null);
-            }}
-          >
-            Cancel
-          </button>
-        </section>
-      )}
+        </Modal.Body>
+      </Modal>
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}
       {status === 'error' && <p role="alert">{error}</p>}

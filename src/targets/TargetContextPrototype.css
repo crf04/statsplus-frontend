@@ -93,7 +93,8 @@
   gap: 16px;
 }
 
-.target-context-form-column .target-qualifier.is-highlighted {
+.target-context-form-column .target-qualifier.is-highlighted,
+.target-context-edit-workbench .target-qualifier.is-highlighted {
   border-color: var(--ct-gold);
   box-shadow: 0 0 0 2px var(--ct-gold-soft);
 }
@@ -369,4 +370,12 @@
   .target-context-switcher-page {
     bottom: 10px;
   }
+}
+
+.target-context-edit-workbench .target-context-panel {
+  margin-bottom: 12px;
+}
+
+.target-context-edit-workbench .target-lab-left {
+  position: static;
 }

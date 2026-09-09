@@ -7,11 +7,7 @@ import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { deleteTarget, updateTarget } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import {
-  contextPrototypeVariantFor,
-  TargetContextEditor,
-  TargetContextPageSwitcher,
-} from './TargetContextPrototype';
+import { contextPrototypeVariantFor, TargetContextEditor } from './TargetContextPrototype';
 import { SeasonMinutesProvider, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
@@ -177,7 +173,6 @@ function TargetDetailContent() {
             <p>It was deleted, or it belongs to another account.</p>
           </div>
         ))}
-      {prototypeVariant && target && <TargetContextPageSwitcher current={prototypeVariant} />}
     </main>
   );
 }

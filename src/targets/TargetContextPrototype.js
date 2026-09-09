@@ -156,11 +156,12 @@ function TargetContextLayouts({
   preferences,
   onPreferencesChange,
   immediateInitialPreview = false,
+  workbench = false,
 }) {
   const read = useTeamContextRead();
   const onTeamChange = useDraftOpponentContext(read, draft, onChange, lockOpponent);
   const { highlightedQualifierIndex, onUse } = useQualifierFromContext(draft, onChange);
-  const [contextOpen, setContextOpen] = useState(true);
+  const [contextOpen, setContextOpen] = useState(!workbench);
   const form = (
     <TargetForm
       draft={draft}
@@ -182,7 +183,7 @@ function TargetContextLayouts({
       lockOpponent={lockOpponent}
       onTeamChange={onTeamChange}
       onUse={onUse}
-      collapsible={variant === 'A'}
+      collapsible={workbench || variant === 'A'}
       open={contextOpen}
       onToggle={setContextOpen}
     />
@@ -190,11 +191,17 @@ function TargetContextLayouts({
   const evidence = (
     <TargetLab
       draft={draft}
+      workbench={workbench}
       immediateInitialPreview={immediateInitialPreview}
       preferences={preferences}
       onPreferencesChange={onPreferencesChange}
     >
-      {variant === 'A' ? (
+      {workbench ? (
+        <>
+          {form}
+          {panel}
+        </>
+      ) : variant === 'A' ? (
         <div className="target-context-a-form-context">
           {panel}
           <div>{form}</div>
@@ -204,6 +211,10 @@ function TargetContextLayouts({
       )}
     </TargetLab>
   );
+
+  if (workbench) {
+    return <div className="target-workbench target-context-edit-workbench">{evidence}</div>;
+  }
 
   return (
     <div className={`target-context-layout target-context-layout-${variant.toLowerCase()}`}>
@@ -297,6 +308,7 @@ export function TargetContextEditor({
         onSubmit={onSubmit}
         onCancel={onCancel}
         immediateInitialPreview
+        workbench
         preferences={preferences}
         onPreferencesChange={onPreferencesChange}
       />

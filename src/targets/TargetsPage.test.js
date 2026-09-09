@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import TargetsPage from './TargetsPage';
 import {
@@ -408,6 +409,50 @@ test('a refused duplicate reads as the backend explained it and keeps the draft'
   expect(screen.getByLabelText('Opponent')).toHaveValue('OKC');
   expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('40');
   expect(fetchTargets).toHaveBeenCalledTimes(1);
+});
+
+test('a pending save cannot be dismissed and keeps its draft until it is refused', async () => {
+  const pending = deferred();
+  createTarget.mockReturnValue(pending.promise);
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier({ opponent: 'NOP', slice: 'Restricted Area', percent: '35' });
+  const dialog = screen.getByRole('dialog', { name: 'New Target' });
+  await act(async () => {
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save Target' }));
+  });
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
+
+  await act(async () => {
+    await userEvent.keyboard('{Escape}');
+  });
+  expect(screen.getByRole('dialog', { name: 'New Target' })).toBeVisible();
+  expect(within(dialog).getByLabelText('Opponent')).toHaveValue('NOP');
+  expect(within(dialog).getByLabelText('Qualifier 1 threshold percent')).toHaveValue('35');
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+  expect(screen.getByRole('dialog', { name: 'New Target' })).toBeVisible();
+  expect(within(dialog).getByLabelText('Qualifier 1 threshold percent')).toHaveValue('35');
+
+  await act(async () => {
+    pending.reject({
+      response: {
+        status: 409,
+        data: {
+          error: { code: 'operation_conflict', message: 'You already have that Target for NOP.' },
+        },
+      },
+    });
+  });
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+    'You already have that Target for NOP.',
+  );
+  expect(within(dialog).getByLabelText('Qualifier 1 threshold percent')).toHaveValue('35');
+  expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeEnabled();
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 /*
@@ -842,15 +887,36 @@ test('the arrow keys move a threshold by one percent', async () => {
   expect(threshold).toHaveValue('1');
 });
 
-test('the collection opens with an active-today line and a deliberately closed composer', async () => {
+test('the collection opens a compact dialog and resets its draft after dismissal', async () => {
   renderPage(false);
   expect(await screen.findByText('1 Target active today')).toBeVisible();
   expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Opponent')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '+ New Target' }));
-  expect(screen.getByLabelText('Opponent')).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-  expect(screen.queryByLabelText('Opponent')).not.toBeInTheDocument();
+  const trigger = screen.getByRole('button', { name: '+ New Target' });
+  trigger.focus();
+  fireEvent.click(trigger);
+  const dialog = await screen.findByRole('dialog', { name: 'New Target' });
+  expect(within(dialog).getByLabelText('Opponent')).toBeVisible();
+
+  fireEvent.change(within(dialog).getByLabelText('Opponent'), { target: { value: 'BOS' } });
+  fireEvent.change(within(dialog).getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '40' },
+  });
+  await act(async () => {
+    await userEvent.keyboard('{Escape}');
+  });
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(trigger).toHaveFocus();
+
+  fireEvent.click(trigger);
+  const reopened = await screen.findByRole('dialog', { name: 'New Target' });
+  expect(within(reopened).getByLabelText('Opponent')).toHaveValue('ATL');
+  expect(within(reopened).getByLabelText('Qualifier 1 threshold percent')).toHaveAttribute(
+    'aria-valuetext',
+    'Choose a threshold',
+  );
+  fireEvent.click(within(reopened).getByRole('button', { name: 'Cancel' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 test('cards state tonight’s fits as pills and keep criteria and logs read-only', async () => {

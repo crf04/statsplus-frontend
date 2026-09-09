@@ -14,7 +14,11 @@
 .target-capture button:focus-visible,
 .target-capture a:focus-visible,
 .target-capture select:focus-visible,
-.target-capture input:focus-visible {
+.target-capture input:focus-visible,
+.target-new-modal button:focus-visible,
+.target-new-modal a:focus-visible,
+.target-new-modal select:focus-visible,
+.target-new-modal input:focus-visible {
   outline: 2px solid var(--ct-gold);
   outline-offset: 2px;
 }
@@ -50,10 +54,10 @@
 
 /* --- the form --- */
 
-.target-new {
+.target-new-modal .modal-body {
   display: grid;
   gap: 8px;
-  margin: 18px 0 24px;
+  min-height: 0;
 }
 
 .target-form {
@@ -250,6 +254,71 @@
   color: var(--ct-dim);
   font-family: var(--ct-mono);
   font-size: 0.68rem;
+}
+
+/* The page composer uses the same accessible dialog behavior as Defense Sheet
+   capture, while keeping its wider Lab readable and its body bounded on short
+   screens. */
+.target-new-layer {
+  z-index: 2020;
+}
+
+.target-new-backdrop {
+  z-index: 2010;
+}
+
+.target-new-dialog {
+  max-width: min(760px, calc(100vw - 1rem));
+}
+
+.target-new-modal {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  text-align: left;
+}
+
+.target-new-modal .modal-header,
+.target-new-modal .modal-body {
+  border-color: var(--ct-line);
+}
+
+.target-new-modal .target-form {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 480px) {
+  .target-new-modal .target-form .target-qualifier {
+    grid-template-columns: minmax(0, 1fr) 18px;
+  }
+
+  .target-new-modal .target-form .target-qualifier > select:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .target-new-modal .target-form .target-qualifier > select:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .target-new-modal .target-form .target-remove {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+
+  .target-new-modal .target-form .target-slider-row {
+    grid-row: 3;
+    gap: 8px;
+  }
+
+  .target-new-modal .target-form .target-slider-unit {
+    flex: 0 0 auto;
+  }
 }
 
 /* --- the card grid --- */
@@ -539,11 +608,6 @@
 }
 .target-fit-pills li.is-thin {
   border-style: dashed;
-}
-.targets-page .target-new {
-  border: 1px dashed var(--ct-line-strong);
-  padding: 18px;
-  margin-bottom: 20px;
 }
 @media (max-width: 819px) {
   .target-grid {

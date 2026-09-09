@@ -48,3 +48,5 @@ Restored `TargetLab` workbench rendering on edit. Context opens inside the quali
 Completion gate: lint, formatting, 683 unit tests, production build, and 107 browser tests passed (2 deployment-only skips). No new tests for this throwaway layout correction.
 
 Independent cross-vendor review prompted the normal-scroll correction and removal of the inert edit switcher. Internal horizontal scrolling is intentional for the narrow stats table; adding a qualifier retains the established focus behavior.
+
+Follow-up review confirmed the restored workbench and unchanged create layouts. Resolved its gallery-label and CSS-specificity findings; the bounded context table scroll remains intentional.

@@ -42,6 +42,9 @@
       color: #ffb21d;
       border-color: #ffb21d;
     }
+    nav[hidden] {
+      display: none;
+    }
     nav {
       display: flex;
       gap: 8px;
@@ -98,7 +101,13 @@
       surface = 'create';
     const names = { A: 'Inline context', B: 'Side panel' };
     function render() {
-      const title = names[variant] + ' · ' + surface + ' · ' + size;
+      document.querySelector('nav[aria-label="Layout"]').hidden = surface === 'edit';
+      const title =
+        (surface === 'edit' ? 'Collapsible context + backtest' : names[variant]) +
+        ' · ' +
+        surface +
+        ' · ' +
+        size;
       document.getElementById('shot').src = surface + '-' + variant + '-' + size + '.png';
       document.getElementById('shot').alt = title;
       document.getElementById('caption').textContent = title;

@@ -376,6 +376,6 @@
   margin-bottom: 12px;
 }
 
-.target-context-edit-workbench .target-lab-left {
+.target-context-edit-workbench.target-workbench .target-lab-left {
   position: static;
 }

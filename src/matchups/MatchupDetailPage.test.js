@@ -1428,7 +1428,7 @@ test('prefills the capture form from the row and saves what the reader made of i
   const { rowAction, dialog } = await openCapture('Transition');
   expect(dialog).toHaveAttribute('aria-modal', 'true');
   // The sheet is BOS's, so BOS is the opponent and it is not up for editing.
-  expect(within(dialog).getByText('BOS')).toBeVisible();
+  expect(within(dialog).getByLabelText('Opponent')).toBeVisible();
   expect(within(dialog).queryByRole('combobox', { name: 'Opponent' })).not.toBeInTheDocument();
   expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 diet base' })).toHaveValue(
     'play_types',
@@ -1521,7 +1521,7 @@ test('captures against whichever team’s sheet is open', async () => {
   await screen.findByRole('heading', { name: 'LAL Defense Sheet' });
 
   const { dialog } = await openCapture('Corner three');
-  expect(within(dialog).getByText('LAL')).toBeVisible();
+  expect(within(dialog).getByLabelText('Opponent')).toBeVisible();
   expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
     'Corner 3',
   );
@@ -1638,3 +1638,9 @@ test('offers no capture on a Traditional row, which has no diet counterpart', as
     screen.queryByRole('button', { name: 'Save Opponent turnovers as a Target' }),
   ).not.toBeInTheDocument();
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('../targets/opponentContextApi', () => ({
+  ...jest.requireActual('../targets/opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

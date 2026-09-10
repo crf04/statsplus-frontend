@@ -1288,3 +1288,9 @@ test('leaving a page aborts its shared in-flight roster request', async () => {
   page.unmount();
   expect(signal.aborted).toBe(true);
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

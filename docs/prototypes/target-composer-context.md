@@ -1,3 +1,5 @@
+> Archived visual studies. The approved design is now implemented by the normal target form; see [production implementation](../features/target-opponent-context.md). Source variants remain on `prototype/targets-team-context` at `75faa9d`.
+
 # Opponent context while creating and editing Targets
 
 Throwaway continuation on `prototype/targets-team-context`, following the list-page exploration at `da7d22f`. No winner selected.

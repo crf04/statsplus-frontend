@@ -1,0 +1,176 @@
+/* Category → slice → opponent: one header, matching selection order. */
+.target-form .target-form-fields .target-form-card .target-qualifier {
+  border: 0;
+  border-bottom: 1px solid var(--ct-line-strong);
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  row-gap: 4px;
+  grid-template-columns: 132px minmax(0, 140px) minmax(0, 1fr) 18px;
+  align-items: center;
+  column-gap: 10px;
+}
+/* Light control boundaries without adding another card around the row. */
+.target-form .target-form-fields .target-form-card .target-qualifier > select {
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background-color: var(--ct-surface-2);
+  transition: border-color 120ms ease;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier > select:hover:not(:disabled) {
+  border-color: var(--ct-dim);
+}
+.target-form .target-form-fields .target-form-card .target-qualifier > select:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier > select:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  font: 600 0.95rem var(--ct-sans);
+  color: var(--ct-text);
+}
+.target-form .target-form-fields .target-form-card .target-qualifier > select:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.95rem;
+}
+/* Opponent evidence: a divided cell with a caption line (team · metric) above the
+   two figures, so rank and difference read as numbers rather than label text. */
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent {
+  grid-column: 3;
+  grid-row: 1;
+  border: 0;
+  border-left: 1px solid var(--ct-line-strong);
+  margin: 0;
+  padding: 1px 0 1px 12px;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  align-items: baseline;
+  gap: 4px 12px;
+  font: 11px/1.2 var(--ct-sans);
+  color: var(--ct-dim);
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-label {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 5px;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-team {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-metric {
+  display: inline;
+  margin: 0;
+  font: inherit;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-metric::before {
+  content: '· ';
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-rank b,
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-diff b {
+  font-size: 15px;
+  line-height: 1;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier-opponent-rank small {
+  color: var(--ct-dim);
+  font-weight: 500;
+  margin-left: 1px;
+}
+.target-form .target-form-fields .target-form-card .target-qualifier .target-slider-row {
+  grid-row: 2;
+  padding: 12px 0 16px;
+}
+@media (max-width: 600px) {
+  .target-form .target-form-fields .target-form-card .target-qualifier {
+    grid-template-columns: 132px minmax(0, 140px) 18px;
+  }
+  .target-form .target-form-fields .target-form-card .target-qualifier-opponent {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    border-left: 0;
+    padding: 2px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+  }
+  .target-form .target-form-fields .target-form-card .target-qualifier .target-slider-row {
+    grid-row: 3;
+  }
+}
+.target-form .target-form-fields .target-form-card .target-qualifier .target-remove {
+  grid-column: 4;
+  grid-row: 1;
+}
+@media (max-width: 600px) {
+  .target-form .target-form-fields .target-form-card .target-qualifier .target-remove {
+    grid-column: 3;
+  }
+}
+
+.target-form .target-qualifier-opponent [data-tone='low'] b {
+  color: var(--ct-miss);
+}
+.target-form .target-qualifier-opponent [data-tone='high'] b {
+  color: var(--ct-hit);
+}
+
+.target-form .target-form-row {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.target-form .target-form-row .target-form-opponent {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+.target-form .target-form-row .target-note {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.target-form .target-form-row .target-note input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.target-qualifier-opponent b {
+  font-weight: 600;
+  color: var(--ct-text);
+}
+.target-qualifier-opponent small {
+  font: inherit;
+}
+.target-qualifier-opponent-state {
+  grid-column: 1 / -1;
+}
+.target-qualifier-opponent-state button {
+  color: var(--ct-gold);
+  background: none;
+  border: 0;
+  padding: 0 4px;
+  font: inherit;
+  text-decoration: underline;
+}
+.target-workbench .target-lab-left {
+  max-width: 510px;
+  width: 100%;
+}
+html:has(.target-workbench),
+body:has(.target-workbench) {
+  background-color: var(--ct-ink);
+}

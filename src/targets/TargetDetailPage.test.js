@@ -530,3 +530,9 @@ test('the floor reports the appearances the Lab’s read kept, and dims while it
   fireEvent.change(screen.getByLabelText('Player game minutes'), { target: { value: '20' } });
   expect(screen.getByText('3 appearances kept')).toHaveClass('is-stale');
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

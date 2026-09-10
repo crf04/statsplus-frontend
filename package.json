@@ -43,7 +43,6 @@
   },
   "scripts": {
     "start": "vite",
-    "prototype:team-context": "vite --open '/targets?contextPrototype=1&variant=A&compose=1'",
     "build": "vite build",
     "preview": "vite preview",
     "test": "TZ=Asia/Tokyo jest --runInBand",

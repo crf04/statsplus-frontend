@@ -64,3 +64,9 @@ test('a pointer threshold is displayed at the precision that will be saved', asy
   expect(screen.getByRole('slider', { name: /threshold percent/ })).toHaveValue('25.9');
   expect(screen.getByText('25.9%')).toBeVisible();
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

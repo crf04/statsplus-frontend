@@ -10,6 +10,9 @@ import {
 } from './targetCatalog';
 import { useDietBaselines } from './useTargets';
 import './TargetWorkbench.css';
+import './TargetForm.css';
+import OpponentContext from './OpponentContext';
+import useOpponentContext from './useOpponentContext';
 import {
   TargetAddMenu,
   TargetBacktestRows,
@@ -104,12 +107,10 @@ export default function TargetForm({
   showActions = true,
   cancelLabel = 'Cancel',
   title,
-  highlightedQualifierIndex = null,
-  qualifierContext,
-  prototypeCardVariant,
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
+  const opponentContext = useOpponentContext(draft.opponent, draft.qualifiers);
   const patchQualifier = (index, patch) =>
     onChange({
       qualifiers: draft.qualifiers.map((qualifier, position) =>
@@ -132,7 +133,7 @@ export default function TargetForm({
 
   return (
     <form
-      className={`target-form${prototypeCardVariant ? ` target-filter-prototype-${prototypeCardVariant}` : ''}`}
+      className="target-form"
       onSubmit={(event) => {
         event.preventDefault();
         if (valid && !busy) onSubmit(request);
@@ -142,7 +143,7 @@ export default function TargetForm({
         <div className="target-form-card">
           <div className="target-form-row">
             {lockOpponent ? (
-              <p className="target-form-opponent">
+              <p className="target-form-opponent" aria-label="Opponent">
                 <span className="target-label visually-hidden">Opponent</span>
                 <b>{draft.opponent}</b>
               </p>
@@ -150,6 +151,7 @@ export default function TargetForm({
               <label className="target-form-opponent">
                 <span className="target-label visually-hidden">Opponent</span>
                 <select
+                  aria-label="Opponent"
                   value={draft.opponent}
                   onChange={(event) =>
                     onChange({
@@ -173,7 +175,7 @@ export default function TargetForm({
                 </select>
               </label>
             )}
-            {prototypeCardVariant === 'C' && noteField}
+            {noteField}
             {/* Stored titles remain authoritative until the criteria move. */}
             <div className="target-form-preview visually-hidden">
               {!title && (
@@ -188,10 +190,7 @@ export default function TargetForm({
           </div>
 
           {draft.qualifiers.map((qualifier, index) => (
-            <div
-              className={`target-qualifier${highlightedQualifierIndex === index ? ' is-highlighted' : ''}`}
-              key={index}
-            >
+            <div className="target-qualifier" key={index}>
               <select
                 aria-label={`Qualifier ${index + 1} diet base`}
                 value={qualifier.base}
@@ -239,7 +238,12 @@ export default function TargetForm({
                 leagueShare={baselines.shares[qualifier.base]?.[qualifier.sliceKey]}
                 onChange={(patch) => patchQualifier(index, patch)}
               />
-              {qualifierContext?.(qualifier)}
+              <OpponentContext
+                opponent={draft.opponent}
+                qualifier={qualifier}
+                {...opponentContext.forQualifier(qualifier)}
+                onRetry={opponentContext.retry}
+              />
               <button
                 type="button"
                 className="target-remove"
@@ -267,8 +271,6 @@ export default function TargetForm({
             onChange={(conditions) => onChange({ conditions })}
             onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
           />
-
-          {prototypeCardVariant !== 'C' && noteField}
         </div>
 
         <section className="target-form-card" aria-label="Backtest">

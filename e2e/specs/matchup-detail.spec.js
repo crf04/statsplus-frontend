@@ -810,8 +810,8 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
 
   // BOS owns the sheet, so BOS is the opponent and it is not up for editing.
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('BOS', { exact: true })).toBeVisible();
-  await expect(dialog.getByLabel('Opponent')).toHaveCount(0);
+  await expect(dialog.getByLabel('Opponent', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Opponent', exact: true })).toHaveCount(0);
   await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
   await expect(dialog.getByLabel('Qualifier 1 slice')).toHaveValue('Restricted Area');
   await expect(

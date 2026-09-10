@@ -32,7 +32,6 @@ const describeLab = ({ valid, status, pending }) => {
 export default function TargetLab({
   draft,
   workbench = false,
-  sideBacktest = false,
   immediateInitialPreview = false,
   children,
   preferences,
@@ -106,22 +105,6 @@ export default function TargetLab({
     </>
   );
 
-  if (sideBacktest) {
-    return (
-      <section
-        className="target-lab target-context-side-backtest"
-        aria-labelledby="target-lab-heading"
-      >
-        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
-          <div className="target-context-editor-column">
-            {children}
-            {evidence}
-          </div>
-          <div className="target-context-backtest-column">{games}</div>
-        </BacktestSampleProvider>
-      </section>
-    );
-  }
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
       <div className="target-lab-left">

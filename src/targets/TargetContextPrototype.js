@@ -169,6 +169,10 @@ function TargetContextLayouts({
   immediateInitialPreview = false,
   workbench = false,
 }) {
+  const [cardParams] = useSearchParams();
+  const cardVariant = ['A', 'B', 'C'].includes(cardParams.get('cardVariant'))
+    ? cardParams.get('cardVariant')
+    : 'A';
   const read = useTeamContextRead();
   const onTeamChange = useDraftOpponentContext(read, draft, onChange, lockOpponent);
   const { highlightedQualifierIndex, onUse } = useQualifierFromContext(draft, onChange);
@@ -176,6 +180,7 @@ function TargetContextLayouts({
   const form = (
     <TargetForm
       draft={draft}
+      prototypeCardVariant={cardVariant}
       title={title}
       busy={busy}
       lockOpponent={lockOpponent}
@@ -236,13 +241,19 @@ function TargetContextLayouts({
   );
 
   if (workbench) {
-    return <div className="target-workbench target-context-edit-workbench">{evidence}</div>;
+    return (
+      <div className="target-workbench target-context-edit-workbench">
+        {evidence}
+        <FilterCardPrototypeSwitcher />
+      </div>
+    );
   }
 
   return (
     <div className={`target-context-layout target-context-layout-${variant.toLowerCase()}`}>
       <div className="target-context-form-column">{evidence}</div>
       {variant === 'B' && panel}
+      <FilterCardPrototypeSwitcher />
     </div>
   );
 }
@@ -358,6 +369,7 @@ export function TargetContextSwitcher({ current, placement = 'page' }) {
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') return undefined;
     const onKeyDown = (event) => {
+      if (document.querySelector('.filter-card-prototype-switcher')) return;
       const target = event.target;
       if (
         target instanceof HTMLElement &&
@@ -407,4 +419,46 @@ export function TargetContextSwitcher({ current, placement = 'page' }) {
 
 export function TargetContextPageSwitcher({ current, visible = true }) {
   return visible ? <TargetContextSwitcher current={current} placement="page" /> : null;
+}
+
+// Three filter-card hierarchies on the existing editor and composer; cardVariant=A/B/C.
+const FILTER_CARD_KEYS = ['A', 'B', 'C'];
+function FilterCardPrototypeSwitcher() {
+  const [params, setParams] = useSearchParams();
+  const keys = FILTER_CARD_KEYS;
+  const current = keys.includes(params.get('cardVariant')) ? params.get('cardVariant') : 'A';
+  const cycle = useCallback(
+    (delta) => {
+      const next = new URLSearchParams(params);
+      next.set('cardVariant', keys[(keys.indexOf(current) + delta + 3) % 3]);
+      setParams(next, { replace: true });
+    },
+    [params, setParams, current, keys],
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined;
+    const onKey = (event) => {
+      if (!(event.target instanceof HTMLElement)) return;
+      if (event.target.closest('input, textarea, select, button, [contenteditable]')) return;
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      cycle(event.key === 'ArrowLeft' ? -1 : 1);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [cycle]);
+  if (process.env.NODE_ENV === 'production') return null;
+  return (
+    <nav className="filter-card-prototype-switcher" aria-label="Filter card prototypes">
+      <button type="button" aria-label="Previous filter card prototype" onClick={() => cycle(-1)}>
+        ←
+      </button>
+      <span>
+        {current} · {{ A: 'Stacked', B: 'Split', C: 'Compact' }[current]}
+      </span>
+      <button type="button" aria-label="Next filter card prototype" onClick={() => cycle(1)}>
+        →
+      </button>
+    </nav>
+  );
 }

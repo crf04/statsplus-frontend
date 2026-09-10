@@ -117,3 +117,33 @@ Replaced the edit accordion with a permanent team stats section below the qualif
 Verified frontend base `161ef3e` plus this correction. Full owning gate passed (lint, formatting, 683 unit tests, build, 107 browser tests; 2 deployment-only skips). Cross-vendor review confirmed layout preservation; its table-padding finding was fixed by sharing the 16px wrap rule with the side-panel variant. Cosmetic padding/background corrections passed formatting afterward.
 
 Live ORL edit at 1440×900 and 390×844: no summary toggle; all 11 play-type rows present; switching to zones renders all 10 rows and returning restores 11; desktop backtest document position/width unchanged; no document overflow; minutes filtering still updates the real preview. Same read-only local points API plus direct Railway reads described above; no account writes. Owned QA services stopped. [Full desktop screen](target-composer-context/edit-team-stats-visible-desktop.png), [phone screen](target-composer-context/edit-team-stats-visible-phone.png).
+
+### Filter card studies (2026-09-09)
+
+Question: retain all filter controls and opponent information, but make the card easier to read.
+Three throwaway layouts share the existing editor and create modal, selected with
+`cardVariant=A`, `B`, or `C` alongside `contextPrototype=1`:
+
+- A — Stacked: category and slice above the slider, opponent evidence in a footer.
+- B — Split: filter controls beside a dedicated opponent rank column; slider spans the phone card.
+- C — Compact: slice first, opponent evidence beneath it, slider last, with simple row dividers.
+
+[Desktop and phone gallery](filter-card-studies/index.html). No winner selected.
+Draft values survive switching; arrows operate the active filter-card study while
+layout A/B remains clickable in the composer. Focused inputs retain arrow-key behavior.
+Minutes remain left, backtest results right, and edit team stats permanently open.
+
+Verification against frontend base `41ec5e9`, backend `8d2cd23`:
+existing lint, formatting, 683 unit tests, build, and 107 E2E tests passed (2 deployment skips).
+Live authenticated desktop/phone checks cover all three editor layouts, category
+switching, visible rank/difference values, no horizontal overflow, and minutes changes
+through the real preview transport. Create-modal checks cover all three card layouts,
+draft preservation on switch, and slider keyboard behavior. No account writes.
+Play-type points use the local additive route with read-only production data;
+other API requests go to Railway. No API deployment or new tests in this visual study.
+Fresh Claude review prompted keyboard guards and distinct switcher placement;
+filter CSS is scoped to qualifier descendants to protect the minutes control.
+
+Followup review identified composer mobile specificity collisions; explicit variant
+grid and remove-button placement now outrank modal defaults. Recaptured all three
+phone composer variants and visually confirmed the split column and remove control.

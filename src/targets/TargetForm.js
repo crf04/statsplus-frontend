@@ -106,6 +106,7 @@ export default function TargetForm({
   title,
   highlightedQualifierIndex = null,
   qualifierContext,
+  prototypeCardVariant,
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
@@ -118,7 +119,7 @@ export default function TargetForm({
 
   return (
     <form
-      className="target-form"
+      className={`target-form${prototypeCardVariant ? ` target-filter-prototype-${prototypeCardVariant}` : ''}`}
       onSubmit={(event) => {
         event.preventDefault();
         if (valid && !busy) onSubmit(request);

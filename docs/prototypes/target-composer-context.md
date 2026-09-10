@@ -248,3 +248,18 @@ category switching, no overflow, and minutes preview. No new tests added.
 Create desktop/phone switching and keyboard-slider checks also passed. Fresh
 cross-vendor review requested a visual clearance check; desktop/phone captures
 confirm threshold values and league labels remain separate from opponent text.
+
+### Dropdown boundaries
+
+Variant C's category and subcategory selectors now have a subtle theme border,
+surface fill, 6px horizontal padding, 32px minimum height, hover feedback, and
+an explicit keyboard focus ring. Existing widths, labels, fonts, and compact
+filter spacing remain. [Desktop](filter-card-studies/dropdowns-outlined-desktop.png)
+and [phone](filter-card-studies/dropdowns-outlined-phone.png) captured live from
+base `df4e3a6`; edit layout/metric/no-overflow/minutes checks passed.
+Completion gate passed: lint, formatting, 683 unit tests, build, 107 E2E tests
+(2 deployment skips). Live create desktop/phone switching and keyboard checks pass.
+Fresh cross-vendor review called the base border redundant, but TargetWorkbench.css
+`.target-form .target-qualifier > select` overrides the page's select border and fill
+with border:0 and transparent. This scoped rule restores visible boundaries, confirmed
+in before/after live captures. Existing disabled-state dimming is preserved.

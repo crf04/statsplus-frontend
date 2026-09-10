@@ -574,6 +574,22 @@ body:has(.target-context-panel-inline) {
   align-items: center;
   column-gap: 10px;
 }
+/* Light control boundaries without adding another card around the row. */
+.target-form.target-form.target-filter-prototype-C .target-qualifier > select {
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background-color: var(--ct-surface-2);
+  transition: border-color 120ms ease;
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier > select:hover:not(:disabled) {
+  border-color: var(--ct-dim);
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier > select:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
 .target-form.target-form.target-filter-prototype-C .target-qualifier > select:first-child {
   grid-column: 1;
   grid-row: 1;

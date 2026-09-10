@@ -107,3 +107,13 @@ Integrated capture uses the actual local backend route/service/publication reade
 Backend implementation captured at `8d2cd23626a2db8bbb4db100aebb8464f6c7ad82`. Fresh cross-vendor re-review found no material issues. The new route test was mutation-verified: switching to possessions and switching to PPP each failed, then the source was restored and all 12 route tests passed. The full gate preceded the strengthened test fixture; focused route tests, frontend lint/unit/build, and coordination checks passed afterward. Browser fixture covers all eleven play-type keys. No extra prototype frontend tests added. Owned Vite and read-only local backend stopped; no production deployment performed. [Updated points screenshot](target-composer-context/edit-playtype-points-allowed.png).
 
 Rank-label follow-up: user requested “just do standard 1-30”. Inline cards now show `#N/30` without “rank · 1 lowest”; the ranking and missing-value behavior are unchanged. Review suggested retaining visible direction text; this was rejected because it directly conflicts with the requested wording change.
+
+## Always-visible team stats
+
+User (unedited): “show me the screen, i dont really want the team stats folded up like that, i think theres a better way to show it, i do like the current structure thouhg”.
+
+Replaced the edit accordion with a permanent team stats section below the qualifiers and minutes control. Category tabs and all rows remain rendered; the right-side backtest layout stays intact. Create modal variants retain their prior behavior. Added a prototype-scoped page background so long captures and the full scrolling surface have a continuous dark background.
+
+Verified frontend base `161ef3e` plus this correction. Full owning gate passed (lint, formatting, 683 unit tests, build, 107 browser tests; 2 deployment-only skips). Cross-vendor review confirmed layout preservation; its table-padding finding was fixed by sharing the 16px wrap rule with the side-panel variant. Cosmetic padding/background corrections passed formatting afterward.
+
+Live ORL edit at 1440×900 and 390×844: no summary toggle; all 11 play-type rows present; switching to zones renders all 10 rows and returning restores 11; desktop backtest document position/width unchanged; no document overflow; minutes filtering still updates the real preview. Same read-only local points API plus direct Railway reads described above; no account writes. Owned QA services stopped. [Full desktop screen](target-composer-context/edit-team-stats-visible-desktop.png), [phone screen](target-composer-context/edit-team-stats-visible-phone.png).

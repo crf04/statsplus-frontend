@@ -93,19 +93,20 @@ function ContextPanel({
   onTeamChange,
   onUse,
   collapsible = false,
+  embedded = false,
   open = true,
   onToggle,
 }) {
   const panelBody = (
     <div className="target-context-panel-body">
-      {!collapsible && (
+      {!collapsible && !embedded && (
         <p className="target-context-opponent-line">
           <b>{codeForTeam(read.selectedTeam) || '—'}</b> opponent context · {read.config.label}
         </p>
       )}
       <ReadControls
         read={read}
-        compact={collapsible}
+        compact={collapsible || embedded}
         lockTeam={lockOpponent}
         hideTeam
         onTeamChange={onTeamChange}
@@ -114,6 +115,15 @@ function ContextPanel({
       <StatsSurface read={read} mode="compact" onUse={onUse} />
     </div>
   );
+
+  if (embedded) {
+    return (
+      <section className="target-context-panel target-context-panel-inline" aria-label="Team stats">
+        <h2>{codeForTeam(read.selectedTeam) || '—'} team stats</h2>
+        {panelBody}
+      </section>
+    );
+  }
 
   if (collapsible) {
     return (
@@ -194,7 +204,8 @@ function TargetContextLayouts({
       lockOpponent={lockOpponent}
       onTeamChange={onTeamChange}
       onUse={onUse}
-      collapsible={workbench || variant === 'A'}
+      embedded={workbench}
+      collapsible={!workbench && variant === 'A'}
       open={contextOpen}
       onToggle={setContextOpen}
     />

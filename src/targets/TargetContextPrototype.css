@@ -243,7 +243,8 @@
   gap: 4px 10px;
 }
 
-.target-context-panel-b .team-context-compact-wrap {
+.target-context-panel-b .team-context-compact-wrap,
+.target-context-panel-inline .team-context-compact-wrap {
   margin: 0 -16px -16px;
   padding: 0 16px 16px;
 }
@@ -433,4 +434,27 @@
   display: block;
   margin-top: 4px;
   font: inherit;
+}
+
+.target-context-panel-inline {
+  padding: 16px;
+}
+.target-context-panel-inline > h2 {
+  margin: 0 0 14px;
+  font: 600 1rem var(--ct-sans);
+  color: var(--ct-text);
+}
+.target-context-panel-inline .team-context-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.target-context-panel-inline .target-context-panel-body {
+  padding: 0;
+}
+
+html:has(.target-context-panel-inline),
+body:has(.target-context-panel-inline) {
+  background-color: var(--ct-ink);
 }

@@ -277,3 +277,24 @@ pass (2 deployment skips). Live edit/create desktop and phone checks pass. Fresh
 cross-vendor review confirmed state/placement isolation; visual inspection confirms
 the phone input has ample space and the desktop border matches the requested
 structured controls. Owned QA services stopped.
+
+### Backtest below the filter card
+
+Supersedes the side-backtest/open-team-stats decision on the edit page: remove the
+full team-stats panel and place summary, hit grid, and games below the editor.
+The editor remains capped at its existing 510px desktop width to preserve the
+current card format. Backtest results use the available page width. Inline opponent
+context and minutes remain in the editor; create modal layouts are unchanged.
+[Desktop](filter-card-studies/backtest-below-card-desktop.png) ·
+[Phone](filter-card-studies/backtest-below-card-phone.png).
+
+Live authenticated checks confirm results below editor, full stats absent, inline
+opponent figures retained, no overflow, reachable summary/games, and a working
+minutes-preview request. Root background is scoped to the edit workbench now that
+its old team-panel anchor has been removed.
+Completion gate from `7979ab5`: lint, formatting, 683 unit tests, build, and
+107 E2E tests pass (2 deployment skips). Fresh cross-vendor review confirmed
+placement/card isolation. Its root-background finding is rebutted: this preserves
+the existing ink background formerly activated by the removed inline panel;
+scoping only to the workbench previously left white below the viewport in full-page
+captures. The new selector remains conditional on this prototype workbench.

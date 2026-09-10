@@ -226,10 +226,7 @@ function TargetContextLayouts({
       onPreferencesChange={onPreferencesChange}
     >
       {workbench ? (
-        <>
-          {form}
-          {panel}
-        </>
+        form
       ) : variant === 'A' ? (
         <div className="target-context-a-form-context">
           {panel}

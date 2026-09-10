@@ -379,7 +379,7 @@
 
 .target-workbench.target-context-edit-workbench .target-context-side-backtest {
   display: grid;
-  grid-template-columns: minmax(360px, 5fr) minmax(0, 6fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 36px;
   align-items: start;
 }
@@ -736,4 +736,13 @@ body:has(.target-context-panel-inline) {
   flex: 1;
   min-width: 0;
   width: 100%;
+}
+
+.target-context-edit-workbench .target-context-editor-column {
+  max-width: 510px;
+  width: 100%;
+}
+html:has(.target-context-edit-workbench),
+body:has(.target-context-edit-workbench) {
+  background-color: var(--ct-ink);
 }

@@ -257,9 +257,9 @@ export default function TargetForm({
           <label className="target-note">
             <span className="target-label">Why</span>
             <input
-              aria-label="Why · optional, never the title"
+              aria-label="Why · optional"
               value={draft.note}
-              placeholder="optional, never the title"
+              placeholder="optional"
               maxLength={280}
               onChange={(event) => onChange({ note: event.target.value })}
             />

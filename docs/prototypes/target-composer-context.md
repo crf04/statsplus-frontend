@@ -232,3 +232,19 @@ figures change color; signs, /30, metric labels and vs-average text remain.
 Tooltips explain the thresholds. [Desktop](filter-card-studies/opponent-colored-values-desktop.png)
 and [phone](filter-card-studies/opponent-colored-values-phone.png) captured with
 live authenticated ORL data; existing layout/metric/minutes checks pass.
+
+### Shorter filters and simpler note copy
+
+Variant C reduces vertical padding, row gaps, slider padding, and spacing between
+qualifiers. The threshold and league marker retain their labels; opponent figures
+and selectors are unchanged. Note placeholder now says "optional", with matching
+accessible label and existing test selectors updated.
+[Desktop](filter-card-studies/filters-compressed-desktop.png) ·
+[Phone](filter-card-studies/filters-compressed-phone.png).
+
+Base `73038f1`: lint, formatting, 683 unit tests, build, and 107 E2E tests passed
+(2 deployment skips). Live edit desktop/phone checks passed for layout, metrics,
+category switching, no overflow, and minutes preview. No new tests added.
+Create desktop/phone switching and keyboard-slider checks also passed. Fresh
+cross-vendor review requested a visual clearance check; desktop/phone captures
+confirm threshold values and league labels remain separate from opponent text.

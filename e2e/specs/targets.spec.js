@@ -9,7 +9,7 @@ const composeTarget = async (page, { opponent, base = 'shot_zones', slice, perce
   await page.getByLabel('Qualifier 1 diet base').selectOption(base);
   await page.getByLabel('Qualifier 1 slice').selectOption(slice);
   await setTargetThreshold(page, percent);
-  if (note) await page.getByLabel('Why · optional, never the title').fill(note);
+  if (note) await page.getByLabel('Why · optional').fill(note);
 };
 const saveTarget = async (page) => {
   await page.getByRole('button', { name: 'Save Target' }).click();

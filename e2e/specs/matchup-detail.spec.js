@@ -839,7 +839,7 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   // The prefill is a starting point: the threshold is the reader's to move.
   await rowAction.click();
   await setTargetThreshold(dialog, 26);
-  await dialog.getByLabel('Why · optional, never the title').fill('Rim leaks against big lineups.');
+  await dialog.getByLabel('Why · optional').fill('Rim leaks against big lineups.');
   await dialog.getByRole('button', { name: 'Save Target' }).click();
 
   // The saved draft is the record, and opens on its own page under the title

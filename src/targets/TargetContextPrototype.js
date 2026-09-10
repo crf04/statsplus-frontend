@@ -177,6 +177,7 @@ function TargetContextLayouts({
           key={`${draft.opponent}:${qualifier.base}`}
           team={read.teams.find((team) => codeForTeam(team) === draft.opponent)}
           opponent={draft.opponent}
+          teams={read.teams}
           teamsLoading={read.teamsState === 'loading'}
           qualifier={qualifier}
         />

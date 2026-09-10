@@ -9,6 +9,7 @@ import {
   formatQualifier,
   NBA_TEAM_TRICODES,
   TARGET_SLICES,
+  targetSliceLabel,
 } from './targetCatalog';
 import './TeamContextPrototype.css';
 
@@ -1017,52 +1018,99 @@ export default function TeamContextPrototype({
   );
 }
 
-// Inline evidence is read independently of the browsing panel's selected category.
-export function QualifierOpponentContext({ team, opponent, qualifier, teamsLoading }) {
+// Share whole-season profile reads across cards in this throwaway prototype.
+const opponentProfiles = new Map();
+const readOpponentProfile = (team, category) => {
+  const key = `${category}:${team}`;
+  if (!opponentProfiles.has(key)) {
+    opponentProfiles.set(
+      key,
+      apiClient
+        .get(getApiUrl('TEAM_STATS'), {
+          params: { team, category },
+        })
+        .then(({ data }) => parseStats(data))
+        .catch((error) => {
+          opponentProfiles.delete(key);
+          throw error;
+        }),
+    );
+  }
+  return opponentProfiles.get(key);
+};
+
+export const qualifierVolumeRow = (qualifier, profile, leagueProfiles) => {
+  const { base, sliceKey } = qualifier;
+  if (base === 'shot_types') {
+    // Rank summed attempts across teams; component ranks cannot be added or averaged.
+    const attempts = (rows) => {
+      const row = rows?.find((item) => item.ShootingType === sliceKey);
+      return Number.isFinite(row?.FG2A) && Number.isFinite(row?.FG3A) ? row.FG2A + row.FG3A : null;
+    };
+    const value = attempts(profile);
+    const values = leagueProfiles?.map(attempts);
+    if (value === null || values?.length !== 30 || values.some((item) => item === null))
+      return null;
+    const average = values.reduce((sum, item) => sum + item, 0) / values.length;
+    return {
+      value,
+      rank: 1 + values.filter((item) => item < value).length,
+      vsAverage: average > 0 ? (value / average - 1) * 100 : null,
+    };
+  }
+  const data = profile?.[0];
+  if (base === 'play_types') {
+    // The current profile endpoint publishes PPP only. Never substitute it for possessions.
+    return null;
+  }
+  const key = base === 'shot_zones' ? `${sliceKey}_OPP_FGA` : sliceKey;
+  if (!Number.isFinite(data?.[key])) return null;
+  return {
+    value: data[key],
+    rank: data[`${key}_RANK`],
+    vsAverage: base === 'assist_locations' ? (data[key] - 1) * 100 : data[`${key}_vs_avg_pct`],
+  };
+};
+
+// Inline evidence follows the player slice, independently of the browsing panel.
+export function QualifierOpponentContext({ team, teams, opponent, qualifier, teamsLoading }) {
   const category = {
     play_types: 'Playtypes',
     shot_zones: 'Zone Shooting',
     assist_locations: 'Assists',
     shot_types: 'Shooting Type',
   }[qualifier.base];
-  const [profile, setProfile] = useState(null);
+  const [profiles, setProfiles] = useState(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (!team || !category) return undefined;
-    const controller = new AbortController();
-    setProfile(null);
+    if (!team || !category || category === 'Playtypes') return undefined;
+    let cancelled = false;
+    setProfiles(null);
     setFailed(false);
-    apiClient
-      .get(getApiUrl('TEAM_STATS'), {
-        params: { team, category },
-        signal: controller.signal,
+    const names = category === 'Shooting Type' ? teams : [team];
+    Promise.all(names.map((name) => readOpponentProfile(name, category)))
+      .then((data) => {
+        if (!cancelled) setProfiles({ profile: data[names.indexOf(team)], league: data });
       })
-      .then(({ data }) => setProfile(parseStats(data)))
-      .catch((error) => {
-        if (!isRequestCancelled(error)) setFailed(true);
+      .catch(() => {
+        if (!cancelled) setFailed(true);
       });
-    return () => controller.abort();
-  }, [team, category]);
-  const row =
-    category &&
-    statRowsFor(category, profile).find(
-      (item) =>
-        item.targetBase === qualifier.base &&
-        item.targetSlice === qualifier.sliceKey &&
-        (qualifier.base !== 'shot_types' || item.rawKey === 'PTS'),
-    );
+    return () => {
+      cancelled = true;
+    };
+  }, [team, teams, category]);
+  const row = qualifierVolumeRow(qualifier, profiles?.profile, profiles?.league);
   const metric =
     qualifier.base === 'play_types'
-      ? 'PPP allowed'
-      : qualifier.base === 'shot_types'
-        ? 'Points allowed /48'
-        : qualifier.base === 'shot_zones'
-          ? 'FGA allowed /48'
-          : 'Assists allowed';
+      ? 'Possessions allowed /48'
+      : qualifier.base === 'assist_locations'
+        ? 'Assists allowed'
+        : 'FGA allowed /48';
   return (
     <div className="target-qualifier-opponent" aria-label={`${opponent} opponent context`}>
       <span className="target-qualifier-opponent-label">
-        {opponent} · {metric}
+        {opponent} · {targetSliceLabel(qualifier.base, qualifier.sliceKey)}
+        <small className="target-qualifier-opponent-metric">{metric}</small>
       </span>
       {row ? (
         <>
@@ -1070,14 +1118,16 @@ export function QualifierOpponentContext({ team, opponent, qualifier, teamsLoadi
             <b>{Number.isFinite(row.rank) ? `#${Math.round(row.rank)}` : '—'}</b> rank · 1 lowest
           </span>
           <span>
-            <b>{formatLeagueComparison(category, row)}</b> vs avg
+            <b>{formatSignedPercent(row.vsAverage)}</b> vs avg
           </span>
         </>
       ) : (
         <span>
-          {failed || profile || (!team && !teamsLoading)
-            ? 'Context unavailable'
-            : 'Loading context…'}
+          {qualifier.base === 'play_types'
+            ? 'Possession data unavailable'
+            : failed || profiles || (!team && !teamsLoading)
+              ? 'Context unavailable'
+              : 'Loading context…'}
         </span>
       )}
     </div>

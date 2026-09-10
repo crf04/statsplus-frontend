@@ -428,3 +428,9 @@
     flex: 1 0 100%;
   }
 }
+
+.target-qualifier-opponent-metric {
+  display: block;
+  margin-top: 4px;
+  font: inherit;
+}

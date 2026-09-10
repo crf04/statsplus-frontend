@@ -74,3 +74,22 @@ Verified at frontend base `66b28ce` plus these changes in the prototype worktree
 Full completion gate passed: lint, formatting, 683 unit tests, production build, 107 browser tests (2 deployment-only skips). Both create variants were captured with live authenticated data at desktop and phone widths. Phone card footers keep rank and difference together beneath the metric label. QA services stopped after capture.
 
 Cross-vendor review confirmed the requested layout and qualifier mapping. Fixed unavailable-team loading, preserved category data when changing a slice, pinned shot-type evidence to PTS, and made rank direction visible. Duplicate category reads across cards remain a deliberate throwaway-prototype limitation; request sharing is deferred.
+
+## Match the player's volume stat to opponent volume
+
+User clarification (unedited): “the catch & shoot should use ORL catch and shoot against stats, map each player stat to the opponent stat” → “Attempts allowed, matching the player stat”.
+
+| Player qualifier           | Opponent comparison for the same slice       | Current source                                                                          |
+| -------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Shot type FGA share        | Two-point + three-point attempts allowed /48 | `Shooting Type`, matching `ShootingType`, sum `FG2A + FG3A`                             |
+| Shot zone FGA share        | Zone FGA allowed /48                         | `Zone Shooting`, matching zone `_OPP_FGA`                                               |
+| Assist location share      | Assists allowed in that location             | `Assists`, matching location's volume index and rank                                    |
+| Play type possession share | Possessions allowed in that play type        | Unavailable: current Team Stats API exposes PPP only; no efficiency rank is substituted |
+
+Shot-type ranking uses all 30 teams' summed attempts, with ascending competition rank and percentage difference from the mean of those totals. Never sums or averages component ranks, differences, or point totals. Missing components or incomplete league coverage make the comparison unavailable. Profile reads are shared in memory across cards. Each footer names the opponent and exact player slice.
+
+Verified at frontend `595bb54` plus this change. Authenticated live create A/B and edit captures at 1440×900 and 390×844 pass; left minutes control updates the actual preview transport, right results stay in place, no account writes or document overflow. Full owning gate passes: lint, formatting, 683 unit tests, build, 107 browser tests (2 deployment-only skips). QA services stopped. [Fresh attempts-mapping screenshot](target-composer-context/edit-opponent-attempts-mapping.png).
+
+Production Team Stats contract inspected at backend reference `81cefe05915b9f931eaa26937c7fae560551bc98` and confirmed against live responses. No API or backend changes made. Play-type volume remains an explicit data limitation of this prototype.
+
+Independent read of all 30 live shooting profiles confirmed ORL Catch & Shoot: 24.7745839637 FGA/48, league mean 28.0072707804, ascending rank 1, relative difference −11.5423128590%. Cross-vendor review confirmed mappings and math; no blocking findings. Complete 30-team coverage is intentional for a league rank, rather than ranking a partial sample. Opponent names come directly from the same team list after tricode matching. The prototype's shared whole-season reads remain fixed until page reload; they are not a production freshness mechanism. The named slice plus FGA label identifies the exact attempt population; the card intentionally displays rank/difference as requested, not another raw-value tile.

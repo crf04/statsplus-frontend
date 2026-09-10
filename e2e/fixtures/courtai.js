@@ -2549,6 +2549,30 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/teams/stats') {
+      if (url.searchParams.get('category') === 'Playtype Points') {
+        await route.fulfill({
+          json: Object.fromEntries(
+            [
+              'Transition',
+              'Isolation',
+              'PRBallHandler',
+              'PRRollMan',
+              'Spotup',
+              'Cut',
+              'Handoff',
+              'OffScreen',
+              'Postup',
+              'OffRebound',
+              'Misc',
+            ].flatMap((key) => [
+              [key, 28],
+              [`${key}_RANK`, 12],
+              [`${key}_vs_avg_pct`, -5.1],
+            ]),
+          ),
+        });
+        return;
+      }
       await route.fulfill({ json: traditionalTeamStats });
       return;
     }

@@ -56,9 +56,9 @@ const TEAM_CODES = {
 const CATEGORY_CONFIG = {
   Playtypes: {
     label: 'Play types',
-    description: 'Points per possession vs league mean',
-    unit: 'league index',
-    note: '1.00× = league mean.',
+    description: 'Opponent points by play type',
+    unit: 'points allowed /48',
+    note: 'Per 48; rank 1 = least allowed.',
     rows: [
       ['Transition', 'Transition', 'play_types', 'Transition'],
       ['Isolation', 'Isolation', 'play_types', 'Isolation'],
@@ -233,19 +233,19 @@ export const statRowsFor = (category, payload) => {
 };
 
 export const formatValue = (category, row) => {
-  if (category === 'Playtypes' || category === 'Assists') return `${formatNumber(row.value, 2)}×`;
+  if (category === 'Assists') return `${formatNumber(row.value, 2)}×`;
   if (row.rawKey.endsWith('_PCT')) return formatPercent(row.value);
   return formatNumber(row.value, 1);
 };
 
 export const unitForRow = (category, row) => {
-  if (category === 'Playtypes' || category === 'Assists') return 'index';
+  if (category === 'Assists') return 'index';
   if (row.rawKey.endsWith('_PCT')) return '%';
   return row.unit || '/48';
 };
 
 export const formatLeagueComparison = (category, row) =>
-  category === 'Playtypes' || category === 'Assists'
+  category === 'Assists'
     ? formatSignedPercent((row.value - 1) * 100)
     : formatSignedPercent(row.vsAverage);
 
@@ -303,7 +303,10 @@ export function useTeamContextRead() {
     setStats([]);
     setStatsState('loading');
     setStatsError(null);
-    const params = { category, team: selectedTeam };
+    const params = {
+      category: category === 'Playtypes' ? 'Playtype Points' : category,
+      team: selectedTeam,
+    };
     apiClient
       .get(getApiUrl('TEAM_STATS'), { params, signal: controller.signal })
       .then((response) => {
@@ -1059,10 +1062,6 @@ export const qualifierVolumeRow = (qualifier, profile, leagueProfiles) => {
     };
   }
   const data = profile?.[0];
-  if (base === 'play_types') {
-    // The current profile endpoint publishes PPP only. Never substitute it for possessions.
-    return null;
-  }
   const key = base === 'shot_zones' ? `${sliceKey}_OPP_FGA` : sliceKey;
   if (!Number.isFinite(data?.[key])) return null;
   return {
@@ -1075,7 +1074,7 @@ export const qualifierVolumeRow = (qualifier, profile, leagueProfiles) => {
 // Inline evidence follows the player slice, independently of the browsing panel.
 export function QualifierOpponentContext({ team, teams, opponent, qualifier, teamsLoading }) {
   const category = {
-    play_types: 'Playtypes',
+    play_types: 'Playtype Points',
     shot_zones: 'Zone Shooting',
     assist_locations: 'Assists',
     shot_types: 'Shooting Type',
@@ -1083,7 +1082,7 @@ export function QualifierOpponentContext({ team, teams, opponent, qualifier, tea
   const [profiles, setProfiles] = useState(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (!team || !category || category === 'Playtypes') return undefined;
+    if (!team || !category) return undefined;
     let cancelled = false;
     setProfiles(null);
     setFailed(false);
@@ -1102,7 +1101,7 @@ export function QualifierOpponentContext({ team, teams, opponent, qualifier, tea
   const row = qualifierVolumeRow(qualifier, profiles?.profile, profiles?.league);
   const metric =
     qualifier.base === 'play_types'
-      ? 'Possessions allowed /48'
+      ? 'Points allowed /48'
       : qualifier.base === 'assist_locations'
         ? 'Assists allowed'
         : 'FGA allowed /48';
@@ -1123,11 +1122,9 @@ export function QualifierOpponentContext({ team, teams, opponent, qualifier, tea
         </>
       ) : (
         <span>
-          {qualifier.base === 'play_types'
-            ? 'Possession data unavailable'
-            : failed || profiles || (!team && !teamsLoading)
-              ? 'Context unavailable'
-              : 'Loading context…'}
+          {failed || profiles || (!team && !teamsLoading)
+            ? 'Context unavailable'
+            : 'Loading context…'}
         </span>
       )}
     </div>

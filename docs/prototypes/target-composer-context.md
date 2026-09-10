@@ -196,3 +196,29 @@ Base `ab83196`; lint, formatting, 683 unit tests, build, and 107 E2E tests pass
 opponent-context read. Fresh review's phone-overflow concern was checked in Chromium:
 a 250px grid resolves to 132px/80px/18px with scrollWidth 250, confirming the
 minmax(0,140px) subcategory track shrinks. No category labels are abbreviated.
+
+### Opponent cell refinement
+
+User (unedited): “offload to fable 5.1 to improve the design of just the opponent card”.
+
+Only the opponent block in prototype C changed. It is now a divided cell beside the
+selectors: a caption line names the opponent and metric unit (`ORL · FGA allowed /48`),
+and a figures line below carries the rank and signed difference at 15px, with `/30` and
+`vs avg` dimmed so the numbers lead. Phones keep the caption and figures on one wrapping
+line beneath the selectors. Selectors, widths, typography, minutes placement, backtest
+column, and team stats are unchanged; variants A and B render as before. No data or
+mapping changes. [Edit desktop](filter-card-studies/opponent-cell-desktop.png) ·
+[edit phone](filter-card-studies/opponent-cell-phone.png) ·
+[create desktop](filter-card-studies/opponent-cell-create-desktop.png) ·
+[create phone](filter-card-studies/opponent-cell-create-phone.png).
+
+Base `47efde5`, backend `8d2cd23`. Live authenticated edit and create captures at
+1440×900 and 390×844 passed the existing harness checks: both cards show rank and
+difference, shot-type metric label, minutes left, backtest beside the editor and not
+displaced, no overflow, live minutes preview, zero account writes. Play-type points used
+the local read-only additive route; other requests went to Railway. Completion gate:
+lint, formatting, 683 unit tests, build, 107 E2E (2 deployment-only skips). No new tests
+for this visual change. Owned QA services stopped.
+Cross-vendor review found one material issue: splitting the rank into `#N` and `/30`
+left variant B's suffix at 11px instead of 23px. Fixed by widening B's size rule; live
+A and B recaptures match their earlier renderings. No other findings.

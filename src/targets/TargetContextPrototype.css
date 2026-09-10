@@ -419,8 +419,10 @@
 .target-qualifier-opponent-label {
   flex: 1 1 150px;
 }
-.target-qualifier-opponent b {
+.target-qualifier-opponent b,
+.target-qualifier-opponent-rank small {
   color: var(--ct-text);
+  font: inherit;
   font-weight: 600;
 }
 
@@ -556,7 +558,7 @@ body:has(.target-context-panel-inline) {
 .target-form.target-form.target-filter-prototype-B
   .target-qualifier-opponent
   > span:nth-child(2)
-  b {
+  :is(b, small) {
   font-size: 23px;
 }
 /* Category → slice → opponent: one header, matching selection order. */
@@ -583,25 +585,52 @@ body:has(.target-context-panel-inline) {
   grid-row: 1;
   font-size: 0.95rem;
 }
+/* Opponent evidence: a divided cell with a caption line (team · metric) above the
+   two figures, so rank and difference read as numbers rather than label text. */
 .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent {
   grid-column: 3;
   grid-row: 1;
   border: 0;
+  border-left: 1px solid var(--ct-line-strong);
   margin: 0;
-  padding: 0;
+  padding: 1px 0 1px 12px;
   display: grid;
-  grid-template-columns: auto auto auto;
-  gap: 5px 8px;
+  grid-template-columns: auto auto;
+  justify-content: start;
   align-items: baseline;
-  font: 11px var(--ct-sans);
+  gap: 4px 12px;
+  font: 11px/1.2 var(--ct-sans);
 }
 .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-label {
-  display: contents;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 5px;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-team {
+  color: var(--ct-text);
+  font-weight: 600;
 }
 .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-metric {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  display: inline;
   margin: 0;
+  font: inherit;
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-metric::before {
+  content: '· ';
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-rank b,
+.target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-diff b {
+  font-size: 15px;
+  line-height: 1;
+}
+.target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-rank small {
+  color: var(--ct-dim);
+  font-weight: 500;
+  margin-left: 1px;
 }
 .target-form.target-form.target-filter-prototype-C .target-qualifier .target-slider-row {
   grid-row: 2;
@@ -614,11 +643,11 @@ body:has(.target-context-panel-inline) {
   .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent {
     grid-column: 1 / 3;
     grid-row: 2;
+    border-left: 0;
+    padding: 2px 0 0;
     display: flex;
     flex-wrap: wrap;
-  }
-  .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent-metric {
-    order: 1;
+    gap: 4px 14px;
   }
   .target-form.target-form.target-filter-prototype-C .target-qualifier .target-slider-row {
     grid-row: 3;

@@ -1115,16 +1115,26 @@ export function QualifierOpponentContext({
   return (
     <div className="target-qualifier-opponent" aria-label={`${opponent} opponent context`}>
       <span className="target-qualifier-opponent-label">
-        {opponent}
+        <span className="target-qualifier-opponent-team">{opponent}</span>
         {!compact && ` · ${targetSliceLabel(qualifier.base, qualifier.sliceKey)}`}
         <small className="target-qualifier-opponent-metric">{metric}</small>
       </span>
       {row ? (
         <>
-          <span title="League rank: 1 is lowest, 30 is highest">
-            <b>{Number.isFinite(row.rank) ? `#${Math.round(row.rank)}/30` : '—'}</b>
+          <span
+            className="target-qualifier-opponent-rank"
+            title="League rank: 1 is lowest, 30 is highest"
+          >
+            {Number.isFinite(row.rank) ? (
+              <>
+                <b>{`#${Math.round(row.rank)}`}</b>
+                <small>/30</small>
+              </>
+            ) : (
+              <b>—</b>
+            )}
           </span>
-          <span>
+          <span className="target-qualifier-opponent-diff">
             <b>{formatSignedPercent(row.vsAverage)}</b> vs avg
           </span>
         </>

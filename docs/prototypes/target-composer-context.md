@@ -169,3 +169,17 @@ state regressions. Retained the phone's inline metric intentionally: the user's
 request is compact presentation, and live 390px captures show all comparison data
 without overflow. The review's proposed mandatory phone metric line was not a user
 requirement. Opponents use fixed three-letter tricodes, not long team names.
+
+### Aligned typography
+
+The category inherited legacy uppercase monospace styling. Prototype C now uses
+matching sans-serif, size, weight, and casing for both selectors, and sans-serif
+for opponent evidence. Compact category names (Shots, Plays, Zones, Assists) keep
+the 82px dropdown readable. Fresh captures: [desktop](filter-card-studies/filter-aligned-font-desktop.png)
+and [phone](filter-card-studies/filter-aligned-font-phone.png).
+
+Verified from base `3acd718`: live desktop/phone edit and create checks, lint,
+formatting, unit tests, build. Initial E2E run had 102 passes and five Target
+failures during a source hot reload; all 16 Target tests passed on rerun after
+edits stopped (two deployment-only skips in the full suite). Cross-vendor CSS
+review found no material issues. Screenshot inspection prompted the short labels.

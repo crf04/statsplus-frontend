@@ -190,7 +190,14 @@ export default function TargetForm({
               >
                 {TARGET_BASES.map((base) => (
                   <option key={base.key} value={base.key}>
-                    {base.label}
+                    {prototypeCardVariant === 'C'
+                      ? {
+                          shot_types: 'Shots',
+                          play_types: 'Plays',
+                          shot_zones: 'Zones',
+                          assist_locations: 'Assists',
+                        }[base.key]
+                      : base.label}
                   </option>
                 ))}
               </select>

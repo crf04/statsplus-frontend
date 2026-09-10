@@ -263,3 +263,17 @@ Fresh cross-vendor review called the base border redundant, but TargetWorkbench.
 `.target-form .target-qualifier > select` overrides the page's select border and fill
 with border:0 and transparent. This scoped rule restores visible boundaries, confirmed
 in before/after live captures. Existing disabled-state dimming is preserved.
+
+### Why beside the opponent
+
+Prototype C moves the existing Why note field into the top row beside the team
+name/picker in edit and create. One field retains the same draft binding, optional
+label, maximum length and disabled state. The former bottom placement remains
+for other variants and the production form. Header flex sizing keeps the input
+beside the team at phone width. [Desktop](filter-card-studies/why-next-to-team-desktop.png)
+and [phone](filter-card-studies/why-next-to-team-phone.png) captured with live data.
+Verified from `f914e4a`: lint, formatting, 683 unit tests, build, and 107 E2E tests
+pass (2 deployment skips). Live edit/create desktop and phone checks pass. Fresh
+cross-vendor review confirmed state/placement isolation; visual inspection confirms
+the phone input has ample space and the desktop border matches the requested
+structured controls. Owned QA services stopped.

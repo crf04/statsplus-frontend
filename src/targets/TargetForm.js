@@ -117,6 +117,19 @@ export default function TargetForm({
       ),
     });
 
+  const noteField = (
+    <label className="target-note">
+      <span className="target-label">Why</span>
+      <input
+        aria-label="Why · optional"
+        value={draft.note}
+        placeholder="optional"
+        maxLength={280}
+        onChange={(event) => onChange({ note: event.target.value })}
+      />
+    </label>
+  );
+
   return (
     <form
       className={`target-form${prototypeCardVariant ? ` target-filter-prototype-${prototypeCardVariant}` : ''}`}
@@ -160,6 +173,7 @@ export default function TargetForm({
                 </select>
               </label>
             )}
+            {prototypeCardVariant === 'C' && noteField}
             {/* Stored titles remain authoritative until the criteria move. */}
             <div className="target-form-preview visually-hidden">
               {!title && (
@@ -254,16 +268,7 @@ export default function TargetForm({
             onQualifier={() => onChange({ qualifiers: [...draft.qualifiers, blankQualifier()] })}
           />
 
-          <label className="target-note">
-            <span className="target-label">Why</span>
-            <input
-              aria-label="Why · optional"
-              value={draft.note}
-              placeholder="optional"
-              maxLength={280}
-              onChange={(event) => onChange({ note: event.target.value })}
-            />
-          </label>
+          {prototypeCardVariant !== 'C' && noteField}
         </div>
 
         <section className="target-form-card" aria-label="Backtest">

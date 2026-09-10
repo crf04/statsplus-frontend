@@ -715,3 +715,25 @@ body:has(.target-context-panel-inline) {
 .target-form .target-qualifier-opponent [data-tone='high'] b {
   color: var(--ct-hit);
 }
+
+.target-form.target-filter-prototype-C .target-form-row {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.target-form.target-filter-prototype-C .target-form-row .target-form-opponent {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+.target-form.target-filter-prototype-C .target-form-row .target-note {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.target-form.target-filter-prototype-C .target-form-row .target-note input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}

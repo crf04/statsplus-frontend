@@ -810,8 +810,8 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
 
   // BOS owns the sheet, so BOS is the opponent and it is not up for editing.
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('BOS', { exact: true })).toBeVisible();
-  await expect(dialog.getByLabel('Opponent')).toHaveCount(0);
+  await expect(dialog.getByLabel('Opponent', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Opponent', exact: true })).toHaveCount(0);
   await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
   await expect(dialog.getByLabel('Qualifier 1 slice')).toHaveValue('Restricted Area');
   await expect(
@@ -839,7 +839,7 @@ test('@critical a Defense Sheet row becomes a Target the Targets page then holds
   // The prefill is a starting point: the threshold is the reader's to move.
   await rowAction.click();
   await setTargetThreshold(dialog, 26);
-  await dialog.getByLabel('Why · optional, never the title').fill('Rim leaks against big lineups.');
+  await dialog.getByLabel('Why · optional').fill('Rim leaks against big lineups.');
   await dialog.getByRole('button', { name: 'Save Target' }).click();
 
   // The saved draft is the record, and opens on its own page under the title

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Targets · team context prototypes</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0e0c07;
+      color: #ece7d8;
+      font: 15px system-ui;
+    }
+    header {
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      background: #0e0c07;
+      border-bottom: 1px solid #403a2c;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #b6ad98;
+      margin: 8px 0;
+    }
+    button,
+    a {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      background: #17140d;
+      border: 1px solid #50452f;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button[aria-pressed='true'] {
+      color: #ffb21d;
+      border-color: #ffb21d;
+    }
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    figure {
+      margin: 20px auto;
+      max-width: 1440px;
+    }
+    img {
+      display: block;
+      max-width: 100%;
+      margin: auto;
+    }
+    body.phone figure {
+      max-width: 390px;
+    }
+    figcaption {
+      text-align: center;
+      color: #b6ad98;
+      padding: 10px;
+    }
+    a {
+      color: #ffb21d;
+    }
+  </style>
+  <header>
+    <h1>Targets · team context</h1>
+    <p>Three layouts using real authenticated data. No design selected yet.</p>
+    <nav aria-label="Layout">
+      <button data-variant="A" aria-pressed="true">A · Comparison table</button
+      ><button data-variant="B" aria-pressed="false">B · Team sidebar</button
+      ><button data-variant="C" aria-pressed="false">C · League ranks</button>
+    </nav>
+    <nav aria-label="Viewport">
+      <button data-size="desktop" aria-pressed="true">Desktop</button
+      ><button data-size="phone" aria-pressed="false">Phone</button>
+    </nav>
+  </header>
+  <figure>
+    <img
+      id="shot"
+      src="targets-variant-A--desktop.png"
+      alt="Comparison table prototype at desktop width"
+    />
+    <figcaption id="caption">A · Comparison table · desktop</figcaption>
+  </figure>
+  <script>
+    let variant = 'A',
+      size = 'desktop';
+    const names = { A: 'Comparison table', B: 'Team sidebar', C: 'League ranks' };
+    function render() {
+      document.getElementById('shot').src = 'targets-variant-' + variant + '--' + size + '.png';
+      document.getElementById('shot').alt = names[variant] + ' at ' + size + ' width';
+      document.getElementById('caption').textContent =
+        variant + ' · ' + names[variant] + ' · ' + size;
+      document.body.classList.toggle('phone', size === 'phone');
+      document
+        .querySelectorAll('[data-variant]')
+        .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === variant));
+      document
+        .querySelectorAll('[data-size]')
+        .forEach((b) => b.setAttribute('aria-pressed', b.dataset.size === size));
+      history.replaceState(null, '', '?variant=' + variant + '&size=' + size);
+    }
+    document.querySelectorAll('button').forEach(
+      (b) =>
+        (b.onclick = () => {
+          if (b.dataset.variant) variant = b.dataset.variant;
+          if (b.dataset.size) size = b.dataset.size;
+          render();
+        }),
+    );
+    const p = new URLSearchParams(location.search);
+    if (['A', 'B', 'C'].includes(p.get('variant'))) variant = p.get('variant');
+    if (p.get('size') === 'phone') size = 'phone';
+    render();
+  </script>
+</html>

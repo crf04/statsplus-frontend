@@ -105,3 +105,9 @@ test('a save answered while its own opening is still current opens the Target', 
   expect(await screen.findByText('One Target')).toBeVisible();
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets\/4$/);
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

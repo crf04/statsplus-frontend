@@ -100,7 +100,7 @@ function TargetDetail({ target, reload }) {
             submitLabel="Save changes"
             showActions={dirty}
             cancelLabel="Revert"
-            onChange={(patch) => setDraft({ ...draft, ...patch })}
+            onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
             onSubmit={save}
             onCancel={() => setDraft(saved)}
           />

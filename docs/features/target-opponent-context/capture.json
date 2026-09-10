@@ -1,0 +1,11 @@
+{
+  "frontendBase": "75faa9d",
+  "backendBase": "8d2cd23",
+  "routes": ["/targets/13", "/targets (New Target button)"],
+  "widths": {
+    "desktop": [1440, 900],
+    "phone": [390, 844]
+  },
+  "source": "Authenticated Railway reads; additive Playtype Points and Shooting Type fields served by local real API against read-only production database",
+  "accountWrites": 0
+}

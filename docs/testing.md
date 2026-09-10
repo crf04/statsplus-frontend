@@ -213,3 +213,12 @@ denominators and reports its eligible player-game count when it is smaller than 
 sample. The hit rate remains a separate strictly-positive individual-margin measure. The sample
 strip reports displayed player-games and total minutes only when every displayed line has a finite
 nonnegative minute value; otherwise it says that minutes are unavailable or incomplete.
+
+Target opponent context is read independently of preview/save. Its API and hook
+suites verify every exact slice, combined shot-attempt fields, per-form request
+sharing, opponent-switch cancellation, and retry isolation. The browser journey
+`target context follows the selected defense and survives context-read failure`
+uses the normal target routes to verify context, real draft persistence, and the
+approved summary-left/games-right grouping. Context failure must never disable an
+otherwise-valid Save. Test selectors distinguish the Opponent combobox from the
+per-filter opponent context label.

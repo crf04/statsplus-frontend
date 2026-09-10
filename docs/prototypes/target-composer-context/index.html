@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Targets · team context prototypes</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0e0c07;
+      color: #ece7d8;
+      font: 15px system-ui;
+    }
+    header {
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      background: #0e0c07;
+      border-bottom: 1px solid #403a2c;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #b6ad98;
+      margin: 8px 0;
+    }
+    button,
+    a {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      background: #17140d;
+      border: 1px solid #50452f;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button[aria-pressed='true'] {
+      color: #ffb21d;
+      border-color: #ffb21d;
+    }
+    nav[hidden] {
+      display: none;
+    }
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    figure {
+      margin: 20px auto;
+      max-width: 1440px;
+    }
+    img {
+      display: block;
+      max-width: 100%;
+      margin: auto;
+    }
+    body.phone figure {
+      max-width: 390px;
+    }
+    figcaption {
+      text-align: center;
+      color: #b6ad98;
+      padding: 10px;
+    }
+    a {
+      color: #ffb21d;
+    }
+  </style>
+  <header>
+    <h1>Targets · team context</h1>
+    <p>
+      Two create layouts; edit keeps the backtest beside collapsible context. Real authenticated
+      data.
+    </p>
+    <nav aria-label="Layout">
+      <button data-variant="A" aria-pressed="true">A · Inline context</button
+      ><button data-variant="B" aria-pressed="false">B · Side panel</button>
+    </nav>
+    <nav aria-label="Surface">
+      <button data-surface="create" aria-pressed="true">Create modal</button
+      ><button data-surface="edit" aria-pressed="false">Edit page</button>
+    </nav>
+    <nav aria-label="Viewport">
+      <button data-size="desktop" aria-pressed="true">Desktop</button
+      ><button data-size="phone" aria-pressed="false">Phone</button>
+    </nav>
+  </header>
+  <figure>
+    <img id="shot" src="create-A-desktop.png" alt="Inline context prototype at desktop width" />
+    <figcaption id="caption">A · Inline context · desktop</figcaption>
+  </figure>
+  <script>
+    let variant = 'A',
+      size = 'desktop',
+      surface = 'create';
+    const names = { A: 'Inline context', B: 'Side panel' };
+    function render() {
+      document.querySelector('nav[aria-label="Layout"]').hidden = surface === 'edit';
+      const title =
+        (surface === 'edit' ? 'Collapsible context + backtest' : names[variant]) +
+        ' · ' +
+        surface +
+        ' · ' +
+        size;
+      document.getElementById('shot').src = surface + '-' + variant + '-' + size + '.png';
+      document.getElementById('shot').alt = title;
+      document.getElementById('caption').textContent = title;
+      document.body.classList.toggle('phone', size === 'phone');
+      document
+        .querySelectorAll('[data-variant]')
+        .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === variant));
+      document
+        .querySelectorAll('[data-size]')
+        .forEach((b) => b.setAttribute('aria-pressed', b.dataset.size === size));
+      document
+        .querySelectorAll('[data-surface]')
+        .forEach((b) => b.setAttribute('aria-pressed', b.dataset.surface === surface));
+      history.replaceState(
+        null,
+        '',
+        '?variant=' + variant + '&surface=' + surface + '&size=' + size,
+      );
+    }
+    document.querySelectorAll('button').forEach(
+      (b) =>
+        (b.onclick = () => {
+          if (b.dataset.variant) variant = b.dataset.variant;
+          if (b.dataset.size) size = b.dataset.size;
+          if (b.dataset.surface) surface = b.dataset.surface;
+          render();
+        }),
+    );
+    const p = new URLSearchParams(location.search);
+    if (['A', 'B'].includes(p.get('variant'))) variant = p.get('variant');
+    if (p.get('size') === 'phone') size = 'phone';
+    if (p.get('surface') === 'edit') surface = 'edit';
+    render();
+  </script>
+</html>

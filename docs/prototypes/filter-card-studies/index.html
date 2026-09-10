@@ -1,0 +1,83 @@
+<!doctype html><meta charset="utf-8" /><meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+/><title>Filter card studies</title
+><style>
+  body {
+    background: #0d0b07;
+    color: #f3e6cb;
+    font: 16px system-ui;
+    margin: 32px;
+  }
+  main {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  img {
+    width: 100%;
+    border: 1px solid #50432c;
+  }
+  a {
+    color: #edb35f;
+  }
+  p {
+    line-height: 1.6;
+  }
+  @media (max-width: 850px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+<h1>Filter card studies</h1>
+<p>
+  Same controls and live opponent data. Minutes stay left, backtest stays right, team stats remain
+  open.
+</p>
+<main>
+  <section>
+    <h2>A · Stacked</h2>
+    <a href="filter-A-desktop-full.png"
+      ><img src="filter-A-desktop.png" alt="Stacked desktop prototype"
+    /></a>
+    <p>
+      <a href="filter-A-phone-full.png">Phone, full screen</a> ·
+      <a href="create-filter-A-desktop.png">Create desktop</a> ·
+      <a href="create-filter-A-phone.png">Create phone</a>
+    </p>
+  </section>
+  <section>
+    <h2>B · Split</h2>
+    <a href="filter-B-desktop-full.png"
+      ><img src="filter-B-desktop.png" alt="Split desktop prototype"
+    /></a>
+    <p>
+      <a href="filter-B-phone-full.png">Phone, full screen</a> ·
+      <a href="create-filter-B-desktop.png">Create desktop</a> ·
+      <a href="create-filter-B-phone.png">Create phone</a>
+    </p>
+  </section>
+  <section>
+    <h2>C · Compact</h2>
+    <a href="filter-C-desktop-full.png"
+      ><img src="filter-C-desktop.png" alt="Compact desktop prototype"
+    /></a>
+    <p>
+      <a href="filter-C-phone-full.png">Phone, full screen</a> ·
+      <a href="create-filter-C-desktop.png">Create desktop</a> ·
+      <a href="create-filter-C-phone.png">Create phone</a>
+    </p>
+    <p>
+      Opponent cell refinement:
+      <a href="opponent-cell-desktop.png">edit desktop</a> ·
+      <a href="opponent-cell-phone.png">edit phone</a> ·
+      <a href="opponent-cell-create-desktop.png">create desktop</a> ·
+      <a href="opponent-cell-create-phone.png">create phone</a>
+    </p>
+  </section>
+</main>
+<p>
+  Play-type points use the local additive API against the read-only production database; other
+  requests use the production Railway API. Prototype only, not deployed.
+</p>

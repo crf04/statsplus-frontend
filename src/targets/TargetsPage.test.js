@@ -364,7 +364,7 @@ test('saves several Qualifiers as one Target and opens the Target the backend st
     target: { value: '15' },
   });
   fireEvent.click(screen.getAllByRole('button', { name: 'At or above; switch to at or below' })[1]);
-  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional'), {
     target: { value: 'No rim protection when Missi sits.' },
   });
 
@@ -394,7 +394,7 @@ test('a note is stored without the whitespace it was typed with', async () => {
   await screen.findAllByRole('article');
 
   composeQualifier();
-  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional'), {
     target: { value: '  Zone late in the shot clock.  ' },
   });
   await act(async () => {
@@ -618,7 +618,7 @@ test('editing the note is not a new draft, so the Lab does not read again', asyn
     .getByRole('list', { name: 'Backtest summary' })
     .closest('.target-lab-result');
 
-  fireEvent.change(screen.getByLabelText('Why · optional, never the title'), {
+  fireEvent.change(screen.getByLabelText('Why · optional'), {
     target: { value: 'Leaks the corner late.' },
   });
   expect(result).not.toHaveClass('is-stale');
@@ -1317,6 +1317,12 @@ test('leaving a page aborts its shared in-flight roster request', async () => {
   page.unmount();
   expect(signal.aborted).toBe(true);
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));
 
 /*
  * Settling one card's Backtest re-renders TargetsPageContent, which used to

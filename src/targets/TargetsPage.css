@@ -585,6 +585,20 @@
   margin-left: auto;
   white-space: nowrap;
 }
+.target-card-prototype {
+  border-color: var(--ct-gold);
+}
+.target-card-prototype .target-card-go {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+.target-context-read-only-badge {
+  color: var(--ct-dim);
+  font: 0.62rem var(--ct-mono);
+  letter-spacing: 0.04em;
+}
 .target-card .target-card-note {
   white-space: normal;
   margin: 0;

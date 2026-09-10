@@ -2549,6 +2549,84 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/teams/stats') {
+      const category = url.searchParams.get('category');
+      if (category === 'Shooting Type') {
+        await route.fulfill({
+          json: ['Catch and Shoot', 'Pullups', 'Less Than 10 ft'].map((ShootingType) => ({
+            ShootingType,
+            FGA: 10,
+            FGA_RANK: 30,
+            FGA_vs_avg_pct: 60,
+            FG2A: 2,
+            FG2A_RANK: 1,
+            FG3A: 8,
+            FG3A_RANK: 30,
+            PTS: 20,
+            PTS_RANK: 10,
+            PTS_vs_avg_pct: -10,
+          })),
+        });
+        return;
+      }
+      if (category === 'Zone Shooting') {
+        await route.fulfill({
+          json: Object.fromEntries(
+            [
+              'Restricted Area',
+              'In The Paint (Non-RA)',
+              'Mid-Range',
+              'Corner 3',
+              'Above the Break 3',
+            ].flatMap((zone) => [
+              [`${zone}_OPP_FGA`, 20],
+              [`${zone}_OPP_FGA_RANK`, 8],
+              [`${zone}_OPP_FGA_vs_avg_pct`, -12],
+            ]),
+          ),
+        });
+        return;
+      }
+      if (category === 'Assists') {
+        await route.fulfill({
+          json: Object.fromEntries(
+            [
+              'Arc3Assists',
+              'Corner3Assists',
+              'AtRimAssists',
+              'ShortMidRangeAssists',
+              'LongMidRangeAssists',
+            ].flatMap((key) => [
+              [key, 1.2],
+              [`${key}_RANK`, 25],
+            ]),
+          ),
+        });
+        return;
+      }
+      if (url.searchParams.get('category') === 'Playtype Points') {
+        await route.fulfill({
+          json: Object.fromEntries(
+            [
+              'Transition',
+              'Isolation',
+              'PRBallHandler',
+              'PRRollMan',
+              'Spotup',
+              'Cut',
+              'Handoff',
+              'OffScreen',
+              'Postup',
+              'OffRebound',
+              'Misc',
+            ].flatMap((key) => [
+              [key, 28],
+              [`${key}_RANK`, 12],
+              [`${key}_vs_avg_pct`, -5.1],
+            ]),
+          ),
+        });
+        return;
+      }
       await route.fulfill({ json: traditionalTeamStats });
       return;
     }

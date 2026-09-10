@@ -3,13 +3,13 @@ import { setTargetThreshold } from '../fixtures/targetControls';
 
 const card = (page, title) => page.getByRole('article', { name: title });
 const composeTarget = async (page, { opponent, base = 'shot_zones', slice, percent, note }) => {
-  if (!(await page.getByLabel('Opponent').isVisible()))
+  if (!(await page.getByRole('combobox', { name: 'Opponent', exact: true }).isVisible()))
     await page.getByRole('button', { name: '+ New Target' }).click();
-  await page.getByLabel('Opponent').selectOption(opponent);
+  await page.getByRole('combobox', { name: 'Opponent', exact: true }).selectOption(opponent);
   await page.getByLabel('Qualifier 1 diet base').selectOption(base);
   await page.getByLabel('Qualifier 1 slice').selectOption(slice);
   await setTargetThreshold(page, percent);
-  if (note) await page.getByLabel('Why · optional, never the title').fill(note);
+  if (note) await page.getByLabel('Why · optional').fill(note);
 };
 const saveTarget = async (page) => {
   await page.getByRole('button', { name: 'Save Target' }).click();
@@ -534,4 +534,68 @@ test('desktop workbench exposes every stats group without scrolling a hidden ben
   await explanation.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText(/Outcomes are box-score proxies/)).toBeVisible();
+});
+
+test('@critical target context follows the selected defense and survives context-read failure', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  let fail = false;
+  const reads = [];
+  await page.route('**/api/teams/stats?**', async (route) => {
+    const url = new URL(route.request().url());
+    reads.push({ team: url.searchParams.get('team'), category: url.searchParams.get('category') });
+    if (fail)
+      return route.fulfill({
+        status: 503,
+        json: { error: { code: 'unavailable', message: 'Unavailable' } },
+      });
+    return route.fallback();
+  });
+  await page.goto('/targets');
+  await page.getByRole('button', { name: '+ New Target' }).click();
+  await composeTarget(page, {
+    opponent: 'ORL',
+    base: 'shot_types',
+    slice: 'Catch and Shoot',
+    percent: 40,
+    note: 'Watch the perimeter.',
+  });
+  let context = page.getByLabel('ORL opponent context');
+  await expect(context).toContainText('#30/30');
+  await expect(context).toContainText('+60%');
+  await expect(context).toContainText('FGA allowed /48');
+  const note = await page.getByLabel('Why · optional').boundingBox();
+  const opponent = await page
+    .getByRole('combobox', { name: 'Opponent', exact: true })
+    .boundingBox();
+  expect(note.x).toBeGreaterThan(opponent.x);
+  expect(Math.abs(note.y - opponent.y)).toBeLessThan(12);
+  const count = reads.length;
+  await page.getByLabel('Qualifier 1 threshold percent').press('ArrowRight');
+  await expect(page.getByRole('status').filter({ hasText: 'Backtest up to date.' })).toBeVisible();
+  expect(reads.length).toBe(count);
+  await page.getByLabel('Qualifier 1 diet base').selectOption('play_types');
+  await page.getByLabel('Qualifier 1 slice').selectOption('Spotup');
+  await expect(context).toContainText('Points allowed /48');
+  await expect(context).toContainText('#12/30');
+  expect(reads).toContainEqual({ team: 'Orlando Magic', category: 'Playtype Points' });
+  fail = true;
+  await page.getByRole('combobox', { name: 'Opponent', exact: true }).selectOption('BOS');
+  context = page.getByLabel('BOS opponent context');
+  await expect(context).toContainText('Context unavailable');
+  await expect(context).not.toContainText('#12');
+  await expect(page.getByRole('button', { name: 'Save Target', exact: true })).toBeEnabled();
+  fail = false;
+  await context.getByRole('button', { name: 'Retry opponent context' }).click();
+  await expect(context).toContainText('#12/30');
+  await page.getByRole('button', { name: 'Save Target', exact: true }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  await expect(page.getByLabel('Why · optional')).toHaveValue('Watch the perimeter.');
+  const summary = await page.getByRole('list', { name: 'Backtest summary' }).boundingBox();
+  const form = await page.getByLabel('Qualifier 1 threshold percent').boundingBox();
+  const games = await page.getByRole('heading', { name: /^Games/ }).boundingBox();
+  expect(summary.y).toBeGreaterThan(form.y);
+  expect(games.x).toBeGreaterThan(form.x);
+  await expect(page.getByRole('navigation', { name: /prototype/i })).toHaveCount(0);
 });

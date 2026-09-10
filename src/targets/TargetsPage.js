@@ -24,9 +24,12 @@ import './TargetsPage.css';
 const TargetCard = memo(function TargetCard({ target, entry, read, resolutionStatus }) {
   const game = entry?.game;
   const stats = useStatPreferences(target);
-  const columns = stats.preferences?.columns ?? read?.backtest?.statColumns ?? [];
-  const gradedBy = stats.preferences?.gradedBy ?? columns[0];
+  const preferences = stats.preferences;
+  const onPreferencesChange = stats.onChange;
+  const columns = preferences?.columns ?? read?.backtest?.statColumns ?? [];
+  const gradedBy = preferences?.gradedBy ?? columns[0];
   const minutesNote = backtestMinutesNote(target);
+  const editHref = `/targets/${target.id}`;
   return (
     <li>
       <article className="target-card" aria-label={target.title}>
@@ -46,7 +49,7 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
                 : 'Today’s activity unavailable'}
             </span>
           )}
-          <Link className="target-card-go" to={`/targets/${target.id}`}>
+          <Link className="target-card-go" to={editHref}>
             View Details / Edit
           </Link>
         </div>
@@ -102,8 +105,8 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
                 backtest={read.backtest}
                 columns={columns}
                 gradedBy={gradedBy}
-                onGrade={(column) => stats.onChange({ columns, gradedBy: column })}
-                onPreferencesChange={stats.onChange}
+                onGrade={(column) => onPreferencesChange({ columns, gradedBy: column })}
+                onPreferencesChange={onPreferencesChange}
               />
               <StatSaveStatus state={stats} />
             </>
@@ -282,7 +285,7 @@ function TargetsPageContent() {
           <TargetForm
             draft={draft}
             busy={saving}
-            onChange={(patch) => setDraft({ ...draft, ...patch })}
+            onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
             onSubmit={save}
             onCancel={dismissComposer}
           />

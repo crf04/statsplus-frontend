@@ -232,3 +232,9 @@ test('removing the window leaves the Backtest section standing', () => {
   expect(screen.queryByLabelText('Window preset')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Player game minutes')).toHaveValue('15');
 });
+
+// Opponent transport is exercised in its own API/hook tests.
+jest.mock('./opponentContextApi', () => ({
+  ...jest.requireActual('./opponentContextApi'),
+  fetchOpponentProfile: () => new Promise(() => {}),
+}));

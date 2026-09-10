@@ -50,51 +50,50 @@ export default function TargetLab({
   const gradedBy = chosen?.gradedBy ?? columns[0];
   const changePreferences = onPreferencesChange ?? setLocalPreferences;
 
-  return (
-    <section className="target-lab" aria-labelledby="target-lab-heading">
-      <div className="target-lab-left">
-        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
-          {children}
-        </BacktestSampleProvider>
-        <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
-          Lab · Backtest · season to date · vs {draft.opponent}
-        </h2>
-        <p role="status" className="target-lab-status">
-          {describeLab({ valid, status, pending })}
+  const evidence = (
+    <>
+      <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
+        Lab · Backtest · season to date · vs {draft.opponent}
+      </h2>
+      <p role="status" className="target-lab-status">
+        {describeLab({ valid, status, pending })}
+      </p>
+      {status === 'error' && (
+        <p className="target-error" role="alert">
+          {error}
+          <button type="button" onClick={retry}>
+            Retry backtest
+          </button>
         </p>
-        {status === 'error' && (
-          <p className="target-error" role="alert">
-            {error}
-            <button type="button" onClick={retry}>
-              Retry backtest
-            </button>
-          </p>
-        )}
-        {preview && (
-          /* What was last read stays on screen, dimmed, while the next answer is
+      )}
+      {preview && (
+        /* What was last read stays on screen, dimmed, while the next answer is
            on its way: a keystroke never blanks the screen. */
-          <div
-            className={`target-lab-result${stale ? ' is-stale' : ''}`}
-            aria-busy={status === 'loading'}
+        <div
+          className={`target-lab-result${stale ? ' is-stale' : ''}`}
+          aria-busy={status === 'loading'}
+        >
+          <TargetRecord
+            backtest={preview}
+            columns={columns}
+            gradedBy={gradedBy}
+            onGrade={(column) => changePreferences({ columns, gradedBy: column })}
+            onPreferencesChange={changePreferences}
           >
-            <TargetRecord
-              backtest={preview}
-              columns={columns}
-              gradedBy={gradedBy}
-              onGrade={(column) => changePreferences({ columns, gradedBy: column })}
-              onPreferencesChange={changePreferences}
-            >
-              {/* Season to date is the evidence; whether the idea is actionable
+            {/* Season to date is the evidence; whether the idea is actionable
                 tonight is one line, present only when the opponent plays. */}
-              {preview.today && (
-                <p className={`target-lab-tonight${preview.today.fitCount ? ' has-fits' : ''}`}>
-                  <b>{preview.today.fitCount}</b> fit tonight vs {preview.target.opponent}
-                </p>
-              )}
-            </TargetRecord>
-          </div>
-        )}
-      </div>
+            {preview.today && (
+              <p className={`target-lab-tonight${preview.today.fitCount ? ' has-fits' : ''}`}>
+                <b>{preview.today.fitCount}</b> fit tonight vs {preview.target.opponent}
+              </p>
+            )}
+          </TargetRecord>
+        </div>
+      )}
+    </>
+  );
+  const games = (
+    <>
       {workbench && preview && (
         <div
           className={`target-lab-games${stale ? ' is-stale' : ''}`}
@@ -103,6 +102,18 @@ export default function TargetLab({
           <TargetGameRows backtest={preview} columns={columns} gradedBy={gradedBy} />
         </div>
       )}
+    </>
+  );
+
+  return (
+    <section className="target-lab" aria-labelledby="target-lab-heading">
+      <div className="target-lab-left">
+        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
+          {children}
+        </BacktestSampleProvider>
+        {evidence}
+      </div>
+      {games}
     </section>
   );
 }

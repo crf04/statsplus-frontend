@@ -1072,7 +1072,14 @@ export const qualifierVolumeRow = (qualifier, profile, leagueProfiles) => {
 };
 
 // Inline evidence follows the player slice, independently of the browsing panel.
-export function QualifierOpponentContext({ team, teams, opponent, qualifier, teamsLoading }) {
+export function QualifierOpponentContext({
+  team,
+  teams,
+  opponent,
+  qualifier,
+  teamsLoading,
+  compact = false,
+}) {
   const category = {
     play_types: 'Playtype Points',
     shot_zones: 'Zone Shooting',
@@ -1108,7 +1115,8 @@ export function QualifierOpponentContext({ team, teams, opponent, qualifier, tea
   return (
     <div className="target-qualifier-opponent" aria-label={`${opponent} opponent context`}>
       <span className="target-qualifier-opponent-label">
-        {opponent} · {targetSliceLabel(qualifier.base, qualifier.sliceKey)}
+        {opponent}
+        {!compact && ` · ${targetSliceLabel(qualifier.base, qualifier.sliceKey)}`}
         <small className="target-qualifier-opponent-metric">{metric}</small>
       </span>
       {row ? (

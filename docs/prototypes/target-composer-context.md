@@ -147,3 +147,25 @@ filter CSS is scoped to qualifier descendants to protect the minutes control.
 Followup review identified composer mobile specificity collisions; explicit variant
 grid and remove-button placement now outrank modal defaults. Recaptured all three
 phone composer variants and visually confirmed the split column and remove control.
+
+### Combined filter header
+
+User correction: category must precede slice when reading left to right. Updated C
+to put category, slice, and opponent/rank/difference in one desktop header; removed
+the duplicate opponent slice label. The metric unit remains beneath the comparison.
+Phone wraps opponent evidence beneath the two selectors. A and B remain available.
+
+[Updated desktop](filter-card-studies/unified-filter-row-desktop.png) ·
+[Updated phone](filter-card-studies/unified-filter-row-phone.png).
+
+Verified against base `9d056cd`: live authenticated edit checks at desktop/phone
+widths, correct rank/metric labels, no overflow, unchanged side backtest, category
+switching, and live minutes preview. Create checks exercise variant switching and
+keyboard threshold changes. Production API routing remains as documented above.
+
+Completion: lint, formatting, 683 unit tests, build, and 107 E2E tests passed
+(2 deployment-only skips). Fresh cross-vendor review found no desktop control or
+state regressions. Retained the phone's inline metric intentionally: the user's
+request is compact presentation, and live 390px captures show all comparison data
+without overflow. The review's proposed mandatory phone metric line was not a user
+requirement. Opponents use fixed three-letter tricodes, not long team names.

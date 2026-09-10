@@ -195,6 +195,7 @@ function TargetContextLayouts({
           teams={read.teams}
           teamsLoading={read.teamsState === 'loading'}
           qualifier={qualifier}
+          compact={cardVariant === 'C'}
         />
       )}
       highlightedQualifierIndex={highlightedQualifierIndex}

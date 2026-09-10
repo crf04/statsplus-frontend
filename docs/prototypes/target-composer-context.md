@@ -222,3 +222,13 @@ for this visual change. Owned QA services stopped.
 Cross-vendor review found one material issue: splitting the rank into `#N` and `/30`
 left variant B's suffix at 11px instead of 23px. Fixed by widening B's size rule; live
 A and B recaptures match their earlier renderings. No other findings.
+
+### Opponent value colors
+
+Ranks 1–10 use the existing red token (least allowed), 21–30 green (most
+allowed), and 11–20 neutral. Differences at or below −5% are red, at or above
++5% green, otherwise neutral. Missing values remain neutral. Only numeric
+figures change color; signs, /30, metric labels and vs-average text remain.
+Tooltips explain the thresholds. [Desktop](filter-card-studies/opponent-colored-values-desktop.png)
+and [phone](filter-card-studies/opponent-colored-values-phone.png) captured with
+live authenticated ORL data; existing layout/metric/minutes checks pass.

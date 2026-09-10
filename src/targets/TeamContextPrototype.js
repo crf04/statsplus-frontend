@@ -1123,7 +1123,16 @@ export function QualifierOpponentContext({
         <>
           <span
             className="target-qualifier-opponent-rank"
-            title="League rank: 1 is lowest, 30 is highest"
+            data-tone={
+              Number.isFinite(row.rank)
+                ? row.rank <= 10
+                  ? 'low'
+                  : row.rank >= 21
+                    ? 'high'
+                    : 'neutral'
+                : 'neutral'
+            }
+            title="League rank: 1 is lowest, 30 is highest; 1–10 red, 11–20 neutral, 21–30 green"
           >
             {Number.isFinite(row.rank) ? (
               <>
@@ -1134,7 +1143,19 @@ export function QualifierOpponentContext({
               <b>—</b>
             )}
           </span>
-          <span className="target-qualifier-opponent-diff">
+          <span
+            className="target-qualifier-opponent-diff"
+            data-tone={
+              Number.isFinite(row.vsAverage)
+                ? row.vsAverage <= -5
+                  ? 'low'
+                  : row.vsAverage >= 5
+                    ? 'high'
+                    : 'neutral'
+                : 'neutral'
+            }
+            title="Allowed vs league average: red at −5% or below, green at +5% or above"
+          >
             <b>{formatSignedPercent(row.vsAverage)}</b> vs avg
           </span>
         </>

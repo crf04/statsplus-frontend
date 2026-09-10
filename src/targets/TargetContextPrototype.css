@@ -690,3 +690,10 @@ body:has(.target-context-panel-inline) {
     grid-column: 3;
   }
 }
+
+.target-form .target-qualifier-opponent [data-tone='low'] b {
+  color: var(--ct-miss);
+}
+.target-form .target-qualifier-opponent [data-tone='high'] b {
+  color: var(--ct-hit);
+}

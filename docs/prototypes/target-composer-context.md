@@ -298,3 +298,21 @@ placement/card isolation. Its root-background finding is rebutted: this preserve
 the existing ink background formerly activated by the removed inline panel;
 scoping only to the workbench previously left white below the viewport in full-page
 captures. The new selector remains conditional on this prototype workbench.
+
+### Correction: summary left, games right
+
+The backtest summary and hit grid belong beneath the filter/minutes cards on the
+left; only the actual game list belongs on the right, as in TargetLab's production
+branch. The prototype now matches that content grouping, retaining all current
+card internals and keeping full team stats removed. Phone stacks games after the
+left-column content. [Desktop](filter-card-studies/summary-left-games-right-desktop.png)
+and [phone](filter-card-studies/summary-left-games-right-phone.png).
+
+Live checks from `e82aacc` confirm summary below form, desktop games beside editor,
+inline opponent figures retained, team panel absent, no overflow, and live minutes
+updates through the actual preview transport. QA services stopped after capture.
+Completion gate passed: lint, formatting, 683 unit tests, build, 107 E2E tests
+(2 deployment skips). Fresh cross-vendor review prompted restoring desktop sticky
+behavior for the editor column, matching the default workbench. Its spacing concern
+is covered by TargetWorkbench.css `.target-workbench .target-form` margin-bottom:
+12px, confirmed in the live capture. Card formatting remains unchanged.

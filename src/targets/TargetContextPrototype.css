@@ -379,7 +379,7 @@
 
 .target-workbench.target-context-edit-workbench .target-context-side-backtest {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 5fr) minmax(0, 6fr);
   gap: 36px;
   align-items: start;
 }
@@ -388,7 +388,7 @@
   min-width: 0;
 }
 .target-context-backtest-column .target-lab-games {
-  margin-top: 24px;
+  margin-top: 0;
 }
 @media (max-width: 819px) {
   .target-workbench.target-context-edit-workbench .target-context-side-backtest {
@@ -745,4 +745,10 @@ body:has(.target-context-panel-inline) {
 html:has(.target-context-edit-workbench),
 body:has(.target-context-edit-workbench) {
   background-color: var(--ct-ink);
+}
+@media (min-width: 820px) {
+  .target-context-edit-workbench .target-context-editor-column {
+    position: sticky;
+    top: 0;
+  }
 }

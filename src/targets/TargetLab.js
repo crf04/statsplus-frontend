@@ -113,11 +113,11 @@ export default function TargetLab({
         aria-labelledby="target-lab-heading"
       >
         <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
-          <div className="target-context-editor-column">{children}</div>
-          <div className="target-context-backtest-column">
+          <div className="target-context-editor-column">
+            {children}
             {evidence}
-            {games}
           </div>
+          <div className="target-context-backtest-column">{games}</div>
         </BacktestSampleProvider>
       </section>
     );

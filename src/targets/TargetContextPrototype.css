@@ -566,7 +566,7 @@ body:has(.target-context-panel-inline) {
   border-radius: 0;
   background: transparent;
   padding: 14px 0;
-  grid-template-columns: 82px minmax(105px, 1fr) auto 18px;
+  grid-template-columns: 132px minmax(0, 140px) minmax(0, 1fr) 18px;
   align-items: center;
   column-gap: 10px;
 }
@@ -609,7 +609,7 @@ body:has(.target-context-panel-inline) {
 }
 @media (max-width: 600px) {
   .target-form.target-form.target-filter-prototype-C .target-qualifier {
-    grid-template-columns: 82px minmax(0, 1fr) 18px;
+    grid-template-columns: 132px minmax(0, 140px) 18px;
   }
   .target-form.target-form.target-filter-prototype-C .target-qualifier-opponent {
     grid-column: 1 / 3;

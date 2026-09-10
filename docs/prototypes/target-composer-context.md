@@ -183,3 +183,16 @@ formatting, unit tests, build. Initial E2E run had 102 passes and five Target
 failures during a source hot reload; all 16 Target tests passed on rerun after
 edits stopped (two deployment-only skips in the full suite). Cross-vendor CSS
 review found no material issues. Screenshot inspection prompted the short labels.
+
+### Correction: narrow the subcategory, preserve category names
+
+Supersedes the short-name experiment above: full category labels are restored.
+The category track is 132px; the subcategory track is capped at 140px instead of
+stretching. Matching typography remains. [Fresh desktop](filter-card-studies/full-category-narrow-slice-desktop.png)
+and [phone](filter-card-studies/full-category-narrow-slice-phone.png).
+
+Base `ab83196`; lint, formatting, 683 unit tests, build, and 107 E2E tests pass
+(2 deployment skips). Live desktop/phone checks pass after retrying an incomplete
+opponent-context read. Fresh review's phone-overflow concern was checked in Chromium:
+a 250px grid resolves to 132px/80px/18px with scrollWidth 250, confirming the
+minmax(0,140px) subcategory track shrinks. No category labels are abbreviated.

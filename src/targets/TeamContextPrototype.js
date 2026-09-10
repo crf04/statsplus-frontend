@@ -1114,7 +1114,7 @@ export function QualifierOpponentContext({ team, teams, opponent, qualifier, tea
       {row ? (
         <>
           <span title="League rank: 1 is lowest, 30 is highest">
-            <b>{Number.isFinite(row.rank) ? `#${Math.round(row.rank)}` : '—'}</b> rank · 1 lowest
+            <b>{Number.isFinite(row.rank) ? `#${Math.round(row.rank)}/30` : '—'}</b>
           </span>
           <span>
             <b>{formatSignedPercent(row.vsAverage)}</b> vs avg

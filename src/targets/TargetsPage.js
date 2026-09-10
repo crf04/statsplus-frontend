@@ -1,9 +1,11 @@
 import { TargetConditionSummary, backtestMinutesNote } from './TargetConditions';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { formatTip } from '../calendarDate';
+import { readRevisit } from '../revisitCache';
 import TargetForm, { blankTargetDraft } from './TargetForm';
 import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
@@ -16,7 +18,10 @@ import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTarg
 import '../SlatePage.css';
 import './TargetsPage.css';
 
-function TargetCard({ target, entry, read, resolutionStatus }) {
+// A card only depends on its own Target, its own Backtest read and its own
+// resolved entry; memoizing it keeps N-1 cards from re-rendering (and
+// recomputing their TargetRecord) every time one Backtest settles.
+const TargetCard = memo(function TargetCard({ target, entry, read, resolutionStatus }) {
   const game = entry?.game;
   const stats = useStatPreferences(target);
   const preferences = stats.preferences;
@@ -112,9 +117,15 @@ function TargetCard({ target, entry, read, resolutionStatus }) {
       </article>
     </li>
   );
-}
+});
 
-function useListBacktests(targets, enabled) {
+// How many league-wide scans run in flight at once; a refusal does not
+// strand later cards, whichever one it was.
+export const BACKTEST_CONCURRENCY = 4;
+
+// The league-wide scans are queued BACKTEST_CONCURRENCY at a time. A revisit
+// within the cache's window is served from it rather than re-scanned.
+function useListBacktests(targets, enabled, userId) {
   const [reads, setReads] = useState({});
   useEffect(() => {
     if (!enabled) {
@@ -128,7 +139,13 @@ function useListBacktests(targets, enabled) {
       if (controller.signal.aborted || nextIndex >= targets.length) return;
       const target = targets[nextIndex];
       nextIndex += 1;
-      fetchTargetBacktest({ id: target.id, signal: controller.signal })
+      readRevisit(
+        'backtest',
+        userId,
+        target.id,
+        () => fetchTargetBacktest({ id: target.id, signal: controller.signal }),
+        { signal: controller.signal },
+      )
         .then(
           (backtest) => {
             if (controller.signal.aborted) return;
@@ -147,23 +164,35 @@ function useListBacktests(targets, enabled) {
         )
         .finally(readNext);
     };
-    readNext();
-    readNext();
+    for (let slot = 0; slot < BACKTEST_CONCURRENCY; slot += 1) readNext();
     return () => controller.abort();
-  }, [targets, enabled]);
+  }, [targets, enabled, userId]);
   return reads;
 }
 
 function TargetsPageContent() {
   const navigate = useNavigate();
-  const { authLoading, isAuthenticated, status, targets, error } = useTargets();
+  const { currentUser } = useAuth();
+  /*
+   * A revisit keeps the previous list on screen while it reloads, rather
+   * than blanking the page for a read that will very likely say the same
+   * thing it said a moment ago.
+   */
+  const { authLoading, isAuthenticated, status, targets, error } = useTargets({
+    keepPrevious: true,
+  });
   /*
    * What each Target is worth today, read for the current Slate Date. It is a
    * second read over the same list, so a day that will not resolve costs the
    * cards their counts and nothing else.
    */
   const resolved = useResolvedTargets();
-  const reads = useListBacktests(targets, status === 'ready' && isAuthenticated);
+  const entryByTargetId = useMemo(() => {
+    const map = new Map();
+    for (const entry of resolved.entries) map.set(entry.target.id, entry);
+    return map;
+  }, [resolved.entries]);
+  const reads = useListBacktests(targets, status === 'ready' && isAuthenticated, currentUser?.uid);
   const [draft, setDraft] = useState(blankTargetDraft);
   const [draftPreferences, setDraftPreferences] = useState(null);
   const [composing, setComposing] = useState(false);
@@ -275,7 +304,10 @@ function TargetsPageContent() {
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}
       {status === 'error' && <p role="alert">{error}</p>}
-      {status === 'ready' &&
+      {/* A revisit keeps the previous list mounted, kept-previous targets and
+       * all, while it reloads in the background rather than blanking the
+       * page for a read that is very likely to say the same thing again. */}
+      {(status === 'ready' || targets.length > 0) &&
         (targets.length === 0 ? (
           <div className="empty-slate">
             <h2>No Targets yet.</h2>
@@ -289,7 +321,7 @@ function TargetsPageContent() {
                 target={target}
                 read={reads[target.id]}
                 resolutionStatus={resolved.status}
-                entry={resolved.entries.find((entry) => entry.target.id === target.id) || null}
+                entry={entryByTargetId.get(target.id) || null}
               />
             ))}
           </ul>

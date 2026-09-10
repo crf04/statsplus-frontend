@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
@@ -105,8 +105,23 @@ export default function TargetRecord({
   onPreferencesChange,
   children,
 }) {
-  const games = recordGames(backtest, columns);
-  const scale = scaleFor(games, gradedBy);
+  // Full precision arithmetic over every player-game is expensive, and a
+  // list page renders one of these per Target; keep it keyed on what
+  // actually changes it rather than redone on every render.
+  const games = useMemo(() => recordGames(backtest, columns), [backtest, columns]);
+  const scale = useMemo(() => scaleFor(games, gradedBy), [games, gradedBy]);
+  const columnSummaries = useMemo(
+    () =>
+      columns.map((column) => {
+        const margins = games.map((row) => row.margins[column]).filter((margin) => margin !== null);
+        const aggregate = aggregateColumn(games, column);
+        const hitShare = margins.length
+          ? margins.filter((margin) => margin > 0).length / margins.length
+          : null;
+        return { column, margins, aggregate, hitShare };
+      }),
+    [games, columns],
+  );
   return (
     <div className="target-record">
       <ul className="target-summary" aria-label="Backtest summary">
@@ -114,14 +129,7 @@ export default function TargetRecord({
           <b>{games.length}</b> <small>player-games</small>
         </li>
         <li className="target-summary-break" aria-hidden="true" />
-        {columns.map((column) => {
-          const margins = games
-            .map((row) => row.margins[column])
-            .filter((margin) => margin !== null);
-          const aggregate = aggregateColumn(games, column);
-          const hitShare = margins.length
-            ? margins.filter((margin) => margin > 0).length / margins.length
-            : null;
+        {columnSummaries.map(({ column, margins, aggregate, hitShare }) => {
           const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
           const roundedDifference = rounded(aggregate.difference);
           const aggregateHeadline = `${formatAggregateNumber(aggregate.difference)} ${unitFor(column)}`;

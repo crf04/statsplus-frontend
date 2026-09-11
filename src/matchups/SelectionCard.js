@@ -116,17 +116,16 @@ function StatStrip({ player, categories, activeStat, onPick }) {
             {line ? (
               <b id={`selection-strip-${category}`}>{line.stats[category].toFixed(1)}</b>
             ) : (
-              <b
-                id={`selection-strip-${category}`}
-                className="selection-strip-books"
-                aria-label={
-                  providers.length
+              <b className="selection-strip-books">
+                <span className="selection-visually-hidden" id={`selection-strip-${category}`}>
+                  {providers.length
                     ? `Posted by ${providers.map(bookName).join(' and ')}`
-                    : 'Not posted'
-                }
-              >
+                    : 'Not posted'}
+                </span>
                 {books.map((mark) => (
-                  <i key={mark}>{mark}</i>
+                  <i key={mark} aria-hidden="true">
+                    {mark}
+                  </i>
                 ))}
               </b>
             )}

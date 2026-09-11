@@ -1310,6 +1310,7 @@ test('separates the focal outcome from hindsight context in the historical dossi
   const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
   expect(strip.getByText('MIN').nextSibling).toHaveTextContent('31.0');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('10.0');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription('10.0');
   expect(strip.getByRole('button', { name: 'FGA' })).toHaveTextContent('11.0');
   await waitFor(() =>
     expect(screen.getByText('No games vs this opponent data is available.')).toBeVisible(),
@@ -1400,8 +1401,14 @@ test('an upcoming game shows minutes to date and the books posting each market',
   const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
   expect(strip.getByText('MIN, last 10').nextSibling).toHaveTextContent('33.7');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('PPUD');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
+    'Posted by PrizePicks and Underdog',
+  );
   expect(strip.getByRole('button', { name: 'FG3A' })).toHaveTextContent('PP');
   expect(strip.getByRole('button', { name: 'FG3A' })).not.toHaveTextContent('UD');
+  expect(strip.getByRole('button', { name: 'FG3A' })).toHaveAccessibleDescription(
+    'Posted by PrizePicks',
+  );
 });
 
 test('the strip and the market tabs read in box-score order', async () => {

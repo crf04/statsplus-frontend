@@ -1,0 +1,41 @@
+# PROTOTYPE — selection card without the Archetype sample
+
+Throwaway. Lives on branch `prototype/selection-card-layout`; nothing here
+should reach `master`.
+
+**Question:** with the Archetype sample removed, how should the Score Matrix
+and "Games vs this opponent" share the selection card so it takes less
+vertical space? Chris's opening idea: put the opponent log beside the matrix.
+
+Three variants, rendered in place of the shipped card on the existing
+`/matchups/:gameId` route, switchable from the floating bar (or `←` / `→`).
+
+## Run it
+
+```
+npm start
+```
+
+then open `http://localhost:5173/matchups/<gameId>?player=<id>&proto=card` while
+signed in. For live production data use the statsplus-live-shots skill.
+
+- `v=A` — **Matrix beside the opponent log.** The ask. Matrix on the left at
+  intrinsic width, opponent log on the right. Stacks on phones.
+- `v=B` — **Active stat strip, matrix folded.** Only the chip-selected stat's
+  scores show, as a strip of source/value pairs with Blend highlighted. The
+  opponent log sits under it. The full matrix is behind a "All N categories"
+  disclosure.
+- `v=C` — **Opponent log as one line.** Matrix unchanged. The opponent log
+  collapses to a single line under the chips: average for the active stat,
+  minutes, and one pill per game.
+
+## What is real and what is not
+
+Everything is live: the real card header, chips, matrix and h2h payload.
+Only the body layout is swapped per variant. The Archetype sample and its
+hindsight note are dropped in all three.
+
+## Removing it
+
+Delete this folder and the blocks marked `PROTOTYPE (throwaway)` in
+`src/matchups/MatchupDetailPage.js`.

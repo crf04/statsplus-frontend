@@ -14,6 +14,11 @@ import {
   getDisplayableDietShare,
 } from './displayConfig';
 import SelectionCard from './SelectionCard';
+// PROTOTYPE (throwaway, branch prototype/selection-card-layout): with
+// `?proto=card` in the URL the selection card renders the layout variants.
+// Delete these imports and the block marked PROTOTYPE below to remove.
+import SelectionCardPrototype from './selectionCardPrototype/SelectionCardPrototype';
+import { useVariant } from './selectionCardPrototype/prototypeMode';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
@@ -655,6 +660,7 @@ function Detail({ matchup, gameId }) {
     error: null,
   });
   const [capture, setCapture] = useState(null);
+  const proto = useVariant(); // PROTOTYPE (throwaway)
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
@@ -869,7 +875,25 @@ function Detail({ matchup, gameId }) {
               That player is not available in this matchup.
             </p>
           )}
-          {selectedPlayer && (
+          {/* PROTOTYPE (throwaway) */}
+          {selectedPlayer && proto.active && (
+            <SelectionCardPrototype
+              variant={proto.variant}
+              onStep={proto.step}
+              player={selectedPlayer}
+              selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
+              status={
+                selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'
+              }
+              error={selectionState.error}
+              windowKey={windowKey}
+              sheetMarket={market}
+              whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
+              historical={historical}
+              onClose={() => updateSelectedPlayer(null)}
+            />
+          )}
+          {selectedPlayer && !proto.active && (
             <SelectionCard
               player={selectedPlayer}
               selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}

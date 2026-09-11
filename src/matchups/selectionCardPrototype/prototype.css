@@ -1,0 +1,157 @@
+/* PROTOTYPE — throwaway. See ./README.md. */
+
+/* Switcher: deliberately not part of the design. */
+.proto-switcher {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #ff3ea5;
+  color: #000;
+  font: 700 12px/1 monospace;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.proto-switcher button {
+  border: 0;
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Shared: tighter matrix cells in every variant. */
+.proto-card .selection-table-wrap th,
+.proto-card .selection-table-wrap td {
+  padding: 4px 6px;
+}
+
+/* A — side by side. */
+.proto-split {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+.proto-matrix-compact table {
+  min-width: 0;
+}
+.proto-split-log h3 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+}
+.proto-split-log .selection-log {
+  min-width: 0;
+}
+.proto-split .selection-table-wrap table {
+  min-width: 0;
+}
+.proto-split .selection-provenance {
+  margin: 6px 0 0;
+}
+
+/* B — active-stat strip + folded matrix. */
+.proto-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.proto-strip > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 5px 9px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.proto-strip dt {
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.proto-strip dd {
+  margin: 0;
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+}
+.proto-strip .proto-strip-blend {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+.proto-b-log .selection-log h3 {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+}
+.proto-b-log .selection-table-wrap table {
+  min-width: 0;
+  max-width: 560px;
+}
+.proto-fold {
+  margin-top: 10px;
+}
+.proto-fold summary {
+  cursor: pointer;
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+}
+.proto-fold[open] summary {
+  margin-bottom: 6px;
+  color: var(--ct-gold);
+}
+
+/* C — one-line opponent log. */
+.proto-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 0 0 10px;
+  border: 1px solid var(--ct-line);
+  border-left: 2px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  padding: 6px 10px;
+  font-size: 0.68rem;
+}
+.proto-line-lead {
+  color: var(--ct-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+}
+.proto-line-avg b {
+  font-family: var(--ct-mono);
+  font-size: 0.82rem;
+  color: var(--ct-gold);
+}
+.proto-line-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.proto-line-games > span {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-family: var(--ct-mono);
+}
+.proto-line-games small {
+  color: var(--ct-dim);
+  font-size: 0.6rem;
+}
+
+@media (max-width: 820px) {
+  .proto-split {
+    grid-template-columns: 1fr;
+  }
+}

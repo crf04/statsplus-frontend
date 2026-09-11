@@ -18,7 +18,7 @@ import SelectionCard from './SelectionCard';
 // `?proto=card` in the URL the selection card renders the layout variants.
 // Delete these imports and the block marked PROTOTYPE below to remove.
 import SelectionCardPrototype from './selectionCardPrototype/SelectionCardPrototype';
-import { useVariant } from './selectionCardPrototype/prototypeMode';
+import { PROTO_STANDALONE, useVariant } from './selectionCardPrototype/prototypeMode';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
@@ -942,7 +942,11 @@ function Detail({ matchup, gameId }) {
 
 export default function MatchupDetailPage() {
   const { gameId } = useParams();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const liveAuth = useAuth();
+  // PROTOTYPE (throwaway): the standalone build serves captured data, no sign-in.
+  const { isAuthenticated, loading: authLoading } = PROTO_STANDALONE
+    ? { isAuthenticated: true, loading: false }
+    : liveAuth;
   const [state, setState] = useState({ status: 'idle', matchup: null, error: null });
   useEffect(() => {
     if (authLoading || !isAuthenticated) {

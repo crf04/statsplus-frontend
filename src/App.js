@@ -5,7 +5,53 @@ import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+// PROTOTYPE (throwaway, branch prototype/selection-card-layout): a standalone
+// build is the selection-card prototype on captured data. Delete to remove.
+import { PROTO_STANDALONE } from './matchups/selectionCardPrototype/prototypeMode';
+import {
+  DEMO_GAME_ID,
+  DEMO_PLAYER_ID,
+  installMockApi,
+} from './matchups/selectionCardPrototype/mock/install';
 import './App.css';
+
+if (PROTO_STANDALONE) installMockApi();
+
+function PrototypeApp() {
+  return (
+    <>
+      <header className="app-header">
+        <nav className="app-nav" aria-label="Primary">
+          <span className="app-brand">CourtAI</span>
+          <div className="app-links">
+            <NavLink to={`/matchups/${DEMO_GAME_ID}`}>Matchups</NavLink>
+          </div>
+          <div className="app-auth">
+            <span
+              style={{ color: 'var(--ct-dim)', fontFamily: 'var(--ct-mono)', fontSize: '0.7rem' }}
+            >
+              prototype · captured data · no sign-in
+            </span>
+          </div>
+        </nav>
+      </header>
+      <RouteContent>
+        <Routes>
+          <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to={`/matchups/${DEMO_GAME_ID}?player=${DEMO_PLAYER_ID}&proto=card&v=A`}
+                replace
+              />
+            }
+          />
+        </Routes>
+      </RouteContent>
+    </>
+  );
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));
@@ -76,36 +122,39 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <div className="App">
-          <ProtectedRoute>
-            <AppNav />
-            <RouteContent>
-              <Routes>
-                <Route path="/" element={<GameLogFilter />} />
-                <Route path="/help" element={<QueryReferencePage />} />
-                <Route path="/matchups" element={<SlatePage />} />
-                <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-                <Route path="/targets" element={<TargetsPage />} />
-                <Route path="/targets/:targetId" element={<TargetDetailPage />} />
-                <Route
-                  path="/operations"
-                  element={
-                    <AdminProtectedRoute>
-                      <OperationsPage />
-                    </AdminProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/operations"
-                  element={
-                    <AdminProtectedRoute>
-                      <OperationsPage />
-                    </AdminProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </RouteContent>
-          </ProtectedRoute>
+          {PROTO_STANDALONE && <PrototypeApp />}
+          {!PROTO_STANDALONE && (
+            <ProtectedRoute>
+              <AppNav />
+              <RouteContent>
+                <Routes>
+                  <Route path="/" element={<GameLogFilter />} />
+                  <Route path="/help" element={<QueryReferencePage />} />
+                  <Route path="/matchups" element={<SlatePage />} />
+                  <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+                  <Route path="/targets" element={<TargetsPage />} />
+                  <Route path="/targets/:targetId" element={<TargetDetailPage />} />
+                  <Route
+                    path="/operations"
+                    element={
+                      <AdminProtectedRoute>
+                        <OperationsPage />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/operations"
+                    element={
+                      <AdminProtectedRoute>
+                        <OperationsPage />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </RouteContent>
+            </ProtectedRoute>
+          )}
         </div>
       </BrowserRouter>
     </AuthProvider>

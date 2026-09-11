@@ -7,6 +7,14 @@
  */
 import { useSearchParams } from 'react-router-dom';
 
+/* Dev servers always allow the prototype; a production build only with
+   REACT_APP_PROTOTYPE=card. A stray merge cannot ship it. */
+export const PROTO_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.REACT_APP_PROTOTYPE === 'card';
+/* The standalone build is the prototype and nothing else: captured data, no
+   sign-in, the matchup page is the whole app. */
+export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'card';
+
 export const VARIANT_KEYS = ['A', 'B', 'C'];
 
 export const VARIANT_NAMES = {
@@ -17,7 +25,7 @@ export const VARIANT_NAMES = {
 
 export const useVariant = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const active = process.env.NODE_ENV !== 'production' && searchParams.get('proto') === 'card';
+  const active = PROTO_ENABLED && (PROTO_STANDALONE || searchParams.get('proto') === 'card');
   const key = (searchParams.get('v') || 'A').toUpperCase();
   const variant = VARIANT_KEYS.includes(key) ? key : 'A';
   const step = (delta) => {

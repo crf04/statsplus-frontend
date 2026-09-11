@@ -13,6 +13,8 @@ A player chip under a Defense Sheet row ("Jordan Poole · 58% FGA · +1.8σ") ap
 
 A fact whose `sigma_deviation` is `null` (the backend had no baseline population for the slice) never renders. The chip text is `<name> · <share>% <unit> · <sign><σ>σ`, one decimal, sign always shown, matching the sheet row's own "vs league" sigma.
 
+Within each card, player chips are ordered by descending absolute sigma deviation, so the strongest positive or negative departure appears first.
+
 ## Considered options
 
 **Only positive deviations of at least 1σ** (the previous rule). Replaced by the requested ±0.5σ cutoff so cards show more players and include both higher and lower shares than the league average. The chip's signed sigma distinguishes the direction.

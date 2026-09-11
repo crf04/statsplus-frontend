@@ -385,6 +385,43 @@ test('toggles delivered windows and applies a two-sided sigma filter without ref
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 });
 
+test('orders player chips by largest absolute sigma deviation first', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.players.forEach((player, index) => {
+    player.teamId = 1;
+    player.dietShares.playTypes = [
+      {
+        key: 'transition',
+        season: {
+          share: [0.31, 0.05, 0.37][index],
+          volumePerGame: 1,
+          leagueAverageShare: 0.25,
+          sigmaDeviation: [0.6, -2, 1.2][index],
+        },
+      },
+    ];
+  });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  const chips = await screen.findByRole('group', { name: 'Players leaning on this slice' });
+  expect(
+    within(chips)
+      .getAllByText(/poss/)
+      .map((chip) => chip.textContent),
+  ).toEqual([
+    'LeBron James · 5% poss · -2.0σ',
+    'Jayson Tatum · 37% poss · +1.2σ',
+    'Austin Reaves · 31% poss · +0.6σ',
+  ]);
+});
+
 test('selection keeps All active and uses only the delivered Season Diet Share', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.find((player) => player.id === 2544).dietShares.playTypes[0].season = {

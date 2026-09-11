@@ -145,6 +145,46 @@
 .target-workbench .target-lab {
   display: contents;
 }
+.target-workbench .target-lab-overview {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.target-workbench .target-lab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.target-workbench .target-lab-header .target-lab-status {
+  margin: 0;
+}
+.target-workbench .target-lab-header > .target-stat-picker {
+  flex-shrink: 0;
+}
+.target-workbench .target-lab-overview .target-summary-stat {
+  flex: 0 0 144px;
+  min-width: 0;
+}
+.target-workbench .target-lab-overview .target-summary-stat > button {
+  height: 100%;
+  min-height: 112px;
+}
+.target-workbench .target-lab-overview .target-summary-unit {
+  display: block;
+  white-space: nowrap;
+}
+.target-workbench .target-lab-overview .target-record-grid {
+  gap: 4px;
+}
+.target-workbench .target-lab-overview .target-record-grid li {
+  width: 20px;
+  height: 20px;
+}
+.target-workbench .target-lab-overview .target-stat-options {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
 .target-workbench .target-lab-left {
   grid-column: 1;
   position: sticky;
@@ -153,7 +193,7 @@
 }
 .target-workbench .target-lab-games {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
 }
 .target-lab-games.is-stale {
   opacity: 0.45;

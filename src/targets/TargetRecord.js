@@ -132,7 +132,6 @@ export default function TargetRecord({
         {columnSummaries.map(({ column, margins, aggregate, hitShare }) => {
           const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
           const roundedDifference = rounded(aggregate.difference);
-          const aggregateHeadline = `${formatAggregateNumber(aggregate.difference)} ${unitFor(column)}`;
           const aggregateRelative = `${formatAggregatePercent(aggregate.relative)} vs baseline`;
           const aggregateCount =
             aggregate.count < games.length
@@ -146,7 +145,8 @@ export default function TargetRecord({
                   roundedDifference > 0 ? 'is-hit' : roundedDifference < 0 ? 'is-miss' : undefined
                 }
               >
-                {aggregateHeadline}
+                {formatAggregateNumber(aggregate.difference)}{' '}
+                <span className="target-summary-unit">{unitFor(column)}</span>
               </b>
               <small>{aggregateRelative}</small>
               <small className="target-summary-hit">

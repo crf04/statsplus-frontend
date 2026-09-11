@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BacktestSampleProvider, countAppearances } from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
+import StatPicker from './StatPicker';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
 
@@ -25,7 +26,7 @@ const describeLab = ({ valid, status, pending }) => {
 /*
  * The Lab: the season-to-date Backtest of the Draft Target above it, read
  * live as the draft is composed. It is not a destination; wherever a draft is
- * edited, this is the evidence beneath the form. Nothing is stored until Save,
+ * edited, this is the evidence alongside the form. Nothing is stored until Save,
  * and Save is the form's own — the Lab never touches it, so a slow or refused
  * read never blocks saving.
  */
@@ -55,9 +56,14 @@ export default function TargetLab({
       <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
         Lab · Backtest · season to date · vs {draft.opponent}
       </h2>
-      <p role="status" className="target-lab-status">
-        {describeLab({ valid, status, pending })}
-      </p>
+      <div className="target-lab-header">
+        <p role="status" className="target-lab-status">
+          {describeLab({ valid, status, pending })}
+        </p>
+        {workbench && preview && (
+          <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
+        )}
+      </div>
       {status === 'error' && (
         <p className="target-error" role="alert">
           {error}
@@ -78,7 +84,7 @@ export default function TargetLab({
             columns={columns}
             gradedBy={gradedBy}
             onGrade={(column) => changePreferences({ columns, gradedBy: column })}
-            onPreferencesChange={changePreferences}
+            onPreferencesChange={workbench ? undefined : changePreferences}
           >
             {/* Season to date is the evidence; whether the idea is actionable
                 tonight is one line, present only when the opponent plays. */}
@@ -107,11 +113,12 @@ export default function TargetLab({
 
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
+      {workbench && <div className="target-lab-overview">{evidence}</div>}
       <div className="target-lab-left">
         <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
           {children}
         </BacktestSampleProvider>
-        {evidence}
+        {!workbench && evidence}
       </div>
       {games}
     </section>

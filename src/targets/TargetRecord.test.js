@@ -26,7 +26,11 @@ test('the record grades all games oldest first and states the aggregate, hit rat
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('33%');
   expect(within(summary).getByRole('listitem', { name: 'PTS' })).toHaveTextContent('+2.0');
   // The aggregate headline is positive, even when fewer than half the games hit.
-  expect(within(summary).getByText('+2.0 PTS/game')).toHaveClass('is-hit');
+  expect(
+    within(summary).getByText(
+      (_, element) => element.tagName === 'B' && element.textContent === '+2.0 PTS/game',
+    ),
+  ).toHaveClass('is-hit');
   expect(within(summary).queryByRole('listitem', { name: 'Players' })).not.toBeInTheDocument();
   const cells = within(screen.getByRole('list', { name: /oldest to newest/ })).getAllByRole(
     'listitem',
@@ -216,7 +220,11 @@ test('the raw and minutes-adjusted views keep the same reduced-minute game disti
   const { rerender } = renderPointsRecord([reducedMinutes]);
   let summary = screen.getByRole('listitem', { name: 'PTS' });
   expect(summary).toHaveTextContent('-10.0 PTS/game');
-  expect(within(summary).getByText('-10.0 PTS/game')).toHaveClass('is-miss');
+  expect(
+    within(summary).getByText(
+      (_, element) => element.tagName === 'B' && element.textContent === '-10.0 PTS/game',
+    ),
+  ).toHaveClass('is-miss');
   expect(summary).toHaveTextContent('-50% vs baseline');
 
   rerender(
@@ -305,9 +313,9 @@ test('efficiency aggregates use each column’s exposure and identify percentage
   expect(screen.getByRole('listitem', { name: 'TS%' })).toHaveTextContent('+8.5 pp');
   expect(screen.getByRole('listitem', { name: 'TS%' })).toHaveTextContent('+19.4% vs baseline');
   expect(
-    within(screen.getByRole('listitem', { name: 'PTS/FGA' })).getByText('+0.2 PTS/FGA', {
-      exact: true,
-    }),
+    within(screen.getByRole('listitem', { name: 'PTS/FGA' })).getByText(
+      (_, element) => element.tagName === 'B' && element.textContent === '+0.2 PTS/FGA',
+    ),
   ).toBeInTheDocument();
   expect(screen.getByRole('listitem', { name: 'PTS/FGA' })).toHaveTextContent('+17.6% vs baseline');
 });

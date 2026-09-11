@@ -152,15 +152,16 @@ test('@critical a completed-season matchup renders section-owned evidence and ga
     .click();
   await expect(page).toHaveURL(new RegExp(`player=202695`));
   await expect(page.getByRole('heading', { name: 'Kawhi Leonard', level: 2 })).toBeVisible();
-  await expect(
-    page.getByText('Focal game LAC @ MIL · 2026-03-29 · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST'),
-  ).toBeVisible();
-  await expect(
-    page.getByText('Pregame samples use games strictly before the focal game.'),
-  ).toBeVisible();
-  await expect(
-    page.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
-  ).toBeVisible();
+  await expect(page.getByText('LAC @ MIL, 2026-03-29.')).toBeVisible();
+  const strip = page.getByRole('group', { name: 'Selection log stat' });
+  await expect(strip).toContainText('34.5');
+  await expect(strip.getByRole('button', { name: 'PTS' })).toContainText('24.0');
+  await expect(strip.getByRole('button', { name: 'REB' })).toContainText('5.0');
+  await expect(strip.getByRole('button', { name: 'AST' })).toContainText('7.0');
+  await expect(page.getByText(/vs MIL, \d+ games? before this one/)).toBeVisible();
+  await expect(page.getByText('Thin sample — interpret cautiously.')).toBeVisible();
+  await expect(page.getByText(/hindsight/)).toHaveCount(0);
+  await expect(page.getByText('Archetype sample')).toHaveCount(0);
   await expect(page.getByText('The Score Matrix reflects completed-season context.')).toBeVisible();
   const matrix = page.getByRole('table', { name: 'Kawhi Leonard Score Matrix' });
   await expect(matrix.getByRole('columnheader', { name: 'Category' })).toBeVisible();
@@ -658,8 +659,9 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   const matrix = page.getByRole('table', { name: 'LeBron James Score Matrix' });
   await expect(matrix).toContainText('+12%');
   await expect(matrix).toContainText('thin');
-  await expect(page.getByText('Thin sample — interpret cautiously.').first()).toBeVisible();
-  await expect(page.getByRole('rowheader', { name: 'AVG' }).first()).toBeVisible();
+  // Only the Archetype sample was thin here, and it no longer renders.
+  await expect(page.getByText('Thin sample — interpret cautiously.')).toHaveCount(0);
+  await expect(page.getByText(/PTS avg/)).toBeVisible();
   await expect(page.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
   await expect(page.getByText('Restricted Area FGA')).toBeVisible();
   await expect(page.getByText('Catch and Shoot FG3A')).toBeVisible();

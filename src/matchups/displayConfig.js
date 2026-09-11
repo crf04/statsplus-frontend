@@ -40,3 +40,32 @@ export const getDisplayableDietShare = (player, base, sliceKey) => {
   const value = findDietShare(player, base, sliceKey);
   return value && shouldDisplayDietShare(base, value) ? value : null;
 };
+
+// Stat Categories read in box-score order wherever a reader picks one: the
+// Defense Sheet market tabs and the selection card. The API lists them
+// alphabetically. Anything unnamed here keeps its API position at the end.
+export const CATEGORY_ORDER = Object.freeze([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'STL',
+  'BLK',
+  'TOV',
+  'FGA',
+  'FG2A',
+  'FG3A',
+  'PR',
+  'PA',
+  'RA',
+  'PRA',
+  'STKS',
+]);
+
+export const orderCategories = (categories) => {
+  const rank = (category) => {
+    const index = CATEGORY_ORDER.indexOf(category);
+    return index === -1 ? CATEGORY_ORDER.length : index;
+  };
+  return [...categories].sort((a, b) => rank(a) - rank(b));
+};

@@ -12,6 +12,7 @@ import {
   findDietShare,
   formatFocalGameLine,
   getDisplayableDietShare,
+  orderCategories,
 } from './displayConfig';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
@@ -682,7 +683,10 @@ function Detail({ matchup, gameId }) {
     (team) => team.teamId === opposingTeamId,
   );
   const markets = useMemo(
-    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.statCategories))],
+    () => [
+      'All',
+      ...orderCategories([...new Set(opposingPlayers.flatMap((player) => player.statCategories))]),
+    ],
     [opposingPlayers],
   );
   const windowSection = historical
@@ -873,6 +877,7 @@ function Detail({ matchup, gameId }) {
           {selectedPlayer && (
             <SelectionCard
               player={selectedPlayer}
+              game={matchup.game}
               selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
               status={
                 selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'

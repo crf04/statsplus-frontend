@@ -543,36 +543,190 @@
   margin-top: 3px;
 }
 
+/* The selection card: name and game on top, the stat strip as the selector,
+   then the Score Matrix and the opponent log side by side in two panels. */
 .selection-card {
-  border: 1px solid var(--ct-gold);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(232, 163, 61, 0.55);
   border-radius: var(--ct-radius-card);
-  padding: 12px;
-  background: var(--ct-surface);
+  padding: 16px 18px 14px;
+  background: linear-gradient(180deg, #1a160e 0%, var(--ct-surface) 140px);
 }
 
 .selection-card-heading {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .selection-card-heading h2 {
   margin: 0;
-  font-size: 0.9rem;
+  font-family: var(--ct-display);
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
-.selection-explainer,
-.thin-note {
+.selection-game {
+  margin: 4px 0 0;
   color: var(--ct-dim);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
 }
 
-.selection-stat-control {
+.selection-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  padding: 0;
+  color: var(--ct-dim);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.selection-close:hover,
+.selection-close:focus-visible {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+/* The strip: one quiet row of tiles, the active stat lit. Scrolls on phones. */
+.selection-strip {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 8px 0;
+  margin: 12px 0;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--ct-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.selection-strip-tile {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 46px;
+  border: 0;
+  border-right: 1px solid var(--ct-line);
+  border-radius: 0;
+  padding: 6px 8px 5px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+.selection-strip-tile:last-child {
+  border-right: 0;
+}
+
+.selection-strip-tile span {
+  color: var(--ct-dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+.selection-strip-tile b {
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+button.selection-strip-tile {
+  cursor: pointer;
+}
+
+button.selection-strip-tile:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+button.selection-strip-tile:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: -2px;
+}
+
+.selection-strip-tile[aria-pressed='true'] {
+  background: var(--ct-gold-soft);
+  box-shadow: inset 0 -2px var(--ct-gold);
+}
+
+.selection-strip-tile[aria-pressed='true'] b {
+  color: var(--ct-gold);
+}
+
+.selection-strip-minutes b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selection-strip-sparkline {
+  width: 44px;
+  height: 14px;
+  color: var(--ct-gold);
+  opacity: 0.8;
+}
+
+.selection-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.selection-strip-books {
+  display: inline-flex;
+  gap: 3px;
+  min-height: 1.1em;
+}
+
+.selection-strip-books i {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 3px;
+  padding: 0 3px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.selection-strip-tile[aria-pressed='true'] .selection-strip-books i {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.selection-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.selection-panel {
+  min-width: 0;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  padding: 10px 12px 8px;
+  background: var(--ct-surface-2);
+}
+
+.selection-panel h3 {
+  margin: 0 0 8px;
+  color: var(--ct-dim);
+  font-family: var(--ct-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.selection-panel-log {
+  border-color: rgba(232, 163, 61, 0.35);
 }
 
 .selection-table-wrap {
@@ -581,40 +735,159 @@
 
 .selection-table-wrap table {
   width: 100%;
-  min-width: 560px;
   border-collapse: collapse;
 }
 
 .selection-table-wrap th,
 .selection-table-wrap td {
   border-bottom: 1px solid var(--ct-line);
-  padding: 5px 8px;
+  padding: 4px 8px;
   text-align: right;
   white-space: nowrap;
+  font-family: var(--ct-mono);
   font-size: 0.66rem;
 }
 
 .selection-table-wrap th:first-child {
   text-align: left;
+  font-family: var(--ct-sans);
 }
 
-.selection-table-wrap .active-market-row {
+.selection-table-wrap thead th {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ct-line-strong);
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-weight: 500;
+}
+
+.selection-table-wrap tbody th {
+  font-weight: 600;
+}
+
+/* Matrix: the wash is the number; rows pick the stat like the strip does. */
+.selection-matrix tbody tr {
+  cursor: pointer;
+}
+
+.selection-matrix tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.selection-matrix-pick {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.selection-matrix-pick:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.delta-flat {
+  color: var(--ct-dim);
+}
+
+.selection-matrix .active-market-row {
   background: var(--ct-gold-soft);
+  box-shadow: inset 2px 0 var(--ct-gold);
 }
 
-.selection-logs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.selection-log {
-  min-width: 0;
-}
-
-.average-row {
+.selection-matrix .blend-col {
+  border-left: 1px solid var(--ct-line-strong);
   font-weight: 700;
+}
+
+.score-none {
+  color: rgba(255, 255, 255, 0.14);
+}
+
+.selection-table-wrap .thin-flag {
+  margin-left: 4px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.55rem;
+}
+
+/* Opponent log: the average leads, one row per game follows. */
+.selection-log-kicker {
+  margin: 0 0 4px;
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+}
+
+.selection-average {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+}
+
+.selection-average b {
+  color: var(--ct-gold);
+  font-family: var(--ct-display);
+  font-size: 2.1rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.selection-average em {
+  color: var(--ct-dim);
+  font-style: normal;
+}
+
+.selection-log-table th small {
+  margin-left: 2px;
+  color: var(--ct-dim);
+  font-size: 0.6rem;
+}
+
+.selection-log-table td {
+  color: var(--ct-dim);
+}
+
+.selection-log-table .selection-log-stat {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+
+.delta-up {
+  color: var(--ct-hit);
+}
+
+.delta-down {
+  color: var(--ct-miss);
+}
+
+.selection-log-table td.delta-up,
+.selection-log-table td.delta-down {
+  color: inherit;
+}
+
+.selection-log-table td.delta-up {
+  color: var(--ct-hit);
+}
+
+.selection-log-table td.delta-down {
+  color: var(--ct-miss);
+}
+
+.selection-explainer,
+.thin-note {
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+}
+
+.selection-explainer {
+  margin: 12px 0 0;
+  font-size: 0.62rem;
+  opacity: 0.8;
 }
 
 .signed-out-detail {
@@ -661,8 +934,16 @@
     grid-column: 1;
   }
 
-  .selection-logs {
+  .selection-panels {
     grid-template-columns: 1fr;
+  }
+
+  .selection-card {
+    padding: 12px;
+  }
+
+  .selection-card-heading h2 {
+    font-size: 1.3rem;
   }
 }
 

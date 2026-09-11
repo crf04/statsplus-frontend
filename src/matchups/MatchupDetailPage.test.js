@@ -871,7 +871,7 @@ test('opens and deep-links the selection card while market flips reuse delivered
     '+12%',
   );
   expect((await screen.findAllByText('+0.083')).length).toBeGreaterThan(0);
-  expect(screen.getByText('No archetype sample data is available.')).toBeVisible();
+  expect(screen.queryByText('Archetype sample')).not.toBeInTheDocument();
   expect(screen.getByText('Transition').closest('article')).toHaveClass('selection-why');
   await userEvent.click(
     within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -1305,15 +1305,19 @@ test('separates the focal outcome from hindsight context in the historical dossi
   renderMatchup('/matchups/game-1?player=2544');
 
   expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
-  expect(
-    await screen.findByText('Pregame samples use games strictly before the focal game.'),
-  ).toBeVisible();
-  expect(
-    screen.getByText('Completed-season baseline — hindsight, not pregame evidence.'),
-  ).toBeVisible();
-  expect(
-    screen.getByText('Focal game LAL @ BOS · 2026-03-29 · 31.0 MIN · 10.0 PTS · 11.0 FGA'),
-  ).toBeVisible();
+  // The focal box score is the strip: minutes first, then one tile per category.
+  expect(screen.getByText('LAL @ BOS, 2026-03-29.')).toBeVisible();
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+  expect(strip.getByText('MIN').nextSibling).toHaveTextContent('31.0');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('10.0');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription('10.0');
+  expect(strip.getByRole('button', { name: 'FGA' })).toHaveTextContent('11.0');
+  await waitFor(() =>
+    expect(screen.getByText('No games vs this opponent data is available.')).toBeVisible(),
+  );
+  // Hindsight context left with the Archetype sample; the explainer still names it.
+  expect(screen.queryByText(/hindsight/)).not.toBeInTheDocument();
+  expect(screen.getByText(/The Score Matrix reflects completed-season context\./)).toBeVisible();
   // The dossier is requested for governed Stat Categories, not posted markets.
   expect(fetchMatchupSelection.mock.calls.at(-1).slice(0, 3)).toEqual([
     'game-1',
@@ -1382,6 +1386,118 @@ test('selection request errors replace loading with an honest alert', async () =
   );
   expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load selection logs');
   expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
+});
+
+test('an upcoming game shows minutes to date and the books posting each market', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=1630559']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  expect(screen.getByText('LAL @ BOS. Markets posted by PrizePicks and Underdog.')).toBeVisible();
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+  expect(strip.getByText('MIN, last 10').nextSibling).toHaveTextContent('33.7');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('PPUD');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
+    'Posted by PrizePicks and Underdog',
+  );
+  expect(strip.getByRole('button', { name: 'FG3A' })).toHaveTextContent('PP');
+  expect(strip.getByRole('button', { name: 'FG3A' })).not.toHaveTextContent('UD');
+  expect(strip.getByRole('button', { name: 'FG3A' })).toHaveAccessibleDescription(
+    'Posted by PrizePicks',
+  );
+});
+
+test('the strip and the market tabs read in box-score order', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  const tabs = within(screen.getByRole('group', { name: 'Market' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+  expect(tabs).toEqual(['All', 'PTS', 'FGA', 'FG3A']);
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }))
+    .getAllByRole('button')
+    .map((button) => button.getAttribute('aria-label'));
+  expect(strip).toEqual(['PTS', 'FGA']);
+  const matrixRows = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }))
+    .getAllByRole('rowheader')
+    .map((row) => row.textContent);
+  expect(matrixRows).toEqual(['PTS', 'FGA']);
+});
+
+test('an upcoming game names its tip time from the schedule', async () => {
+  fetchMatchup.mockResolvedValueOnce({
+    ...matchup,
+    game: {
+      ...matchup.game,
+      scheduledAt: '2026-01-16T00:30:00.000Z',
+      status: 'scheduled',
+      statusLabel: 'Scheduled',
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=1630559']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  const when = new Date('2026-01-16T00:30:00.000Z');
+  const day = when.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  expect(
+    screen.getByText(`LAL @ BOS, ${day}, ${time}. Markets posted by PrizePicks and Underdog.`),
+  ).toBeVisible();
+});
+
+test('a matrix row picks the stat from the keyboard too', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  const matrix = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }));
+  matrix.getByRole('button', { name: 'FGA' }).focus();
+  await userEvent.keyboard('{Enter}');
+  expect(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('a matrix row picks the stat like the strip does', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  await userEvent.click(screen.getByRole('rowheader', { name: 'FGA' }));
+  expect(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 /*

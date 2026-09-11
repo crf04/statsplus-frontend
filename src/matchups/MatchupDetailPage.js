@@ -12,6 +12,7 @@ import {
   findDietShare,
   formatFocalGameLine,
   getDisplayableDietShare,
+  orderCategories,
 } from './displayConfig';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
@@ -290,7 +291,7 @@ function PlayerRail({
                   <p className="focal-line">
                     {formatFocalGameLine(
                       focalLine,
-                      market === 'All' ? player.statCategories : [market],
+                      market === 'All' ? orderCategories(player.statCategories) : [market],
                     )}
                   </p>
                 )}
@@ -306,7 +307,7 @@ function PlayerRail({
                     role="group"
                     aria-label={`${player.name} posted markets`}
                   >
-                    {player.postedMarkets.map((postedMarket) => {
+                    {orderCategories(player.postedMarkets).map((postedMarket) => {
                       const providers = Object.entries(player.provenance)
                         .filter(([, markets]) => markets.includes(postedMarket))
                         .map(([provider]) => provider);
@@ -682,7 +683,10 @@ function Detail({ matchup, gameId }) {
     (team) => team.teamId === opposingTeamId,
   );
   const markets = useMemo(
-    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.statCategories))],
+    () => [
+      'All',
+      ...orderCategories([...new Set(opposingPlayers.flatMap((player) => player.statCategories))]),
+    ],
     [opposingPlayers],
   );
   const windowSection = historical
@@ -873,6 +877,7 @@ function Detail({ matchup, gameId }) {
           {selectedPlayer && (
             <SelectionCard
               player={selectedPlayer}
+              game={matchup.game}
               selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
               status={
                 selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'

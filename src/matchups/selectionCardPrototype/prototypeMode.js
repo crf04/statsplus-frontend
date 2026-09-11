@@ -15,12 +15,14 @@ export const PROTO_ENABLED =
    sign-in, the matchup page is the whole app. */
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'card';
 
-export const VARIANT_KEYS = ['A', 'B', 'C'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E'];
 
 export const VARIANT_NAMES = {
   A: 'Matrix beside the opponent log',
   B: 'Active stat strip, matrix folded',
   C: 'Opponent log as one line',
+  D: 'A, ledger: signed ink, hero average',
+  E: 'A, panels: heat cells, two surfaces',
 };
 
 export const useVariant = () => {

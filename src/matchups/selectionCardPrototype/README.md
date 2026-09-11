@@ -25,6 +25,13 @@ signed in. For live production data use the statsplus-live-shots skill.
   scores show, as a strip of source/value pairs with Blend highlighted. The
   opponent log sits under it. The full matrix is behind a "All N categories"
   disclosure.
+- `v=D` — **A, ledger.** Same split as A. Signed ink in the matrix (green up,
+  red down, dashes faded), rows clickable, Blend column set off. The log leads
+  with the average as a large number, then one row per game. Box-score strip
+  under the name replaces the focal sentence; explainer moves to small print.
+- `v=E` — **A, panels.** D's chrome, but the matrix and the log sit in two
+  inset panels, and matrix cells carry a heat wash scaled to the score
+  instead of coloured ink.
 - `v=C` — **Opponent log as one line.** Matrix unchanged. The opponent log
   collapses to a single line under the chips: average for the active stat,
   minutes, and one pill per game.

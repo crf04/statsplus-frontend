@@ -42,7 +42,7 @@ function PrototypeApp() {
             path="*"
             element={
               <Navigate
-                to={`/matchups/${DEMO_GAME_ID}?player=${DEMO_PLAYER_ID}&proto=card&v=A`}
+                to={`/matchups/${DEMO_GAME_ID}?player=${DEMO_PLAYER_ID}&proto=card&v=D`}
                 replace
               />
             }

@@ -239,7 +239,169 @@ function VariantC({ player, rows, bases, hasBlend, activeStat, historical, selec
   );
 }
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC };
+/* Shared by D and E: a cell whose ink or wash carries the sign. */
+const signClass = (component) => {
+  if (!component) return 'proto-cell-none';
+  if (Math.round(component.value * 100) === 0) return 'proto-cell-flat';
+  return component.value > 0 ? 'proto-cell-up' : 'proto-cell-down';
+};
+const washStyle = (component) => {
+  if (!component) return undefined;
+  const alpha = Math.min(0.55, Math.abs(component.value) * 3);
+  const rgb = component.value >= 0 ? '76, 175, 125' : '194, 78, 78';
+  return { background: `rgba(${rgb}, ${alpha.toFixed(2)})` };
+};
+
+function InkMatrix({ player, rows, bases, hasBlend, activeStat, historical, onPick, wash }) {
+  return (
+    <div className="selection-table-wrap proto-ink-wrap">
+      <table
+        aria-label={`${player.name} Score Matrix`}
+        className={wash ? 'proto-wash' : 'proto-ink'}
+      >
+        <thead>
+          <tr>
+            <th scope="col">{historical ? 'Category' : 'Market'}</th>
+            {bases.map((base) => (
+              <th scope="col" key={base}>
+                {BASE_LABELS[base] || base}
+              </th>
+            ))}
+            {hasBlend && (
+              <th scope="col" className="proto-blend-col">
+                Blend
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ market, score }) => (
+            <tr
+              key={market}
+              className={market === activeStat ? 'active-market-row' : undefined}
+              onClick={() => onPick(market)}
+            >
+              <th scope="row">{market}</th>
+              {bases.map((base) => {
+                const component = score.components[base];
+                return (
+                  <td
+                    key={base}
+                    className={signClass(component)}
+                    style={wash ? washStyle(component) : undefined}
+                  >
+                    <Cell component={component} />
+                  </td>
+                );
+              })}
+              {hasBlend && (
+                <td
+                  className={`proto-blend-col ${signClass(score.blend)}`}
+                  style={wash ? washStyle(score.blend) : undefined}
+                >
+                  <Cell component={score.blend} />
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const opponentOf = (rows) => {
+  const first = rows.find((row) => !row.average);
+  return first ? first.matchup.replace(/^.*(?:vs\.|@)\s*/, '') : null;
+};
+
+function HeroLog({ table, market, status, excludesFocalGame }) {
+  if (status === 'loading') return <p role="status">Loading games vs this opponent…</p>;
+  if (status !== 'ready') return null;
+  const games = table.rows.filter((row) => !row.average);
+  const avg = table.rows.find((row) => row.average);
+  const opponent = opponentOf(table.rows);
+  if (games.length === 0) {
+    return <p className="honest-empty">No games vs this opponent before the focal game.</p>;
+  }
+  return (
+    <div className="proto-hero-log">
+      <p className="proto-hero-kicker">
+        vs {opponent}, {games.length} {games.length === 1 ? 'game' : 'games'}
+        {excludesFocalGame ? ' before this one' : ''}
+        {table.thin && <span className="thin-flag">thin</span>}
+      </p>
+      {avg && (
+        <p className="proto-hero">
+          <b>{avg.stats[market].toFixed(1)}</b>
+          <span>
+            {market} avg <em>in {avg.minutes.toFixed(1)} min</em>
+          </span>
+          <span className={avg.deltas[market] >= 0 ? 'proto-cell-up' : 'proto-cell-down'}>
+            {formatDelta(avg.deltas[market])} /min
+          </span>
+        </p>
+      )}
+      <table className="proto-hero-table">
+        <tbody>
+          {games.map((row) => (
+            <tr key={row.date}>
+              <th scope="row">
+                {row.date} <small>{row.matchup}</small>
+              </th>
+              <td>{row.minutes.toFixed(1)} min</td>
+              <td className="proto-hero-stat">{row.stats[market].toFixed(1)}</td>
+              <td className={row.deltas[market] >= 0 ? 'proto-cell-up' : 'proto-cell-down'}>
+                {formatDelta(row.deltas[market])}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* D — A's layout with signed ink in the matrix and a hero average on the log. */
+function VariantD(props) {
+  const { selection, status, activeStat } = props;
+  return (
+    <div className="proto-split proto-ledger">
+      <InkMatrix {...props} />
+      <HeroLog
+        table={selection?.h2h}
+        market={activeStat}
+        status={status}
+        excludesFocalGame={selection?.experience?.samples.excludesFocalGame}
+      />
+    </div>
+  );
+}
+
+/* E — A's layout as two panels with heat-washed cells. */
+function VariantE(props) {
+  const { selection, status, activeStat } = props;
+  return (
+    <div className="proto-split proto-panels">
+      <section className="proto-panel">
+        <h3>Score Matrix</h3>
+        <InkMatrix {...props} wash />
+      </section>
+      <section className="proto-panel proto-panel-log">
+        <h3>Games vs this opponent</h3>
+        <HeroLog
+          table={selection?.h2h}
+          market={activeStat}
+          status={status}
+          excludesFocalGame={selection?.experience?.samples.excludesFocalGame}
+        />
+      </section>
+    </div>
+  );
+}
+
+const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD, E: VariantE };
+const REFINED = new Set(['D', 'E']);
 
 export default function SelectionCardPrototype({
   variant,
@@ -293,23 +455,59 @@ export default function SelectionCardPrototype({
         if (event.key === 'Escape') onClose();
       }}
     >
-      <div className="selection-card-heading">
-        <div>
-          <p className="matchup-eyebrow">Selection card</p>
-          <h2 id="selection-heading">{player.name}</h2>
+      {REFINED.has(variant) ? (
+        <div className="proto-head">
+          <div className="proto-head-title">
+            <h2 id="selection-heading">{player.name}</h2>
+            {player.focalGameLine && (
+              <p className="proto-head-game">
+                {player.focalGameLine.matchup}, {player.focalGameLine.gameDate}
+                {historical ? '. Completed-season context.' : ''}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="proto-close"
+            onClick={onClose}
+            aria-label="Close selection card"
+          >
+            ×
+          </button>
         </div>
-        <button type="button" className="selection-close" onClick={onClose}>
-          Close selection card
-        </button>
-      </div>
-      <p className="selection-explainer">
+      ) : (
+        <div className="selection-card-heading">
+          <div>
+            <p className="matchup-eyebrow">Selection card</p>
+            <h2 id="selection-heading">{player.name}</h2>
+          </div>
+          <button type="button" className="selection-close" onClick={onClose}>
+            Close selection card
+          </button>
+        </div>
+      )}
+      {player.focalGameLine && REFINED.has(variant) && (
+        <ol className="proto-box" aria-label="Focal game line">
+          <li>
+            <span>MIN</span>
+            <b>{player.focalGameLine.minutes.toFixed(1)}</b>
+          </li>
+          {player.statCategories.map((category) => (
+            <li key={category} className={category === activeStat ? 'proto-box-active' : undefined}>
+              <span>{category}</span>
+              <b>{player.focalGameLine.stats[category].toFixed(1)}</b>
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className={`selection-explainer${REFINED.has(variant) ? ' proto-explainer' : ''}`}>
         {whyRelevant
           ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
         {historical ? ' The Score Matrix reflects completed-season context.' : ''}
       </p>
-      {player.focalGameLine && (
+      {player.focalGameLine && !REFINED.has(variant) && (
         <p className="focal-line">
           {formatFocalGameLine(player.focalGameLine, player.statCategories, { includeDate: true })}
         </p>
@@ -336,6 +534,7 @@ export default function SelectionCardPrototype({
         historical={historical}
         selection={selection}
         status={status}
+        onPick={setActiveStat}
       />
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)

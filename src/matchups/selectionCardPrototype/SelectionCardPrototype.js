@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatFocalGameLine } from '../displayConfig';
 import PrototypeSwitcher from './PrototypeSwitcher';
+import { orderCategories } from './prototypeMode';
 import './prototype.css';
 
 const BASE_LABELS = {
@@ -20,32 +21,6 @@ const BASE_LABELS = {
 const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
 const formatDelta = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
-
-/* Box-score order instead of the API's alphabetical one. Anything the list
-   does not name keeps its API position after the named ones. */
-const CATEGORY_ORDER = [
-  'PTS',
-  'REB',
-  'AST',
-  '3PM',
-  'STL',
-  'BLK',
-  'TOV',
-  'FGA',
-  'FG2A',
-  'FG3A',
-  'PR',
-  'PA',
-  'RA',
-  'PRA',
-  'STKS',
-];
-const orderCategories = (categories) =>
-  [...categories].sort((a, b) => {
-    const ia = CATEGORY_ORDER.indexOf(a);
-    const ib = CATEGORY_ORDER.indexOf(b);
-    return (ia === -1 ? CATEGORY_ORDER.length : ia) - (ib === -1 ? CATEGORY_ORDER.length : ib);
-  });
 
 const useRows = (player, windowKey) => {
   const rows = orderCategories(player.statCategories).map((market) => ({

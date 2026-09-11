@@ -39,3 +39,29 @@ export const useVariant = () => {
   };
   return { active, variant, step };
 };
+
+/* Box-score order instead of the API's alphabetical one. Anything the list
+   does not name keeps its API position after the named ones. */
+export const CATEGORY_ORDER = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'STL',
+  'BLK',
+  'TOV',
+  'FGA',
+  'FG2A',
+  'FG3A',
+  'PR',
+  'PA',
+  'RA',
+  'PRA',
+  'STKS',
+];
+export const orderCategories = (categories) =>
+  [...categories].sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a);
+    const ib = CATEGORY_ORDER.indexOf(b);
+    return (ia === -1 ? CATEGORY_ORDER.length : ia) - (ib === -1 ? CATEGORY_ORDER.length : ib);
+  });

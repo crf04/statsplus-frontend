@@ -18,7 +18,11 @@ import SelectionCard from './SelectionCard';
 // `?proto=card` in the URL the selection card renders the layout variants.
 // Delete these imports and the block marked PROTOTYPE below to remove.
 import SelectionCardPrototype from './selectionCardPrototype/SelectionCardPrototype';
-import { PROTO_STANDALONE, useVariant } from './selectionCardPrototype/prototypeMode';
+import {
+  PROTO_STANDALONE,
+  orderCategories,
+  useVariant,
+} from './selectionCardPrototype/prototypeMode';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
@@ -687,8 +691,14 @@ function Detail({ matchup, gameId }) {
     (team) => team.teamId === opposingTeamId,
   );
   const markets = useMemo(
-    () => ['All', ...new Set(opposingPlayers.flatMap((player) => player.statCategories))],
-    [opposingPlayers],
+    () => [
+      'All',
+      // PROTOTYPE (throwaway): box-score order for the market tabs.
+      ...(proto.active ? orderCategories : (list) => list)([
+        ...new Set(opposingPlayers.flatMap((player) => player.statCategories)),
+      ]),
+    ],
+    [opposingPlayers, proto.active],
   );
   const windowSection = historical
     ? sections[windowKey === 'season' ? 'seasonDefense' : 'last15Defense']

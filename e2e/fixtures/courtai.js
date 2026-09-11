@@ -458,7 +458,7 @@ export const matchupPayload = {
           // Above the sigma and volume floor: chip must render.
           dietShare('Transition', 0.19, 0.0925, 0.075),
           // Current-matchup Postup population: mean .05, pstdev .1.
-          // Below league average: chip stays hidden by sigma.
+          // Only -0.3 sigma from league average: chip stays hidden by sigma.
           dietShare('Postup', 0.02, 0.05, 0.1),
         ],
         // Current-matchup shot_zones Restricted Area population: mean .20, pstdev .06,
@@ -489,12 +489,8 @@ export const matchupPayload = {
         play_types: [dietShare('Transition', 0.18, 0.0925, 0.075)],
         // Restricted Area is not an FG3A-compatible slice, and no shot-type
         // Diet fact exists, so FG3A has no contributing player evidence.
-        // This fact would have passed the OLD fixed share gate (>= 25% FGA),
-        // but sigma_deviation stays under the 1-sigma display floor against
-        // the same (mean .20, pstdev .06) population LeBron and Tatum use, so
-        // it is hidden by sigma, not by accident. If the display gate ever
-        // regresses to the fixed-share rule, this chip would render again and
-        // the "hidden" assertion below would fail.
+        // At +0.83 sigma against the same (mean .20, pstdev .06) population
+        // LeBron and Tatum use, this chip clears the half-sigma display floor.
         shot_zones: [dietShare('Restricted Area', 0.25, 0.2, 0.06, 5.1, 'field_goal_attempts')],
         shot_types: [],
         // Above the sigma floor (against the shared mean .14, pstdev .12
@@ -822,8 +818,8 @@ export const historicalMatchupPayload = {
           // with Giannis's fact below. Above the sigma and volume floor:
           // chip must render.
           dietShare('Transition', 0.22, 0.09, 0.1),
-          // Historical Postup population: mean .05, pstdev .15. Above league
-          // average but under the 1-sigma display floor: chip stays hidden.
+          // Historical Postup population: mean .05, pstdev .15. At +0.6 sigma,
+          // this chip clears the half-sigma display floor.
           dietShare('Postup', 0.14, 0.05, 0.15),
         ],
         // Historical shot_zones Restricted Area population: mean .21, pstdev

@@ -1,19 +1,21 @@
-# Diet Share chips show a lean relative to the league, not a fixed share
+# Diet Share chips show departures from the league average
 
 **Status:** accepted
 
-A player chip under a Defense Sheet row ("Jordan Poole · 58% FGA · +1.8σ") appears when the player's Season Diet Share for that slice sits at least one population standard deviation above the league mean for the slice, and the player's volume in the slice clears a small per-game floor. The backend delivers `league_average_share` and `sigma_deviation` on every Diet Share fact; the frontend owns only the display gate, in `src/matchups/displayConfig.js`:
+A player chip under a Defense Sheet row ("Jordan Poole · 58% FGA · +1.8σ") appears when the player's Season Diet Share for that slice sits at least half a population standard deviation above or below the league mean for the slice, and the player's volume in the slice clears a small per-game floor. Both boundaries are inclusive: `sigma_deviation <= -0.5` or `sigma_deviation >= 0.5`. The backend delivers `league_average_share` and `sigma_deviation` on every Diet Share fact; the frontend owns only the display gate, in `src/matchups/displayConfig.js`:
 
-| Base            | Minimum sigma deviation | Minimum volume per game |
-| --------------- | ----------------------- | ----------------------- |
-| playTypes       | 1                       | 1 possession            |
-| shotZones       | 1                       | 1 FGA                   |
-| shotTypes       | 1                       | 4 FGA                   |
-| assistLocations | 1                       | 1 assist                |
+| Base            | Minimum absolute sigma deviation | Minimum volume per game |
+| --------------- | -------------------------------- | ----------------------- |
+| playTypes       | 0.5                              | 1 possession            |
+| shotZones       | 0.5                              | 1 FGA                   |
+| shotTypes       | 0.5                              | 4 FGA                   |
+| assistLocations | 0.5                              | 1 assist                |
 
 A fact whose `sigma_deviation` is `null` (the backend had no baseline population for the slice) never renders. The chip text is `<name> · <share>% <unit> · <sign><σ>σ`, one decimal, sign always shown, matching the sheet row's own "vs league" sigma.
 
 ## Considered options
+
+**Only positive deviations of at least 1σ** (the previous rule). Replaced by the requested ±0.5σ cutoff so cards show more players and include both higher and lower shares than the league average. The chip's signed sigma distinguishes the direction.
 
 **A fixed share per Base** (the original rule: play types ≥15%, zones ≥25%, shot types ≥35%, assist locations ≥30%). Rejected because slice shares are far from uniform. Against 2025-26 production data the fixed gate showed 212 of 304 rotation players on Above the Break 3, where the league mean is 32%, and never showed a Corner 3 lean, where the league mean is 10%. Most chips were below league average and the word "leaning" was untrue.
 

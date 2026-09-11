@@ -4,10 +4,10 @@
 export const UNAVAILABLE_RELATIVE_LABEL = 'vs league: unavailable (not comparable)';
 
 export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
-  playTypes: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 1 }),
-  shotZones: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 1 }),
-  shotTypes: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 4 }),
-  assistLocations: Object.freeze({ minimumSigmaDeviation: 1, minimumVolumePerGame: 1 }),
+  playTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
+  shotZones: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
+  shotTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 4 }),
+  assistLocations: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
 });
 
 export const shouldDisplayDietShare = (base, value) => {
@@ -15,7 +15,7 @@ export const shouldDisplayDietShare = (base, value) => {
   return (
     Boolean(threshold) &&
     value.sigmaDeviation !== null &&
-    value.sigmaDeviation >= threshold.minimumSigmaDeviation &&
+    Math.abs(value.sigmaDeviation) >= threshold.minimumSigmaDeviation &&
     value.volumePerGame >= threshold.minimumVolumePerGame
   );
 };

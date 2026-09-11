@@ -487,3 +487,75 @@
   color: #000;
   text-decoration: underline;
 }
+
+/* The strip is the selector: tiles are buttons, MIN stays inert. */
+.proto-box li {
+  padding: 0;
+}
+.proto-box li > span,
+.proto-box li > b,
+.proto-box li > button {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 5px;
+}
+.proto-box li > span {
+  padding-bottom: 0;
+}
+.proto-box li > b {
+  padding-top: 0;
+}
+.proto-box-minutes {
+  display: flex;
+  flex-direction: column;
+}
+.proto-box li > button {
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.proto-box li > button:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.proto-box li > button:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: -2px;
+}
+.proto-box li > button span {
+  color: var(--ct-dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+.proto-box li > button b {
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.proto-card-D .proto-box,
+.proto-card-E .proto-box {
+  margin-bottom: 12px;
+}
+
+.proto-box .proto-box-minutes > b {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.proto-switcher-label {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .proto-switcher {
+    max-width: calc(100% - 24px);
+    font-size: 10px;
+  }
+  .proto-switcher-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

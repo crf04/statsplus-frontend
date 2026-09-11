@@ -27,7 +27,10 @@ const useRows = (player, windowKey) => {
     market,
     score: player.scores[market][windowKey],
   }));
-  const bases = [...new Set(rows.flatMap(({ score }) => Object.keys(score.components)))];
+  const BASE_ORDER = ['shotTypes', 'shotZones', 'playTypes', 'assistLocations', 'traditional'];
+  const bases = [...new Set(rows.flatMap(({ score }) => Object.keys(score.components)))].sort(
+    (a, b) => BASE_ORDER.indexOf(a) - BASE_ORDER.indexOf(b),
+  );
   const hasBlend = rows.some(({ score }) => score.blend);
   return { rows, bases, hasBlend };
 };
@@ -422,7 +425,7 @@ const gameWhen = (game) => {
 
 /* Pregame strip: last-10 minutes with its sparkline, then which books post
    each market. There is no box score yet and the payload carries no lines. */
-function PregameStrip({ player, activeStat }) {
+function PregameStrip({ player, activeStat, onPick }) {
   const minutes = player.last10Minutes;
   const avg = minutes.length ? minutes.reduce((a, b) => a + b, 0) / minutes.length : null;
   const max = Math.max(...minutes, 1);
@@ -430,7 +433,7 @@ function PregameStrip({ player, activeStat }) {
     .map((m, i) => `${(i / Math.max(minutes.length - 1, 1)) * 60},${18 - (m / max) * 16}`)
     .join(' ');
   return (
-    <ol className="proto-box proto-box-pregame" aria-label="Pregame line">
+    <ol className="proto-box proto-box-pregame" aria-label="Pregame line and stat selector">
       <li className="proto-box-minutes">
         <span>MIN, last 10</span>
         <b>
@@ -448,12 +451,18 @@ function PregameStrip({ player, activeStat }) {
           .map(([provider]) => bookMark(provider));
         return (
           <li key={category} className={category === activeStat ? 'proto-box-active' : undefined}>
-            <span>{category}</span>
-            <b className="proto-box-books">
-              {books.map((mark) => (
-                <i key={mark}>{mark}</i>
-              ))}
-            </b>
+            <button
+              type="button"
+              aria-pressed={category === activeStat}
+              onClick={() => onPick(category)}
+            >
+              <span>{category}</span>
+              <b className="proto-box-books">
+                {books.map((mark) => (
+                  <i key={mark}>{mark}</i>
+                ))}
+              </b>
+            </button>
           </li>
         );
       })}
@@ -559,18 +568,24 @@ export default function SelectionCardPrototype({
         </div>
       )}
       {!player.focalGameLine && REFINED.has(variant) && (
-        <PregameStrip player={player} activeStat={activeStat} />
+        <PregameStrip player={player} activeStat={activeStat} onPick={setActiveStat} />
       )}
       {player.focalGameLine && REFINED.has(variant) && (
-        <ol className="proto-box" aria-label="Focal game line">
+        <ol className="proto-box" aria-label="Focal game line and stat selector">
           <li>
             <span>MIN</span>
             <b>{player.focalGameLine.minutes.toFixed(1)}</b>
           </li>
           {orderCategories(player.statCategories).map((category) => (
             <li key={category} className={category === activeStat ? 'proto-box-active' : undefined}>
-              <span>{category}</span>
-              <b>{player.focalGameLine.stats[category].toFixed(1)}</b>
+              <button
+                type="button"
+                aria-pressed={category === activeStat}
+                onClick={() => setActiveStat(category)}
+              >
+                <span>{category}</span>
+                <b>{player.focalGameLine.stats[category].toFixed(1)}</b>
+              </button>
             </li>
           ))}
         </ol>
@@ -587,18 +602,20 @@ export default function SelectionCardPrototype({
           {formatFocalGameLine(player.focalGameLine, player.statCategories, { includeDate: true })}
         </p>
       )}
-      <div className="selection-stat-control" role="group" aria-label="Selection log stat">
-        {orderCategories(player.statCategories).map((market) => (
-          <button
-            type="button"
-            key={market}
-            aria-pressed={activeStat === market}
-            onClick={() => setActiveStat(market)}
-          >
-            {market}
-          </button>
-        ))}
-      </div>
+      {!REFINED.has(variant) && (
+        <div className="selection-stat-control" role="group" aria-label="Selection log stat">
+          {orderCategories(player.statCategories).map((market) => (
+            <button
+              type="button"
+              key={market}
+              aria-pressed={activeStat === market}
+              onClick={() => setActiveStat(market)}
+            >
+              {market}
+            </button>
+          ))}
+        </div>
+      )}
       {status === 'error' && <p role="alert">{error}</p>}
       <Body
         player={player}

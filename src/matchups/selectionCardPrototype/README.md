@@ -1,5 +1,34 @@
 # PROTOTYPE — selection card without the Archetype sample
 
+## Verdict (2026-09-11)
+
+**E wins.** Chris picked A's split first ("I like A"), asked for the card to
+look more aesthetic, then chose E over D. Decisions folded into the shipped
+card:
+
+- Archetype sample removed, with its hindsight note.
+- Score Matrix left, Games vs this opponent right, in two inset panels; stacks
+  on phones.
+- Matrix cells carry a heat wash scaled to the score (green up, red down),
+  dashes faded; Blend column set off with a rule; rows clickable.
+- Opponent log leads with the average as a large gold number, then one row
+  per game; minutes muted, stat bold, delta coloured by sign.
+- Header: name in the display face, one line naming the game (completed:
+  matchup and date; upcoming: matchup, tip time, and the books posting
+  markets), a round × to close.
+- The strip under the name is the stat selector; the chip row is gone.
+  Completed game: MIN plus the box score per category. Upcoming game: MIN as
+  the last-10 average with its sparkline, then the books posting each market.
+  The MIN tile is inert.
+- Categories in box-score order everywhere: PTS REB AST 3PM STL BLK TOV FGA
+  FG2A FG3A PR PA RA PRA STKS. The page's market tabs use the same order.
+- Explainer sentence moves to small print at the foot of the card.
+- Matrix columns pinned: Shot types, Shot zones, Play types, Assist locations,
+  Traditional, Blend.
+
+Deployed no-login at statsplus-targets-proto.vercel.app (`?demo=pregame` for
+the upcoming-game twin).
+
 Throwaway. Lives on branch `prototype/selection-card-layout`; nothing here
 should reach `master`.
 

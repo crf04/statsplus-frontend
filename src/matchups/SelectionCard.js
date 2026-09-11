@@ -19,8 +19,12 @@ const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
 const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
-const formatDelta = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
-const signClass = (value) => (value >= 0 ? 'delta-up' : 'delta-down');
+const formatDelta = (value) => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
+const signClass = (value) => {
+  if (value > 0) return 'delta-up';
+  if (value < 0) return 'delta-down';
+  return 'delta-flat';
+};
 const bookName = (provider) =>
   BOOK_NAMES[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();
@@ -33,6 +37,7 @@ const washStyle = (component) => {
   return { background: `rgba(${rgb}, ${alpha.toFixed(2)})` };
 };
 
+// The tip time is the schedule's own time in the reader's zone.
 const gameWhen = (game) => {
   const when = new Date(game.scheduledAt);
   if (Number.isNaN(when.getTime())) return null;
@@ -41,7 +46,8 @@ const gameWhen = (game) => {
     month: 'short',
     day: 'numeric',
   });
-  return game.status === 'scheduled' && game.statusLabel ? `${day}, ${game.statusLabel}` : day;
+  const time = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return `${day}, ${time}`;
 };
 
 function Cell({ component }) {
@@ -90,25 +96,35 @@ function StatStrip({ player, categories, activeStat, onPick }) {
         </b>
       </div>
       {categories.map((category) => {
-        const books = line
+        const providers = line
           ? []
           : Object.entries(player.provenance)
               .filter(([, markets]) => markets.includes(category))
-              .map(([provider]) => bookMark(provider));
+              .map(([provider]) => provider);
+        const books = providers.map(bookMark);
         return (
           <button
             type="button"
             key={category}
             className="selection-strip-tile"
             aria-label={category}
+            aria-describedby={`selection-strip-${category}`}
             aria-pressed={activeStat === category}
             onClick={() => onPick(category)}
           >
             <span aria-hidden="true">{category}</span>
             {line ? (
-              <b>{line.stats[category].toFixed(1)}</b>
+              <b id={`selection-strip-${category}`}>{line.stats[category].toFixed(1)}</b>
             ) : (
-              <b className="selection-strip-books">
+              <b
+                id={`selection-strip-${category}`}
+                className="selection-strip-books"
+                aria-label={
+                  providers.length
+                    ? `Posted by ${providers.map(bookName).join(' and ')}`
+                    : 'Not posted'
+                }
+              >
                 {books.map((mark) => (
                   <i key={mark}>{mark}</i>
                 ))}
@@ -130,12 +146,6 @@ function OpponentLog({ table, market, excludesFocalGame }) {
   const opponent = games[0].matchup.replace(/^.*(?:vs\.|@)\s*/, '');
   return (
     <>
-      <p className="selection-log-kicker">
-        vs {opponent}, {games.length} {games.length === 1 ? 'game' : 'games'}
-        {excludesFocalGame ? ' before this one' : ''}
-        {table.thin && <span className="thin-flag">thin</span>}
-      </p>
-      {table.thin && <p className="thin-note">Thin sample — interpret cautiously.</p>}
       {average && (
         <p className="selection-average">
           <b>{average.stats[market].toFixed(1)}</b>
@@ -147,6 +157,12 @@ function OpponentLog({ table, market, excludesFocalGame }) {
           </span>
         </p>
       )}
+      <p className="selection-log-kicker">
+        vs {opponent}, {games.length} {games.length === 1 ? 'game' : 'games'}
+        {excludesFocalGame ? ' before this one' : ''}
+        {table.thin && <span className="thin-flag">thin</span>}
+      </p>
+      {table.thin && <p className="thin-note">Thin sample — interpret cautiously.</p>}
       <div className="selection-table-wrap">
         <table className="selection-log-table">
           <thead>
@@ -212,8 +228,12 @@ export default function SelectionCard({
     previousSheetMarket.current = sheetMarket;
   }, [player.id, player.statCategories, sheetMarket]);
   const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
+  const baseRank = (base) => {
+    const index = BASE_ORDER.indexOf(base);
+    return index === -1 ? BASE_ORDER.length : index;
+  };
   const bases = [...new Set(rows.flatMap(({ score }) => Object.keys(score.components)))].sort(
-    (a, b) => BASE_ORDER.indexOf(a) - BASE_ORDER.indexOf(b),
+    (a, b) => baseRank(a) - baseRank(b),
   );
   const hasBlend = rows.some(({ score }) => score.blend);
   const line = player.focalGameLine;
@@ -283,7 +303,19 @@ export default function SelectionCard({
                     className={market === activeStat ? 'active-market-row' : undefined}
                     onClick={() => setActiveStat(market)}
                   >
-                    <th scope="row">{market}</th>
+                    <th scope="row">
+                      <button
+                        type="button"
+                        className="selection-matrix-pick"
+                        aria-pressed={market === activeStat}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveStat(market);
+                        }}
+                      >
+                        {market}
+                      </button>
+                    </th>
                     {bases.map((base) => (
                       <td key={base} style={washStyle(score.components[base])}>
                         <Cell component={score.components[base]} />

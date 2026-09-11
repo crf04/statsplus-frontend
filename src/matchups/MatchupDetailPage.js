@@ -291,7 +291,7 @@ function PlayerRail({
                   <p className="focal-line">
                     {formatFocalGameLine(
                       focalLine,
-                      market === 'All' ? player.statCategories : [market],
+                      market === 'All' ? orderCategories(player.statCategories) : [market],
                     )}
                   </p>
                 )}
@@ -307,7 +307,7 @@ function PlayerRail({
                     role="group"
                     aria-label={`${player.name} posted markets`}
                   >
-                    {player.postedMarkets.map((postedMarket) => {
+                    {orderCategories(player.postedMarkets).map((postedMarket) => {
                       const providers = Object.entries(player.provenance)
                         .filter(([, markets]) => markets.includes(postedMarket))
                         .map(([provider]) => provider);

@@ -764,6 +764,24 @@ button.selection-strip-tile:focus-visible {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.selection-matrix-pick {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.selection-matrix-pick:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.delta-flat {
+  color: var(--ct-dim);
+}
+
 .selection-matrix .active-market-row {
   background: var(--ct-gold-soft);
   box-shadow: inset 2px 0 var(--ct-gold);

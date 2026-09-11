@@ -1417,10 +1417,63 @@ test('the strip and the market tabs read in box-score order', async () => {
     .getAllByRole('button')
     .map((button) => button.textContent);
   expect(tabs).toEqual(['All', 'PTS', 'FGA', 'FG3A']);
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }))
+    .getAllByRole('button')
+    .map((button) => button.getAttribute('aria-label'));
+  expect(strip).toEqual(['PTS', 'FGA']);
   const matrixRows = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }))
     .getAllByRole('rowheader')
     .map((row) => row.textContent);
   expect(matrixRows).toEqual(['PTS', 'FGA']);
+});
+
+test('an upcoming game names its tip time from the schedule', async () => {
+  fetchMatchup.mockResolvedValueOnce({
+    ...matchup,
+    game: {
+      ...matchup.game,
+      scheduledAt: '2026-01-16T00:30:00.000Z',
+      status: 'scheduled',
+      statusLabel: 'Scheduled',
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=1630559']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  const when = new Date('2026-01-16T00:30:00.000Z');
+  const day = when.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  expect(
+    screen.getByText(`LAL @ BOS, ${day}, ${time}. Markets posted by PrizePicks and Underdog.`),
+  ).toBeVisible();
+});
+
+test('a matrix row picks the stat from the keyboard too', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  const matrix = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }));
+  matrix.getByRole('button', { name: 'FGA' }).focus();
+  await userEvent.keyboard('{Enter}');
+  expect(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('a matrix row picks the stat like the strip does', async () => {

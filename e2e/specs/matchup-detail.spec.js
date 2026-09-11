@@ -260,9 +260,8 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(page.getByText('LeBron James · 27% FGA · +1.2σ')).toBeVisible();
   await expect(page.getByText('LeBron James · 36% FGA · +1.2σ')).toBeVisible();
   await expect(page.getByText('LeBron James · 31% ast · +1.4σ')).toBeVisible();
-  // Would have passed the old fixed shot_zones gate (>= 25% FGA); hidden by
-  // sigma_deviation (0.83) under the shared population's 1-sigma floor.
-  await expect(page.getByText(/Austin Reaves · 25% FGA/)).toHaveCount(0);
+  // A 0.83-sigma share now clears the inclusive half-sigma display floor.
+  await expect(page.getByText(/Austin Reaves · 25% FGA/)).toBeVisible();
   // Above the assist_locations sigma floor; hidden by the volume floor.
   await expect(page.getByText(/Austin Reaves · 35% ast/)).toHaveCount(0);
   await expect(page.getByText('2 targetable returned')).toBeVisible();

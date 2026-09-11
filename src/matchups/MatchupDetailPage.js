@@ -351,7 +351,8 @@ function DietShareChips({ players, base, sliceKey, market }) {
       const share = getDisplayableDietShare(player, base, sliceKey);
       if (!share) return [];
       return [{ player, share }];
-    });
+    })
+    .sort((a, b) => Math.abs(b.share.sigmaDeviation) - Math.abs(a.share.sigmaDeviation));
   if (chips.length === 0)
     return <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>;
   return (

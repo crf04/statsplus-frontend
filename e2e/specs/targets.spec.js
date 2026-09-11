@@ -254,10 +254,14 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
   await page.getByRole('slider', { name: /threshold percent/ }).press('ArrowRight');
   await expect(summaryItem(page, 'Player-games')).toHaveText(/^3 player-games$/);
-  const summary = await page.getByRole('list', { name: 'Backtest summary' }).textContent();
+  const summaryItems = page
+    .getByRole('list', { name: 'Backtest summary' })
+    .getByRole('listitem')
+    .filter({ hasNot: page.getByRole('button', { name: 'stats ▾' }) });
+  const summary = await summaryItems.allTextContents();
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
-  await expect(page.getByRole('list', { name: 'Backtest summary' })).toHaveText(summary);
+  await expect(summaryItems).toHaveText(summary);
   const games = page.getByRole('region', { name: 'Backtest games' });
   await expect(games.getByRole('listitem')).toHaveCount(3);
   await expect(games).not.toContainText('Austin Reaves');
@@ -595,7 +599,9 @@ test('@critical target context follows the selected defense and survives context
   const summary = await page.getByRole('list', { name: 'Backtest summary' }).boundingBox();
   const form = await page.getByLabel('Qualifier 1 threshold percent').boundingBox();
   const games = await page.getByRole('heading', { name: /^Games/ }).boundingBox();
-  expect(summary.y).toBeGreaterThan(form.y);
+  expect(summary.y + summary.height).toBeLessThan(form.y);
+  expect(summary.y + summary.height).toBeLessThan(games.y);
+  expect(summary.x + summary.width).toBeGreaterThanOrEqual(games.x + games.width);
   expect(games.x).toBeGreaterThan(form.x);
   await expect(page.getByRole('navigation', { name: /prototype/i })).toHaveCount(0);
 });

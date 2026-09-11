@@ -219,6 +219,6 @@ suites verify every exact slice, combined shot-attempt fields, per-form request
 sharing, opponent-switch cancellation, and retry isolation. The browser journey
 `target context follows the selected defense and survives context-read failure`
 uses the normal target routes to verify context, real draft persistence, and the
-approved summary-left/games-right grouping. Context failure must never disable an
+full-width summary above the filters-left/games-right grouping. Context failure must never disable an
 otherwise-valid Save. Test selectors distinguish the Opponent combobox from the
 per-filter opponent context label.

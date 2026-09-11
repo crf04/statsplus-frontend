@@ -21,8 +21,34 @@ const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 1
 const formatDelta = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
+/* Box-score order instead of the API's alphabetical one. Anything the list
+   does not name keeps its API position after the named ones. */
+const CATEGORY_ORDER = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'STL',
+  'BLK',
+  'TOV',
+  'FGA',
+  'FG2A',
+  'FG3A',
+  'PR',
+  'PA',
+  'RA',
+  'PRA',
+  'STKS',
+];
+const orderCategories = (categories) =>
+  [...categories].sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a);
+    const ib = CATEGORY_ORDER.indexOf(b);
+    return (ia === -1 ? CATEGORY_ORDER.length : ia) - (ib === -1 ? CATEGORY_ORDER.length : ib);
+  });
+
 const useRows = (player, windowKey) => {
-  const rows = player.statCategories.map((market) => ({
+  const rows = orderCategories(player.statCategories).map((market) => ({
     market,
     score: player.scores[market][windowKey],
   }));
@@ -441,7 +467,7 @@ function PregameStrip({ player, activeStat }) {
           )}
         </b>
       </li>
-      {player.statCategories.map((category) => {
+      {orderCategories(player.statCategories).map((category) => {
         const books = Object.entries(player.provenance)
           .filter(([, markets]) => markets.includes(category))
           .map(([provider]) => bookMark(provider));
@@ -566,7 +592,7 @@ export default function SelectionCardPrototype({
             <span>MIN</span>
             <b>{player.focalGameLine.minutes.toFixed(1)}</b>
           </li>
-          {player.statCategories.map((category) => (
+          {orderCategories(player.statCategories).map((category) => (
             <li key={category} className={category === activeStat ? 'proto-box-active' : undefined}>
               <span>{category}</span>
               <b>{player.focalGameLine.stats[category].toFixed(1)}</b>
@@ -587,7 +613,7 @@ export default function SelectionCardPrototype({
         </p>
       )}
       <div className="selection-stat-control" role="group" aria-label="Selection log stat">
-        {player.statCategories.map((market) => (
+        {orderCategories(player.statCategories).map((market) => (
           <button
             type="button"
             key={market}

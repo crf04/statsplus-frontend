@@ -891,6 +891,7 @@ function Detail({ matchup, gameId }) {
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
               historical={historical}
               onClose={() => updateSelectedPlayer(null)}
+              game={matchup.game}
             />
           )}
           {selectedPlayer && !proto.active && (

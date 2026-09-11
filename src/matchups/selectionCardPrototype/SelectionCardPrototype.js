@@ -400,6 +400,66 @@ function VariantE(props) {
   );
 }
 
+const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel: 'FD' };
+const BOOK_NAMES = {
+  prizepicks: 'PrizePicks',
+  underdog: 'Underdog',
+  draftkings: 'DraftKings',
+  fanduel: 'FanDuel',
+};
+const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();
+const gameWhen = (game) => {
+  if (!game) return '';
+  const when = new Date(game.scheduledAt);
+  const day = when.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  return game.status === 'scheduled' && game.statusLabel ? `${day}, ${game.statusLabel}` : day;
+};
+
+/* Pregame strip: last-10 minutes with its sparkline, then which books post
+   each market. There is no box score yet and the payload carries no lines. */
+function PregameStrip({ player, activeStat }) {
+  const minutes = player.last10Minutes;
+  const avg = minutes.length ? minutes.reduce((a, b) => a + b, 0) / minutes.length : null;
+  const max = Math.max(...minutes, 1);
+  const points = minutes
+    .map((m, i) => `${(i / Math.max(minutes.length - 1, 1)) * 60},${18 - (m / max) * 16}`)
+    .join(' ');
+  return (
+    <ol className="proto-box proto-box-pregame" aria-label="Pregame line">
+      <li className="proto-box-minutes">
+        <span>MIN, last 10</span>
+        <b>
+          {avg === null ? '—' : avg.toFixed(1)}
+          {minutes.length > 1 && (
+            <svg viewBox="0 0 60 18" aria-hidden="true">
+              <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          )}
+        </b>
+      </li>
+      {player.statCategories.map((category) => {
+        const books = Object.entries(player.provenance)
+          .filter(([, markets]) => markets.includes(category))
+          .map(([provider]) => bookMark(provider));
+        return (
+          <li key={category} className={category === activeStat ? 'proto-box-active' : undefined}>
+            <span>{category}</span>
+            <b className="proto-box-books">
+              {books.map((mark) => (
+                <i key={mark}>{mark}</i>
+              ))}
+            </b>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD, E: VariantE };
 const REFINED = new Set(['D', 'E']);
 
@@ -415,6 +475,7 @@ export default function SelectionCardPrototype({
   whyRelevant,
   historical,
   onClose,
+  game,
 }) {
   const panelRef = useRef(null);
   const previousPlayerId = useRef(player.id);
@@ -459,11 +520,21 @@ export default function SelectionCardPrototype({
         <div className="proto-head">
           <div className="proto-head-title">
             <h2 id="selection-heading">{player.name}</h2>
-            {player.focalGameLine && (
+            {player.focalGameLine ? (
               <p className="proto-head-game">
                 {player.focalGameLine.matchup}, {player.focalGameLine.gameDate}
                 {historical ? '. Completed-season context.' : ''}
               </p>
+            ) : (
+              game && (
+                <p className="proto-head-game">
+                  {game.away.tricode} @ {game.home.tricode}, {gameWhen(game)}. Markets posted by{' '}
+                  {Object.keys(player.provenance)
+                    .map((provider) => BOOK_NAMES[provider] || provider)
+                    .join(' and ')}
+                  .
+                </p>
+              )
             )}
           </div>
           <button
@@ -485,6 +556,9 @@ export default function SelectionCardPrototype({
             Close selection card
           </button>
         </div>
+      )}
+      {!player.focalGameLine && REFINED.has(variant) && (
+        <PregameStrip player={player} activeStat={activeStat} />
       )}
       {player.focalGameLine && REFINED.has(variant) && (
         <ol className="proto-box" aria-label="Focal game line">

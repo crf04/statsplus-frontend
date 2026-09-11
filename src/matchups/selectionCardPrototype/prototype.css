@@ -439,3 +439,51 @@
     flex: 0 0 auto;
   }
 }
+
+/* Pregame strip and the demo toggle. */
+.proto-box-minutes b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.proto-box-minutes svg {
+  width: 44px;
+  height: 14px;
+  color: var(--ct-gold);
+  opacity: 0.8;
+}
+.proto-box-books {
+  display: inline-flex;
+  gap: 3px;
+  min-height: 1.1em;
+}
+.proto-box-books i {
+  font-style: normal;
+  font-family: var(--ct-sans);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ct-dim);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.proto-box-active .proto-box-books i {
+  color: var(--ct-gold);
+  border-color: var(--ct-gold);
+}
+.proto-demo-toggle {
+  display: inline-flex;
+  margin-left: 4px;
+  border-left: 1px solid rgba(0, 0, 0, 0.35);
+  padding-left: 8px;
+  gap: 6px;
+}
+.proto-demo-toggle a {
+  color: rgba(0, 0, 0, 0.55);
+  text-decoration: none;
+}
+.proto-demo-toggle a[aria-current='true'] {
+  color: #000;
+  text-decoration: underline;
+}

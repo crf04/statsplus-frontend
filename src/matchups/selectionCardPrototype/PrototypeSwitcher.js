@@ -3,7 +3,7 @@
  * design under evaluation. Never rendered in a production build.
  */
 import { useEffect } from 'react';
-import { PROTO_ENABLED, VARIANT_NAMES } from './prototypeMode';
+import { PROTO_ENABLED, PROTO_STANDALONE, VARIANT_NAMES } from './prototypeMode';
 
 const isTyping = () => {
   const el = document.activeElement;
@@ -13,6 +13,29 @@ const isTyping = () => {
     el.tagName === 'TEXTAREA' ||
     el.isContentEditable ||
     el.getAttribute?.('role') === 'textbox'
+  );
+};
+
+/* Standalone only: swap the captured completed game for its synthetic
+   upcoming-game twin. A full navigation, so the page refetches. */
+const DemoToggle = () => {
+  const params = new URLSearchParams(window.location.search);
+  const pregame = params.get('demo') === 'pregame';
+  const href = (on) => {
+    const next = new URLSearchParams(params);
+    if (on) next.set('demo', 'pregame');
+    else next.delete('demo');
+    return `${window.location.pathname}?${next}`;
+  };
+  return (
+    <span className="proto-demo-toggle">
+      <a href={href(false)} aria-current={!pregame ? 'true' : undefined}>
+        completed
+      </a>
+      <a href={href(true)} aria-current={pregame ? 'true' : undefined}>
+        upcoming
+      </a>
+    </span>
   );
 };
 
@@ -40,6 +63,7 @@ const PrototypeSwitcher = ({ variant, onStep }) => {
       <button type="button" onClick={() => onStep(1)} aria-label="Next variant">
         →
       </button>
+      {PROTO_STANDALONE && <DemoToggle />}
     </div>
   );
 };

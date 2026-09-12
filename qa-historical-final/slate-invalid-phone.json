@@ -1,0 +1,67 @@
+{
+  "url": "http://127.0.0.1:5192/matchups?date=not-a-date",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screenshot": "/tmp/statsplus-57-spec-loop/qa-historical-final/slate-invalid-phone.png",
+  "aria": "/tmp/statsplus-57-spec-loop/qa-historical-final/slate-invalid-phone.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-12T16:53:10.241Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/user/targets/resolve",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:10.244Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:11.151Z",
+      "actionStep": 6,
+      "method": "GET",
+      "path": "/api/games/matchup",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:13.659Z",
+      "actionStep": 25,
+      "method": "GET",
+      "path": "/api/games/matchup",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:14.720Z",
+      "actionStep": 28,
+      "method": "GET",
+      "path": "/api/user/targets/resolve",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:14.724Z",
+      "actionStep": 28,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:15.336Z",
+      "actionStep": 32,
+      "method": "GET",
+      "path": "/api/user/targets/resolve",
+      "status": 400
+    },
+    {
+      "at": "2026-09-12T16:53:15.337Z",
+      "actionStep": 32,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 400
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+- banner:
+  - navigation "Primary":
+    - link "CourtAI":
+      - /url: /
+    - link "Search":
+      - /url: /
+    - link "Matchups":
+      - /url: /matchups
+    - link "Targets":
+      - /url: /targets
+    - button "CQ CourtAI QA":
+      - text: CQ CourtAI QA
+      - img
+- main:
+  - paragraph: Targets
+  - paragraph: No Targets active today
+  - button "+ New Target"
+  - heading "No Targets yet." [level=2]
+  - paragraph: Choose + New Target to save a read on a defense.

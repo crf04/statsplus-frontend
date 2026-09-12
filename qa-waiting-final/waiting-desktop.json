@@ -1,0 +1,24 @@
+{
+  "url": "http://127.0.0.1:5192/matchups/0022501174",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-57-spec-loop/qa-waiting-final/waiting-desktop.png",
+  "aria": "/tmp/statsplus-57-spec-loop/qa-waiting-final/waiting-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-12T16:54:39.968Z",
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:54:41.263Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/matchup",
+      "status": 200
+    }
+  ]
+}

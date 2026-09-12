@@ -1,0 +1,18 @@
+{
+  "url": "http://127.0.0.1:5191/matchups?date=2026-04-10",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-57-spec-loop/production-1/slate-desktop.png",
+  "aria": "/tmp/statsplus-57-spec-loop/production-1/slate-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-12T16:14:50.383Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    }
+  ]
+}

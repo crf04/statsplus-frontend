@@ -1,0 +1,60 @@
+{
+  "url": "http://127.0.0.1:5191/matchups?date=2026-04-10",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screenshot": "/tmp/statsplus-57-spec-loop/production-1/slate-recovered-phone.png",
+  "aria": "/tmp/statsplus-57-spec-loop/production-1/slate-recovered-phone.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-12T16:14:50.383Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:14:51.485Z",
+      "actionStep": 6,
+      "method": "GET",
+      "path": "/api/games/matchup",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:14:53.361Z",
+      "actionStep": 25,
+      "method": "GET",
+      "path": "/api/games/matchup",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:14:53.689Z",
+      "actionStep": 28,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:14:54.164Z",
+      "actionStep": 32,
+      "method": "GET",
+      "path": "/api/user/targets/resolve",
+      "status": 400
+    },
+    {
+      "at": "2026-09-12T16:14:54.170Z",
+      "actionStep": 32,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 400
+    },
+    {
+      "at": "2026-09-12T16:14:54.511Z",
+      "actionStep": 37,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    }
+  ]
+}

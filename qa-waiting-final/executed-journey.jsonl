@@ -1,0 +1,38 @@
+{"action": "doctor"}
+{"action": "open", "path": "/matchups/0022501174"}
+{"action": "assert", "target": {"role": "heading", "name": "BOS Defense Sheet"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022501174"}, "status": 200}
+{"action": "assert", "target": {"role": "heading", "name": "OPP REB"}}
+{"action": "click", "target": {"role": "button", "name": "Last 15"}}
+{"action": "assert", "target": {"text": "Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Assist locations unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Shot types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Shot zones unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Play types unavailable for Last 15: provider_window_unsupported."}}
+{"action": "assert", "target": {"text": "insufficient_governed_games"}, "state": "hidden"}
+{"action": "proof", "name": "waiting-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Season"}}
+{"action": "assert", "target": {"role": "heading", "name": "OPP REB"}}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"role": "button", "name": "Last 15"}}
+{"action": "assert", "target": {"text": "Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Assist locations unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Shot types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert", "target": {"text": "Shot zones unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "waiting-phone"}
+{"action": "click", "target": {"role": "button", "name": "Season"}}
+{"action": "assert", "target": {"role": "heading", "name": "OPP REB"}}
+{"action": "reload"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022501174"}, "status": 200}
+{"action": "click", "target": {"role": "button", "name": "Last 15"}}
+{"action": "assert", "target": {"text": "Shot zones unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."}}
+{"action": "open", "path": "/targets"}
+{"action": "assert", "target": {"role": "heading", "name": "No Targets yet."}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets", "query": {}, "status": 200}
+{"action": "assert", "target": {"role": "alert"}, "state": "hidden"}
+{"action": "assert", "target": {"text": "No Targets active today"}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/resolve", "query": {}, "status": 200}
+{"action": "proof", "name": "targets-empty-phone"}
+{"action": "snapshot"}
+{"action": "cleanup"}

@@ -1,0 +1,72 @@
+- banner:
+  - navigation "Primary":
+    - link "CourtAI":
+      - /url: /
+    - link "Search":
+      - /url: /
+    - link "Matchups":
+      - /url: /matchups
+    - link "Targets":
+      - /url: /targets
+    - button "CQ CourtAI QA":
+      - text: CQ CourtAI QA
+      - img
+- main:
+  - link "← Back to slate":
+    - /url: /matchups
+  - paragraph: Open Team Sheets · live contract
+  - heading "NOP @ BOS" [level=1]
+  - region "Matchup data freshness":
+    - strong: schedule
+    - text: ": stale, as of 3d ago — schedule data warning"
+    - strong: pool
+    - text: ": unavailable, as of age unavailable — pool data warning"
+    - strong: stats
+    - text: ": fresh, as of 0m ago"
+    - strong: injuries
+    - text: ": unavailable, as of age unavailable — injuries data warning"
+  - group "Defense team":
+    - button "NOP defense vs BOS players"
+    - button "BOS defense vs NOP players" [pressed]
+  - paragraph: Tap a player to trace their rows across the sheet; use the score card for the full dossier.
+  - region "Injury Report":
+    - heading "Injury Report" [level=2]
+    - paragraph: "Injury report unavailable: disabled."
+    - 'link "Data source: rotowire"':
+      - /url: https://www.rotowire.com/basketball/injury-report.php
+  - complementary "Season scoring order":
+    - paragraph: Targetable players
+    - heading "Season scoring order" [level=2]
+    - group "Player rail sort":
+      - button "Season scoring" [pressed]
+      - button "Matchup Score" [disabled]
+    - paragraph: No posted players are available for this market.
+  - region "Defense Sheet controls":
+    - group "Stat window":
+      - button "Season"
+      - button "Last 15" [pressed]
+    - group "Deviation filter":
+      - button "All deviations"
+      - button "At least 1 sigma" [pressed]
+      - button "At least 2 sigma"
+    - group "Market":
+      - button "All" [pressed]
+  - region "BOS Defense Sheet":
+    - paragraph: Relative concessions · per 48
+    - heading "BOS Defense Sheet" [level=2]
+    - paragraph: 0 rows hidden near league average.
+    - region "Assist locations":
+      - heading "Assist locations" [level=3]
+      - paragraph: "Assist locations unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."
+    - region "Play types":
+      - heading "Play types" [level=3]
+      - paragraph: "Play types unavailable for Last 15: provider_window_unsupported."
+    - region "Shot types":
+      - heading "Shot types" [level=3]
+      - paragraph: "Shot types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."
+    - region "Shot zones":
+      - heading "Shot zones" [level=3]
+      - paragraph: "Shot zones unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."
+    - region "Traditional defense":
+      - heading "Traditional defense" [level=3]
+      - paragraph: "Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games."

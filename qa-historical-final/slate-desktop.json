@@ -1,0 +1,25 @@
+{
+  "url": "http://127.0.0.1:5192/matchups?date=2026-04-10",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-57-spec-loop/qa-historical-final/slate-desktop.png",
+  "aria": "/tmp/statsplus-57-spec-loop/qa-historical-final/slate-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-12T16:53:10.241Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/user/targets/resolve",
+      "status": 200
+    },
+    {
+      "at": "2026-09-12T16:53:10.244Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/slate",
+      "status": 200
+    }
+  ]
+}

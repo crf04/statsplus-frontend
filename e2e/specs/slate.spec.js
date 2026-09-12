@@ -89,9 +89,9 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await page.screenshot({ path: testInfo.outputPath('slate-empty.png'), fullPage: true });
 
   await page.getByLabel('Slate date').fill('');
-  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page).toHaveURL(/\/matchups\?date=2026-01-15$/);
   await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
-  expect(requests.some((url) => !new URL(url).searchParams.has('date'))).toBe(true);
+  expect(requests.some((url) => new URL(url).searchParams.get('date') === '2026-01-15')).toBe(true);
 
   await page.getByLabel('Slate date').fill('2026-01-10');
   await expect(page).toHaveURL(/date=2026-01-10/);
@@ -108,7 +108,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
 
   // Today is reachable from any date, not only as recovery from a bad one.
   await page.getByRole('button', { name: 'Today' }).click();
-  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page).toHaveURL(/\/matchups\?date=2026-01-15$/);
   await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Today' })).toBeDisabled();
 });
@@ -175,10 +175,11 @@ test('a rejected slate request leaves date navigation available', async ({
 test('an invalid requested date stays neutral until the backend rejects it', async ({
   authenticatedPage: page,
 }) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await installApiContract(page, {
     '/api/games/slate': (request) => {
       const date = new URL(request.url()).searchParams.get('date');
-      if (date) {
+      if (date === '2026-02-30') {
         return {
           status: 400,
           body: { error: { code: 'invalid_input', message: 'Enter a valid date.' } },
@@ -198,7 +199,7 @@ test('an invalid requested date stays neutral until the backend rejects it', asy
   await expect(page.getByRole('button', { name: 'Today' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Today' }).click();
-  await expect(page).toHaveURL(/\/matchups$/);
+  await expect(page).toHaveURL(/\/matchups\?date=2026-01-15$/);
   await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
 });
 

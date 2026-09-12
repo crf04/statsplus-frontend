@@ -59,6 +59,24 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+test('opens March 11 by default during the offseason and can return to today', async () => {
+  jest.setSystemTime(new Date('2026-09-11T12:00:00Z'));
+  fetchSlate.mockImplementation(async (date) => ({ ...slate, slateDate: date }));
+  render(
+    <MemoryRouter initialEntries={['/matchups']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-03-11');
+  await screen.findByRole('heading', { name: 'Wednesday, March 11, 2026' });
+  expect(fetchSlate).toHaveBeenCalledWith('2026-03-11', expect.any(Object));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+  await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
+  expect(fetchSlate).toHaveBeenLastCalledWith('2026-09-11', expect.any(Object));
+});
+
 test('shows an age for every available freshness surface and names degraded surfaces', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
@@ -155,7 +173,7 @@ test('clearing the date requests today without entering an invalid state', async
 
   fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '' } });
 
-  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith('2026-01-15', expect.any(Object)));
   expect(screen.queryByRole('heading', { name: 'Invalid slate date' })).not.toBeInTheDocument();
   expect(screen.getByLabelText('Slate date')).toHaveValue('2026-01-15');
 });
@@ -176,7 +194,7 @@ test('offers Today as a recovery from an invalid requested date', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
 
-  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith('2026-01-15', expect.any(Object)));
   expect(screen.queryByRole('heading', { name: 'Invalid slate date' })).not.toBeInTheDocument();
 });
 
@@ -282,7 +300,7 @@ test('offers Today from any other date and marks it inert on today', async () =>
 
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
 
-  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith(undefined, expect.any(Object)));
+  await waitFor(() => expect(fetchSlate).toHaveBeenCalledWith('2026-01-15', expect.any(Object)));
 });
 
 test('opens Team Sheets from anywhere on the row', async () => {

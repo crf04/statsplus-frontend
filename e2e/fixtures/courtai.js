@@ -1190,6 +1190,15 @@ export const operationsPayload = {
   },
   jobs: [
     {
+      job_id: 'job-e2e-catalog-bootstrap',
+      action: 'catalog.bootstrap',
+      resource: '2025-26:athlete',
+      status: 'succeeded',
+      created_at: '2026-04-13T00:05:00Z',
+      completed_at: '2026-04-13T00:06:00Z',
+      error_code: null,
+    },
+    {
       job_id: 'job-e2e-1',
       action: 'composition.retry',
       resource: 'composition-e2e-1',

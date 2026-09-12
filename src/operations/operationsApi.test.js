@@ -130,6 +130,7 @@ test('accepts and discards the optional documented projection diagnostics', () =
 
 test.each([
   'collector.create',
+  'catalog.bootstrap',
   'publication.rebuild',
   'publication.family_rollback',
   'publication.repair_group.promote',

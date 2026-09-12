@@ -1,0 +1,47 @@
+{"action":"doctor"}
+{"action":"open","path":"/matchups"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert","target":{"role":"heading","name":"Wednesday, March 11, 2026"}}
+{"action":"assert","target":{"selector":"a[href^='/matchups/']","index":0}}
+{"action":"assert-layout"}
+{"action":"proof","name":"offseason-desktop"}
+{"action":"click","target":{"role":"button","name":"Next date"}}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-12"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-12"}
+{"action":"click","target":{"role":"button","name":"Previous date"}}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"reload"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"viewport","name":"phone"}
+{"action":"open","path":"/matchups"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert-layout"}
+{"action":"proof","name":"offseason-phone"}
+{"action":"click","target":{"role":"button","name":"Today"}}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-09-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-09-11"}
+{"action":"assert","target":{"role":"button","name":"Today"},"state":"disabled"}
+{"action":"assert","target":{"text":"No games on this slate."}}
+{"action":"proof","name":"today-phone"}
+{"action":"fill","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert","target":{"selector":"a[href^='/matchups/']","index":0}}
+{"action":"open","path":"/matchups?date=not-a-date"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"not-a-date"},"status":400}
+{"action":"assert","target":{"role":"heading","name":"Invalid slate date"}}
+{"action":"assert","target":{"role":"alert"}}
+{"action":"proof","name":"invalid-phone"}
+{"action":"click","target":{"role":"button","name":"Today"}}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-09-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-09-11"}
+{"action":"fill","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-03-11"},"status":200}
+{"action":"assert","target":{"label":"Slate date"},"value":"2026-03-11"}
+{"action":"assert-layout"}
+{"action":"proof","name":"recovered-phone"}
+{"action":"cleanup"}

@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-09-12T00:18:10.869Z",
+  "environment": "qa",
+  "frontend": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus-frontend/offseason-matchups",
+    "branch": "fix/offseason-matchups-default",
+    "head": "1818700e09040c1c771220f062dafc48c0ebc8df",
+    "fingerprint": "af6f6ffb1fe2418ff9938210d1f712c078f4451561330d62f10d7b07ab178101"
+  },
+  "backendSource": {
+    "root": "/Users/chrisfu/statsplus-local/backend",
+    "branch": "chore/local-backend-setup",
+    "head": "ab9b92c533973e43d50a04170963056672fa736b",
+    "fingerprint": "4633d10121f58905bbe9e9a4ad52a50980cdf22384fc12134146511ebd0ff42a"
+  },
+  "deployedBackendRevision": "unknown",
+  "cleanedUp": true,
+  "helperSha256": "ea4cc49ec588e7bf599e0718cff3174cfd9853809d81b91fc2c20f388d39555c",
+  "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+  "snapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5"
+}

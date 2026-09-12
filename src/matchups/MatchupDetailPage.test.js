@@ -567,6 +567,30 @@ test('renders one relevant traditional unavailability notice for All and specifi
   ).not.toBeInTheDocument();
 });
 
+test('explains a withheld Last-15 window in a sentence instead of a raw reason', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.traditional.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'insufficient_governed_games',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(
+    screen.getByText(
+      'Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+    ),
+  ).toBeVisible();
+  expect(screen.queryByText(/insufficient_governed_games/)).not.toBeInTheDocument();
+});
+
 test('names an unavailable OPP_REB window without hiding other traditional markets', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [

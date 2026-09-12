@@ -509,6 +509,54 @@ test('traditional unavailability has one market-relevant owner', async ({ page }
   expect(failedResponses).toEqual([]);
 });
 
+test('explains a withheld Last-15 window in a sentence instead of a raw reason', async ({
+  page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.league.surface_availability.traditional.last_15 = {
+    status: 'unavailable',
+    unavailable_reason: 'insufficient_governed_games',
+  };
+  candidate.league.defense_sheet.traditional.forEach((row) => {
+    row.last_15 = null;
+  });
+  Object.values(candidate.league.defensive_columns).forEach((column) => {
+    column.last_15 = null;
+  });
+  candidate.teams.forEach((team) => {
+    team.defense_sheet.traditional.forEach((row) => {
+      row.last_15 = null;
+    });
+    Object.values(team.defensive_columns).forEach((column) => {
+      column.last_15 = null;
+    });
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+  const consoleErrors = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+
+  await page.goto('/matchups/0022500584');
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
+  await expect(
+    page.getByText(
+      'Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+    ),
+  ).toHaveCount(1);
+  await expect(page.getByText(/insufficient_governed_games/)).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-detail-last15-withheld.png'),
+    fullPage: true,
+  });
+
+  await page.getByRole('button', { name: 'Season', exact: true }).click();
+  await expect(page.getByText('OPP TOV')).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
 test('matchup keeps stale unmatched injury entries visible', async ({ page }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:30:00Z'));
   await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));

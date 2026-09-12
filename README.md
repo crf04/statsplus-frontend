@@ -21,7 +21,7 @@ The natural-language path is the one I cared most about — the structured filte
 ## Routes and navigation
 
 The shared navigation exposes the game-log search at `/` and the date-based NBA slate at
-`/matchups?date=YYYY-MM-DD`. Omitting `date` opens today's Eastern-time slate. Unknown client-side
+`/matchups?date=YYYY-MM-DD`. Omitting `date` temporarily opens March 11, 2026 for the offseason. The Today button opens the current Eastern-time slate. Unknown client-side
 paths return to `/`, and Vercel's SPA fallback keeps direct links to `/matchups` working. Signed-out
 visitors keep the shared shell and see a sign-in prompt on the matchups route rather than being
 redirected.

@@ -197,10 +197,13 @@ function SlateBoard({ games, renderExtra }) {
   );
 }
 
+// Temporary offseason landing date; remove when current slates resume.
+const defaultSlateDate = '2026-03-11';
+
 export default function SlatePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const requestedDate = searchParams.get('date');
+  const requestedDate = searchParams.get('date') ?? defaultSlateDate;
   const todaySlateDate = getTodaySlateDate();
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
@@ -287,7 +290,7 @@ export default function SlatePage() {
             <input
               type="date"
               value={slateDate || ''}
-              onChange={(event) => navigate(event.target.value)}
+              onChange={(event) => navigate(event.target.value || todaySlateDate)}
             />
           </label>
           <button
@@ -305,7 +308,7 @@ export default function SlatePage() {
             className="today-reset"
             type="button"
             disabled={slateDate === todaySlateDate}
-            onClick={() => navigate('')}
+            onClick={() => navigate(todaySlateDate)}
           >
             Today
           </button>

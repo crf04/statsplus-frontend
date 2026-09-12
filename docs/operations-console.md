@@ -28,7 +28,7 @@ fields (including unsupported checksum fields), malformed timestamps/counts,
 unknown statuses/actions, and fields associated with secrets, credentials,
 raw provider responses, payloads, player facts, databases, or exceptions are
 rejected at the API seam. The decoder accepts the
-legacy `collector.create` audit action observed in production history alongside
+legacy `collector.create` and `catalog.bootstrap` audit actions observed in production history alongside
 the backend-documented operator actions.
 
 ## Operator actions

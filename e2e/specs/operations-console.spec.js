@@ -36,6 +36,7 @@ test('@critical admin can inspect collection health and confirm an audited repai
   await expect(page.getByText(/Usage threshold/)).toBeVisible();
   await expect(page.getByText(/Counter retry in 1h/)).toBeVisible();
   await expect(page.getByText('Create Collector')).toBeVisible();
+  await expect(page.getByText('Bootstrap catalog')).toBeVisible();
 
   await page.getByRole('button', { name: 'Repair traditional_opponent' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();

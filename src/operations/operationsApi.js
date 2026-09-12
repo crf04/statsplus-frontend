@@ -36,6 +36,7 @@ const KNOWN_JOB_ACTIONS = new Set([
   'collector.revoke',
   'collector.rotate',
   'collector.create',
+  'catalog.bootstrap',
   'publication.rebuild',
   'publication.family_rollback',
   'publication.repair_group.promote',

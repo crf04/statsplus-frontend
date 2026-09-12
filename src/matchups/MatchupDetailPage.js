@@ -69,9 +69,12 @@ const SECTION_REASONS = {
   game_logs_incomplete: 'Canonical game logs are incomplete for this game.',
   no_game_log_rows: 'No canonical game-log rows exist for this game.',
   player_pool_unavailable: 'No Player Pool snapshot is available for this game.',
+  insufficient_governed_games:
+    'Last 15 has not opened yet; it opens once every team has played 15 games.',
 };
-const sectionReason = (section) =>
-  SECTION_REASONS[section.unavailableReason] || `${section.unavailableReason}.`;
+const surfaceReason = (unavailableReason) =>
+  SECTION_REASONS[unavailableReason] || `${unavailableReason}.`;
+const sectionReason = (section) => surfaceReason(section.unavailableReason);
 const contextLabel = (section) => CONTEXT_LABELS[section.context] || section.context;
 const sourceLabel = (section) => SOURCE_LABELS[section.source] || section.source;
 // Collection time is provenance for immutable evidence, so it is stated as a
@@ -452,7 +455,7 @@ function DefenseSheet({
             <p className="honest-empty">
               {BASE_LABELS[base] || base} unavailable for{' '}
               {WINDOWS.find((window) => window.key === windowKey)?.label}:{' '}
-              {availability.unavailableReason}.
+              {surfaceReason(availability.unavailableReason)}
             </p>
           </section>
         ) : visibleRows.length || legacyUnavailableRow ? (

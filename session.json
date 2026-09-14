@@ -1,0 +1,730 @@
+{
+  "startedAt": "2026-09-14T03:02:20.379Z",
+  "coordination": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-1b6a5bef",
+    "branch": "t3code/spec-loop-implementation-review",
+    "head": "54a4cb6fcb78b29d8ccc65c9859d54f50ee30ca5"
+  },
+  "qaRuntimeSha256": "e6786c7112588af821453e83d4bec5f518f3ae563a613589ab0f18e00c2b46ef",
+  "productionGuardSha256": "f94bf27b53f0d05949fd6ae6d4c75d548d4451f4e064e53f3ad014829d10502b",
+  "helperSha256": "ea4cc49ec588e7bf599e0718cff3174cfd9853809d81b91fc2c20f388d39555c",
+  "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+  "frontend": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-1b6a5bef/.statsplus/worktrees/frontend",
+    "branch": "",
+    "head": "2f92cba52430458822c7ac664a9598409b51cc80",
+    "fingerprint": "792e7b3f350a181957702bffa1416cf03ec1f1f3435271c9cadccf2bca906964"
+  },
+  "backendSource": {
+    "root": "/Users/chrisfu/statsplus-backend",
+    "branch": "research/wnba-additional-data",
+    "head": "af5574d5d3a8e821bb63d21fc90684d5203aefed"
+  },
+  "environment": "production",
+  "deployedBackendRevision": "unknown",
+  "api": "https://statsplus-backend-production.up.railway.app",
+  "origin": "http://127.0.0.1:5188",
+  "out": "/tmp/statsplus-closeout/42-production",
+  "runtime": "/var/folders/vl/c4y_fblx7bg4lgkdxnmsbj_h0000gn/T/statsplus-runtime-pf9wIs",
+  "results": [
+    {
+      "ok": true,
+      "action": "launch",
+      "out": "/tmp/statsplus-closeout/42-production",
+      "ready": true,
+      "frontend": {
+        "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-1b6a5bef/.statsplus/worktrees/frontend",
+        "branch": "",
+        "head": "2f92cba52430458822c7ac664a9598409b51cc80",
+        "fingerprint": "792e7b3f350a181957702bffa1416cf03ec1f1f3435271c9cadccf2bca906964"
+      },
+      "origin": "http://127.0.0.1:5188",
+      "api": "https://statsplus-backend-production.up.railway.app",
+      "environment": "production",
+      "auth": {
+        "authenticated": true,
+        "expiresAt": "Mon, 14 Sep 2026 04:02:21 GMT",
+        "transportIsLocal": true
+      }
+    },
+    {
+      "ok": true,
+      "step": 1,
+      "action": "doctor",
+      "commandSha256": "a9335ee9a0fc05c9eaf88b05947b48c514652dd185ee5cd5a66bf58b98c98547",
+      "ready": true,
+      "frontend": {
+        "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-1b6a5bef/.statsplus/worktrees/frontend",
+        "branch": "",
+        "head": "2f92cba52430458822c7ac664a9598409b51cc80",
+        "fingerprint": "792e7b3f350a181957702bffa1416cf03ec1f1f3435271c9cadccf2bca906964"
+      },
+      "origin": "http://127.0.0.1:5188",
+      "api": "https://statsplus-backend-production.up.railway.app",
+      "environment": "production",
+      "auth": {
+        "authenticated": true,
+        "expiresAt": "Mon, 14 Sep 2026 04:02:21 GMT",
+        "transportIsLocal": true
+      }
+    },
+    {
+      "ok": true,
+      "step": 2,
+      "action": "open",
+      "commandSha256": "18474a17ac783dff5b3d4e7ad8e084c85982756811287a7db8cead3e26e82770"
+    },
+    {
+      "ok": true,
+      "step": 3,
+      "action": "assert",
+      "commandSha256": "25418df1f9242e3f0071e3003bd760a82804dbdb71faa082ac517de19d9ee11d",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "MIL Defense Sheet"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 4,
+      "action": "assert-response",
+      "commandSha256": "29f34b3571ef2204a343471d7c741dce8b98ff71072cd6e51cb9964fd13acbde",
+      "response": {
+        "at": "2026-09-14T03:02:44.950Z",
+        "actionStep": 2,
+        "method": "GET",
+        "path": "/api/games/matchup",
+        "status": 200
+      }
+    },
+    {
+      "ok": true,
+      "step": 5,
+      "action": "snapshot",
+      "commandSha256": "975d604e4d09afb89817dd0e10fbce3f92c639d3efcb967e79a925c42cfabc0e",
+      "aria": "- banner:\n  - navigation \"Primary\":\n    - link \"CourtAI\":\n      - /url: /\n    - link \"Search\":\n      - /url: /\n    - link \"Matchups\":\n      - /url: /matchups\n    - link \"Targets\":\n      - /url: /targets\n    - link \"Operations\":\n      - /url: /operations\n    - button \"CF Chris Fu\":\n      - text: CF Chris Fu\n      - img\n- main:\n  - link \"← Back to slate\":\n    - /url: /matchups\n  - paragraph: Historical Matchup · stored evidence\n  - heading \"LAC @ MIL\" [level=1]\n  - region \"Historical matchup evidence\":\n    - strong: Schedule\n    - text: \": Completed-season catalog · from Event Catalog · collected 2026-09-09\"\n    - strong: Participants\n    - text: \": Completed-season context · from game logs\"\n    - strong: Season defense\n    - text: \": Completed-season context · from Defense Sheet publication\"\n    - strong: Last 15 defense\n    - text: \": unavailable — No point-in-time snapshot was captured for this game.\"\n    - strong: Injuries\n    - text: \": unavailable — No pregame injury snapshot was archived for this game.\"\n  - group \"Defense team\":\n    - button \"LAC defense vs MIL players\"\n    - button \"MIL defense vs LAC players\" [pressed]\n  - paragraph: Tap a player to trace their rows across the sheet; use the score card for the full dossier.\n  - region \"Injuries\":\n    - heading \"Injuries\" [level=2]\n    - paragraph: No pregame injury snapshot was archived for this game.\n  - complementary \"Players in game\":\n    - paragraph: Players in game\n    - heading \"Season scoring order\" [level=2]\n    - group \"Player rail sort\":\n      - button \"Season scoring\" [pressed]\n      - button \"Matchup Score\" [disabled]\n    - article \"Kawhi Leonard player\":\n      - heading \"Kawhi Leonard game logs\" [level=3]:\n        - link \"Kawhi Leonard game logs\":\n          - /url: /?player_name=Kawhi+Leonard\n          - text: Kawhi Leonard\n      - paragraph: 27.9 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 22.6 MIN · 20.0 PTS · 8.0 REB · 2.0 AST · 4.0 3PM · 0.0 STL · 0.0 BLK · 1.0 TOV · 16.0 FGA · 9.0 FG2A · 7.0 FG3A · 28.0 PR · 22.0 PA · 10.0 RA · 30.0 PRA · 0.0 STKS\n      - 'img \"Kawhi Leonard last 10 minutes: 24.783333, 30.333333, 34.533333, 22.566667, 35.5, 31.7, 29.85, 30.15, 30, 37.433333\"'\n      - button \"Open selection card\"\n    - article \"Darius Garland player\":\n      - heading \"Darius Garland game logs\" [level=3]:\n        - link \"Darius Garland game logs\":\n          - /url: /?player_name=Darius+Garland\n          - text: Darius Garland\n      - paragraph: 18.8 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 26.7 MIN · 15.0 PTS · 2.0 REB · 11.0 AST · 3.0 3PM · 2.0 STL · 0.0 BLK · 5.0 TOV · 9.0 FGA · 2.0 FG2A · 7.0 FG3A · 17.0 PR · 26.0 PA · 13.0 RA · 28.0 PRA · 2.0 STKS\n      - 'img \"Darius Garland last 10 minutes: 18.133333, 30.15, 34.533333, 26.666667, 37.25, 29, 24.433333, 28.383333, 40.55, 26.6\"'\n      - button \"Open selection card\"\n    - article \"Bennedict Mathurin player\":\n      - heading \"Bennedict Mathurin game logs\" [level=3]:\n        - link \"Bennedict Mathurin game logs\":\n          - /url: /?player_name=Bennedict+Mathurin\n          - text: Bennedict Mathurin\n      - paragraph: 17.6 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 27.2 MIN · 28.0 PTS · 6.0 REB · 1.0 AST · 1.0 3PM · 0.0 STL · 0.0 BLK · 4.0 TOV · 10.0 FGA · 9.0 FG2A · 1.0 FG3A · 34.0 PR · 29.0 PA · 7.0 RA · 35.0 PRA · 0.0 STKS\n      - 'img \"Bennedict Mathurin last 10 minutes: 27.016667, 29.25, 27.2, 22.383333, 26.85, 27.35, 27.05, 23.916667, 5.166667, 32.1\"'\n      - button \"Open selection card\"\n    - article \"John Collins player\":\n      - heading \"John Collins game logs\" [level=3]:\n        - link \"John Collins game logs\":\n          - /url: /?player_name=John+Collins\n          - text: John Collins\n      - paragraph: 13.6 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 35.2 MIN · 22.0 PTS · 3.0 REB · 3.0 AST · 0.0 3PM · 0.0 STL · 1.0 BLK · 1.0 TOV · 13.0 FGA · 11.0 FG2A · 2.0 FG3A · 25.0 PR · 25.0 PA · 6.0 RA · 28.0 PRA · 1.0 STKS\n      - 'img \"John Collins last 10 minutes: 22.283333, 19.866667, 35.216667, 31.216667, 24.766667, 23.95, 27.9, 27.433333, 13.35, 20.683333\"'\n      - button \"Open selection card\"\n    - article \"Derrick Jones Jr. player\":\n      - heading \"Derrick Jones Jr. game logs\" [level=3]:\n        - link \"Derrick Jones Jr. game logs\":\n          - /url: /?player_name=Derrick+Jones+Jr.\n          - text: Derrick Jones Jr.\n      - paragraph: 10.1 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 25.7 MIN · 13.0 PTS · 4.0 REB · 0.0 AST · 1.0 3PM · 2.0 STL · 1.0 BLK · 1.0 TOV · 9.0 FGA · 8.0 FG2A · 1.0 FG3A · 17.0 PR · 13.0 PA · 4.0 RA · 17.0 PRA · 3.0 STKS\n      - 'img \"Derrick Jones Jr. last 10 minutes: 28.466667, 25.783333, 25.716667, 23.35, 23.75, 25.216667, 23.483333, 30.283333, 23.316667, 20.766667\"'\n      - button \"Open selection card\"\n    - article \"Jordan Miller player\":\n      - heading \"Jordan Miller game logs\" [level=3]:\n        - link \"Jordan Miller game logs\":\n          - /url: /?player_name=Jordan+Miller\n          - text: Jordan Miller\n      - paragraph: 10.0 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 23.9 MIN · 5.0 PTS · 5.0 REB · 3.0 AST · 0.0 3PM · 3.0 STL · 0.0 BLK · 1.0 TOV · 7.0 FGA · 4.0 FG2A · 3.0 FG3A · 10.0 PR · 8.0 PA · 8.0 RA · 13.0 PRA · 3.0 STKS\n      - 'img \"Jordan Miller last 10 minutes: 21.383333, 13.233333, 23.85, 24.9, 25.7, 23.483333, 16.2, 29.616667, 32.35, 29.2\"'\n      - button \"Open selection card\"\n    - article \"Brook Lopez player\":\n      - heading \"Brook Lopez game logs\" [level=3]:\n        - link \"Brook Lopez game logs\":\n          - /url: /?player_name=Brook+Lopez\n          - text: Brook Lopez\n      - paragraph: 8.5 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 25.3 MIN · 8.0 PTS · 7.0 REB · 1.0 AST · 0.0 3PM · 4.0 STL · 2.0 BLK · 0.0 TOV · 3.0 FGA · 2.0 FG2A · 1.0 FG3A · 15.0 PR · 9.0 PA · 8.0 RA · 16.0 PRA · 6.0 STKS\n      - 'img \"Brook Lopez last 10 minutes: 25.266667, 33.233333, 25.316667, 35.766667, 24.016667, 19.1, 25.266667, 30.383333, 36.166667, 22.766667\"'\n      - button \"Open selection card\"\n    - article \"Kobe Sanders player\":\n      - heading \"Kobe Sanders game logs\" [level=3]:\n        - link \"Kobe Sanders game logs\":\n          - /url: /?player_name=Kobe+Sanders\n          - text: Kobe Sanders\n      - paragraph: 7.3 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 10.0 MIN · 3.0 PTS · 0.0 REB · 0.0 AST · 1.0 3PM · 1.0 STL · 0.0 BLK · 1.0 TOV · 1.0 FGA · 0.0 FG2A · 1.0 FG3A · 3.0 PR · 3.0 PA · 0.0 RA · 3.0 PRA · 1.0 STKS\n      - 'img \"Kobe Sanders last 10 minutes: 25.516667, 7.316667, 10, 1.366667, 13.233333, 20.3, 24.433333, 23.533333, 11.416667, 22.733333\"'\n      - button \"Open selection card\"\n    - article \"Kris Dunn player\":\n      - heading \"Kris Dunn game logs\" [level=3]:\n        - link \"Kris Dunn game logs\":\n          - /url: /?player_name=Kris+Dunn\n          - text: Kris Dunn\n      - paragraph: 7.3 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 31.6 MIN · 10.0 PTS · 2.0 REB · 5.0 AST · 2.0 3PM · 2.0 STL · 0.0 BLK · 2.0 TOV · 5.0 FGA · 2.0 FG2A · 3.0 FG3A · 12.0 PR · 15.0 PA · 7.0 RA · 17.0 PRA · 2.0 STKS\n      - 'img \"Kris Dunn last 10 minutes: 24.35, 20.616667, 31.583333, 19.933333, 20.916667, 26.583333, 27.183333, 26.883333, 26.566667, 22.15\"'\n      - button \"Open selection card\"\n    - article \"Nicolas Batum player\":\n      - heading \"Nicolas Batum game logs\" [level=3]:\n        - link \"Nicolas Batum game logs\":\n          - /url: /?player_name=Nicolas+Batum\n          - text: Nicolas Batum\n      - paragraph: 4.0 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 11.9 MIN · 3.0 PTS · 2.0 REB · 1.0 AST · 1.0 3PM · 0.0 STL · 0.0 BLK · 0.0 TOV · 4.0 FGA · 0.0 FG2A · 4.0 FG3A · 5.0 PR · 4.0 PA · 3.0 RA · 6.0 PRA · 0.0 STKS\n      - 'img \"Nicolas Batum last 10 minutes: 20.383333, 21.383333, 14.566667, 14.483333, 11.883333, 5.6, 5.5, 4.85, 5.4, 22.333333\"'\n      - button \"Open selection card\"\n  - region \"Defense Sheet controls\":\n    - group \"Stat window\":\n      - button \"Season\" [pressed]\n      - button \"Last 15\" [disabled]\n    - group \"Deviation filter\":\n      - button \"All deviations\"\n      - button \"At least 1 sigma\" [pressed]\n      - button \"At least 2 sigma\"\n    - paragraph: Completed-season context\n    - paragraph: No point-in-time snapshot was captured for this game.\n    - group \"Stat category\":\n      - button \"All\" [pressed]\n      - button \"PTS\"\n      - button \"REB\"\n      - button \"AST\"\n      - button \"3PM\"\n      - button \"STL\"\n      - button \"BLK\"\n      - button \"TOV\"\n      - button \"FGA\"\n      - button \"FG2A\"\n      - button \"FG3A\"\n      - button \"PR\"\n      - button \"PA\"\n      - button \"RA\"\n      - button \"PRA\"\n      - button \"STKS\"\n  - region \"MIL Defense Sheet\":\n    - paragraph: Relative concessions · per 48\n    - heading \"MIL Defense Sheet\" [level=2]\n    - paragraph: \"Season defense provenance: Completed-season context · Defense Sheet publication\"\n    - paragraph: 30 rows hidden near league average.\n    - region \"Assist locations\":\n      - heading \"Assist locations\" [level=3]\n      - article:\n        - text: \"29\"\n        - heading \"Arc3Assists\" [level=4]\n        - button \"Save Arc3Assists as a Target\": Save as Target\n        - strong: \"9.1\"\n        - text: +17.2% vs league +2.1σ\n        - group \"Players leaning on this slice\": Darius Garland · 24% ast · -0.6σ Kawhi Leonard · 33% ast · +0.6σ\n      - article:\n        - text: \"28\"\n        - heading \"LongMidRangeAssists\" [level=4]\n        - button \"Save LongMidRangeAssists as a Target\": Save as Target\n        - strong: \"1.4\"\n        - text: +17.3% vs league +1.2σ\n        - paragraph: No displayed Diet Shares meet the named threshold.\n      - article:\n        - text: \"6\"\n        - heading \"ShortMidRangeAssists\" [level=4]\n        - button \"Save ShortMidRangeAssists as a Target\": Save as Target\n        - strong: \"3.5\"\n        - text: \"-18.6% vs league -1.1σ\"\n        - paragraph: No displayed Diet Shares meet the named threshold.\n    - region \"Play types\":\n      - heading \"Play types\" [level=3]\n      - article:\n        - text: \"26\"\n        - heading \"Cut PTS\" [level=4]\n        - button \"Save Cut PTS as a Target\": Save as Target\n        - strong: \"10.7\"\n        - text: +11.0% vs league +1.1σ\n        - group \"Players leaning on this slice\": Derrick Jones Jr. · 14% poss · +0.9σ\n      - article:\n        - text: \"5\"\n        - heading \"OffRebound POSS\" [level=4]\n        - button \"Save OffRebound POSS as a Target\": Save as Target\n        - strong: \"5.1\"\n        - text: \"-10.2% vs league -1.2σ\"\n        - group \"Players leaning on this slice\": John Collins · 10% poss · +0.6σ\n      - article:\n        - text: \"3\"\n        - heading \"OffRebound PTS\" [level=4]\n        - button \"Save OffRebound PTS as a Target\": Save as Target\n        - strong: \"5.6\"\n        - text: \"-13.4% vs league -1.2σ\"\n        - group \"Players leaning on this slice\": John Collins · 10% poss · +0.6σ\n      - article:\n        - text: \"4\"\n        - heading \"PRBallHandler POSS\" [level=4]\n        - button \"Save PRBallHandler POSS as a Target\": Save as Target\n        - strong: \"14.7\"\n        - text: \"-11.0% vs league -1.1σ\"\n        - group \"Players leaning on this slice\": Darius Garland · 42% poss · +2.1σ Bennedict Mathurin · 26% poss · +0.7σ Kawhi Leonard · 25% poss · +0.6σ\n      - article:\n        - text: \"7\"\n        - heading \"Postup POSS\" [level=4]\n        - button \"Save Postup POSS as a Target\": Save as Target\n        - strong: \"3.0\"\n        - text: \"-19.3% vs league -1.1σ\"\n        - group \"Players leaning on this slice\": Brook Lopez · 14% poss · +1.0σ John Collins · 11% poss · +0.6σ\n      - article:\n        - text: \"7\"\n        - heading \"Postup PTS\" [level=4]\n        - button \"Save Postup PTS as a Target\": Save as Target\n        - strong: \"2.9\"\n        - text: \"-21.0% vs league -1.0σ\"\n        - group \"Players leaning on this slice\": Brook Lopez · 14% poss · +1.0σ John Collins · 11% poss · +0.6σ\n      - article:\n        - text: \"28\"\n        - heading \"Spotup POSS\" [level=4]\n        - button \"Save Spotup POSS as a Target\": Save as Target\n        - strong: \"28.5\"\n        - text: +8.2% vs league +1.1σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 67% poss · +3.7σ Bennedict Mathurin · 8% poss · -1.5σ Kobe Sanders · 42% poss · +1.5σ Darius Garland · 9% poss · -1.4σ Kawhi Leonard · 12% poss · -1.2σ Derrick Jones Jr. · 38% poss · +1.1σ Kris Dunn · 37% poss · +1.0σ Brook Lopez · 32% poss · +0.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Spotup PTS\" [level=4]\n        - button \"Save Spotup PTS as a Target\": Save as Target\n        - strong: \"31.0\"\n        - text: +12.4% vs league +1.5σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 67% poss · +3.7σ Bennedict Mathurin · 8% poss · -1.5σ Kobe Sanders · 42% poss · +1.5σ Darius Garland · 9% poss · -1.4σ Kawhi Leonard · 12% poss · -1.2σ Derrick Jones Jr. · 38% poss · +1.1σ Kris Dunn · 37% poss · +1.0σ Brook Lopez · 32% poss · +0.6σ\n    - region \"Shot types\":\n      - heading \"Shot types\" [level=3]\n      - article:\n        - text: \"28\"\n        - heading \"Catch and Shoot FG2M\" [level=4]\n        - button \"Save Catch and Shoot FG2M as a Target\": Save as Target\n        - strong: \"0.9\"\n        - text: +31.2% vs league +1.5σ\n        - group \"Players leaning on this slice\": Brook Lopez · 56% FGA · +1.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Catch and Shoot FG3A\" [level=4]\n        - button \"Save Catch and Shoot FG3A as a Target\": Save as Target\n        - strong: \"29.1\"\n        - text: +10.1% vs league +1.4σ\n        - group \"Players leaning on this slice\": Brook Lopez · 56% FGA · +1.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Catch and Shoot FG3M\" [level=4]\n        - button \"Save Catch and Shoot FG3M as a Target\": Save as Target\n        - strong: \"11.2\"\n        - text: +14.7% vs league +1.7σ\n        - group \"Players leaning on this slice\": Brook Lopez · 56% FGA · +1.6σ\n      - article:\n        - text: \"4\"\n        - heading \"Less Than 10 ft FG2A\" [level=4]\n        - button \"Save Less Than 10 ft FG2A as a Target\": Save as Target\n        - strong: \"34.7\"\n        - text: \"-7.6% vs league -1.2σ\"\n        - group \"Players leaning on this slice\": Jordan Miller · 62% FGA · +1.0σ Kawhi Leonard · 31% FGA · -0.7σ John Collins · 55% FGA · +0.7σ Derrick Jones Jr. · 55% FGA · +0.6σ\n    - region \"Shot zones\":\n      - heading \"Shot zones\" [level=3]\n      - article:\n        - text: \"29\"\n        - heading \"Above the Break 3 FGA\" [level=4]\n        - button \"Save Above the Break 3 FGA as a Target\": Save as Target\n        - strong: \"29.8\"\n        - text: +9.2% vs league +1.7σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 52% FGA · +1.3σ John Collins · 13% FGA · -1.3σ Brook Lopez · 50% FGA · +1.2σ Jordan Miller · 18% FGA · -1.0σ Derrick Jones Jr. · 21% FGA · -0.8σ Darius Garland · 40% FGA · +0.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Above the Break 3 FGM\" [level=4]\n        - button \"Save Above the Break 3 FGM as a Target\": Save as Target\n        - strong: \"10.8\"\n        - text: +13.7% vs league +1.9σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 52% FGA · +1.3σ John Collins · 13% FGA · -1.3σ Brook Lopez · 50% FGA · +1.2σ Jordan Miller · 18% FGA · -1.0σ Derrick Jones Jr. · 21% FGA · -0.8σ Darius Garland · 40% FGA · +0.6σ\n      - article:\n        - text: \"3\"\n        - heading \"In The Paint (Non RA) FGA\" [level=4]\n        - button \"Save In The Paint (Non RA) FGA as a Target\": Save as Target\n        - strong: \"14.9\"\n        - text: \"-16.0% vs league -1.5σ\"\n        - group \"Players leaning on this slice\": Jordan Miller · 29% FGA · +1.0σ Kawhi Leonard · 28% FGA · +0.9σ Kris Dunn · 26% FGA · +0.7σ Darius Garland · 24% FGA · +0.5σ\n      - article:\n        - text: \"1\"\n        - heading \"In The Paint (Non RA) FGM\" [level=4]\n        - button \"Save In The Paint (Non RA) FGM as a Target\": Save as Target\n        - strong: \"6.0\"\n        - text: \"-24.3% vs league -1.7σ\"\n        - group \"Players leaning on this slice\": Jordan Miller · 29% FGA · +1.0σ Kawhi Leonard · 28% FGA · +0.9σ Kris Dunn · 26% FGA · +0.7σ Darius Garland · 24% FGA · +0.5σ\n    - region \"Traditional defense\":\n      - heading \"Traditional defense\" [level=3]\n      - article:\n        - text: \"4\"\n        - heading \"OPP BLK\" [level=4]\n        - strong: \"4.1\"\n        - text: \"-14.2% vs league -1.2σ\"\n      - article:\n        - text: \"6\"\n        - heading \"OPP TOV\" [level=4]\n        - strong: \"13.0\"\n        - text: \"-9.9% vs league -1.1σ\""
+    },
+    {
+      "ok": true,
+      "step": 6,
+      "action": "proof",
+      "commandSha256": "0a4994c75aa1f8e44bb2ca2715dc0626e5299b7dded9e7fa643c1eb6c60526cb",
+      "url": "http://127.0.0.1:5188/matchups/0022501082",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-desktop.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-desktop.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 7,
+      "action": "assert",
+      "commandSha256": "3f598d730579e3e3fd2b8290f62050ca312e509a1de35f4ac960525b52346d36",
+      "assertion": {
+        "target": {
+          "role": "button",
+          "name": "Last 15"
+        },
+        "state": "disabled",
+        "check": "disabled"
+      }
+    },
+    {
+      "ok": true,
+      "step": 8,
+      "action": "assert",
+      "commandSha256": "c4407271dc3bfc7a0f5a45f3f26deeed1c14b31d19582a8797a0b3e54cf51c5a",
+      "assertion": {
+        "target": {
+          "text": "No point-in-time snapshot was captured for this game."
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 9,
+      "action": "assert",
+      "commandSha256": "a3a59c825f7662c18e38b037e3da68c023bc6ed3fcddc09ad528b5547320d90a",
+      "assertion": {
+        "target": {
+          "role": "region",
+          "name": "Matchup data freshness"
+        },
+        "state": "hidden",
+        "check": "hidden"
+      }
+    },
+    {
+      "ok": true,
+      "step": 10,
+      "action": "assert",
+      "commandSha256": "a583d6e5d60259223875e9bf0104e157bc0426bef2098c58d3ad03520d528651",
+      "assertion": {
+        "target": {
+          "role": "article",
+          "name": "Kawhi Leonard player"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 11,
+      "action": "click",
+      "commandSha256": "dc3454147ea41702254cdb60b25108e0f67e99afb83187e1f679f85c3c76ac4d"
+    },
+    {
+      "ok": true,
+      "step": 12,
+      "action": "assert",
+      "commandSha256": "8775aeec55de77004981c8daccb9687ad694a6b2b4929cfba05b893181e9bbde",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "LAC Defense Sheet"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 13,
+      "action": "assert",
+      "commandSha256": "de84083d62f118a87cdac6894babd15533f92c04bc8dd5efb45086d633e95bfa",
+      "assertion": {
+        "target": {
+          "role": "article",
+          "name": "Kawhi Leonard player"
+        },
+        "state": "hidden",
+        "check": "hidden"
+      }
+    },
+    {
+      "ok": true,
+      "step": 14,
+      "action": "proof",
+      "commandSha256": "d1db143fa64647affb69b04a083af66eb42cba4b00d6172b57d9218e32b46a4a",
+      "url": "http://127.0.0.1:5188/matchups/0022501082",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-mil-participants.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-mil-participants.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 15,
+      "action": "click",
+      "commandSha256": "1228f0d77467bd3bb192df46a64a43284b7ecf23547876bc76bb081566d7b8c2"
+    },
+    {
+      "ok": true,
+      "step": 16,
+      "action": "click",
+      "commandSha256": "51f730ee34b043d8be08e662fcc4978381cd9b8123f4f517b1d265e9390f043d"
+    },
+    {
+      "ok": true,
+      "step": 17,
+      "action": "assert",
+      "commandSha256": "b27abce1573567ef6d050d5da0e735f5903bce630be7586723b0a446fefd9b1a",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Cut PTS"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 18,
+      "action": "assert",
+      "commandSha256": "473956caafccb786f82c0fcf4cf655d403cadf383bcff3d2f8a4dfdf9e5a9459",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "OPP BLK"
+        },
+        "state": "hidden",
+        "check": "hidden"
+      }
+    },
+    {
+      "ok": true,
+      "step": 19,
+      "action": "click",
+      "commandSha256": "72c48b66b75ad8609194eff3cd583361b40a9174f57dc80ed16c7d5c8f8a98ac"
+    },
+    {
+      "ok": true,
+      "step": 20,
+      "action": "proof",
+      "commandSha256": "d74d08ecf612ec8da51912e3d90f05626b60388435277239777f93adc12937ea",
+      "url": "http://127.0.0.1:5188/matchups/0022501082",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-pts-score-order.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-pts-score-order.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 21,
+      "action": "snapshot",
+      "commandSha256": "975d604e4d09afb89817dd0e10fbce3f92c639d3efcb967e79a925c42cfabc0e",
+      "aria": "- banner:\n  - navigation \"Primary\":\n    - link \"CourtAI\":\n      - /url: /\n    - link \"Search\":\n      - /url: /\n    - link \"Matchups\":\n      - /url: /matchups\n    - link \"Targets\":\n      - /url: /targets\n    - link \"Operations\":\n      - /url: /operations\n    - button \"CF Chris Fu\":\n      - text: CF Chris Fu\n      - img\n- main:\n  - link \"← Back to slate\":\n    - /url: /matchups\n  - paragraph: Historical Matchup · stored evidence\n  - heading \"LAC @ MIL\" [level=1]\n  - region \"Historical matchup evidence\":\n    - strong: Schedule\n    - text: \": Completed-season catalog · from Event Catalog · collected 2026-09-09\"\n    - strong: Participants\n    - text: \": Completed-season context · from game logs\"\n    - strong: Season defense\n    - text: \": Completed-season context · from Defense Sheet publication\"\n    - strong: Last 15 defense\n    - text: \": unavailable — No point-in-time snapshot was captured for this game.\"\n    - strong: Injuries\n    - text: \": unavailable — No pregame injury snapshot was archived for this game.\"\n  - group \"Defense team\":\n    - button \"LAC defense vs MIL players\"\n    - button \"MIL defense vs LAC players\" [pressed]\n  - paragraph: Tap a player to trace their rows across the sheet; use the score card for the full dossier.\n  - region \"Injuries\":\n    - heading \"Injuries\" [level=2]\n    - paragraph: No pregame injury snapshot was archived for this game.\n  - complementary \"Players in game\":\n    - paragraph: Players in game\n    - heading \"PTS Matchup Score order · completed-season context\" [level=2]\n    - group \"Player rail sort\":\n      - button \"Season scoring\"\n      - button \"Matchup Score\" [pressed]\n    - article \"Nicolas Batum player\":\n      - heading \"Nicolas Batum game logs\" [level=3]:\n        - link \"Nicolas Batum game logs\":\n          - /url: /?player_name=Nicolas+Batum\n          - text: Nicolas Batum\n      - paragraph: 4.0 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 11.9 MIN · 3.0 PTS\n      - 'img \"Nicolas Batum last 10 minutes: 20.383333, 21.383333, 14.566667, 14.483333, 11.883333, 5.6, 5.5, 4.85, 5.4, 22.333333\"'\n      - button \"Open selection card\"\n    - article \"Brook Lopez player\":\n      - heading \"Brook Lopez game logs\" [level=3]:\n        - link \"Brook Lopez game logs\":\n          - /url: /?player_name=Brook+Lopez\n          - text: Brook Lopez\n      - paragraph: 8.5 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 25.3 MIN · 8.0 PTS\n      - 'img \"Brook Lopez last 10 minutes: 25.266667, 33.233333, 25.316667, 35.766667, 24.016667, 19.1, 25.266667, 30.383333, 36.166667, 22.766667\"'\n      - button \"Open selection card\"\n    - article \"Kobe Sanders player\":\n      - heading \"Kobe Sanders game logs\" [level=3]:\n        - link \"Kobe Sanders game logs\":\n          - /url: /?player_name=Kobe+Sanders\n          - text: Kobe Sanders\n      - paragraph: 7.3 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 10.0 MIN · 3.0 PTS\n      - 'img \"Kobe Sanders last 10 minutes: 25.516667, 7.316667, 10, 1.366667, 13.233333, 20.3, 24.433333, 23.533333, 11.416667, 22.733333\"'\n      - button \"Open selection card\"\n    - article \"Derrick Jones Jr. player\":\n      - heading \"Derrick Jones Jr. game logs\" [level=3]:\n        - link \"Derrick Jones Jr. game logs\":\n          - /url: /?player_name=Derrick+Jones+Jr.\n          - text: Derrick Jones Jr.\n      - paragraph: 10.1 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 25.7 MIN · 13.0 PTS\n      - 'img \"Derrick Jones Jr. last 10 minutes: 28.466667, 25.783333, 25.716667, 23.35, 23.75, 25.216667, 23.483333, 30.283333, 23.316667, 20.766667\"'\n      - button \"Open selection card\"\n    - article \"Kris Dunn player\":\n      - heading \"Kris Dunn game logs\" [level=3]:\n        - link \"Kris Dunn game logs\":\n          - /url: /?player_name=Kris+Dunn\n          - text: Kris Dunn\n      - paragraph: 7.3 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 31.6 MIN · 10.0 PTS\n      - 'img \"Kris Dunn last 10 minutes: 24.35, 20.616667, 31.583333, 19.933333, 20.916667, 26.583333, 27.183333, 26.883333, 26.566667, 22.15\"'\n      - button \"Open selection card\"\n    - article \"John Collins player\":\n      - heading \"John Collins game logs\" [level=3]:\n        - link \"John Collins game logs\":\n          - /url: /?player_name=John+Collins\n          - text: John Collins\n      - paragraph: 13.6 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 35.2 MIN · 22.0 PTS\n      - 'img \"John Collins last 10 minutes: 22.283333, 19.866667, 35.216667, 31.216667, 24.766667, 23.95, 27.9, 27.433333, 13.35, 20.683333\"'\n      - button \"Open selection card\"\n    - article \"Bennedict Mathurin player\":\n      - heading \"Bennedict Mathurin game logs\" [level=3]:\n        - link \"Bennedict Mathurin game logs\":\n          - /url: /?player_name=Bennedict+Mathurin\n          - text: Bennedict Mathurin\n      - paragraph: 17.6 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 27.2 MIN · 28.0 PTS\n      - 'img \"Bennedict Mathurin last 10 minutes: 27.016667, 29.25, 27.2, 22.383333, 26.85, 27.35, 27.05, 23.916667, 5.166667, 32.1\"'\n      - button \"Open selection card\"\n    - article \"Jordan Miller player\":\n      - heading \"Jordan Miller game logs\" [level=3]:\n        - link \"Jordan Miller game logs\":\n          - /url: /?player_name=Jordan+Miller\n          - text: Jordan Miller\n      - paragraph: 10.0 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 23.9 MIN · 5.0 PTS\n      - 'img \"Jordan Miller last 10 minutes: 21.383333, 13.233333, 23.85, 24.9, 25.7, 23.483333, 16.2, 29.616667, 32.35, 29.2\"'\n      - button \"Open selection card\"\n    - article \"Darius Garland player\":\n      - heading \"Darius Garland game logs\" [level=3]:\n        - link \"Darius Garland game logs\":\n          - /url: /?player_name=Darius+Garland\n          - text: Darius Garland\n      - paragraph: 18.8 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 26.7 MIN · 15.0 PTS\n      - 'img \"Darius Garland last 10 minutes: 18.133333, 30.15, 34.533333, 26.666667, 37.25, 29, 24.433333, 28.383333, 40.55, 26.6\"'\n      - button \"Open selection card\"\n    - article \"Kawhi Leonard player\":\n      - heading \"Kawhi Leonard game logs\" [level=3]:\n        - link \"Kawhi Leonard game logs\":\n          - /url: /?player_name=Kawhi+Leonard\n          - text: Kawhi Leonard\n      - paragraph: 27.9 PPG · completed-season context\n      - paragraph: Focal game LAC @ MIL · 22.6 MIN · 20.0 PTS\n      - 'img \"Kawhi Leonard last 10 minutes: 24.783333, 30.333333, 34.533333, 22.566667, 35.5, 31.7, 29.85, 30.15, 30, 37.433333\"'\n      - button \"Open selection card\"\n  - region \"Defense Sheet controls\":\n    - group \"Stat window\":\n      - button \"Season\" [pressed]\n      - button \"Last 15\" [disabled]\n    - group \"Deviation filter\":\n      - button \"All deviations\"\n      - button \"At least 1 sigma\" [pressed]\n      - button \"At least 2 sigma\"\n    - paragraph: Completed-season context\n    - paragraph: No point-in-time snapshot was captured for this game.\n    - group \"Stat category\":\n      - button \"All\"\n      - button \"PTS\" [pressed]\n      - button \"REB\"\n      - button \"AST\"\n      - button \"3PM\"\n      - button \"STL\"\n      - button \"BLK\"\n      - button \"TOV\"\n      - button \"FGA\"\n      - button \"FG2A\"\n      - button \"FG3A\"\n      - button \"PR\"\n      - button \"PA\"\n      - button \"RA\"\n      - button \"PRA\"\n      - button \"STKS\"\n  - region \"MIL Defense Sheet\":\n    - paragraph: Relative concessions · per 48\n    - heading \"MIL Defense Sheet\" [level=2]\n    - paragraph: \"Season defense provenance: Completed-season context · Defense Sheet publication\"\n    - paragraph: 19 rows hidden near league average.\n    - region \"Play types\":\n      - heading \"Play types\" [level=3]\n      - article:\n        - text: \"26\"\n        - heading \"Cut PTS\" [level=4]\n        - button \"Save Cut PTS as a Target\": Save as Target\n        - strong: \"10.7\"\n        - text: +11.0% vs league +1.1σ\n        - group \"Players leaning on this slice\": Derrick Jones Jr. · 14% poss · +0.9σ\n      - article:\n        - text: \"5\"\n        - heading \"OffRebound POSS\" [level=4]\n        - button \"Save OffRebound POSS as a Target\": Save as Target\n        - strong: \"5.1\"\n        - text: \"-10.2% vs league -1.2σ\"\n        - group \"Players leaning on this slice\": John Collins · 10% poss · +0.6σ\n      - article:\n        - text: \"3\"\n        - heading \"OffRebound PTS\" [level=4]\n        - button \"Save OffRebound PTS as a Target\": Save as Target\n        - strong: \"5.6\"\n        - text: \"-13.4% vs league -1.2σ\"\n        - group \"Players leaning on this slice\": John Collins · 10% poss · +0.6σ\n      - article:\n        - text: \"4\"\n        - heading \"PRBallHandler POSS\" [level=4]\n        - button \"Save PRBallHandler POSS as a Target\": Save as Target\n        - strong: \"14.7\"\n        - text: \"-11.0% vs league -1.1σ\"\n        - group \"Players leaning on this slice\": Darius Garland · 42% poss · +2.1σ Bennedict Mathurin · 26% poss · +0.7σ Kawhi Leonard · 25% poss · +0.6σ\n      - article:\n        - text: \"7\"\n        - heading \"Postup POSS\" [level=4]\n        - button \"Save Postup POSS as a Target\": Save as Target\n        - strong: \"3.0\"\n        - text: \"-19.3% vs league -1.1σ\"\n        - group \"Players leaning on this slice\": Brook Lopez · 14% poss · +1.0σ John Collins · 11% poss · +0.6σ\n      - article:\n        - text: \"7\"\n        - heading \"Postup PTS\" [level=4]\n        - button \"Save Postup PTS as a Target\": Save as Target\n        - strong: \"2.9\"\n        - text: \"-21.0% vs league -1.0σ\"\n        - group \"Players leaning on this slice\": Brook Lopez · 14% poss · +1.0σ John Collins · 11% poss · +0.6σ\n      - article:\n        - text: \"28\"\n        - heading \"Spotup POSS\" [level=4]\n        - button \"Save Spotup POSS as a Target\": Save as Target\n        - strong: \"28.5\"\n        - text: +8.2% vs league +1.1σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 67% poss · +3.7σ Bennedict Mathurin · 8% poss · -1.5σ Kobe Sanders · 42% poss · +1.5σ Darius Garland · 9% poss · -1.4σ Kawhi Leonard · 12% poss · -1.2σ Derrick Jones Jr. · 38% poss · +1.1σ Kris Dunn · 37% poss · +1.0σ Brook Lopez · 32% poss · +0.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Spotup PTS\" [level=4]\n        - button \"Save Spotup PTS as a Target\": Save as Target\n        - strong: \"31.0\"\n        - text: +12.4% vs league +1.5σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 67% poss · +3.7σ Bennedict Mathurin · 8% poss · -1.5σ Kobe Sanders · 42% poss · +1.5σ Darius Garland · 9% poss · -1.4σ Kawhi Leonard · 12% poss · -1.2σ Derrick Jones Jr. · 38% poss · +1.1σ Kris Dunn · 37% poss · +1.0σ Brook Lopez · 32% poss · +0.6σ\n    - region \"Shot types\":\n      - heading \"Shot types\" [level=3]\n      - article:\n        - text: \"28\"\n        - heading \"Catch and Shoot FG2M\" [level=4]\n        - button \"Save Catch and Shoot FG2M as a Target\": Save as Target\n        - strong: \"0.9\"\n        - text: +31.2% vs league +1.5σ\n        - group \"Players leaning on this slice\": Brook Lopez · 56% FGA · +1.6σ\n      - article:\n        - text: \"29\"\n        - heading \"Catch and Shoot FG3M\" [level=4]\n        - button \"Save Catch and Shoot FG3M as a Target\": Save as Target\n        - strong: \"11.2\"\n        - text: +14.7% vs league +1.7σ\n        - group \"Players leaning on this slice\": Brook Lopez · 56% FGA · +1.6σ\n    - region \"Shot zones\":\n      - heading \"Shot zones\" [level=3]\n      - article:\n        - text: \"29\"\n        - heading \"Above the Break 3 FGM\" [level=4]\n        - button \"Save Above the Break 3 FGM as a Target\": Save as Target\n        - strong: \"10.8\"\n        - text: +13.7% vs league +1.9σ\n        - group \"Players leaning on this slice\": Nicolas Batum · 52% FGA · +1.3σ John Collins · 13% FGA · -1.3σ Brook Lopez · 50% FGA · +1.2σ Jordan Miller · 18% FGA · -1.0σ Derrick Jones Jr. · 21% FGA · -0.8σ Darius Garland · 40% FGA · +0.6σ\n      - article:\n        - text: \"1\"\n        - heading \"In The Paint (Non RA) FGM\" [level=4]\n        - button \"Save In The Paint (Non RA) FGM as a Target\": Save as Target\n        - strong: \"6.0\"\n        - text: \"-24.3% vs league -1.7σ\"\n        - group \"Players leaning on this slice\": Jordan Miller · 29% FGA · +1.0σ Kawhi Leonard · 28% FGA · +0.9σ Kris Dunn · 26% FGA · +0.7σ Darius Garland · 24% FGA · +0.5σ"
+    },
+    {
+      "ok": true,
+      "step": 22,
+      "action": "assert",
+      "commandSha256": "d5b92df4c65dafdce1e8d6627e282275c0d49f7dbd10f48a74d2cfa877bc11ed",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "PTS Matchup Score order · completed-season context"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 23,
+      "action": "click",
+      "commandSha256": "8ad9f100f54c659b04d92a205c579337f4ec6ac80465b97c493fc813a001e1fd"
+    },
+    {
+      "ok": true,
+      "step": 24,
+      "action": "assert",
+      "commandSha256": "3b072c99d8fc2759338b198a46ed785263fff32df96847b19ac138f942c4eb65",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Kawhi Leonard"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 25,
+      "action": "assert-response",
+      "commandSha256": "cb3a501011a2bd538cf0a2c54ad11429010b90d8f89bff0829b4468b298bc557",
+      "response": {
+        "at": "2026-09-14T03:04:08.968Z",
+        "actionStep": 23,
+        "method": "GET",
+        "path": "/api/games/matchup/selection",
+        "status": 200
+      }
+    },
+    {
+      "ok": true,
+      "step": 26,
+      "action": "proof",
+      "commandSha256": "dfc69d9e49fabefda2bd2c99f34b57ac4b64522ae25cd86b6d8a870ea553c407",
+      "url": "http://127.0.0.1:5188/matchups/0022501082?player=202695",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-selection-desktop.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-selection-desktop.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:04:08.968Z",
+          "actionStep": 23,
+          "method": "GET",
+          "path": "/api/games/matchup/selection",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 27,
+      "action": "press",
+      "commandSha256": "4f4755c018f13b81f1eefad928a76fa0b93e8c185c826c9ffa6eb91c2965d6fd"
+    },
+    {
+      "ok": true,
+      "step": 28,
+      "action": "viewport",
+      "commandSha256": "8085c1c1c96b12dcd22168a587fa83e56f36d3cd95c4d694f1d9ed13144f94e1"
+    },
+    {
+      "ok": true,
+      "step": 29,
+      "action": "click",
+      "commandSha256": "17c7fceef0ebd445e00950f437c6f26a461ff69015cf4aa36e671eb0d9cbee4b"
+    },
+    {
+      "ok": true,
+      "step": 30,
+      "action": "assert",
+      "commandSha256": "df60432f02ea26df5f6f4cdd610889b1ba8f4acedc9291f25d3a5297c5c193d4",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "OPP BLK"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 31,
+      "action": "click",
+      "commandSha256": "51f730ee34b043d8be08e662fcc4978381cd9b8123f4f517b1d265e9390f043d"
+    },
+    {
+      "ok": true,
+      "step": 32,
+      "action": "assert",
+      "commandSha256": "473956caafccb786f82c0fcf4cf655d403cadf383bcff3d2f8a4dfdf9e5a9459",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "OPP BLK"
+        },
+        "state": "hidden",
+        "check": "hidden"
+      }
+    },
+    {
+      "ok": true,
+      "step": 33,
+      "action": "assert",
+      "commandSha256": "b27abce1573567ef6d050d5da0e735f5903bce630be7586723b0a446fefd9b1a",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Cut PTS"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 34,
+      "action": "proof",
+      "commandSha256": "475476c166a5f6c068f11eb7ebe1ea8947f8e5a2b1789735d75e74f164a73af6",
+      "url": "http://127.0.0.1:5188/matchups/0022501082",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-phone.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-phone.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:04:08.968Z",
+          "actionStep": 23,
+          "method": "GET",
+          "path": "/api/games/matchup/selection",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 35,
+      "action": "assert-layout",
+      "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+    },
+    {
+      "ok": true,
+      "step": 36,
+      "action": "click",
+      "commandSha256": "dc3454147ea41702254cdb60b25108e0f67e99afb83187e1f679f85c3c76ac4d"
+    },
+    {
+      "ok": true,
+      "step": 37,
+      "action": "assert",
+      "commandSha256": "8775aeec55de77004981c8daccb9687ad694a6b2b4929cfba05b893181e9bbde",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "LAC Defense Sheet"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 38,
+      "action": "assert",
+      "commandSha256": "de84083d62f118a87cdac6894babd15533f92c04bc8dd5efb45086d633e95bfa",
+      "assertion": {
+        "target": {
+          "role": "article",
+          "name": "Kawhi Leonard player"
+        },
+        "state": "hidden",
+        "check": "hidden"
+      }
+    },
+    {
+      "ok": true,
+      "step": 39,
+      "action": "click",
+      "commandSha256": "1228f0d77467bd3bb192df46a64a43284b7ecf23547876bc76bb081566d7b8c2"
+    },
+    {
+      "ok": true,
+      "step": 40,
+      "action": "click",
+      "commandSha256": "95ee38ea6db43ad2ef196e7cb1f5ab3b35f1737871e7b7ff42eabca2a03d63ae"
+    },
+    {
+      "ok": true,
+      "step": 41,
+      "action": "assert",
+      "commandSha256": "ba664c50b265774a1a8a946eda708ff894baa2c55400b72e727ddb0e6a6177ea",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Season scoring order"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 42,
+      "action": "click",
+      "commandSha256": "8ad9f100f54c659b04d92a205c579337f4ec6ac80465b97c493fc813a001e1fd"
+    },
+    {
+      "ok": true,
+      "step": 43,
+      "action": "assert",
+      "commandSha256": "3b072c99d8fc2759338b198a46ed785263fff32df96847b19ac138f942c4eb65",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Kawhi Leonard"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 44,
+      "action": "assert",
+      "commandSha256": "fba6c8508144723ddecb1fe5340351a3c897291d6b95cbe9bb992068bb9523ef",
+      "assertion": {
+        "target": {
+          "within": {
+            "role": "group",
+            "name": "Selection log stat"
+          },
+          "role": "button",
+          "name": "PTS"
+        },
+        "attribute": "aria-pressed",
+        "check": "attribute",
+        "expectedSha256": "18d10c7d2b4b04aaf04254d1ae5d655a5dc0407cbcdd5a8c3986e985370f36ee"
+      }
+    },
+    {
+      "ok": true,
+      "step": 45,
+      "action": "proof",
+      "commandSha256": "7d344c4f0b18fb5cd6484feaaabbf91fb5db21c83dc51595e6c1520ba444564c",
+      "url": "http://127.0.0.1:5188/matchups/0022501082?player=202695",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "/tmp/statsplus-closeout/42-production/historical-selection-phone.png",
+      "aria": "/tmp/statsplus-closeout/42-production/historical-selection-phone.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-14T03:02:22.223Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:22.605Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:02:44.950Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/games/matchup",
+          "status": 200
+        },
+        {
+          "at": "2026-09-14T03:04:08.968Z",
+          "actionStep": 23,
+          "method": "GET",
+          "path": "/api/games/matchup/selection",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 46,
+      "action": "assert-layout",
+      "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+    },
+    {
+      "ok": true,
+      "step": 47,
+      "action": "reload",
+      "commandSha256": "58b3ee3e3afd94ba729d1aa0f212914a582015ca6ab066b15105f6816099f849"
+    },
+    {
+      "ok": true,
+      "step": 48,
+      "action": "assert",
+      "commandSha256": "3b072c99d8fc2759338b198a46ed785263fff32df96847b19ac138f942c4eb65",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Kawhi Leonard"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 49,
+      "action": "assert-response",
+      "commandSha256": "cb3a501011a2bd538cf0a2c54ad11429010b90d8f89bff0829b4468b298bc557",
+      "response": {
+        "at": "2026-09-14T03:04:55.053Z",
+        "actionStep": 47,
+        "method": "GET",
+        "path": "/api/games/matchup/selection",
+        "status": 200
+      }
+    },
+    {
+      "ok": true,
+      "step": 50,
+      "action": "press",
+      "commandSha256": "4f4755c018f13b81f1eefad928a76fa0b93e8c185c826c9ffa6eb91c2965d6fd"
+    }
+  ],
+  "cleanedUp": true
+}

@@ -1,0 +1,51 @@
+{"action":"doctor"}
+{"action":"open","path":"/matchups/0022501082"}
+{"action":"assert","target":{"role":"heading","name":"MIL Defense Sheet"}}
+{"action":"assert-response","path":"/api/games/matchup","status":200,"method":"GET","query":{"game_id":"0022501082"}}
+{"action":"snapshot"}
+{"action":"proof","name":"historical-desktop"}
+{"action":"assert","target":{"role":"button","name":"Last 15"},"state":"disabled"}
+{"action":"assert","target":{"text":"No point-in-time snapshot was captured for this game."}}
+{"action":"assert","target":{"role":"region","name":"Matchup data freshness"},"state":"hidden"}
+{"action":"assert","target":{"role":"article","name":"Kawhi Leonard player"}}
+{"action":"click","target":{"role":"button","name":"LAC defense vs MIL players"}}
+{"action":"assert","target":{"role":"heading","name":"LAC Defense Sheet"}}
+{"action":"assert","target":{"role":"article","name":"Kawhi Leonard player"},"state":"hidden"}
+{"action":"proof","name":"historical-mil-participants"}
+{"action":"click","target":{"role":"button","name":"MIL defense vs LAC players"}}
+{"action":"click","target":{"within":{"role":"group","name":"Stat category"},"role":"button","name":"PTS"}}
+{"action":"assert","target":{"role":"heading","name":"Cut PTS"}}
+{"action":"assert","target":{"role":"heading","name":"OPP BLK"},"state":"hidden"}
+{"action":"click","target":{"role":"button","name":"Matchup Score"}}
+{"action":"proof","name":"historical-pts-score-order"}
+{"action":"snapshot"}
+{"action":"assert","target":{"role":"heading","name":"PTS Matchup Score order · completed-season context"}}
+{"action":"click","target":{"within":{"role":"article","name":"Kawhi Leonard player"},"role":"button","name":"Open selection card"}}
+{"action":"assert","target":{"role":"heading","name":"Kawhi Leonard"}}
+{"action":"assert-response","path":"/api/games/matchup/selection","status":200,"method":"GET","query":{"game_id":"0022501082","player_id":"202695"}}
+{"action":"proof","name":"historical-selection-desktop"}
+{"action":"press","key":"Escape"}
+{"action":"viewport","name":"phone"}
+{"action":"click","target":{"within":{"role":"group","name":"Stat category"},"role":"button","name":"All"}}
+{"action":"assert","target":{"role":"heading","name":"OPP BLK"}}
+{"action":"click","target":{"within":{"role":"group","name":"Stat category"},"role":"button","name":"PTS"}}
+{"action":"assert","target":{"role":"heading","name":"OPP BLK"},"state":"hidden"}
+{"action":"assert","target":{"role":"heading","name":"Cut PTS"}}
+{"action":"proof","name":"historical-phone"}
+{"action":"assert-layout"}
+{"action":"click","target":{"role":"button","name":"LAC defense vs MIL players"}}
+{"action":"assert","target":{"role":"heading","name":"LAC Defense Sheet"}}
+{"action":"assert","target":{"role":"article","name":"Kawhi Leonard player"},"state":"hidden"}
+{"action":"click","target":{"role":"button","name":"MIL defense vs LAC players"}}
+{"action":"click","target":{"role":"button","name":"Season scoring"}}
+{"action":"assert","target":{"role":"heading","name":"Season scoring order"}}
+{"action":"click","target":{"within":{"role":"article","name":"Kawhi Leonard player"},"role":"button","name":"Open selection card"}}
+{"action":"assert","target":{"role":"heading","name":"Kawhi Leonard"}}
+{"action":"assert","target":{"within":{"role":"group","name":"Selection log stat"},"role":"button","name":"PTS"},"attribute":"aria-pressed","value":"true"}
+{"action":"proof","name":"historical-selection-phone"}
+{"action":"assert-layout"}
+{"action":"reload"}
+{"action":"assert","target":{"role":"heading","name":"Kawhi Leonard"}}
+{"action":"assert-response","path":"/api/games/matchup/selection","status":200,"method":"GET","query":{"game_id":"0022501082","player_id":"202695"}}
+{"action":"press","key":"Escape"}
+{"action":"cleanup"}

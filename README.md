@@ -1,3 +1,7 @@
+# Corrected section heading and description
+
+Latest source: `8ec70faf21bffce90dfb6fdbadf6e156e0e11b61`. See [production-heading](production-heading) for 48 passing actions and refreshed desktop/phone screenshots. Section description removed; card descriptions restored.
+
 # Current evidence: descriptions removed
 
 Latest frontend commit `d443d48` removes both sample descriptions and clears copied notes. [Production verification, screenshots, and independent review](production-no-description/README.md) passed on this exact revision. Older evidence below retains the previous appearance for history.

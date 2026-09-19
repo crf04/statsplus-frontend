@@ -1,0 +1,93 @@
+[
+  {
+    "at": "2026-09-19T02:43:14.070Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:14.358Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets/resolve",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:14.453Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:14.500Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:15.225Z",
+    "actionStep": 16,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:15.245Z",
+    "actionStep": 16,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:16.688Z",
+    "actionStep": 20,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:17.554Z",
+    "actionStep": 30,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:17.554Z",
+    "actionStep": 30,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:18.741Z",
+    "actionStep": 34,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:20.408Z",
+    "actionStep": 41,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:20.415Z",
+    "actionStep": 41,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:43:20.875Z",
+    "actionStep": 44,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  }
+]

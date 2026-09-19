@@ -1,0 +1,721 @@
+[
+  {
+    "ok": true,
+    "step": 1,
+    "action": "open",
+    "commandSha256": "bad4d158119582caabba04f27b2dd4da8350f1a0b19b7d09079d44b4061c53e6"
+  },
+  {
+    "ok": true,
+    "step": 2,
+    "action": "assert-response",
+    "commandSha256": "a4e9cec45c97ed9429e080cf7c76f7268a3c2dc6eb00ba46ded9e6af7b4f90f9",
+    "response": {
+      "at": "2026-09-19T02:43:14.070Z",
+      "actionStep": 1,
+      "method": "GET",
+      "path": "/api/user/targets",
+      "status": 200
+    }
+  },
+  {
+    "ok": true,
+    "step": 3,
+    "action": "assert",
+    "commandSha256": "0ba263e5265e95b6369048e5c76791846e718217e4a68de1ce2c867d9e81fcff",
+    "assertion": {
+      "target": {
+        "role": "heading",
+        "name": "No Targets yet."
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 4,
+    "action": "assert",
+    "commandSha256": "81159ce04fa1a3c64d195967eff1fe0fb64d3d6d9109aca854e8379e21c0dae1",
+    "assertion": {
+      "target": {
+        "role": "heading",
+        "name": "Sample Targets"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 5,
+    "action": "assert",
+    "commandSha256": "e0c6aa58197c63503202d964455dc7b2e27544561e6be99c19d7adebccc019c5",
+    "assertion": {
+      "target": {
+        "selector": ".sample-targets-intro p"
+      },
+      "state": "hidden",
+      "check": "hidden"
+    }
+  },
+  {
+    "ok": true,
+    "step": 6,
+    "action": "assert",
+    "commandSha256": "aac473da1e155c4d5c019def838d8bdfcad9beb4101b27b96b7678a8d7212493",
+    "assertion": {
+      "target": {
+        "text": "Explore players who use at least 25% of their possessions as pick-and-roll ball handlers."
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 7,
+    "action": "assert",
+    "commandSha256": "53109205aa06393e181c5d8d00aa530b867f2bac78e038214cbb4a06e985103f",
+    "assertion": {
+      "target": {
+        "text": "No Targets active today"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 8,
+    "action": "assert",
+    "commandSha256": "f3d6ca4bc62baf7e134ca3088001e92a87b2dbc70ba9a000d1c94951e9a1ab7c",
+    "assertion": {
+      "target": {
+        "within": {
+          "role": "article",
+          "name": "ORL vs P&R ball handler \u2265 25%"
+        },
+        "role": "list",
+        "name": "Backtest summary"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 9,
+    "action": "assert",
+    "commandSha256": "9d694ae24b2f1f2ad506f2915f585622a05f1c0b10fa6b1b3ccb22ad4847a83c",
+    "assertion": {
+      "target": {
+        "within": {
+          "role": "article",
+          "name": "NYK vs P&R roll man \u2265 15%"
+        },
+        "role": "list",
+        "name": "Backtest summary"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 10,
+    "action": "assert-response",
+    "commandSha256": "d8adba0c6671b856aa3bf8508e6dc6bd91b627630144815a60da9146c4b369cb",
+    "response": {
+      "at": "2026-09-19T02:43:14.500Z",
+      "actionStep": 1,
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    }
+  },
+  {
+    "ok": true,
+    "step": 11,
+    "action": "assert-layout",
+    "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+  },
+  {
+    "ok": true,
+    "step": 12,
+    "action": "proof",
+    "commandSha256": "2801bd1a2f31ba8816c67066995021dd340314733b1700f1c04b76041d03e1da",
+    "url": "http://127.0.0.1:5198/targets",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "screenshot": "/tmp/sample-targets-production-heading/production-samples-desktop.png",
+    "aria": "/tmp/sample-targets-production-heading/production-samples-desktop.aria.txt",
+    "responses": [
+      {
+        "at": "2026-09-19T02:43:14.070Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.358Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets/resolve",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.453Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.500Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "step": 13,
+    "action": "click",
+    "commandSha256": "69d9aabeb1d683d7dd6e1bbade6bed21d56ef38ea49946db44906d7b31cf14ed"
+  },
+  {
+    "ok": true,
+    "step": 14,
+    "action": "assert",
+    "commandSha256": "7c05016da5220b84a97ee3327801a08afe8f81aa1441b4b200bea6d7e27e48c5",
+    "assertion": {
+      "target": {
+        "within": {
+          "role": "article",
+          "name": "ORL vs P&R ball handler \u2265 25%"
+        },
+        "role": "button",
+        "name": "FGA +0.9 FGA/game +7.1% vs baseline Hit rate 53%"
+      },
+      "attribute": "aria-pressed",
+      "check": "attribute",
+      "expectedSha256": "18d10c7d2b4b04aaf04254d1ae5d655a5dc0407cbcdd5a8c3986e985370f36ee"
+    }
+  },
+  {
+    "ok": true,
+    "step": 15,
+    "action": "assert",
+    "commandSha256": "228f379cd6bf2023ce46cb25de4cf6f832f4cb31a1435149d67d80789a5b7837",
+    "assertion": {
+      "target": {
+        "role": "list",
+        "name": "130 games, oldest to newest, graded by FGA margin"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 16,
+    "action": "click",
+    "commandSha256": "9d9751d8832cda2ca55ef055a2eb5edc1afda56b0beff3ce8e45b2b664c4b716"
+  },
+  {
+    "ok": true,
+    "step": 17,
+    "action": "assert",
+    "commandSha256": "284371815aa6419416f3db1078570d334f06f9c89f5bb362f30d3ee772d0607c",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 threshold percent"
+      },
+      "check": "value",
+      "expectedSha256": "21cee27a52b79f89fa2ccbfe8436f7fd5285a4f88027d07fc9a591f7a3178e80"
+    }
+  },
+  {
+    "ok": true,
+    "step": 18,
+    "action": "assert",
+    "commandSha256": "3aff79616212e266cdccaa9f70785138bc13c3473b6f30197bb898158bed145e",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 slice"
+      },
+      "check": "value",
+      "expectedSha256": "84f3b0cc87d8cd2345c551c73b9d14d0aa46a97b7495fd8a5788ebfdf1d4711a"
+    }
+  },
+  {
+    "ok": true,
+    "step": 19,
+    "action": "click",
+    "commandSha256": "0d2ad8f3ef8c3e4acb8ffba0448d46a374a872d99fd9be8f2110170de348249a"
+  },
+  {
+    "ok": true,
+    "step": 20,
+    "action": "press",
+    "commandSha256": "b76718f03263d257cb6dfda5203597c015432731f6a65deae0a337471fb38496"
+  },
+  {
+    "ok": true,
+    "step": 21,
+    "action": "assert",
+    "commandSha256": "a622c34d0150f1e57e217c9c89f4e3c5b9e241f9acdefbf4b742e139c64181c2",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 threshold percent"
+      },
+      "check": "value",
+      "expectedSha256": "227e4918add1d7964e1745439f5cf44f3e3aba15de6f570942d418510b022b9d"
+    }
+  },
+  {
+    "ok": true,
+    "step": 22,
+    "action": "assert",
+    "commandSha256": "b3b882e587bc6c945229ccf771709199bc97b729d24ef3b1c8b7527e4725bade",
+    "assertion": {
+      "target": {
+        "text": "Backtest up to date."
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 23,
+    "action": "assert-response",
+    "commandSha256": "d8adba0c6671b856aa3bf8508e6dc6bd91b627630144815a60da9146c4b369cb",
+    "response": {
+      "at": "2026-09-19T02:43:16.688Z",
+      "actionStep": 20,
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    }
+  },
+  {
+    "ok": true,
+    "step": 24,
+    "action": "proof",
+    "commandSha256": "4134158e75d2c25d6e7c42f1cfb5baae922273d8ec855606e6409fb7e2dad47f",
+    "url": "http://127.0.0.1:5198/targets",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "screenshot": "/tmp/sample-targets-production-heading/production-orl-draft-desktop.png",
+    "aria": "/tmp/sample-targets-production-heading/production-orl-draft-desktop.aria.txt",
+    "responses": [
+      {
+        "at": "2026-09-19T02:43:14.070Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.358Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets/resolve",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.453Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.500Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.225Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/teams/stats",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.245Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/diet/baselines",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:16.688Z",
+        "actionStep": 20,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "step": 25,
+    "action": "click",
+    "commandSha256": "62b6ae4b1b94b7dd6c876e047621b343bc5de26c7d798c78f0807d405ed260f3"
+  },
+  {
+    "ok": true,
+    "step": 26,
+    "action": "assert",
+    "commandSha256": "e3366f4e553f5fcf952af9de4ea283ee39c04c4fe348f32ceacab02280038d0f",
+    "assertion": {
+      "target": {
+        "role": "article",
+        "name": "ORL vs P&R ball handler \u2265 25%"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 27,
+    "action": "viewport",
+    "commandSha256": "8085c1c1c96b12dcd22168a587fa83e56f36d3cd95c4d694f1d9ed13144f94e1"
+  },
+  {
+    "ok": true,
+    "step": 28,
+    "action": "assert-layout",
+    "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+  },
+  {
+    "ok": true,
+    "step": 29,
+    "action": "proof",
+    "commandSha256": "2a6ee3ab85a0b3a07b62f0f4b904ab69c525c0965b4f484f702519d05f7ea6de",
+    "url": "http://127.0.0.1:5198/targets",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "screenshot": "/tmp/sample-targets-production-heading/production-samples-phone.png",
+    "aria": "/tmp/sample-targets-production-heading/production-samples-phone.aria.txt",
+    "responses": [
+      {
+        "at": "2026-09-19T02:43:14.070Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.358Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets/resolve",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.453Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.500Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.225Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/teams/stats",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.245Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/diet/baselines",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:16.688Z",
+        "actionStep": 20,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "step": 30,
+    "action": "click",
+    "commandSha256": "c3116192589f16226c2917d128f88f1df0991022094a8da9e39457a5ef50f425"
+  },
+  {
+    "ok": true,
+    "step": 31,
+    "action": "assert",
+    "commandSha256": "593e5cb5248ab433d4a84c1cb743ef5758bc79a4e3bc8753abcd605ba801db4d",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 slice"
+      },
+      "check": "value",
+      "expectedSha256": "ea117a4296cfcbcbd202391243c1ef01a2291374f3a865d8588434ced3e866c0"
+    }
+  },
+  {
+    "ok": true,
+    "step": 32,
+    "action": "assert",
+    "commandSha256": "543a4bbf60db7d5016df0b41fc9527486a2fe4b3369df409ed3471a702cd7d77",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 threshold percent"
+      },
+      "check": "value",
+      "expectedSha256": "47cea6234e51694af3ba37750e249b15a6cd79dce68ac582e3075bb28393b5ea"
+    }
+  },
+  {
+    "ok": true,
+    "step": 33,
+    "action": "click",
+    "commandSha256": "0d2ad8f3ef8c3e4acb8ffba0448d46a374a872d99fd9be8f2110170de348249a"
+  },
+  {
+    "ok": true,
+    "step": 34,
+    "action": "press",
+    "commandSha256": "b76718f03263d257cb6dfda5203597c015432731f6a65deae0a337471fb38496"
+  },
+  {
+    "ok": true,
+    "step": 35,
+    "action": "assert",
+    "commandSha256": "a622c34d0150f1e57e217c9c89f4e3c5b9e241f9acdefbf4b742e139c64181c2",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 threshold percent"
+      },
+      "check": "value",
+      "expectedSha256": "227e4918add1d7964e1745439f5cf44f3e3aba15de6f570942d418510b022b9d"
+    }
+  },
+  {
+    "ok": true,
+    "step": 36,
+    "action": "assert",
+    "commandSha256": "b3b882e587bc6c945229ccf771709199bc97b729d24ef3b1c8b7527e4725bade",
+    "assertion": {
+      "target": {
+        "text": "Backtest up to date."
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 37,
+    "action": "assert-response",
+    "commandSha256": "d8adba0c6671b856aa3bf8508e6dc6bd91b627630144815a60da9146c4b369cb",
+    "response": {
+      "at": "2026-09-19T02:43:18.741Z",
+      "actionStep": 34,
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    }
+  },
+  {
+    "ok": true,
+    "step": 38,
+    "action": "assert-layout",
+    "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+  },
+  {
+    "ok": true,
+    "step": 39,
+    "action": "proof",
+    "commandSha256": "9b79d43cc02f888b3716bd52d0814c84e62ec1b5bd84032d18ce9afbe6d951ef",
+    "url": "http://127.0.0.1:5198/targets",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "screenshot": "/tmp/sample-targets-production-heading/production-nyk-draft-phone.png",
+    "aria": "/tmp/sample-targets-production-heading/production-nyk-draft-phone.aria.txt",
+    "responses": [
+      {
+        "at": "2026-09-19T02:43:14.070Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.358Z",
+        "actionStep": 1,
+        "method": "GET",
+        "path": "/api/user/targets/resolve",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.453Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:14.500Z",
+        "actionStep": 1,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.225Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/teams/stats",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:15.245Z",
+        "actionStep": 16,
+        "method": "GET",
+        "path": "/api/diet/baselines",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:16.688Z",
+        "actionStep": 20,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:17.554Z",
+        "actionStep": 30,
+        "method": "GET",
+        "path": "/api/diet/baselines",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:17.554Z",
+        "actionStep": 30,
+        "method": "GET",
+        "path": "/api/teams/stats",
+        "status": 200
+      },
+      {
+        "at": "2026-09-19T02:43:18.741Z",
+        "actionStep": 34,
+        "method": "POST",
+        "path": "/api/user/targets/preview",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "ok": true,
+    "step": 40,
+    "action": "click",
+    "commandSha256": "62b6ae4b1b94b7dd6c876e047621b343bc5de26c7d798c78f0807d405ed260f3"
+  },
+  {
+    "ok": true,
+    "step": 41,
+    "action": "click",
+    "commandSha256": "c3116192589f16226c2917d128f88f1df0991022094a8da9e39457a5ef50f425"
+  },
+  {
+    "ok": true,
+    "step": 42,
+    "action": "assert",
+    "commandSha256": "543a4bbf60db7d5016df0b41fc9527486a2fe4b3369df409ed3471a702cd7d77",
+    "assertion": {
+      "target": {
+        "label": "Qualifier 1 threshold percent"
+      },
+      "check": "value",
+      "expectedSha256": "47cea6234e51694af3ba37750e249b15a6cd79dce68ac582e3075bb28393b5ea"
+    }
+  },
+  {
+    "ok": true,
+    "step": 43,
+    "action": "click",
+    "commandSha256": "62b6ae4b1b94b7dd6c876e047621b343bc5de26c7d798c78f0807d405ed260f3"
+  },
+  {
+    "ok": true,
+    "step": 44,
+    "action": "reload",
+    "commandSha256": "58b3ee3e3afd94ba729d1aa0f212914a582015ca6ab066b15105f6816099f849"
+  },
+  {
+    "ok": true,
+    "step": 45,
+    "action": "assert-response",
+    "commandSha256": "a4e9cec45c97ed9429e080cf7c76f7268a3c2dc6eb00ba46ded9e6af7b4f90f9",
+    "response": {
+      "at": "2026-09-19T02:43:20.875Z",
+      "actionStep": 44,
+      "method": "GET",
+      "path": "/api/user/targets",
+      "status": 200
+    }
+  },
+  {
+    "ok": true,
+    "step": 46,
+    "action": "assert",
+    "commandSha256": "0ba263e5265e95b6369048e5c76791846e718217e4a68de1ce2c867d9e81fcff",
+    "assertion": {
+      "target": {
+        "role": "heading",
+        "name": "No Targets yet."
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 47,
+    "action": "assert",
+    "commandSha256": "e3366f4e553f5fcf952af9de4ea283ee39c04c4fe348f32ceacab02280038d0f",
+    "assertion": {
+      "target": {
+        "role": "article",
+        "name": "ORL vs P&R ball handler \u2265 25%"
+      },
+      "check": "visible"
+    }
+  },
+  {
+    "ok": true,
+    "step": 48,
+    "action": "assert",
+    "commandSha256": "8949f8a713856dda5a4ae609c66dac2a730d15b8b994d84c3d941d5fc3f28373",
+    "assertion": {
+      "target": {
+        "role": "article",
+        "name": "NYK vs P&R roll man \u2265 15%"
+      },
+      "check": "visible"
+    }
+  }
+]

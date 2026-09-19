@@ -9,14 +9,14 @@ const samples = [
     qualifiers: [
       { base: 'play_types', sliceKey: 'PRBallHandler', comparator: 'at_or_above', threshold: 0.25 },
     ],
-    note: '',
+    note: 'Explore players who use at least 25% of their possessions as pick-and-roll ball handlers.',
   },
   {
     opponent: 'NYK',
     qualifiers: [
       { base: 'play_types', sliceKey: 'PRRollMan', comparator: 'at_or_above', threshold: 0.15 },
     ],
-    note: '',
+    note: 'Explore players who use at least 15% of their possessions as pick-and-roll roll men.',
   },
 ];
 
@@ -50,6 +50,7 @@ function SampleCard({ target, onAdd }) {
               );
             })}
           </div>
+          <p className="target-card-note">{target.note}</p>
         </div>
         <section aria-label="Sample backtest">
           <p className="target-backtest-proxy">Backtest · season to date</p>
@@ -81,11 +82,7 @@ export default function SampleTargets({ onAdd }) {
   return (
     <section aria-labelledby="sample-targets-heading">
       <div className="sample-targets-intro">
-        <h2 id="sample-targets-heading">Sample targets</h2>
-        <p>
-          Explore these examples, then add one to make it your own. Nothing is saved until you
-          choose Save Target.
-        </p>
+        <h2 id="sample-targets-heading">Sample Targets</h2>
       </div>
       <ul className="target-grid">
         {samples.map((target) => (

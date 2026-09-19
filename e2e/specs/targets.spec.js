@@ -45,7 +45,7 @@ for (const viewport of [
         writes.push(request);
     });
     await page.goto('/targets');
-    const samples = page.getByRole('region', { name: 'Sample targets' });
+    const samples = page.getByRole('region', { name: 'Sample Targets' });
     await expect(samples.getByRole('article')).toHaveCount(2);
     await expect(samples.getByText('Sample', { exact: true })).toHaveCount(2);
     await expect(samples.getByRole('list', { name: 'Backtest summary' })).toHaveCount(2);

@@ -1,0 +1,46 @@
+{
+  "frontend": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-0273628e/.statsplus/worktrees/frontend",
+    "branch": "feat/sample-targets",
+    "head": "10ed0538fd18f8b61128bc9bef05bfe7f0134151",
+    "fingerprint": "d47b52a4346aab298eb0afb12d398262a7df5863e2b026a7a14800e039183ad4"
+  },
+  "api": "https://statsplus-backend-production.up.railway.app",
+  "environment": "production",
+  "helperSha256": "0b0b18096fddf1ad991d5d544e737d30163cc93ac661308dbf7969df7bc0abb9",
+  "productionGuardSha256": "9377eeb93d3a03667786fc9545bc6ca8382e23b3e2394c7dd8f81b46493a755a",
+  "passedSteps": 45,
+  "accountReads": [
+    {
+      "status": 200,
+      "targetCount": 0
+    },
+    {
+      "status": 200,
+      "targetCount": 0
+    }
+  ],
+  "nonReadRequests": [
+    {
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/targets/preview",
+      "status": 200
+    }
+  ],
+  "cleanedUp": true
+}

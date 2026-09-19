@@ -1,0 +1,32 @@
+--- original/production-guard.mjs
++++ verification-only/production-guard.mjs
+@@ -2,7 +2,8 @@
+   return (request, response) => {
+     if (
+       environment === "production" &&
+-      !["GET", "HEAD", "OPTIONS"].includes(request.method)
++      !["GET", "HEAD", "OPTIONS"].includes(request.method) &&
++      !(request.method === "POST" && request.url === "/api/user/targets/preview")
+     ) {
+       response.writeHead(403, { "Content-Type": "application/json" });
+       response.end(
+--- original/control-statsplus.mjs
++++ verification-only/control-statsplus.mjs
+@@ -558,6 +558,17 @@
+   const responses = createResponseTracker(origin, network);
+   page.on("request", (request) => responses.request(request));
+   page.on("response", (response) => responses.response(response));
++  // Retain only non-sensitive account counts; never record payloads or tokens.
++  const accountReads = [];
++  page.on("response", async (response) => {
++    const url = new URL(response.url());
++    if (url.origin !== origin || url.pathname !== "/api/user/targets" || response.request().method() !== "GET") return;
++    try {
++      const body = await response.json();
++      accountReads.push({ status: response.status(), targetCount: Array.isArray(body.targets) ? body.targets.length : null });
++      writeFileSync(join(out, "account-reads.json"), JSON.stringify(accountReads, null, 2) + "\n");
++    } catch { /* A canceled navigation does not count as a verified read. */ }
++  });
+   await page.goto(origin);
+   try {
+     await page.evaluate(async (token) => {

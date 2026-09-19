@@ -1,0 +1,105 @@
+[
+  {
+    "at": "2026-09-19T02:02:46.602Z",
+    "method": "GET",
+    "path": "/api/teams",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:02:46.837Z",
+    "method": "GET",
+    "path": "/api/players",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:12.530Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:12.839Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets/resolve",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:13.063Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:13.309Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:55.773Z",
+    "actionStep": 13,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:55.787Z",
+    "actionStep": 13,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:03:57.375Z",
+    "actionStep": 17,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:24.963Z",
+    "actionStep": 27,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:24.966Z",
+    "actionStep": 27,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:26.113Z",
+    "actionStep": 31,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:26.873Z",
+    "actionStep": 37,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:27.828Z",
+    "actionStep": 38,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:04:28.306Z",
+    "actionStep": 41,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  }
+]

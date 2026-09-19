@@ -1,0 +1,46 @@
+{"action":"open","path":"/targets"}
+{"action":"assert-response","method":"GET","path":"/api/user/targets","query":{},"status":200}
+{"action":"assert","target":{"role":"heading","name":"No Targets yet."}}
+{"action":"assert","target":{"text":"No Targets active today"}}
+{"action":"assert","target":{"within":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"},"role":"list","name":"Backtest summary"}}
+{"action":"assert","target":{"within":{"role":"article","name":"NYK vs P&R roll man ≥ 15%"},"role":"list","name":"Backtest summary"}}
+{"action":"assert-response","method":"POST","path":"/api/user/targets/preview","query":{},"status":200}
+{"action":"assert-layout"}
+{"action":"proof","name":"production-samples-desktop"}
+{"action":"click","target":{"within":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"},"role":"button","name":"FGA +0.9 FGA/game +7.1% vs baseline Hit rate 53%"}}
+{"action":"assert","target":{"within":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"},"role":"button","name":"FGA +0.9 FGA/game +7.1% vs baseline Hit rate 53%"},"attribute":"aria-pressed","value":"true"}
+{"action":"assert","target":{"role":"list","name":"130 games, oldest to newest, graded by FGA margin"}}
+{"action":"click","target":{"within":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"},"role":"button","name":"Add to my targets"}}
+{"action":"assert","target":{"label":"Qualifier 1 threshold percent"},"value":"25"}
+{"action":"assert","target":{"label":"Qualifier 1 slice"},"value":"PRBallHandler"}
+{"action":"click","target":{"label":"Qualifier 1 threshold percent"}}
+{"action":"press","key":"ArrowRight"}
+{"action":"assert","target":{"label":"Qualifier 1 threshold percent"},"value":"31"}
+{"action":"assert","target":{"text":"Backtest up to date."}}
+{"action":"assert-response","method":"POST","path":"/api/user/targets/preview","query":{},"status":200}
+{"action":"proof","name":"production-orl-draft-desktop"}
+{"action":"click","target":{"role":"button","name":"Cancel"}}
+{"action":"assert","target":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"}}
+{"action":"viewport","name":"phone"}
+{"action":"assert-layout"}
+{"action":"proof","name":"production-samples-phone"}
+{"action":"click","target":{"within":{"role":"article","name":"NYK vs P&R roll man ≥ 15%"},"role":"button","name":"Add to my targets"}}
+{"action":"assert","target":{"label":"Qualifier 1 slice"},"value":"PRRollMan"}
+{"action":"assert","target":{"label":"Qualifier 1 threshold percent"},"value":"15"}
+{"action":"click","target":{"label":"Qualifier 1 threshold percent"}}
+{"action":"press","key":"ArrowRight"}
+{"action":"assert","target":{"label":"Qualifier 1 threshold percent"},"value":"31"}
+{"action":"assert","target":{"text":"Backtest up to date."}}
+{"action":"assert-response","method":"POST","path":"/api/user/targets/preview","query":{},"status":200}
+{"action":"assert-layout"}
+{"action":"proof","name":"production-nyk-draft-phone"}
+{"action":"click","target":{"role":"button","name":"Cancel"}}
+{"action":"click","target":{"within":{"role":"article","name":"NYK vs P&R roll man ≥ 15%"},"role":"button","name":"Add to my targets"}}
+{"action":"assert","target":{"label":"Qualifier 1 threshold percent"},"value":"15"}
+{"action":"click","target":{"role":"button","name":"Cancel"}}
+{"action":"reload"}
+{"action":"assert-response","method":"GET","path":"/api/user/targets","query":{},"status":200}
+{"action":"assert","target":{"role":"heading","name":"No Targets yet."}}
+{"action":"assert","target":{"role":"article","name":"ORL vs P&R ball handler ≥ 25%"}}
+{"action":"assert","target":{"role":"article","name":"NYK vs P&R roll man ≥ 15%"}}
+{"action":"cleanup"}

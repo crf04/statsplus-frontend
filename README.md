@@ -1,3 +1,9 @@
+# Latest verification
+
+Production empty-account checks now pass. See [production-empty/README.md](production-empty/README.md) for the new live-data samples, desktop/phone edit-and-cancel journeys, zero target writes, screenshots and exact replay evidence. This resolves the prior sample-preview verification limit below.
+
+---
+
 # Sample targets PR evidence
 
 Frontend commit: `10ed053` (verified content committed without changes). Tested base: `2f92cba52430458822c7ac664a9598409b51cc80` plus working diff, fingerprint `e69156f92fcdd4a43257c6af142fd392f3fda1b9b7dbd3c2f1d3f6088cf01bf9`. Backend QA: `a994f66b257a073991ac0539d7996fba0e3d9fb1`. Coordination: `54a4cb6fcb78b29d8ccc65c9859d54f50ee30ca5`.

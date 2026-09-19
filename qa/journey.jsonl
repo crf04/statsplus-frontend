@@ -1,0 +1,26 @@
+{"action": "open", "path": "/targets"}
+{"action": "assert", "target": {"role": "heading", "name": "Sample targets"}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets", "query": {}, "status": 200}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"within": {"role": "article", "name": "NYK vs P&R roll man ≥ 15%"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "samples-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert-layout"}
+{"action": "proof", "name": "samples-phone"}
+{"action": "click", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "button", "name": "Add to my targets"}}
+{"action": "assert", "target": {"label": "Qualifier 1 threshold percent"}, "value": "25"}
+{"action": "click", "target": {"label": "Qualifier 1 threshold percent"}}
+{"action": "press", "key": "ArrowRight"}
+{"action": "proof", "name": "sample-draft-phone"}
+{"action": "assert", "target": {"label": "Qualifier 1 threshold percent"}, "value": "31"}
+{"action": "click", "target": {"role": "button", "name": "Save Target"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets", "query": {}, "status": 201}
+{"action": "click", "target": {"role": "link", "name": "← All Targets"}}
+{"action": "assert", "target": {"role": "article", "name": "ORL vs P&R ball handler ≥ 31%"}}
+{"action": "assert", "target": {"role": "heading", "name": "Sample targets"}, "state": "hidden"}
+{"action": "reload"}
+{"action": "assert", "target": {"role": "article", "name": "ORL vs P&R ball handler ≥ 31%"}}
+{"action": "proof", "name": "saved-target-phone"}
+{"action": "cleanup"}

@@ -1,0 +1,7 @@
+{"action":"open","path":"/targets"}
+{"action":"assert-response","method":"GET","path":"/api/user/targets","query":{},"status":200}
+{"action":"proof","name":"targets-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert-layout"}
+{"action":"proof","name":"targets-phone"}
+{"action":"cleanup"}

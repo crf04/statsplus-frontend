@@ -726,7 +726,3 @@
   color: var(--ct-text);
   font: 600 1.3rem var(--ct-display);
 }
-.sample-targets-intro p {
-  color: var(--ct-dim);
-  font-size: 0.86rem;
-}

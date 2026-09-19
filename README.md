@@ -1,3 +1,9 @@
+# Current evidence: descriptions removed
+
+Latest frontend commit `d443d48` removes both sample descriptions and clears copied notes. [Production verification, screenshots, and independent review](production-no-description/README.md) passed on this exact revision. Older evidence below retains the previous appearance for history.
+
+---
+
 # Latest verification
 
 Production empty-account checks now pass. See [production-empty/README.md](production-empty/README.md) for the new live-data samples, desktop/phone edit-and-cancel journeys, zero target writes, screenshots and exact replay evidence. This resolves the prior sample-preview verification limit below.

@@ -1,0 +1,100 @@
+[
+  {
+    "at": "2026-09-19T02:10:06.197Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:06.558Z",
+    "actionStep": 1,
+    "method": "GET",
+    "path": "/api/user/targets/resolve",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:06.614Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:06.614Z",
+    "actionStep": 1,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:07.370Z",
+    "actionStep": 14,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:07.387Z",
+    "actionStep": 14,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:08.548Z",
+    "actionStep": 19,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:09.695Z",
+    "actionStep": 29,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:09.706Z",
+    "actionStep": 29,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:10.902Z",
+    "actionStep": 34,
+    "method": "POST",
+    "path": "/api/user/targets/preview",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:11.682Z",
+    "actionStep": 40,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:12.586Z",
+    "actionStep": 41,
+    "method": "GET",
+    "path": "/api/teams/stats",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:12.597Z",
+    "actionStep": 41,
+    "method": "GET",
+    "path": "/api/diet/baselines",
+    "status": 200
+  },
+  {
+    "at": "2026-09-19T02:10:13.062Z",
+    "actionStep": 44,
+    "method": "GET",
+    "path": "/api/user/targets",
+    "status": 200
+  }
+]

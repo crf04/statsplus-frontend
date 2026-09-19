@@ -1,0 +1,397 @@
+- banner:
+  - navigation "Primary":
+    - link "CourtAI":
+      - /url: /
+    - link "Search":
+      - /url: /
+    - link "Matchups":
+      - /url: /matchups
+    - link "Targets":
+      - /url: /targets
+    - button "CQ CourtAI QA":
+      - text: CQ CourtAI QA
+      - img
+- main:
+  - paragraph: Targets
+  - paragraph: No Targets active today
+  - button "+ New Target"
+  - heading "No Targets yet." [level=2]
+  - paragraph: Choose + New Target or start with a sample below.
+  - region "Sample targets":
+    - heading "Sample targets" [level=2]
+    - paragraph: Explore these examples, then add one to make it your own. Nothing is saved until you choose Save Target.
+    - list:
+      - listitem:
+        - article "ORL vs P&R ball handler ≥ 25%":
+          - text: Sample
+          - button "Add to my targets"
+          - text: ORL P&R ball handler ≥ 25%
+          - region "Sample backtest":
+            - paragraph: Backtest · season to date
+            - list "Backtest summary":
+              - listitem "Player-games": 130 player-games
+              - listitem "PTS":
+                - button "PTS +1.4 PTS/game +9.1% vs baseline Hit rate 55%"
+              - listitem "FGA":
+                - button "FGA +0.9 FGA/game +7.1% vs baseline Hit rate 53%" [pressed]
+              - listitem "PTS/36":
+                - button "PTS/36 +1.4 PTS/36 +6.7% vs baseline Hit rate 55%"
+              - listitem "FGA/36":
+                - button "FGA/36 +0.8 FGA/36 +4.8% vs baseline Hit rate 53%"
+              - listitem:
+                - button "stats ▾"
+            - list "130 games, oldest to newest, graded by FGA margin":
+              - listitem "2025-10-25 · Josh Giddey · 18.0 FGA · season 13.3 · +4.7 margin"
+              - listitem "2025-10-25 · Tre Jones · 7.0 FGA · season 9.5 · -2.5 margin"
+              - listitem "2025-10-27 · Tyrese Maxey · 32.0 FGA · season 21.4 · +10.6 margin"
+              - listitem "2025-10-29 · Cade Cunningham · 24.0 FGA · season 18.6 · +5.4 margin"
+              - listitem "2025-10-29 · Daniss Jenkins · 1.0 FGA · season 7.9 · -6.9 margin"
+              - listitem "2025-10-29 · Caris LeVert · 5.0 FGA · season 6.5 · -1.5 margin"
+              - listitem "2025-10-30 · LaMelo Ball · 19.0 FGA · season 17.3 · +1.7 margin"
+              - listitem "2025-10-30 · Tre Mann · 9.0 FGA · season 5.7 · +3.3 margin"
+              - listitem "2025-11-01 · Kyshawn George · 12.0 FGA · season 12.0 · -0.0 margin"
+              - listitem "2025-11-01 · Bub Carrington · 9.0 FGA · season 9.0 · -0.0 margin"
+              - listitem "2025-11-07 · Payton Pritchard · 16.0 FGA · season 13.8 · +2.2 margin"
+              - listitem "2025-11-07 · Derrick White · 16.0 FGA · season 14.4 · +1.6 margin"
+              - listitem "2025-11-07 · Anfernee Simons · 8.0 FGA · season 11.8 · -3.8 margin"
+              - listitem "2025-11-09 · Payton Pritchard · 8.0 FGA · season 13.8 · -5.8 margin"
+              - listitem "2025-11-09 · Derrick White · 18.0 FGA · season 14.4 · +3.6 margin"
+              - listitem "2025-11-09 · Anfernee Simons · 13.0 FGA · season 11.8 · +1.2 margin"
+              - listitem "2025-11-10 · Deni Avdija · 18.0 FGA · season 16.1 · +1.9 margin"
+              - listitem "2025-11-10 · Shaedon Sharpe · 18.0 FGA · season 17.4 · +0.6 margin"
+              - listitem "2025-11-10 · Jrue Holiday · 14.0 FGA · season 13.4 · +0.6 margin"
+              - listitem "2025-11-12 · Jalen Brunson · 23.0 FGA · season 19.9 · +3.1 margin"
+              - listitem "2025-11-12 · Tyler Kolek · 1.0 FGA · season 4.0 · -3.0 margin"
+              - listitem "2025-11-16 · Reed Sheppard · 11.0 FGA · season 11.5 · -0.5 margin"
+              - listitem "2025-11-18 · Brandin Podziemski · 7.0 FGA · season 10.6 · -3.6 margin"
+              - listitem "2025-11-22 · Jalen Brunson · 21.0 FGA · season 19.9 · +1.1 margin"
+              - listitem "2025-11-22 · Tyler Kolek · 3.0 FGA · season 4.0 · -1.0 margin"
+              - listitem "2025-11-23 · Payton Pritchard · 16.0 FGA · season 13.8 · +2.2 margin"
+              - listitem "2025-11-23 · Derrick White · 11.0 FGA · season 14.4 · -3.4 margin"
+              - listitem "2025-11-23 · Anfernee Simons · 11.0 FGA · season 11.8 · -0.8 margin"
+              - listitem "2025-11-25 · Tyrese Maxey · 15.0 FGA · season 21.4 · -6.4 margin"
+              - listitem "2025-11-28 · Cade Cunningham · 26.0 FGA · season 18.6 · +7.4 margin"
+              - listitem "2025-11-28 · Daniss Jenkins · 2.0 FGA · season 7.9 · -5.9 margin"
+              - listitem "2025-11-28 · Caris LeVert · 7.0 FGA · season 6.5 · +0.5 margin"
+              - listitem "2025-12-01 · Josh Giddey · 14.0 FGA · season 13.3 · +0.7 margin"
+              - listitem "2025-12-01 · Tre Jones · 10.0 FGA · season 9.5 · +0.5 margin"
+              - listitem "2025-12-03 · De'Aaron Fox · 20.0 FGA · season 14.5 · +5.5 margin"
+              - listitem "2025-12-07 · Jalen Brunson · 23.0 FGA · season 19.9 · +3.1 margin"
+              - listitem "2025-12-07 · Tyler Kolek · 2.0 FGA · season 4.0 · -2.0 margin"
+              - listitem "2025-12-13 · Jalen Brunson · 27.0 FGA · season 19.9 · +7.1 margin"
+              - listitem "2025-12-13 · Tyler Kolek · 3.0 FGA · season 4.0 · -1.0 margin"
+              - listitem "2025-12-18 · Jamal Murray · 22.0 FGA · season 18.1 · +3.9 margin"
+              - listitem "2025-12-20 · Keyonte George · 22.0 FGA · season 16.3 · +5.7 margin"
+              - listitem "2025-12-20 · Isaiah Collier · 12.0 FGA · season 8.7 · +3.3 margin"
+              - listitem "2025-12-22 · Brandin Podziemski · 10.0 FGA · season 10.6 · -0.6 margin"
+              - listitem "2025-12-22 · Pat Spencer · 5.0 FGA · season 6.6 · -1.6 margin"
+              - listitem "2025-12-23 · Deni Avdija · 25.0 FGA · season 16.1 · +8.9 margin"
+              - listitem "2025-12-23 · Shaedon Sharpe · 18.0 FGA · season 17.4 · +0.6 margin"
+              - listitem "2025-12-26 · Brandon Miller · 16.0 FGA · season 16.1 · -0.1 margin"
+              - listitem "2025-12-26 · LaMelo Ball · 20.0 FGA · season 17.3 · +2.7 margin"
+              - listitem "2025-12-26 · Tre Mann · 2.0 FGA · season 5.7 · -3.7 margin"
+              - listitem "2025-12-27 · Jamal Murray · 21.0 FGA · season 18.1 · +2.9 margin"
+              - listitem "2025-12-29 · Jamal Shead · 15.0 FGA · season 6.1 · +8.9 margin"
+              - listitem "2025-12-31 · Andrew Nembhard · 15.0 FGA · season 13.2 · +1.8 margin"
+              - listitem "2025-12-31 · T.J. McConnell · 4.0 FGA · season 8.0 · -4.0 margin"
+              - listitem "2026-01-02 · Tre Jones · 7.0 FGA · season 9.5 · -2.5 margin"
+              - listitem "2026-01-04 · Andrew Nembhard · 16.0 FGA · season 13.2 · +2.8 margin"
+              - listitem "2026-01-04 · T.J. McConnell · 9.0 FGA · season 8.0 · +1.0 margin"
+              - listitem "2026-01-04 · Kam Jones · 0.0 FGA · season 4.6 · -4.6 margin"
+              - listitem "2026-01-06 · Bub Carrington · 9.0 FGA · season 9.0 · -0.0 margin"
+              - listitem "2026-01-07 · Nolan Traore · 5.0 FGA · season 8.6 · -3.6 margin"
+              - listitem "2026-01-09 · Tyrese Maxey · 22.0 FGA · season 21.4 · +0.6 margin"
+              - listitem "2026-01-11 · Jeremiah Fears · 12.0 FGA · season 12.3 · -0.3 margin"
+              - listitem "2026-01-11 · Jordan Poole · 11.0 FGA · season 11.4 · -0.4 margin"
+              - listitem "2026-01-15 · Cam Spencer · 7.0 FGA · season 7.7 · -0.7 margin"
+              - listitem "2026-01-15 · Vince Williams Jr. · 7.0 FGA · season 7.3 · -0.3 margin"
+              - listitem "2026-01-18 · Ja Morant · 13.0 FGA · season 16.1 · -3.1 margin"
+              - listitem "2026-01-18 · Cam Spencer · 6.0 FGA · season 7.7 · -1.7 margin"
+              - listitem "2026-01-18 · Vince Williams Jr. · 8.0 FGA · season 7.3 · +0.7 margin"
+              - listitem "2026-01-22 · Brandon Miller · 15.0 FGA · season 16.1 · -1.1 margin"
+              - listitem "2026-01-22 · LaMelo Ball · 12.0 FGA · season 17.3 · -5.3 margin"
+              - listitem "2026-01-24 · Donovan Mitchell · 30.0 FGA · season 20.0 · +10.0 margin"
+              - listitem "2026-01-24 · Tyrese Proctor · 4.0 FGA · season 4.5 · -0.5 margin"
+              - listitem "2026-01-24 · Craig Porter Jr. · 3.0 FGA · season 4.0 · -1.0 margin"
+              - listitem "2026-01-26 · Donovan Mitchell · 25.0 FGA · season 20.0 · +5.0 margin"
+              - listitem "2026-01-26 · Tyrese Proctor · 3.0 FGA · season 4.5 · -1.5 margin"
+              - listitem "2026-01-26 · Craig Porter Jr. · 5.0 FGA · season 4.0 · +1.0 margin"
+              - listitem "2026-01-30 · Jamal Shead · 4.0 FGA · season 6.1 · -2.1 margin"
+              - listitem "2026-02-01 · De'Aaron Fox · 14.0 FGA · season 14.5 · -0.5 margin"
+              - listitem "2026-02-03 · Shai Gilgeous-Alexander · 22.0 FGA · season 19.4 · +2.6 margin"
+              - listitem "2026-02-05 · Nolan Traore · 13.0 FGA · season 8.6 · +4.4 margin"
+              - listitem "2026-02-05 · Ben Saraf · 4.0 FGA · season 6.9 · -2.9 margin"
+              - listitem "2026-02-07 · Keyonte George · 5.0 FGA · season 16.3 · -11.3 margin"
+              - listitem "2026-02-07 · Isaiah Collier · 15.0 FGA · season 8.7 · +6.3 margin"
+              - listitem "2026-02-07 · Vince Williams Jr. · 1.0 FGA · season 7.3 · -6.3 margin"
+              - listitem "2026-02-09 · Kevin Porter Jr. · 19.0 FGA · season 13.5 · +5.5 margin"
+              - listitem "2026-02-09 · Ryan Rollins · 16.0 FGA · season 13.9 · +2.1 margin"
+              - listitem "2026-02-11 · Kevin Porter Jr. · 14.0 FGA · season 13.5 · +0.5 margin"
+              - listitem "2026-02-19 · Malik Monk · 8.0 FGA · season 10.2 · -2.2 margin"
+              - listitem "2026-02-19 · Devin Carter · 12.0 FGA · season 7.7 · +4.3 margin"
+              - listitem "2026-02-21 · Jalen Green · 26.0 FGA · season 16.0 · +10.0 margin"
+              - listitem "2026-02-21 · Grayson Allen · 22.0 FGA · season 13.1 · +8.9 margin"
+              - listitem "2026-02-21 · Collin Gillespie · 17.0 FGA · season 10.5 · +6.5 margin"
+              - listitem "2026-02-24 · Luka Dončić · 24.0 FGA · season 22.8 · +1.2 margin"
+              - listitem "2026-02-24 · Austin Reaves · 16.0 FGA · season 14.9 · +1.1 margin"
+              - listitem "2026-02-26 · Reed Sheppard · 11.0 FGA · season 11.5 · -0.5 margin"
+              - listitem "2026-03-01 · Cade Cunningham · 25.0 FGA · season 18.6 · +6.4 margin"
+              - listitem "2026-03-01 · Daniss Jenkins · 6.0 FGA · season 7.9 · -1.9 margin"
+              - listitem "2026-03-01 · Caris LeVert · 10.0 FGA · season 6.5 · +3.5 margin"
+              - listitem "2026-03-03 · Bub Carrington · 8.0 FGA · season 9.0 · -1.0 margin"
+              - listitem "2026-03-03 · Sharife Cooper · 11.0 FGA · season 6.0 · +5.0 margin"
+              - listitem "2026-03-05 · Cooper Flagg · 22.0 FGA · season 17.1 · +4.9 margin"
+              - listitem "2026-03-05 · Ryan Nembhard · 5.0 FGA · season 6.5 · -1.5 margin"
+              - listitem "2026-03-08 · Ryan Rollins · 12.0 FGA · season 13.9 · -1.9 margin"
+              - listitem "2026-03-11 · Donovan Mitchell · 24.0 FGA · season 20.0 · +4.0 margin"
+              - listitem "2026-03-12 · Bub Carrington · 7.0 FGA · season 9.0 · -2.0 margin"
+              - listitem "2026-03-12 · Sharife Cooper · 1.0 FGA · season 6.0 · -5.0 margin"
+              - listitem "2026-03-17 · Shai Gilgeous-Alexander · 27.0 FGA · season 19.4 · +7.6 margin"
+              - listitem "2026-03-17 · Ajay Mitchell · 12.0 FGA · season 10.4 · +1.6 margin"
+              - listitem "2026-03-19 · Brandon Miller · 14.0 FGA · season 16.1 · -2.1 margin"
+              - listitem "2026-03-19 · LaMelo Ball · 13.0 FGA · season 17.3 · -4.3 margin"
+              - listitem "2026-03-19 · Tre Mann · 3.0 FGA · season 5.7 · -2.7 margin"
+              - listitem "2026-03-21 · Luka Dončić · 30.0 FGA · season 22.8 · +7.2 margin"
+              - listitem "2026-03-21 · Austin Reaves · 20.0 FGA · season 14.9 · +5.1 margin"
+              - listitem "2026-03-23 · Andrew Nembhard · 9.0 FGA · season 13.2 · -4.2 margin"
+              - listitem "2026-03-23 · T.J. McConnell · 6.0 FGA · season 8.0 · -2.0 margin"
+              - listitem "2026-03-24 · Donovan Mitchell · 22.0 FGA · season 20.0 · +2.0 margin"
+              - listitem "2026-03-26 · Malik Monk · 12.0 FGA · season 10.2 · +1.8 margin"
+              - listitem "2026-03-26 · Devin Carter · 12.0 FGA · season 7.7 · +4.3 margin"
+              - listitem "2026-03-29 · Jamal Shead · 5.0 FGA · season 6.1 · -1.1 margin"
+              - listitem "2026-03-31 · Devin Booker · 16.0 FGA · season 18.7 · -2.7 margin"
+              - listitem "2026-03-31 · Jalen Green · 10.0 FGA · season 16.0 · -6.0 margin"
+              - listitem "2026-03-31 · Grayson Allen · 14.0 FGA · season 13.1 · +0.9 margin"
+              - listitem "2026-03-31 · Collin Gillespie · 8.0 FGA · season 10.5 · -2.5 margin"
+              - listitem "2026-04-03 · Cooper Flagg · 30.0 FGA · season 17.1 · +12.9 margin"
+              - listitem "2026-04-03 · Brandon Williams · 15.0 FGA · season 9.3 · +5.7 margin"
+              - listitem "2026-04-03 · Ryan Nembhard · 6.0 FGA · season 6.5 · -0.5 margin"
+              - listitem "2026-04-05 · Jeremiah Fears · 14.0 FGA · season 12.3 · +1.7 margin"
+              - listitem "2026-04-06 · Daniss Jenkins · 11.0 FGA · season 7.9 · +3.1 margin"
+              - listitem "2026-04-06 · Marcus Sasser · 8.0 FGA · season 4.7 · +3.3 margin"
+              - listitem "2026-04-10 · Tre Jones · 12.0 FGA · season 9.5 · +2.5 margin"
+              - listitem "2026-04-10 · Yuki Kawamura · 2.0 FGA · season 2.9 · -0.9 margin"
+            - text: short by more beat by more
+            - group: FGA vs the player’s own season average
+      - listitem:
+        - article "NYK vs P&R roll man ≥ 15%":
+          - text: Sample
+          - button "Add to my targets"
+          - text: NYK P&R roll man ≥ 15%
+          - region "Sample backtest":
+            - paragraph: Backtest · season to date
+            - list "Backtest summary":
+              - listitem "Player-games": 112 player-games
+              - listitem "PTS":
+                - button "PTS -1.5 PTS/game -15.6% vs baseline Hit rate 30%" [pressed]
+              - listitem "FGA":
+                - button "FGA -1.2 FGA/game -17.6% vs baseline Hit rate 26%"
+              - listitem "PTS/36":
+                - button "PTS/36 -2.1 PTS/36 -12.9% vs baseline Hit rate 31%"
+              - listitem "FGA/36":
+                - button "FGA/36 -1.7 FGA/36 -14.9% vs baseline Hit rate 28%"
+              - listitem:
+                - button "stats ▾"
+            - list "112 games, oldest to newest, graded by PTS margin":
+              - listitem "2025-10-22 · Evan Mobley · 22.0 PTS · season 18.2 · +3.8 margin"
+              - listitem "2025-10-22 · Jarrett Allen · 4.0 PTS · season 15.4 · -11.4 margin"
+              - listitem "2025-10-24 · Neemias Queta · 8.0 PTS · season 10.2 · -2.2 margin"
+              - listitem "2025-10-28 · Myles Turner · 5.0 PTS · season 11.9 · -6.9 margin"
+              - listitem "2025-10-31 · Nikola Vučević · 26.0 PTS · season 15.1 · +10.9 margin"
+              - listitem "2025-10-31 · Jalen Smith · 10.0 PTS · season 10.2 · -0.2 margin"
+              - listitem "2025-11-02 · Nikola Vučević · 17.0 PTS · season 15.1 · +1.9 margin"
+              - listitem "2025-11-02 · Jalen Smith · 12.0 PTS · season 10.2 · +1.8 margin"
+              - listitem "2025-11-03 · Alex Sarr · 19.0 PTS · season 16.3 · +2.7 margin"
+              - listitem "2025-11-03 · Tristan Vukcevic · 4.0 PTS · season 9.0 · -5.0 margin"
+              - listitem "2025-11-03 · Anthony Gill · 2.0 PTS · season 5.8 · -3.8 margin"
+              - listitem "2025-11-05 · Rudy Gobert · 7.0 PTS · season 10.9 · -3.9 margin"
+              - listitem "2025-11-09 · Day'Ron Sharpe · 10.0 PTS · season 8.7 · +1.3 margin"
+              - listitem "2025-11-12 · Wendell Carter Jr. · 13.0 PTS · season 11.8 · +1.2 margin"
+              - listitem "2025-11-12 · Goga Bitadze · 10.0 PTS · season 5.9 · +4.1 margin"
+              - listitem "2025-11-19 · Daniel Gafford · 7.0 PTS · season 9.5 · -2.5 margin"
+              - listitem "2025-11-19 · Moussa Cisse · 0.0 PTS · season 4.5 · -4.5 margin"
+              - listitem "2025-11-22 · Wendell Carter Jr. · 11.0 PTS · season 11.8 · -0.8 margin"
+              - listitem "2025-11-22 · Goga Bitadze · 6.0 PTS · season 5.9 · +0.1 margin"
+              - listitem "2025-11-24 · Day'Ron Sharpe · 5.0 PTS · season 8.7 · -3.7 margin"
+              - listitem "2025-11-26 · Moussa Diabaté · 4.0 PTS · season 7.9 · -3.9 margin"
+              - listitem "2025-11-28 · Myles Turner · 10.0 PTS · season 11.9 · -1.9 margin"
+              - listitem "2025-11-30 · Sandro Mamukelashvili · 9.0 PTS · season 11.2 · -2.2 margin"
+              - listitem "2025-11-30 · Collin Murray-Boyles · 11.0 PTS · season 8.5 · +2.5 margin"
+              - listitem "2025-12-02 · Neemias Queta · 8.0 PTS · season 10.2 · -2.2 margin"
+              - listitem "2025-12-03 · Moussa Diabaté · 2.0 PTS · season 7.9 · -5.9 margin"
+              - listitem "2025-12-05 · Jusuf Nurkić · 4.0 PTS · season 10.9 · -6.9 margin"
+              - listitem "2025-12-07 · Wendell Carter Jr. · 8.0 PTS · season 11.8 · -3.8 margin"
+              - listitem "2025-12-07 · Goga Bitadze · 2.0 PTS · season 5.9 · -3.9 margin"
+              - listitem "2025-12-09 · Sandro Mamukelashvili · 2.0 PTS · season 11.2 · -9.2 margin"
+              - listitem "2025-12-09 · Jakob Poeltl · 10.0 PTS · season 10.7 · -0.7 margin"
+              - listitem "2025-12-09 · Collin Murray-Boyles · 6.0 PTS · season 8.5 · -2.5 margin"
+              - listitem "2025-12-13 · Wendell Carter Jr. · 14.0 PTS · season 11.8 · +2.2 margin"
+              - listitem "2025-12-13 · Goga Bitadze · 0.0 PTS · season 5.9 · -5.9 margin"
+              - listitem "2025-12-18 · Jay Huff · 6.0 PTS · season 9.5 · -3.5 margin"
+              - listitem "2025-12-23 · Rudy Gobert · 11.0 PTS · season 10.9 · +0.1 margin"
+              - listitem "2025-12-25 · Evan Mobley · 14.0 PTS · season 18.2 · -4.2 margin"
+              - listitem "2025-12-25 · Jarrett Allen · 7.0 PTS · season 15.4 · -8.4 margin"
+              - listitem "2025-12-25 · Thomas Bryant · 3.0 PTS · season 6.2 · -3.2 margin"
+              - listitem "2025-12-29 · Yves Missi · 2.0 PTS · season 5.7 · -3.7 margin"
+              - listitem "2025-12-31 · Luke Kornet · 7.0 PTS · season 6.5 · +0.5 margin"
+              - listitem "2026-01-03 · Joel Embiid · 26.0 PTS · season 26.9 · -0.9 margin"
+              - listitem "2026-01-05 · Paul Reed · 8.0 PTS · season 7.8 · +0.2 margin"
+              - listitem "2026-01-07 · Ivica Zubac · 22.0 PTS · season 14.1 · +7.9 margin"
+              - listitem "2026-01-07 · Brook Lopez · 6.0 PTS · season 8.5 · -2.5 margin"
+              - listitem "2026-01-09 · Mark Williams · 10.0 PTS · season 11.7 · -1.7 margin"
+              - listitem "2026-01-09 · Oso Ighodaro · 0.0 PTS · season 6.5 · -6.5 margin"
+              - listitem "2026-01-11 · Donovan Clingan · 8.0 PTS · season 12.1 · -4.1 margin"
+              - listitem "2026-01-11 · Robert Williams III · 12.0 PTS · season 6.7 · +5.3 margin"
+              - listitem "2026-01-14 · Maxime Raynaud · 10.0 PTS · season 12.5 · -2.5 margin"
+              - listitem "2026-01-14 · Dylan Cardwell · 2.0 PTS · season 5.4 · -3.4 margin"
+              - listitem "2026-01-15 · Quinten Post · 5.0 PTS · season 7.7 · -2.7 margin"
+              - listitem "2026-01-17 · Mark Williams · 14.0 PTS · season 11.7 · +2.3 margin"
+              - listitem "2026-01-17 · Oso Ighodaro · 2.0 PTS · season 6.5 · -4.5 margin"
+              - listitem "2026-01-19 · Moussa Cisse · 15.0 PTS · season 4.5 · +10.5 margin"
+              - listitem "2026-01-21 · Day'Ron Sharpe · 6.0 PTS · season 8.7 · -2.7 margin"
+              - listitem "2026-01-24 · Joel Embiid · 38.0 PTS · season 26.9 · +11.1 margin"
+              - listitem "2026-01-27 · Domantas Sabonis · 11.0 PTS · season 15.8 · -4.8 margin"
+              - listitem "2026-01-27 · Maxime Raynaud · 4.0 PTS · season 12.5 · -8.5 margin"
+              - listitem "2026-01-27 · Dylan Cardwell · 4.0 PTS · season 5.4 · -1.4 margin"
+              - listitem "2026-01-28 · Sandro Mamukelashvili · 9.0 PTS · season 11.2 · -2.2 margin"
+              - listitem "2026-01-28 · Collin Murray-Boyles · 4.0 PTS · season 8.5 · -4.5 margin"
+              - listitem "2026-01-30 · Donovan Clingan · 7.0 PTS · season 12.1 · -5.1 margin"
+              - listitem "2026-01-30 · Robert Williams III · 4.0 PTS · season 6.7 · -2.7 margin"
+              - listitem "2026-02-01 · Deandre Ayton · 13.0 PTS · season 12.5 · +0.5 margin"
+              - listitem "2026-02-01 · Jaxson Hayes · 2.0 PTS · season 7.5 · -5.5 margin"
+              - listitem "2026-02-03 · Alex Sarr · 11.0 PTS · season 16.3 · -5.3 margin"
+              - listitem "2026-02-03 · Anthony Gill · 0.0 PTS · season 5.8 · -5.8 margin"
+              - listitem "2026-02-04 · Jonas Valančiūnas · 2.0 PTS · season 8.7 · -6.7 margin"
+              - listitem "2026-02-06 · Paul Reed · 12.0 PTS · season 7.8 · +4.2 margin"
+              - listitem "2026-02-08 · Nikola Vučević · 11.0 PTS · season 15.1 · -4.1 margin"
+              - listitem "2026-02-08 · Neemias Queta · 4.0 PTS · season 10.2 · -6.2 margin"
+              - listitem "2026-02-08 · Luka Garza · 6.0 PTS · season 8.1 · -2.1 margin"
+              - listitem "2026-02-10 · Jay Huff · 10.0 PTS · season 9.5 · +0.5 margin"
+              - listitem "2026-02-19 · Paul Reed · 18.0 PTS · season 7.8 · +10.2 margin"
+              - listitem "2026-02-21 · Clint Capela · 4.0 PTS · season 3.8 · +0.2 margin"
+              - listitem "2026-02-22 · Jalen Smith · 12.0 PTS · season 10.2 · +1.8 margin"
+              - listitem "2026-02-24 · Evan Mobley · 12.0 PTS · season 18.2 · -6.2 margin"
+              - listitem "2026-02-24 · Jarrett Allen · 19.0 PTS · season 15.4 · +3.6 margin"
+              - listitem "2026-02-24 · Thomas Bryant · 5.0 PTS · season 6.2 · -1.2 margin"
+              - listitem "2026-02-27 · Myles Turner · 19.0 PTS · season 11.9 · +7.1 margin"
+              - listitem "2026-02-27 · Pete Nance · 0.0 PTS · season 5.4 · -5.4 margin"
+              - listitem "2026-02-27 · Jericho Sims · 2.0 PTS · season 5.0 · -3.0 margin"
+              - listitem "2026-03-01 · Luke Kornet · 2.0 PTS · season 6.5 · -4.5 margin"
+              - listitem "2026-03-03 · Sandro Mamukelashvili · 4.0 PTS · season 11.2 · -7.2 margin"
+              - listitem "2026-03-03 · Jakob Poeltl · 9.0 PTS · season 10.7 · -1.7 margin"
+              - listitem "2026-03-04 · Isaiah Hartenstein · 0.0 PTS · season 9.2 · -9.2 margin"
+              - listitem "2026-03-04 · Jaylin Williams · 8.0 PTS · season 7.2 · +0.8 margin"
+              - listitem "2026-03-06 · Jonas Valančiūnas · 2.0 PTS · season 8.7 · -6.7 margin"
+              - listitem "2026-03-06 · Zeke Nnaji · 0.0 PTS · season 3.7 · -3.7 margin"
+              - listitem "2026-03-08 · Deandre Ayton · 6.0 PTS · season 12.5 · -6.5 margin"
+              - listitem "2026-03-08 · Jaxson Hayes · 5.0 PTS · season 7.5 · -2.5 margin"
+              - listitem "2026-03-09 · Brook Lopez · 16.0 PTS · season 8.5 · +7.5 margin"
+              - listitem "2026-03-11 · Oscar Tshiebwe · 2.0 PTS · season 7.8 · -5.8 margin"
+              - listitem "2026-03-13 · Ivica Zubac · 11.0 PTS · season 14.1 · -3.1 margin"
+              - listitem "2026-03-13 · Jay Huff · 9.0 PTS · season 9.5 · -0.5 margin"
+              - listitem "2026-03-15 · Quinten Post · 22.0 PTS · season 7.7 · +14.3 margin"
+              - listitem "2026-03-17 · Ivica Zubac · 11.0 PTS · season 14.1 · -3.1 margin"
+              - listitem "2026-03-17 · Jay Huff · 6.0 PTS · season 9.5 · -3.5 margin"
+              - listitem "2026-03-22 · Tristan Vukcevic · 13.0 PTS · season 9.0 · +4.0 margin"
+              - listitem "2026-03-22 · Anthony Gill · 18.0 PTS · season 5.8 · +12.2 margin"
+              - listitem "2026-03-24 · Yves Missi · 2.0 PTS · season 5.7 · -3.7 margin"
+              - listitem "2026-03-24 · Karlo Matković · 12.0 PTS · season 5.7 · +6.3 margin"
+              - listitem "2026-03-26 · Moussa Diabaté · 2.0 PTS · season 7.9 · -5.9 margin"
+              - listitem "2026-03-29 · Isaiah Hartenstein · 6.0 PTS · season 9.2 · -3.2 margin"
+              - listitem "2026-03-29 · Jaylin Williams · 3.0 PTS · season 7.2 · -4.2 margin"
+              - listitem "2026-03-31 · Clint Capela · 0.0 PTS · season 3.8 · -3.8 margin"
+              - listitem "2026-04-09 · Nikola Vučević · 10.0 PTS · season 15.1 · -5.1 margin"
+              - listitem "2026-04-09 · Neemias Queta · 10.0 PTS · season 10.2 · -0.2 margin"
+              - listitem "2026-04-10 · Sandro Mamukelashvili · 17.0 PTS · season 11.2 · +5.8 margin"
+              - listitem "2026-04-10 · Jakob Poeltl · 4.0 PTS · season 10.7 · -6.7 margin"
+              - listitem "2026-04-12 · Moussa Diabaté · 4.0 PTS · season 7.9 · -3.9 margin"
+            - text: short by more beat by more
+            - group: PTS vs the player’s own season average
+- dialog "New Target":
+  - heading "New Target" [level=2]
+  - button "Close"
+  - group:
+    - text: Opponent
+    - combobox "Opponent":
+      - option "ATL"
+      - option "BOS"
+      - option "BKN"
+      - option "CHA"
+      - option "CHI"
+      - option "CLE"
+      - option "DAL"
+      - option "DEN"
+      - option "DET"
+      - option "GSW"
+      - option "HOU"
+      - option "IND"
+      - option "LAC"
+      - option "LAL"
+      - option "MEM"
+      - option "MIA"
+      - option "MIL"
+      - option "MIN"
+      - option "NOP"
+      - option "NYK" [selected]
+      - option "OKC"
+      - option "ORL"
+      - option "PHI"
+      - option "PHX"
+      - option "POR"
+      - option "SAC"
+      - option "SAS"
+      - option "TOR"
+      - option "UTA"
+      - option "WAS"
+    - text: Why
+    - textbox "Why · optional":
+      - /placeholder: optional
+    - text: Title preview · derived from the Qualifiers
+    - heading "NYK vs P&R roll man ≥ 31%" [level=1]
+    - combobox "Qualifier 1 diet base":
+      - option "Shot zones"
+      - option "Play types" [selected]
+      - option "Shot types"
+      - option "Assist locations"
+    - combobox "Qualifier 1 slice":
+      - option "Transition"
+      - option "Isolation"
+      - option "P&R ball handler"
+      - option "P&R roll man" [selected]
+      - option "Spot up"
+      - option "Cut"
+      - option "Handoff"
+      - option "Off screen"
+      - option "Post up"
+      - option "Putback"
+    - button "At or above; switch to at or below": ≥
+    - status: 31%
+    - slider "Qualifier 1 threshold percent": "31"
+    - text: league 7.6% of possessions
+    - group "NYK opponent context": "NYK · Points allowed /48 #15/30 -2.5% vs avg"
+    - button "Remove Qualifier 1": ×
+    - button "+ and"
+    - region "Backtest":
+      - text: Backtest
+      - status: any
+      - slider "Player game minutes": "-1"
+    - button "Save Target"
+    - button "Cancel"
+  - region "Lab · Backtest · season to date · vs NYK":
+    - heading "Lab · Backtest · season to date · vs NYK" [level=2]
+    - status: Backtest up to date.
+    - list "Backtest summary":
+      - listitem "Player-games": 0 player-games
+      - listitem "PTS":
+        - button "PTS — PTS/game — vs baseline Hit rate —" [pressed]
+      - listitem "FGA":
+        - button "FGA — FGA/game — vs baseline Hit rate —"
+      - listitem "PTS/36":
+        - button "PTS/36 — PTS/36 — vs baseline Hit rate —"
+      - listitem "FGA/36":
+        - button "FGA/36 — FGA/36 — vs baseline Hit rate —"
+      - listitem:
+        - button "stats ▾"
+    - paragraph: Nobody qualifying has faced NYK yet.
+    - text: short by more beat by more
+    - group: PTS vs the player’s own season average

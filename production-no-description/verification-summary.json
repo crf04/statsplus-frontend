@@ -1,0 +1,22 @@
+{
+  "frontend": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-0273628e/.statsplus/worktrees/frontend",
+    "branch": "feat/sample-targets",
+    "head": "d443d4821406de1022305ba9d27a9364517967ac",
+    "fingerprint": "60515bbae0a5f236084229eacfcf99fa5b744df38154d300487c2d4858945d80"
+  },
+  "passedSteps": 48,
+  "cleanedUp": true,
+  "accountReads": [
+    {
+      "status": 200,
+      "targetCount": 0
+    },
+    {
+      "status": 200,
+      "targetCount": 0
+    }
+  ],
+  "helperSha256": "0b0b18096fddf1ad991d5d544e737d30163cc93ac661308dbf7969df7bc0abb9",
+  "productionGuardSha256": "9377eeb93d3a03667786fc9545bc6ca8382e23b3e2394c7dd8f81b46493a755a"
+}

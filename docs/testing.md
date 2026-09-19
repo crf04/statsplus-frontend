@@ -222,3 +222,10 @@ uses the normal target routes to verify context, real draft persistence, and the
 full-width summary above the filters-left/games-right grouping. Context failure must never disable an
 otherwise-valid Save. Test selectors distinguish the Opponent combobox from the
 per-filter opponent context label.
+
+Empty authenticated Targets lists show two shared sample drafts: ORL versus P&R
+ball handlers at or above 25%, and NYK versus P&R roll men at or above 15%. Each reads the existing preview endpoint;
+viewing samples and adjusting their displayed stats never writes account state.
+The desktop and phone sample journeys copy an example into the composer, edit
+it, save it, and verify samples disappear on return and reload. React tests also
+cover loading/list failure, saved accounts, canceling a copy, and preview retry.

@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { formatTip } from '../calendarDate';
 import { readRevisit } from '../revisitCache';
-import TargetForm, { blankTargetDraft } from './TargetForm';
+import TargetForm, { blankTargetDraft, targetToDraft } from './TargetForm';
 import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
@@ -14,6 +14,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
+import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
@@ -309,10 +310,21 @@ function TargetsPageContent() {
        * page for a read that is very likely to say the same thing again. */}
       {(status === 'ready' || targets.length > 0) &&
         (targets.length === 0 ? (
-          <div className="empty-slate">
-            <h2>No Targets yet.</h2>
-            <p>Choose + New Target to save a read on a defense.</p>
-          </div>
+          <>
+            <div className="empty-slate">
+              <h2>No Targets yet.</h2>
+              <p>Choose + New Target or start with a sample below.</p>
+            </div>
+            <SampleTargets
+              key={currentUser?.uid}
+              onAdd={(target, preferences) => {
+                setDraft(targetToDraft(target));
+                setDraftPreferences(preferences);
+                setSaveError(null);
+                setComposing(true);
+              }}
+            />
+          </>
         ) : (
           <ul className="target-grid">
             {targets.map((target) => (

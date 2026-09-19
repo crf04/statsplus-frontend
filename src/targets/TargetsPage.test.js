@@ -275,6 +275,105 @@ test('says so plainly when the account has no Targets yet', async () => {
   expect(screen.getByText('1 Target active today')).toBeInTheDocument();
 });
 
+test('shows unsaved samples only after an authenticated empty list succeeds', async () => {
+  const pending = deferred();
+  fetchTargets.mockReturnValue(pending.promise);
+  fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-04-09', entries: [] });
+  renderPage(false);
+  expect(screen.queryByText('Sample targets')).not.toBeInTheDocument();
+  await act(async () => pending.resolve([]));
+  const samples = screen.getByRole('region', { name: 'Sample targets' });
+  expect(within(samples).getAllByRole('article')).toHaveLength(2);
+  expect(
+    within(samples).getByRole('article', { name: 'ORL vs P&R ball handler ≥ 25%' }),
+  ).toBeInTheDocument();
+  expect(
+    within(samples).getByRole('article', { name: 'NYK vs P&R roll man ≥ 15%' }),
+  ).toBeInTheDocument();
+  expect(within(samples).getAllByText('Sample')).toHaveLength(2);
+  await waitFor(() => expect(fetchTargetPreview).toHaveBeenCalledTimes(2));
+  expect(createTarget).not.toHaveBeenCalled();
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+  expect(screen.getByText('No Targets active today')).toBeInTheDocument();
+});
+
+test('copies a sample into an editable draft and saves only after confirmation', async () => {
+  fetchTargets.mockResolvedValue([]);
+  renderPage(false);
+  const samples = await screen.findByRole('region', { name: 'Sample targets' });
+  fireEvent.click(within(samples).getAllByRole('button', { name: 'Add to my targets' })[0]);
+  const dialog = screen.getByRole('dialog', { name: 'New Target' });
+  expect(within(dialog).getByLabelText('Opponent')).toHaveValue('ORL');
+  expect(within(dialog).getByLabelText('Qualifier 1 slice')).toHaveValue('PRBallHandler');
+  expect(within(dialog).getByLabelText('Qualifier 1 threshold percent')).toHaveValue('25');
+  expect(createTarget).not.toHaveBeenCalled();
+  fireEvent.change(within(dialog).getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '28' },
+  });
+  await act(async () =>
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save Target' })),
+  );
+  expect(createTarget).toHaveBeenCalledWith(
+    expect.objectContaining({
+      opponent: 'ORL',
+      qualifiers: [
+        {
+          base: 'play_types',
+          sliceKey: 'PRBallHandler',
+          comparator: 'at_or_above',
+          threshold: 0.28,
+        },
+      ],
+    }),
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent('/targets/9');
+});
+
+test('a failed sample backtest can retry without creating a target', async () => {
+  fetchTargets.mockResolvedValue([]);
+  fetchTargetPreview.mockRejectedValue(new Error('unavailable'));
+  renderPage(false);
+  const samples = await screen.findByRole('region', { name: 'Sample targets' });
+  const first = within(samples).getAllByRole('article')[0];
+  const retry = await within(first).findByRole('button', { name: 'Retry backtest' });
+  expect(within(first).getByRole('button', { name: 'Add to my targets' })).toBeEnabled();
+  fetchTargetPreview.mockResolvedValue(preview);
+  fireEvent.click(retry);
+  expect(await within(first).findByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+  expect(createTarget).not.toHaveBeenCalled();
+});
+
+test('canceling an edited sample leaves the original example intact', async () => {
+  fetchTargets.mockResolvedValue([]);
+  renderPage(false);
+  const samples = await screen.findByRole('region', { name: 'Sample targets' });
+  const add = within(samples).getAllByRole('button', { name: 'Add to my targets' })[0];
+  fireEvent.click(add);
+  fireEvent.change(screen.getByLabelText('Qualifier 1 threshold percent'), {
+    target: { value: '28' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  fireEvent.click(add);
+  expect(screen.getByLabelText('Qualifier 1 threshold percent')).toHaveValue('25');
+  expect(createTarget).not.toHaveBeenCalled();
+});
+
+test('does not offer samples when the target list fails', async () => {
+  fetchTargets.mockRejectedValue(new Error('unavailable'));
+  renderPage(false);
+  await screen.findByRole('alert');
+  expect(screen.queryByRole('region', { name: 'Sample targets' })).not.toBeInTheDocument();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+});
+
+test('does not offer samples alongside saved targets', async () => {
+  renderPage(false);
+  await screen.findAllByRole('article');
+  expect(screen.queryByRole('region', { name: 'Sample targets' })).not.toBeInTheDocument();
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+});
+
 test('previews the title the Qualifiers would derive', async () => {
   renderPage();
   await screen.findAllByRole('article');

@@ -718,3 +718,15 @@
     grid-column: 1;
   }
 }
+
+.sample-targets-intro {
+  margin: 20px 0 16px;
+}
+.sample-targets-intro h2 {
+  color: var(--ct-text);
+  font: 600 1.3rem var(--ct-display);
+}
+.sample-targets-intro p {
+  color: var(--ct-dim);
+  font-size: 0.86rem;
+}

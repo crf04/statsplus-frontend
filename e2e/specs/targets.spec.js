@@ -30,6 +30,51 @@ const setFloor = async (page, minutes) => {
 const summaryItem = (scope, label) =>
   scope.getByRole('list', { name: 'Backtest summary' }).getByRole('listitem', { name: label });
 
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`sample targets become a personal target only after saving at ${viewport.width}px`, async ({
+    authenticatedPage: page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await installApiContract(page);
+    const writes = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/api/user/targets' && request.method() === 'POST')
+        writes.push(request);
+    });
+    await page.goto('/targets');
+    const samples = page.getByRole('region', { name: 'Sample targets' });
+    await expect(samples.getByRole('article')).toHaveCount(2);
+    await expect(samples.getByText('Sample', { exact: true })).toHaveCount(2);
+    await expect(samples.getByRole('list', { name: 'Backtest summary' })).toHaveCount(2);
+    await expect(page.getByText('No Targets active today')).toBeVisible();
+    expect(writes).toHaveLength(0);
+    await samples.getByRole('button', { name: 'Add to my targets' }).first().click();
+    const dialog = page.getByRole('dialog', { name: 'New Target' });
+    await expect(dialog.getByRole('combobox', { name: 'Opponent', exact: true })).toHaveValue(
+      'ORL',
+    );
+    await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('25');
+    await dialog.getByLabel('Qualifier 1 threshold percent').press('ArrowRight');
+    await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('26');
+    expect(writes).toHaveLength(0);
+    await dialog.getByRole('button', { name: 'Save Target' }).click();
+    await expect(page).toHaveURL(/\/targets\/\d+$/);
+    expect(writes).toHaveLength(1);
+    await page.getByRole('link', { name: '← All Targets' }).click();
+    await expect(card(page, 'ORL vs P&R ball handler ≥ 26%')).toBeVisible();
+    await expect(samples).toHaveCount(0);
+    await page.reload();
+    await expect(card(page, 'ORL vs P&R ball handler ≥ 26%')).toBeVisible();
+    await expect(samples).toHaveCount(0);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
+}
+
 test('@critical authenticated user creates, opens, edits, and deletes a Target', async ({
   authenticatedPage: page,
 }) => {
@@ -98,7 +143,9 @@ test('list and workbench fit a phone width', async ({ authenticatedPage: page })
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await saveTarget(page);
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -210,7 +257,9 @@ test('Target defaults follow each Qualifier base and keep their declared order',
   for (const { base, slice, expected } of cases) {
     await page.goto('/targets');
     await composeTarget(page, { opponent: 'OKC', base, slice, percent: 10 });
-    const summary = page.getByRole('list', { name: 'Backtest summary' });
+    const summary = page
+      .getByRole('dialog', { name: 'New Target' })
+      .getByRole('list', { name: 'Backtest summary' });
     await expect(summary).toBeVisible();
     await expect
       .poll(() =>
@@ -251,10 +300,15 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
     slice: 'AtRimAssists',
     percent: 30,
   });
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('slider', { name: /threshold percent/ }).press('ArrowRight');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^3 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^3 player-games$/);
   const summaryItems = page
+    .getByRole('region', { name: /Lab · Backtest/ })
     .getByRole('list', { name: 'Backtest summary' })
     .getByRole('listitem')
     .filter({ hasNot: page.getByRole('button', { name: 'stats ▾' }) });
@@ -304,13 +358,17 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   });
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a defender’s minutes' }).click();
   await page
     .getByLabel('Defender', { exact: true })
     .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^1 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^1 player-games$/);
   await expect(page.getByRole('region', { name: 'Backtest games' })).toContainText('Jayson Tatum');
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
@@ -327,7 +385,9 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.reload();
   await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^1 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^1 player-games$/);
   const cardRead = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
@@ -347,7 +407,9 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a date window' }).click();
   await page.getByLabel('From', { exact: true }).fill('2025-01-11');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^0 player-games$/);
 });
 
 test('@critical a player game minutes Condition filters appearances, persists, and can revert', async ({
@@ -363,14 +425,20 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   });
   const playerMinutes = page.getByRole('slider', { name: 'Player game minutes' });
   await expect(playerMinutes).toHaveAttribute('aria-valuetext', 'any');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await setFloor(page, 36);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^0 player-games$/);
   await expect(
     page.getByText('No qualifying appearances match these backtest conditions.'),
   ).toBeVisible();
   await setFloor(page, 35);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await expect(playerMinutes).toHaveValue('35');
@@ -378,10 +446,14 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   // does not restate it beneath the evidence.
   await expect(page.getByText(/min \(backtest only\)/)).toHaveCount(0);
   await setFloor(page, 36);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^0 player-games$/);
   await page.getByRole('button', { name: 'Revert' }).click();
   await expect(playerMinutes).toHaveValue('35');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'stats ▾' }).click();
   await page.getByRole('checkbox', { name: 'PTS/36', exact: true }).check();
   await page.getByRole('button', { name: 'stats ▾' }).click();
@@ -395,7 +467,9 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   await page.reload();
   await expect(page.getByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
   await expect(page.getByRole('slider', { name: 'Player game minutes' })).toHaveValue('35');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
     'Backtest · season to date · excludes games ≤ 35 min',
@@ -418,13 +492,17 @@ test('@critical a saved player game minutes floor can be cleared while a date Co
   await page.getByRole('button', { name: '+ and' }).click();
   await page.getByRole('button', { name: 'a date window' }).click();
   await page.getByLabel('From', { exact: true }).fill('2025-01-10');
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^0 player-games$/);
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
   await expect(page.getByLabel('From', { exact: true })).toHaveValue('2025-01-10');
   await expect(playerMinutes).toHaveValue('36');
   await setFloor(page, -1);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   const clearedConditions = page.waitForRequest(
     (request) =>
       request.method() === 'PATCH' && request.postDataJSON()?.conditions?.from === '2025-01-10',
@@ -442,7 +520,9 @@ test('@critical a saved player game minutes floor can be cleared while a date Co
     'aria-valuetext',
     'any',
   );
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
 });
 
 test('Slate fits honor a defender who is out and an inclusive date window', async ({
@@ -515,7 +595,9 @@ test('desktop workbench exposes every stats group without scrolling a hidden ben
   });
   await page.getByRole('button', { name: 'Save Target' }).click();
   await expect(page).toHaveURL(/\/targets\/\d+$/);
-  await expect(summaryItem(page, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(
+    summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+  ).toHaveText(/^4 player-games$/);
   await page.getByRole('button', { name: 'stats ▾' }).click();
   for (const stat of ['FGA', 'PTS/36', 'PTS/FGA']) {
     const checkbox = page.getByRole('checkbox', { name: stat, exact: true });

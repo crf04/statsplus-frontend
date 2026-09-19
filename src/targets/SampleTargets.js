@@ -9,14 +9,14 @@ const samples = [
     qualifiers: [
       { base: 'play_types', sliceKey: 'PRBallHandler', comparator: 'at_or_above', threshold: 0.25 },
     ],
-    note: 'Explore players who use at least 25% of their possessions as pick-and-roll ball handlers.',
+    note: '',
   },
   {
     opponent: 'NYK',
     qualifiers: [
       { base: 'play_types', sliceKey: 'PRRollMan', comparator: 'at_or_above', threshold: 0.15 },
     ],
-    note: 'Explore players who use at least 15% of their possessions as pick-and-roll roll men.',
+    note: '',
   },
 ];
 
@@ -50,7 +50,6 @@ function SampleCard({ target, onAdd }) {
               );
             })}
           </div>
-          <p className="target-card-note">{target.note}</p>
         </div>
         <section aria-label="Sample backtest">
           <p className="target-backtest-proxy">Backtest · season to date</p>

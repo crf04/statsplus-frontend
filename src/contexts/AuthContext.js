@@ -58,9 +58,15 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     error: null,
   }));
 
+  // The uid whose admin verdict is settled. Firebase refreshes the ID token
+  // about hourly; re-checking that same user keeps the verdict visible instead
+  // of dropping guarded routes back to a spinner that unmounts their page.
+  const settledAdminUidRef = useRef(null);
+
   const refreshAdminClaims = useCallback(
     async (user = currentUserRef.current, forceRefresh = false) => {
       if (!user) {
+        settledAdminUidRef.current = null;
         setAdminState({ loading: false, isAdmin: false, status: 'signed_out', error: null });
         return false;
       }
@@ -87,10 +93,14 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         return false;
       }
 
-      setAdminState((previous) => ({ ...previous, loading: true, error: null }));
+      if (forceRefresh || settledAdminUidRef.current !== user.uid) {
+        settledAdminUidRef.current = null;
+        setAdminState((previous) => ({ ...previous, loading: true, error: null }));
+      }
       try {
         const tokenResult = await getIdTokenResult(user, forceRefresh);
         const isAdmin = hasAdminClaim(tokenResult?.claims);
+        settledAdminUidRef.current = user.uid;
         setAdminState({
           loading: false,
           isAdmin,
@@ -99,6 +109,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         });
         return isAdmin;
       } catch (claimError) {
+        settledAdminUidRef.current = null;
         const message = claimError?.message || 'Unable to verify administrator permissions.';
         setAdminState({
           loading: false,

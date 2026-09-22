@@ -1,30 +1,24 @@
-import { useRef, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Bar } from 'react-chartjs-2';
-import 'chart.js/auto';
-import annotationPlugin from 'chartjs-plugin-annotation';
-import { Chart } from 'chart.js';
+import './chartSetup';
 import MetricsDashboardRow from './MetricsDashboardRow';
 import AppliedFilters from './AppliedFilters';
 import { numericOrZero, toFiniteNumber } from './numberUtils';
 
-Chart.register(annotationPlugin);
+const getPer36Value = (average, stat) => {
+  const value = toFiniteNumber(average?.[stat]);
+  const minutes = toFiniteNumber(average?.MIN);
+  return value !== null && minutes !== null && minutes !== 0 ? (value / minutes) * 36 : 0;
+};
 
 const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilters }) => {
-  const chartRef = useRef(null);
+  const explicitLineValue = toFiniteNumber(lineValue);
+  const numericLineValue =
+    explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[0]?.[lineType], 0);
 
-  const getLineValue = () => {
-    const explicitValue = toFiniteNumber(lineValue);
-    if (explicitValue !== null) return explicitValue;
-    return toFiniteNumber(averages?.[0]?.[lineType], 0);
-  };
-
-  const getPer36Value = (average, stat) => {
-    const value = toFiniteNumber(average?.[stat]);
-    const minutes = toFiniteNumber(average?.MIN);
-    return value !== null && minutes !== null && minutes !== 0 ? (value / minutes) * 36 : 0;
-  };
-
-  const getChartData = () => {
+  // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
+  // both are rebuilt only when an input they read changes.
+  const chartData = useMemo(() => {
     if (!Array.isArray(gameLogs) || gameLogs.length === 0 || lineType === 'None') {
       return {
         labels: [],
@@ -41,8 +35,6 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
     const labels = gameLogs.map((log) => log?.GAME_DATE || '');
     const data = gameLogs.map((log) => numericOrZero(log?.[lineType]));
 
-    // Use the average if lineValue is empty or not provided
-    const numericLineValue = getLineValue();
     const backgroundColors =
       !isNaN(numericLineValue) && numericLineValue > 0
         ? data.map((value) =>
@@ -63,13 +55,10 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
         },
       ],
     };
-  };
+  }, [gameLogs, lineType, numericLineValue]);
 
-  const getChartOptions = () => {
-    // Use the average if lineValue is empty or not provided
-    const numericLineValue = getLineValue();
-
-    return {
+  const chartOptions = useMemo(
+    () => ({
       responsive: true,
       plugins: {
         legend: {
@@ -86,7 +75,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
               borderDash: [6, 4],
               label: {
                 content:
-                  toFiniteNumber(lineValue) !== null
+                  explicitLineValue !== null
                     ? `Line: ${lineValue}`
                     : `Avg: ${numericLineValue.toFixed(1)}`,
                 enabled: true,
@@ -164,14 +153,12 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
           },
         },
       },
-    };
-  };
+    }),
+    [gameLogs, lineType, lineValue, explicitLineValue, numericLineValue],
+  );
 
-  useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.update();
-    }
-  }, [lineType, lineValue, gameLogs, averages]);
+  const overLineCount = (logs) =>
+    logs.filter((log) => numericOrZero(log[lineType]) > numericLineValue).length;
 
   return (
     <>
@@ -182,27 +169,15 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
             per36Value={getPer36Value(averages?.[0], lineType)}
             seasonRawValue={numericOrZero(averages?.[1]?.[lineType])}
             seasonPer36Value={getPer36Value(averages?.[1], lineType)}
-            ratio={`${
-              gameLogs.filter((log) => {
-                return numericOrZero(log[lineType]) > getLineValue();
-              }).length
-            }/${gameLogs.length}`}
-            last5ratio={`${
-              gameLogs.slice(-5).filter((log) => {
-                return numericOrZero(log[lineType]) > getLineValue();
-              }).length
-            }/${Math.min(5, gameLogs.length)}`}
-            last10ratio={`${
-              gameLogs.slice(-10).filter((log) => {
-                return numericOrZero(log[lineType]) > getLineValue();
-              }).length
-            }/${Math.min(10, gameLogs.length)}`}
+            ratio={`${overLineCount(gameLogs)}/${gameLogs.length}`}
+            last5ratio={`${overLineCount(gameLogs.slice(-5))}/${Math.min(5, gameLogs.length)}`}
+            last10ratio={`${overLineCount(gameLogs.slice(-10))}/${Math.min(10, gameLogs.length)}`}
           />
           <div className="mt-3 mb-3">
             <AppliedFilters filters={appliedFilters} />
           </div>
           <div className="chart-container">
-            <Bar ref={chartRef} data={getChartData()} options={getChartOptions()} />
+            <Bar data={chartData} options={chartOptions} />
           </div>
         </>
       )}

@@ -1,0 +1,739 @@
+{
+  "startedAt": "2026-09-23T05:23:58.671Z",
+  "coordination": {
+    "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-88c0711c",
+    "branch": "t3code/88c0711c",
+    "head": "b87a5830985e17d3ab3b24703599bf45ee9e3c82"
+  },
+  "qaRuntimeSha256": "e6786c7112588af821453e83d4bec5f518f3ae563a613589ab0f18e00c2b46ef",
+  "productionGuardSha256": "f94bf27b53f0d05949fd6ae6d4c75d548d4451f4e064e53f3ad014829d10502b",
+  "helperSha256": "ea4cc49ec588e7bf599e0718cff3174cfd9853809d81b91fc2c20f388d39555c",
+  "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+  "frontend": {
+    "root": "/Users/chrisfu/statsplus-frontend",
+    "branch": "claude/home-screen-center-court",
+    "head": "53be6812b22d2f21ab49c9494a7969ae4a6e74e2",
+    "fingerprint": "337a080bc09a8f05dc82372631ab6d36a998e68789b10b166bdaefb98c5cc990"
+  },
+  "backendSource": {
+    "root": "/Users/chrisfu/statsplus-local/backend",
+    "branch": "chore/local-backend-setup",
+    "head": "ab9b92c533973e43d50a04170963056672fa736b",
+    "fingerprint": "4633d10121f58905bbe9e9a4ad52a50980cdf22384fc12134146511ebd0ff42a"
+  },
+  "environment": "qa",
+  "qa": {
+    "ready": true,
+    "api": "http://127.0.0.1:62355",
+    "database": "courtai_qa_21d0fd7087924c3a",
+    "backend": "/Users/chrisfu/statsplus-local/backend",
+    "pid": 35645,
+    "snapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5",
+    "unauthenticatedStatus": 401
+  },
+  "deployedBackendRevision": "unknown",
+  "api": "http://127.0.0.1:62355",
+  "origin": "http://127.0.0.1:5188",
+  "out": "/tmp/statsplus-141-evidence/qa",
+  "runtime": "/var/folders/vl/c4y_fblx7bg4lgkdxnmsbj_h0000gn/T/statsplus-runtime-qYthpf",
+  "results": [
+    {
+      "ok": true,
+      "action": "launch",
+      "out": "/tmp/statsplus-141-evidence/qa",
+      "ready": true,
+      "frontend": {
+        "root": "/Users/chrisfu/statsplus-frontend",
+        "branch": "claude/home-screen-center-court",
+        "head": "53be6812b22d2f21ab49c9494a7969ae4a6e74e2",
+        "fingerprint": "337a080bc09a8f05dc82372631ab6d36a998e68789b10b166bdaefb98c5cc990"
+      },
+      "origin": "http://127.0.0.1:5188",
+      "api": "http://127.0.0.1:62355",
+      "environment": "qa",
+      "qa": {
+        "ready": true,
+        "api": "http://127.0.0.1:62355",
+        "database": "courtai_qa_21d0fd7087924c3a",
+        "backend": "/Users/chrisfu/statsplus-local/backend",
+        "pid": 35645,
+        "snapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5",
+        "unauthenticatedStatus": 401
+      },
+      "auth": {
+        "authenticated": true,
+        "expiresAt": "Wed, 23 Sep 2026 06:23:59 GMT",
+        "transportIsLocal": true
+      }
+    },
+    {
+      "ok": true,
+      "step": 1,
+      "action": "doctor",
+      "commandSha256": "a9335ee9a0fc05c9eaf88b05947b48c514652dd185ee5cd5a66bf58b98c98547",
+      "ready": true,
+      "frontend": {
+        "root": "/Users/chrisfu/statsplus-frontend",
+        "branch": "claude/home-screen-center-court",
+        "head": "53be6812b22d2f21ab49c9494a7969ae4a6e74e2",
+        "fingerprint": "337a080bc09a8f05dc82372631ab6d36a998e68789b10b166bdaefb98c5cc990"
+      },
+      "origin": "http://127.0.0.1:5188",
+      "api": "http://127.0.0.1:62355",
+      "environment": "qa",
+      "qa": {
+        "ready": true,
+        "api": "http://127.0.0.1:62355",
+        "database": "courtai_qa_21d0fd7087924c3a",
+        "backend": "/Users/chrisfu/statsplus-local/backend",
+        "pid": 35645,
+        "snapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5",
+        "unauthenticatedStatus": 401
+      },
+      "auth": {
+        "authenticated": true,
+        "expiresAt": "Wed, 23 Sep 2026 06:23:59 GMT",
+        "transportIsLocal": true
+      }
+    },
+    {
+      "ok": true,
+      "step": 2,
+      "action": "open",
+      "commandSha256": "7db0957bba6fd0ccd6f168b3727036243cb5dc9e51cb1fbd86d1333c9d5f0608"
+    },
+    {
+      "ok": true,
+      "step": 3,
+      "action": "assert",
+      "commandSha256": "9a5258ed35cc8ce8a48776a9151e3352f4611227cf4ab70f7c3bf8c9bdc32125",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Ask the box score"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 4,
+      "action": "assert",
+      "commandSha256": "c391a30b5c6aa549ef74ff90dd5bdcca2454f2f1e8e55d74a57d76e16057c15a",
+      "assertion": {
+        "target": {
+          "role": "button",
+          "name": "Run it"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 5,
+      "action": "assert-layout",
+      "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+    },
+    {
+      "ok": true,
+      "step": 6,
+      "action": "proof",
+      "commandSha256": "69043ed6c87ee97377f1109c48a341bbe7b048ad0227b97cb41ebe640dde02f3",
+      "url": "http://127.0.0.1:5188/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/landing-desktop.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/landing-desktop.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 7,
+      "action": "viewport",
+      "commandSha256": "8085c1c1c96b12dcd22168a587fa83e56f36d3cd95c4d694f1d9ed13144f94e1"
+    },
+    {
+      "ok": true,
+      "step": 8,
+      "action": "assert-layout",
+      "commandSha256": "c7705f91c2d41dc2fd0c48264fde1439d371491c227965e19d64f97370fdb0d1"
+    },
+    {
+      "ok": true,
+      "step": 9,
+      "action": "proof",
+      "commandSha256": "550851084faf191a0537079ce6a667e2f26ae0f18ef57a7f203ee1b4b2ecb292",
+      "url": "http://127.0.0.1:5188/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/landing-phone.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/landing-phone.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 10,
+      "action": "viewport",
+      "commandSha256": "fd45d81df98c1e58026fe8b759e6ce4201fb14b18432fcc552fba07211269f67"
+    },
+    {
+      "ok": true,
+      "step": 11,
+      "action": "fill",
+      "commandSha256": "7fa2170c844958bebd88eef9f932561514fae7ca00446aa57f4427ddbf059e4f"
+    },
+    {
+      "ok": true,
+      "step": 12,
+      "action": "press",
+      "commandSha256": "b8061b4ef1eb5b5ce32ec6c3a4bd2754752ce0eb2e0e43327b48fc9f6f992859"
+    },
+    {
+      "ok": true,
+      "step": 13,
+      "action": "assert",
+      "commandSha256": "a60211481026f51657e03d3f63c60e9b3e8f7324ba7e9832cff00a08397c0200",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Game Logs"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 14,
+      "action": "proof",
+      "commandSha256": "0b7a4142b5143e7035535037ab45ef37047af2d802f92020604f1a6cf0a4569a",
+      "url": "http://127.0.0.1:5188/?player_name=LeBron+James&season_filter=2025-26&game_filter=10",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/query-result.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/query-result.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.479Z",
+          "actionStep": 12,
+          "method": "POST",
+          "path": "/api/nl-query",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 15,
+      "action": "assert-response",
+      "commandSha256": "1b820a244b0533cf6e0c5cbdfd50144709624810acddd9cce15cd266ebebbeb2",
+      "response": {
+        "at": "2026-09-23T05:24:21.799Z",
+        "actionStep": 12,
+        "method": "GET",
+        "path": "/api/games/game_logs",
+        "status": 200
+      }
+    },
+    {
+      "ok": true,
+      "step": 16,
+      "action": "proof",
+      "commandSha256": "5b033f0424b8fb5d2a8128ec64c8419ef3a4e790ca2dea824fb8edd59c404b28",
+      "url": "http://127.0.0.1:5188/?player_name=LeBron+James&season_filter=2025-26&game_filter=10",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/query-result-loaded.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/query-result-loaded.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.479Z",
+          "actionStep": 12,
+          "method": "POST",
+          "path": "/api/nl-query",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.799Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/games/game_logs",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.976Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/players/profile",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.008Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.039Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 17,
+      "action": "click",
+      "commandSha256": "9467b8952a145e10f0cfc56462ec3921356e004bf257b34b882b49cfe8dd40d5"
+    },
+    {
+      "ok": true,
+      "step": 18,
+      "action": "assert",
+      "commandSha256": "5db5ee1690faf54ff9b24d8d54a209cc4a1ebb6aa21a7322ffaae4a349969d2e",
+      "assertion": {
+        "check": "url",
+        "expectedSha256": "df7e940f72aa93cbcb6d70cc35124b0767c7a0e353043c7c24b660ea9be7b952"
+      }
+    },
+    {
+      "ok": true,
+      "step": 19,
+      "action": "assert",
+      "commandSha256": "9a5258ed35cc8ce8a48776a9151e3352f4611227cf4ab70f7c3bf8c9bdc32125",
+      "assertion": {
+        "target": {
+          "role": "heading",
+          "name": "Ask the box score"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 20,
+      "action": "assert",
+      "commandSha256": "e561c330279ad401b9e15c2c050bdaff21670e2edbcbd755c7d8028bf3e61fea",
+      "assertion": {
+        "target": {
+          "role": "textbox"
+        },
+        "check": "value",
+        "expectedSha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+      }
+    },
+    {
+      "ok": true,
+      "step": 21,
+      "action": "proof",
+      "commandSha256": "dc34f610422f63c29ed07720d0e1d64884c1201736ecee35a32308c674fd83b4",
+      "url": "http://127.0.0.1:5188/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/returned-landing.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/returned-landing.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.479Z",
+          "actionStep": 12,
+          "method": "POST",
+          "path": "/api/nl-query",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.799Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/games/game_logs",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.976Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/players/profile",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.008Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.039Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 22,
+      "action": "click",
+      "commandSha256": "0f76117fa384c58b969dcf6bd382cd39ccbbd2e5a844a38a89439baba65db832"
+    },
+    {
+      "ok": true,
+      "step": 23,
+      "action": "snapshot",
+      "commandSha256": "975d604e4d09afb89817dd0e10fbce3f92c639d3efcb967e79a925c42cfabc0e",
+      "aria": "- banner:\n  - navigation \"Primary\":\n    - link \"CourtAI\":\n      - /url: /\n    - link \"Search\":\n      - /url: /\n    - link \"Matchups\":\n      - /url: /matchups\n    - link \"Targets\":\n      - /url: /targets\n    - button \"CQ CourtAI QA\":\n      - text: CQ CourtAI QA\n      - img\n- button \"Open search\":\n  - img\n- button \"Back to search\": ←\n- button \"Saved Filter Sets\"\n- text: \"Player:\"\n- combobox \"Player:\": None\n- text: \"Line Type:\"\n- combobox \"Line Type:\":\n  - option \"None\"\n  - option \"PTS\" [selected]\n  - option \"FD_PTS\"\n  - option \"PRA\"\n  - option \"PA\"\n  - option \"RA\"\n  - option \"PR\"\n  - option \"AST\"\n  - option \"REB\"\n  - option \"FTM\"\n  - option \"FTA\"\n  - option \"STL\"\n  - option \"BLK\"\n  - option \"STKS\"\n  - option \"FG3M\"\n  - option \"FG3A\"\n  - option \"FG2M\"\n  - option \"FG2A\"\n  - option \"FGM\"\n  - option \"FGA\"\n  - option \"TOV\"\n- text: \"Line Value:\"\n- textbox \"Line Value:\":\n  - /placeholder: Enter value\n  - text: \"19.9\"\n- text: \"Player Filter:\"\n- combobox \"Player Filter:\"\n- group:\n  - radio \"ON\" [checked]\n  - text: \"ON\"\n  - radio \"OFF\"\n  - text: \"OFF\"\n- button \"Add\"\n- text: \"Date Filter:\"\n- textbox \"Date Filter:\"\n- text: \"Location:\"\n- group:\n  - radio \"Both\" [checked]\n  - text: Both\n  - radio \"Home\"\n  - text: Home\n  - radio \"Away\"\n  - text: Away\n- text: \"Last N games:\"\n- spinbutton \"Last N games:\": \"0\"\n- text: \"Playtype Matchup Rating: 0 - 200\"\n- slider \"Lower thumb\": \"0\"\n- slider \"Upper thumb\": \"200\"\n- text: \"Minute Range: 0 - 48\"\n- slider \"Lower thumb\": \"0\"\n- slider \"Upper thumb\": \"48\"\n- text: \"Defensive Filter:\"\n- button \"General\" [pressed]\n- button \"Shot type\"\n- button \"Play type\"\n- button \"Assists\"\n- combobox \"Defensive Filter:\":\n  - option \"None\" [selected]\n  - option \"Points Allowed\"\n  - option \"Rebounds Allowed\"\n  - option \"Assists Allowed\"\n  - option \"Steals + Blocks\"\n  - option \"Steals\"\n  - option \"Blocks\"\n  - option \"Free Throws Allowed\"\n  - option \"Turnovers Forced\"\n- textbox \"Defensive filter rank\":\n  - /placeholder: Number\n- button \"Add\" [disabled]\n- text: Positive rank = top defenses, negative = bottom\n- button \"Self Filters:\"\n- button \"Apply Filters\"\n- heading \"Player Profile\" [level=4]\n- group:\n  - radio \"Playtypes\" [checked]\n  - text: Playtypes\n  - radio \"Assists\"\n  - text: Assists\n  - radio \"Archetype\"\n  - text: Archetype\n  - radio \"Shooting Type\"\n  - text: Shooting Type\n  - radio \"Zone Shooting\"\n  - text: Zone Shooting\n- paragraph: No player data available\n- heading \"Opposing Team Profile\" [level=4]\n- combobox:\n  - option \"Choose a team\" [selected]\n  - option \"Atlanta Hawks\"\n  - option \"Boston Celtics\"\n  - option \"Cleveland Cavaliers\"\n  - option \"New Orleans Pelicans\"\n  - option \"Chicago Bulls\"\n  - option \"Dallas Mavericks\"\n  - option \"Denver Nuggets\"\n  - option \"Golden State Warriors\"\n  - option \"Houston Rockets\"\n  - option \"Los Angeles Clippers\"\n  - option \"Los Angeles Lakers\"\n  - option \"Miami Heat\"\n  - option \"Milwaukee Bucks\"\n  - option \"Minnesota Timberwolves\"\n  - option \"Brooklyn Nets\"\n  - option \"New York Knicks\"\n  - option \"Orlando Magic\"\n  - option \"Indiana Pacers\"\n  - option \"Philadelphia 76ers\"\n  - option \"Phoenix Suns\"\n  - option \"Portland Trail Blazers\"\n  - option \"Sacramento Kings\"\n  - option \"San Antonio Spurs\"\n  - option \"Oklahoma City Thunder\"\n  - option \"Toronto Raptors\"\n  - option \"Utah Jazz\"\n  - option \"Memphis Grizzlies\"\n  - option \"Washington Wizards\"\n  - option \"Detroit Pistons\"\n  - option \"Charlotte Hornets\"\n- combobox:\n  - option \"Traditional\" [selected]\n  - option \"Playtypes\"\n  - option \"Assists\"\n  - option \"Zone Shooting\"\n  - option \"Shooting Type\"\n- textbox\n- paragraph: Select a team and category to view stats.\n- heading \"Per 36 Minutes Comparison\" [level=4]\n- text: Filtered vs Season\n- heading \"Game Logs\" [level=4]\n- heading \"No game logs to display\" [level=4]"
+    },
+    {
+      "ok": true,
+      "step": 24,
+      "action": "assert",
+      "commandSha256": "23934ef573437ecfad11b7d86a88ce917c956d504fa8e7fb8ea9abde4a87fcef",
+      "assertion": {
+        "check": "url",
+        "expectedSha256": "0b8b09fd668502856298bfde1a889a93ce3aa0450d9c6a1829742fbbdc9ed9aa"
+      }
+    },
+    {
+      "ok": true,
+      "step": 25,
+      "action": "assert",
+      "commandSha256": "8b4e84f3eeec780c1e6809e769b19675e0fe7bcb9873892ceb7cfbe52f0ec46b",
+      "assertion": {
+        "target": {
+          "role": "button",
+          "name": "Apply Filters"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 26,
+      "action": "proof",
+      "commandSha256": "a1969572732282fee7ad4d5acd6b8be375423bcb7aecb69fbde053137e8e662a",
+      "url": "http://127.0.0.1:5188/?browse=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/browse-workspace.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/browse-workspace.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.479Z",
+          "actionStep": 12,
+          "method": "POST",
+          "path": "/api/nl-query",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.799Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/games/game_logs",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.976Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/players/profile",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.008Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.039Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "step": 27,
+      "action": "click",
+      "commandSha256": "9467b8952a145e10f0cfc56462ec3921356e004bf257b34b882b49cfe8dd40d5"
+    },
+    {
+      "ok": true,
+      "step": 28,
+      "action": "click",
+      "commandSha256": "417b8ad837dc5d46ff6511a97be3d1d3ebc3ca9c0c02196015a125922936e17a"
+    },
+    {
+      "ok": true,
+      "step": 29,
+      "action": "assert",
+      "commandSha256": "e0ea6acfb5b5385b1d3b392648b049005bf1935982f9e97b434e19215145a68a",
+      "assertion": {
+        "target": {
+          "role": "dialog",
+          "name": "Saved Filter Sets"
+        },
+        "check": "visible"
+      }
+    },
+    {
+      "ok": true,
+      "step": 30,
+      "action": "proof",
+      "commandSha256": "ba7ea2e82b3bc92ace221ed92289a4d65738238f0b31cc05d24be41f2ae372de",
+      "url": "http://127.0.0.1:5188/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "/tmp/statsplus-141-evidence/qa/saved-filter-sets.png",
+      "aria": "/tmp/statsplus-141-evidence/qa/saved-filter-sets.aria.txt",
+      "responses": [
+        {
+          "at": "2026-09-23T05:24:00.146Z",
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:00.422Z",
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.691Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/players",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:13.694Z",
+          "actionStep": 2,
+          "method": "GET",
+          "path": "/api/teams",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.479Z",
+          "actionStep": 12,
+          "method": "POST",
+          "path": "/api/nl-query",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.799Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/games/game_logs",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:21.976Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/players/profile",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.008Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:22.039Z",
+          "actionStep": 12,
+          "method": "GET",
+          "path": "/api/teams/stats",
+          "status": 200
+        },
+        {
+          "at": "2026-09-23T05:24:51.976Z",
+          "actionStep": 28,
+          "method": "GET",
+          "path": "/api/user/saved-filter-sets",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "cleanedUp": true
+}

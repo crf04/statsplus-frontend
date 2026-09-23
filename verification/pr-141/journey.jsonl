@@ -1,0 +1,31 @@
+{"action":"doctor"}
+{"action":"open","path":"/"}
+{"action":"assert","target":{"role":"heading","name":"Ask the box score"}}
+{"action":"assert","target":{"role":"button","name":"Run it"}}
+{"action":"assert-layout"}
+{"action":"proof","name":"landing-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert-layout"}
+{"action":"proof","name":"landing-phone"}
+{"action":"viewport","name":"desktop"}
+{"action":"fill","target":{"role":"textbox"},"value":"LeBron James last 10 games"}
+{"action":"press","key":"Enter"}
+{"action":"assert","target":{"role":"heading","name":"Game Logs"}}
+{"action":"proof","name":"query-result"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","game_filter":"10"},"status":200}
+{"action":"proof","name":"query-result-loaded"}
+{"action":"click","target":{"role":"button","name":"Back to search"}}
+{"action":"assert","url":"/"}
+{"action":"assert","target":{"role":"heading","name":"Ask the box score"}}
+{"action":"assert","target":{"role":"textbox"},"value":""}
+{"action":"proof","name":"returned-landing"}
+{"action":"click","target":{"role":"button","name":"Browse without a query"}}
+{"action":"snapshot"}
+{"action":"assert","url":"/?browse=1"}
+{"action":"assert","target":{"role":"button","name":"Apply Filters"}}
+{"action":"proof","name":"browse-workspace"}
+{"action":"click","target":{"role":"button","name":"Back to search"}}
+{"action":"click","target":{"role":"button","name":"Saved Filter Sets"}}
+{"action":"assert","target":{"role":"dialog","name":"Saved Filter Sets"}}
+{"action":"proof","name":"saved-filter-sets"}
+{"action":"cleanup"}

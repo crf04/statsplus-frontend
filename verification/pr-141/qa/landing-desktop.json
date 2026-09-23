@@ -1,0 +1,37 @@
+{
+  "url": "http://127.0.0.1:5188/",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-141-evidence/qa/landing-desktop.png",
+  "aria": "/tmp/statsplus-141-evidence/qa/landing-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-09-23T05:24:00.146Z",
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-09-23T05:24:00.422Z",
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-09-23T05:24:13.691Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-09-23T05:24:13.694Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    }
+  ]
+}

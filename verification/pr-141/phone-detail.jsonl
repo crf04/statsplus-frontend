@@ -1,0 +1,7 @@
+{"action":"doctor"}
+{"action":"open","path":"/"}
+{"action":"viewport","name":"phone"}
+{"action":"click","target":{"text":"Stack the filters"}}
+{"action":"assert-layout"}
+{"action":"proof","name":"landing-phone-steps"}
+{"action":"cleanup"}

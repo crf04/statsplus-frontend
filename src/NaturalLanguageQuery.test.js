@@ -115,6 +115,18 @@ describe('NaturalLanguageQuery', () => {
     expect(input).not.toBeDisabled();
   });
 
+  test('the court behind the Query Prompt is scenery, hidden from assistive technology', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} inWorkspace={false} />
+      </MemoryRouter>,
+    );
+    const court = container.querySelector('.landing-court');
+    expect(court).toBeInTheDocument();
+    expect(court).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
   test('the Query Prompt gives way to the compact search on the URL alone', () => {
     // Whether we are past the prompt is the URL's business. This component
     // keeps no flag of its own, so a future entry path cannot be locked behind
@@ -124,7 +136,7 @@ describe('NaturalLanguageQuery', () => {
         <NaturalLanguageQuery onFiltersApplied={jest.fn()} inWorkspace={false} />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: 'CourtAI' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ask the box score' })).toBeInTheDocument();
 
     rerender(
       <MemoryRouter>

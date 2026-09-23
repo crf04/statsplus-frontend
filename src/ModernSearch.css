@@ -5,7 +5,9 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(1200px 700px at 50% 30%, #17130b 0%, #0d0b07 65%);
+  background:
+    radial-gradient(900px 520px at 50% 0%, rgba(232, 163, 61, 0.13), transparent 70%),
+    linear-gradient(180deg, #120f09, #0d0b07 70%);
   display: flex;
   /* Centred by the container's auto margins rather than by alignment, so a
      viewport shorter than the content scrolls instead of clipping its top. */
@@ -24,25 +26,114 @@
   overflow-x: hidden;
 }
 
-/* The one signature: a half-court drawn in hairlines, center circle
-   sitting behind the search bar. */
-.court-lines {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -58%);
-  width: min(1400px, 160vw);
-  height: auto;
-  fill: none;
-  stroke: rgba(232, 163, 61, 0.13);
-  stroke-width: 1.5;
-  pointer-events: none;
-  z-index: 0;
+/* The one signature: a regulation half court (LandingCourt.js) seen from
+   the broadcast camera, laid behind the hero. Half court sits just below the
+   search links; the hoop end recedes behind the search and fades out before
+   the headline, so the floor stays scenery and adds no height of its own. */
+.landing-hero {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 72px;
 }
 
-.court-lines .court-dash {
-  stroke-dasharray: 10 12;
-  stroke: rgba(232, 163, 61, 0.09);
+.landing-court {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100vw;
+  height: 74%;
+  transform: translateX(-50%);
+  z-index: -1;
+  perspective: 900px;
+  perspective-origin: 50% -20%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.75;
+  /* fog toward the hoop and at the sidelines */
+  -webkit-mask-image:
+    linear-gradient(180deg, transparent 0%, transparent 34%, #000 68%, #000 90%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(180deg, transparent 0%, transparent 34%, #000 68%, #000 90%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.landing-court svg {
+  position: absolute;
+  left: 50%;
+  bottom: -13%;
+  width: min(1100px, 190vw);
+  height: auto;
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) rotateX(73deg);
+}
+
+.landing-court .court-wood {
+  fill: url(#landing-court-planks);
+}
+
+.landing-court .court-spot {
+  fill: url(#landing-court-spot);
+}
+
+.landing-court .court-paint {
+  fill: rgba(232, 163, 61, 0.075);
+}
+
+.landing-court .court-line {
+  fill: none;
+  stroke: var(--ct-gold);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+.landing-court .court-soft {
+  opacity: 0.45;
+}
+
+.landing-court .court-rim {
+  stroke: #ff9a3c;
+  stroke-width: 2.6;
+  opacity: 1;
+}
+
+.landing-court .court-dash {
+  stroke-dasharray: 9 8;
+}
+
+/* the lines draw themselves in once, as the prompt appears */
+.landing-court .court-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: courtDraw 1.6s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+
+.landing-court .court-draw-2 {
+  animation-delay: 0.2s;
+}
+
+.landing-court .court-draw-3 {
+  animation-delay: 0.45s;
+}
+
+.landing-court .court-fade {
+  opacity: 0;
+  animation: courtFade 0.8s ease-out 1.2s forwards;
+}
+
+@keyframes courtDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes courtFade {
+  to {
+    opacity: 0.8;
+  }
 }
 
 .landing-container {
@@ -55,7 +146,7 @@
 }
 
 .landing-header {
-  margin-bottom: 48px;
+  margin-bottom: 40px;
   position: relative;
   text-align: center;
 }
@@ -93,39 +184,50 @@
   }
 }
 
+.landing-eyebrow {
+  margin: 0 0 14px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
 .landing-title {
-  font-size: 5.4rem;
-  font-weight: 600;
-  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-  color: #ffffff;
-  margin-bottom: 6px;
-  letter-spacing: 0.01em;
-  position: relative;
-  line-height: 1;
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: clamp(58px, 12vw, 156px);
+  font-weight: 800;
+  line-height: 0.84;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.landing-title em {
+  display: block;
+  font-style: normal;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ct-gold);
+}
+
+/* A dark halo lets court lines pass behind small type without crossing it. */
+.landing-tagline,
+.prompt-browse-button {
+  text-shadow:
+    0 0 6px var(--ct-ink),
+    0 0 14px var(--ct-ink),
+    0 0 22px var(--ct-ink);
 }
 
 .landing-tagline {
-  color: #9b937f;
-  font-family:
-    'Barlow',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    system-ui,
-    sans-serif;
+  max-width: 46ch;
+  margin: 18px auto 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
   font-size: 17px;
   font-weight: 400;
   letter-spacing: 0.01em;
-  margin: 16px 0 0;
-}
-
-.dynamic-title-text {
-  color: #e8a33d;
-  display: inline-block;
-  position: relative;
-  font-family: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
 }
 
 /* Accessibility: Reduced motion preferences */
@@ -134,6 +236,16 @@
   .landing-search-button:disabled {
     animation: none !important;
     opacity: 1;
+  }
+
+  .landing-court .court-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .landing-court .court-fade {
+    animation: none;
+    opacity: 0.8;
   }
 }
 
@@ -214,28 +326,30 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(22, 19, 13, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 4px 4px 4px 20px;
+  background: rgba(22, 19, 13, 0.9);
+  border: 1px solid rgba(232, 163, 61, 0.45);
+  border-radius: 999px;
+  padding: 8px 8px 8px 22px;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
   backdrop-filter: blur(20px);
-  max-width: 720px;
+  max-width: 700px;
   margin: 0 auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 0 6px rgba(232, 163, 61, 0.06),
+    0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
 .landing-input-wrapper:hover {
-  border-color: rgba(232, 163, 61, 0.35);
+  border-color: rgba(232, 163, 61, 0.7);
 }
 
 .landing-input-wrapper:focus-within {
   border-color: #e8a33d;
   box-shadow:
-    0 0 0 3px rgba(232, 163, 61, 0.14),
-    0 12px 40px rgba(0, 0, 0, 0.45);
+    0 0 0 8px rgba(232, 163, 61, 0.12),
+    0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
 .landing-input-wrapper:focus-within .landing-search-icon {
@@ -245,10 +359,10 @@
 
 .landing-search-icon {
   color: #e8a33d;
-  margin-right: 16px;
+  margin-right: 12px;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   opacity: 0.9;
   transition: all 0.3s ease;
 }
@@ -257,7 +371,7 @@
   background: transparent !important;
   border: none !important;
   color: #ffffff !important;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 500;
   font-family:
     'Barlow',
@@ -266,7 +380,8 @@
     'Segoe UI',
     system-ui,
     sans-serif;
-  padding: 14px 100px 14px 0;
+  padding: 10px 12px 10px 0;
+  min-width: 0;
   flex: 1;
   outline: none !important;
   box-shadow: none !important;
@@ -274,7 +389,7 @@
 }
 
 .landing-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(239, 233, 220, 0.45);
   font-weight: 500;
 }
 
@@ -288,12 +403,17 @@
 .landing-search-button {
   background: #e8a33d;
   border: none;
-  border-radius: 10px;
-  width: 48px;
+  border-radius: 999px;
   height: 48px;
+  padding: 0 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  font-family: var(--ct-display);
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   transition: background 0.2s ease;
   color: #1a1408;
   margin-left: 8px;
@@ -575,7 +695,7 @@
 }
 
 .compact-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(239, 233, 220, 0.45);
   font-weight: 500;
 }
 
@@ -945,23 +1065,6 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   /* Landing Page Mobile */
-  .landing-title {
-    font-size: 3.4rem;
-  }
-
-  .dynamic-title-text {
-    font-size: inherit;
-    animation: gradientShift 10s ease-in-out infinite;
-    letter-spacing: 1.5px;
-  }
-
-  .dynamic-title-text::before {
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-  }
-
   .landing-subtitle {
     font-size: 1.1rem;
   }
@@ -978,20 +1081,22 @@
   }
 
   .landing-input-wrapper {
-    max-width: 90%;
     padding: 6px 6px 6px 16px;
-    border-radius: 14px;
   }
 
   .landing-search-input {
     font-size: 16px; /* Prevents zoom on iOS */
-    padding: 16px 96px 16px 0;
+    padding: 12px 8px 12px 0;
     text-overflow: ellipsis;
   }
 
   .landing-search-button {
     width: 48px;
-    height: 48px;
+    padding: 0;
+  }
+
+  .landing-search-button-label {
+    display: none;
   }
 
   /* Legacy Mobile Styles */
@@ -1134,9 +1239,10 @@
 
 .prompt-browse {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 20px;
-  margin: -12px 0 24px;
+  gap: 12px 22px;
+  margin: -14px 0 0;
 }
 
 .prompt-browse-button {

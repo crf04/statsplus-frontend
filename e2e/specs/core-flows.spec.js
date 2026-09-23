@@ -25,7 +25,7 @@ test('@smoke public landing page explains how to authenticate', async ({ deploye
   });
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
   await expect(page.getByRole('textbox')).toBeDisabled();
   expect(rawBypassHeaders).toHaveLength(0);
@@ -78,7 +78,7 @@ test('@critical the development auth adapter unlocks the search seam', async ({ 
   await installApiContract(page);
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await page.getByRole('button', { name: 'Sign in with Google' }).click();
   await expect(page.getByRole('textbox')).toBeEnabled();
   await expect(page.getByText('CourtAI Test User')).toBeVisible();
@@ -106,7 +106,7 @@ test('@critical natural-language search renders results and returns to search', 
 
   await page.getByRole('button', { name: 'Back to search' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveValue('');
 });
 
@@ -188,7 +188,7 @@ test('@critical leaving is one action however many filters were applied', async 
 
   await page.getByRole('button', { name: 'Back to search' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
 });
 
 test('a season the panel cannot express survives an unrelated apply', async ({
@@ -233,7 +233,7 @@ test('@critical the query reference is linkable and hands an example back to sea
 
   const example = 'Giannis games at home with 10+ FGA playing 30+ minutes';
   await page.getByRole('link', { name: example }).click();
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveValue(example);
 });
 
@@ -660,7 +660,7 @@ test('@critical Back out of the workspace returns to the Query Prompt', async ({
   // a bare route that says something different from what is on screen.
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveValue('');
 });
@@ -935,7 +935,7 @@ test('leaving the Workspace cancels a season still in flight', async ({
   // The slowest endpoint in the application does not keep working for a
   // workspace nobody is in any more.
   await page.getByRole('button', { name: 'Back to search' }).click();
-  await expect(page.getByRole('heading', { name: 'CourtAI', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score', exact: true })).toBeVisible();
   await expect(page.getByRole('textbox')).toBeVisible();
   await expect.poll(() => cancelledSeasonRequests).toEqual(['LeBron James']);
   release();

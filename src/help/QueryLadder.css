@@ -1,6 +1,5 @@
 .query-ladder {
-  max-width: 720px;
-  margin: 40px auto 0;
+  margin: 0 auto;
   text-align: left;
 }
 
@@ -14,12 +13,12 @@
 }
 
 .query-ladder-title {
-  font-family: var(--ct-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-family: var(--ct-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--ct-dim);
+  color: var(--ct-text);
   margin: 0;
 }
 
@@ -33,32 +32,30 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .query-ladder-rung {
   position: relative;
 }
 
-/* the connector that reads as one query growing */
-.query-ladder-rung:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 26px;
-  top: 44px;
-  bottom: 6px;
-  width: 1px;
-  background: linear-gradient(to bottom, rgba(232, 163, 61, 0.45), rgba(232, 163, 61, 0.08));
+/* columns read left to right; hairlines separate the steps */
+.query-ladder-rung + .query-ladder-rung {
+  border-left: 1px solid var(--ct-line);
 }
 
 .query-ladder-button {
   display: flex;
-  gap: 18px;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
   width: 100%;
   text-align: left;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--ct-radius-card);
-  padding: 18px 16px;
+  padding: 20px 18px;
   cursor: pointer;
   color: var(--ct-text);
   font-family: inherit;
@@ -78,21 +75,12 @@
 }
 
 .query-ladder-index {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid rgba(232, 163, 61, 0.5);
-  color: var(--ct-gold);
-  font-family: var(--ct-mono);
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-  background: var(--ct-ink);
-  position: relative;
-  z-index: 1;
+  font-family: var(--ct-display);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(232, 163, 61, 0.7);
 }
 
 .query-ladder-body {
@@ -160,5 +148,16 @@
 
   .query-ladder-rung:not(:last-child)::after {
     left: 19px;
+  }
+}
+
+@media (max-width: 760px) {
+  .query-ladder-rungs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .query-ladder-rung + .query-ladder-rung {
+    border-left: 0;
+    border-top: 1px solid var(--ct-line);
   }
 }

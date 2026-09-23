@@ -115,7 +115,9 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
 
       // The Search prompt has no charts; they load with the workspace sections.
       await page.getByRole('link', { name: 'Search', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'CourtAI', exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Ask the box score', exact: true }),
+      ).toBeVisible();
       await page.waitForLoadState('networkidle');
       expect([...requestedCharts], 'Chart assets requested on the Search prompt').toEqual([]);
       await page.getByRole('link', { name: 'Matchups', exact: true }).click();

@@ -152,7 +152,7 @@ test('signed-out matchups keeps the shared shell and does not redirect', async (
 test('unknown paths return to the search landing page', async ({ page }) => {
   await page.goto('/not-a-route');
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('heading', { name: 'CourtAI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
 });
 
 test('a rejected slate request leaves date navigation available', async ({

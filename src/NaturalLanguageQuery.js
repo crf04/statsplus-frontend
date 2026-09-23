@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
-import { Search, CheckCircle, AlertCircle, Brain } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, Brain, ArrowRight } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
 import { BROWSE_PARAM, convertNLToFilters } from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
+import LandingCourt from './LandingCourt';
 import './ModernSearch.css';
 
 const sampleQueries = [
@@ -183,76 +184,82 @@ const NaturalLanguageQuery = ({
   if (!inWorkspace) {
     return (
       <div className="landing-page">
-        <svg className="court-lines" viewBox="0 0 1200 800" aria-hidden="true" focusable="false">
-          {/* half-court line */}
-          <line x1="0" y1="400" x2="1200" y2="400" />
-          {/* center circle behind the search bar */}
-          <circle cx="600" cy="400" r="150" />
-          <circle cx="600" cy="400" r="48" />
-          {/* three-point arc + key, entering from the bottom */}
-          <path d="M 240 800 L 240 720 A 360 360 0 0 1 960 720 L 960 800" />
-          <rect x="480" y="640" width="240" height="160" />
-          <circle cx="600" cy="640" r="72" className="court-dash" />
-        </svg>
         <div className="landing-container">
-          <div className="landing-header">
-            <h1 className="landing-title">
-              <span className="dynamic-title-text">CourtAI</span>
-            </h1>
-            <p className="landing-tagline">NBA game-log analytics, asked in plain English.</p>
-          </div>
+          <div className="landing-hero">
+            <LandingCourt />
+            <div className="landing-header">
+              <p className="landing-eyebrow">NBA game logs · plain English</p>
+              <h1 className="landing-title">
+                Ask the <em>box score</em>
+              </h1>
+              <p className="landing-tagline">
+                Name a player, add what matters, and get back the exact games you meant.
+              </p>
+            </div>
 
-          <div className="landing-search-wrapper">
-            <Form onSubmit={handleSubmit} className="landing-search-form">
-              <div className="landing-input-wrapper">
-                <Search className={`landing-search-icon ${isLoading ? 'loading' : ''}`} size={22} />
-                <Form.Control
-                  type="text"
-                  placeholder={
-                    isLoading
-                      ? 'Processing query...'
-                      : isAuthenticated
-                        ? sampleQueries[placeholderIdx]
-                        : 'Sign in to enter a query...'
-                  }
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  disabled={isLoading || !isAuthenticated}
-                  className={`landing-search-input ${isLoading ? 'loading' : ''}`}
-                />
-                <Button
-                  type="submit"
-                  disabled={isLoading || !query.trim() || !isAuthenticated}
-                  className="landing-search-button"
-                >
-                  {isLoading ? <div className="custom-spinner"></div> : <Brain size={18} />}
-                </Button>
-              </div>
-            </Form>
-          </div>
+            <div className="landing-search-wrapper">
+              <Form onSubmit={handleSubmit} className="landing-search-form">
+                <div className="landing-input-wrapper">
+                  <Search
+                    className={`landing-search-icon ${isLoading ? 'loading' : ''}`}
+                    size={20}
+                  />
+                  <Form.Control
+                    type="text"
+                    placeholder={
+                      isLoading
+                        ? 'Processing query...'
+                        : isAuthenticated
+                          ? sampleQueries[placeholderIdx]
+                          : 'Sign in to enter a query...'
+                    }
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    disabled={isLoading || !isAuthenticated}
+                    className={`landing-search-input ${isLoading ? 'loading' : ''}`}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !query.trim() || !isAuthenticated}
+                    className="landing-search-button"
+                    aria-label="Run it"
+                  >
+                    {isLoading ? (
+                      <div className="custom-spinner"></div>
+                    ) : (
+                      <>
+                        <span className="landing-search-button-label">Run it</span>
+                        <ArrowRight size={18} aria-hidden="true" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </Form>
+            </div>
 
-          {/* The deterministic door. Disabled rather than hidden when signed
+            {/* The deterministic door. Disabled rather than hidden when signed
               out, so the capability is discoverable and the page does not
               reflow on sign-in. */}
-          <div className="prompt-browse">
-            <button
-              type="button"
-              className="prompt-browse-button"
-              disabled={isLoading || !isAuthenticated}
-              onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
-            >
-              Browse without a query
-            </button>
-            {onOpenSavedFilterSets && (
+            <div className="prompt-browse">
               <button
                 type="button"
                 className="prompt-browse-button"
-                disabled={isLoading}
-                onClick={onOpenSavedFilterSets}
+                disabled={isLoading || !isAuthenticated}
+                onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
               >
-                Saved Filter Sets
+                Browse without a query
               </button>
-            )}
+              {onOpenSavedFilterSets && (
+                <button
+                  type="button"
+                  className="prompt-browse-button"
+                  disabled={isLoading}
+                  onClick={onOpenSavedFilterSets}
+                >
+                  Saved Filter Sets
+                </button>
+              )}
+            </div>
           </div>
 
           <QueryLadder

@@ -143,12 +143,11 @@ const defensiveSelect = () => screen.getByLabelText('Defensive Filter:');
 const clickCategoryPill = (name) => fireEvent.click(screen.getByRole('button', { name }));
 
 // The player search carries an "Add" of its own, so the defensive one is
-// reached through the input group it shares with the rank field.
+// reached through the input group it shares with the defensive select.
 const defensiveAddButton = () =>
-  within(screen.getByLabelText('Defensive filter rank').closest('.input-group')).getByRole(
-    'button',
-    { name: 'Add' },
-  );
+  within(defensiveSelect().closest('.input-group')).getByRole('button', { name: 'Add' });
+
+const rankCountSlider = () => screen.getByRole('slider', { name: 'Number of teams' });
 
 const labelForToken = (token) =>
   OPPONENT_FILTERS.flatMap((group) => group.items).find((item) => item.token === token).label;
@@ -202,7 +201,6 @@ test('switching category drops a selection the new category cannot show', () => 
 
   // A General token does not survive the move to Shot type.
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
   expect(defensiveSelect().value).toBe('OPP_PTS');
   expect(defensiveAddButton()).toBeEnabled();
 
@@ -226,7 +224,6 @@ test('re-picking the category a selection belongs to leaves it selected', () => 
   renderPanel();
 
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
   clickCategoryPill('General');
 
   expect(defensiveSelect().value).toBe('OPP_PTS');
@@ -265,13 +262,10 @@ test('an added defensive filter wears its label, and applies as its token', () =
 
   clickCategoryPill('General');
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  const rank = screen.getByLabelText('Defensive filter rank');
-  fireEvent.change(rank, { target: { value: '5' } });
-  // The player search carries an "Add" of its own, so this one is reached
-  // through the group it shares with the rank input.
-  fireEvent.click(within(rank.closest('.input-group')).getByRole('button', { name: 'Add' }));
+  fireEvent.change(rankCountSlider(), { target: { value: '5' } });
+  fireEvent.click(defensiveAddButton());
 
-  expect(screen.getByText('Points Allowed (5)')).toBeInTheDocument();
+  expect(screen.getByText('Points Allowed (5 highest)')).toBeInTheDocument();
 
   applyFilters();
 
@@ -280,6 +274,80 @@ test('an added defensive filter wears its label, and applies as its token', () =
     'teams_against[]': ['OPP_PTS'],
     'rank_filter[]': [5],
   });
+});
+
+/*
+ * The backend sorts teams by the filter's metric, highest first, and a rank
+ * slices from either end: +N is the N teams with the highest value, -N the lowest. The
+ * control builds that sign from words, so a user never types one.
+ */
+test('the rank control is a Highest/Lowest toggle and a 1-30 count, defaulting to the 10 highest', () => {
+  renderPanel();
+
+  expect(screen.getByRole('radio', { name: 'Highest' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Lowest' })).not.toBeChecked();
+  expect(rankCountSlider()).toHaveAttribute('min', '1');
+  expect(rankCountSlider()).toHaveAttribute('max', '30');
+  expect(rankCountSlider()).toHaveValue('10');
+  expect(screen.queryByPlaceholderText('Number')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Positive rank/)).not.toBeInTheDocument();
+});
+
+test('the sentence under the control names the teams Add would select', () => {
+  renderPanel();
+
+  expect(
+    screen.getByText('Pick a filter to add the 10 teams with the highest value.'),
+  ).toBeInTheDocument();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  fireEvent.click(screen.getByRole('radio', { name: 'Lowest' }));
+  fireEvent.change(rankCountSlider(), { target: { value: '8' } });
+
+  expect(screen.getByText('Adds the 8 teams with the lowest Points Allowed.')).toBeInTheDocument();
+});
+
+test('a filter is addable as soon as one is picked, since every count is a usable rank', () => {
+  renderPanel();
+
+  expect(defensiveAddButton()).toBeDisabled();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+
+  expect(defensiveAddButton()).toBeEnabled();
+});
+
+test('lowest applies as a negative rank and wears its words on the badge', () => {
+  const onApplyFilters = renderPanel();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  fireEvent.click(defensiveAddButton());
+  clickCategoryPill('Play type');
+  fireEvent.change(defensiveSelect(), { target: { value: 'Transition' } });
+  fireEvent.click(screen.getByRole('radio', { name: 'Lowest' }));
+  fireEvent.change(rankCountSlider(), { target: { value: '8' } });
+  fireEvent.click(defensiveAddButton());
+
+  expect(screen.getByText('Points Allowed (10 highest)')).toBeInTheDocument();
+  expect(screen.getByText('Transition (8 lowest)')).toBeInTheDocument();
+
+  applyFilters();
+
+  expect(onApplyFilters).toHaveBeenCalledWith({
+    player_name: 'LeBron James',
+    'teams_against[]': ['OPP_PTS', 'Transition'],
+    'rank_filter[]': [10, -8],
+  });
+});
+
+test('a rank arriving with a link reads as words in the panel too', () => {
+  renderPanel({
+    player_name: 'LeBron James',
+    'teams_against[]': ['OPP_PTS'],
+    'rank_filter[]': ['-10'],
+  });
+
+  expect(screen.getByText('Points Allowed (10 lowest)')).toBeInTheDocument();
 });
 
 /*

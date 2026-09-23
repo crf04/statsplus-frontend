@@ -94,6 +94,25 @@ const labelByToken = new Map(
 /** The short display name for an opponent filter token; unknown tokens pass through. */
 export const opponentFilterLabel = (token) => labelByToken.get(token) ?? token;
 
+/**
+ * A rank selects teams by the filter's own metric: +N is the N teams with the
+ * highest value of it, -N the N with the lowest (the backend sorts highest first and
+ * slices from either end). Whether "highest" is the tougher defense depends on
+ * the metric, so the words stay with the metric rather than claiming either.
+ */
+export const RANK_TEAM_LIMIT = 30;
+
+/** "10 highest" / "10 lowest" for a signed rank; a value that is not a nonzero integer passes through. */
+export const describeRank = (rank) => {
+  const value = Number(rank);
+  if (!Number.isInteger(value) || value === 0) return String(rank);
+  return `${Math.abs(value)} ${value > 0 ? 'highest' : 'lowest'}`;
+};
+
+/** The badge text for one opponent filter, e.g. "Points Allowed (10 lowest)". */
+export const opponentFilterRankLabel = (token, rank) =>
+  `${opponentFilterLabel(token)} (${describeRank(rank)})`;
+
 /** The flat token list the dropdown accepts, with the `None` sentinel first. */
 export const defensiveOptions = [
   'None',

@@ -13,7 +13,12 @@ import {
   ListGroup,
 } from 'react-bootstrap';
 import ReactSlider from 'react-slider';
-import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
+import {
+  OPPONENT_FILTERS,
+  RANK_TEAM_LIMIT,
+  opponentFilterLabel,
+  opponentFilterRankLabel,
+} from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
 import './FilterOptions.css';
 
@@ -29,6 +34,8 @@ const DEFENSIVE_CATEGORY_PILL_LABELS = {
 };
 
 const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
+const DEFAULT_RANK_DIRECTION = 'highest';
+const DEFAULT_RANK_COUNT = 10;
 
 const defensiveCategoryItems = (category) =>
   OPPONENT_FILTERS.find((group) => group.category === category)?.items ?? [];
@@ -47,7 +54,8 @@ const FilterOptions = ({
   const [activeDefensiveCategory, setActiveDefensiveCategory] = useState(
     DEFAULT_DEFENSIVE_CATEGORY,
   );
-  const [filterNumber, setFilterNumber] = useState('');
+  const [rankDirection, setRankDirection] = useState(DEFAULT_RANK_DIRECTION);
+  const [rankCount, setRankCount] = useState(DEFAULT_RANK_COUNT);
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
   const [playerStatus, setPlayerStatus] = useState('on');
@@ -124,7 +132,8 @@ const FilterOptions = ({
     // Always reset all form fields to their defaults first
     setSelectedDefensiveFilter('None');
     setActiveDefensiveCategory(DEFAULT_DEFENSIVE_CATEGORY);
-    setFilterNumber('');
+    setRankDirection(DEFAULT_RANK_DIRECTION);
+    setRankCount(DEFAULT_RANK_COUNT);
     setActiveFilters([]);
     setPlayerInput('');
     setPlayerStatus('on');
@@ -262,25 +271,19 @@ const FilterOptions = ({
     setTouchedControls(prepopulatedControls);
   }, [appliedFilters]);
 
-  // A rank is a league position: positive counts from the best defenses, negative
-  // from the worst. Zero asks for the top nothing, which silently matches no team
-  // and returns an empty table, so it is not an addable filter.
-  const parsedFilterRank = parseInt(filterNumber, 10);
+  // A rank picks teams by the filter's own metric: +N is the N teams with the
+  // highest value of it, -N the N with the lowest. The direction toggle and the 1-30
+  // count build that sign, so a zero or blank rank cannot be entered at all.
+  const pendingRank = rankDirection === 'highest' ? rankCount : -rankCount;
   const canAddFilter =
     selectedDefensiveFilter !== 'None' &&
-    !Number.isNaN(parsedFilterRank) &&
-    parsedFilterRank !== 0 &&
     !activeFilters.some((f) => f.filter === selectedDefensiveFilter);
 
   const handleAddFilter = () => {
     if (!canAddFilter) return;
-    setActiveFilters([
-      ...activeFilters,
-      { filter: selectedDefensiveFilter, number: parsedFilterRank },
-    ]);
+    setActiveFilters([...activeFilters, { filter: selectedDefensiveFilter, number: pendingRank }]);
     markControlTouched('teams_against');
     setSelectedDefensiveFilter('None');
-    setFilterNumber('');
   };
 
   const handleRemoveFilter = (index) => {
@@ -746,28 +749,6 @@ const FilterOptions = ({
                 </option>
               ))}
             </Form.Select>
-            <FormControl
-              id="defensive-filter-rank"
-              aria-label="Defensive filter rank"
-              className="defensive-filter-rank"
-              type="text"
-              value={filterNumber}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || /^-?\d*$/.test(value)) {
-                  setFilterNumber(value);
-                }
-              }}
-              onBlur={() => {
-                if (filterNumber === '' || isNaN(parseInt(filterNumber))) {
-                  setFilterNumber('');
-                } else {
-                  setFilterNumber(parseInt(filterNumber).toString());
-                }
-              }}
-              placeholder="Number"
-              style={{ appearance: 'textfield' }}
-            />
             <Button
               type="button"
               variant="outline-primary"
@@ -777,13 +758,57 @@ const FilterOptions = ({
               Add
             </Button>
           </InputGroup>
-          <div className="defensive-filter-rank-helper">
-            Positive rank = top defenses, negative = bottom
+          <div className="defensive-filter-rank">
+            <ToggleButtonGroup
+              type="radio"
+              name="defensiveRankDirection"
+              value={rankDirection}
+              onChange={setRankDirection}
+              aria-label="Teams with the highest or the lowest"
+            >
+              <ToggleButton
+                id="defensive-rank-highest"
+                value="highest"
+                variant="outline-primary"
+                size="sm"
+              >
+                Highest
+              </ToggleButton>
+              <ToggleButton
+                id="defensive-rank-lowest"
+                value="lowest"
+                variant="outline-primary"
+                size="sm"
+              >
+                Lowest
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <input
+              id="defensive-filter-rank"
+              type="range"
+              className="defensive-filter-rank-slider"
+              min="1"
+              max={RANK_TEAM_LIMIT}
+              step="1"
+              aria-label="Number of teams"
+              value={rankCount}
+              onChange={(e) => setRankCount(Number(e.target.value))}
+            />
+            <output className="defensive-filter-rank-count" htmlFor="defensive-filter-rank">
+              {rankCount}
+            </output>
+          </div>
+          <div className="defensive-filter-rank-helper" aria-live="polite">
+            {selectedDefensiveFilter === 'None'
+              ? `Pick a filter to add the ${rankCount} teams with the ${rankDirection} value.`
+              : `Adds the ${rankCount} teams with the ${rankDirection} ${opponentFilterLabel(
+                  selectedDefensiveFilter,
+                )}.`}
           </div>
           <div className="mt-2">
             {activeFilters.map((filter, index) => (
               <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
-                {opponentFilterLabel(filter.filter)} ({filter.number})
+                {opponentFilterRankLabel(filter.filter, filter.number)}
                 <Button
                   type="button"
                   aria-label={`Remove ${opponentFilterLabel(filter.filter)} filter`}

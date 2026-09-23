@@ -25,3 +25,14 @@ test('renders one badge per recognised parameter', () => {
   expect(screen.getByText('75 <= PLAYTYPE_RTG <= 125')).toBeVisible();
   expect(screen.getAllByText(/PLAYTYPE_RTG/)).toHaveLength(1);
 });
+
+test('an opponent rank reads as the highest or lowest of the metric, never a bare sign', () => {
+  render(
+    <AppliedFilters
+      filters={{ 'teams_against[]': ['OPP_PTS', 'Transition'], 'rank_filter[]': ['5', '-10'] }}
+    />,
+  );
+
+  expect(screen.getByText('Points Allowed (5 highest)')).toBeVisible();
+  expect(screen.getByText('Transition (10 lowest)')).toBeVisible();
+});

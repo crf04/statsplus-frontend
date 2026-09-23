@@ -1,5 +1,5 @@
 import { Badge } from 'react-bootstrap';
-import { opponentFilterLabel } from './opponentFilters';
+import { opponentFilterRankLabel } from './opponentFilters';
 
 const AppliedFilters = ({ filters }) => {
   const renderBadge = (key, value, bg = 'primary') => (
@@ -16,7 +16,7 @@ const AppliedFilters = ({ filters }) => {
         : [filters['rank_filter[]']];
       return teamsArray.map((team, index) => {
         const rank = ranksArray[index];
-        return renderBadge(`${key}-${index}`, `${opponentFilterLabel(team)} (${rank})`);
+        return renderBadge(`${key}-${index}`, opponentFilterRankLabel(team, rank));
       });
     } else if (key === 'player_name') {
       return renderBadge(key, `Player: ${value}`);

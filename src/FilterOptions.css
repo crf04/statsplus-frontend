@@ -50,9 +50,31 @@
   background-size: 11px 7px;
 }
 
-/* A rank is at most two digits and a sign, so the input yields room to Add. */
+/* Direction toggle, then the 1-30 count slider taking the remaining width, then
+   the count itself, on one line even at phone width. */
 .defensive-filter-rank {
-  max-width: 96px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.defensive-filter-rank .btn-group {
+  flex: none;
+}
+
+.defensive-filter-rank-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--ct-gold);
+}
+
+.defensive-filter-rank-count {
+  flex: none;
+  min-width: 2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .defensive-filter-rank-helper {

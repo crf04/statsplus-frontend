@@ -333,14 +333,20 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  const defensiveFilter = page.getByPlaceholder('Number').locator('xpath=..');
+  const defensiveFilter = page.getByLabel('Defensive Filter:').locator('xpath=..');
+  const teamCount = page.getByRole('slider', { name: 'Number of teams' });
   // Isolation and Transition are both Play type filters, and the category
   // persists across the two selections below, so one pill click covers both.
+  // A filter is addable only once one is picked; the count is always 1-30, so
+  // there is no blank or zero rank left to guard against.
   await page.getByRole('button', { name: 'Play type' }).click();
+  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
   await page.getByLabel('Defensive Filter:').selectOption('Isolation');
-  await page.getByPlaceholder('Number').fill('5');
+  await teamCount.fill('5');
+  await expect(page.getByText('Adds the 5 teams with the highest Isolation.')).toBeVisible();
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
+  await expect(page.getByText('Isolation (5 highest)').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 
@@ -349,24 +355,17 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 
-  // A filter is only addable with a usable rank. A blank rank would be stripped
-  // on the way out and desynchronise rank_filter[] from teams_against[]; a rank
-  // of zero asks for the top nothing and silently returns an empty table.
+  // Lowest sends the negative rank, and both filters travel with paired ranks.
   // Applying filters re-renders the panel from appliedFilters and resets the
   // category pill back to its default, so it needs clicking again here.
+  const rankedRequestCount = gameLogRequests.length;
   await page.getByRole('button', { name: 'Play type' }).click();
   await page.getByLabel('Defensive Filter:').selectOption('Transition');
-  await page.getByPlaceholder('Number').fill('');
-  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
-  await page.getByPlaceholder('Number').fill('0');
-  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeHidden();
-
-  // A real rank makes it addable, and both filters travel with paired ranks.
-  const rankedRequestCount = gameLogRequests.length;
-  await page.getByPlaceholder('Number').fill('-8');
+  await page.getByText('Lowest', { exact: true }).click();
+  await teamCount.fill('8');
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
+  await expect(page.getByText('Transition (8 lowest)').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 

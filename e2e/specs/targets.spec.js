@@ -178,19 +178,26 @@ const expectCardBacktests = async (page) => {
     await expect(card(page, title).getByRole('list', { name: 'Backtest summary' })).toBeVisible();
 };
 
-test('@critical the Targets list reads every card’s Backtest in one request', async ({
+test('@critical the Targets list reads uncached Backtests singly, then warm ones in one request', async ({
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
-  await page.goto('/targets');
-  await saveTwoTargets(page);
-  // Count only the reload's reads, not the one the save left in flight.
-  await expectCardBacktests(page);
   const reads = [];
   page.on('request', (request) => {
     const path = backtestPath(request);
-    if (path) reads.push(`${request.method()} ${path}`);
+    if (path) reads.push(`${request.method()} ${path.replace(/\d+/, ':id')}`);
   });
+  await page.goto('/targets');
+  await saveTwoTargets(page);
+  await expectCardBacktests(page);
+  // Each visit asks the batch first; only the Target not yet cached is scanned.
+  expect(reads).toEqual([
+    'GET /api/user/targets/backtests',
+    'GET /api/user/targets/:id/backtest',
+    'GET /api/user/targets/backtests',
+    'GET /api/user/targets/:id/backtest',
+  ]);
+  reads.length = 0;
   await page.reload();
   await expectCardBacktests(page);
   expect(reads).toEqual(['GET /api/user/targets/backtests']);

@@ -888,6 +888,12 @@ test('decodes each ok batch item with the single Backtest decoder and each error
   expect(decodeBacktests({ success: true, season: '2025-26', backtests: [] })).toEqual([]);
 });
 
+test('an uncached batch item asks for the single route rather than failing the card', () => {
+  expect(
+    decodeBacktests({ ...wireBatch, backtests: [{ target_id: 8, status: 'uncached' }] }),
+  ).toEqual([{ targetId: 8, status: 'uncached' }]);
+});
+
 test('an undecodable ok item fails only its own card', () => {
   const [broken, error] = decodeBacktests({
     ...wireBatch,
@@ -921,6 +927,7 @@ test.each([
   ['an item that is not a record', { backtests: [7] }],
   ['an item without a Target id', { backtests: [{ status: 'ok', backtest: wireBacktestBody }] }],
   ['an unknown status', { backtests: [{ target_id: 7, status: 'pending' }] }],
+  ['no status', { backtests: [{ target_id: 7 }] }],
   ['an ok item without a body', { backtests: [{ target_id: 7, status: 'ok' }] }],
   ['an error item without an error', { backtests: [{ target_id: 7, status: 'error' }] }],
   [

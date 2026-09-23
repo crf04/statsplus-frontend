@@ -2065,6 +2065,12 @@ export const installApiContract = async (page, overrides = {}) => {
   // so that creating, editing, and deleting reach the same list.
   const targets = [];
   let nextTargetId = 0;
+  // The backend's per-Target Backtest result cache: the single route fills it,
+  // and the batch route only reads it. The key is what the Backtest depends
+  // on, so an edited Target misses until it is read again.
+  const cachedBacktests = new Set();
+  const backtestCacheKey = (target) =>
+    JSON.stringify([target.id, target.opponent, target.qualifiers, target.conditions ?? null]);
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -2365,9 +2371,10 @@ export const installApiContract = async (page, overrides = {}) => {
         return;
       }
 
-      // Every Target's backtest in one read, in list order, from the same
-      // composition the single route serves; not a Target with the id
-      // "backtests". Like every account route it refuses a missing bearer.
+      // Every cached Target backtest in one read, in list order, from the same
+      // composition the single route serves; a Target the single route has not
+      // read yet is uncached. Not a Target with the id "backtests". Like every
+      // account route it refuses a missing bearer.
       if (url.pathname === '/api/user/targets/backtests' && method === 'GET') {
         if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
           await route.fulfill({
@@ -2382,11 +2389,11 @@ export const installApiContract = async (page, overrides = {}) => {
           json: {
             success: true,
             season: '2025-26',
-            backtests: targets.map((target) => ({
-              target_id: target.id,
-              status: 'ok',
-              backtest: backtestTarget(target),
-            })),
+            backtests: targets.map((target) =>
+              cachedBacktests.has(backtestCacheKey(target))
+                ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target) }
+                : { target_id: target.id, status: 'uncached' },
+            ),
           },
         });
         return;
@@ -2404,6 +2411,7 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
+        cachedBacktests.add(backtestCacheKey(target));
         await route.fulfill({ json: { success: true, ...backtestTarget(target) } });
         return;
       }

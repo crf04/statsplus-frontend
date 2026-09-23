@@ -553,9 +553,11 @@ export const fetchTargetBacktest = async ({ id, signal } = {}) => {
 };
 
 /*
- * Every Target's Backtest in one read, in list order. An ok item is the single
- * route's body and goes through the same decoder; an error item is that
- * Target's own failure, carried as the message its card shows. A body that
+ * Every cached Target Backtest in one read, in list order. An ok item is the
+ * single route's body and goes through the same decoder; an uncached item is
+ * one the backend has not computed, which the caller reads through the single
+ * route; an error item is that Target's own failure, carried as the message
+ * its card shows. A body that
  * does not decode fails only its own card, as it would on the single route.
  * An envelope that cannot be read at all fails the whole read.
  */
@@ -572,6 +574,8 @@ const decodeBatchItem = (item) => {
       throw createInvalidResponseError();
     return { targetId, status: 'error', error: error.message || BATCH_ITEM_FALLBACK };
   }
+  // Not in the backend's cache: the card is read through the single route.
+  if (status === 'uncached') return { targetId, status: 'uncached' };
   if (status !== 'ok' || !isRecord(item.backtest)) throw createInvalidResponseError();
   try {
     const backtest = decodeBacktest(item.backtest);

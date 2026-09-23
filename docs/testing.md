@@ -106,9 +106,11 @@ player either Matchup publishes, excludes the thin Diets rather than flagging th
 outcome columns from each Qualifier's slice, and averages a player's season over the games the
 game-log route serves for that player — so a backtest row and the Log Workspace that row hands off
 to show the same game. Its summary is the contract's own arithmetic over those games. The Targets
-list reads every card's backtest in one `GET /api/user/targets/backtests`, which the fixture answers
-from that same composition in list order; the per-Target route remains for the list's fallback when
-the batch route answers `404` or `405`. The preview a
+list first asks `GET /api/user/targets/backtests`, which serves only cached backtests: the fixture
+answers `ok` from that same composition for a Target its single route has already read (with an
+unchanged opponent, Qualifiers and Conditions) and `uncached` otherwise, in list order. The list
+reads each uncached Target through the per-Target route, and every Target that way when the batch
+route answers `404` or `405`. The preview a
 Draft Target's Lab reads is the same composition for a Target that is stored nowhere, with a `today`
 block resolved against the current Slate date; it refuses a missing bearer, an unknown base or slice,
 and more than ten Qualifiers with the backend's envelopes. The slate route reports pool freshness that matches the evidence resolution

@@ -511,7 +511,7 @@ const GameLogFilter = () => {
 
       {/* Player Stats Cards - positioned between search and main content */}
       {inWorkspace && (
-        <Container fluid className="pt-2 pb-1">
+        <Container fluid className="workspace-toolbar pt-2 pb-1">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button
               // Navigating to the bare route is the whole action: the effect

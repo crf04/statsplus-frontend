@@ -277,6 +277,53 @@ test('the landing help and reference stay usable at a narrow viewport', async ({
   expect(await overflowsHorizontally()).toBe(false);
 });
 
+test('the Log Workspace fits a phone and every control stays tappable', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Per 36 Minutes Comparison' })).toBeVisible();
+
+  // The wide game-logs table scrolls inside its own container rather than
+  // widening the page.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+
+  // Every reading and toggle can be brought wholly on screen by scrolling down
+  // the page alone: nothing is clipped past a card's edge or pushed off the
+  // left of the page. (Programmatic scrolling would also scroll the clipping
+  // containers, which a finger cannot.)
+  const readings = [
+    page.getByText('Hit Rate', { exact: true }),
+    ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
+      page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
+    ),
+  ];
+  for (const reading of readings) {
+    const box = await reading.boundingBox();
+    await page.mouse.wheel(0, box.y - 300);
+    await expect(reading).toBeInViewport({ ratio: 1 });
+  }
+  await page.getByText('Misc', { exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Misc' })).toBeChecked();
+
+  // The floating search toggle does not cover the toolbar.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const save = page.getByRole('button', { name: 'Save Filter Set' });
+  const saveBox = await save.boundingBox();
+  const searchBox = await page.getByRole('button', { name: 'Open search' }).boundingBox();
+  expect(
+    saveBox.y + saveBox.height <= searchBox.y ||
+      searchBox.y + searchBox.height <= saveBox.y ||
+      saveBox.x + saveBox.width <= searchBox.x ||
+      searchBox.x + searchBox.width <= saveBox.x,
+  ).toBe(true);
+  await save.click();
+  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeVisible();
+});
+
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {
   await page.addInitScript((storageKey) => {
     window.localStorage.setItem(storageKey, 'true');

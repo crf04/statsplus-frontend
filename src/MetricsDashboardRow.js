@@ -86,7 +86,9 @@ const MetricsDashboardRow = ({
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'row' }}
+      // Wrap rather than clip: the row hides overflow, so on a phone the Hit Rate
+      // card would otherwise be cut off past the right edge.
+      style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
       className="rounded-lg overflow-hidden bg-[#16130d]"
     >
       <MetricCard

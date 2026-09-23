@@ -1,4 +1,5 @@
 import { parseCalendarDate } from './calendarDate';
+import { parseRank } from './opponentFilters';
 /**
  * Shared filter translation and cleaning.
  *
@@ -312,9 +313,10 @@ export const filterSetFromSearchParams = (searchParams) => {
     // wider than the panel dropdown. Validating names here would refuse links
     // written from the API documentation, so only the structure is checked.
     if (teams.some((team) => team.trim() === '')) reject('teams_against[]');
-    // Zero asks for the top nothing, which matches no team and empties the table.
-    const parsedRanks = ranks.map(wholeNumber);
-    if (parsedRanks.some((rank) => rank === null || rank === 0)) reject('rank_filter[]');
+    // A rank is a nonzero count or an inclusive "low,high" range. Zero asks for
+    // the top nothing, which matches no team and empties the table.
+    const parsedRanks = ranks.map(parseRank);
+    if (parsedRanks.some((rank) => rank === null)) reject('rank_filter[]');
     if (teams.length !== ranks.length) reject('rank_filter[]');
     if (invalid.length === 0) {
       filters['teams_against[]'] = teams;

@@ -94,6 +94,65 @@ const labelByToken = new Map(
 /** The short display name for an opponent filter token; unknown tokens pass through. */
 export const opponentFilterLabel = (token) => labelByToken.get(token) ?? token;
 
+/**
+ * The backend ranks every team by the filter's own metric, rank 1 being the
+ * highest value, and one `rank_filter[]` entry selects from that list: `N` is
+ * ranks 1 through N, `-N` the last N ranked teams, and `low,high` the
+ * inclusive ranks low through high. Whether rank 1 is the tougher defense
+ * depends on the metric, so the words stay with ranks rather than claiming it.
+ */
+export const RANK_TEAM_LIMIT = 30;
+
+const SIGNED_RANK = /^[+-]?\d+$/;
+const RANK_RANGE = /^(\d+),(\d+)$/;
+
+/**
+ * One rank_filter[] entry in its canonical form: a nonzero whole number, or a
+ * "low,high" string with 1 <= low <= high. Anything else is null, because the
+ * API rejects it (and a zero rank would match no team).
+ */
+export const parseRank = (rank) => {
+  const text = String(rank).replace(/\s+/g, '');
+  if (SIGNED_RANK.test(text)) {
+    const value = Number(text);
+    return value === 0 ? null : value;
+  }
+  const range = RANK_RANGE.exec(text);
+  if (!range) return null;
+  const [low, high] = [Number(range[1]), Number(range[2])];
+  return low >= 1 && low <= high ? `${low},${high}` : null;
+};
+
+/**
+ * The rank_filter[] entry for an inclusive rank range. A range starting at
+ * rank 1 is sent as the plain count, the form every earlier link used.
+ */
+export const encodeRankRange = ([low, high]) => (low === 1 ? high : `${low},${high}`);
+
+/**
+ * The slider position for a parsed rank. "The last N" has no fixed ranks when
+ * a filter ranks fewer than every team, so it is shown against the full league.
+ */
+export const rankRangeOf = (rank) => {
+  if (typeof rank === 'string') return rank.split(',').map(Number);
+  if (rank > 0) return [1, Math.min(rank, RANK_TEAM_LIMIT)];
+  return [Math.max(1, RANK_TEAM_LIMIT + rank + 1), RANK_TEAM_LIMIT];
+};
+
+const describeRanks = (low, high) => (low === high ? `rank ${low}` : `ranks ${low}–${high}`);
+
+/** "ranks 1–10", "rank 7", "ranks 11–20", or "last 8"; an unusable entry passes through. */
+export const describeRank = (rank) => {
+  const parsed = parseRank(rank);
+  if (parsed === null) return String(rank);
+  if (typeof parsed === 'string') return describeRanks(...rankRangeOf(parsed));
+  return parsed > 0 ? describeRanks(1, parsed) : `last ${-parsed}`;
+};
+
+/** The badge text for one opponent filter, e.g. "Points Allowed (ranks 11–20)". */
+export const opponentFilterRankLabel = (token, rank) =>
+  `${opponentFilterLabel(token)} (${describeRank(rank)})`;
+
 /** The flat token list the dropdown accepts, with the `None` sentinel first. */
 export const defensiveOptions = [
   'None',

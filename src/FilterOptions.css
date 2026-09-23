@@ -50,9 +50,15 @@
   background-size: 11px 7px;
 }
 
-/* A rank is at most two digits and a sign, so the input yields room to Add. */
+/* The 1-30 rank range reuses the panel's two-thumb slider skin; the label
+   above it reads the range the thumbs stand on. */
 .defensive-filter-rank {
-  max-width: 96px;
+  margin-top: 10px;
+}
+
+.defensive-filter-rank-label {
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 .defensive-filter-rank-helper {

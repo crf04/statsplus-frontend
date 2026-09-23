@@ -13,7 +13,14 @@ import {
   ListGroup,
 } from 'react-bootstrap';
 import ReactSlider from 'react-slider';
-import { OPPONENT_FILTERS, opponentFilterLabel } from './opponentFilters';
+import {
+  OPPONENT_FILTERS,
+  RANK_TEAM_LIMIT,
+  encodeRankRange,
+  opponentFilterLabel,
+  opponentFilterRankLabel,
+  parseRank,
+} from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
 import './FilterOptions.css';
 
@@ -29,6 +36,7 @@ const DEFENSIVE_CATEGORY_PILL_LABELS = {
 };
 
 const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
+const DEFAULT_RANK_RANGE = [1, 10];
 
 const defensiveCategoryItems = (category) =>
   OPPONENT_FILTERS.find((group) => group.category === category)?.items ?? [];
@@ -47,7 +55,7 @@ const FilterOptions = ({
   const [activeDefensiveCategory, setActiveDefensiveCategory] = useState(
     DEFAULT_DEFENSIVE_CATEGORY,
   );
-  const [filterNumber, setFilterNumber] = useState('');
+  const [rankRange, setRankRange] = useState(DEFAULT_RANK_RANGE);
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
   const [playerStatus, setPlayerStatus] = useState('on');
@@ -124,7 +132,7 @@ const FilterOptions = ({
     // Always reset all form fields to their defaults first
     setSelectedDefensiveFilter('None');
     setActiveDefensiveCategory(DEFAULT_DEFENSIVE_CATEGORY);
-    setFilterNumber('');
+    setRankRange(DEFAULT_RANK_RANGE);
     setActiveFilters([]);
     setPlayerInput('');
     setPlayerStatus('on');
@@ -229,8 +237,8 @@ const FilterOptions = ({
         // Same rule as adding by hand: a rank of zero matches no team, so an
         // unusable rank drops its filter rather than silently emptying the table.
         const filtersToAdd = teamsAgainst
-          .map((team, index) => ({ filter: team, number: parseInt(rankFilter[index], 10) }))
-          .filter(({ number }) => !Number.isNaN(number) && number !== 0);
+          .map((team, index) => ({ filter: team, number: parseRank(rankFilter[index]) }))
+          .filter(({ number }) => number !== null);
         if (filtersToAdd.length > 0) {
           setActiveFilters(filtersToAdd);
           prepopulatedControls.add('teams_against');
@@ -262,25 +270,19 @@ const FilterOptions = ({
     setTouchedControls(prepopulatedControls);
   }, [appliedFilters]);
 
-  // A rank is a league position: positive counts from the best defenses, negative
-  // from the worst. Zero asks for the top nothing, which silently matches no team
-  // and returns an empty table, so it is not an addable filter.
-  const parsedFilterRank = parseInt(filterNumber, 10);
+  // The slider picks an inclusive range of league ranks, rank 1 being the
+  // highest value of the filter's metric, so a zero or blank rank cannot be
+  // entered at all.
+  const pendingRank = encodeRankRange(rankRange);
   const canAddFilter =
     selectedDefensiveFilter !== 'None' &&
-    !Number.isNaN(parsedFilterRank) &&
-    parsedFilterRank !== 0 &&
     !activeFilters.some((f) => f.filter === selectedDefensiveFilter);
 
   const handleAddFilter = () => {
     if (!canAddFilter) return;
-    setActiveFilters([
-      ...activeFilters,
-      { filter: selectedDefensiveFilter, number: parsedFilterRank },
-    ]);
+    setActiveFilters([...activeFilters, { filter: selectedDefensiveFilter, number: pendingRank }]);
     markControlTouched('teams_against');
     setSelectedDefensiveFilter('None');
-    setFilterNumber('');
   };
 
   const handleRemoveFilter = (index) => {
@@ -746,28 +748,6 @@ const FilterOptions = ({
                 </option>
               ))}
             </Form.Select>
-            <FormControl
-              id="defensive-filter-rank"
-              aria-label="Defensive filter rank"
-              className="defensive-filter-rank"
-              type="text"
-              value={filterNumber}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || /^-?\d*$/.test(value)) {
-                  setFilterNumber(value);
-                }
-              }}
-              onBlur={() => {
-                if (filterNumber === '' || isNaN(parseInt(filterNumber))) {
-                  setFilterNumber('');
-                } else {
-                  setFilterNumber(parseInt(filterNumber).toString());
-                }
-              }}
-              placeholder="Number"
-              style={{ appearance: 'textfield' }}
-            />
             <Button
               type="button"
               variant="outline-primary"
@@ -777,13 +757,37 @@ const FilterOptions = ({
               Add
             </Button>
           </InputGroup>
-          <div className="defensive-filter-rank-helper">
-            Positive rank = top defenses, negative = bottom
+          <div className="defensive-filter-rank">
+            <div className="defensive-filter-rank-label">
+              Ranks {rankRange[0]}–{rankRange[1]}
+            </div>
+            <ReactSlider
+              className="horizontal-slider"
+              thumbClassName="thumb"
+              trackClassName="track"
+              value={rankRange}
+              ariaLabel={['From rank', 'To rank']}
+              ariaValuetext={(state) => `Rank ${state.valueNow}`}
+              renderThumb={(props, state) => <div {...props}>{state.valueNow}</div>}
+              pearling
+              minDistance={0}
+              min={1}
+              max={RANK_TEAM_LIMIT}
+              step={1}
+              onChange={setRankRange}
+            />
+          </div>
+          <div className="defensive-filter-rank-helper" aria-live="polite">
+            {selectedDefensiveFilter === 'None'
+              ? 'Rank 1 is the team with the highest value of the filter.'
+              : `Adds the teams ranked ${rankRange[0]}–${rankRange[1]} by ${opponentFilterLabel(
+                  selectedDefensiveFilter,
+                )} (rank 1 = highest).`}
           </div>
           <div className="mt-2">
             {activeFilters.map((filter, index) => (
               <Badge key={index} bg="primary" className="me-1 mb-1 p-2">
-                {opponentFilterLabel(filter.filter)} ({filter.number})
+                {opponentFilterRankLabel(filter.filter, filter.number)}
                 <Button
                   type="button"
                   aria-label={`Remove ${opponentFilterLabel(filter.filter)} filter`}

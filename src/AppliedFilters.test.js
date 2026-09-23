@@ -25,3 +25,18 @@ test('renders one badge per recognised parameter', () => {
   expect(screen.getByText('75 <= PLAYTYPE_RTG <= 125')).toBeVisible();
   expect(screen.getAllByText(/PLAYTYPE_RTG/)).toHaveLength(1);
 });
+
+test('an opponent rank reads as league ranks, never a bare sign', () => {
+  render(
+    <AppliedFilters
+      filters={{
+        'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation'],
+        'rank_filter[]': ['5', '-10', '11,20'],
+      }}
+    />,
+  );
+
+  expect(screen.getByText('Points Allowed (ranks 1–5)')).toBeVisible();
+  expect(screen.getByText('Transition (last 10)')).toBeVisible();
+  expect(screen.getByText('Isolation (ranks 11–20)')).toBeVisible();
+});

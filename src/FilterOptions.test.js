@@ -143,12 +143,29 @@ const defensiveSelect = () => screen.getByLabelText('Defensive Filter:');
 const clickCategoryPill = (name) => fireEvent.click(screen.getByRole('button', { name }));
 
 // The player search carries an "Add" of its own, so the defensive one is
-// reached through the input group it shares with the rank field.
+// reached through the input group it shares with the defensive select.
 const defensiveAddButton = () =>
-  within(screen.getByLabelText('Defensive filter rank').closest('.input-group')).getByRole(
-    'button',
-    { name: 'Add' },
+  within(defensiveSelect().closest('.input-group')).getByRole('button', { name: 'Add' });
+
+// The rank range is a two-thumb slider. Its thumbs take the keys a keyboard
+// user would press: Home and End reach the ends, arrows step one rank.
+const rankThumbs = () =>
+  ['From rank', 'To rank'].map((name) =>
+    screen.getByRole('slider', { name }).getAttribute('aria-valuenow'),
   );
+
+const pressOnThumb = (name, key, times = 1) => {
+  const thumb = screen.getByRole('slider', { name });
+  fireEvent.focus(thumb);
+  for (let press = 0; press < times; press += 1) fireEvent.keyDown(thumb, { key });
+};
+
+const setRankRange = (low, high) => {
+  pressOnThumb('To rank', 'End');
+  pressOnThumb('From rank', 'Home');
+  pressOnThumb('From rank', 'ArrowRight', low - 1);
+  pressOnThumb('To rank', 'ArrowLeft', 30 - high);
+};
 
 const labelForToken = (token) =>
   OPPONENT_FILTERS.flatMap((group) => group.items).find((item) => item.token === token).label;
@@ -202,7 +219,6 @@ test('switching category drops a selection the new category cannot show', () => 
 
   // A General token does not survive the move to Shot type.
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
   expect(defensiveSelect().value).toBe('OPP_PTS');
   expect(defensiveAddButton()).toBeEnabled();
 
@@ -226,7 +242,6 @@ test('re-picking the category a selection belongs to leaves it selected', () => 
   renderPanel();
 
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  fireEvent.change(screen.getByLabelText('Defensive filter rank'), { target: { value: '5' } });
   clickCategoryPill('General');
 
   expect(defensiveSelect().value).toBe('OPP_PTS');
@@ -265,21 +280,114 @@ test('an added defensive filter wears its label, and applies as its token', () =
 
   clickCategoryPill('General');
   fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
-  const rank = screen.getByLabelText('Defensive filter rank');
-  fireEvent.change(rank, { target: { value: '5' } });
-  // The player search carries an "Add" of its own, so this one is reached
-  // through the group it shares with the rank input.
-  fireEvent.click(within(rank.closest('.input-group')).getByRole('button', { name: 'Add' }));
+  setRankRange(1, 5);
+  fireEvent.click(defensiveAddButton());
 
-  expect(screen.getByText('Points Allowed (5)')).toBeInTheDocument();
+  expect(screen.getByText('Points Allowed (ranks 1–5)')).toBeInTheDocument();
 
   applyFilters();
 
+  // A range from rank 1 travels as the plain count every earlier link used.
   expect(onApplyFilters).toHaveBeenCalledWith({
     player_name: 'LeBron James',
     'teams_against[]': ['OPP_PTS'],
     'rank_filter[]': [5],
   });
+});
+
+/*
+ * The backend ranks every team by the filter's metric, rank 1 being the
+ * highest value. The slider picks any inclusive range of those ranks, from
+ * either end or the middle, so a user never types a signed number.
+ */
+test('the rank control is one 1-30 range slider, defaulting to ranks 1-10', () => {
+  renderPanel();
+
+  expect(rankThumbs()).toEqual(['1', '10']);
+  ['From rank', 'To rank'].forEach((name) => {
+    expect(screen.getByRole('slider', { name })).toHaveAttribute('aria-valuemin', '1');
+    expect(screen.getByRole('slider', { name })).toHaveAttribute('aria-valuemax', '30');
+  });
+  expect(screen.getByText('Ranks 1–10')).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Highest' })).not.toBeInTheDocument();
+  expect(screen.queryByPlaceholderText('Number')).not.toBeInTheDocument();
+});
+
+test('both ends of the range move independently', () => {
+  renderPanel();
+
+  pressOnThumb('From rank', 'ArrowRight', 10);
+  pressOnThumb('To rank', 'End');
+
+  expect(rankThumbs()).toEqual(['11', '30']);
+  expect(screen.getByText('Ranks 11–30')).toBeInTheDocument();
+
+  pressOnThumb('To rank', 'ArrowLeft', 10);
+
+  expect(rankThumbs()).toEqual(['11', '20']);
+});
+
+test('the sentence under the control names the teams Add would select', () => {
+  renderPanel();
+
+  expect(
+    screen.getByText('Rank 1 is the team with the highest value of the filter.'),
+  ).toBeInTheDocument();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  setRankRange(11, 20);
+
+  expect(
+    screen.getByText('Adds the teams ranked 11–20 by Points Allowed (rank 1 = highest).'),
+  ).toBeInTheDocument();
+});
+
+test('a filter is addable as soon as one is picked, since every range is a usable rank', () => {
+  renderPanel();
+
+  expect(defensiveAddButton()).toBeDisabled();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+
+  expect(defensiveAddButton()).toBeEnabled();
+});
+
+test('a range away from rank 1 applies as low,high and reads as ranks on the badge', () => {
+  const onApplyFilters = renderPanel();
+
+  fireEvent.change(defensiveSelect(), { target: { value: 'OPP_PTS' } });
+  fireEvent.click(defensiveAddButton());
+  clickCategoryPill('Play type');
+  fireEvent.change(defensiveSelect(), { target: { value: 'Transition' } });
+  setRankRange(11, 20);
+  fireEvent.click(defensiveAddButton());
+  fireEvent.change(defensiveSelect(), { target: { value: 'Isolation' } });
+  setRankRange(7, 7);
+  fireEvent.click(defensiveAddButton());
+
+  expect(screen.getByText('Points Allowed (ranks 1–10)')).toBeInTheDocument();
+  expect(screen.getByText('Transition (ranks 11–20)')).toBeInTheDocument();
+  expect(screen.getByText('Isolation (rank 7)')).toBeInTheDocument();
+
+  applyFilters();
+
+  expect(onApplyFilters).toHaveBeenCalledWith({
+    player_name: 'LeBron James',
+    'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation'],
+    'rank_filter[]': [10, '11,20', '7,7'],
+  });
+});
+
+test('ranks arriving with a link read as words in the panel, in every form', () => {
+  renderPanel({
+    player_name: 'LeBron James',
+    'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation'],
+    'rank_filter[]': ['-10', '11,20', '5'],
+  });
+
+  expect(screen.getByText('Points Allowed (last 10)')).toBeInTheDocument();
+  expect(screen.getByText('Transition (ranks 11–20)')).toBeInTheDocument();
+  expect(screen.getByText('Isolation (ranks 1–5)')).toBeInTheDocument();
 });
 
 /*

@@ -60,6 +60,15 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          // Silence deprecation warnings raised inside Bootstrap's own Sass
+          // (src/bootstrap-subset.scss); warnings from src still print.
+          quietDeps: true,
+        },
+      },
+    },
     // Keep existing REACT_APP_* settings working while allowing Vite's
     // VITE_* names for new deployments. Only explicitly supported settings
     // are exposed to client code.

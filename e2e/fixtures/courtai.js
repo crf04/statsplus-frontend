@@ -2365,6 +2365,33 @@ export const installApiContract = async (page, overrides = {}) => {
         return;
       }
 
+      // Every Target's backtest in one read, in list order, from the same
+      // composition the single route serves; not a Target with the id
+      // "backtests". Like every account route it refuses a missing bearer.
+      if (url.pathname === '/api/user/targets/backtests' && method === 'GET') {
+        if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+          await route.fulfill({
+            status: 401,
+            json: {
+              error: { code: 'authentication_required', message: 'Authentication required.' },
+            },
+          });
+          return;
+        }
+        await route.fulfill({
+          json: {
+            success: true,
+            season: '2025-26',
+            backtests: targets.map((target) => ({
+              target_id: target.id,
+              status: 'ok',
+              backtest: backtestTarget(target),
+            })),
+          },
+        });
+        return;
+      }
+
       // The season-to-date backtest of one Target, not a Target whose id ends
       // in "/backtest".
       const backtestId = targetId?.match(/^(.+)\/backtest$/)?.[1];

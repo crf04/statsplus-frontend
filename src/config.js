@@ -25,6 +25,7 @@ const config = {
     DIET_BASELINES: '/api/diet/baselines',
     TARGETS: '/api/user/targets',
     TARGET_PREVIEW: '/api/user/targets/preview',
+    TARGET_BACKTESTS: '/api/user/targets/backtests',
   },
 
   // Application settings

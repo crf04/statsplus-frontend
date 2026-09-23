@@ -12,7 +12,7 @@ import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
-import { createTarget, fetchTargetBacktest } from './targetsApi';
+import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
@@ -120,12 +120,24 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
   );
 });
 
-// How many league-wide scans run in flight at once; a refusal does not
-// strand later cards, whichever one it was.
+// How many league-wide scans run in flight at once when the batch route is
+// absent; a refusal does not strand later cards, whichever one it was.
 export const BACKTEST_CONCURRENCY = 4;
 
-// The league-wide scans are queued BACKTEST_CONCURRENCY at a time. A revisit
-// within the cache's window is served from it rather than re-scanned.
+const BACKTEST_FALLBACK_MESSAGE = 'Unable to read this Backtest.';
+
+// A backend deployed before the batch route answers it with 404, or 405 where
+// a neighbouring route owns the path.
+const batchRouteAbsent = (error) => [404, 405].includes(error?.response?.status);
+
+/*
+ * Every card's Backtest comes from one batch read of the whole list. A revisit
+ * within the cache's window is served from it rather than re-scanned; the
+ * batch is keyed by the listed Target ids, so a list that changed since is
+ * read afresh, and it is fenced like every Target read, so a Target write
+ * busts it. Against a backend without the batch route, the per-Target scans
+ * are queued BACKTEST_CONCURRENCY at a time instead.
+ */
 function useListBacktests(targets, enabled, userId) {
   const [reads, setReads] = useState({});
   useEffect(() => {
@@ -134,38 +146,71 @@ function useListBacktests(targets, enabled, userId) {
       return undefined;
     }
     const controller = new AbortController();
-    let nextIndex = 0;
+    const { signal } = controller;
     setReads({});
+    if (targets.length === 0) return () => controller.abort();
+    let nextIndex = 0;
     const readNext = () => {
-      if (controller.signal.aborted || nextIndex >= targets.length) return;
+      if (signal.aborted || nextIndex >= targets.length) return;
       const target = targets[nextIndex];
       nextIndex += 1;
       readRevisit(
         'backtest',
         userId,
         target.id,
-        () => fetchTargetBacktest({ id: target.id, signal: controller.signal }),
-        { signal: controller.signal },
+        () => fetchTargetBacktest({ id: target.id, signal }),
+        { signal },
       )
         .then(
           (backtest) => {
-            if (controller.signal.aborted) return;
+            if (signal.aborted) return;
             setReads((current) => ({ ...current, [target.id]: { status: 'ready', backtest } }));
           },
           (error) => {
-            if (controller.signal.aborted) return;
+            if (signal.aborted) return;
             setReads((current) => ({
               ...current,
               [target.id]: {
                 status: 'error',
-                error: getRequestErrorMessage(error, 'Unable to read this Backtest.'),
+                error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
               },
             }));
           },
         )
         .finally(readNext);
     };
-    for (let slot = 0; slot < BACKTEST_CONCURRENCY; slot += 1) readNext();
+
+    readRevisit(
+      'backtests',
+      userId,
+      targets.map((target) => target.id),
+      () => fetchTargetBacktests({ signal }),
+      { signal },
+    ).then(
+      (items) => {
+        if (signal.aborted) return;
+        const byId = new Map(items.map(({ targetId, ...read }) => [String(targetId), read]));
+        const missing = { status: 'error', error: BACKTEST_FALLBACK_MESSAGE };
+        setReads(
+          Object.fromEntries(
+            targets.map((target) => [target.id, byId.get(String(target.id)) || missing]),
+          ),
+        );
+      },
+      (error) => {
+        if (signal.aborted) return;
+        if (batchRouteAbsent(error)) {
+          for (let slot = 0; slot < BACKTEST_CONCURRENCY; slot += 1) readNext();
+          return;
+        }
+        // Anything else is every card's failure, read the way one card's was.
+        const failed = {
+          status: 'error',
+          error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
+        };
+        setReads(Object.fromEntries(targets.map((target) => [target.id, failed])));
+      },
+    );
     return () => controller.abort();
   }, [targets, enabled, userId]);
   return reads;

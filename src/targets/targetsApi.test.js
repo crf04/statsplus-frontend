@@ -8,12 +8,14 @@ import {
   fetchSeasonMinutes,
   fetchDietBaselines,
   decodeBacktest,
+  decodeBacktests,
   decodePreview,
   decodeResolvedTargets,
   decodeTargets,
   deleteTarget,
   fetchResolvedTargets,
   fetchTargetBacktest,
+  fetchTargetBacktests,
   fetchTargetPreview,
   fetchTargets,
   updateTarget,
@@ -25,6 +27,7 @@ jest.mock('../config', () => ({
     ({
       TARGETS: '/api/user/targets',
       TARGET_PREVIEW: '/api/user/targets/preview',
+      TARGET_BACKTESTS: '/api/user/targets/backtests',
       DIET_BASELINES: '/api/diet/baselines',
       TEAM_SEASON_MINUTES: '/api/teams',
     })[name],
@@ -853,6 +856,87 @@ test("reads one Target's backtest from the documented path with a cold-start-saf
     expect.objectContaining({ statColumns: ['PTS', '3PM'] }),
   );
   expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/7/backtest', {
+    signal: controller.signal,
+    timeout: 20000,
+  });
+});
+
+/*
+ * The batch read carries every Target's Backtest in list order. An ok item is
+ * the single route's body without `success`, decoded by the same decoder; an
+ * error item is that Target's own failure, read the way a card reads one.
+ */
+const { success: _success, ...wireBacktestBody } = wireBacktest;
+const wireBatch = {
+  success: true,
+  season: '2025-26',
+  backtests: [
+    { target_id: 7, status: 'ok', backtest: wireBacktestBody },
+    {
+      target_id: 9,
+      status: 'error',
+      error: { code: 'backtest_unavailable', message: 'This Backtest is unavailable.' },
+    },
+  ],
+};
+
+test('decodes each ok batch item with the single Backtest decoder and each error to its message', () => {
+  expect(decodeBacktests(wireBatch)).toEqual([
+    { targetId: 7, status: 'ready', backtest: decodeBacktest(wireBacktest) },
+    { targetId: 9, status: 'error', error: 'This Backtest is unavailable.' },
+  ]);
+  expect(decodeBacktests({ success: true, season: '2025-26', backtests: [] })).toEqual([]);
+});
+
+test('an undecodable ok item fails only its own card', () => {
+  const [broken, error] = decodeBacktests({
+    ...wireBatch,
+    backtests: [
+      { target_id: 7, status: 'ok', backtest: { ...wireBacktestBody, stat_columns: [] } },
+      wireBatch.backtests[1],
+    ],
+  });
+  expect(broken).toEqual({
+    targetId: 7,
+    status: 'error',
+    error: 'The Targets API returned an invalid response.',
+  });
+  expect(error.status).toBe('error');
+  // A Backtest filed under another Target's id would show on the wrong card.
+  expect(
+    decodeBacktests({
+      ...wireBatch,
+      backtests: [{ target_id: 8, status: 'ok', backtest: wireBacktestBody }],
+    })[0],
+  ).toEqual({
+    targetId: 8,
+    status: 'error',
+    error: 'The Targets API returned an invalid response.',
+  });
+});
+
+test.each([
+  ['a missing envelope', null],
+  ['no backtests list', { success: true, season: '2025-26' }],
+  ['an item that is not a record', { backtests: [7] }],
+  ['an item without a Target id', { backtests: [{ status: 'ok', backtest: wireBacktestBody }] }],
+  ['an unknown status', { backtests: [{ target_id: 7, status: 'pending' }] }],
+  ['an ok item without a body', { backtests: [{ target_id: 7, status: 'ok' }] }],
+  ['an error item without an error', { backtests: [{ target_id: 7, status: 'error' }] }],
+  [
+    'an error item without a message',
+    { backtests: [{ target_id: 7, status: 'error', error: { code: 'x' } }] },
+  ],
+  ['a Target listed twice', { backtests: [wireBatch.backtests[1], wireBatch.backtests[1]] }],
+])('refuses a batch envelope with %s', (_label, payload) => {
+  expect(() => decodeBacktests(payload)).toThrow(/invalid response/i);
+});
+
+test('the batch read is one authenticated, abortable request on the slow-read budget', async () => {
+  const controller = new AbortController();
+  apiClient.get.mockResolvedValueOnce({ data: wireBatch });
+  await expect(fetchTargetBacktests({ signal: controller.signal })).resolves.toHaveLength(2);
+  expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/backtests', {
     signal: controller.signal,
     timeout: 20000,
   });

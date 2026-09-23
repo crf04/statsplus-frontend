@@ -38,6 +38,8 @@ test.each([
   ['mutation', 'resolution'],
   ['logout', 'backtest'],
   ['mutation', 'backtest'],
+  ['logout', 'backtests'],
+  ['mutation', 'backtests'],
 ])('%s fences a late %s response', async (trigger, kind) => {
   let finish;
   const pending = new Promise((resolve) => {
@@ -62,6 +64,20 @@ test('invalidateTargetResolutions also clears a cached Backtest', async () => {
   await readRevisit('backtest', 'alice', 7, load);
   expect(load).toHaveBeenCalledTimes(2);
 });
+test.each(['backtest', 'backtests'])(
+  'invalidateTargetResolutions clears a cached %s read without touching other kinds',
+  async (kind) => {
+    const load = jest.fn().mockResolvedValue('fresh');
+    const other = jest.fn().mockResolvedValue('logs');
+    await readRevisit(kind, 'alice', 'all', load);
+    await read('kept', other);
+    invalidateTargetResolutions();
+    await readRevisit(kind, 'alice', 'all', load);
+    await read('kept', other);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(other).toHaveBeenCalledTimes(1);
+  },
+);
 test('never caches rejected or aborted reads', async () => {
   const load = jest.fn().mockRejectedValueOnce(new Error('bad')).mockResolvedValue('good');
   await expect(read('x', load)).rejects.toThrow('bad');

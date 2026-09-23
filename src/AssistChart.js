@@ -1,15 +1,4 @@
-import {
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Label,
-} from 'recharts';
+import MatchupComboChart from './MatchupComboChart';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 
 const AssistChart = ({
@@ -57,32 +46,27 @@ const AssistChart = ({
     ? chartData.reduce((sum, item) => sum + item.matchupRating, 0)
     : null;
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload || payload.length === 0) return null;
-
-    const data = payload[0].payload;
-    return (
-      <div
-        className="custom-tooltip"
-        style={{
-          backgroundColor: '#1e1a12',
-          padding: '10px 12px',
-          border: '1px solid rgba(255,255,255,0.16)',
-          borderRadius: '6px',
-          color: '#efe9dc',
-        }}
-      >
-        <p className="label">{`${label} Assists`}</p>
-        <p style={{ color: '#e8a33d' }}>{`Frequency: ${formatNumber(data.frequency, 2)}%`}</p>
-        <p style={{ color: '#7a8699' }}>{`Frequency+: ${formatNumber(data.frequencyPlus, 2)}%`}</p>
-        {teamData && (
-          <p style={{ color: getColor(data.teamDefense) }}>
-            {`Team Defense: ${formatNumber(data.teamDefense * 100 - 100, 2)}% (Rank: ${data.teamDefenseRank ?? 'N/A'})`}
-          </p>
-        )}
-      </div>
-    );
-  };
+  const renderTooltip = (data) => (
+    <div
+      className="custom-tooltip"
+      style={{
+        backgroundColor: '#1e1a12',
+        padding: '10px 12px',
+        border: '1px solid rgba(255,255,255,0.16)',
+        borderRadius: '6px',
+        color: '#efe9dc',
+      }}
+    >
+      <p className="label">{`${data.type} Assists`}</p>
+      <p style={{ color: '#e8a33d' }}>{`Frequency: ${formatNumber(data.frequency, 2)}%`}</p>
+      <p style={{ color: '#7a8699' }}>{`Frequency+: ${formatNumber(data.frequencyPlus, 2)}%`}</p>
+      {teamData && (
+        <p style={{ color: getColor(data.teamDefense) }}>
+          {`Team Defense: ${formatNumber(data.teamDefense * 100 - 100, 2)}% (Rank: ${data.teamDefenseRank ?? 'N/A'})`}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -90,69 +74,14 @@ const AssistChart = ({
       role="img"
       aria-label={`${teamData ? 'Assist frequency and team defense' : 'Assist frequency'} chart`}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={chartData}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 60,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis
-            tick={{ fill: '#9b937f', fontSize: 11 }}
-            dataKey="type"
-            angle={assistTypes.length > 2 ? -45 : 0}
-            textAnchor={assistTypes.length > 2 ? 'end' : 'middle'}
-            interval={0}
-            height={assistTypes.length > 2 ? 80 : 30}
-          />
-          <YAxis tick={{ fill: '#9b937f', fontSize: 11 }} yAxisId="left">
-            <Label
-              angle={-90}
-              value="Frequency (%)"
-              position="insideLeft"
-              style={{ textAnchor: 'middle' }}
-            />
-          </YAxis>
-          {teamData && (
-            <YAxis
-              tick={{ fill: '#9b937f', fontSize: 11 }}
-              yAxisId="right"
-              orientation="right"
-              domain={[0.5, 1.5]}
-            >
-              <Label
-                angle={90}
-                value="Team Defense Multiplier"
-                position="insideRight"
-                style={{ textAnchor: 'middle' }}
-              />
-            </YAxis>
-          )}
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar
-            yAxisId="left"
-            dataKey="frequency"
-            name="Assist Frequency (%)"
-            fill="#e8a33d"
-            radius={[3, 3, 0, 0]}
-          />
-          {teamData && (
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="teamDefense"
-              name="Team Defense"
-              stroke="#7a8699"
-              strokeWidth={2}
-            />
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
+      <MatchupComboChart
+        rows={chartData.map((row) => ({ ...row, label: row.type }))}
+        barLabel="Assist Frequency (%)"
+        yTitle="Frequency (%)"
+        withDefense={Boolean(teamData)}
+        rotateLabels={assistTypes.length > 2}
+        renderTooltip={renderTooltip}
+      />
       {teamData && totalMatchupRating !== null && (
         <div
           style={{

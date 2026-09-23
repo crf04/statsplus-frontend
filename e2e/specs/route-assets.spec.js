@@ -28,9 +28,7 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
     ]);
     const chunks = JSON.parse(stdout);
     const chartAssets = chunks
-      .filter((chunk) =>
-        chunk.modules.some((id) => /\/node_modules\/(chart\.js|recharts)\//.test(id)),
-      )
+      .filter((chunk) => chunk.modules.some((id) => /\/node_modules\/chart\.js\//.test(id)))
       .map((chunk) => `/${chunk.fileName}`);
     expect(chartAssets.length).toBeGreaterThan(0);
     server = await preview({

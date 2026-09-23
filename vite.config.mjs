@@ -80,7 +80,6 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             firebase: ['firebase/app', 'firebase/auth'],
             chartjs: ['chart.js', 'chartjs-plugin-annotation', 'react-chartjs-2'],
-            recharts: ['recharts'],
             ui: ['react-bootstrap', 'lucide-react', 'react-slider'],
           },
         },

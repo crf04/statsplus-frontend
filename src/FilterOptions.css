@@ -50,31 +50,15 @@
   background-size: 11px 7px;
 }
 
-/* Direction toggle, then the 1-30 count slider taking the remaining width, then
-   the count itself, on one line even at phone width. */
+/* The 1-30 rank range reuses the panel's two-thumb slider skin; the label
+   above it reads the range the thumbs stand on. */
 .defensive-filter-rank {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-top: 10px;
 }
 
-.defensive-filter-rank .btn-group {
-  flex: none;
-}
-
-.defensive-filter-rank-slider {
-  flex: 1 1 auto;
-  min-width: 0;
-  accent-color: var(--ct-gold);
-}
-
-.defensive-filter-rank-count {
-  flex: none;
-  min-width: 2ch;
-  text-align: right;
+.defensive-filter-rank-label {
+  margin-bottom: 6px;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
 }
 
 .defensive-filter-rank-helper {

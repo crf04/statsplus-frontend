@@ -26,13 +26,17 @@ test('renders one badge per recognised parameter', () => {
   expect(screen.getAllByText(/PLAYTYPE_RTG/)).toHaveLength(1);
 });
 
-test('an opponent rank reads as the highest or lowest of the metric, never a bare sign', () => {
+test('an opponent rank reads as league ranks, never a bare sign', () => {
   render(
     <AppliedFilters
-      filters={{ 'teams_against[]': ['OPP_PTS', 'Transition'], 'rank_filter[]': ['5', '-10'] }}
+      filters={{
+        'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation'],
+        'rank_filter[]': ['5', '-10', '11,20'],
+      }}
     />,
   );
 
-  expect(screen.getByText('Points Allowed (5 highest)')).toBeVisible();
-  expect(screen.getByText('Transition (10 lowest)')).toBeVisible();
+  expect(screen.getByText('Points Allowed (ranks 1–5)')).toBeVisible();
+  expect(screen.getByText('Transition (last 10)')).toBeVisible();
+  expect(screen.getByText('Isolation (ranks 11–20)')).toBeVisible();
 });

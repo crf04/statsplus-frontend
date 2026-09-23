@@ -16,8 +16,10 @@ import ReactSlider from 'react-slider';
 import {
   OPPONENT_FILTERS,
   RANK_TEAM_LIMIT,
+  encodeRankRange,
   opponentFilterLabel,
   opponentFilterRankLabel,
+  parseRank,
 } from './opponentFilters';
 import { formatNumber, toFiniteNumber } from './numberUtils';
 import './FilterOptions.css';
@@ -34,8 +36,7 @@ const DEFENSIVE_CATEGORY_PILL_LABELS = {
 };
 
 const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
-const DEFAULT_RANK_DIRECTION = 'highest';
-const DEFAULT_RANK_COUNT = 10;
+const DEFAULT_RANK_RANGE = [1, 10];
 
 const defensiveCategoryItems = (category) =>
   OPPONENT_FILTERS.find((group) => group.category === category)?.items ?? [];
@@ -54,8 +55,7 @@ const FilterOptions = ({
   const [activeDefensiveCategory, setActiveDefensiveCategory] = useState(
     DEFAULT_DEFENSIVE_CATEGORY,
   );
-  const [rankDirection, setRankDirection] = useState(DEFAULT_RANK_DIRECTION);
-  const [rankCount, setRankCount] = useState(DEFAULT_RANK_COUNT);
+  const [rankRange, setRankRange] = useState(DEFAULT_RANK_RANGE);
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
   const [playerStatus, setPlayerStatus] = useState('on');
@@ -132,8 +132,7 @@ const FilterOptions = ({
     // Always reset all form fields to their defaults first
     setSelectedDefensiveFilter('None');
     setActiveDefensiveCategory(DEFAULT_DEFENSIVE_CATEGORY);
-    setRankDirection(DEFAULT_RANK_DIRECTION);
-    setRankCount(DEFAULT_RANK_COUNT);
+    setRankRange(DEFAULT_RANK_RANGE);
     setActiveFilters([]);
     setPlayerInput('');
     setPlayerStatus('on');
@@ -238,8 +237,8 @@ const FilterOptions = ({
         // Same rule as adding by hand: a rank of zero matches no team, so an
         // unusable rank drops its filter rather than silently emptying the table.
         const filtersToAdd = teamsAgainst
-          .map((team, index) => ({ filter: team, number: parseInt(rankFilter[index], 10) }))
-          .filter(({ number }) => !Number.isNaN(number) && number !== 0);
+          .map((team, index) => ({ filter: team, number: parseRank(rankFilter[index]) }))
+          .filter(({ number }) => number !== null);
         if (filtersToAdd.length > 0) {
           setActiveFilters(filtersToAdd);
           prepopulatedControls.add('teams_against');
@@ -271,10 +270,10 @@ const FilterOptions = ({
     setTouchedControls(prepopulatedControls);
   }, [appliedFilters]);
 
-  // A rank picks teams by the filter's own metric: +N is the N teams with the
-  // highest value of it, -N the N with the lowest. The direction toggle and the 1-30
-  // count build that sign, so a zero or blank rank cannot be entered at all.
-  const pendingRank = rankDirection === 'highest' ? rankCount : -rankCount;
+  // The slider picks an inclusive range of league ranks, rank 1 being the
+  // highest value of the filter's metric, so a zero or blank rank cannot be
+  // entered at all.
+  const pendingRank = encodeRankRange(rankRange);
   const canAddFilter =
     selectedDefensiveFilter !== 'None' &&
     !activeFilters.some((f) => f.filter === selectedDefensiveFilter);
@@ -759,51 +758,31 @@ const FilterOptions = ({
             </Button>
           </InputGroup>
           <div className="defensive-filter-rank">
-            <ToggleButtonGroup
-              type="radio"
-              name="defensiveRankDirection"
-              value={rankDirection}
-              onChange={setRankDirection}
-              aria-label="Teams with the highest or the lowest"
-            >
-              <ToggleButton
-                id="defensive-rank-highest"
-                value="highest"
-                variant="outline-primary"
-                size="sm"
-              >
-                Highest
-              </ToggleButton>
-              <ToggleButton
-                id="defensive-rank-lowest"
-                value="lowest"
-                variant="outline-primary"
-                size="sm"
-              >
-                Lowest
-              </ToggleButton>
-            </ToggleButtonGroup>
-            <input
-              id="defensive-filter-rank"
-              type="range"
-              className="defensive-filter-rank-slider"
-              min="1"
+            <div className="defensive-filter-rank-label">
+              Ranks {rankRange[0]}–{rankRange[1]}
+            </div>
+            <ReactSlider
+              className="horizontal-slider"
+              thumbClassName="thumb"
+              trackClassName="track"
+              value={rankRange}
+              ariaLabel={['From rank', 'To rank']}
+              ariaValuetext={(state) => `Rank ${state.valueNow}`}
+              renderThumb={(props, state) => <div {...props}>{state.valueNow}</div>}
+              pearling
+              minDistance={0}
+              min={1}
               max={RANK_TEAM_LIMIT}
-              step="1"
-              aria-label="Number of teams"
-              value={rankCount}
-              onChange={(e) => setRankCount(Number(e.target.value))}
+              step={1}
+              onChange={setRankRange}
             />
-            <output className="defensive-filter-rank-count" htmlFor="defensive-filter-rank">
-              {rankCount}
-            </output>
           </div>
           <div className="defensive-filter-rank-helper" aria-live="polite">
             {selectedDefensiveFilter === 'None'
-              ? `Pick a filter to add the ${rankCount} teams with the ${rankDirection} value.`
-              : `Adds the ${rankCount} teams with the ${rankDirection} ${opponentFilterLabel(
+              ? 'Rank 1 is the team with the highest value of the filter.'
+              : `Adds the teams ranked ${rankRange[0]}–${rankRange[1]} by ${opponentFilterLabel(
                   selectedDefensiveFilter,
-                )}.`}
+                )} (rank 1 = highest).`}
           </div>
           <div className="mt-2">
             {activeFilters.map((filter, index) => (

@@ -334,45 +334,54 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   const defensiveFilter = page.getByLabel('Defensive Filter:').locator('xpath=..');
-  const teamCount = page.getByRole('slider', { name: 'Number of teams' });
+  const fromRank = page.getByRole('slider', { name: 'From rank' });
+  const toRank = page.getByRole('slider', { name: 'To rank' });
   // Isolation and Transition are both Play type filters, and the category
   // persists across the two selections below, so one pill click covers both.
-  // A filter is addable only once one is picked; the count is always 1-30, so
-  // there is no blank or zero rank left to guard against.
+  // A filter is addable only once one is picked; the range is always within
+  // ranks 1-30, so there is no blank or zero rank left to guard against.
   await page.getByRole('button', { name: 'Play type' }).click();
   await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
   await page.getByLabel('Defensive Filter:').selectOption('Isolation');
-  await teamCount.fill('5');
-  await expect(page.getByText('Adds the 5 teams with the highest Isolation.')).toBeVisible();
+  // The default range is ranks 1-10; five steps down the upper thumb is 1-5.
+  for (let step = 0; step < 5; step += 1) await toRank.press('ArrowLeft');
+  await expect(toRank).toHaveAttribute('aria-valuenow', '5');
+  await expect(
+    page.getByText('Adds the teams ranked 1–5 by Isolation (rank 1 = highest).'),
+  ).toBeVisible();
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
-  await expect(page.getByText('Isolation (5 highest)').first()).toBeVisible();
+  await expect(page.getByText('Isolation (ranks 1–5)').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
+  // A range from rank 1 travels as the plain count every earlier link used.
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 
-  // Lowest sends the negative rank, and both filters travel with paired ranks.
-  // Applying filters re-renders the panel from appliedFilters and resets the
-  // category pill back to its default, so it needs clicking again here.
+  // Both ends move: ranks 11-20 is a middle range, sent as low,high, and both
+  // filters travel with paired ranks. Applying filters re-renders the panel
+  // from appliedFilters and resets the category pill, so it needs clicking again.
   const rankedRequestCount = gameLogRequests.length;
   await page.getByRole('button', { name: 'Play type' }).click();
   await page.getByLabel('Defensive Filter:').selectOption('Transition');
-  await page.getByText('Lowest', { exact: true }).click();
-  await teamCount.fill('8');
+  await toRank.press('End');
+  for (let step = 0; step < 10; step += 1) await toRank.press('ArrowLeft');
+  for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowRight');
+  await expect(fromRank).toHaveAttribute('aria-valuenow', '11');
+  await expect(toRank).toHaveAttribute('aria-valuenow', '20');
   await defensiveFilter.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
-  await expect(page.getByText('Transition (8 lowest)').first()).toBeVisible();
+  await expect(page.getByText('Transition (ranks 11–20)').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Apply Filters' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
   const pairedRequest = new URL(gameLogRequests.at(-1));
   expect(pairedRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation', 'Transition']);
-  expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '-8']);
+  expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '11,20']);
 });
 
 test('@critical applying an untouched panel emits only the controls the user moved', async ({

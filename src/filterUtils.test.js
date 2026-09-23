@@ -85,6 +85,17 @@ describe('filterSetFromSearchParams', () => {
     expect(filters['rank_filter[]']).toEqual([5, -8]);
   });
 
+  test('decodes an inclusive rank range alongside signed counts', () => {
+    const { filters, invalid } = decode(
+      'teams_against%5B%5D=Isolation&teams_against%5B%5D=Transition' +
+        '&teams_against%5B%5D=Cut&rank_filter%5B%5D=11%2C20&rank_filter%5B%5D=%2B5' +
+        '&rank_filter%5B%5D=-8',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters['rank_filter[]']).toEqual(['11,20', 5, -8]);
+  });
+
   test('decodes a Filter Set carrying no player', () => {
     const { filters, invalid } = decode('game_filter=10&location_filter=Away');
 
@@ -117,6 +128,9 @@ describe('filterSetFromSearchParams', () => {
     ['player_name=+', 'player_name'],
     ['self_filters%5BPTS%5D=20', 'self_filters[PTS]'],
     ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=0', 'rank_filter[]'],
+    ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=20%2C11', 'rank_filter[]'],
+    ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=0%2C5', 'rank_filter[]'],
+    ['teams_against%5B%5D=Isolation&rank_filter%5B%5D=1%2C2%2C3', 'rank_filter[]'],
     ['teams_against%5B%5D=Isolation', 'rank_filter[]'],
   ])('names %s as invalid rather than guessing', (query, expected) => {
     const { invalid } = decode(query);

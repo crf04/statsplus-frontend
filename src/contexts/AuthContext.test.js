@@ -80,6 +80,48 @@ test('follows Firebase listener transitions and token refresh claim changes', as
   expect(screen.getByTestId('admin-status')).toHaveTextContent('signed_out');
 });
 
+test('keeps the settled admin verdict while a token refresh re-checks the same user', async () => {
+  let listener;
+  onIdTokenChanged.mockImplementation((_auth, next) => {
+    listener = next;
+    return jest.fn();
+  });
+  let resolveRecheck;
+  getIdTokenResult
+    .mockResolvedValueOnce({ claims: { admin: true } })
+    .mockImplementationOnce(() => new Promise((resolve) => (resolveRecheck = resolve)))
+    .mockImplementationOnce(() => new Promise(() => {}));
+  function AdminLoadingProbe() {
+    const auth = useAuth();
+    return <output data-testid="admin-loading">{String(auth.adminLoading)}</output>;
+  }
+  render(
+    <AuthProvider authClient={configuredAuth}>
+      <AuthProbe />
+      <AdminLoadingProbe />
+    </AuthProvider>,
+  );
+
+  await act(async () => listener({ uid: 'admin-1' }));
+  await waitFor(() => expect(screen.getByTestId('admin-status')).toHaveTextContent('authorized'));
+
+  // Firebase's hourly token refresh fires the listener again for the same uid;
+  // guarded routes must not fall back to a spinner and unmount their page.
+  await act(async () => {
+    listener({ uid: 'admin-1' });
+  });
+  expect(screen.getByTestId('admin-loading')).toHaveTextContent('false');
+  expect(screen.getByTestId('admin-status')).toHaveTextContent('authorized');
+  await act(async () => resolveRecheck({ claims: {} }));
+  expect(screen.getByTestId('admin-status')).toHaveTextContent('forbidden');
+
+  // A different account has no verdict yet, so it is checked visibly.
+  await act(async () => {
+    listener({ uid: 'other-2' });
+  });
+  expect(screen.getByTestId('admin-loading')).toHaveTextContent('true');
+});
+
 test('reports missing Firebase configuration without leaving admin loading', async () => {
   renderProvider({ authClient: null });
   await waitFor(() =>

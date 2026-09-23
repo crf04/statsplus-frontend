@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
 
-test('production routes defer chart downloads until Search is opened', async ({ browser }) => {
+test('production routes and the Search prompt defer chart downloads', async ({ browser }) => {
   test.setTimeout(120_000);
   const { preview } = await import('vite');
   const outDir = await mkdtemp(path.join(os.tmpdir(), 'courtai-route-assets-'));
@@ -113,9 +113,11 @@ test('production routes defer chart downloads until Search is opened', async ({ 
       await page.waitForLoadState('networkidle');
       expect([...requestedCharts], `Chart assets requested on ${route}`).toEqual([]);
 
+      // The Search prompt has no charts; they load with the workspace sections.
       await page.getByRole('link', { name: 'Search', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'CourtAI', exact: true })).toBeVisible();
-      expect([...requestedCharts].sort()).toEqual([...chartAssets].sort());
+      await page.waitForLoadState('networkidle');
+      expect([...requestedCharts], 'Chart assets requested on the Search prompt').toEqual([]);
       await page.getByRole('link', { name: 'Matchups', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Sign in to view the slate' })).toBeVisible();
       await context.close();

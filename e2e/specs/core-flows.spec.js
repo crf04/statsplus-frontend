@@ -1472,3 +1472,16 @@ test('@critical the Traditional profile splits opponent rebounds into offensive 
   // reader is looking at contradictory rebound data.
   await expect(readout('REB').getByText('44.10', { exact: true })).toBeVisible();
 });
+
+test('the workspace draws the game-log chart with the registered Chart.js pieces', async ({
+  authenticatedPage: page,
+}) => {
+  // Chart.js registers only the controllers the app uses; an unregistered
+  // piece throws while drawing, so a page error here means one is missing.
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.locator('.chart-container canvas')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Opposing Team Profile' })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});

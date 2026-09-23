@@ -1,15 +1,12 @@
 import { readRevisit } from './revisitCache';
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
 import FilterOptions from './FilterOptions';
-import PlayerProfile from './PlayerProfile';
-import OpposingTeamProfile from './OpposingTeamProfile';
 import PerformanceAverages from './PerformanceAverages';
-import ChartComponent from './ChartComponent';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
@@ -25,6 +22,12 @@ import {
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
 import useDocumentTitle from './useDocumentTitle';
+
+// The chart-bearing sections render only in the workspace, so their chart
+// libraries load on demand instead of delaying the landing prompt.
+const PlayerProfile = lazy(() => import('./PlayerProfile'));
+const OpposingTeamProfile = lazy(() => import('./OpposingTeamProfile'));
+const ChartComponent = lazy(() => import('./ChartComponent'));
 
 const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
@@ -575,13 +578,15 @@ const GameLogFilter = () => {
                     playerList={playerList}
                     averages={averages}
                   />
-                  <ChartComponent
-                    gameLogs={gameLogs}
-                    lineType={lineType}
-                    lineValue={lineValue}
-                    averages={averages}
-                    appliedFilters={appliedFilters}
-                  />
+                  <Suspense fallback={null}>
+                    <ChartComponent
+                      gameLogs={gameLogs}
+                      lineType={lineType}
+                      lineValue={lineValue}
+                      averages={averages}
+                      appliedFilters={appliedFilters}
+                    />
+                  </Suspense>
                 </Card.Body>
               </Card>
             </Col>
@@ -601,14 +606,18 @@ const GameLogFilter = () => {
 
           <Row className="mb-5">
             <Col md={6}>
-              <PlayerProfile selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} />
+              <Suspense fallback={null}>
+                <PlayerProfile selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} />
+              </Suspense>
             </Col>
             <Col md={6}>
-              <OpposingTeamProfile
-                teams={teams}
-                selectedTeam={selectedTeam}
-                setSelectedTeam={setSelectedTeam}
-              />
+              <Suspense fallback={null}>
+                <OpposingTeamProfile
+                  teams={teams}
+                  selectedTeam={selectedTeam}
+                  setSelectedTeam={setSelectedTeam}
+                />
+              </Suspense>
             </Col>
           </Row>
 

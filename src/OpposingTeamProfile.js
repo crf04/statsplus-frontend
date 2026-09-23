@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Form, Row, Col, Table as BSTable } from 'react-bootstrap';
 import { apiClient } from './config';
 import { Bar } from 'react-chartjs-2';
+import './chartSetup';
 import { RankCube } from './utils';
 import { getApiUrl } from './config';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
@@ -14,43 +15,51 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
   const dateTimeoutRef = useRef(null);
   const requestIdRef = useRef(0);
 
-  const fetchTeamStats = useCallback(() => {
-    const requestId = ++requestIdRef.current;
+  const fetchTeamStats = useCallback(
+    (signal) => {
+      const requestId = ++requestIdRef.current;
 
-    if (selectedTeam && selectedCategory) {
-      const endpoint = getApiUrl('TEAM_STATS');
-      apiClient
-        .get(endpoint, {
-          params: {
-            category: selectedCategory,
-            team: selectedTeam,
-            date: debouncedDateFilter || null,
-          },
-        })
-        .then((response) => {
-          if (requestId !== requestIdRef.current) return;
-          if (response.data) {
-            setTeamStats(response.data);
-          } else {
-            console.error('Received invalid data format for team stats');
+      if (selectedTeam && selectedCategory) {
+        const endpoint = getApiUrl('TEAM_STATS');
+        apiClient
+          .get(endpoint, {
+            params: {
+              category: selectedCategory,
+              team: selectedTeam,
+              date: debouncedDateFilter || null,
+            },
+            signal,
+          })
+          .then((response) => {
+            if (requestId !== requestIdRef.current) return;
+            if (response.data) {
+              setTeamStats(response.data);
+            } else {
+              console.error('Received invalid data format for team stats');
+              setTeamStats(null);
+            }
+          })
+          .catch((error) => {
+            if (signal?.aborted || requestId !== requestIdRef.current) return;
+            console.error(
+              'There was an error fetching the team stats:',
+              error.response?.status || error.message,
+            );
             setTeamStats(null);
-          }
-        })
-        .catch((error) => {
-          if (requestId !== requestIdRef.current) return;
-          console.error(
-            'There was an error fetching the team stats:',
-            error.response?.status || error.message,
-          );
-          setTeamStats(null);
-        });
-    } else {
-      setTeamStats(null);
-    }
-  }, [selectedTeam, selectedCategory, debouncedDateFilter]);
+          });
+      } else {
+        setTeamStats(null);
+      }
+    },
+    [selectedTeam, selectedCategory, debouncedDateFilter],
+  );
 
   useEffect(() => {
-    fetchTeamStats();
+    // Abort a superseded request so quick team changes do not leave stale
+    // stats requests running.
+    const controller = new AbortController();
+    fetchTeamStats(controller.signal);
+    return () => controller.abort();
   }, [fetchTeamStats]);
 
   useEffect(() => {

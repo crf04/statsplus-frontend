@@ -12,7 +12,7 @@ import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
-import { createTarget, fetchTargetBacktest } from './targetsApi';
+import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
@@ -124,8 +124,89 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
 // strand later cards, whichever one it was.
 export const BACKTEST_CONCURRENCY = 4;
 
-// The league-wide scans are queued BACKTEST_CONCURRENCY at a time. A revisit
-// within the cache's window is served from it rather than re-scanned.
+const BACKTEST_FALLBACK_MESSAGE = 'Unable to read this Backtest.';
+
+// A backend deployed before the batch route answers it with 404, or 405 where
+// a neighbouring route owns the path.
+const batchRouteAbsent = (error) => [404, 405].includes(error?.response?.status);
+
+// Scans each queued Target through the single route, BACKTEST_CONCURRENCY at
+// a time, settling each card as its own read lands.
+const readQueue = async (queue, signal, settle) => {
+  let next = 0;
+  const worker = async () => {
+    while (!signal.aborted && next < queue.length) {
+      const target = queue[next];
+      next += 1;
+      try {
+        const backtest = await fetchTargetBacktest({ id: target.id, signal });
+        settle({ [target.id]: { status: 'ready', backtest } });
+      } catch (error) {
+        settle({
+          [target.id]: {
+            status: 'error',
+            error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
+          },
+        });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(BACKTEST_CONCURRENCY, queue.length) }, worker));
+};
+
+/*
+ * One batch request returns every Backtest the backend already has cached;
+ * each Target it marks uncached is then scanned through the single route,
+ * queued as before. Without the batch route (404 or 405) every Target is
+ * queued. Cards settle as their reads land.
+ *
+ * The combined result is one revisit entry, keyed by the listed Target ids and
+ * fenced like every Target read: a revisit within the window makes no request
+ * at all, a Target write busts it, and a read that spanned a write is never
+ * kept. Only a list whose every card is ready is kept, so a failed card is
+ * retried on the next visit, as a failed single read always was.
+ */
+const partialRead = () =>
+  Object.assign(new Error('Some Backtests could not be read.'), {
+    partial: true,
+  });
+
+const readListBacktests = async (targets, signal, settle) => {
+  const reads = {};
+  const record = (batch) => {
+    Object.assign(reads, batch);
+    settle(batch);
+  };
+  let queue = targets;
+  try {
+    const items = await fetchTargetBacktests({ signal });
+    const byId = new Map(items.map(({ targetId, ...read }) => [String(targetId), read]));
+    const missing = { status: 'error', error: BACKTEST_FALLBACK_MESSAGE };
+    const settled = {};
+    queue = [];
+    for (const target of targets) {
+      const read = byId.get(String(target.id)) || missing;
+      if (read.status === 'uncached') queue.push(target);
+      else settled[target.id] = read;
+    }
+    record(settled);
+  } catch (error) {
+    if (signal.aborted) throw error;
+    if (!batchRouteAbsent(error)) {
+      // Anything else is every card's failure, read the way one card's was.
+      const failed = {
+        status: 'error',
+        error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
+      };
+      record(Object.fromEntries(targets.map((target) => [target.id, failed])));
+      throw partialRead();
+    }
+  }
+  await readQueue(queue, signal, record);
+  if (targets.some((target) => reads[target.id]?.status !== 'ready')) throw partialRead();
+  return reads;
+};
+
 function useListBacktests(targets, enabled, userId) {
   const [reads, setReads] = useState({});
   useEffect(() => {
@@ -134,38 +215,23 @@ function useListBacktests(targets, enabled, userId) {
       return undefined;
     }
     const controller = new AbortController();
-    let nextIndex = 0;
+    const { signal } = controller;
     setReads({});
-    const readNext = () => {
-      if (controller.signal.aborted || nextIndex >= targets.length) return;
-      const target = targets[nextIndex];
-      nextIndex += 1;
-      readRevisit(
-        'backtest',
-        userId,
-        target.id,
-        () => fetchTargetBacktest({ id: target.id, signal: controller.signal }),
-        { signal: controller.signal },
-      )
-        .then(
-          (backtest) => {
-            if (controller.signal.aborted) return;
-            setReads((current) => ({ ...current, [target.id]: { status: 'ready', backtest } }));
-          },
-          (error) => {
-            if (controller.signal.aborted) return;
-            setReads((current) => ({
-              ...current,
-              [target.id]: {
-                status: 'error',
-                error: getRequestErrorMessage(error, 'Unable to read this Backtest.'),
-              },
-            }));
-          },
-        )
-        .finally(readNext);
+    if (targets.length === 0) return () => controller.abort();
+    const settle = (batch) => {
+      if (!signal.aborted) setReads((current) => ({ ...current, ...batch }));
     };
-    for (let slot = 0; slot < BACKTEST_CONCURRENCY; slot += 1) readNext();
+    readRevisit(
+      'backtests',
+      userId,
+      targets.map((target) => target.id),
+      () => readListBacktests(targets, signal, settle),
+      { signal },
+    ).then(
+      (combined) => settle(combined),
+      // Every card has already settled with what it could read.
+      () => {},
+    );
     return () => controller.abort();
   }, [targets, enabled, userId]);
   return reads;

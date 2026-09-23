@@ -158,6 +158,79 @@ test('list and workbench fit a phone width', async ({ authenticatedPage: page })
   );
 });
 
+const backtestPath = (request) => {
+  const { pathname } = new URL(request.url());
+  return /^\/api\/user\/targets\/(\d+\/backtest|backtests)$/.test(pathname) ? pathname : null;
+};
+const saveTwoTargets = async (page) => {
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await saveTarget(page);
+  await composeTarget(page, { opponent: 'OKC', slice: 'Corner 3', percent: '40' });
+  await saveTarget(page);
+};
+const expectCardBacktests = async (page) => {
+  for (const title of ['ATL vs At-rim assists ≥ 30%', 'OKC vs Corner 3 ≥ 40%'])
+    await expect(card(page, title).getByRole('list', { name: 'Backtest summary' })).toBeVisible();
+};
+
+test('@critical the Targets list reads uncached Backtests singly, then warm ones in one request', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  const reads = [];
+  page.on('request', (request) => {
+    const path = backtestPath(request);
+    if (path) reads.push(`${request.method()} ${path.replace(/\d+/, ':id')}`);
+  });
+  await page.goto('/targets');
+  await saveTwoTargets(page);
+  await expectCardBacktests(page);
+  // Each visit asks the batch first; only the Target not yet cached is scanned.
+  expect(reads).toEqual([
+    'GET /api/user/targets/backtests',
+    'GET /api/user/targets/:id/backtest',
+    'GET /api/user/targets/backtests',
+    'GET /api/user/targets/:id/backtest',
+  ]);
+  reads.length = 0;
+  await page.reload();
+  await expectCardBacktests(page);
+  expect(reads).toEqual(['GET /api/user/targets/backtests']);
+});
+
+test('the Targets list falls back to one read per Target without the batch route', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.route('**/api/user/targets/backtests', (route) =>
+    route.fulfill({
+      status: 404,
+      json: { error: { code: 'resource_not_found', message: 'Not found.' } },
+    }),
+  );
+  await page.goto('/targets');
+  await saveTwoTargets(page);
+  // Count only the reload's reads, not the one the save left in flight.
+  await expectCardBacktests(page);
+  const reads = [];
+  page.on('request', (request) => {
+    const path = backtestPath(request);
+    if (path) reads.push(path.replace(/\d+/, ':id'));
+  });
+  await page.reload();
+  await expectCardBacktests(page);
+  expect(reads).toEqual([
+    '/api/user/targets/backtests',
+    '/api/user/targets/:id/backtest',
+    '/api/user/targets/:id/backtest',
+  ]);
+});
+
 test('signed-out Targets keep explicit states', async ({ page }) => {
   await installApiContract(page);
   await page.goto('/targets');
@@ -391,7 +464,7 @@ test('@critical a defender Condition narrows the Lab, persists, and appears on t
   const cardRead = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
-      /\/targets\/\d+\/backtest$/.test(new URL(response.url()).pathname),
+      new URL(response.url()).pathname === '/api/user/targets/backtests',
   );
   await page.getByRole('link', { name: '← All Targets' }).click();
   expect((await cardRead).status()).toBe(200);

@@ -553,6 +553,57 @@ export const fetchTargetBacktest = async ({ id, signal } = {}) => {
 };
 
 /*
+ * Every cached Target Backtest in one read, in list order. An ok item is the
+ * single route's body and goes through the same decoder; an uncached item is
+ * one the backend has not computed, which the caller reads through the single
+ * route; an error item is that Target's own failure, carried as the message
+ * its card shows. A body that
+ * does not decode fails only its own card, as it would on the single route.
+ * An envelope that cannot be read at all fails the whole read.
+ */
+const BATCH_ITEM_FALLBACK = 'Unable to read this Backtest.';
+
+const decodeBatchItem = (item) => {
+  if (!isRecord(item)) throw createInvalidResponseError();
+  const { target_id: targetId, status } = item;
+  if (!(typeof targetId === 'string' || typeof targetId === 'number'))
+    throw createInvalidResponseError();
+  if (status === 'error') {
+    const { error } = item;
+    if (!isRecord(error) || typeof error.code !== 'string' || typeof error.message !== 'string')
+      throw createInvalidResponseError();
+    return { targetId, status: 'error', error: error.message || BATCH_ITEM_FALLBACK };
+  }
+  // Not in the backend's cache: the card is read through the single route.
+  if (status === 'uncached') return { targetId, status: 'uncached' };
+  if (status !== 'ok' || !isRecord(item.backtest)) throw createInvalidResponseError();
+  try {
+    const backtest = decodeBacktest(item.backtest);
+    // A body filed under another Target's id would show on the wrong card.
+    if (String(backtest.target.id) !== String(targetId)) throw createInvalidResponseError();
+    return { targetId, status: 'ready', backtest };
+  } catch {
+    return { targetId, status: 'error', error: createInvalidResponseError().message };
+  }
+};
+
+export const decodeBacktests = (payload) => {
+  if (!isRecord(payload) || !Array.isArray(payload.backtests)) throw createInvalidResponseError();
+  const reads = payload.backtests.map(decodeBatchItem);
+  if (new Set(reads.map((read) => String(read.targetId))).size !== reads.length)
+    throw createInvalidResponseError();
+  return reads;
+};
+
+export const fetchTargetBacktests = async ({ signal } = {}) => {
+  const response = await apiClient.get(getApiUrl('TARGET_BACKTESTS'), {
+    signal,
+    timeout: TARGET_READ_TIMEOUT,
+  });
+  return decodeBacktests(response.data);
+};
+
+/*
  * The same scan for a Target that is not saved: the create body goes up and
  * the backtest comes back, with nothing stored. The Lab asks for this after
  * every settled edit, so the read is abortable by the edit after it.

@@ -4,9 +4,9 @@ import { isCalendarDate, getTodaySlateDate } from './calendarDate';
 const entries = new Map();
 let session = 0;
 let resolutions = 0;
-// Both a Target's resolution and its backtest read stale unless a write to
-// the Target invalidates them together.
-const FENCED_KINDS = new Set(['resolution', 'backtest']);
+// A Target's resolution, its own backtest, and the batch of every Target's
+// backtest all read stale unless a write to a Target invalidates them together.
+const FENCED_KINDS = new Set(['resolution', 'backtest', 'backtests']);
 export const clearRevisitCaches = () => {
   session += 1;
   entries.clear();

@@ -12,11 +12,13 @@ import {
   fetchTargets,
   fetchDietBaselines,
   fetchTargetBacktest,
+  fetchTargetBacktests,
   fetchSeasonMinutes,
 } from './targetsApi';
 
 jest.mock('./targetsApi', () => ({
   fetchTargetBacktest: jest.fn(),
+  fetchTargetBacktests: jest.fn(),
   fetchSeasonMinutes: jest.fn(),
   fetchTargets: jest.fn(),
   fetchDietBaselines: jest.fn(),
@@ -84,6 +86,21 @@ const queuedTargets = [
   { ...targets[0], id: 12, title: 'DAL vs Corner 3 ≥ 40% (v2)' },
   { ...targets[1], id: 13, title: 'BOS vs Restricted area ≤ 20% (v2)' },
 ];
+
+/*
+ * A backend that predates the batch route answers it with 404 (or 405 where a
+ * neighbouring route owns the path), and the page falls back to one read per
+ * Target.
+ */
+const routeAbsent = (status = 404) =>
+  Object.assign(new Error(`Request failed with status code ${status}`), {
+    response: { status, data: { error: { code: 'resource_not_found', message: 'Not found.' } } },
+  });
+const singleRouteOnly = (status = 404) =>
+  fetchTargetBacktests.mockRejectedValue(routeAbsent(status));
+const readyBatch = (list, backtest) =>
+  list.map((target) => ({ targetId: target.id, status: 'ready', backtest }));
+const uncachedBatch = (list) => list.map((target) => ({ targetId: target.id, status: 'uncached' }));
 
 const deferred = () => {
   let resolve;
@@ -230,6 +247,7 @@ beforeEach(() => {
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargetBacktest.mockImplementation(() => new Promise(() => {}));
+  fetchTargetBacktests.mockImplementation(() => new Promise(() => {}));
   fetchTargets.mockResolvedValue(targets);
   fetchResolvedTargets.mockResolvedValue(resolution);
   fetchTargetPreview.mockResolvedValue(preview);
@@ -294,6 +312,7 @@ test('shows unsaved samples only after an authenticated empty list succeeds', as
   await waitFor(() => expect(fetchTargetPreview).toHaveBeenCalledTimes(2));
   expect(createTarget).not.toHaveBeenCalled();
   expect(fetchTargetBacktest).not.toHaveBeenCalled();
+  expect(fetchTargetBacktests).not.toHaveBeenCalled();
   expect(screen.getByText('No Targets active today')).toBeInTheDocument();
 });
 
@@ -1055,7 +1074,8 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
   expect(within(card).queryByRole('table')).not.toBeInTheDocument();
 });
 
-test('Backtests start BACKTEST_CONCURRENCY reads at once and refill the queue when one settles', async () => {
+test('without the batch route, Backtests start BACKTEST_CONCURRENCY reads at once and refill the queue when one settles', async () => {
+  singleRouteOnly();
   expect(BACKTEST_CONCURRENCY).toBe(4);
   fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
   const reads = new Map(
@@ -1083,6 +1103,7 @@ test('Backtests start BACKTEST_CONCURRENCY reads at once and refill the queue wh
 });
 
 test('a failed Backtest frees a slot for every queued card', async () => {
+  singleRouteOnly();
   fetchTargets.mockResolvedValue(queuedTargets);
   const reads = new Map(queuedTargets.map((target) => [target.id, deferred()]));
   fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
@@ -1140,6 +1161,7 @@ test('thin evidence stays visible as a dashed fit pill', async () => {
 });
 
 test('signing out aborts active reads and leaves queued cards untouched', async () => {
+  singleRouteOnly();
   fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
   const reads = new Map(
     queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1).map((target) => [target.id, deferred()]),
@@ -1172,6 +1194,7 @@ test('signing out aborts active reads and leaves queued cards untouched', async 
 });
 
 test('late old reads cannot overwrite a fresh authenticated read after sign-in', async () => {
+  singleRouteOnly();
   const oldReads = [deferred(), deferred()];
   const freshReads = [deferred(), deferred()];
   const freshBacktest = {
@@ -1256,6 +1279,7 @@ test('late old reads cannot overwrite a fresh authenticated read after sign-in',
 });
 
 test('unmounting the list aborts every active read and never starts the queue', async () => {
+  singleRouteOnly();
   fetchTargets.mockResolvedValue(queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1));
   const reads = new Map(
     queuedTargets.slice(0, BACKTEST_CONCURRENCY + 1).map((target) => [target.id, deferred()]),
@@ -1322,7 +1346,7 @@ test('list cards read each Target’s persisted columns and grading independentl
     { ...targets[0], statPreferences: { columns: ['PTS', 'PTS/36'], gradedBy: 'PTS/36' } },
     targets[1],
   ]);
-  fetchTargetBacktest.mockResolvedValue(preview);
+  fetchTargetBacktests.mockResolvedValue(readyBatch(targets, preview));
   renderPage(false);
   const first = await screen.findByRole('article', { name: targets[0].title });
   expect(await within(first).findByRole('list', { name: /graded by PTS\/36/ })).toBeVisible();
@@ -1376,11 +1400,13 @@ test('one page shares one roster read across same-opponent chips, then releases 
     conditioned,
     { ...conditioned, id: 88, title: 'Another same-opponent Target' },
   ]);
-  fetchTargetBacktest.mockResolvedValue({
-    ...preview,
-    target: conditioned,
-    gamesConsidered: { kept: 3, played: 10 },
-  });
+  fetchTargetBacktests.mockResolvedValue(
+    readyBatch([conditioned, { id: 88 }], {
+      ...preview,
+      target: conditioned,
+      gamesConsidered: { kept: 3, played: 10 },
+    }),
+  );
   fetchSeasonMinutes.mockResolvedValue({
     season: '2025-26',
     players: [{ playerId: 27, name: 'Rudy Gobert', averageMinutes: 32, gamesPlayed: 60 }],
@@ -1430,6 +1456,7 @@ jest.mock('./opponentContextApi', () => ({
  * change.
  */
 test('settling one Backtest does not re-render cards whose own Backtest already finished', async () => {
+  singleRouteOnly();
   fetchTargets.mockResolvedValue(queuedTargets);
   const reads = new Map(queuedTargets.map((target) => [target.id, deferred()]));
   fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
@@ -1474,7 +1501,8 @@ test('the list read is asked to keep the previous list on screen while it reload
  * re-scanning the league, and a Target write should bust that cache so the
  * next revisit is honest again.
  */
-test('a revisit within the cache window reuses a Backtest, and a Target write busts it', async () => {
+test('without the batch route, a revisit reuses each Backtest, and a Target write busts it', async () => {
+  singleRouteOnly();
   auth.currentUser = { uid: 'revisit-reader' };
   fetchTargetBacktest.mockResolvedValue(preview);
 
@@ -1490,4 +1518,244 @@ test('a revisit within the cache window reuses a Backtest, and a Target write bu
   invalidateTargetResolutions();
   renderPage(false);
   await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(4));
+});
+
+/*
+ * The batch route answers every card at once: one request for the list, not
+ * one per Target queued BACKTEST_CONCURRENCY at a time.
+ */
+test('the list reads every Backtest with one batch request rather than one per Target', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets);
+  fetchTargetBacktests.mockResolvedValue(readyBatch(queuedTargets, preview));
+  renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(
+    queuedTargets.length,
+  );
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+});
+
+test('a batch error item fails only its own card, and a Target the batch omits says so', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
+  fetchTargetBacktests.mockResolvedValue([
+    { targetId: 7, status: 'error', error: 'This Backtest is unavailable.' },
+    { targetId: 8, status: 'ready', backtest: preview },
+  ]);
+  renderPage(false);
+  const failed = await screen.findByRole('article', { name: targets[0].title });
+  expect(await within(failed).findByText('This Backtest is unavailable.')).toBeVisible();
+  expect(within(failed).queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  const ready = screen.getByRole('article', { name: targets[1].title });
+  expect(within(ready).getByRole('list', { name: 'Backtest summary' })).toBeVisible();
+  const omitted = screen.getByRole('article', { name: queuedTargets[2].title });
+  expect(within(omitted).getByText('Unable to read this Backtest.')).toBeVisible();
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+});
+
+test('while the batch is in flight every card says it is reading the season', async () => {
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(1));
+  expect(within(card).getByText('Reading the season…')).toBeVisible();
+});
+
+test.each([404, 405])(
+  'a %s from the batch route falls back to the per-Target queue',
+  async (status) => {
+    singleRouteOnly(status);
+    fetchTargets.mockResolvedValue(queuedTargets);
+    fetchTargetBacktest.mockResolvedValue(preview);
+    renderPage(false);
+    expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(
+      queuedTargets.length,
+    );
+    expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+    expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual(
+      queuedTargets.map((target) => target.id),
+    );
+  },
+);
+
+test('any other batch failure shows each card its error without falling back', async () => {
+  fetchTargetBacktests.mockRejectedValue(
+    Object.assign(new Error('Request failed with status code 503'), {
+      response: {
+        status: 503,
+        data: { error: { code: 'publication_unavailable', message: 'Backtests are unavailable.' } },
+      },
+    }),
+  );
+  renderPage(false);
+  expect(await screen.findAllByText('Backtests are unavailable.')).toHaveLength(targets.length);
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+});
+
+test('leaving the list aborts the batch read and ignores its late answer', async () => {
+  const batch = deferred();
+  fetchTargetBacktests.mockReturnValue(batch.promise);
+  const view = renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(1));
+  const [{ signal }] = fetchTargetBacktests.mock.calls[0];
+  view.unmount();
+  expect(signal.aborted).toBe(true);
+  await act(async () => batch.reject(routeAbsent(404)));
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+});
+
+test('a revisit within the cache window reuses the batch, and a Target write busts it', async () => {
+  auth.currentUser = { uid: 'batch-revisit-reader' };
+  fetchTargetBacktests.mockResolvedValue(readyBatch(targets, preview));
+
+  const first = renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  first.unmount();
+
+  const second = renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+  second.unmount();
+
+  invalidateTargetResolutions();
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(2));
+  expect(fetchTargetBacktest).not.toHaveBeenCalled();
+});
+
+test('a batch that was in flight across a Target write is shown but never revisited', async () => {
+  auth.currentUser = { uid: 'batch-fence-reader' };
+  const stale = deferred();
+  fetchTargetBacktests
+    .mockReturnValueOnce(stale.promise)
+    .mockResolvedValue(readyBatch(targets, preview));
+  const first = renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(1));
+  invalidateTargetResolutions();
+  await act(async () => stale.resolve(readyBatch(targets, preview)));
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  first.unmount();
+
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(2));
+});
+
+test('a changed Target list is not served a cached batch that predates it', async () => {
+  auth.currentUser = { uid: 'batch-list-reader' };
+  fetchTargetBacktests.mockResolvedValue(readyBatch(targets, preview));
+  const first = renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  first.unmount();
+
+  fetchTargets.mockResolvedValue(queuedTargets.slice(0, 3));
+  fetchTargetBacktests.mockResolvedValue(readyBatch(queuedTargets.slice(0, 3), preview));
+  renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(3);
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(2);
+});
+
+/*
+ * The batch serves only what the backend has cached. Every uncached Target is
+ * read through the single route, BACKTEST_CONCURRENCY at a time, as before.
+ */
+test('a batch with two hits and three misses reads exactly the three misses singly', async () => {
+  const listed = queuedTargets.slice(0, 5);
+  fetchTargets.mockResolvedValue(listed);
+  fetchTargetBacktests.mockResolvedValue([
+    ...readyBatch(listed.slice(0, 2), preview),
+    ...uncachedBatch(listed.slice(2)),
+  ]);
+  const reads = new Map(listed.slice(2).map((target) => [target.id, deferred()]));
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
+  renderPage(false);
+
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(3));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([10, 11, 12]);
+  const pending = screen.getByRole('article', { name: queuedTargets[2].title });
+  expect(within(pending).getByText('Reading the season…')).toBeVisible();
+
+  await act(async () => {
+    for (const read of reads.values()) read.resolve(preview);
+  });
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(5);
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(3);
+});
+
+test('an all-uncached batch queues every Target BACKTEST_CONCURRENCY at a time', async () => {
+  fetchTargets.mockResolvedValue(queuedTargets);
+  fetchTargetBacktests.mockResolvedValue(uncachedBatch(queuedTargets));
+  const reads = new Map(queuedTargets.map((target) => [target.id, deferred()]));
+  fetchTargetBacktest.mockImplementation(({ id }) => reads.get(id).promise);
+  renderPage(false);
+
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([7, 8, 10, 11]);
+  await act(async () => reads.get(8).reject(new Error('failed 8')));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY + 1));
+  await act(async () => reads.get(7).resolve(preview));
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(BACKTEST_CONCURRENCY + 2));
+  expect(fetchTargetBacktest.mock.calls.map(([request]) => request.id)).toEqual([
+    7, 8, 10, 11, 12, 13,
+  ]);
+  expect(await screen.findByText('failed 8')).toBeVisible();
+  expect(screen.getAllByRole('list', { name: 'Backtest summary' })).toHaveLength(1);
+});
+
+test('a revisit reuses the combined hits and single reads with no request at all', async () => {
+  auth.currentUser = { uid: 'combined-revisit-reader' };
+  fetchTargetBacktests.mockResolvedValue([
+    ...readyBatch([targets[0]], preview),
+    ...uncachedBatch([targets[1]]),
+  ]);
+  fetchTargetBacktest.mockResolvedValue(preview);
+  const first = renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  first.unmount();
+
+  const second = renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(1);
+  second.unmount();
+
+  invalidateTargetResolutions();
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(2);
+});
+
+test('a Target write during the single reads keeps the list from being revisited', async () => {
+  auth.currentUser = { uid: 'combined-fence-reader' };
+  fetchTargetBacktests.mockResolvedValue(uncachedBatch(targets));
+  const reads = [deferred(), deferred()];
+  let next = 0;
+  fetchTargetBacktest.mockImplementation(() => reads[next++]?.promise ?? Promise.resolve(preview));
+  const first = renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktest).toHaveBeenCalledTimes(2));
+  invalidateTargetResolutions();
+  await act(async () => {
+    for (const read of reads) read.resolve(preview);
+  });
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  first.unmount();
+
+  renderPage(false);
+  await waitFor(() => expect(fetchTargetBacktests).toHaveBeenCalledTimes(2));
+});
+
+test('a list with a failed card is read again on the next visit', async () => {
+  auth.currentUser = { uid: 'partial-reader' };
+  fetchTargetBacktests.mockResolvedValue([
+    ...readyBatch([targets[0]], preview),
+    ...uncachedBatch([targets[1]]),
+  ]);
+  fetchTargetBacktest.mockRejectedValueOnce(new Error('failed 8')).mockResolvedValue(preview);
+  const first = renderPage(false);
+  expect(await screen.findByText('failed 8')).toBeVisible();
+  first.unmount();
+
+  renderPage(false);
+  expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(2);
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
 });

@@ -78,6 +78,20 @@ arbitrary timeouts, call React internals, or mock implementation modules. Prefer
 Tag the smallest deployment-level check with `@smoke`. Tag revenue- or workflow-critical browser
 journeys with `@critical`. Untagged E2E tests still run in the complete suite.
 
+## Bootstrap styles
+
+The app ships only the Bootstrap styles it renders. `src/bootstrap-subset.scss` compiles the needed
+Bootstrap partials and utility groups from Bootstrap's Sass; `src/index.js` imports it where the
+full `bootstrap.min.css` used to be. When you render a Bootstrap class or react-bootstrap component
+the subset does not emit yet, add its partial or utility group to that file.
+`src/bootstrapSubset.test.js` fails until you do. It collects the classes src can render (string
+literals outside inline `style` objects, template-literal prefixes, and the classes each
+react-bootstrap component adds for its props). It then requires every rule in
+`bootstrap/dist/css/bootstrap.css` that can match those classes to appear in the compiled subset,
+declaration for declaration. Using a new react-bootstrap component also means adding it to the
+test's `COMPONENT_CLASSES` map. `sass` is pinned to 1.78.0 because later versions compute
+Bootstrap's tinted and shaded colors one channel level differently from the published stylesheet.
+
 ## Deterministic authentication and data
 
 The Playwright web server starts with `REACT_APP_E2E_MODE=true`. In non-production builds only, this

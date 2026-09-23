@@ -1,0 +1,95 @@
+// The Bootstrap 5.3 styles this app renders, compiled from Bootstrap's own
+// Sass so the entry stylesheet does not ship the ~230 KB of components and
+// utilities no page uses. The partial order mirrors
+// node_modules/bootstrap/scss/bootstrap.scss so the cascade is unchanged.
+//
+// When you use a Bootstrap class or react-bootstrap component that is not
+// emitted here, add its partial below or its utility group to
+// $used-utility-groups. src/bootstrapSubset.test.js fails until you do: it
+// checks that every Bootstrap rule matching a class the source can render is
+// emitted by this file, identical to the full Bootstrap stylesheet.
+//
+// `sass` is pinned to 1.78.0 on purpose. Sass 1.79 changed color arithmetic,
+// so tint/shade/mix results (button hover colors, table variants) differ from
+// Bootstrap's published CSS by one channel level.
+
+// Configuration
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+// Only the utility groups the source uses. None of them is used at a
+// breakpoint or in print, so their responsive and print variants are dropped.
+$used-utility-groups: (
+  'overflow',
+  'display',
+  'position',
+  'border',
+  'width',
+  'justify-content',
+  'align-items',
+  'margin-x',
+  'margin-top',
+  'margin-end',
+  'margin-bottom',
+  'margin-start',
+  'padding',
+  'padding-x',
+  'padding-y',
+  'padding-top',
+  'padding-bottom',
+  'gap',
+  'text-align',
+  'text-decoration',
+  'color',
+  'background-color',
+  'rounded'
+);
+$used-utilities: ();
+@each $key, $utility in $utilities {
+  @if index($used-utility-groups, $key) {
+    $used-utilities: map-merge(
+      $used-utilities,
+      (
+        $key: map-merge(
+            $utility,
+            (
+              responsive: false,
+              print: false,
+            )
+          ),
+      )
+    );
+  }
+}
+$utilities: $used-utilities;
+
+// Layout & components
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/tables';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/transitions';
+@import 'bootstrap/scss/dropdown';
+@import 'bootstrap/scss/button-group';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/badge';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/list-group';
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/tooltip';
+@import 'bootstrap/scss/spinners';
+
+// Helpers
+@import 'bootstrap/scss/helpers';
+
+// Utilities
+@import 'bootstrap/scss/utilities/api';

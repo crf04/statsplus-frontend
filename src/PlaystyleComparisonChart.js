@@ -1,16 +1,4 @@
-import {
-  ComposedChart,
-  BarChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Label,
-} from 'recharts';
+import MatchupComboChart from './MatchupComboChart';
 
 const PlaystyleComparisonChart = ({ playerData, teamData }) => {
   if (!playerData) {
@@ -56,109 +44,47 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
     ? chartData.reduce((sum, item) => sum + (item.matchupRating || 0), 0)
     : null;
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div
-          className="custom-tooltip"
-          style={{
-            backgroundColor: '#1e1a12',
-            padding: '10px 12px',
-            border: '1px solid rgba(255,255,255,0.16)',
-            borderRadius: '6px',
-            color: '#efe9dc',
-          }}
-        >
-          <p className="label">{`${data.playstyle}`}</p>
-          <p
-            style={{ color: '#e8a33d' }}
-          >{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
-          {teamData && (
-            <>
-              <p style={{ color: getColor(data.teamDefense) }}>
-                {`Team Defense: ${(data.teamDefense * 100 - 100).toFixed(2)}% (Rank: ${data.teamDefenseRank})`}
-              </p>
-            </>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const renderChart = () => {
-    const ChartComponent = teamData ? ComposedChart : BarChart;
-    return (
-      <ChartComponent
-        data={chartData}
-        margin={{
-          top: 20,
-          right: 30,
-          left: 20,
-          bottom: 60,
-        }}
-      >
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-        <XAxis
-          tick={{ fill: '#9b937f', fontSize: 11 }}
-          dataKey="playstyle"
-          angle={-45}
-          textAnchor="end"
-          interval={0}
-          height={80}
-        />
-        <YAxis tick={{ fill: '#9b937f', fontSize: 11 }} yAxisId="left" orientation="left">
-          <Label
-            angle={-90}
-            value="Player Frequency (%)"
-            position="insideLeft"
-            style={{ textAnchor: 'middle' }}
-          />
-        </YAxis>
-        {teamData && (
-          <YAxis
-            tick={{ fill: '#9b937f', fontSize: 11 }}
-            yAxisId="right"
-            orientation="right"
-            domain={[0.5, 1.5]}
-          >
-            <Label
-              angle={90}
-              value="Team Defense Multiplier"
-              position="insideRight"
-              style={{ textAnchor: 'middle' }}
-            />
-          </YAxis>
-        )}
-        <Tooltip content={<CustomTooltip />} />
-        <Legend />
-        <Bar
-          yAxisId="left"
-          dataKey="playerFrequency"
-          name="Player Frequency (%)"
-          fill="#e8a33d"
-          radius={[3, 3, 0, 0]}
-        />
-        {teamData && (
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="teamDefense"
-            name="Team Defense"
-            stroke="#7a8699"
-            strokeWidth={2}
-          />
-        )}
-      </ChartComponent>
-    );
-  };
+  const renderTooltip = (data) => (
+    <div
+      className="custom-tooltip"
+      style={{
+        backgroundColor: '#1e1a12',
+        padding: '10px 12px',
+        border: '1px solid rgba(255,255,255,0.16)',
+        borderRadius: '6px',
+        color: '#efe9dc',
+      }}
+    >
+      <p className="label">{`${data.playstyle}`}</p>
+      <p style={{ color: '#e8a33d' }}>{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
+      {teamData && (
+        <>
+          <p style={{ color: getColor(data.teamDefense) }}>
+            {`Team Defense: ${(data.teamDefense * 100 - 100).toFixed(2)}% (Rank: ${data.teamDefenseRank})`}
+          </p>
+        </>
+      )}
+    </div>
+  );
 
   return (
-    <div style={{ width: '100%', height: '500px', position: 'relative' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        {renderChart()}
-      </ResponsiveContainer>
+    <div
+      style={{ width: '100%', height: '500px', position: 'relative' }}
+      role="img"
+      aria-label={`${teamData ? 'Playtype frequency and team defense' : 'Playtype frequency'} chart`}
+    >
+      <MatchupComboChart
+        rows={chartData.map((row) => ({
+          ...row,
+          label: row.playstyle,
+          frequency: row.playerFrequency,
+        }))}
+        barLabel="Player Frequency (%)"
+        yTitle="Player Frequency (%)"
+        withDefense={Boolean(teamData)}
+        rotateLabels
+        renderTooltip={renderTooltip}
+      />
       {teamData && totalMatchupRating && (
         <div
           style={{

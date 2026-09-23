@@ -1147,6 +1147,9 @@ test('the applied-filter badges describe the data after a player change', async 
 
   await page.goto('/?player_name=LeBron+James&game_filter=5');
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  // The chart section loads lazily after the table, and it renders its badges
+  // with its canvas, so count only once every badge place has rendered.
+  await expect(page.locator('.chart-container canvas')).toBeVisible();
   const badgePlaces = await page.getByText('GAMES <= 5').count();
   expect(badgePlaces).toBe(3);
 

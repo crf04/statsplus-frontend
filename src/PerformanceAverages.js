@@ -12,6 +12,10 @@ const describeSample = ({ filtered, season }) => {
 
 const PerformanceAverages = ({ averages, appliedFilters, sampleSize = null }) => {
   const [activeCategory, setActiveCategory] = useState('Shooting');
+  // An empty season has no averages to compare against, so there is no sample
+  // to state. A filter that empties only the filtered side still reads "0 of M".
+  const seasonAverages = Array.isArray(averages) ? averages[1] : null;
+  const hasSeasonAverages = Boolean(seasonAverages) && Object.keys(seasonAverages).length > 0;
 
   const renderCompactPer36 = () => {
     if (!Array.isArray(averages) || averages.length !== 2) {
@@ -298,7 +302,7 @@ const PerformanceAverages = ({ averages, appliedFilters, sampleSize = null }) =>
           <Card.Body className="p-3">
             <h4 className="mb-2">Per 36 Minutes Comparison</h4>
             <span className="legend-text mb-1 d-block text-center">Filtered vs Season</span>
-            {sampleSize && (
+            {sampleSize && hasSeasonAverages && (
               <p className="sample-size-text text-center mb-2">{describeSample(sampleSize)}</p>
             )}
             <div className="mb-2">

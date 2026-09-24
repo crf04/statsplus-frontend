@@ -53,12 +53,23 @@ describe('PerformanceAverages', () => {
   test('states an emptied sample rather than hiding it', () => {
     render(
       <PerformanceAverages
-        averages={[]}
+        averages={[{}, { MIN: 40, PTS: 20 }]}
         appliedFilters={{}}
         sampleSize={{ filtered: 0, season: 71 }}
       />,
     );
     expect(screen.getByText('0 of 71 games')).toBeVisible();
+  });
+
+  test('says nothing about the sample when the season has no averages', () => {
+    render(
+      <PerformanceAverages
+        averages={[{}, {}]}
+        appliedFilters={{}}
+        sampleSize={{ filtered: 0, season: 0 }}
+      />,
+    );
+    expect(screen.queryByText(/\bgames?\b/)).not.toBeInTheDocument();
   });
 
   test('says nothing about the sample before a result arrives', () => {

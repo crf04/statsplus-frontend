@@ -19,6 +19,11 @@ const firstRecord = (value) => {
   return {};
 };
 
+// How many games the unfiltered season holds (crf04/statsplus#88). An older
+// backend or a malformed value must not invent a season size, so anything but a
+// non-negative integer is unknown.
+const seasonGameCount = (value) => (Number.isInteger(value) && value >= 0 ? value : null);
+
 /** Decode the backend's JSON-string-or-object response once at the API seam. */
 export const decodeGameLogsResponse = (payload = {}) => {
   if (!payload || typeof payload !== 'object') {
@@ -36,6 +41,7 @@ export const decodeGameLogsResponse = (payload = {}) => {
   return {
     gameLogs: [...gameLogs].reverse(),
     averages: [firstRecord(averages), firstRecord(seasonAverages)],
+    seasonGameCount: seasonGameCount(payload.season_game_count),
     nextGame: payload.next_game || null,
   };
 };

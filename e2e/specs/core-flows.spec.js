@@ -635,6 +635,8 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
+  // The sample states itself against the whole season, which no filter changes.
+  await expect(page.getByText('1 of 2 games', { exact: true })).toBeVisible();
 
   // Clearing it removes it from the URL and from the request that follows.
   const fixedRequestCount = gameLogRequests.length;
@@ -645,6 +647,7 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(fixedRequestCount);
   expect(gameLogRequests.at(-1).searchParams.has('opponent_tricode')).toBe(false);
   await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toBeVisible();
+  await expect(page.getByText('2 of 2 games', { exact: true })).toBeVisible();
 });
 
 test('@critical Back out of the workspace returns to the Query Prompt', async ({

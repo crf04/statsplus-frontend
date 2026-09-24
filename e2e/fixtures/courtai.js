@@ -2522,14 +2522,14 @@ export const installApiContract = async (page, overrides = {}) => {
     }
 
     if (url.pathname === '/api/games/game_logs') {
+      const season = seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs;
       await route.fulfill({
         json: {
-          game_logs: applyOpponentTricode(
-            applySelfFilters(seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs, url),
-            url,
-          ),
+          game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
           averages: [averages],
           season_averages: [{ ...averages, PTS: 27, AST: 8 }],
+          // Like the real endpoint, the season total ignores every filter.
+          season_game_count: season.length,
           next_game: 'Atlanta Hawks',
         },
       });

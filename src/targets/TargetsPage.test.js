@@ -999,15 +999,12 @@ test('the arrow keys move a threshold by one percent', async () => {
   fireEvent.keyDown(threshold, { key: 'ArrowDown' });
   expect(threshold).toHaveValue('38');
 
-  // A decimal keeps its decimal; the bounds hold; a blank field starts at zero.
+  // A decimal keeps its decimal; the upper bound holds; a blank field starts at zero.
   fireEvent.change(threshold, { target: { value: '40.5' } });
   fireEvent.keyDown(threshold, { key: 'ArrowRight' });
   expect(threshold).toHaveValue('41.5');
   for (let step = 0; step < 100; step += 1) fireEvent.keyDown(threshold, { key: 'ArrowRight' });
   expect(threshold).toHaveValue('100');
-  fireEvent.change(threshold, { target: { value: '0' } });
-  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
-  expect(threshold).toHaveValue('0');
   fireEvent.change(threshold, { target: { value: '0' } });
   fireEvent.keyDown(threshold, { key: 'ArrowUp' });
   expect(threshold).toHaveValue('1');

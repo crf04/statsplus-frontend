@@ -188,7 +188,6 @@ const NaturalLanguageQuery = ({
           <div className="landing-hero">
             <LandingCourt />
             <div className="landing-header">
-              <p className="landing-eyebrow">NBA game logs · plain English</p>
               <h1 className="landing-title">
                 Ask the <em>box score</em>
               </h1>

@@ -321,6 +321,14 @@ body {
     gap: 10px;
   }
 
+  /* Wrap rather than overflow a phone-width card: centred in its wrapper, an
+     overflowing group spills off both edges and its first toggle is lost. */
+  .per36-toggle-group {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+  }
+
   .per36-toggle-btn {
     font-size: 0.7rem !important;
     padding: 5px 10px !important;
@@ -582,32 +590,46 @@ body {
 }
 
 /* Side-by-side layout for per 36 and game logs */
+/* A bare 1fr track is minmax(auto, 1fr): it grows to the game-logs table's
+   min-content width and pushes the page wider than a phone. minmax(0, 1fr)
+   and min-width: 0 keep each column inside the viewport, so the table
+   scrolls inside its own .table-scroll-container instead. */
 .stats-layout-container {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
 
 .per36-sidebar {
   grid-column: 1;
+  min-width: 0;
 }
 
 .game-logs-main {
   grid-column: 2;
+  min-width: 0;
 }
 
 /* Responsive side-by-side layout */
 @media (max-width: 1200px) {
   .stats-layout-container {
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 350px minmax(0, 1fr);
     gap: 16px;
   }
 }
 
 @media (max-width: 768px) {
+  /* The compact search toggle is fixed at the top centre of the viewport
+     (ModernSearch.css: header + 12px, 52px tall). On a narrow screen the
+     toolbar's Save Filter Set button reaches the centre and sits beneath it,
+     so start the toolbar below the toggle. */
+  .workspace-toolbar {
+    margin-top: 64px;
+  }
+
   .stats-layout-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
 

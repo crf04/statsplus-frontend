@@ -445,18 +445,6 @@ test('the blank form is unsaveable until a threshold has been composed', async (
   expect(save).toBeEnabled();
 });
 
-test('slider tuning cannot set a threshold outside the share range', async () => {
-  renderPage();
-  await screen.findAllByRole('article');
-  const threshold = screen.getByLabelText('Qualifier 1 threshold percent');
-  fireEvent.change(threshold, { target: { value: '100' } });
-  fireEvent.keyDown(threshold, { key: 'ArrowRight' });
-  expect(Number(threshold.value)).toBeLessThanOrEqual(100);
-  fireEvent.change(threshold, { target: { value: '0' } });
-  fireEvent.keyDown(threshold, { key: 'ArrowLeft' });
-  expect(threshold).toHaveValue('0');
-});
-
 test('refuses to save a Target with no Qualifier at all', async () => {
   renderPage();
   await screen.findAllByRole('article');

@@ -152,9 +152,3 @@ export const describeRank = (rank) => {
 /** The badge text for one opponent filter, e.g. "Points Allowed (ranks 11–20)". */
 export const opponentFilterRankLabel = (token, rank) =>
   `${opponentFilterLabel(token)} (${describeRank(rank)})`;
-
-/** The flat token list the dropdown accepts, with the `None` sentinel first. */
-export const defensiveOptions = [
-  'None',
-  ...OPPONENT_FILTERS.flatMap((group) => group.items.map((item) => item.token)),
-];

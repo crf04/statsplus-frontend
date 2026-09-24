@@ -1,0 +1,16 @@
+{"action":"open","path":"/?player_name=LeBron+James&game_filter=5"}
+{"action":"assert","target":{"role":"heading","name":"Game Logs"}}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","game_filter":"5"},"status":200}
+{"action":"snapshot"}
+{"action":"assert","target":{"text":"5 of 60 games"}}
+{"action":"proof","name":"prod-a-shared-link-desktop"}
+{"action":"fill","target":{"label":"Last N games:"},"value":""}
+{"action":"click","target":{"role":"button","name":"Apply Filters"}}
+{"action":"assert","target":{"text":"60 of 60 games"}}
+{"action":"proof","name":"prod-b-cleared-desktop"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James"},"status":200}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"text":"60 of 60 games"}}
+{"action":"proof","name":"prod-b-cleared-phone"}
+{"action":"assert-layout"}
+{"action":"cleanup"}

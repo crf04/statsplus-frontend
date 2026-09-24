@@ -65,6 +65,16 @@ test('a pointer threshold is displayed at the precision that will be saved', asy
   expect(screen.getByText('25.9%')).toBeVisible();
 });
 
+test('nudging a threshold below zero keeps it at zero', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
+  render(<Form />);
+  const slider = screen.getByRole('slider', { name: /threshold percent/ });
+  fireEvent.change(slider, { target: { value: '0' } });
+  fireEvent.keyDown(slider, { key: 'ArrowLeft' });
+  expect(screen.getByText('0%')).toBeVisible();
+  expect(screen.queryByText('-1%')).not.toBeInTheDocument();
+});
+
 // Opponent transport is exercised in its own API/hook tests.
 jest.mock('./opponentContextApi', () => ({
   ...jest.requireActual('./opponentContextApi'),

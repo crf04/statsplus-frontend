@@ -3,8 +3,19 @@ import { Row, Col, Card, ToggleButtonGroup, ToggleButton } from 'react-bootstrap
 import AppliedFilters from './AppliedFilters';
 import { formatNumber, formatPercent, numericOrZero, toFiniteNumber } from './numberUtils';
 
-const PerformanceAverages = ({ averages, appliedFilters }) => {
+// "12 of 71 games" when the season size is known, "12 games" when it is not.
+const describeSample = ({ filtered, season }) => {
+  const total = Number.isInteger(season) ? season : filtered;
+  const noun = total === 1 ? 'game' : 'games';
+  return Number.isInteger(season) ? `${filtered} of ${season} ${noun}` : `${filtered} ${noun}`;
+};
+
+const PerformanceAverages = ({ averages, appliedFilters, sampleSize = null }) => {
   const [activeCategory, setActiveCategory] = useState('Shooting');
+  // An empty season has no averages to compare against, so there is no sample
+  // to state. A filter that empties only the filtered side still reads "0 of M".
+  const seasonAverages = Array.isArray(averages) ? averages[1] : null;
+  const hasSeasonAverages = Boolean(seasonAverages) && Object.keys(seasonAverages).length > 0;
 
   const renderCompactPer36 = () => {
     if (!Array.isArray(averages) || averages.length !== 2) {
@@ -291,6 +302,9 @@ const PerformanceAverages = ({ averages, appliedFilters }) => {
           <Card.Body className="p-3">
             <h4 className="mb-2">Per 36 Minutes Comparison</h4>
             <span className="legend-text mb-1 d-block text-center">Filtered vs Season</span>
+            {sampleSize && hasSeasonAverages && (
+              <p className="sample-size-text text-center mb-2">{describeSample(sampleSize)}</p>
+            )}
             <div className="mb-2">
               <AppliedFilters filters={appliedFilters || {}} />
             </div>

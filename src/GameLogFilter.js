@@ -58,6 +58,9 @@ const GameLogFilter = () => {
   const [lineValue, setLineValue] = useState('');
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
+  // How many games the shown averages cover, against the whole season; null
+  // until a game-log response arrives for the current Filter Set.
+  const [sampleSize, setSampleSize] = useState(null);
   const [playerList, setPlayerList] = useState([]);
   const [teams, setTeams] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({});
@@ -249,6 +252,7 @@ const GameLogFilter = () => {
       // if it never arrives, rather than only once it does.
       setGameLogs([]);
       setAverages([]);
+      setSampleSize(null);
 
       return readRevisit(
         'logs',
@@ -264,6 +268,10 @@ const GameLogFilter = () => {
 
           setGameLogs(data.gameLogs);
           setAverages(data.averages);
+          setSampleSize({
+            filtered: data.gameLogs.length,
+            season: data.seasonGameCount ?? null,
+          });
           if (updateSelectedTeam) {
             setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
           }
@@ -296,6 +304,7 @@ const GameLogFilter = () => {
     setGameLogs([]);
     clearSeasonGameLogs();
     setAverages([]);
+    setSampleSize(null);
     setSelectedTeam('');
     setGameLogsError(null);
   }, [abortGameLogsRequest, clearSeasonGameLogs]);
@@ -337,6 +346,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setSampleSize(null);
       setAppliedFilters({});
       setGameLogsError(
         `This link could not be opened: ${listNames(urlInvalid)} ` +
@@ -356,6 +366,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setSampleSize(null);
       return undefined;
     }
 
@@ -368,6 +379,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setSampleSize(null);
       setSelectedTeam('');
       return undefined;
     }
@@ -623,7 +635,11 @@ const GameLogFilter = () => {
 
           <div className="stats-layout-container">
             <div className="per36-sidebar">
-              <PerformanceAverages averages={averages} appliedFilters={appliedFilters} />
+              <PerformanceAverages
+                averages={averages}
+                appliedFilters={appliedFilters}
+                sampleSize={isGameLogsLoading ? null : sampleSize}
+              />
             </div>
 
             <div className="game-logs-main">

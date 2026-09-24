@@ -22,4 +22,58 @@ describe('PerformanceAverages', () => {
     const pointsCard = screen.getByText('PTS').closest('.compact-stat-card');
     expect(within(pointsCard).getAllByText('18.0')).toHaveLength(2);
   });
+
+  const averages = [
+    { MIN: 20, PTS: 10 },
+    { MIN: 40, PTS: 20 },
+  ];
+
+  test('states the filtered sample against the whole season', () => {
+    render(
+      <PerformanceAverages
+        averages={averages}
+        appliedFilters={{}}
+        sampleSize={{ filtered: 12, season: 71 }}
+      />,
+    );
+    expect(screen.getByText('12 of 71 games')).toBeVisible();
+  });
+
+  test('counts only the filtered games when the season size is unknown', () => {
+    render(
+      <PerformanceAverages
+        averages={averages}
+        appliedFilters={{}}
+        sampleSize={{ filtered: 1, season: null }}
+      />,
+    );
+    expect(screen.getByText('1 game')).toBeVisible();
+  });
+
+  test('states an emptied sample rather than hiding it', () => {
+    render(
+      <PerformanceAverages
+        averages={[{}, { MIN: 40, PTS: 20 }]}
+        appliedFilters={{}}
+        sampleSize={{ filtered: 0, season: 71 }}
+      />,
+    );
+    expect(screen.getByText('0 of 71 games')).toBeVisible();
+  });
+
+  test('says nothing about the sample when the season has no averages', () => {
+    render(
+      <PerformanceAverages
+        averages={[{}, {}]}
+        appliedFilters={{}}
+        sampleSize={{ filtered: 0, season: 0 }}
+      />,
+    );
+    expect(screen.queryByText(/\bgames?\b/)).not.toBeInTheDocument();
+  });
+
+  test('says nothing about the sample before a result arrives', () => {
+    render(<PerformanceAverages averages={averages} appliedFilters={{}} sampleSize={null} />);
+    expect(screen.queryByText(/\bgames?\b/)).not.toBeInTheDocument();
+  });
 });

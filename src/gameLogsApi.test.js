@@ -36,6 +36,7 @@ describe('gameLogsApi', () => {
         ]),
         averages: JSON.stringify([{ PTS: 20 }]),
         season_averages: [{ PTS: 21 }],
+        season_game_count: 71,
         next_game: 'Boston Celtics',
       }),
     ).toEqual({
@@ -44,9 +45,25 @@ describe('gameLogsApi', () => {
         { GAME_ID: 1, WL: 'W', TOV: 3 },
       ],
       averages: [{ PTS: 20 }, { PTS: 21 }],
+      seasonGameCount: 71,
       nextGame: 'Boston Celtics',
     });
   });
+
+  test('keeps a zero season game count', () => {
+    expect(decodeGameLogsResponse({ game_logs: [], season_game_count: 0 }).seasonGameCount).toBe(0);
+  });
+
+  // An older backend, a cached response, or a malformed value must not invent a
+  // season size, so anything but a non-negative integer reads as unknown.
+  test.each([undefined, null, -1, 2.5, '71', Number.NaN])(
+    'reads a season game count of %p as unknown',
+    (value) => {
+      expect(
+        decodeGameLogsResponse({ game_logs: [], season_game_count: value }).seasonGameCount,
+      ).toBeNull();
+    },
+  );
 
   test('returns a useful error for malformed game logs', () => {
     expect(() => decodeGameLogsResponse({ game_logs: '{not-json}' })).toThrow(

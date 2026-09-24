@@ -58,14 +58,10 @@ jest.mock('./OpposingTeamProfile', () => ({
     </div>
   ),
 }));
-jest.mock('./PerformanceAverages', () => ({
-  __esModule: true,
-  default: ({ sampleSize }) => (
-    <output data-testid="sample-size">
-      {sampleSize ? `${sampleSize.filtered} of ${sampleSize.season}` : ''}
-    </output>
-  ),
-}));
+jest.mock('./PerformanceAverages', () => {
+  const { default: ActualPerformanceAverages } = jest.requireActual('./PerformanceAverages');
+  return { __esModule: true, default: ActualPerformanceAverages };
+});
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerStatsCards', () => ({ __esModule: true, default: () => null }));
@@ -428,14 +424,18 @@ test('unchanged Apply recovers from an initial failure with a default comparison
 
 test('hides the sample size while the next request is in flight', async () => {
   const logs = (count) => Array.from({ length: count }, (_, index) => ({ GAME_ID: `${index}` }));
+  const averages = [
+    { MIN: 30, PTS: 20 },
+    { MIN: 34, PTS: 25 },
+  ];
   fetchGameLogsData.mockResolvedValueOnce({
     gameLogs: logs(3),
-    averages: [{}, {}],
+    averages,
     seasonGameCount: 60,
     nextGame: null,
   });
   renderGameLogFilter(['/?player_name=Nikola+Jokic']);
-  await waitFor(() => expect(screen.getByTestId('sample-size')).toHaveTextContent('3 of 60'));
+  expect(await screen.findByText('3 of 60 games')).toBeVisible();
 
   let resolveNext;
   fetchGameLogsData.mockImplementationOnce(
@@ -446,10 +446,10 @@ test('hides the sample size while the next request is in flight', async () => {
   );
   fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
   await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(2));
-  expect(screen.getByTestId('sample-size')).toBeEmptyDOMElement();
+  expect(screen.queryByText(/of 60 games/)).not.toBeInTheDocument();
 
   await act(async () =>
-    resolveNext({ gameLogs: logs(5), averages: [{}, {}], seasonGameCount: 60, nextGame: null }),
+    resolveNext({ gameLogs: logs(5), averages, seasonGameCount: 60, nextGame: null }),
   );
-  expect(screen.getByTestId('sample-size')).toHaveTextContent('5 of 60');
+  expect(screen.getByText('5 of 60 games')).toBeVisible();
 });

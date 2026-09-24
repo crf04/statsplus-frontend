@@ -45,6 +45,7 @@ A few decisions worth calling out:
 
 - Multi-dimensional filtering (player, team, matchup, season, date, stat thresholds, teammates on/off court, home/away)
 - Natural language query box, with a guided ladder on the landing page and a linkable query reference at `/help`
+- The Log Workspace's Filtered vs Season card states its sample against the season: "12 of 71 games", or "0 of 71 games" when the filters leave nothing. Without a valid `season_game_count` from `/api/games/game_logs` (an older backend or a cached response) it reads "12 games". It shows no count while a request is loading or when the season has no games.
 - Player profile pages with summaries, averages, recent game logs, assist profiles, and 2-vs-3 distribution charts
 - Team and opponent matchup pages
 - Responsive layout via Tailwind + Bootstrap + custom CSS

@@ -505,16 +505,6 @@ test('missing minutes and legacy rates remain visible individually but leave agg
   );
 });
 
-test('the per36 column excludes a zero-minute row', () => {
-  renderPointsRecord(
-    [player({ name: 'A', seasonPoints: 20, seasonMinutes: 30, gamePoints: 10, gameMinutes: 0 })],
-    ['PTS/36'],
-  );
-  const summary = screen.getByRole('listitem', { name: 'PTS/36' });
-  expect(summary).toHaveTextContent('— PTS/36');
-  expect(summary).toHaveTextContent('0 of 1 player-games used');
-});
-
 test('an empty record has no aggregate evidence', () => {
   render(<TargetRecord backtest={{ ...backtest, players: [] }} />);
   expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('0');

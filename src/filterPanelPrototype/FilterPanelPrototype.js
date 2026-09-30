@@ -10,7 +10,7 @@ import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
 import VariantF from './VariantF';
-import Filler from './fillers';
+import Filler, { FillerJ } from './fillers';
 import './prototype.css';
 
 const VARIANTS = {
@@ -32,6 +32,14 @@ const VARIANTS = {
       {...props}
       pinned
       filler={<Filler kind="saved-extremes" panel={props.panel} extra={props.extra} />}
+    />
+  ),
+  J: (props) => (
+    <VariantB
+      {...props}
+      pinned
+      compactTiles
+      filler={<FillerJ panel={props.panel} extra={props.extra} />}
     />
   ),
   H: (props) => (

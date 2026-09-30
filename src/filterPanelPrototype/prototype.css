@@ -1185,3 +1185,56 @@
   background: rgba(122, 134, 153, 0.16);
   color: #aab4c4;
 }
+
+/* ---- J: count folded into the strip, compact tiles ------------------- */
+
+@media (min-width: 768px) {
+  .fp-pinned .fp-scroll > .fp-filler.is-j {
+    gap: 12px;
+    overflow: visible;
+    padding-top: 6px;
+  }
+}
+.fpx-match-head b {
+  font-family: var(--ct-mono);
+  font-size: 13px;
+  color: var(--ct-text);
+  letter-spacing: 0;
+}
+.fpx-match-head .is-thin {
+  color: var(--ct-gold-hover);
+}
+.fpx-match .fpx-strip-legend {
+  margin-top: 6px;
+}
+.fpb-tiles.is-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.fpb-tiles.is-compact .fpb-tile {
+  padding: 8px 10px;
+}
+.fpb-tiles.is-compact .fpb-tile b {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fpb-tiles.is-compact .fpb-tile span {
+  display: none;
+}
+@media (max-width: 767px) {
+  .fp-filler.is-j {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+  }
+}
+.fp-filler.is-j > * {
+  flex-shrink: 0;
+}
+.fpx-saved {
+  height: 46px;
+  line-height: 1.3;
+}

@@ -163,7 +163,7 @@ export const Editor = ({ which, panel, onDone }) => {
   );
 };
 
-const VariantB = ({ panel, pinned, filler }) => {
+const VariantB = ({ panel, pinned, filler, compactTiles }) => {
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -283,7 +283,7 @@ const VariantB = ({ panel, pinned, filler }) => {
         ) : (
           <>
             <div className="fpb-addlabel">Add a filter</div>
-            <div className="fpb-tiles">
+            <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
               {TILES.map((tile) => (
                 <button
                   key={tile.key}

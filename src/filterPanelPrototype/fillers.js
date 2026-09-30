@@ -30,7 +30,7 @@ const useHeight = () => {
 const COUNT_H = 30;
 const STRIP_H = 84;
 const LIST_HEAD_H = 46;
-const ROW_H = 42;
+const ROW_H = 46;
 
 /* ---- match count + season strip ---------------------------------------- */
 
@@ -309,6 +309,157 @@ const OpponentExtremes = ({ rows, expanded, onToggle, panel }) => {
           {expanded ? 'Show fewer' : `+ ${hidden} more`}
         </button>
       )}
+    </div>
+  );
+};
+
+/* ---- variant J: strip with its count, demo game, saved sets ------------- */
+
+const J_MATCH_H = 92;
+const J_GAP = 12;
+const J_HEAD_H = 34;
+const J_SUMMARY_H = 28;
+const J_OPP_ROW_H = 32;
+const J_MORE_H = 30;
+const J_SAVED_ROW_H = 46;
+const J_SAVED_MIN = 2;
+
+// The count is the strip's title: how many of the season's games the
+// filters kept, over the cells that show which ones.
+const MatchStrip = ({ seasonLogs, keptDates, lineType, line }) => {
+  const kept = seasonLogs.filter((log) => keptDates.has(log.GAME_DATE)).length;
+  const pct = seasonLogs.length ? Math.round((kept / seasonLogs.length) * 100) : 0;
+  return (
+    <div className="fpx-match">
+      <div className="fpx-list-head fpx-match-head">
+        <span>
+          <b>{kept}</b> of {seasonLogs.length} games match
+        </span>
+        <span className={`fp-val${pct < 20 ? ' is-thin' : ''}`}>
+          {pct < 20 ? 'small sample' : `${pct}%`}
+        </span>
+      </div>
+      <SeasonStrip
+        seasonLogs={seasonLogs}
+        keptDates={keptDates}
+        lineType={lineType}
+        line={line}
+        stripRows={3}
+      />
+    </div>
+  );
+};
+
+const SavedSetsJ = ({ rows, expanded, onToggle }) => {
+  const sets = useSavedSets();
+  const navigate = useNavigate();
+  if (!sets) return null;
+  const currentSearch = window.location.search.replace(/^\?/, '');
+  const shown = expanded ? sets : sets.slice(0, rows);
+  const hidden = sets.length - shown.length;
+  return (
+    <div className="fpx-list">
+      <div className="fpx-list-head">
+        <span>Saved Filter Sets</span>
+        <span className="fp-val">{sets.length}</span>
+      </div>
+      {sets.length === 0 && (
+        <p className="fp-note">Nothing saved yet. Save this set to come back to it in one tap.</p>
+      )}
+      {shown.map((set) => {
+        const described = describeSavedFilterSet(set.queryString);
+        const current = new URLSearchParams(set.queryString).toString() === currentSearch;
+        return (
+          <button
+            key={set.id}
+            type="button"
+            className={`fpx-saved${current ? ' is-current' : ''}`}
+            onClick={() => navigate(`/?${set.queryString}`)}
+          >
+            <b>{set.name}</b>
+            <span>
+              {described.parameters.map((parameter) => parameter.label).join(' · ') || 'no filters'}
+            </span>
+          </button>
+        );
+      })}
+      {(hidden > 0 || (expanded && sets.length > rows)) && (
+        <button type="button" className="fpx-ext-more" onClick={onToggle}>
+          {expanded ? 'Show fewer' : `+ ${hidden} more`}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Everything is always shown; spare height goes to demo-game rows first, then
+// saved sets. When even the minimum does not fit, the panel scrolls.
+export const FillerJ = ({ panel, extra }) => {
+  const [ref, height] = useHeight();
+  const [oppOpen, setOppOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const { ensureSeason } = panel;
+  useEffect(() => {
+    ensureSeason();
+  }, [ensureSeason]);
+
+  const seasonLogs = extra.seasonGameLogs || [];
+  const keptDates = new Set((extra.gameLogs || []).map((log) => log.GAME_DATE));
+
+  // On a phone the panel stacks under the chart, so nothing needs filling:
+  // show a fixed amount instead of measuring.
+  const phone = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  let spare =
+    height -
+    (J_MATCH_H +
+      J_GAP +
+      J_HEAD_H +
+      J_SUMMARY_H +
+      J_GAP +
+      J_HEAD_H +
+      J_SAVED_MIN * J_SAVED_ROW_H +
+      J_MORE_H);
+  let oppRows = 0;
+  if (phone) {
+    oppRows = 5;
+    spare = J_MORE_H + J_SAVED_ROW_H;
+  } else if (!oppOpen) {
+    const all = EXTREMES.length;
+    const canvas = spare + J_SUMMARY_H;
+    if (canvas >= all * J_OPP_ROW_H) {
+      oppRows = all;
+      spare = canvas - all * J_OPP_ROW_H;
+    } else {
+      const fit = Math.floor((canvas - J_MORE_H) / J_OPP_ROW_H);
+      if (fit >= 2) {
+        oppRows = fit;
+        spare = canvas - fit * J_OPP_ROW_H - J_MORE_H;
+      }
+    }
+  }
+  const savedRows = J_SAVED_MIN + Math.max(0, Math.floor(spare / J_SAVED_ROW_H));
+
+  return (
+    <div className="fp-filler is-j" ref={ref}>
+      {seasonLogs.length > 0 && (
+        <MatchStrip
+          seasonLogs={seasonLogs}
+          keptDates={keptDates}
+          lineType={extra.lineType}
+          line={lineFor(extra)}
+        />
+      )}
+      <OpponentExtremes
+        rows={oppRows}
+        expanded={oppOpen}
+        onToggle={() => setOppOpen((open) => !open)}
+        panel={panel}
+      />
+      <SavedSetsJ
+        rows={savedRows}
+        expanded={savedOpen}
+        onToggle={() => setSavedOpen((open) => !open)}
+      />
     </div>
   );
 };

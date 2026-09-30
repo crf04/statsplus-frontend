@@ -6,7 +6,7 @@ unrelated controls.
 
 Three variants plus the current panel, on the real `/` route, switched with
 the floating bar or `←`/`→`. The variant rides the hash
-(`#proto=filters&v=A|B|C|D|E|F|G|H|I|Now`) because the query string is the Filter Set.
+(`#proto=filters&v=A|B|C|D|E|F|G|H|I|J|Now`) because the query string is the Filter Set.
 
 - **A — Grouped sheet.** Everything visible in four groups (Lineup, Games,
   Matchup, Own stats); values read beside labels; sticky Apply bar.
@@ -71,3 +71,13 @@ Correction: Playtypes (and Assists) values from `/api/teams/stats` are the
 team's rate over the league average (Misc 1.171 = 17% more points per
 possession than average), not raw PPP; the card shows "+17% vs avg". Volume
 per play type lives in the separate "Playtype Points" category (per-48).
+
+Round 5 (keep saved sets beside the demo game):
+
+- **J — I, reworked.** "N of M games match" is now the strip's title, and
+  the progress bar is gone. Saved Filter Sets are always shown (at least two
+  rows plus "+ N more"). Spare height goes to demo-game rows first, then
+  saved sets. The "Add a filter" tiles are single-line buttons in three
+  columns, to make room. On a phone the filler shows in page flow with fixed
+  counts. At 1280 wide the minimum doesn't fit, so the panel scrolls about
+  50px.

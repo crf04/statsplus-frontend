@@ -8,6 +8,7 @@ import PlayerSelector from './PlayerSelector';
 // PROTOTYPE (throwaway, branch prototype/filter-panel-look): variants of the
 // filter panel. Renders plain <FilterOptions> when the prototype is off.
 import FilterOptions from './filterPanelPrototype/FilterPanelPrototype';
+import { useVariant as usePrototypeVariant } from './filterPanelPrototype/prototypeMode';
 import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
@@ -36,6 +37,9 @@ const listNames = (names) =>
 
 const GameLogFilter = () => {
   const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
+  // PROTOTYPE: variant F moves the filter panel into a bar above the chart.
+  const prototypeVariant = usePrototypeVariant();
+  const filterBar = prototypeVariant.active && prototypeVariant.variant === 'F';
   const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
@@ -579,7 +583,21 @@ const GameLogFilter = () => {
       {inWorkspace && !isRefusedLink && (
         <Container fluid className="game-log-filter py-2">
           <Row className="mb-5">
-            <Col md={8}>
+            {filterBar && (
+              <Col xs={12} className="mb-3">
+                <FilterOptions
+                  playerList={playerList}
+                  onApplyFilters={handleApplyFilters}
+                  selectedPlayer={selectedPlayer}
+                  seasonGameLogs={playerSeasonGameLogs}
+                  seasonGameLogsLoading={seasonGameLogsLoading}
+                  seasonGameLogsFailed={seasonGameLogsFailed}
+                  onOpenSelfFilters={loadSeasonGameLogs}
+                  appliedFilters={appliedFilters}
+                />
+              </Col>
+            )}
+            <Col md={filterBar ? 12 : 8}>
               <Card className="dark-card">
                 <Card.Body>
                   <PlayerSelector
@@ -594,28 +612,32 @@ const GameLogFilter = () => {
                   />
                   <Suspense fallback={null}>
                     <ChartComponent
+                      key={filterBar ? 'bar' : 'side'}
                       gameLogs={gameLogs}
                       lineType={lineType}
                       lineValue={lineValue}
                       averages={averages}
                       appliedFilters={appliedFilters}
+                      fixedHeight={filterBar ? 380 : undefined}
                     />
                   </Suspense>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={4}>
-              <FilterOptions
-                playerList={playerList}
-                onApplyFilters={handleApplyFilters}
-                selectedPlayer={selectedPlayer}
-                seasonGameLogs={playerSeasonGameLogs}
-                seasonGameLogsLoading={seasonGameLogsLoading}
-                seasonGameLogsFailed={seasonGameLogsFailed}
-                onOpenSelfFilters={loadSeasonGameLogs}
-                appliedFilters={appliedFilters}
-              />
-            </Col>
+            {!filterBar && (
+              <Col md={4}>
+                <FilterOptions
+                  playerList={playerList}
+                  onApplyFilters={handleApplyFilters}
+                  selectedPlayer={selectedPlayer}
+                  seasonGameLogs={playerSeasonGameLogs}
+                  seasonGameLogsLoading={seasonGameLogsLoading}
+                  seasonGameLogsFailed={seasonGameLogsFailed}
+                  onOpenSelfFilters={loadSeasonGameLogs}
+                  appliedFilters={appliedFilters}
+                />
+              </Col>
+            )}
           </Row>
 
           <Row className="mb-5">

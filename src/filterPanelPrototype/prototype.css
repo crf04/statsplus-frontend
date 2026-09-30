@@ -749,3 +749,158 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ---- D / E: the panel fills the chart card's height ------------------- */
+
+.fp-scroll {
+  min-height: 0;
+}
+@media (min-width: 768px) {
+  .game-log-filter .row > div:has(> .fp-pinned) {
+    position: relative;
+  }
+  .fp-pinned {
+    position: absolute;
+    inset: 0 calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+    display: flex;
+    flex-direction: column;
+  }
+  .fp-pinned .fp-scroll {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0 -18px;
+    padding: 0 18px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ct-line-strong) transparent;
+  }
+  .fp-pinned .fpb-foot,
+  .fp-pinned .fpc-apply {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--ct-line);
+  }
+  .fp-pinned.fp-c .fpc-apply {
+    margin-top: 14px;
+  }
+  .fp-pinned .fp-scroll {
+    padding-bottom: 14px;
+  }
+}
+
+/* ---- F: filter bar above the chart ------------------------------------ */
+
+.fp-f {
+  position: relative;
+  padding: 10px 12px;
+}
+.fpf-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fpf-title {
+  flex: 0 0 auto;
+  font-family: var(--ct-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.fpf-pills {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.fpf-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ct-line);
+  border-radius: 8px;
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 32px;
+  white-space: nowrap;
+}
+.fpf-pill:hover {
+  border-color: var(--ct-line-strong);
+}
+.fpf-pill-label {
+  color: var(--ct-dim);
+}
+.fpf-pill-value {
+  font-family: var(--ct-mono);
+  font-size: 12px;
+  color: var(--ct-dim);
+}
+.fpf-pill.is-set {
+  border-color: rgba(232, 163, 61, 0.45);
+  background: #241e13;
+}
+.fpf-pill.is-set .fpf-pill-value {
+  color: var(--ct-gold-hover);
+}
+.fpf-pill.is-open {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+}
+.fpf-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fpf-apply {
+  width: auto;
+  height: 34px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+.fpf-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 40;
+  width: min(360px, calc(100% - 16px));
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: #1b170f;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+.fpf-pop .fp-chips {
+  margin: 0;
+}
+.fpf-pop .fpb-editor {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+@media (max-width: 767px) {
+  .fpf-bar {
+    flex-wrap: wrap;
+  }
+  .fpf-title {
+    flex: 1;
+  }
+  .fpf-actions {
+    order: 2;
+  }
+  .fpf-pills {
+    order: 3;
+    flex: 0 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -12px;
+    padding: 0 12px 2px;
+    scrollbar-width: none;
+  }
+}

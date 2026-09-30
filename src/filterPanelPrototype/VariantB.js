@@ -16,7 +16,7 @@ import {
   selfChipLabel,
 } from './parts';
 
-const formatDate = (iso) => {
+export const formatDate = (iso) => {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', {
     month: 'short',
@@ -48,7 +48,7 @@ const Rule = ({ kind, children, onEdit, onRemove }) => (
   </li>
 );
 
-const Editor = ({ which, panel, onDone }) => {
+export const Editor = ({ which, panel, onDone }) => {
   const title = TILES.find((tile) => tile.key === which)?.title;
   let body = null;
   if (which === 'teammate') body = <TeammateSearch panel={panel} />;
@@ -163,7 +163,7 @@ const Editor = ({ which, panel, onDone }) => {
   );
 };
 
-const VariantB = ({ panel }) => {
+const VariantB = ({ panel, pinned }) => {
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -266,40 +266,42 @@ const VariantB = ({ panel }) => {
   );
 
   return (
-    <div className="fp fp-b">
-      <div className="fpb-head">
-        <span className="fpb-eyebrow">Showing</span>
-        <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-      </div>
-      {rules.length > 0 ? (
-        <ul className="fpb-rules">{rules}</ul>
-      ) : (
-        <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
-      )}
+    <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`}>
+      <div className="fp-scroll">
+        <div className="fpb-head">
+          <span className="fpb-eyebrow">Showing</span>
+          <h2>{panel.selectedPlayer}&rsquo;s games</h2>
+        </div>
+        {rules.length > 0 ? (
+          <ul className="fpb-rules">{rules}</ul>
+        ) : (
+          <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
+        )}
 
-      {editing ? (
-        <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
-      ) : (
-        <>
-          <div className="fpb-addlabel">Add a filter</div>
-          <div className="fpb-tiles">
-            {TILES.map((tile) => (
-              <button
-                key={tile.key}
-                type="button"
-                className="fpb-tile"
-                onClick={() => {
-                  if (tile.key === 'self') panel.ensureSeason();
-                  setEditing(tile.key);
-                }}
-              >
-                <b>+ {tile.title}</b>
-                <span>{tile.sub}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+        {editing ? (
+          <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
+        ) : (
+          <>
+            <div className="fpb-addlabel">Add a filter</div>
+            <div className="fpb-tiles">
+              {TILES.map((tile) => (
+                <button
+                  key={tile.key}
+                  type="button"
+                  className="fpb-tile"
+                  onClick={() => {
+                    if (tile.key === 'self') panel.ensureSeason();
+                    setEditing(tile.key);
+                  }}
+                >
+                  <b>+ {tile.title}</b>
+                  <span>{tile.sub}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="fpb-foot">
         {panel.activeCount > 0 && (

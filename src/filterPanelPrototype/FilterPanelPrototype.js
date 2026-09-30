@@ -9,9 +9,17 @@ import useFilterPanel from './useFilterPanel';
 import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
+import VariantF from './VariantF';
 import './prototype.css';
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC };
+const VARIANTS = {
+  A: VariantA,
+  B: VariantB,
+  C: VariantC,
+  D: (props) => <VariantB {...props} pinned />,
+  E: (props) => <VariantC {...props} pinned />,
+  F: VariantF,
+};
 
 const FilterPanelPrototype = (props) => {
   const { active, variant, step } = useVariant();

@@ -11,7 +11,16 @@ const getPer36Value = (average, stat) => {
   return value !== null && minutes !== null && minutes !== 0 ? (value / minutes) * 36 : 0;
 };
 
-const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilters }) => {
+// PROTOTYPE (throwaway): `fixedHeight` lets filter-panel variant F draw the
+// chart full width without a 2:1 aspect making it 700px tall.
+const ChartComponent = ({
+  gameLogs,
+  lineType,
+  lineValue,
+  averages,
+  appliedFilters,
+  fixedHeight,
+}) => {
   const explicitLineValue = toFiniteNumber(lineValue);
   const numericLineValue =
     explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[0]?.[lineType], 0);
@@ -60,6 +69,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
   const chartOptions = useMemo(
     () => ({
       responsive: true,
+      ...(fixedHeight ? { maintainAspectRatio: false } : {}),
       plugins: {
         legend: {
           display: false,
@@ -154,7 +164,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
         },
       },
     }),
-    [gameLogs, lineType, lineValue, explicitLineValue, numericLineValue],
+    [gameLogs, lineType, lineValue, explicitLineValue, numericLineValue, fixedHeight],
   );
 
   const overLineCount = (logs) =>
@@ -176,7 +186,10 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
           <div className="mt-3 mb-3">
             <AppliedFilters filters={appliedFilters} />
           </div>
-          <div className="chart-container">
+          <div
+            className="chart-container"
+            style={fixedHeight ? { position: 'relative', height: fixedHeight } : undefined}
+          >
             <Bar data={chartData} options={chartOptions} />
           </div>
         </>

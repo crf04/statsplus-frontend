@@ -12,12 +12,15 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'filters';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'Now'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'Now'];
 
 export const VARIANT_NAMES = {
   A: 'Grouped sheet, everything visible',
   B: 'Filter Set as sentence + add menu',
   C: 'Summary rows that open in place',
+  D: 'B, filling the chart card height',
+  E: 'C, filling the chart card height',
+  F: 'Filter bar above a full-width chart',
   Now: 'Current panel (for comparison)',
 };
 
@@ -52,6 +55,8 @@ export const useVariant = () => {
       window.history.replaceState(window.history.state, '', `#${next}`);
       window.sessionStorage.setItem(STORE, String(next));
       setHash(next);
+      // Other hook instances (the page layout reads it for F) follow along.
+      window.dispatchEvent(new Event('hashchange'));
     },
     [variant],
   );

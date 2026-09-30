@@ -66,3 +66,8 @@ Caveats: the list reads `/api/teams/stats` ranks (per game, 1 = fewest);
 the defensive filter ranks a per-48 Season publication, so a tier can
 disagree with the list by a place near the cut. Zone stats and a few
 general ones (FG%, OREB, DREB…) have no defensive filter, so no "+".
+
+Correction: Playtypes (and Assists) values from `/api/teams/stats` are the
+team's rate over the league average (Misc 1.171 = 17% more points per
+possession than average), not raw PPP; the card shows "+17% vs avg". Volume
+per play type lives in the separate "Playtype Points" category (per-48).

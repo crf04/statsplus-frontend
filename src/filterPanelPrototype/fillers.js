@@ -246,7 +246,6 @@ const EXTREMES = opponentCha.stats
 
 const formatStat = (stat) => {
   if (stat.fmt === 'pct') return `${(stat.value * 100).toFixed(1)}%`;
-  if (stat.fmt === 'ppp') return `${stat.value.toFixed(2)} PPP`;
   if (stat.fmt === 'idx') {
     const pct = Math.round((stat.value - 1) * 100);
     return `${pct > 0 ? '+' : ''}${pct}% vs avg`;

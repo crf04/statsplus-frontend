@@ -132,91 +132,91 @@
 },
 {
 "group": "Play type",
-"label": "Transition PPP",
+"label": "Transition (per poss.)",
 "value": 0.985,
 "teamRank": 9,
 "token": "Transition",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Isolation PPP",
+"label": "Isolation (per poss.)",
 "value": 1.013,
 "teamRank": 19,
 "token": "Isolation",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Spot-up PPP",
+"label": "Spot-up (per poss.)",
 "value": 0.979,
 "teamRank": 8,
 "token": "Spotup",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Handoff PPP",
+"label": "Handoff (per poss.)",
 "value": 0.938,
 "teamRank": 5,
 "token": "Handoff",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Off-screen PPP",
+"label": "Off-screen (per poss.)",
 "value": 1.023,
 "teamRank": 17,
 "token": "OffScreen",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Post-up PPP",
+"label": "Post-up (per poss.)",
 "value": 0.996,
 "teamRank": 15,
 "token": "Postup",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "P&R ball-handler PPP",
+"label": "P&R ball-handler (per poss.)",
 "value": 1.032,
 "teamRank": 24,
 "token": "PRBallHandler",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "P&R roll-man PPP",
+"label": "P&R roll-man (per poss.)",
 "value": 1.004,
 "teamRank": 18,
 "token": "PRRollMan",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Cuts PPP",
+"label": "Cuts (per poss.)",
 "value": 0.958,
 "teamRank": 8,
 "token": "Cut",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Putbacks PPP",
+"label": "Putbacks (per poss.)",
 "value": 0.982,
 "teamRank": 10,
 "token": "OffRebound",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Play type",
-"label": "Misc. PPP",
+"label": "Misc. (per poss.)",
 "value": 1.171,
 "teamRank": 29,
 "token": "Misc",
-"fmt": "ppp"
+"fmt": "idx"
 },
 {
 "group": "Assists",

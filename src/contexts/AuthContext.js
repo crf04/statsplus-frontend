@@ -15,8 +15,12 @@ const AuthContext = createContext();
 
 const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
+// PROTOTYPE (throwaway): the standalone filter-panel build signs in a fake
+// user the same way E2E mode does, so it needs no Firebase login.
+const isProtoStandalone = process.env.REACT_APP_PROTOTYPE === 'filters';
 const isE2EMode =
-  process.env.NODE_ENV !== 'production' && process.env.REACT_APP_E2E_MODE === 'true';
+  (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_E2E_MODE === 'true') ||
+  isProtoStandalone;
 const e2eUser = {
   uid: 'courtai-e2e-user',
   displayName: 'CourtAI Test User',
@@ -25,6 +29,7 @@ const e2eUser = {
 
 const getInitialUser = () => {
   if (!isE2EMode || typeof window === 'undefined') return null;
+  if (isProtoStandalone) return e2eUser;
   return window.localStorage.getItem(E2E_AUTH_STORAGE_KEY) === 'true' ? e2eUser : null;
 };
 

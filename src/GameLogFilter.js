@@ -5,7 +5,9 @@ import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
-import FilterOptions from './FilterOptions';
+// PROTOTYPE (throwaway, branch prototype/filter-panel-look): variants of the
+// filter panel. Renders plain <FilterOptions> when the prototype is off.
+import FilterOptions from './filterPanelPrototype/FilterPanelPrototype';
 import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';

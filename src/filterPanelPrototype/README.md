@@ -6,7 +6,7 @@ unrelated controls.
 
 Three variants plus the current panel, on the real `/` route, switched with
 the floating bar or `←`/`→`. The variant rides the hash
-(`#proto=filters&v=A|B|C|D|E|F|G|H|Now`) because the query string is the Filter Set.
+(`#proto=filters&v=A|B|C|D|E|F|G|H|I|Now`) because the query string is the Filter Set.
 
 - **A — Grouped sheet.** Everything visible in four groups (Lineup, Games,
   Matchup, Own stats); values read beside labels; sticky Apply bar.
@@ -50,3 +50,19 @@ Trap found: `/api/teams/stats` ranks 1 = lowest value (Utah allows the most
 points and is rank 30), but `rank_filter[]` ranks 1 = highest. H flips it
 (filter rank = 31 − team rank). The G/H filler needs the unfiltered season
 request on load, which production currently makes only for Own stats.
+
+Round 4 (G chosen, plus the demo game):
+
+- **I — G + every top-8 / bottom-8 opponent rank.** The next opponent
+  (@ CHA, demo) listed across all five team-stat categories (general, play
+  type PPP, assists, zones, shot type): 18 of 53 stats sit in the top or
+  bottom 8. Each filterable one has a "+" that adds the matching tier as a
+  defensive rule (1–8 for "most", 23–30 for "fewest"). Priority when space
+  is short: match count, opponent summary line, 3-row strip, opponent rows,
+  saved sets. "+ N more" (or the summary) expands the list and the panel
+  scrolls.
+
+Caveats: the list reads `/api/teams/stats` ranks (per game, 1 = fewest);
+the defensive filter ranks a per-48 Season publication, so a tier can
+disagree with the list by a place near the cut. Zone stats and a few
+general ones (FG%, OREB, DREB…) have no defensive filter, so no "+".

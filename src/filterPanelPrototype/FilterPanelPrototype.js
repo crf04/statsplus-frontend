@@ -27,6 +27,13 @@ const VARIANTS = {
       filler={<Filler kind="saved" panel={props.panel} extra={props.extra} />}
     />
   ),
+  I: (props) => (
+    <VariantB
+      {...props}
+      pinned
+      filler={<Filler kind="saved-extremes" panel={props.panel} extra={props.extra} />}
+    />
+  ),
   H: (props) => (
     <VariantC
       {...props}

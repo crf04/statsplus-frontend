@@ -12,6 +12,8 @@ import { apiClient, getApiUrl } from '../config';
 import { fetchSavedFilterSets } from '../savedFilterSetsApi';
 import { describeSavedFilterSet } from '../savedFilterSetDescription';
 import { toFiniteNumber } from '../numberUtils';
+import { opponentFilterLabel } from '../opponentFilters';
+import opponentCha from './mock/opponent-cha.json';
 
 const useHeight = () => {
   const ref = useRef(null);
@@ -54,14 +56,14 @@ const MatchCount = ({ kept, season }) => {
   );
 };
 
-const SeasonStrip = ({ seasonLogs, keptDates, lineType, line }) => {
+const SeasonStrip = ({ seasonLogs, keptDates, lineType, line, stripRows = 4 }) => {
   const first = seasonLogs[0]?.GAME_DATE;
   const last = seasonLogs[seasonLogs.length - 1]?.GAME_DATE;
   const month = (iso) =>
     iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { month: 'short' }) : '';
   return (
     <div className="fpx-strip">
-      <div className="fpx-strip-grid">
+      <div className="fpx-strip-grid" style={{ gridTemplateRows: `repeat(${stripRows}, 10px)` }}>
         {seasonLogs.map((log) => {
           const kept = keptDates.has(log.GAME_DATE);
           const value = toFiniteNumber(log[lineType], 0);
@@ -218,10 +220,105 @@ const NextOpponent = ({ rows, panel, lineType }) => {
   );
 };
 
+/* ---- next opponent: every top-8 / bottom-8 rank (variant I) ------------ */
+
+const EXT_COUNT_H = 30;
+const EXT_SUMMARY_H = 28;
+const EXT_MIN_H = 12 + 34 + EXT_SUMMARY_H;
+const EXT_STRIP_H = 12 + 36 + 7 + 16;
+const EXT_ROW_H = 32;
+const EXT_MORE_H = 30;
+
+// Team-stats ranks run 1 = fewest allowed. Only the ends of the league count.
+const EXTREMES = opponentCha.stats
+  .filter((stat) => stat.teamRank <= 8 || stat.teamRank >= 23)
+  .map((stat) => {
+    const fewest = stat.teamRank <= 8;
+    return {
+      ...stat,
+      fewest,
+      place: fewest ? stat.teamRank : 31 - stat.teamRank,
+      // The defensive filter ranks 1 = most allowed, so "fewest" is 23–30.
+      tier: fewest ? [23, 30] : [1, 8],
+    };
+  })
+  .sort((a, b) => a.place - b.place || a.label.localeCompare(b.label));
+
+const formatStat = (stat) => {
+  if (stat.fmt === 'pct') return `${(stat.value * 100).toFixed(1)}%`;
+  if (stat.fmt === 'ppp') return `${stat.value.toFixed(2)} PPP`;
+  if (stat.fmt === 'idx') {
+    const pct = Math.round((stat.value - 1) * 100);
+    return `${pct > 0 ? '+' : ''}${pct}% vs avg`;
+  }
+  return stat.value.toFixed(1);
+};
+
+const OpponentExtremes = ({ rows, expanded, onToggle, panel }) => {
+  const summaryOnly = !expanded && rows === 0;
+  const shown = expanded ? EXTREMES : EXTREMES.slice(0, rows);
+  const hidden = EXTREMES.length - shown.length;
+  const most = EXTREMES.filter((stat) => !stat.fewest).length;
+  return (
+    <div className="fpx-list fpx-ext">
+      <button type="button" className="fpx-list-head fpx-ext-head" onClick={onToggle}>
+        <span>Next: @ {opponentCha.tricode} · demo game</span>
+        <span className="fp-val">
+          {most} most · {EXTREMES.length - most} fewest
+        </span>
+      </button>
+      {shown.map((stat) => {
+        const applied =
+          stat.token && panel.activeFilters.some((filter) => filter.filter === stat.token);
+        return (
+          <div key={`${stat.group}-${stat.label}`} className="fpx-ext-row">
+            <span className={`fpx-ext-rank${stat.fewest ? ' is-fewest' : ' is-most'}`}>
+              {ordinal(stat.place)} {stat.fewest ? 'fewest' : 'most'}
+            </span>
+            <span className="fpx-ext-label" title={stat.group}>
+              {stat.label}
+            </span>
+            <span className="fpx-ext-value">{formatStat(stat)}</span>
+            {stat.token ? (
+              <button
+                type="button"
+                className="fpx-ext-add"
+                disabled={applied}
+                title={`Add: teams ranked ${stat.tier[0]}–${stat.tier[1]} in ${opponentFilterLabel(stat.token)}`}
+                aria-label={`Add teams ranked ${stat.tier[0]}–${stat.tier[1]} in ${opponentFilterLabel(stat.token)}`}
+                onClick={() => panel.addDefenseRule(stat.token, stat.tier)}
+              >
+                {applied ? '✓' : '+'}
+              </button>
+            ) : (
+              <span className="fpx-ext-add is-none" title="No matching defensive filter" />
+            )}
+          </div>
+        );
+      })}
+      {summaryOnly && (
+        <button type="button" className="fpx-ext-summary" onClick={onToggle}>
+          {EXTREMES.slice(0, 6).map((stat) => (
+            <span key={stat.label} className={stat.fewest ? 'is-fewest' : 'is-most'}>
+              {ordinal(stat.place)} {stat.fewest ? 'fewest' : 'most'} · {stat.label}
+            </span>
+          ))}
+        </button>
+      )}
+      {!summaryOnly && (hidden > 0 || expanded) && (
+        <button type="button" className="fpx-ext-more" onClick={onToggle}>
+          {expanded ? 'Show fewer' : `+ ${hidden} more`}
+        </button>
+      )}
+    </div>
+  );
+};
+
 /* ---- the filler --------------------------------------------------------- */
 
 const Filler = ({ kind, panel, extra }) => {
   const [ref, height] = useHeight();
+  const [expanded, setExpanded] = useState(false);
   const { ensureSeason } = panel;
   useEffect(() => {
     ensureSeason();
@@ -237,12 +334,63 @@ const Filler = ({ kind, panel, extra }) => {
   if (showCount) room -= COUNT_H;
   const showStrip = showCount && room >= STRIP_H;
   if (showStrip) room -= STRIP_H;
-  const rows = Math.max(0, Math.floor((room - LIST_HEAD_H) / ROW_H));
+  let rows = Math.max(0, Math.floor((room - LIST_HEAD_H) / ROW_H));
+  let showStripI = false;
+
+  // Variant I: count, then the opponent summary, then a 3-row strip, then
+  // opponent rows (replacing the summary line), then saved sets.
+  let extRows = 0;
+  let showExt = false;
+  let stripRows = 4;
+  if (kind === 'saved-extremes') {
+    stripRows = 3;
+    room = height;
+    const count = seasonLogs.length > 0 && room >= EXT_COUNT_H;
+    if (count) room -= EXT_COUNT_H;
+    showExt = expanded || room >= EXT_MIN_H;
+    if (showExt && !expanded) room -= EXT_MIN_H;
+    showStripI = count && room >= EXT_STRIP_H;
+    if (showStripI) room -= EXT_STRIP_H;
+    const all = EXTREMES.length;
+    if (showExt && !expanded) {
+      const reclaimed = room + EXT_SUMMARY_H;
+      if (Math.floor(reclaimed / EXT_ROW_H) >= all) {
+        extRows = all;
+        room = reclaimed - all * EXT_ROW_H;
+      } else {
+        const fit = Math.floor((reclaimed - EXT_MORE_H) / EXT_ROW_H);
+        if (fit >= 2) {
+          extRows = fit;
+          room = reclaimed - fit * EXT_ROW_H - EXT_MORE_H;
+        }
+      }
+    }
+    rows = expanded ? 3 : Math.max(0, Math.floor((room - LIST_HEAD_H) / ROW_H));
+  }
 
   return (
-    <div className="fp-filler" ref={ref}>
-      {showCount && <MatchCount kept={gameLogs.length} season={seasonLogs.length} />}
-      {showStrip && (
+    <div className={`fp-filler${expanded ? ' is-expanded' : ''}`} ref={ref}>
+      {(kind === 'saved-extremes' ? seasonLogs.length > 0 && height >= EXT_COUNT_H : showCount) && (
+        <MatchCount kept={gameLogs.length} season={seasonLogs.length} />
+      )}
+      {showExt && (
+        <OpponentExtremes
+          rows={extRows}
+          expanded={expanded}
+          onToggle={() => setExpanded((open) => !open)}
+          panel={panel}
+        />
+      )}
+      {showStripI && (
+        <SeasonStrip
+          seasonLogs={seasonLogs}
+          keptDates={keptDates}
+          lineType={extra.lineType}
+          line={line}
+          stripRows={stripRows}
+        />
+      )}
+      {kind !== 'saved-extremes' && showStrip && (
         <SeasonStrip
           seasonLogs={seasonLogs}
           keptDates={keptDates}
@@ -251,6 +399,9 @@ const Filler = ({ kind, panel, extra }) => {
         />
       )}
       {kind === 'saved' && (
+        <SavedSets rows={rows} currentSearch={window.location.search.replace(/^\?/, '')} />
+      )}
+      {kind === 'saved-extremes' && (
         <SavedSets rows={rows} currentSearch={window.location.search.replace(/^\?/, '')} />
       )}
       {kind === 'next' && <NextOpponent rows={rows} panel={panel} lineType={extra.lineType} />}

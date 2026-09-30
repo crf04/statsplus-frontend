@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'filters';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'Now'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'Now'];
 
 export const VARIANT_NAMES = {
   A: 'Grouped sheet, everything visible',
@@ -23,6 +23,7 @@ export const VARIANT_NAMES = {
   F: 'Filter bar above a full-width chart',
   G: 'D + match strip + saved Filter Sets',
   H: 'E + match strip + next opponent',
+  I: 'G + demo game: every top/bottom-8 rank',
   Now: 'Current panel (for comparison)',
 };
 

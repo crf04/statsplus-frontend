@@ -1,0 +1,430 @@
+{
+"team": "Charlotte Hornets",
+"tricode": "CHA",
+"stats": [
+{
+"group": "General",
+"label": "Points",
+"value": 110.761,
+"teamRank": 7,
+"token": "OPP_PTS",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Rebounds",
+"value": 39.131,
+"teamRank": 2,
+"token": "OPP_REB",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Assists",
+"value": 25.828,
+"teamRank": 9,
+"token": "OPP_AST",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Steals + blocks",
+"value": 12.586,
+"teamRank": 10,
+"token": "OPP_STOCKS",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Steals",
+"value": 8.164,
+"teamRank": 13,
+"token": "OPP_STL",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Blocks",
+"value": 4.422,
+"teamRank": 9,
+"token": "OPP_BLK",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Free throw attempts",
+"value": 20.301,
+"teamRank": 1,
+"token": "OPP_FTA",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Turnovers forced",
+"value": 12.647,
+"teamRank": 3,
+"token": "OPP_TOV",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "3s made",
+"value": 12.768,
+"teamRank": 11,
+"token": "OPP_FG3M",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "3PT attempts",
+"value": 35.912,
+"teamRank": 8,
+"token": "OPP_FG3A",
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "FG made",
+"value": 40.869,
+"teamRank": 9,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "FG attempts",
+"value": 87.544,
+"teamRank": 11,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "FG%",
+"value": 0.467,
+"teamRank": 11,
+"token": null,
+"fmt": "pct"
+},
+{
+"group": "General",
+"label": "3PT%",
+"value": 0.356,
+"teamRank": 18,
+"token": null,
+"fmt": "pct"
+},
+{
+"group": "General",
+"label": "Off. rebounds",
+"value": 10.144,
+"teamRank": 3,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "General",
+"label": "Def. rebounds",
+"value": 28.987,
+"teamRank": 2,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Play type",
+"label": "Transition PPP",
+"value": 0.985,
+"teamRank": 9,
+"token": "Transition",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Isolation PPP",
+"value": 1.013,
+"teamRank": 19,
+"token": "Isolation",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Spot-up PPP",
+"value": 0.979,
+"teamRank": 8,
+"token": "Spotup",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Handoff PPP",
+"value": 0.938,
+"teamRank": 5,
+"token": "Handoff",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Off-screen PPP",
+"value": 1.023,
+"teamRank": 17,
+"token": "OffScreen",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Post-up PPP",
+"value": 0.996,
+"teamRank": 15,
+"token": "Postup",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "P&R ball-handler PPP",
+"value": 1.032,
+"teamRank": 24,
+"token": "PRBallHandler",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "P&R roll-man PPP",
+"value": 1.004,
+"teamRank": 18,
+"token": "PRRollMan",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Cuts PPP",
+"value": 0.958,
+"teamRank": 8,
+"token": "Cut",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Putbacks PPP",
+"value": 0.982,
+"teamRank": 10,
+"token": "OffRebound",
+"fmt": "ppp"
+},
+{
+"group": "Play type",
+"label": "Misc. PPP",
+"value": 1.171,
+"teamRank": 29,
+"token": "Misc",
+"fmt": "ppp"
+},
+{
+"group": "Assists",
+"label": "At-rim assists",
+"value": 0.996,
+"teamRank": 16,
+"token": "AtRimAssists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "2PT assists",
+"value": 0.997,
+"teamRank": 13,
+"token": "TwoPtAssists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "3PT assists",
+"value": 0.935,
+"teamRank": 7,
+"token": "ThreePtAssists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "Arc-3 assists",
+"value": 0.986,
+"teamRank": 15,
+"token": "Arc3Assists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "Corner-3 assists",
+"value": 0.825,
+"teamRank": 2,
+"token": "Corner3Assists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "Short mid assists",
+"value": 0.992,
+"teamRank": 13,
+"token": "ShortMidRangeAssists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "Long mid assists",
+"value": 1.025,
+"teamRank": 19,
+"token": "LongMidRangeAssists",
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "All assists",
+"value": 0.971,
+"teamRank": 9,
+"token": null,
+"fmt": "idx"
+},
+{
+"group": "Assists",
+"label": "Assist points",
+"value": 0.965,
+"teamRank": 10,
+"token": null,
+"fmt": "idx"
+},
+{
+"group": "Zones",
+"label": "Restricted Area makes",
+"value": 16.838,
+"teamRank": 18,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Restricted Area attempts",
+"value": 25.367,
+"teamRank": 17,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "In The Paint (Non-RA) makes",
+"value": 7.8,
+"teamRank": 14,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "In The Paint (Non-RA) attempts",
+"value": 18.053,
+"teamRank": 15,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Mid-Range makes",
+"value": 3.462,
+"teamRank": 9,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Mid-Range attempts",
+"value": 8.601,
+"teamRank": 10,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Corner 3 makes",
+"value": 3.001,
+"teamRank": 2,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Corner 3 attempts",
+"value": 7.775,
+"teamRank": 2,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Above the Break 3 makes",
+"value": 9.756,
+"teamRank": 19,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Zones",
+"label": "Above the Break 3 attempts",
+"value": 27.76,
+"teamRank": 21,
+"token": null,
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "C&S points",
+"value": 28.902,
+"teamRank": 8,
+"token": "C&S PTS",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "C&S 3s",
+"value": 9.172,
+"teamRank": 11,
+"token": "C&S 3s",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "C&S 3PA",
+"value": 25.44,
+"teamRank": 11,
+"token": "C&S 3A",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "Pull-up points",
+"value": 21.017,
+"teamRank": 18,
+"token": "PU PTS",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "Pull-up 2s",
+"value": 5.333,
+"teamRank": 16,
+"token": "PU 2s",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "Pull-up 3s",
+"value": 3.45,
+"teamRank": 25,
+"token": "PU 3s",
+"fmt": "1"
+},
+{
+"group": "Shot type",
+"label": "Inside 10 ft makes",
+"value": 22.002,
+"teamRank": 13,
+"token": "Less Than 10 ft",
+"fmt": "1"
+}
+]
+}

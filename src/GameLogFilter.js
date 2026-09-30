@@ -594,6 +594,10 @@ const GameLogFilter = () => {
                   seasonGameLogsFailed={seasonGameLogsFailed}
                   onOpenSelfFilters={loadSeasonGameLogs}
                   appliedFilters={appliedFilters}
+                  gameLogs={gameLogs}
+                  averages={averages}
+                  lineType={lineType}
+                  lineValue={lineValue}
                 />
               </Col>
             )}
@@ -635,6 +639,10 @@ const GameLogFilter = () => {
                   seasonGameLogsFailed={seasonGameLogsFailed}
                   onOpenSelfFilters={loadSeasonGameLogs}
                   appliedFilters={appliedFilters}
+                  gameLogs={gameLogs}
+                  averages={averages}
+                  lineType={lineType}
+                  lineValue={lineValue}
                 />
               </Col>
             )}

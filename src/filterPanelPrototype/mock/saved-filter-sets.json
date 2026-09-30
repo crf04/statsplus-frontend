@@ -1,0 +1,39 @@
+{
+ "saved_filter_sets": [
+  {
+   "id": "demo-1",
+   "name": "JJ without Trae",
+   "query_string": "player_name=Jalen+Johnson&players_off%5B%5D=Trae+Young"
+  },
+  {
+   "id": "demo-2",
+   "name": "JJ last 10 at home",
+   "query_string": "player_name=Jalen+Johnson&game_filter=10&location_filter=Home"
+  },
+  {
+   "id": "demo-3",
+   "name": "JJ vs soft scoring D",
+   "query_string": "player_name=Jalen+Johnson&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=10"
+  },
+  {
+   "id": "demo-4",
+   "name": "JJ heavy minutes",
+   "query_string": "player_name=Jalen+Johnson&minutes_filter=34%2C48"
+  },
+  {
+   "id": "demo-5",
+   "name": "JJ boards vs weak rebounding",
+   "query_string": "player_name=Jalen+Johnson&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=8"
+  },
+  {
+   "id": "demo-6",
+   "name": "JJ away since Feb",
+   "query_string": "player_name=Jalen+Johnson&location_filter=Away&date_filter=2026-02-01"
+  },
+  {
+   "id": "demo-7",
+   "name": "JJ 25+ PTS nights",
+   "query_string": "player_name=Jalen+Johnson&self_filters%5BPTS%5D=25%2C43"
+  }
+ ]
+}

@@ -163,7 +163,7 @@ export const Editor = ({ which, panel, onDone }) => {
   );
 };
 
-const VariantB = ({ panel, pinned }) => {
+const VariantB = ({ panel, pinned, filler }) => {
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -301,6 +301,7 @@ const VariantB = ({ panel, pinned }) => {
             </div>
           </>
         )}
+        {filler}
       </div>
 
       <div className="fpb-foot">

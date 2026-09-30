@@ -10,6 +10,7 @@ import VariantA from './VariantA';
 import VariantB from './VariantB';
 import VariantC from './VariantC';
 import VariantF from './VariantF';
+import Filler from './fillers';
 import './prototype.css';
 
 const VARIANTS = {
@@ -19,6 +20,20 @@ const VARIANTS = {
   D: (props) => <VariantB {...props} pinned />,
   E: (props) => <VariantC {...props} pinned />,
   F: VariantF,
+  G: (props) => (
+    <VariantB
+      {...props}
+      pinned
+      filler={<Filler kind="saved" panel={props.panel} extra={props.extra} />}
+    />
+  ),
+  H: (props) => (
+    <VariantC
+      {...props}
+      pinned
+      filler={<Filler kind="next" panel={props.panel} extra={props.extra} />}
+    />
+  ),
 };
 
 const FilterPanelPrototype = (props) => {
@@ -28,7 +43,7 @@ const FilterPanelPrototype = (props) => {
   const Variant = VARIANTS[variant];
   return (
     <>
-      {Variant ? <Variant panel={panel} /> : <FilterOptions {...props} />}
+      {Variant ? <Variant panel={panel} extra={props} /> : <FilterOptions {...props} />}
       <PrototypeSwitcher variant={variant} onStep={step} />
     </>
   );

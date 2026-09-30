@@ -40,7 +40,7 @@ const Row = ({ id, label, value, set, open, onToggle, children }) => (
   </div>
 );
 
-const VariantC = ({ panel, pinned }) => {
+const VariantC = ({ panel, pinned, filler }) => {
   const [open, setOpen] = useState(() => new Set());
   const toggle = (id) => {
     if (id === 'self') panel.ensureSeason();
@@ -222,6 +222,7 @@ const VariantC = ({ panel, pinned }) => {
             </button>
           </Row>
         </div>
+        {filler}
       </div>
 
       <button type="button" className="fp-btn-primary fpc-apply" onClick={panel.apply}>

@@ -6,7 +6,7 @@
  * The game-log endpoint answers from the captured season (or the captured
  * "Trae Young off" set) and then applies the simple filters itself, so
  * Apply visibly changes the chart and table. Defensive filters are not
- * modelled: they pass through unfiltered.
+ * modelled: they pass through unfiltered. Saved Filter Sets are synthetic.
  */
 import { apiClient } from '../../config';
 import players from './players.json';
@@ -16,6 +16,8 @@ import logsOff from './logs-off.json';
 import profile from './profile.json';
 import teamPlaytypes from './team-playtypes.json';
 import teamTraditional from './team-traditional.json';
+import teamChaTraditional from './team-cha-traditional.json';
+import savedFilterSets from './saved-filter-sets.json';
 
 export const DEMO_URL = '/?player_name=Jalen+Johnson&players_off%5B%5D=Trae+Young#proto=filters&v=A';
 
@@ -69,7 +71,15 @@ export const installMockApi = () => {
     else if (url.endsWith('/api/games/game_logs')) data = gameLogs(config.params);
     else if (url.endsWith('/api/players/profile')) data = profile;
     else if (url.endsWith('/api/teams/stats'))
-      data = config.params?.category === 'Playtypes' ? teamPlaytypes : teamTraditional;
+      data =
+        config.params?.category === 'Playtypes'
+          ? teamPlaytypes
+          : config.params?.team === 'Charlotte Hornets'
+            ? teamChaTraditional
+            : teamTraditional;
+    // Synthetic saved sets (not the owner's real ones): the link is public.
+    else if (url.endsWith('/api/user/saved-filter-sets') && (config.method || 'get') === 'get')
+      data = savedFilterSets;
     if (data) {
       config.adapter = async () => ({ data, status: 200, statusText: 'OK', headers: {}, config });
     }

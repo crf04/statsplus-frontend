@@ -393,7 +393,16 @@ const useFilterPanel = ({
     markControlTouched('opponent_tricode');
   };
 
-  const ensureSeason = () => setSelfFiltersOpen(true);
+  const ensureSeason = useCallback(() => setSelfFiltersOpen(true), []);
+
+  // PROTO: one-tap rule from the next-opponent card (variant H).
+  const addDefenseRule = (token, range) => {
+    setActiveFilters((previous) => [
+      ...previous.filter((f) => f.filter !== token),
+      { filter: token, number: encodeRankRange(range) },
+    ]);
+    markControlTouched('teams_against');
+  };
 
   const selectSelfStat = (column) => {
     ensureSeason();
@@ -552,6 +561,7 @@ const useFilterPanel = ({
     setRankRange,
     canAddFilter,
     addDefensiveFilter,
+    addDefenseRule,
     removeDefensiveFilter,
     activeFilters,
     opponentFilterLabel,

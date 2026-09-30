@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'filters';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'Now'];
+export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'Now'];
 
 export const VARIANT_NAMES = {
   A: 'Grouped sheet, everything visible',
@@ -21,6 +21,8 @@ export const VARIANT_NAMES = {
   D: 'B, filling the chart card height',
   E: 'C, filling the chart card height',
   F: 'Filter bar above a full-width chart',
+  G: 'D + match strip + saved Filter Sets',
+  H: 'E + match strip + next opponent',
   Now: 'Current panel (for comparison)',
 };
 

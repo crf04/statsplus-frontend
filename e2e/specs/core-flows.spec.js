@@ -1039,7 +1039,7 @@ test('leaving the Workspace cancels a season still in flight', async ({
 
   await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
-  await expect(page.getByText('Loading the season range…')).toBeVisible();
+  await expect(page.getByText('Loading the season range…').first()).toBeVisible();
 
   // The slowest endpoint in the application does not keep working for a
   // workspace nobody is in any more.

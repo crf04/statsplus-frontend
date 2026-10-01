@@ -1,0 +1,541 @@
+{
+ "next_game": {
+  "game_id": "demo-0001",
+  "date": "2026-10-22",
+  "opponent": "CHA",
+  "opponent_name": "Charlotte Hornets",
+  "home": false
+ },
+ "opponent_ranks": [
+  {
+   "group": "General",
+   "label": "Points",
+   "value": 110.761,
+   "vs_league_pct": null,
+   "most_rank": 24,
+   "ranked_teams": 30,
+   "team_filter": "OPP_PTS",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Rebounds",
+   "value": 39.131,
+   "vs_league_pct": null,
+   "most_rank": 29,
+   "ranked_teams": 30,
+   "team_filter": "OPP_REB",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Assists",
+   "value": 25.828,
+   "vs_league_pct": null,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": "OPP_AST",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Steals + blocks",
+   "value": 12.586,
+   "vs_league_pct": null,
+   "most_rank": 21,
+   "ranked_teams": 30,
+   "team_filter": "OPP_STOCKS",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Steals",
+   "value": 8.164,
+   "vs_league_pct": null,
+   "most_rank": 18,
+   "ranked_teams": 30,
+   "team_filter": "OPP_STL",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Blocks",
+   "value": 4.422,
+   "vs_league_pct": null,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": "OPP_BLK",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Free throw attempts",
+   "value": 20.301,
+   "vs_league_pct": null,
+   "most_rank": 30,
+   "ranked_teams": 30,
+   "team_filter": "OPP_FTA",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Turnovers forced",
+   "value": 12.647,
+   "vs_league_pct": null,
+   "most_rank": 28,
+   "ranked_teams": 30,
+   "team_filter": "OPP_TOV",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "3s made",
+   "value": 12.768,
+   "vs_league_pct": null,
+   "most_rank": 20,
+   "ranked_teams": 30,
+   "team_filter": "OPP_FG3M",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "3PT attempts",
+   "value": 35.912,
+   "vs_league_pct": null,
+   "most_rank": 23,
+   "ranked_teams": 30,
+   "team_filter": "OPP_FG3A",
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "FG made",
+   "value": 40.869,
+   "vs_league_pct": null,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "FG attempts",
+   "value": 87.544,
+   "vs_league_pct": null,
+   "most_rank": 20,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "FG%",
+   "value": 0.467,
+   "vs_league_pct": null,
+   "most_rank": 20,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "percent"
+  },
+  {
+   "group": "General",
+   "label": "3PT%",
+   "value": 0.356,
+   "vs_league_pct": null,
+   "most_rank": 13,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "percent"
+  },
+  {
+   "group": "General",
+   "label": "Off. rebounds",
+   "value": 10.144,
+   "vs_league_pct": null,
+   "most_rank": 28,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "General",
+   "label": "Def. rebounds",
+   "value": 28.987,
+   "vs_league_pct": null,
+   "most_rank": 29,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Play type",
+   "label": "Transition (per poss.)",
+   "value": 0.985,
+   "vs_league_pct": -1.5,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": "Transition",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Isolation (per poss.)",
+   "value": 1.013,
+   "vs_league_pct": 1.3,
+   "most_rank": 12,
+   "ranked_teams": 30,
+   "team_filter": "Isolation",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Spot-up (per poss.)",
+   "value": 0.979,
+   "vs_league_pct": -2.1,
+   "most_rank": 23,
+   "ranked_teams": 30,
+   "team_filter": "Spotup",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Handoff (per poss.)",
+   "value": 0.938,
+   "vs_league_pct": -6.2,
+   "most_rank": 26,
+   "ranked_teams": 30,
+   "team_filter": "Handoff",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Off-screen (per poss.)",
+   "value": 1.023,
+   "vs_league_pct": 2.3,
+   "most_rank": 14,
+   "ranked_teams": 30,
+   "team_filter": "OffScreen",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Post-up (per poss.)",
+   "value": 0.996,
+   "vs_league_pct": -0.4,
+   "most_rank": 16,
+   "ranked_teams": 30,
+   "team_filter": "Postup",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "P&R ball-handler (per poss.)",
+   "value": 1.032,
+   "vs_league_pct": 3.2,
+   "most_rank": 7,
+   "ranked_teams": 30,
+   "team_filter": "PRBallHandler",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "P&R roll-man (per poss.)",
+   "value": 1.004,
+   "vs_league_pct": 0.4,
+   "most_rank": 13,
+   "ranked_teams": 30,
+   "team_filter": "PRRollMan",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Cuts (per poss.)",
+   "value": 0.958,
+   "vs_league_pct": -4.2,
+   "most_rank": 23,
+   "ranked_teams": 30,
+   "team_filter": "Cut",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Putbacks (per poss.)",
+   "value": 0.982,
+   "vs_league_pct": -1.8,
+   "most_rank": 21,
+   "ranked_teams": 30,
+   "team_filter": "OffRebound",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Play type",
+   "label": "Misc. (per poss.)",
+   "value": 1.171,
+   "vs_league_pct": 17.1,
+   "most_rank": 2,
+   "ranked_teams": 30,
+   "team_filter": "Misc",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "At-rim assists",
+   "value": 0.996,
+   "vs_league_pct": -0.4,
+   "most_rank": 15,
+   "ranked_teams": 30,
+   "team_filter": "AtRimAssists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "2PT assists",
+   "value": 0.997,
+   "vs_league_pct": -0.3,
+   "most_rank": 18,
+   "ranked_teams": 30,
+   "team_filter": "TwoPtAssists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "3PT assists",
+   "value": 0.935,
+   "vs_league_pct": -6.5,
+   "most_rank": 24,
+   "ranked_teams": 30,
+   "team_filter": "ThreePtAssists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "Arc-3 assists",
+   "value": 0.986,
+   "vs_league_pct": -1.4,
+   "most_rank": 16,
+   "ranked_teams": 30,
+   "team_filter": "Arc3Assists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "Corner-3 assists",
+   "value": 0.825,
+   "vs_league_pct": -17.5,
+   "most_rank": 29,
+   "ranked_teams": 30,
+   "team_filter": "Corner3Assists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "Short mid assists",
+   "value": 0.992,
+   "vs_league_pct": -0.8,
+   "most_rank": 18,
+   "ranked_teams": 30,
+   "team_filter": "ShortMidRangeAssists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "Long mid assists",
+   "value": 1.025,
+   "vs_league_pct": 2.5,
+   "most_rank": 12,
+   "ranked_teams": 30,
+   "team_filter": "LongMidRangeAssists",
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "All assists",
+   "value": 0.971,
+   "vs_league_pct": -2.9,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Assists",
+   "label": "Assist points",
+   "value": 0.965,
+   "vs_league_pct": -3.5,
+   "most_rank": 21,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "league_ratio"
+  },
+  {
+   "group": "Zones",
+   "label": "Restricted Area makes",
+   "value": 16.838,
+   "vs_league_pct": null,
+   "most_rank": 13,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Restricted Area attempts",
+   "value": 25.367,
+   "vs_league_pct": null,
+   "most_rank": 14,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "In The Paint (Non-RA) makes",
+   "value": 7.8,
+   "vs_league_pct": null,
+   "most_rank": 17,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "In The Paint (Non-RA) attempts",
+   "value": 18.053,
+   "vs_league_pct": null,
+   "most_rank": 16,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Mid-Range makes",
+   "value": 3.462,
+   "vs_league_pct": null,
+   "most_rank": 22,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Mid-Range attempts",
+   "value": 8.601,
+   "vs_league_pct": null,
+   "most_rank": 21,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Corner 3 makes",
+   "value": 3.001,
+   "vs_league_pct": null,
+   "most_rank": 29,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Corner 3 attempts",
+   "value": 7.775,
+   "vs_league_pct": null,
+   "most_rank": 29,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Above the Break 3 makes",
+   "value": 9.756,
+   "vs_league_pct": null,
+   "most_rank": 12,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Zones",
+   "label": "Above the Break 3 attempts",
+   "value": 27.76,
+   "vs_league_pct": null,
+   "most_rank": 10,
+   "ranked_teams": 30,
+   "team_filter": null,
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "C&S points",
+   "value": 28.902,
+   "vs_league_pct": null,
+   "most_rank": 23,
+   "ranked_teams": 30,
+   "team_filter": "C&S PTS",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "C&S 3s",
+   "value": 9.172,
+   "vs_league_pct": null,
+   "most_rank": 20,
+   "ranked_teams": 30,
+   "team_filter": "C&S 3s",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "C&S 3PA",
+   "value": 25.44,
+   "vs_league_pct": null,
+   "most_rank": 20,
+   "ranked_teams": 30,
+   "team_filter": "C&S 3A",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "Pull-up points",
+   "value": 21.017,
+   "vs_league_pct": null,
+   "most_rank": 13,
+   "ranked_teams": 30,
+   "team_filter": "PU PTS",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "Pull-up 2s",
+   "value": 5.333,
+   "vs_league_pct": null,
+   "most_rank": 15,
+   "ranked_teams": 30,
+   "team_filter": "PU 2s",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "Pull-up 3s",
+   "value": 3.45,
+   "vs_league_pct": null,
+   "most_rank": 6,
+   "ranked_teams": 30,
+   "team_filter": "PU 3s",
+   "unit": "count"
+  },
+  {
+   "group": "Shot type",
+   "label": "Inside 10 ft makes",
+   "value": 22.002,
+   "vs_league_pct": null,
+   "most_rank": 18,
+   "ranked_teams": 30,
+   "team_filter": "Less Than 10 ft",
+   "unit": "count"
+  }
+ ]
+}

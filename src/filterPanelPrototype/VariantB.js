@@ -266,7 +266,7 @@ const VariantB = ({ panel, pinned, filler, compactTiles }) => {
   );
 
   return (
-    <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`}>
+    <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
         <div className="fpb-head">
           <span className="fpb-eyebrow">Showing</span>

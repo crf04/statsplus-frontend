@@ -80,8 +80,8 @@ const SeasonStrip = ({ seasonLogs, keptDates, lineType, line, stripRows = 4 }) =
       <div className="fpx-strip-legend">
         <span>{month(first)}</span>
         <span>
-          <i className="is-over" /> over <i className="is-under" /> under{' '}
-          <i className="is-out" /> filtered out
+          <i className="is-over" /> over <i className="is-under" /> under <i className="is-out" />{' '}
+          filtered out
         </span>
         <span>{month(last)}</span>
       </div>
@@ -261,7 +261,7 @@ const OpponentExtremes = ({ rows, expanded, onToggle, panel }) => {
   return (
     <div className="fpx-list fpx-ext">
       <button type="button" className="fpx-list-head fpx-ext-head" onClick={onToggle}>
-        <span>Next: @ {opponentCha.tricode} · demo game</span>
+        <span>Next: @ {opponentCha.tricode} · Oct 22</span>
         <span className="fp-val">
           {most} most · {EXTREMES.length - most} fewest
         </span>

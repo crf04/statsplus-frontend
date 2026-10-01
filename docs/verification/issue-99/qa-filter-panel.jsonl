@@ -1,0 +1,35 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert-response", "method": "GET", "path": "/api/players/next-opponent", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"selector": "[data-testid=\"filter-panel\"]"}}
+{"action": "assert", "target": {"role": "button", "name": "Remove last"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 of 60 games match"}}
+{"action": "snapshot"}
+{"action": "proof", "name": "filter-panel-qa-desktop"}
+{"action": "click", "target": {"role": "button", "name": "+ Last N"}}
+{"action": "click", "target": {"role": "button", "name": "10"}}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "10"}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "10 games"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "10 of 60 games match"}}
+{"action": "proof", "name": "filter-panel-qa-applied"}
+{"action": "back"}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 games"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 of 60 games match"}}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"role": "button", "name": "+ Last N"}}
+{"action": "click", "target": {"role": "button", "name": "15"}}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "15"}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "15 games"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "15 of 60 games match"}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "filter-panel-qa-phone-applied"}
+{"action": "click", "target": {"role": "button", "name": "+ Own stat line"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Stat"}}
+{"action": "proof", "name": "filter-panel-qa-phone-own-stat"}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "cleanup"}

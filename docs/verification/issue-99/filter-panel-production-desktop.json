@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:5188/?player_name=LeBron+James&season_filter=2025-26&game_filter=5",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-99/production-filter-panel-evidence/filter-panel-production-desktop.png",
+  "aria": "/tmp/statsplus-99/production-filter-panel-evidence/filter-panel-production-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-10-01T01:12:25.213Z",
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:25.214Z",
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:25.612Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/next-opponent",
+      "status": 404
+    },
+    {
+      "at": "2026-10-01T01:12:25.660Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:25.661Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/user/saved-filter-sets",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:25.730Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:25.730Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/profile",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:26.098Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:26.150Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:26.357Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:12:26.357Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    }
+  ]
+}

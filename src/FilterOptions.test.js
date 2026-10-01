@@ -14,6 +14,7 @@ window.matchMedia = () => ({ matches: false });
 const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
+    const [line, setLine] = useState(20);
     return (
       <MemoryRouter>
         <FilterOptions
@@ -23,10 +24,12 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
           seasonGameLogs={seasonGameLogs}
           gameLogs={seasonGameLogs.slice(0, 1)}
           lineType="PTS"
-          lineValue={20}
+          lineValue={line}
+          averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
           appliedFilters={appliedFilters}
         />
+        <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <output data-testid="patch">{JSON.stringify(result)}</output>
       </MemoryRouter>
     );
@@ -189,4 +192,46 @@ test('signed-out panel exposes no account saved sets or next opponent block', ()
   expect(screen.queryByText('Saved Filter Sets')).toBeNull();
   expect(screen.queryByText(/^Next:/)).toBeNull();
   expect(screen.getByRole('button', { name: 'last 10 games' })).toBeVisible();
+});
+
+test('season cells follow the explicit chart line rather than the filtered average', () => {
+  renderPanel({}, [{ GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25 }]);
+  expect(
+    screen.getByRole('button', { name: '2026-01-01 LAL @ BOS · PTS 25 (over)' }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Set chart line to 30' }));
+  expect(
+    screen.getByRole('button', { name: '2026-01-01 LAL @ BOS · PTS 25 (under)' }),
+  ).toBeVisible();
+});
+
+test('picking a teammate suggestion directly adds its row and on-court patch', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
+  fireEvent.change(screen.getByRole('combobox', { name: 'Teammate' }), {
+    target: { value: 'Anthony' },
+  });
+  fireEvent.click(screen.getByRole('option', { name: 'Anthony Davis + on court' }));
+  expect(screen.getByRole('button', { name: /with Anthony Davis on court/ })).toBeVisible();
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'players_on[]': ['Anthony Davis'],
+    'players_off[]': [],
+  });
+});
+
+test('a minimum-only playtype link retains the default maximum when applied', () => {
+  renderPanel({ playstyle_RTG_min: 20 });
+  fireEvent.click(screen.getByRole('button', { name: /rating playtype 20–200/ }));
+  expect(screen.getByRole('slider', { name: 'Maximum rating' })).toHaveAttribute(
+    'aria-valuenow',
+    '200',
+  );
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    playstyle_RTG_min: 20,
+    playstyle_RTG_max: 200,
+  });
 });

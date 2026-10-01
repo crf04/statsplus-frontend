@@ -1466,7 +1466,10 @@ test('a link carrying filters but no player applies them to the player chosen', 
   await page.getByRole('option', { name: 'LeBron James' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
-  const requested = gameLogRequests.at(-1);
+  await expect
+    .poll(() => gameLogRequests.some((url) => url.searchParams.get('game_filter') === '10'))
+    .toBe(true);
+  const requested = gameLogRequests.findLast((url) => url.searchParams.get('game_filter') === '10');
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
   expect(requested.searchParams.get('game_filter')).toBe('10');
 });

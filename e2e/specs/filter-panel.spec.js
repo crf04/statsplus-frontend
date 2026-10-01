@@ -62,7 +62,10 @@ test('next opponent tiers follow their own ranked population and omit middle/con
   await expect(panel.getByRole('button', { name: /Add teams ranked.*Context only/ })).toHaveCount(
     0,
   );
-  await panel.getByRole('button', { name: 'Add teams ranked 13–20 in Transition' }).click();
+  const addTier = panel.getByRole('button', { name: 'Add teams ranked 13–20 in Transition' });
+  await addTier.click();
+  await expect(addTier).toBeDisabled();
+  await expect(addTier).toHaveText('✓');
   await panel.getByRole('button', { name: 'Apply 1 change' }).click();
   await expect
     .poll(() => new URL(page.url()).searchParams.getAll('rank_filter[]'))
@@ -125,4 +128,130 @@ test('a bottom tier with fewer than eight ranked teams remains a valid inclusive
     .poll(() => new URL(page.url()).searchParams.getAll('teams_against[]'))
     .toEqual(['Isolation']);
   expect(new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['5']);
+});
+
+test('the most-allowed tier applies ranks one through eight and stays marked added', async ({
+  page,
+}) => {
+  const panel = await open(page, {
+    next_game: {
+      game_id: '0022600001',
+      date: '2026-10-22',
+      opponent: 'CHA',
+      opponent_name: 'Charlotte Hornets',
+      home: false,
+    },
+    opponent_ranks: [
+      {
+        group: 'General',
+        label: 'Points',
+        value: 120,
+        vs_league_pct: null,
+        most_rank: 2,
+        ranked_teams: 30,
+        team_filter: 'OPP_PTS',
+        unit: 'count',
+      },
+    ],
+  });
+  const add = panel.getByRole('button', { name: 'Add teams ranked 1–8 in Points Allowed' });
+  await add.click();
+  await expect(add).toBeDisabled();
+  await expect(add).toHaveText('✓');
+  await panel.getByRole('button', { name: 'Apply 1 change' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['8']);
+});
+
+test('signed-out shared readers send no account or next-opponent requests', async ({ page }) => {
+  await installParityApi(page);
+  const accountReads = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path === '/api/user/saved-filter-sets' || path === '/api/players/next-opponent')
+      accountReads.push(path);
+  });
+  await page.goto(PARITY_PATH);
+  await expect(page.getByTestId('filter-panel')).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
+  ).toBeVisible();
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  expect(accountReads).toEqual([]);
+});
+
+test('opening a Saved Filter Set marks its visible name as open', async ({ page }) => {
+  const panel = await open(page, { next_game: null, opponent_ranks: [] });
+  const saved = panel.getByRole('button', { name: /JJ last 10 at home/ });
+  await saved.click();
+  await expect
+    .poll(() =>
+      saved.evaluate((element) => getComputedStyle(element.querySelector('b'), '::after').content),
+    )
+    .toBe('" · open"');
+});
+
+test('switching seasons for one player reloads bounds and withholds the previous season', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  await installParityApi(page);
+  await page.route('**/api/user/saved-filter-sets', (route) =>
+    route.fulfill({
+      json: {
+        saved_filter_sets: [
+          {
+            id: 'season-b',
+            name: 'Season B',
+            query_string: 'player_name=Jalen+Johnson&game_filter=10&season_filter=2024-25',
+          },
+        ],
+      },
+    }),
+  );
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  const seasonRequests = [];
+  await page.route('**/api/games/game_logs**', async (route) => {
+    const url = new URL(route.request().url());
+    const season = url.searchParams.get('season_filter');
+    if (!url.searchParams.has('game_filter')) {
+      seasonRequests.push(season);
+      if (season === '2024-25') await held;
+    }
+    const second = season === '2024-25';
+    await route.fulfill({
+      json: {
+        game_logs: [
+          {
+            GAME_DATE: second ? '2025-01-01' : '2024-01-01',
+            MATCHUP: 'ATL @ CHA',
+            PTS: second ? 35 : 15,
+          },
+        ],
+        averages: [{ PTS: 20 }],
+        season_averages: [{ PTS: 20 }],
+        next_game: null,
+      },
+    });
+  });
+  await page.goto('/?player_name=Jalen+Johnson&game_filter=10&season_filter=2023-24');
+  const panel = page.getByTestId('filter-panel');
+  await expect(panel.getByText(/of 1 games match/)).toBeVisible();
+  await panel.getByRole('button', { name: /Season B/ }).click();
+  await expect.poll(() => seasonRequests).toEqual(['2023-24', '2024-25']);
+  await panel.getByRole('button', { name: '+ Own stat line' }).click();
+  await panel.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(panel.getByRole('slider', { name: 'Minimum PTS' })).toHaveCount(0);
+  await expect(panel.getByText('Loading the season range…').first()).toBeVisible();
+  release();
+  await expect(panel.getByRole('slider', { name: 'Minimum PTS' })).toHaveAttribute(
+    'aria-valuenow',
+    '35',
+  );
+  await expect(panel.getByRole('button', { name: /2025-01-01 ATL @ CHA/ })).toBeVisible();
 });

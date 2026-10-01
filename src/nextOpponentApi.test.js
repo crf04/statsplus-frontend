@@ -51,6 +51,9 @@ test('decodes a scheduled opponent and preserves the direct reduced-population r
 });
 
 test.each([
+  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 0 }] },
+  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 1.5 }] },
+  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], team_filter: 42 }] },
   { ...response, next_game: {} },
   { ...response, opponent_ranks: null },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 21 }] },

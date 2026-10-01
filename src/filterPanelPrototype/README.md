@@ -81,3 +81,24 @@ Round 5 (keep saved sets beside the demo game):
   columns, to make room. On a phone the filler shows in page flow with fixed
   counts. At 1280 wide the minimum doesn't fit, so the panel scrolls about
   50px.
+
+## Verdict (2026-09-30)
+
+**J wins.** Chris chose J after reviewing A–J ("i like it"), with one last
+change: the strip legend reads "over · under · filtered out" without the line
+value. What J settles:
+
+- Filter Set shown as a sentence at the top (B), with single-line "+ Add a
+  filter" buttons in three columns.
+- On desktop the panel takes exactly the chart card's height. Apply is pinned
+  to the bottom, and the content scrolls inside the panel if it overflows.
+- Under the filters, in priority order: the season strip titled "N of M games
+  match" (no progress bar), the next opponent's top/bottom-8 ranks with
+  one-tap tier rules, and saved Filter Sets (always at least two rows).
+- On a phone the same blocks show in page flow.
+
+Open items for the real build: the next game comes from the game-log
+response, not a demo; the opponent list and the defensive filter must share
+one rank source (team-stats ranks run 1 = fewest, filters 1 = most); the
+strip needs the unfiltered season request on load; 1280-wide screens scroll
+about 50px.

@@ -80,7 +80,7 @@ const SeasonStrip = ({ seasonLogs, keptDates, lineType, line, stripRows = 4 }) =
       <div className="fpx-strip-legend">
         <span>{month(first)}</span>
         <span>
-          <i className="is-over" /> over {line} <i className="is-under" /> under{' '}
+          <i className="is-over" /> over <i className="is-under" /> under{' '}
           <i className="is-out" /> filtered out
         </span>
         <span>{month(last)}</span>

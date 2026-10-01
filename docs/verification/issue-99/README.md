@@ -76,3 +76,7 @@ deployment. No application was deployed or merged during this task.
 The owner approved regenerating screenshots exclusively from the frozen reference
 with the Vercel feedback widget hidden. The parity kit README records that command;
 no baselines were generated from this implementation.
+
+## Final review records
+
+[Standards PASS](review-standards.md), [backend and tier mutation PASS](review-backend-and-tier-mutations.md), and [frontend mutation PASS](review-frontend-mutations.md). All 13 previously surviving frontend defects were independently reintroduced and killed by the added tests; restored tests passed. Source and tests remained unchanged during publication.

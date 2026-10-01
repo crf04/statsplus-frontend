@@ -40,7 +40,7 @@ const DESKTOP = {
   1920: { width: 1920, height: 1100 },
 };
 const PHONE = { width: 390, height: 844 };
-const SHOT = { maxDiffPixelRatio: 0.005, animations: 'disabled' };
+const SHOT = { maxDiffPixels: 50, animations: 'disabled' };
 
 test.describe('filter panel matches the design reference', () => {
   for (const width of [1280, 1440, 1920]) {

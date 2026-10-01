@@ -56,11 +56,17 @@ test.describe('filter panel matches the design reference', () => {
     await expect(panel).toHaveScreenshot('panel-1440-editor.png', SHOT);
   });
 
-  test('panel with the opponent list and saved sets expanded', async ({ page }) => {
+  test('panel with the opponent list expanded', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
     await panel.getByRole('button', { name: '+ 14 more' }).click();
+    await expect(panel.getByRole('button', { name: 'Show fewer' })).toBeVisible();
     await expect(panel).toHaveScreenshot('panel-1920-opponent-expanded.png', SHOT);
+  });
+
+  test('panel with saved sets expanded', async ({ page }) => {
+    const panel = await open(page, DESKTOP[1920]);
     await panel.getByRole('button', { name: '+ 5 more' }).click();
+    await expect(panel.getByRole('button', { name: /JJ 25\+ PTS nights/ })).toBeVisible();
     await expect(panel).toHaveScreenshot('panel-1920-saved-expanded.png', SHOT);
   });
 

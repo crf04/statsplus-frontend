@@ -437,7 +437,10 @@ export const FillerJ = ({ panel, extra }) => {
       }
     }
   }
-  const savedRows = J_SAVED_MIN + Math.max(0, Math.floor(spare / J_SAVED_ROW_H));
+  // An expanded opponent list takes the spare height, and the panel scrolls.
+  const savedRows = oppOpen
+    ? J_SAVED_MIN
+    : J_SAVED_MIN + Math.max(0, Math.floor(spare / J_SAVED_ROW_H));
 
   return (
     <div className="fp-filler is-j" ref={ref}>

@@ -1,0 +1,81 @@
+{
+  "qa-final-evidence": {
+    "startedAt": "2026-10-01T01:15:31.225Z",
+    "environment": "qa",
+    "frontend": {
+      "root": "/Users/chrisfu/statsplus-frontend-99",
+      "branch": "feat/filter-panel-99",
+      "head": "ecb66a25eb8cde2cd416a1609a0a632d55993ad7",
+      "fingerprint": "a8f87f5ffc2c15c33e1c842fbb8c2b215d51ab3e03bd74cfb41658c7f9703a27"
+    },
+    "backendSource": {
+      "root": "/Users/chrisfu/statsplus-backend-99",
+      "branch": "feat/next-opponent-99",
+      "head": "ee311a6de9faad32c0693ba6fe115865f2e59dbe",
+      "fingerprint": "9226c3a00a692ef575039631ee0fb382a12ea91dd9431032e44de322c7f15202"
+    },
+    "deployedBackendRevision": "unknown",
+    "helperSha256": "e2f8d857aa5bbdd6241c3bb11dfcec276d346a0b946d7babdff71fbd29f7c35e",
+    "qaRuntimeSha256": "e6786c7112588af821453e83d4bec5f518f3ae563a613589ab0f18e00c2b46ef",
+    "productionGuardSha256": "f94bf27b53f0d05949fd6ae6d4c75d548d4451f4e064e53f3ad014829d10502b",
+    "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+    "coordination": {
+      "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-970e4413",
+      "branch": "t3code/970e4413",
+      "head": "1c08ac39ab97886bef6a944cc8905321f552c59e"
+    },
+    "qaSnapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5"
+  },
+  "qa-inline-saved-evidence": {
+    "startedAt": "2026-10-01T01:14:03.390Z",
+    "environment": "qa",
+    "frontend": {
+      "root": "/Users/chrisfu/statsplus-frontend-99",
+      "branch": "feat/filter-panel-99",
+      "head": "ecb66a25eb8cde2cd416a1609a0a632d55993ad7",
+      "fingerprint": "a8f87f5ffc2c15c33e1c842fbb8c2b215d51ab3e03bd74cfb41658c7f9703a27"
+    },
+    "backendSource": {
+      "root": "/Users/chrisfu/statsplus-backend-99",
+      "branch": "feat/next-opponent-99",
+      "head": "ee311a6de9faad32c0693ba6fe115865f2e59dbe",
+      "fingerprint": "9226c3a00a692ef575039631ee0fb382a12ea91dd9431032e44de322c7f15202"
+    },
+    "deployedBackendRevision": "unknown",
+    "helperSha256": "e2f8d857aa5bbdd6241c3bb11dfcec276d346a0b946d7babdff71fbd29f7c35e",
+    "qaRuntimeSha256": "e6786c7112588af821453e83d4bec5f518f3ae563a613589ab0f18e00c2b46ef",
+    "productionGuardSha256": "f94bf27b53f0d05949fd6ae6d4c75d548d4451f4e064e53f3ad014829d10502b",
+    "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+    "coordination": {
+      "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-970e4413",
+      "branch": "t3code/970e4413",
+      "head": "1c08ac39ab97886bef6a944cc8905321f552c59e"
+    },
+    "qaSnapshotSha256": "3fe69266e135d9ed9e6f671d01e7034c7d529a6ee3a9fa6395851b003ee222f5"
+  },
+  "production-filter-panel-evidence": {
+    "startedAt": "2026-10-01T01:12:21.152Z",
+    "environment": "production",
+    "frontend": {
+      "root": "/Users/chrisfu/statsplus-frontend-99",
+      "branch": "feat/filter-panel-99",
+      "head": "ecb66a25eb8cde2cd416a1609a0a632d55993ad7",
+      "fingerprint": "a8f87f5ffc2c15c33e1c842fbb8c2b215d51ab3e03bd74cfb41658c7f9703a27"
+    },
+    "backendSource": {
+      "root": "/Users/chrisfu/statsplus-backend",
+      "branch": "master",
+      "head": "ac61b6661fc0d68dd554c2ddd66e879ef9d2003f"
+    },
+    "deployedBackendRevision": "unknown",
+    "helperSha256": "e2f8d857aa5bbdd6241c3bb11dfcec276d346a0b946d7babdff71fbd29f7c35e",
+    "qaRuntimeSha256": "e6786c7112588af821453e83d4bec5f518f3ae563a613589ab0f18e00c2b46ef",
+    "productionGuardSha256": "f94bf27b53f0d05949fd6ae6d4c75d548d4451f4e064e53f3ad014829d10502b",
+    "responseTrackerSha256": "e7fff71a907fc47cd4eead40b28430a3fe3d1cc72e920e7bcd25d1fce7955232",
+    "coordination": {
+      "root": "/Users/chrisfu/.t3/worktrees/statsplus/t3code-970e4413",
+      "branch": "t3code/970e4413",
+      "head": "1c08ac39ab97886bef6a944cc8905321f552c59e"
+    }
+  }
+}

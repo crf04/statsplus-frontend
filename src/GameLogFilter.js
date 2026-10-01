@@ -186,21 +186,17 @@ const GameLogFilter = () => {
   // Nothing in flight outlives the workspace.
   useEffect(() => clearSeasonGameLogs, [clearSeasonGameLogs]);
 
-  /*
-   * The game-log endpoint is the slowest in the application and most sessions
-   * never touch Self Filters, so the season is asked for only when that control
-   * is opened, and only once per player. It is its own request rather than a
-   * by-product of the filtered one, because the whole point of it is that no
-   * filter is applied.
-   */
+  // The strip and Own stat line share one unfiltered-season read per player.
   const loadSeasonGameLogs = useCallback(() => {
     const player = urlFilters.player_name;
+    const season = urlFilters.season_filter;
     if (!player || authLoading || !isAuthenticated) return;
-    if (seasonRequestRef.current.player === player) return;
+    if (seasonRequestRef.current.player === player && seasonRequestRef.current.season === season)
+      return;
 
     seasonRequestRef.current.controller?.abort();
     const controller = new AbortController();
-    seasonRequestRef.current = { player, controller };
+    seasonRequestRef.current = { player, season, controller };
     setSeasonGameLogsLoading(true);
     setSeasonGameLogsFailed(false);
 
@@ -210,11 +206,14 @@ const GameLogFilter = () => {
     // player after a change away and back.
     const isCurrentRequest = () => seasonRequestRef.current.controller === controller;
 
-    fetchGameLogsData({ player_name: player }, { signal: controller.signal })
+    fetchGameLogsData(
+      { player_name: player, ...(season ? { season_filter: season } : {}) },
+      { signal: controller.signal },
+    )
       .then((data) => {
         if (!isCurrentRequest()) return;
         setSeasonGameLogsLoading(false);
-        setSeasonGameLogs({ player, gameLogs: data.gameLogs });
+        setSeasonGameLogs({ player, season, gameLogs: data.gameLogs });
       })
       .catch((error) => {
         if (!isCurrentRequest()) return;
@@ -225,12 +224,15 @@ const GameLogFilter = () => {
         setSeasonGameLogsLoading(false);
         setSeasonGameLogsFailed(!isRequestCancelled(error));
       });
-  }, [authLoading, isAuthenticated, urlFilters.player_name]);
+  }, [authLoading, isAuthenticated, urlFilters.player_name, urlFilters.season_filter]);
 
   // One player's season must never bound another player's sliders.
   const playerSeasonGameLogs = useMemo(
-    () => (seasonGameLogs.player === selectedPlayer ? seasonGameLogs.gameLogs : []),
-    [seasonGameLogs, selectedPlayer],
+    () =>
+      seasonGameLogs.player === selectedPlayer && seasonGameLogs.season === urlFilters.season_filter
+        ? seasonGameLogs.gameLogs
+        : [],
+    [seasonGameLogs, selectedPlayer, urlFilters.season_filter],
   );
 
   // One request seam owns game-log state transitions. A request may only
@@ -612,6 +614,12 @@ const GameLogFilter = () => {
                 seasonGameLogsFailed={seasonGameLogsFailed}
                 onOpenSelfFilters={loadSeasonGameLogs}
                 appliedFilters={appliedFilters}
+                gameLogs={gameLogs}
+                gameLogsLoading={isGameLogsLoading}
+                gameLogsError={gameLogsError}
+                averages={averages}
+                lineType={lineType}
+                lineValue={lineValue}
               />
             </Col>
           </Row>

@@ -23,6 +23,13 @@ export const decodeSavedFilterSets = (payload = {}) => {
   return payload.saved_filter_sets.map(decodeSavedFilterSet);
 };
 
+const listeners = new Set();
+export const subscribeSavedFilterSets = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+const notifySavedFilterSets = () => listeners.forEach((listener) => listener());
+
 const savedFilterSetsUrl = (path = '') => `${getApiUrl('SAVED_FILTER_SETS')}${path}`;
 
 export const fetchSavedFilterSets = async ({ signal } = {}) => {
@@ -36,12 +43,15 @@ export const fetchSavedFilterSets = async ({ signal } = {}) => {
  */
 export const createSavedFilterSet = async ({ name, queryString }) => {
   await apiClient.post(savedFilterSetsUrl(), { name, query_string: queryString });
+  notifySavedFilterSets();
 };
 
 export const renameSavedFilterSet = async ({ id, name }) => {
   await apiClient.patch(savedFilterSetsUrl(`/${encodeURIComponent(id)}`), { name });
+  notifySavedFilterSets();
 };
 
 export const deleteSavedFilterSet = async ({ id }) => {
   await apiClient.delete(savedFilterSetsUrl(`/${encodeURIComponent(id)}`));
+  notifySavedFilterSets();
 };

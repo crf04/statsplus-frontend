@@ -1,0 +1,29 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 of 60 games match"}}
+{"action": "click", "target": {"role": "button", "name": "Save Filter Set"}}
+{"action": "fill", "target": {"label": "Name"}, "value": "QA panel sample"}
+{"action": "click", "target": {"role": "button", "name": "Save"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/saved-filter-sets", "query": {}, "status": 201}
+{"action": "assert-response", "method": "GET", "path": "/api/user/saved-filter-sets", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "QA panel sample"}}
+{"action": "proof", "name": "inline-saved-created-desktop"}
+{"action": "reload"}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "QA panel sample"}}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"role": "button", "name": "+ Last N"}}
+{"action": "click", "target": {"role": "button", "name": "10"}}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "10 of 60 games match"}}
+{"action": "click", "target": {"selector": "[data-testid=\"filter-panel\"] .fpx-saved", "index": 0}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 games"}}
+{"action": "assert", "target": {"within": {"selector": "[data-testid=\"filter-panel\"]"}, "text": "5 of 60 games match"}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "inline-saved-opened-phone"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=abc"}
+{"action": "assert", "target": {"role": "alert"}}
+{"action": "assert", "target": {"role": "button", "name": "Save Filter Set"}, "state": "hidden"}
+{"action": "proof", "name": "filter-panel-refused-link-phone"}
+{"action": "cleanup"}

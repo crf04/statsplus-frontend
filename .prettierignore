@@ -6,3 +6,6 @@ coverage/
 
 # Machine-generated dependency metadata
 package-lock.json
+
+# Frozen design-reference parity fixtures are copied verbatim.
+e2e/filterPanelParity/

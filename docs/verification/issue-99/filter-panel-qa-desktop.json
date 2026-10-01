@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:5188/?player_name=LeBron+James&season_filter=2025-26&game_filter=5",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "screenshot": "/tmp/statsplus-99/qa-final-evidence/filter-panel-qa-desktop.png",
+  "aria": "/tmp/statsplus-99/qa-final-evidence/filter-panel-qa-desktop.aria.txt",
+  "responses": [
+    {
+      "at": "2026-10-01T01:15:33.824Z",
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:33.826Z",
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.165Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/user/saved-filter-sets",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.192Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/next-opponent",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.416Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.441Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/profile",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.478Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.480Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.741Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.774Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:15:34.795Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    }
+  ]
+}

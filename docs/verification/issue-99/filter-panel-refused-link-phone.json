@@ -1,0 +1,184 @@
+{
+  "url": "http://127.0.0.1:5188/?player_name=LeBron+James&game_filter=abc",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screenshot": "/tmp/statsplus-99/qa-inline-saved-evidence/filter-panel-refused-link-phone.png",
+  "aria": "/tmp/statsplus-99/qa-inline-saved-evidence/filter-panel-refused-link-phone.aria.txt",
+  "responses": [
+    {
+      "at": "2026-10-01T01:14:05.977Z",
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:05.977Z",
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:07.482Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/user/saved-filter-sets",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:07.935Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/next-opponent",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:09.065Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:09.244Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:09.253Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:09.898Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:10.255Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/players/profile",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:10.255Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:10.255Z",
+      "actionStep": 2,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:11.520Z",
+      "actionStep": 7,
+      "method": "POST",
+      "path": "/api/user/saved-filter-sets",
+      "status": 201
+    },
+    {
+      "at": "2026-10-01T01:14:11.533Z",
+      "actionStep": 7,
+      "method": "GET",
+      "path": "/api/user/saved-filter-sets",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.616Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/user/saved-filter-sets",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.647Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/players/next-opponent",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.853Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.876Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/players/profile",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.885Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:12.915Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:13.211Z",
+      "actionStep": 12,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:13.339Z",
+      "actionStep": 16,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:13.339Z",
+      "actionStep": 16,
+      "method": "GET",
+      "path": "/api/teams/stats",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:13.737Z",
+      "actionStep": 18,
+      "method": "GET",
+      "path": "/api/games/game_logs",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:14.782Z",
+      "actionStep": 25,
+      "method": "GET",
+      "path": "/api/players",
+      "status": 200
+    },
+    {
+      "at": "2026-10-01T01:14:14.783Z",
+      "actionStep": 25,
+      "method": "GET",
+      "path": "/api/teams",
+      "status": 200
+    }
+  ]
+}

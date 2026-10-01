@@ -155,8 +155,12 @@ test('@critical Back undoes the last filter change', async ({ authenticatedPage:
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('1');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('1');
+  await page.getByRole('button', { name: /^Apply/ }).click();
   await expect(page).toHaveURL(/game_filter=1/);
   await expect(page.getByText('GAMES <= 1').first()).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
@@ -181,8 +185,12 @@ test('@critical leaving is one action however many filters were applied', async 
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
   for (const games of ['9', '8', '7']) {
-    await page.getByLabel('Last N games:').fill(games);
-    await page.getByRole('button', { name: 'Apply Filters' }).click();
+    if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+      await page.getByRole('button', { name: 'Done', exact: true }).click();
+    if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+      await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+    await page.getByLabel('Last N games', { exact: true }).fill(games);
+    await page.getByRole('button', { name: /^Apply/ }).click();
     await expect(page).toHaveURL(new RegExp(`game_filter=${games}`));
   }
 
@@ -204,8 +212,12 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   await page.goto('/?player_name=LeBron+James&season_filter=2023-24');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).toHaveURL(/season_filter=2023-24/);
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
@@ -358,10 +370,14 @@ test('@critical structured filters serialize through the game-log request seam',
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.get('game_filter')).toBe('5');
 });
@@ -380,29 +396,32 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  const defensiveFilter = page.getByLabel('Defensive Filter:').locator('xpath=..');
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  const defensiveFilter = page.getByTestId('filter-panel');
   const fromRank = page.getByRole('slider', { name: 'From rank' });
   const toRank = page.getByRole('slider', { name: 'To rank' });
   // Isolation and Transition are both Play type filters, and the category
   // persists across the two selections below, so one pill click covers both.
   // A filter is addable only once one is picked; the range is always within
   // ranks 1-30, so there is no blank or zero rank left to guard against.
-  await page.getByRole('button', { name: 'Play type' }).click();
-  await expect(defensiveFilter.getByRole('button', { name: 'Add' })).toBeDisabled();
-  await page.getByLabel('Defensive Filter:').selectOption('Isolation');
+  await page.getByRole('tab', { name: 'Play type' }).click();
+  await expect(
+    defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }),
+  ).toBeDisabled();
+  await page.getByLabel('Defensive metric').selectOption('Isolation');
   // The default range is ranks 1-10; five steps down the upper thumb is 1-5.
   for (let step = 0; step < 5; step += 1) await toRank.press('ArrowLeft');
   await expect(toRank).toHaveAttribute('aria-valuenow', '5');
+  await expect(page.getByText('1–5', { exact: true })).toBeVisible();
+  await defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }).click();
   await expect(
-    page.getByText('Adds the teams ranked 1–5 by Isolation (rank 1 = highest).'),
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
   ).toBeVisible();
-  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
-  await expect(page.getByRole('button', { name: 'Remove Isolation filter' })).toBeVisible();
   await expect(page.getByText('Isolation (ranks 1–5)').first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
   // A range from rank 1 travels as the plain count every earlier link used.
@@ -412,18 +431,24 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   // filters travel with paired ranks. Applying filters re-renders the panel
   // from appliedFilters and resets the category pill, so it needs clicking again.
   const rankedRequestCount = gameLogRequests.length;
-  await page.getByRole('button', { name: 'Play type' }).click();
-  await page.getByLabel('Defensive Filter:').selectOption('Transition');
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByRole('tab', { name: 'Play type' }).click();
+  await page.getByLabel('Defensive metric').selectOption('Transition');
   await toRank.press('End');
   for (let step = 0; step < 10; step += 1) await toRank.press('ArrowLeft');
   for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowRight');
   await expect(fromRank).toHaveAttribute('aria-valuenow', '11');
   await expect(toRank).toHaveAttribute('aria-valuenow', '20');
-  await defensiveFilter.getByRole('button', { name: 'Add' }).click();
-  await expect(page.getByRole('button', { name: 'Remove Transition filter' })).toBeVisible();
+  await defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }).click();
+  await expect(
+    page
+      .getByTestId('filter-panel')
+      .getByRole('button', { name: /^Remove versus/ })
+      .last(),
+  ).toBeVisible();
   await expect(page.getByText('Transition (ranks 11–20)').first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
   const pairedRequest = new URL(gameLogRequests.at(-1));
@@ -445,10 +470,14 @@ test('@critical applying an untouched panel emits only the controls the user mov
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
   const latestRequest = new URL(gameLogRequests.at(-1));
 
   // The one moved control and the player travel; every untouched control stays
@@ -460,8 +489,10 @@ test('@critical applying an untouched panel emits only the controls the user mov
   // Moving a second control keeps the filter the panel was pre-populated with,
   // and still leaves the untouched controls behind.
   const appliedRequestCount = gameLogRequests.length;
-  await page.getByLabel('Date Filter:').fill('2025-01-09');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Since' }).click();
+  await page.getByLabel('Since date').fill('2025-01-09');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedRequestCount);
   const secondRequest = new URL(gameLogRequests.at(-1));
@@ -513,7 +544,11 @@ test('@critical a link without a player waits for one instead of erroring', asyn
   await page.goto('/?game_filter=10');
 
   // A Filter Set without a player is partial, not malformed: the panel holds it.
-  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('10');
   await expect(page.getByRole('alert')).toBeHidden();
   expect(gameLogRequests).toHaveLength(0);
 });
@@ -575,8 +610,10 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
   // Signing in fires the held Filter Set exactly once, without a second visit.
   await page.getByRole('button', { name: 'Sign in with Google' }).click();
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect.poll(() => gameLogRequests.length).toBe(1);
-  const requested = new URL(gameLogRequests[0]);
+  await expect.poll(() => gameLogRequests.length).toBe(2);
+  const requested = new URL(
+    gameLogRequests.find((url) => new URL(url).searchParams.has('game_filter')),
+  );
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
   expect(requested.searchParams.get('game_filter')).toBe('10');
 });
@@ -600,7 +637,11 @@ test('a bound the link arrived with survives a later apply', async ({
   // The label and the thumbs are two separate readings of the same range, and
   // this journey once passed while they disagreed. The playtype control is the
   // first of the two range sliders; both name their thumbs the same way.
-  await expect(page.getByText('Playtype Matchup Rating: 0 - 80')).toBeVisible();
+  await page
+    .getByTestId('filter-panel')
+    .getByRole('button', { name: /rating playtype 0–80/ })
+    .click();
+  await expect(page.getByText('0–80', { exact: true })).toBeVisible();
   const playstyleThumbs = page.getByRole('slider');
   await expect(playstyleThumbs.first()).toHaveAttribute('aria-valuenow', '0');
   await expect(playstyleThumbs.nth(1)).toHaveAttribute('aria-valuenow', '80');
@@ -608,8 +649,12 @@ test('a bound the link arrived with survives a later apply', async ({
   const arrivedCount = gameLogRequests.length;
   // Touch an unrelated control, so the apply is a real change rather than a
   // rewrite of the Filter Set already in the address bar.
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(arrivedCount);
 
   const reapplied = new URL(gameLogRequests.at(-1));
@@ -629,9 +674,13 @@ test('applying a playerless link asks for a player instead of sending a placehol
   });
 
   await page.goto('/?game_filter=10');
-  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('10');
 
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page.getByRole('alert')).toContainText('Choose a player');
   expect(gameLogRequests).toHaveLength(0);
@@ -647,11 +696,19 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
 
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Last N games:')).toHaveValue('10');
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('10');
 
   // Emptying a control is a decision, not silence. It has to be able to say so.
-  await page.getByLabel('Last N games:').fill('');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/game_filter/);
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
@@ -679,7 +736,9 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   // The opponent travels on the request, and the panel says which one is fixed.
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
   expect(gameLogRequests.at(-1).searchParams.get('opponent_tricode')).toBe('ATL');
-  await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
+  ).toBeVisible();
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
   // The sample states itself against the whole season, which no filter changes.
@@ -687,8 +746,11 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
 
   // Clearing it removes it from the URL and from the request that follows.
   const fixedRequestCount = gameLogRequests.length;
-  await page.getByRole('button', { name: 'Remove ATL opponent' }).click();
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page
+    .getByTestId('filter-panel')
+    .getByRole('button', { name: /^Remove versus/ })
+    .click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/opponent_tricode/);
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(fixedRequestCount);
@@ -727,10 +789,15 @@ test('@critical removing every self filter clears its parameter', async ({
 
   await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=20%2C60');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Remove PTS filter' })).toBeVisible();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove own/ }),
+  ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Remove PTS filter' }).click();
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page
+    .getByTestId('filter-panel')
+    .getByRole('button', { name: /^Remove own/ })
+    .click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/self_filters/);
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
@@ -752,44 +819,35 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
-  expect(gameLogRequests).toHaveLength(1);
+  await expect.poll(() => gameLogRequests.length).toBe(2);
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBe(2);
-  expect([...gameLogRequests.at(-1).searchParams.entries()]).toEqual([
-    ['player_name', 'LeBron James'],
-  ]);
+  expect([
+    ...gameLogRequests
+      .find((url) => [...url.searchParams.keys()].join() === 'player_name')
+      .searchParams.entries(),
+  ]).toEqual([['player_name', 'LeBron James']]);
 
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
 
-  // Everything the disclosure hides sits inside the region it says it controls,
-  // both ends of the range included.
-  const disclosure = page.getByRole('button', { name: 'Self Filters' });
-  await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-  await expect(disclosure).toHaveAttribute('aria-controls', 'self-filter-controls');
-  const selfFilterControls = page.locator('#self-filter-controls');
-  await expect(selfFilterControls.getByLabel('Self filter stat')).toBeVisible();
-  await expect(selfFilterControls.getByLabel('Lower thumb')).toBeVisible();
-  await expect(selfFilterControls.getByLabel('Upper thumb')).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Minimum PTS' })).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Maximum PTS' })).toBeVisible();
 
   // The season bounds the slider, so the filter the user arrived with can be
   // widened back out again.
-  await page.getByRole('button', { name: 'Add self filter' }).click();
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  await page.getByRole('button', { name: 'Add stat filter' }).click();
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBe(3);
   expect(gameLogRequests.at(-1).searchParams.get('self_filters[PTS]')).toBe('27,31');
   await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
 
-  // Closed, the control is gone but what it already applied is not: a filter
-  // that arrived on a link stays readable and removable without opening it.
-  await disclosure.click();
-  await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
-  await expect(selfFilterControls).toHaveCount(0);
-  const appliedSelfFilters = page.getByRole('group', { name: 'Applied self filters' });
-  await expect(appliedSelfFilters.getByRole('button', { name: 'Remove PTS filter' })).toBeVisible();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove own/ }),
+  ).toBeVisible();
 });
 
 test('an open Self Filters control follows a player change to that season', async ({
@@ -809,18 +867,18 @@ test('an open Self Filters control follows a player change to that season', asyn
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
   await expect.poll(() => seasonRequests).toEqual(['LeBron James']);
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
   await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
   // The ranges on offer are this player's, not the one we arrived on.
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('18–42', { exact: true })).toBeVisible();
 });
 
 test('a superseded season never bounds the player on screen', async ({
@@ -852,18 +910,18 @@ test('a superseded season never bounds the player on screen', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('18–42', { exact: true })).toBeVisible();
 
   // The season asked for before the player changed arrives late. It belongs to
   // nobody on screen, so it must change nothing.
   release();
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toHaveCount(0);
-  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+  await expect(page.getByText('27.0–31.0', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('18–42', { exact: true })).toBeVisible();
 });
 
 test('a player left and returned to gets a fresh season request', async ({
@@ -915,13 +973,13 @@ test('a player left and returned to gets a fresh season request', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
   await expect.poll(() => seasonRequests).toEqual(['LeBron James']);
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 18.0 - 42.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('18–42', { exact: true })).toBeVisible();
 
   // Back to the player we started on. The first request for them was abandoned
   // on the way out, so returning has to ask again rather than wait on it.
@@ -930,14 +988,14 @@ test('a player left and returned to gets a fresh season request', async ({
   await expect
     .poll(() => seasonRequests)
     .toEqual(['LeBron James', 'Stephen Curry', 'LeBron James']);
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
 
   // The abandoned first request answers at last, for the player now on screen.
   // It is not the request anyone is waiting on, so it changes nothing.
   release();
-  await expect(page.getByText('PTS: 18.0 - 42.0')).toHaveCount(0);
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  await expect(page.getByText('18–42', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
   expect(cancelledSeasonRequests).toEqual(['LeBron James']);
 });
 
@@ -979,8 +1037,9 @@ test('leaving the Workspace cancels a season still in flight', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
-  await expect(page.getByText('Loading the season for this player…')).toBeVisible();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('Loading the season range…').first()).toBeVisible();
 
   // The slowest endpoint in the application does not keep working for a
   // workspace nobody is in any more.
@@ -1030,22 +1089,18 @@ test('a season that fails to load says so, and loads on re-opening', async ({
   await page.goto('/?player_name=LeBron+James&game_filter=10');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Self Filters' }).click();
-  // An empty stat list with no explanation is indistinguishable from a player
-  // with no stats.
-  const failure = page.getByRole('status').filter({ hasText: 'could not be loaded' });
-  await expect(failure).toBeVisible();
-
-  await page.getByRole('button', { name: 'Self Filters' }).click();
-  await page.getByRole('button', { name: 'Self Filters' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  // The season retry on opening the editor supplies the missing bounds.
+  const failure = page.getByRole('status').filter({ hasText: "Couldn't load" });
 
   await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'LeBron James']);
   await expect(failure).toHaveCount(0);
-  await page.getByLabel('Self filter stat').selectOption('PTS');
-  await expect(page.getByText('PTS: 27.0 - 31.0')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
 });
 
-test('a session that never opens Self Filters pays for no extra request', async ({
+test('the season strip reads the unfiltered season once without opening Own stat line', async ({
   authenticatedPage: page,
 }) => {
   const gameLogRequests = [];
@@ -1058,13 +1113,17 @@ test('a session that never opens Self Filters pays for no extra request', async 
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBe(2);
+  await expect.poll(() => gameLogRequests.length).toBe(3);
   // The slowest endpoint in the application is only asked for the season when
   // the control that needs it is opened.
-  expect(gameLogRequests.every((url) => url.searchParams.has('game_filter'))).toBe(true);
+  expect(gameLogRequests.filter((url) => !url.searchParams.has('game_filter'))).toHaveLength(1);
 });
 
 test('@critical the escape hatch reaches a result with no language model', async ({
@@ -1126,8 +1185,12 @@ test('an empty workspace is shareable, and the sentinel never reaches a request'
 
   // Applying puts real filters in the URL, and the sentinel has stopped being
   // true, so it goes.
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
   await expect(page).toHaveURL(/game_filter=5/);
   await expect(page).not.toHaveURL(/browse/);
 });
@@ -1165,8 +1228,12 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
   await page.goto('/?player_name=LeBron+James');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   const appliedCount = gameLogRequests.length;
 
@@ -1176,7 +1243,20 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
   // Comparing two players under identical conditions is one action, so the
   // filter the user applied is still on the wire for the new player.
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
-  const afterChange = gameLogRequests.at(-1);
+  await expect
+    .poll(() =>
+      gameLogRequests.some(
+        (url) =>
+          url.searchParams.get('player_name') === 'Stephen Curry' &&
+          url.searchParams.get('game_filter') === '5',
+      ),
+    )
+    .toBe(true);
+  const afterChange = gameLogRequests.findLast(
+    (url) =>
+      url.searchParams.get('player_name') === 'Stephen Curry' &&
+      url.searchParams.has('game_filter'),
+  );
   expect(afterChange.searchParams.get('player_name')).toBe('Stephen Curry');
   expect(afterChange.searchParams.get('game_filter')).toBe('5');
 
@@ -1276,7 +1356,7 @@ test('a refused link is not quietly replaced by choosing a player', async ({
   // an apply that drops the parameter the alert is naming and loads unfiltered
   // data the link never asked for.
   await expect(page.getByLabel('Player:')).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Apply Filters' })).toBeHidden();
+  await expect(page.getByRole('button', { name: /^Apply/ })).toBeHidden();
   await expect(page).toHaveURL(/game_filter=0/);
   expect(gameLogRequests).toHaveLength(0);
 
@@ -1353,8 +1433,12 @@ test('a slow request never claims the result was empty', async ({ authenticatedP
   await page.goto('/?player_name=LeBron+James');
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
 
-  await page.getByLabel('Last N games:').fill('5');
-  await page.getByRole('button', { name: 'Apply Filters' }).click();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  await page.getByLabel('Last N games', { exact: true }).fill('5');
+  await page.getByRole('button', { name: /^Apply/ }).click();
 
   // "No game logs to display" is a finding. A request that has not answered yet
   // has not found anything, and a user who acts on that reads a real result.
@@ -1382,7 +1466,10 @@ test('a link carrying filters but no player applies them to the player chosen', 
   await page.getByRole('option', { name: 'LeBron James' }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
-  const requested = gameLogRequests.at(-1);
+  await expect
+    .poll(() => gameLogRequests.some((url) => url.searchParams.get('game_filter') === '10'))
+    .toBe(true);
+  const requested = gameLogRequests.findLast((url) => url.searchParams.get('game_filter') === '10');
   expect(requested.searchParams.get('player_name')).toBe('LeBron James');
   expect(requested.searchParams.get('game_filter')).toBe('10');
 });
@@ -1397,6 +1484,9 @@ test('@critical a saved Filter Set is a name that reopens the same Log Workspace
   await page.getByLabel('Name').fill('LeBron last 10');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeHidden();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /LeBron last 10/ }),
+  ).toBeVisible();
 
   // The same name twice is the backend's answer, shown rather than swallowed.
   await page.getByRole('button', { name: 'Save Filter Set' }).click();

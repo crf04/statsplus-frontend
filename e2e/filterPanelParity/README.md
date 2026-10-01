@@ -75,3 +75,10 @@ Reference regeneration and clean checks used the frozen URL above with
 `PARITY_TARGET=prototype E2E_BASE_URL=<frozen URL> npx playwright test
 filter-panel-parity --project=chromium`; regeneration added
 `--update-snapshots --grep 'panel at|panel with|panel on'`.
+
+Linux baselines were captured from the same frozen reference deployment with
+only the approved feedback widget hidden, using Playwright 1.62.1 in
+`mcr.microsoft.com/playwright:v1.62.1-noble` (linux/amd64; image digest
+`sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e`).
+The seven reference captures and all twelve build parity tests passed. No build
+screenshots were used to create baselines; the 50-pixel tolerance is unchanged.

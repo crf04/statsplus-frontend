@@ -93,3 +93,36 @@ test('a historical Filter Set shares its season with the strip read', async ({ p
     '2023-24',
   ]);
 });
+
+test('a bottom tier with fewer than eight ranked teams remains a valid inclusive filter', async ({
+  page,
+}) => {
+  const panel = await open(page, {
+    next_game: {
+      game_id: '0022600001',
+      date: '2026-10-22',
+      opponent: 'CHA',
+      opponent_name: 'Charlotte Hornets',
+      home: false,
+    },
+    opponent_ranks: [
+      {
+        group: 'Play types',
+        label: 'Isolation (per poss.)',
+        value: 0.8,
+        vs_league_pct: -20,
+        most_rank: 4,
+        ranked_teams: 5,
+        team_filter: 'Isolation',
+        unit: 'league_ratio',
+      },
+    ],
+  });
+  await expect(panel.getByText('2nd fewest')).toBeVisible();
+  await panel.getByRole('button', { name: 'Add teams ranked 1–5 in Isolation' }).click();
+  await panel.getByRole('button', { name: 'Apply 1 change' }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll('teams_against[]'))
+    .toEqual(['Isolation']);
+  expect(new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['5']);
+});

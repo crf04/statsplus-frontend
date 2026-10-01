@@ -303,7 +303,7 @@ const FilterPanelContext = ({ panel, extra }) => {
         token: stat.team_filter,
         fewest,
         place: fewest ? stat.ranked_teams - stat.most_rank + 1 : stat.most_rank,
-        tier: fewest ? [stat.ranked_teams - 7, stat.ranked_teams] : [1, 8],
+        tier: fewest ? [Math.max(1, stat.ranked_teams - 7), stat.ranked_teams] : [1, 8],
       };
     })
     .sort((a, b) => a.place - b.place || a.label.localeCompare(b.label));

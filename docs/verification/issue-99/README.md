@@ -2,13 +2,14 @@
 
 Implementation verified: frontend `ecb66a25eb8cde2cd416a1609a0a632d55993ad7`,
 backend `ee311a6de9faad32c0693ba6fe115865f2e59dbe`, coordination `1c08ac3`.
-This directory is an evidence-only addition after those source revisions.
+The final test-only revision is `e81985de`; application source is unchanged from
+`ecb66a25`. This directory records evidence separately from application changes.
 
 ## Results
 
 | Check                                      | Verdict                                          | Evidence                                                                                                                                                                      |
 | ------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend completion gate                   | Passed                                           | lint, formatting, 819 Jest tests, build, 132 E2E tests; 2 production-only tests skipped in the hermetic suite                                                                 |
+| Frontend completion gate                   | Passed                                           | lint, formatting, 825 Jest tests, build, 136 E2E tests; 2 production-only tests skipped in the hermetic suite                                                                 |
 | Backend completion gate                    | Passed                                           | 5,145 tests, 85.40% coverage, migration replay and demo validation                                                                                                            |
 | Coordination gate                          | Passed                                           | `scripts/check.py` with both implementation roots selected                                                                                                                    |
 | Frozen J parity                            | Passed                                           | 12 checks, including seven screenshots with the 50-pixel tolerance unchanged                                                                                                  |

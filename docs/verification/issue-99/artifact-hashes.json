@@ -1,5 +1,5 @@
 {
-  "README.md": "53fdf18101976effa68da5a005979f882f42f5d7c1f41c164efd4f603f837c87",
+  "README.md": "728ef3d80911c18d5edace67531e076fdcc4bd9361669f7147aa301f8e705a64",
   "filter-panel-production-desktop.aria.txt": "f57a3c90a713ad083d465ee8fbe8219a3a4d5199c40da5061181aa06746d2628",
   "filter-panel-production-desktop.json": "d5637cac78a309c78795d6ed3351ac4513fe8c9abf993dc43e6be269130b3df6",
   "filter-panel-production-desktop.png": "55f23209f14fe37de9d7bbbcf45856b554c25efb3552668d32a53025dc395aea",
@@ -31,5 +31,6 @@
   "qa-inline-saved-results.jsonl": "8a85f9a06563286d85de97cc0d5ffe8c877ae3b00ba3726392142b1f2b66bdf3",
   "qa-inline-saved.jsonl": "aad0362d2c72ada86de4c9ab6bcb4ba2d136a3462752ba9ee4d11ec1771741f5",
   "qa-results.jsonl": "88e8037f5e07dc0418b8430fafe20b75ca1353ba57a4b156b4f5c62f345a962a",
+  "source-identity.json": "673319ee2c11b8fc29996de8c7eaac6483bf4f556ac2c4c437372925ec978eaa",
   "verification-plan.md": "fc6468a06e2660d7ee8e4a188a979f2c03b95d4024c11b8433d9c4030b1da0bf"
 }

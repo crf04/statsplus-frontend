@@ -396,7 +396,7 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   await expect(page.getByRole('list', { name: /graded by AST\/36 margin/ })).toBeVisible();
   await games.getByRole('link', { name: 'LeBron James games vs ATL' }).click();
   await expect(page).toHaveURL('/?player_name=LeBron+James&opponent_tricode=ATL');
-  await expect(page.getByRole('button', { name: 'Remove ATL opponent' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove versus ATL' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
 });
 

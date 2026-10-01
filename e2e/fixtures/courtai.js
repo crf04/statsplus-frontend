@@ -2500,6 +2500,11 @@ export const installApiContract = async (page, overrides = {}) => {
       }
     }
 
+    if (url.pathname === '/api/players/next-opponent') {
+      await route.fulfill({ json: { next_game: null, opponent_ranks: [] } });
+      return;
+    }
+
     if (url.pathname === '/api/players') {
       await route.fulfill({ json: ['LeBron James', 'Stephen Curry', 'Kevin Durant'] });
       return;

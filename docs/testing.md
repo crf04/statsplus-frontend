@@ -248,3 +248,10 @@ viewing samples and adjusting their displayed stats never writes account state.
 The desktop and phone sample journeys copy an example into the composer, edit
 it, save it, and verify samples disappear on return and reload. React tests also
 cover loading/list failure, saved accounts, canceling a copy, and preview retry.
+
+The Log Workspace filter panel copies the frozen J design's parity kit without
+changing its screenshot baselines. Run `npx playwright test filter-panel-parity
+--project=chromium` for that gate. `filter-panel.spec.js` also checks next-opponent
+tiers against a reduced ranked population, context-only stats, and no scheduled
+game. The strip and Own stat line share the unfiltered season read; the new
+`/api/players/next-opponent` read is independent and its absence hides that block.

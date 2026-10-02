@@ -287,9 +287,7 @@ test('the panel lists only Saved Filter Sets for the player on screen', async ({
   await expect(panel.getByRole('button', { name: /JJ at home/ })).toBeVisible();
   await expect(panel.getByRole('button', { name: /Trae at home/ })).toHaveCount(0);
   await expect(panel.getByRole('button', { name: /No player/ })).toHaveCount(0);
-  await expect(panel.locator('.fpx-list-head').filter({ hasText: 'Saved Filter Sets' })).toHaveText(
-    /Saved Filter Sets\s*1$/,
-  );
+  await expect(panel.getByText(/^Saved Filter Sets\s*1$/)).toBeVisible();
 });
 
 test('a player with no Saved Filter Sets is told so by name', async ({ page }) => {

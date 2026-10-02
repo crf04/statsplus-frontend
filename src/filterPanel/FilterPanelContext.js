@@ -218,8 +218,12 @@ const MatchStrip = ({ seasonLogs, keptDates, lineType, line }) => {
   );
 };
 
-const SavedFilterSets = ({ rows, expanded, onToggle }) => {
-  const { sets, error, retry } = useSavedSets();
+const samePlayer = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+// The panel sits beside one player's games, so it lists only that player's
+// sets; the Saved Filter Sets modal still lists every set on the account.
+const SavedFilterSets = ({ player, rows, expanded, onToggle }) => {
+  const { sets: allSets, error, retry } = useSavedSets();
   const navigate = useNavigate();
   if (error)
     return (
@@ -233,7 +237,10 @@ const SavedFilterSets = ({ rows, expanded, onToggle }) => {
         </button>
       </div>
     );
-  if (!sets) return null;
+  if (!allSets) return null;
+  const sets = allSets.filter(
+    (set) => samePlayer(describeSavedFilterSet(set.queryString).player) === samePlayer(player),
+  );
   const canonicalSearch = (search) => {
     const params = new URLSearchParams(search);
     params.sort();
@@ -248,9 +255,7 @@ const SavedFilterSets = ({ rows, expanded, onToggle }) => {
         <span>Saved Filter Sets</span>
         <span className="fp-val">{sets.length}</span>
       </div>
-      {sets.length === 0 && (
-        <p className="fp-note">Nothing saved yet. Save this set to come back to it in one tap.</p>
-      )}
+      {sets.length === 0 && <p className="fp-note">No saved sets for {player} yet.</p>}
       {shown.map((set) => {
         const described = describeSavedFilterSet(set.queryString);
         const current = canonicalSearch(set.queryString) === currentSearch;
@@ -393,6 +398,7 @@ const FilterPanelContext = ({ panel, extra }) => {
         extremes={extremes}
       />
       <SavedFilterSets
+        player={panel.selectedPlayer}
         rows={savedRows}
         expanded={savedOpen}
         onToggle={() => setSavedOpen((open) => !open)}

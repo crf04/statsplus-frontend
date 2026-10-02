@@ -255,3 +255,65 @@ test('switching seasons for one player reloads bounds and withholds the previous
   );
   await expect(panel.getByRole('button', { name: /2025-01-01 ATL @ CHA/ })).toBeVisible();
 });
+
+test('the panel lists only Saved Filter Sets for the player on screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  await installParityApi(page);
+  await page.route('**/api/players/next-opponent?**', (route) =>
+    route.fulfill({ json: { next_game: null, opponent_ranks: [] } }),
+  );
+  await page.route('**/api/user/saved-filter-sets', (route) =>
+    route.fulfill({
+      json: {
+        saved_filter_sets: [
+          {
+            id: 'jj',
+            name: 'JJ at home',
+            query_string: 'player_name=jalen++johnson&location_filter=Home',
+          },
+          {
+            id: 'trae',
+            name: 'Trae at home',
+            query_string: 'player_name=Trae+Young&location_filter=Home',
+          },
+          { id: 'none', name: 'No player', query_string: 'game_filter=10' },
+        ],
+      },
+    }),
+  );
+  await page.goto(PARITY_PATH);
+  const panel = page.getByTestId('filter-panel');
+  await expect(panel.getByRole('button', { name: /JJ at home/ })).toBeVisible();
+  await expect(panel.getByRole('button', { name: /Trae at home/ })).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: /No player/ })).toHaveCount(0);
+  await expect(panel.locator('.fpx-list-head').filter({ hasText: 'Saved Filter Sets' })).toHaveText(
+    /Saved Filter Sets\s*1$/,
+  );
+});
+
+test('a player with no Saved Filter Sets is told so by name', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  await installParityApi(page);
+  await page.route('**/api/players/next-opponent?**', (route) =>
+    route.fulfill({ json: { next_game: null, opponent_ranks: [] } }),
+  );
+  await page.route('**/api/user/saved-filter-sets', (route) =>
+    route.fulfill({
+      json: {
+        saved_filter_sets: [
+          {
+            id: 'trae',
+            name: 'Trae at home',
+            query_string: 'player_name=Trae+Young&location_filter=Home',
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto(PARITY_PATH);
+  const panel = page.getByTestId('filter-panel');
+  await expect(panel.getByText('No saved sets for Jalen Johnson yet.')).toBeVisible();
+  await expect(panel.getByRole('button', { name: /Trae at home/ })).toHaveCount(0);
+});

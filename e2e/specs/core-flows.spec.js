@@ -803,6 +803,11 @@ test('@critical removing every self filter clears its parameter', async ({
     .getByTestId('filter-panel')
     .getByRole('button', { name: /^Remove own/ })
     .click();
+  // The initial season read has the same query as the cleared workspace.
+  // Observe it before Apply so it cannot satisfy the post-Apply assertion.
+  await expect
+    .poll(() => gameLogRequests.map((url) => Object.fromEntries(url.searchParams)))
+    .toContainEqual({ player_name: 'LeBron James' });
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 

@@ -150,3 +150,67 @@ Agent tests could not be mutation-tested without subscription login.
 | 139 | FIXED2-T12-resolve-ignores-date               | resolve read omits date param                                                                                                 | 1 (desktop+phone): saved Target fits identify players in a dated Slate                                                                                                                                                                                                                                                           | KILLED             |
 | 140 | FIXED2-B3-finish-select-ignored               | Terminal status select change ignored (default stays complete)                                                                | 1 (desktop+phone): an admin confirms finish cycle and sees its durable job                                                                                                                                                                                                                                                       | KILLED             |
 | 141 | FIXED2-F6b-workspace-saved-buttons-signed-out | workspace Save/Saved Filter Sets buttons shown to signed-out readers                                                          | 1 (desktop+phone): signed-out readers are offered no saved Filter Sets                                                                                                                                                                                                                                                           | KILLED             |
+
+## Follow-up independent review at 905c8dd
+
+Verdict: CLEAN. No material findings. All 11 round-1 findings are resolved or are acknowledged limits.
+Review tree /Users/chrisfu/statsplus-frontend-e2e-review2 is clean (`git status --short` empty, HEAD 905c8dd). Implementation tree untouched. No PR writes.
+
+## Checks run (review tree)
+
+- Baseline `e2e run --exclude-tag agent`: 16 files, 114/114 passed (desktop + phone). baseline.log
+- `npm run lint`, `format:check`, `typecheck:e2e`: pass. static.log
+- CI=1 `--repeat-each 3`: 342/342 passed, 114 of 114 tests passed all 3 runs, 245s. repeat3.log
+  (Round 1 saw one cold-start timeout under heavy load; `assertionTimeout` is now 10s and 3x repeats are stable.)
+
+## Round-1 finding disposition
+
+| #   | Finding                                         | Status                  | Evidence                                                                                                                                             |
+| --- | ----------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Q6 ladder only clicks rung 2                    | Resolved                | R2-Q6 killed 2/2 at `toHaveValue "Jalen Johnson this year"`                                                                                          |
+| 2   | Q5 browser Back from /help not reached          | Resolved                | R2-Q5 killed 2/2 at `toHaveValue "Luka last 10 games"`                                                                                               |
+| 3   | X8 modal-close asserted only after reload       | Resolved                | R2-X8 killed 2/2 at `dialog toHaveCount(0)` before reload                                                                                            |
+| 4   | F6 signed-out landing not asserted              | Resolved                | R2-F6 and R2-F6b (workspace buttons) killed 2/2 each at `toHaveCount(0)`, anchored on landing heading                                                |
+| 5   | B3 default status selected                      | Resolved                | R2-B3 killed 2/2: body `complete` vs expected `no_game`                                                                                              |
+| 6   | T12 date indistinguishable from fixture default | Resolved                | R2-T12 killed 2/2 at targets.e2e.ts:221 (`At-rim assists` article missing on 2026-03-29), the intended assertion; Targets tests before it still pass |
+| 7   | Matchup player link and Back to slate untested  | Resolved                | New tests, mutated below                                                                                                                             |
+| 8   | AGENTS.md/CLAUDE.md gate omits e2e              | Resolved                | AGENTS.md:37-38 and CLAUDE.md:37-38 list `typecheck:e2e`, `test:flows`                                                                               |
+| 9   | Cold-start flake                                | Mitigated               | assertionTimeout 10s; 3x repeat clean; GitHub CI on 14bb5b2 reported green by parent                                                                 |
+| 10  | Unused `isPhone`, direct `zod` dep              | Resolved                | `isPhone` removed; zod removed from package.json and lock (lock diff is only that line); `npm ci` + typecheck pass                                   |
+| 11  | Limits (a)-(e)                                  | Unchanged, acknowledged | see Limits                                                                                                                                           |
+
+## Mutation table (each run at desktop and phone, `--retries 0`, tree restored after each via `git checkout -- src e2e e2e.config.ts package.json`)
+
+Source file for N1/N2: src/matchups/MatchupDetailPage.js. R2 ids are the six round-1 survivors re-run on the fixed tests (definitions in /tmp/e2e-review/batch9.py).
+
+| id     | Mutation                                           | Failing assertion                                             | desktop | phone  |
+| ------ | -------------------------------------------------- | ------------------------------------------------------------- | ------- | ------ |
+| N1a    | player game-logs link `to="/"`                     | matchups.e2e.ts:121 `toHaveURL('/?player_name=LeBron+James')` | killed  | killed |
+| N1b    | link carries `player_name: 'Austin Reaves'`        | :121 toHaveURL                                                | killed  | killed |
+| N1c    | player link `to="/matchups"`                       | :121 toHaveURL                                                | killed  | killed |
+| N2a    | Back to slate `to="/"`                             | :136 `toHaveURL('/matchups')`                                 | killed  | killed |
+| N2b    | Back to slate `to="."` (stays on detail)           | :136 toHaveURL                                                | killed  | killed |
+| N2c    | Back to slate `to="/targets"`                      | :136 toHaveURL                                                | killed  | killed |
+| N2d    | Back to slate `to="/matchups?date=2026-03-29"`     | :136 toHaveURL                                                | killed  | killed |
+| R2-Q5  | history-entry draft stamp dropped                  | query-reference `toHaveValue "Luka last 10 games"`            | killed  | killed |
+| R2-Q6  | rungs 1 and 3 load empty text                      | `toHaveValue "Jalen Johnson this year"`                       | killed  | killed |
+| R2-F6  | Saved Filter Sets entry shown signed-out (landing) | `toHaveCount(0)`                                              | killed  | killed |
+| R2-F6b | workspace Save/Saved buttons shown signed-out      | `toHaveCount(0)` (:77 Save Filter Set)                        | killed  | killed |
+| R2-X8  | opening a saved set leaves modal open              | dialog `toHaveCount(0)`                                       | killed  | killed |
+| R2-T12 | resolve read omits `date`                          | targets.e2e.ts:221 article visible                            | killed  | killed |
+| R2-B3  | Terminal status select change ignored              | request body `status` expected `no_game`, got `complete`      | killed  | killed |
+
+14 mutations, 28 cases: 28 killed, 0 survived, 0 unrun. Every failure is at the intended behavioural assertion (URL, input value, count, request body, locator), not a runtime/import error; checked per log (log-*.txt). N1/N2 mutations 3-4 per test cover distinct defects (wrong destination, wrong player, wrong page, same page, wrong date) so the URL assertion is not trivially satisfied. The player test additionally asserts the heading, a game-log cell and the outgoing `player_name` request; the Back test asserts the game-list link and absence of the Defense Sheet heading.
+
+Other changed tests: the `isPhone` removal and `assertionTimeout` change are non-behavioural; covered by the baseline and 3x repeat runs. Nothing else needed extra mutation.
+
+## Limits (unchanged, not defects)
+
+- Agent steps (8 tests, tag `agent`): not run. No ChatGPT login in this environment and none requested, no tokens copied; replay cache absent. I do not claim agent goals or replay pass. Static check from round 1 still holds: each ends in assertions that fail if the agent does nothing.
+- I did not independently rerun GitHub CI; green at 14bb5b2 is the parent's report.
+- Hermetic fixtures differ from live backend text for the duplicate-name error; fixture-only phone overflow assertions (live Log Workspace overflow in feature map was not reproduced in this revision, per parent's live QA).
+- Playwright-only coverage of window/sort/nav controls is documented in docs/e2e-flows.md. PR157 Playwright race fixes were out of scope.
+
+## Artifacts
+
+/tmp/e2e-review-round2: baseline.log, static.log, repeat3.log, results.jsonl, run.out, mut.py, batch.py, log-*.txt. Round-1 evidence preserved in /tmp/e2e-review.

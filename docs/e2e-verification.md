@@ -29,7 +29,7 @@ Run from the frontend worktree with Node 22.18.0 (CI pins 22.14.0; package minim
 The full e2e report is `.e2e/report.json`; Markdown/JUnit and failure artifacts
 remain under `.e2e/`. Reports are ignored and uploaded by the new CI job.
 Initial new-test failures were exact locator/visible-text mismatches, corrected
-before the passing run. No application bug was confirmed. Follow-up verification found a race in two existing
+before the passing run. No application bug was confirmed. Follow-up verification found a race in three existing
 Playwright assertions; it is fixed separately on `test/wait-for-filter-requests`.
 
 ## Live verification
@@ -130,7 +130,11 @@ agent completion gate, removes unused `isPhone` and direct `zod`, and uses a
 
 The original mutation table is in [e2e-mutation-audit.md](e2e-mutation-audit.md).
 Detailed first-round reports, mutation definitions and logs remain under
-`/tmp/e2e-review/`. A fresh follow-up review covers the changes and the new cases.
+`/tmp/e2e-review/`. A fresh Claude Sonnet 5.5 follow-up found no material findings at `905c8dd`.
+It passed the 114-case baseline and 342/342 cases under `CI=1 --repeat-each 3`.
+All 14 follow-up mutations were killed at both widths (28/28); failures were
+at the intended behavioral assertions, and the review worktree was restored clean.
+The final report and mutation table are appended to the committed audit.
 Agent variants remain unrun and unmutated because subscription login is absent.
 
 ## Follow-up verification at `905c8dd`
@@ -193,3 +197,7 @@ Real Google popup login, enabled paid AI/DFS/injury/Redis integration behavior,
 and live administrator mutations were not exercised. Their applicable UI/HTTP
 branches are covered by hermetic tests; the QA account has no admin claims.
 The PR remains draft. No PR was merged.
+
+GitHub CI at `14bb5b25e086c009830e6d026ddb8436b90a6b78` passed validation,
+Playwright and e2e flows; Vercel deployment succeeded. The two deployment-smoke
+jobs were intentionally skipped. [CI run](https://github.com/crf04/statsplus-frontend/actions/runs/37238415122).

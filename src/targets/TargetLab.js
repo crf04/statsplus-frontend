@@ -102,12 +102,11 @@ export default function TargetLab({
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow.
   const shownSeason = season ?? preview?.season ?? null;
-  // A refusal of the season the reader picked is that season's answer. What
-  // was read for another season is not its Backtest, so it leaves the screen
-  // rather than standing beside the refusal; while the pick is still being
-  // read, it stays dimmed under the reading line.
-  const evidence =
-    status === 'error' && season !== null && preview?.season !== season ? null : preview;
+  // What was read for another season is not the picked season's Backtest, so
+  // it leaves the screen beside a refusal or an incomplete draft; only while
+  // the pick is about to be read, or is being read, does it stay, dimmed.
+  const reading = valid && status !== 'error' && (pending || status === 'loading');
+  const evidence = season !== null && preview?.season !== season && !reading ? null : preview;
   const fallback = describeFallback(evidence);
   const seasonGames = describeSeasonGames(evidence, published);
   const pastSeason = isPastSeason(shownSeason, published);

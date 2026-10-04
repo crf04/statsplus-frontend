@@ -595,3 +595,40 @@ test.each([
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
 });
+
+test('an incomplete draft does not bring back the season read before a refused one', async () => {
+  fetchTargetPreview.mockResolvedValueOnce({
+    ...backtest,
+    season: '2025-26',
+    seasonReason: 'published',
+    publishedSeason: '2025-26',
+    today: null,
+  });
+  await open();
+  fetchTargetPreview.mockRejectedValueOnce(
+    Object.assign(new Error('Request failed with status code 503'), {
+      response: {
+        status: 503,
+        data: {
+          error: {
+            code: 'season_unavailable',
+            message: 'The 2024-25 season is unavailable.',
+            details: { season: '2024-25', published_season: '2025-26', stream: 'player_game_logs' },
+          },
+        },
+      },
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: '2024-25' }));
+  // About to be read, the season before it stays, dimmed.
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
+
+  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '2024-25' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Backtest games' })).not.toBeInTheDocument();
+});

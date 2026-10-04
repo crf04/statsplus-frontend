@@ -1,0 +1,113 @@
+import { expect } from 'e2e';
+import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
+
+signedInTest(
+  'a slate opens team sheets and local controls change their evidence',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/matchups?date=2026-01-15');
+    await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
+    await expect(browser).toHaveURL('/matchups/0022500584');
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await expect(screen.getByText('Transition PTS')).toBeVisible();
+    await expect(screen.getByText('Above the Break 3 FGA')).toBeVisible();
+    await screen.getByRole('button', 'FG2A').tap();
+    await expect(screen.getByText('Restricted Area FGA')).toBeVisible();
+    await expect(screen.getByText('Above the Break 3 FGA')).toHaveCount(0);
+    await screen.getByRole('button', 'FG3A').tap();
+    await expect(screen.getByText('Catch and Shoot FG3A')).toBeVisible();
+    await expect(screen.getByText('Restricted Area FGA')).toHaveCount(0);
+    await screen.getByRole('button', 'LAL defense vs BOS players').tap();
+    await expect(screen.getByRole('heading', 'LAL Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('article', 'Jayson Tatum player')).toBeVisible();
+    expect(api.sent('/api/games/matchup')).toHaveLength(1);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+  },
+);
+
+signedInTest(
+  'historical sheets distinguish unavailable snapshots from published season evidence',
+  async ({ app, screen }) => {
+    await app.open('/matchups/0022501082');
+    await expect(screen.getByRole('heading', 'MIL Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('region', 'Historical matchup evidence')).toContainText(
+      'Participants: Completed-Season Context · From Game Logs',
+    );
+    await expect(screen.getByRole('button', 'Last 15')).toBeDisabled();
+    await expect(screen.getByText('Transition PTS')).toBeVisible();
+    await expect(screen.getByRole('article', 'Kawhi Leonard player')).toContainText(
+      'Focal game LAC @ MIL · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST',
+    );
+    await screen.getByRole('group', 'Stat category').getByRole('button', 'PTS').tap();
+    await expect(screen.getByText('Transition PTS')).toBeVisible();
+    await expect(screen.getByText('Above the Break 3 FGA')).toHaveCount(0);
+  },
+);
+
+signedInTest(
+  'selection cards preserve deep links, change the log stat, and close with Escape',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/matchups/0022500584?context=kept');
+    await screen
+      .getByRole('article', 'LeBron James player')
+      .getByRole('button', 'Open selection card')
+      .tap();
+    await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
+    await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
+    await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
+    await screen.getByRole('group', 'Selection log stat').getByRole('button', 'PRA').tap();
+    await expect(screen.getByRole('columnheader', 'PRA').first()).toBeVisible();
+    await expect(screen.getByText('+0.102').first()).toBeVisible();
+    expect(api.sent('/api/games/matchup/selection')).toHaveLength(1);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('selection-card');
+    await browser.keyboard.press('Escape');
+    await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
+    await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
+    await expect(
+      screen.getByRole('article', 'LeBron James player').getByRole('button'),
+    ).toBeFocused();
+    await browser.reload();
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'an empty selection explains why no opponent logs are shown',
+  async ({ app, screen }) => {
+    await app.open('/matchups/0022500584?player=1630559');
+    await expect(screen.getByRole('heading', 'Austin Reaves')).toBeVisible();
+    await expect(screen.getByText('No games vs this opponent data is available.')).toBeVisible();
+    await expect(
+      screen.getByText('No score components were computable for FG3A in Season.'),
+    ).toBeVisible();
+  },
+);
+
+signedInTest(
+  'a failed selection read shows a handled error while the sheet remains usable',
+  async ({ app, screen, api }) => {
+    await api.override({
+      '/api/games/matchup/selection': {
+        status: 500,
+        body: { error: { code: 'provider_unavailable' } },
+      },
+    });
+    await app.open('/matchups/0022500584?player=2544');
+    await expect(screen.getByRole('alert')).toContainText('Unable to load selection logs');
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'the agent opens a player selection card',
+  { tags: ['agent'] },
+  async ({ app, agent, screen }) => {
+    await app.open('/matchups/0022500584');
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await agent.act('open the selection card for LeBron James');
+    await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
+    await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
+  },
+);

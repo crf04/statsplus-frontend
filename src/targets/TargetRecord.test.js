@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import TargetRecord from './TargetRecord';
+import { MemoryRouter } from 'react-router-dom';
+import TargetRecord, { TargetGameRows } from './TargetRecord';
 import * as statValues from './statValues';
 const backtest = {
   target: { opponent: 'OKC' },
@@ -510,4 +511,35 @@ test('an empty record has no aggregate evidence', () => {
   expect(screen.getByRole('listitem', { name: 'Player-games' })).toHaveTextContent('0');
   expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— PTS/game');
   expect(screen.getByRole('listitem', { name: 'PTS' })).toHaveTextContent('— vs baseline');
+});
+
+/*
+ * A row hands off to the Log Workspace on that player's games against the
+ * opponent. A season the backend did not default to is named in the link, or
+ * the log would open on the published season's games instead.
+ */
+const handoff = (season) => {
+  const { unmount } = render(
+    <MemoryRouter>
+      <TargetGameRows backtest={{ ...backtest, ...season }} columns={['PTS']} gradedBy="PTS" />
+    </MemoryRouter>,
+  );
+  const href = screen
+    .getAllByRole('link', { name: 'Player One games vs OKC' })[0]
+    .getAttribute('href');
+  unmount();
+  return href;
+};
+
+test('a past season’s game rows open the log on that season', () => {
+  expect(handoff({ season: '2024-25', seasonReason: 'requested' })).toBe(
+    '/?player_name=Player+One&season_filter=2024-25&opponent_tricode=OKC',
+  );
+  expect(handoff({ season: '2025-26', seasonReason: 'fallback_no_games' })).toBe(
+    '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',
+  );
+  expect(handoff({ season: '2025-26', seasonReason: 'published' })).toBe(
+    '/?player_name=Player+One&opponent_tricode=OKC',
+  );
+  expect(handoff({})).toBe('/?player_name=Player+One&opponent_tricode=OKC');
 });

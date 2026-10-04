@@ -257,7 +257,17 @@ export function TargetGameRows({
             <span className="target-game-who">
               <Link
                 aria-label={`${row.player.name} games vs ${backtest.target.opponent}`}
-                to={`/?${filterSetToSearchParams({ player_name: row.player.name, opponent_tricode: backtest.target.opponent })}`}
+                to={`/?${filterSetToSearchParams({
+                  player_name: row.player.name,
+                  opponent_tricode: backtest.target.opponent,
+                  // A season the backend did not default to is named, so the
+                  // log opens on the games this row was read from.
+                  ...(backtest.season &&
+                  backtest.seasonReason &&
+                  backtest.seasonReason !== 'published'
+                    ? { season_filter: backtest.season }
+                    : {}),
+                })}`}
               >
                 {row.player.name}
               </Link>{' '}

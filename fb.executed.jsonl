@@ -1,0 +1,64 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "open", "path": "/targets"}
+{"action": "assert", "target": {"role": "heading", "name": "No Targets yet."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "list", "name": "Backtest summary"}}
+{"action": "proof", "name": "fb1-sample-card-fallback-desktop"}
+{"action": "click", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "button", "name": "Add to my targets"}}
+{"action": "click", "target": {"role": "button", "name": "Save Target"}}
+{"action": "assert", "url": "/targets/1"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"text": "2026-27 has no games yet, showing 2025-26"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2025-26"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "click", "target": {"role": "button", "name": "+ and"}}
+{"action": "click", "target": {"role": "button", "name": "a defender’s minutes"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Defender"}}
+{"action": "click", "target": {"role": "combobox", "name": "Defender"}}
+{"action": "press", "key": "P"}
+{"action": "press", "key": "Enter"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "proof", "name": "fb2-lab-fallback-defender-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2026-27"}}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 503}
+{"action": "assert", "target": {"text": "2026-27 has no games yet, showing 2025-26"}, "state": "hidden"}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "assert", "target": {"role": "button", "name": "Retry backtest"}}
+{"action": "proof", "name": "fb3-lab-refused-2026-27-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2025-26"}}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"text": "2026-27 has no games yet, showing 2025-26"}, "state": "hidden"}
+{"action": "proof", "name": "fb4-lab-2025-26-requested-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2026-27"}}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "assert", "target": {"text": "2026-27 has no games yet, showing 2025-26"}, "state": "hidden"}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "proof", "name": "fb5-lab-refused-2026-27-phone"}
+{"action": "reload"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"text": "2026-27 has no games yet, showing 2025-26"}}
+{"action": "proof", "name": "fb6-lab-fallback-phone"}
+{"action": "assert-layout"}
+{"action": "click", "target": {"role": "link", "name": "← All Targets"}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/backtests", "query": {}, "status": 200}
+{"action": "assert", "target": {"text": "Nobody qualifying has faced ORL yet."}, "state": "hidden"}
+{"action": "proof", "name": "fb7-saved-card-fallback-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "proof", "name": "fb7-saved-card-fallback-desktop"}
+{"action": "reload"}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/backtests", "query": {}, "status": 503}
+{"action": "assert", "target": {"text": "Nobody qualifying has faced ORL yet."}, "state": "hidden"}
+{"action": "proof", "name": "fb8-saved-card-history-removed-desktop"}
+{"action": "open", "path": "/targets/1"}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 503}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "proof", "name": "fb9-lab-history-removed-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "fb9-lab-history-removed-phone"}
+{"action": "cleanup"}

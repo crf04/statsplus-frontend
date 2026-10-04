@@ -1,0 +1,12 @@
+{"action": "open", "path": "/targets"}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/backtests", "query": {}, "status": 200}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary", "index": 0}}
+{"action": "proof", "name": "fp1-saved-cards-production-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "fp1-saved-cards-production-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/targets/28"}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "proof", "name": "fp2-lab-guard-blocked-desktop"}
+{"action": "cleanup"}

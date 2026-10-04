@@ -1,0 +1,55 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "open", "path": "/targets"}
+{"action": "assert", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "click", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "button", "name": "Add to my targets"}}
+{"action": "click", "target": {"role": "button", "name": "Save Target"}}
+{"action": "assert", "url": "/targets/1"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2025-26"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "click", "target": {"role": "button", "name": "+ and"}}
+{"action": "click", "target": {"role": "button", "name": "a defender’s minutes"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Defender"}}
+{"action": "assert-response", "method": "GET", "path": "/api/teams/ORL/season-minutes", "query": {}, "status": 200}
+{"action": "click", "target": {"role": "combobox", "name": "Defender"}}
+{"action": "press", "key": "P"}
+{"action": "press", "key": "Enter"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "proof", "name": "fa1-lab-defender-2025-26-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2024-25"}}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 503}
+{"action": "assert", "target": {"role": "button", "name": "Retry backtest"}}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2024-25"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "proof", "name": "fa2-lab-refused-2024-25-defender-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Remove Qualifier 1"}}
+{"action": "assert", "target": {"text": "Complete the Qualifiers to see the Backtest."}}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "proof", "name": "fa3-lab-incomplete-after-refusal-desktop"}
+{"action": "reload"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2025-26"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2024-25"}}
+{"action": "assert", "target": {"text": "Backtest not updated."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 503}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}, "state": "hidden"}
+{"action": "proof", "name": "fa4-lab-refused-2024-25-phone"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Backtest season"}, "role": "button", "name": "2025-26"}}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"role": "list", "name": "Backtest summary"}}
+{"action": "proof", "name": "fa5-lab-2025-26-phone"}
+{"action": "assert-layout"}
+{"action": "click", "target": {"role": "link", "name": "← All Targets"}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/backtests", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "article", "name": "ORL vs P&R ball handler ≥ 25%"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"text": "Nobody qualifying has faced ORL yet."}, "state": "hidden"}
+{"action": "proof", "name": "fa6-saved-card-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "proof", "name": "fa6-saved-card-desktop"}
+{"action": "cleanup"}

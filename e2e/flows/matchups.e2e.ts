@@ -72,12 +72,16 @@ signedInTest(
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
     await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
-    await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
+    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
+    await expect(matrix).toContainText('+12%');
+    await expect(matrix.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
     const logStats = screen.getByRole('group', 'Selection log stat');
     await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
     await logStats.getByRole('button', 'PRA').tap();
     await expect(logStats.getByRole('button', 'PRA')).toHaveAttribute('aria-pressed', 'true');
     await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
+    await expect(matrix.getByRole('button', 'PRA')).toHaveAttribute('aria-pressed', 'true');
+    await expect(matrix.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
     await expect(screen.getByRole('columnheader', 'PRA').first()).toBeVisible();
     await expect(screen.getByText('+0.102').first()).toBeVisible();
     expect(api.sent('/api/games/matchup/selection')).toHaveLength(1);

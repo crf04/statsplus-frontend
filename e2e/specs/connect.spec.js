@@ -31,3 +31,12 @@ test('a signed-out visitor can copy the connector URL by hand or with the button
 
   expect(apiRequests).toEqual([]);
 });
+
+test('setup steps render as numbered lists', async ({ page }) => {
+  await page.goto('/connect');
+
+  for (const client of ['Claude', 'ChatGPT']) {
+    const steps = page.getByRole('region', { name: client }).getByRole('list');
+    await expect(steps).toHaveCSS('list-style-type', 'decimal');
+  }
+});

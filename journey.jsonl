@@ -1,0 +1,15 @@
+{"action":"open","path":"/connect"}
+{"action":"assert","target":{"role":"heading","name":"Use StatsPlus in Claude or ChatGPT"}}
+{"action":"assert-layout"}
+{"action":"proof","name":"connect-desktop-top","scrollY":0}
+{"action":"proof","name":"connect-desktop-bottom","scrollY":1000}
+{"action":"click","target":{"role":"button","name":"Copy connector URL"}}
+{"action":"assert","target":{"role":"button","name":"Copied"}}
+{"action":"viewport","name":"phone"}
+{"action":"assert-layout"}
+{"action":"proof","name":"connect-phone-top","scrollY":0}
+{"action":"proof","name":"connect-phone-middle","scrollY":680}
+{"action":"proof","name":"connect-phone-bottom","scrollY":2000}
+{"action":"click","target":{"role":"button","name":"Copy connector URL"}}
+{"action":"assert","target":{"role":"button","name":"Copied"}}
+{"action":"cleanup"}

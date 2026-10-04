@@ -22,6 +22,49 @@ Two Matchup navigation journeys added at `905c8dd` brought the reviewed baseline
 to **57 journeys / 114 width cases**. These are historical counts; the fix-round
 results later in this document describe the strengthened suite.
 
+## Review fix round 1 at `8c7f22a`
+
+Worktree `/Users/chrisfu/statsplus-frontend-e2e`, branch `test/e2e-framework`,
+revision `8c7f22a5e4ab344d81c64d3f04009ee39cec85aa`; Node 22.18.0.
+This is #155 alone, with no #157 commit applied and no test retries.
+
+| Command                                       | Result                                           |
+| --------------------------------------------- | ------------------------------------------------ |
+| `npm run lint`                                | Passed                                           |
+| `npm run format:check`                        | Passed                                           |
+| `npm run typecheck:e2e`                       | Passed                                           |
+| `npm run build`                               | Passed                                           |
+| `npm run test:ci`                             | 825 passed, 50 suites                            |
+| `npm run test:flows`                          | 120 passed: 60 deterministic journeys × 2 widths |
+| `npm run test:e2e -- --workers=2 --retries=0` | 137 passed, 1 failed, 2 intentional skips        |
+
+The failing Playwright test in this run was `a season the panel cannot express
+survives an unrelated apply`, another of the three request-observation races
+repaired by #157. The independent `1366da1` run instead failed the clearing-control
+test; both results are recorded, not hidden by retries. **Merge #157 first.**
+
+The three added deterministic journeys cover ambiguous-player guidance, rendered
+stats cards/per-36 averages, and clearing old rows while Apply is in flight.
+Existing journeys now assert date controls, selection focus/pressed state/history,
+Target through-date inclusivity and two-game fit isolation, dialog reset state,
+table-scoped filter badges, reference clause rows, and one HTTP request per Apply.
+No application code, shared HTTP fixture, or Playwright spec changed in #155.
+
+Full gate logs are `/tmp/statsplus-fix-round1-155-gates/`.
+The Score Matrix follow-up at `c48456b98a74d1fae7a72ca7926ad62647b6f4df`
+reran all seven gates: lint, strict types, build, 825 Jest tests and 120 flow
+cases passed; Playwright again had 137 passed, 1 failed, 2 skipped, this time
+on `clearing a control clears its parameter`. Logs are
+`/tmp/statsplus-fix-round1-155-final-gates/`. The draft evidence table initially
+failed formatting; formatting was corrected and the final check passed after
+completing the evidence. The only remaining gate failure is the #157-dependent
+Playwright race. No retries were used in either Playwright run.
+The [mutation report](e2e-review-round1.md) contains exact output, equivalent-mutant
+rebuttals, and the [replayable mutation corpus](e2e-review-round1-mutations.json).
+Existing QA/production evidence below remains historical; this Internal-tier
+assertion repair does not change rendered application output or require new live
+backend behavior. Optional agent/replay runs remain unverified for lack of login.
+
 ## Initial adoption checks at `4de976e`
 
 Run from the frontend worktree with Node 22.18.0 (CI pins 22.14.0; package minimum 22.12):

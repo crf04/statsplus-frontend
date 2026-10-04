@@ -508,12 +508,15 @@ test('a Defender chosen for the published season is refused for a past one, neve
     player_id: 203991,
   });
   await expect(page.getByRole('button', { name: 'Retry backtest' })).toBeVisible();
+  // The published season's numbers are not that refused season's Backtest.
+  await expect(lab.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
   // The roster is read for last season too, which has no ATL roster here: the
-  // published season's minutes are not offered in its place.
+  // published season's minutes are not offered in its place, but the defender
+  // keeps the name he was chosen by.
   expect(rosterSeasons).toContain('2024-25');
   await expect(page.getByLabel('Defender', { exact: true }).locator('option')).toHaveText([
     'Choose a defender',
-    'Player 203991 · roster unavailable',
+    'Clint Capela · roster unavailable',
   ]);
 
   await page

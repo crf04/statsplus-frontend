@@ -99,11 +99,17 @@ export default function TargetLab({
   useEffect(() => {
     if (rosterPublished) setPublished(rosterPublished);
   }, [rosterPublished]);
-  const fallback = describeFallback(preview);
-  const seasonGames = describeSeasonGames(preview, published);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow.
   const shownSeason = season ?? preview?.season ?? null;
+  // A refusal of the season the reader picked is that season's answer. What
+  // was read for another season is not its Backtest, so it leaves the screen
+  // rather than standing beside the refusal; while the pick is still being
+  // read, it stays dimmed under the reading line.
+  const evidence =
+    status === 'error' && season !== null && preview?.season !== season ? null : preview;
+  const fallback = describeFallback(evidence);
+  const seasonGames = describeSeasonGames(evidence, published);
   const pastSeason = isPastSeason(shownSeason, published);
   const labSeason = useMemo(
     () => ({ season: shownSeason, requested: season, pastSeason }),
@@ -123,10 +129,11 @@ export default function TargetLab({
   const gradedBy = chosen?.gradedBy ?? columns[0];
   const changePreferences = onPreferencesChange ?? setLocalPreferences;
 
-  const evidence = (
+  const lab = (
     <>
       <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
-        Lab · Backtest · {preview ? describeBacktestSeason(preview, published) : 'season to date'} ·
+        Lab · Backtest ·{' '}
+        {describeBacktestSeason(evidence ?? (shownSeason && { season: shownSeason }), published)} ·
         vs {draft.opponent}
       </h2>
       <div className="target-lab-header">
@@ -136,7 +143,7 @@ export default function TargetLab({
         {published && (
           <SeasonToggle published={published} shown={shownSeason} onChange={setSeason} />
         )}
-        {workbench && preview && (
+        {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
@@ -144,13 +151,13 @@ export default function TargetLab({
       {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
       {status === 'error' && (
         <p className="target-error" role="alert">
-          {error}
+          {error}{' '}
           <button type="button" onClick={retry}>
             Retry backtest
           </button>
         </p>
       )}
-      {preview && (
+      {evidence && (
         /* What was last read stays on screen, dimmed, while the next answer is
            on its way: a keystroke never blanks the screen. */
         <div
@@ -158,7 +165,7 @@ export default function TargetLab({
           aria-busy={status === 'loading'}
         >
           <TargetRecord
-            backtest={preview}
+            backtest={evidence}
             columns={columns}
             gradedBy={gradedBy}
             onGrade={(column) => changePreferences({ columns, gradedBy: column })}
@@ -166,9 +173,9 @@ export default function TargetLab({
           >
             {/* Season to date is the evidence; whether the idea is actionable
                 tonight is one line, present only when the opponent plays. */}
-            {preview.today && (
-              <p className={`target-lab-tonight${preview.today.fitCount ? ' has-fits' : ''}`}>
-                <b>{preview.today.fitCount}</b> fit tonight vs {preview.target.opponent}
+            {evidence.today && (
+              <p className={`target-lab-tonight${evidence.today.fitCount ? ' has-fits' : ''}`}>
+                <b>{evidence.today.fitCount}</b> fit tonight vs {evidence.target.opponent}
               </p>
             )}
           </TargetRecord>
@@ -178,12 +185,12 @@ export default function TargetLab({
   );
   const games = (
     <>
-      {workbench && preview && (
+      {workbench && evidence && (
         <div
           className={`target-lab-games${stale ? ' is-stale' : ''}`}
           aria-busy={status === 'loading'}
         >
-          <TargetGameRows backtest={preview} columns={columns} gradedBy={gradedBy} />
+          <TargetGameRows backtest={evidence} columns={columns} gradedBy={gradedBy} />
         </div>
       )}
     </>
@@ -191,12 +198,12 @@ export default function TargetLab({
 
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
-      {workbench && <div className="target-lab-overview">{evidence}</div>}
+      {workbench && <div className="target-lab-overview">{lab}</div>}
       <div className="target-lab-left">
-        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
+        <BacktestSampleProvider value={{ appearances: countAppearances(evidence), stale }}>
           <LabSeasonValueProvider value={labSeason}>{children}</LabSeasonValueProvider>
         </BacktestSampleProvider>
-        {!workbench && evidence}
+        {!workbench && lab}
       </div>
       {games}
     </section>

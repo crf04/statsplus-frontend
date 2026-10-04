@@ -356,3 +356,35 @@ jest.mock('./opponentContextApi', () => ({
   ...jest.requireActual('./opponentContextApi'),
   fetchOpponentProfile: () => new Promise(() => {}),
 }));
+
+test('a chosen defender keeps the name read for him when the next season’s roster is refused', async () => {
+  fetchSeasonMinutes.mockImplementation(async ({ season }) => {
+    if (season === '2024-25')
+      throw Object.assign(new Error('Request failed with status code 503'), {
+        response: {
+          status: 503,
+          data: {
+            error: { code: 'season_unavailable', message: 'The 2024-25 season is unavailable.' },
+          },
+        },
+      });
+    return {
+      season: '2025-26',
+      seasonReason: 'published',
+      publishedSeason: '2025-26',
+      players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+    };
+  });
+  const { rerender } = render(inLab('2025-26', null));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  await screen.findByRole('option', { name: 'Rudy Gobert · 32.0 min · 60 games' });
+  fireEvent.change(screen.getByLabelText('Defender'), { target: { value: '27' } });
+
+  rerender(inLab('2024-25', '2024-25'));
+  expect(
+    await screen.findByText('The 2024-25 season is unavailable.', { exact: false }),
+  ).toBeVisible();
+  expect(defenderOptions()).toEqual(['Choose a defender', 'Rudy Gobert · roster unavailable']);
+  expect(screen.getByLabelText('Defender')).toHaveValue('27');
+});

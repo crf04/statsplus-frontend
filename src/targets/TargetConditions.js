@@ -112,6 +112,9 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   const labSeason = useLabSeason();
   const roster = useSeasonMinutes(needsRoster ? opponent : null, labSeason?.requested ?? null);
   const [customWindow, setCustomWindow] = useState(false);
+  // The name the chosen defender was last offered under, so a season whose
+  // roster cannot be read still names him rather than his id.
+  const [named, setNamed] = useState(null);
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
@@ -126,6 +129,9 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   );
   const choices = rosterMismatch ? [] : roster.players;
   const chosen = choices.find((player) => player.playerId === defender?.playerId);
+  if (chosen && (named?.playerId !== chosen.playerId || named.name !== chosen.name))
+    setNamed({ playerId: chosen.playerId, name: chosen.name });
+  const knownName = named && named.playerId === defender?.playerId ? named.name : null;
   const endYear = presetSeason ? Number(presetSeason.slice(0, 4)) + 1 : null;
   const preset = conditions.to
     ? 'custom'
@@ -154,7 +160,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               <option value="">Choose a defender</option>
               {defender.playerId && !chosen && (
                 <option value={defender.playerId}>
-                  Player {defender.playerId} · roster unavailable
+                  {knownName ?? `Player ${defender.playerId}`} · roster unavailable
                 </option>
               )}
               {choices.map((player) => (

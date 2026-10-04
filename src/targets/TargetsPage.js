@@ -14,11 +14,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import {
-  describeBacktestFailure,
-  describeBacktestSeason,
-  describeFallback,
-} from './backtestSample';
+import { BacktestSeasonLabel, describeBacktestFailure } from './backtestSample';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
@@ -104,11 +100,7 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
           {/* A card has no season of its own: it reads the backend's default,
               so the label says which season that turned out to be. */}
           <p className="target-backtest-proxy">
-            Backtest
-            {read?.status === 'ready' && ` · ${describeBacktestSeason(read.backtest)}`}
-            {read?.status === 'ready' && describeFallback(read.backtest) && (
-              <span className="target-backtest-note"> · {describeFallback(read.backtest)}</span>
-            )}
+            <BacktestSeasonLabel backtest={read?.status === 'ready' ? read.backtest : null} />
             {minutesNote && <span className="target-backtest-note"> · {minutesNote}</span>}
           </p>
           {read?.status === 'ready' ? (

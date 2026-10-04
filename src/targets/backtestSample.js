@@ -55,6 +55,21 @@ export const describeBacktestSeason = (backtest, published = publishedSeasonOf(b
 };
 
 /*
+ * A card's Backtest heading: which season it read, once it has read one, and
+ * why that season when it is not the published one.
+ */
+export function BacktestSeasonLabel({ backtest }) {
+  const fallback = describeFallback(backtest);
+  return (
+    <>
+      Backtest
+      {backtest && ` · ${describeBacktestSeason(backtest)}`}
+      {fallback && <span className="target-backtest-note"> · {fallback}</span>}
+    </>
+  );
+}
+
+/*
  * A season whose data the backend no longer holds is not a season nobody fit,
  * so it never reads as an empty Backtest. The backend's message names what is
  * missing.

@@ -2098,8 +2098,14 @@ export const installApiContract = async (page, overrides = {}) => {
   // and the batch route only reads it. The key is what the Backtest depends
   // on, so an edited Target misses until it is read again.
   const cachedBacktests = new Set();
-  const backtestCacheKey = (target) =>
-    JSON.stringify([target.id, target.opponent, target.qualifiers, target.conditions ?? null]);
+  const backtestCacheKey = (target, season) =>
+    JSON.stringify([
+      target.id,
+      season ?? PUBLISHED_SEASON,
+      target.opponent,
+      target.qualifiers,
+      target.conditions ?? null,
+    ]);
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -2431,7 +2437,7 @@ export const installApiContract = async (page, overrides = {}) => {
             success: true,
             season: season ?? PUBLISHED_SEASON,
             backtests: targets.map((target) =>
-              cachedBacktests.has(backtestCacheKey(target))
+              cachedBacktests.has(backtestCacheKey(target, season))
                 ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target, season) }
                 : { target_id: target.id, status: 'uncached' },
             ),
@@ -2457,7 +2463,7 @@ export const installApiContract = async (page, overrides = {}) => {
           await route.fulfill(invalidSeasonResponse);
           return;
         }
-        cachedBacktests.add(backtestCacheKey(target));
+        cachedBacktests.add(backtestCacheKey(target, season));
         await route.fulfill({ json: { success: true, ...backtestTarget(target, season) } });
         return;
       }

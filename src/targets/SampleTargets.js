@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import TargetRecord from './TargetRecord';
-import { describeBacktestSeason, describeFallback } from './backtestSample';
+import { BacktestSeasonLabel } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
 import { useTargetPreview } from './useTargets';
 
@@ -55,11 +55,7 @@ function SampleCard({ target, onAdd }) {
         </div>
         <section aria-label="Sample backtest">
           <p className="target-backtest-proxy">
-            Backtest
-            {preview && ` · ${describeBacktestSeason(preview)}`}
-            {describeFallback(preview) && (
-              <span className="target-backtest-note"> · {describeFallback(preview)}</span>
-            )}
+            <BacktestSeasonLabel backtest={preview} />
           </p>
           {status === 'error' ? (
             <p className="target-error" role="alert">

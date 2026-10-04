@@ -862,6 +862,14 @@ test('decodes the season a Backtest read and why, and tolerates a body without t
   expect(
     decodePreview({ ...wirePreview, season: '2024-25', season_reason: 'requested', today: null }),
   ).toEqual(expect.objectContaining({ season: '2024-25', seasonReason: 'requested', today: null }));
+  expect(
+    decodePreview({
+      ...wirePreview,
+      season: '2025-26',
+      season_reason: 'fallback_no_games',
+      today: null,
+    }),
+  ).toEqual(expect.objectContaining({ season: '2025-26', seasonReason: 'fallback_no_games' }));
   const legacy = decodeBacktest(wireBacktest);
   expect(legacy.season).toBe('2025-26');
   expect(legacy).not.toHaveProperty('seasonReason');

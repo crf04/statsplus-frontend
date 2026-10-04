@@ -437,6 +437,16 @@ test('the Lab reads the season picked on its toggle and a saved card names its s
   await expect(
     card(page, 'ATL vs At-rim assists ≥ 30%').getByRole('region', { name: 'Backtest' }),
   ).toContainText('Backtest · 2025-26 season to date');
+  // A season's cached Backtest is that season's alone.
+  const batch = (query) =>
+    page.evaluate(async (path) => {
+      const response = await fetch(path, {
+        headers: { authorization: 'Bearer courtai-e2e-token' },
+      });
+      return (await response.json()).backtests.map((item) => item.status);
+    }, `/api/user/targets/backtests${query}`);
+  expect(await batch('')).toEqual(['ok']);
+  expect(await batch('?season=2024-25')).toEqual(['uncached']);
 });
 
 test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {

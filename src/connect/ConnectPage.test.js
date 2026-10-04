@@ -1,17 +1,20 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
+
+let mockSignedIn = false;
 
 jest.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({
-    currentUser: null,
+    currentUser: mockSignedIn ? { displayName: 'Test Viewer' } : null,
     loading: false,
     error: null,
     signInWithGoogle: jest.fn(),
     logout: jest.fn(),
     getToken: jest.fn(),
-    isAuthenticated: false,
+    isAuthenticated: mockSignedIn,
+    isAdmin: false,
   }),
 }));
 
@@ -31,6 +34,7 @@ const renderConnectRoute = async () => {
 };
 
 afterEach(() => {
+  mockSignedIn = false;
   delete navigator.clipboard;
   window.history.pushState({}, '', '/');
 });
@@ -51,6 +55,16 @@ test('a signed-out visitor reaches the Connect page from the main nav', async ()
   expect(screen.getByText(CONNECTOR_URL)).toBeInTheDocument();
 });
 
+test('a signed-in viewer keeps the Connect link in the main nav', () => {
+  mockSignedIn = true;
+  window.history.pushState({}, '', '/matchups');
+  render(<App />);
+
+  const nav = screen.getByRole('navigation', { name: 'Primary' });
+  expect(within(nav).getByRole('button', { name: /Test Viewer/ })).toBeInTheDocument();
+  expect(within(nav).getByRole('link', { name: 'Connect' })).toHaveAttribute('href', '/connect');
+});
+
 test('copying puts exactly the connector URL on the clipboard and confirms it', async () => {
   let clipboardText = '';
   installClipboard((text) => {
@@ -65,16 +79,24 @@ test('copying puts exactly the connector URL on the clipboard and confirms it', 
   expect(clipboardText).toBe('https://statsplus-mcp-production.up.railway.app/mcp');
 });
 
-test('a blocked clipboard leaves the URL on the page as selectable text', async () => {
-  installClipboard(() => Promise.reject(new DOMException('Denied', 'NotAllowedError')));
+test('a blocked clipboard leaves the URL on the page and the button ready to retry', async () => {
+  let rejectWrite;
+  installClipboard(
+    () =>
+      new Promise((resolve, reject) => {
+        rejectWrite = reject;
+      }),
+  );
   await renderConnectRoute();
 
-  const button = screen.getByRole('button', { name: 'Copy connector URL' });
-  userEvent.click(button);
+  userEvent.click(screen.getByRole('button', { name: 'Copy connector URL' }));
+  await act(async () => {
+    rejectWrite(new DOMException('Denied', 'NotAllowedError'));
+  });
 
-  await waitFor(() => expect(button).toBeEnabled());
-  expect(screen.getByText(CONNECTOR_URL).tagName).toBe('CODE');
+  expect(screen.getByRole('button', { name: 'Copy connector URL' })).toBeEnabled();
   expect(screen.queryByRole('button', { name: 'Copied' })).not.toBeInTheDocument();
+  expect(screen.getByText(CONNECTOR_URL)).toBeVisible();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
@@ -90,6 +112,7 @@ test('Claude and ChatGPT each get an ordered list of setup steps, Claude first',
     expect(list.tagName).toBe('OL');
     expect(within(list).getByText(/sign in with google/i)).toBeInTheDocument();
   }
+  expect(within(claude).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
   expect(within(chatgpt).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
 });
 

@@ -73,14 +73,22 @@ const ConnectPage = () => {
       <div className="connect-clients">
         <section className="connect-section" aria-labelledby="connect-claude-heading">
           <h2 id="connect-claude-heading">Claude</h2>
-          <p className="connect-note">Web or desktop app, on any Claude plan.</p>
+          <p className="connect-note">
+            Web or desktop app. On a Team or Enterprise plan, an Owner first adds StatsPlus under{' '}
+            <strong>Organization settings → Connectors</strong>; members then find it under{' '}
+            <strong>Customize → Connectors</strong> and start at step 5.
+          </p>
           <ol className="connect-steps">
             <li>
               Open <strong>Customize → Connectors</strong>, select <strong>+ Add</strong>, then{' '}
               <strong>Add custom connector</strong>.
             </li>
             <li>Name it StatsPlus, paste the connector URL and select Continue.</li>
-            <li>Keep the sign-in settings Claude detects, then select Add.</li>
+            <li>Review the authentication settings Claude detects and select Continue.</li>
+            <li>
+              If asked for an OAuth client, choose <strong>Register automatically</strong>, then
+              select Add.
+            </li>
             <li>Select Connect and sign in with Google, using your StatsPlus account.</li>
             <li>
               In a chat, open the <strong>+</strong> menu, choose <strong>Connectors</strong> and

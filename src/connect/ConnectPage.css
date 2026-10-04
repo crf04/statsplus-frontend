@@ -1,0 +1,154 @@
+.connect-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 32px 120px;
+  color: var(--ct-text);
+  /* the app shell centres its content; a guide reads as a left-aligned sheet */
+  text-align: left;
+}
+
+.connect-title {
+  font-family: var(--ct-display);
+  font-size: 3.2rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0 0 12px;
+}
+
+.connect-lede {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ct-dim);
+  max-width: 620px;
+  margin: 0 0 48px;
+}
+
+.connect-section {
+  margin-bottom: 52px;
+}
+
+.connect-section > h2 {
+  font-family: var(--ct-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ct-gold);
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+
+.connect-url {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.connect-url code {
+  flex: 1;
+  min-width: 0;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 11px 14px;
+  color: #c9c2b2;
+  font-family: var(--ct-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.connect-copy {
+  flex: none;
+  min-width: 88px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  background: transparent;
+  color: var(--ct-gold);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connect-copy:hover {
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold-hover);
+}
+
+.connect-copy:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.connect-clients {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0 48px;
+}
+
+.connect-note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ct-dim);
+  margin: 0 0 14px;
+}
+
+.connect-steps {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.connect-steps li,
+.connect-notes li {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ct-text);
+  margin-bottom: 8px;
+}
+
+.connect-steps li::marker {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+}
+
+.connect-steps strong {
+  font-weight: 600;
+}
+
+.connect-prompts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 760px;
+}
+
+.connect-prompts li {
+  margin-bottom: 8px;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 11px 14px;
+  color: #c9c2b2;
+  font-family: var(--ct-mono);
+  font-size: 13px;
+}
+
+.connect-notes {
+  margin: 0;
+  padding-left: 22px;
+  max-width: 620px;
+}
+
+@media (max-width: 640px) {
+  .connect-page {
+    padding: 28px 18px 90px;
+  }
+
+  .connect-title {
+    font-size: 2.4rem;
+  }
+}

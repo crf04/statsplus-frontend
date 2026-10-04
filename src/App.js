@@ -14,6 +14,7 @@ const OperationsPage = lazy(() => import('./operations/OperationsPage'));
 const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
+const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 
 class RouteErrorBoundary extends Component {
   state = { failed: false };
@@ -61,6 +62,7 @@ function AppNav() {
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
+          <NavLink to="/connect">Connect</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
@@ -82,6 +84,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<GameLogFilter />} />
                 <Route path="/help" element={<QueryReferencePage />} />
+                <Route path="/connect" element={<ConnectPage />} />
                 <Route path="/matchups" element={<SlatePage />} />
                 <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
                 <Route path="/targets" element={<TargetsPage />} />

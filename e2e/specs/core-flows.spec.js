@@ -809,9 +809,7 @@ test('@critical removing every self filter clears its parameter', async ({
   await expect(page).not.toHaveURL(/self_filters/);
   await expect
     .poll(() =>
-      gameLogRequests
-        .slice(requestsBeforeApply)
-        .map((url) => Object.fromEntries(url.searchParams)),
+      gameLogRequests.slice(requestsBeforeApply).map((url) => Object.fromEntries(url.searchParams)),
     )
     .toContainEqual({ player_name: 'LeBron James' });
 });

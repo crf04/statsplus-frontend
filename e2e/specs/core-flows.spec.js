@@ -217,16 +217,22 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('5');
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).toHaveURL(/season_filter=2023-24/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
-  const latest = new URL(gameLogRequests.at(-1));
-  expect(latest.searchParams.get('season_filter')).toBe('2023-24');
-  expect(latest.searchParams.get('game_filter')).toBe('5');
-  // Untouched controls stay absent so the API applies its own defaults.
-  expect(latest.searchParams.has('minutes_filter')).toBe(false);
-  expect(latest.searchParams.has('location_filter')).toBe(false);
+  // Season reads share this endpoint; wait for the request caused by Apply.
+  await expect
+    .poll(() =>
+      gameLogRequests
+        .slice(requestsBeforeApply)
+        .map((url) => Object.fromEntries(new URL(url).searchParams)),
+    )
+    .toContainEqual({
+      player_name: 'LeBron James',
+      season_filter: '2023-24',
+      game_filter: '5',
+    });
 });
 
 test('@critical the query reference is linkable and hands an example back to search', async ({
@@ -797,11 +803,17 @@ test('@critical removing every self filter clears its parameter', async ({
     .getByTestId('filter-panel')
     .getByRole('button', { name: /^Remove own/ })
     .click();
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/self_filters/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
-  expect(gameLogRequests.at(-1).searchParams.has('self_filters[PTS]')).toBe(false);
+  await expect
+    .poll(() =>
+      gameLogRequests
+        .slice(requestsBeforeApply)
+        .map((url) => Object.fromEntries(url.searchParams)),
+    )
+    .toContainEqual({ player_name: 'LeBron James' });
 });
 
 test('@critical Self Filters ranges are the player unfiltered season', async ({

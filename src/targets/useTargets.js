@@ -73,7 +73,7 @@ const useAccountRead = (
   read,
   empty,
   scope,
-  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false } = {},
+  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false, failureState } = {},
 ) => {
   const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
   const owner = useRef();
@@ -106,6 +106,7 @@ const useAccountRead = (
             status: 'error',
             error: getRequestErrorMessage(error, failure),
             ...empty,
+            ...failureState?.(error, scope),
           });
         }
       });
@@ -119,6 +120,7 @@ const useAccountRead = (
     failure,
     requests,
     keepPrevious,
+    failureState,
     currentUser?.uid,
   ]);
 
@@ -304,7 +306,10 @@ const EMPTY_ROSTER = {
   publishedSeason: undefined,
   players: [],
   scope: null,
+  unavailable: null,
 };
+// A refused roster read still names the published season in its details.
+const rosterFailure = (error, scope) => ({ scope, unavailable: seasonUnavailableDetails(error) });
 const readRoster = async ({ scope, signal }) =>
   scope ? { ...EMPTY_ROSTER, ...(await fetchRoster(scope, signal)), scope } : EMPTY_ROSTER;
 /*
@@ -317,6 +322,7 @@ export const useSeasonMinutes = (opponent, season = null) => {
   const sharedRead = useContext(RosterReadContext);
   const read = useAccountRead(sharedRead || readRoster, EMPTY_ROSTER, scope, {
     failure: 'Unable to load the season roster.',
+    failureState: rosterFailure,
   });
   const current = read.scope === scope;
   return {
@@ -325,5 +331,6 @@ export const useSeasonMinutes = (opponent, season = null) => {
     seasonReason: current ? read.seasonReason : undefined,
     publishedSeason: current ? read.publishedSeason : undefined,
     players: current ? read.players : [],
+    unavailable: current ? (read.unavailable ?? null) : null,
   };
 };

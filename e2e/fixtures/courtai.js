@@ -2394,9 +2394,10 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
-        // A null season is the default, as an omitted one is.
-        const season = body?.season ?? undefined;
-        if (invalidSeason(season)) {
+        // Only an omitted season is the default; a present one must be a
+        // season string, so an explicit null is refused.
+        const season = body?.season;
+        if ((body && 'season' in body && typeof season !== 'string') || invalidSeason(season)) {
           await route.fulfill(invalidSeasonResponse);
           return;
         }

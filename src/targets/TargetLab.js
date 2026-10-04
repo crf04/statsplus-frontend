@@ -80,16 +80,25 @@ export default function TargetLab({
     valid ? (season ? { ...request, season } : request) : null,
     { immediateInitial: immediateInitialPreview },
   );
-  // The published season comes from the latest answer: a refusal names it in
-  // its details, over the evidence still on screen from an earlier read. A
-  // first read refused without them leaves the opponent's roster read, which
-  // names it too, so the reader can still pick a season.
+  // The published season comes from the latest answer as it lands: a
+  // refusal's details, a preview, or the opponent's roster. Starting the next
+  // read answers nothing, so the evidence still on screen never takes it back.
+  // A first read refused without details leaves the roster read, whose answer
+  // or refusal names it too, so the reader can still pick a season.
   const roster = useSeasonMinutes(
     valid && !published && status === 'error' && !unavailable ? draft.opponent : null,
   );
-  const answeredPublished =
-    unavailable?.publishedSeason ?? publishedSeasonOf(preview) ?? publishedSeasonOf(roster);
-  if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
+  const rosterPublished = roster.unavailable?.publishedSeason ?? publishedSeasonOf(roster);
+  useEffect(() => {
+    const answered = publishedSeasonOf(preview);
+    if (answered) setPublished(answered);
+  }, [preview]);
+  useEffect(() => {
+    if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
+  }, [unavailable]);
+  useEffect(() => {
+    if (rosterPublished) setPublished(rosterPublished);
+  }, [rosterPublished]);
   const fallback = describeFallback(preview);
   const seasonGames = describeSeasonGames(preview, published);
   // The season the evidence is for, or is about to be for: what the form's

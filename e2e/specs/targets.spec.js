@@ -432,6 +432,23 @@ test('the Lab reads the season picked on its toggle and a saved card names its s
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^0 player-games$/);
   await expect(page.getByText(/fit tonight/)).toHaveCount(0);
   expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2024-25' });
+  // Only an omitted season is the default: an explicit null is refused.
+  const preview = (body) =>
+    page.evaluate(async (data) => {
+      const response = await fetch('/api/user/targets/preview', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer courtai-e2e-token',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const json = await response.json();
+      return [response.status, json.season_reason ?? json.error?.code];
+    }, body);
+  const { season: _picked, ...omitted } = previews.at(-1);
+  expect(await preview(omitted)).toEqual([200, 'published']);
+  expect(await preview({ ...omitted, season: null })).toEqual([400, 'invalid_input']);
 
   await saveTarget(page);
   await expect(

@@ -1167,6 +1167,79 @@ test('a refusal names the published season over evidence still on screen', async
   ).toEqual(['2026-27', '2025-26']);
 });
 
+const refusalNaming = (season, publishedSeason, stream) =>
+  Object.assign(new Error('Request failed with status code 503'), {
+    response: {
+      status: 503,
+      data: {
+        error: {
+          code: 'season_unavailable',
+          message: `The ${season} season is unavailable.`,
+          details: { season, published_season: publishedSeason, stream },
+        },
+      },
+    },
+  });
+const toggleSeasons = () =>
+  within(screen.getByRole('group', { name: 'Backtest season' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+
+test('the published season a refusal named holds while the next read loads', async () => {
+  jest.useFakeTimers();
+  let refuse = false;
+  fetchTargetPreview.mockImplementation(({ season }) => {
+    if (season === '2026-27') return new Promise(() => {});
+    if (refuse) return Promise.reject(refusalNaming('2025-26', '2026-27', 'grouped_shot_types'));
+    return Promise.resolve({
+      ...preview,
+      season: '2025-26',
+      seasonReason: 'published',
+      publishedSeason: '2025-26',
+    });
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+  expect(toggleSeasons()).toEqual(['2025-26', '2024-25']);
+  refuse = true;
+  composeQualifier({ percent: '35' });
+  await settle();
+  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
+
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2026-27' }),
+  );
+  expect(labStatus()).toHaveTextContent('Reading the season…');
+  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
+});
+
+test('a refused roster read names the published season when the first read has no details', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockRejectedValue(
+    Object.assign(new Error('Request failed with status code 500'), {
+      response: {
+        status: 500,
+        data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
+      },
+    }),
+  );
+  fetchSeasonMinutes.mockRejectedValue(refusalNaming('2025-26', '2026-27', 'player_game_logs'));
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+
+  expect(fetchSeasonMinutes).toHaveBeenCalledWith(expect.objectContaining({ opponent: 'OKC' }));
+  await screen.findByRole('group', { name: 'Backtest season' });
+  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
+});
+
 test.each([
   [
     'a season that is not the published one or the one before',

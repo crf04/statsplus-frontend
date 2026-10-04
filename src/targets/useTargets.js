@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { beginStatPreferenceRead } from './useStatPreferences';
-import { describeBacktestFailure } from './backtestSample';
+import { describeBacktestFailure, seasonUnavailableDetails } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
   fetchDietBaselines,
@@ -145,7 +145,7 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  */
 export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
 
-const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
+const EMPTY_PREVIEW = { status: 'idle', error: null, unavailable: null, preview: null, key: null };
 
 /*
  * What a Draft Target is evaluated by: the opponent, the Qualifiers, and the
@@ -203,18 +203,19 @@ export const useTargetPreview = (request, { immediateInitial = false } = {}) => 
         ...current,
         status: current.preview ? 'ready' : 'idle',
         error: null,
+        unavailable: null,
       }));
       return undefined;
     }
     const controller = new AbortController();
     if (initialRead.current.key === null) initialRead.current.key = key;
     const load = () => {
-      setState((current) => ({ ...current, status: 'loading', error: null }));
+      setState((current) => ({ ...current, status: 'loading', error: null, unavailable: null }));
       fetchTargetPreview({ ...JSON.parse(key), signal: controller.signal })
         .then((preview) => {
           if (controller.signal.aborted) return;
           readKey.current = key;
-          setState({ status: 'ready', error: null, preview, key });
+          setState({ status: 'ready', error: null, unavailable: null, preview, key });
         })
         .catch((error) => {
           if (controller.signal.aborted || isRequestCancelled(error)) return;
@@ -222,6 +223,7 @@ export const useTargetPreview = (request, { immediateInitial = false } = {}) => 
             ...current,
             status: 'error',
             error: describeBacktestFailure(error, PREVIEW_FAILURE),
+            unavailable: seasonUnavailableDetails(error),
           }));
         });
     };

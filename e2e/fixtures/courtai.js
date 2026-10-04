@@ -2455,6 +2455,7 @@ export const installApiContract = async (page, overrides = {}) => {
             success: true,
             season: season ?? PUBLISHED_SEASON,
             season_reason: season === undefined ? 'published' : 'requested',
+            published_season: PUBLISHED_SEASON,
             backtests: targets.map((target) =>
               cachedBacktests.has(backtestCacheKey(target, season))
                 ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target, season) }

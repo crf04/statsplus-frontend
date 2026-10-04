@@ -14,7 +14,7 @@ import {
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
-import { useSeasonMinutes, useTargetPreview } from './useTargets';
+import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
 
 /*
@@ -76,16 +76,13 @@ export default function TargetLab({
   const [season, setSeason] = useState(null);
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
-  const { status, preview, error, pending, retry } = useTargetPreview(
+  const { status, preview, error, unavailable, pending, retry } = useTargetPreview(
     valid ? (season ? { ...request, season } : request) : null,
     { immediateInitial: immediateInitialPreview },
   );
-  // A Backtest refused for want of one stream still has a published season:
-  // the opponent's roster read names it, so the reader can pick another.
-  const roster = useSeasonMinutes(
-    valid && !published && status === 'error' ? draft.opponent : null,
-  );
-  const answeredPublished = publishedSeasonOf(preview) ?? publishedSeasonOf(roster);
+  // A Backtest refused for want of one stream still names the published
+  // season, so the reader can pick the other one.
+  const answeredPublished = publishedSeasonOf(preview) ?? unavailable?.publishedSeason ?? null;
   if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
   const fallback = describeFallback(preview);
   const seasonGames = describeSeasonGames(preview, published);

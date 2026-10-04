@@ -132,8 +132,8 @@ and more than ten Qualifiers with the backend's envelopes. Every backtest route 
 and anything else is `400 invalid_input`. Without one, a body reads `2025-26` with
 `season_reason: "published"`; a named season is `requested`. The contract holds no `2024-25` games,
 so that season's backtest is empty and its preview's `today` is `null`. A Defender Condition is validated against the backtest's season, so a
-`2024-25` preview naming one is `400 invalid_input`; every backtest body and the batch envelope carry `season_reason`, and backtest bodies name
-`published_season: "2025-26"`. `GET /api/teams/<tricode>/season-minutes` takes the same optional
+`2024-25` preview naming one is `400 invalid_input`; every backtest body and the batch envelope carry `season_reason`, and backtest bodies and
+the batch envelope name `published_season: "2025-26"`. `GET /api/teams/<tricode>/season-minutes` takes the same optional
 `season` and answers with `season`, `season_reason` and `published_season`; its `2024-25` roster is
 empty. The slate route reports pool freshness that matches the evidence resolution
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a

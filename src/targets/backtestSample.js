@@ -48,6 +48,11 @@ export const countAppearances = (backtest) =>
  * it. With no season named, the backend reads the published one, or the one
  * before it while the published season has no games yet, and says which.
  */
+const isSeason = (value) =>
+  typeof value === 'string' &&
+  /^\d{4}-\d{2}$/.test(value) &&
+  Number(value.slice(5)) === (Number(value.slice(0, 4)) + 1) % 100;
+
 const shiftSeason = (season, years) => {
   const start = Number(season.slice(0, 4)) + years;
   return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
@@ -122,6 +127,32 @@ export function BacktestSeasonLabel({ backtest }) {
  */
 export const describeSeasonUnavailable = (message) =>
   ['That season’s data is unavailable.', message].filter(Boolean).join(' ');
+
+/*
+ * What a season_unavailable refusal says about the seasons: the one it
+ * resolved, the published one it resolved against, and the stream that is
+ * missing. A refused first read still names the published season, so the
+ * reader can pick the other one. Anything that does not hold together is
+ * ignored rather than trusted.
+ */
+export const seasonUnavailableDetails = (error) => {
+  const failure = error?.response?.data?.error;
+  const details = failure?.details;
+  if (
+    failure?.code !== 'season_unavailable' ||
+    !details ||
+    !isSeason(details.season) ||
+    !isSeason(details.published_season) ||
+    typeof details.stream !== 'string' ||
+    ![details.published_season, previousSeason(details.published_season)].includes(details.season)
+  )
+    return null;
+  return {
+    season: details.season,
+    publishedSeason: details.published_season,
+    stream: details.stream,
+  };
+};
 
 export const describeBacktestFailure = (error, fallback) => {
   const failure = error?.response?.data?.error;

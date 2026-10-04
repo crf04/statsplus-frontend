@@ -2394,13 +2394,15 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
-        if (invalidSeason(body?.season)) {
+        // A null season is the default, as an omitted one is.
+        const season = body?.season ?? undefined;
+        if (invalidSeason(season)) {
           await route.fulfill(invalidSeasonResponse);
           return;
         }
         if (
           invalidTargetBody(body) ||
-          !validFixtureConditions(body.conditions, body.opponent, body.season)
+          !validFixtureConditions(body.conditions, body.opponent, season)
         ) {
           await route.fulfill({
             status: 400,
@@ -2424,7 +2426,7 @@ export const installApiContract = async (page, overrides = {}) => {
                 conditions: canonicalFixtureConditions(body.conditions),
                 stat_preferences: body.stat_preferences ?? null,
               },
-              body.season,
+              season,
             ),
           },
         });

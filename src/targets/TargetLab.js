@@ -14,7 +14,7 @@ import {
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
-import { useTargetPreview } from './useTargets';
+import { useSeasonMinutes, useTargetPreview } from './useTargets';
 import './TargetFits.css';
 
 /*
@@ -80,9 +80,15 @@ export default function TargetLab({
     valid ? (season ? { ...request, season } : request) : null,
     { immediateInitial: immediateInitialPreview },
   );
-  // A Backtest refused for want of one stream still names the published
-  // season, so the reader can pick the other one.
-  const answeredPublished = publishedSeasonOf(preview) ?? unavailable?.publishedSeason ?? null;
+  // The published season comes from the latest answer: a refusal names it in
+  // its details, over the evidence still on screen from an earlier read. A
+  // first read refused without them leaves the opponent's roster read, which
+  // names it too, so the reader can still pick a season.
+  const roster = useSeasonMinutes(
+    valid && !published && status === 'error' && !unavailable ? draft.opponent : null,
+  );
+  const answeredPublished =
+    unavailable?.publishedSeason ?? publishedSeasonOf(preview) ?? publishedSeasonOf(roster);
   if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
   const fallback = describeFallback(preview);
   const seasonGames = describeSeasonGames(preview, published);

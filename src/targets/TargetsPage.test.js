@@ -1083,6 +1083,90 @@ test('a refused first read names the published season, so both seasons stay sele
   expect(screen.getByText('Lab · Backtest · 2026-27 season to date · vs OKC')).toBeInTheDocument();
 });
 
+test('a first read refused without details still finds the published season on the roster', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (!season)
+      throw Object.assign(new Error('Request failed with status code 500'), {
+        response: {
+          status: 500,
+          data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
+        },
+      });
+    return {
+      ...preview,
+      season,
+      seasonReason: 'requested',
+      publishedSeason: '2026-27',
+      today: null,
+    };
+  });
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    seasonReason: 'fallback_no_games',
+    publishedSeason: '2026-27',
+    players: [],
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+
+  expect(fetchSeasonMinutes).toHaveBeenCalledWith(expect.objectContaining({ opponent: 'OKC' }));
+  const toggle = await screen.findByRole('group', { name: 'Backtest season' });
+  expect(
+    within(toggle)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['2026-27', '2025-26']);
+});
+
+test('a refusal names the published season over evidence still on screen', async () => {
+  jest.useFakeTimers();
+  let refuse = false;
+  fetchTargetPreview.mockImplementation(async () => {
+    if (refuse)
+      throw Object.assign(new Error('Request failed with status code 503'), {
+        response: {
+          status: 503,
+          data: {
+            error: {
+              code: 'season_unavailable',
+              message: 'The 2025-26 season is unavailable.',
+              details: {
+                season: '2025-26',
+                published_season: '2026-27',
+                stream: 'grouped_shot_types',
+              },
+            },
+          },
+        },
+      });
+    return { ...preview, season: '2025-26', seasonReason: 'published', publishedSeason: '2025-26' };
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+  const toggle = screen.getByRole('group', { name: 'Backtest season' });
+  expect(
+    within(toggle)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['2025-26', '2024-25']);
+
+  refuse = true;
+  composeQualifier({ percent: '35' });
+  await settle();
+  expect(
+    within(toggle)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['2026-27', '2025-26']);
+});
+
 test.each([
   [
     'a season that is not the published one or the one before',

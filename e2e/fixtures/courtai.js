@@ -1723,7 +1723,9 @@ const validSlateDate = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   Number.isFinite(Date.parse(value)) &&
   new Date(value).toISOString().slice(0, 10) === value;
-const validFixtureConditions = (conditions, opponent) => {
+// A Defender is validated against the Backtest's season; the previous season
+// has no games here, so no roster either.
+const validFixtureConditions = (conditions, opponent, season) => {
   if (conditions === undefined || conditions === null) return true;
   if (typeof conditions !== 'object' || Array.isArray(conditions)) return false;
   const { from, to, defender, player_minutes: playerMinutes } = conditions;
@@ -1736,7 +1738,7 @@ const validFixtureConditions = (conditions, opponent) => {
   const validDefender =
     defender === null ||
     (defender &&
-      (CONDITION_ROSTERS[opponent] || []).some(
+      (season === PREVIOUS_SEASON ? [] : CONDITION_ROSTERS[opponent] || []).some(
         (player) => player.player_id === defender.player_id,
       ) &&
       ['under', 'at_least'].includes(defender.comparator) &&
@@ -2379,7 +2381,14 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
-        if (invalidTargetBody(body) || !validFixtureConditions(body.conditions, body.opponent)) {
+        if (invalidSeason(body?.season)) {
+          await route.fulfill(invalidSeasonResponse);
+          return;
+        }
+        if (
+          invalidTargetBody(body) ||
+          !validFixtureConditions(body.conditions, body.opponent, body.season)
+        ) {
           await route.fulfill({
             status: 400,
             json: {
@@ -2389,10 +2398,6 @@ export const installApiContract = async (page, overrides = {}) => {
               },
             },
           });
-          return;
-        }
-        if (invalidSeason(body.season)) {
-          await route.fulfill(invalidSeasonResponse);
           return;
         }
         await route.fulfill({
@@ -2436,6 +2441,7 @@ export const installApiContract = async (page, overrides = {}) => {
           json: {
             success: true,
             season: season ?? PUBLISHED_SEASON,
+            season_reason: season === undefined ? 'published' : 'requested',
             backtests: targets.map((target) =>
               cachedBacktests.has(backtestCacheKey(target, season))
                 ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target, season) }

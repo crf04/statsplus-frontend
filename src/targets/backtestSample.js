@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { getRequestErrorMessage } from '../gameLogsApi';
 
 /*
@@ -15,6 +15,29 @@ export const BacktestSampleProvider = BacktestSampleContext.Provider;
 
 // Null wherever no Lab is above, which is a form with no evidence beneath it.
 export const useBacktestSample = () => useContext(BacktestSampleContext);
+
+/*
+ * The season the Lab is reading, and whether it is a past one, for the
+ * season-bound controls of the form beside it: date presets name that season's
+ * dates, and the published season's league and opponent readings are not shown
+ * beside a past season's evidence. The Lab provides it to a form nested in it,
+ * and reports it to a LabSeasonProvider above a form that is its sibling.
+ */
+const LabSeasonContext = createContext(null);
+const ReportLabSeasonContext = createContext(null);
+
+export const LabSeasonValueProvider = LabSeasonContext.Provider;
+export const useLabSeason = () => useContext(LabSeasonContext);
+export const useReportLabSeason = () => useContext(ReportLabSeasonContext);
+
+export function LabSeasonProvider({ children }) {
+  const [labSeason, setLabSeason] = useState(null);
+  return (
+    <ReportLabSeasonContext.Provider value={setLabSeason}>
+      <LabSeasonContext.Provider value={labSeason}>{children}</LabSeasonContext.Provider>
+    </ReportLabSeasonContext.Provider>
+  );
+}
 
 export const countAppearances = (backtest) =>
   backtest ? backtest.players.reduce((total, player) => total + player.games.length, 0) : null;
@@ -43,28 +66,44 @@ export const describeFallback = (backtest) =>
     ? `${shiftSeason(backtest.season, 1)} has no games yet, showing ${backtest.season}`
     : null;
 
+// A season before the published one, read whole and never mixed with it.
+export const isPastSeason = (season, published) =>
+  Boolean(season && published && season !== published);
+
 /*
  * A completed season is read whole, so only the published one is "to date".
  * A backend that does not echo the season reads the published one.
  */
 export const describeBacktestSeason = (backtest, published = publishedSeasonOf(backtest)) => {
   if (!backtest?.season) return 'season to date';
-  return published && backtest.season !== published
+  return isPastSeason(backtest.season, published)
     ? `${backtest.season} season`
     : `${backtest.season} season to date`;
 };
 
 /*
+ * How far the season to date has got for this opponent, so a thin one reads
+ * as thin. Whether it is too thin is the reader's call; nothing here judges it.
+ */
+export const describeSeasonGames = (backtest, published = publishedSeasonOf(backtest)) => {
+  if (!backtest?.season || !backtest.gamesConsidered || isPastSeason(backtest.season, published))
+    return null;
+  const { played } = backtest.gamesConsidered;
+  return `${backtest.target.opponent} has played ${played} ${played === 1 ? 'game' : 'games'} in ${backtest.season}`;
+};
+
+/*
  * A card's Backtest heading: which season it read, once it has read one, and
- * why that season when it is not the published one.
+ * why that season when it is not the published one, or how far the published
+ * one has got.
  */
 export function BacktestSeasonLabel({ backtest }) {
-  const fallback = describeFallback(backtest);
+  const note = describeFallback(backtest) ?? describeSeasonGames(backtest);
   return (
     <>
       Backtest
       {backtest && ` · ${describeBacktestSeason(backtest)}`}
-      {fallback && <span className="target-backtest-note"> · {fallback}</span>}
+      {note && <span className="target-backtest-note"> · {note}</span>}
     </>
   );
 }

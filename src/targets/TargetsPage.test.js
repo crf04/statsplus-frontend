@@ -918,7 +918,12 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   fetchTargetPreview.mockImplementation(async ({ season }) =>
     season === '2024-25'
       ? { ...preview, season: '2024-25', seasonReason: 'requested', today: null }
-      : { ...preview, season: '2025-26', seasonReason: season ? 'requested' : 'published' },
+      : {
+          ...preview,
+          season: '2025-26',
+          seasonReason: season ? 'requested' : 'published',
+          gamesConsidered: { played: 2, kept: 2 },
+        },
   );
   renderPage();
   await screen.findAllByRole('article');
@@ -940,6 +945,8 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   );
   expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeInTheDocument();
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
+  expect(screen.getByText('OKC has played 2 games in 2025-26')).toBeVisible();
+  expect(screen.queryByText(/hidden while the Lab reads a past one/)).not.toBeInTheDocument();
 
   fireEvent.click(within(toggle).getByRole('button', { name: '2024-25' }));
   await settle();
@@ -953,6 +960,8 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   );
   expect(screen.getByText('Lab · Backtest · 2024-25 season · vs OKC')).toBeInTheDocument();
   expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/has played/)).not.toBeInTheDocument();
+  expect(screen.getByText(/hidden while the Lab reads a past one/)).toBeVisible();
 
   fireEvent.click(within(toggle).getByRole('button', { name: '2025-26' }));
   await settle();
@@ -1029,14 +1038,19 @@ test('each saved card labels its Backtest with the season the backend read', asy
 
 test('a saved card reading the published season labels it to date', async () => {
   fetchTargetBacktests.mockResolvedValue(
-    readyBatch(targets, { ...preview, season: '2025-26', seasonReason: 'published' }),
+    readyBatch(targets, {
+      ...preview,
+      season: '2025-26',
+      seasonReason: 'published',
+      gamesConsidered: { played: 1, kept: 1 },
+    }),
   );
   renderPage(false);
 
   const [card] = await screen.findAllByRole('article');
   await waitFor(() =>
     expect(within(card).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
-      'Backtest · 2025-26 season to date',
+      'Backtest · 2025-26 season to date · OKC has played 1 game in 2025-26',
     ),
   );
 });

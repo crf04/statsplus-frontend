@@ -14,7 +14,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { BacktestSeasonLabel, describeBacktestFailure } from './backtestSample';
+import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
@@ -352,23 +352,25 @@ function TargetsPageContent() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <TargetForm
-            draft={draft}
-            busy={saving}
-            onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-            onSubmit={save}
-            onCancel={dismissComposer}
-          />
-          {saveError && (
-            <p className="target-error" role="alert">
-              {saveError}
-            </p>
-          )}
-          <TargetLab
-            draft={draft}
-            preferences={draftPreferences}
-            onPreferencesChange={setDraftPreferences}
-          />
+          <LabSeasonProvider>
+            <TargetForm
+              draft={draft}
+              busy={saving}
+              onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              onSubmit={save}
+              onCancel={dismissComposer}
+            />
+            {saveError && (
+              <p className="target-error" role="alert">
+                {saveError}
+              </p>
+            )}
+            <TargetLab
+              draft={draft}
+              preferences={draftPreferences}
+              onPreferencesChange={setDraftPreferences}
+            />
+          </LabSeasonProvider>
         </Modal.Body>
       </Modal>
 

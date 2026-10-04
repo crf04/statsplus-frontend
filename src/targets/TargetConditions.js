@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
-import { useBacktestSample } from './backtestSample';
+import { useBacktestSample, useLabSeason } from './backtestSample';
 
 // The track's first stop, left of every real floor, meaning no floor at all.
 const NO_FLOOR = -1;
@@ -108,12 +108,16 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   const needsRoster =
     conditions && (conditions.defender || conditions.from !== null || conditions.to !== null);
   const roster = useSeasonMinutes(needsRoster ? opponent : null);
+  const labSeason = useLabSeason();
   const [customWindow, setCustomWindow] = useState(false);
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
   const hasWindow = conditions.from !== null || conditions.to !== null;
-  const endYear = roster.season ? Number(roster.season.slice(0, 4)) + 1 : null;
+  // Presets name dates in the season the Lab is reading, which is the roster's
+  // own wherever no Lab is reading.
+  const presetSeason = labSeason?.season ?? roster.season;
+  const endYear = presetSeason ? Number(presetSeason.slice(0, 4)) + 1 : null;
   const preset = conditions.to
     ? 'custom'
     : !conditions.from

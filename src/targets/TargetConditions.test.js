@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { TargetConditionSummary, backtestMinutesNote, validConditions } from './TargetConditions';
 import { fetchDietBaselines, fetchSeasonMinutes } from './targetsApi';
+import { LabSeasonValueProvider } from './backtestSample';
 jest.mock('./targetsApi', () => ({ fetchDietBaselines: jest.fn(), fetchSeasonMinutes: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false }),
@@ -223,6 +224,46 @@ test('the minutes floor sits in its own card, apart from the opponent filters', 
   expect(backtest.contains(teamCard)).toBe(false);
   expect(teamCard.contains(backtest)).toBe(false);
 });
+/*
+ * The Lab can read a past season while the roster, league averages and
+ * opponent readings are the published season's. Presets follow the season the
+ * Lab reads, and the published-season context is not shown beside past
+ * evidence.
+ */
+const renderInLab = (season, pastSeason) =>
+  render(
+    <LabSeasonValueProvider value={{ season, pastSeason }}>
+      <Form />
+    </LabSeasonValueProvider>,
+  );
+
+test('a past season names its own dates and hides published-season context', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
+  renderInLab('2024-25', true);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });
+  expect(screen.getByLabelText('From')).toHaveValue('2025-01-01');
+  expect(
+    screen.getByText(
+      'League averages and opponent context cover the published season, so they are hidden while the Lab reads a past one.',
+    ),
+  ).toBeVisible();
+  await act(async () => {});
+  expect(screen.queryByText('league 10%')).not.toBeInTheDocument();
+});
+
+test('the published season keeps its dates and league averages', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
+  renderInLab('2025-26', false);
+  expect(await screen.findByText('league 10%')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });
+  expect(screen.getByLabelText('From')).toHaveValue('2026-01-01');
+  expect(screen.queryByText(/hidden while the Lab reads a past one/)).not.toBeInTheDocument();
+});
+
 test('removing the window leaves the Backtest section standing', () => {
   render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));

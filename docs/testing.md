@@ -131,7 +131,8 @@ and more than ten Qualifiers with the backend's envelopes. Every backtest route 
 (preview body, `?season=` on the GETs): `2025-26` is the published season, `2024-25` the previous one,
 and anything else is `400 invalid_input`. Without one, a body reads `2025-26` with
 `season_reason: "published"`; a named season is `requested`. The contract holds no `2024-25` games,
-so that season's backtest is empty and its preview's `today` is `null`. The slate route reports pool freshness that matches the evidence resolution
+so that season's backtest is empty and its preview's `today` is `null`. A Defender Condition is validated against the backtest's season, so a
+`2024-25` preview naming one is `400 invalid_input`; the batch envelope carries `season_reason` too. The slate route reports pool freshness that matches the evidence resolution
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
 journey never sees one route call a pool unavailable while the other lists players from it.
 

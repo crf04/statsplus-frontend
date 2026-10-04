@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BacktestSampleProvider,
+  LabSeasonValueProvider,
   countAppearances,
   describeBacktestSeason,
   describeFallback,
+  describeSeasonGames,
+  isPastSeason,
   previousSeason,
   publishedSeasonOf,
+  useReportLabSeason,
 } from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
@@ -79,6 +83,18 @@ export default function TargetLab({
   const answeredPublished = publishedSeasonOf(preview);
   if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
   const fallback = describeFallback(preview);
+  const seasonGames = describeSeasonGames(preview, published);
+  // The season the evidence is for, or is about to be for: what the form's
+  // season-bound controls follow.
+  const shownSeason = season ?? preview?.season ?? null;
+  const pastSeason = isPastSeason(shownSeason, published);
+  const labSeason = useMemo(() => ({ season: shownSeason, pastSeason }), [shownSeason, pastSeason]);
+  const reportLabSeason = useReportLabSeason();
+  useEffect(() => {
+    if (!reportLabSeason) return undefined;
+    reportLabSeason(labSeason);
+    return () => reportLabSeason(null);
+  }, [reportLabSeason, labSeason]);
   // The result on screen describes the draft it was read for; the moment the
   // draft moves on, the result is stale, whether or not the read has begun.
   const stale = pending || status !== 'ready';
@@ -98,17 +114,14 @@ export default function TargetLab({
           {describeLab({ valid, status, pending })}
         </p>
         {published && (
-          <SeasonToggle
-            published={published}
-            shown={season ?? preview?.season}
-            onChange={setSeason}
-          />
+          <SeasonToggle published={published} shown={shownSeason} onChange={setSeason} />
         )}
         {workbench && preview && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
       {fallback && <p className="target-lab-season-note">{fallback}</p>}
+      {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
       {status === 'error' && (
         <p className="target-error" role="alert">
           {error}
@@ -161,7 +174,7 @@ export default function TargetLab({
       {workbench && <div className="target-lab-overview">{evidence}</div>}
       <div className="target-lab-left">
         <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
-          {children}
+          <LabSeasonValueProvider value={labSeason}>{children}</LabSeasonValueProvider>
         </BacktestSampleProvider>
         {!workbench && evidence}
       </div>

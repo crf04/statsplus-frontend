@@ -447,6 +447,41 @@ test('the Lab reads the season picked on its toggle and a saved card names its s
     }, `/api/user/targets/backtests${query}`);
   expect(await batch('')).toEqual(['ok']);
   expect(await batch('?season=2024-25')).toEqual(['uncached']);
+  // A Defender is validated against the Backtest's season, which for 2024-25
+  // has no ATL roster here.
+  const previewStatus = (season) =>
+    page.evaluate(
+      async (body) => {
+        const response = await fetch('/api/user/targets/preview', {
+          method: 'POST',
+          headers: {
+            authorization: 'Bearer courtai-e2e-token',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        return response.status;
+      },
+      {
+        opponent: 'ATL',
+        qualifiers: [
+          {
+            base: 'assist_locations',
+            slice_key: 'AtRimAssists',
+            comparator: 'at_or_above',
+            threshold: 0.3,
+          },
+        ],
+        conditions: {
+          from: null,
+          to: null,
+          defender: { player_id: 203991, comparator: 'under', minutes: 20 },
+        },
+        ...(season ? { season } : {}),
+      },
+    );
+  expect(await previewStatus()).toBe(200);
+  expect(await previewStatus('2024-25')).toBe(400);
 });
 
 test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {
@@ -594,7 +629,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   ).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
-    'Backtest · 2025-26 season to date · excludes games ≤ 35 min',
+    'Backtest · 2025-26 season to date · ATL has played 4 games in 2025-26 · excludes games ≤ 35 min',
   );
 });
 

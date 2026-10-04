@@ -8,7 +8,21 @@ No application source, existing browser fixture/spec, or Playwright config chang
 Verification tier: **Internal** (test infrastructure and coverage only). Additional
 live QA and production checks were performed and recorded separately below.
 
-## Owning checks
+## Merge order and standalone baseline
+
+**Merge PR #157 before #155.** #155 depends on its repair of three existing
+Playwright request-observation races; #155 does not contain that repair.
+At the independently reviewed baseline `1366da1912e5625de5b9a14f5ef2265db04d9e6c`,
+Playwright without retries produced **137 passed, 1 failed, 2 skipped**. The
+failure was `clearing a control clears its parameter`. Green CI with retries
+is not a clean standalone first-attempt result.
+
+The initial adoption below had **55 deterministic journeys / 110 width cases**.
+Two Matchup navigation journeys added at `905c8dd` brought the reviewed baseline
+to **57 journeys / 114 width cases**. These are historical counts; the fix-round
+results later in this document describe the strengthened suite.
+
+## Initial adoption checks at `4de976e`
 
 Run from the frontend worktree with Node 22.18.0 (CI pins 22.14.0; package minimum 22.12):
 
@@ -21,7 +35,7 @@ Run from the frontend worktree with Node 22.18.0 (CI pins 22.14.0; package minim
 | `npm run test:ci`                                                                                  | 825 tests passed                                                                |
 | `npm run build`                                                                                    | Passed                                                                          |
 | `npm run test:e2e -- --workers=2`                                                                  | 138 passed, 2 existing intentional skips                                        |
-| `npm run test:flows`                                                                               | 110 passed: 55 deterministic cases × desktop/phone                              |
+| `npm run test:flows`                                                                               | 110 passed at `4de976e`: 55 initial cases × desktop/phone                       |
 | `npx e2e list`                                                                                     | All flow/target pairs collected, including 16 optional agent cases              |
 | `npx e2e login openai`                                                                             | Interactive browser authorization required; cancelled rather than blocking work |
 | `npx e2e run e2e/flows/search.e2e.ts --tag agent --target desktop --output .e2e/agent-login-check` | Blocked: `MODEL_PROVIDER_FAILED`, no stored ChatGPT login                       |

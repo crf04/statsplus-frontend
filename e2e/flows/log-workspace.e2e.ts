@@ -54,13 +54,26 @@ signedInTest(
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
     await expect(screen.getByRole('cell', '27')).toBeVisible();
 
+    const requestsBeforeApply = api.sent('/api/games/game_logs').length;
     await setLastNGames(screen, '1');
 
     await expect(browser).toHaveURL('/?player_name=LeBron+James&game_filter=1');
     await expect(screen.getByText('GAMES <= 1').first()).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
     await expect(screen.getByRole('cell', '27')).toHaveCount(0);
-    expect(api.sent('/api/games/game_logs').at(-1)?.search.get('game_filter')).toBe('1');
+    expect(api.sent('/api/games/game_logs')).toHaveLength(requestsBeforeApply + 1);
+    expect(api.sent('/api/games/game_logs')[requestsBeforeApply].search.get('game_filter')).toBe(
+      '1',
+    );
+    // Scope to the table's heading container; the chart's copy cannot satisfy this.
+    expect(
+      await browser.evaluate(
+        () =>
+          [...document.querySelectorAll('h4')].find(
+            (heading) => heading.textContent === 'Game Logs',
+          )?.parentElement?.textContent ?? null,
+      ),
+    ).toContain('GAMES <= 1');
 
     await browser.back();
     await expect(browser).toHaveURL('/?player_name=LeBron+James');
@@ -127,6 +140,53 @@ signedInTest(
     ).toBeVisible();
     failed = false;
     await browser.reload();
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByRole('cell', '27')).toHaveCount(0);
+  },
+);
+
+signedInTest('the workspace shows stats cards and per-36 averages', async ({ app, screen }) => {
+  await app.open('/?player_name=LeBron+James&game_filter=10');
+  await expect(screen.getByRole('cell', '31')).toBeVisible();
+  await expect(screen.getByText('POINTS', { exact: true })).toBeVisible();
+  await expect(screen.getByText('29.0', { exact: true })).toBeVisible();
+  await expect(screen.getByText('+2.0 vs Season', { exact: true })).toBeVisible();
+  await expect(screen.getByRole('heading', 'Per 36 Minutes Comparison')).toBeVisible();
+  await expect(screen.getByText('2 of 2 games', { exact: true })).toBeVisible();
+  await expect(screen.getByText('29.8', { exact: true })).toBeVisible();
+  await expect(screen.getByText('27.8', { exact: true })).toBeVisible();
+});
+
+signedInTest(
+  'a pending Apply clears the previous rows until its response arrives',
+  async ({ app, screen, api }) => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await api.override({
+      '/api/games/game_logs': async (request) => {
+        if (new URL(request.url()).searchParams.get('game_filter') === '1') await pending;
+        return lastOneGame(request);
+      },
+    });
+    await app.open('/?player_name=LeBron+James');
+    await expect(screen.getByRole('cell', '27')).toBeVisible();
+    try {
+      await setLastNGames(screen, '1');
+      await expect
+        .poll(
+          () =>
+            api
+              .sent('/api/games/game_logs')
+              .filter((request) => request.search.get('game_filter') === '1').length,
+        )
+        .toBe(1);
+      await expect(screen.getByRole('cell', '27')).toHaveCount(0);
+      await expect(screen.getByRole('cell', '31')).toHaveCount(0);
+    } finally {
+      release();
+    }
     await expect(screen.getByRole('cell', '31')).toBeVisible();
     await expect(screen.getByRole('cell', '27')).toHaveCount(0);
   },

@@ -26,6 +26,10 @@ signedInTest(
     await screen.getByRole('button', 'Save').tap();
     await expect(screen.getByRole('alert')).toContainText('already have a saved Filter Set');
     await screen.getByRole('button', 'Cancel').tap();
+    await screen.getByRole('button', 'Save Filter Set').tap();
+    await expect(screen.getByLabel('Name')).toHaveValue('');
+    await expect(screen.getByRole('dialog').getByRole('alert')).toHaveCount(0);
+    await screen.getByRole('button', 'Cancel').tap();
 
     await screen.getByRole('button', 'Back to search').tap();
     await expect(browser).toHaveURL('/');

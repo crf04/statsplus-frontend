@@ -157,9 +157,13 @@ for (const action of actions) {
       const dialog = screen.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole('button', 'Confirm action')).toBeDisabled();
+      await dialog.getByLabel('Reason (required)').fill('Discard this previous reason');
       await dialog.getByRole('button', 'Cancel').tap();
+      await expect(dialog).toHaveCount(0);
       expect(api.sent(`/api/admin/collection${action.path}`, 'POST')).toHaveLength(0);
       await scope.getByRole('button', action.button).first().tap();
+      await expect(dialog.getByLabel('Reason (required)')).toHaveValue('');
+      await expect(dialog.getByRole('button', 'Confirm action')).toBeDisabled();
       if (action.fields) await action.fields(dialog);
       await dialog.getByLabel('Reason (required)').fill(reason);
       await dialog.getByRole('button', 'Confirm action').tap();

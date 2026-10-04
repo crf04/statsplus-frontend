@@ -12,6 +12,7 @@ signedInTest(
 
     await expect(screen.getByRole('heading', 'Thursday, January 15, 2026')).toBeVisible();
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-01-15');
     await expect(screen.getByText('Los Angeles Lakers at Boston Celtics')).toBeVisible();
     expect(api.sent('/api/games/slate')[0].search.get('date')).toBe('2026-01-15');
     expect(await overflowsHorizontally(browser)).toBe(false);
@@ -20,9 +21,23 @@ signedInTest(
     await expect(browser).toHaveURL('/matchups?date=2026-01-16');
     await expect(screen.getByRole('heading', 'Friday, January 16, 2026')).toBeVisible();
 
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-01-16');
+    await screen.getByRole('button', 'Previous date').tap();
+    await expect(browser).toHaveURL('/matchups?date=2026-01-15');
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-01-15');
+
     await screen.getByLabel('Slate date').fill('2026-03-29');
     await expect(browser).toHaveURL('/matchups?date=2026-03-29');
     await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-03-29');
+
+    const today = await browser.evaluate(() =>
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()),
+    );
+    await screen.getByRole('button', 'Today').tap();
+    await expect(browser).toHaveURL(`/matchups?date=${today}`);
+    await expect(screen.getByLabel('Slate date')).toHaveValue(today);
+    await expect(screen.getByRole('button', 'Today')).toBeDisabled();
   },
 );
 
@@ -66,6 +81,8 @@ signedInTest(
     await app.open('/matchups?date=2026-02-30');
 
     await expect(screen.getByRole('heading', 'Invalid slate date')).toBeVisible();
+    await expect(screen.getByText('Requested date “2026-02-30” is invalid.')).toBeVisible();
+    await expect(screen.getByLabel('Slate date')).toHaveValue('');
     await expect(screen.getByRole('alert')).toContainText('Enter a valid date.');
     await expect(screen.getByRole('button', 'Previous date')).toBeDisabled();
     await expect(screen.getByRole('button', 'Next date')).toBeDisabled();

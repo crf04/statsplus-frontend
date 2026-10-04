@@ -11,13 +11,29 @@ signedInTest(
     await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
     await expect(screen.getByText('Transition PTS')).toBeVisible();
     await expect(screen.getByText('Above the Break 3 FGA')).toBeVisible();
+    const categories = screen.getByRole('group', 'Market');
+    await expect(categories.getByRole('button', 'All')).toHaveAttribute('aria-pressed', 'true');
     await screen.getByRole('button', 'FG2A').tap();
+    await expect(categories.getByRole('button', 'FG2A')).toHaveAttribute('aria-pressed', 'true');
+    await expect(categories.getByRole('button', 'All')).toHaveAttribute('aria-pressed', 'false');
     await expect(screen.getByText('Restricted Area FGA')).toBeVisible();
     await expect(screen.getByText('Above the Break 3 FGA')).toHaveCount(0);
     await screen.getByRole('button', 'FG3A').tap();
     await expect(screen.getByText('Catch and Shoot FG3A')).toBeVisible();
     await expect(screen.getByText('Restricted Area FGA')).toHaveCount(0);
+    await expect(screen.getByRole('button', 'BOS defense vs LAL players')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await screen.getByRole('button', 'LAL defense vs BOS players').tap();
+    await expect(screen.getByRole('button', 'LAL defense vs BOS players')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(screen.getByRole('button', 'BOS defense vs LAL players')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     await expect(screen.getByRole('heading', 'LAL Defense Sheet')).toBeVisible();
     await expect(screen.getByRole('article', 'Jayson Tatum player')).toBeVisible();
     expect(api.sent('/api/games/matchup')).toHaveLength(1);
@@ -45,7 +61,7 @@ signedInTest(
 );
 
 signedInTest(
-  'selection cards preserve deep links, change the log stat, and close with Escape',
+  'selection cards preserve history, change the log stat, and close by button or Escape',
   { tags: ['critical'] },
   async ({ app, screen, browser, api }) => {
     await app.open('/matchups/0022500584?context=kept');
@@ -55,13 +71,32 @@ signedInTest(
       .tap();
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
+    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
     await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
-    await screen.getByRole('group', 'Selection log stat').getByRole('button', 'PRA').tap();
+    const logStats = screen.getByRole('group', 'Selection log stat');
+    await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
+    await logStats.getByRole('button', 'PRA').tap();
+    await expect(logStats.getByRole('button', 'PRA')).toHaveAttribute('aria-pressed', 'true');
+    await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
     await expect(screen.getByRole('columnheader', 'PRA').first()).toBeVisible();
     await expect(screen.getByText('+0.102').first()).toBeVisible();
     expect(api.sent('/api/games/matchup/selection')).toHaveLength(1);
     expect(await overflowsHorizontally(browser)).toBe(false);
     await app.screenshot('selection-card');
+    await browser.back();
+    await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
+    await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
+    await browser.forward();
+    await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
+    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
+    await screen.getByRole('button', 'Close selection card').tap();
+    await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
+    await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
+    await screen
+      .getByRole('article', 'LeBron James player')
+      .getByRole('button', 'Open selection card')
+      .tap();
+    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
     await browser.keyboard.press('Escape');
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
     await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);

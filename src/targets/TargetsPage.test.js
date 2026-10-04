@@ -252,6 +252,7 @@ beforeEach(() => {
   fetchResolvedTargets.mockResolvedValue(resolution);
   fetchTargetPreview.mockResolvedValue(preview);
   createTarget.mockResolvedValue(storedTarget);
+  fetchSeasonMinutes.mockResolvedValue({ season: '2025-26', players: [] });
 });
 
 afterEach(() => {
@@ -1020,6 +1021,51 @@ test('a season the backend no longer holds reads as unavailable data, not as nob
     'That season’s data is unavailable. No retained player_game_logs Publication for 2024-25.',
   );
   expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  // A roster that does not name the published season leaves nothing to choose.
+  expect(screen.queryByRole('group', { name: 'Backtest season' })).not.toBeInTheDocument();
+});
+
+test('a refused default read still offers both seasons when the roster names the published one', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (!season) throw seasonUnavailable();
+    return {
+      ...preview,
+      season,
+      seasonReason: 'requested',
+      publishedSeason: '2026-27',
+      today: null,
+    };
+  });
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    seasonReason: 'fallback_no_games',
+    publishedSeason: '2026-27',
+    players: [],
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+
+  expect(fetchSeasonMinutes).toHaveBeenCalledWith(expect.objectContaining({ opponent: 'OKC' }));
+  const toggle = screen.getByRole('group', { name: 'Backtest season' });
+  expect(
+    within(toggle)
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual(['2026-27', '2025-26']);
+  fireEvent.click(within(toggle).getByRole('button', { name: '2025-26' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2025-26' }),
+  );
+  expect(within(toggle).getByRole('button', { name: '2025-26' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(screen.getByText('Lab · Backtest · 2025-26 season · vs OKC')).toBeInTheDocument();
 });
 
 test('each saved card labels its Backtest with the season the backend read', async () => {

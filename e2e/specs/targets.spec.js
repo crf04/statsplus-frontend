@@ -471,6 +471,11 @@ test('a Defender chosen for the published season is refused for a past one, neve
     .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^1 player-games$/);
 
+  const rosterSeasons = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/season-minutes'))
+      rosterSeasons.push(new URL(request.url()).searchParams.get('season'));
+  });
   const refused = page.waitForResponse(
     (response) =>
       response.url().endsWith('/api/user/targets/preview') &&
@@ -486,10 +491,12 @@ test('a Defender chosen for the published season is refused for a past one, neve
     player_id: 203991,
   });
   await expect(page.getByRole('button', { name: 'Retry backtest' })).toBeVisible();
-  // The published roster's minutes are not offered beside last season.
+  // The roster is read for last season too, which has no ATL roster here: the
+  // published season's minutes are not offered in its place.
+  expect(rosterSeasons).toContain('2024-25');
   await expect(page.getByLabel('Defender', { exact: true }).locator('option')).toHaveText([
     'Choose a defender',
-    'Clint Capela',
+    'Player 203991 · roster unavailable',
   ]);
 
   await page
@@ -497,6 +504,11 @@ test('a Defender chosen for the published season is refused for a past one, neve
     .getByRole('button', { name: '2025-26' })
     .click();
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^1 player-games$/);
+  await expect(page.getByLabel('Defender', { exact: true })).toHaveValue('203991');
+  await expect(page.getByLabel('Defender', { exact: true }).locator('option')).toHaveText([
+    'Choose a defender',
+    'Clint Capela · 28.0 min · 3 games',
+  ]);
 });
 
 test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {

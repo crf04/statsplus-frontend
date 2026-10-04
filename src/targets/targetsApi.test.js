@@ -875,6 +875,22 @@ test('decodes the season a Backtest read and why, and tolerates a body without t
   expect(legacy).not.toHaveProperty('seasonReason');
 });
 
+test('decodes the published season a Backtest names, and tolerates its absence', () => {
+  expect(
+    decodePreview({
+      ...wirePreview,
+      season: '2024-25',
+      season_reason: 'requested',
+      published_season: '2025-26',
+      today: null,
+    }),
+  ).toEqual(expect.objectContaining({ season: '2024-25', publishedSeason: '2025-26' }));
+  expect(decodeBacktest(wireBacktest)).not.toHaveProperty('publishedSeason');
+  expect(() => decodeBacktest({ ...wireBacktest, published_season: '2026' })).toThrow(
+    /invalid response/i,
+  );
+});
+
 test('refuses a season or reason it could not label honestly', () => {
   expect(() => decodeBacktest({ ...wireBacktest, season_reason: 'default' })).toThrow(
     /invalid response/i,
@@ -1173,6 +1189,34 @@ test('the authenticated roster read preserves minutes order and refuses malforme
   const controller = new AbortController();
   await fetchSeasonMinutes({ opponent: 'MIN', signal: controller.signal });
   expect(apiClient.get).toHaveBeenCalledWith('/api/teams/MIN/season-minutes', {
+    signal: controller.signal,
+  });
+});
+
+test('a roster read names its season, why, and the published season, and reads a named one', async () => {
+  const payload = {
+    season: '2025-26',
+    season_reason: 'fallback_no_games',
+    published_season: '2026-27',
+    players: [{ player_id: 27, name: 'Rudy Gobert', games_played: 60, average_minutes: 32 }],
+  };
+  expect(decodeSeasonMinutes(payload)).toEqual({
+    season: '2025-26',
+    seasonReason: 'fallback_no_games',
+    publishedSeason: '2026-27',
+    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+  });
+  expect(() => decodeSeasonMinutes({ ...payload, season_reason: 'latest' })).toThrow(
+    /invalid response/,
+  );
+  expect(() => decodeSeasonMinutes({ ...payload, published_season: 2026 })).toThrow(
+    /invalid response/,
+  );
+  apiClient.get.mockResolvedValue({ data: payload });
+  const controller = new AbortController();
+  await fetchSeasonMinutes({ opponent: 'MIN', season: '2024-25', signal: controller.signal });
+  expect(apiClient.get).toHaveBeenLastCalledWith('/api/teams/MIN/season-minutes', {
+    params: { season: '2024-25' },
     signal: controller.signal,
   });
 });

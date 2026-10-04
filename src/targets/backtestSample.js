@@ -17,10 +17,11 @@ export const BacktestSampleProvider = BacktestSampleContext.Provider;
 export const useBacktestSample = () => useContext(BacktestSampleContext);
 
 /*
- * The season the Lab is reading, and whether it is a past one, for the
- * season-bound controls of the form beside it: date presets name that season's
- * dates, and the published season's league and opponent readings are not shown
- * beside a past season's evidence. The Lab provides it to a form nested in it,
+ * The season the Lab is reading, the one the reader picked (null for the
+ * backend's default), and whether it is a past one, for the season-bound
+ * controls of the form beside it: the Defender roster is read for the same
+ * season, date presets name that season's dates, and the published season's
+ * league and opponent readings are not shown beside a past season's evidence. The Lab provides it to a form nested in it,
  * and reports it to a LabSeasonProvider above a form that is its sibling.
  */
 const LabSeasonContext = createContext(null);
@@ -54,8 +55,14 @@ const shiftSeason = (season, years) => {
 
 export const previousSeason = (season) => shiftSeason(season, -1);
 
-// Null for a read that named its season, or a backend that gives no reason.
+/*
+ * The published season, as the backend names it, or as a default read's
+ * reason implies. Null for a read that named its season from a backend that
+ * does not name the published one, or a backend that gives no reason. A roster
+ * read carries the same metadata as a Backtest.
+ */
 export const publishedSeasonOf = (backtest) => {
+  if (backtest?.publishedSeason) return backtest.publishedSeason;
   if (backtest?.seasonReason === 'published') return backtest.season;
   if (backtest?.seasonReason === 'fallback_no_games') return shiftSeason(backtest.season, 1);
   return null;

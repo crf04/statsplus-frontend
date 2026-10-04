@@ -455,6 +455,25 @@ const decodeSummary = (summary, statColumns) => {
  * exactly what the detail will show after saving.
  */
 const SEASON_REASONS = new Set(['requested', 'published', 'fallback_no_games']);
+const isSeason = (value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
+
+/*
+ * Which season a read covers, why, and which season is published. Each is
+ * absent from a backend deployed before it existed; a reason or a published
+ * season with no season read says nothing.
+ */
+const validSeasonMetadata = (payload) =>
+  (payload.season === undefined || isSeason(payload.season)) &&
+  (payload.season_reason === undefined ||
+    (payload.season !== undefined && SEASON_REASONS.has(payload.season_reason))) &&
+  (payload.published_season === undefined ||
+    (payload.season !== undefined && isSeason(payload.published_season)));
+
+const decodeSeasonMetadata = (payload) => ({
+  ...(payload.season !== undefined ? { season: payload.season } : {}),
+  ...(payload.season_reason !== undefined ? { seasonReason: payload.season_reason } : {}),
+  ...(payload.published_season !== undefined ? { publishedSeason: payload.published_season } : {}),
+});
 
 const decodeBacktestBody = (payload, target) => {
   if (target.conditions && payload?.games_considered === undefined)
@@ -469,19 +488,11 @@ const decodeBacktestBody = (payload, target) => {
   }
   // Which season was read, and why. The reason is absent from a backend
   // deployed before it existed; a reason with no season says nothing.
-  if (
-    (payload.season !== undefined &&
-      (typeof payload.season !== 'string' || !/^\d{4}-\d{2}$/.test(payload.season))) ||
-    (payload.season_reason !== undefined &&
-      (payload.season === undefined || !SEASON_REASONS.has(payload.season_reason)))
-  ) {
-    throw createInvalidResponseError();
-  }
+  if (!validSeasonMetadata(payload)) throw createInvalidResponseError();
   const statColumns = payload.stat_columns.map(requireString);
   return {
     target,
-    ...(payload.season !== undefined ? { season: payload.season } : {}),
-    ...(payload.season_reason !== undefined ? { seasonReason: payload.season_reason } : {}),
+    ...decodeSeasonMetadata(payload),
     ...(payload.games_considered !== undefined
       ? { gamesConsidered: decodeGamesConsidered(payload.games_considered) }
       : {}),
@@ -734,8 +745,8 @@ export const fetchDietBaselines = async ({ signal } = {}) => {
 export const decodeSeasonMinutes = (payload) => {
   if (
     !isRecord(payload) ||
-    typeof payload.season !== 'string' ||
-    !/^\d{4}-\d{2}$/.test(payload.season) ||
+    !isSeason(payload.season) ||
+    !validSeasonMetadata(payload) ||
     !Array.isArray(payload.players)
   )
     throw createInvalidResponseError();
@@ -759,12 +770,13 @@ export const decodeSeasonMinutes = (payload) => {
       averageMinutes: player.average_minutes,
     };
   });
-  return { season: payload.season, players };
+  return { ...decodeSeasonMetadata(payload), players };
 };
-export const fetchSeasonMinutes = async ({ opponent, signal }) => {
+// With no season named, the backend reads the Backtest's default season.
+export const fetchSeasonMinutes = async ({ opponent, season, signal }) => {
   const response = await apiClient.get(
     `${getApiUrl('TEAM_SEASON_MINUTES')}/${encodeURIComponent(opponent)}/season-minutes`,
-    { signal },
+    { ...(season ? { params: { season } } : {}), signal },
   );
   return decodeSeasonMinutes(response.data);
 };

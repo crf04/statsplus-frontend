@@ -2033,6 +2033,7 @@ const backtestTarget = (target, season) => {
     target,
     season: season ?? PUBLISHED_SEASON,
     season_reason: season === undefined ? 'published' : 'requested',
+    published_season: PUBLISHED_SEASON,
     games_considered: {
       kept: games.filter((game) => conditionCounts(target, game)).length,
       played: games.length,
@@ -2270,8 +2271,20 @@ export const installApiContract = async (page, overrides = {}) => {
         });
         return;
       }
+      // The roster follows the Backtest's season rule; the previous season has
+      // no games here, so no roster either.
+      const season = url.searchParams.get('season') ?? undefined;
+      if (invalidSeason(season)) {
+        await route.fulfill(invalidSeasonResponse);
+        return;
+      }
       await route.fulfill({
-        json: { season: '2025-26', players: CONDITION_ROSTERS[rosterMatch[1]] || [] },
+        json: {
+          season: season ?? PUBLISHED_SEASON,
+          season_reason: season === undefined ? 'published' : 'requested',
+          published_season: PUBLISHED_SEASON,
+          players: season === PREVIOUS_SEASON ? [] : CONDITION_ROSTERS[rosterMatch[1]] || [],
+        },
       });
       return;
     }

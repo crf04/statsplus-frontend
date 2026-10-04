@@ -107,8 +107,10 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
 export function TargetConditionRows({ opponent, conditions, onChange }) {
   const needsRoster =
     conditions && (conditions.defender || conditions.from !== null || conditions.to !== null);
-  const roster = useSeasonMinutes(needsRoster ? opponent : null);
+  // The roster is read for the season the Lab reads: the one the reader
+  // picked, or the backend's default, which is the Lab's default too.
   const labSeason = useLabSeason();
+  const roster = useSeasonMinutes(needsRoster ? opponent : null, labSeason?.requested ?? null);
   const [customWindow, setCustomWindow] = useState(false);
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
@@ -117,12 +119,13 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   // Presets name dates in the season the Lab is reading, which is the roster's
   // own wherever no Lab is reading.
   const presetSeason = labSeason?.season ?? roster.season;
-  // The roster and its minutes are the published season's, so they are not
-  // offered as choices beside a past season's evidence; a Defender already
-  // chosen keeps its name.
-  const pastSeason = labSeason?.pastSeason ?? false;
-  const choices = pastSeason ? [] : roster.players;
-  const chosen = roster.players.find((player) => player.playerId === defender?.playerId);
+  // A roster for any other season than the Lab's evidence is never offered:
+  // a backend that ignores the season answers with the published one.
+  const rosterMismatch = Boolean(
+    labSeason?.season && roster.season && roster.season !== labSeason.season,
+  );
+  const choices = rosterMismatch ? [] : roster.players;
+  const chosen = choices.find((player) => player.playerId === defender?.playerId);
   const endYear = presetSeason ? Number(presetSeason.slice(0, 4)) + 1 : null;
   const preset = conditions.to
     ? 'custom'
@@ -149,12 +152,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               }
             >
               <option value="">Choose a defender</option>
-              {defender.playerId && pastSeason && (
-                <option value={defender.playerId}>
-                  {chosen ? chosen.name : `Player ${defender.playerId}`}
-                </option>
-              )}
-              {defender.playerId && !pastSeason && !chosen && (
+              {defender.playerId && !chosen && (
                 <option value={defender.playerId}>
                   Player {defender.playerId} · roster unavailable
                 </option>
@@ -184,13 +182,12 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               </button>
             </p>
           )}
-          {pastSeason && (
+          {rosterMismatch && (
             <p>
-              Defender choices come from the published season’s roster, so they are hidden while the
-              Lab reads a past one.
+              The {opponent} roster for {labSeason.season} is unavailable.
             </p>
           )}
-          {!pastSeason && roster.status === 'ready' && !roster.players.length && (
+          {!rosterMismatch && roster.status === 'ready' && !roster.players.length && (
             <p>No season roster available for {opponent}.</p>
           )}
           <div

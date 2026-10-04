@@ -14,7 +14,7 @@ import {
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
-import { useTargetPreview } from './useTargets';
+import { useSeasonMinutes, useTargetPreview } from './useTargets';
 import './TargetFits.css';
 
 /*
@@ -80,7 +80,12 @@ export default function TargetLab({
     valid ? (season ? { ...request, season } : request) : null,
     { immediateInitial: immediateInitialPreview },
   );
-  const answeredPublished = publishedSeasonOf(preview);
+  // A Backtest refused for want of one stream still has a published season:
+  // the opponent's roster read names it, so the reader can pick another.
+  const roster = useSeasonMinutes(
+    valid && !published && status === 'error' ? draft.opponent : null,
+  );
+  const answeredPublished = publishedSeasonOf(preview) ?? publishedSeasonOf(roster);
   if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
   const fallback = describeFallback(preview);
   const seasonGames = describeSeasonGames(preview, published);
@@ -88,7 +93,10 @@ export default function TargetLab({
   // season-bound controls follow.
   const shownSeason = season ?? preview?.season ?? null;
   const pastSeason = isPastSeason(shownSeason, published);
-  const labSeason = useMemo(() => ({ season: shownSeason, pastSeason }), [shownSeason, pastSeason]);
+  const labSeason = useMemo(
+    () => ({ season: shownSeason, requested: season, pastSeason }),
+    [shownSeason, season, pastSeason],
+  );
   const reportLabSeason = useReportLabSeason();
   useEffect(() => {
     if (!reportLabSeason) return undefined;

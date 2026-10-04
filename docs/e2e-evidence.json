@@ -12,6 +12,9 @@
     },
     "qa-targets.jsonl": {
       "sha256": "26e5f5a6ac609d8ceb270c37bc045ee21382872100f011424dec33d2da2f8fe8"
+    },
+    "matchup-links-verified.jsonl": {
+      "sha256": "09c7ea3e8135723d5c24cd45c2a5e4690f6bf378d62ee69a172a21bce218eba9"
     }
   },
   "runs": [
@@ -169,6 +172,26 @@
         "search-refused-phone.png",
         "search-shared-desktop.png"
       ]
+    },
+    {
+      "name": "qa-matchup-links-verified",
+      "journey": "matchup-links-verified.jsonl",
+      "frontend": {
+        "root": "/Users/chrisfu/statsplus-frontend-e2e",
+        "branch": "test/e2e-framework",
+        "head": "905c8ddd0f2ea5f0d1fe32ad066f8dc27da50726",
+        "fingerprint": "3a8a0af850b09af479b0b73be93ad4d944e3a5901f8038df9fb30e5f5c28f4b3"
+      },
+      "backendSource": {
+        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": ["matchup-back-to-slate-phone.png", "matchup-log-handoff-desktop.png"]
     }
   ]
 }

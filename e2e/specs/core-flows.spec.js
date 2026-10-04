@@ -714,11 +714,19 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('');
+  // Observe the identical initial season query before recording Apply traffic.
+  await expect
+    .poll(() => gameLogRequests.map((url) => Object.fromEntries(url.searchParams)))
+    .toContainEqual({ player_name: 'LeBron James' });
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/game_filter/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
-  expect(gameLogRequests.at(-1).searchParams.has('game_filter')).toBe(false);
+  await expect
+    .poll(() =>
+      gameLogRequests.slice(requestsBeforeApply).map((url) => Object.fromEntries(url.searchParams)),
+    )
+    .toContainEqual({ player_name: 'LeBron James' });
   await expect(page.getByText('GAMES <= 10')).toHaveCount(0);
 });
 

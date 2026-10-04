@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { BacktestSampleProvider, countAppearances } from './backtestSample';
+import {
+  BacktestSampleProvider,
+  countAppearances,
+  describeBacktestSeason,
+  describeFallback,
+  previousSeason,
+  publishedSeasonOf,
+} from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
@@ -24,6 +31,28 @@ const describeLab = ({ valid, status, pending }) => {
 };
 
 /*
+ * The two seasons a Backtest can read. Which one is published is only known
+ * once the backend has answered a read that named no season, so until then
+ * there is nothing to choose between.
+ */
+function SeasonToggle({ published, shown, onChange }) {
+  return (
+    <div className="target-season-toggle" role="group" aria-label="Backtest season">
+      {[published, previousSeason(published)].map((season) => (
+        <button
+          key={season}
+          type="button"
+          aria-pressed={season === shown}
+          onClick={() => season !== shown && onChange(season)}
+        >
+          {season}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/*
  * The Lab: the season-to-date Backtest of the Draft Target above it, read
  * live as the draft is composed. It is not a destination; wherever a draft is
  * edited, this is the evidence alongside the form. Nothing is stored until Save,
@@ -39,10 +68,17 @@ export default function TargetLab({
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
+  // Null until the reader picks one: the backend's default, fallback included.
+  const [season, setSeason] = useState(null);
+  const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
-  const { status, preview, error, pending, retry } = useTargetPreview(valid ? request : null, {
-    immediateInitial: immediateInitialPreview,
-  });
+  const { status, preview, error, pending, retry } = useTargetPreview(
+    valid ? (season ? { ...request, season } : request) : null,
+    { immediateInitial: immediateInitialPreview },
+  );
+  const answeredPublished = publishedSeasonOf(preview);
+  if (answeredPublished && answeredPublished !== published) setPublished(answeredPublished);
+  const fallback = describeFallback(preview);
   // The result on screen describes the draft it was read for; the moment the
   // draft moves on, the result is stale, whether or not the read has begun.
   const stale = pending || status !== 'ready';
@@ -54,16 +90,25 @@ export default function TargetLab({
   const evidence = (
     <>
       <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
-        Lab · Backtest · season to date · vs {draft.opponent}
+        Lab · Backtest · {preview ? describeBacktestSeason(preview, published) : 'season to date'} ·
+        vs {draft.opponent}
       </h2>
       <div className="target-lab-header">
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending })}
         </p>
+        {published && (
+          <SeasonToggle
+            published={published}
+            shown={season ?? preview?.season}
+            onChange={setSeason}
+          />
+        )}
         {workbench && preview && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
+      {fallback && <p className="target-lab-season-note">{fallback}</p>}
       {status === 'error' && (
         <p className="target-error" role="alert">
           {error}

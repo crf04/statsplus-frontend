@@ -589,6 +589,7 @@ test('decodes the backtest to the rows the table reads, in the backend order', (
         { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
       ],
     },
+    season: '2025-26',
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     statColumns: ['PTS', '3PM'],
     summary: {
@@ -848,6 +849,55 @@ test('previews a draft at the documented path with the create body', async () =>
   );
 });
 
+/*
+ * A Backtest says which season it read and why: the published one, the
+ * previous one because the published season has no games yet, or the one the
+ * request named. A backend deployed before the reason existed still echoes the
+ * season alone, and that read stays readable.
+ */
+test('decodes the season a Backtest read and why, and tolerates a body without the reason', () => {
+  expect(decodeBacktest({ ...wireBacktest, season_reason: 'published' })).toEqual(
+    expect.objectContaining({ season: '2025-26', seasonReason: 'published' }),
+  );
+  expect(
+    decodePreview({ ...wirePreview, season: '2024-25', season_reason: 'requested', today: null }),
+  ).toEqual(expect.objectContaining({ season: '2024-25', seasonReason: 'requested', today: null }));
+  const legacy = decodeBacktest(wireBacktest);
+  expect(legacy.season).toBe('2025-26');
+  expect(legacy).not.toHaveProperty('seasonReason');
+});
+
+test('refuses a season or reason it could not label honestly', () => {
+  expect(() => decodeBacktest({ ...wireBacktest, season_reason: 'default' })).toThrow(
+    /invalid response/i,
+  );
+  expect(() =>
+    decodeBacktest({ ...wireBacktest, season: '2025', season_reason: 'published' }),
+  ).toThrow(/invalid response/i);
+  const { season: _season, ...seasonless } = wireBacktest;
+  expect(() => decodeBacktest({ ...seasonless, season_reason: 'fallback_no_games' })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('previews a named season in the body and leaves it out for the default', async () => {
+  apiClient.post.mockResolvedValue({
+    data: { ...wirePreview, season: '2024-25', season_reason: 'requested', today: null },
+  });
+  const draft = {
+    opponent: 'OKC',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  };
+  await fetchTargetPreview({ ...draft, season: '2024-25' });
+  expect(apiClient.post.mock.calls.at(-1)[1]).toEqual(
+    expect.objectContaining({ opponent: 'OKC', season: '2024-25' }),
+  );
+  await fetchTargetPreview(draft);
+  expect(apiClient.post.mock.calls.at(-1)[1]).not.toHaveProperty('season');
+});
+
 test("reads one Target's backtest from the documented path with a cold-start-safe timeout", async () => {
   apiClient.get.mockResolvedValue({ data: wireBacktest });
   const controller = new AbortController();
@@ -886,6 +936,31 @@ test('decodes each ok batch item with the single Backtest decoder and each error
     { targetId: 9, status: 'error', error: 'This Backtest is unavailable.' },
   ]);
   expect(decodeBacktests({ success: true, season: '2025-26', backtests: [] })).toEqual([]);
+});
+
+test('a batch item whose season is not retained reads as unavailable data, naming the stream', () => {
+  expect(
+    decodeBacktests({
+      ...wireBatch,
+      backtests: [
+        {
+          target_id: 7,
+          status: 'error',
+          error: {
+            code: 'season_unavailable',
+            message: 'No retained player_game_logs Publication for 2024-25.',
+          },
+        },
+      ],
+    }),
+  ).toEqual([
+    {
+      targetId: 7,
+      status: 'error',
+      error:
+        'That season’s data is unavailable. No retained player_game_logs Publication for 2024-25.',
+    },
+  ]);
 });
 
 test('an uncached batch item asks for the single route rather than failing the card', () => {

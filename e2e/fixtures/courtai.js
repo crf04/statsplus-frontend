@@ -1996,19 +1996,44 @@ export const backtestSummary = (players, statColumns) => {
   };
 };
 
-const backtestTarget = (target) => {
+/*
+ * A Backtest reads the published season or the one before it. With no season
+ * named it reads the published one, which has games here, so the reason is
+ * `published`. The contract holds no games for the previous season, so its
+ * Backtest is read and empty rather than refused.
+ */
+const PUBLISHED_SEASON = '2025-26';
+const PREVIOUS_SEASON = '2024-25';
+const invalidSeason = (season) =>
+  season !== undefined && season !== PUBLISHED_SEASON && season !== PREVIOUS_SEASON;
+const invalidSeasonResponse = {
+  status: 400,
+  json: {
+    error: {
+      code: 'invalid_input',
+      message: `season must be ${PUBLISHED_SEASON} or ${PREVIOUS_SEASON}.`,
+    },
+  },
+};
+
+const backtestTarget = (target, season) => {
+  const past = season === PREVIOUS_SEASON;
   const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
-  const players = leaguePlayers
-    .map((player) => backtestPlayer(target, statColumns, player))
-    .filter(Boolean)
-    // Season scoring descending, as every player list the product shows is.
-    .sort((first, second) => second.season_scoring - first.season_scoring);
+  const players = past
+    ? []
+    : leaguePlayers
+        .map((player) => backtestPlayer(target, statColumns, player))
+        .filter(Boolean)
+        // Season scoring descending, as every player list the product shows is.
+        .sort((first, second) => second.season_scoring - first.season_scoring);
+  const games = past ? [] : opponentGames(target.opponent);
   return {
     target,
-    season: '2025-26',
+    season: season ?? PUBLISHED_SEASON,
+    season_reason: season === undefined ? 'published' : 'requested',
     games_considered: {
-      kept: opponentGames(target.opponent).filter((game) => conditionCounts(target, game)).length,
-      played: opponentGames(target.opponent).length,
+      kept: games.filter((game) => conditionCounts(target, game)).length,
+      played: games.length,
     },
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     stat_columns: statColumns,
@@ -2041,12 +2066,16 @@ const invalidTargetBody = (body) =>
       qualifier.threshold > 1,
   );
 
-const previewTarget = (draft) => {
+const previewTarget = (draft, season) => {
   const target = { ...draft, title: backendTargetTitle(draft) };
   const [entry] = resolveTargets(DEFAULT_SLATE_DATE, [target]).targets;
   return {
-    ...backtestTarget(target),
-    today: entry.game ? { game: entry.game, fit_count: entry.players.length } : null,
+    ...backtestTarget(target, season),
+    // A past season says nothing about tonight.
+    today:
+      season !== PREVIOUS_SEASON && entry.game
+        ? { game: entry.game, fit_count: entry.players.length }
+        : null,
   };
 };
 
@@ -2356,16 +2385,23 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
+        if (invalidSeason(body.season)) {
+          await route.fulfill(invalidSeasonResponse);
+          return;
+        }
         await route.fulfill({
           json: {
             success: true,
-            ...previewTarget({
-              opponent: body.opponent,
-              qualifiers: body.qualifiers.map(toStored),
-              note: body.note || '',
-              conditions: canonicalFixtureConditions(body.conditions),
-              stat_preferences: body.stat_preferences ?? null,
-            }),
+            ...previewTarget(
+              {
+                opponent: body.opponent,
+                qualifiers: body.qualifiers.map(toStored),
+                note: body.note || '',
+                conditions: canonicalFixtureConditions(body.conditions),
+                stat_preferences: body.stat_preferences ?? null,
+              },
+              body.season,
+            ),
           },
         });
         return;
@@ -2385,13 +2421,18 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
+        const season = url.searchParams.get('season') ?? undefined;
+        if (invalidSeason(season)) {
+          await route.fulfill(invalidSeasonResponse);
+          return;
+        }
         await route.fulfill({
           json: {
             success: true,
-            season: '2025-26',
+            season: season ?? PUBLISHED_SEASON,
             backtests: targets.map((target) =>
               cachedBacktests.has(backtestCacheKey(target))
-                ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target) }
+                ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target, season) }
                 : { target_id: target.id, status: 'uncached' },
             ),
           },
@@ -2411,8 +2452,13 @@ export const installApiContract = async (page, overrides = {}) => {
           });
           return;
         }
+        const season = url.searchParams.get('season') ?? undefined;
+        if (invalidSeason(season)) {
+          await route.fulfill(invalidSeasonResponse);
+          return;
+        }
         cachedBacktests.add(backtestCacheKey(target));
-        await route.fulfill({ json: { success: true, ...backtestTarget(target) } });
+        await route.fulfill({ json: { success: true, ...backtestTarget(target, season) } });
         return;
       }
 

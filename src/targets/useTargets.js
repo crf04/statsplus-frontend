@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { beginStatPreferenceRead } from './useStatPreferences';
+import { describeBacktestFailure } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
   fetchDietBaselines,
@@ -147,8 +148,9 @@ export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY
 const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
 
 /*
- * What a Draft Target is evaluated by: the opponent and the Qualifiers. The
- * note is never part of the evidence, so editing it is not a new draft.
+ * What a Draft Target is evaluated by: the opponent, the Qualifiers, and the
+ * season when one is named. The note is never part of the evidence, so editing
+ * it is not a new draft.
  */
 const previewKey = (request) =>
   request
@@ -156,6 +158,7 @@ const previewKey = (request) =>
         opponent: request.opponent,
         qualifiers: request.qualifiers,
         ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+        ...(request.season !== undefined ? { season: request.season } : {}),
       })
     : null;
 
@@ -218,7 +221,7 @@ export const useTargetPreview = (request, { immediateInitial = false } = {}) => 
           setState((current) => ({
             ...current,
             status: 'error',
-            error: getRequestErrorMessage(error, PREVIEW_FAILURE),
+            error: describeBacktestFailure(error, PREVIEW_FAILURE),
           }));
         });
     };

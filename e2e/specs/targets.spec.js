@@ -400,6 +400,45 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
 });
 
+test('the Lab reads the season picked on its toggle and a saved card names its season', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  const previews = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/user/targets/preview')) previews.push(request.postDataJSON());
+  });
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  const lab = page.getByRole('region', { name: /Lab · Backtest/ });
+  const season = page.getByRole('group', { name: 'Backtest season' });
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(season.getByRole('button', { name: '2025-26' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('region', { name: /2025-26 season to date/ })).toBeVisible();
+  expect(previews.at(-1)).not.toHaveProperty('season');
+
+  await season.getByRole('button', { name: '2024-25' }).click();
+  await expect(
+    page.getByRole('region', { name: /Lab · Backtest · 2024-25 season ·/ }),
+  ).toBeVisible();
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^0 player-games$/);
+  await expect(page.getByText(/fit tonight/)).toHaveCount(0);
+  expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2024-25' });
+
+  await saveTarget(page);
+  await expect(
+    card(page, 'ATL vs At-rim assists ≥ 30%').getByRole('region', { name: 'Backtest' }),
+  ).toContainText('Backtest · 2025-26 season to date');
+});
+
 test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installApiContract(page);
@@ -545,7 +584,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   ).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
-    'Backtest · season to date · excludes games ≤ 35 min',
+    'Backtest · 2025-26 season to date · excludes games ≤ 35 min',
   );
 });
 

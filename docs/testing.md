@@ -127,7 +127,11 @@ reads each uncached Target through the per-Target route, and every Target that w
 route answers `404` or `405`. The preview a
 Draft Target's Lab reads is the same composition for a Target that is stored nowhere, with a `today`
 block resolved against the current Slate date; it refuses a missing bearer, an unknown base or slice,
-and more than ten Qualifiers with the backend's envelopes. The slate route reports pool freshness that matches the evidence resolution
+and more than ten Qualifiers with the backend's envelopes. Every backtest route takes an optional `season`
+(preview body, `?season=` on the GETs): `2025-26` is the published season, `2024-25` the previous one,
+and anything else is `400 invalid_input`. Without one, a body reads `2025-26` with
+`season_reason: "published"`; a named season is `requested`. The contract holds no `2024-25` games,
+so that season's backtest is empty and its preview's `today` is `null`. The slate route reports pool freshness that matches the evidence resolution
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
 journey never sees one route call a pool unavailable while the other lists players from it.
 

@@ -105,6 +105,33 @@ node /Users/chrisfu/.agents/skills/statsplus-live-shots/live-shots.mjs \
 These production-backed desktop (1440×900) and phone (390×844) screenshots are
 committed under `docs/screenshots/e2e-adoption/`. Both were visually inspected.
 
+## Independent review and follow-up
+
+Claude Sonnet 5.5 reviewed implementation `4de976e` in an isolated worktree and
+ran 120 distinct application/transport mutations. Every original deterministic
+case failed under at least one relevant mutation. Six other mutations survived,
+which exposed gaps in assertions rather than application defects:
+
+| Finding                                            | Correction                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| Only the middle landing example was exercised      | Click and assert all three literal query examples                        |
+| Back returned through a newly pushed history entry | Exercise browser Back directly from the reference before the return link |
+| Reload concealed an unclosed saved-sets modal      | Assert dismissal before reload                                           |
+| Signed-out landing was not checked for saved sets  | Anchor on rendered landing content, then check the button is absent      |
+| Finish-cycle selection matched its default         | Select and assert the non-default `no_game` request value                |
+| Target resolution used the fixture's default date  | Add a MIL Target and verify its fit on the distinct historical date      |
+
+The reviewer proved the proposed corrections kill all six survivors and preserve
+330/330 repeated test runs in a scratch copy. The implementation also adds two
+Matchup navigation cases (player → Log Workspace and Back to slate), updates the
+agent completion gate, removes unused `isPhone` and direct `zod`, and uses a
+10-second assertion timeout to allow cold browser startup under load.
+
+The original mutation table is in [e2e-mutation-audit.md](e2e-mutation-audit.md).
+Detailed first-round reports, mutation definitions and logs remain under
+`/tmp/e2e-review/`. A fresh follow-up review covers the changes and the new cases.
+Agent variants remain unrun and unmutated because subscription login is absent.
+
 ## Unmet checks and next action
 
 Agent goals are written and followed by exact locator outcomes, but have not run

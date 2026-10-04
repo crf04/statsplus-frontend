@@ -36,6 +36,10 @@ signedInTest(
     await screen.getByRole('textbox', PROMPT).fill(draft);
     await screen.getByRole('link', 'Every filter we understand').tap();
     await expect(screen.getByRole('heading', 'Query reference')).toBeFocused();
+    // Browser Back lands on the entry the link stamped, not one a click pushed.
+    await browser.back();
+    await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(draft);
+    await screen.getByRole('link', 'Every filter we understand').tap();
 
     await screen.getByRole('link', { name: 'Back to search', exact: false }).tap();
     await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(draft);
@@ -51,10 +55,17 @@ signedInTest(
   'the three-step landing guide loads each example into the prompt',
   async ({ app, screen, browser }) => {
     await app.open('/');
-    await screen.getByRole('button', { name: 'Narrow it down', exact: false }).tap();
-    await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(
-      'Jalen Johnson this year without Trae Young',
-    );
+    for (const [rung, query] of [
+      ['Start with a player', 'Jalen Johnson this year'],
+      ['Narrow it down', 'Jalen Johnson this year without Trae Young'],
+      [
+        'Stack the filters',
+        'Jalen Johnson this year without Trae Young against bottom 10 defenses playing 25+ minutes',
+      ],
+    ]) {
+      await screen.getByRole('button', { name: rung, exact: false }).tap();
+      await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(query);
+    }
     expect(await overflowsHorizontally(browser)).toBe(false);
   },
 );

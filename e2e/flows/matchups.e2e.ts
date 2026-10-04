@@ -111,3 +111,31 @@ signedInTest(
     await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
   },
 );
+
+signedInTest(
+  'a Matchup player opens their Log Workspace',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/matchups/0022500584');
+    await screen.getByRole('link', 'LeBron James game logs').tap();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    expect(api.sent('/api/games/game_logs')[0].search.get('player_name')).toBe('LeBron James');
+  },
+);
+
+signedInTest(
+  'Back to slate leaves Matchup detail and shows the game list',
+  { tags: ['critical'] },
+  async ({ app, screen, browser }) => {
+    await app.open('/matchups/0022500584');
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await screen.getByRole('link', '← Back to slate').tap();
+    await expect(browser).toHaveURL('/matchups');
+    await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
+    await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
+    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toHaveCount(0);
+  },
+);

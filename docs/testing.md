@@ -41,6 +41,10 @@ npm run test:e2e:ui
 npm run test:e2e:debug
 ```
 
+The local server listens on port 4173. Give each concurrent checkout its own port with
+`E2E_PORT=<port>`; a port already in use fails the run instead of testing another checkout's build.
+Set `E2E_REUSE_SERVER=true` only to reuse a server this checkout started.
+
 Run the public smoke test against a deployment without starting a local server:
 
 ```bash

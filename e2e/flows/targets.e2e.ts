@@ -1,5 +1,6 @@
 import { expect } from 'e2e';
 import type { Screen } from 'e2e';
+import { historicalMatchupPayload, slateGame, slatePayload } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest, signedOutTest } from './support/courtai.ts';
 
 const threshold = async (screen: Screen, percent: number) => {
@@ -145,6 +146,17 @@ signedInTest(
     await expect(screen.getByText('Nobody qualifying has faced ATL yet.')).toBeVisible();
     await screen.getByRole('button', 'Revert').tap();
     await expect(sampleCount(screen)).toHaveText('1 player-games');
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a date window').tap();
+    await screen.getByLabel('Through').fill('2025-01-09');
+    await expect(sampleCount(screen)).toHaveText('0 player-games');
+    await screen.getByLabel('Through').fill('2025-01-10');
+    await expect(sampleCount(screen)).toHaveText('1 player-games');
+    await screen.getByRole('button', 'Save changes').tap();
+    await expect(screen.getByRole('button', 'Save changes')).toHaveCount(0);
+    await browser.reload();
+    await expect(screen.getByLabel('Through')).toHaveValue('2025-01-10');
+    await expect(sampleCount(screen)).toHaveText('1 player-games');
   },
 );
 
@@ -197,6 +209,14 @@ signedInTest(
     await screen.getByRole('combobox', 'Opponent').selectOption({ value: 'BOS' });
     await screen.getByRole('button', 'Save Target').tap();
     await expect(screen.getByRole('heading', 'BOS vs At-rim assists ≥ 30%')).toBeVisible();
+    let twoGames = true;
+    await browser.route('**/api/games/slate?**', async (route) => {
+      if (twoGames) {
+        await route.fulfill({
+          json: slatePayload('2026-01-15', [slateGame, historicalMatchupPayload.game]),
+        });
+      } else await route.fallback();
+    });
     await app.open('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     const fits = screen.getByRole('article').filter({ hasText: 'At-rim assists' });
@@ -205,7 +225,15 @@ signedInTest(
     await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toHaveText(
       'Austin Reaves LAL THIN 35% lg 14% 20.1',
     );
+    const otherGame = screen
+      .getByRole('listitem')
+      .filter({ has: screen.getByRole('heading', 'LAC @ MIL') })
+      .last();
+    await expect(otherGame).toHaveCount(1);
+    await expect(otherGame.getByRole('article')).toHaveCount(0);
+    await expect(fits).toHaveCount(1);
     expect(await overflowsHorizontally(browser)).toBe(false);
+    twoGames = false;
 
     // The Slate asks for its own date: a MIL Target resolves only on 2026-03-29.
     await app.open('/targets');

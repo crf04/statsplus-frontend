@@ -17,6 +17,10 @@ signedOutTest(
     // Signed out, the prompt says why it is disabled.
     await expect(screen.getByRole('textbox', 'Sign in to enter a query...')).toBeDisabled();
 
+    for (const rung of ['Start with a player', 'Narrow it down', 'Stack the filters']) {
+      await expect(screen.getByRole('button', { name: rung, exact: false })).toBeDisabled();
+    }
+
     await screen.getByRole('button', 'Sign in with Google').tap();
 
     await expect(screen.getByRole('textbox', PROMPT)).toBeEnabled();
@@ -130,5 +134,22 @@ signedOutTest(
     await app.open('/not-a-courtai-route');
     await expect(browser).toHaveURL('/');
     await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'an ambiguous player asks for a player before applying filters',
+  async ({ app, screen, browser, api }) => {
+    // The parser resolved the time clause but could not resolve which Jalen.
+    await api.override({ '/api/nl-query': { body: { game_count: 10, confidence: 0.9 } } });
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill('Jalen last 10 games');
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+    await expect(screen.getByText('Choose a player before applying these filters.')).toBeVisible();
+    await expect(browser).toHaveURL('/');
+    expect(api.sent('/api/nl-query', 'POST').map((request) => request.body)).toEqual([
+      { query: 'Jalen last 10 games' },
+    ]);
+    expect(api.sent('/api/games/game_logs')).toHaveLength(0);
   },
 );

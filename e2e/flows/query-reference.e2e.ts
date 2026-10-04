@@ -15,6 +15,9 @@ signedInTest(
 
     await expect(browser).toHaveURL('/help');
     await expect(screen.getByRole('heading', 'Query reference')).toBeVisible();
+    const clauses = screen.getByRole('region', 'Clauses');
+    await expect(clauses.getByRole('rowheader', 'last')).toBeVisible();
+    await expect(clauses.getByRole('cell', 'Only the most recent N games.')).toBeVisible();
     await expect(screen.getByRole('rowheader', 'Less Than 10 ft')).toBeVisible();
     await expect(screen.getByRole('rowheader', 'PRRollMan')).toBeVisible();
     expect(await overflowsHorizontally(browser)).toBe(false);

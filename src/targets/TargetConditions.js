@@ -117,6 +117,12 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
   // Presets name dates in the season the Lab is reading, which is the roster's
   // own wherever no Lab is reading.
   const presetSeason = labSeason?.season ?? roster.season;
+  // The roster and its minutes are the published season's, so they are not
+  // offered as choices beside a past season's evidence; a Defender already
+  // chosen keeps its name.
+  const pastSeason = labSeason?.pastSeason ?? false;
+  const choices = pastSeason ? [] : roster.players;
+  const chosen = roster.players.find((player) => player.playerId === defender?.playerId);
   const endYear = presetSeason ? Number(presetSeason.slice(0, 4)) + 1 : null;
   const preset = conditions.to
     ? 'custom'
@@ -143,13 +149,17 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               }
             >
               <option value="">Choose a defender</option>
-              {defender.playerId &&
-                !roster.players.some((player) => player.playerId === defender.playerId) && (
-                  <option value={defender.playerId}>
-                    Player {defender.playerId} · roster unavailable
-                  </option>
-                )}
-              {roster.players.map((player) => (
+              {defender.playerId && pastSeason && (
+                <option value={defender.playerId}>
+                  {chosen ? chosen.name : `Player ${defender.playerId}`}
+                </option>
+              )}
+              {defender.playerId && !pastSeason && !chosen && (
+                <option value={defender.playerId}>
+                  Player {defender.playerId} · roster unavailable
+                </option>
+              )}
+              {choices.map((player) => (
                 <option key={player.playerId} value={player.playerId}>
                   {player.name} · {player.averageMinutes.toFixed(1)} min · {player.gamesPlayed}{' '}
                   games
@@ -174,7 +184,13 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               </button>
             </p>
           )}
-          {roster.status === 'ready' && !roster.players.length && (
+          {pastSeason && (
+            <p>
+              Defender choices come from the published season’s roster, so they are hidden while the
+              Lab reads a past one.
+            </p>
+          )}
+          {!pastSeason && roster.status === 'ready' && !roster.players.length && (
             <p>No season roster available for {opponent}.</p>
           )}
           <div

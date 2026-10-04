@@ -447,41 +447,56 @@ test('the Lab reads the season picked on its toggle and a saved card names its s
     }, `/api/user/targets/backtests${query}`);
   expect(await batch('')).toEqual(['ok']);
   expect(await batch('?season=2024-25')).toEqual(['uncached']);
-  // A Defender is validated against the Backtest's season, which for 2024-25
-  // has no ATL roster here.
-  const previewStatus = (season) =>
-    page.evaluate(
-      async (body) => {
-        const response = await fetch('/api/user/targets/preview', {
-          method: 'POST',
-          headers: {
-            authorization: 'Bearer courtai-e2e-token',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify(body),
-        });
-        return response.status;
-      },
-      {
-        opponent: 'ATL',
-        qualifiers: [
-          {
-            base: 'assist_locations',
-            slice_key: 'AtRimAssists',
-            comparator: 'at_or_above',
-            threshold: 0.3,
-          },
-        ],
-        conditions: {
-          from: null,
-          to: null,
-          defender: { player_id: 203991, comparator: 'under', minutes: 20 },
-        },
-        ...(season ? { season } : {}),
-      },
-    );
-  expect(await previewStatus()).toBe(200);
-  expect(await previewStatus('2024-25')).toBe(400);
+});
+
+test('a Defender chosen for the published season is refused for a past one, never mixed', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  await page.getByRole('button', { name: 'Save Target' }).click();
+  await expect(page).toHaveURL(/\/targets\/\d+$/);
+  const lab = page.getByRole('region', { name: /Lab · Backtest/ });
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+  await page.getByRole('button', { name: '+ and' }).click();
+  await page.getByRole('button', { name: 'a defender’s minutes' }).click();
+  await page
+    .getByLabel('Defender', { exact: true })
+    .selectOption({ label: 'Clint Capela · 28.0 min · 3 games' });
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^1 player-games$/);
+
+  const refused = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/user/targets/preview') &&
+      response.request().postDataJSON()?.season === '2024-25',
+  );
+  await page
+    .getByRole('group', { name: 'Backtest season' })
+    .getByRole('button', { name: '2024-25' })
+    .click();
+  const response = await refused;
+  expect(response.status()).toBe(400);
+  expect(response.request().postDataJSON().conditions.defender).toMatchObject({
+    player_id: 203991,
+  });
+  await expect(page.getByRole('button', { name: 'Retry backtest' })).toBeVisible();
+  // The published roster's minutes are not offered beside last season.
+  await expect(page.getByLabel('Defender', { exact: true }).locator('option')).toHaveText([
+    'Choose a defender',
+    'Clint Capela',
+  ]);
+
+  await page
+    .getByRole('group', { name: 'Backtest season' })
+    .getByRole('button', { name: '2025-26' })
+    .click();
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^1 player-games$/);
 });
 
 test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {

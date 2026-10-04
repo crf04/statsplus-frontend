@@ -251,12 +251,29 @@ test('a past season names its own dates and hides published-season context', asy
   ).toBeVisible();
   await act(async () => {});
   expect(screen.queryByText('league 10%')).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'MIN opponent context' })).not.toBeInTheDocument();
+});
+
+test('a past season offers no published-season Defender choices', async () => {
+  renderInLab('2024-25', true);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  await waitFor(() => expect(screen.queryByText('Loading MIN roster…')).not.toBeInTheDocument());
+  expect(
+    Array.from(screen.getByLabelText('Defender').options).map((option) => option.textContent),
+  ).toEqual(['Choose a defender']);
+  expect(
+    screen.getByText(
+      'Defender choices come from the published season’s roster, so they are hidden while the Lab reads a past one.',
+    ),
+  ).toBeVisible();
 });
 
 test('the published season keeps its dates and league averages', async () => {
   fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
   renderInLab('2025-26', false);
   expect(await screen.findByText('league 10%')).toBeInTheDocument();
+  expect(screen.getByRole('group', { name: 'MIN opponent context' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
   fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });

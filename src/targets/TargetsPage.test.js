@@ -917,7 +917,13 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   jest.useFakeTimers();
   fetchTargetPreview.mockImplementation(async ({ season }) =>
     season === '2024-25'
-      ? { ...preview, season: '2024-25', seasonReason: 'requested', today: null }
+      ? {
+          ...preview,
+          season: '2024-25',
+          seasonReason: 'requested',
+          today: null,
+          gamesConsidered: { played: 3, kept: 3 },
+        }
       : {
           ...preview,
           season: '2025-26',
@@ -947,6 +953,7 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
   expect(screen.getByText('OKC has played 2 games in 2025-26')).toBeVisible();
   expect(screen.queryByText(/hidden while the Lab reads a past one/)).not.toBeInTheDocument();
+  expect(screen.getByRole('group', { name: 'OKC opponent context' })).toBeInTheDocument();
 
   fireEvent.click(within(toggle).getByRole('button', { name: '2024-25' }));
   await settle();
@@ -962,6 +969,7 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
   expect(screen.queryByText(/has played/)).not.toBeInTheDocument();
   expect(screen.getByText(/hidden while the Lab reads a past one/)).toBeVisible();
+  expect(screen.queryByRole('group', { name: 'OKC opponent context' })).not.toBeInTheDocument();
 
   fireEvent.click(within(toggle).getByRole('button', { name: '2025-26' }));
   await settle();

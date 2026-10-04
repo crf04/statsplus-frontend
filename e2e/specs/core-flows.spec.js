@@ -217,22 +217,18 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('5');
+  // Observe both initial game-log reads before Apply.
+  await expect.poll(() => gameLogRequests.length).toBe(2);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).toHaveURL(/season_filter=2023-24/);
-  // Season reads share this endpoint; wait for the request caused by Apply.
-  await expect
-    .poll(() =>
-      gameLogRequests
-        .slice(requestsBeforeApply)
-        .map((url) => Object.fromEntries(new URL(url).searchParams)),
-    )
-    .toContainEqual({
-      player_name: 'LeBron James',
-      season_filter: '2023-24',
-      game_filter: '5',
-    });
+  // Observe the new Apply request without constraining unrelated defaults.
+  await expect.poll(() => gameLogRequests.length).toBe(requestsBeforeApply + 1);
+  const applied = new URL(gameLogRequests[requestsBeforeApply]).searchParams;
+  expect(applied.get('player_name')).toBe('LeBron James');
+  expect(applied.get('season_filter')).toBe('2023-24');
+  expect(applied.get('game_filter')).toBe('5');
 });
 
 test('@critical the query reference is linkable and hands an example back to search', async ({
@@ -700,13 +696,29 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
     }
   });
 
-  await page.goto('/?player_name=LeBron+James&game_filter=10');
+  // A one-game result must expand when its limit is cleared.
+  await page.route('**/api/games/game_logs*', async (route) => {
+    const url = new URL(route.request().url());
+    await route.fulfill({
+      json: {
+        game_logs: url.searchParams.get('game_filter') === '1' ? gameLogs.slice(0, 1) : gameLogs,
+        averages: [averages],
+        season_averages: [averages],
+        season_game_count: 2,
+        next_game: 'Atlanta Hawks',
+      },
+    });
+  });
+
+  await page.goto('/?player_name=LeBron+James&game_filter=1');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
   if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
     await page.getByRole('button', { name: 'Done', exact: true }).click();
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
-  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('10');
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('1');
 
   // Emptying a control is a decision, not silence. It has to be able to say so.
   if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
@@ -716,18 +728,27 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
   await page.getByLabel('Last N games', { exact: true }).fill('');
   // Observe the identical initial season query before recording Apply traffic.
   await expect
-    .poll(() => gameLogRequests.map((url) => Object.fromEntries(url.searchParams)))
-    .toContainEqual({ player_name: 'LeBron James' });
+    .poll(() =>
+      gameLogRequests.some(
+        (url) =>
+          url.searchParams.get('player_name') === 'LeBron James' &&
+          !url.searchParams.has('game_filter'),
+      ),
+    )
+    .toBe(true);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/game_filter/);
-  await expect
-    .poll(() =>
-      gameLogRequests.slice(requestsBeforeApply).map((url) => Object.fromEntries(url.searchParams)),
-    )
-    .toContainEqual({ player_name: 'LeBron James' });
-  await expect(page.getByText('GAMES <= 10')).toHaveCount(0);
+  await expect.poll(() => gameLogRequests.length).toBe(requestsBeforeApply + 1);
+  const applied = gameLogRequests[requestsBeforeApply].searchParams;
+  expect(applied.get('player_name')).toBe('LeBron James');
+  expect(applied.has('game_filter')).toBe(false);
+  // A stray read cannot stand in for a response applied to the workspace.
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  expect(gameLogRequests).toHaveLength(requestsBeforeApply + 1);
+  await expect(page.getByText('GAMES <= 1')).toHaveCount(0);
 });
 
 /*
@@ -801,8 +822,10 @@ test('@critical removing every self filter clears its parameter', async ({
     }
   });
 
-  await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=20%2C60');
+  await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=30%2C60');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
   await expect(
     page.getByTestId('filter-panel').getByRole('button', { name: /^Remove own/ }),
   ).toBeVisible();
@@ -814,17 +837,26 @@ test('@critical removing every self filter clears its parameter', async ({
   // The initial season read has the same query as the cleared workspace.
   // Observe it before Apply so it cannot satisfy the post-Apply assertion.
   await expect
-    .poll(() => gameLogRequests.map((url) => Object.fromEntries(url.searchParams)))
-    .toContainEqual({ player_name: 'LeBron James' });
+    .poll(() =>
+      gameLogRequests.some(
+        (url) =>
+          url.searchParams.get('player_name') === 'LeBron James' &&
+          !url.searchParams.has('self_filters[PTS]'),
+      ),
+    )
+    .toBe(true);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/self_filters/);
-  await expect
-    .poll(() =>
-      gameLogRequests.slice(requestsBeforeApply).map((url) => Object.fromEntries(url.searchParams)),
-    )
-    .toContainEqual({ player_name: 'LeBron James' });
+  await expect.poll(() => gameLogRequests.length).toBe(requestsBeforeApply + 1);
+  const applied = gameLogRequests[requestsBeforeApply].searchParams;
+  expect(applied.get('player_name')).toBe('LeBron James');
+  expect(applied.has('self_filters[PTS]')).toBe(false);
+  // A stray read cannot stand in for a response applied to the workspace.
+  await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  expect(gameLogRequests).toHaveLength(requestsBeforeApply + 1);
 });
 
 test('@critical Self Filters ranges are the player unfiltered season', async ({

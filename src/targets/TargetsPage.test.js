@@ -1083,7 +1083,17 @@ test('a refused first read names the published season, so both seasons stay sele
   expect(screen.getByText('Lab · Backtest · 2026-27 season to date · vs OKC')).toBeInTheDocument();
 });
 
-test('details that do not hold together establish no season', async () => {
+test.each([
+  [
+    'a season that is not the published one or the one before',
+    { season: '2023-24', published_season: '2026-27', stream: 'player_game_logs' },
+  ],
+  [
+    'a malformed season',
+    { season: '2026-99', published_season: '2026-99', stream: 'player_game_logs' },
+  ],
+  ['a missing stream', { season: '2025-26', published_season: '2026-27' }],
+])('details naming %s establish no season', async (_, details) => {
   jest.useFakeTimers();
   fetchTargetPreview.mockRejectedValue(
     Object.assign(new Error('Request failed with status code 503'), {
@@ -1092,8 +1102,8 @@ test('details that do not hold together establish no season', async () => {
         data: {
           error: {
             code: 'season_unavailable',
-            message: 'The 2023-24 season is unavailable.',
-            details: { season: '2023-24', published_season: '2026-27', stream: 'player_game_logs' },
+            message: 'The season is unavailable.',
+            details,
           },
         },
       },
@@ -1105,7 +1115,9 @@ test('details that do not hold together establish no season', async () => {
   composeQualifier();
   await settle();
 
-  expect(screen.getByRole('alert')).toHaveTextContent('That season’s data is unavailable.');
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'That season’s data is unavailable. The season is unavailable.',
+  );
   expect(screen.queryByRole('group', { name: 'Backtest season' })).not.toBeInTheDocument();
 });
 

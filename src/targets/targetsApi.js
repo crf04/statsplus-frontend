@@ -6,7 +6,7 @@ import { TARGET_READ_TIMEOUT } from '../apiSettings';
 import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
 import { TARGET_COMPARATORS } from './targetCatalog';
-import { describeSeasonUnavailable } from './backtestSample';
+import { describeSeasonUnavailable, isSeason } from './backtestSample';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
 
@@ -455,7 +455,6 @@ const decodeSummary = (summary, statColumns) => {
  * exactly what the detail will show after saving.
  */
 const SEASON_REASONS = new Set(['requested', 'published', 'fallback_no_games']);
-const isSeason = (value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
 
 /*
  * Which season a read covers, why, and which season is published. Each is

@@ -48,7 +48,8 @@ export const countAppearances = (backtest) =>
  * it. With no season named, the backend reads the published one, or the one
  * before it while the published season has no games yet, and says which.
  */
-const isSeason = (value) =>
+// A season names two consecutive years, as "2025-26".
+export const isSeason = (value) =>
   typeof value === 'string' &&
   /^\d{4}-\d{2}$/.test(value) &&
   Number(value.slice(5)) === (Number(value.slice(0, 4)) + 1) % 100;

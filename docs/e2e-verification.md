@@ -29,7 +29,8 @@ Run from the frontend worktree with Node 22.18.0 (CI pins 22.14.0; package minim
 The full e2e report is `.e2e/report.json`; Markdown/JUnit and failure artifacts
 remain under `.e2e/`. Reports are ignored and uploaded by the new CI job.
 Initial new-test failures were exact locator/visible-text mismatches, corrected
-before the passing run. No application bug was confirmed, so there is no bug-fix PR.
+before the passing run. No application bug was confirmed. Follow-up verification found a race in two existing
+Playwright assertions; it is fixed separately on `test/wait-for-filter-requests`.
 
 ## Live verification
 
@@ -131,6 +132,46 @@ The original mutation table is in [e2e-mutation-audit.md](e2e-mutation-audit.md)
 Detailed first-round reports, mutation definitions and logs remain under
 `/tmp/e2e-review/`. A fresh follow-up review covers the changes and the new cases.
 Agent variants remain unrun and unmutated because subscription login is absent.
+
+## Follow-up verification at `905c8dd`
+
+`npm ci`, lint, formatting, strict type checking, 825 Jest tests and build passed.
+`npm run test:flows` passed **114/114**. The coordination gate passed with the
+pinned QA backend above.
+
+Live `matchup-links-verified.jsonl` passed 19 steps at frontend
+`905c8ddd0f2ea5f0d1fe32ad066f8dc27da50726`, using the same QA helper arguments and
+output `qa-matchup-links-verified`. Clicking Jeremiah Fears opened his Game Logs
+and sent the matching request; at phone width Back to slate restored the date
+controls and selecting April 10 rendered NOP @ BOS with a successful slate read.
+The initial exploratory expectation of an empty current slate was incorrect:
+QA freezes today to March 11, 2026. All exploratory and final sessions cleaned up.
+
+A concurrent Playwright run suffered React dependency-cache loading errors while
+review worktrees shared `node_modules`; it was interrupted. A rerun with a private
+Vite cache cleared those errors but exposed two pre-existing request-observation
+races (136 passed, 2 failed, 2 intentional skips). A focused single-worker repeat
+reproduced one race (19 passed, 1 failed). Network traces show the correct Apply
+request arriving after the tests prematurely inspect an earlier season read.
+The isolated fix and regression verification are delivered separately; this PR
+does not alter the existing Playwright specs. Local logs:
+`/tmp/statsplus-e2e-round2-playwright-final.log` and
+`/tmp/statsplus-e2e-request-race-red.log`.
+
+The private-cache rerun used a temporary Vite config importing this checkout's
+`vite.config.mjs` and overriding only `cacheDir` to
+`/tmp/statsplus-e2e-gate-vite-cache`, then:
+
+```sh
+REACT_APP_E2E_MODE=true npm start -- --config /tmp/statsplus-e2e-gate.vite.mjs --host 127.0.0.1 --port 4173 --strictPort
+npm run test:e2e -- --workers=2
+npm run test:e2e -- --workers=1 --grep 'a season the panel cannot express|removing every self filter' --repeat-each=10
+```
+
+An intermediate attempt with `E2E_BASE_URL=http://127.0.0.1:4174` unnecessarily
+enabled the deployed-only API smoke against the local app; it was interrupted
+and replaced by the default-port command above. No product change was needed
+for either harness setup error.
 
 ## Unmet checks and next action
 

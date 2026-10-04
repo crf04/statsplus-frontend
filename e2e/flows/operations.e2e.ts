@@ -115,9 +115,9 @@ const actions: {
     name: 'finish cycle',
     button: 'Finish cycle',
     path: '/cycles/cycle-e2e-1/finish',
-    body: { status: 'complete', reason },
+    body: { status: 'no_game', reason },
     fields: async (screen) => {
-      await screen.getByLabel('Terminal status').selectOption({ value: 'complete' });
+      await screen.getByLabel('Terminal status').selectOption({ value: 'no_game' });
     },
     job: 'Finish cycle',
   },

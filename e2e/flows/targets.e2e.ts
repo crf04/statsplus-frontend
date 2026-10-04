@@ -206,6 +206,19 @@ signedInTest(
       'Austin Reaves LAL THIN 35% lg 14% 20.1',
     );
     expect(await overflowsHorizontally(browser)).toBe(false);
+
+    // The Slate asks for its own date: a MIL Target resolves only on 2026-03-29.
+    await app.open('/targets');
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('combobox', 'Opponent').selectOption({ value: 'MIL' });
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'assist_locations' });
+    await screen.getByLabel('Qualifier 1 slice').selectOption({ value: 'AtRimAssists' });
+    await threshold(screen, 30);
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('heading', 'MIL vs At-rim assists ≥ 30%')).toBeVisible();
+    await app.open('/matchups?date=2026-03-29');
+    await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
+    await expect(screen.getByRole('article').filter({ hasText: 'At-rim assists' })).toBeVisible();
   },
 );
 

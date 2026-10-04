@@ -34,6 +34,8 @@ decoder and `e2e/fixtures/courtai.js` aligned with that contract.
    npm run test:ci
    npm run build
    npm run test:e2e
+   npm run typecheck:e2e
+   npm run test:flows
    ```
 
 ## Agent skills

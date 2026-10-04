@@ -36,9 +36,9 @@ signedInTest(
     await expect(browser).toHaveURL('/?player_name=LeBron+James&game_filter=10');
     await expect(screen.getByText('GAMES <= 10').first()).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByRole('dialog')).toHaveCount(0);
     await browser.reload();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
-    await expect(screen.getByRole('dialog')).toHaveCount(0);
 
     const banner = screen.getByRole('banner');
     await banner.getByRole('button', 'CT CourtAI Test User').tap();
@@ -77,6 +77,11 @@ signedOutTest(
     await expect(screen.getByRole('button', 'Save Filter Set')).toHaveCount(0);
     await expect(screen.getByRole('button', 'Saved Filter Sets')).toHaveCount(0);
     expect(api.sent('/api/user/saved-filter-sets')).toHaveLength(0);
+
+    await app.open('/');
+    await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
+    await expect(screen.getByRole('button', 'Browse without a query')).toBeDisabled();
+    await expect(screen.getByRole('button', 'Saved Filter Sets')).toHaveCount(0);
   },
 );
 

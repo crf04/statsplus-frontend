@@ -15,6 +15,7 @@ const app = {
 export default {
   tests: ['e2e/flows/**/*.e2e.ts'],
   workers: 2,
+  assertionTimeout: 10_000,
   reporters: ['list', 'junit', 'markdown'],
   trace: 'retain-on-failure',
   cache: { dir: 'e2e/replay-cache' },

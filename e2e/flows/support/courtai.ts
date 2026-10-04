@@ -135,10 +135,6 @@ export const adminTest = withContract.extend<{ signedIn: true }>({
   },
 });
 
-/** True when the attempt runs at the phone target's width. */
-export const isPhone = async (browser: Browser) =>
-  (await browser.evaluate(() => window.innerWidth)) < 768;
-
 /** True when the document scrolls sideways. */
 export const overflowsHorizontally = (browser: Browser) =>
   browser.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

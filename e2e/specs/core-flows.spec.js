@@ -932,6 +932,8 @@ test('an open Self Filters control follows a player change to that season', asyn
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  // The input changes before the router commits. Edit the new applied Filter Set.
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
 
   await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
   // The ranges on offer are this player's, not the one we arrived on.
@@ -971,6 +973,8 @@ test('a superseded season never bounds the player on screen', async ({
   await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  // The input changes before the router commits. Edit the new applied Filter Set.
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
 
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('18–42', { exact: true })).toBeVisible();
@@ -1036,6 +1040,8 @@ test('a player left and returned to gets a fresh season request', async ({
 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  // The input changes before the router commits. Edit the new applied Filter Set.
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('18–42', { exact: true })).toBeVisible();
 
@@ -1043,6 +1049,8 @@ test('a player left and returned to gets a fresh season request', async ({
   // on the way out, so returning has to ask again rather than wait on it.
   await page.getByLabel('Player:').fill('LeBron');
   await page.getByRole('option', { name: 'LeBron James' }).click();
+  // The input changes before the router commits. Edit the new applied Filter Set.
+  await expect(page.getByText('Player: LeBron James', { exact: true }).first()).toBeVisible();
   await expect
     .poll(() => seasonRequests)
     .toEqual(['LeBron James', 'Stephen Curry', 'LeBron James']);

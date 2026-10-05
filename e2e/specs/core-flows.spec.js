@@ -229,6 +229,9 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   expect(applied.get('player_name')).toBe('LeBron James');
   expect(applied.get('season_filter')).toBe('2023-24');
   expect(applied.get('game_filter')).toBe('5');
+  // Untouched controls stay absent so the API applies its own defaults.
+  expect(applied.has('minutes_filter')).toBe(false);
+  expect(applied.has('location_filter')).toBe(false);
 });
 
 test('@critical the query reference is linkable and hands an example back to search', async ({

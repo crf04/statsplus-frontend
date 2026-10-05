@@ -22,13 +22,11 @@
       "name": "qa-search-pinned",
       "journey": "search.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "30116a5d4b69bf2532e165b98750bd30fd86a002a80ec5c10d808176a6a80984"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
         "branch": "",
         "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
         "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
@@ -49,13 +47,11 @@
       "name": "qa-matchups",
       "journey": "matchups.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
         "branch": "",
         "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
         "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
@@ -76,13 +72,11 @@
       "name": "qa-saved",
       "journey": "qa-saved-filter-sets.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
         "branch": "",
         "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
         "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
@@ -100,13 +94,11 @@
       "name": "qa-targets",
       "journey": "qa-targets.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
         "branch": "",
         "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
         "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
@@ -125,13 +117,11 @@
       "name": "production-matchups",
       "journey": "matchups.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend",
         "branch": "master",
         "head": "ac61b6661fc0d68dd554c2ddd66e879ef9d2003f"
       },
@@ -151,13 +141,11 @@
       "name": "production-search",
       "journey": "search.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "334f99b7e3623de460cb5142313ca54286d932ca",
         "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend",
         "branch": "master",
         "head": "ac61b6661fc0d68dd554c2ddd66e879ef9d2003f"
       },
@@ -177,13 +165,11 @@
       "name": "qa-matchup-links-verified",
       "journey": "matchup-links-verified.jsonl",
       "frontend": {
-        "root": "/Users/chrisfu/statsplus-frontend-e2e",
         "branch": "test/e2e-framework",
         "head": "905c8ddd0f2ea5f0d1fe32ad066f8dc27da50726",
         "fingerprint": "3a8a0af850b09af479b0b73be93ad4d944e3a5901f8038df9fb30e5f5c28f4b3"
       },
       "backendSource": {
-        "root": "/Users/chrisfu/statsplus-backend-e2e-qa",
         "branch": "",
         "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
         "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"

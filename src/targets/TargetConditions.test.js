@@ -225,28 +225,28 @@ test('the minutes floor sits in its own card, apart from the opponent filters', 
   expect(teamCard.contains(backtest)).toBe(false);
 });
 /*
- * The Lab can read a past season while the roster, league averages and
- * opponent readings are the published season's. Presets follow the season the
- * Lab reads, and the published-season context is not shown beside past
- * evidence.
+ * The Lab can read a season other than the published one while league
+ * averages and opponent readings are the published season's. Presets follow
+ * the season the Lab reads, and the published-season context is not shown
+ * beside another season's evidence.
  */
-const renderInLab = (season, pastSeason) =>
+const renderInLab = (season, otherSeason) =>
   render(
-    <LabSeasonValueProvider value={{ season, pastSeason }}>
+    <LabSeasonValueProvider value={{ season, otherSeason }}>
       <Form />
     </LabSeasonValueProvider>,
   );
 
-test('a past season names its own dates and hides published-season context', async () => {
+test('another season names its own dates and hides published-season context', async () => {
   fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
-  renderInLab('2024-25', true);
+  renderInLab('2026-27', true);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
   fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });
-  expect(screen.getByLabelText('From')).toHaveValue('2025-01-01');
+  expect(screen.getByLabelText('From')).toHaveValue('2027-01-01');
   expect(
     screen.getByText(
-      'League averages and opponent context cover the published season, so they are hidden while the Lab reads a past one.',
+      'League averages and opponent context cover the published season, so they are hidden while the Lab reads another.',
     ),
   ).toBeVisible();
   await act(async () => {});
@@ -260,7 +260,7 @@ test('a past season names its own dates and hides published-season context', asy
  * never shown while the next one loads.
  */
 const inLab = (season, requested) => (
-  <LabSeasonValueProvider value={{ season, requested, pastSeason: season === '2024-25' }}>
+  <LabSeasonValueProvider value={{ season, requested, otherSeason: season === '2026-27' }}>
     <Form />
   </LabSeasonValueProvider>
 );
@@ -268,15 +268,15 @@ const defenderOptions = () =>
   Array.from(screen.getByLabelText('Defender').options).map((option) => option.textContent);
 
 test('Defender choices are the roster of the season the Lab reads', async () => {
-  const lastSeason = { resolve: null };
+  const nextSeason = { resolve: null };
   fetchSeasonMinutes.mockImplementation(({ season }) =>
-    season === '2024-25'
+    season === '2026-27'
       ? new Promise((resolve) => {
-          lastSeason.resolve = resolve;
+          nextSeason.resolve = resolve;
         })
       : Promise.resolve({
           season: '2025-26',
-          seasonReason: 'published',
+          seasonReason: 'default',
           publishedSeason: '2025-26',
           players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
         }),
@@ -291,18 +291,18 @@ test('Defender choices are the roster of the season the Lab reads', async () => 
     expect.not.objectContaining({ season: expect.anything() }),
   );
 
-  rerender(inLab('2024-25', '2024-25'));
+  rerender(inLab('2026-27', '2026-27'));
   expect(fetchSeasonMinutes).toHaveBeenLastCalledWith(
-    expect.objectContaining({ opponent: 'MIN', season: '2024-25' }),
+    expect.objectContaining({ opponent: 'MIN', season: '2026-27' }),
   );
-  // Last season's roster is not in yet, and this season's is not offered for it.
+  // Next season's roster is not in yet, and this season's is not offered for it.
   expect(defenderOptions()).toEqual(['Choose a defender']);
 
   await act(async () =>
-    lastSeason.resolve({
-      season: '2024-25',
+    nextSeason.resolve({
+      season: '2026-27',
       seasonReason: 'requested',
-      publishedSeason: '2025-26',
+      publishedSeason: '2026-27',
       players: [
         { playerId: 27, name: 'Rudy Gobert', gamesPlayed: 76, averageMinutes: 34 },
         { playerId: 41, name: 'Naz Reid', gamesPlayed: 81, averageMinutes: 24 },
@@ -322,10 +322,10 @@ test('a roster answered for another season than the Lab reads is not offered', a
     season: '2025-26',
     players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
   });
-  render(inLab('2024-25', '2024-25'));
+  render(inLab('2026-27', '2026-27'));
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
   fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
-  expect(await screen.findByText('The MIN roster for 2024-25 is unavailable.')).toBeVisible();
+  expect(await screen.findByText('The MIN roster for 2026-27 is unavailable.')).toBeVisible();
   expect(defenderOptions()).toEqual(['Choose a defender']);
 });
 
@@ -359,18 +359,18 @@ jest.mock('./opponentContextApi', () => ({
 
 test('a chosen defender keeps the name read for him when the next season’s roster is refused', async () => {
   fetchSeasonMinutes.mockImplementation(async ({ season }) => {
-    if (season === '2024-25')
+    if (season === '2026-27')
       throw Object.assign(new Error('Request failed with status code 503'), {
         response: {
           status: 503,
           data: {
-            error: { code: 'season_unavailable', message: 'The 2024-25 season is unavailable.' },
+            error: { code: 'season_unavailable', message: 'The 2026-27 season is unavailable.' },
           },
         },
       });
     return {
       season: '2025-26',
-      seasonReason: 'published',
+      seasonReason: 'default',
       publishedSeason: '2025-26',
       players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
     };
@@ -381,9 +381,9 @@ test('a chosen defender keeps the name read for him when the next season’s ros
   await screen.findByRole('option', { name: 'Rudy Gobert · 32.0 min · 60 games' });
   fireEvent.change(screen.getByLabelText('Defender'), { target: { value: '27' } });
 
-  rerender(inLab('2024-25', '2024-25'));
+  rerender(inLab('2026-27', '2026-27'));
   expect(
-    await screen.findByText('The 2024-25 season is unavailable.', { exact: false }),
+    await screen.findByText('The 2026-27 season is unavailable.', { exact: false }),
   ).toBeVisible();
   expect(defenderOptions()).toEqual(['Choose a defender', 'Rudy Gobert · roster unavailable']);
   expect(screen.getByLabelText('Defender')).toHaveValue('27');

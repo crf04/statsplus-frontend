@@ -306,10 +306,9 @@ const EMPTY_ROSTER = {
   publishedSeason: undefined,
   players: [],
   scope: null,
-  unavailable: null,
 };
-// A refused roster read still names the published season in its details.
-const rosterFailure = (error, scope) => ({ scope, unavailable: seasonUnavailableDetails(error) });
+// A refused read is the refusal of this opponent and season.
+const rosterFailure = (error, scope) => ({ scope });
 const readRoster = async ({ scope, signal }) =>
   scope ? { ...EMPTY_ROSTER, ...(await fetchRoster(scope, signal)), scope } : EMPTY_ROSTER;
 /*
@@ -331,6 +330,5 @@ export const useSeasonMinutes = (opponent, season = null) => {
     seasonReason: current ? read.seasonReason : undefined,
     publishedSeason: current ? read.publishedSeason : undefined,
     players: current ? read.players : [],
-    unavailable: current ? (read.unavailable ?? null) : null,
   };
 };

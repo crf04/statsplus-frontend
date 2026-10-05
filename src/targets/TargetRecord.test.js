@@ -531,9 +531,16 @@ const handoff = (season) => {
   return href;
 };
 
-test('a past season’s game rows open the log on that season', () => {
-  expect(handoff({ season: '2024-25', seasonReason: 'requested' })).toBe(
-    '/?player_name=Player+One&season_filter=2024-25&opponent_tricode=OKC',
+test('a season other than the published one opens the log on that season', () => {
+  expect(
+    handoff({ season: '2026-27', seasonReason: 'requested', publishedSeason: '2025-26' }),
+  ).toBe('/?player_name=Player+One&season_filter=2026-27&opponent_tricode=OKC');
+  // The default is named once it is no longer the published season, not before.
+  expect(handoff({ season: '2025-26', seasonReason: 'default', publishedSeason: '2026-27' })).toBe(
+    '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',
+  );
+  expect(handoff({ season: '2025-26', seasonReason: 'default', publishedSeason: '2025-26' })).toBe(
+    '/?player_name=Player+One&opponent_tricode=OKC',
   );
   expect(handoff({ season: '2025-26', seasonReason: 'fallback_no_games' })).toBe(
     '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',

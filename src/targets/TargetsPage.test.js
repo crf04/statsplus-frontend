@@ -317,26 +317,6 @@ test('shows unsaved samples only after an authenticated empty list succeeds', as
   expect(screen.getByText('No Targets active today')).toBeInTheDocument();
 });
 
-test('a sample card labels its Backtest with the season the backend read', async () => {
-  fetchTargets.mockResolvedValue([]);
-  fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-04-09', entries: [] });
-  fetchTargetPreview.mockResolvedValue({
-    ...preview,
-    season: '2025-26',
-    seasonReason: 'fallback_no_games',
-    today: null,
-  });
-  renderPage(false);
-
-  const samples = await screen.findByRole('region', { name: 'Sample Targets' });
-  const [sample] = within(samples).getAllByRole('article');
-  await waitFor(() =>
-    expect(within(sample).getByRole('region', { name: 'Sample backtest' })).toHaveTextContent(
-      'Backtest · 2025-26 season · 2026-27 has no games yet, showing 2025-26',
-    ),
-  );
-});
-
 test('copies a sample into an editable draft and saves only after confirmation', async () => {
   fetchTargets.mockResolvedValue([]);
   renderPage(false);
@@ -897,43 +877,62 @@ test('the tonight line is absent when the opponent has no game', async () => {
 });
 
 /*
- * The Lab reads the backend's default season until the reader picks one of
- * the two it offers: the published season and the one before it. A past
- * season says nothing about tonight.
+ * The Lab offers two seasons, 2025-26 then 2026-27, and reads the backend's
+ * default, 2025-26, until the reader picks one. A season other than the
+ * published one is never mixed with the published season's readings.
  */
-const seasonUnavailable = () =>
+const refusalNaming = (season, publishedSeason, stream = 'player_game_logs') =>
   Object.assign(new Error('Request failed with status code 503'), {
     response: {
       status: 503,
       data: {
         error: {
           code: 'season_unavailable',
-          message: 'No retained player_game_logs Publication for 2024-25.',
+          message: `The ${season} season is unavailable.`,
+          details: { season, published_season: publishedSeason, stream },
         },
       },
     },
   });
+const operationFailed = () =>
+  Object.assign(new Error('Request failed with status code 500'), {
+    response: {
+      status: 500,
+      data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
+    },
+  });
+const toggleSeasons = () =>
+  within(screen.getByRole('group', { name: 'Backtest season' }))
+    .getAllByRole('button')
+    .map((button) => [button.textContent, button.getAttribute('aria-pressed')]);
+const defaultRead = {
+  ...preview,
+  season: '2025-26',
+  seasonReason: 'default',
+  publishedSeason: '2025-26',
+  gamesConsidered: { played: 2, kept: 2 },
+};
 
-test('the Lab season toggle names the season it reads and sends the one picked', async () => {
+test('the Lab offers 2025-26 then 2026-27, reads the default, and sends the one picked', async () => {
   jest.useFakeTimers();
   fetchTargetPreview.mockImplementation(async ({ season }) =>
-    season === '2024-25'
+    season === '2026-27'
       ? {
           ...preview,
-          season: '2024-25',
+          season: '2026-27',
           seasonReason: 'requested',
-          today: null,
-          gamesConsidered: { played: 3, kept: 3 },
+          publishedSeason: '2025-26',
+          gamesConsidered: { played: 1, kept: 1 },
         }
-      : {
-          ...preview,
-          season: '2025-26',
-          seasonReason: season ? 'requested' : 'published',
-          gamesConsidered: { played: 2, kept: 2 },
-        },
+      : { ...defaultRead, ...(season && { season, seasonReason: 'requested' }) },
   );
   renderPage();
   await screen.findAllByRole('article');
+  // Before anything is read, the default is the season on offer.
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
 
   composeQualifier();
   await settle();
@@ -941,46 +940,83 @@ test('the Lab season toggle names the season it reads and sends the one picked',
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
     expect.not.objectContaining({ season: expect.anything() }),
   );
-  const toggle = screen.getByRole('group', { name: 'Backtest season' });
-  expect(within(toggle).getByRole('button', { name: '2025-26' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  expect(within(toggle).getByRole('button', { name: '2024-25' })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
-  expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeInTheDocument();
-  expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
+  expect(screen.getByText('Lab · Backtest · 2025-26 default season · vs OKC')).toBeInTheDocument();
+  expect(screen.getByText('2025-26 default season', { selector: 'p' })).toBeVisible();
+  expect(screen.queryByText(/has no games yet/)).not.toBeInTheDocument();
   expect(screen.getByText('OKC has played 2 games in 2025-26')).toBeVisible();
-  expect(screen.queryByText(/hidden while the Lab reads a past one/)).not.toBeInTheDocument();
+  expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
   expect(screen.getByRole('group', { name: 'OKC opponent context' })).toBeInTheDocument();
 
-  fireEvent.click(within(toggle).getByRole('button', { name: '2024-25' }));
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
   await settle();
 
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.objectContaining({ opponent: 'OKC', season: '2024-25' }),
+    expect.objectContaining({ opponent: 'OKC', season: '2026-27' }),
   );
-  expect(within(toggle).getByRole('button', { name: '2024-25' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  expect(screen.getByText('Lab · Backtest · 2024-25 season · vs OKC')).toBeInTheDocument();
-  expect(screen.queryByText(/fit tonight/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/has played/)).not.toBeInTheDocument();
-  expect(screen.getByText(/hidden while the Lab reads a past one/)).toBeVisible();
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'false'],
+    ['2026-27', 'true'],
+  ]);
+  // A season after the published one is in progress, never a completed one.
+  expect(screen.getByText('Lab · Backtest · 2026-27 season to date · vs OKC')).toBeInTheDocument();
+  expect(screen.getByText('OKC has played 1 game in 2026-27')).toBeVisible();
+  expect(screen.queryByText('2025-26 default season', { selector: 'p' })).not.toBeInTheDocument();
+  expect(screen.getByText(/hidden while the Lab reads another/)).toBeVisible();
   expect(screen.queryByRole('group', { name: 'OKC opponent context' })).not.toBeInTheDocument();
 
-  fireEvent.click(within(toggle).getByRole('button', { name: '2025-26' }));
+  fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
   await settle();
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
     expect.objectContaining({ season: '2025-26' }),
   );
-  expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
+  expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeInTheDocument();
+  expect(screen.queryByText(/hidden while the Lab reads another/)).not.toBeInTheDocument();
 });
 
-test('the Lab says why it shows last season while the published one has no games', async () => {
+test('a refused or failed default read still offers both seasons, the default pressed', async () => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (!season) throw operationFailed();
+    if (season === '2026-27') throw refusalNaming('2026-27', '2025-26');
+    return { ...defaultRead, season, seasonReason: 'requested' };
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+  expect(screen.getByRole('alert')).toHaveTextContent('Failed to backtest the target.');
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
+
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  await settle();
+  // A season with nothing published is unavailable, not a season nobody fit.
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'That season’s data is unavailable. The 2026-27 season is unavailable. Retry backtest',
+  );
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'false'],
+    ['2026-27', 'true'],
+  ]);
+
+  fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2025-26' }),
+  );
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+});
+
+test('a backend deployed before the default still labels its fallback and published reads', async () => {
   jest.useFakeTimers();
   fetchTargetPreview.mockResolvedValue({
     ...preview,
@@ -995,312 +1031,97 @@ test('the Lab says why it shows last season while the published one has no games
   await settle();
 
   expect(screen.getByText('2026-27 has no games yet, showing 2025-26')).toBeVisible();
-  const toggle = screen.getByRole('group', { name: 'Backtest season' });
-  expect(
-    within(toggle)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['2026-27', '2025-26']);
-  expect(within(toggle).getByRole('button', { name: '2025-26' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
   expect(screen.getByText('Lab · Backtest · 2025-26 season · vs OKC')).toBeInTheDocument();
-});
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
 
-test('a season the backend no longer holds reads as unavailable data, not as nobody fitting', async () => {
-  jest.useFakeTimers();
-  fetchTargetPreview.mockRejectedValue(seasonUnavailable());
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'That season’s data is unavailable. No retained player_game_logs Publication for 2024-25.',
-  );
-  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
-  // A refusal without details names no published season, so there is nothing to choose.
-  expect(screen.queryByRole('group', { name: 'Backtest season' })).not.toBeInTheDocument();
-});
-
-test('a refused first read names the published season, so both seasons stay selectable', async () => {
-  jest.useFakeTimers();
-  const refusal = (details) =>
-    Object.assign(new Error('Request failed with status code 503'), {
-      response: {
-        status: 503,
-        data: {
-          error: {
-            code: 'season_unavailable',
-            message:
-              'The 2025-26 season is unavailable: no retained player_game_logs Publication can be read.',
-            details,
-          },
-        },
-      },
-    });
-  fetchTargetPreview.mockImplementation(async ({ season }) => {
-    if (!season)
-      throw refusal({ season: '2025-26', published_season: '2026-27', stream: 'player_game_logs' });
-    return {
-      ...preview,
-      season,
-      seasonReason: 'requested',
-      publishedSeason: '2026-27',
-      today: null,
-    };
-  });
-  // The roster reads the same missing game logs, so it cannot name the season.
-  fetchSeasonMinutes.mockRejectedValue(
-    refusal({ season: '2025-26', published_season: '2026-27', stream: 'player_game_logs' }),
-  );
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'That season’s data is unavailable. The 2025-26 season is unavailable: no retained player_game_logs Publication can be read.',
-  );
-  const toggle = screen.getByRole('group', { name: 'Backtest season' });
-  expect(
-    within(toggle)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['2026-27', '2025-26']);
-  fireEvent.click(within(toggle).getByRole('button', { name: '2026-27' }));
-  await settle();
-  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.objectContaining({ season: '2026-27' }),
-  );
-  expect(within(toggle).getByRole('button', { name: '2026-27' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  expect(screen.getByText('Lab · Backtest · 2026-27 season to date · vs OKC')).toBeInTheDocument();
-});
-
-test('a first read refused without details still finds the published season on the roster', async () => {
-  jest.useFakeTimers();
-  fetchTargetPreview.mockImplementation(async ({ season }) => {
-    if (!season)
-      throw Object.assign(new Error('Request failed with status code 500'), {
-        response: {
-          status: 500,
-          data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
-        },
-      });
-    return {
-      ...preview,
-      season,
-      seasonReason: 'requested',
-      publishedSeason: '2026-27',
-      today: null,
-    };
-  });
-  fetchSeasonMinutes.mockResolvedValue({
+  fetchTargetPreview.mockResolvedValue({
+    ...preview,
     season: '2025-26',
-    seasonReason: 'fallback_no_games',
-    publishedSeason: '2026-27',
-    players: [],
+    seasonReason: 'published',
   });
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-
-  expect(fetchSeasonMinutes).toHaveBeenCalledWith(expect.objectContaining({ opponent: 'OKC' }));
-  const toggle = await screen.findByRole('group', { name: 'Backtest season' });
-  expect(
-    within(toggle)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['2026-27', '2025-26']);
-});
-
-test('a refusal names the published season over evidence still on screen', async () => {
-  jest.useFakeTimers();
-  let refuse = false;
-  fetchTargetPreview.mockImplementation(async () => {
-    if (refuse)
-      throw Object.assign(new Error('Request failed with status code 503'), {
-        response: {
-          status: 503,
-          data: {
-            error: {
-              code: 'season_unavailable',
-              message: 'The 2025-26 season is unavailable.',
-              details: {
-                season: '2025-26',
-                published_season: '2026-27',
-                stream: 'grouped_shot_types',
-              },
-            },
-          },
-        },
-      });
-    return { ...preview, season: '2025-26', seasonReason: 'published', publishedSeason: '2025-26' };
-  });
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-  const toggle = screen.getByRole('group', { name: 'Backtest season' });
-  expect(
-    within(toggle)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['2025-26', '2024-25']);
-
-  refuse = true;
   composeQualifier({ percent: '35' });
   await settle();
-  expect(
-    within(toggle)
-      .getAllByRole('button')
-      .map((button) => button.textContent),
-  ).toEqual(['2026-27', '2025-26']);
+  expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeInTheDocument();
+  expect(screen.queryByText(/has no games yet|default season/)).not.toBeInTheDocument();
 });
 
-const refusalNaming = (season, publishedSeason, stream) =>
-  Object.assign(new Error('Request failed with status code 503'), {
-    response: {
-      status: 503,
-      data: {
-        error: {
-          code: 'season_unavailable',
-          message: `The ${season} season is unavailable.`,
-          details: { season, published_season: publishedSeason, stream },
-        },
-      },
-    },
-  });
-const toggleSeasons = () =>
-  within(screen.getByRole('group', { name: 'Backtest season' }))
-    .getAllByRole('button')
-    .map((button) => button.textContent);
-
-test('the published season a refusal named holds while the next read loads', async () => {
+test('a refusal naming a later published season makes the default season a past one', async () => {
   jest.useFakeTimers();
-  let refuse = false;
-  fetchTargetPreview.mockImplementation(({ season }) => {
-    if (season === '2026-27') return new Promise(() => {});
-    if (refuse) return Promise.reject(refusalNaming('2025-26', '2026-27', 'grouped_shot_types'));
-    return Promise.resolve({
-      ...preview,
-      season: '2025-26',
-      seasonReason: 'published',
-      publishedSeason: '2025-26',
-    });
+  let answer = 'read';
+  fetchTargetPreview.mockImplementation(() => {
+    if (answer === 'hang') return new Promise(() => {});
+    if (answer === 'refuse')
+      return Promise.reject(refusalNaming('2025-26', '2026-27', 'grouped_shot_types'));
+    return Promise.resolve(defaultRead);
   });
   renderPage();
   await screen.findAllByRole('article');
 
   composeQualifier();
   await settle();
-  expect(toggleSeasons()).toEqual(['2025-26', '2024-25']);
-  refuse = true;
+  expect(screen.getByRole('group', { name: 'OKC opponent context' })).toBeInTheDocument();
+
+  answer = 'refuse';
   composeQualifier({ percent: '35' });
   await settle();
-  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
+  expect(screen.getByRole('alert')).toHaveTextContent('The 2025-26 season is unavailable.');
+  expect(screen.getByText(/hidden while the Lab reads another/)).toBeVisible();
+  expect(screen.queryByRole('group', { name: 'OKC opponent context' })).not.toBeInTheDocument();
+  expect(toggleSeasons()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
 
-  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  // Starting the next read takes nothing back.
+  answer = 'hang';
+  composeQualifier({ percent: '30' });
   await settle();
-  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.objectContaining({ season: '2026-27' }),
-  );
   expect(labStatus()).toHaveTextContent('Reading the season…');
-  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
+  expect(screen.getByText(/hidden while the Lab reads another/)).toBeVisible();
 });
 
-test('a refused roster read names the published season when the first read has no details', async () => {
-  jest.useFakeTimers();
-  fetchTargetPreview.mockRejectedValue(
-    Object.assign(new Error('Request failed with status code 500'), {
-      response: {
-        status: 500,
-        data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
-      },
-    }),
+test('a sample card labels its Backtest with the default season the backend read', async () => {
+  fetchTargets.mockResolvedValue([]);
+  fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-04-09', entries: [] });
+  fetchTargetPreview.mockResolvedValue(defaultRead);
+  renderPage(false);
+
+  const samples = await screen.findByRole('region', { name: 'Sample Targets' });
+  const [sample] = within(samples).getAllByRole('article');
+  await waitFor(() =>
+    expect(within(sample).getByRole('region', { name: 'Sample backtest' })).toHaveTextContent(
+      'Backtest · 2025-26 default season · OKC has played 2 games in 2025-26',
+    ),
   );
-  fetchSeasonMinutes.mockRejectedValue(refusalNaming('2025-26', '2026-27', 'player_game_logs'));
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-
-  expect(fetchSeasonMinutes).toHaveBeenCalledWith(expect.objectContaining({ opponent: 'OKC' }));
-  await screen.findByRole('group', { name: 'Backtest season' });
-  expect(toggleSeasons()).toEqual(['2026-27', '2025-26']);
-});
-
-test.each([
-  [
-    'a season that is not the published one or the one before',
-    { season: '2023-24', published_season: '2026-27', stream: 'player_game_logs' },
-  ],
-  [
-    'a malformed season',
-    { season: '2026-99', published_season: '2026-99', stream: 'player_game_logs' },
-  ],
-  ['a missing stream', { season: '2025-26', published_season: '2026-27' }],
-])('details naming %s establish no season', async (_, details) => {
-  jest.useFakeTimers();
-  fetchTargetPreview.mockRejectedValue(
-    Object.assign(new Error('Request failed with status code 503'), {
-      response: {
-        status: 503,
-        data: {
-          error: {
-            code: 'season_unavailable',
-            message: 'The season is unavailable.',
-            details,
-          },
-        },
-      },
-    }),
-  );
-  renderPage();
-  await screen.findAllByRole('article');
-
-  composeQualifier();
-  await settle();
-
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'That season’s data is unavailable. The season is unavailable.',
-  );
-  expect(screen.queryByRole('group', { name: 'Backtest season' })).not.toBeInTheDocument();
+  expect(within(sample).queryByText(/has no games yet/)).toBeNull();
 });
 
 test('each saved card labels its Backtest with the season the backend read', async () => {
   singleRouteOnly();
   fetchTargetBacktest.mockImplementation(async ({ id }) => {
-    if (id === 8) throw seasonUnavailable();
-    return { ...preview, season: '2025-26', seasonReason: 'fallback_no_games', today: undefined };
+    if (id === 8) throw refusalNaming('2025-26', '2025-26');
+    return { ...defaultRead, today: undefined };
   });
   renderPage(false);
 
-  const [fallbackCard, unavailableCard] = await screen.findAllByRole('article');
+  const [defaultCard, unavailableCard] = await screen.findAllByRole('article');
   await waitFor(() =>
-    expect(within(fallbackCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
-      'Backtest · 2025-26 season · 2026-27 has no games yet, showing 2025-26',
+    expect(within(defaultCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
+      'Backtest · 2025-26 default season · OKC has played 2 games in 2025-26',
     ),
   );
-  expect(within(fallbackCard).queryByRole('group', { name: 'Backtest season' })).toBeNull();
+  expect(within(defaultCard).queryByRole('group', { name: 'Backtest season' })).toBeNull();
   await waitFor(() =>
     expect(within(unavailableCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
-      'That season’s data is unavailable. No retained player_game_logs Publication for 2024-25.',
+      'That season’s data is unavailable. The 2025-26 season is unavailable.',
     ),
   );
 });
 
-test('a saved card reading the published season labels it to date', async () => {
+test('a saved card from a backend deployed before the default keeps its own label', async () => {
   fetchTargetBacktests.mockResolvedValue(
     readyBatch(targets, {
       ...preview,

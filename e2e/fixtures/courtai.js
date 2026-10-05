@@ -1723,9 +1723,9 @@ const validSlateDate = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   Number.isFinite(Date.parse(value)) &&
   new Date(value).toISOString().slice(0, 10) === value;
-// A Defender is validated against the Backtest's season; the previous season
-// has no games here, so no roster either.
-const validFixtureConditions = (conditions, opponent, season) => {
+// A Defender is validated against the Backtest's season, which is always one
+// with games here: the other is refused before validation.
+const validFixtureConditions = (conditions, opponent) => {
   if (conditions === undefined || conditions === null) return true;
   if (typeof conditions !== 'object' || Array.isArray(conditions)) return false;
   const { from, to, defender, player_minutes: playerMinutes } = conditions;
@@ -1738,7 +1738,7 @@ const validFixtureConditions = (conditions, opponent, season) => {
   const validDefender =
     defender === null ||
     (defender &&
-      (season === PREVIOUS_SEASON ? [] : CONDITION_ROSTERS[opponent] || []).some(
+      (CONDITION_ROSTERS[opponent] || []).some(
         (player) => player.player_id === defender.player_id,
       ) &&
       ['under', 'at_least'].includes(defender.comparator) &&
@@ -1999,41 +1999,64 @@ export const backtestSummary = (players, statColumns) => {
 };
 
 /*
- * A Backtest reads the published season or the one before it. With no season
- * named it reads the published one, which has games here, so the reason is
- * `published`. The contract holds no games for the previous season, so its
- * Backtest is read and empty rather than refused.
+ * A Backtest reads 2025-26 or 2026-27. With no season named it reads the
+ * 2025-26 default, whatever is published, so the reason is `default`; a named
+ * season is `requested`. The published season here is 2025-26, and nothing is
+ * published for 2026-27, so naming it is refused as `season_unavailable`
+ * rather than read as an empty Backtest. Anything else is `400`.
  */
 const PUBLISHED_SEASON = '2025-26';
-const PREVIOUS_SEASON = '2024-25';
+const DEFAULT_SEASON = '2025-26';
+const UNPUBLISHED_SEASON = '2026-27';
 const invalidSeason = (season) =>
-  season !== undefined && season !== PUBLISHED_SEASON && season !== PREVIOUS_SEASON;
+  season !== undefined && season !== DEFAULT_SEASON && season !== UNPUBLISHED_SEASON;
 const invalidSeasonResponse = {
   status: 400,
   json: {
     error: {
       code: 'invalid_input',
-      message: `season must be ${PUBLISHED_SEASON} or ${PREVIOUS_SEASON}.`,
+      message: `season must be ${DEFAULT_SEASON} or ${UNPUBLISHED_SEASON}.`,
     },
   },
 };
+const seasonUnavailableResponse = {
+  status: 503,
+  json: {
+    error: {
+      code: 'season_unavailable',
+      message: `The ${UNPUBLISHED_SEASON} season is unavailable: no retained player_game_logs Publication can be read.`,
+      details: {
+        season: UNPUBLISHED_SEASON,
+        published_season: PUBLISHED_SEASON,
+        stream: 'player_game_logs',
+      },
+    },
+  },
+};
+// The response for a season no route can read, or null for a readable one.
+const seasonRefusal = (season) =>
+  invalidSeason(season)
+    ? invalidSeasonResponse
+    : season === UNPUBLISHED_SEASON
+      ? seasonUnavailableResponse
+      : null;
+const seasonMetadata = (season) => ({
+  season: season ?? DEFAULT_SEASON,
+  season_reason: season === undefined ? 'default' : 'requested',
+  published_season: PUBLISHED_SEASON,
+});
 
 const backtestTarget = (target, season) => {
-  const past = season === PREVIOUS_SEASON;
   const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
-  const players = past
-    ? []
-    : leaguePlayers
-        .map((player) => backtestPlayer(target, statColumns, player))
-        .filter(Boolean)
-        // Season scoring descending, as every player list the product shows is.
-        .sort((first, second) => second.season_scoring - first.season_scoring);
-  const games = past ? [] : opponentGames(target.opponent);
+  const players = leaguePlayers
+    .map((player) => backtestPlayer(target, statColumns, player))
+    .filter(Boolean)
+    // Season scoring descending, as every player list the product shows is.
+    .sort((first, second) => second.season_scoring - first.season_scoring);
+  const games = opponentGames(target.opponent);
   return {
     target,
-    season: season ?? PUBLISHED_SEASON,
-    season_reason: season === undefined ? 'published' : 'requested',
-    published_season: PUBLISHED_SEASON,
+    ...seasonMetadata(season),
     games_considered: {
       kept: games.filter((game) => conditionCounts(target, game)).length,
       played: games.length,
@@ -2074,11 +2097,7 @@ const previewTarget = (draft, season) => {
   const [entry] = resolveTargets(DEFAULT_SLATE_DATE, [target]).targets;
   return {
     ...backtestTarget(target, season),
-    // A past season says nothing about tonight.
-    today:
-      season !== PREVIOUS_SEASON && entry.game
-        ? { game: entry.game, fit_count: entry.players.length }
-        : null,
+    today: entry.game ? { game: entry.game, fit_count: entry.players.length } : null,
   };
 };
 
@@ -2104,7 +2123,7 @@ export const installApiContract = async (page, overrides = {}) => {
   const backtestCacheKey = (target, season) =>
     JSON.stringify([
       target.id,
-      season ?? PUBLISHED_SEASON,
+      season ?? DEFAULT_SEASON,
       target.opponent,
       target.qualifiers,
       target.conditions ?? null,
@@ -2271,20 +2290,15 @@ export const installApiContract = async (page, overrides = {}) => {
         });
         return;
       }
-      // The roster follows the Backtest's season rule; the previous season has
-      // no games here, so no roster either.
+      // The roster follows the Backtest's season rule.
       const season = url.searchParams.get('season') ?? undefined;
-      if (invalidSeason(season)) {
-        await route.fulfill(invalidSeasonResponse);
+      const refusal = seasonRefusal(season);
+      if (refusal) {
+        await route.fulfill(refusal);
         return;
       }
       await route.fulfill({
-        json: {
-          season: season ?? PUBLISHED_SEASON,
-          season_reason: season === undefined ? 'published' : 'requested',
-          published_season: PUBLISHED_SEASON,
-          players: season === PREVIOUS_SEASON ? [] : CONDITION_ROSTERS[rosterMatch[1]] || [],
-        },
+        json: { ...seasonMetadata(season), players: CONDITION_ROSTERS[rosterMatch[1]] || [] },
       });
       return;
     }
@@ -2397,14 +2411,16 @@ export const installApiContract = async (page, overrides = {}) => {
         // Only an omitted season is the default; a present one must be a
         // season string, so an explicit null is refused.
         const season = body?.season;
-        if ((body && 'season' in body && typeof season !== 'string') || invalidSeason(season)) {
+        if (body && 'season' in body && typeof season !== 'string') {
           await route.fulfill(invalidSeasonResponse);
           return;
         }
-        if (
-          invalidTargetBody(body) ||
-          !validFixtureConditions(body.conditions, body.opponent, season)
-        ) {
+        const refusal = seasonRefusal(season);
+        if (refusal) {
+          await route.fulfill(refusal);
+          return;
+        }
+        if (invalidTargetBody(body) || !validFixtureConditions(body.conditions, body.opponent)) {
           await route.fulfill({
             status: 400,
             json: {
@@ -2449,16 +2465,15 @@ export const installApiContract = async (page, overrides = {}) => {
           return;
         }
         const season = url.searchParams.get('season') ?? undefined;
-        if (invalidSeason(season)) {
-          await route.fulfill(invalidSeasonResponse);
+        const refusal = seasonRefusal(season);
+        if (refusal) {
+          await route.fulfill(refusal);
           return;
         }
         await route.fulfill({
           json: {
             success: true,
-            season: season ?? PUBLISHED_SEASON,
-            season_reason: season === undefined ? 'published' : 'requested',
-            published_season: PUBLISHED_SEASON,
+            ...seasonMetadata(season),
             backtests: targets.map((target) =>
               cachedBacktests.has(backtestCacheKey(target, season))
                 ? { target_id: target.id, status: 'ok', backtest: backtestTarget(target, season) }
@@ -2482,8 +2497,9 @@ export const installApiContract = async (page, overrides = {}) => {
           return;
         }
         const season = url.searchParams.get('season') ?? undefined;
-        if (invalidSeason(season)) {
-          await route.fulfill(invalidSeasonResponse);
+        const refusal = seasonRefusal(season);
+        if (refusal) {
+          await route.fulfill(refusal);
           return;
         }
         cachedBacktests.add(backtestCacheKey(target, season));

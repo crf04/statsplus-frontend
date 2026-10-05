@@ -3,18 +3,19 @@ import {
   BacktestSampleProvider,
   LabSeasonValueProvider,
   countAppearances,
+  BACKTEST_SEASONS,
+  DEFAULT_BACKTEST_SEASON,
   describeBacktestSeason,
-  describeFallback,
   describeSeasonGames,
-  isPastSeason,
-  previousSeason,
+  describeSeasonNote,
+  isOtherSeason,
   publishedSeasonOf,
   useReportLabSeason,
 } from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
-import { useSeasonMinutes, useTargetPreview } from './useTargets';
+import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
 
 /*
@@ -35,14 +36,13 @@ const describeLab = ({ valid, status, pending }) => {
 };
 
 /*
- * The two seasons a Backtest can read. Which one is published is only known
- * once the backend has answered a read that named no season, so until then
- * there is nothing to choose between.
+ * The two seasons a Backtest can read, offered whatever the backend has
+ * answered, so a refused read can always be read again for the other one.
  */
-function SeasonToggle({ published, shown, onChange }) {
+function SeasonToggle({ shown, onChange }) {
   return (
     <div className="target-season-toggle" role="group" aria-label="Backtest season">
-      {[published, previousSeason(published)].map((season) => (
+      {BACKTEST_SEASONS.map((season) => (
         <button
           key={season}
           type="button"
@@ -72,7 +72,7 @@ export default function TargetLab({
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
-  // Null until the reader picks one: the backend's default, fallback included.
+  // Null until the reader picks one: the backend's default.
   const [season, setSeason] = useState(null);
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
@@ -81,14 +81,9 @@ export default function TargetLab({
     { immediateInitial: immediateInitialPreview },
   );
   // The published season comes from the latest answer as it lands: a
-  // refusal's details, a preview, or the opponent's roster. Starting the next
-  // read answers nothing, so the evidence still on screen never takes it back.
-  // A first read refused without details leaves the roster read, whose answer
-  // or refusal names it too, so the reader can still pick a season.
-  const roster = useSeasonMinutes(
-    valid && !published && status === 'error' && !unavailable ? draft.opponent : null,
-  );
-  const rosterPublished = roster.unavailable?.publishedSeason ?? publishedSeasonOf(roster);
+  // refusal's details or a preview. Starting the next read answers nothing, so
+  // the evidence still on screen never takes it back. It decides only whether
+  // the season read is past or in progress, never which seasons are offered.
   useEffect(() => {
     const answered = publishedSeasonOf(preview);
     if (answered) setPublished(answered);
@@ -96,23 +91,20 @@ export default function TargetLab({
   useEffect(() => {
     if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
   }, [unavailable]);
-  useEffect(() => {
-    if (rosterPublished) setPublished(rosterPublished);
-  }, [rosterPublished]);
   // The season the evidence is for, or is about to be for: what the form's
-  // season-bound controls follow.
-  const shownSeason = season ?? preview?.season ?? null;
+  // season-bound controls follow. Before any answer, the default.
+  const shownSeason = season ?? preview?.season ?? DEFAULT_BACKTEST_SEASON;
   // What was read for another season is not the picked season's Backtest, so
   // it leaves the screen beside a refusal or an incomplete draft; only while
   // the pick is about to be read, or is being read, does it stay, dimmed.
   const reading = valid && status !== 'error' && (pending || status === 'loading');
   const evidence = season !== null && preview?.season !== season && !reading ? null : preview;
-  const fallback = describeFallback(evidence);
+  const seasonNote = describeSeasonNote(evidence);
   const seasonGames = describeSeasonGames(evidence, published);
-  const pastSeason = isPastSeason(shownSeason, published);
+  const otherSeason = isOtherSeason(shownSeason, published);
   const labSeason = useMemo(
-    () => ({ season: shownSeason, requested: season, pastSeason }),
-    [shownSeason, season, pastSeason],
+    () => ({ season: shownSeason, requested: season, otherSeason }),
+    [shownSeason, season, otherSeason],
   );
   const reportLabSeason = useReportLabSeason();
   useEffect(() => {
@@ -139,14 +131,12 @@ export default function TargetLab({
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending })}
         </p>
-        {published && (
-          <SeasonToggle published={published} shown={shownSeason} onChange={setSeason} />
-        )}
+        <SeasonToggle shown={shownSeason} onChange={setSeason} />
         {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
-      {fallback && <p className="target-lab-season-note">{fallback}</p>}
+      {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
       {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
       {status === 'error' && (
         <p className="target-error" role="alert">

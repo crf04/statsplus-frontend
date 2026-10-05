@@ -18,11 +18,12 @@ export const useBacktestSample = () => useContext(BacktestSampleContext);
 
 /*
  * The season the Lab is reading, the one the reader picked (null for the
- * backend's default), and whether it is a past one, for the season-bound
- * controls of the form beside it: the Defender roster is read for the same
- * season, date presets name that season's dates, and the published season's
- * league and opponent readings are not shown beside a past season's evidence. The Lab provides it to a form nested in it,
- * and reports it to a LabSeasonProvider above a form that is its sibling.
+ * backend's default), and whether it is other than the published one, for the
+ * season-bound controls of the form beside it: the Defender roster is read for
+ * the same season, date presets name that season's dates, and the published
+ * season's league and opponent readings are not shown beside another season's
+ * evidence. The Lab provides it to a form nested in it, and reports it to a
+ * LabSeasonProvider above a form that is its sibling.
  */
 const LabSeasonContext = createContext(null);
 const ReportLabSeasonContext = createContext(null);
@@ -44,43 +45,55 @@ export const countAppearances = (backtest) =>
   backtest ? backtest.players.reduce((total, player) => total + player.games.length, 0) : null;
 
 /*
- * The season a Backtest read, which is the published season or the one before
- * it. With no season named, the backend reads the published one, or the one
- * before it while the published season has no games yet, and says which.
+ * The two seasons a Backtest can read, in the order the Lab offers them. With
+ * no season named, the backend reads the default one and says so; there is no
+ * other.
  */
+export const BACKTEST_SEASONS = ['2025-26', '2026-27'];
+export const DEFAULT_BACKTEST_SEASON = '2025-26';
+
 // A season names two consecutive years, as "2025-26".
 export const isSeason = (value) =>
   typeof value === 'string' &&
   /^\d{4}-\d{2}$/.test(value) &&
   Number(value.slice(5)) === (Number(value.slice(0, 4)) + 1) % 100;
 
-const shiftSeason = (season, years) => {
-  const start = Number(season.slice(0, 4)) + years;
+const nextSeason = (season) => {
+  const start = Number(season.slice(0, 4)) + 1;
   return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
 };
 
-export const previousSeason = (season) => shiftSeason(season, -1);
-
 /*
- * The published season, as the backend names it, or as a default read's
- * reason implies. Null for a read that named its season from a backend that
- * does not name the published one, or a backend that gives no reason. A roster
- * read carries the same metadata as a Backtest.
+ * The published season, as the backend names it, or as an earlier backend's
+ * reason implies. Null for a read whose backend does not name it, which a
+ * default read never implies: the default is not the published season. A
+ * roster read carries the same metadata as a Backtest.
  */
 export const publishedSeasonOf = (backtest) => {
   if (backtest?.publishedSeason) return backtest.publishedSeason;
   if (backtest?.seasonReason === 'published') return backtest.season;
-  if (backtest?.seasonReason === 'fallback_no_games') return shiftSeason(backtest.season, 1);
+  if (backtest?.seasonReason === 'fallback_no_games') return nextSeason(backtest.season);
   return null;
 };
 
-export const describeFallback = (backtest) =>
-  backtest?.seasonReason === 'fallback_no_games'
-    ? `${shiftSeason(backtest.season, 1)} has no games yet, showing ${backtest.season}`
-    : null;
+/*
+ * Why the Backtest reads the season it does, when the reader did not pick it:
+ * the default, or, from a backend deployed before the default, a fallback
+ * from a published season with no games.
+ */
+export const describeSeasonNote = (backtest) => {
+  if (backtest?.seasonReason === 'default') return `${backtest.season} default season`;
+  if (backtest?.seasonReason === 'fallback_no_games')
+    return `${nextSeason(backtest.season)} has no games yet, showing ${backtest.season}`;
+  return null;
+};
 
-// A season before the published one, read whole and never mixed with it.
+// A season before the published one, read whole.
 export const isPastSeason = (season, published) =>
+  Boolean(season && published && season < published);
+
+// Any season but the published one, whose readings are never mixed into it.
+export const isOtherSeason = (season, published) =>
   Boolean(season && published && season !== published);
 
 /*
@@ -89,6 +102,7 @@ export const isPastSeason = (season, published) =>
  */
 export const describeBacktestSeason = (backtest, published = publishedSeasonOf(backtest)) => {
   if (!backtest?.season) return 'season to date';
+  if (backtest.seasonReason === 'default') return describeSeasonNote(backtest);
   return isPastSeason(backtest.season, published)
     ? `${backtest.season} season`
     : `${backtest.season} season to date`;
@@ -107,11 +121,12 @@ export const describeSeasonGames = (backtest, published = publishedSeasonOf(back
 
 /*
  * A card's Backtest heading: which season it read, once it has read one, and
- * why that season when it is not the published one, or how far the published
- * one has got.
+ * why that season, or how far a season in progress has got.
  */
 export function BacktestSeasonLabel({ backtest }) {
-  const note = describeFallback(backtest) ?? describeSeasonGames(backtest);
+  const note =
+    (backtest?.seasonReason === 'fallback_no_games' && describeSeasonNote(backtest)) ||
+    describeSeasonGames(backtest);
   return (
     <>
       Backtest
@@ -131,10 +146,9 @@ export const describeSeasonUnavailable = (message) =>
 
 /*
  * What a season_unavailable refusal says about the seasons: the one it
- * resolved, the published one it resolved against, and the stream that is
- * missing. A refused first read still names the published season, so the
- * reader can pick the other one. Anything that does not hold together is
- * ignored rather than trusted.
+ * resolved, which is either Backtest season whatever is published, the
+ * published one as it actually is, and the stream that is missing. Anything
+ * that does not hold together is ignored rather than trusted.
  */
 export const seasonUnavailableDetails = (error) => {
   const failure = error?.response?.data?.error;
@@ -142,10 +156,9 @@ export const seasonUnavailableDetails = (error) => {
   if (
     failure?.code !== 'season_unavailable' ||
     !details ||
-    !isSeason(details.season) ||
+    !BACKTEST_SEASONS.includes(details.season) ||
     !isSeason(details.published_season) ||
-    typeof details.stream !== 'string' ||
-    ![details.published_season, previousSeason(details.published_season)].includes(details.season)
+    typeof details.stream !== 'string'
   )
     return null;
   return {

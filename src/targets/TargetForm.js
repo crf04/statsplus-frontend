@@ -112,8 +112,8 @@ export default function TargetForm({
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
   // League averages and opponent readings are the published season's, so they
-  // stand beside a past season's evidence only by mixing seasons.
-  const pastSeason = useLabSeason()?.pastSeason ?? false;
+  // stand beside another season's evidence only by mixing seasons.
+  const otherSeason = useLabSeason()?.otherSeason ?? false;
   const opponentContext = useOpponentContext(draft.opponent, draft.qualifiers);
   const patchQualifier = (index, patch) =>
     onChange({
@@ -240,11 +240,11 @@ export default function TargetForm({
                 qualifier={qualifier}
                 index={index}
                 leagueShare={
-                  pastSeason ? undefined : baselines.shares[qualifier.base]?.[qualifier.sliceKey]
+                  otherSeason ? undefined : baselines.shares[qualifier.base]?.[qualifier.sliceKey]
                 }
                 onChange={(patch) => patchQualifier(index, patch)}
               />
-              {!pastSeason && (
+              {!otherSeason && (
                 <OpponentContext
                   opponent={draft.opponent}
                   qualifier={qualifier}
@@ -266,13 +266,13 @@ export default function TargetForm({
               </button>
             </div>
           ))}
-          {pastSeason && (
+          {otherSeason && (
             <small className="target-baselines-unavailable">
               League averages and opponent context cover the published season, so they are hidden
-              while the Lab reads a past one.
+              while the Lab reads another.
             </small>
           )}
-          {!pastSeason && baselines.status === 'error' && (
+          {!otherSeason && baselines.status === 'error' && (
             <small className="target-baselines-unavailable">League averages unavailable.</small>
           )}
           <TargetConditionRows

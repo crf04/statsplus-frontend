@@ -454,7 +454,9 @@ const decodeSummary = (summary, statColumns) => {
  * read and the Draft Target preview share it, which is what makes the Lab show
  * exactly what the detail will show after saving.
  */
-const SEASON_REASONS = new Set(['requested', 'published', 'fallback_no_games']);
+// `default` is the pinned default season; `published` and `fallback_no_games`
+// come from a backend deployed before it.
+const SEASON_REASONS = new Set(['default', 'requested', 'published', 'fallback_no_games']);
 
 /*
  * Which season a read covers, why, and which season is published. Each is

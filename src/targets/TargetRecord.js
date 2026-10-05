@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
+import { isOtherSeason, publishedSeasonOf } from './backtestSample';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
@@ -260,11 +261,10 @@ export function TargetGameRows({
                 to={`/?${filterSetToSearchParams({
                   player_name: row.player.name,
                   opponent_tricode: backtest.target.opponent,
-                  // A season the backend did not default to is named, so the
-                  // log opens on the games this row was read from.
-                  ...(backtest.season &&
-                  backtest.seasonReason &&
-                  backtest.seasonReason !== 'published'
+                  // A season other than the published one, which the log opens
+                  // on, is named, so the log opens on the games this row was
+                  // read from.
+                  ...(isOtherSeason(backtest.season, publishedSeasonOf(backtest))
                     ? { season_filter: backtest.season }
                     : {}),
                 })}`}

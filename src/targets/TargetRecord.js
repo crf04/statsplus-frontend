@@ -263,8 +263,13 @@ export function TargetGameRows({
                   opponent_tricode: backtest.target.opponent,
                   // A season other than the published one, which the log opens
                   // on, is named, so the log opens on the games this row was
-                  // read from.
-                  ...(isOtherSeason(backtest.season, publishedSeasonOf(backtest))
+                  // read from. A requested season is named whenever the
+                  // published one is unknown.
+                  ...((
+                    publishedSeasonOf(backtest)
+                      ? isOtherSeason(backtest.season, publishedSeasonOf(backtest))
+                      : backtest.season && backtest.seasonReason === 'requested'
+                  )
                     ? { season_filter: backtest.season }
                     : {}),
                 })}`}

@@ -24,12 +24,13 @@ import './TargetFits.css';
  * A half-typed draft is not a Target to evaluate, so it is not sent, and the
  * line says what would make it one.
  */
-const describeLab = ({ valid, status, pending }) => {
+const describeLab = ({ valid, status, pending, misread }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
   if (status === 'loading') return 'Reading the season…';
   // A refusal is the answer to the draft in hand, so it outranks the draft
-  // having moved on; the next read replaces both.
-  if (status === 'error') return 'Backtest not updated.';
+  // having moved on; the next read replaces both. So does an answer for
+  // another season than the one picked.
+  if (status === 'error' || misread) return 'Backtest not updated.';
   if (pending) return 'Draft changed · reading shortly…';
   if (status === 'ready') return 'Backtest up to date.';
   return '';
@@ -99,6 +100,9 @@ export default function TargetLab({
   // the pick is about to be read, or is being read, does it stay, dimmed.
   const reading = valid && status !== 'error' && (pending || status === 'loading');
   const evidence = season !== null && preview?.season !== season && !reading ? null : preview;
+  // A backend that ignores the picked season answers with another one: that
+  // is not the picked season's Backtest, nor a season nobody fit.
+  const misread = valid && status === 'ready' && !reading && preview && !evidence;
   const seasonNote = describeSeasonNote(evidence);
   const seasonGames = describeSeasonGames(evidence, published);
   const otherSeason = isOtherSeason(shownSeason, published);
@@ -129,7 +133,7 @@ export default function TargetLab({
       </h2>
       <div className="target-lab-header">
         <p role="status" className="target-lab-status">
-          {describeLab({ valid, status, pending })}
+          {describeLab({ valid, status, pending, misread })}
         </p>
         <SeasonToggle shown={shownSeason} onChange={setSeason} />
         {workbench && evidence && (
@@ -138,6 +142,12 @@ export default function TargetLab({
       </div>
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
       {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
+      {misread && (
+        <p className="target-error" role="alert">
+          The {season} Backtest is unavailable: the server answered for{' '}
+          {preview.season ?? 'another season'}.
+        </p>
+      )}
       {status === 'error' && (
         <p className="target-error" role="alert">
           {error}{' '}

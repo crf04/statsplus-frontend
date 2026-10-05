@@ -1016,6 +1016,34 @@ test('a refused or failed default read still offers both seasons, the default pr
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
 });
 
+test('a picked season answered for another season is unavailable, never up to date', async () => {
+  jest.useFakeTimers();
+  // A backend deployed before seasons ignores the one named.
+  fetchTargetPreview.mockResolvedValue({ ...preview, season: '2025-26' });
+  renderPage();
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+  expect(labStatus()).toHaveTextContent('Backtest up to date.');
+
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2026-27' }),
+  );
+  expect(labStatus()).toHaveTextContent('Backtest not updated.');
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'The 2026-27 Backtest is unavailable: the server answered for 2025-26.',
+  );
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
+  await settle();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(labStatus()).toHaveTextContent('Backtest up to date.');
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+});
+
 test('a backend deployed before the default still labels its fallback and published reads', async () => {
   jest.useFakeTimers();
   fetchTargetPreview.mockResolvedValue({

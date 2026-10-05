@@ -8,6 +8,17 @@ signedInTest(
   'a dated slate lists its game and the date controls step through the calendar',
   { tags: ['critical'] },
   async ({ app, screen, browser, api }) => {
+    // Pin both Date() and Date.now() before the app computes Today. The web
+    // engine exposes init scripts rather than Playwright's page.clock.
+    await browser.addInitScript(() => {
+      const RealDate = Date;
+      const instant = RealDate.parse('2026-04-01T02:00:00Z'); // March 31 in New York.
+      window.Date = new Proxy(RealDate, {
+        construct: (target, args) => Reflect.construct(target, args.length ? args : [instant]),
+        apply: () => new RealDate(instant).toString(),
+        get: (target, key) => (key === 'now' ? () => instant : Reflect.get(target, key)),
+      });
+    });
     await app.open('/matchups?date=2026-01-15');
 
     await expect(screen.getByRole('heading', 'Thursday, January 15, 2026')).toBeVisible();
@@ -31,9 +42,7 @@ signedInTest(
     await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
     await expect(screen.getByLabel('Slate date')).toHaveValue('2026-03-29');
 
-    const today = await browser.evaluate(() =>
-      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()),
-    );
+    const today = '2026-03-31';
     await screen.getByRole('button', 'Today').tap();
     await expect(browser).toHaveURL(`/matchups?date=${today}`);
     await expect(screen.getByLabel('Slate date')).toHaveValue(today);

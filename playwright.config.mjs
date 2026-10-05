@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const externalBaseUrl = process.env.E2E_BASE_URL;
+// Parallel worktrees each need their own port. Reusing a server is opt-in so a
+// run never silently tests another checkout's build.
+const localPort = process.env.E2E_PORT || '4173';
+const localBaseUrl = `http://127.0.0.1:${localPort}`;
 const vercelAutomationBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 const bypassSecretActive = Boolean(vercelAutomationBypassSecret);
 
@@ -15,7 +19,7 @@ export default defineConfig({
     ? [['line'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
     : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
-    baseURL: externalBaseUrl || 'http://127.0.0.1:4173',
+    baseURL: externalBaseUrl || localBaseUrl,
     trace: bypassSecretActive ? 'off' : 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: bypassSecretActive ? 'off' : 'retain-on-failure',
@@ -39,10 +43,10 @@ export default defineConfig({
     : {
         // Keep the hermetic auth adapter cross-platform. The previous inline
         // POSIX assignment is not understood by Windows PowerShell/cmd.
-        command: 'npm start -- --host 127.0.0.1 --port 4173 --strictPort',
+        command: `npm start -- --host 127.0.0.1 --port ${localPort} --strictPort`,
         env: { ...process.env, REACT_APP_E2E_MODE: 'true' },
-        url: 'http://127.0.0.1:4173',
-        reuseExistingServer: !process.env.CI,
+        url: localBaseUrl,
+        reuseExistingServer: process.env.E2E_REUSE_SERVER === 'true',
         timeout: 120_000,
       },
 });

@@ -28,12 +28,12 @@ export default {
   targets: [
     {
       name: 'desktop',
-      engine: web({ viewport: { width: 1440, height: 900 } }),
+      engine: web({ viewport: { width: 1440, height: 900 }, timezoneId: 'Asia/Tokyo' }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/desktop.log' } },
     },
     {
       name: 'phone',
-      engine: web({ viewport: { width: 390, height: 844 } }),
+      engine: web({ viewport: { width: 390, height: 844 }, timezoneId: 'Asia/Tokyo' }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/phone.log' } },
     },
   ],

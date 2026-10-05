@@ -74,7 +74,9 @@ function AppNav() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      {/* Commit URL-driven controls before accepting edits for the new page.
+          A deferred player transition could otherwise erase a new stat choice. */}
+      <BrowserRouter useTransitions={false}>
         <div className="App">
           <ProtectedRoute>
             <AppNav />

@@ -553,4 +553,9 @@ test('a season other than the published one opens the log on that season', () =>
     '/?player_name=Player+One&opponent_tricode=OKC',
   );
   expect(handoff({})).toBe('/?player_name=Player+One&opponent_tricode=OKC');
+  // Without a published season, only a requested one is named.
+  expect(handoff({ season: '2025-26', seasonReason: 'default' })).toBe(
+    '/?player_name=Player+One&opponent_tricode=OKC',
+  );
+  expect(handoff({ season: '2025-26' })).toBe('/?player_name=Player+One&opponent_tricode=OKC');
 });

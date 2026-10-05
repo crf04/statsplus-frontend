@@ -628,6 +628,7 @@ test('an incomplete draft does not bring back the season read before a refused o
   fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
 
   expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: '2026-27' })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'Backtest games' })).not.toBeInTheDocument();

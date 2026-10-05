@@ -65,7 +65,9 @@ signedInTest(
     expect(api.sent('/api/games/game_logs')[requestsBeforeApply].search.get('game_filter')).toBe(
       '1',
     );
-    // Scope to the table's heading container; the chart's copy cannot satisfy this.
+    // The table card has no named region, and its badges sit outside the table.
+    // Scope via its heading so the chart's duplicate badge cannot satisfy this.
+    // Keep this local until the card gains a semantic region for product navigation.
     expect(
       await browser.evaluate(
         () =>

@@ -21,7 +21,7 @@ const useHeight = () => {
 
 const lineFor = ({ lineType, lineValue, averages }) => {
   const explicit = toFiniteNumber(lineValue);
-  return explicit !== null ? explicit : toFiniteNumber(averages?.[0]?.[lineType], 0);
+  return explicit !== null ? explicit : toFiniteNumber(averages?.[1]?.[lineType], 0);
 };
 
 const SeasonStrip = ({ seasonLogs, keptDates, lineType, line, stripRows = 4 }) => {

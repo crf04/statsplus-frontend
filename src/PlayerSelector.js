@@ -27,9 +27,9 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // Auto-populate lineValue with average when lineType changes or averages are available
+  // Auto-populate lineValue with the season average when lineType changes or averages are available
   useEffect(() => {
-    const avgValue = toFiniteNumber(averages?.[0]?.[lineType]);
+    const avgValue = toFiniteNumber(averages?.[1]?.[lineType]);
     if (avgValue !== null) {
       setLineValue(formatNumber(avgValue, 1));
     }
@@ -141,7 +141,7 @@ const PlayerSelector = ({
               const newLineType = e.target.value;
               setLineType(newLineType);
               // Auto-populate with average for the new line type
-              const average = toFiniteNumber(averages?.[0]?.[newLineType]);
+              const average = toFiniteNumber(averages?.[1]?.[newLineType]);
               if (average !== null) {
                 const avgValue = Math.round(average * 2) / 2;
                 setLineValue(formatNumber(avgValue, 1));

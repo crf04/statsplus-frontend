@@ -67,9 +67,8 @@ const gameLogs = (params) => {
   }
   const games = Number(params.get('game_filter'));
   if (games > 0) rows = rows.slice(0, games);
-  // The chart line reads the season average; this fixture has one set of rows, so both
-  // averages are that set's mean and the reference screenshots stay unchanged.
-  return { ...base, game_logs: rows, averages: mean(rows), season_averages: mean(rows) };
+  // season_averages and season_game_count stay as captured: the chart line reads the season.
+  return { ...base, game_logs: rows, averages: mean(rows) };
 };
 
 export const installParityApi = async (page) => {

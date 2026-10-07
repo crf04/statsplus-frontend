@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TargetRecord from './TargetRecord';
+import { BacktestSeasonLabel } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
 import { useTargetPreview } from './useTargets';
 
@@ -53,7 +54,9 @@ function SampleCard({ target, onAdd }) {
           <p className="target-card-note">{target.note}</p>
         </div>
         <section aria-label="Sample backtest">
-          <p className="target-backtest-proxy">Backtest · season to date</p>
+          <p className="target-backtest-proxy">
+            <BacktestSeasonLabel backtest={preview} />
+          </p>
           {status === 'error' ? (
             <p className="target-error" role="alert">
               {error}{' '}

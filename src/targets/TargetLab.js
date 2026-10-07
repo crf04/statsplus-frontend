@@ -1,5 +1,17 @@
-import { useState } from 'react';
-import { BacktestSampleProvider, countAppearances } from './backtestSample';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  BacktestSampleProvider,
+  LabSeasonValueProvider,
+  countAppearances,
+  BACKTEST_SEASONS,
+  DEFAULT_BACKTEST_SEASON,
+  describeBacktestSeason,
+  describeSeasonGames,
+  describeSeasonNote,
+  isOtherSeason,
+  publishedSeasonOf,
+  useReportLabSeason,
+} from './backtestSample';
 import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
@@ -12,16 +24,38 @@ import './TargetFits.css';
  * A half-typed draft is not a Target to evaluate, so it is not sent, and the
  * line says what would make it one.
  */
-const describeLab = ({ valid, status, pending }) => {
+const describeLab = ({ valid, status, pending, misread }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
   if (status === 'loading') return 'Reading the season…';
   // A refusal is the answer to the draft in hand, so it outranks the draft
-  // having moved on; the next read replaces both.
-  if (status === 'error') return 'Backtest not updated.';
+  // having moved on; the next read replaces both. So does an answer for
+  // another season than the one picked.
+  if (status === 'error' || misread) return 'Backtest not updated.';
   if (pending) return 'Draft changed · reading shortly…';
   if (status === 'ready') return 'Backtest up to date.';
   return '';
 };
+
+/*
+ * The two seasons a Backtest can read, offered whatever the backend has
+ * answered, so a refused read can always be read again for the other one.
+ */
+function SeasonToggle({ shown, onChange }) {
+  return (
+    <div className="target-season-toggle" role="group" aria-label="Backtest season">
+      {BACKTEST_SEASONS.map((season) => (
+        <button
+          key={season}
+          type="button"
+          aria-pressed={season === shown}
+          onClick={() => season !== shown && onChange(season)}
+        >
+          {season}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /*
  * The Lab: the season-to-date Backtest of the Draft Target above it, read
@@ -39,10 +73,49 @@ export default function TargetLab({
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
+  // Null until the reader picks one: the backend's default.
+  const [season, setSeason] = useState(null);
+  const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
-  const { status, preview, error, pending, retry } = useTargetPreview(valid ? request : null, {
-    immediateInitial: immediateInitialPreview,
-  });
+  const { status, preview, error, unavailable, pending, retry } = useTargetPreview(
+    valid ? (season ? { ...request, season } : request) : null,
+    { immediateInitial: immediateInitialPreview },
+  );
+  // The published season comes from the latest answer as it lands: a
+  // refusal's details or a preview. Starting the next read answers nothing, so
+  // the evidence still on screen never takes it back. It decides only whether
+  // the season read is past or in progress, never which seasons are offered.
+  useEffect(() => {
+    const answered = publishedSeasonOf(preview);
+    if (answered) setPublished(answered);
+  }, [preview]);
+  useEffect(() => {
+    if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
+  }, [unavailable]);
+  // The season the evidence is for, or is about to be for: what the form's
+  // season-bound controls follow. Before any answer, the default.
+  const shownSeason = season ?? preview?.season ?? DEFAULT_BACKTEST_SEASON;
+  // What was read for another season is not the picked season's Backtest, so
+  // it leaves the screen beside a refusal or an incomplete draft; only while
+  // the pick is about to be read, or is being read, does it stay, dimmed.
+  const reading = valid && status !== 'error' && (pending || status === 'loading');
+  const evidence = season !== null && preview?.season !== season && !reading ? null : preview;
+  // A backend that ignores the picked season answers with another one: that
+  // is not the picked season's Backtest, nor a season nobody fit.
+  const misread = valid && status === 'ready' && !reading && preview && !evidence;
+  const seasonNote = describeSeasonNote(evidence);
+  const seasonGames = describeSeasonGames(evidence, published);
+  const otherSeason = isOtherSeason(shownSeason, published);
+  const labSeason = useMemo(
+    () => ({ season: shownSeason, requested: season, otherSeason }),
+    [shownSeason, season, otherSeason],
+  );
+  const reportLabSeason = useReportLabSeason();
+  useEffect(() => {
+    if (!reportLabSeason) return undefined;
+    reportLabSeason(labSeason);
+    return () => reportLabSeason(null);
+  }, [reportLabSeason, labSeason]);
   // The result on screen describes the draft it was read for; the moment the
   // draft moves on, the result is stale, whether or not the read has begun.
   const stale = pending || status !== 'ready';
@@ -51,28 +124,39 @@ export default function TargetLab({
   const gradedBy = chosen?.gradedBy ?? columns[0];
   const changePreferences = onPreferencesChange ?? setLocalPreferences;
 
-  const evidence = (
+  const lab = (
     <>
       <h2 id="target-lab-heading" className="target-section-heading visually-hidden">
-        Lab · Backtest · season to date · vs {draft.opponent}
+        Lab · Backtest ·{' '}
+        {describeBacktestSeason(evidence ?? (shownSeason && { season: shownSeason }), published)} ·
+        vs {draft.opponent}
       </h2>
       <div className="target-lab-header">
         <p role="status" className="target-lab-status">
-          {describeLab({ valid, status, pending })}
+          {describeLab({ valid, status, pending, misread })}
         </p>
-        {workbench && preview && (
+        <SeasonToggle shown={shownSeason} onChange={setSeason} />
+        {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
+      {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
+      {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
+      {misread && (
+        <p className="target-error" role="alert">
+          The {season} Backtest is unavailable: the server answered for{' '}
+          {preview.season ?? 'another season'}.
+        </p>
+      )}
       {status === 'error' && (
         <p className="target-error" role="alert">
-          {error}
+          {error}{' '}
           <button type="button" onClick={retry}>
             Retry backtest
           </button>
         </p>
       )}
-      {preview && (
+      {evidence && (
         /* What was last read stays on screen, dimmed, while the next answer is
            on its way: a keystroke never blanks the screen. */
         <div
@@ -80,7 +164,7 @@ export default function TargetLab({
           aria-busy={status === 'loading'}
         >
           <TargetRecord
-            backtest={preview}
+            backtest={evidence}
             columns={columns}
             gradedBy={gradedBy}
             onGrade={(column) => changePreferences({ columns, gradedBy: column })}
@@ -88,9 +172,9 @@ export default function TargetLab({
           >
             {/* Season to date is the evidence; whether the idea is actionable
                 tonight is one line, present only when the opponent plays. */}
-            {preview.today && (
-              <p className={`target-lab-tonight${preview.today.fitCount ? ' has-fits' : ''}`}>
-                <b>{preview.today.fitCount}</b> fit tonight vs {preview.target.opponent}
+            {evidence.today && (
+              <p className={`target-lab-tonight${evidence.today.fitCount ? ' has-fits' : ''}`}>
+                <b>{evidence.today.fitCount}</b> fit tonight vs {evidence.target.opponent}
               </p>
             )}
           </TargetRecord>
@@ -100,12 +184,12 @@ export default function TargetLab({
   );
   const games = (
     <>
-      {workbench && preview && (
+      {workbench && evidence && (
         <div
           className={`target-lab-games${stale ? ' is-stale' : ''}`}
           aria-busy={status === 'loading'}
         >
-          <TargetGameRows backtest={preview} columns={columns} gradedBy={gradedBy} />
+          <TargetGameRows backtest={evidence} columns={columns} gradedBy={gradedBy} />
         </div>
       )}
     </>
@@ -113,12 +197,12 @@ export default function TargetLab({
 
   return (
     <section className="target-lab" aria-labelledby="target-lab-heading">
-      {workbench && <div className="target-lab-overview">{evidence}</div>}
+      {workbench && <div className="target-lab-overview">{lab}</div>}
       <div className="target-lab-left">
-        <BacktestSampleProvider value={{ appearances: countAppearances(preview), stale }}>
-          {children}
+        <BacktestSampleProvider value={{ appearances: countAppearances(evidence), stale }}>
+          <LabSeasonValueProvider value={labSeason}>{children}</LabSeasonValueProvider>
         </BacktestSampleProvider>
-        {!workbench && evidence}
+        {!workbench && lab}
       </div>
       {games}
     </section>

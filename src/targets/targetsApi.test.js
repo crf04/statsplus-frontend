@@ -589,6 +589,7 @@ test('decodes the backtest to the rows the table reads, in the backend order', (
         { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
       ],
     },
+    season: '2025-26',
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     statColumns: ['PTS', '3PM'],
     summary: {
@@ -848,6 +849,88 @@ test('previews a draft at the documented path with the create body', async () =>
   );
 });
 
+/*
+ * A Backtest says which season it read and why: the default, or the one the
+ * request named. A backend deployed earlier says `published` or
+ * `fallback_no_games`, or echoes the season alone, and those reads stay
+ * readable.
+ */
+test('decodes the season a Backtest read and why, and tolerates a body without the reason', () => {
+  expect(decodeBacktest({ ...wireBacktest, season_reason: 'default' })).toEqual(
+    expect.objectContaining({ season: '2025-26', seasonReason: 'default' }),
+  );
+  expect(decodeBacktest({ ...wireBacktest, season_reason: 'published' })).toEqual(
+    expect.objectContaining({ season: '2025-26', seasonReason: 'published' }),
+  );
+  expect(
+    decodePreview({ ...wirePreview, season: '2026-27', season_reason: 'requested', today: null }),
+  ).toEqual(expect.objectContaining({ season: '2026-27', seasonReason: 'requested', today: null }));
+  expect(
+    decodePreview({
+      ...wirePreview,
+      season: '2025-26',
+      season_reason: 'fallback_no_games',
+      today: null,
+    }),
+  ).toEqual(expect.objectContaining({ season: '2025-26', seasonReason: 'fallback_no_games' }));
+  const legacy = decodeBacktest(wireBacktest);
+  expect(legacy.season).toBe('2025-26');
+  expect(legacy).not.toHaveProperty('seasonReason');
+});
+
+test('decodes the published season a Backtest names, and tolerates its absence', () => {
+  expect(
+    decodePreview({
+      ...wirePreview,
+      season: '2025-26',
+      season_reason: 'default',
+      published_season: '2026-27',
+      today: null,
+    }),
+  ).toEqual(
+    expect.objectContaining({
+      season: '2025-26',
+      seasonReason: 'default',
+      publishedSeason: '2026-27',
+    }),
+  );
+  expect(decodeBacktest(wireBacktest)).not.toHaveProperty('publishedSeason');
+  expect(() => decodeBacktest({ ...wireBacktest, published_season: '2026' })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('refuses a season or reason it could not label honestly', () => {
+  expect(() => decodeBacktest({ ...wireBacktest, season_reason: 'latest' })).toThrow(
+    /invalid response/i,
+  );
+  expect(() =>
+    decodeBacktest({ ...wireBacktest, season: '2025', season_reason: 'published' }),
+  ).toThrow(/invalid response/i);
+  const { season: _season, ...seasonless } = wireBacktest;
+  expect(() => decodeBacktest({ ...seasonless, season_reason: 'fallback_no_games' })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('previews a named season in the body and leaves it out for the default', async () => {
+  apiClient.post.mockResolvedValue({
+    data: { ...wirePreview, season: '2026-27', season_reason: 'requested', today: null },
+  });
+  const draft = {
+    opponent: 'OKC',
+    qualifiers: [
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    ],
+  };
+  await fetchTargetPreview({ ...draft, season: '2026-27' });
+  expect(apiClient.post.mock.calls.at(-1)[1]).toEqual(
+    expect.objectContaining({ opponent: 'OKC', season: '2026-27' }),
+  );
+  await fetchTargetPreview(draft);
+  expect(apiClient.post.mock.calls.at(-1)[1]).not.toHaveProperty('season');
+});
+
 test("reads one Target's backtest from the documented path with a cold-start-safe timeout", async () => {
   apiClient.get.mockResolvedValue({ data: wireBacktest });
   const controller = new AbortController();
@@ -886,6 +969,31 @@ test('decodes each ok batch item with the single Backtest decoder and each error
     { targetId: 9, status: 'error', error: 'This Backtest is unavailable.' },
   ]);
   expect(decodeBacktests({ success: true, season: '2025-26', backtests: [] })).toEqual([]);
+});
+
+test('a batch item whose season is not retained reads as unavailable data, naming the stream', () => {
+  expect(
+    decodeBacktests({
+      ...wireBatch,
+      backtests: [
+        {
+          target_id: 7,
+          status: 'error',
+          error: {
+            code: 'season_unavailable',
+            message: 'No retained player_game_logs Publication for 2026-27.',
+          },
+        },
+      ],
+    }),
+  ).toEqual([
+    {
+      targetId: 7,
+      status: 'error',
+      error:
+        'That season’s data is unavailable. No retained player_game_logs Publication for 2026-27.',
+    },
+  ]);
 });
 
 test('an uncached batch item asks for the single route rather than failing the card', () => {
@@ -1090,6 +1198,37 @@ test('the authenticated roster read preserves minutes order and refuses malforme
   const controller = new AbortController();
   await fetchSeasonMinutes({ opponent: 'MIN', signal: controller.signal });
   expect(apiClient.get).toHaveBeenCalledWith('/api/teams/MIN/season-minutes', {
+    signal: controller.signal,
+  });
+});
+
+test('a roster read names its season, why, and the published season, and reads a named one', async () => {
+  const payload = {
+    season: '2025-26',
+    season_reason: 'fallback_no_games',
+    published_season: '2026-27',
+    players: [{ player_id: 27, name: 'Rudy Gobert', games_played: 60, average_minutes: 32 }],
+  };
+  expect(decodeSeasonMinutes(payload)).toEqual({
+    season: '2025-26',
+    seasonReason: 'fallback_no_games',
+    publishedSeason: '2026-27',
+    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+  });
+  expect(() => decodeSeasonMinutes({ ...payload, season_reason: 'latest' })).toThrow(
+    /invalid response/,
+  );
+  expect(() => decodeSeasonMinutes({ ...payload, published_season: 2026 })).toThrow(
+    /invalid response/,
+  );
+  apiClient.get.mockResolvedValue({ data: payload });
+  const controller = new AbortController();
+  expect(decodeSeasonMinutes({ ...payload, season_reason: 'default' })).toEqual(
+    expect.objectContaining({ season: '2025-26', seasonReason: 'default' }),
+  );
+  await fetchSeasonMinutes({ opponent: 'MIN', season: '2026-27', signal: controller.signal });
+  expect(apiClient.get).toHaveBeenLastCalledWith('/api/teams/MIN/season-minutes', {
+    params: { season: '2026-27' },
     signal: controller.signal,
   });
 });

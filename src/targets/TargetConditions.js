@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
-import { useBacktestSample } from './backtestSample';
+import { useBacktestSample, useLabSeason } from './backtestSample';
 
 // The track's first stop, left of every real floor, meaning no floor at all.
 const NO_FLOOR = -1;
@@ -107,13 +107,32 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
 export function TargetConditionRows({ opponent, conditions, onChange }) {
   const needsRoster =
     conditions && (conditions.defender || conditions.from !== null || conditions.to !== null);
-  const roster = useSeasonMinutes(needsRoster ? opponent : null);
+  // The roster is read for the season the Lab reads: the one the reader
+  // picked, or the backend's default, which is the Lab's default too.
+  const labSeason = useLabSeason();
+  const roster = useSeasonMinutes(needsRoster ? opponent : null, labSeason?.requested ?? null);
   const [customWindow, setCustomWindow] = useState(false);
+  // The name the chosen defender was last offered under, so a season whose
+  // roster cannot be read still names him rather than his id.
+  const [named, setNamed] = useState(null);
   if (!conditions) return null;
   const patch = (change) => onChange({ ...conditions, ...change });
   const defender = conditions.defender;
   const hasWindow = conditions.from !== null || conditions.to !== null;
-  const endYear = roster.season ? Number(roster.season.slice(0, 4)) + 1 : null;
+  // Presets name dates in the season the Lab is reading, which is the roster's
+  // own wherever no Lab is reading.
+  const presetSeason = labSeason?.season ?? roster.season;
+  // A roster for any other season than the Lab's evidence is never offered:
+  // a backend that ignores the season answers with the published one.
+  const rosterMismatch = Boolean(
+    labSeason?.season && roster.season && roster.season !== labSeason.season,
+  );
+  const choices = rosterMismatch ? [] : roster.players;
+  const chosen = choices.find((player) => player.playerId === defender?.playerId);
+  if (chosen && (named?.playerId !== chosen.playerId || named.name !== chosen.name))
+    setNamed({ playerId: chosen.playerId, name: chosen.name });
+  const knownName = named && named.playerId === defender?.playerId ? named.name : null;
+  const endYear = presetSeason ? Number(presetSeason.slice(0, 4)) + 1 : null;
   const preset = conditions.to
     ? 'custom'
     : !conditions.from
@@ -139,13 +158,12 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               }
             >
               <option value="">Choose a defender</option>
-              {defender.playerId &&
-                !roster.players.some((player) => player.playerId === defender.playerId) && (
-                  <option value={defender.playerId}>
-                    Player {defender.playerId} · roster unavailable
-                  </option>
-                )}
-              {roster.players.map((player) => (
+              {defender.playerId && !chosen && (
+                <option value={defender.playerId}>
+                  {knownName ?? `Player ${defender.playerId}`} · roster unavailable
+                </option>
+              )}
+              {choices.map((player) => (
                 <option key={player.playerId} value={player.playerId}>
                   {player.name} · {player.averageMinutes.toFixed(1)} min · {player.gamesPlayed}{' '}
                   games
@@ -170,7 +188,12 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
               </button>
             </p>
           )}
-          {roster.status === 'ready' && !roster.players.length && (
+          {rosterMismatch && (
+            <p>
+              The {opponent} roster for {labSeason.season} is unavailable.
+            </p>
+          )}
+          {!rosterMismatch && roster.status === 'ready' && !roster.players.length && (
             <p>No season roster available for {opponent}.</p>
           )}
           <div

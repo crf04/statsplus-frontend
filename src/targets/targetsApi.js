@@ -6,6 +6,7 @@ import { TARGET_READ_TIMEOUT } from '../apiSettings';
 import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
 import { TARGET_COMPARATORS } from './targetCatalog';
+import { describeSeasonUnavailable, isSeason } from './backtestSample';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
 
@@ -453,6 +454,28 @@ const decodeSummary = (summary, statColumns) => {
  * read and the Draft Target preview share it, which is what makes the Lab show
  * exactly what the detail will show after saving.
  */
+// `default` is the pinned default season; `published` and `fallback_no_games`
+// come from a backend deployed before it.
+const SEASON_REASONS = new Set(['default', 'requested', 'published', 'fallback_no_games']);
+
+/*
+ * Which season a read covers, why, and which season is published. Each is
+ * absent from a backend deployed before it existed; a reason or a published
+ * season with no season read says nothing.
+ */
+const validSeasonMetadata = (payload) =>
+  (payload.season === undefined || isSeason(payload.season)) &&
+  (payload.season_reason === undefined ||
+    (payload.season !== undefined && SEASON_REASONS.has(payload.season_reason))) &&
+  (payload.published_season === undefined ||
+    (payload.season !== undefined && isSeason(payload.published_season)));
+
+const decodeSeasonMetadata = (payload) => ({
+  ...(payload.season !== undefined ? { season: payload.season } : {}),
+  ...(payload.season_reason !== undefined ? { seasonReason: payload.season_reason } : {}),
+  ...(payload.published_season !== undefined ? { publishedSeason: payload.published_season } : {}),
+});
+
 const decodeBacktestBody = (payload, target) => {
   if (target.conditions && payload?.games_considered === undefined)
     throw createInvalidResponseError();
@@ -464,9 +487,13 @@ const decodeBacktestBody = (payload, target) => {
   ) {
     throw createInvalidResponseError();
   }
+  // Which season was read, and why. The reason is absent from a backend
+  // deployed before it existed; a reason with no season says nothing.
+  if (!validSeasonMetadata(payload)) throw createInvalidResponseError();
   const statColumns = payload.stat_columns.map(requireString);
   return {
     target,
+    ...decodeSeasonMetadata(payload),
     ...(payload.games_considered !== undefined
       ? { gamesConsidered: decodeGamesConsidered(payload.games_considered) }
       : {}),
@@ -503,7 +530,8 @@ const decodeToday = (today) => {
 
 /*
  * The preview is the backtest of a Draft Target: the same shape, with the
- * validated draft echoed back in place of a stored record, plus `today`.
+ * validated draft echoed back in place of a stored record, plus `today`,
+ * which is null for a past season: it says nothing about tonight.
  */
 export const decodePreview = (payload = {}) => {
   if (!isRecord(payload) || payload.today === undefined) throw createInvalidResponseError();
@@ -572,6 +600,8 @@ const decodeBatchItem = (item) => {
     const { error } = item;
     if (!isRecord(error) || typeof error.code !== 'string' || typeof error.message !== 'string')
       throw createInvalidResponseError();
+    if (error.code === 'season_unavailable')
+      return { targetId, status: 'error', error: describeSeasonUnavailable(error.message) };
     return { targetId, status: 'error', error: error.message || BATCH_ITEM_FALLBACK };
   }
   // Not in the backend's cache: the card is read through the single route.
@@ -606,7 +636,8 @@ export const fetchTargetBacktests = async ({ signal } = {}) => {
 /*
  * The same scan for a Target that is not saved: the create body goes up and
  * the backtest comes back, with nothing stored. The Lab asks for this after
- * every settled edit, so the read is abortable by the edit after it.
+ * every settled edit, so the read is abortable by the edit after it. With no
+ * season named, the backend chooses one and says why.
  */
 export const fetchTargetPreview = async ({
   opponent,
@@ -614,6 +645,7 @@ export const fetchTargetPreview = async ({
   note,
   conditions,
   statPreferences,
+  season,
   signal,
 } = {}) => {
   const response = await apiClient.post(
@@ -626,6 +658,7 @@ export const fetchTargetPreview = async ({
       ...(statPreferences !== undefined
         ? { stat_preferences: encodeStatPreferences(statPreferences) }
         : {}),
+      ...(season !== undefined ? { season } : {}),
     },
     { signal, timeout: TARGET_READ_TIMEOUT },
   );
@@ -713,8 +746,8 @@ export const fetchDietBaselines = async ({ signal } = {}) => {
 export const decodeSeasonMinutes = (payload) => {
   if (
     !isRecord(payload) ||
-    typeof payload.season !== 'string' ||
-    !/^\d{4}-\d{2}$/.test(payload.season) ||
+    !isSeason(payload.season) ||
+    !validSeasonMetadata(payload) ||
     !Array.isArray(payload.players)
   )
     throw createInvalidResponseError();
@@ -738,12 +771,13 @@ export const decodeSeasonMinutes = (payload) => {
       averageMinutes: player.average_minutes,
     };
   });
-  return { season: payload.season, players };
+  return { ...decodeSeasonMetadata(payload), players };
 };
-export const fetchSeasonMinutes = async ({ opponent, signal }) => {
+// With no season named, the backend reads the Backtest's default season.
+export const fetchSeasonMinutes = async ({ opponent, season, signal }) => {
   const response = await apiClient.get(
     `${getApiUrl('TEAM_SEASON_MINUTES')}/${encodeURIComponent(opponent)}/season-minutes`,
-    { signal },
+    { ...(season ? { params: { season } } : {}), signal },
   );
   return decodeSeasonMinutes(response.data);
 };

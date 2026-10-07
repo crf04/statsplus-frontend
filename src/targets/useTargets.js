@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { beginStatPreferenceRead } from './useStatPreferences';
+import { describeBacktestFailure, seasonUnavailableDetails } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import {
   fetchDietBaselines,
@@ -72,7 +73,7 @@ const useAccountRead = (
   read,
   empty,
   scope,
-  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false } = {},
+  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false, failureState } = {},
 ) => {
   const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
   const owner = useRef();
@@ -105,6 +106,7 @@ const useAccountRead = (
             status: 'error',
             error: getRequestErrorMessage(error, failure),
             ...empty,
+            ...failureState?.(error, scope),
           });
         }
       });
@@ -118,6 +120,7 @@ const useAccountRead = (
     failure,
     requests,
     keepPrevious,
+    failureState,
     currentUser?.uid,
   ]);
 
@@ -144,11 +147,12 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  */
 export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
 
-const EMPTY_PREVIEW = { status: 'idle', error: null, preview: null, key: null };
+const EMPTY_PREVIEW = { status: 'idle', error: null, unavailable: null, preview: null, key: null };
 
 /*
- * What a Draft Target is evaluated by: the opponent and the Qualifiers. The
- * note is never part of the evidence, so editing it is not a new draft.
+ * What a Draft Target is evaluated by: the opponent, the Qualifiers, and the
+ * season when one is named. The note is never part of the evidence, so editing
+ * it is not a new draft.
  */
 const previewKey = (request) =>
   request
@@ -156,6 +160,7 @@ const previewKey = (request) =>
         opponent: request.opponent,
         qualifiers: request.qualifiers,
         ...(request.conditions !== undefined ? { conditions: request.conditions } : {}),
+        ...(request.season !== undefined ? { season: request.season } : {}),
       })
     : null;
 
@@ -200,25 +205,27 @@ export const useTargetPreview = (request, { immediateInitial = false } = {}) => 
         ...current,
         status: current.preview ? 'ready' : 'idle',
         error: null,
+        unavailable: null,
       }));
       return undefined;
     }
     const controller = new AbortController();
     if (initialRead.current.key === null) initialRead.current.key = key;
     const load = () => {
-      setState((current) => ({ ...current, status: 'loading', error: null }));
+      setState((current) => ({ ...current, status: 'loading', error: null, unavailable: null }));
       fetchTargetPreview({ ...JSON.parse(key), signal: controller.signal })
         .then((preview) => {
           if (controller.signal.aborted) return;
           readKey.current = key;
-          setState({ status: 'ready', error: null, preview, key });
+          setState({ status: 'ready', error: null, unavailable: null, preview, key });
         })
         .catch((error) => {
           if (controller.signal.aborted || isRequestCancelled(error)) return;
           setState((current) => ({
             ...current,
             status: 'error',
-            error: getRequestErrorMessage(error, PREVIEW_FAILURE),
+            error: describeBacktestFailure(error, PREVIEW_FAILURE),
+            unavailable: seasonUnavailableDetails(error),
           }));
         });
     };
@@ -250,6 +257,15 @@ export const useDietBaselines = () =>
 
 const RosterReadContext = createContext(null);
 
+// One roster read is one opponent in one season; no season is the backend's
+// default. Tricodes and seasons carry no "/".
+const rosterScope = (opponent, season) =>
+  opponent ? (season ? `${opponent}/${season}` : opponent) : null;
+const fetchRoster = (scope, signal) => {
+  const [opponent, season] = scope.split('/');
+  return fetchSeasonMinutes({ opponent, ...(season ? { season } : {}), signal });
+};
+
 // A page owns its roster reads. Multiple cards for the same opponent share the
 // request and result, and leaving the page aborts and releases every read.
 export function SeasonMinutesProvider({ children, resetKey, enabled = true }) {
@@ -263,8 +279,8 @@ export function SeasonMinutesProvider({ children, resetKey, enabled = true }) {
         if (requests.has(scope)) return requests.get(scope);
         const controller = new AbortController();
         controllers.add(controller);
-        const request = fetchSeasonMinutes({ opponent: scope, signal: controller.signal })
-          .then((data) => ({ ...data, opponent: scope }))
+        const request = fetchRoster(scope, controller.signal)
+          .then((data) => ({ ...data, scope }))
           .catch((error) => {
             if (requests.get(scope) === request) requests.delete(scope);
             throw error;
@@ -284,19 +300,35 @@ export function SeasonMinutesProvider({ children, resetKey, enabled = true }) {
   return <RosterReadContext.Provider value={reads.read}>{children}</RosterReadContext.Provider>;
 }
 
-const EMPTY_ROSTER = { season: null, players: [], opponent: null };
+const EMPTY_ROSTER = {
+  season: null,
+  seasonReason: undefined,
+  publishedSeason: undefined,
+  players: [],
+  scope: null,
+};
+// A refused read is the refusal of this opponent and season.
+const rosterFailure = (error, scope) => ({ scope });
 const readRoster = async ({ scope, signal }) =>
-  scope
-    ? { ...(await fetchSeasonMinutes({ opponent: scope, signal })), opponent: scope }
-    : EMPTY_ROSTER;
-export const useSeasonMinutes = (opponent) => {
+  scope ? { ...EMPTY_ROSTER, ...(await fetchRoster(scope, signal)), scope } : EMPTY_ROSTER;
+/*
+ * An opponent's roster and minutes in one season, or in the Backtest's
+ * default season when none is named. What was read for another opponent or
+ * season is never offered as this one's while the new read is under way.
+ */
+export const useSeasonMinutes = (opponent, season = null) => {
+  const scope = rosterScope(opponent, season);
   const sharedRead = useContext(RosterReadContext);
-  const read = useAccountRead(sharedRead || readRoster, EMPTY_ROSTER, opponent, {
+  const read = useAccountRead(sharedRead || readRoster, EMPTY_ROSTER, scope, {
     failure: 'Unable to load the season roster.',
+    failureState: rosterFailure,
   });
+  const current = read.scope === scope;
   return {
     ...read,
-    season: read.opponent === opponent ? read.season : null,
-    players: read.opponent === opponent ? read.players : [],
+    season: current ? read.season : null,
+    seasonReason: current ? read.seasonReason : undefined,
+    publishedSeason: current ? read.publishedSeason : undefined,
+    players: current ? read.players : [],
   };
 };

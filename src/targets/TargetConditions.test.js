@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TargetForm, { targetToDraft } from './TargetForm';
 import { TargetConditionSummary, backtestMinutesNote, validConditions } from './TargetConditions';
 import { fetchDietBaselines, fetchSeasonMinutes } from './targetsApi';
+import { LabSeasonValueProvider } from './backtestSample';
 jest.mock('./targetsApi', () => ({ fetchDietBaselines: jest.fn(), fetchSeasonMinutes: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false }),
@@ -223,6 +224,123 @@ test('the minutes floor sits in its own card, apart from the opponent filters', 
   expect(backtest.contains(teamCard)).toBe(false);
   expect(teamCard.contains(backtest)).toBe(false);
 });
+/*
+ * The Lab can read a season other than the published one while league
+ * averages and opponent readings are the published season's. Presets follow
+ * the season the Lab reads, and the published-season context is not shown
+ * beside another season's evidence.
+ */
+const renderInLab = (season, otherSeason) =>
+  render(
+    <LabSeasonValueProvider value={{ season, otherSeason }}>
+      <Form />
+    </LabSeasonValueProvider>,
+  );
+
+test('another season names its own dates and hides published-season context', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
+  renderInLab('2026-27', true);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });
+  expect(screen.getByLabelText('From')).toHaveValue('2027-01-01');
+  expect(
+    screen.getByText(
+      'League averages and opponent context cover the published season, so they are hidden while the Lab reads another.',
+    ),
+  ).toBeVisible();
+  await act(async () => {});
+  expect(screen.queryByText('league 10%')).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'MIN opponent context' })).not.toBeInTheDocument();
+});
+
+/*
+ * The Defender roster is read for the season the Lab reads, so its choices,
+ * minutes and games are that season's. What was offered for another season is
+ * never shown while the next one loads.
+ */
+const inLab = (season, requested) => (
+  <LabSeasonValueProvider value={{ season, requested, otherSeason: season === '2026-27' }}>
+    <Form />
+  </LabSeasonValueProvider>
+);
+const defenderOptions = () =>
+  Array.from(screen.getByLabelText('Defender').options).map((option) => option.textContent);
+
+test('Defender choices are the roster of the season the Lab reads', async () => {
+  const nextSeason = { resolve: null };
+  fetchSeasonMinutes.mockImplementation(({ season }) =>
+    season === '2026-27'
+      ? new Promise((resolve) => {
+          nextSeason.resolve = resolve;
+        })
+      : Promise.resolve({
+          season: '2025-26',
+          seasonReason: 'default',
+          publishedSeason: '2025-26',
+          players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+        }),
+  );
+  const { rerender } = render(inLab('2025-26', null));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  expect(
+    await screen.findByRole('option', { name: 'Rudy Gobert · 32.0 min · 60 games' }),
+  ).toBeInTheDocument();
+  expect(fetchSeasonMinutes).toHaveBeenLastCalledWith(
+    expect.not.objectContaining({ season: expect.anything() }),
+  );
+
+  rerender(inLab('2026-27', '2026-27'));
+  expect(fetchSeasonMinutes).toHaveBeenLastCalledWith(
+    expect.objectContaining({ opponent: 'MIN', season: '2026-27' }),
+  );
+  // Next season's roster is not in yet, and this season's is not offered for it.
+  expect(defenderOptions()).toEqual(['Choose a defender']);
+
+  await act(async () =>
+    nextSeason.resolve({
+      season: '2026-27',
+      seasonReason: 'requested',
+      publishedSeason: '2026-27',
+      players: [
+        { playerId: 27, name: 'Rudy Gobert', gamesPlayed: 76, averageMinutes: 34 },
+        { playerId: 41, name: 'Naz Reid', gamesPlayed: 81, averageMinutes: 24 },
+      ],
+    }),
+  );
+  expect(defenderOptions()).toEqual([
+    'Choose a defender',
+    'Rudy Gobert · 34.0 min · 76 games',
+    'Naz Reid · 24.0 min · 81 games',
+  ]);
+});
+
+test('a roster answered for another season than the Lab reads is not offered', async () => {
+  // A backend that ignores the season answers with the published roster.
+  fetchSeasonMinutes.mockResolvedValue({
+    season: '2025-26',
+    players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+  });
+  render(inLab('2026-27', '2026-27'));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  expect(await screen.findByText('The MIN roster for 2026-27 is unavailable.')).toBeVisible();
+  expect(defenderOptions()).toEqual(['Choose a defender']);
+});
+
+test('the published season keeps its dates and league averages', async () => {
+  fetchDietBaselines.mockResolvedValue({ shares: { shot_zones: { 'Restricted Area': 0.1 } } });
+  renderInLab('2025-26', false);
+  expect(await screen.findByText('league 10%')).toBeInTheDocument();
+  expect(screen.getByRole('group', { name: 'MIN opponent context' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a date window' }));
+  fireEvent.change(screen.getByLabelText('Window preset'), { target: { value: '01' } });
+  expect(screen.getByLabelText('From')).toHaveValue('2026-01-01');
+  expect(screen.queryByText(/hidden while the Lab reads a past one/)).not.toBeInTheDocument();
+});
+
 test('removing the window leaves the Backtest section standing', () => {
   render(<Form />);
   fireEvent.click(screen.getByRole('button', { name: '+ and' }));
@@ -238,3 +356,35 @@ jest.mock('./opponentContextApi', () => ({
   ...jest.requireActual('./opponentContextApi'),
   fetchOpponentProfile: () => new Promise(() => {}),
 }));
+
+test('a chosen defender keeps the name read for him when the next season’s roster is refused', async () => {
+  fetchSeasonMinutes.mockImplementation(async ({ season }) => {
+    if (season === '2026-27')
+      throw Object.assign(new Error('Request failed with status code 503'), {
+        response: {
+          status: 503,
+          data: {
+            error: { code: 'season_unavailable', message: 'The 2026-27 season is unavailable.' },
+          },
+        },
+      });
+    return {
+      season: '2025-26',
+      seasonReason: 'default',
+      publishedSeason: '2025-26',
+      players: [{ playerId: 27, name: 'Rudy Gobert', gamesPlayed: 60, averageMinutes: 32 }],
+    };
+  });
+  const { rerender } = render(inLab('2025-26', null));
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  fireEvent.click(screen.getByRole('button', { name: 'a defender’s minutes' }));
+  await screen.findByRole('option', { name: 'Rudy Gobert · 32.0 min · 60 games' });
+  fireEvent.change(screen.getByLabelText('Defender'), { target: { value: '27' } });
+
+  rerender(inLab('2026-27', '2026-27'));
+  expect(
+    await screen.findByText('The 2026-27 season is unavailable.', { exact: false }),
+  ).toBeVisible();
+  expect(defenderOptions()).toEqual(['Choose a defender', 'Rudy Gobert · roster unavailable']);
+  expect(screen.getByLabelText('Defender')).toHaveValue('27');
+});

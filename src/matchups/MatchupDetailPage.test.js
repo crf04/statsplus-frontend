@@ -1666,7 +1666,9 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
   renderMatchup();
 
   const { dialog } = await openCapture('Transition');
-  expect(within(dialog).getByText('Lab · Backtest · season to date · vs BOS')).toBeVisible();
+  expect(
+    within(dialog).getByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
+  ).toBeVisible();
   // The prefill is a complete draft, so it is read without a keystroke.
   const strip = await within(dialog).findByRole(
     'list',

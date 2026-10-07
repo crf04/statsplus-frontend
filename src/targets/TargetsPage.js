@@ -14,6 +14,7 @@ import { StatSaveStatus } from './StatPicker';
 import { formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
+import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
@@ -96,8 +97,10 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
           </section>
         )}
         <section aria-label="Backtest">
+          {/* A card has no season of its own: it reads the backend's default,
+              so the label says which season that turned out to be. */}
           <p className="target-backtest-proxy">
-            Backtest · season to date
+            <BacktestSeasonLabel backtest={read?.status === 'ready' ? read.backtest : null} />
             {minutesNote && <span className="target-backtest-note"> · {minutesNote}</span>}
           </p>
           {read?.status === 'ready' ? (
@@ -145,7 +148,7 @@ const readQueue = async (queue, signal, settle) => {
         settle({
           [target.id]: {
             status: 'error',
-            error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
+            error: describeBacktestFailure(error, BACKTEST_FALLBACK_MESSAGE),
           },
         });
       }
@@ -196,7 +199,7 @@ const readListBacktests = async (targets, signal, settle) => {
       // Anything else is every card's failure, read the way one card's was.
       const failed = {
         status: 'error',
-        error: getRequestErrorMessage(error, BACKTEST_FALLBACK_MESSAGE),
+        error: describeBacktestFailure(error, BACKTEST_FALLBACK_MESSAGE),
       };
       record(Object.fromEntries(targets.map((target) => [target.id, failed])));
       throw partialRead();
@@ -349,23 +352,25 @@ function TargetsPageContent() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <TargetForm
-            draft={draft}
-            busy={saving}
-            onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-            onSubmit={save}
-            onCancel={dismissComposer}
-          />
-          {saveError && (
-            <p className="target-error" role="alert">
-              {saveError}
-            </p>
-          )}
-          <TargetLab
-            draft={draft}
-            preferences={draftPreferences}
-            onPreferencesChange={setDraftPreferences}
-          />
+          <LabSeasonProvider>
+            <TargetForm
+              draft={draft}
+              busy={saving}
+              onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              onSubmit={save}
+              onCancel={dismissComposer}
+            />
+            {saveError && (
+              <p className="target-error" role="alert">
+                {saveError}
+              </p>
+            )}
+            <TargetLab
+              draft={draft}
+              preferences={draftPreferences}
+              onPreferencesChange={setDraftPreferences}
+            />
+          </LabSeasonProvider>
         </Modal.Body>
       </Modal>
 

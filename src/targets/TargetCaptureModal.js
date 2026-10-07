@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import TargetForm from './TargetForm';
 import TargetLab from './TargetLab';
+import { LabSeasonProvider } from './backtestSample';
 import { SeasonMinutesProvider } from './useTargets';
 import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
 import { createTarget } from './targetsApi';
@@ -128,7 +129,7 @@ function TargetCaptureContent({ capture, onHide }) {
       </Modal.Header>
       <Modal.Body>
         {draft && (
-          <>
+          <LabSeasonProvider>
             <p className="target-capture-source">
               From the {state.capture.opponent} Defense Sheet ·{' '}
               {targetSliceLabel(state.capture.base, state.capture.sliceKey)}
@@ -154,7 +155,7 @@ function TargetCaptureContent({ capture, onHide }) {
             {/* A Target born from a Defense Sheet row is tuned right here,
                 against the season the row prompted a look at. */}
             <TargetLab draft={draft} />
-          </>
+          </LabSeasonProvider>
         )}
       </Modal.Body>
     </Modal>

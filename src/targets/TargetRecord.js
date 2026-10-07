@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
+import { isOtherSeason, publishedSeasonOf } from './backtestSample';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
@@ -257,7 +258,21 @@ export function TargetGameRows({
             <span className="target-game-who">
               <Link
                 aria-label={`${row.player.name} games vs ${backtest.target.opponent}`}
-                to={`/?${filterSetToSearchParams({ player_name: row.player.name, opponent_tricode: backtest.target.opponent })}`}
+                to={`/?${filterSetToSearchParams({
+                  player_name: row.player.name,
+                  opponent_tricode: backtest.target.opponent,
+                  // A season other than the published one, which the log opens
+                  // on, is named, so the log opens on the games this row was
+                  // read from. A requested season is named whenever the
+                  // published one is unknown.
+                  ...((
+                    publishedSeasonOf(backtest)
+                      ? isOtherSeason(backtest.season, publishedSeasonOf(backtest))
+                      : backtest.season && backtest.seasonReason === 'requested'
+                  )
+                    ? { season_filter: backtest.season }
+                    : {}),
+                })}`}
               >
                 {row.player.name}
               </Link>{' '}

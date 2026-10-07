@@ -9,6 +9,7 @@ import {
   findTargetBase,
 } from './targetCatalog';
 import { useDietBaselines } from './useTargets';
+import { useLabSeason } from './backtestSample';
 import './TargetWorkbench.css';
 import './TargetForm.css';
 import OpponentContext from './OpponentContext';
@@ -110,6 +111,9 @@ export default function TargetForm({
 }) {
   const { valid, problem, request } = describeDraft(draft);
   const baselines = useDietBaselines();
+  // League averages and opponent readings are the published season's, so they
+  // stand beside another season's evidence only by mixing seasons.
+  const otherSeason = useLabSeason()?.otherSeason ?? false;
   const opponentContext = useOpponentContext(draft.opponent, draft.qualifiers);
   const patchQualifier = (index, patch) =>
     onChange({
@@ -235,15 +239,19 @@ export default function TargetForm({
               <QualifierSlider
                 qualifier={qualifier}
                 index={index}
-                leagueShare={baselines.shares[qualifier.base]?.[qualifier.sliceKey]}
+                leagueShare={
+                  otherSeason ? undefined : baselines.shares[qualifier.base]?.[qualifier.sliceKey]
+                }
                 onChange={(patch) => patchQualifier(index, patch)}
               />
-              <OpponentContext
-                opponent={draft.opponent}
-                qualifier={qualifier}
-                {...opponentContext.forQualifier(qualifier)}
-                onRetry={opponentContext.retry}
-              />
+              {!otherSeason && (
+                <OpponentContext
+                  opponent={draft.opponent}
+                  qualifier={qualifier}
+                  {...opponentContext.forQualifier(qualifier)}
+                  onRetry={opponentContext.retry}
+                />
+              )}
               <button
                 type="button"
                 className="target-remove"
@@ -258,7 +266,13 @@ export default function TargetForm({
               </button>
             </div>
           ))}
-          {baselines.status === 'error' && (
+          {otherSeason && (
+            <small className="target-baselines-unavailable">
+              League averages and opponent context cover the published season, so they are hidden
+              while the Lab reads another.
+            </small>
+          )}
+          {!otherSeason && baselines.status === 'error' && (
             <small className="target-baselines-unavailable">League averages unavailable.</small>
           )}
           <TargetConditionRows

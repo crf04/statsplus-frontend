@@ -490,6 +490,58 @@
   font-size: 0.68rem;
 }
 
+/* Where the Lab stands, beside the season it reads. */
+.target-lab-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* The two seasons a Backtest can read, one of them pressed. */
+.target-season-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  overflow: hidden;
+}
+
+.target-season-toggle button {
+  border: 0;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--ct-dim);
+  font: 0.68rem var(--ct-mono);
+  cursor: pointer;
+}
+
+.target-season-toggle button + button {
+  border-left: 1px solid var(--ct-line-strong);
+}
+
+.target-season-toggle button[aria-pressed='true'] {
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+}
+
+/* Why the season shown is not the published one. */
+.target-lab-season-note {
+  margin: 0;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+}
+
+/* How many games the published season has had for this opponent. */
+.target-lab-season-games {
+  margin: 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.68rem;
+}
+
 /* What was last read, while the next answer is on its way. */
 .target-lab-result {
   display: grid;

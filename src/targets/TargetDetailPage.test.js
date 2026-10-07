@@ -536,3 +536,100 @@ jest.mock('./opponentContextApi', () => ({
   ...jest.requireActual('./opponentContextApi'),
   fetchOpponentProfile: () => new Promise(() => {}),
 }));
+/*
+ * A season the reader picked and the backend refused is the answer on screen.
+ * The season read before it is not that season's Backtest, so neither its
+ * numbers nor the reason it was shown stand beside the refusal.
+ */
+test.each([
+  [
+    'a fallback season',
+    { season: '2025-26', seasonReason: 'fallback_no_games', publishedSeason: '2026-27' },
+    '2026-27',
+    'Lab · Backtest · 2026-27 season to date · vs OKC',
+  ],
+  [
+    'the default season',
+    { season: '2025-26', seasonReason: 'default', publishedSeason: '2025-26' },
+    '2026-27',
+    'Lab · Backtest · 2026-27 season to date · vs OKC',
+  ],
+])('a refused season never shows %s read before it', async (_, read, refused, heading) => {
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (season === refused)
+      throw Object.assign(new Error('Request failed with status code 503'), {
+        response: {
+          status: 503,
+          data: {
+            error: {
+              code: 'season_unavailable',
+              message: `The ${refused} season is unavailable.`,
+              details: {
+                season: refused,
+                published_season: read.publishedSeason,
+                stream: 'player_game_logs',
+              },
+            },
+          },
+        },
+      });
+    return { ...backtest, ...read, ...(season && { season, seasonReason: 'requested' }) };
+  });
+  await open();
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: refused }));
+  await act(async () => jest.advanceTimersByTime(600));
+
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    `That season’s data is unavailable. The ${refused} season is unavailable. Retry backtest`,
+  );
+  expect(screen.getByRole('heading', { name: heading, hidden: true })).toBeInTheDocument();
+  expect(screen.queryByText(/has no games yet|default season/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Backtest games' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/appearances kept/)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+});
+
+test('an incomplete draft does not bring back the season read before a refused one', async () => {
+  fetchTargetPreview.mockResolvedValueOnce({
+    ...backtest,
+    season: '2025-26',
+    seasonReason: 'default',
+    publishedSeason: '2025-26',
+    today: null,
+  });
+  await open();
+  fetchTargetPreview.mockRejectedValueOnce(
+    Object.assign(new Error('Request failed with status code 503'), {
+      response: {
+        status: 503,
+        data: {
+          error: {
+            code: 'season_unavailable',
+            message: 'The 2026-27 season is unavailable.',
+            details: { season: '2026-27', published_season: '2025-26', stream: 'player_game_logs' },
+          },
+        },
+      },
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  // About to be read, the season before it stays, dimmed.
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+  await act(async () => jest.advanceTimersByTime(600));
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Qualifier 1' }));
+
+  expect(screen.getByText('Complete the Qualifiers to see the Backtest.')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '2026-27' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Backtest games' })).not.toBeInTheDocument();
+});

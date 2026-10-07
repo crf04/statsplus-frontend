@@ -131,7 +131,16 @@ reads each uncached Target through the per-Target route, and every Target that w
 route answers `404` or `405`. The preview a
 Draft Target's Lab reads is the same composition for a Target that is stored nowhere, with a `today`
 block resolved against the current Slate date; it refuses a missing bearer, an unknown base or slice,
-and more than ten Qualifiers with the backend's envelopes. The slate route reports pool freshness that matches the evidence resolution
+and more than ten Qualifiers with the backend's envelopes. Every backtest route takes an optional `season`
+(preview body, `?season=` on the GETs): `2025-26` or `2026-27`, and anything else, `2024-25` and an
+explicit `null` included, is `400 invalid_input`. Without one, a body reads the `2025-26` default with
+`season_reason: "default"`; a named season is `requested`. The published season is `2025-26` and nothing
+is published for `2026-27`, so naming it is `503 season_unavailable` with `details`
+`{season: "2026-27", published_season: "2025-26", stream: "player_game_logs"}` rather than an empty
+Backtest; the batch route refuses the whole request the same way. Every backtest body and the batch
+envelope carry `season_reason` and `published_season: "2025-26"`. A Defender Condition is validated
+against the backtest's season. `GET /api/teams/<tricode>/season-minutes` takes the same optional `season`
+and answers with `season`, `season_reason` and `published_season`, or the same refusals. The slate route reports pool freshness that matches the evidence resolution
 reports for the same date — a fresh pool on the scheduled date, none on the completed one — so a
 journey never sees one route call a pool unavailable while the other lists players from it.
 

@@ -1,12 +1,8 @@
-# Connect page screenshot evidence
+# Connect page evidence
 
-Frontend revision: bdc3f192b12e4a121c7dae1d62bdb096bf4aec41.
-Local frontend connected to production Railway with real Firebase authentication; no fixture auth. Desktop 1440×900, phone 390×844. Signed-in admin navigation is visible and fits at phone width.
+Frontend revision: `942a4001ef3c5df385fcdf94f61a8278bf2c0b23`.
+Captured October 6, 2026 using the verify-statsplus production helper with viewport-only capture and scroll-offset support. Local frontend connected to production Railway; real Firebase authentication, no fixtures. Desktop 1440×900; phone 390×844.
 
-Captured 2026-10-04 through the verify-statsplus production helper, using a temporary copy that grants browser clipboard permissions and captures scrolled viewport screenshots instead of full-page images. No application styles were changed for capture. Chromium full-page capture does not correctly paint the app's fixed background outside the viewport, so overlapping viewport captures show the actual rendered page.
+All 15 journey steps passed, including Copy → Copied at both widths and no horizontal overflow. Page is static and made zero API requests. Five screenshots inspected. Owned browser/server cleaned up and runtime removed. `journey.jsonl` contains the replay; SHA256SUMS covers evidence files.
 
-The supplied journey checks route heading, document overflow and Copy → Copied at desktop and phone widths. All 15 steps passed, including cleanup. The page issues no API requests. This evidence does not verify ChatGPT/Claude connector OAuth; those acceptance checks remain pending deployment.
-
-The step-number CSS fix passes two independent Astra review axes; its browser regression test fails when the decimal declaration is removed. Full frontend gate: lint, format, 831 Jest tests, build, 140 E2E passed/2 skipped.
-
-Images were inspected: both clients have visible numbered steps, all sections remain dark/readable when scrolled, no phone overflow. The desktop heading outline is the app's route-focus indicator.
+The updated ChatGPT instructions follow the authenticated live flow tested on October 6. Both ChatGPT and the existing Claude production connector executed get_slate successfully. Live connector checks returned the October 6 empty Slate with stale schedule and unavailable injuries/player-pool caveats; they do not establish data freshness or populated game behavior. Personal client-chat screenshots are intentionally excluded from this public evidence branch.

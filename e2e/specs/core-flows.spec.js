@@ -789,6 +789,8 @@ test('@critical removing every self filter clears its parameter', async ({
 
   await page.goto('/?player_name=LeBron+James&self_filters%5BPTS%5D=20%2C60');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  // The chart line defaults to the season average (27), not the filtered one (29).
+  await expect(page.getByLabel('Line Value:')).toHaveValue('27.0');
   await expect(
     page.getByTestId('filter-panel').getByRole('button', { name: /^Remove own/ }),
   ).toBeVisible();

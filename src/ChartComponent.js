@@ -14,7 +14,7 @@ const getPer36Value = (average, stat) => {
 const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilters }) => {
   const explicitLineValue = toFiniteNumber(lineValue);
   const numericLineValue =
-    explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[0]?.[lineType], 0);
+    explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[1]?.[lineType], 0);
 
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
@@ -77,7 +77,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
                 content:
                   explicitLineValue !== null
                     ? `Line: ${lineValue}`
-                    : `Avg: ${numericLineValue.toFixed(1)}`,
+                    : `Season avg: ${numericLineValue.toFixed(1)}`,
                 enabled: true,
                 position: 'start',
                 backgroundColor: '#1e1a12',

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import FilterPanelContext from './FilterPanelContext';
 
-jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn() }), { virtual: true });
 jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: false, currentUser: null }),
 }));
@@ -29,7 +29,11 @@ test('the season strip with no typed line classifies games against the season av
     seasonGameLogs: logs,
   };
 
-  render(<FilterPanelContext panel={panel} extra={extra} />);
+  render(
+    <MemoryRouter>
+      <FilterPanelContext panel={panel} extra={extra} />
+    </MemoryRouter>,
+  );
 
   expect(screen.getByLabelText('2026-01-01 ATL vs. BOS · PTS 21 (under)')).toHaveClass('is-under');
   expect(screen.getByLabelText('2026-01-03 ATL @ NYK · PTS 19 (under)')).toHaveClass('is-under');

@@ -100,25 +100,32 @@ const ConnectPage = () => {
         <section className="connect-section" aria-labelledby="connect-chatgpt-heading">
           <h2 id="connect-chatgpt-heading">ChatGPT</h2>
           <p className="connect-note">
-            On the web, with a Plus, Pro, Business, Enterprise or Education plan. Custom connectors
-            need Developer mode.
+            On the web, with a Plus, Pro, Business, Enterprise or Education plan. Availability may
+            depend on your workspace settings. If ChatGPT asks for Developer mode, enable it before
+            adding the connector.
           </p>
           <ol className="connect-steps">
             <li>
-              Open <strong>Settings → Security and login</strong> and turn on{' '}
-              <strong>Developer mode</strong>.
+              Open <strong>Plugins → Add → Add custom MCP server</strong>.
             </li>
             <li>
-              Go to <strong>Plugins</strong> and select the <strong>+</strong> button.
+              Name it StatsPlus, paste the connector URL into <strong>Server URL</strong> and choose{' '}
+              <strong>OAuth</strong> for authentication.
             </li>
             <li>
-              Name it StatsPlus, paste the connector URL as the connection, choose OAuth and create
-              it.
+              Let ChatGPT discover the OAuth settings. If asked for a registration method, choose{' '}
+              <strong>Dynamic Client Registration (DCR)</strong>.
             </li>
-            <li>Sign in with Google, using your StatsPlus account.</li>
             <li>
-              In a chat, open the <strong>+</strong> menu, choose <strong>Developer mode</strong>{' '}
-              and select StatsPlus.
+              Review the notice, check <strong>I understand and want to continue</strong>, then
+              select <strong>Create as a plugin</strong>.
+            </li>
+            <li>
+              Select <strong>Continue to StatsPlus</strong> and sign in with Google, using your
+              StatsPlus account.
+            </li>
+            <li>
+              On the StatsPlus plugin page, select <strong>Try in chat</strong> and ask a question.
             </li>
           </ol>
         </section>

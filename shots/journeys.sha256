@@ -1,2 +1,4 @@
 8d2664b281f92249115dee07494212c4640f2cebaf63c11ba732ecddd6e714ff  /tmp/slateproto/qa/qa.jsonl
 5409e58340d6d9af0c60984183b8c1641563cdc1fc9835b2ee4e5413f8cdb790  /tmp/slateproto/qa/prod.jsonl
+97524b594c2f1250ae6060a38399a1ea1f56d8d9cc53fb13078021a8bc948358  /tmp/slateproto/qa/postdeploy.jsonl
+3d52a77583503802d84cfbf947624e8f61baff379044e66953b5fcdea2c4b1a0  /tmp/slateproto/qa/legacy-dropped.jsonl

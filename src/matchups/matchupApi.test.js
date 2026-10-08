@@ -511,6 +511,16 @@ describe.each(LEGACY_AND_NEW_SHOT_MAKE_MARKETS)(
       expect(decodedMarkets(current)).toEqual(current);
     });
 
+    test('rejects a list whose elements only join to an accepted one', () => {
+      for (const accepted of [legacy, current]) {
+        const merged = [`${accepted[0]},${accepted[1]}`, ...accepted.slice(2)];
+        expect(() => decodeMatchup(withShotRow(base, key, merged))).toThrow('invalid response');
+      }
+      expect(() => decodeMatchup(withShotRow(base, key, [current.join()]))).toThrow(
+        'invalid response',
+      );
+    });
+
     test('rejects any third list', () => {
       const reordered = [...current].reverse();
       const withoutPra = current.filter((market) => market !== 'PRA');

@@ -368,7 +368,13 @@ const decodeSheetRow = (row, availability, base) => {
   const identity = decodeSheetIdentity(base, key);
   if (identity === null) return null;
   const markets = requireStringList(row.markets);
-  if (!identity.acceptedMarkets.some((accepted) => accepted.join() === markets.join()))
+  if (
+    !identity.acceptedMarkets.some(
+      (accepted) =>
+        accepted.length === markets.length &&
+        accepted.every((market, index) => market === markets[index]),
+    )
+  )
     throw invalid();
   return {
     key,

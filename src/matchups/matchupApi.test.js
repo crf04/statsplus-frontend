@@ -470,7 +470,7 @@ test('rejects malformed markets on a recognized additive-Base row', () => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
-const LEGACY_AND_NEW_SHOT_MAKE_MARKETS = [
+const OLD_AND_NEW_SHOT_MAKE_MARKETS = [
   ['shot_zones', 'Restricted Area:FGM', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
   ['shot_zones', 'Corner 3:FGM', ['PTS', '3PM'], ['PTS', '3PM', 'PA', 'PR', 'PRA']],
   ['shot_types', 'Pullups:FG2M', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
@@ -498,7 +498,7 @@ const withShotRow = (base, key, markets) => {
   return candidate;
 };
 
-describe.each(LEGACY_AND_NEW_SHOT_MAKE_MARKETS)(
+describe.each(OLD_AND_NEW_SHOT_MAKE_MARKETS)(
   'shot make row %s %s',
   (base, key, legacy, current) => {
     const decodedMarkets = (markets) => {
@@ -506,13 +506,13 @@ describe.each(LEGACY_AND_NEW_SHOT_MAKE_MARKETS)(
       return decodeMatchup(withShotRow(base, key, markets)).teams[0].defenseSheet[camel][0].markets;
     };
 
-    test('decodes the current list and the points-and-combos list', () => {
-      expect(decodedMarkets(legacy)).toEqual(legacy);
+    test('decodes the points-and-combos list and rejects the old points-only list', () => {
       expect(decodedMarkets(current)).toEqual(current);
+      expect(() => decodeMatchup(withShotRow(base, key, legacy))).toThrow('invalid response');
     });
 
     test('rejects a list whose elements only join to an accepted one', () => {
-      for (const accepted of [legacy, current]) {
+      for (const accepted of [current]) {
         const merged = [`${accepted[0]},${accepted[1]}`, ...accepted.slice(2)];
         expect(() => decodeMatchup(withShotRow(base, key, merged))).toThrow('invalid response');
       }

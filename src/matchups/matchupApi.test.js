@@ -470,6 +470,72 @@ test('rejects malformed markets on a recognized additive-Base row', () => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
+const LEGACY_AND_NEW_SHOT_MAKE_MARKETS = [
+  ['shot_zones', 'Restricted Area:FGM', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
+  ['shot_zones', 'Corner 3:FGM', ['PTS', '3PM'], ['PTS', '3PM', 'PA', 'PR', 'PRA']],
+  ['shot_types', 'Pullups:FG2M', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
+  ['shot_types', 'Catch and Shoot:FG3M', ['3PM', 'PTS'], ['3PM', 'PTS', 'PA', 'PR', 'PRA']],
+];
+
+const withShotRow = (base, key, markets) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet[base] = [
+    {
+      key,
+      season: { average_allowed_per_48: 30, sigma: 2 },
+      last_15: { average_allowed_per_48: 29, sigma: 1.8 },
+    },
+  ];
+  candidate.teams[0].defense_sheet[base] = [
+    {
+      key,
+      label: key,
+      markets,
+      season: { allowed_per_48: 32, percent_vs_league_average: 7, sigma_deviation: 1.2, rank: 24 },
+      last_15: { allowed_per_48: 31, percent_vs_league_average: 6, sigma_deviation: 1.1, rank: 22 },
+    },
+  ];
+  return candidate;
+};
+
+describe.each(LEGACY_AND_NEW_SHOT_MAKE_MARKETS)(
+  'shot make row %s %s',
+  (base, key, legacy, current) => {
+    const decodedMarkets = (markets) => {
+      const camel = base === 'shot_zones' ? 'shotZones' : 'shotTypes';
+      return decodeMatchup(withShotRow(base, key, markets)).teams[0].defenseSheet[camel][0].markets;
+    };
+
+    test('decodes the current list and the points-and-combos list', () => {
+      expect(decodedMarkets(legacy)).toEqual(legacy);
+      expect(decodedMarkets(current)).toEqual(current);
+    });
+
+    test('rejects any third list', () => {
+      const reordered = [...current].reverse();
+      const withoutPra = current.filter((market) => market !== 'PRA');
+      const withExtra = [...current, 'REB'];
+      for (const markets of [reordered, withoutPra, withExtra, []]) {
+        expect(() => decodeMatchup(withShotRow(base, key, markets))).toThrow('invalid response');
+      }
+    });
+  },
+);
+
+test('keeps attempt rows exact: a combo list on an FGA row is rejected', () => {
+  expect(() =>
+    decodeMatchup(withShotRow('shot_zones', 'Restricted Area:FGA', ['FGA', 'FG2A', 'PRA'])),
+  ).toThrow('invalid response');
+  for (const markets of [
+    ['FGA', 'FG2A', 'PRA'],
+    ['FGA', 'FG2A', 'PA', 'PR', 'PRA'],
+  ]) {
+    expect(() => decodeMatchup(withShotRow('shot_types', 'Pullups:FG2A', markets))).toThrow(
+      'invalid response',
+    );
+  }
+});
+
 test('derives canonical governed Diet slice identities from backend sheet row keys', () => {
   const candidate = JSON.parse(JSON.stringify(payload));
   candidate.league.defense_sheet.play_types[0].key = 'Transition:PTS';

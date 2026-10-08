@@ -112,7 +112,7 @@ const ASSIST_LOCATION_SLICES = new Set([
 const TRADITIONAL_SLICES = new Set(['OPP_REB', 'OPP_TOV', 'OPP_STL', 'OPP_BLK']);
 const ADDITIVE_SHEET_BASES = new Set(['play_types', 'assist_locations', 'traditional']);
 
-const expectedSheetMarkets = (base, sliceKey, statKey) => {
+const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   if (base === 'play_types') {
     return statKey === 'PTS' ? ['PTS', 'PA', 'PR', 'PRA'] : ['PTS'];
   }
@@ -120,13 +120,15 @@ const expectedSheetMarkets = (base, sliceKey, statKey) => {
     if (statKey === 'FGA') {
       return TWO_POINT_SHOT_ZONE_SLICES.has(sliceKey) ? ['FGA', 'FG2A'] : ['FGA', 'FG3A'];
     }
-    return THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey) ? ['PTS', '3PM'] : ['PTS'];
+    return THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey)
+      ? ['PTS', '3PM', 'PA', 'PR', 'PRA']
+      : ['PTS', 'PA', 'PR', 'PRA'];
   }
   if (base === 'shot_types') {
     return {
-      FG2M: ['PTS'],
+      FG2M: ['PTS', 'PA', 'PR', 'PRA'],
       FG2A: ['FGA', 'FG2A'],
-      FG3M: ['3PM', 'PTS'],
+      FG3M: ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
       FG3A: ['FGA', 'FG3A'],
     }[statKey];
   }
@@ -137,6 +139,35 @@ const expectedSheetMarkets = (base, sliceKey, statKey) => {
     OPP_STL: ['STL', 'STKS'],
     OPP_BLK: ['BLK', 'STKS'],
   }[statKey];
+};
+
+// `markets` lists the Stat Categories whose Matchup Score reads the row, combos
+// included. The backend is moving the FGM/FG2M/FG3M rows of shot_zones and
+// shot_types from points-only lists to ones that also name PA, PR and PRA
+// (crf04/statsplus#117). Until it deploys, both lists are accepted for those
+// rows; every other row stays exact. Drop LEGACY_SHOT_MAKE_MARKETS afterwards.
+const LEGACY_SHOT_MAKE_MARKETS = {
+  shot_zones_two_point: ['PTS'],
+  shot_zones_three_point: ['PTS', '3PM'],
+  FG2M: ['PTS'],
+  FG3M: ['3PM', 'PTS'],
+};
+
+// Every accepted list for a row, canonical first.
+const expectedSheetMarkets = (base, sliceKey, statKey) => {
+  const canonical = canonicalSheetMarkets(base, sliceKey, statKey);
+  let legacy;
+  if (base === 'shot_zones' && statKey === 'FGM') {
+    legacy =
+      LEGACY_SHOT_MAKE_MARKETS[
+        THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey)
+          ? 'shot_zones_three_point'
+          : 'shot_zones_two_point'
+      ];
+  } else if (base === 'shot_types') {
+    legacy = LEGACY_SHOT_MAKE_MARKETS[statKey];
+  }
+  return legacy ? [canonical, legacy] : [canonical];
 };
 
 const decodeSheetIdentity = (base, key) => {
@@ -168,7 +199,7 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
-  return { sliceKey, markets: expectedSheetMarkets(base, sliceKey, statKey) };
+  return { sliceKey, acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey) };
 };
 
 const decodeRetrievedAt = (value) => {
@@ -337,7 +368,14 @@ const decodeSheetRow = (row, availability, base) => {
   const identity = decodeSheetIdentity(base, key);
   if (identity === null) return null;
   const markets = requireStringList(row.markets);
-  if (markets.join() !== identity.markets.join()) throw invalid();
+  if (
+    !identity.acceptedMarkets.some(
+      (accepted) =>
+        accepted.length === markets.length &&
+        accepted.every((market, index) => market === markets[index]),
+    )
+  )
+    throw invalid();
   return {
     key,
     sliceKey: identity.sliceKey,

@@ -906,6 +906,107 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
+test('filtered to a combo market, the Defense Sheet lists the shot make rows that feed its points', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotZones = [
+    ['Restricted Area:FGM', 'Restricted Area', 'Restricted Area FGM', ['PTS', 'PA', 'PR', 'PRA']],
+    ['Corner 3:FGM', 'Corner 3', 'Corner 3 FGM', ['PTS', '3PM', 'PA', 'PR', 'PRA']],
+    ['Corner 3:FGA', 'Corner 3', 'Corner 3 FGA', ['FGA', 'FG3A']],
+  ].map(([key, sliceKey, label, markets]) => ({
+    key,
+    sliceKey,
+    label,
+    markets,
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  }));
+  boston.defenseSheet.shotTypes = [
+    ['Pullups:FG2M', 'Pullups', 'Pullups FG2M', ['PTS', 'PA', 'PR', 'PRA']],
+    [
+      'Catch and Shoot:FG3M',
+      'Catch and Shoot',
+      'Catch and Shoot FG3M',
+      ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
+    ],
+  ].map(([key, sliceKey, label, markets]) => ({
+    key,
+    sliceKey,
+    label,
+    markets,
+    season: value(5, 5, 1, 20),
+    last15: value(5, 5, 1, 20),
+  }));
+  candidate.players.find((player) => player.id === 2544).statCategories.push('PRA', 'PR', 'PA');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+
+  for (const combo of ['PRA', 'PR', 'PA']) {
+    await userEvent.click(screen.getByRole('button', { name: combo }));
+    for (const label of [
+      'Restricted Area FGM',
+      'Corner 3 FGM',
+      'Pullups FG2M',
+      'Catch and Shoot FG3M',
+    ]) {
+      expect(screen.getByText(label)).toBeVisible();
+    }
+    expect(screen.queryByText('Corner 3 FGA')).not.toBeInTheDocument();
+  }
+});
+
+test('the Selection card highlights the shot make rows behind a combo market for his Diet', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  const row = (key, sliceKey, markets) => ({
+    key,
+    sliceKey,
+    label: key,
+    markets,
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  });
+  boston.defenseSheet.shotZones = [
+    row('Restricted Area:FGM', 'Restricted Area', ['PTS', 'PA', 'PR', 'PRA']),
+    row('Corner 3:FGM', 'Corner 3', ['PTS', '3PM', 'PA', 'PR', 'PRA']),
+  ];
+  boston.defenseSheet.shotTypes = [
+    row('Pullups:FG2M', 'Pullups', ['PTS', 'PA', 'PR', 'PRA']),
+    row('Catch and Shoot:FG3M', 'Catch and Shoot', ['3PM', 'PTS', 'PA', 'PR', 'PRA']),
+  ];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  const share = { share: 0.3, volumePerGame: 5.1, sigmaDeviation: 1.2 };
+  lebron.dietShares.shotZones = [
+    { key: 'Restricted Area', season: share },
+    { key: 'Corner 3', season: share },
+  ];
+  lebron.dietShares.shotTypes = [
+    { key: 'Pullups', season: share },
+    { key: 'Catch and Shoot', season: share },
+  ];
+  lebron.statCategories.push('PRA', 'PR', 'PA');
+  for (const combo of ['PRA', 'PR', 'PA']) lebron.scores[combo] = score(0.08, 0.02);
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup('/matchups/game-1?player=2544');
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+
+  const tabs = screen.getByRole('group', { name: 'Market' });
+  for (const combo of ['PRA', 'PR', 'PA']) {
+    await userEvent.click(within(tabs).getByRole('button', { name: combo }));
+    for (const label of [
+      'Restricted Area:FGM',
+      'Corner 3:FGM',
+      'Pullups:FG2M',
+      'Catch and Shoot:FG3M',
+    ]) {
+      expect(screen.getByText(label).closest('article')).toHaveClass('selection-why');
+    }
+  }
+});
+
 test('joins suffixed sheet rows to bare governed Diet slice identities', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const defense = candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet;

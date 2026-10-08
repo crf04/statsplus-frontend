@@ -142,33 +142,10 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
 };
 
 // `markets` lists the Stat Categories whose Matchup Score reads the row, combos
-// included. The backend is moving the FGM/FG2M/FG3M rows of shot_zones and
-// shot_types from points-only lists to ones that also name PA, PR and PRA
-// (crf04/statsplus#117). Until it deploys, both lists are accepted for those
-// rows; every other row stays exact. Drop LEGACY_SHOT_MAKE_MARKETS afterwards.
-const LEGACY_SHOT_MAKE_MARKETS = {
-  shot_zones_two_point: ['PTS'],
-  shot_zones_three_point: ['PTS', '3PM'],
-  FG2M: ['PTS'],
-  FG3M: ['3PM', 'PTS'],
-};
-
-// Every accepted list for a row, canonical first.
-const expectedSheetMarkets = (base, sliceKey, statKey) => {
-  const canonical = canonicalSheetMarkets(base, sliceKey, statKey);
-  let legacy;
-  if (base === 'shot_zones' && statKey === 'FGM') {
-    legacy =
-      LEGACY_SHOT_MAKE_MARKETS[
-        THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey)
-          ? 'shot_zones_three_point'
-          : 'shot_zones_two_point'
-      ];
-  } else if (base === 'shot_types') {
-    legacy = LEGACY_SHOT_MAKE_MARKETS[statKey];
-  }
-  return legacy ? [canonical, legacy] : [canonical];
-};
+// included (crf04/statsplus#117); every row's list is exact.
+const expectedSheetMarkets = (base, sliceKey, statKey) => [
+  canonicalSheetMarkets(base, sliceKey, statKey),
+];
 
 const decodeSheetIdentity = (base, key) => {
   let sliceKey;

@@ -409,22 +409,23 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
     defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }),
   ).toBeDisabled();
   await page.getByLabel('Defensive metric').selectOption('Isolation');
-  // The default range is ranks 1-10; five steps down the upper thumb is 1-5.
-  for (let step = 0; step < 5; step += 1) await toRank.press('ArrowLeft');
-  await expect(toRank).toHaveAttribute('aria-valuenow', '5');
-  await expect(page.getByText('1–5', { exact: true })).toBeVisible();
+  // The default range is ranks 21-30 (the 10 that allow the most); five steps up the lower
+  // thumb is 26-30, which the backend knows as positions 1-5.
+  for (let step = 0; step < 5; step += 1) await fromRank.press('ArrowRight');
+  await expect(fromRank).toHaveAttribute('aria-valuenow', '26');
+  await expect(page.getByText('26–30', { exact: true })).toBeVisible();
   await defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }).click();
   await expect(
     page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
   ).toBeVisible();
-  await expect(page.getByText('Isolation (ranks 1–5)').first()).toBeVisible();
+  await expect(page.getByText('Isolation (ranks 26–30)').first()).toBeVisible();
 
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
-  // A range from rank 1 travels as the plain count every earlier link used.
+  // A range ending at rank 30 is positions 1-5, sent as the plain count every earlier link used.
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 
   // Both ends move: ranks 11-20 is a middle range, sent as low,high, and both
@@ -434,9 +435,8 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
   await page.getByRole('tab', { name: 'Play type' }).click();
   await page.getByLabel('Defensive metric').selectOption('Transition');
-  await toRank.press('End');
+  for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowLeft');
   for (let step = 0; step < 10; step += 1) await toRank.press('ArrowLeft');
-  for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowRight');
   await expect(fromRank).toHaveAttribute('aria-valuenow', '11');
   await expect(toRank).toHaveAttribute('aria-valuenow', '20');
   await defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }).click();

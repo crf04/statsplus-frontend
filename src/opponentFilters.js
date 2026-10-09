@@ -100,8 +100,19 @@ export const opponentFilterLabel = (token) => labelByToken.get(token) ?? token;
  * ranks 1 through N, `-N` the last N ranked teams, and `low,high` the
  * inclusive ranks low through high. Whether rank 1 is the tougher defense
  * depends on the metric, so the words stay with ranks rather than claiming it.
+ *
+ * Those are POSITIONS, and URLs, saved sets, and requests keep them. People
+ * read and enter the product scale instead: ranks 1-30 where 30 = the defense
+ * allows the most (position 1). `mirrorRankRange` is the one translation
+ * between the two, used at every display and input site.
  */
 export const RANK_TEAM_LIMIT = 30;
+
+/** Mirror an inclusive range between positions and the product scale (31 - n); its own inverse. */
+export const mirrorRankRange = ([low, high]) => [
+  RANK_TEAM_LIMIT + 1 - high,
+  RANK_TEAM_LIMIT + 1 - low,
+];
 
 const SIGNED_RANK = /^[+-]?\d+$/;
 const RANK_RANGE = /^(\d+),(\d+)$/;
@@ -130,7 +141,7 @@ export const parseRank = (rank) => {
 export const encodeRankRange = ([low, high]) => (low === 1 ? high : `${low},${high}`);
 
 /**
- * The slider position for a parsed rank. "The last N" has no fixed ranks when
+ * The position range for a parsed rank. "The last N" has no fixed ranks when
  * a filter ranks fewer than every team, so it is shown against the full league.
  */
 export const rankRangeOf = (rank) => {
@@ -141,12 +152,11 @@ export const rankRangeOf = (rank) => {
 
 const describeRanks = (low, high) => (low === high ? `rank ${low}` : `ranks ${low}–${high}`);
 
-/** "ranks 1–10", "rank 7", "ranks 11–20", or "last 8"; an unusable entry passes through. */
+/** Product-scale text such as "ranks 21–30" or "rank 24"; an unusable entry passes through. */
 export const describeRank = (rank) => {
   const parsed = parseRank(rank);
   if (parsed === null) return String(rank);
-  if (typeof parsed === 'string') return describeRanks(...rankRangeOf(parsed));
-  return parsed > 0 ? describeRanks(1, parsed) : `last ${-parsed}`;
+  return describeRanks(...mirrorRankRange(rankRangeOf(parsed)));
 };
 
 /** The badge text for one opponent filter, e.g. "Points Allowed (ranks 11–20)". */

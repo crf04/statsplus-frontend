@@ -30,13 +30,14 @@ test('an opponent rank reads as league ranks, never a bare sign', () => {
   render(
     <AppliedFilters
       filters={{
-        'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation'],
-        'rank_filter[]': ['5', '-10', '11,20'],
+        'teams_against[]': ['OPP_PTS', 'Transition', 'Isolation', 'OPP_REB'],
+        'rank_filter[]': ['5', '-10', '12,20', '10'],
       }}
     />,
   );
 
-  expect(screen.getByText('Points Allowed (ranks 1–5)')).toBeVisible();
-  expect(screen.getByText('Transition (last 10)')).toBeVisible();
-  expect(screen.getByText('Isolation (ranks 11–20)')).toBeVisible();
+  expect(screen.getByText('Points Allowed (ranks 26–30)')).toBeVisible();
+  expect(screen.getByText('Transition (ranks 1–10)')).toBeVisible();
+  expect(screen.getByText('Isolation (ranks 11–19)')).toBeVisible();
+  expect(screen.getByText('Rebounds Allowed (ranks 21–30)')).toBeVisible();
 });

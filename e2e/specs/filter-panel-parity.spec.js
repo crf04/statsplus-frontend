@@ -120,10 +120,10 @@ test.describe('filter panel behaves like the design reference', () => {
     await expect(panel.getByText(/Next: @ CHA · Oct 22/i)).toBeVisible();
     await expect(panel.getByText('1st fewest')).toBeVisible();
     await panel
-      .getByRole('button', { name: 'Add teams ranked 23–30 in Free Throws Allowed' })
+      .getByRole('button', { name: 'Add the 8 teams that allow the fewest Free Throws Allowed' })
       .click();
     await expect(
-      panel.getByRole('button', { name: /versus\s*Free Throws Allowed \(ranks 23–30\)/i }),
+      panel.getByRole('button', { name: /versus\s*Free Throws Allowed \(ranks 1–8\)/i }),
     ).toBeVisible();
     await panel.getByRole('button', { name: 'Apply 1 change' }).click();
     await expect.poll(() => search(page).getAll('teams_against[]')).toEqual(['OPP_FTA']);

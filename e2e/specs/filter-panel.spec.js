@@ -59,10 +59,12 @@ test('next opponent tiers follow their own ranked population and omit middle/con
   await expect(panel.getByText('+17% vs avg')).toBeVisible();
   await expect(panel.getByText('Points', { exact: true })).toHaveCount(0);
   await expect(panel.getByText('1st most')).toBeVisible();
-  await expect(panel.getByRole('button', { name: /Add teams ranked.*Context only/ })).toHaveCount(
-    0,
-  );
-  const addTier = panel.getByRole('button', { name: 'Add teams ranked 13–20 in Transition' });
+  await expect(
+    panel.getByRole('button', { name: /Add the .* teams that allow.*Context only/ }),
+  ).toHaveCount(0);
+  const addTier = panel.getByRole('button', {
+    name: 'Add the 8 teams that allow the fewest Transition',
+  });
   await addTier.click();
   await expect(addTier).toBeDisabled();
   await expect(addTier).toHaveText('✓');
@@ -122,7 +124,9 @@ test('a bottom tier with fewer than eight ranked teams remains a valid inclusive
     ],
   });
   await expect(panel.getByText('2nd fewest')).toBeVisible();
-  await panel.getByRole('button', { name: 'Add teams ranked 1–5 in Isolation' }).click();
+  await panel
+    .getByRole('button', { name: 'Add the 5 teams that allow the fewest Isolation' })
+    .click();
   await panel.getByRole('button', { name: 'Apply 1 change' }).click();
   await expect
     .poll(() => new URL(page.url()).searchParams.getAll('teams_against[]'))
@@ -130,7 +134,7 @@ test('a bottom tier with fewer than eight ranked teams remains a valid inclusive
   expect(new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['5']);
 });
 
-test('the most-allowed tier applies ranks one through eight and stays marked added', async ({
+test('the most-allowed tier applies positions one through eight and stays marked added', async ({
   page,
 }) => {
   const panel = await open(page, {
@@ -154,7 +158,9 @@ test('the most-allowed tier applies ranks one through eight and stays marked add
       },
     ],
   });
-  const add = panel.getByRole('button', { name: 'Add teams ranked 1–8 in Points Allowed' });
+  const add = panel.getByRole('button', {
+    name: 'Add the 8 teams that allow the most Points Allowed',
+  });
   await add.click();
   await expect(add).toBeDisabled();
   await expect(add).toHaveText('✓');

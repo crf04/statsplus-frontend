@@ -134,6 +134,35 @@ test('a bottom tier with fewer than eight ranked teams remains a valid inclusive
   expect(new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['5']);
 });
 
+test('a most-allowed tier names only the teams a reduced population ranks', async ({ page }) => {
+  const panel = await open(page, {
+    next_game: {
+      game_id: '0022600001',
+      date: '2026-10-22',
+      opponent: 'CHA',
+      opponent_name: 'Charlotte Hornets',
+      home: false,
+    },
+    opponent_ranks: [
+      {
+        group: 'Play types',
+        label: 'Isolation (per poss.)',
+        value: 1.2,
+        vs_league_pct: 20,
+        most_rank: 1,
+        ranked_teams: 5,
+        team_filter: 'Isolation',
+        unit: 'league_ratio',
+      },
+    ],
+  });
+  await panel
+    .getByRole('button', { name: 'Add the 5 teams that allow the most Isolation' })
+    .click();
+  await panel.getByRole('button', { name: 'Apply 1 change' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll('rank_filter[]')).toEqual(['8']);
+});
+
 test('the most-allowed tier applies positions one through eight and stays marked added', async ({
   page,
 }) => {

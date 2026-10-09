@@ -141,11 +141,15 @@ export const parseRank = (rank) => {
 export const encodeRankRange = ([low, high]) => (low === 1 ? high : `${low},${high}`);
 
 /**
- * The position range for a parsed rank. "The last N" has no fixed ranks when
+ * The position range for a parsed rank, within positions 1-30 (the backend
+ * clips a wider range the same way). "The last N" has no fixed ranks when
  * a filter ranks fewer than every team, so it is shown against the full league.
  */
 export const rankRangeOf = (rank) => {
-  if (typeof rank === 'string') return rank.split(',').map(Number);
+  if (typeof rank === 'string') {
+    const [low, high] = rank.split(',').map(Number);
+    return [Math.min(low, RANK_TEAM_LIMIT), Math.min(high, RANK_TEAM_LIMIT)];
+  }
   if (rank > 0) return [1, Math.min(rank, RANK_TEAM_LIMIT)];
   return [Math.max(1, RANK_TEAM_LIMIT + rank + 1), RANK_TEAM_LIMIT];
 };
@@ -156,6 +160,9 @@ const describeRanks = (low, high) => (low === high ? `rank ${low}` : `ranks ${lo
 export const describeRank = (rank) => {
   const parsed = parseRank(rank);
   if (parsed === null) return String(rank);
+  // Positions past 30 hold no team, so the range has no rank on the 1-30 scale.
+  if (typeof parsed === 'string' && Number(parsed.split(',')[0]) > RANK_TEAM_LIMIT)
+    return 'no ranked team';
   return describeRanks(...mirrorRankRange(rankRangeOf(parsed)));
 };
 

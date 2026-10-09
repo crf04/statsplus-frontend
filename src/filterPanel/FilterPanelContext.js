@@ -101,7 +101,7 @@ const useSavedSets = () => {
 
 // Words, not numbers: the fewest end has no fixed slot on a 1-30 scale when fewer teams are ranked.
 const extremeAddText = (stat, withColon) =>
-  `Add${withColon ? ':' : ''} the ${stat.tier[1] - stat.tier[0] + 1} teams that allow the ${
+  `Add${withColon ? ':' : ''} the ${Math.min(stat.tier[1], stat.ranked_teams) - stat.tier[0] + 1} teams that allow the ${
     stat.fewest ? 'fewest' : 'most'
   } ${opponentFilterLabel(stat.token)}`;
 

@@ -70,6 +70,19 @@ export const isRequestCancelled = (error) =>
       error.message === 'The operation was aborted.'),
   );
 
+/**
+ * Ends a server failure's message (a 5xx response) with the first eight
+ * characters of its X-Request-ID, so a user can quote it. A refusal (4xx), a
+ * failure with no response, or one with no header keeps its message. axios
+ * lowercases response header names.
+ */
+export const withRequestReference = (message, error) => {
+  const requestId = error?.response?.headers?.['x-request-id'];
+  return error?.response?.status >= 500 && typeof requestId === 'string' && requestId
+    ? `${message} (ref ${requestId.slice(0, 8)})`
+    : message;
+};
+
 export const getRequestErrorMessage = (
   error,
   fallback = 'The request failed. Please try again.',
@@ -78,10 +91,11 @@ export const getRequestErrorMessage = (
   if (!responseError && ['ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)) {
     return 'The request took too long. Please try again.';
   }
-  return (
+  return withRequestReference(
     (typeof responseError === 'string' ? responseError : responseError?.message) ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
+      error?.response?.data?.message ||
+      error?.message ||
+      fallback,
+    error,
   );
 };

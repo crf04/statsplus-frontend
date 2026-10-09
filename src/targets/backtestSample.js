@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react';
-import { getRequestErrorMessage } from '../gameLogsApi';
+import { getRequestErrorMessage, withRequestReference } from '../gameLogsApi';
 
 /*
  * What the Backtest just read, offered to the form that composed it. The Lab
@@ -171,6 +171,6 @@ export const seasonUnavailableDetails = (error) => {
 export const describeBacktestFailure = (error, fallback) => {
   const failure = error?.response?.data?.error;
   return failure?.code === 'season_unavailable'
-    ? describeSeasonUnavailable(failure.message)
+    ? withRequestReference(describeSeasonUnavailable(failure.message), error)
     : getRequestErrorMessage(error, fallback);
 };

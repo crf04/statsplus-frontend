@@ -2021,6 +2021,12 @@ const invalidSeasonResponse = {
 };
 const seasonUnavailableResponse = {
   status: 503,
+  // The API is a different origin, so the browser shows the reference only
+  // when the backend exposes the header, as it does in production.
+  headers: {
+    'X-Request-ID': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f',
+    'Access-Control-Expose-Headers': 'X-Request-ID',
+  },
   json: {
     error: {
       code: 'season_unavailable',

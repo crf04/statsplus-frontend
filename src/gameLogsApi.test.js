@@ -79,10 +79,11 @@ describe('gameLogsApi', () => {
     ).toBe('Try later.');
   });
 
-  test('ends a failed response message with the first eight characters of its request id', () => {
+  test('ends a server failure message with the first eight characters of its request id', () => {
     expect(
       getRequestErrorMessage({
         response: {
+          status: 500,
           headers: { 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
           data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
         },
@@ -90,10 +91,20 @@ describe('gameLogsApi', () => {
     ).toBe('Failed to backtest the target. (ref 77070cec)');
   });
 
-  test('leaves a response without a request id, and a timeout, unchanged', () => {
+  test('leaves a refusal, a response without a request id, and a timeout unchanged', () => {
     expect(
       getRequestErrorMessage({
         response: {
+          status: 400,
+          headers: { 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
+          data: { error: { code: 'invalid_input', message: 'Choose an opponent.' } },
+        },
+      }),
+    ).toBe('Choose an opponent.');
+    expect(
+      getRequestErrorMessage({
+        response: {
+          status: 500,
           headers: {},
           data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
         },

@@ -71,13 +71,14 @@ export const isRequestCancelled = (error) =>
   );
 
 /**
- * Ends a failed HTTP response's message with the first eight characters of its
- * X-Request-ID, so a user can quote it. A failure with no response or no header
- * keeps its message. axios lowercases response header names.
+ * Ends a server failure's message (a 5xx response) with the first eight
+ * characters of its X-Request-ID, so a user can quote it. A refusal (4xx), a
+ * failure with no response, or one with no header keeps its message. axios
+ * lowercases response header names.
  */
 export const withRequestReference = (message, error) => {
   const requestId = error?.response?.headers?.['x-request-id'];
-  return typeof requestId === 'string' && requestId
+  return error?.response?.status >= 500 && typeof requestId === 'string' && requestId
     ? `${message} (ref ${requestId.slice(0, 8)})`
     : message;
 };

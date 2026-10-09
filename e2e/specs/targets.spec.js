@@ -431,6 +431,10 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card n
   // Nothing is published for 2026-27: it is unavailable, never an empty Backtest.
   await season.getByRole('button', { name: '2026-27' }).click();
   await expect(lab.getByRole('alert')).toContainText('That season’s data is unavailable.');
+  // The failed response carries X-Request-ID, so the message ends with its reference.
+  await expect(lab.getByRole('alert')).toContainText(
+    'unavailable: no retained player_game_logs Publication can be read. (ref 77070cec)',
+  );
   await expect(lab.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
   expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2026-27' });
 

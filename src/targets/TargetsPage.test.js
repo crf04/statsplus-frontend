@@ -894,10 +894,11 @@ const refusalNaming = (season, publishedSeason, stream = 'player_game_logs') =>
       },
     },
   });
-const operationFailed = () =>
+const operationFailed = (headers = {}) =>
   Object.assign(new Error('Request failed with status code 500'), {
     response: {
       status: 500,
+      headers,
       data: { error: { code: 'operation_failed', message: 'Failed to backtest the target.' } },
     },
   });
@@ -975,6 +976,23 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and sends the one 
   );
   expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeInTheDocument();
   expect(screen.queryByText(/hidden while the Lab reads another/)).not.toBeInTheDocument();
+});
+
+test.each([
+  [
+    { 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
+    'Failed to backtest the target. (ref 77070cec)',
+  ],
+  [{}, 'Failed to backtest the target.'],
+])('a failed backtest with headers %j reads %j', async (headers, text) => {
+  jest.useFakeTimers();
+  fetchTargetPreview.mockRejectedValue(operationFailed(headers));
+  renderPage();
+  await screen.findAllByRole('article');
+
+  composeQualifier();
+  await settle();
+  expect(screen.getByRole('alert').textContent).toBe(`${text} Retry backtest`);
 });
 
 test('a refused or failed default read still offers both seasons, the default pressed', async () => {

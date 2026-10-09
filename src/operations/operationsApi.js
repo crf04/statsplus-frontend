@@ -1,4 +1,5 @@
 import { apiClient, getApiUrl } from '../config';
+import { withRequestReference } from '../gameLogsApi';
 
 /*
  * The collection control plane is intentionally a small, safe-field API. Do
@@ -485,11 +486,12 @@ export const getOperationsErrorMessage = (
   fallback = 'The operations request failed. Please try again.',
 ) => {
   const responseError = error?.response?.data?.error;
-  return (
+  return withRequestReference(
     (typeof responseError === 'string' ? responseError : responseError?.message) ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
+      error?.response?.data?.message ||
+      error?.message ||
+      fallback,
+    error,
   );
 };
 

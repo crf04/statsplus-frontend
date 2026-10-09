@@ -6,6 +6,7 @@ import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
+import { withRequestReference } from './gameLogsApi';
 import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
 
 const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
@@ -46,8 +47,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           if (data && Object.keys(data).length > 0) setPlayerData(data);
           else setPlayerError('No data available for this player');
         })
-        .catch(() => {
-          if (!controller.signal.aborted) setPlayerError('Failed to fetch data. Please try again.');
+        .catch((error) => {
+          if (!controller.signal.aborted)
+            setPlayerError(withRequestReference('Failed to fetch data. Please try again.', error));
         })
         .finally(() => {
           if (!controller.signal.aborted) setPlayerLoading(false);
@@ -75,8 +77,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           if (data && Object.keys(data).length > 0) setTeamData(data);
           else setTeamError('No data available for this team');
         })
-        .catch(() => {
-          if (!controller.signal.aborted) setTeamError('Failed to fetch data. Please try again.');
+        .catch((error) => {
+          if (!controller.signal.aborted)
+            setTeamError(withRequestReference('Failed to fetch data. Please try again.', error));
         })
         .finally(() => {
           if (!controller.signal.aborted) setTeamLoading(false);

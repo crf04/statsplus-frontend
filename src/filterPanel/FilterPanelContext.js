@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { withRequestReference } from '../gameLogsApi';
 import { fetchSavedFilterSets, subscribeSavedFilterSets } from '../savedFilterSetsApi';
 import { describeSavedFilterSet } from '../savedFilterSetDescription';
 import { toFiniteNumber } from '../numberUtils';
@@ -91,8 +92,8 @@ const useSavedSets = () => {
       .then((sets) => {
         if (!controller.signal.aborted) setSets(sets);
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(true);
+      .catch((error) => {
+        if (!controller.signal.aborted) setError(error || true);
       });
     return () => controller.abort();
   }, [isAuthenticated, currentUser?.uid, revision]);
@@ -230,7 +231,7 @@ const SavedFilterSets = ({ player, rows, expanded, onToggle }) => {
       <div className="fpx-list">
         <div className="fpx-list-head">Saved Filter Sets</div>
         <p role="status" className="fp-note">
-          Could not load Saved Filter Sets.
+          {withRequestReference('Could not load Saved Filter Sets.', error)}
         </p>
         <button type="button" className="fp-link" onClick={retry}>
           Retry saved sets

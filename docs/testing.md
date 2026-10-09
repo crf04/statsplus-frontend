@@ -268,3 +268,9 @@ changing its screenshot baselines. Run `npx playwright test filter-panel-parity
 tiers against a reduced ranked population, context-only stats, and no scheduled
 game. The strip and Own stat line share the unfiltered season read; the new
 `/api/players/next-opponent` read is independent and its absence hides that block.
+
+The player-switch regression slows Chromium rendering (not its network) to make
+the former deferred-navigation race reproducible. Picking a stat immediately
+after a player change must retain that choice and display the new season range.
+`BrowserRouter` commits navigation synchronously so the outgoing editable panel
+cannot accept a choice that the incoming Filter Set then erases.

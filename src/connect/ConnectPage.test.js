@@ -122,6 +122,6 @@ test('the page explains what to ask and how to read the answers', async () => {
   expect(screen.getByText(/It doesn.t make picks/)).toBeInTheDocument();
   expect(screen.getByText("What's on tonight's slate?")).toBeInTheDocument();
   expect(screen.getByText('Which players fit my Targets today?')).toBeInTheDocument();
-  expect(screen.getByText(/1 means the defense allows the most/)).toBeInTheDocument();
+  expect(screen.getByText(/30 means the defense allows the most/)).toBeInTheDocument();
   expect(screen.getByText(/US Eastern time and default to today/)).toBeInTheDocument();
 });

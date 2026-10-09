@@ -209,8 +209,8 @@ export const TeamFilterBuilder = ({ panel, onAdded }) => (
       labels={['From rank', 'To rank']}
     />
     <div className="fp-scale">
-      <span>1 · highest</span>
-      <span>30 · lowest</span>
+      <span>1 · allows the fewest</span>
+      <span>30 · allows the most</span>
     </div>
     <button
       type="button"

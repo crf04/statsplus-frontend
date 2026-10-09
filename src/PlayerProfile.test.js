@@ -131,3 +131,23 @@ test.each([
   expect(screen.getByText(content)).toBeVisible();
   expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
 });
+
+const failedRequest = (status) =>
+  Object.assign(new Error(`Request failed with status code ${status}`), {
+    response: { status, headers: { 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' } },
+  });
+
+test.each([
+  ['PLAYER_PROFILE', 500, 'Failed to fetch data. Please try again. (ref 77070cec)'],
+  ['TEAM_STATS', 500, 'Failed to fetch data. Please try again. (ref 77070cec)'],
+  ['PLAYER_PROFILE', 400, 'Failed to fetch data. Please try again.'],
+])('a %s read refused with %i shows %j', async (failing, status, text) => {
+  apiClient.get.mockImplementation((url) =>
+    url === failing
+      ? Promise.reject(failedRequest(status))
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  expect(screen.getByText(text)).toBeVisible();
+});

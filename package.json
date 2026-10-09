@@ -53,8 +53,13 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "eslint .",
-    "format:check": "prettier --check package.json vercel.json README.md index.html middleware.js src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
-    "format": "prettier --write package.json vercel.json README.md index.html middleware.js src e2e docs playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json"
+    "format:check": "prettier --check package.json vercel.json README.md index.html middleware.js src e2e docs e2e.config.ts tsconfig.e2e.json playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
+    "format": "prettier --write package.json vercel.json README.md index.html middleware.js src e2e docs e2e.config.ts tsconfig.e2e.json playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
+    "test:flows": "e2e run --exclude-tag agent",
+    "test:flows:agent": "e2e run --tag agent",
+    "test:flows:all": "e2e run",
+    "test:flows:replay": "e2e run --tag agent --strict-cache",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -73,17 +78,21 @@
     }
   },
   "devDependencies": {
+    "@ai-sdk/openai": "^4.0.83",
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-react": "^7.29.7",
+    "@e2e-dev/web": "^0.12.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "ai": "^7.0.127",
     "autoprefixer": "^10.4.19",
     "babel-jest": "^30.4.1",
+    "e2e": "^0.17.0",
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -95,6 +104,8 @@
     "prettier": "^3.9.6",
     "sass": "1.78.0",
     "tailwindcss": "^3.4.5",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vite": "^7.3.6"
   }
 }

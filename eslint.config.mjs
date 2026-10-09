@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -12,9 +13,11 @@ export default [
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
+      '.e2e/**',
     ],
   },
   eslint.configs.recommended,
+  ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['**/*.ts'] })),
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {

@@ -9,3 +9,6 @@ package-lock.json
 
 # Frozen design-reference parity fixtures are copied verbatim.
 e2e/filterPanelParity/
+
+# Verified e2e recordings are runner-owned; never reformat them.
+e2e/replay-cache/

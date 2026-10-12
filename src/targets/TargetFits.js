@@ -1,5 +1,6 @@
 import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
 import { formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
+import { WINDOW_REASONS } from '../windowReasons';
 import '../readings.css';
 import './TargetFits.css';
 
@@ -104,11 +105,13 @@ export function TargetContext({ context }) {
 export function TargetFitTable({ entry, dense = false }) {
   const { availability, game, players, target } = entry;
   if (availability.status !== 'available') {
+    const code = availability.unavailableReason;
+    const reason = code && (WINDOW_REASONS[code] || `${code}.`);
     return (
       <p className="target-empty">
         {game.opposingTeam.tricode} pool unavailable
-        {availability.unavailableReason ? `: ${availability.unavailableReason}` : ''}. Nobody can be
-        listed, which is not the same as nobody fitting.
+        {reason ? `: ${reason}` : '.'} Nobody can be listed, which is not the same as nobody
+        fitting.
       </p>
     );
   }

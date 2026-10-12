@@ -14,6 +14,7 @@ import {
   getDisplayableDietShare,
   orderCategories,
 } from './displayConfig';
+import { WINDOW_REASONS } from '../windowReasons';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
@@ -69,11 +70,11 @@ const SECTION_REASONS = {
   game_logs_incomplete: 'Canonical game logs are incomplete for this game.',
   no_game_log_rows: 'No canonical game-log rows exist for this game.',
   player_pool_unavailable: 'No Player Pool snapshot is available for this game.',
-  insufficient_governed_games:
-    'Last 15 has not opened yet; it opens once every team has played 15 games.',
 };
 const surfaceReason = (unavailableReason) =>
-  SECTION_REASONS[unavailableReason] || `${unavailableReason}.`;
+  WINDOW_REASONS[unavailableReason] ||
+  SECTION_REASONS[unavailableReason] ||
+  `${unavailableReason}.`;
 const sectionReason = (section) => surfaceReason(section.unavailableReason);
 const contextLabel = (section) => CONTEXT_LABELS[section.context] || section.context;
 const sourceLabel = (section) => SOURCE_LABELS[section.source] || section.source;

@@ -217,10 +217,12 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('5');
+  // The page load already sent two requests; wait for the one Apply sends.
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).toHaveURL(/season_filter=2023-24/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(requestsBeforeApply);
   const latest = new URL(gameLogRequests.at(-1));
   expect(latest.searchParams.get('season_filter')).toBe('2023-24');
   expect(latest.searchParams.get('game_filter')).toBe('5');
@@ -708,10 +710,12 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('');
+  // The page load already sent two requests; wait for the one Apply sends.
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/game_filter/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(requestsBeforeApply);
   expect(gameLogRequests.at(-1).searchParams.has('game_filter')).toBe(false);
   await expect(page.getByText('GAMES <= 10')).toHaveCount(0);
 });
@@ -799,10 +803,12 @@ test('@critical removing every self filter clears its parameter', async ({
     .getByTestId('filter-panel')
     .getByRole('button', { name: /^Remove own/ })
     .click();
+  // The page load already sent two requests; wait for the one Apply sends.
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect(page).not.toHaveURL(/self_filters/);
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(requestsBeforeApply);
   expect(gameLogRequests.at(-1).searchParams.has('self_filters[PTS]')).toBe(false);
 });
 
@@ -1235,8 +1241,10 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('5');
+  // The page load already sent two requests; wait for the one Apply sends.
+  const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(requestsBeforeApply);
   const appliedCount = gameLogRequests.length;
 
   await page.getByLabel('Player:').fill('Stephen');

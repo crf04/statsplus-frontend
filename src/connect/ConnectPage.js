@@ -144,7 +144,8 @@ const ConnectPage = () => {
         <h2 id="connect-notes-heading">Good to know</h2>
         <ul className="connect-notes">
           <li>
-            Opponent ranks run from 1 to 30, where 1 means the defense allows the most of that stat.
+            Opponent ranks run from 1 to 30, where 30 means the defense allows the most of that
+            stat.
           </li>
           <li>Dates use US Eastern time and default to today.</li>
         </ul>

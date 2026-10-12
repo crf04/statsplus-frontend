@@ -145,13 +145,13 @@ test('Team Filter categories scope metrics and switching drops a stale selection
   renderPanel();
   fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
   fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'OPP_PTS' } });
-  expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 1–10' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' })).toBeEnabled();
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
   expect(screen.getByRole('option', { name: 'Spot-Up' })).toBeVisible();
   expect(screen.queryByRole('option', { name: 'Points Allowed' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pick a metric to add' })).toBeDisabled();
   fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Transition' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 1–10' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 21–30' }));
   apply();
   expect(patch()).toEqual({
     player_name: 'LeBron James',
@@ -161,24 +161,38 @@ test('Team Filter categories scope metrics and switching drops a stale selection
 });
 
 test('editing a Team Filter loads its rank window and replaces its existing token', () => {
-  renderPanel({ 'teams_against[]': ['Transition'], 'rank_filter[]': ['11,20'] });
-  fireEvent.click(screen.getByRole('button', { name: /versus Transition \(ranks 11–20\)/ }));
+  renderPanel({ 'teams_against[]': ['Transition'], 'rank_filter[]': ['12,20'] });
+  fireEvent.click(screen.getByRole('button', { name: /versus Transition \(ranks 11–19\)/ }));
   const thumb = screen.getByRole('slider', { name: 'From rank' });
   fireEvent.focus(thumb);
   fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 12–20' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 12–19' }));
   apply();
   expect(patch()).toEqual({
     player_name: 'LeBron James',
     'teams_against[]': ['Transition'],
-    'rank_filter[]': ['12,20'],
+    'rank_filter[]': ['12,19'],
   });
+});
+
+test('positions 1,8 display as ranks 23–30 and choosing 23–30 requests 1,8', () => {
+  renderPanel({ 'teams_against[]': ['OPP_PTS'], 'rank_filter[]': ['1,8'] });
+  expect(screen.getByText('Points Allowed (ranks 23–30)')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
+  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Isolation' } });
+  const from = screen.getByRole('slider', { name: 'From rank' });
+  fireEvent.focus(from);
+  for (let i = 0; i < 2; i += 1) fireEvent.keyDown(from, { key: 'ArrowRight' });
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Isolation, ranks 23–30' }));
+  apply();
+  expect(patch()['rank_filter[]']).toEqual(['1,8', 8]);
 });
 
 test('legacy signed rank forms remain readable and survive apply', () => {
   renderPanel({ 'teams_against[]': ['OPP_PTS', 'Isolation'], 'rank_filter[]': ['-10', '5'] });
-  expect(screen.getByText('Points Allowed (last 10)')).toBeVisible();
-  expect(screen.getByText('Isolation (ranks 1–5)')).toBeVisible();
+  expect(screen.getByText('Points Allowed (ranks 1–10)')).toBeVisible();
+  expect(screen.getByText('Isolation (ranks 26–30)')).toBeVisible();
   apply();
   expect(patch()).toEqual({
     player_name: 'LeBron James',

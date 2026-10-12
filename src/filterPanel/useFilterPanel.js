@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   OPPONENT_FILTERS,
   encodeRankRange,
+  mirrorRankRange,
   opponentFilterLabel,
   parseRank,
   rankRangeOf,
@@ -19,7 +20,9 @@ export const DEFENSIVE_CATEGORY_PILL_LABELS = {
 };
 
 const DEFAULT_DEFENSIVE_CATEGORY = 'General defense';
-const DEFAULT_RANK_RANGE = [1, 10];
+// The rank slider holds the product scale (30 = allows the most); positions only exist in
+// filters and requests. The default is the 10 that allow the most.
+const DEFAULT_RANK_RANGE = [21, 30];
 
 /* the stat list is the game-log row shape, known before any season
    request, so the Own stats control can render with no click. Only the slider
@@ -258,7 +261,7 @@ const useFilterPanel = ({
     setDirty(new Set());
   }, [appliedFilters]);
 
-  const pendingRank = encodeRankRange(rankRange);
+  const pendingRank = encodeRankRange(mirrorRankRange(rankRange));
   const canAddFilter = selectedDefensiveFilter !== 'None';
 
   const addDefensiveFilter = () => {
@@ -278,7 +281,7 @@ const useFilterPanel = ({
     );
     setActiveDefensiveCategory(category?.category || DEFAULT_DEFENSIVE_CATEGORY);
     setSelectedDefensiveFilter(filter.filter);
-    setRankRange(rankRangeOf(filter.number));
+    setRankRange(mirrorRankRange(rankRangeOf(filter.number)));
   };
 
   const editSelfFilter = (filter) => {

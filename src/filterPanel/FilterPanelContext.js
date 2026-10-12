@@ -100,6 +100,12 @@ const useSavedSets = () => {
   return { sets, error, retry: () => setRevision((value) => value + 1) };
 };
 
+// Words, not numbers: the fewest end has no fixed slot on a 1-30 scale when fewer teams are ranked.
+const extremeAddText = (stat, withColon) =>
+  `Add${withColon ? ':' : ''} the ${Math.min(stat.tier[1], stat.ranked_teams) - stat.tier[0] + 1} teams that allow the ${
+    stat.fewest ? 'fewest' : 'most'
+  } ${opponentFilterLabel(stat.token)}`;
+
 const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
@@ -154,8 +160,8 @@ const OpponentExtremes = ({ rows, expanded, onToggle, panel, data, extremes }) =
                 type="button"
                 className="fpx-ext-add"
                 disabled={applied}
-                title={`Add: teams ranked ${stat.tier[0]}–${stat.tier[1]} in ${opponentFilterLabel(stat.token)}`}
-                aria-label={`Add teams ranked ${stat.tier[0]}–${stat.tier[1]} in ${opponentFilterLabel(stat.token)}`}
+                title={extremeAddText(stat, true)}
+                aria-label={extremeAddText(stat, false)}
                 onClick={() => panel.addTeamFilter(stat.token, stat.tier)}
               >
                 {applied ? '✓' : '+'}

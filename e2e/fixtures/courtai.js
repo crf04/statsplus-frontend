@@ -161,6 +161,7 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(11 + offset, -6, -0.7, 9),
       ),
     ],
+    // Last 15 is still on the previous season, so shot types carry no L15 value.
     shot_types: [
       defenseRow(
         'Catch and Shoot:FG3A',
@@ -169,7 +170,7 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(16 + offset, 9, 1.1, 23),
         defenseValue(15 + offset, 8, 1.2, 22),
       ),
-    ],
+    ].map((row) => ({ ...row, last_15: null })),
     assist_locations: [
       defenseRow(
         'AtRimAssists',
@@ -243,7 +244,9 @@ const league = {
         last_15:
           base === 'play_types'
             ? { status: 'unavailable', unavailable_reason: 'provider_unsupported' }
-            : { status: 'available', unavailable_reason: null },
+            : base === 'shot_types'
+              ? { status: 'missing', unavailable_reason: 'window_not_ready' }
+              : { status: 'available', unavailable_reason: null },
       },
     ]),
   ),
@@ -259,7 +262,10 @@ const league = {
       leagueRow('Restricted Area:FGA', 21, 1.7, 21.2, 1.5),
       leagueRow('Above the Break 3:FGA', 11.5, 1, 11.7, 1),
     ],
-    shot_types: [leagueRow('Catch and Shoot:FG3A', 15.5, 1.2, 15.3, 1.1)],
+    shot_types: [leagueRow('Catch and Shoot:FG3A', 15.5, 1.2, 15.3, 1.1)].map((row) => ({
+      ...row,
+      last_15: null,
+    })),
     assist_locations: [
       leagueRow('AtRimAssists', 10, 0.8, 10.1, 0.9),
       leagueRow('Assists', 24, 1.4, 23.8, 1.3),

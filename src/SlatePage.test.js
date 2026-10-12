@@ -647,6 +647,31 @@ test('an unavailable pool reads differently from nobody fitting', async () => {
   expect(screen.getByText('2 Targets active', { exact: false })).toBeVisible();
 });
 
+test('states a window_not_ready pool reason in a sentence instead of the raw code', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [
+      resolvedEntry({
+        availability: {
+          status: 'unavailable',
+          source: 'player_pool',
+          unavailableReason: 'window_not_ready',
+        },
+        players: [],
+      }),
+    ],
+  });
+
+  renderSlate();
+
+  expect(
+    await screen.findByText(
+      'LAL pool unavailable: Last 15 has not opened yet; it opens once every team has played 15 games. Nobody can be listed, which is not the same as nobody fitting.',
+    ),
+  ).toBeVisible();
+  expect(screen.queryByText(/window_not_ready/)).not.toBeInTheDocument();
+});
+
 test('an idle Target adds nothing to the board and counts as nothing active', async () => {
   fetchResolvedTargets.mockResolvedValue({
     slateDate: '2026-01-15',

@@ -284,6 +284,12 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(
     page.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
+  await expect(
+    page.getByText(
+      'Shot types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/window_not_ready/)).toHaveCount(0);
   await expect(page.getByText(/LeBron James · 19% poss/)).toHaveCount(0);
   await expect(page.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
   await expect(page.getByText('OPP TOV')).toBeVisible();

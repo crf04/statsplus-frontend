@@ -766,3 +766,30 @@
     align-items: flex-start;
   }
 }
+
+/* B: the real connector card */
+.cp-realcard {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 12px;
+  background: #1f1e1b;
+}
+
+.cp-b-hero {
+  align-items: start;
+}
+
+/* the card is long; the pitch and URL stay in view beside it */
+.cp-b-copy {
+  position: sticky;
+  top: 32px;
+  padding-top: 40px;
+}
+
+@media (max-width: 760px) {
+  .cp-b-copy {
+    position: static;
+    padding-top: 0;
+  }
+}

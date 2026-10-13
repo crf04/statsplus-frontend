@@ -9,14 +9,14 @@ export const TOOLS = [
     key: 'slate',
     name: 'Slate',
     blurb: "Tonight's games and the ten most and least favourable Matchups by points.",
-    prompt: "What's on tonight's slate?",
+    prompt: "What's on the slate for April 10, 2026?",
     card: true,
   },
   {
     key: 'matchup',
     name: 'Matchup',
     blurb: "One player's Matchup Score in every market, and the parts of his game that drive it.",
-    prompt: "Show Cade Cunningham's matchup in DET @ CHA.",
+    prompt: "Show Cade Cunningham's matchup against Charlotte.",
     card: true,
   },
   {
@@ -24,7 +24,8 @@ export const TOOLS = [
     name: 'Game logs',
     blurb:
       'His games against defenses like this one, with teammates in or out, minutes, home or away.',
-    prompt: 'How has he done against the 10 teams that allow the most points to guards?',
+    prompt:
+      'How has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
     card: true,
   },
   {
@@ -37,7 +38,8 @@ export const TOOLS = [
     key: 'backtest',
     name: 'Backtest',
     blurb: 'Try a draft Target over a full season before you save it.',
-    prompt: 'Backtest pick-and-roll guards against Charlotte this season.',
+    prompt:
+      'Backtest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
   },
 ];
 

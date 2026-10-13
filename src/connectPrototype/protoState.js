@@ -26,7 +26,7 @@ export const HOME_VARIANTS = [
 const read = () => {
   const params = new URLSearchParams(window.location.hash.slice(1));
   return {
-    v: params.get('v') || sessionStorage.getItem('proto-connect-v') || 'A',
+    v: params.get('v') || sessionStorage.getItem('proto-connect-v') || 'B',
     h: params.get('h') || sessionStorage.getItem('proto-connect-h') || '1',
   };
 };

@@ -17,6 +17,14 @@ is the Filter Set). A floating switcher at bottom left changes them.
 
 Gated by `PROTO_ENABLED` (dev, or `REACT_APP_PROTOTYPE=connect`).
 
-## Verdict
+## Verdict (round 1, 2026-10-13)
 
-(pending)
+Home **1** (eyebrow pill) and Connect **B**, with the connector's actual card
+instead of the mock, and the example queries kept. Round 2:
+
+- B embeds the real Matchup card (`public/connect-proto/matchup-card.html`,
+  served HTML from statsplus-mcp main) in an iframe; `RealCard.js` plays the
+  MCP Apps host and sends `matchupCard.json`, the structuredContent of a live
+  production `get_matchup(player="Cade Cunningham", opponent="CHA")`.
+- Every example query was run against production on 2026-10-13 and answers
+  (`What's on tonight's slate?` was replaced: 0 games in the offseason).

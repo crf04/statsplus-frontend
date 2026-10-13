@@ -2,17 +2,9 @@
 // the Connect page, picked with `#v=A|B|C|D`.
 import { useEffect, useRef } from 'react';
 import LandingCourt from '../LandingCourt';
+import RealCard from './RealCard';
 import '../ModernSearch.css';
-import {
-  AnswerCard,
-  CLIENTS,
-  ClientTabs,
-  CopyUrl,
-  NOTES,
-  SAMPLE_ANSWER,
-  Steps,
-  TOOLS,
-} from './content';
+import { CLIENTS, ClientTabs, CopyUrl, NOTES, SAMPLE_ANSWER, Steps, TOOLS } from './content';
 import { useProto } from './protoState';
 import './ConnectPrototype.css';
 
@@ -114,12 +106,16 @@ const VariantB = ({ headingRef }) => (
         <div className="cp-bubble cp-bubble-user">{SAMPLE_ANSWER.question}</div>
         <div className="cp-bubble cp-bubble-ai">
           <p>
-            Points lean slightly favourable: <strong>+0.4% vs league</strong>. The edge is his
-            pick-and-roll: 37% of his plays, and Charlotte ranks 26th against it.
+            Cade&apos;s points Matchup against Charlotte is <strong>+0.4% vs league</strong>,
+            slightly favourable. The edge is his pick-and-roll: 37% of his plays, and Charlotte
+            ranks 26th against it.
           </p>
-          <AnswerCard />
+          <RealCard />
         </div>
-        <figcaption>A real answer from the connector, trimmed to points.</figcaption>
+        <figcaption>
+          The real Matchup card from the connector, with live data from the completed 2025-26
+          season.
+        </figcaption>
       </figure>
     </header>
 
@@ -134,6 +130,7 @@ const VariantB = ({ headingRef }) => (
       <h2 id="cp-b-ask" className="cp-h2">
         Try asking
       </h2>
+      <p className="cp-note">Each of these works today. Paste one into a chat with CourtAI on.</p>
       <ul className="cp-chips">
         {TOOLS.map((tool) => (
           <li key={tool.key}>

@@ -1,0 +1,1538 @@
+{
+  "mode": "unscheduled",
+  "as_of": {
+    "season": "2025-26",
+    "season_defense": "2026-08-24",
+    "last_15_defense": "2026-08-24",
+    "player_diets": "2026-09-09"
+  },
+  "season_reading": "completed season",
+  "player": {
+    "name": "Cade Cunningham",
+    "team": "DET",
+    "opponent": "CHA",
+    "last_10_minutes": [
+      39.366667, 35.15, 25.833333, 28.383333, 30.166667, 37.216667, 5.333333, 25.666667, 28.4,
+      21.816667
+    ]
+  },
+  "rank_scale": "1-30, 30 = allows the most of the metric (1 = allows the fewest)",
+  "bases": ["Shot types", "Shot zones", "Play types", "Assist locations", "Traditional"],
+  "diet": [
+    {
+      "base": "Shot types",
+      "slices": [
+        { "slice": "Less Than 10 ft", "share": "46%", "league_share": "43%", "sd": "+0.2 SD" },
+        { "slice": "Pull-ups", "share": "40%", "league_share": "24%", "sd": "+1.1 SD" },
+        { "slice": "Catch & shoot", "share": "13%", "league_share": "32%", "sd": "-1.3 SD" }
+      ]
+    },
+    {
+      "base": "Shot zones",
+      "slices": [
+        { "slice": "Above-break 3", "share": "29%", "league_share": "32%", "sd": "-0.2 SD" },
+        { "slice": "Paint (non-RA)", "share": "28%", "league_share": "20%", "sd": "+0.9 SD" },
+        { "slice": "Restricted area", "share": "26%", "league_share": "28%", "sd": "-0.1 SD" },
+        { "slice": "Mid-range", "share": "15%", "league_share": "10%", "sd": "+0.8 SD" },
+        { "slice": "Corner 3", "share": "2%", "league_share": "11%", "sd": "-1.3 SD" }
+      ]
+    },
+    {
+      "base": "Play types",
+      "slices": [
+        { "slice": "PnR ball handler", "share": "37%", "league_share": "18%", "sd": "+1.6 SD" },
+        { "slice": "Transition", "share": "19%", "league_share": "18%", "sd": "+0.1 SD" },
+        { "slice": "Isolation", "share": "12%", "league_share": "8%", "sd": "+0.9 SD" },
+        { "slice": "Spot up", "share": "8%", "league_share": "25%", "sd": "-1.5 SD" },
+        { "slice": "Handoff", "share": "8%", "league_share": "6%", "sd": "+0.5 SD" },
+        { "slice": "Misc", "share": "5%", "league_share": "5%", "sd": "-0.1 SD" },
+        { "slice": "Post up", "share": "4%", "league_share": "8%", "sd": "-0.6 SD" },
+        { "slice": "Off screen", "share": "4%", "league_share": "5%", "sd": "-0.4 SD" },
+        { "slice": "Cut", "share": "2%", "league_share": "8%", "sd": "-0.9 SD" },
+        { "slice": "Putback", "share": "1%", "league_share": "6%", "sd": "-0.8 SD" }
+      ]
+    },
+    {
+      "base": "Assist locations",
+      "slices": [
+        { "slice": "Rim", "share": "49%", "league_share": "37%", "sd": "+1.5 SD" },
+        { "slice": "Arc 3", "share": "22%", "league_share": "29%", "sd": "-1.0 SD" },
+        { "slice": "Short mid-range", "share": "18%", "league_share": "17%", "sd": "+0.2 SD" },
+        { "slice": "Corner 3", "share": "11%", "league_share": "13%", "sd": "-0.5 SD" },
+        { "slice": "Long mid-range", "share": "1%", "league_share": "5%", "sd": "-1.5 SD" }
+      ]
+    }
+  ],
+  "markets": [
+    {
+      "market": "PTS",
+      "season": { "value": 0.003507, "label": "+0.4% vs league (favourable)", "thin": false },
+      "last15": { "value": -0.009619, "label": "-1% vs league (unfavourable)", "thin": false },
+      "last15_agrees": null,
+      "components": {
+        "Shot types": { "value": -0.003022, "thin": false },
+        "Shot zones": { "value": -0.011112, "thin": false },
+        "Play types": { "value": 0.024656, "thin": false },
+        "Assist locations": null,
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Play types",
+          "slice": "PnR ball handler",
+          "metric": "PnR ball handler points allowed per 48",
+          "opponent_rank": 26,
+          "vs_league": "+12%",
+          "diet_share": "37%",
+          "row": "sheet:play_types:PRBallHandler:PTS",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
+            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
+            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
+            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+          ]
+        },
+        {
+          "base": "Play types",
+          "slices": [
+            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
+            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
+            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
+            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
+            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
+            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
+            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
+            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
+            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
+            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "REB",
+      "season": { "value": -0.101277, "label": "-10% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.100724,
+        "label": "-10% vs league (unfavourable)",
+        "thin": false
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": { "value": -0.101277, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Rebounds",
+          "metric": "rebounds allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-10%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_REB",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Rebounds",
+              "metric": "rebounds allowed per 48",
+              "opponent_rank": 2,
+              "vs_league": "-10%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "AST",
+      "season": { "value": -0.025682, "label": "-3% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.13761,
+        "label": "-14% vs league (unfavourable)",
+        "thin": false
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": { "value": -0.025682, "thin": false },
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Assist locations",
+          "slice": "Rim",
+          "metric": "rim assists allowed per 48",
+          "opponent_rank": 16,
+          "vs_league": "-0.4%",
+          "diet_share": "49%",
+          "row": "sheet:assist_locations:AtRimAssists",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Assist locations",
+          "slices": [
+            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
+            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
+            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
+            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "3PM",
+      "season": { "value": 0.013232, "label": "+1% vs league (favourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": { "value": 0.136775, "label": "+14% vs league (favourable)", "thin": false },
+      "components": {
+        "Shot types": { "value": 0.013885, "thin": false },
+        "Shot zones": { "value": 0.012578, "thin": false },
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Shot types",
+          "slice": "Pull-ups",
+          "metric": "Pull-ups 3PT makes allowed per 48",
+          "opponent_rank": 25,
+          "vs_league": "+6%",
+          "diet_share": "40%",
+          "row": "sheet:shot_types:Pullups:FG3M",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Shot zones",
+          "slice": "Above-break 3",
+          "metric": "Above-break 3 field goals made allowed per 48",
+          "opponent_rank": 19,
+          "vs_league": "+2%",
+          "diet_share": "29%",
+          "row": "sheet:shot_zones:Above the Break 3:FGM",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": null, "vs_league": null },
+            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": null, "vs_league": null },
+            { "slice": "Restricted area", "opponent_rank": null, "vs_league": null },
+            { "slice": "Mid-range", "opponent_rank": null, "vs_league": null },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "PRA",
+      "season": { "value": -0.018598, "label": "-2% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.054654,
+        "label": "-5% vs league (unfavourable)",
+        "thin": false
+      },
+      "components": {
+        "Shot types": { "value": -0.001836, "thin": false },
+        "Shot zones": { "value": -0.006751, "thin": false },
+        "Play types": { "value": 0.014979, "thin": false },
+        "Assist locations": { "value": -0.006461, "thin": false },
+        "Traditional": { "value": -0.014267, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Rebounds",
+          "metric": "rebounds allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-10%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_REB",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Shot zones",
+          "slice": "Above-break 3",
+          "metric": "Above-break 3 field goals made allowed per 48",
+          "opponent_rank": 19,
+          "vs_league": "+2%",
+          "diet_share": "29%",
+          "row": "sheet:shot_zones:Above the Break 3:FGM",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
+            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
+            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
+            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+          ]
+        },
+        {
+          "base": "Play types",
+          "slices": [
+            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
+            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
+            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
+            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
+            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
+            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
+            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
+            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
+            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
+            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+          ]
+        },
+        {
+          "base": "Assist locations",
+          "slices": [
+            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
+            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
+            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
+            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+          ]
+        },
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Rebounds",
+              "metric": "rebounds allowed per 48",
+              "opponent_rank": 2,
+              "vs_league": "-10%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "PA",
+      "season": { "value": -0.005041, "label": "-0.5% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": { "value": -0.0471, "label": "-5% vs league (unfavourable)", "thin": false },
+      "components": {
+        "Shot types": { "value": -0.002137, "thin": false },
+        "Shot zones": { "value": -0.007858, "thin": false },
+        "Play types": { "value": 0.017436, "thin": false },
+        "Assist locations": { "value": -0.007521, "thin": false },
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Shot zones",
+          "slice": "Above-break 3",
+          "metric": "Above-break 3 field goals made allowed per 48",
+          "opponent_rank": 19,
+          "vs_league": "+2%",
+          "diet_share": "29%",
+          "row": "sheet:shot_zones:Above the Break 3:FGM",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Assist locations",
+          "slice": "Rim",
+          "metric": "rim assists allowed per 48",
+          "opponent_rank": 16,
+          "vs_league": "-0.4%",
+          "diet_share": "49%",
+          "row": "sheet:assist_locations:AtRimAssists",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
+            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
+            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
+            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+          ]
+        },
+        {
+          "base": "Play types",
+          "slices": [
+            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
+            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
+            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
+            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
+            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
+            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
+            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
+            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
+            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
+            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+          ]
+        },
+        {
+          "base": "Assist locations",
+          "slices": [
+            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
+            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
+            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
+            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "PR",
+      "season": { "value": -0.016216, "label": "-2% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.026768,
+        "label": "-3% vs league (unfavourable)",
+        "thin": false
+      },
+      "components": {
+        "Shot types": { "value": -0.002453, "thin": false },
+        "Shot zones": { "value": -0.00902, "thin": false },
+        "Play types": { "value": 0.020015, "thin": false },
+        "Assist locations": null,
+        "Traditional": { "value": -0.019063, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Rebounds",
+          "metric": "rebounds allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-10%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_REB",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Shot zones",
+          "slice": "Above-break 3",
+          "metric": "Above-break 3 field goals made allowed per 48",
+          "opponent_rank": 19,
+          "vs_league": "+2%",
+          "diet_share": "29%",
+          "row": "sheet:shot_zones:Above the Break 3:FGM",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
+            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
+            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
+            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+          ]
+        },
+        {
+          "base": "Play types",
+          "slices": [
+            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
+            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
+            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
+            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
+            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
+            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
+            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
+            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
+            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
+            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+          ]
+        },
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Rebounds",
+              "metric": "rebounds allowed per 48",
+              "opponent_rank": 2,
+              "vs_league": "-10%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "RA",
+      "season": { "value": -0.052817, "label": "-5% vs league (unfavourable)", "thin": false },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.12437,
+        "label": "-12% vs league (unfavourable)",
+        "thin": false
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": { "value": -0.016463, "thin": false },
+        "Traditional": { "value": -0.036353, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Rebounds",
+          "metric": "rebounds allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-10%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_REB",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Assist locations",
+          "slice": "Rim",
+          "metric": "rim assists allowed per 48",
+          "opponent_rank": 16,
+          "vs_league": "-0.4%",
+          "diet_share": "49%",
+          "row": "sheet:assist_locations:AtRimAssists",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Assist locations",
+          "slices": [
+            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
+            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
+            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
+            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+          ]
+        },
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Rebounds",
+              "metric": "rebounds allowed per 48",
+              "opponent_rank": 2,
+              "vs_league": "-10%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "FGA",
+      "season": { "value": 0.001322, "label": "+0.1% vs league (favourable)", "thin": false },
+      "last15": { "value": -0.016174, "label": "-2% vs league (unfavourable)", "thin": false },
+      "last15_agrees": null,
+      "components": {
+        "Shot types": { "value": -0.001549, "thin": false },
+        "Shot zones": { "value": 0.004193, "thin": false },
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Shot zones",
+          "slice": "Above-break 3",
+          "metric": "Above-break 3 field goal attempts allowed per 48",
+          "opponent_rank": 21,
+          "vs_league": "+2%",
+          "diet_share": "29%",
+          "row": "sheet:shot_zones:Above the Break 3:FGA",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 18, "vs_league": "+0.5%" },
+            { "slice": "Pull-ups", "opponent_rank": 17, "vs_league": "+2%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 21, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": 15, "vs_league": "+2%" },
+            { "slice": "Restricted area", "opponent_rank": 17, "vs_league": "+0.8%" },
+            { "slice": "Mid-range", "opponent_rank": 10, "vs_league": "-3%" },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "FG2A",
+      "season": { "value": 0.003077, "label": "+0.3% vs league (favourable)", "thin": false },
+      "last15": { "value": -0.144771, "label": "-14% vs league (unfavourable)", "thin": false },
+      "last15_agrees": null,
+      "components": {
+        "Shot types": { "value": 0.004057, "thin": false },
+        "Shot zones": { "value": 0.002098, "thin": false },
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Shot types",
+          "slice": "Less Than 10 ft",
+          "metric": "Less Than 10 ft 2PT attempts allowed per 48",
+          "opponent_rank": 18,
+          "vs_league": "+0.5%",
+          "diet_share": "46%",
+          "row": "sheet:shot_types:Less Than 10 ft:FG2A",
+          "filter_match": "exact"
+        },
+        {
+          "base": "Shot zones",
+          "slice": "Paint (non-RA)",
+          "metric": "Paint (non-RA) field goal attempts allowed per 48",
+          "opponent_rank": 15,
+          "vs_league": "+2%",
+          "diet_share": "28%",
+          "row": "sheet:shot_zones:In The Paint (Non-RA):FGA",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": 18, "vs_league": "+0.5%" },
+            { "slice": "Pull-ups", "opponent_rank": 17, "vs_league": "+2%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": null, "vs_league": null },
+            { "slice": "Paint (non-RA)", "opponent_rank": 15, "vs_league": "+2%" },
+            { "slice": "Restricted area", "opponent_rank": 17, "vs_league": "+0.8%" },
+            { "slice": "Mid-range", "opponent_rank": 10, "vs_league": "-3%" },
+            { "slice": "Corner 3", "opponent_rank": null, "vs_league": null }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "FG3A",
+      "season": { "value": -0.001167, "label": "-0.1% vs league (unfavourable)", "thin": false },
+      "last15": { "value": 0.12787, "label": "+13% vs league (favourable)", "thin": false },
+      "last15_agrees": null,
+      "components": {
+        "Shot types": { "value": -0.011238, "thin": false },
+        "Shot zones": { "value": 0.008904, "thin": false },
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": null
+      },
+      "drivers": [
+        {
+          "base": "Shot types",
+          "slice": "Pull-ups",
+          "metric": "Pull-ups 3PT attempts allowed per 48",
+          "opponent_rank": 10,
+          "vs_league": "-2%",
+          "diet_share": "40%",
+          "row": "sheet:shot_types:Pullups:FG3A",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Shot types",
+          "slices": [
+            { "slice": "Less Than 10 ft", "opponent_rank": null, "vs_league": null },
+            { "slice": "Pull-ups", "opponent_rank": 10, "vs_league": "-2%" },
+            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+          ]
+        },
+        {
+          "base": "Shot zones",
+          "slices": [
+            { "slice": "Above-break 3", "opponent_rank": 21, "vs_league": "+2%" },
+            { "slice": "Paint (non-RA)", "opponent_rank": null, "vs_league": null },
+            { "slice": "Restricted area", "opponent_rank": null, "vs_league": null },
+            { "slice": "Mid-range", "opponent_rank": null, "vs_league": null },
+            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "STL",
+      "season": {
+        "value": -0.025373,
+        "label": "-3% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.123368,
+        "label": "-12% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": { "value": -0.025373, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Steals",
+          "metric": "steals per 48",
+          "opponent_rank": 13,
+          "vs_league": "-3%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_STL",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Steals",
+              "metric": "steals per 48",
+              "opponent_rank": 13,
+              "vs_league": "-3%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "BLK",
+      "season": {
+        "value": -0.081903,
+        "label": "-8% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.211063,
+        "label": "-21% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": { "value": -0.081903, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Blocks",
+          "metric": "blocks per 48",
+          "opponent_rank": 9,
+          "vs_league": "-8%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_BLK",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Traditional",
+          "slices": [
+            { "slice": "Blocks", "metric": "blocks per 48", "opponent_rank": 9, "vs_league": "-8%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "STKS",
+      "season": {
+        "value": -0.046281,
+        "label": "-5% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.155803,
+        "label": "-16% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": { "value": -0.046281, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Blocks",
+          "metric": "blocks per 48",
+          "opponent_rank": 9,
+          "vs_league": "-8%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_BLK",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Traditional",
+          "slices": [
+            { "slice": "Blocks", "metric": "blocks per 48", "opponent_rank": 9, "vs_league": "-8%" }
+          ]
+        }
+      ]
+    },
+    {
+      "market": "TOV",
+      "season": {
+        "value": -0.123777,
+        "label": "-12% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "last15": null,
+      "last15_agrees": {
+        "value": -0.112015,
+        "label": "-11% vs league (unfavourable)",
+        "thin": false,
+        "no_blend_component": "Traditional"
+      },
+      "components": {
+        "Shot types": null,
+        "Shot zones": null,
+        "Play types": null,
+        "Assist locations": null,
+        "Traditional": { "value": -0.123777, "thin": false }
+      },
+      "drivers": [
+        {
+          "base": "Traditional",
+          "slice": "Turnovers",
+          "metric": "turnovers forced per 48",
+          "opponent_rank": 3,
+          "vs_league": "-12%",
+          "diet_share": null,
+          "row": "sheet:traditional:OPP_TOV",
+          "filter_match": "exact"
+        }
+      ],
+      "bases": [
+        {
+          "base": "Traditional",
+          "slices": [
+            {
+              "slice": "Turnovers",
+              "metric": "turnovers forced per 48",
+              "opponent_rank": 3,
+              "vs_league": "-12%"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Defense and Diets are the completed 2025-26 season, the latest data.",
+    "Not applicable to an unscheduled matchup (no game): injuries, posted lines, participants and head-to-head rows.",
+    "Each slice's opponent rank and % vs league come from its row for that market (scored rows over possessions, then the furthest from league average); a slice with no such row has none.",
+    "The backend sends no Blend for defensive markets (TOV, STL, BLK, STKS); their score is the Traditional component alone."
+  ],
+  "provenance": {
+    "assist_locations_l15": {
+      "age_seconds": 4404129,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "e8be623ec8ec33f886aa5d51cb187a09c717cb6e1031b00132ee401a906ded36",
+      "publication_id": "bcbaacc2-5172-43f6-83ed-dbfd40ca6340",
+      "retrieved_at": "2026-08-23T05:03:36.908442+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "assist_locations_l15",
+      "unavailable_reason": null,
+      "version": 5
+    },
+    "assist_locations_season": {
+      "age_seconds": 4401794,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "fef6362f06a245e19a5abac310f5bf55f0b835fcc1e7420019ef4242e0b8b5f5",
+      "publication_id": "ce6454d8-523d-4d3c-b8e7-b4b48b9015d1",
+      "retrieved_at": "2026-08-23T05:42:31.915540+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "assist_locations_season",
+      "unavailable_reason": null,
+      "version": 4
+    },
+    "exact_shot_zones": {
+      "age_seconds": 2917196,
+      "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+      "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+      "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+      "fence": 4,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+      "payload_checksum": "249c98f5af777a04db9d2f651825b6a9e96c77d465689e39be2bea64f2847f88",
+      "publication_id": "b38d49db-8685-426c-966f-a8c737722cbb",
+      "retrieved_at": "2026-09-09T10:05:49.503289+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "exact_shot_zones",
+      "unavailable_reason": null,
+      "version": 4
+    },
+    "exact_shot_zones_opponent_l15": {
+      "age_seconds": 3130738,
+      "coverage_cutoff": "2026-09-06T07:57:51+00:00",
+      "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+      "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
+      "fence": 3,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "e104123c-8f4a-4c5a-af48-d3cfbaddd458",
+      "payload_checksum": "649464024deb2b88ee3a1ad8cb37fb2666ef1ed7c935e0597db102ece8dd4647",
+      "publication_id": "312b0e45-0aee-47c8-a35b-047a532c8930",
+      "retrieved_at": "2026-09-06T22:46:47.468226+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "exact_shot_zones_opponent_l15",
+      "unavailable_reason": null,
+      "version": 3
+    },
+    "exact_shot_zones_opponent_season": {
+      "age_seconds": 3130738,
+      "coverage_cutoff": "2026-09-06T07:57:51+00:00",
+      "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+      "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
+      "fence": 2,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "e104123c-8f4a-4c5a-af48-d3cfbaddd458",
+      "payload_checksum": "9bc98d632a763474929a8bf3774153f72409e70a84738686708599a437f5088d",
+      "publication_id": "96ade3d4-ffff-4a50-afb8-b03af236cf18",
+      "retrieved_at": "2026-09-06T22:46:47.468226+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "exact_shot_zones_opponent_season",
+      "unavailable_reason": null,
+      "version": 2
+    },
+    "generation": [
+      {
+        "age_seconds": 4404129,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "e8be623ec8ec33f886aa5d51cb187a09c717cb6e1031b00132ee401a906ded36",
+        "publication_id": "bcbaacc2-5172-43f6-83ed-dbfd40ca6340",
+        "retrieved_at": "2026-08-23T05:03:36.908442+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "assist_locations_l15",
+        "unavailable_reason": null,
+        "version": 5
+      },
+      {
+        "age_seconds": 4401794,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "fef6362f06a245e19a5abac310f5bf55f0b835fcc1e7420019ef4242e0b8b5f5",
+        "publication_id": "ce6454d8-523d-4d3c-b8e7-b4b48b9015d1",
+        "retrieved_at": "2026-08-23T05:42:31.915540+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "assist_locations_season",
+        "unavailable_reason": null,
+        "version": 4
+      },
+      {
+        "age_seconds": 2917196,
+        "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+        "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+        "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+        "fence": 4,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+        "payload_checksum": "249c98f5af777a04db9d2f651825b6a9e96c77d465689e39be2bea64f2847f88",
+        "publication_id": "b38d49db-8685-426c-966f-a8c737722cbb",
+        "retrieved_at": "2026-09-09T10:05:49.503289+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "exact_shot_zones",
+        "unavailable_reason": null,
+        "version": 4
+      },
+      {
+        "age_seconds": 3130738,
+        "coverage_cutoff": "2026-09-06T07:57:51+00:00",
+        "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+        "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
+        "fence": 3,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "e104123c-8f4a-4c5a-af48-d3cfbaddd458",
+        "payload_checksum": "649464024deb2b88ee3a1ad8cb37fb2666ef1ed7c935e0597db102ece8dd4647",
+        "publication_id": "312b0e45-0aee-47c8-a35b-047a532c8930",
+        "retrieved_at": "2026-09-06T22:46:47.468226+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "exact_shot_zones_opponent_l15",
+        "unavailable_reason": null,
+        "version": 3
+      },
+      {
+        "age_seconds": 3130738,
+        "coverage_cutoff": "2026-09-06T07:57:51+00:00",
+        "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+        "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
+        "fence": 2,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "e104123c-8f4a-4c5a-af48-d3cfbaddd458",
+        "payload_checksum": "9bc98d632a763474929a8bf3774153f72409e70a84738686708599a437f5088d",
+        "publication_id": "96ade3d4-ffff-4a50-afb8-b03af236cf18",
+        "retrieved_at": "2026-09-06T22:46:47.468226+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "exact_shot_zones_opponent_season",
+        "unavailable_reason": null,
+        "version": 2
+      },
+      {
+        "age_seconds": 2917512,
+        "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+        "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+        "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+        "fence": 6,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+        "payload_checksum": "f86f52dd5e67a09ea158318023c81501b241407a81000d4051a8397a7bcc7f52",
+        "publication_id": "1c4bfb21-0038-433f-b3e9-eae7a7300965",
+        "retrieved_at": "2026-09-09T10:00:33.801679+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "grouped_shot_types",
+        "unavailable_reason": null,
+        "version": 6
+      },
+      {
+        "age_seconds": 4242035,
+        "coverage_cutoff": "2026-08-24T19:37:25+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "240e366d-e00f-485d-82bf-9608ff15b5ec",
+        "payload_checksum": "71a62bb71e970b66374118f9b6a3d29220a34f1a1859958b39ea8964e38a0263",
+        "publication_id": "bd7d6f40-07bd-40ad-951f-c124f19e3e17",
+        "retrieved_at": "2026-08-25T02:05:10.903799+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "grouped_shot_types_opponent_l15",
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "age_seconds": 4245337,
+        "coverage_cutoff": "2026-08-24T19:37:25+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
+        "fence": 3,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "240e366d-e00f-485d-82bf-9608ff15b5ec",
+        "payload_checksum": "1feaa3dfe674157592f3bd85b962707a6e9e989ddb76c7958947baffc2d9b31e",
+        "publication_id": "7344bb54-fbcd-4c19-a2e5-0ce967149dff",
+        "retrieved_at": "2026-08-25T01:10:08.980399+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "grouped_shot_types_opponent_season",
+        "unavailable_reason": null,
+        "version": 3
+      },
+      {
+        "age_seconds": 2697649,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "570fa216199b1a156b67a63d4935e824dbfe12bab7e547a051214bef1ef49585",
+        "publication_id": "dc534717-30b9-4426-bc4d-8f66b4064625",
+        "retrieved_at": "2026-09-11T23:04:56.597624+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "player_assist_locations",
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "age_seconds": 4353206,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": null,
+        "event_catalog_publication_id": null,
+        "fence": 3,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": null,
+        "payload_checksum": "e43dcb0aef889793278aeafd811349cf0db05683582c29fed08e56517c42e2c9",
+        "publication_id": "1bf3a07a-741a-4f7c-9bef-977a22066b15",
+        "retrieved_at": "2026-08-23T19:12:19.727615+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "player_game_logs",
+        "unavailable_reason": null,
+        "version": 3
+      },
+      {
+        "age_seconds": 4401823,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "3f1adcb674128a716908f237fe3385e6036a8dc0eeba19e684a98518209fd3d8",
+        "publication_id": "09a07a9e-b08c-4016-962b-a079f9ee248b",
+        "retrieved_at": "2026-08-23T05:42:02.623322+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "player_per36",
+        "unavailable_reason": null,
+        "version": 5
+      },
+      {
+        "age_seconds": 2917512,
+        "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+        "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+        "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+        "fence": 5,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+        "payload_checksum": "61b700877bcb5cf5845bee9cf23194110a61e8a8703878acb6bc48cfab1a7b89",
+        "publication_id": "f66ec097-0d08-4f00-8c3f-9e9fa05bffd3",
+        "retrieved_at": "2026-09-09T10:00:33.679229+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "synergy_play_types",
+        "unavailable_reason": null,
+        "version": 5
+      },
+      {
+        "age_seconds": 4267213,
+        "coverage_cutoff": "2026-08-24T10:52:39+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "642b443d-9195-4d9d-ad59-a384b1d3d882",
+        "fence": 3,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "0beb0af1-9969-4321-b088-04b6ff7f66f3",
+        "payload_checksum": "5d2a9f96ed1f336b610989b661f19eb3642b57b3fe47559186dc65d9cc733e41",
+        "publication_id": "6a7a95e6-dc8a-43a3-bea7-f3328436e921",
+        "retrieved_at": "2026-08-24T19:05:33.172525+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "synergy_play_types_opponent_season",
+        "unavailable_reason": null,
+        "version": 3
+      },
+      {
+        "age_seconds": 3307951,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 2,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "f559801b1ceebbbec7d512fcf591a77c14c900dbbb52c09f8404ff5c48035386",
+        "publication_id": "37f3a1bc-e8d9-4ff7-a59e-ae842415aa1d",
+        "retrieved_at": "2026-09-04T21:33:15.218483+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "traditional_opponent_l15",
+        "unavailable_reason": null,
+        "version": 7
+      },
+      {
+        "age_seconds": 3307993,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 2,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "389e64e8d5122a28a928f8037fe12a966769c4c0844b9527855735b86e12e795",
+        "publication_id": "2bbaba13-ff2f-402b-9b8a-ef21f6390aef",
+        "retrieved_at": "2026-09-04T21:32:32.848954+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "traditional_opponent_season",
+        "unavailable_reason": null,
+        "version": 8
+      }
+    ],
+    "grouped_shot_types": {
+      "age_seconds": 2917512,
+      "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+      "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+      "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+      "fence": 6,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+      "payload_checksum": "f86f52dd5e67a09ea158318023c81501b241407a81000d4051a8397a7bcc7f52",
+      "publication_id": "1c4bfb21-0038-433f-b3e9-eae7a7300965",
+      "retrieved_at": "2026-09-09T10:00:33.801679+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "grouped_shot_types",
+      "unavailable_reason": null,
+      "version": 6
+    },
+    "grouped_shot_types_opponent_l15": {
+      "age_seconds": 4242035,
+      "coverage_cutoff": "2026-08-24T19:37:25+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "240e366d-e00f-485d-82bf-9608ff15b5ec",
+      "payload_checksum": "71a62bb71e970b66374118f9b6a3d29220a34f1a1859958b39ea8964e38a0263",
+      "publication_id": "bd7d6f40-07bd-40ad-951f-c124f19e3e17",
+      "retrieved_at": "2026-08-25T02:05:10.903799+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "grouped_shot_types_opponent_l15",
+      "unavailable_reason": null,
+      "version": 1
+    },
+    "grouped_shot_types_opponent_season": {
+      "age_seconds": 4245337,
+      "coverage_cutoff": "2026-08-24T19:37:25+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
+      "fence": 3,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "240e366d-e00f-485d-82bf-9608ff15b5ec",
+      "payload_checksum": "1feaa3dfe674157592f3bd85b962707a6e9e989ddb76c7958947baffc2d9b31e",
+      "publication_id": "7344bb54-fbcd-4c19-a2e5-0ce967149dff",
+      "retrieved_at": "2026-08-25T01:10:08.980399+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "grouped_shot_types_opponent_season",
+      "unavailable_reason": null,
+      "version": 3
+    },
+    "player_assist_locations": {
+      "age_seconds": 2697649,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "570fa216199b1a156b67a63d4935e824dbfe12bab7e547a051214bef1ef49585",
+      "publication_id": "dc534717-30b9-4426-bc4d-8f66b4064625",
+      "retrieved_at": "2026-09-11T23:04:56.597624+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "player_assist_locations",
+      "unavailable_reason": null,
+      "version": 1
+    },
+    "player_game_logs": {
+      "age_seconds": 4353206,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": null,
+      "event_catalog_publication_id": null,
+      "fence": 3,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": null,
+      "payload_checksum": "e43dcb0aef889793278aeafd811349cf0db05683582c29fed08e56517c42e2c9",
+      "publication_id": "1bf3a07a-741a-4f7c-9bef-977a22066b15",
+      "retrieved_at": "2026-08-23T19:12:19.727615+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "player_game_logs",
+      "unavailable_reason": null,
+      "version": 3
+    },
+    "player_per36": {
+      "age_seconds": 4401823,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "3f1adcb674128a716908f237fe3385e6036a8dc0eeba19e684a98518209fd3d8",
+      "publication_id": "09a07a9e-b08c-4016-962b-a079f9ee248b",
+      "retrieved_at": "2026-08-23T05:42:02.623322+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "player_per36",
+      "unavailable_reason": null,
+      "version": 5
+    },
+    "sources": {},
+    "synergy:l15": {
+      "age_seconds": null,
+      "coverage_cutoff": null,
+      "event_catalog_checksum": null,
+      "event_catalog_publication_id": null,
+      "fence": null,
+      "freshness": "unavailable",
+      "legacy_fallback_allowed": false,
+      "manifest_id": null,
+      "payload_checksum": null,
+      "publication_id": null,
+      "retrieved_at": null,
+      "season": null,
+      "source": "database",
+      "status": "unavailable",
+      "stream_key": "synergy:l15",
+      "unavailable_reason": "provider_window_unsupported",
+      "version": null
+    },
+    "synergy_play_types": {
+      "age_seconds": 2917512,
+      "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+      "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+      "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+      "fence": 5,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+      "payload_checksum": "61b700877bcb5cf5845bee9cf23194110a61e8a8703878acb6bc48cfab1a7b89",
+      "publication_id": "f66ec097-0d08-4f00-8c3f-9e9fa05bffd3",
+      "retrieved_at": "2026-09-09T10:00:33.679229+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "synergy_play_types",
+      "unavailable_reason": null,
+      "version": 5
+    },
+    "synergy_play_types_opponent_l15": {
+      "age_seconds": null,
+      "coverage_cutoff": null,
+      "event_catalog_checksum": null,
+      "event_catalog_publication_id": null,
+      "fence": null,
+      "freshness": "unavailable",
+      "legacy_fallback_allowed": false,
+      "manifest_id": null,
+      "payload_checksum": null,
+      "publication_id": null,
+      "retrieved_at": null,
+      "season": null,
+      "source": "database",
+      "status": "unavailable",
+      "stream_key": "synergy_play_types_opponent_l15",
+      "unavailable_reason": "provider_window_unsupported",
+      "version": null
+    },
+    "synergy_play_types_opponent_season": {
+      "age_seconds": 4267213,
+      "coverage_cutoff": "2026-08-24T10:52:39+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "642b443d-9195-4d9d-ad59-a384b1d3d882",
+      "fence": 3,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "0beb0af1-9969-4321-b088-04b6ff7f66f3",
+      "payload_checksum": "5d2a9f96ed1f336b610989b661f19eb3642b57b3fe47559186dc65d9cc733e41",
+      "publication_id": "6a7a95e6-dc8a-43a3-bea7-f3328436e921",
+      "retrieved_at": "2026-08-24T19:05:33.172525+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "synergy_play_types_opponent_season",
+      "unavailable_reason": null,
+      "version": 3
+    },
+    "traditional_opponent_l15": {
+      "age_seconds": 3307951,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 2,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "f559801b1ceebbbec7d512fcf591a77c14c900dbbb52c09f8404ff5c48035386",
+      "publication_id": "37f3a1bc-e8d9-4ff7-a59e-ae842415aa1d",
+      "retrieved_at": "2026-09-04T21:33:15.218483+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "traditional_opponent_l15",
+      "unavailable_reason": null,
+      "version": 7
+    },
+    "traditional_opponent_season": {
+      "age_seconds": 3307993,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 2,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "389e64e8d5122a28a928f8037fe12a966769c4c0844b9527855735b86e12e795",
+      "publication_id": "2bbaba13-ff2f-402b-9b8a-ef21f6390aef",
+      "retrieved_at": "2026-09-04T21:32:32.848954+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "traditional_opponent_season",
+      "unavailable_reason": null,
+      "version": 8
+    }
+  },
+  "data_as_of": [
+    "Data as of the 2025-26 season's 2026-09-09 play-type Diets, shot-zone Diets and shot-type Diets, the 2025-26 season's 2026-09-06 shot-zone defense, the 2025-26 season's 2026-08-24 play-type defense and shot-type defense, and the 2025-26 season's 2026-08-21 game logs, per-36 rates, assist-location Diets, team defense and assist-location defense.",
+    "Stale: game logs, per-36 rates and assist-location defense (50 days old), play-type Diets, shot-zone Diets and shot-type Diets (33 days old), assist-location Diets (31 days old), team defense (38 days old), play-type defense and shot-type defense (49 days old), shot-zone defense (36 days old). State this once, in a closing line of any answer that uses them."
+  ]
+}

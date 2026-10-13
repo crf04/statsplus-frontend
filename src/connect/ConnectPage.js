@@ -106,7 +106,6 @@ const NOTES = [
 const ClientTabs = () => {
   const [active, setActive] = useState(0);
   const tabRefs = useRef([]);
-  const client = CLIENTS[active];
 
   // Arrow keys move between tabs and select, as in the WAI-ARIA tabs pattern.
   const onKeyDown = (event) => {
@@ -141,19 +140,23 @@ const ClientTabs = () => {
           </button>
         ))}
       </div>
-      <div
-        className="connect-tabpanel"
-        role="tabpanel"
-        id={`connect-panel-${client.id}`}
-        aria-labelledby={`connect-tab-${client.id}`}
-      >
-        <p className="connect-note">{client.note}</p>
-        <ol className="connect-steps">
-          {client.steps.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ol>
-      </div>
+      {CLIENTS.map((c, index) => (
+        <div
+          key={c.id}
+          className="connect-tabpanel"
+          role="tabpanel"
+          id={`connect-panel-${c.id}`}
+          aria-labelledby={`connect-tab-${c.id}`}
+          hidden={index !== active}
+        >
+          <p className="connect-note">{c.note}</p>
+          <ol className="connect-steps">
+            {c.steps.map((step, stepIndex) => (
+              <li key={stepIndex}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      ))}
     </>
   );
 };

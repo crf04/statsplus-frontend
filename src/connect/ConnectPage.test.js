@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -30,7 +30,12 @@ const installClipboard = (writeText) => {
 const renderConnectRoute = async () => {
   window.history.pushState({}, '', '/connect');
   render(<App />);
-  await screen.findByRole('heading', { level: 1, name: 'Ask CourtAI from your chat' });
+  const heading = await screen.findByRole('heading', {
+    level: 1,
+    name: 'Ask CourtAI from your chat',
+  });
+  // Route entry focuses the heading; wait for it so later focus moves are ours.
+  await waitFor(() => expect(heading).toHaveFocus());
 };
 
 afterEach(() => {
@@ -124,10 +129,25 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(panel).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom MCP server/)).toBeInTheDocument();
   expect(within(panel).getByText(/sign in with google/i)).toBeInTheDocument();
-  expect(within(setup).queryByText(/Add custom connector/)).not.toBeInTheDocument();
+  expect(within(setup).getByText(/Add custom connector/)).not.toBeVisible();
 
   fireEvent.keyDown(document.activeElement, { key: 'ArrowRight' });
   expect(within(setup).getByRole('tab', { name: 'Claude' })).toHaveFocus();
+  expect(within(setup).getByRole('tabpanel', { name: 'Claude' })).toBeInTheDocument();
+
+  fireEvent.keyDown(document.activeElement, { key: 'ArrowLeft' });
+  expect(within(setup).getByRole('tab', { name: 'ChatGPT' })).toHaveFocus();
+  expect(within(setup).getByRole('tab', { name: 'ChatGPT' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  fireEvent.keyDown(document.activeElement, { key: 'ArrowLeft' });
+  expect(within(setup).getByRole('tab', { name: 'Claude' })).toHaveFocus();
+
+  // Every tab names a panel that exists; the inactive one is hidden, not removed.
+  for (const tab of within(setup).getAllByRole('tab', { hidden: true })) {
+    expect(document.getElementById(tab.getAttribute('aria-controls'))).not.toBeNull();
+  }
 
   fireEvent.click(within(setup).getByRole('tab', { name: 'ChatGPT' }));
   expect(within(setup).getByRole('tabpanel', { name: 'ChatGPT' })).toBeInTheDocument();
@@ -155,4 +175,5 @@ test('the page shows the real card and one working question per tool', async () 
   expect(within(notes).getByText(/It doesn.t make picks/)).toBeInTheDocument();
   expect(within(notes).getByText(/30 means the defense allows the most/)).toBeInTheDocument();
   expect(within(notes).getByText(/US Eastern time and default to today/)).toBeInTheDocument();
+  expect(within(notes).getByText(/your own CourtAI sign-in/)).toBeInTheDocument();
 });

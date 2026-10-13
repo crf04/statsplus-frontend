@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import snapshot from './matchupCardSnapshot.json';
 
 // The connector's own Matchup card: public/mcp-cards/matchup.html is the
@@ -37,7 +37,10 @@ const MatchupCardFrame = () => {
   const frameRef = useRef(null);
   const [height, setHeight] = useState(INITIAL_HEIGHT);
 
-  useEffect(() => {
+  // A layout effect runs before the browser yields to the frame's first
+  // script, so a cached card's one-shot ui/initialize cannot arrive before
+  // the listener does.
+  useLayoutEffect(() => {
     const onMessage = (event) => {
       const card = frameRef.current?.contentWindow;
       if (!card || event.source !== card) return;

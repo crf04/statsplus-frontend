@@ -6,9 +6,17 @@ test('a signed-out visitor can copy the connector URL by hand or with the button
   page,
   context,
 }) => {
-  const apiRequests = [];
+  // The page is static: no backend call and no call to the connector itself.
+  // The card's own HTML under /mcp-cards/ is a static asset, not the connector.
+  const dataRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url());
+    const url = new URL(request.url());
+    const toBackend = url.pathname.startsWith('/api/');
+    const toConnector =
+      url.hostname === new URL(CONNECTOR_URL).hostname ||
+      url.pathname === '/mcp' ||
+      url.pathname.startsWith('/mcp/');
+    if (toBackend || toConnector) dataRequests.push(request.url());
   });
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.clock.install();
@@ -29,7 +37,7 @@ test('a signed-out visitor can copy the connector URL by hand or with the button
   await page.clock.runFor(5000);
   await expect(page.getByRole('button', { name: 'Copy connector URL' })).toBeVisible();
 
-  expect(apiRequests).toEqual([]);
+  expect(dataRequests).toEqual([]);
 });
 
 test('setup steps render as numbered lists in both tabs', async ({ page }) => {

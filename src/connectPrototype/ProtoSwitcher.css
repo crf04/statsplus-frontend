@@ -1,0 +1,71 @@
+/* PROTOTYPE (throwaway) */
+.ps {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 3000;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid #5b4b2c;
+  border-radius: 10px;
+  background: rgba(10, 8, 5, 0.96);
+  color: #efe9dc;
+  font:
+    12px/1.4 ui-monospace,
+    Menlo,
+    monospace;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.ps-closed {
+  width: auto;
+  cursor: pointer;
+}
+
+.ps-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: #e8a33d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ps-x {
+  border: none;
+  background: none;
+  color: #9b937f;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ps-options {
+  display: grid;
+  gap: 3px;
+}
+
+.ps-opt {
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: #c9c2b2;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ps-opt[aria-pressed='true'] {
+  border-color: #e8a33d;
+  color: #fff;
+  background: rgba(232, 163, 61, 0.12);
+}
+
+.ps-go {
+  display: block;
+  margin-top: 8px;
+  color: #e8a33d;
+  text-decoration: none;
+}

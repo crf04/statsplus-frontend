@@ -5,6 +5,7 @@ import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import { PROTO_ENABLED } from './connectPrototype/protoState';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -15,6 +16,9 @@ const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
+// PROTOTYPE (throwaway, branch prototype/connect-page-look)
+const ConnectPrototype = lazy(() => import('./connectPrototype/ConnectPrototype'));
+const ProtoSwitcher = lazy(() => import('./connectPrototype/ProtoSwitcher'));
 
 class RouteErrorBoundary extends Component {
   state = { failed: false };
@@ -84,7 +88,10 @@ function App() {
               <Routes>
                 <Route path="/" element={<GameLogFilter />} />
                 <Route path="/help" element={<QueryReferencePage />} />
-                <Route path="/connect" element={<ConnectPage />} />
+                <Route
+                  path="/connect"
+                  element={PROTO_ENABLED ? <ConnectPrototype /> : <ConnectPage />}
+                />
                 <Route path="/matchups" element={<SlatePage />} />
                 <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
                 <Route path="/targets" element={<TargetsPage />} />
@@ -108,6 +115,11 @@ function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </RouteContent>
+            {PROTO_ENABLED && (
+              <Suspense fallback={null}>
+                <ProtoSwitcher />
+              </Suspense>
+            )}
           </ProtectedRoute>
         </div>
       </BrowserRouter>

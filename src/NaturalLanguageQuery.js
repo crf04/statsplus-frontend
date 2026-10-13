@@ -9,6 +9,7 @@ import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
 import LandingCourt from './LandingCourt';
+import HomeConnectSlot from './connectPrototype/HomeConnectSlot';
 import './ModernSearch.css';
 
 const sampleQueries = [
@@ -188,6 +189,7 @@ const NaturalLanguageQuery = ({
           <div className="landing-hero">
             <LandingCourt />
             <div className="landing-header">
+              <HomeConnectSlot at="eyebrow" />
               <h1 className="landing-title">
                 Ask the <em>box score</em>
               </h1>
@@ -259,6 +261,7 @@ const NaturalLanguageQuery = ({
                 </button>
               )}
             </div>
+            <HomeConnectSlot at="door" />
           </div>
 
           <QueryLadder
@@ -266,6 +269,8 @@ const NaturalLanguageQuery = ({
             disabled={isLoading || !isAuthenticated}
             currentQuery={query}
           />
+          <HomeConnectSlot at="card" />
+          <HomeConnectSlot at="ticker" />
 
           {error && (
             <div className="landing-error">

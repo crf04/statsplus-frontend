@@ -1,0 +1,224 @@
+/* PROTOTYPE (throwaway): home-page mentions of the connector. */
+
+/* 1: pill above the headline */
+.hc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 26px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid rgba(232, 163, 61, 0.38);
+  border-radius: 999px;
+  background: rgba(13, 11, 7, 0.75);
+  color: #e6dcc6;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.hc-eyebrow:hover {
+  border-color: var(--ct-gold);
+  color: #fff6e4;
+}
+
+.hc-eyebrow-new {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--ct-gold);
+  color: #1a1206;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* 2: a third door under Browse / Saved Filter Sets */
+.hc-door {
+  margin: 18px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.9rem;
+  text-shadow:
+    0 0 6px var(--ct-ink),
+    0 0 14px var(--ct-ink),
+    0 0 22px var(--ct-ink);
+}
+
+.hc-door-link {
+  border-bottom: 1px solid rgba(232, 163, 61, 0.45);
+  color: var(--ct-gold);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.hc-door-link:hover {
+  color: var(--ct-gold-hover);
+}
+
+/* 3: a card under the query ladder */
+.hc-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+  margin: 40px 0 0;
+  padding: 26px 28px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background:
+    radial-gradient(420px 200px at 100% 0%, rgba(232, 163, 61, 0.1), transparent 70%),
+    var(--ct-surface);
+  text-align: left;
+}
+
+.hc-card-kicker {
+  margin: 0 0 6px;
+  color: var(--ct-gold);
+  font-family: var(--ct-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hc-card h2 {
+  margin: 0 0 8px;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.hc-card p:not(.hc-card-kicker) {
+  margin: 0 0 16px;
+  color: var(--ct-dim);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.hc-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-gold);
+  color: #1a1206;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.hc-card-cta:hover {
+  background: var(--ct-gold-hover);
+  color: #1a1206;
+}
+
+.hc-card-chat {
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hc-card-bubble {
+  padding: 9px 12px;
+  border-radius: 12px;
+}
+
+.hc-card-user {
+  justify-self: end;
+  max-width: 90%;
+  border-bottom-right-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ct-text);
+}
+
+.hc-card-ai {
+  max-width: 95%;
+  border: 1px solid var(--ct-line);
+  border-bottom-left-radius: 4px;
+  color: #ddd5c4;
+}
+
+.hc-card-ai strong {
+  color: var(--ct-hit);
+}
+
+/* 4: a ticker strip pinned to the bottom of the landing viewport */
+.hc-ticker {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(760px, calc(100vw - 24px));
+  padding: 10px 12px 10px 10px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(232, 163, 61, 0.35);
+  border-radius: 12px;
+  background: rgba(22, 19, 13, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
+  color: var(--ct-text);
+  text-align: left;
+  text-decoration: none;
+}
+
+.hc-ticker:hover {
+  border-color: var(--ct-gold);
+  color: var(--ct-text);
+}
+
+.hc-ticker-tag {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: var(--ct-gold);
+  color: #1a1206;
+  font-family: var(--ct-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hc-ticker-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+.hc-ticker-cta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--ct-gold);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .hc-card {
+    grid-template-columns: 1fr;
+    padding: 22px 18px;
+  }
+
+  .hc-ticker-cta {
+    display: none;
+  }
+
+  .hc-ticker-text {
+    font-size: 13px;
+  }
+
+  .hc-eyebrow {
+    font-size: 13px;
+  }
+}

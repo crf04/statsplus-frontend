@@ -30,7 +30,7 @@ const installClipboard = (writeText) => {
 const renderConnectRoute = async () => {
   window.history.pushState({}, '', '/connect');
   render(<App />);
-  await screen.findByRole('heading', { level: 1, name: 'Use StatsPlus in Claude or ChatGPT' });
+  await screen.findByRole('heading', { level: 1, name: 'Use CourtAI in Claude or ChatGPT' });
 };
 
 afterEach(() => {
@@ -50,7 +50,7 @@ test('a signed-out visitor reaches the Connect page from the main nav', async ()
   userEvent.click(link);
 
   expect(
-    await screen.findByRole('heading', { level: 1, name: 'Use StatsPlus in Claude or ChatGPT' }),
+    await screen.findByRole('heading', { level: 1, name: 'Use CourtAI in Claude or ChatGPT' }),
   ).toBeInTheDocument();
   expect(screen.getByText(CONNECTOR_URL)).toBeInTheDocument();
 });

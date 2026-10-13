@@ -15,7 +15,11 @@ const context =
   'Judge split accessible text on screen; scroll and wait for lazy content. ' +
   'Intended, not findings: signed-out Search, Matchups and Targets are disabled or gated with ' +
   'no back control (navigation stays usable); /help example links prefill Search; ' +
-  'explore has no clipboard permission, so Copy never shows Copied.';
+  'explore has no clipboard permission, so Copy never shows Copied. ' +
+  'The query parser is a fixed stub: every typed query returns LeBron James, last 10 games, so ' +
+  'judge what the app does with that answer, not whether it matches the text typed. ' +
+  'Also intended: a reopened Matchup card starts on its default stat; a Target note is free text ' +
+  'that threshold edits leave unchanged; Operator job rows show no submitted reason.';
 const persona = { model: chatgpt('gpt-6-luna'), maxSteps: 40, maxModelCalls: 40, context };
 
 export default {

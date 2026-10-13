@@ -9,5 +9,5 @@
     "allowImportingTsExtensions": true,
     "skipLibCheck": true
   },
-  "include": ["e2e.config.ts", "e2e/flows/**/*.ts"]
+  "include": ["e2e.config.ts", "e2e.bugbash.config.ts", "e2e/flows/**/*.ts", "e2e/bridge/**/*.ts"]
 }

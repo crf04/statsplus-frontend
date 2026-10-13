@@ -98,3 +98,77 @@ This is Internal-tier adoption: application source, requests, responses and rend
 output are unchanged. PR evidence records the owning gates and additional live QA
 and production checks separately. Review the runner reports for the exact cases;
 passing the deterministic suite does not imply the agent or live provider paths passed.
+
+## Fixture bridge for exploration and MCP
+
+The flow runner starts `node e2e/bridge/server.mjs {port}` on loopback using
+its port-0 allocation. The bridge serves Vite and `/api/*` on the same origin;
+it never proxies requests. The shared `e2e/fixtures/courtai-contract.mjs`
+contract also backs Playwright and scripted browser routes. Unknown API paths
+return 501. A fixture cookie plus the disposable E2E bearer is required;
+reader cookies cannot access `/api/admin/*`. No Firebase credentials are used.
+The bridge overrides local API/Firebase environment settings, removes remote
+font links, and applies a same-origin resource CSP. This is a development-only
+fixture service, never a deployment entry point.
+
+`bugbash.setup.e2e.ts` declares `bb-reader` and `bb-admin`. Each setup visits
+`/__fixture/bootstrap/reader` or `/__fixture/bootstrap/admin`, proves the UI
+gate and seeded account state, then saves storage **and the fixture cookie**.
+Each bootstrap creates a new in-memory contract; Saved Filter Sets, Targets,
+and simulated Operations jobs survive reloads with that cookie but never leak
+to another bootstrap. Fresh `e2e explore --session …` invocations run their
+setup independently, even on the same bridge. Teardown closes the owned Vite
+and HTTP server and discards its accounts.
+
+The seeded games are `0022500584` (January 15, 2026, LAL at BOS) and
+`0022501082` (March 29, 2026, historical LAC at MIL). Saved Filter Sets and
+Targets start empty. Target preview/backtest answers reuse the same tiny
+fixture composition as scripted flows. Operations diagnostics are seeded;
+confirmations only enqueue simulated jobs in that account's memory. Dates,
+statistics and query interpretation are fixtures, not live provider coverage.
+
+The tracked `e2e.bugbash.config.ts` supplies the bridge, personas, fixture
+context, desktop and phone targets, and browser resource auditing. Run one
+charter per invocation, with fresh output paths:
+
+```bash
+export PATH=/opt/homebrew/opt/node/bin:$PATH # macOS Homebrew Node, if needed
+E2E_BRIDGE_LOG=.e2e/bugbash/search-input-desktop-network.jsonl \
+  npx e2e explore 'Starting at / as the fixture reader, submit an empty query, 300 characters, unicode, and leading spaces; report lost input or failures that cannot be corrected and retried.' \
+  --config e2e.bugbash.config.ts --target desktop --agent fuzzer \
+  --session bb-reader --max-steps 3 --trace on --video \
+  --output .e2e/bugbash/search-input-desktop
+```
+
+Use `bb-reader` for `search-input`, `workspace-apply`, `slate-dates`,
+`matchup-selection`, `saved-filter-state`, and `target-draft`; use `bb-admin`
+for `operations-confirm`. Public charters need no session. Findings are model
+claims: preserve the log's Assessment and Findings, including zero findings,
+before any separately authorized triage. Phone is a viewport, not touch.
+
+For live MCP, launch `npx e2e mcp --config e2e.bugbash.config.ts`, then
+`open_session` with `target: "desktop"` (or `"phone"`). MCP has no saved-session
+option: use its `navigate` tool to visit `/__fixture/bootstrap/reader` or
+`/__fixture/bootstrap/admin`, then observe the dated Slate or Operations
+Console. Use `close_session` when finished. Navigating to a bootstrap again
+creates a fresh account; it is not a resume URL. A manual bridge can also be
+started with `node e2e/bridge/server.mjs 0`; it prints its allocated origin and
+closes on SIGINT/SIGTERM/SIGHUP.
+
+`E2E_BRIDGE_LOG` names a per-invocation log under an ignored directory (default
+`.e2e/logs/bugbash-<target>.log`). Its JSON lines contain incoming HTTP origin,
+method, path and status, plus `browser-resource` origins/paths from browser
+Resource Timing and CSP violations (`blocked: true`). Headers, bodies and
+cookies are excluded. Inspect both kinds for non-loopback origins; browser
+resource entries must be present before claiming browser network coverage.
+Check the complete log with `node e2e/bridge/check-network.mjs <log> …`; it
+requires both HTTP and browser entries and rejects non-loopback origins.
+This evidence covers app requests, not the explorer's separately authorized
+model-provider calls. CSP does not restrict top-level navigation: stay on the
+fixture origin, as the persona instructs, and do not connect external accounts.
+
+`npm run test:flows` also runs the HTTP bridge regression tests. The Connect
+flow checks selectable URL text, clipboard payload and feedback, feedback
+reset, numbered setup lists and absence of API requests. e2e exposes no
+clipboard-permission grant, so it uses a local clipboard sink; the Playwright
+Connect spec retains the real browser clipboard check.

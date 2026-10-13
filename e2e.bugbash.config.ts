@@ -12,7 +12,10 @@ const context =
   'Saved Filter Sets and Targets start empty and persist in memory for this session, including reloads. ' +
   'Operations jobs are simulated and never affect production. Reference responses are small fixed fixtures, not live NBA data. ' +
   'Google simulates auth; do not sign in again. Phone is width-only, not touch. ' +
-  'Judge split accessible text on screen; scroll and wait for lazy content.';
+  'Judge split accessible text on screen; scroll and wait for lazy content. ' +
+  'Intended, not findings: signed-out Search, Matchups and Targets are disabled or gated with ' +
+  'no back control (navigation stays usable); /help example links prefill Search; ' +
+  'explore has no clipboard permission, so Copy never shows Copied.';
 const persona = { model: chatgpt('gpt-6-luna'), maxSteps: 40, maxModelCalls: 40, context };
 
 export default {

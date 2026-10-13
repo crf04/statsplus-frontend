@@ -1,0 +1,20 @@
+{"action":"doctor"}
+{"action":"open","path":"/help"}
+{"action":"assert","target":{"role":"heading","name":"Query reference"}}
+{"action":"assert","target":{"role":"heading","name":"Clauses"}}
+{"action":"assert","target":{"role":"rowheader","name":"10+ FGA"}}
+{"action":"assert","target":{"text":"Only games where he reached a box-score total, such as 10+ FGA or 30+ points."}}
+{"action":"assert-layout"}
+{"action":"proof","name":"help-clauses-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"role":"rowheader","name":"10+ FGA"}}
+{"action":"assert","target":{"text":"Only games where he reached a box-score total, such as 10+ FGA or 30+ points."}}
+{"action":"assert-layout"}
+{"action":"proof","name":"help-clauses-phone"}
+{"action":"snapshot"}
+{"action":"click","target":{"role":"link","name":"Giannis games at home with 10+ FGA playing 30+ minutes"}}
+{"action":"assert","target":{"role":"heading","name":"Ask the box score"}}
+{"action":"assert","target":{"selector":"input.landing-search-input"},"value":"Giannis games at home with 10+ FGA playing 30+ minutes"}
+{"action":"assert-layout"}
+{"action":"proof","name":"example-prefilled-phone"}
+{"action":"cleanup"}

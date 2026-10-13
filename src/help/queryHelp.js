@@ -33,6 +33,10 @@ export const KEYWORDS = [
   { keyword: 'with', means: 'Only games a named teammate played.' },
   { keyword: 'against', means: 'Only games versus opponents matching a defensive rank.' },
   { keyword: 'at home', means: 'Home games only. Use "on the road" for away games.' },
+  {
+    keyword: '10+ FGA',
+    means: 'Only games where he reached a box-score total, such as 10+ FGA or 30+ points.',
+  },
   { keyword: 'playing 30+ minutes', means: 'Drops blowout and injury outliers by workload.' },
 ];
 

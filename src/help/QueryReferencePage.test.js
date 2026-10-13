@@ -23,6 +23,17 @@ describe('QueryReferencePage', () => {
     });
   });
 
+  test('documents the stat threshold its stacked examples use', () => {
+    renderPage();
+
+    expect(screen.getByRole('rowheader', { name: '10+ FGA' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('cell', {
+        name: 'Only games where he reached a box-score total, such as 10+ FGA or 30+ points.',
+      }),
+    ).toBeInTheDocument();
+  });
+
   test('offers a way back to the search page', () => {
     renderPage();
 

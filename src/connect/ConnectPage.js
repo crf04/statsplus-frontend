@@ -45,11 +45,11 @@ const ConnectPage = () => {
   return (
     <main className="connect-page">
       <h1 className="connect-title" tabIndex={-1} ref={headingRef}>
-        Use StatsPlus in Claude or ChatGPT
+        Use CourtAI in Claude or ChatGPT
       </h1>
       <p className="connect-lede">
-        Ask about matchups, slates, your Targets and game logs, using data from your StatsPlus
-        account. StatsPlus reports facts. It doesn&apos;t make picks.
+        Ask about matchups, slates, your Targets and game logs, using data from your CourtAI
+        account. CourtAI reports facts. It doesn&apos;t make picks.
       </p>
 
       <section className="connect-section" aria-labelledby="connect-url-heading">
@@ -74,7 +74,7 @@ const ConnectPage = () => {
         <section className="connect-section" aria-labelledby="connect-claude-heading">
           <h2 id="connect-claude-heading">Claude</h2>
           <p className="connect-note">
-            Web or desktop app. On a Team or Enterprise plan, an Owner first adds StatsPlus under{' '}
+            Web or desktop app. On a Team or Enterprise plan, an Owner first adds CourtAI under{' '}
             <strong>Organization settings → Connectors</strong>; members then find it under{' '}
             <strong>Customize → Connectors</strong> and start at step 5.
           </p>
@@ -83,16 +83,16 @@ const ConnectPage = () => {
               Open <strong>Customize → Connectors</strong>, select <strong>+ Add</strong>, then{' '}
               <strong>Add custom connector</strong>.
             </li>
-            <li>Name it StatsPlus, paste the connector URL and select Continue.</li>
+            <li>Name it CourtAI, paste the connector URL and select Continue.</li>
             <li>Review the authentication settings Claude detects and select Continue.</li>
             <li>
               If asked for an OAuth client, choose <strong>Register automatically</strong>, then
               select Add.
             </li>
-            <li>Select Connect and sign in with Google, using your StatsPlus account.</li>
+            <li>Select Connect and sign in with Google, using your CourtAI account.</li>
             <li>
               In a chat, open the <strong>+</strong> menu, choose <strong>Connectors</strong> and
-              turn StatsPlus on.
+              turn CourtAI on.
             </li>
           </ol>
         </section>
@@ -109,7 +109,7 @@ const ConnectPage = () => {
               Open <strong>Plugins → Add → Add custom MCP server</strong>.
             </li>
             <li>
-              Name it StatsPlus, paste the connector URL into <strong>Server URL</strong> and choose{' '}
+              Name it CourtAI, paste the connector URL into <strong>Server URL</strong> and choose{' '}
               <strong>OAuth</strong> for authentication.
             </li>
             <li>
@@ -121,11 +121,11 @@ const ConnectPage = () => {
               select <strong>Create as a plugin</strong>.
             </li>
             <li>
-              Select <strong>Continue to StatsPlus</strong> and sign in with Google, using your
-              StatsPlus account.
+              Select <strong>Continue to CourtAI</strong> and sign in with Google, using your
+              CourtAI account.
             </li>
             <li>
-              On the StatsPlus plugin page, select <strong>Try in chat</strong> and ask a question.
+              On the CourtAI plugin page, select <strong>Try in chat</strong> and ask a question.
             </li>
           </ol>
         </section>

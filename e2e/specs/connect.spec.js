@@ -15,7 +15,7 @@ test('a signed-out visitor can copy the connector URL by hand or with the button
   await page.goto('/connect');
 
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Use StatsPlus in Claude or ChatGPT' }),
+    page.getByRole('heading', { level: 1, name: 'Use CourtAI in Claude or ChatGPT' }),
   ).toBeVisible();
 
   // A blocked clipboard leaves manual selection as the way to copy.

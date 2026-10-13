@@ -11,6 +11,7 @@ width, not touch emulation.
 Requires Node 22.22.3+ on Node 22, or Node 24.8+. CI pins 22.22.3.
 
 ```sh
+nvm install               # reads .nvmrc; then nvm use in later shells
 npm ci
 npx playwright install chromium
 npx e2e-web install chromium
@@ -51,6 +52,10 @@ MCP sessions; `npx e2e explore` accepts `--output` but requires model login.
 Runs keep their reports and screenshots under `<output>/results/`; use a unique
 `--output` directory to retain a proof before starting another run. CI uploads
 `.e2e/results/`. The bundled upstream skill matches the installed 0.20 package.
+
+The two Doctor screenshots in `screenshots/e2e-adoption/doctor-*.png` are
+hermetic signed-out desktop/phone evidence. Historical `production-*.png` files
+remain separately labelled production evidence; they are not current proofs.
 
 ## Flow map
 

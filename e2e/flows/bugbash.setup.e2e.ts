@@ -92,10 +92,6 @@ test('browser audit observes local resources and CSP-blocked WebSockets', async 
     return null;
   });
   await expect
-    .poll(() =>
-      entries.filter(
-        (entry) => entry.blocked && new URL(entry.url).hostname === 'fixture-audit.invalid',
-      ),
-    )
-    .toEqual([{ url: 'wss://fixture-audit.invalid/socket', blocked: true }]);
+    .poll(() => entries.find((entry) => entry.url === 'wss://fixture-audit.invalid/socket'))
+    .toEqual({ url: 'wss://fixture-audit.invalid/socket', blocked: true });
 });

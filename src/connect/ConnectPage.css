@@ -7,20 +7,23 @@
   text-align: left;
 }
 
-/* Hero: the pitch and URL beside an example conversation */
+/* Hero: the pitch beside the URL */
 .connect-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: 56px;
-  align-items: start;
-  margin-bottom: 72px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 24px 56px;
+  align-items: end;
+  margin-bottom: 40px;
 }
 
-/* the card is long; the pitch and URL stay in view beside it */
-.connect-pitch {
-  position: sticky;
-  top: 32px;
-  padding-top: 40px;
+.connect-pitch /* Route entry focuses the heading (tabIndex -1) for screen readers; it is
+   not a control, so it draws no focus ring. */
+.connect-title:focus {
+  outline: none;
+}
+
+.connect-lede {
+  margin-bottom: 0;
 }
 
 .connect-eyebrow {
@@ -104,40 +107,35 @@
   color: var(--ct-gold);
 }
 
-/* The example conversation */
+/* The example conversation: the exchange beside a wide card */
 .connect-chat {
-  margin: 0;
-  padding: 0 18px 16px;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin: 0 0 72px;
+  padding: 20px;
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
   background:
-    radial-gradient(500px 240px at 80% 0%, rgba(232, 163, 61, 0.08), transparent 70%), #120f0a;
+    radial-gradient(600px 260px at 15% 0%, rgba(232, 163, 61, 0.08), transparent 70%), #120f0a;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
 }
 
-.connect-chat-bar {
+.connect-chat-talk {
   display: flex;
-  gap: 6px;
-  padding: 14px 0 12px;
-}
-
-.connect-chat-bar span {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
+  flex-direction: column;
+  gap: 14px;
 }
 
 .connect-bubble {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 14px;
   line-height: 1.55;
 }
 
 .connect-bubble-user {
-  width: fit-content;
-  max-width: 85%;
-  margin-left: auto;
+  align-self: flex-end;
   padding: 10px 14px;
   border-radius: 14px 14px 4px 14px;
   background: rgba(255, 255, 255, 0.08);
@@ -156,7 +154,6 @@
 }
 
 .connect-chat figcaption {
-  margin-top: 12px;
   color: var(--ct-dim);
   font-size: 12px;
 }
@@ -304,12 +301,11 @@
 
   .connect-hero {
     grid-template-columns: 1fr;
-    gap: 36px;
   }
 
-  .connect-pitch {
-    position: static;
-    padding-top: 0;
+  .connect-chat {
+    grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .connect-prompts li {

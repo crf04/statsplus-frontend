@@ -201,6 +201,8 @@ const ConnectPage = () => {
             Add CourtAI to Claude or ChatGPT and ask about matchups in your own words. Answers come
             from your CourtAI account, with the date their data is as of.
           </p>
+        </div>
+        <div className="connect-start">
           <div className="connect-url" role="group" aria-label="Connector URL">
             <code>{CONNECTOR_URL}</code>
             <button type="button" className="connect-copy" onClick={copyUrl}>
@@ -219,13 +221,12 @@ const ConnectPage = () => {
             Then follow the steps for <a href="#connect-setup">Claude or ChatGPT</a>.
           </p>
         </div>
+      </div>
 
-        <figure className="connect-chat" aria-label="An example conversation">
-          <div className="connect-chat-bar" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
+      {/* The card runs side by side (court beside the Bases) once it is wider
+          than 520px, so the example gets the page's width, not a hero column. */}
+      <figure className="connect-chat" aria-label="An example conversation">
+        <div className="connect-chat-talk">
           <p className="connect-bubble connect-bubble-user">
             Show Cade Cunningham&apos;s matchup against Charlotte.
           </p>
@@ -234,12 +235,12 @@ const ConnectPage = () => {
             slightly favourable. The edge is his pick-and-roll: 37% of his plays, and Charlotte
             ranks 26th against it.
           </p>
-          <MatchupCardFrame />
           <figcaption>
             The connector&apos;s own Matchup card, with data from the completed 2025-26 season.
           </figcaption>
-        </figure>
-      </div>
+        </div>
+        <MatchupCardFrame />
+      </figure>
 
       <section
         className="connect-section"

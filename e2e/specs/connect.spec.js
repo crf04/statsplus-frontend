@@ -58,11 +58,23 @@ test('the connector card renders the captured Matchup and sizes its frame', asyn
   await expect(frame.getByText(/Unscheduled Matchup/).first()).toBeVisible();
   await expect(frame.getByText(/State this once/)).toHaveCount(0);
 
-  // The card reports its own height; a frame stuck at the initial 560px would clip it.
-  const height = await page
-    .locator('iframe[title^="CourtAI Matchup card"]')
-    .evaluate((node) => node.getBoundingClientRect().height);
-  expect(height).toBeGreaterThan(900);
+  // The frame follows the card's own size report; a frame stuck at the
+  // initial 560px would clip it or leave a gap.
+  const frameBox = page.locator('iframe[title^="CourtAI Matchup card"]');
+  await expect
+    .poll(async () => {
+      const outer = await frameBox.evaluate((node) => node.getBoundingClientRect().height);
+      const inner = await frame
+        .locator('html')
+        .evaluate((node) => Math.ceil(node.getBoundingClientRect().height));
+      return Math.abs(outer - inner) <= 2 && inner !== 560;
+    })
+    .toBe(true);
+
+  // Wide enough for the card's side-by-side layout: the court beside the Bases.
+  const court = await frame.locator('.court').first().boundingBox();
+  const bases = await frame.getByText('Play types · PTS', { exact: false }).first().boundingBox();
+  expect(bases.x).toBeGreaterThan(court.x + court.width - 1);
 });
 
 test('the home page points to the Connect page', async ({ page }) => {

@@ -1,13 +1,14 @@
 # Testing CourtAI
 
-CourtAI uses three complementary test layers. Each layer exercises a stable public seam and has a
+CourtAI uses four complementary test layers. Each layer exercises a stable public seam and has a
 different job.
 
-| Layer          | Public seam                              | Runs                                      | Purpose                                                                                       |
-| -------------- | ---------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Jest           | Pure modules and rendered React behavior | Local and every PR                        | Fast feedback on filter, response-decoding, formatting, and UI behavior                       |
-| Playwright E2E | Browser UI and HTTP requests             | Local and every PR                        | Deterministic critical journeys using an in-browser API contract                              |
-| Deployed smoke | Public deployment URL                    | Successful deployments or manual dispatch | Confirms that the built site loads and Matchups API routing reaches the authenticated backend |
+| Layer          | Public seam                                              | Runs                                      | Purpose                                                                                       |
+| -------------- | -------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Jest           | Pure modules and rendered React behavior                 | Local and every PR                        | Fast feedback on filter, response-decoding, formatting, and UI behavior                       |
+| Playwright E2E | Browser UI and HTTP requests                             | Local and every PR                        | Deterministic critical journeys using an in-browser API contract                              |
+| e2e flows      | Browser UI and HTTP requests at desktop and phone widths | Local and every PR                        | Complete route journeys; optional ChatGPT agent goals with replay                             |
+| Deployed smoke | Public deployment URL                                    | Successful deployments or manual dispatch | Confirms that the built site loads and Matchups API routing reaches the authenticated backend |
 
 Real Google authentication and backend data are intentionally outside the per-PR E2E gate. Popup
 authentication, credentials, and changing live data make a poor deterministic gate. The deployed
@@ -17,6 +18,8 @@ during exploratory QA or added later as a secret-backed scheduled suite.
 
 The production smoke intentionally fails when the backend is unavailable because a frontend release
 is not usable when its same-origin API dependency cannot enforce authentication.
+
+See [the e2e flow map](e2e-flows.md) for setup, subscription login, replay, route coverage, and why the existing Playwright suite remains.
 
 ## Commands
 
@@ -30,6 +33,7 @@ Run the full hermetic E2E suite:
 
 ```bash
 npm run test:e2e
+npm run test:flows
 ```
 
 Useful focused modes:

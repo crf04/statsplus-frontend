@@ -1,0 +1,183 @@
+{
+  "recordedAt": "2026-10-04",
+  "journeys": {
+    "search.jsonl": {
+      "sha256": "06dff00840c10a9c3be9b6bda2ffbf306f494b03be353991b5ee678b1a36bb2d"
+    },
+    "matchups.jsonl": {
+      "sha256": "ed22f707c4dbee5356f424abcf9dd8155ccdf92a8d16d43d47bd5bace3927121"
+    },
+    "qa-saved-filter-sets.jsonl": {
+      "sha256": "a568415f8b15839503f6ee9ed3f2ea901788f2a1cfe857c1001e8aa913a95ad0"
+    },
+    "qa-targets.jsonl": {
+      "sha256": "26e5f5a6ac609d8ceb270c37bc045ee21382872100f011424dec33d2da2f8fe8"
+    },
+    "matchup-links-verified.jsonl": {
+      "sha256": "09c7ea3e8135723d5c24cd45c2a5e4690f6bf378d62ee69a172a21bce218eba9"
+    }
+  },
+  "runs": [
+    {
+      "name": "qa-search-pinned",
+      "journey": "search.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "30116a5d4b69bf2532e165b98750bd30fd86a002a80ec5c10d808176a6a80984"
+      },
+      "backendSource": {
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "search-reloaded-phone.png",
+        "search-return-desktop.png",
+        "search-browse-desktop.png",
+        "search-filter-applied-desktop.png",
+        "search-refused-phone.png",
+        "search-shared-desktop.png"
+      ]
+    },
+    {
+      "name": "qa-matchups",
+      "journey": "matchups.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
+      },
+      "backendSource": {
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "slate-invalid-phone.png",
+        "slate-recovered-phone.png",
+        "slate-empty-phone.png",
+        "matchup-desktop.png",
+        "matchup-phone.png",
+        "slate-desktop.png"
+      ]
+    },
+    {
+      "name": "qa-saved",
+      "journey": "qa-saved-filter-sets.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
+      },
+      "backendSource": {
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "saved-filter-renamed-phone.png",
+        "saved-filter-created-desktop.png",
+        "saved-filter-deleted-phone.png"
+      ]
+    },
+    {
+      "name": "qa-targets",
+      "journey": "qa-targets.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
+      },
+      "backendSource": {
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "targets-list-desktop.png",
+        "target-lab-desktop.png",
+        "targets-list-phone.png",
+        "target-deleted-phone.png"
+      ]
+    },
+    {
+      "name": "production-matchups",
+      "journey": "matchups.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
+      },
+      "backendSource": {
+        "branch": "master",
+        "head": "ac61b6661fc0d68dd554c2ddd66e879ef9d2003f"
+      },
+      "environment": "production",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "slate-invalid-phone.png",
+        "slate-recovered-phone.png",
+        "slate-empty-phone.png",
+        "matchup-desktop.png",
+        "matchup-phone.png",
+        "slate-desktop.png"
+      ]
+    },
+    {
+      "name": "production-search",
+      "journey": "search.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "334f99b7e3623de460cb5142313ca54286d932ca",
+        "fingerprint": "6ad4839026a6c1b90062c5b784e9cdc0a831e6601d4bcc7bca9304825a336744"
+      },
+      "backendSource": {
+        "branch": "master",
+        "head": "ac61b6661fc0d68dd554c2ddd66e879ef9d2003f"
+      },
+      "environment": "production",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": [
+        "search-reloaded-phone.png",
+        "search-return-desktop.png",
+        "search-browse-desktop.png",
+        "search-filter-applied-desktop.png",
+        "search-refused-phone.png",
+        "search-shared-desktop.png"
+      ]
+    },
+    {
+      "name": "qa-matchup-links-verified",
+      "journey": "matchup-links-verified.jsonl",
+      "frontend": {
+        "branch": "test/e2e-framework",
+        "head": "905c8ddd0f2ea5f0d1fe32ad066f8dc27da50726",
+        "fingerprint": "3a8a0af850b09af479b0b73be93ad4d944e3a5901f8038df9fb30e5f5c28f4b3"
+      },
+      "backendSource": {
+        "branch": "",
+        "head": "c1f40b54cf7e0af881381e805f0fc4b91fa3ffca",
+        "fingerprint": "9e352a7ed52b2a612b9315d85ae7d187aac73819ca8f3756fbb259e660b64d1d"
+      },
+      "environment": "qa",
+      "cleanedUp": true,
+      "runtimeAbsent": true,
+      "screenshots": ["matchup-back-to-slate-phone.png", "matchup-log-handoff-desktop.png"]
+    }
+  ]
+}

@@ -108,7 +108,7 @@ contract also backs Playwright and scripted browser routes. Unknown API paths
 return 501. A fixture cookie plus the disposable E2E bearer is required;
 reader cookies cannot access `/api/admin/*`. No Firebase credentials are used.
 The bridge overrides local API/Firebase environment settings, removes remote
-font links, and applies a same-origin resource CSP. This is a development-only
+font links (serving the existing Barlow weights from local fixture assets), and applies a same-origin resource CSP. This is a development-only
 fixture service, never a deployment entry point.
 
 `bugbash.setup.e2e.ts` declares `bb-reader` and `bb-admin`. Each setup visits

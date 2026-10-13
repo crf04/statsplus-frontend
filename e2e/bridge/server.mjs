@@ -12,6 +12,7 @@ import {
 export async function startBridge(port = 0) {
   const accounts = new Map();
   const httpServer = createHttpServer();
+  const boundOrigin = () => `http://${httpServer.address().address}:${httpServer.address().port}`;
   const json = (res, status, body) => {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(body));
@@ -19,12 +20,14 @@ export async function startBridge(port = 0) {
   const plugin = {
     name: 'courtai-fixture-bridge',
     transformIndexHtml(html) {
-      // Offline fonts: even preconnect must not contact a third-party host.
-      return html.replace(/<link\b[^>]*https:\/\/fonts\.[^>]*>/g, '');
+      // Serve the existing font families locally; remove third-party preconnect too.
+      return html
+        .replace(/<link\b[^>]*https:\/\/fonts\.[^>]*>/g, '')
+        .replace('</head>', '<link rel="stylesheet" href="/e2e/bridge/fonts/fonts.css"></head>');
     },
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const origin = `http://127.0.0.1:${httpServer.address().port}`;
+        const origin = boundOrigin();
         if (req.headers.host !== new URL(origin).host)
           return json(res, 403, { error: 'Loopback host required' });
         res.setHeader('Cache-Control', 'no-store');
@@ -131,7 +134,7 @@ export async function startBridge(port = 0) {
         ].map((key) => [`process.env.REACT_APP_FIREBASE_${key}`, '""']),
       ),
     },
-    server: { middlewareMode: true, hmr: false, proxy: {} },
+    server: { middlewareMode: true, hmr: false, ws: false, proxy: {} },
   });
   httpServer.on('request', server.middlewares);
   await new Promise((resolve, reject) => {
@@ -142,7 +145,7 @@ export async function startBridge(port = 0) {
     throw error;
   });
   return {
-    origin: `http://127.0.0.1:${httpServer.address().port}`,
+    origin: boundOrigin(),
     close: async () => {
       httpServer.closeAllConnections();
       await Promise.all([

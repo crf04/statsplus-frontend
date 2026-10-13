@@ -1,5 +1,6 @@
 import { test } from '@e2e-dev/web';
 import { expect } from 'e2e';
+import { auditNetwork } from '../bridge/network-audit.ts';
 
 // No browser routes or init scripts: these are the actual HTTP/MCP bootstrap paths.
 test.setup(
@@ -58,3 +59,43 @@ test(
     await app.screenshot('bridge-admin');
   },
 );
+
+test('browser audit observes local resources and CSP-blocked WebSockets', async ({
+  app,
+  browser,
+  screen,
+}) => {
+  const entries: { url: string; blocked?: boolean }[] = [];
+  await browser.addInitScript(auditNetwork);
+  await browser.route('**/__fixture/network', async (route) => {
+    entries.push(...JSON.parse(route.request.postData ?? '[]'));
+    await route.continue();
+  });
+  await app.open('/connect');
+  await expect(screen.getByRole('heading', 'Use CourtAI in Claude or ChatGPT')).toBeVisible();
+  await expect
+    .poll(() =>
+      entries.some((entry) => new URL(entry.url).pathname === '/src/connect/ConnectPage.js'),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      entries.some((entry) => new URL(entry.url).pathname === '/e2e/bridge/fonts/barlow-400.woff2'),
+    )
+    .toBe(true);
+  await browser.evaluate(() => {
+    try {
+      new WebSocket('wss://fixture-audit.invalid/socket');
+    } catch {
+      /* CSP refuses before any network connection. */
+    }
+    return null;
+  });
+  await expect
+    .poll(() =>
+      entries.filter(
+        (entry) => entry.blocked && new URL(entry.url).hostname === 'fixture-audit.invalid',
+      ),
+    )
+    .toEqual([{ url: 'wss://fixture-audit.invalid/socket', blocked: true }]);
+});

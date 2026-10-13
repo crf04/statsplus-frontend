@@ -29,7 +29,7 @@ signedOutTest(
     expect(await browser.evaluate(() => window.sessionStorage.getItem('connect:clipboard'))).toBe(
       CONNECTOR_URL,
     );
-    await expect(screen.getByRole('button', 'Copy connector URL')).toBeVisible();
+    await expect(screen.getByRole('button', 'Copy connector URL')).toBeVisible({ timeout: 5000 });
     expect(api.requests).toEqual([]);
     await app.screenshot('connect-guide');
   },

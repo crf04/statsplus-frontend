@@ -18,6 +18,6 @@ export function auditNetwork() {
     );
   }).observe({ type: 'resource', buffered: true });
   window.addEventListener('securitypolicyviolation', (event) => {
-    if (/^https?:/.test(event.blockedURI)) send([{ url: event.blockedURI, blocked: true }]);
+    if (/^(https?|wss?):/.test(event.blockedURI)) send([{ url: event.blockedURI, blocked: true }]);
   });
 }

@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { get } from 'node:http';
+import { once } from 'node:events';
+import { createInterface } from 'node:readline';
 import test from 'node:test';
 import { startBridge } from './server.mjs';
 
 test('HTTP bridge preserves the fixture contract and isolates disposable accounts', async (t) => {
   const bridge = await startBridge();
   t.after(() => bridge.close());
+  assert.equal(new URL(bridge.origin).hostname, '127.0.0.1');
   const bootstrap = async (role) => {
     const response = await fetch(`${bridge.origin}/__fixture/bootstrap/${role}`);
     assert.equal(response.status, 200);
@@ -29,6 +34,36 @@ test('HTTP bridge preserves the fixture contract and isolates disposable account
       assert.equal((await fetch(`${bridge.origin}/__fixture/unknown`)).status, 404);
       assert.equal((await fetch(`${bridge.origin}/api/games/slate`)).status, 401);
       assert.equal((await api(reader, 'admin/collection/diagnostics')).status, 403);
+      assert.equal(
+        (await fetch(`${bridge.origin}/api/games/slate`, { headers: { Cookie: reader } })).status,
+        401,
+      );
+      assert.equal(
+        (
+          await fetch(`${bridge.origin}/api/games/slate`, {
+            headers: { Authorization: 'Bearer courtai-e2e-token' },
+          })
+        ).status,
+        401,
+      );
+      const wrongHostStatus = await new Promise((resolve, reject) => {
+        get(bridge.origin, { headers: { Host: 'outside.invalid' } }, (response) => {
+          response.resume();
+          resolve(response.statusCode);
+        }).on('error', reject);
+      });
+      assert.equal(wrongHostStatus, 403);
+      assert.equal(
+        (
+          await api(reader, 'admin/collection/repair', 'POST', {
+            stream_key: 'traditional_opponent',
+            season: '2025-26',
+            cutoff: '2026-04-13T00:00:00.000Z',
+            reason: 'Must be denied',
+          })
+        ).status,
+        403,
+      );
     },
   );
 
@@ -77,8 +112,54 @@ test('HTTP bridge preserves the fixture contract and isolates disposable account
     'documents restrict resources to this origin and omit remote font connections',
     async () => {
       const response = await fetch(bridge.origin);
-      assert.match(response.headers.get('content-security-policy'), /connect-src 'self'/);
+      assert.equal(
+        response.headers
+          .get('content-security-policy')
+          .split(';')
+          .map((value) => value.trim())
+          .find((value) => value.startsWith('connect-src')),
+        "connect-src 'self'",
+      );
       assert.doesNotMatch(await response.text(), /fonts\.google/);
     },
   );
 });
+
+test(
+  'CLI records browser network evidence without query strings and exits on SIGTERM',
+  { timeout: 15000 },
+  async (t) => {
+    const child = spawn(process.execPath, ['e2e/bridge/server.mjs', '0'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const exited = once(child, 'exit');
+    const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+    t.after(async () => {
+      child.kill('SIGTERM');
+      await exited;
+    });
+    const nextLine = async (prefix) => {
+      while (true) {
+        const { value, done } = await lines.next();
+        assert.equal(done, false, 'bridge must remain running until teardown');
+        if (value.startsWith(prefix)) return value;
+      }
+    };
+    const origin = (await nextLine('Fixture bridge: ')).slice('Fixture bridge: '.length);
+    const response = await fetch(`${origin}/__fixture/network`, {
+      method: 'POST',
+      body: JSON.stringify([{ url: 'wss://outside.invalid/socket?private=value', blocked: true }]),
+    });
+    assert.equal(response.status, 204);
+    const record = JSON.parse(await nextLine('{"kind":"browser-resource"'));
+    assert.deepEqual(record, {
+      kind: 'browser-resource',
+      origin: 'wss://outside.invalid',
+      path: '/socket',
+      blocked: true,
+    });
+    child.kill('SIGTERM');
+    const [code] = await exited;
+    assert.equal(code, 0);
+  },
+);

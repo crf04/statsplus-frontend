@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -30,7 +30,7 @@ const installClipboard = (writeText) => {
 const renderConnectRoute = async () => {
   window.history.pushState({}, '', '/connect');
   render(<App />);
-  await screen.findByRole('heading', { level: 1, name: 'Use CourtAI in Claude or ChatGPT' });
+  await screen.findByRole('heading', { level: 1, name: 'Ask CourtAI from your chat' });
 };
 
 afterEach(() => {
@@ -50,7 +50,7 @@ test('a signed-out visitor reaches the Connect page from the main nav', async ()
   userEvent.click(link);
 
   expect(
-    await screen.findByRole('heading', { level: 1, name: 'Use CourtAI in Claude or ChatGPT' }),
+    await screen.findByRole('heading', { level: 1, name: 'Ask CourtAI from your chat' }),
   ).toBeInTheDocument();
   expect(screen.getByText(CONNECTOR_URL)).toBeInTheDocument();
 });
@@ -100,28 +100,59 @@ test('a blocked clipboard leaves the URL on the page and the button ready to ret
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
-test('Claude and ChatGPT each get an ordered list of setup steps, Claude first', async () => {
+test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys switch them', async () => {
   await renderConnectRoute();
 
-  const claude = screen.getByRole('region', { name: 'Claude' });
-  const chatgpt = screen.getByRole('region', { name: 'ChatGPT' });
-  expect(claude.compareDocumentPosition(chatgpt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const setup = screen.getByRole('region', { name: 'Set it up' });
+  const tabs = within(setup).getAllByRole('tab');
+  expect(tabs.map((tab) => tab.textContent)).toEqual(['Claude', 'ChatGPT']);
 
-  for (const section of [claude, chatgpt]) {
-    const list = within(section).getByRole('list');
-    expect(list.tagName).toBe('OL');
-    expect(within(list).getByText(/sign in with google/i)).toBeInTheDocument();
-  }
-  expect(within(claude).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
-  expect(within(chatgpt).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
+  let panel = within(setup).getByRole('tabpanel', { name: 'Claude' });
+  expect(within(panel).getByRole('list').tagName).toBe('OL');
+  expect(within(panel).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
+  expect(within(panel).getByText(/Add custom connector/)).toBeInTheDocument();
+
+  tabs[0].focus();
+  fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+
+  expect(within(setup).getByRole('tab', { name: 'ChatGPT' })).toHaveFocus();
+  expect(within(setup).getByRole('tab', { name: 'ChatGPT' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  panel = within(setup).getByRole('tabpanel', { name: 'ChatGPT' });
+  expect(within(panel).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
+  expect(within(panel).getByText(/Add custom MCP server/)).toBeInTheDocument();
+  expect(within(panel).getByText(/sign in with google/i)).toBeInTheDocument();
+  expect(within(setup).queryByText(/Add custom connector/)).not.toBeInTheDocument();
+
+  fireEvent.keyDown(document.activeElement, { key: 'ArrowRight' });
+  expect(within(setup).getByRole('tab', { name: 'Claude' })).toHaveFocus();
+
+  fireEvent.click(within(setup).getByRole('tab', { name: 'ChatGPT' }));
+  expect(within(setup).getByRole('tabpanel', { name: 'ChatGPT' })).toBeInTheDocument();
 });
 
-test('the page explains what to ask and how to read the answers', async () => {
+test('the page shows the real card and one working question per tool', async () => {
   await renderConnectRoute();
 
-  expect(screen.getByText(/It doesn.t make picks/)).toBeInTheDocument();
-  expect(screen.getByText("What's on tonight's slate?")).toBeInTheDocument();
-  expect(screen.getByText('Which players fit my Targets today?')).toBeInTheDocument();
-  expect(screen.getByText(/30 means the defense allows the most/)).toBeInTheDocument();
-  expect(screen.getByText(/US Eastern time and default to today/)).toBeInTheDocument();
+  expect(
+    screen.getByTitle('CourtAI Matchup card: Cade Cunningham against Charlotte'),
+  ).toHaveAttribute('src', '/mcp-cards/matchup.html');
+
+  const prompts = within(screen.getByRole('region', { name: 'Try asking' })).getAllByRole(
+    'listitem',
+  );
+  expect(prompts.map((item) => item.textContent)).toEqual([
+    "SlateWhat's on the slate for April 10, 2026?",
+    "MatchupShow Cade Cunningham's matchup against Charlotte.",
+    'Game logsHow has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
+    'TargetsWhich players fit my Targets today?',
+    'BacktestBacktest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
+  ]);
+
+  const notes = screen.getByRole('region', { name: 'Good to know' });
+  expect(within(notes).getByText(/It doesn.t make picks/)).toBeInTheDocument();
+  expect(within(notes).getByText(/30 means the defense allows the most/)).toBeInTheDocument();
+  expect(within(notes).getByText(/US Eastern time and default to today/)).toBeInTheDocument();
 });

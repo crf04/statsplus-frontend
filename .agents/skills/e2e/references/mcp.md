@@ -5,6 +5,13 @@ coding agent drives the app the way the testing agent does: look at a screen
 before writing a test, check a locator before committing to it. Running tests
 and reading a failed run stay on the CLI (topics `running` and `debugging`).
 
+## Contents
+
+- Setup
+- Tools
+- Workflow
+- Rules
+
 ## Setup
 
 The server ships with `e2e`. `e2e init` offers to register it; by hand:
@@ -20,21 +27,27 @@ Or declare it in the client's project config (`.mcp.json` for Claude Code,
 { "mcpServers": { "e2e": { "command": "npx", "args": ["e2e", "mcp"] } } }
 ```
 
-No model is needed: without the optional `ai` package, sessions open and the
-deterministic tools work.
+Sessions run on the project's config (`e2e.config.ts` or `e2e.config.mts`):
+in a project without one, `open_session` fails with `CONFIG_NOT_FOUND`, so
+set it up first (topic `setup`). No model is needed: without the optional `ai` package, sessions
+open and the deterministic tools work.
 
 Flags: `--config <path>` names the default config file, `--target <name>`
-fixes the target every session opens on, `--headless` hides the browser or
-simulator (sessions are headed by default outside CI), `--max-sessions <n>`
+fixes the target every session opens on, `--headed` shows the browser or
+simulator when the engine supports it in sessions that do not set `headed`
+(sessions are headless by default, as in `e2e run`), `--max-sessions <n>`
 sets how many sessions may be open at once (default 4, 1 through 16).
 
 ## Tools
 
-Four tools; everything a session can do is a catalog behind `call`.
+Four tools, all on the server registered as `e2e`; everything a session can
+do is a catalog behind `call`. Clients show them with the server name, such
+as `mcp__e2e__open_session` in Claude Code; when another MCP server offers a
+tool with the same name, use the `e2e` server's.
 
 | Tool | Does |
 | --- | --- |
-| `open_session` | Loads the config (`config` names another file; default the nearest `e2e.config.ts`), starts the declared app command if any, boots the engine, opens the app URL, and returns the session id, the catalog, and the first observation. `target` is required when the config declares several. Each session has its own browser or device. |
+| `open_session` | Loads the config (`config` names another file; default the nearest `e2e.config.ts`), starts the declared app command if any, boots the engine, opens the app URL, and returns the session id, the catalog, and the first observation. `target` is required when the config declares several. `headed: true` shows the browser or simulator when the user wants to watch; without it the session follows the server's `--headed`, headless by default. Each session has its own browser or device. |
 | `tools` | The catalog: one line per tool with its argument names (`?` marks optional), the first sentence of its description, and `[read-only]` where it changes nothing. `tools {tool}` shows the full description and the JSON Schema of its arguments. |
 | `call` | Runs one catalog tool: `call {tool: "tap", args: {target: "n42"}}`. Arguments are checked against the tool's schema first; a wrong one fails with `INVALID_ARGUMENT` naming the field. |
 | `close_session` | Saves a recording still running, ends the attempt, disposes the engine, stops the app processes the session started once no other session uses them. |
@@ -56,6 +69,10 @@ The catalog, per session:
 | `start_recording` | Starts a video of the app (`name` optional, for the file name). Listed when the engine records video. |
 | `stop_recording` | Stops it and returns the absolute path of each video file, under `<output>/videos/<session>/` (`.e2e` by default), or the URL of a provider's own recording. |
 | Project tools | Every `defineTool` in the agent's `tools` that applies to the target's platform, under its own name; an engine pack such as `mobileTools` adds `open_app`, `swipe`, `alert`. |
+
+Project tools use their `toModelOutput` renderer for strings as well as
+structured results. Its `error-text` and `error-json` outputs set the MCP
+result's `isError: true`; treat them as failed calls.
 
 Once a secret is filled in the session, `screenshot` and the point tools
 (`tap_at`, `hover_at`, `type_at`, `press_at`, `select_at`) answer with a

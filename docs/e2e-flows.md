@@ -1,6 +1,6 @@
 # e2e flow coverage
 
-The e2e 0.17 runner complements the existing Playwright gate. Both drive the real
+The e2e 0.20 runner (`@e2e-dev/web` 0.14) complements the existing Playwright gate. Both drive the real
 React app through the same hermetic HTTP contract and development-only auth
 adapter; neither proves Firebase popup login or the deployed backend. Every new
 deterministic case runs at 1440×900 and 390×844. Phone means responsive browser
@@ -8,10 +8,14 @@ width, not touch emulation.
 
 ## Run
 
+Requires Node 22.22.3+ on Node 22, or Node 24.8+. CI pins 22.22.3.
+
 ```sh
 npm ci
 npx playwright install chromium
 npx e2e-web install chromium
+npx e2e list               # load config and discover test/target pairs
+npx e2e run smoke --tag smoke --output .e2e/doctor
 npm run test:e2e           # existing Playwright suite
 npm run test:flows         # deterministic e2e, both widths, no model credentials
 npx e2e login openai       # personal ChatGPT subscription, browser authorization
@@ -34,9 +38,19 @@ CI adds an independent `e2e flows` job with the engine's own Chromium installati
 JSON/JUnit/Markdown reports and failure artifacts. It runs the deterministic
 suite on every PR without subscription credentials. Agent runs stay local until
 recordings have been made and reviewed. The existing `validate` and `E2E` jobs,
-including production smoke configuration, are unchanged. `.cursor/mcp.json`
+retain their existing tests; every CI job now uses the runner-compatible Node version. `.cursor/mcp.json`
 is local editor registration and ignored; `.mcp.json` and the upstream e2e skill
 are shared setup.
+
+`npx e2e models openai` checks whether a ChatGPT login is usable; 0.20 has no
+`login status` command. No stored login is required by `test:flows`.
+
+The verification Doctor uses `flows/smoke.e2e.ts` (`smoke` tag): it opens Search
+and pins the CourtAI navigation and landing heading. `npx e2e mcp` serves live
+MCP sessions; `npx e2e explore` accepts `--output` but requires model login.
+Runs keep their reports and screenshots under `<output>/results/`; use a unique
+`--output` directory to retain a proof before starting another run. CI uploads
+`.e2e/results/`. The bundled upstream skill matches the installed 0.20 package.
 
 ## Flow map
 
@@ -58,7 +72,7 @@ Routes are from `src/App.js`; the six research areas also match the coordination
 | Unknown URL falls back to Search                                                                                                                                                | `flows/search.e2e.ts`                                              | `specs/slate.spec.js`                                                                                 |
 | Production route assets, authenticated API routing, protected-preview credential handling                                                                                       | existing runner retained                                           | `specs/route-assets.spec.js`, `deployed-smoke-config.spec.js`, `core-flows.spec.js`                   |
 
-Keep Playwright alongside e2e: e2e 0.17 lacks screenshot comparison, browser-clock
+Keep Playwright alongside e2e for its established screenshot baselines, browser-clock
 control and full mobile device emulation. Existing request race/cancellation,
 chart hover, HTTP rejection and deployment tests also remain valuable and are
 not replaced by a short happy-path test. The disjoint `*.spec.js` and `*.e2e.ts`

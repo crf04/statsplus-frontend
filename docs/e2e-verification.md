@@ -8,9 +8,10 @@ Run-specific gate counts, mutations, and review verdicts belong on the pull requ
 
 Merge [#157](https://github.com/crf04/statsplus-frontend/pull/157) before
 [#155](https://github.com/crf04/statsplus-frontend/pull/155). It repairs three
-request-observation races in the existing Playwright tests. Until then, #155's
-standalone Playwright gate can fail despite a passing run; retries do not establish
-first-attempt stability.
+request-observation races in the existing Playwright tests. #155 is rebased on
+#157 so its completion gate includes those fixes; both pull requests retain
+`master` as their GitHub base. After #157 merges, update #155 against master
+if the owner's merge strategy rewrites the prerequisite commits.
 
 ## Historical evidence
 

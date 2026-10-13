@@ -3,11 +3,12 @@
     "target": "ES2022",
     "module": "NodeNext",
     "strict": true,
+    "types": ["node"],
     "noEmit": true,
     "allowJs": true,
     "checkJs": false,
     "allowImportingTsExtensions": true,
     "skipLibCheck": true
   },
-  "include": ["e2e.config.ts", "e2e/flows/**/*.ts"]
+  "include": ["e2e.config.ts", "e2e.bugbash.config.ts", "e2e/flows/**/*.ts", "e2e/bridge/**/*.ts"]
 }

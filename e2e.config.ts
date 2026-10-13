@@ -5,9 +5,8 @@ import { chatgpt } from 'e2e/oauth/chatgpt';
 const app = {
   url: 'http://127.0.0.1:0',
   command: {
-    executable: 'npm',
-    args: ['start', '--', '--host', '127.0.0.1', '--port', '{port}', '--strictPort'],
-    env: { REACT_APP_E2E_MODE: 'true' },
+    executable: 'node',
+    args: ['e2e/bridge/server.mjs', '{port}'],
     startupTimeout: 120_000,
   },
 };

@@ -1715,6 +1715,7 @@ test('the workspace draws the game-log chart with the registered Chart.js pieces
 test('a rate-limited game-logs read shows the backend message and is not retried', async ({
   authenticatedPage: page,
 }) => {
+  await page.clock.install();
   await installApiContract(page, { '/api/games/game_logs': RATE_LIMITED });
   const reads = [];
   page.on('request', (request) => {
@@ -1722,9 +1723,10 @@ test('a rate-limited game-logs read shows the backend message and is not retried
     if (url.pathname === '/api/games/game_logs') reads.push(url.search);
   });
   await page.goto('/?player_name=LeBron+James&game_filter=10');
-  await expect(page.getByText('Too many requests. Try again in a few seconds.')).toBeVisible();
+  await expect(page.getByText('Too many requests. Try again in 3 seconds.')).toBeVisible();
   await expect(page.getByText('(ref')).toHaveCount(0);
-  await page.waitForTimeout(1500);
+  // Well past the 3 s Retry-After: still nothing repeated.
+  await page.clock.fastForward(10000);
   // The page asks twice, for the season and for the filter; neither is repeated.
   expect(reads).toEqual(['?player_name=LeBron+James', '?player_name=LeBron+James&game_filter=10']);
 });

@@ -912,6 +912,7 @@ test('@critical target context follows the selected defense and survives context
 test('a rate-limited Backtest read shows the backend message on its card, without retrying', async ({
   authenticatedPage: page,
 }) => {
+  await page.clock.install();
   await installApiContract(page, { '/api/user/targets/:id/backtest': RATE_LIMITED });
   const reads = [];
   page.on('request', (request) => {
@@ -922,9 +923,11 @@ test('a rate-limited Backtest read shows the backend message on its card, withou
   await composeTarget(page, { opponent: 'OKC', slice: 'Corner 3', percent: '40' });
   await saveTarget(page);
   const okc = card(page, 'OKC vs Corner 3 ≥ 40%');
-  await expect(okc.getByText('Too many requests. Try again in a few seconds.')).toBeVisible();
+  await expect(okc.getByText('Too many requests. Try again in 3 seconds.')).toBeVisible();
   await expect(okc).not.toContainText('(ref');
   await expect(okc.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
-  // The batch read, then the one single read it queued. Nothing is repeated.
+  // Well past the 3 s Retry-After: still nothing repeated.
+  await page.clock.fastForward(10000);
+  // The batch read, then the one single read it queued.
   expect(reads).toEqual(['GET /api/user/targets/backtests', 'GET /api/user/targets/:id/backtest']);
 });

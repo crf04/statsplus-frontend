@@ -107,6 +107,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   jest.clearAllMocks();
 });
 
@@ -427,6 +428,7 @@ test('a rate_limited game-logs read shows the backend message, once', async () =
   getRequestErrorMessage.mockImplementationOnce(
     jest.requireActual('./gameLogsApi').getRequestErrorMessage,
   );
+  jest.useFakeTimers({ advanceTimers: true });
   mockFilterPatch = { game_filter: 10 };
   fetchGameLogsData.mockRejectedValue(
     Object.assign(new Error('Request failed with status code 429'), {
@@ -436,14 +438,17 @@ test('a rate_limited game-logs read shows the backend message, once', async () =
         data: {
           error: {
             code: 'rate_limited',
-            message: 'Too many requests. Try again in a few seconds.',
+            message: 'Too many requests. Try again in 3 seconds.',
           },
         },
       },
     }),
   );
   renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
-  await screen.findByText('Too many requests. Try again in a few seconds.');
+  await screen.findByText('Too many requests. Try again in 3 seconds.');
+  await act(async () => {
+    jest.advanceTimersByTime(10000);
+  });
   expect(fetchGameLogsData).toHaveBeenCalledTimes(1);
 });
 

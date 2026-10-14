@@ -1182,6 +1182,7 @@ test('each saved card labels its Backtest with the season the backend read', asy
 });
 
 test('a rate_limited Backtest read shows the backend message on its card, with no reference', async () => {
+  jest.useFakeTimers({ advanceTimers: true });
   singleRouteOnly();
   fetchTargetBacktest.mockImplementation(async ({ id }) => {
     if (id === 8)
@@ -1192,7 +1193,7 @@ test('a rate_limited Backtest read shows the backend message on its card, with n
           data: {
             error: {
               code: 'rate_limited',
-              message: 'Too many requests. Try again in a few seconds.',
+              message: 'Too many requests. Try again in 3 seconds.',
             },
           },
         },
@@ -1204,11 +1205,14 @@ test('a rate_limited Backtest read shows the backend message on its card, with n
   const [, limitedCard] = await screen.findAllByRole('article');
   await waitFor(() =>
     expect(within(limitedCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
-      'Too many requests. Try again in a few seconds.',
+      'Too many requests. Try again in 3 seconds.',
     ),
   );
   expect(limitedCard).not.toHaveTextContent('(ref');
-  // Never retried on its own: one read for each of the two cards.
+  // Never retried on its own, even after the Retry-After interval has passed.
+  await act(async () => {
+    jest.advanceTimersByTime(10000);
+  });
   expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
 });
 

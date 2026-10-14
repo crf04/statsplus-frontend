@@ -126,7 +126,7 @@ describe('gameLogsApi', () => {
       data: {
         error: {
           code: 'rate_limited',
-          message: 'Too many requests. Try again in a few seconds.',
+          message: 'Too many requests. Try again in 3 seconds.',
         },
       },
     },
@@ -134,7 +134,7 @@ describe('gameLogsApi', () => {
 
   test('shows the backend message for rate_limited, without a request reference', () => {
     expect(getRequestErrorMessage(rateLimitedResponse(), 'Unable to load game logs.')).toBe(
-      'Too many requests. Try again in a few seconds.',
+      'Too many requests. Try again in 3 seconds.',
     );
   });
 

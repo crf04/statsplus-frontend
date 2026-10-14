@@ -2127,7 +2127,7 @@ export const RATE_LIMITED = {
   status: 429,
   headers: { 'Retry-After': '3' },
   body: {
-    error: { code: 'rate_limited', message: 'Too many requests. Try again in a few seconds.' },
+    error: { code: 'rate_limited', message: 'Too many requests. Try again in 3 seconds.' },
   },
 };
 

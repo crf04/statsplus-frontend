@@ -29,7 +29,15 @@ test('other 403 responses leave the signed-in app in place', async ({ authentica
       json: { error: { code: 'forbidden', message: 'Admin access required.' } },
     }),
   );
+  const refused = page.waitForResponse(
+    (response) => response.url().includes('/api/') && response.status() === 403,
+  );
   await page.goto('/');
+  await refused;
+  // Let React render whatever the refusal caused before looking.
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+  );
 
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
   await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toHaveCount(0);

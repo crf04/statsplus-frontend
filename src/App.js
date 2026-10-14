@@ -5,6 +5,7 @@ import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import { reportRenderError } from './errorReporting';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -21,6 +22,10 @@ class RouteErrorBoundary extends Component {
 
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+
+  componentDidCatch(error, info) {
+    reportRenderError(error, info);
   }
 
   render() {

@@ -27,6 +27,7 @@
     "natural-language-query"
   ],
   "dependencies": {
+    "@sentry/react": "^11.7.0",
     "axios": "^1.19.0",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.3",
@@ -85,6 +86,7 @@
     "@e2e-dev/web": "^0.14.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.1",
+    "@sentry/vite-plugin": "^5.4.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

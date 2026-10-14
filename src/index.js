@@ -4,6 +4,9 @@ import './index.css';
 import './bootstrap-subset.scss';
 import App from './App';
 import './theme.css';
+import { initErrorReporting } from './errorReporting';
+
+initErrorReporting();
 
 const rootElement = document.getElementById('root');
 

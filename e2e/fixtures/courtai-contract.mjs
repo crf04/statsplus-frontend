@@ -2116,7 +2116,19 @@ const isCalendarDate = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 
-export const installApiContract = async (page, overrides = {}) => {
+// The backend's refusal of every authenticated route for a waitlisted account
+// (crf04/statsplus#157, Boundary contract).
+export const waitlistedResponse = {
+  status: 403,
+  json: {
+    error: {
+      code: 'waitlisted',
+      message: "The beta is full right now. You're on the waitlist and we'll let you in soon.",
+    },
+  },
+};
+
+export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
   // contract remembers what this page saved: a list that never changes cannot
@@ -2143,6 +2155,11 @@ export const installApiContract = async (page, overrides = {}) => {
     const request = route.request();
     const url = new URL(request.url());
     const override = overrides[url.pathname];
+
+    if (waitlisted) {
+      await route.fulfill(waitlistedResponse);
+      return;
+    }
 
     if (url.pathname === '/api/admin/collection/diagnostics' && request.method() === 'GET') {
       await route.fulfill({ json: { ...operationsPayload, jobs: operationsJobs } });

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getIdToken } from 'firebase/auth';
 import { API_TIMEOUT } from '../apiSettings';
 import { auth } from '../firebase/config';
+import { reportWaitlisted } from './waitlistSignal';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -65,6 +66,10 @@ apiClient.interceptors.response.use(
       error?.name === 'AbortError'
     ) {
       return Promise.reject(error);
+    }
+
+    if (error.response?.status === 403 && error.response.data?.error?.code === 'waitlisted') {
+      reportWaitlisted(error.response.data.error.message);
     }
 
     // Handle 401 Unauthorized responses

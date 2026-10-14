@@ -27,6 +27,28 @@ describe('gameLogsApi', () => {
     });
   });
 
+  test('does not retry a rate_limited game-logs request, even after Retry-After', async () => {
+    jest.useFakeTimers({ advanceTimers: true });
+    try {
+      apiClient.get.mockRejectedValue({
+        response: {
+          status: 429,
+          headers: { 'retry-after': '3' },
+          data: { error: { code: 'rate_limited', message: 'Slow down.' } },
+        },
+      });
+
+      await expect(fetchGameLogsData({ player_name: 'LeBron James' })).rejects.toMatchObject({
+        response: { status: 429 },
+      });
+      await jest.advanceTimersByTimeAsync(10000);
+
+      expect(apiClient.get).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('decodes JSON-string and object payloads once and reverses logs for display', () => {
     expect(
       decodeGameLogsResponse({

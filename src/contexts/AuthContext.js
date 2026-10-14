@@ -199,8 +199,8 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
 
   useEffect(
     () =>
-      subscribeWaitlisted((message) => {
-        if (currentUserRef.current) setWaitlist({ message });
+      subscribeWaitlisted((message, account) => {
+        if (account && currentUserRef.current?.uid === account) setWaitlist({ message });
       }),
     [],
   );

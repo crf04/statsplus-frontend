@@ -34,11 +34,13 @@ apiClient.interceptors.request.use(
       if (e2eTokenAvailable) {
         config.headers = config.headers || {};
         config.headers.Authorization = 'Bearer courtai-e2e-token';
+        config.waitlistAccount = 'courtai-e2e-user';
       } else if (user) {
         // Get the Firebase ID token
         const token = await getIdToken(user);
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
+        config.waitlistAccount = user.uid;
       }
     } catch (error) {
       // Firebase can be intentionally unavailable in local development. The
@@ -69,7 +71,7 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 403 && error.response.data?.error?.code === 'waitlisted') {
-      reportWaitlisted(error.response.data.error.message);
+      reportWaitlisted(error.response.data.error.message, error.config?.waitlistAccount);
     }
 
     // Handle 401 Unauthorized responses

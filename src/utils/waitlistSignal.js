@@ -8,6 +8,8 @@ export const subscribeWaitlisted = (listener) => {
   return () => listeners.delete(listener);
 };
 
-export const reportWaitlisted = (message) => {
-  listeners.forEach((listener) => listener(message));
+// `account` is the uid the refused request was sent as, so a slow answer for
+// one account cannot waitlist the account that replaced it.
+export const reportWaitlisted = (message, account) => {
+  listeners.forEach((listener) => listener(message, account));
 };

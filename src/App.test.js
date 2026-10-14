@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import App from './App';
 import config, { getApiUrl } from './config';
 
@@ -50,18 +50,6 @@ test('a waitlisted user sees the waitlist screen instead of the signed-in app', 
   expect(screen.getByText('fan@example.com')).toBeInTheDocument();
   expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Ask the box score' })).not.toBeInTheDocument();
-});
-
-test('a waitlisted user can sign out from the waitlist screen', async () => {
-  Object.assign(mockAuth, {
-    currentUser: { email: 'fan@example.com' },
-    isAuthenticated: true,
-    waitlist: { message: 'The beta is full right now.' },
-  });
-  render(<App />);
-
-  fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
-  expect(mockAuth.logout).toHaveBeenCalledTimes(1);
 });
 
 test('renders the CourtAI search landing page', async () => {

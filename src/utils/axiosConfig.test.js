@@ -44,6 +44,8 @@ const rejectWith = (status, data) => async (config) => {
 };
 
 test('a waitlisted 403 reports the backend message and still rejects the request', async () => {
+  auth.currentUser = { uid: 'u1' };
+  getIdToken.mockResolvedValue('test-token');
   const heard = jest.fn();
   const unsubscribe = subscribeWaitlisted(heard);
   const message = "The beta is full right now. You're on the waitlist and we'll let you in soon.";
@@ -53,7 +55,8 @@ test('a waitlisted 403 reports the backend message and still rejects the request
     }),
   ).rejects.toMatchObject({ response: { status: 403 } });
   unsubscribe();
-  expect(heard.mock.calls).toEqual([[message]]);
+  // The account is the one the refused request was sent as.
+  expect(heard.mock.calls).toEqual([[message, 'u1']]);
 });
 
 test.each([

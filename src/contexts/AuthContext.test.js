@@ -197,7 +197,7 @@ describe('waitlist', () => {
     await act(async () => listener({ uid: 'u1', email: 'a@example.com' }));
     expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
 
-    act(() => reportWaitlisted(message));
+    act(() => reportWaitlisted(message, 'u1'));
     expect(screen.getByTestId('waitlist')).toHaveTextContent(message);
 
     await act(async () => listener(null));
@@ -207,7 +207,7 @@ describe('waitlist', () => {
   test('a different account does not inherit the waitlist', async () => {
     renderProvider();
     await act(async () => listener({ uid: 'u1' }));
-    act(() => reportWaitlisted(message));
+    act(() => reportWaitlisted(message, 'u1'));
     await act(async () => listener({ uid: 'u2' }));
     expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
   });
@@ -215,7 +215,7 @@ describe('waitlist', () => {
   test('a token refresh for the same account keeps the waitlist', async () => {
     renderProvider();
     await act(async () => listener({ uid: 'u1' }));
-    act(() => reportWaitlisted(message));
+    act(() => reportWaitlisted(message, 'u1'));
     await act(async () => listener({ uid: 'u1' }));
     expect(screen.getByTestId('waitlist')).toHaveTextContent(message);
   });
@@ -223,7 +223,22 @@ describe('waitlist', () => {
   test('a waitlisted response that arrives while signed out is ignored', async () => {
     renderProvider();
     await act(async () => listener(null));
-    act(() => reportWaitlisted(message));
+    act(() => reportWaitlisted(message, 'u1'));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a slow answer to the previous account’s request does not waitlist the current account', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    await act(async () => listener({ uid: 'u2' }));
+    act(() => reportWaitlisted(message, 'u1'));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a waitlisted response from a request sent with no account is ignored', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    act(() => reportWaitlisted(message, undefined));
     expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
   });
 });

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, ArrowRight } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
@@ -188,6 +188,10 @@ const NaturalLanguageQuery = ({
           <div className="landing-hero">
             <LandingCourt />
             <div className="landing-header">
+              <Link to="/connect" className="landing-connect">
+                <span className="landing-connect-new">New</span> Ask CourtAI in Claude or ChatGPT
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
               <h1 className="landing-title">
                 Ask the <em>box score</em>
               </h1>

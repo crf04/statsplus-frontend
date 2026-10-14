@@ -146,6 +146,19 @@ describe('NaturalLanguageQuery', () => {
     expect(screen.getByRole('button', { name: /open search/i })).toBeInTheDocument();
   });
 
+  test('points to the Connect page from above the headline', () => {
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={jest.fn()} />
+      </MemoryRouter>,
+    );
+
+    const pill = screen.getByRole('link', { name: 'New Ask CourtAI in Claude or ChatGPT' });
+    expect(pill).toHaveAttribute('href', '/connect');
+    const headline = screen.getByRole('heading', { name: 'Ask the box score' });
+    expect(pill.compareDocumentPosition(headline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   test('offers a deterministic door beside the query prompt', () => {
     render(
       <MemoryRouter>

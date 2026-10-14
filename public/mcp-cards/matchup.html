@@ -1,0 +1,470 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>CourtAI Matchup card</title>
+<style>
+/* Shared by every StatsPlus card. Inlined into each card at serve time.
+   Host theme variables (MCP Apps hostContext) come first; the fallbacks only
+   apply outside a host. StatsPlus voice carried from the web app's theme.css:
+   monospace numerals, green/red only for vs-average and W/L, one amber accent. */
+:root {
+  --fg: var(--color-text-primary, #1f1e1d);
+  --muted: var(--color-text-secondary, #5e5d59);
+  --faint: var(--color-text-tertiary, #8a887f);
+  --line: var(--color-border-tertiary, rgba(127, 127, 127, 0.2));
+  --line-strong: var(--color-border-secondary, rgba(127, 127, 127, 0.38));
+  --tint: var(--color-background-secondary, rgba(127, 127, 127, 0.07));
+  --mono: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  --up-rgb: 46, 150, 98;
+  --down-rgb: 194, 70, 70;
+  --up: rgb(var(--up-rgb));
+  --down: rgb(var(--down-rgb));
+  --amber: #c98a28;
+}
+:root[data-theme="dark"] { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }
+}
+html, body { margin: 0; background: transparent; }
+body {
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: var(--font-text-sm-size, 14px);
+  line-height: var(--font-text-sm-line-height, 1.45);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+.card { padding: 14px 16px 12px; }
+.empty { color: var(--muted); padding: 14px 16px; }
+
+/* Header: title left, brand + context right. */
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
+.title { font-size: var(--font-heading-sm-size, 16px); font-weight: var(--font-weight-semibold, 600); }
+.sub { color: var(--muted); font-size: var(--font-text-xs-size, 12px); }
+.brand { font-size: 11px; font-weight: var(--font-weight-semibold, 600); letter-spacing: 0.02em; color: var(--faint); white-space: nowrap; }
+.brand::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 5px; vertical-align: 1px; }
+.fixture { color: var(--amber); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; margin-left: 6px; }
+
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.pill { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-semibold, 600); text-align: center; border-radius: var(--border-radius-sm, 6px); padding: 1px 6px; }
+.flag { display: inline-block; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; line-height: 15px; }
+.foot { margin-top: 10px; color: var(--faint); font-size: var(--font-text-xs-size, 12px); }
+.foot p { margin: 0; }
+.rule { border-top: 1px solid var(--line); }
+.as-of { margin-top: 10px; padding-top: 8px; color: var(--muted); font-size: var(--font-text-xs-size, 12px); }
+.as-of p { margin: 0; }
+.as-of p.warn { color: var(--fg); font-weight: var(--font-weight-medium, 500); }
+.as-of p.warn::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }
+
+  /* A court sheet for one player's Matchup: one market at a time. A half court shows his Diet in a
+     spatial Base (colour = what the opponent allows, number = his share); the other Bases are
+     butterflies (his share against the league's on the left, the opponent's % vs league on the right). */
+  :root { --ground: var(--color-background-primary, #fff); }
+  :root[data-theme="dark"] { --ground: var(--color-background-primary, #262624); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground: var(--color-background-primary, #262624); } }
+
+  .mh { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px 12px; }
+  .mh .who { min-width: 0; }
+  .mh .nm { font-size: 19px; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+  .mh .meta { color: var(--muted); font-size: var(--font-text-xs-size, 12px); }
+  .mh .meta b { color: var(--fg); font-weight: var(--font-weight-medium, 500); }
+  .mh .sc { text-align: right; flex: none; }
+  .mh .sc .pill { display: inline-block; font-size: 16px; line-height: 32px; padding: 0 12px; margin-top: 4px; }
+  .mh .sc .meta { font-size: 10.5px; margin-top: 2px; }
+
+  .sstrip { display: flex; gap: 6px; overflow-x: auto; margin: 12px -16px 0; padding: 0 16px 4px; scrollbar-width: none; }
+  .sstrip::-webkit-scrollbar { display: none; }
+  .tile { all: unset; box-sizing: border-box; flex: none; display: flex; flex-direction: column; gap: 1px; min-width: 52px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--fg); }
+  button.tile { cursor: pointer; }
+  button.tile:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  .tile.minutes { background: var(--tint); }
+  .tile .k { font-size: 10px; color: var(--faint); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  .tile .v { font-family: var(--mono); font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .tile .l15 { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .tile.on { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+  .tile.thin { border-style: dashed; border-color: var(--line-strong); }
+  .tile.thin.on { border-color: var(--amber); }
+  .spark { flex: none; }
+
+  .comps { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+  .cchip { font-size: 12px; border-radius: 6px; padding: 3px 8px; color: var(--fg); background: var(--tint); }
+  .cchip b { font-family: var(--mono); margin-left: 3px; }
+  .cchip.thin { outline: 1.5px dashed var(--line-strong); outline-offset: -2px; }
+  .cchip.blend { box-shadow: inset 0 0 0 1.5px var(--line-strong); font-weight: 600; }
+  .cchip em { font-style: normal; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); margin-left: 4px; }
+  .cchip .l15 { font-weight: 400; color: var(--muted); margin-left: 6px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 4px; }
+  .layout.solo { grid-template-columns: minmax(0, 1fr); }
+  .layout.solo .courtbox { max-width: 420px; }
+  .sec { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); font-weight: 600; margin: 14px 0 6px; display: flex; justify-content: space-between; gap: 8px; }
+  .sec .rk { font-family: var(--mono); letter-spacing: 0; text-transform: none; font-size: 11.5px; }
+
+  /* The court sizes by its container; labels are HTML over it so their type stays readable at any width. */
+  .courtbox { position: relative; }
+  .court { display: block; width: 100%; height: auto; color: var(--fg); }
+  .court [data-region] { stroke: none; }
+  .rl { position: absolute; transform: translate(-50%, -50%); text-align: center; line-height: 1.15; white-space: nowrap; pointer-events: auto; }
+  .rl b { display: block; font-family: var(--mono); font-size: 15px; font-weight: 700; }
+  .rl small { display: block; font-family: var(--mono); font-size: 10px; color: var(--fg); opacity: 0.8; }
+  .rl.rot { transform: translate(-50%, -50%) rotate(-90deg); }
+  .rl.rot b { font-size: 11px; }
+  .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; font-size: 11px; color: var(--faint); }
+  .legend .grad { width: 90px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(var(--down-rgb), 0.7), var(--tint), rgba(var(--up-rgb), 0.75)); }
+  .legend + .sub { margin-top: 2px; font-size: 11px; color: var(--faint); }
+
+  /* Butterfly: his share (tick = league average) left of the label, the opponent's % vs league right of it. */
+  .bf { display: grid; grid-template-columns: 32px minmax(0, 1fr) minmax(64px, 104px) minmax(0, 1fr) 78px; gap: 4px 8px; align-items: center; font-size: 11.5px; }
+  .bf .hd { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bf .hd.l { grid-column: 1 / 3; text-align: right; }
+  .bf .hd.r { grid-column: 4 / 6; }
+  .bf .lab { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: var(--font-weight-medium, 500); }
+  .bf .lb, .bf .rb { position: relative; height: 14px; }
+  .bf .lb > i { position: absolute; right: 0; top: 2px; bottom: 2px; background: var(--amber); border-radius: 2px 0 0 2px; opacity: 0.85; }
+  .bf .lb > s { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--fg); opacity: 0.55; text-decoration: none; }
+  .bf .rb::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--line-strong); }
+  .bf .rb > i { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+  .bf .t { font-family: var(--mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .bf .t.l { text-align: right; }
+  .bf .t.r { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 6px; }
+  .bf .t.r > :first-child { text-align: right; color: var(--fg); }
+
+  .rpill { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 5px; color: #fff; font: 600 11px var(--mono); flex: none; }
+  .trad { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 12.5px; padding: 6px 0; }
+  .trad b { font-weight: 600; }
+  .bfkey { margin-top: 6px; font-size: 11px; color: var(--faint); }
+  .key { margin-top: 10px; font-size: 10.5px; color: var(--faint); }
+  .key i { display: inline-block; width: 12px; height: 9px; outline: 1.5px dashed var(--line-strong); outline-offset: -1px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+
+  @media (max-width: 520px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .mh .nm { font-size: 17px; }
+    .rl b { font-size: 13px; }
+    .rl small { font-size: 9px; }
+    .rl.rot b { font-size: 10px; }
+    .bf { grid-template-columns: 30px minmax(0, 1fr) minmax(70px, 96px) minmax(0, 1fr) 74px; gap: 4px 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="root" class="empty">Loading matchup…</div>
+<script>
+  // A region of the half court is one slice of his Diet; the Assist locations map onto the same five regions.
+  const REGIONS = {
+    "Shot zones": { rim: "Restricted area", paint: "Paint (non-RA)", mid: "Mid-range", corner: "Corner 3", arc: "Above-break 3" },
+    "Assist locations": { rim: "Rim", paint: "Short mid-range", mid: "Long mid-range", corner: "Corner 3", arc: "Arc 3" },
+  };
+  const num = (text) => (text == null ? null : parseFloat(String(text).replace("−", "-")));
+  // Fill for what the opponent allows in a slice (percent vs league): green = more, red = less; none = untinted.
+  const soft = (p) => p == null ? "var(--tint)"
+    : `rgba(var(${p >= 0 ? "--up-rgb" : "--down-rgb"}), ${Math.min(0.8, 0.12 + Math.abs(p) / 28).toFixed(2)})`;
+  // 30 = allows the most = green, 1 = red.
+  const rankPill = (r) => r == null
+    ? '<span class="rpill" style="background:var(--tint);color:var(--faint)">–</span>'
+    : `<span class="rpill" style="background:hsl(${Math.round((r - 1) * 4.1)},62%,42%)">${r}</span>`;
+  const spark = (xs, w = 64, h = 18) => {
+    if (xs.length < 2) return "";
+    const mx = Math.max(...xs), mn = Math.min(...xs);
+    const pts = xs.map((x, i) => `${((i / (xs.length - 1)) * w).toFixed(1)},${(h - 2 - ((x - mn) / (mx - mn || 1)) * (h - 4)).toFixed(1)}`).join(" ");
+    return `<svg width="${w}" height="${h}" class="spark" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--amber)" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  };
+  // His last-10 minutes average: the web app's StatStrip arithmetic, stated in the tool text too.
+  const minutesAverage = (xs) => {
+    if (!xs.length) return null;
+    let total = 0;
+    for (const x of xs) total += x;
+    return window.sp.fixed(total / xs.length, 1);
+  };
+
+  let data = null;
+  let picked = null;
+
+  // The market's Base reads joined to his Diet: a slice's share and league share beside the opponent's rank.
+  function joined(market, base) {
+    const diet = (data.diet || []).find((b) => b.base === base.base);
+    const byLabel = Object.fromEntries(((diet && diet.slices) || []).map((s) => [s.slice, s]));
+    return base.slices.map((s) => ({ ...(byLabel[s.slice] || {}), ...s }));
+  }
+
+  function court(m, base, opp) {
+    const { esc, minus, ordinal } = window.sp;
+    const map = REGIONS[base.base];
+    const by = Object.fromEntries(joined(m, base).map((s) => [s.slice, s]));
+    const at = (region) => by[map[region]];
+    const fill = (region) => { const s = at(region); return soft(s ? num(s.vs_league) : null); };
+    const hy = 52.5, R3 = 237.5;
+    const arc = `M30 0 L30 140 A${R3} ${R3} 0 0 0 470 140 L470 0`, ra = `M210 0 L210 ${hy} A40 40 0 0 0 290 ${hy} L290 0`;
+    const shape = (region, el) => el.replace("/>", ` data-region="${region}" style="fill:${fill(region)}"/>`);
+    const ground = (el) => el.replace("/>", ' style="fill:var(--ground)"/>');
+    const svg = `<svg class="court" viewBox="0 0 500 400" role="img" aria-label="${esc(base.base)} half court">
+      ${ground('<rect width="500" height="400"/>')}${shape("arc", '<rect width="500" height="400"/>')}
+      ${shape("corner", '<rect width="30" height="140"/>')}${shape("corner", '<rect x="470" width="30" height="140"/>')}
+      ${ground(`<path d="${arc} Z"/>`)}${shape("mid", `<path d="${arc} Z"/>`)}
+      ${ground('<rect x="170" width="160" height="190"/>')}${shape("paint", '<rect x="170" width="160" height="190"/>')}
+      ${ground(`<path d="${ra} Z"/>`)}${shape("rim", `<path d="${ra} Z"/>`)}
+      <g fill="none" stroke="var(--ground)" stroke-width="3"><path d="${arc}"/><rect x="170" width="160" height="190"/><path d="${ra}"/></g>
+      <rect width="500" height="400" fill="none" stroke="var(--line-strong)" stroke-width="2"/>
+      <circle cx="250" cy="${hy - 12}" r="7.5" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/>
+      <line x1="220" x2="280" y1="${hy - 22}" y2="${hy - 22}" stroke="currentColor" stroke-opacity=".5" stroke-width="3"/>
+    </svg>`;
+    const label = (region, x, y, rot) => {
+      const s = at(region);
+      if (!s) return "";
+      const rank = s.opponent_rank == null ? "no opponent row" : `${esc(opp)} ${ordinal(s.opponent_rank)} (${esc(s.vs_league)} vs league)`;
+      const second = rot ? "" : `<small>${s.opponent_rank == null ? "–" : ordinal(s.opponent_rank)} · ${s.vs_league == null ? "–" : esc(minus(s.vs_league))}</small>`;
+      return `<div class="rl${rot ? " rot" : ""}" data-region="${region}" style="left:${(x / 5).toFixed(1)}%;top:${(y / 4).toFixed(1)}%" title="${esc(s.slice)}: ${esc(s.share)} of his ${esc(base.base)} Diet · ${rank}"><b>${esc(s.share)}</b>${second}</div>`;
+    };
+    const labels = label("rim", 250, 72) + label("paint", 250, 152) + label("mid", 250, 242) + label("arc", 250, 337)
+      + label("corner", 18, 70, true) + label("corner", 483, 70, true);
+    return `<div class="courtbox">${svg}${labels}</div>`;
+  }
+
+  function butterfly(m, base, opp) {
+    const { esc, minus, ordinal, SHORT, pct } = window.sp;
+    const slices = joined(m, base);
+    const mx = Math.max(0.4, ...slices.map((s) => Math.max(num(s.share) / 100, num(s.league_share) / 100 || 0)));
+    const comp = m.components[base.base];
+    const rows = slices.map((s) => {
+      const share = num(s.share) / 100, league = s.league_share == null ? null : num(s.league_share) / 100;
+      const v = num(s.vs_league), w = v == null ? 0 : Math.min(50, (Math.abs(v) / 30) * 50);
+      const tip = `${s.slice}: ${s.share} of his Diet${s.league_share == null ? "" : ` (league ${s.league_share})`} · ${s.opponent_rank == null ? "no opponent row" : `${opp} ${ordinal(s.opponent_rank)} (${s.vs_league} vs league)`}`;
+      return `<span class="t l">${esc(s.share)}</span>
+        <div class="lb"><i style="width:${((share / mx) * 100).toFixed(1)}%"></i>${league == null ? "" : `<s style="right:${((league / mx) * 100).toFixed(1)}%"></s>`}</div>
+        <span class="lab" title="${esc(tip)}">${esc(s.slice)}</span>
+        <div class="rb">${v == null ? "" : `<i style="${v >= 0 ? "left:50%" : "right:50%"};width:${w.toFixed(1)}%;background:${soft(v)}"></i>`}</div>
+        <span class="t r"><span>${s.vs_league == null ? "–" : esc(minus(s.vs_league))}</span><span>${s.opponent_rank == null ? "" : ordinal(s.opponent_rank)}</span></span>`;
+    }).join("");
+    return `<div class="sec"><span>${esc(base.base)} · ${esc(m.market)}</span><span class="rk ${comp && comp.value >= 0 ? "up" : "down"}">${comp ? pct(comp.value) : ""}</span></div>
+      <div class="bf" aria-label="${esc(base.base)}: his Diet against what ${esc(opp)} allows">
+        <span class="hd l">His Diet</span><span class="hd r">${esc(opp)} allows</span>${rows}</div>`;
+  }
+
+  function tradRow(m, opp) {
+    const { esc, minus, ordinal, pct } = window.sp;
+    const base = (m.bases || []).find((x) => x.base === "Traditional");
+    const comp = m.components.Traditional;
+    const t = base && base.slices[0];
+    if (!t || !comp) return "";
+    const allowed = /^(.*) allowed per 48$/.exec(t.metric);
+    const what = allowed ? `${esc(opp)} allows ${esc(allowed[1])}` : `${esc(opp)}: ${esc(t.metric)}`;
+    const vs = t.vs_league ? `, ${esc(minus(t.vs_league))} vs league per 48` : "";
+    return `<div class="sec"><span>Traditional · ${esc(m.market)}</span></div>
+      <div class="trad">${rankPill(t.opponent_rank)}<div><b>${what}</b> · ${ordinal(t.opponent_rank)} in the league${vs}</div><span class="rk ${comp.value >= 0 ? "up" : "down"}">${pct(comp.value)}</span></div>`;
+  }
+
+  function draw(restore) {
+    const { esc, pct, day, wash, ordinal, minus, SHORT } = window.sp;
+    const root = document.getElementById("root");
+    const d = data;
+    const m = d.markets.find((x) => x.market === picked) || d.markets[0];
+    const opp = d.player.opponent || "opponent n/a";
+    const minutes = d.player.last_10_minutes || [];
+    const average = minutesAverage(minutes);
+
+    // An Unscheduled Matchup (mode "unscheduled") has no game: it names its opponent and as-of date instead.
+    const unscheduled = d.mode === "unscheduled";
+    let meta;
+    if (unscheduled) {
+      const asOf = d.as_of && (d.as_of.season_defense || d.as_of.player_diets);
+      const date = !asOf ? "an unreported date" : /^\d{4}-\d{2}-\d{2}$/.test(asOf) ? day(asOf) : asOf;
+      meta = `${esc(d.player.team || "team n/a")} vs <b>${esc(opp)}</b> · Unscheduled Matchup (no scheduled game) · data as of ${esc(date)}`;
+    } else {
+      const [away, home] = String(d.game.label).split(" @ ");
+      const where = d.player.team === away ? `${esc(away)} @ <b>${esc(home)}</b>` : d.player.team === home ? `${esc(home)} vs <b>${esc(away)}</b>` : esc(d.game.label);
+      const state = d.game.state ? ` · ${esc(d.game.state.charAt(0).toUpperCase() + d.game.state.slice(1))}` : "";
+      meta = `${where} · ${esc(day(d.game.date))} Slate${state}`;
+    }
+    const closest = d.player.closest_match_to
+      ? `<div class="meta">Closest match to “${esc(d.player.closest_match_to)}”</div>`
+      : "";
+
+    const season = m.season;
+    const pill = season
+      ? `<span class="pill" style="${wash(season.value)}">${pct(season.value)}</span>`
+      : '<span class="pill">—</span>';
+    const tiles = d.markets.map((x) => {
+      const s = x.season;
+      const tone = !s || Math.round(s.value * 100) === 0 ? "" : s.value > 0 ? " up" : " down";
+      return `<button type="button" class="tile mk${x === m ? " on" : ""}${s && s.thin ? " thin" : ""}" data-market="${esc(x.market)}" aria-pressed="${x === m}">
+        <span class="k">${esc(x.market)}</span><span class="v${tone}">${s ? pct(s.value) : "—"}</span>${x.last15 ? `<span class="l15">L15 ${pct(x.last15.value)}</span>` : ""}</button>`;
+    }).join("");
+    const chips = d.bases.filter((b) => m.components[b]).map((b) => {
+      const c = m.components[b];
+      return `<span class="cchip${c.thin ? " thin" : ""}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b>${c.thin ? "<em>thin</em>" : ""}</span>`;
+    }).join("");
+    // A defensive market has no Blend: its score is its one Traditional component, already a chip.
+    const blend = season && !season.no_blend_component
+      ? `<span class="cchip blend${season.thin ? " thin" : ""}" style="${wash(season.value)}">Blend <b>${pct(season.value)}</b>${season.thin ? "<em>thin</em>" : ""}${m.last15 ? `<span class="l15">Last 15 <b>${pct(m.last15.value)}</b>${m.last15.thin ? "<em>thin</em>" : ""}</span>` : ""}</span>`
+      : "";
+
+    const bases = (m.bases || []).filter((b) => b.base !== "Traditional");
+    const spatial = bases.find((b) => REGIONS[b.base]);
+    const others = bases.filter((b) => b !== spatial);
+    const trad = tradRow(m, opp);
+    const left = spatial
+      ? `<div><div class="sec"><span>${esc(spatial.base)} · ${esc(m.market)}</span><span class="rk ${m.components[spatial.base] && m.components[spatial.base].value >= 0 ? "up" : "down"}">${m.components[spatial.base] ? pct(m.components[spatial.base].value) : ""}</span></div>
+          ${court(m, spatial, opp)}
+          <div class="legend"><span>${esc(opp)} allows</span><span>less</span><span class="grad"></span><span>more than league</span></div>
+          <div class="sub">Number = his share of ${esc(spatial.base)}; under it, ${esc(opp)}'s rank (30th = allows the most) and % vs league. Grey = no slice.</div></div>`
+      : "";
+    const key = others.length
+      ? `<div class="sub bfkey">Left: his share of the Base, │ = the league-average share. Right: what ${esc(opp)} allows vs league, then its rank (30th = allows the most).</div>`
+      : "";
+    const right = others.map((b) => butterfly(m, b, opp)).join("") + key + trad;
+    const body = left || right
+      ? `<div class="layout${left && right ? "" : " solo"}">${left}${right ? `<div>${right}</div>` : ""}</div>`
+      : `<p class="sub">No Diet-based Base for ${esc(m.market)}.</p>`;
+    const anyThin = d.markets.some((x) => (x.season && x.season.thin) || Object.values(x.components).some((c) => c && c.thin));
+
+    const old = restore && root.querySelector ? root.querySelector(".sstrip") : null;
+    const scrolled = old ? old.scrollLeft : 0;
+    root.className = "card";
+    root.innerHTML = `
+      <div class="mh">
+        <div class="who">
+          <div class="nm">${esc(d.player.name)}</div>
+          ${closest}
+          <div class="meta">${meta}</div>
+        </div>
+        <div class="sc"><div class="brand">CourtAI</div>${pill}<div class="meta">${esc(m.market)} Matchup Score${season && season.thin ? " · thin" : ""}${season && season.no_blend_component ? ` · ${esc(season.no_blend_component)} only` : ""}</div></div>
+      </div>
+      <div class="sstrip" role="group" aria-label="Market">
+        <div class="tile minutes"><span class="k">MIN, last 10</span><span class="v">${average == null ? "—" : average}${spark(minutes)}</span></div>
+        ${tiles}
+      </div>
+      <div class="comps" aria-label="Season Matchup Score by Base">${chips}${blend}</div>
+      ${body}
+      ${anyThin ? '<div class="key"><i></i>thin sample</div>' : ""}
+      ${window.sp.asOf(d)}`;
+    if (restore && root.querySelector) {
+      const strip = root.querySelector(".sstrip");
+      if (strip) strip.scrollLeft = scrolled;
+      const on = root.querySelector(".tile.on");
+      if (on && on.focus) on.focus({ preventScroll: true });
+    }
+  }
+
+  window.renderCard = function (d) {
+    const root = document.getElementById("root");
+    if (!d || !d.markets || !d.markets.length || !d.player) { root.className = "empty"; root.innerHTML = `No matchup data.${window.sp.asOf(d)}`; return; }
+    data = d;
+    // The market Claude was asked about first, else PTS; a player scored in neither starts on his first.
+    picked = (d.markets.find((m) => m.market === d.asked_market) || d.markets.find((m) => m.market === "PTS") || d.markets[0]).market;
+    root.onclick = (event) => {
+      const tile = event.target && event.target.closest && event.target.closest("[data-market]");
+      if (!tile || !tile.dataset.market) return;
+      picked = tile.dataset.market;
+      draw(true);
+    };
+    draw(false);
+  };
+</script>
+<script>
+// Shared by every StatsPlus card. Inlined into each card at serve time.
+// Minimal MCP Apps View bridge (spec 2026-01-26): JSON-RPC 2.0 over
+// postMessage. Only what a display-only card needs (#83): the ui/initialize
+// handshake, host theming, tool results and size reports. Each card defines
+// window.renderCard(structuredContent) before this script runs.
+(function () {
+  const PROTOCOL = "2026-01-26";
+  let nextId = 1;
+  const pending = new Map();
+  const send = (msg) => window.parent.postMessage({ jsonrpc: "2.0", ...msg }, "*");
+  const request = (method, params) => new Promise((resolve, reject) => {
+    const id = nextId++;
+    pending.set(id, { resolve, reject });
+    send({ id, method, params });
+  });
+  const notify = (method, params) => send({ method, params });
+
+  function applyHost(ctx) {
+    if (!ctx) return;
+    const root = document.documentElement;
+    const vars = ctx.styles && ctx.styles.variables;
+    if (vars) for (const [k, v] of Object.entries(vars)) if (v) root.style.setProperty(k, v);
+    if (ctx.theme) { root.dataset.theme = ctx.theme; root.style.colorScheme = ctx.theme; }
+  }
+
+  window.addEventListener("message", (event) => {
+    if (event.source !== window.parent) return;
+    const msg = event.data;
+    if (!msg || msg.jsonrpc !== "2.0") return;
+    if (msg.id !== undefined && !msg.method && pending.has(msg.id)) {
+      const { resolve, reject } = pending.get(msg.id);
+      pending.delete(msg.id);
+      msg.error ? reject(msg.error) : resolve(msg.result);
+    } else if (msg.method === "ui/notifications/tool-result") {
+      window.renderCard(msg.params && msg.params.structuredContent);
+    } else if (msg.method === "ui/notifications/host-context-changed") {
+      applyHost(msg.params);
+    } else if (msg.method === "ui/resource-teardown" && msg.id !== undefined) {
+      send({ id: msg.id, result: {} });
+    } else if (msg.id !== undefined && msg.method) {
+      send({ id: msg.id, error: { code: -32601, message: "Method not found" } });
+    }
+  });
+
+  let lastHeight = 0;
+  new ResizeObserver(() => {
+    const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+    if (height !== lastHeight) { lastHeight = height; notify("ui/notifications/size-changed", { height }); }
+  }).observe(document.documentElement);
+
+  request("ui/initialize", {
+    appInfo: { name: document.title || "CourtAI card", version: "0.1.0" },
+    appCapabilities: {},
+    protocolVersion: PROTOCOL,
+  }).then((result) => {
+    applyHost(result && result.hostContext);
+    notify("ui/notifications/initialized", {});
+  });
+})();
+
+// Formatting helpers shared by the cards.
+window.sp = {
+  esc: (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])),
+  minus: (s) => String(s).replace(/^-/, "−"),
+  // Same as the tool text (vocabulary._percent): one decimal below 1% so a small score never reads as "−0%".
+  pct: (v) => {
+    const p = v * 100;
+    if (window.sp.fixed(Math.abs(p), 1) === "0.0") return "0%";
+    return `${p > 0 ? "+" : "−"}${window.sp.fixed(Math.abs(p), Math.abs(p) < 0.95 ? 1 : 0)}%`;
+  },
+  // Python's format(a, f".{d}f") for 0 <= a < 1e21 and d <= 1 (card percents): round the exact binary value
+  // half to even, where toFixed rounds ties up. Below 0.01 it is zero at d <= 1, and toPrecision would go exponential.
+  fixed: (a, d) => {
+    if (a < 0.01) return (0).toFixed(d);
+    const [whole, frac = ""] = a.toPrecision(60).split(".");
+    const rest = frac.slice(d);
+    let n = BigInt(whole + frac.slice(0, d));
+    const tail = rest.slice(1).replace(/0+$/, "");
+    if (rest[0] > "5" || (rest[0] === "5" && (tail !== "" || n % 2n === 1n))) n += 1n;
+    const s = n.toString().padStart(d + 1, "0");
+    return d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;
+  },
+  ordinal: (n) => { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); },
+  // The web app's Selection-card wash: greener up, redder down, capped alpha.
+  wash: (v) => {
+    if (Math.round(v * 100) === 0) return "";
+    const a = Math.min(0.5, 0.12 + Math.abs(v) * 2.5).toFixed(2);
+    return `background: rgba(var(${v > 0 ? "--up-rgb" : "--down-rgb"}), ${a})`;
+  },
+  day: (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+  // The as-of footer: the tool text's own footer lines (`data_as_of`), verbatim; nothing from an
+  // older backend that sends no provenance. Stale and unavailable lines are marked for emphasis.
+  asOf: (d) => {
+    const lines = d && Array.isArray(d.data_as_of) ? d.data_as_of : [];
+    if (!lines.length) return "";
+    const p = (l) => `<p${/^(Stale|Unavailable):/.test(l) ? ' class="warn"' : ""}>${window.sp.esc(l)}</p>`;
+    return `<div class="as-of rule">${lines.map(p).join("")}</div>`;
+  },
+  // Short Base labels for narrow cards (Slate and Matchup both show these).
+  SHORT: { "Shot types": "Shot", "Shot zones": "Zone", "Play types": "Play", "Assist locations": "Assist", "Traditional": "Trad" },
+};
+
+</script>
+</body>
+</html>

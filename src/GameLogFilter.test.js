@@ -422,6 +422,31 @@ test('unchanged Apply recovers from an initial failure with a default comparison
   expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics');
 });
 
+test('a rate_limited game-logs read shows the backend message, once', async () => {
+  const { getRequestErrorMessage } = require('./gameLogsApi');
+  getRequestErrorMessage.mockImplementationOnce(
+    jest.requireActual('./gameLogsApi').getRequestErrorMessage,
+  );
+  mockFilterPatch = { game_filter: 10 };
+  fetchGameLogsData.mockRejectedValue(
+    Object.assign(new Error('Request failed with status code 429'), {
+      response: {
+        status: 429,
+        headers: { 'retry-after': '3', 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
+        data: {
+          error: {
+            code: 'rate_limited',
+            message: 'Too many requests. Try again in a few seconds.',
+          },
+        },
+      },
+    }),
+  );
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await screen.findByText('Too many requests. Try again in a few seconds.');
+  expect(fetchGameLogsData).toHaveBeenCalledTimes(1);
+});
+
 test('hides the sample size while the next request is in flight', async () => {
   const logs = (count) => Array.from({ length: count }, (_, index) => ({ GAME_ID: `${index}` }));
   const averages = [

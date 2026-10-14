@@ -1181,6 +1181,37 @@ test('each saved card labels its Backtest with the season the backend read', asy
   );
 });
 
+test('a rate_limited Backtest read shows the backend message on its card, with no reference', async () => {
+  singleRouteOnly();
+  fetchTargetBacktest.mockImplementation(async ({ id }) => {
+    if (id === 8)
+      throw Object.assign(new Error('Request failed with status code 429'), {
+        response: {
+          status: 429,
+          headers: { 'retry-after': '3', 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
+          data: {
+            error: {
+              code: 'rate_limited',
+              message: 'Too many requests. Try again in a few seconds.',
+            },
+          },
+        },
+      });
+    return { ...defaultRead, today: undefined };
+  });
+  renderPage(false);
+
+  const [, limitedCard] = await screen.findAllByRole('article');
+  await waitFor(() =>
+    expect(within(limitedCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
+      'Too many requests. Try again in a few seconds.',
+    ),
+  );
+  expect(limitedCard).not.toHaveTextContent('(ref');
+  // Never retried on its own: one read for each of the two cards.
+  expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+});
+
 test('a saved card from a backend deployed before the default keeps its own label', async () => {
   fetchTargetBacktests.mockResolvedValue(
     readyBatch(targets, {

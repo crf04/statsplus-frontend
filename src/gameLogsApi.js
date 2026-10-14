@@ -1,4 +1,5 @@
 import { apiClient, getApiUrl } from './config';
+import { GAME_LOGS_TIMEOUT } from './apiSettings';
 
 const parseJsonValue = (value, fallback, fieldName) => {
   if (value === null || value === undefined || value === '') return fallback;
@@ -51,10 +52,9 @@ export const fetchGameLogsData = async (params = {}, { signal } = {}) => {
   const response = await apiClient.get(getApiUrl('GAME_LOGS'), {
     params,
     signal,
-    // Game-log queries can legitimately be slower than ordinary API calls.
-    // Keep AbortController cancellation available without inheriting the
-    // short default timeout used by the shared client.
-    timeout: 0,
+    // Game-log queries can legitimately be slower than ordinary API calls, but
+    // not slower than the backend's own query limit.
+    timeout: GAME_LOGS_TIMEOUT,
   });
 
   return decodeGameLogsResponse(response.data);
@@ -91,9 +91,13 @@ export const getRequestErrorMessage = (
   if (!responseError && ['ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)) {
     return 'The request took too long. Please try again.';
   }
+  // A 429 the backend did not write (a proxy's) still says to slow down.
+  const rateLimited =
+    error?.response?.status === 429 && 'Too many requests. Try again in a few seconds.';
   return withRequestReference(
     (typeof responseError === 'string' ? responseError : responseError?.message) ||
       error?.response?.data?.message ||
+      rateLimited ||
       error?.message ||
       fallback,
     error,

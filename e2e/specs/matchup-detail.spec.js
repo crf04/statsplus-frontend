@@ -1005,3 +1005,93 @@ test('capture stays reachable and the sheet stays unscrolled at a phone width', 
     true,
   );
 });
+
+/*
+ * What the sheet looks like is CSS, which jsdom does not apply, so these read
+ * computed styles in the browser (crf04/statsplus#179 AC 9, 13, 15, 17, 18).
+ */
+const withMakesBesideAttempts = () => {
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.teams
+    .find((team) => team.tricode === 'BOS')
+    .defense_sheet.shot_zones.push({
+      key: 'Restricted Area:FGM',
+      label: 'Restricted Area FGM',
+      markets: ['PTS', 'PA', 'PR', 'PRA'],
+      season: { allowed_per_48: 14, percent_vs_league_average: 6, sigma_deviation: 1.2, rank: 22 },
+      last_15: { allowed_per_48: 13, percent_vs_league_average: 4, sigma_deviation: 1.1, rank: 20 },
+    });
+  candidate.league.defense_sheet.shot_zones.push({
+    key: 'Restricted Area:FGM',
+    season: { average_allowed_per_48: 13.2, sigma: 1 },
+    last_15: { average_allowed_per_48: 12.5, sigma: 1 },
+  });
+  return candidate;
+};
+
+test('the sheet dims off-stat measures, draws no category boxes and reads at the larger type', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  await installApiContract(page, { '/api/games/matchup': withMakesBesideAttempts() });
+  await page.goto('/matchups/0022500584');
+
+  // On PTS the makes are in the stat and the attempts beside them are not.
+  const restricted = page.getByRole('article', { name: 'Restricted area' });
+  await expect(restricted.getByTitle(/per 48/)).toHaveCount(2);
+  const [attempts, makes] = await restricted.getByTitle(/per 48/).all();
+  const opacity = async (locator) =>
+    Number(await locator.evaluate((node) => getComputedStyle(node).opacity));
+  expect(await opacity(attempts)).toBeLessThan(1);
+  expect(await opacity(makes)).toBe(1);
+
+  // A category is a label and a rule, not a box.
+  const category = page.getByRole('region', { name: 'Shot zones' });
+  const box = await category.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [
+      style.borderTopWidth,
+      style.borderRightWidth,
+      style.borderBottomWidth,
+      style.borderLeftWidth,
+      style.backgroundColor,
+    ];
+  });
+  expect(box).toEqual(['0px', '0px', '0px', '0px', 'rgba(0, 0, 0, 0)']);
+
+  // Body text is at least 15% larger than on master, where the rail note and
+  // an injury entry were both 0.68rem (10.88px).
+  const fontSize = async (locator) =>
+    Number.parseFloat(await locator.evaluate((node) => getComputedStyle(node).fontSize));
+  expect(await fontSize(page.getByText(/^By season scoring/))).toBeGreaterThanOrEqual(10.88 * 1.15);
+  expect(await fontSize(page.getByText('Left calf soreness'))).toBeGreaterThanOrEqual(10.88 * 1.15);
+});
+
+test.describe('on a touch screen', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('the save icon shows without hover and the page does not scroll sideways', async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+    await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+    await installApiContract(page, { '/api/games/matchup': withMakesBesideAttempts() });
+    await page.goto('/matchups/0022500584');
+
+    expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
+    const save = page.getByRole('button', { name: 'Save Restricted area as a Target' });
+    const opacity = Number(await save.evaluate((node) => getComputedStyle(node).opacity));
+    expect(opacity).toBeGreaterThan(0.5);
+    for (const stat of ['PTS', 'All']) {
+      await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: stat }).tap();
+      // A mobile browser widens its layout viewport to fit overflow, so the
+      // page is held to the 390 px screen itself rather than to innerWidth.
+      const widths = await page.evaluate(() => [
+        window.innerWidth,
+        document.documentElement.scrollWidth,
+      ]);
+      expect(widths).toEqual([390, 390]);
+    }
+  });
+});

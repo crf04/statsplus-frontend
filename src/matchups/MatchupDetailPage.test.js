@@ -727,9 +727,17 @@ test('a late selection response cannot replace a newer player selection', async 
   const first = new Promise((resolve) => {
     resolveFirst = resolve;
   });
+  const logRow = (pts, delta) => ({
+    date: '2025-12-25',
+    matchup: 'LAL vs. BOS',
+    minutes: 33,
+    stats: { PTS: pts, FG3A: 7, FGA: 18 },
+    deltas: { PTS: delta, FG3A: 0.01, FGA: 0.01 },
+    average: false,
+  });
   const austin = {
     playerId: 1630559,
-    h2h: { thin: false, rows: [] },
+    h2h: { thin: false, rows: [logRow(44, 0.444)] },
     archetype: { thin: false, rows: [] },
   };
   fetchMatchupSelection.mockImplementation((_gameId, playerId) =>
@@ -749,14 +757,19 @@ test('a late selection response cannot replace a newer player selection', async 
     }),
   );
   expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
-  resolveFirst({
-    playerId: 2544,
-    h2h: { thin: false, rows: [] },
-    archetype: { thin: false, rows: [] },
-  });
-  await waitFor(() =>
-    expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible(),
+  expect((await screen.findAllByText('+0.444')).length).toBeGreaterThan(0);
+  // LeBron's request settles after Austin's: his logs must not replace Austin's.
+  await act(async () =>
+    resolveFirst({
+      playerId: 2544,
+      h2h: { thin: false, rows: [logRow(77, 0.777)] },
+      archetype: { thin: false, rows: [] },
+    }),
   );
+  expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  expect(screen.getAllByText('+0.444').length).toBeGreaterThan(0);
+  expect(screen.queryByText('+0.777')).not.toBeInTheDocument();
+  expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
 });
 
 test('orders the rail by season scoring in every stat and scopes tabs to the displayed side', async () => {
@@ -1079,26 +1092,43 @@ test('player switches clamp the card stat and team toggles remain user-controlle
   expect(screen.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
 });
 
-test('card stat choices persist while a different global sheet market remains active', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+test('the card follows later sheet-stat changes but keeps a stat chosen on the card', async () => {
+  renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   const sheetMarkets = within(screen.getByRole('group', { name: 'Market' }));
-  await userEvent.click(sheetMarkets.getByRole('button', { name: 'PTS' }));
   await userEvent.click(
     within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('button', {
       name: 'Open selection card',
     }),
   );
-  const cardStats = within(await screen.findByRole('group', { name: 'Selection log stat' }));
-  await userEvent.click(cardStats.getByRole('button', { name: 'FGA' }));
-  expect(cardStats.getByRole('button', { name: 'FGA' })).toHaveAttribute('aria-pressed', 'true');
+  await screen.findByRole('group', { name: 'Selection log stat' });
+  const pressed = () =>
+    within(screen.getByRole('group', { name: 'Selection log stat' }))
+      .getAllByRole('button')
+      .filter((button) => button.getAttribute('aria-pressed') === 'true')
+      .map((button) => button.getAttribute('aria-label'));
+  expect(pressed()).toEqual(['PTS']);
+
+  // A later sheet stat he has carries into the card.
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'FGA' }));
+  // The card follows in an effect, so it lands a render after the click.
+  await waitFor(() => expect(pressed()).toEqual(['FGA']));
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'PTS' }));
+  await waitFor(() => expect(pressed()).toEqual(['PTS']));
+
+  // A stat chosen on the card survives sheet stats he does not have, and All.
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  );
   expect(sheetMarkets.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'FG3A' }));
+  await act(async () => {});
+  expect(pressed()).toEqual(['FGA']);
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'All' }));
+  await act(async () => {});
+  expect(pressed()).toEqual(['FGA']);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
@@ -1820,11 +1850,18 @@ test('AC1: a finished game says when, what the sheet is built on and what is mis
 
 test('AC1: an upcoming game names its tip-off and the books and time its lines were read', async () => {
   atInstant('2026-01-15T12:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // The pool names the books it read, whatever the players' provenance lists.
+  candidate.freshness.pool.providers = [
+    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+    { name: 'draftkings', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings, read 8:50 PM.',
   );
   expect(summary.querySelector('.matchup-warning')).toBeNull();
 });
@@ -1937,6 +1974,8 @@ test('AC5: before the game the row leads with his line, PrizePicks first, other 
   const lebron = await screen.findByRole('article', { name: 'LeBron James player' });
   expect(within(lebron).getByText('27.5')).toBeVisible();
   expect(within(lebron).getByText('line · 25.4 avg')).toBeVisible();
+  // Minutes before the game are his last-10 average: (35 + 36 + 38) / 3.
+  expect(within(lebron).getByText('36 min last 10')).toBeVisible();
   const lebronBooks = within(lebron).getByLabelText(
     'PTS posted by PrizePicks and Underdog at 26.5',
   );
@@ -2208,4 +2247,117 @@ test('AC15: Save as Target is an icon at the row end that captures the slice', a
   expect(save).toHaveTextContent('');
   expect(save.querySelector('svg')).not.toBeNull();
   expect(screen.queryByText('Save as Target')).not.toBeInTheDocument();
+});
+
+test('closing a deep-linked card whose row the open stat hides hands focus to the rail heading', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const austin = candidate.players.find((player) => player.id === 1630559);
+  austin.postedMarkets = ['FG3A'];
+  austin.statCategories = ['FG3A'];
+  austin.provenance = { prizepicks: ['FG3A'] };
+  austin.lines = {};
+  delete austin.scores.PTS;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup('/matchups/game-1?player=1630559');
+
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  // The page keeps its PTS opening, which leaves Austin's row out of the rail.
+  expect(railNames()).toEqual(['LeBron James']);
+  await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+  await waitFor(() =>
+    expect(
+      within(screen.getByRole('complementary', { name: 'Targetable players' })).getByRole(
+        'heading',
+        { level: 2 },
+      ),
+    ).toHaveFocus(),
+  );
+  expect(document.activeElement).toHaveTextContent('LAL · PTS');
+});
+
+test('AC6: a withheld score is no headline, and a defensive-only score is one', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  // Components computed, Blend withheld for a named missing input.
+  lebron.scores.FGA.season = {
+    components: { playTypes: { value: 0.5, thin: false } },
+    blend: null,
+    missingInputs: ['team_defense:play_types'],
+  };
+  // A defensive stat has no Blend by contract; its component is the score.
+  lebron.postedMarkets.push('TOV');
+  lebron.statCategories.push('TOV');
+  lebron.provenance.prizepicks.push('TOV');
+  lebron.scores.TOV = {
+    season: {
+      components: { traditional: { value: 0.07, thin: false } },
+      blend: null,
+      missingInputs: [],
+    },
+    last15: { components: {}, blend: null, missingInputs: [] },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  const withheld = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(withheld).getByText('—')).toBeVisible();
+  expect(withheld).not.toHaveTextContent('50%');
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByText('+7%'),
+  ).toHaveClass('tone-up');
+});
+
+test('AC10: one shot type reads as a 2s row and a 3s row, each with its attempts and makes', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const row = (stat, markets, season) => ({
+    key: `Pullups:${stat}`,
+    sliceKey: 'Pullups',
+    label: `Pullups ${stat}`,
+    markets,
+    season,
+    last15: season,
+  });
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes = [
+    row('FG2A', ['FGA', 'FG2A'], value(12, 4, 1.1, 20)),
+    row('FG2M', ['PTS'], value(5, -6, -1.2, 9)),
+    row('FG3A', ['FGA', 'FG3A'], value(7, 15, 1.5, 28)),
+    row('FG3M', ['3PM', 'PTS'], value(2.5, 9, 1.3, 25)),
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const cells = (name) =>
+    within(sheetRow(name))
+      .getAllByTitle(/per 48/)
+      .map(
+        (cell) => cell.getAttribute('title').split(' · ')[0] + ' ' + cell.firstChild.textContent,
+      );
+  expect(
+    within(screen.getByRole('region', { name: 'Shot types' }))
+      .getAllByRole('article')
+      .map((article) => article.getAttribute('aria-label')),
+  ).toEqual(['Pull-up 3s', 'Pull-up 2s']);
+  // Attempts then Makes, each its own shot value's.
+  expect(cells('Pull-up 2s')).toEqual(['12.0 per 48 +4%', '5.0 per 48 −6%']);
+  expect(cells('Pull-up 3s')).toEqual(['7.0 per 48 +15%', '2.5 per 48 +9%']);
+});
+
+test('AC12: the rank marker sits from fewest at the left to most at the right', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const marker = (name, index = 0) =>
+    within(sheetRow(name)).getAllByRole('img')[index].querySelector('i');
+  // Rank 30 allows the most: the right end. Rank 3: near the left.
+  expect(marker('Corner 3s').style.left).toBe('100%');
+  expect(marker('Above-the-break 3s').style.left).toBe(`${(2 / 29) * 100}%`);
+  expect(marker('Corner 3s', 1).style.left).toBe(`${(16 / 29) * 100}%`);
 });

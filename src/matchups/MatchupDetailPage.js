@@ -328,6 +328,7 @@ function PlayerRail({
   selectedId,
   onSelect,
   registerTrigger,
+  headingRef,
 }) {
   const stat = market === 'All' ? 'PTS' : market;
   const injuryById = new Map(
@@ -346,7 +347,8 @@ function PlayerRail({
     <aside className="player-rail" aria-label={label}>
       <div className="rail-heading">
         <p className="matchup-eyebrow">{label}</p>
-        <h2>
+        {/* Focus lands here when a closed card's own row is not on screen. */}
+        <h2 ref={headingRef} tabIndex={-1}>
           {teamTricode ? `${teamTricode} · ` : ''}
           {stat}
         </h2>
@@ -812,6 +814,7 @@ function Detail({ matchup, gameId }) {
   const selectedId = searchParams.get('player');
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
+  const railHeading = useRef(null);
   const [selectionState, setSelectionState] = useState({
     status: 'idle',
     playerId: null,
@@ -894,7 +897,9 @@ function Detail({ matchup, gameId }) {
   }, [experienceMode, gameId, selectedPlayer]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
-      selectionTriggers.current.get(previousSelectedId.current)?.focus();
+      // The stat in view can hide the row that opened the card (a deep link
+      // to a player without it), so the rail heading keeps focus on the page.
+      (selectionTriggers.current.get(previousSelectedId.current) || railHeading.current)?.focus();
     }
     previousSelectedId.current = selectedId;
   }, [selectedId]);
@@ -952,6 +957,7 @@ function Detail({ matchup, gameId }) {
             selectedId={selectedId}
             onSelect={(player) => updateSelectedPlayer(player.id)}
             registerTrigger={registerTrigger}
+            headingRef={railHeading}
           />
           {/* An injury report nobody has is named in the summary sentence. */}
           {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}

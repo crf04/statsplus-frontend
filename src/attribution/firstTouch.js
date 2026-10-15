@@ -54,9 +54,10 @@ const inFlight = new Set();
 /** Posts the stored first touch once per account. Failures are silent and retried on a later load. */
 export const sendFirstTouch = async (uid, client = apiClient) => {
   if (!uid || inFlight.has(uid)) return;
-  const storage = window.localStorage;
+  let storage;
   let entry;
   try {
+    storage = window.localStorage;
     entry = read(storage);
   } catch {
     return;

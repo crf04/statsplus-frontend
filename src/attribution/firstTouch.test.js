@@ -147,6 +147,40 @@ describe('sendFirstTouch', () => {
     expect(stored().sentFor).toBeNull();
   });
 
+  test('sends nothing for a signed-out visitor (no uid)', async () => {
+    const client = clientReturning(201);
+    await sendFirstTouch(undefined, client);
+    await sendFirstTouch(null, client);
+    expect(client.post).not.toHaveBeenCalled();
+    expect(stored().sentFor).toBeNull();
+  });
+
+  test('two concurrent sends for the same uid make exactly one request', async () => {
+    let resolve;
+    const client = {
+      post: jest.fn(() => new Promise((done) => (resolve = done))),
+    };
+    const first = sendFirstTouch('uid-1', client);
+    const second = sendFirstTouch('uid-1', client);
+    resolve({ status: 201, data: {} });
+    await Promise.all([first, second]);
+    expect(client.post).toHaveBeenCalledTimes(1);
+    expect(stored().sentFor).toBe('uid-1');
+  });
+
+  test('a throwing localStorage getter does not reject', async () => {
+    const client = clientReturning(201);
+    const spy = jest.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    try {
+      await expect(sendFirstTouch('uid-1', client)).resolves.toBeUndefined();
+    } finally {
+      spy.mockRestore();
+    }
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
   test('sends nothing when no first touch was stored', async () => {
     window.localStorage.clear();
     const client = clientReturning(201);

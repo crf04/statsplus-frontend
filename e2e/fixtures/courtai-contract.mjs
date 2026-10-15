@@ -2255,6 +2255,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       target.qualifiers,
       target.conditions ?? null,
     ]);
+  let attributionRecorded = false;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -2264,7 +2265,42 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     // Accepted even for a waitlisted account, as the backend does.
     if (url.pathname === '/api/user/attribution' && request.method() === 'POST' && !override) {
-      await route.fulfill({ status: 201, json: { recorded: true } });
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'unauthorized', message: 'Missing E2E bearer token.' } },
+        });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      const isObject = body !== null && typeof body === 'object' && !Array.isArray(body);
+      const known = [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+        'ref',
+        'referrer',
+        'landing_path',
+        'landed_at',
+      ];
+      if (!isObject || known.some((k) => body[k] != null && typeof body[k] !== 'string')) {
+        await route.fulfill({
+          status: 400,
+          json: { error: { code: 'invalid_attribution', message: 'Invalid attribution body.' } },
+        });
+        return;
+      }
+      // Write-once per account; the E2E user is the only account.
+      const recorded = attributionRecorded;
+      attributionRecorded = true;
+      await route.fulfill({ status: recorded ? 200 : 201, json: { recorded: !recorded } });
       return;
     }
 

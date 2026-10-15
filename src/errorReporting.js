@@ -28,7 +28,13 @@ const scrubEvent = (event) => {
   delete event.extra;
   delete event.contexts?.replay;
   delete event.message;
-  for (const value of event.exception?.values || []) value.value = redact(value.value);
+  for (const value of event.exception?.values || []) {
+    value.value = redact(value.value);
+    for (const frame of value.stacktrace?.frames || []) {
+      if (frame.filename) frame.filename = frame.filename.replace(/[?#].*$/, '');
+      if (frame.abs_path) frame.abs_path = frame.abs_path.replace(/[?#].*$/, '');
+    }
+  }
   if (event.request) {
     event.request = { url: pathOnly(event.request.url), method: event.request.method };
   }

@@ -141,3 +141,29 @@ test('events keep the page path only and drop request headers and exception secr
   expect(event.exception.values[0].value).toBe('failed for [email] with Bearer [token]');
   expect(JSON.stringify(sent)).not.toMatch(/secret-token|someone@example\.com/);
 });
+
+test('an uncaught error is reported without the page query, hash or frame URL secrets', async () => {
+  initErrorReporting({ dsn: 'https://key@example.ingest.sentry.io/1', transport });
+  window.history.replaceState(
+    {},
+    '',
+    '/connect?email=someone@example.com#access_token=secret-token',
+  );
+  const swallow = (event) => event.preventDefault();
+  window.addEventListener('error', swallow);
+  const error = new Error('boom');
+  error.stack = `Error: boom\n    at run (http://localhost/assets/app.js?email=someone@example.com#access_token=secret-token:1:1)`;
+  window.dispatchEvent(
+    new ErrorEvent('error', {
+      error,
+      message: 'boom',
+      filename:
+        'http://localhost/assets/app.js?email=someone@example.com#access_token=secret-token',
+    }),
+  );
+  window.removeEventListener('error', swallow);
+  await Sentry.flush();
+  window.history.replaceState({}, '', '/');
+  expect(events().map((event) => event.exception.values[0].value)).toEqual(['boom']);
+  expect(JSON.stringify(sent)).not.toMatch(/secret-token|someone@example\.com/);
+});

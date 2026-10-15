@@ -27,6 +27,28 @@ test('saves the current Filter Set query string under the typed name', async () 
   expect(onHide).toHaveBeenCalled();
 });
 
+test('starts with the current query as the name, which can be saved as is', async () => {
+  createSavedFilterSet.mockResolvedValue(undefined);
+  render(
+    <SaveFilterSetModal
+      show
+      onHide={jest.fn()}
+      queryString={queryString}
+      defaultName="LeBron James last 10"
+    />,
+  );
+
+  expect(screen.getByLabelText('Name')).toHaveValue('LeBron James last 10');
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  });
+
+  expect(createSavedFilterSet).toHaveBeenCalledWith({
+    name: 'LeBron James last 10',
+    queryString,
+  });
+});
+
 test('cannot save without a name', () => {
   render(<SaveFilterSetModal show onHide={jest.fn()} queryString={queryString} />);
 

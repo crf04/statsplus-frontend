@@ -197,6 +197,14 @@ secret is present; screenshots remain available for failure evidence.
 
 For branch protection, require both `validate` and `E2E` before merging.
 
+The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
+tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA
+`evidence.md` table from verify-statsplus, `boundary` also a passed production table, and
+`gates only` a cited test file (`*.test.js(x)`, `__tests__/` or `e2e/`). A table counts only when no
+runtime file differs between its Frontend revision and the head, so commit before QA and rerun it
+after a later runtime commit, including one merged in from master.
+Drafts are skipped. The rules live in `.github/scripts/check_qa_evidence.py`.
+
 ## Codex exploratory QA
 
 After automated checks pass, ask Codex to open the local app or preview in its collaborative browser

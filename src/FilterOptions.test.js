@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import FilterOptions from './FilterOptions';
+import { fetchSeasons } from './seasonsApi';
 
-jest.mock('./contexts/AuthContext', () => ({ useAuth: () => ({ isAuthenticated: false }) }));
+jest.mock('./contexts/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: true, loading: false }),
+}));
+jest.mock('./seasonsApi', () => ({ fetchSeasons: jest.fn() }));
 global.ResizeObserver = class {
   observe() {}
   unobserve() {}
@@ -11,15 +15,22 @@ global.ResizeObserver = class {
 };
 window.matchMedia = () => ({ matches: false });
 
+beforeEach(() => {
+  fetchSeasons.mockReset();
+  fetchSeasons.mockRejectedValue(new Error('offline'));
+});
+
 const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
+    const [seasonChoice, setSeasonChoice] = useState(null);
     const [line, setLine] = useState(20);
     return (
       <MemoryRouter>
         <FilterOptions
           playerList={['LeBron James', 'Anthony Davis']}
           onApplyFilters={setResult}
+          onSeasonChange={setSeasonChoice}
           selectedPlayer="LeBron James"
           seasonGameLogs={seasonGameLogs}
           gameLogs={seasonGameLogs.slice(0, 1)}
@@ -31,6 +42,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <output data-testid="patch">{JSON.stringify(result)}</output>
+        <output data-testid="season-choice">{seasonChoice}</output>
       </MemoryRouter>
     );
   };
@@ -248,4 +260,44 @@ test('a minimum-only playtype link retains the default maximum when applied', ()
     playstyle_RTG_min: 20,
     playstyle_RTG_max: 200,
   });
+});
+
+const twoSeasons = { seasons: ['2026-27', '2025-26'], defaultSeason: '2025-26' };
+
+test('a season select offers each season, starts on the default and applies at once', async () => {
+  fetchSeasons.mockResolvedValue(twoSeasons);
+  renderPanel({ game_filter: 10 });
+  const select = await screen.findByRole('combobox', { name: 'Season' });
+  expect(select).toHaveValue('2025-26');
+  expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+    '2026-27',
+    '2025-26',
+  ]);
+
+  fireEvent.change(select, { target: { value: '2026-27' } });
+  expect(screen.getByTestId('season-choice')).toHaveTextContent('2026-27');
+  expect(screen.getByTestId('patch')).toHaveTextContent('null');
+});
+
+test('the season select shows the season in the link and Clear all leaves it out of its patch', async () => {
+  fetchSeasons.mockResolvedValue(twoSeasons);
+  renderPanel({ season_filter: '2026-27', game_filter: 10 });
+  expect(await screen.findByRole('combobox', { name: 'Season' })).toHaveValue('2026-27');
+  fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+  expect(patch()).not.toHaveProperty('season_filter');
+});
+
+test.each([
+  [
+    'a single season',
+    () => fetchSeasons.mockResolvedValue({ seasons: ['2025-26'], defaultSeason: '2025-26' }),
+  ],
+  ['no seasons', () => fetchSeasons.mockResolvedValue({ seasons: [], defaultSeason: '2025-26' })],
+  ['a failed read', () => fetchSeasons.mockRejectedValue(new Error('offline'))],
+])('hides the season select for %s', async (_name, arrange) => {
+  arrange();
+  renderPanel();
+  await waitFor(() => expect(fetchSeasons).toHaveBeenCalled());
+  await act(async () => {});
+  expect(screen.queryByRole('combobox', { name: 'Season' })).toBeNull();
 });

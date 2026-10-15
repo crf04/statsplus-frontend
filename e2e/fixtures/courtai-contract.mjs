@@ -98,9 +98,17 @@ const scheduleOnlySlateGame = {
 export const slatePayload = (
   date,
   games,
-  { poolFreshnessStatus = 'unavailable', poolRetrievedAt = null, providers = {} } = {},
+  {
+    poolFreshnessStatus = 'unavailable',
+    poolRetrievedAt = null,
+    providers = {},
+    previousGameDate = /** @type {string | null} */ (null),
+    nextGameDate = /** @type {string | null} */ (null),
+  } = {},
 ) => ({
   slate_date: date,
+  previous_game_date: previousGameDate,
+  next_game_date: nextGameDate,
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
@@ -1573,6 +1581,24 @@ const TARGET_LIMIT = 50;
 const HISTORICAL_SLATE_DATE = '2026-03-29';
 const DEFAULT_SLATE_DATE = '2026-01-15';
 
+// The Slate Date the backend assumes when a request names none: today in US Eastern.
+const todaySlateDate = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+// Seasons whose game logs can be read. The default one is what the real endpoint reads when
+// season_filter is omitted; the other is a single-game season so a switch is visible in results.
+export const SEASONS = { seasons: ['2026-27', '2025-26'], default_season: '2025-26' };
+// 2026-27 holds one game per player: that player's latest row, 13 points higher (LeBron: 44).
+const applySeason = (logs, url) =>
+  url.searchParams.get('season_filter') === '2026-27'
+    ? [{ ...logs[0], GAME_DATE: '2026-10-20', PTS: logs[0].PTS + 13 }]
+    : logs;
+
 const RESOLVABLE_SLATES = {
   [DEFAULT_SLATE_DATE]: {
     matchup: matchupPayload,
@@ -2164,6 +2190,48 @@ const fulfillOverride = (route, response) =>
     json: response.body ?? response,
   });
 
+// Shooting Type rows as /api/players/profile returns them (per game, season).
+const SHOOTING_TYPE_PROFILE = [
+  { SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.203, FGM: 1.4, FGA: 3.5, FG_PCT: 0.402, FG2M: 0.2, FG2A: 0.4, FG2_PCT: 0.5, FG2A_FREQUENCY: 0.024, FG3M: 1.2, FG3A: 3.0, FG3_PCT: 0.388, FG3A_FREQUENCY: 0.178 },
+  { SHOT_TYPE: 'Pullup', FGA_FREQUENCY: 0.239, FGM: 1.6, FGA: 4.1, FG_PCT: 0.398, FG2M: 1.2, FG2A: 2.7, FG2_PCT: 0.449, FG2A_FREQUENCY: 0.16, FG3M: 0.4, FG3A: 1.4, FG3_PCT: 0.296, FG3A_FREQUENCY: 0.08 },
+  { SHOT_TYPE: '<10 Ft', FGA_FREQUENCY: 0.529, FGM: 5.2, FGA: 9.0, FG_PCT: 0.575, FG2M: 5.2, FG2A: 9.0, FG2_PCT: 0.575, FG2A_FREQUENCY: 0.529, FG3M: 0, FG3A: 0, FG3_PCT: 0, FG3A_FREQUENCY: 0 },
+]; // prettier-ignore
+
+// The parts of an Unscheduled Matchup the Zone Shooting court reads: the
+// player's Shot-zone Diet and the opponent's season made/attempted rows.
+const SHOT_ZONE_DIET = [
+  ['Restricted Area', 0.313, 0.276, 18, -0.3],
+  ['In The Paint (Non-RA)', 0.294, 0.201, 14, -1.4],
+  ['Mid-Range', 0.116, 0.098, 9, -6.7],
+  ['Corner 3', 0.02, 0.106, 2, -18.6],
+  ['Above the Break 3', 0.257, 0.32, 19, 2.3],
+];
+const unscheduledShotZonePayload = (opponent) => ({
+  players: [
+    {
+      diet_shares: {
+        shot_zones: SHOT_ZONE_DIET.map(([key, share, league]) => ({
+          key,
+          season: { share, league_average_share: league, games_played: 72, volume: 100, volume_unit: 'field_goal_attempts', sigma_deviation: 0 },
+        })),
+      },
+    },
+  ],
+  teams: [
+    {
+      tricode: opponent,
+      defense_sheet: {
+        shot_zones: SHOT_ZONE_DIET.flatMap(([key, , , rank, percent]) =>
+          ['FGM', 'FGA'].map((stat) => ({
+            key: `${key}:${stat}`,
+            season: { rank, percent_vs_league_average: percent, allowed_per_48: 10, sigma_deviation: 0 },
+          })),
+        ),
+      },
+    },
+  ],
+}); // prettier-ignore
+
 export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -2683,9 +2751,14 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    if (url.pathname === '/api/games/seasons') {
+      await route.fulfill({ json: SEASONS });
+      return;
+    }
+
     if (url.pathname === '/api/games/game_logs') {
       const playerName = url.searchParams.get('player_name');
-      const season = seasonsByPlayer[playerName] || gameLogs;
+      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
       await route.fulfill({
         json: {
           game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
@@ -2701,7 +2774,15 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/games/slate') {
-      const date = url.searchParams.get('date') || DEFAULT_SLATE_DATE;
+      const date = url.searchParams.get('date') || todaySlateDate();
+      // Every date but the completed one lists a game, so the nearest game day
+      // on either side is the adjacent date.
+      const adjacent = (days) => {
+        const moved = new Date(`${date}T12:00:00Z`);
+        moved.setUTCDate(moved.getUTCDate() + days);
+        return moved.toISOString().slice(0, 10);
+      };
+      const neighbours = { previousGameDate: adjacent(-1), nextGameDate: adjacent(1) };
       // The completed LAC @ MIL game is on its own date, so a Target aimed at
       // either side of it resolves against game-log participants there. The
       // pool freshness matches the evidence resolution reports for the same
@@ -2710,8 +2791,9 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       await route.fulfill({
         json:
           date === HISTORICAL_SLATE_DATE
-            ? slatePayload(date, [historicalGame])
+            ? slatePayload(date, [historicalGame], neighbours)
             : slatePayload(date, [scheduleOnlySlateGame], {
+                ...neighbours,
                 poolFreshnessStatus: 'fresh',
                 poolRetrievedAt: '2026-01-15T11:50:00Z',
               }),
@@ -2748,7 +2830,22 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/players/profile') {
-      await route.fulfill({ json: { Transition: 1.2, Isolation: 0.9 } });
+      await route.fulfill({
+        json:
+          url.searchParams.get('category') === 'Shooting Type'
+            ? SHOOTING_TYPE_PROFILE
+            : { Transition: 1.2, Isolation: 0.9 },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/matchups/unscheduled') {
+      const opponent = url.searchParams.get('opponent');
+      if (!/^[A-Z]{3}$/.test(opponent || '') || !url.searchParams.get('player_name')) {
+        await route.fulfill({ status: 400, json: { error: { code: 'invalid_input' } } });
+        return;
+      }
+      await route.fulfill({ json: unscheduledShotZonePayload(opponent) });
       return;
     }
 

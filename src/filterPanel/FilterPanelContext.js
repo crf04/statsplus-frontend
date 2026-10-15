@@ -229,8 +229,8 @@ const samePlayer = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, '
 
 // The panel sits beside one player's games, so it lists only that player's
 // sets; the Saved Filter Sets modal still lists every set on the account.
-const SavedFilterSets = ({ player, rows, expanded, onToggle }) => {
-  const { sets: allSets, error, retry } = useSavedSets();
+const SavedFilterSets = ({ player, rows, expanded, onToggle, saved }) => {
+  const { sets: allSets, error, retry } = saved;
   const navigate = useNavigate();
   if (error)
     return (
@@ -295,17 +295,34 @@ const FilterPanelContext = ({ panel, extra }) => {
   const [ref, height] = useHeight();
   const { isAuthenticated } = useAuth();
   const [opponent, setOpponent] = useState(null);
+  // The player the next-opponent read last finished for, answered or not.
+  const [opponentFor, setOpponentFor] = useState(null);
   useEffect(() => {
     setOpponent(null);
+    setOpponentFor(null);
     if (!isAuthenticated || !panel.selectedPlayer) return undefined;
     const controller = new AbortController();
     fetchNextOpponent(panel.selectedPlayer, { signal: controller.signal })
       .then((data) => {
         if (!controller.signal.aborted) setOpponent(data);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setOpponentFor(panel.selectedPlayer);
+      });
     return () => controller.abort();
   }, [isAuthenticated, panel.selectedPlayer]);
+  const saved = useSavedSets();
+  // The Workspace reveals in one piece, so it waits for this panel's own reads.
+  const settled =
+    !isAuthenticated ||
+    ((!panel.selectedPlayer || opponentFor === panel.selectedPlayer) &&
+      (saved.sets !== null || Boolean(saved.error)));
+  const { onContextSettled } = extra;
+  useEffect(() => {
+    onContextSettled?.(settled ? panel.selectedPlayer : null);
+  }, [onContextSettled, settled, panel.selectedPlayer]);
+  useEffect(() => () => onContextSettled?.(null), [onContextSettled]);
   const extremes = (opponent?.opponent_ranks || [])
     .filter((stat) => stat.most_rank <= 8 || stat.most_rank > stat.ranked_teams - 8)
     .map((stat) => {
@@ -409,6 +426,7 @@ const FilterPanelContext = ({ panel, extra }) => {
         rows={savedRows}
         expanded={savedOpen}
         onToggle={() => setSavedOpen((open) => !open)}
+        saved={saved}
       />
     </div>
   );

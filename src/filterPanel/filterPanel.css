@@ -398,6 +398,18 @@
   text-transform: uppercase;
   color: var(--ct-dim);
 }
+.fpb-season {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+.fpb-season span {
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+}
 .fp-b h2 {
   font-size: 26px;
   margin: 2px 0 12px;
@@ -907,6 +919,10 @@
   display: none;
 }
 @media (max-width: 767px) {
+  .fpb-season .fp-select {
+    height: 44px;
+    font-size: 16px;
+  }
   .fp-filler.is-j {
     display: flex;
     flex-direction: column;

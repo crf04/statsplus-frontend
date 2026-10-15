@@ -1,0 +1,29 @@
+name: QA evidence
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  qa-evidence:
+    # Drafts are where a pull request waits for QA, per the coordination guide.
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A runtime change ships only with the verify-statsplus evidence its
+      # declared live checks need, taken at a revision with this pull request's
+      # runtime files; see .github/scripts/check_qa_evidence.py.
+      - name: Require verify-statsplus evidence for runtime changes
+        working-directory: .github/scripts
+        run: |
+          python3 -m unittest test_check_qa_evidence
+          python3 check_qa_evidence.py

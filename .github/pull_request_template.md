@@ -7,8 +7,9 @@ Describe the problem and resulting behavior.
 
 ## Verification
 
-Which live checks apply (user-visible, boundary, or gates only, per the
-coordination AGENTS.md) and why:
+Live checks: <!-- user-visible, boundary, or gates only, per the coordination CLAUDE.md -->
+
+Why they apply:
 
 List the affected behaviors and mark each passed, failed, or untested. Record
 exact frontend/backend revisions and commands; explain any omitted check.
@@ -24,6 +25,10 @@ frontend connected to production Railway. User-visible changes need labelled
 desktop and phone screenshots from QA or production. Label QA screenshots
 separately. Include video or other action/result evidence where relevant.
 
-Paste each verify-statsplus run's `evidence.md`:
+Paste each verify-statsplus run's `evidence.md`. Once this pull request is
+ready, the QA evidence check fails a runtime change unless user-visible has a
+passed QA table and boundary also a passed production table, each from a
+committed revision whose runtime files match the head; gates only names its
+test files instead:
 
 Known failures, untested surfaces, or disabled integrations:

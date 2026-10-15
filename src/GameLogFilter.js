@@ -29,6 +29,16 @@ const PlayerProfile = lazy(() => import('./PlayerProfile'));
 const OpposingTeamProfile = lazy(() => import('./OpposingTeamProfile'));
 const ChartComponent = lazy(() => import('./ChartComponent'));
 
+// Renders nothing; mounted beside a lazy section inside the same Suspense
+// boundary, its effect runs only once that section's chunk has arrived.
+const OnMount = ({ onMount, onUnmount }) => {
+  useEffect(() => {
+    onMount();
+    return onUnmount;
+  }, [onMount, onUnmount]);
+  return null;
+};
+
 const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
@@ -78,6 +88,22 @@ const GameLogFilter = () => {
   const [listsError, setListsError] = useState(null);
   const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
+  // The Workspace is revealed in one piece. Each section that reads on its own
+  // reports what it last finished reading for, and the Workspace stays behind
+  // one loading state until every section has finished for what is on screen.
+  const [profileSettledFor, setProfileSettledFor] = useState(null);
+  const [opponentSettledFor, setOpponentSettledFor] = useState(null);
+  const [chartReady, setChartReady] = useState(false);
+  const [panelSettledFor, setPanelSettledFor] = useState(null);
+  const handleProfileSettled = useCallback(
+    (player, team) => setProfileSettledFor(player === null ? null : `${player}|${team}`),
+    [],
+  );
+  const handleChartReady = useCallback(() => setChartReady(true), []);
+  const handleChartGone = useCallback(() => setChartReady(false), []);
+  // Each game-log request starts a new load for the Workspace to reveal whole.
+  const [workspaceLoad, setWorkspaceLoad] = useState(0);
+  const [revealedLoad, setRevealedLoad] = useState(null);
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
   const teamsRef = useRef([]);
@@ -248,6 +274,7 @@ const GameLogFilter = () => {
       const controller = new AbortController();
       gameLogsRequestRef.current = { id: requestId, controller };
       setIsGameLogsLoading(true);
+      setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
@@ -345,6 +372,9 @@ const GameLogFilter = () => {
       returnToQueryPrompt();
       return undefined;
     }
+    // Entering the Workspace is a load of its own, even with no game-log
+    // request to make, so it is revealed whole like any other.
+    if (!wasInWorkspace.current) setWorkspaceLoad((load) => load + 1);
     wasInWorkspace.current = true;
 
     if (urlInvalid.length > 0) {
@@ -416,6 +446,21 @@ const GameLogFilter = () => {
   ]);
 
   /*
+   * The Season select is not a Filter Set apply: it writes the season into the
+   * URL beside whatever else is there and stops. Any read follows from the URL
+   * like every other change, so a reader with no player yet can still choose a
+   * season, and nothing is requested for a player nobody named.
+   */
+  const handleSeasonChange = (season) => {
+    if (isRefusedLink) return;
+    const nextSearch = filterSetToSearchParams(
+      mergeFilterSet(urlFilters, { season_filter: season }),
+    );
+    if (nextSearch.toString() === searchParams.toString()) return;
+    setSearchParams(nextSearch, { replace: false });
+  };
+
+  /*
    * Applying a changed Filter Set writes it to the URL for the effect above
    * to request. Reapplying the current Filter Set explicitly refreshes it.
    *
@@ -475,6 +520,25 @@ const GameLogFilter = () => {
     return { ok: true };
   };
 
+  const sectionsLoading =
+    authLoading ||
+    listsLoading ||
+    isGameLogsLoading ||
+    !chartReady ||
+    panelSettledFor !== selectedPlayer ||
+    profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
+    opponentSettledFor !== selectedTeam;
+  // The season range is left out on purpose: it is only the panel's strip,
+  // which says it is loading in place, and the page stays usable meanwhile.
+  // Once a load has been revealed, a section re-reading because the user
+  // changed it (another opponent, another profile tab) shows its own progress
+  // rather than taking the whole Workspace back behind the loading state.
+  useEffect(() => {
+    if (!sectionsLoading) setRevealedLoad(workspaceLoad);
+  }, [sectionsLoading, workspaceLoad]);
+  const showWorkspaceLoading =
+    inWorkspace && !isRefusedLink && sectionsLoading && revealedLoad !== workspaceLoad;
+
   /*
    * Choosing a player patches the player into the Filter Set rather than
    * replacing it, so comparing two players under identical conditions is one
@@ -501,7 +565,7 @@ const GameLogFilter = () => {
         onOpenSavedFilterSets={isAuthenticated ? () => setShowSavedFilterSets(true) : undefined}
       />
 
-      {(authLoading || listsLoading) && (
+      {!inWorkspace && (authLoading || listsLoading) && (
         <div className="text-center text-light py-2" role="status" aria-live="polite">
           <Spinner animation="border" size="sm" className="me-2" />
           {authLoading ? 'Checking authentication…' : 'Loading players and teams…'}
@@ -523,7 +587,7 @@ const GameLogFilter = () => {
           it points at.
         </Alert>
       )}
-      {isGameLogsLoading && inWorkspace && (
+      {showWorkspaceLoading && (
         <div className="text-center text-light py-2" role="status" aria-live="polite">
           <Spinner animation="border" size="sm" className="me-2" />
           Loading game logs…
@@ -574,7 +638,7 @@ const GameLogFilter = () => {
               </div>
             )}
           </div>
-          <Card className="dark-card">
+          <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
               <PlayerStatsCards
                 averages={averages}
@@ -588,7 +652,9 @@ const GameLogFilter = () => {
 
       {/* Only show main content after landing page */}
       {inWorkspace && !isRefusedLink && (
-        <Container fluid className="game-log-filter py-2">
+        // Hidden rather than unmounted while loading, so every section reads at
+        // once instead of each waiting for the one before it to appear.
+        <Container fluid className={`game-log-filter py-2${showWorkspaceLoading ? ' d-none' : ''}`}>
           <Row className="mb-5">
             <Col md={8}>
               <Card className="dark-card">
@@ -611,6 +677,7 @@ const GameLogFilter = () => {
                       averages={averages}
                       appliedFilters={appliedFilters}
                     />
+                    <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />
                   </Suspense>
                 </Card.Body>
               </Card>
@@ -619,6 +686,7 @@ const GameLogFilter = () => {
               <FilterOptions
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
+                onSeasonChange={handleSeasonChange}
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}
                 seasonGameLogsLoading={seasonGameLogsLoading}
@@ -631,6 +699,7 @@ const GameLogFilter = () => {
                 averages={averages}
                 lineType={lineType}
                 lineValue={lineValue}
+                onContextSettled={setPanelSettledFor}
               />
             </Col>
           </Row>
@@ -638,7 +707,11 @@ const GameLogFilter = () => {
           <Row className="mb-5">
             <Col md={6}>
               <Suspense fallback={null}>
-                <PlayerProfile selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} />
+                <PlayerProfile
+                  selectedPlayer={selectedPlayer}
+                  selectedTeam={selectedTeam}
+                  onSettled={handleProfileSettled}
+                />
               </Suspense>
             </Col>
             <Col md={6}>
@@ -647,6 +720,7 @@ const GameLogFilter = () => {
                   teams={teams}
                   selectedTeam={selectedTeam}
                   setSelectedTeam={setSelectedTeam}
+                  onSettled={setOpponentSettledFor}
                 />
               </Suspense>
             </Col>
@@ -682,6 +756,7 @@ const GameLogFilter = () => {
             // The URL as it stands is what gets saved, so what opens later is
             // the link the user was looking at.
             queryString={searchParams.toString()}
+            defaultName={currentQuery || ''}
           />
           <SavedFilterSetsModal
             show={showSavedFilterSets}

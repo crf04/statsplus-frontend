@@ -59,8 +59,9 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-test('opens March 11 by default during the offseason and can return to today', async () => {
-  jest.setSystemTime(new Date('2026-09-11T12:00:00Z'));
+test('opens on today in New York by default and can return to it', async () => {
+  // 02:00 UTC on Sep 12 is still Sep 11 in New York.
+  jest.setSystemTime(new Date('2026-09-12T02:00:00Z'));
   fetchSlate.mockImplementation(async (date) => ({ ...slate, slateDate: date }));
   render(
     <MemoryRouter initialEntries={['/matchups']}>
@@ -68,13 +69,89 @@ test('opens March 11 by default during the offseason and can return to today', a
     </MemoryRouter>,
   );
 
-  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-03-11');
-  await screen.findByRole('heading', { name: 'Wednesday, March 11, 2026' });
-  expect(fetchSlate).toHaveBeenCalledWith('2026-03-11', expect.any(Object));
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-09-11');
+  await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
+  expect(fetchSlate).toHaveBeenCalledWith('2026-09-11', expect.any(Object));
 
+  fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '2026-03-11' } });
+  await screen.findByRole('heading', { name: 'Wednesday, March 11, 2026' });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
   expect(fetchSlate).toHaveBeenLastCalledWith('2026-09-11', expect.any(Object));
+});
+
+test('an empty slate offers its previous and next game days and jumps to them', async () => {
+  fetchSlate.mockImplementation(async (date) =>
+    date === '2026-07-15'
+      ? {
+          ...slate,
+          slateDate: date,
+          games: [],
+          previousGameDate: '2026-06-14',
+          nextGameDate: '2026-10-21',
+        }
+      : { ...slate, slateDate: date },
+  );
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-07-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(
+    await screen.findByRole('button', { name: 'Next game day Wednesday, October 21, 2026' }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Previous game day Sunday, June 14, 2026' }));
+  await screen.findByRole('heading', { name: 'Sunday, June 14, 2026' });
+  expect(fetchSlate).toHaveBeenLastCalledWith('2026-06-14', expect.any(Object));
+  expect(screen.queryByRole('button', { name: /game day/ })).toBeNull();
+});
+
+test('the next game day button opens that date', async () => {
+  fetchSlate.mockImplementation(async (date) =>
+    date === '2026-07-15'
+      ? { ...slate, slateDate: date, games: [], previousGameDate: null, nextGameDate: '2026-10-21' }
+      : { ...slate, slateDate: date },
+  );
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-07-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Next game day Wednesday, October 21, 2026' }),
+  );
+  await screen.findByRole('heading', { name: 'Wednesday, October 21, 2026' });
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-10-21');
+  expect(fetchSlate).toHaveBeenLastCalledWith('2026-10-21', expect.any(Object));
+});
+
+test('an empty slate with no neighbours, or from an older backend, offers no jump', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    games: [],
+    previousGameDate: null,
+    nextGameDate: '2026-10-21',
+  });
+  const { unmount } = render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-07-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  await screen.findByText('No games on this slate.');
+  expect(screen.queryByRole('button', { name: /Previous game day/ })).toBeNull();
+  expect(screen.getByRole('button', { name: /Next game day/ })).toBeVisible();
+  unmount();
+
+  fetchSlate.mockResolvedValue({ ...slate, games: [] });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-07-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  await screen.findByText('No games on this slate.');
+  expect(screen.queryByRole('button', { name: /game day/ })).toBeNull();
 });
 
 test('shows an age for every available freshness surface and names degraded surfaces', async () => {

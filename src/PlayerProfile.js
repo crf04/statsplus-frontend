@@ -7,9 +7,13 @@ import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
-import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
+import ShotTypeTable from './profileShooting/ShotTypeTable';
+import ShotZoneCourt from './profileShooting/ShotZoneCourt';
+import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
+import { TEAM_CODES } from './targets/opponentContextApi';
+import { fetchDietBaselines } from './targets/targetsApi';
 
-const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
+const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
@@ -17,7 +21,14 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [teamLoading, setTeamLoading] = useState(false);
   const [playerError, setPlayerError] = useState(null);
   const [teamError, setTeamError] = useState(null);
+  // The read each half last finished for, so "settled" is judged against the
+  // current inputs rather than a loading flag an effect has yet to raise.
+  const [playerSettledFor, setPlayerSettledFor] = useState(null);
+  const [teamSettledFor, setTeamSettledFor] = useState(null);
   const profileOpponent = selectedProfile === 'Archetype' ? selectedTeam : undefined;
+  // Zone Shooting is the Matchup court against the page's opponent, by tricode.
+  const zoneOpponent =
+    selectedProfile === 'Zone Shooting' ? (TEAM_CODES[selectedTeam] ?? null) : undefined;
   const hasPlayer = selectedPlayer !== 'None';
   const teamCategory =
     selectedProfile === 'Playtypes'
@@ -26,13 +37,30 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         ? 'Assists'
         : null;
   const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
+  const playerReadKey = hasPlayer
+    ? `${selectedPlayer}|${selectedProfile}|${profileOpponent}|${zoneOpponent}`
+    : null;
+  const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}` : null;
+  const settled =
+    (!playerReadKey || playerSettledFor === playerReadKey) &&
+    (!teamReadKey || teamSettledFor === teamReadKey);
+
+  useEffect(() => {
+    // Unsettled is reported too, so readiness from an earlier read of the same
+    // player and opponent cannot stand in for the one now in flight.
+    if (settled) onSettled?.(selectedPlayer, selectedTeam);
+    else onSettled?.(null);
+  }, [settled, selectedPlayer, selectedTeam, onSettled]);
+  // Unmounted, it has settled for nothing; a remount must answer again.
+  useEffect(() => () => onSettled?.(null), [onSettled]);
 
   useEffect(() => {
     const controller = new AbortController();
     setPlayerData(null);
     setPlayerError(null);
     setPlayerLoading(hasPlayer);
-    if (hasPlayer) {
+    setPlayerSettledFor(null);
+    const readProfile = () =>
       apiClient
         .get(getApiUrl('PLAYER_PROFILE'), {
           params: {
@@ -42,27 +70,55 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           },
           signal: controller.signal,
         })
-        .then(({ data }) => {
+        .then(({ data }) => (data && Object.keys(data).length > 0 ? data : null));
+    const read = () => {
+      if (selectedProfile === 'Zone Shooting') {
+        return zoneOpponent
+          ? fetchShotZoneMatchup(selectedPlayer, zoneOpponent, { signal: controller.signal })
+          : Promise.resolve({ noOpponent: true });
+      }
+      if (selectedProfile === 'Shooting Type') {
+        // The league tick is supplementary: without baselines the table still reads.
+        return Promise.all([
+          readProfile(),
+          fetchDietBaselines({ signal: controller.signal }).catch(() => null),
+        ]).then(([rows, baselines]) =>
+          rows ? { rows, leagueShares: baselines?.shares?.shot_types ?? null } : null,
+        );
+      }
+      return readProfile();
+    };
+    if (hasPlayer) {
+      read()
+        .then((data) => {
           if (controller.signal.aborted) return;
-          if (data && Object.keys(data).length > 0) setPlayerData(data);
+          if (data?.noOpponent) return;
+          if (data) setPlayerData(data);
           else setPlayerError('No data available for this player');
         })
         .catch((error) => {
-          if (!controller.signal.aborted)
-            setPlayerError(withRequestReference('Failed to fetch data. Please try again.', error));
+          if (controller.signal.aborted) return;
+          setPlayerError(
+            selectedProfile === 'Zone Shooting' && shotZoneUnavailable(error)
+              ? `No shot zone matchup for ${selectedPlayer} this season.`
+              : withRequestReference('Failed to fetch data. Please try again.', error),
+          );
         })
         .finally(() => {
-          if (!controller.signal.aborted) setPlayerLoading(false);
+          if (controller.signal.aborted) return;
+          setPlayerLoading(false);
+          setPlayerSettledFor(playerReadKey);
         });
     }
     return () => controller.abort();
-  }, [selectedPlayer, selectedProfile, profileOpponent, hasPlayer]);
+  }, [selectedPlayer, selectedProfile, profileOpponent, zoneOpponent, hasPlayer, playerReadKey]);
 
   useEffect(() => {
     const controller = new AbortController();
     setTeamData(null);
     setTeamError(null);
     setTeamLoading(Boolean(comparisonTeam));
+    setTeamSettledFor(null);
     if (comparisonTeam) {
       apiClient
         .get(getApiUrl('TEAM_STATS'), {
@@ -82,13 +138,20 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
             setTeamError(withRequestReference('Failed to fetch data. Please try again.', error));
         })
         .finally(() => {
-          if (!controller.signal.aborted) setTeamLoading(false);
+          if (controller.signal.aborted) return;
+          setTeamLoading(false);
+          setTeamSettledFor(teamReadKey);
         });
     }
     return () => controller.abort();
-  }, [teamCategory, comparisonTeam]);
+  }, [teamCategory, comparisonTeam, teamReadKey]);
 
-  const loading = playerLoading || (Boolean(teamCategory) && teamLoading);
+  // Until the read for the current view has finished, the data in state belongs
+  // to the previous view (a tab switch renders once before the read clears it).
+  const loading =
+    playerLoading ||
+    (Boolean(playerReadKey) && playerSettledFor !== playerReadKey) ||
+    (Boolean(teamCategory) && teamLoading);
   const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join(' ');
 
   const renderAssistProfile = () => {
@@ -112,104 +175,21 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   };
 
   const renderZoneShootingProfile = () => {
+    if (!zoneOpponent) {
+      return <p>Pick an opponent in the Opposing Team card to see his zones against them.</p>;
+    }
     if (!playerData) {
       return <p>No zone shooting data available</p>;
     }
-    const zoneData = playerData;
-
-    const zones = [
-      'Above the Break 3',
-      'In The Paint (Non-RA)',
-      'Left Corner 3',
-      'Mid-Range',
-      'Restricted Area',
-      'Right Corner 3',
-    ];
-
-    const sortedZones = [...zones].sort(
-      (a, b) =>
-        (toFiniteNumber(zoneData[`${b}_PTS`], 0) || 0) -
-        (toFiniteNumber(zoneData[`${a}_PTS`], 0) || 0),
-    );
-
-    return (
-      <table className="table table-hover">
-        <thead>
-          <tr>
-            <th>Zone</th>
-            <th>FGA</th>
-            <th>FGM</th>
-            <th>FG%</th>
-            <th>PTS</th>
-            <th>PTS%</th>
-            <th>PTS%+</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedZones.map((zone, index) => (
-            <tr key={index}>
-              <td>{zone}</td>
-              <td>{zoneData[`${zone}_FGA`]}</td>
-              <td>{zoneData[`${zone}_FGM`]}</td>
-              <td>{formatPercent(zoneData[`${zone}_FG_PCT`], 1)}</td>
-              <td>{formatNumber(zoneData[`${zone}_PTS`], 2)}</td>
-              <td>
-                {formatNumber(zoneData[`${zone}_PTS%`], 2)}
-                {toFiniteNumber(zoneData[`${zone}_PTS%`]) === null ? '' : '%'}
-              </td>
-              <td>{formatNumber(zoneData[`${zone}_PTS%+`], 2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
+    return <ShotZoneCourt matchup={playerData} />;
   };
 
   const renderShootingTypeProfile = () => {
-    // Ensure playerData is an array of objects
-    if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {
+    const rows = playerData?.rows;
+    if (!Array.isArray(rows) || rows.length === 0) {
       return <p>No shooting type data available</p>;
     }
-    return (
-      <table className="table table-hover">
-        <thead>
-          <tr>
-            <th>Shot Type</th>
-            <th>FG2A</th>
-            <th>FG2A Frequency</th>
-            <th>FG2M</th>
-            <th>FG2%</th>
-            <th>FG3A</th>
-            <th>FG3A Frequency</th>
-            <th>FG3M</th>
-            <th>FG3%</th>
-            <th>FGA</th>
-            <th>FGA Frequency</th>
-            <th>FGM</th>
-            <th>FG%</th>
-          </tr>
-        </thead>
-        <tbody>
-          {playerData.map((item, index) => (
-            <tr key={index}>
-              <td>{item.SHOT_TYPE}</td>
-              <td>{item.FG2A}</td>
-              <td>{item.FG2A_FREQUENCY}</td>
-              <td>{item.FG2M}</td>
-              <td>{item.FG2_PCT}</td>
-              <td>{item.FG3A}</td>
-              <td>{item.FG3A_FREQUENCY}</td>
-              <td>{item.FG3M}</td>
-              <td>{item.FG3_PCT}</td>
-              <td>{item.FGA}</td>
-              <td>{item.FGA_FREQUENCY}</td>
-              <td>{item.FGM}</td>
-              <td>{item.FG_PCT}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
+    return <ShotTypeTable rows={rows} leagueShares={playerData.leagueShares} />;
   };
 
   const renderContent = () => {

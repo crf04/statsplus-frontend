@@ -8,6 +8,15 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/profile-shooting-tables): the standalone
+// build serves captured data to the Log Workspace with a fake signed-in user.
+import { PROTO_STANDALONE } from './profileShootingPrototype/prototypeMode';
+import { DEMO_URL, installMockApi } from './profileShootingPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.search) window.history.replaceState(null, '', DEMO_URL);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

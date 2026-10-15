@@ -8,9 +8,14 @@ import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
+// PROTOTYPE (throwaway, branch prototype/profile-shooting-tables)
+import { sampleData, useProto } from './profileShootingPrototype/prototypeMode';
+import PrototypeSwitcher from './profileShootingPrototype/PrototypeSwitcher';
+import { ShootingTypeProto, ZoneShootingProto } from './profileShootingPrototype/variants';
 
 const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
-  const [selectedProfile, setSelectedProfile] = useState('Playtypes');
+  const proto = useProto();
+  const [selectedProfile, setSelectedProfile] = useState(proto.active ? 'Shooting Type' : 'Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
   const [playerLoading, setPlayerLoading] = useState(false);
@@ -115,7 +120,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     if (!playerData) {
       return <p>No zone shooting data available</p>;
     }
-    const zoneData = playerData;
+    const zoneData = proto.active ? sampleData('Zone Shooting', proto.player) : playerData;
+    if (proto.active && proto.variant !== 'Now')
+      return <ZoneShootingProto variant={proto.variant} data={zoneData} />;
 
     const zones = [
       'Above the Break 3',
@@ -170,6 +177,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     if (!playerData || !Array.isArray(playerData) || playerData.length === 0) {
       return <p>No shooting type data available</p>;
     }
+    const typeData = proto.active ? sampleData('Shooting Type', proto.player) : playerData;
+    if (proto.active && proto.variant !== 'Now')
+      return <ShootingTypeProto variant={proto.variant} data={typeData} />;
     return (
       <table className="table table-hover">
         <thead>
@@ -190,7 +200,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           </tr>
         </thead>
         <tbody>
-          {playerData.map((item, index) => (
+          {typeData.map((item, index) => (
             <tr key={index}>
               <td>{item.SHOT_TYPE}</td>
               <td>{item.FG2A}</td>
@@ -308,6 +318,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
           </ToggleButtonGroup>
         </div>
         {renderContent()}
+        {proto.active && <PrototypeSwitcher proto={proto} />}
       </Card.Body>
     </Card>
   );

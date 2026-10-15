@@ -9,6 +9,18 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/header-look): header variants ride
+// the hash (#proto=header&v=A); the standalone build serves captured data
+// with a fake signed-in admin.
+import HeaderPrototype from './headerPrototype/HeaderPrototype';
+import { PROTO_STANDALONE, useVariant } from './headerPrototype/prototypeMode';
+import { installMockApi } from './headerPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.hash.includes('proto=header'))
+    window.history.replaceState(null, '', `${window.location.pathname}#proto=header&v=A`);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));
@@ -56,6 +68,8 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
+  const proto = useVariant();
+  if (proto.active) return <HeaderPrototype {...proto} />;
 
   return (
     <header className="app-header">

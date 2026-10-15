@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getIdToken } from 'firebase/auth';
 import { API_TIMEOUT } from '../apiSettings';
 import { auth } from '../firebase/config';
+import { reportApiError } from '../errorReporting';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -66,6 +67,8 @@ apiClient.interceptors.response.use(
     ) {
       return Promise.reject(error);
     }
+
+    reportApiError(error);
 
     // Handle 401 Unauthorized responses
     if (error.response?.status === 401) {

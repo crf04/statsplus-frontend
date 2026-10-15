@@ -77,12 +77,11 @@ export const publishedSeasonOf = (backtest) => {
 };
 
 /*
- * Why the Backtest reads the season it does, when the reader did not pick it:
- * the default, or, from a backend deployed before the default, a fallback
- * from a published season with no games.
+ * Why the Backtest reads the season it does, when a backend deployed before
+ * the default fell back from a published season with no games. The default
+ * needs no note: the season alone names it.
  */
 export const describeSeasonNote = (backtest) => {
-  if (backtest?.seasonReason === 'default') return `${backtest.season} default season`;
   if (backtest?.seasonReason === 'fallback_no_games')
     return `${nextSeason(backtest.season)} has no games yet, showing ${backtest.season}`;
   return null;
@@ -102,31 +101,18 @@ export const isOtherSeason = (season, published) =>
  */
 export const describeBacktestSeason = (backtest, published = publishedSeasonOf(backtest)) => {
   if (!backtest?.season) return 'season to date';
-  if (backtest.seasonReason === 'default') return describeSeasonNote(backtest);
+  if (backtest.seasonReason === 'default') return backtest.season;
   return isPastSeason(backtest.season, published)
     ? `${backtest.season} season`
     : `${backtest.season} season to date`;
 };
 
 /*
- * How far the season to date has got for this opponent, so a thin one reads
- * as thin. Whether it is too thin is the reader's call; nothing here judges it.
- */
-export const describeSeasonGames = (backtest, published = publishedSeasonOf(backtest)) => {
-  if (!backtest?.season || !backtest.gamesConsidered || isPastSeason(backtest.season, published))
-    return null;
-  const { played } = backtest.gamesConsidered;
-  return `${backtest.target.opponent} has played ${played} ${played === 1 ? 'game' : 'games'} in ${backtest.season}`;
-};
-
-/*
  * A card's Backtest heading: which season it read, once it has read one, and
- * why that season, or how far a season in progress has got.
+ * why that season.
  */
 export function BacktestSeasonLabel({ backtest }) {
-  const note =
-    (backtest?.seasonReason === 'fallback_no_games' && describeSeasonNote(backtest)) ||
-    describeSeasonGames(backtest);
+  const note = backtest?.seasonReason === 'fallback_no_games' && describeSeasonNote(backtest);
   return (
     <>
       Backtest

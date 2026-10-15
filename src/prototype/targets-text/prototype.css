@@ -1,0 +1,45 @@
+/* PROTOTYPE — throwaway. The switcher is fixed px so no variant resizes it. */
+.proto-switcher {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  font: 600 13px/1.2 system-ui, sans-serif;
+  zoom: 1;
+  max-width: calc(100vw - 16px);
+}
+.proto-switcher button {
+  border: 0;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  background: #111;
+  color: #fff;
+  font: 700 16px system-ui, sans-serif;
+  flex: none;
+}
+.proto-switcher-label {
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proto-banner {
+  font: 12px system-ui, sans-serif;
+  color: #9b937f;
+  text-align: center;
+  padding: 4px;
+}
+/* Keep the last card clear of the switcher. */
+body[class*='proto-text-'] .targets-page {
+  padding-bottom: 80px;
+}

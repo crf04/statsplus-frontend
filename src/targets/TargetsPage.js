@@ -17,6 +17,7 @@ import TargetsSignedOut from './TargetsSignedOut';
 import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
+import PrototypeSwitcher from '../prototype/targets-text/PrototypeSwitcher'; // PROTOTYPE (throwaway)
 import '../SlatePage.css';
 import './TargetsPage.css';
 
@@ -409,6 +410,7 @@ function TargetsPageContent() {
             ))}
           </ul>
         ))}
+      <PrototypeSwitcher />
     </main>
   );
 }

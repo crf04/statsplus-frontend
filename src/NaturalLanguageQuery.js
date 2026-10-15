@@ -12,7 +12,7 @@ import LandingCourt from './LandingCourt';
 import './ModernSearch.css';
 // PROTOTYPE (throwaway, branch prototype/home-feature-previews)
 import HomePreviewPrototype from './homePreviewPrototype/HomePreviewPrototype';
-import { useTerse, useVariant } from './homePreviewPrototype/prototypeMode';
+import { useVariant } from './homePreviewPrototype/prototypeMode';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -40,7 +40,6 @@ const NaturalLanguageQuery = ({
   const location = useLocation();
   const navigate = useNavigate();
   const proto = useVariant(); // PROTOTYPE (throwaway)
-  const terse = useTerse();
   const wasInWorkspace = useRef(inWorkspace);
 
   // Combined loading state: true if either NL query or game logs are loading
@@ -192,8 +191,7 @@ const NaturalLanguageQuery = ({
         <LandingCourt />
         <div className="landing-header">
           <Link to="/connect" className="landing-connect">
-            <span className="landing-connect-new">New</span>{' '}
-            {terse ? 'Claude & ChatGPT' : 'Ask CourtAI in Claude or ChatGPT'}
+            <span className="landing-connect-new">New</span> Ask CourtAI in Claude or ChatGPT
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
           <h1 className="landing-title">

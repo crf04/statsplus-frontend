@@ -6,7 +6,7 @@ and Targets, and in what shape?
 Variants on the real home, switched by `#proto=home&v=Z4|Z3|Z2|Z|Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
-- **Z4** Z3 with less text: "Get more specific", ticker keeps three players without team tags, short pill and card labels, no league shares
+- **Z4** Z3 with less text: "Get more specific", ticker keeps three players without team tags, short card labels, no league shares
 - **Z3** Z2 with the per-step bar charts kept: questions as one row of three steps; Tonight | Your Targets (two cards, stretched to match Tonight) below
 - **Z2** questions as one row of chips; Tonight (Best, Toughest) | Your Targets (one-line rows) below
 - **Z** Y with three columns: Try a question | Tonight (Best, Toughest) | Your Targets

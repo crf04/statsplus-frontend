@@ -842,3 +842,69 @@
 .ps-C6 .ps-cells span {
   min-width: 72px;
 }
+.ps-cell-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* ---- C7: no category box; number tiles; players read as tags ---- */
+.ps-C7 { gap: 4px 28px; }
+.ps-C7 .ps-base { border: 0; border-radius: 0; padding: 0; background: none; }
+.ps-C7 .ps-base > h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 2px;
+  color: var(--ct-dim);
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+}
+.ps-C7 .ps-base > h3::after { content: ''; flex: 1; height: 1px; background: var(--ct-line); }
+.ps-C7 .ps-row { border-top: 0; border-bottom: 1px solid var(--ct-line); padding: 14px 0; }
+.ps-C7 .ps-row.why { margin: 0; padding-inline: 10px; }
+/* The slice is the headline: display face, larger, full white. */
+.ps-C7 .ps-label h4 { font-family: var(--ct-display); font-size: 1.3rem; font-weight: 600; letter-spacing: 0.01em; }
+/* Name and save on top, tiles underneath, at every width. */
+.ps-C7 .ps-merged { grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.ps-C7 .ps-save { grid-column: 2; grid-row: 1; }
+.ps-C7 .ps-cells { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; gap: 8px; }
+.ps-C7 .ps-cells > span.ps-tile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  border: 1px solid var(--ct-line);
+  border-radius: 10px;
+  padding: 8px 14px 8px 8px;
+  background: var(--ct-surface);
+}
+.ps-C7 .ps-cells > span.ps-tile.off { opacity: 0.5; }
+.ps-C7 .ps-tile > .pc-rank.rank-pill {
+  display: inline-flex;
+  flex: 0 0 34px;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  font-size: 0.86rem;
+}
+.ps-C7 .ps-tile > .ps-cell-text { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.ps-C7 .ps-cell-text small { color: var(--ct-dim); font-size: 0.66rem; letter-spacing: 0.06em; }
+.ps-C7 .ps-cell-text b { font-family: var(--ct-display); font-size: 1.3rem; font-weight: 600; line-height: 1.05; }
+.ps-C7 .ps-cell-text em { color: var(--ct-dim); font-size: 0.72rem; font-style: normal; }
+/* Players: small mono tags, quieter than the slice and the numbers. */
+.ps-C7 .pc-chips { gap: 6px; margin-top: 10px; }
+.ps-C7 .pc-chips span {
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+}
+.ps-C7 .pc-chips span b { color: var(--ct-text); font-weight: 600; }

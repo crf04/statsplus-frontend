@@ -14,6 +14,8 @@
  *   C6 Slices       C2 without cards: play types drop possessions (points only);
  *                   shot types and zones show attempts beside makes even when only
  *                   one of them is in the selected market
+ *   C7 Slice tiles  C6 with each measure as a number tile (rank square + %), no
+ *                   box around a category, players as quiet tags under the slice
  */
 import { Bookmark } from 'lucide-react';
 import { DIET_BASE_WIRE_NAMES } from '../matchupApi';
@@ -262,6 +264,8 @@ const splitByShotValue = (row) => {
 };
 
 function SliceSheet(props) {
+  // C7: the same slices, measures as number tiles, no box around a category.
+  const tiles = props.style === 'C7';
   const { team, players, market, windowKey, deviation, surfaceAvailability, selectedPlayer } =
     props;
   let hidden = 0;
@@ -289,7 +293,7 @@ function SliceSheet(props) {
     return groups.length ? [{ base, groups }] : [];
   });
   return (
-    <section className="ps ps-C6" aria-labelledby="defense-sheet-heading">
+    <section className={`ps ps-C6${tiles ? ' ps-C7' : ''}`} aria-labelledby="defense-sheet-heading">
       <div className="ps-head">
         <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
         <p>
@@ -319,26 +323,41 @@ function SliceSheet(props) {
                       return (
                         <span
                           key={row.key}
-                          className={off ? 'off' : undefined}
+                          className={
+                            [tiles && 'ps-tile', off && 'off'].filter(Boolean).join(' ') ||
+                            undefined
+                          }
                           title={sigmaTitle(stat)}
                         >
-                          {group.rows.length > 1 && <small>{C6_SHORT[measure] || measure}</small>}
-                          <b className={tone(stat.percentVsLeagueAverage)}>
-                            {pct(stat.percentVsLeagueAverage)}
-                          </b>
-                          <em>{rankWords(stat.rank).replace('Allows ', '')}</em>
+                          {tiles && <RankSquare rank={stat.rank} />}
+                          <span className="ps-cell-text">
+                            {group.rows.length > 1 && <small>{C6_SHORT[measure] || measure}</small>}
+                            <b className={tone(stat.percentVsLeagueAverage)}>
+                              {pct(stat.percentVsLeagueAverage)}
+                            </b>
+                            <em>{rankWords(stat.rank).replace('Allows ', '')}</em>
+                          </span>
                         </span>
                       );
                     })}
                   </div>
                   <SaveButton row={group.rows[0]} base={base} {...props} />
                 </div>
-                <Leans
-                  players={players}
-                  base={base}
-                  sliceKey={group.rows[0].sliceKey}
-                  market={market}
-                />
+                {tiles ? (
+                  <LeanChips
+                    players={players}
+                    base={base}
+                    sliceKey={group.rows[0].sliceKey}
+                    market={market}
+                  />
+                ) : (
+                  <Leans
+                    players={players}
+                    base={base}
+                    sliceKey={group.rows[0].sliceKey}
+                    market={market}
+                  />
+                )}
               </article>
             );
           })}
@@ -349,7 +368,7 @@ function SliceSheet(props) {
 }
 
 export default function ProtoSheet(props) {
-  if (props.style === 'C6') return <SliceSheet {...props} />;
+  if (props.style === 'C6' || props.style === 'C7') return <SliceSheet {...props} />;
   const { team, players, market, windowKey, selectedPlayer, style } = props;
   const { sections, hidden } = prepare(props);
   const why = (base, row) =>

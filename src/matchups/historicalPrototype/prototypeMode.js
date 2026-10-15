@@ -12,7 +12,7 @@ import { useSearchParams } from 'react-router-dom';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'historical';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['O', 'A', 'B', 'C', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
+export const VARIANT_KEYS = ['O', 'A', 'B', 'C', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'];
 export const VARIANT_NAMES = {
   O: 'Current page (baseline)',
   A: 'Stat grid cards · status chips',
@@ -24,6 +24,7 @@ export const VARIANT_NAMES = {
   C4: 'C + sheet: cards, readable',
   C5: 'C + sheet: cards, one per slice',
   C6: 'C + sheet: slices, no possessions',
+  C7: 'C + sheet: slice rows, number tiles',
 };
 
 export const useVariant = () => {

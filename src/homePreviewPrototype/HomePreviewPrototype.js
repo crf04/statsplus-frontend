@@ -31,7 +31,15 @@ import {
   tipoff,
 } from './parts';
 import hooks from './mock/hooks.json';
-import { AnswerLadder, LadderPath, LadderRows, SlimSpot, Spotlight, SpotlightCard } from './hooks';
+import {
+  AnswerLadder,
+  LadderPath,
+  LadderRows,
+  SavedRail,
+  SlimSpot,
+  Spotlight,
+  SpotlightCard,
+} from './hooks';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -757,6 +765,58 @@ const VariantP = (props) => {
   );
 };
 
+/* R: saved Filter Sets left of the headline, Tonight right of it.
+   S: a page-length left sidebar for what is yours (saved sets, Targets);
+   discovery stays in the main column. */
+const VariantR = (props) => {
+  const { bestCard, worstCard, targetList } = useTonight(props);
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <div className="hp-flank hp-calm hp-has-saved">
+          <div className="hp-flank-side hp-flank-left">
+            <SavedRail />
+          </div>
+          <div className="hp-flank-center">{props.hero}</div>
+          <div className="hp-flank-side hp-flank-right hp-r-tonight">
+            {bestCard}
+            {worstCard}
+          </div>
+        </div>
+      }
+      middle={<LadderPath onUseQuery={props.onUseQuery} />}
+      ladder={<div className="hp-r-targets">{targetList}</div>}
+    />
+  );
+};
+
+const VariantS = (props) => {
+  const { bestCard, worstCard, targetList } = useTonight(props);
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <div className="hp-s hp-has-saved">
+          <aside className="hp-s-side" aria-label="Yours">
+            <SavedRail limit={6} />
+            {targetList}
+          </aside>
+          <div className="hp-s-main">
+            {props.hero}
+            <LadderPath onUseQuery={props.onUseQuery} />
+            <section className="hp-bottom-pair hp-s-pair" aria-label="Tonight">
+              <div className="hp-flank-left">{bestCard}</div>
+              <div className="hp-flank-right">{worstCard}</div>
+            </section>
+          </div>
+        </div>
+      }
+      ladder={null}
+    />
+  );
+};
+
 const VariantQ = (props) => {
   const { bestCard, worstCard, targetList } = useTonight(props);
   return (
@@ -778,6 +838,8 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  R: VariantR,
+  S: VariantS,
   N: VariantN,
   O: VariantO,
   P: VariantP,

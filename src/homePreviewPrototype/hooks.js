@@ -12,7 +12,10 @@ import { Link } from 'react-router-dom';
 import { QUERY_LADDER, splitAddedClause } from '../help/queryHelp';
 import { targetSliceLabel } from '../targets/targetCatalog';
 import hooks from './mock/hooks.json';
-import { pct, tipoff } from './parts';
+import savedSets from './mock/saved-filter-sets.json';
+import { decodeSavedFilterSets } from '../savedFilterSetsApi';
+import { describeSavedFilterSet } from '../savedFilterSetDescription';
+import { ProtoLink, pct, tipoff } from './parts';
 
 const ordinal = (n) => {
   const tail =
@@ -270,3 +273,35 @@ export const LadderPath = ({ onUseQuery }) => (
     </Link>
   </div>
 );
+
+/* R/S: the reader's saved Filter Sets as a rail (synthetic sets: the link is
+   public). Each row reads like the saved list: name, player, parameters. */
+export const SavedRail = ({ limit = 5 }) => {
+  const sets = decodeSavedFilterSets(savedSets);
+  return (
+    <section className="hp-saved" aria-label="Your saved Filter Sets">
+      <div className="hp-tlines-head">
+        <span className="hp-kicker">Your saved Filter Sets</span>
+        <ProtoLink to="/?browse=1" className="hp-more">
+          All {sets.length} →
+        </ProtoLink>
+      </div>
+      <ul>
+        {sets.slice(0, limit).map((set) => {
+          const { player, parameters } = describeSavedFilterSet(set.queryString);
+          return (
+            <li key={set.id}>
+              <ProtoLink to={`/?${set.queryString}`} className="hp-saved-row">
+                <b>{set.name}</b>
+                <small>
+                  {player}
+                  {parameters.length > 0 && ` · ${parameters.map((p) => p.label).join(' · ')}`}
+                </small>
+              </ProtoLink>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+};

@@ -1,0 +1,34 @@
+{
+  "saved_filter_sets": [
+    {
+      "id": "demo-1",
+      "name": "JJ without Trae",
+      "query_string": "player_name=Jalen+Johnson&players_off%5B%5D=Trae+Young"
+    },
+    {
+      "id": "demo-2",
+      "name": "Maxey last 10 at home",
+      "query_string": "player_name=Tyrese+Maxey&game_filter=10&location_filter=Home"
+    },
+    {
+      "id": "demo-3",
+      "name": "Wemby vs soft paint D",
+      "query_string": "player_name=Victor+Wembanyama&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=10"
+    },
+    {
+      "id": "demo-4",
+      "name": "Brunson heavy minutes",
+      "query_string": "player_name=Jalen+Brunson&minutes_filter=36%2C48"
+    },
+    {
+      "id": "demo-5",
+      "name": "Sabonis boards vs weak rebounding",
+      "query_string": "player_name=Domantas+Sabonis&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=8"
+    },
+    {
+      "id": "demo-6",
+      "name": "Edwards away since Feb",
+      "query_string": "player_name=Anthony+Edwards&location_filter=Away&date_filter=2026-02-01"
+    }
+  ]
+}

@@ -76,9 +76,7 @@ test('a default read names the published season only when the backend does', () 
 });
 
 test('a Backtest names its season as default, to date, or whole', () => {
-  expect(describeBacktestSeason({ season: '2025-26', seasonReason: 'default' })).toBe(
-    '2025-26 default season',
-  );
+  expect(describeBacktestSeason({ season: '2025-26', seasonReason: 'default' })).toBe('2025-26');
   expect(
     describeBacktestSeason({
       season: '2026-27',

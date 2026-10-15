@@ -429,8 +429,10 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card n
     'aria-pressed',
     'true',
   );
-  await expect(page.getByRole('region', { name: /2025-26 default season/ })).toBeVisible();
-  await expect(lab.getByText('2025-26 default season', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Lab · Backtest · 2025-26 · vs ATL' }),
+  ).toBeVisible();
+  await expect(page.getByText(/default season|has played/)).toHaveCount(0);
   await expect(page.getByText(/has no games yet/)).toHaveCount(0);
   expect(previews.at(-1)).not.toHaveProperty('season');
 
@@ -470,7 +472,10 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card n
   await saveTarget(page);
   await expect(
     card(page, 'ATL vs At-rim assists ≥ 30%').getByRole('region', { name: 'Backtest' }),
-  ).toContainText('Backtest · 2025-26 default season');
+  ).toContainText('Backtest · 2025-26');
+  await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).not.toContainText(
+    /default season|has played/,
+  );
   const batch = (query) =>
     page.evaluate(async (path) => {
       const response = await fetch(path, {
@@ -693,7 +698,7 @@ test('@critical a player game minutes Condition filters appearances, persists, a
   ).toHaveText(/^4 player-games$/);
   await page.getByRole('link', { name: '← All Targets' }).click();
   await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toContainText(
-    'Backtest · 2025-26 default season · ATL has played 4 games in 2025-26 · excludes games ≤ 35 min',
+    'Backtest · 2025-26 · excludes games ≤ 35 min',
   );
 });
 

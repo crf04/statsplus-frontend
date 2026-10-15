@@ -64,17 +64,45 @@ describe('QueryLadder', () => {
   test('links to the query reference', () => {
     renderLadder();
 
-    expect(screen.getByRole('link', { name: /every filter we understand/i })).toHaveAttribute(
-      'href',
-      '/help',
-    );
+    expect(screen.getByRole('link', { name: /all filters/i })).toHaveAttribute('href', '/help');
   });
 
   test('leaves a modified click to the browser so the reference can open in a new tab', () => {
     renderLadder();
-    const link = screen.getByRole('link', { name: /every filter we understand/i });
+    const link = screen.getByRole('link', { name: /all filters/i });
 
     expect(fireEvent.click(link, { button: 0 })).toBe(false); // handled in-app
     expect(fireEvent.click(link, { button: 0, metaKey: true })).toBe(true); // left to the browser
+  });
+});
+
+describe('QueryLadder answers', () => {
+  const answers = [
+    { points: 22.5, games: 72, series: [20, 25, 30] },
+    { points: 22.1, games: 63, series: [18, 26] },
+    { points: 23.1, games: 18, series: [31] },
+  ];
+
+  test('each rung shows its average, its change from the rung before, and its games', () => {
+    renderLadder({ answers });
+
+    const rungs = screen.getAllByRole('listitem');
+    expect(rungs[0]).toHaveTextContent('22.5 PTS72 games');
+    expect(rungs[1]).toHaveTextContent('22.1 PTS−0.463 games');
+    expect(rungs[2]).toHaveTextContent('23.1 PTS+1.018 games');
+  });
+
+  test('a bar per game, gold where the game beat the rung average', () => {
+    renderLadder({ answers });
+
+    const bars = document.querySelectorAll('.query-ladder-rung:first-child .query-ladder-bars i');
+    expect([...bars].map((bar) => bar.className)).toEqual(['', 'is-over', 'is-over']);
+  });
+
+  test('without answers the rungs keep their titles and notes', () => {
+    renderLadder();
+
+    expect(screen.getByText('Start with a player')).toBeInTheDocument();
+    expect(screen.queryByText(/PTS/)).not.toBeInTheDocument();
   });
 });

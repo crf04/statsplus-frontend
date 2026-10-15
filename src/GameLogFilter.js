@@ -372,6 +372,9 @@ const GameLogFilter = () => {
       returnToQueryPrompt();
       return undefined;
     }
+    // Entering the Workspace is a load of its own, even with no game-log
+    // request to make, so it is revealed whole like any other.
+    if (!wasInWorkspace.current) setWorkspaceLoad((load) => load + 1);
     wasInWorkspace.current = true;
 
     if (urlInvalid.length > 0) {

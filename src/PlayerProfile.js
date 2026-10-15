@@ -39,7 +39,10 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
     (!teamReadKey || teamSettledFor === teamReadKey);
 
   useEffect(() => {
+    // Unsettled is reported too, so readiness from an earlier read of the same
+    // player and opponent cannot stand in for the one now in flight.
     if (settled) onSettled?.(selectedPlayer, selectedTeam);
+    else onSettled?.(null);
   }, [settled, selectedPlayer, selectedTeam, onSettled]);
   // Unmounted, it has settled for nothing; a remount must answer again.
   useEffect(() => () => onSettled?.(null), [onSettled]);

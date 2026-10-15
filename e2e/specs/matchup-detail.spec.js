@@ -1095,3 +1095,27 @@ test.describe('on a touch screen', () => {
     }
   });
 });
+
+test('a rank marker sits along its fewest-to-most track by rank', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  await installApiContract(page);
+  await page.goto('/matchups/0022500584');
+  await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'All' }).click();
+
+  // Rank 1 is the track's left end and rank 30 its right end.
+  for (const [slice, rank] of [
+    ['Above-the-break 3s', 3],
+    ['At the rim', 28],
+  ]) {
+    const track = page.getByRole('article', { name: slice }).getByRole('img');
+    await expect(track).toHaveAccessibleName(new RegExp(`^Rank ${rank} of 30`));
+    const [trackBox, markerBox] = await Promise.all([
+      track.boundingBox(),
+      track.locator('i').boundingBox(),
+    ]);
+    const centre = markerBox.x + markerBox.width / 2;
+    const expected = trackBox.x + ((rank - 1) / 29) * trackBox.width;
+    expect(Math.abs(centre - expected)).toBeLessThan(2);
+  }
+});

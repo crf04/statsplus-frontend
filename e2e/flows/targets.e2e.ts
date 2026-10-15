@@ -333,8 +333,11 @@ signedInTest(
   },
   async ({ app, screen, browser, api }) => {
     await app.open('/matchups/0022500584');
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
-    const capture = screen.getByRole('button', 'Save Restricted Area FGA as a Target');
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    // Shot-zone attempts read on All rather than the opening PTS tab.
+    const allStats = screen.getByRole('group', 'Market').getByRole('button', 'All');
+    await allStats.tap();
+    const capture = screen.getByRole('button', 'Save Restricted area as a Target');
     await capture.tap();
     const dialog = screen.getByRole('dialog');
     await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
@@ -359,6 +362,7 @@ signedInTest(
       ],
     });
     await app.open('/matchups/0022500584');
+    await allStats.tap();
     await capture.tap();
     await dialog.getByRole('button', 'Save Target').tap();
     await expect(dialog.getByRole('alert')).toContainText('You already have that Target for BOS.');

@@ -46,16 +46,15 @@ const score = (season, last15 = season) => ({
     missingInputs: [],
   },
 });
-const unavailableScore = (missingInputs) => ({
-  season: { components: {}, blend: null, missingInputs },
-  last15: { components: {}, blend: null, missingInputs },
-});
 
 const matchup = {
   game: {
     gameId: 'game-1',
     away: { teamId: 1, tricode: 'LAL' },
     home: { teamId: 2, tricode: 'BOS' },
+    scheduledAt: '2026-01-16T00:30:00.000Z',
+    status: 'scheduled',
+    statusLabel: 'Scheduled',
     preseason: false,
   },
   experience: { mode: 'current', playerSource: 'player_pool', sections: null },
@@ -101,26 +100,28 @@ const matchup = {
           {
             // A sheet row's key pairs the slice with a stat, so a Qualifier
             // written from `key` would name a slice the diet has never heard of.
-            key: 'transition:PTS',
-            sliceKey: 'transition',
-            label: 'Transition',
+            key: 'Transition:PTS',
+            sliceKey: 'Transition',
+            label: 'Transition PTS',
             markets: ['PTS', 'FGA'],
             season: value(18.4, 12.34, 1.4, 27),
             last15: value(15.2, -8.26, -1.1, 5),
           },
           {
-            key: 'isolation:PTS',
-            sliceKey: 'isolation',
-            label: 'Isolation',
+            key: 'Isolation:PTS',
+            sliceKey: 'Isolation',
+            label: 'Isolation PTS',
             markets: ['PTS'],
             season: value(8.1, 2, 0.4, 16),
             last15: value(8.4, 4, 0.5, 18),
           },
+        ],
+        shotZones: [
           {
-            key: 'above-break:FG3A',
-            sliceKey: 'above-break',
-            label: 'Above-break three',
-            markets: ['FG3A'],
+            key: 'Above the Break 3:FGA',
+            sliceKey: 'Above the Break 3',
+            label: 'Above the Break 3 FGA',
+            markets: ['FGA', 'FG3A'],
             season: value(10.2, -11, -1.3, 3),
             last15: value(11, -6, -0.7, 9),
           },
@@ -131,7 +132,7 @@ const matchup = {
           {
             key: 'OPP_TOV',
             sliceKey: 'OPP_TOV',
-            label: 'Opponent turnovers',
+            label: 'OPP TOV',
             markets: ['TOV'],
             season: value(14.2, 8, 1.2, 26),
             last15: value(12.9, -3, -1.1, 6),
@@ -152,13 +153,15 @@ const matchup = {
       playerSource: 'player_pool',
       focalGameLine: null,
       provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['PTS'] },
+      // PrizePicks posts his points without a number; Underdog's is the line.
+      lines: { underdog: { PTS: 21.5 } },
       seasonScoring: 20.1,
       last10Minutes: [32, 35, 34],
       injuryBadgeRef: 'injury-1',
       dietShares: {
         playTypes: [
           {
-            key: 'transition',
+            key: 'Transition',
             season: {
               share: 0.18,
               volumePerGame: 4,
@@ -180,13 +183,15 @@ const matchup = {
       playerSource: 'player_pool',
       focalGameLine: null,
       provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
+      // The books disagree on his points; no book has posted his FGA number.
+      lines: { prizepicks: { PTS: 27.5 }, underdog: { PTS: 26.5 } },
       seasonScoring: 25.4,
       last10Minutes: [35, 36, 38],
       injuryBadgeRef: null,
       dietShares: {
         playTypes: [
           {
-            key: 'transition',
+            key: 'Transition',
             season: { share: 0.19, volumePerGame: 5, sigmaDeviation: 1.3 },
           },
         ],
@@ -203,6 +208,7 @@ const matchup = {
       playerSource: 'player_pool',
       focalGameLine: null,
       provenance: { prizepicks: ['REB'] },
+      lines: {},
       seasonScoring: 27.2,
       last10Minutes: [36, 37, 38],
       injuryBadgeRef: null,
@@ -317,7 +323,7 @@ test('shows the matchup-detail preseason caveat only for preseason games', async
       </Routes>
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   expect(screen.queryByRole('note', { name: 'Preseason matchup caveat' })).not.toBeInTheDocument();
   regular.unmount();
 
@@ -339,59 +345,44 @@ test('shows the matchup-detail preseason caveat only for preseason games', async
 });
 
 test('toggles delivered windows and applies a two-sided sigma filter without refetching', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  renderMatchup();
 
-  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
-  expect(screen.getByText('Transition')).toBeVisible();
-  expect(screen.getByText('Above-break three')).toBeVisible();
-  expect(screen.queryByText('Isolation')).not.toBeInTheDocument();
-  expect(screen.getByText('1 row hidden near league average.')).toBeVisible();
-  expect(screen.getByText('+12.3% vs league')).toBeVisible();
-  expect(
-    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
-  ).not.toBeInTheDocument();
-  expect(screen.getByText(/19% poss/)).toBeVisible();
-  expect(screen.getByText('Austin Reaves · 18% poss · +1.2σ')).toBeVisible();
-  expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
-  expect(
-    within(screen.getByRole('article', { name: 'LeBron James player' })).getByLabelText(
-      'PTS from prizepicks, underdog',
-    ),
-  ).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  // The page opens on PTS, which hides the attempts-only Above-the-break slice.
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRowNames()).toEqual(['Transition', 'Above-the-break 3s', 'Turnovers forced']);
+  expect(sheetRow('Transition')).toHaveTextContent('+12%');
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(screen.getByText('-8.3% vs league')).toBeVisible();
-  expect(screen.getByText(/19% poss/)).toBeVisible();
+  expect(sheetRow('Transition')).toHaveTextContent('−8%');
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 
-  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
-  expect(screen.getByText('Transition')).toBeVisible();
-  expect(screen.queryByText('Above-break three')).not.toBeInTheDocument();
-  expect(screen.queryByText(/Austin Reaves · 18% poss/)).not.toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
-  expect(screen.getByText(/Austin Reaves · 18% poss/)).toBeVisible();
-
-  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Season' }));
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
-  expect(screen.getByText('Isolation')).toBeVisible();
-  expect(screen.getByText('+4.0% vs league')).toBeVisible();
+  expect(sheetRowNames()).toEqual([
+    'Transition',
+    'Isolation',
+    'Above-the-break 3s',
+    'Turnovers forced',
+  ]);
+  expect(sheetRow('Isolation')).toHaveTextContent('+2%');
+  // Two-sided: −1.3σ clears the 1σ floor as readily as +1.4σ does.
+  await userEvent.click(screen.getByRole('button', { name: 'At least 1 sigma' }));
+  expect(sheetRowNames()).toContain('Above-the-break 3s');
+  await userEvent.click(screen.getByRole('button', { name: 'At least 2 sigma' }));
+  expect(sheetRowNames()).toEqual([]);
+  expect(screen.getByText('No Defense Sheet rows match these controls.')).toBeVisible();
   expect(fetchMatchup).toHaveBeenCalledTimes(1);
 });
 
-test('orders player chips by largest absolute sigma deviation first', async () => {
+test('lists who leans on a slice above league, most first, and leaves off those below', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.forEach((player, index) => {
     player.teamId = 1;
+    player.statCategories = ['PTS'];
     player.dietShares.playTypes = [
       {
-        key: 'transition',
+        key: 'Transition',
         season: {
           share: [0.31, 0.05, 0.37][index],
           volumePerGame: 1,
@@ -402,27 +393,19 @@ test('orders player chips by largest absolute sigma deviation first', async () =
     ];
   });
   fetchMatchup.mockResolvedValueOnce(candidate);
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  renderMatchup();
 
-  const chips = await screen.findByRole('group', { name: 'Players leaning on this slice' });
+  const leans = await screen.findByRole('list', { name: 'Players leaning on Transition' });
   expect(
-    within(chips)
-      .getAllByText(/poss/)
-      .map((chip) => chip.textContent),
-  ).toEqual([
-    'LeBron James · 5% poss · -2.0σ',
-    'Jayson Tatum · 37% poss · +1.2σ',
-    'Austin Reaves · 31% poss · +0.6σ',
-  ]);
+    within(leans)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent),
+  ).toEqual(['Jayson Tatum 37% +1.2σ', 'Austin Reaves 31% +0.6σ']);
+  // LeBron leans on it 2σ less than league: a soft spot is not his.
+  expect(within(leans).queryByText('LeBron James')).not.toBeInTheDocument();
 });
 
-test('selection keeps All active and uses only the delivered Season Diet Share', async () => {
+test('a selection highlights only the slices his delivered Season Diet Share leans on', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.find((player) => player.id === 2544).dietShares.playTypes[0].season = {
     share: 0.02,
@@ -439,13 +422,12 @@ test('selection keeps All active and uses only the delivered Season Diet Share',
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   expect(screen.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
   expect(screen.queryByText(/Diet Share inputs for the current window/)).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  expect(screen.getByText('Transition').closest('article')).not.toHaveClass('selection-why');
+  expect(
+    within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'PTS' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(sheetRow('Transition')).not.toHaveClass('selection-why');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(screen.getByText('Transition').closest('article')).not.toHaveClass('selection-why');
+  expect(sheetRow('Transition')).not.toHaveClass('selection-why');
 });
 
 test('names an unavailable surface window while leaving available surfaces usable', async () => {
@@ -466,36 +448,27 @@ test('names an unavailable surface window while leaving available surfaces usabl
   lebron.scores.AST = score(0.05);
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.assistLocations = [
     {
-      key: 'paint-assists',
-      sliceKey: 'paint-assists',
-      label: 'Paint assists',
+      key: 'AtRimAssists',
+      sliceKey: 'AtRimAssists',
+      label: 'AtRimAssists',
       markets: ['AST'],
       season: value(11, 13, 1.5, 28),
       last15: value(10, 9, 1.1, 24),
     },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(
     screen.getByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).toBeVisible();
-  expect(
-    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
-  ).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'AST' }));
   expect(
     screen.queryByText('Play types unavailable for Last 15: provider_unsupported.'),
   ).not.toBeInTheDocument();
-  expect(screen.getByText('Paint assists')).toBeVisible();
+  expect(sheetRowNames()).toEqual(['At the rim']);
 });
 
 test('renders one relevant traditional unavailability notice for All and specific markets', async () => {
@@ -507,15 +480,17 @@ test('renders one relevant traditional unavailability notice for All and specifi
   candidate.teams.forEach((team) => {
     team.defenseSheet.traditional = [
       {
-        key: 'opponent-rebounds',
-        label: 'Opponent rebounds',
+        key: 'OPP_REB',
+        sliceKey: 'OPP_REB',
+        label: 'OPP REB',
         markets: ['REB'],
         season: value(45, -8, -1.2, 4),
         last15: null,
       },
       {
-        key: 'opponent-turnovers',
-        label: 'Opponent turnovers',
+        key: 'OPP_TOV',
+        sliceKey: 'OPP_TOV',
+        label: 'OPP TOV',
         markets: ['TOV'],
         season: value(14.8, 10, 1.3, 25),
         last15: null,
@@ -543,27 +518,18 @@ test('renders one relevant traditional unavailability notice for All and specifi
   };
   lebron.scores.AST = score(0.05);
   fetchMatchup.mockResolvedValueOnce(candidate);
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
-  expect(
-    screen.getAllByText('Traditional defense unavailable for Last 15: not_stored.'),
-  ).toHaveLength(1);
+  expect(screen.getAllByText('Box score unavailable for Last 15: not_stored.')).toHaveLength(1);
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
-  expect(
-    screen.getAllByText('Traditional defense unavailable for Last 15: not_stored.'),
-  ).toHaveLength(1);
+  expect(screen.getAllByText('Box score unavailable for Last 15: not_stored.')).toHaveLength(1);
 
   await userEvent.click(screen.getByRole('button', { name: 'AST' }));
   expect(
-    screen.queryByText('Traditional defense unavailable for Last 15: not_stored.'),
+    screen.queryByText('Box score unavailable for Last 15: not_stored.'),
   ).not.toBeInTheDocument();
 });
 
@@ -581,11 +547,12 @@ test('explains a withheld Last-15 window in a sentence instead of a raw reason',
       </Routes>
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(
     screen.getByText(
-      'Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+      'Box score unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
     ),
   ).toBeVisible();
   expect(screen.queryByText(/insufficient_governed_games/)).not.toBeInTheDocument();
@@ -605,11 +572,12 @@ test('explains a Last-15 window still on the previous season in a sentence', asy
       </Routes>
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(
     screen.getByText(
-      'Traditional defense unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+      'Box score unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
     ),
   ).toBeVisible();
   expect(screen.queryByText(/window_not_ready/)).not.toBeInTheDocument();
@@ -621,7 +589,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
     {
       key: 'OPP_REB',
       sliceKey: 'OPP_REB',
-      label: 'Opponent rebounds',
+      label: 'OPP REB',
       markets: ['REB'],
       season: value(45, -8, -1.2, 4),
       last15: null,
@@ -629,7 +597,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
     {
       key: 'OPP_TOV',
       sliceKey: 'OPP_TOV',
-      label: 'Opponent turnovers',
+      label: 'OPP TOV',
       markets: ['TOV'],
       season: value(14.8, 10, 1.3, 25),
       last15: value(13.4, 5, 1.1, 22),
@@ -640,144 +608,116 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   lebron.statCategories.push('REB', 'TOV');
   lebron.provenance.prizepicks.push('REB', 'TOV');
   fetchMatchup.mockResolvedValueOnce(candidate);
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  expect(screen.getByText('Opponent rebounds')).toBeVisible();
-  expect(screen.getByTitle('Opponent rank 4/30 — 30 allows the most')).toBeVisible();
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRow('Rebounds')).toHaveTextContent('−8%');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
 
-  expect(
-    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
-  ).not.toBeInTheDocument();
   expect(screen.getByText('Opponent rebounds unavailable for Last 15.')).toBeVisible();
-  expect(screen.getByText('Opponent turnovers')).toBeVisible();
+  expect(sheetRowNames()).toContain('Turnovers forced');
+  expect(sheetRowNames()).not.toContain('Rebounds');
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'REB' }));
   expect(screen.getAllByText('Opponent rebounds unavailable for Last 15.')).toHaveLength(1);
-  expect(screen.queryByTitle('Opponent rank 4/30 — 30 allows the most')).not.toBeInTheDocument();
+  expect(sheetRowNames()).toEqual([]);
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
   expect(screen.queryByText('Opponent rebounds unavailable for Last 15.')).not.toBeInTheDocument();
-  expect(screen.getByText('Opponent turnovers')).toBeVisible();
-  expect(screen.queryByRole('heading', { name: 'OPP_TOV' })).not.toBeInTheDocument();
+  expect(sheetRowNames()).toEqual(['Turnovers forced']);
 });
 
 test('renders governed traditional sheet rows without duplicate defensive columns', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
-    ['OPP_REB', 'Opponent rebounds', ['REB', 'PR', 'RA', 'PRA'], 45, -1.2],
-    ['OPP_TOV', 'Opponent turnovers', ['TOV'], 15.8, 1.3],
-    ['OPP_STL', 'Opponent steals', ['STL', 'STKS'], 6.9, -1.1],
-    ['OPP_BLK', 'Opponent blocks', ['BLK', 'STKS'], 5.8, 1.4],
-  ].map(([key, label, markets, allowed, sigma]) => ({
+    ['OPP_REB', ['REB', 'PR', 'RA', 'PRA'], 45, -1.2],
+    ['OPP_TOV', ['TOV'], 15.8, 1.3],
+    ['OPP_STL', ['STL', 'STKS'], 6.9, -1.1],
+    ['OPP_BLK', ['BLK', 'STKS'], 5.8, 1.4],
+  ].map(([key, markets, allowed, sigma], index) => ({
     key,
     sliceKey: key,
-    label,
+    label: key.replace('_', ' '),
     markets,
-    season: value(allowed, 8, sigma, 22),
+    season: value(allowed, 8 - index, sigma, 22),
     last15: value(allowed - 0.5, 4, sigma, 18),
   }));
   fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
 
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-
-  const traditionalSheet = screen
-    .getByRole('heading', { name: 'Traditional defense' })
-    .closest('section');
-  expect(within(traditionalSheet).getByText('Opponent rebounds')).toBeVisible();
-  expect(within(traditionalSheet).getByText('Opponent turnovers')).toBeVisible();
-  expect(within(traditionalSheet).getByText('Opponent steals')).toBeVisible();
-  expect(within(traditionalSheet).getByText('Opponent blocks')).toBeVisible();
+  const boxScore = screen.getByRole('region', { name: 'Box score' });
   expect(
-    screen.queryByRole('heading', { name: 'Traditional defensive columns' }),
-  ).not.toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'OPP_TOV' })).not.toBeInTheDocument();
+    within(boxScore)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label')),
+  ).toEqual(['Rebounds', 'Turnovers forced', 'Steals', 'Blocks']);
+  expect(within(boxScore).queryByText(/OPP/)).not.toBeInTheDocument();
 });
 
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  // Isolation's points sit near league; its possessions would not.
   boston.defenseSheet.playTypes.push({
-    key: 'transition:POSS',
-    sliceKey: 'transition',
-    label: 'Transition POSS',
+    key: 'Isolation:POSS',
+    sliceKey: 'Isolation',
+    label: 'Isolation POSS',
     markets: ['PTS'],
-    season: value(14.9, 11, 1.6, 28),
+    season: value(14.9, 31, 1.6, 28),
     last15: value(13.1, 6, 0.9, 22),
   });
   fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  const playTypeRows = () =>
+    within(screen.getByRole('region', { name: 'Play types' }))
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label'));
+  expect(playTypeRows()).toEqual(['Transition']);
+  expect(screen.getByText(/1 close to average hidden\./)).toBeVisible();
 
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
-  const playTypes = screen.getByRole('heading', { name: 'Play types' }).closest('section');
-  expect(within(playTypes).getByText('Transition')).toBeVisible();
-  expect(within(playTypes).queryByText('Transition POSS')).not.toBeInTheDocument();
+  expect(playTypeRows()).toEqual(['Transition', 'Isolation']);
+  // One Points measure per slice: the possession row's +31% never shows.
+  expect(sheetRow('Isolation')).toHaveTextContent('+2%');
+  expect(sheetRow('Isolation')).not.toHaveTextContent('31%');
 });
 
-test('renders neutral relative percentages for nonzero values without directional color', async () => {
+test('renders a reading with no league comparison without a direction or a guessed percent', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
   boston.defenseSheet.playTypes[0].season = value(7.5, null, 1.4, 1);
   fetchMatchup.mockResolvedValueOnce(candidate);
-
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
-  const transition = screen.getByText('Transition').closest('article');
-  expect(transition).toHaveTextContent('7.5');
-  expect(transition).toHaveTextContent('1.4σ');
-  expect(transition).toHaveTextContent('vs league: unavailable (not comparable)');
-  expect(transition).not.toHaveTextContent('null%');
-  expect(transition.querySelector('.relative-over, .relative-under')).not.toBeInTheDocument();
-  expect(transition.querySelector('.relative-neutral > strong')).toHaveTextContent('7.5');
-  expect(
-    within(transition).getByText('vs league: unavailable (not comparable)'),
-  ).not.toHaveAttribute('class');
+  const transition = sheetRow('Transition');
+  const cell = within(transition).getByTitle(
+    '7.5 per 48 · +1.4σ · rank 1 of 30 (30 allows the most) · vs league: unavailable (not comparable)',
+  );
+  expect(within(cell).getByText('—')).toHaveClass('tone-flat');
+  expect(transition).not.toHaveTextContent('null');
+  // With no comparison it cannot be the softest spot, so it reads last.
+  expect(sheetRowNames().slice(0, 2)).toEqual(['Isolation', 'Transition']);
 });
 
-test('renders nullable season scoring and explains zero-component offensive scores', async () => {
+test('sorts a player with no season scoring last and explains zero-component offensive scores', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.seasonScoring = null;
   lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
   fetchMatchup.mockResolvedValueOnce(candidate);
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
+  renderMatchup('/matchups/game-1?player=2544');
+  await screen.findByRole('article', { name: 'LeBron James player' });
+  expect(railNames()).toEqual(['Austin Reaves', 'LeBron James']);
+  // No season average to stand his line beside.
+  expect(screen.getByRole('article', { name: 'LeBron James player' })).toHaveTextContent(
+    /27\.5linePP/,
   );
-  const card = await screen.findByRole('article', { name: 'LeBron James player' });
-  expect(card).toHaveTextContent('Season scoring unavailable');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(screen.getByText('No score components were computable for FGA in Last 15.')).toBeVisible();
 });
@@ -787,9 +727,17 @@ test('a late selection response cannot replace a newer player selection', async 
   const first = new Promise((resolve) => {
     resolveFirst = resolve;
   });
+  const logRow = (pts, delta) => ({
+    date: '2025-12-25',
+    matchup: 'LAL vs. BOS',
+    minutes: 33,
+    stats: { PTS: pts, FG3A: 7, FGA: 18 },
+    deltas: { PTS: delta, FG3A: 0.01, FGA: 0.01 },
+    average: false,
+  });
   const austin = {
     playerId: 1630559,
-    h2h: { thin: false, rows: [] },
+    h2h: { thin: false, rows: [logRow(44, 0.444)] },
     archetype: { thin: false, rows: [] },
   };
   fetchMatchupSelection.mockImplementation((_gameId, playerId) =>
@@ -809,30 +757,33 @@ test('a late selection response cannot replace a newer player selection', async 
     }),
   );
   expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
-  resolveFirst({
-    playerId: 2544,
-    h2h: { thin: false, rows: [] },
-    archetype: { thin: false, rows: [] },
-  });
-  await waitFor(() =>
-    expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible(),
+  expect((await screen.findAllByText('+0.444')).length).toBeGreaterThan(0);
+  // LeBron's request settles after Austin's: his logs must not replace Austin's.
+  await act(async () =>
+    resolveFirst({
+      playerId: 2544,
+      h2h: { thin: false, rows: [logRow(77, 0.777)] },
+      archetype: { thin: false, rows: [] },
+    }),
   );
+  expect(screen.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  expect(screen.getAllByText('+0.444').length).toBeGreaterThan(0);
+  expect(screen.queryByText('+0.777')).not.toBeInTheDocument();
+  expect(screen.queryByText('Loading selection logs…')).not.toBeInTheDocument();
 });
 
-test('sorts the active market by delivered Matchup Score and scopes tabs to the displayed side', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+test('orders the rail by season scoring in every stat and scopes tabs to the displayed side', async () => {
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   expect(screen.queryByRole('button', { name: 'REB' })).not.toBeInTheDocument();
+  expect(railNames()).toEqual(['LeBron James', 'Austin Reaves']);
+  // FG3A would put Austin first by Matchup Score; the order stays season scoring.
+  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+  expect(railNames()).toEqual(['Austin Reaves']);
   await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
-  expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('LeBron James');
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  expect(screen.getAllByRole('article', { name: /player/i })[0]).toHaveTextContent('Austin Reaves');
+  expect(railNames()).toEqual(['LeBron James', 'Austin Reaves']);
+  expect(screen.queryByRole('button', { name: 'Matchup Score' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Player rail sort' })).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
   expect(await screen.findByRole('button', { name: 'REB' })).toBeVisible();
@@ -853,7 +804,7 @@ test('the team switch heads the sidebar and the stat strip sits last on the shee
       </Routes>
     </MemoryRouter>,
   );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   const teamTabs = screen.getByRole('group', { name: 'Defense team' });
   const sidebar = document.querySelector('.matchup-sidebar');
   expect(sidebar.firstElementChild).toBe(teamTabs);
@@ -890,7 +841,7 @@ test('team tabs follow team ids when both teams share a tricode', async () => {
       </Routes>
     </MemoryRouter>,
   );
-  const rail = await screen.findByRole('complementary', { name: 'Season scoring order' });
+  const rail = await screen.findByRole('complementary', { name: 'Targetable players' });
   const tabs = within(screen.getByRole('group', { name: 'Defense team' })).getAllByRole('button');
   expect(tabs).toHaveLength(2);
   const railNames = () =>
@@ -961,29 +912,24 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
   boston.defenseSheet.shotZones = [
-    ['Restricted Area:FGM', 'Restricted Area', 'Restricted Area FGM', ['PTS', 'PA', 'PR', 'PRA']],
-    ['Corner 3:FGM', 'Corner 3', 'Corner 3 FGM', ['PTS', '3PM', 'PA', 'PR', 'PRA']],
-    ['Corner 3:FGA', 'Corner 3', 'Corner 3 FGA', ['FGA', 'FG3A']],
-  ].map(([key, sliceKey, label, markets]) => ({
+    ['Restricted Area:FGM', 'Restricted Area', ['PTS', 'PA', 'PR', 'PRA']],
+    ['Corner 3:FGM', 'Corner 3', ['PTS', '3PM', 'PA', 'PR', 'PRA']],
+    ['Corner 3:FGA', 'Corner 3', ['FGA', 'FG3A']],
+  ].map(([key, sliceKey, markets]) => ({
     key,
     sliceKey,
-    label,
+    label: key,
     markets,
     season: value(9, 5, 1, 20),
     last15: value(9, 5, 1, 20),
   }));
   boston.defenseSheet.shotTypes = [
-    ['Pullups:FG2M', 'Pullups', 'Pullups FG2M', ['PTS', 'PA', 'PR', 'PRA']],
-    [
-      'Catch and Shoot:FG3M',
-      'Catch and Shoot',
-      'Catch and Shoot FG3M',
-      ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
-    ],
-  ].map(([key, sliceKey, label, markets]) => ({
+    ['Pullups:FG2M', 'Pullups', ['PTS', 'PA', 'PR', 'PRA']],
+    ['Catch and Shoot:FG3M', 'Catch and Shoot', ['3PM', 'PTS', 'PA', 'PR', 'PRA']],
+  ].map(([key, sliceKey, markets]) => ({
     key,
     sliceKey,
-    label,
+    label: key,
     markets,
     season: value(5, 5, 1, 20),
     last15: value(5, 5, 1, 20),
@@ -992,19 +938,16 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
   fetchMatchup.mockResolvedValueOnce(candidate);
 
   renderMatchup();
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
 
   for (const combo of ['PRA', 'PR', 'PA']) {
     await userEvent.click(screen.getByRole('button', { name: combo }));
-    for (const label of [
-      'Restricted Area FGM',
-      'Corner 3 FGM',
-      'Pullups FG2M',
-      'Catch and Shoot FG3M',
-    ]) {
-      expect(screen.getByText(label)).toBeVisible();
+    for (const slice of ['Restricted area', 'Corner 3s', 'Pull-up 2s', 'Catch-and-shoot 3s']) {
+      expect(sheetRow(slice)).toBeVisible();
     }
-    expect(screen.queryByText('Corner 3 FGA')).not.toBeInTheDocument();
+    // Corner 3 attempts feed no combo but still show, at full strength, beside the makes.
+    const cells = within(sheetRow('Corner 3s')).getAllByTitle(/per 48/);
+    expect(cells.map((cell) => cell.className)).toEqual(['sheet-cell', 'sheet-cell']);
   }
 });
 
@@ -1047,13 +990,8 @@ test('the Selection card highlights the shot make rows behind a combo market for
   const tabs = screen.getByRole('group', { name: 'Market' });
   for (const combo of ['PRA', 'PR', 'PA']) {
     await userEvent.click(within(tabs).getByRole('button', { name: combo }));
-    for (const label of [
-      'Restricted Area:FGM',
-      'Corner 3:FGM',
-      'Pullups:FG2M',
-      'Catch and Shoot:FG3M',
-    ]) {
-      expect(screen.getByText(label).closest('article')).toHaveClass('selection-why');
+    for (const slice of ['Restricted area', 'Corner 3s', 'Pull-up 2s', 'Catch-and-shoot 3s']) {
+      expect(sheetRow(slice)).toHaveClass('selection-why');
     }
   }
 });
@@ -1089,20 +1027,24 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2, sigmaDeviation: 1.2 } },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
-
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'FGA' }),
+  );
 
-  expect(screen.getByText('Restricted Area FGA').closest('article')).toHaveClass('selection-why');
-  expect(screen.getByText('Catch and Shoot FG3A').closest('article')).toHaveClass('selection-why');
-  expect(screen.getByText('LeBron James · 27% FGA · +1.1σ')).toBeVisible();
-  expect(screen.getByText('LeBron James · 36% FGA · +1.2σ')).toBeVisible();
+  expect(sheetRow('Restricted area')).toHaveClass('selection-why');
+  expect(sheetRow('Catch-and-shoot 3s')).toHaveClass('selection-why');
+  expect(
+    within(sheetRow('Restricted area')).getByRole('list', {
+      name: 'Players leaning on Restricted area',
+    }),
+  ).toHaveTextContent('LeBron James 27% +1.1σ');
+  expect(
+    within(sheetRow('Catch-and-shoot 3s')).getByRole('list', {
+      name: 'Players leaning on Catch-and-shoot 3s',
+    }),
+  ).toHaveTextContent('LeBron James 36% +1.2σ');
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {
@@ -1149,26 +1091,43 @@ test('player switches clamp the card stat and team toggles remain user-controlle
   expect(screen.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
 });
 
-test('card stat choices persist while a different global sheet market remains active', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+test('the card follows later sheet-stat changes but keeps a stat chosen on the card', async () => {
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   const sheetMarkets = within(screen.getByRole('group', { name: 'Market' }));
-  await userEvent.click(sheetMarkets.getByRole('button', { name: 'PTS' }));
   await userEvent.click(
     within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('button', {
       name: 'Open selection card',
     }),
   );
-  const cardStats = within(await screen.findByRole('group', { name: 'Selection log stat' }));
-  await userEvent.click(cardStats.getByRole('button', { name: 'FGA' }));
-  expect(cardStats.getByRole('button', { name: 'FGA' })).toHaveAttribute('aria-pressed', 'true');
+  await screen.findByRole('group', { name: 'Selection log stat' });
+  const pressed = () =>
+    within(screen.getByRole('group', { name: 'Selection log stat' }))
+      .getAllByRole('button')
+      .filter((button) => button.getAttribute('aria-pressed') === 'true')
+      .map((button) => button.getAttribute('aria-label'));
+  expect(pressed()).toEqual(['PTS']);
+
+  // A later sheet stat he has carries into the card.
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'FGA' }));
+  // The card follows in an effect, so it lands a render after the click.
+  await waitFor(() => expect(pressed()).toEqual(['FGA']));
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'PTS' }));
+  await waitFor(() => expect(pressed()).toEqual(['PTS']));
+
+  // A stat chosen on the card survives sheet stats he does not have, and All.
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  );
   expect(sheetMarkets.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'FG3A' }));
+  await act(async () => {});
+  expect(pressed()).toEqual(['FGA']);
+  await userEvent.click(sheetMarkets.getByRole('button', { name: 'All' }));
+  await act(async () => {});
+  expect(pressed()).toEqual(['FGA']);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
@@ -1200,6 +1159,7 @@ const historicalMatchup = () => {
     player.playerSource = 'game_logs';
     player.postedMarkets = [];
     player.provenance = {};
+    player.lines = {};
     player.injuryBadgeRef = null;
     player.focalGameLine = {
       gameId: 'game-1',
@@ -1213,6 +1173,19 @@ const historicalMatchup = () => {
   });
   return candidate;
 };
+
+const sheetRegion = () => screen.getByRole('region', { name: /^What [A-Z]+ allows$/ });
+const sheetRow = (name) => within(sheetRegion()).getByRole('article', { name });
+const sheetRowNames = () =>
+  within(sheetRegion())
+    .queryAllByRole('article')
+    .map((row) => row.getAttribute('aria-label'));
+const railNames = () =>
+  screen
+    .getAllByRole('article', { name: / player$/ })
+    .map((row) => row.getAttribute('aria-label').replace(/ player$/, ''));
+// Locale time strings may separate "9:30" from "AM" with a narrow space.
+const normalized = (element) => element.textContent.replace(/\s+/g, ' ');
 
 const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
 
@@ -1233,7 +1206,7 @@ test('keeps the live Defense Sheet gated on missing legacy stats freshness', asy
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
-  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
   expect(screen.getByText('Defense Sheet unavailable because stats are missing.')).toBeVisible();
   expect(screen.queryByText('Transition')).not.toBeInTheDocument();
 });
@@ -1242,54 +1215,12 @@ test('renders Season defense from its own Surface while legacy stats freshness i
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();
 
-  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
-  expect(screen.getByText('Transition')).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  expect(sheetRow('Transition')).toBeVisible();
   expect(
     screen.queryByText('Defense Sheet unavailable because stats are missing.'),
   ).not.toBeInTheDocument();
-
-  const evidence = screen.getByRole('region', { name: 'Historical matchup evidence' });
-  expect(screen.queryByRole('region', { name: 'Matchup data freshness' })).not.toBeInTheDocument();
-  expect(evidence).toHaveTextContent('Schedule: Completed-season catalog · from Event Catalog');
-  expect(evidence).toHaveTextContent('Participants: Completed-season context · from game logs');
-  expect(evidence).toHaveTextContent(
-    'Season defense: Completed-season context · from Defense Sheet publication',
-  );
-  expect(evidence).toHaveTextContent(
-    'Last 15 defense: unavailable — No point-in-time snapshot was captured for this game.',
-  );
-
-  expect(screen.getByText('Completed-season context')).toBeVisible();
-  expect(
-    screen.getByText(
-      'Season defense provenance: Completed-season context · Defense Sheet publication',
-    ),
-  ).toBeVisible();
   expect(screen.getByRole('button', { name: 'Last 15' })).toBeDisabled();
-  expect(
-    screen.getAllByText('No point-in-time snapshot was captured for this game.').length,
-  ).toBeGreaterThan(0);
-  expect(screen.getByText('No pregame injury snapshot was archived for this game.')).toBeVisible();
-  expect(screen.queryByText('Left calf soreness')).not.toBeInTheDocument();
-});
-
-test('states schedule collection time as provenance rather than a staleness warning', async () => {
-  const candidate = historicalMatchup();
-  candidate.experience.sections.schedule.collectedAt = '2026-03-30T04:10:00.000Z';
-  fetchMatchup.mockResolvedValueOnce(candidate);
-  renderMatchup();
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  const evidence = screen.getByRole('region', { name: 'Historical matchup evidence' });
-  expect(evidence).toHaveTextContent(
-    'Schedule: Completed-season catalog · from Event Catalog · collected 2026-03-30',
-  );
-  // The live bars say "<surface> data warning" and age their timestamps. An
-  // immutable completed season states neither.
-  expect(evidence).not.toHaveTextContent('data warning');
-  expect(evidence).not.toHaveTextContent('ago');
-  expect(evidence).not.toHaveTextContent('stale');
-  expect(screen.queryByText(/schedule: .*, as of/i)).not.toBeInTheDocument();
 });
 
 test('labels the historical rail Players in game and switches it with the defense team', async () => {
@@ -1303,15 +1234,9 @@ test('labels the historical rail Players in game and switches it with the defens
     within(rail).queryByRole('article', { name: 'Jayson Tatum player' }),
   ).not.toBeInTheDocument();
   expect(screen.queryByText('Targetable players')).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole('group', { name: 'LeBron James posted markets' }),
-  ).not.toBeInTheDocument();
   expect(screen.queryByRole('group', { name: 'Market' })).not.toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Stat category' })).toBeVisible();
-
-  const lebron = within(rail).getByRole('article', { name: 'LeBron James player' });
-  expect(lebron).toHaveTextContent('25.4 PPG · completed-season context');
-  expect(lebron).toHaveTextContent('Focal game LAL @ BOS · 31.0 MIN · 10.0 PTS · 11.0 FGA');
+  expect(rail).not.toHaveTextContent('completed-season context');
 
   await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
   expect(await screen.findByRole('article', { name: 'Jayson Tatum player' })).toBeVisible();
@@ -1337,59 +1262,6 @@ const withDefensiveScores = (candidate, missingInputs) => {
   return candidate;
 };
 
-test('treats a withheld score with named missing inputs as unavailable', async () => {
-  fetchMatchup.mockResolvedValueOnce(
-    withDefensiveScores(historicalMatchup(), ['team_defense:traditional']),
-  );
-  renderMatchup();
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
-  expect(
-    screen.getByText('TOV Matchup Score unavailable: missing team_defense:traditional.'),
-  ).toBeVisible();
-
-  // 0.44 would outrank every complete score if the component were promoted.
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  const cards = screen.getAllByRole('article', { name: /player$/ });
-  expect(cards[0]).toHaveTextContent('LeBron James');
-  expect(cards.at(-1)).toHaveTextContent('Austin Reaves');
-});
-
-test('keeps a complete defensive score available from its only component', async () => {
-  fetchMatchup.mockResolvedValueOnce(withDefensiveScores(historicalMatchup(), []));
-  renderMatchup();
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
-  expect(screen.queryByText(/TOV Matchup Score unavailable/)).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  expect(screen.getAllByRole('article', { name: /player$/ })[0]).toHaveTextContent('Austin Reaves');
-});
-
-test('keeps a participant with an unavailable score visible, named, and sorted last', async () => {
-  const candidate = historicalMatchup();
-  candidate.players.find((player) => player.id === 1630559).scores.PTS = unavailableScore([
-    'team_defense:play_types',
-    'player_diet:shot_zones',
-  ]);
-  fetchMatchup.mockResolvedValueOnce(candidate);
-  renderMatchup();
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
-  expect(
-    screen.getByText(
-      'PTS Matchup Score unavailable: missing team_defense:play_types, player_diet:shot_zones.',
-    ),
-  ).toBeVisible();
-
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  const cards = screen.getAllByRole('article', { name: /player$/ });
-  expect(cards[0]).toHaveTextContent('LeBron James');
-  expect(cards.at(-1)).toHaveTextContent('Austin Reaves');
-});
-
 test('refuses to open a dossier for an unavailable participant', async () => {
   const candidate = historicalMatchup();
   candidate.experience.sections.participants = historicalSection(
@@ -1401,7 +1273,7 @@ test('refuses to open a dossier for an unavailable participant', async () => {
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup('/matchups/game-1?player=2544');
 
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   expect(screen.getByText('That player is not available in this matchup.')).toBeVisible();
   expect(screen.queryByRole('heading', { name: 'LeBron James', level: 2 })).not.toBeInTheDocument();
   expect(fetchMatchupSelection).not.toHaveBeenCalled();
@@ -1452,8 +1324,8 @@ test('names an unavailable participant source while the Defense Sheet stays usab
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
-  expect(await screen.findByRole('heading', { name: 'BOS Defense Sheet' })).toBeVisible();
-  expect(screen.getByText('Transition')).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  expect(sheetRow('Transition')).toBeVisible();
   expect(screen.getByText('Canonical game logs are incomplete for this game.')).toBeVisible();
   expect(screen.queryByRole('article', { name: 'LeBron James player' })).not.toBeInTheDocument();
 });
@@ -1502,34 +1374,6 @@ test('separates the focal outcome from hindsight context in the historical dossi
   ]);
 });
 
-test('labels the rail Matchup Score order with completed-season context in historical mode', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
-  renderMatchup();
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  expect(
-    screen.getByRole('heading', { name: 'PTS Matchup Score order · completed-season context' }),
-  ).toBeVisible();
-});
-
-test('does not label the rail Matchup Score order in current mode', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Matchup Score' }));
-  expect(screen.getByRole('heading', { name: 'PTS Matchup Score order' })).toBeVisible();
-  expect(screen.queryByText(/completed-season context/)).not.toBeInTheDocument();
-});
-
 test('labels the historical Score Matrix explainer with completed-season context', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup('/matchups/game-1?player=2544');
@@ -1573,7 +1417,9 @@ test('an upcoming game shows minutes to date and the books posting each market',
     </MemoryRouter>,
   );
   await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
-  expect(screen.getByText('LAL @ BOS. Markets posted by PrizePicks and Underdog.')).toBeVisible();
+  expect(
+    screen.getByText(/^LAL @ BOS, .*\. Markets posted by PrizePicks and Underdog\.$/),
+  ).toBeVisible();
   const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
   expect(strip.getByText('MIN, last 10').nextSibling).toHaveTextContent('33.7');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('PPUD');
@@ -1706,7 +1552,7 @@ const capturePreview = {
     title: 'BOS vs Transition offense ≥ 9%',
     note: '',
     qualifiers: [
-      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+      { base: 'play_types', sliceKey: 'Transition', comparator: 'at_or_above', threshold: 0.09 },
     ],
   },
   proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
@@ -1741,7 +1587,7 @@ const capturePreview = {
 };
 
 const openCapture = async (rowLabel) => {
-  await screen.findByRole('heading', { name: /Defense Sheet$/ });
+  await screen.findByRole('heading', { name: /^What [A-Z]+ allows$/ });
   const rowAction = screen.getByRole('button', { name: `Save ${rowLabel} as a Target` });
   await userEvent.click(rowAction);
   return { rowAction, dialog: await screen.findByRole('dialog') };
@@ -1764,7 +1610,7 @@ test('prefills the capture form from the row and saves what the reader made of i
   );
   // The row's slice, not its key, which also names the stat the row measures.
   expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
-    'transition',
+    'Transition',
   );
   expect(
     within(dialog).getByRole('button', { name: 'At or above; switch to at or below' }),
@@ -1799,7 +1645,7 @@ test('prefills the capture form from the row and saves what the reader made of i
     opponent: 'BOS',
     note: '',
     qualifiers: [
-      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.12 },
+      { base: 'play_types', sliceKey: 'Transition', comparator: 'at_or_above', threshold: 0.12 },
       { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
     ],
   });
@@ -1831,7 +1677,7 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
     expect.objectContaining({
       opponent: 'BOS',
       qualifiers: [
-        { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+        { base: 'play_types', sliceKey: 'Transition', comparator: 'at_or_above', threshold: 0.09 },
       ],
     }),
   );
@@ -1847,11 +1693,11 @@ test('captures against whichever team’s sheet is open', async () => {
   createTarget.mockResolvedValue(storedTarget({ opponent: 'LAL' }));
   renderMatchup();
 
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: /^LAL defense/ }));
-  await screen.findByRole('heading', { name: 'LAL Defense Sheet' });
+  await screen.findByRole('heading', { name: 'What LAL allows' });
 
-  const { dialog } = await openCapture('Corner three');
+  const { dialog } = await openCapture('Corner 3s');
   expect(within(dialog).getByLabelText('Opponent')).toBeVisible();
   expect(within(dialog).getByRole('combobox', { name: 'Qualifier 1 slice' })).toHaveValue(
     'Corner 3',
@@ -1873,7 +1719,10 @@ test('captures against whichever team’s sheet is open', async () => {
 test('leaves the threshold to be typed when the slice publishes no league average', async () => {
   renderMatchup();
 
-  const { dialog } = await openCapture('Above-break three');
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  // Attempts-only, so it reads on All rather than the opening PTS tab.
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const { dialog } = await openCapture('Above-the-break 3s');
   expect(thresholdField(dialog)).toHaveValue('0');
   expect(thresholdField(dialog)).toHaveAttribute('aria-valuetext', 'Choose a threshold');
   expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeDisabled();
@@ -1923,7 +1772,8 @@ test('a save that resolves after the dialog was dismissed does not navigate', as
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
   // Another row, another draft, before the first save answers.
-  const next = (await openCapture('Above-break three')).dialog;
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const next = (await openCapture('Above-the-break 3s')).dialog;
   fireEvent.change(thresholdField(next), { target: { value: '32' } });
   await act(async () => settle());
 
@@ -1950,7 +1800,7 @@ test('a duplicate Target keeps the composed draft and says why it was refused', 
     opponent: 'BOS',
     note: '',
     qualifiers: [
-      { base: 'play_types', sliceKey: 'transition', comparator: 'at_or_above', threshold: 0.09 },
+      { base: 'play_types', sliceKey: 'Transition', comparator: 'at_or_above', threshold: 0.09 },
     ],
   });
   expect(await within(dialog).findByRole('alert')).toHaveTextContent(
@@ -1962,11 +1812,13 @@ test('a duplicate Target keeps the composed draft and says why it was refused', 
 test('offers no capture on a Traditional row, which has no diet counterpart', async () => {
   renderMatchup();
 
-  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
-  expect(screen.getByText('Opponent turnovers')).toBeVisible();
-  expect(
-    screen.queryByRole('button', { name: 'Save Opponent turnovers as a Target' }),
-  ).not.toBeInTheDocument();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRow('Turnovers forced')).toBeVisible();
+  expect(within(sheetRow('Turnovers forced')).queryByRole('button')).not.toBeInTheDocument();
+  expect(within(sheetRow('Transition')).getByRole('button')).toHaveAccessibleName(
+    'Save Transition as a Target',
+  );
 });
 
 // Opponent transport is exercised in its own API/hook tests.
@@ -1974,3 +1826,537 @@ jest.mock('../targets/opponentContextApi', () => ({
   ...jest.requireActual('../targets/opponentContextApi'),
   fetchOpponentProfile: () => new Promise(() => {}),
 }));
+
+/*
+ * crf04/statsplus#179 acceptance criteria, one test each, read the way a
+ * reader reads the page.
+ */
+const atInstant = (iso) => jest.spyOn(Date, 'now').mockReturnValue(Date.parse(iso));
+afterEach(() => jest.restoreAllMocks());
+
+test('AC1: a finished game says when, what the sheet is built on and what is missing in one sentence', async () => {
+  const candidate = historicalMatchup();
+  candidate.game = { ...candidate.game, status: 'final', statusLabel: 'Final' };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(screen.getByText('Matchup')).toHaveClass('matchup-eyebrow');
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Final. Full-season defense ranks; no Last 15 or injury report.',
+  );
+});
+
+test('AC1: an upcoming game names its tip-off and the books and time its lines were read', async () => {
+  atInstant('2026-01-15T12:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // The pool names the books it read, whatever the players' provenance lists.
+  candidate.freshness.pool.providers = [
+    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+    { name: 'draftkings', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings, read 8:50 PM.',
+  );
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+});
+
+test('AC1: the live header keeps its stale-data warnings in the warning colour', async () => {
+  atInstant('2026-01-15T12:30:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
+  candidate.injuries.unavailableReason = 'permission_required';
+  candidate.freshness.injuries = { status: 'unavailable', retrievedAt: null };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM;' +
+      ' no injury report.' +
+      ' Player pool stale, as of 40m ago (older than 15m freshness bar).' +
+      ' Injury report unavailable, as of age unavailable.',
+  );
+  const warnings = within(summary).getAllByText(/as of/);
+  expect(warnings.map((warning) => warning.className)).toEqual([
+    'matchup-warning',
+    'matchup-warning',
+  ]);
+  // AC2: the unavailable report lives in the sentence, not a box of its own.
+  expect(screen.queryByRole('heading', { name: 'Injury Report' })).not.toBeInTheDocument();
+});
+
+test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
+  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(screen.queryByText(/provenance/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Completed-season context/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Tap a player/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText('No pregame injury snapshot was archived for this game.'),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /Injur/ })).not.toBeInTheDocument();
+  const last15 = screen.getByRole('button', { name: 'Last 15' });
+  expect(last15).toBeDisabled();
+  expect(last15).toHaveAttribute('title', 'No point-in-time snapshot was captured for this game.');
+  expect(
+    screen.queryByText('No point-in-time snapshot was captured for this game.'),
+  ).not.toBeInTheDocument();
+});
+
+test('AC3: the page opens on PTS, and on All the rail still reads points', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  const tabs = within(screen.getByRole('group', { name: 'Market' }));
+  expect(tabs.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
+  await userEvent.click(tabs.getByRole('button', { name: 'All' }));
+  const rail = screen.getByRole('complementary', { name: 'Targetable players' });
+  expect(within(rail).getByRole('heading', { level: 2 })).toHaveTextContent('LAL · PTS');
+  expect(screen.getByRole('article', { name: 'LeBron James player' })).toHaveTextContent('27.5');
+  expect(screen.getByRole('article', { name: 'Austin Reaves player' })).toHaveTextContent('21.5');
+});
+
+test('AC3: the page opens on All when the other side has no points', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.players
+    .filter((player) => player.teamId === 1)
+    .forEach((player) => {
+      player.statCategories = player.statCategories.filter((stat) => stat !== 'PTS');
+    });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(
+    within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'All' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('AC4: after the game each row shows minutes and what he did, against his average for PTS', async () => {
+  const candidate = historicalMatchup();
+  candidate.players.find((player) => player.id === 1630559).focalGameLine.stats.PTS = 24;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const austin = await screen.findByRole('article', { name: 'Austin Reaves player' });
+  const lebron = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(austin).getByText('30 min', { exact: false })).toBeVisible();
+  expect(within(austin).getByText('24')).toBeVisible();
+  expect(within(austin).getByText(/\+3\.9 vs his season average/)).toHaveClass('tone-up');
+  expect(within(lebron).getByText('31 min', { exact: false })).toBeVisible();
+  expect(within(lebron).getByText('10')).toBeVisible();
+  expect(within(lebron).getByText(/−15\.4 vs his season average/)).toHaveClass('tone-down');
+
+  // Another stat: his number in it, with no season-average comparison.
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  const fga = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(fga).getByText('11')).toBeVisible();
+  expect(fga).not.toHaveTextContent('season average');
+});
+
+test('AC5: before the game the row leads with his line, PrizePicks first, other books beside their marks', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // Whatever order the books arrive in, PrizePicks' line leads.
+  const lebronFixture = candidate.players.find((player) => player.id === 2544);
+  lebronFixture.provenance = { underdog: ['PTS'], prizepicks: ['PTS', 'FGA'] };
+  lebronFixture.lines = { underdog: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const lebron = await screen.findByRole('article', { name: 'LeBron James player' });
+  expect(within(lebron).getByText('27.5')).toBeVisible();
+  expect(within(lebron).getByText('line · 25.4 avg')).toBeVisible();
+  // Minutes before the game are his last-10 average: (35 + 36 + 38) / 3.
+  expect(within(lebron).getByText('36 min last 10')).toBeVisible();
+  const lebronBooks = within(lebron).getByLabelText(
+    'PTS posted by PrizePicks and Underdog at 26.5',
+  );
+  expect(lebronBooks).toHaveTextContent('PPUD 26.5');
+
+  // PrizePicks posts Austin without a number, so Underdog's line leads.
+  const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
+  expect(within(austin).getByText('21.5')).toBeVisible();
+  expect(within(austin).getByText('line · 20.1 avg')).toBeVisible();
+  expect(within(austin).getByLabelText('PTS posted by PrizePicks and Underdog')).toHaveTextContent(
+    'PPUD',
+  );
+  // The live rail keeps its injury badges.
+  expect(within(austin).getByText('Game-time decision')).toHaveClass('injury-badge');
+});
+
+test('AC6: with no line for that stat the row leads with his Matchup Score, never a made-up line', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const austin = candidate.players.find((player) => player.id === 1630559);
+  austin.scores.FG3A = score(-0.06, 0.02);
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  const lebronRow = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(lebronRow).getByText('+4%')).toHaveClass('tone-up');
+  expect(within(lebronRow).getByText('Matchup Score')).toBeVisible();
+  expect(lebronRow).not.toHaveTextContent('line');
+
+  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+  expect(
+    within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByText('-6%'),
+  ).toHaveClass('tone-down');
+
+  // No line and no computable score: nothing is shown in its place.
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  const empty = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(empty).getByText('—')).toBeVisible();
+  expect(empty).not.toHaveTextContent('%');
+});
+
+test('AC7: rows sort by season scoring, open the selection card and hand focus back on close', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(railNames()).toEqual(['LeBron James', 'Austin Reaves']);
+  const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
+  expect(within(austin).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+    'href',
+    '/?player_name=Austin+Reaves',
+  );
+  const open = within(austin).getByRole('button', { name: 'Open selection card' });
+  await userEvent.click(open);
+  expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  expect(within(austin).getByRole('button', { name: 'Selected' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+  await waitFor(() =>
+    expect(within(austin).getByRole('button', { name: 'Open selection card' })).toHaveFocus(),
+  );
+});
+
+// A BOS sheet with every category, for the sheet's layout criteria.
+const fullSheet = () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const row = (key, sliceKey, markets, season) => ({
+    key,
+    sliceKey,
+    label: key,
+    markets,
+    season,
+    last15: season,
+  });
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet = {
+    playTypes: [
+      row('Transition:PTS', 'Transition', ['PTS', 'PA', 'PR', 'PRA'], value(18.4, 12.34, 1.4, 27)),
+      row('OffRebound:PTS', 'OffRebound', ['PTS', 'PA', 'PR', 'PRA'], value(5.1, 20, 1.6, 29)),
+      row('OffRebound:POSS', 'OffRebound', ['PTS'], value(4.4, 31, 1.7, 30)),
+    ],
+    shotTypes: [
+      row('Less Than 10 ft:FG2A', 'Less Than 10 ft', ['FGA', 'FG2A'], value(30, 4, 1.1, 20)),
+      row('Less Than 10 ft:FG2M', 'Less Than 10 ft', ['PTS'], value(16, 6, 1.2, 21)),
+      row('Catch and Shoot:FG3A', 'Catch and Shoot', ['FGA', 'FG3A'], value(17, 9, 1.1, 23)),
+      row('Catch and Shoot:FG3M', 'Catch and Shoot', ['3PM', 'PTS'], value(6, 3, 1.0, 19)),
+    ],
+    shotZones: [
+      row('Restricted Area:FGA', 'Restricted Area', ['FGA', 'FG2A'], value(23, -10, -1.2, 7)),
+      row('Restricted Area:FGM', 'Restricted Area', ['PTS'], value(15, 5, 1.1, 22)),
+      row('Corner 3:FGA', 'Corner 3', ['FGA', 'FG3A'], value(9, 30, 2.1, 30)),
+      row('Corner 3:FGM', 'Corner 3', ['PTS', '3PM'], value(3.4, 1, 1.0, 17)),
+    ],
+    assistLocations: [
+      row('Arc3Assists', 'Arc3Assists', ['AST', 'PA', 'RA', 'PRA'], value(8, -11, -1.3, 3)),
+    ],
+    traditional: [row('OPP_REB', 'OPP_REB', ['REB', 'PR', 'RA', 'PRA'], value(45, 7, 1.2, 24))],
+  };
+  return candidate;
+};
+
+const regionNames = () =>
+  within(sheetRegion())
+    .getAllByRole('region')
+    .map((region) => region.getAttribute('aria-labelledby'))
+    .map((id) => document.getElementById(id).textContent);
+
+test('AC8: the sheet is headed by what the team allows and how to read it', async () => {
+  renderMatchup();
+
+  const heading = await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(heading.nextElementSibling).toHaveTextContent(
+    'Compared with the league average, softest spots first. 1 close to average hidden.',
+  );
+});
+
+test('AC9: each category is a label with one header row naming its columns', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(regionNames()).toEqual([
+    'Play types',
+    'Shot types',
+    'Shot zones',
+    'Assists by location',
+    'Box score',
+  ]);
+  const columns = (name) =>
+    within(screen.getByRole('region', { name }))
+      .getAllByText(/^(Points|Attempts|Makes|Allowed)$/)
+      .map((column) => column.textContent);
+  expect(columns('Play types')).toEqual(['Points']);
+  expect(columns('Shot types')).toEqual(['Attempts', 'Makes']);
+  expect(columns('Shot zones')).toEqual(['Attempts', 'Makes']);
+  expect(columns('Assists by location')).toEqual(['Allowed']);
+  expect(columns('Box score')).toEqual(['Allowed']);
+});
+
+test('AC10: one row per slice with its measures side by side, shot types split into 2s and 3s', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const rowsOf = (name) =>
+    within(screen.getByRole('region', { name }))
+      .getAllByRole('article')
+      .map((row) => [row.getAttribute('aria-label'), within(row).queryAllByTitle(/per 48/).length]);
+  expect(rowsOf('Shot types')).toEqual([
+    ['Catch-and-shoot 3s', 2],
+    ['Under 10 ft 2s', 2],
+  ]);
+  expect(rowsOf('Shot zones')).toEqual([
+    ['Corner 3s', 2],
+    ['Restricted area', 2],
+  ]);
+  // The possession row never reads; Putbacks shows its points measure only.
+  expect(rowsOf('Play types')).toEqual([
+    ['Putbacks', 1],
+    ['Transition', 1],
+  ]);
+  expect(sheetRow('Putbacks')).toHaveTextContent('+20%');
+});
+
+test('AC11: slices read in plain English, never as wire keys', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRowNames()).toEqual([
+    'Putbacks',
+    'Transition',
+    'Catch-and-shoot 3s',
+    'Under 10 ft 2s',
+    'Corner 3s',
+    'Restricted area',
+    'Above-the-break 3s',
+    'Rebounds',
+  ]);
+  expect(
+    within(sheetRegion()).queryByText(/Arc3Assists|OffRebound|OPP_REB|Less Than|:PTS|PTS$/),
+  ).not.toBeInTheDocument();
+});
+
+test('AC12: each measure shows one % vs league and its rank on a fewest-to-most track', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const transition = within(sheetRow('Transition'));
+  expect(transition.getByText('+12%')).toHaveClass('tone-up');
+  expect(transition.getByRole('img')).toHaveAccessibleName('Rank 27 of 30: allows the 4th most');
+  expect(transition.getByRole('img')).toHaveTextContent('27');
+  // Per-48 and σ are there on hover, not printed.
+  expect(transition.getByTitle('18.4 per 48 · +1.4σ · rank 27 of 30 (30 allows the most)')).toBe(
+    transition.getByText('+12%').parentElement,
+  );
+  // The cell prints the percent and the rank marker, nothing else.
+  expect(transition.getByText('+12%').parentElement).toHaveTextContent(/^\+12%27$/);
+
+  const arc = within(sheetRow('Above-the-break 3s'));
+  expect(arc.getByText('−11%')).toHaveClass('tone-down');
+  expect(arc.getByRole('img')).toHaveAccessibleName('Rank 3 of 30: allows the 3rd fewest');
+  expect(
+    within(sheetRow('Corner 3s'))
+      .getAllByRole('img')
+      .map((track) => track.getAttribute('aria-label')),
+  ).toEqual(['Rank 30 of 30: allows the most', 'Rank 17 of 30: allows the 14th most']);
+});
+
+test('AC13: slices sort by their in-market measure, and both measures read at full strength', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  const zoneOrder = () =>
+    within(screen.getByRole('region', { name: 'Shot zones' }))
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label'));
+  // PTS reads makes: Restricted area +5% before Corner 3s +1%, whatever the
+  // attempts say.
+  expect(zoneOrder()).toEqual(['Restricted area', 'Corner 3s']);
+  const cells = () =>
+    within(sheetRow('Corner 3s'))
+      .getAllByTitle(/per 48/)
+      .map((cell) => cell.className);
+  expect(cells()).toEqual(['sheet-cell', 'sheet-cell']);
+
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  expect(zoneOrder()).toEqual(['Corner 3s', 'Restricted area']);
+  expect(cells()).toEqual(['sheet-cell', 'sheet-cell']);
+});
+
+test('AC14: only players over league who pass the display threshold are listed under a slice', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const share = (sigmaDeviation, volumePerGame) => [
+    {
+      key: 'Transition',
+      season: { share: 0.2, volumePerGame, leagueAverageShare: 0.1, sigmaDeviation },
+    },
+  ];
+  candidate.players[0].dietShares.playTypes = share(0.4, 5); // Austin: above league, under 0.5σ
+  candidate.players[1].dietShares.playTypes = share(1.3, 0.5); // LeBron: under the volume floor
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(
+    within(sheetRow('Transition')).queryByRole('list', { name: /Players leaning/ }),
+  ).not.toBeInTheDocument();
+});
+
+test('AC15: Save as Target is an icon at the row end that captures the slice', async () => {
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  const save = within(sheetRow('Transition')).getByRole('button', {
+    name: 'Save Transition as a Target',
+  });
+  expect(save).toHaveAttribute('title', 'Save as Target');
+  expect(save).toHaveTextContent('');
+  expect(save.querySelector('svg')).not.toBeNull();
+  expect(screen.queryByText('Save as Target')).not.toBeInTheDocument();
+});
+
+test('closing a deep-linked card whose row the open stat hides hands focus to the rail heading', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const austin = candidate.players.find((player) => player.id === 1630559);
+  austin.postedMarkets = ['FG3A'];
+  austin.statCategories = ['FG3A'];
+  austin.provenance = { prizepicks: ['FG3A'] };
+  austin.lines = {};
+  delete austin.scores.PTS;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup('/matchups/game-1?player=1630559');
+
+  await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
+  // The page keeps its PTS opening, which leaves Austin's row out of the rail.
+  expect(railNames()).toEqual(['LeBron James']);
+  await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+  await waitFor(() =>
+    expect(
+      within(screen.getByRole('complementary', { name: 'Targetable players' })).getByRole(
+        'heading',
+        { level: 2 },
+      ),
+    ).toHaveFocus(),
+  );
+  expect(document.activeElement).toHaveTextContent('LAL · PTS');
+});
+
+test('AC6: a withheld score is no headline, and a defensive-only score is one', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  // Components computed, Blend withheld for a named missing input.
+  lebron.scores.FGA.season = {
+    components: { playTypes: { value: 0.5, thin: false } },
+    blend: null,
+    missingInputs: ['team_defense:play_types'],
+  };
+  // A defensive stat has no Blend by contract; its component is the score.
+  lebron.postedMarkets.push('TOV');
+  lebron.statCategories.push('TOV');
+  lebron.provenance.prizepicks.push('TOV');
+  lebron.scores.TOV = {
+    season: {
+      components: { traditional: { value: 0.07, thin: false } },
+      blend: null,
+      missingInputs: [],
+    },
+    last15: { components: {}, blend: null, missingInputs: [] },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  const withheld = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(within(withheld).getByText('—')).toBeVisible();
+  expect(withheld).not.toHaveTextContent('50%');
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByText('+7%'),
+  ).toHaveClass('tone-up');
+});
+
+test('AC10: one shot type reads as a 2s row and a 3s row, each with its attempts and makes', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const row = (stat, markets, season) => ({
+    key: `Pullups:${stat}`,
+    sliceKey: 'Pullups',
+    label: `Pullups ${stat}`,
+    markets,
+    season,
+    last15: season,
+  });
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes = [
+    row('FG2A', ['FGA', 'FG2A'], value(12, 4, 1.1, 20)),
+    row('FG2M', ['PTS'], value(5, -6, -1.2, 9)),
+    row('FG3A', ['FGA', 'FG3A'], value(7, 15, 1.5, 28)),
+    row('FG3M', ['3PM', 'PTS'], value(2.5, 9, 1.3, 25)),
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const cells = (name) =>
+    within(sheetRow(name))
+      .getAllByTitle(/per 48/)
+      .map(
+        (cell) => cell.getAttribute('title').split(' · ')[0] + ' ' + cell.firstChild.textContent,
+      );
+  expect(
+    within(screen.getByRole('region', { name: 'Shot types' }))
+      .getAllByRole('article')
+      .map((article) => article.getAttribute('aria-label')),
+  ).toEqual(['Pull-up 3s', 'Pull-up 2s']);
+  // Attempts then Makes, each its own shot value's.
+  expect(cells('Pull-up 2s')).toEqual(['12.0 per 48 +4%', '5.0 per 48 −6%']);
+  expect(cells('Pull-up 3s')).toEqual(['7.0 per 48 +15%', '2.5 per 48 +9%']);
+});
+
+test('AC12: the rank marker sits from fewest at the left to most at the right', async () => {
+  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  const marker = (name, index = 0) =>
+    within(sheetRow(name)).getAllByRole('img')[index].querySelector('i');
+  // Rank 30 allows the most: the right end. Rank 3: near the left.
+  expect(marker('Corner 3s').style.left).toBe('100%');
+  expect(marker('Above-the-break 3s').style.left).toBe(`${(2 / 29) * 100}%`);
+  expect(marker('Corner 3s', 1).style.left).toBe(`${(16 / 29) * 100}%`);
+});

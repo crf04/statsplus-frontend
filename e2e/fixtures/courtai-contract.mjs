@@ -463,6 +463,11 @@ export const matchupPayload = {
         prizepicks: COMPLETE_MARKETS,
         underdog: ['PTS', 'TOV'],
       },
+      // The books disagree on his points line; only PrizePicks numbers his rebounds.
+      lines: {
+        prizepicks: { PTS: 27.5, REB: 7.5 },
+        underdog: { PTS: 26.5 },
+      },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
@@ -494,6 +499,8 @@ export const matchupPayload = {
       tricode: 'LAL',
       posted_markets: ['PTS', 'FG3A', 'STL'],
       provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['STL'] },
+      // No book has numbered him yet, so the rail falls back to his Matchup Score.
+      lines: {},
       season_scoring: 20.1,
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
@@ -762,6 +769,7 @@ const historicalParticipant = ({
   player_source: 'game_logs',
   posted_markets: [],
   provenance: {},
+  lines: {},
   stat_categories: HISTORICAL_CATEGORIES,
   focal_game_line: historicalFocalLine(team, minutes, focalStats),
   season_scoring: seasonScoring,

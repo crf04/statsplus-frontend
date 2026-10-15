@@ -8,19 +8,21 @@ signedInTest(
     await app.open('/matchups?date=2026-01-15');
     await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
     await expect(browser).toHaveURL('/matchups/0022500584');
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
-    await expect(screen.getByText('Transition PTS')).toBeVisible();
-    await expect(screen.getByText('Above the Break 3 FGA')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    // The page opens on points: the rail leads with LeBron's posted line.
     const categories = screen.getByRole('group', 'Market');
-    await expect(categories.getByRole('button', 'All')).toHaveAttribute('aria-pressed', 'true');
+    await expect(categories.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
+    await expect(screen.getByRole('article', 'LeBron James player')).toContainText('27.5');
+    await expect(screen.getByRole('article', 'Transition')).toBeVisible();
+    await expect(screen.getByRole('article', 'Above-the-break 3s')).toHaveCount(0);
     await screen.getByRole('button', 'FG2A').tap();
     await expect(categories.getByRole('button', 'FG2A')).toHaveAttribute('aria-pressed', 'true');
-    await expect(categories.getByRole('button', 'All')).toHaveAttribute('aria-pressed', 'false');
-    await expect(screen.getByText('Restricted Area FGA')).toBeVisible();
-    await expect(screen.getByText('Above the Break 3 FGA')).toHaveCount(0);
+    await expect(categories.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
+    await expect(screen.getByRole('article', 'Restricted area')).toBeVisible();
+    await expect(screen.getByRole('article', 'Transition')).toHaveCount(0);
     await screen.getByRole('button', 'FG3A').tap();
-    await expect(screen.getByText('Catch and Shoot FG3A')).toBeVisible();
-    await expect(screen.getByText('Restricted Area FGA')).toHaveCount(0);
+    await expect(screen.getByRole('article', 'Catch-and-shoot 3s')).toBeVisible();
+    await expect(screen.getByRole('article', 'Restricted area')).toHaveCount(0);
     await expect(screen.getByRole('button', 'BOS defense vs LAL players')).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -34,7 +36,7 @@ signedInTest(
       'aria-pressed',
       'false',
     );
-    await expect(screen.getByRole('heading', 'LAL Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What LAL allows')).toBeVisible();
     await expect(screen.getByRole('article', 'Jayson Tatum player')).toBeVisible();
     expect(api.sent('/api/games/matchup')).toHaveLength(1);
     expect(await overflowsHorizontally(browser)).toBe(false);
@@ -45,18 +47,20 @@ signedInTest(
   'historical sheets distinguish unavailable snapshots from published season evidence',
   async ({ app, screen }) => {
     await app.open('/matchups/0022501082');
-    await expect(screen.getByRole('heading', 'MIL Defense Sheet')).toBeVisible();
-    await expect(screen.getByRole('region', 'Historical matchup evidence')).toContainText(
-      'Participants: Completed-Season Context · From Game Logs',
+    await expect(screen.getByRole('heading', 'What MIL allows')).toBeVisible();
+    await expect(screen.getByRole('region', 'Matchup summary')).toContainText(
+      'Final. Full-season defense ranks; no Last 15 or injury report.',
     );
     await expect(screen.getByRole('button', 'Last 15')).toBeDisabled();
-    await expect(screen.getByText('Transition PTS')).toBeVisible();
-    await expect(screen.getByRole('article', 'Kawhi Leonard player')).toContainText(
-      'Focal game LAC @ MIL · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST',
-    );
+    await expect(screen.getByRole('article', 'Transition')).toBeVisible();
+    const kawhi = screen.getByRole('article', 'Kawhi Leonard player');
+    await expect(kawhi).toContainText('+2.6 vs his season average');
+    await expect(kawhi).toContainText('24');
+    await screen.getByRole('group', 'Stat category').getByRole('button', 'All').tap();
+    await expect(screen.getByRole('article', 'Above-the-break 3s')).toBeVisible();
     await screen.getByRole('group', 'Stat category').getByRole('button', 'PTS').tap();
-    await expect(screen.getByText('Transition PTS')).toBeVisible();
-    await expect(screen.getByText('Above the Break 3 FGA')).toHaveCount(0);
+    await expect(screen.getByRole('article', 'Transition')).toBeVisible();
+    await expect(screen.getByRole('article', 'Above-the-break 3s')).toHaveCount(0);
   },
 );
 
@@ -108,7 +112,7 @@ signedInTest(
       screen.getByRole('article', 'LeBron James player').getByRole('button'),
     ).toBeFocused();
     await browser.reload();
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
   },
 );
 
@@ -135,7 +139,7 @@ signedInTest(
     });
     await app.open('/matchups/0022500584?player=2544');
     await expect(screen.getByRole('alert')).toContainText('Unable to load selection logs');
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
   },
 );
 
@@ -144,7 +148,7 @@ signedInTest(
   { tags: ['agent'] },
   async ({ app, agent, screen }) => {
     await app.open('/matchups/0022500584');
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
     await agent.act('open the selection card for LeBron James');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
     await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
@@ -170,11 +174,11 @@ signedInTest(
   { tags: ['critical'] },
   async ({ app, screen, browser }) => {
     await app.open('/matchups/0022500584');
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toBeVisible();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
     await screen.getByRole('link', '← Back to slate').tap();
     await expect(browser).toHaveURL('/matchups');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
-    await expect(screen.getByRole('heading', 'BOS Defense Sheet')).toHaveCount(0);
+    await expect(screen.getByRole('heading', 'What BOS allows')).toHaveCount(0);
   },
 );

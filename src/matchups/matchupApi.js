@@ -564,6 +564,7 @@ const decodePlayer = (player, experience, game) => {
   ) {
     throw invalid();
   }
+  const provenance = gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets);
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
@@ -572,7 +573,8 @@ const decodePlayer = (player, experience, game) => {
     playerSource,
     postedMarkets,
     statCategories,
-    provenance: gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets),
+    provenance,
+    lines: decodeLines(player.lines, provenance),
     focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
@@ -582,6 +584,32 @@ const decodePlayer = (player, experience, game) => {
     scores: decodeScores(player.scores, statCategories, gameLogSourced),
   };
 };
+
+/*
+ * A provider's posted line per market, the standard full-game number. The field
+ * is additive, so a row from a backend that does not send it reads as no lines
+ * rather than an unreadable response. A line can only exist where that provider
+ * posts the market, and a line is a count: never negative, never non-finite.
+ */
+function decodeLines(lines, provenance) {
+  if (lines === undefined) return {};
+  if (!isRecord(lines)) throw invalid();
+  return Object.fromEntries(
+    Object.entries(lines).map(([provider, markets]) => {
+      if (!isRecord(markets)) throw invalid();
+      const posted = Object.hasOwn(provenance, provider) ? provenance[provider] : [];
+      return [
+        provider,
+        Object.fromEntries(
+          Object.entries(markets).map(([market, value]) => {
+            if (!posted.includes(market) || requireNumber(value) < 0) throw invalid();
+            return [market, value];
+          }),
+        ),
+      ];
+    }),
+  );
+}
 
 function decodeProvenance(provenance, postedMarkets) {
   if (!isRecord(provenance) || Object.keys(provenance).length === 0) throw invalid();

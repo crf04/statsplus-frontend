@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
@@ -9,10 +9,13 @@ import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import {
   UNAVAILABLE_RELATIVE_LABEL,
+  bookMark,
+  bookName,
   findDietShare,
-  formatFocalGameLine,
+  formatScorePercent,
   getDisplayableDietShare,
   orderCategories,
+  sliceName,
 } from './displayConfig';
 import { WINDOW_REASONS } from '../windowReasons';
 import SelectionCard from './SelectionCard';
@@ -29,41 +32,6 @@ const DEVIATIONS = [
   { value: 1, label: 'At least 1 sigma' },
   { value: 2, label: 'At least 2 sigma' },
 ];
-const BASE_LABELS = {
-  playTypes: 'Play types',
-  shotZones: 'Shot zones',
-  shotTypes: 'Shot types',
-  assistLocations: 'Assist locations',
-  traditional: 'Traditional defense',
-};
-const SHARE_LABELS = {
-  playTypes: 'poss',
-  shotZones: 'FGA',
-  shotTypes: 'FGA',
-  assistLocations: 'ast',
-};
-const SECTION_ORDER = [
-  ['schedule', 'Schedule'],
-  ['participants', 'Participants'],
-  ['seasonDefense', 'Season defense'],
-  ['last15Defense', 'Last 15 defense'],
-  ['injuries', 'Injuries'],
-];
-const CONTEXT_LABELS = {
-  completed_season_catalog: 'Completed-season catalog',
-  current_season_catalog: 'Current-season catalog',
-  completed_season: 'Completed-season context',
-  pregame: 'Pregame',
-  posted_markets: 'Posted markets',
-  current: 'Current',
-};
-const SOURCE_LABELS = {
-  event_catalog: 'Event Catalog',
-  player_game_logs: 'game logs',
-  player_pool: 'Player Pool',
-  team_matchup_publication: 'Defense Sheet publication',
-  rotowire: 'rotowire',
-};
 const SECTION_REASONS = {
   no_point_in_time_snapshot: 'No point-in-time snapshot was captured for this game.',
   no_pregame_snapshot: 'No pregame injury snapshot was archived for this game.',
@@ -76,94 +44,281 @@ const surfaceReason = (unavailableReason) =>
   SECTION_REASONS[unavailableReason] ||
   `${unavailableReason}.`;
 const sectionReason = (section) => surfaceReason(section.unavailableReason);
-const contextLabel = (section) => CONTEXT_LABELS[section.context] || section.context;
-const sourceLabel = (section) => SOURCE_LABELS[section.source] || section.source;
-// Collection time is provenance for immutable evidence, so it is stated as a
-// date rather than an age that would read as an operational staleness warning.
-const collectedLabel = (section) =>
-  section.collectedAt ? ` · collected ${section.collectedAt.slice(0, 10)}` : '';
+const windowLabel = (windowKey) => WINDOWS.find((window) => window.key === windowKey)?.label;
 
-// Historical sections replace the live freshness bars: each one governs only its
-// own evidence, so a missing pool or stats marker cannot speak for the others.
-function HistoricalEvidence({ sections }) {
+// "a", "a and b", "a, b and c".
+const listWords = (words, conjunction = 'and') =>
+  words.length < 2
+    ? words.join('')
+    : `${words.slice(0, -1).join(', ')} ${conjunction} ${words.at(-1)}`;
+// Whole numbers stay whole; a half-point line keeps its half.
+const formatStat = (value) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
+const toneClass = (value) =>
+  value === null || value === 0 ? 'tone-flat' : value > 0 ? 'tone-up' : 'tone-down';
+
+/* ------------------------------- Summary ------------------------------- */
+
+// The game's date and tip-off read in the reader's own zone, as the
+// selection card does.
+const gameDay = (game) =>
+  new Date(game.scheduledAt).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+const clock = (iso) =>
+  new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+const gameStatus = (game) =>
+  game.status === 'final'
+    ? 'Final'
+    : game.status === 'postponed'
+      ? 'Postponed'
+      : `Tip-off ${clock(game.scheduledAt)}`;
+
+// Which books the live sheet's lines come from, and when they were read.
+const linesSource = (matchup) => {
+  const { pool } = matchup.freshness;
+  const books = pool.providers.length
+    ? pool.providers.map((provider) => provider.name)
+    : [...new Set(matchup.players.flatMap((player) => Object.keys(player.provenance)))];
+  if (['missing', 'unavailable'].includes(pool.status) || books.length === 0) {
+    return 'No lines posted yet';
+  }
+  return `Lines from ${listWords(books.map(bookName))}${
+    pool.retrievedAt ? `, read ${clock(pool.retrievedAt)}` : ''
+  }`;
+};
+
+const FRESHNESS_NAMES = {
+  schedule: 'Schedule',
+  pool: 'Player pool',
+  stats: 'Defense stats',
+  injuries: 'Injury report',
+};
+
+// The live header's stale-data warnings, one short sentence each.
+const freshnessWarnings = (freshness, now) => [
+  ...['schedule', 'pool', 'stats', 'injuries'].flatMap((name) => {
+    const surface = freshness[name];
+    const presentation = getSurfaceFreshnessPresentation(surface, name, now);
+    if (!presentation.warning) return [];
+    return [
+      {
+        key: name,
+        text: `${FRESHNESS_NAMES[name]} ${presentation.status}, as of ${formatAge(
+          surface.retrievedAt,
+          now,
+        )}${presentation.thresholdNote ? ` (${presentation.thresholdNote})` : ''}.`,
+      },
+    ];
+  }),
+  ...freshness.pool.providers.flatMap((provider) => {
+    const presentation = getSurfaceFreshnessPresentation(provider, 'pool', now);
+    if (!presentation.warning) return [];
+    return [
+      {
+        key: `pool-${provider.name}`,
+        text: `${bookName(provider.name)} lines ${presentation.status}, as of ${formatAge(
+          provider.retrievedAt,
+          now,
+        )}.`,
+      },
+    ];
+  }),
+];
+
+/*
+ * One sentence in place of the provenance block: when the game is, what the
+ * sheet is built on, and what this matchup does not have. The live header's
+ * stale-data warnings follow it in the warning colour.
+ */
+function MatchupSummary({ matchup, now }) {
+  const { game, experience } = matchup;
+  const historical = experience.mode === 'historical';
+  const missing = [];
+  if (historical) {
+    if (experience.sections.last15Defense.status !== 'available') missing.push('Last 15');
+    if (experience.sections.injuries.status !== 'available') missing.push('injury report');
+  } else {
+    if (
+      Object.values(matchup.league.surfaceAvailability).every(
+        (windows) => windows.last15.status !== 'available',
+      )
+    ) {
+      missing.push('Last 15');
+    }
+    if (matchup.injuries.status === 'unavailable') missing.push('injury report');
+  }
+  const builtOn = historical ? 'Full-season defense ranks' : linesSource(matchup);
+  const warnings = historical ? [] : freshnessWarnings(matchup.freshness, now);
   return (
-    <section className="matchup-freshness" aria-label="Historical matchup evidence">
-      {SECTION_ORDER.map(([key, label]) => {
-        const section = sections[key];
-        return (
-          <span key={key}>
-            <strong>{label}</strong>:{' '}
-            {section.status === 'available'
-              ? `${contextLabel(section)} · from ${sourceLabel(section)}${collectedLabel(section)}`
-              : `${section.status} — ${sectionReason(section)}`}
-          </span>
-        );
-      })}
+    <section className="matchup-summary" aria-label="Matchup summary">
+      <p>
+        {gameDay(game)} · {gameStatus(game)}.{' '}
+        <span>
+          {builtOn}
+          {missing.length ? `; no ${listWords(missing, 'or')}.` : '.'}
+        </span>
+        {warnings.map((warning) => (
+          <Fragment key={warning.key}>
+            {' '}
+            <span className="matchup-warning">{warning.text}</span>
+          </Fragment>
+        ))}
+      </p>
     </section>
   );
 }
 
-function Freshness({ freshness, now }) {
-  const surfaces = [
-    ['schedule', freshness.schedule],
-    ['pool', freshness.pool],
-    ['stats', freshness.stats],
-    ['injuries', freshness.injuries],
-  ];
-  return (
-    <section className="matchup-freshness" aria-label="Matchup data freshness">
-      {surfaces.map(([name, surface]) => {
-        const presentation = getSurfaceFreshnessPresentation(surface, name, now);
-        return (
-          <span key={name} className={presentation.warning ? 'matchup-warning' : undefined}>
-            <strong>{name}</strong>: {presentation.status}, as of{' '}
-            {formatAge(surface.retrievedAt, now)}
-            {presentation.warning ? ` — ${name} data warning` : ''}
-            {presentation.thresholdNote ? ` (${presentation.thresholdNote})` : ''}
-          </span>
-        );
-      })}
-      {freshness.pool.providers.map((provider) => {
-        const presentation = getSurfaceFreshnessPresentation(provider, 'pool', now);
-        return (
-          <span
-            key={provider.name}
-            className={presentation.warning ? 'matchup-warning' : undefined}
-          >
-            <strong>{provider.name} pool</strong>: {presentation.status}, as of{' '}
-            {formatAge(provider.retrievedAt, now)}
-          </span>
-        );
-      })}
-    </section>
-  );
-}
+/* --------------------------------- Rail -------------------------------- */
 
-function Sparkline({ values, playerName }) {
-  if (values.length === 0) return <span className="sparkline-empty">Minutes unavailable</span>;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const points = values
-    .map(
-      (value, index) =>
-        `${(index / Math.max(1, values.length - 1)) * 88 + 4},${24 - ((value - min) / span) * 18}`,
-    )
-    .join(' ');
+// A score is unavailable, not zero, when the contract could not compute it.
+// A Blend withheld alongside named missing inputs is an incomplete score, so
+// no single component may stand in for it. A defensive category has no Blend
+// by contract and names nothing missing, so its component is the whole score.
+const scoreFor = (player, stat, windowKey) => {
+  const score = player.scores[stat]?.[windowKey];
+  if (!score) return null;
+  if (score.blend === null && score.missingInputs.length > 0) return null;
+  return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
+};
+
+const postedLine = (player, provider, stat) => {
+  const markets = Object.hasOwn(player.lines, provider) ? player.lines[provider] : {};
+  return Object.hasOwn(markets, stat) ? markets[stat] : null;
+};
+
+/*
+ * The books that post him in this stat, PrizePicks first, each with its line,
+ * and the one line the row leads with: the first book that has one. No line
+ * anywhere is a null headline, never a guess.
+ */
+const linesFor = (player, stat) => {
+  const books = Object.keys(player.provenance)
+    .filter((provider) => player.provenance[provider].includes(stat))
+    .sort((a, b) => Number(b === 'prizepicks') - Number(a === 'prizepicks'))
+    .map((provider) => ({ provider, line: postedLine(player, provider, stat) }));
+  return { books, headline: books.find((book) => book.line !== null)?.line ?? null };
+};
+
+const averageOf = (values) =>
+  values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+
+function RailRow({ player, stat, historical, windowKey, injury, selected, onSelect, register }) {
+  const serializedPlayerId = String(player.id);
+  const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name })}`;
+  const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
+  let value;
+  let caption;
+  let meta;
+  let marks = null;
+  if (historical) {
+    const focal = player.focalGameLine;
+    const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
+    const delta =
+      did !== null && seasonAverage !== null ? Math.round((did - seasonAverage) * 10) / 10 : null;
+    value = <b>{did === null ? '—' : formatStat(did)}</b>;
+    caption = stat;
+    meta = (
+      <>
+        {focal ? `${Math.round(focal.minutes)} min` : 'Minutes unavailable'}
+        {delta !== null && (
+          <em className={toneClass(delta)}>
+            {' · '}
+            {delta > 0 ? '+' : delta < 0 ? '−' : '±'}
+            {Math.abs(delta).toFixed(1)} vs his season average
+          </em>
+        )}
+      </>
+    );
+  } else {
+    const { books, headline } = linesFor(player, stat);
+    const score = headline === null ? scoreFor(player, stat, windowKey) : null;
+    value =
+      headline !== null ? (
+        <b>{formatStat(headline)}</b>
+      ) : (
+        <b className={score === null ? undefined : toneClass(Math.round(score * 100))}>
+          {score === null ? '—' : formatScorePercent(score)}
+        </b>
+      );
+    caption =
+      headline !== null
+        ? seasonAverage !== null
+          ? `line · ${seasonAverage.toFixed(1)} avg`
+          : 'line'
+        : 'Matchup Score';
+    const minutes = averageOf(player.last10Minutes);
+    meta = minutes === null ? null : `${Math.round(minutes)} min last 10`;
+    marks = books.length ? (
+      <span
+        className="rail-books"
+        aria-label={`${stat} posted by ${listWords(
+          books.map(({ provider, line }) =>
+            line !== null && line !== headline
+              ? `${bookName(provider)} at ${formatStat(line)}`
+              : bookName(provider),
+          ),
+        )}`}
+      >
+        {books.map(({ provider, line }) => (
+          <i key={provider} aria-hidden="true">
+            {bookMark(provider)}
+            {line !== null && line !== headline ? ` ${formatStat(line)}` : ''}
+          </i>
+        ))}
+      </span>
+    ) : null;
+  }
   return (
-    <svg
-      className="minutes-sparkline"
-      viewBox="0 0 96 30"
-      role="img"
-      aria-label={`${playerName} last 10 minutes: ${values.join(', ')}`}
+    <article
+      aria-label={`${player.name} player`}
+      className={`rail-row${selected ? ' selected' : ''}`}
     >
-      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
+      <div className="rail-row-name">
+        <h3>
+          <Link
+            aria-label={`${player.name} game logs`}
+            className="player-game-logs"
+            to={gameLogsPath}
+          >
+            {player.name}
+            <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+          </Link>
+        </h3>
+        <p>
+          {meta}
+          {injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
+        </p>
+      </div>
+      <div className="rail-row-value">
+        {value}
+        <small>{caption}</small>
+        {marks}
+      </div>
+      {/* The whole row opens the selection card; the name above stays its own link. */}
+      <button
+        ref={(node) => register(serializedPlayerId, node)}
+        type="button"
+        className="rail-row-open"
+        aria-expanded={selected}
+        aria-controls="matchup-selection-card"
+        aria-label={selected ? 'Selected' : 'Open selection card'}
+        onClick={() => onSelect(player)}
+      />
+    </article>
   );
 }
 
+/*
+ * One stat at a time: the selected tab's, points on All. After the game each
+ * row leads with what he did; before it, with his posted line, or his Matchup
+ * Score when no book has posted a number.
+ */
 function PlayerRail({
   players,
+  teamTricode,
   injuries,
   historical,
   unavailableMessage,
@@ -173,75 +328,34 @@ function PlayerRail({
   selectedId,
   onSelect,
   registerTrigger,
+  headingRef,
 }) {
-  const [sortMode, setSortMode] = useState('season');
-  useEffect(() => {
-    if (market === 'All') setSortMode('season');
-  }, [market]);
+  const stat = market === 'All' ? 'PTS' : market;
   const injuryById = new Map(
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
-  const windowScoreFor = (player) => player.scores[market]?.[windowKey] ?? null;
-  // A score is unavailable, not zero, when the contract could not compute it.
-  // A Blend withheld alongside named missing inputs is an incomplete score, so
-  // no single component may stand in for it. A defensive category has no Blend
-  // by contract and names nothing missing, so its component is the whole score.
-  const scoreFor = (player) => {
-    const score = windowScoreFor(player);
-    if (!score) return null;
-    if (score.blend === null && score.missingInputs.length > 0) return null;
-    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
-  };
-  const byScore = sortMode === 'score' && market !== 'All';
-  const compareDescendingUnavailableLast = (a, b, valueOf) => {
-    const first = valueOf(a);
-    const second = valueOf(b);
-    if ((first === null) !== (second === null)) return first === null ? 1 : -1;
-    if (first === null || first === second) return 0;
-    return second - first;
-  };
-  const scoped = players.filter(
-    (player) => market === 'All' || player.statCategories.includes(market),
-  );
-  scoped.sort(
-    (a, b) =>
-      (byScore ? compareDescendingUnavailableLast(a, b, scoreFor) : 0) ||
-      compareDescendingUnavailableLast(a, b, (player) => player.seasonScoring) ||
-      a.name.localeCompare(b.name),
-  );
+  const scoped = players
+    .filter((player) => market === 'All' || player.statCategories.includes(market))
+    .sort((a, b) => {
+      if ((a.seasonScoring === null) !== (b.seasonScoring === null)) {
+        return a.seasonScoring === null ? 1 : -1;
+      }
+      return (b.seasonScoring ?? 0) - (a.seasonScoring ?? 0) || a.name.localeCompare(b.name);
+    });
+  const label = historical ? 'Players in game' : 'Targetable players';
   return (
-    <aside
-      className="player-rail"
-      aria-label={historical ? 'Players in game' : undefined}
-      aria-labelledby={historical ? undefined : 'player-rail-heading'}
-    >
-      <div className="section-heading">
-        <p className="matchup-eyebrow">{historical ? 'Players in game' : 'Targetable players'}</p>
-        <h2 id="player-rail-heading">
-          {sortMode === 'score' && market !== 'All'
-            ? `${market} Matchup Score order${historical ? ' · completed-season context' : ''}`
-            : 'Season scoring order'}
+    <aside className="player-rail" aria-label={label}>
+      <div className="rail-heading">
+        <p className="matchup-eyebrow">{label}</p>
+        {/* Focus lands here when a closed card's own row is not on screen. */}
+        <h2 ref={headingRef} tabIndex={-1}>
+          {teamTricode ? `${teamTricode} · ` : ''}
+          {stat}
         </h2>
-        {targetableCount !== null && (
-          <p className="rail-count">{targetableCount} targetable returned</p>
-        )}
-        <div className="rail-sort" role="group" aria-label="Player rail sort">
-          <button
-            type="button"
-            aria-pressed={sortMode === 'season'}
-            onClick={() => setSortMode('season')}
-          >
-            Season scoring
-          </button>
-          <button
-            type="button"
-            aria-pressed={sortMode === 'score'}
-            disabled={market === 'All'}
-            onClick={() => setSortMode('score')}
-          >
-            Matchup Score
-          </button>
-        </div>
+        <p className="rail-count">
+          By season scoring
+          {targetableCount !== null ? ` · ${targetableCount} targetable returned` : ''}
+        </p>
       </div>
       {unavailableMessage ? (
         <p className="honest-empty">{unavailableMessage}</p>
@@ -253,125 +367,112 @@ function PlayerRail({
         </p>
       ) : (
         <div className="player-list">
-          {scoped.map((player) => {
-            const injury = historical ? undefined : injuryById.get(player.injuryBadgeRef);
-            const serializedPlayerId = String(player.id);
-            const focalLine = player.focalGameLine;
-            const unscored = market !== 'All' && scoreFor(player) === null;
-            const missingInputs = unscored ? (windowScoreFor(player)?.missingInputs ?? []) : [];
-            const gameLogsPath = `/?${filterSetToSearchParams({
-              player_name: player.name,
-            })}`;
-            return (
-              <article
-                key={player.id}
-                aria-label={`${player.name} player`}
-                className={`player-card${selectedId === serializedPlayerId ? ' selected' : ''}`}
-              >
-                <div>
-                  <h3>
-                    <Link
-                      aria-label={`${player.name} game logs`}
-                      className="player-game-logs"
-                      to={gameLogsPath}
-                    >
-                      {player.name}
-                      <ArrowUpRight size={11} strokeWidth={2.4} aria-hidden="true" />
-                    </Link>
-                  </h3>
-                  <p>
-                    {player.seasonScoring === null
-                      ? 'Season scoring unavailable'
-                      : `${player.seasonScoring.toFixed(1)} PPG`}
-                    {historical && player.seasonScoring !== null
-                      ? ' · completed-season context'
-                      : ''}
-                  </p>
-                </div>
-                {injury && (
-                  <span className="injury-badge">{injury.status || injury.rawStatus}</span>
-                )}
-                {historical && focalLine && (
-                  <p className="focal-line">
-                    {formatFocalGameLine(
-                      focalLine,
-                      market === 'All' ? orderCategories(player.statCategories) : [market],
-                    )}
-                  </p>
-                )}
-                {historical && unscored && (
-                  <p className="honest-empty">
-                    {market} Matchup Score unavailable
-                    {missingInputs.length ? `: missing ${missingInputs.join(', ')}` : ''}.
-                  </p>
-                )}
-                {!historical && (
-                  <div
-                    className="market-chips"
-                    role="group"
-                    aria-label={`${player.name} posted markets`}
-                  >
-                    {orderCategories(player.postedMarkets).map((postedMarket) => {
-                      const providers = Object.entries(player.provenance)
-                        .filter(([, markets]) => markets.includes(postedMarket))
-                        .map(([provider]) => provider);
-                      const provenanceLabel = `${postedMarket} from ${providers.join(', ')}`;
-                      return (
-                        <span
-                          key={postedMarket}
-                          aria-label={provenanceLabel}
-                          title={provenanceLabel}
-                        >
-                          {postedMarket}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-                <Sparkline values={player.last10Minutes} playerName={player.name} />
-                <button
-                  ref={(node) => registerTrigger(serializedPlayerId, node)}
-                  type="button"
-                  className="select-player"
-                  aria-expanded={selectedId === serializedPlayerId}
-                  aria-controls="matchup-selection-card"
-                  onClick={() => onSelect(player)}
-                >
-                  {selectedId === serializedPlayerId ? 'Selected' : 'Open selection card'}
-                </button>
-              </article>
-            );
-          })}
+          {scoped.map((player) => (
+            <RailRow
+              key={player.id}
+              player={player}
+              stat={stat}
+              historical={historical}
+              windowKey={windowKey}
+              injury={historical ? undefined : injuryById.get(player.injuryBadgeRef)}
+              selected={selectedId === String(player.id)}
+              onSelect={onSelect}
+              register={registerTrigger}
+            />
+          ))}
         </div>
       )}
     </aside>
   );
 }
 
-function DietShareChips({ players, base, sliceKey, market }) {
-  if (!SHARE_LABELS[base]) return null;
-  const chips = players
-    .filter((player) => market === 'All' || player.statCategories.includes(market))
-    .flatMap((player) => {
-      const share = getDisplayableDietShare(player, base, sliceKey);
-      if (!share) return [];
-      return [{ player, share }];
-    })
-    .sort((a, b) => Math.abs(b.share.sigmaDeviation) - Math.abs(a.share.sigmaDeviation));
-  if (chips.length === 0)
-    return <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>;
-  return (
-    <div className="diet-chips" role="group" aria-label="Players leaning on this slice">
-      {chips.map(({ player, share }) => (
-        <span key={player.id}>
-          {player.name} · {Math.round(share.share * 100)}% {SHARE_LABELS[base]} ·{' '}
-          {share.sigmaDeviation > 0 ? '+' : ''}
-          {share.sigmaDeviation.toFixed(1)}σ
-        </span>
-      ))}
-    </div>
-  );
-}
+/* ---------------------------- Defense Sheet ---------------------------- */
+
+const SHEET_BASES = ['playTypes', 'shotTypes', 'shotZones', 'assistLocations', 'traditional'];
+const BASE_LABELS = {
+  playTypes: 'Play types',
+  shotTypes: 'Shot types',
+  shotZones: 'Shot zones',
+  assistLocations: 'Assists by location',
+  traditional: 'Box score',
+};
+// Each category names its measures once, in its header row.
+const BASE_COLUMNS = {
+  playTypes: ['Points'],
+  shotTypes: ['Attempts', 'Makes'],
+  shotZones: ['Attempts', 'Makes'],
+  assistLocations: ['Allowed'],
+  traditional: ['Allowed'],
+};
+const MEASURE_COLUMNS = {
+  PTS: 'Points',
+  FGA: 'Attempts',
+  FG2A: 'Attempts',
+  FG3A: 'Attempts',
+  FGM: 'Makes',
+  FG2M: 'Makes',
+  FG3M: 'Makes',
+};
+const SHARE_LABELS = {
+  playTypes: 'possessions',
+  shotZones: 'FGA',
+  shotTypes: 'FGA',
+  assistLocations: 'assists',
+};
+
+const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);
+const columnOf = (row) => MEASURE_COLUMNS[rowMeasure(row)] || 'Allowed';
+
+/*
+ * One sheet line per slice, its measures side by side. A shot type carries 2-
+ * and 3-point measures, so each shot value is its own line ("Catch-and-shoot
+ * 3s") pairing its attempts with its makes.
+ */
+const groupBySlice = (base, rows) => {
+  const groups = new Map();
+  for (const row of rows) {
+    const shotValue = base === 'shotTypes' ? /^FG([23])/.exec(rowMeasure(row) || '')?.[1] : null;
+    const id = shotValue ? `${row.sliceKey} ${shotValue}s` : row.sliceKey;
+    if (!groups.has(id)) {
+      const name = sliceName(row.sliceKey);
+      groups.set(id, {
+        id,
+        sliceKey: row.sliceKey,
+        name: shotValue ? `${name} ${shotValue}s` : name,
+        rows: [],
+      });
+    }
+    groups.get(id).rows.push(row);
+  }
+  return [...groups.values()];
+};
+
+// 30 allows the most, 1 the fewest.
+const ordinal = (n) => {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${{ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'}`;
+};
+const rankWords = (rank) =>
+  rank === 30
+    ? 'allows the most'
+    : rank === 1
+      ? 'allows the fewest'
+      : rank >= 16
+        ? `allows the ${ordinal(31 - rank)} most`
+        : `allows the ${ordinal(rank)} fewest`;
+const formatRelative = (value) => {
+  if (value === null) return '—';
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? '+' : rounded < 0 ? '−' : ''}${Math.abs(rounded)}%`;
+};
+const cellTitle = (stat) =>
+  [
+    `${stat.allowedPer48.toFixed(1)} per 48`,
+    `${stat.sigmaDeviation > 0 ? '+' : ''}${stat.sigmaDeviation.toFixed(1)}σ`,
+    `rank ${stat.rank} of 30 (30 allows the most)`,
+    ...(stat.percentVsLeagueAverage === null ? [UNAVAILABLE_RELATIVE_LABEL] : []),
+  ].join(' · ');
 
 /*
  * The league average a slice is read against is published on the diet fact
@@ -387,6 +488,37 @@ const sliceLeagueAverageShare = (players, base, sliceKey) => {
   return null;
 };
 
+// Who leans on a slice more than the league does, most first. Players below
+// league are left off: the sheet lists who a soft spot is for.
+const leansFor = (players, base, sliceKey, market) =>
+  SHARE_LABELS[base]
+    ? players
+        .filter((player) => market === 'All' || player.statCategories.includes(market))
+        .flatMap((player) => {
+          const share = getDisplayableDietShare(player, base, sliceKey);
+          return share && share.sigmaDeviation > 0 ? [{ player, share }] : [];
+        })
+        .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
+    : [];
+
+function SheetCell({ row, windowKey }) {
+  const stat = row[windowKey];
+  return (
+    <div className="sheet-cell" title={cellTitle(stat)}>
+      <b className={toneClass(stat.percentVsLeagueAverage)}>
+        {formatRelative(stat.percentVsLeagueAverage)}
+      </b>
+      <span
+        className="rank-track"
+        role="img"
+        aria-label={`Rank ${stat.rank} of 30: ${rankWords(stat.rank)}`}
+      >
+        <i style={{ left: `${((stat.rank - 1) / 29) * 100}%`, '--rank': stat.rank }}>{stat.rank}</i>
+      </span>
+    </div>
+  );
+}
+
 function DefenseSheet({
   team,
   players,
@@ -395,17 +527,16 @@ function DefenseSheet({
   deviation,
   selectedPlayer,
   surfaceAvailability,
-  provenance,
   onCapture,
 }) {
+  const inMarket = (row) => market === 'All' || row.markets.includes(market);
   let hidden = 0;
-  const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
+  const sections = SHEET_BASES.filter((base) => team.defenseSheet[base]).map((base) => {
     // Play types read by points only; the possession rows repeat the same story.
-    const marketRows = rows.filter(
-      (row) =>
-        !(base === 'playTypes' && row.key.endsWith(':POSS')) &&
-        (market === 'All' || row.markets.includes(market)),
+    const rows = team.defenseSheet[base].filter(
+      (row) => !(base === 'playTypes' && rowMeasure(row) === 'POSS'),
     );
+    const marketRows = rows.filter(inMarket);
     const availability = surfaceAvailability[base][windowKey];
     if (availability.status !== 'available') {
       return {
@@ -413,29 +544,41 @@ function DefenseSheet({
         availability,
         relevant: marketRows.length > 0,
         legacyUnavailableRow: null,
-        visibleRows: [],
+        groups: [],
       };
     }
     const legacyUnavailableRow =
       base === 'traditional'
         ? marketRows.find((row) => row.key === 'OPP_REB' && row[windowKey] === null) || null
         : null;
-    const visibleRows = marketRows
-      .filter((row) => row[windowKey] !== null)
-      .filter((row) => {
-        const shown = Math.abs(row[windowKey].sigmaDeviation) >= deviation;
+    const lead = (group) => {
+      const values = group.rows
+        .filter(inMarket)
+        .map((row) => row[windowKey].percentVsLeagueAverage)
+        .filter((value) => value !== null);
+      return values.length ? Math.max(...values) : null;
+    };
+    const groups = groupBySlice(
+      base,
+      rows.filter((row) => row[windowKey] !== null),
+    )
+      .filter((group) => group.rows.some(inMarket))
+      .filter((group) => {
+        const shown = group.rows
+          .filter(inMarket)
+          .some((row) => Math.abs(row[windowKey].sigmaDeviation) >= deviation);
         if (!shown) hidden += 1;
         return shown;
+      })
+      // Softest spot first; a slice with no league comparison reads last.
+      .map((group) => ({ ...group, lead: lead(group) }))
+      .sort((a, b) => {
+        if ((a.lead === null) !== (b.lead === null)) return a.lead === null ? 1 : -1;
+        return (b.lead ?? 0) - (a.lead ?? 0);
       });
-    return {
-      base,
-      availability,
-      relevant: marketRows.length > 0,
-      legacyUnavailableRow,
-      visibleRows,
-    };
+    return { base, availability, relevant: marketRows.length > 0, legacyUnavailableRow, groups };
   });
-  const visibleCount = sections.reduce((total, section) => total + section.visibleRows.length, 0);
+  const visibleCount = sections.reduce((total, section) => total + section.groups.length, 0);
   const hasNamedUnavailable = sections.some(
     (section) =>
       section.legacyUnavailableRow ||
@@ -443,123 +586,129 @@ function DefenseSheet({
   );
   return (
     <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
-      <div className="section-heading">
-        <p className="matchup-eyebrow">Relative concessions · per 48</p>
-        <h2 id="defense-sheet-heading">{team.tricode} Defense Sheet</h2>
-        {provenance && <p className="sheet-provenance">{provenance}</p>}
-      </div>
-      <p className="hidden-count">
-        {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
-      </p>
+      <header className="sheet-heading">
+        <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+        <p>
+          Compared with the league average, softest spots first.
+          {hidden ? ` ${hidden} close to average hidden.` : ''}
+        </p>
+      </header>
       {visibleCount === 0 && !hasNamedUnavailable && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
-      {sections.map(({ base, availability, relevant, legacyUnavailableRow, visibleRows }) =>
-        availability.status !== 'available' && relevant ? (
-          <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
-            <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
-            <p className="honest-empty">
-              {BASE_LABELS[base] || base} unavailable for{' '}
-              {WINDOWS.find((window) => window.key === windowKey)?.label}:{' '}
-              {surfaceReason(availability.unavailableReason)}
-            </p>
-          </section>
-        ) : visibleRows.length || legacyUnavailableRow ? (
-          <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
-            <h3 id={`base-${base}`}>{BASE_LABELS[base] || base}</h3>
-            {visibleRows.length > 0 && (
-              <div className="sheet-rows">
-                {visibleRows.map((row) => {
-                  const stat = row[windowKey];
-                  return (
-                    <article
-                      className={`sheet-row${
-                        selectedPlayer &&
-                        getDisplayableDietShare(selectedPlayer, base, row.sliceKey)
-                          ? ' selection-why'
-                          : ''
-                      }`}
-                      key={`${base}-${row.key}`}
-                    >
-                      <div className="row-stat">
-                        <span
-                          className="rank-pill"
-                          style={{ '--rank': stat.rank }}
-                          title={`Opponent rank ${stat.rank}/30 — 30 allows the most`}
-                        >
-                          {stat.rank}
-                        </span>
-                        <div>
-                          <h4>{row.label}</h4>
-                          {/* The row is the evidence, so the Target is captured
-                              where it is read: this team as the opponent, this
-                              slice as the Qualifier. */}
-                          {DIET_BASE_WIRE_NAMES[base] && (
-                            <button
-                              type="button"
-                              className="row-capture"
-                              aria-label={`Save ${row.label} as a Target`}
-                              onClick={() =>
-                                onCapture({
-                                  opponent: team.tricode,
-                                  base: DIET_BASE_WIRE_NAMES[base],
-                                  sliceKey: row.sliceKey,
-                                  leagueAverageShare: sliceLeagueAverageShare(
-                                    players,
-                                    base,
-                                    row.sliceKey,
-                                  ),
-                                })
-                              }
-                            >
-                              Save as Target
-                            </button>
-                          )}
-                        </div>
-                        <div
-                          className={
-                            stat.percentVsLeagueAverage === null
-                              ? 'relative-neutral'
-                              : stat.percentVsLeagueAverage < 0
-                                ? 'relative-under'
-                                : 'relative-over'
-                          }
-                        >
-                          <strong>{stat.allowedPer48.toFixed(1)}</strong>
-                          {stat.percentVsLeagueAverage === null ? (
-                            <span>{UNAVAILABLE_RELATIVE_LABEL}</span>
-                          ) : (
-                            <span>
-                              {stat.percentVsLeagueAverage > 0 ? '+' : ''}
-                              {stat.percentVsLeagueAverage.toFixed(1)}% vs league
-                            </span>
-                          )}
-                          <span>
-                            {stat.sigmaDeviation > 0 ? '+' : ''}
-                            {stat.sigmaDeviation.toFixed(1)}σ
-                          </span>
-                        </div>
-                      </div>
-                      <DietShareChips
-                        players={players}
-                        base={base}
-                        sliceKey={row.sliceKey}
-                        market={market}
-                      />
-                    </article>
-                  );
-                })}
+      <div className="sheet-sections">
+        {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
+          const label = BASE_LABELS[base];
+          if (availability.status !== 'available') {
+            return relevant ? (
+              <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
+                <div className="sheet-base-head">
+                  <h3 id={`base-${base}`}>{label}</h3>
+                </div>
+                <p className="honest-empty">
+                  {label} unavailable for {windowLabel(windowKey)}:{' '}
+                  {surfaceReason(availability.unavailableReason)}
+                </p>
+              </section>
+            ) : null;
+          }
+          if (!groups.length && !legacyUnavailableRow) return null;
+          const columns = BASE_COLUMNS[base];
+          return (
+            <section
+              className="sheet-base"
+              key={base}
+              aria-labelledby={`base-${base}`}
+              style={{ '--cols': columns.length }}
+            >
+              <div className="sheet-base-head">
+                <h3 id={`base-${base}`}>{label}</h3>
+                {columns.map((column) => (
+                  <span key={column}>{column}</span>
+                ))}
               </div>
-            )}
-            {legacyUnavailableRow && (
-              <p className="honest-empty">
-                Opponent rebounds unavailable for{' '}
-                {WINDOWS.find((window) => window.key === windowKey)?.label}.
-              </p>
-            )}
-          </section>
-        ) : null,
-      )}
+              {groups.map((group) => {
+                const why =
+                  selectedPlayer && getDisplayableDietShare(selectedPlayer, base, group.sliceKey);
+                const leans = leansFor(players, base, group.sliceKey, market);
+                return (
+                  <article
+                    key={group.id}
+                    className={`sheet-row${why ? ' selection-why' : ''}`}
+                    aria-label={group.name}
+                  >
+                    <h4>{group.name}</h4>
+                    {columns.map((column) => {
+                      const row = group.rows.find((item) => columnOf(item) === column);
+                      return row ? (
+                        <SheetCell key={column} row={row} windowKey={windowKey} />
+                      ) : (
+                        <span key={column} className="sheet-cell-empty" />
+                      );
+                    })}
+                    {/* The row is the evidence, so the Target is captured where
+                        it is read: this team as the opponent, this slice as the
+                        Qualifier. */}
+                    {DIET_BASE_WIRE_NAMES[base] ? (
+                      <button
+                        type="button"
+                        className="sheet-save"
+                        aria-label={`Save ${group.name} as a Target`}
+                        title="Save as Target"
+                        onClick={() =>
+                          onCapture({
+                            opponent: team.tricode,
+                            base: DIET_BASE_WIRE_NAMES[base],
+                            sliceKey: group.sliceKey,
+                            leagueAverageShare: sliceLeagueAverageShare(
+                              players,
+                              base,
+                              group.sliceKey,
+                            ),
+                          })
+                        }
+                      >
+                        <Bookmark size={16} strokeWidth={2} aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                    {leans.length > 0 && (
+                      <ul className="sheet-leans" aria-label={`Players leaning on ${group.name}`}>
+                        {leans.map(({ player, share }) => (
+                          <li
+                            key={player.id}
+                            title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}`}
+                          >
+                            <span>{player.name}</span> <b>{Math.round(share.share * 100)}%</b>{' '}
+                            <em>+{share.sigmaDeviation.toFixed(1)}σ</em>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                );
+              })}
+              {groups.length > 0 && (
+                <div className="sheet-legend" aria-hidden="true">
+                  <span />
+                  {columns.map((column) => (
+                    <span key={column}>
+                      <em>fewest</em>
+                      <em>most</em>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {legacyUnavailableRow && (
+                <p className="honest-empty">
+                  Opponent rebounds unavailable for {windowLabel(windowKey)}.
+                </p>
+              )}
+            </section>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -646,6 +795,8 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
   );
 }
 
+const openingMarket = (markets) => (markets.includes('PTS') ? 'PTS' : 'All');
+
 function Detail({ matchup, gameId }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const now = useMinuteNow(true);
@@ -653,12 +804,12 @@ function Detail({ matchup, gameId }) {
   const initialTeam =
     matchup.teams.find((team) => team.tricode === homeTricode) || matchup.teams[0];
   const [teamId, setTeamId] = useState(initialTeam.teamId);
-  const [market, setMarket] = useState('All');
   const [windowKey, setWindowKey] = useState('season');
   const [deviation, setDeviation] = useState(1);
   const selectedId = searchParams.get('player');
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
+  const railHeading = useRef(null);
   const [selectionState, setSelectionState] = useState({
     status: 'idle',
     playerId: null,
@@ -698,14 +849,16 @@ function Detail({ matchup, gameId }) {
     ],
     [opposingPlayers],
   );
-  const windowSection = historical
-    ? sections[windowKey === 'season' ? 'seasonDefense' : 'last15Defense']
-    : null;
+  // The page opens on points when the players on the sheet's other side have
+  // points, and the rail reads the same stat the sheet is filtered to.
+  // A chosen stat the other side does not have falls back the same way.
+  const [chosenMarket, setMarket] = useState(null);
+  const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
-  useEffect(() => {
-    if (!markets.includes(market)) setMarket('All');
-  }, [market, markets]);
+  const injuriesAvailable = historical
+    ? sections.injuries.status === 'available'
+    : matchup.injuries.status !== 'unavailable';
   useEffect(() => {
     if (!selectedPlayer) {
       setSelectionState({ status: 'idle', playerId: null, data: null, error: null });
@@ -739,7 +892,9 @@ function Detail({ matchup, gameId }) {
   }, [experienceMode, gameId, selectedPlayer]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
-      selectionTriggers.current.get(previousSelectedId.current)?.focus();
+      // The stat in view can hide the row that opened the card (a deep link
+      // to a player without it), so the rail heading keeps focus on the page.
+      (selectionTriggers.current.get(previousSelectedId.current) || railHeading.current)?.focus();
     }
     previousSelectedId.current = selectedId;
   }, [selectedId]);
@@ -760,20 +915,12 @@ function Detail({ matchup, gameId }) {
       <header className="matchup-heading">
         <div>
           <Link to="/matchups">← Back to slate</Link>
-          <p className="matchup-eyebrow">
-            {historical
-              ? 'Historical Matchup · stored evidence'
-              : 'Open Team Sheets · live contract'}
-          </p>
+          <p className="matchup-eyebrow">Matchup</p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
-        {historical ? (
-          <HistoricalEvidence sections={sections} />
-        ) : (
-          <Freshness freshness={matchup.freshness} now={now} />
-        )}
+        <MatchupSummary matchup={matchup} now={now} />
       </header>
       {matchup.game.preseason && (
         <p
@@ -787,20 +934,9 @@ function Detail({ matchup, gameId }) {
       <div className="detail-grid">
         <div className="matchup-sidebar">
           <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
-          <p className="sheet-instruction">
-            Tap a player to trace their rows across the sheet; use the score card for the full
-            dossier.
-          </p>
-          {historical && sections.injuries.status !== 'available' ? (
-            <section className="injury-report" aria-labelledby="injury-heading">
-              <h2 id="injury-heading">Injuries</h2>
-              <p className="honest-empty">{sectionReason(sections.injuries)}</p>
-            </section>
-          ) : (
-            <InjuryReport injuries={matchup.injuries} now={now} />
-          )}
           <PlayerRail
             players={opposingPlayers}
+            teamTricode={opposingTeam?.tricode}
             injuries={matchup.injuries}
             historical={historical}
             unavailableMessage={
@@ -816,7 +952,10 @@ function Detail({ matchup, gameId }) {
             selectedId={selectedId}
             onSelect={(player) => updateSelectedPlayer(player.id)}
             registerTrigger={registerTrigger}
+            headingRef={railHeading}
           />
+          {/* An injury report nobody has is named in the summary sentence. */}
+          {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">
@@ -831,6 +970,11 @@ function Detail({ matchup, gameId }) {
                       type="button"
                       aria-pressed={windowKey === item.key}
                       disabled={item.key === 'last15' && last15Blocked}
+                      title={
+                        item.key === 'last15' && last15Blocked
+                          ? sectionReason(last15Section)
+                          : undefined
+                      }
                       key={item.key}
                       onClick={() => setWindowKey(item.key)}
                     >
@@ -857,10 +1001,6 @@ function Detail({ matchup, gameId }) {
                 </div>
               </div>
             </div>
-            {windowSection?.context && (
-              <p className="window-context">{contextLabel(windowSection)}</p>
-            )}
-            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
             <div
               className="market-tabs"
               role="group"
@@ -904,7 +1044,7 @@ function Detail({ matchup, gameId }) {
               it. The live journey keeps the gate it has always had. */}
           {!historical && matchup.freshness.stats.status === 'missing' ? (
             <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
-              <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
+              <h2 id="defense-sheet-heading">What {defenseTeam.tricode} allows</h2>
               <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
             </section>
           ) : (
@@ -916,11 +1056,6 @@ function Detail({ matchup, gameId }) {
               deviation={deviation}
               selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
               surfaceAvailability={matchup.league.surfaceAvailability}
-              provenance={
-                windowSection
-                  ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
-                  : null
-              }
               onCapture={setCapture}
             />
           )}

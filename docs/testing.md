@@ -115,7 +115,11 @@ The Matchup contract serves two games. `0022500584` is the current/live slate ma
 is the completed-season LAC @ MIL Historical Matchup: every Season defense Surface published, Last 15
 unavailable for want of a point-in-time snapshot, no archived DFS markets, and canonical game-log
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
-single integrated journey rather than splitting it across implementation-shaped tests.
+single integrated journey rather than splitting it across implementation-shaped tests. On the live
+game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on his points, and only
+PrizePicks numbers his rebounds), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
+Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
+carries `lines: {}`.
 
 Target resolution is composed from those same two Matchups rather than canned, so the shares and
 Defense Sheet readings a Target shows are the ones the Matchup page shows for the same game.

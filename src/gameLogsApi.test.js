@@ -69,6 +69,7 @@ describe('gameLogsApi', () => {
       averages: [{ PTS: 20 }, { PTS: 21 }],
       seasonGameCount: 71,
       nextGame: 'Boston Celtics',
+      playerId: null,
     });
   });
 
@@ -84,6 +85,17 @@ describe('gameLogsApi', () => {
       expect(
         decodeGameLogsResponse({ game_logs: [], season_game_count: value }).seasonGameCount,
       ).toBeNull();
+    },
+  );
+
+  test('reads the player id that names their headshot', () => {
+    expect(decodeGameLogsResponse({ game_logs: [], player_id: 2544 }).playerId).toBe(2544);
+  });
+
+  test.each([undefined, null, 0, -1, 2.5, '2544'])(
+    'reads a player id of %p as unknown',
+    (value) => {
+      expect(decodeGameLogsResponse({ game_logs: [], player_id: value }).playerId).toBeNull();
     },
   );
 

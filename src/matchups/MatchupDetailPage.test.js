@@ -1853,7 +1853,6 @@ test('leaves the threshold to be typed when the slice publishes no league averag
   expect(
     within(dialog).getByText('Every threshold must be a share between 0% and 100%.'),
   ).toBeVisible();
-  expect(within(dialog).getByText(/no league average published for this slice/)).toBeVisible();
 
   fireEvent.change(thresholdField(dialog), { target: { value: '32' } });
   expect(within(dialog).getByRole('button', { name: 'Save Target' })).toBeEnabled();

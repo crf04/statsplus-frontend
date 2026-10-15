@@ -249,13 +249,6 @@
   background: transparent;
 }
 
-.target-capture-source {
-  margin: 0 0 12px;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.68rem;
-}
-
 /* The page composer uses the same accessible dialog behavior as Defense Sheet
    capture, while keeping its wider Lab readable and its body bounded on short
    screens. */
@@ -769,4 +762,25 @@
 .sample-targets-intro h2 {
   color: var(--ct-text);
   font: 600 1.3rem var(--ct-display);
+}
+
+/* Both composers, Defense Sheet capture and + New Target, put the form and its
+   Backtest side by side, so a moved threshold is read without scrolling;
+   narrower screens stack them, form first. */
+@media (min-width: 992px) {
+  .modal-dialog.target-compose-dialog {
+    max-width: min(1100px, calc(100vw - 3rem));
+  }
+
+  .target-compose-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+
+  .target-compose-form {
+    position: sticky;
+    top: 0;
+  }
 }

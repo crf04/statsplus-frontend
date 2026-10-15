@@ -6,7 +6,7 @@ import TargetForm from './TargetForm';
 import TargetLab from './TargetLab';
 import { LabSeasonProvider } from './backtestSample';
 import { SeasonMinutesProvider } from './useTargets';
-import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
+import { shareToThresholdPercent } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
 
@@ -117,8 +117,9 @@ function TargetCaptureContent({ capture, onHide }) {
       show={Boolean(capture)}
       onHide={onHide}
       centered
-      // Wide enough for the Lab's table beneath the form.
+      // Wide enough for the form and the Lab side by side.
       size="xl"
+      dialogClassName="target-compose-dialog"
       contentClassName="target-capture"
       aria-labelledby="target-capture-title"
     >
@@ -130,31 +131,29 @@ function TargetCaptureContent({ capture, onHide }) {
       <Modal.Body>
         {draft && (
           <LabSeasonProvider>
-            <p className="target-capture-source">
-              From the {state.capture.opponent} Defense Sheet ·{' '}
-              {targetSliceLabel(state.capture.base, state.capture.sliceKey)}
-              {typeof state.capture.leagueAverageShare === 'number'
-                ? ' · threshold starts at the league average'
-                : ' · no league average published for this slice'}
-            </p>
-            <TargetForm
-              draft={draft}
-              busy={saving}
-              lockOpponent
-              onChange={(patch) =>
-                setState((current) => ({ ...current, draft: { ...current.draft, ...patch } }))
-              }
-              onSubmit={save}
-              onCancel={onHide}
-            />
-            {error && (
-              <p className="target-error" role="alert">
-                {error}
-              </p>
-            )}
-            {/* A Target born from a Defense Sheet row is tuned right here,
-                against the season the row prompted a look at. */}
-            <TargetLab draft={draft} />
+            <div className="target-compose-layout">
+              <div className="target-compose-form">
+                <TargetForm
+                  draft={draft}
+                  busy={saving}
+                  lockOpponent
+                  onChange={(patch) =>
+                    setState((current) => ({ ...current, draft: { ...current.draft, ...patch } }))
+                  }
+                  onSubmit={save}
+                  onCancel={onHide}
+                />
+                {error && (
+                  <p className="target-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+              {/* A Target born from a Defense Sheet row is tuned right here,
+                  against the season the row prompted a look at, with the
+                  result beside the controls that move it. */}
+              <TargetLab draft={draft} />
+            </div>
           </LabSeasonProvider>
         )}
       </Modal.Body>

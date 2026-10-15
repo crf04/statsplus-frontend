@@ -14,6 +14,7 @@ const BASE_LABELS = {
   assistLocations: 'Assist locations',
   traditional: 'Traditional',
 };
+const BOOKS_SHOWN = 4;
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
 const formatDelta = (value) => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
@@ -43,6 +44,81 @@ const gameWhen = (game) => {
   const time = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   return `${day}, ${time}`;
 };
+
+const formatPrice = (price) => (price === null ? '—' : price > 0 ? `+${price}` : `${price}`);
+const asOfTime = (stamp) => {
+  const when = new Date(stamp);
+  if (Number.isNaN(when.getTime())) return null;
+  return when.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+};
+
+// Sportsbook quotes for the selected stat. The best price is the backend's
+// call (equal lines only); this table only marks it, with a star as well as
+// weight so colour is not the only signal.
+function BookLines({ market, quote }) {
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => setExpanded(false), [market]);
+  const hidden = quote.books.length - BOOKS_SHOWN;
+  const shown = expanded || hidden <= 0 ? quote.books : quote.books.slice(0, BOOKS_SHOWN);
+  const time = asOfTime(quote.asOf);
+  const price = (value, best) => (
+    <td className={best ? 'book-best' : undefined}>
+      {formatPrice(value)}
+      {best && (
+        <span role="img" aria-label="best price">
+          {' '}
+          ★
+        </span>
+      )}
+    </td>
+  );
+  return (
+    <section className="selection-panel selection-panel-books" aria-label="Sportsbooks">
+      <h3>
+        Sportsbooks · {market}
+        <span className="book-stamp">
+          {quote.closing ? 'Closing' : time ? `as of ${time}` : null}
+        </span>
+      </h3>
+      <div className="selection-table-wrap">
+        <table aria-label={`${market} sportsbook lines`} className="selection-books">
+          <thead>
+            <tr>
+              <th scope="col">Book</th>
+              <th scope="col">Line</th>
+              <th scope="col">Over</th>
+              <th scope="col">Under</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((entry) => (
+              <tr key={entry.book}>
+                <th scope="row">{bookName(entry.book)}</th>
+                <td>{entry.line}</td>
+                {price(entry.over, entry.bestOver)}
+                {price(entry.under, entry.bestUnder)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {hidden > 0 && (
+        <button
+          type="button"
+          className="book-more"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Show fewer' : `+${hidden} more`}
+        </button>
+      )}
+    </section>
+  );
+}
 
 function Cell({ component }) {
   if (!component) return <span className="score-none">—</span>;
@@ -341,6 +417,9 @@ export default function SelectionCard({
           )}
         </section>
       </div>
+      {player.bookLines?.[activeStat]?.books.length > 0 && (
+        <BookLines market={activeStat} quote={player.bookLines[activeStat]} />
+      )}
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
         .map(({ market }) => (

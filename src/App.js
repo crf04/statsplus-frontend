@@ -8,6 +8,15 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/home-feature-previews): the standalone
+// build serves captured data to the home page with a fake signed-in user.
+import { PROTO_STANDALONE } from './homePreviewPrototype/prototypeMode';
+import { installMockApi } from './homePreviewPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (window.location.pathname !== '/') window.history.replaceState(null, '', '/#proto=home&v=A');
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

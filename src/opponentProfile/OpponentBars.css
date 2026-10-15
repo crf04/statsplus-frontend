@@ -1,0 +1,214 @@
+/* Opposing Team Profile: each reading as a bar diverging from league average. */
+
+.opp-bars {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  text-align: left;
+}
+
+.opp-bars-value,
+.opp-bars-vs,
+.opp-bars-group-head,
+.opp-bars-scale-track {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.opp-bars-columns {
+  display: grid;
+  gap: 4px 28px;
+}
+.opp-bars-column {
+  min-width: 0;
+}
+
+.opp-bars-row,
+.opp-bars-scale {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 4.2em 22px;
+  align-items: center;
+  gap: 10px;
+}
+.opp-bars-row {
+  padding: 5px 0;
+}
+
+.opp-bars-label {
+  font-size: 13.5px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.opp-bars-value {
+  display: block;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+
+.opp-bars-track {
+  position: relative;
+  height: 14px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.opp-bars-axis {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--ct-line-strong);
+}
+.opp-bars-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 2px;
+}
+.opp-bars-fill-more {
+  background: linear-gradient(90deg, rgba(76, 175, 125, 0.55), var(--ct-hit));
+  border-radius: 0 3px 3px 0;
+}
+.opp-bars-fill-less {
+  background: linear-gradient(270deg, rgba(194, 78, 78, 0.55), var(--ct-miss));
+  border-radius: 3px 0 0 3px;
+}
+
+.opp-bars-vs {
+  font-size: 12.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.opp-bars-vs-more {
+  color: var(--ct-hit);
+}
+.opp-bars-vs-less {
+  color: #e07a6c;
+}
+.opp-bars-vs-flat {
+  color: var(--ct-dim);
+}
+
+.opp-bars .opp-bars-rank {
+  width: 20px;
+  height: 20px;
+  font-size: 0.62rem;
+}
+.opp-bars-rank-none {
+  color: var(--ct-dim);
+  text-align: center;
+}
+
+.opp-bars-scale {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+.opp-bars-scale-track {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ct-dim);
+}
+
+.opp-bars-group {
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--ct-line);
+}
+.opp-bars-group-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ct-gold);
+}
+.opp-bars-group-head {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ct-text);
+}
+.opp-bars-cont {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ct-dim);
+}
+
+.opp-bars-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+.opp-bars-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+/* Stacked, a split list reads as one: no second scale, no seam, no "cont." */
+.opp-bars-columns-split .opp-bars-column + .opp-bars-column .opp-bars-scale {
+  display: none;
+}
+.opp-bars-group-continues {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.opp-bars-group-continued {
+  padding-top: 0;
+}
+.opp-bars-group-continued > .opp-bars-group-title {
+  display: none;
+}
+
+@container (max-width: 380px) {
+  .opp-bars-row,
+  .opp-bars-scale {
+    grid-template-columns: minmax(0, 7em) minmax(0, 1fr) 3.8em 20px;
+    gap: 6px;
+  }
+}
+
+/* Side by side only when each column keeps a readable bar. */
+@container (min-width: 600px) {
+  .opp-bars-columns-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .opp-bars-columns-split .opp-bars-column + .opp-bars-column .opp-bars-scale {
+    display: grid;
+  }
+  .opp-bars-group-continues {
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--ct-line);
+  }
+  .opp-bars-group-continued {
+    padding-top: 4px;
+  }
+  .opp-bars-group-continued > .opp-bars-group-title {
+    display: flex;
+  }
+  .opp-bars-columns-split .opp-bars-row,
+  .opp-bars-columns-split .opp-bars-scale {
+    grid-template-columns: minmax(0, 7.2em) minmax(0, 1fr) 3.7em 20px;
+    gap: 7px;
+  }
+  .opp-bars-columns-split .opp-bars-label {
+    font-size: 13px;
+  }
+  .opp-bars-columns-split .opp-bars-vs {
+    font-size: 12px;
+  }
+}

@@ -1186,3 +1186,48 @@
     margin-top: 24px;
   }
 }
+
+/* ---- M: everything tonight-related below the ladder ----------------------- */
+.hp-reference-up {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ct-gold) !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.hp-bottom {
+  width: min(900px, 100%);
+  margin: 64px auto 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--ct-line);
+}
+.hp-bottom-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  text-align: left;
+}
+.hp-bottom-targets {
+  margin: 36px auto 0;
+}
+@media (max-width: 700px) {
+  .hp-bottom-pair {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .hp-bottom .hp-flank-right .hp-slim {
+    border-right: 0;
+    border-left: 2px solid var(--ct-miss);
+    background: linear-gradient(90deg, rgba(13, 11, 7, 0.85), rgba(13, 11, 7, 0.4));
+    text-align: left;
+  }
+  .hp-bottom .hp-flank-right .hp-slim-head {
+    flex-direction: row;
+  }
+  .hp-bottom .hp-flank-right .hp-slim-cta {
+    align-self: flex-start;
+  }
+}

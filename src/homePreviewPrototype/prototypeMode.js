@@ -12,9 +12,25 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'home';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['K', 'L', 'I', 'J', 'H', 'F', 'G', 'E', 'A', 'B', 'C', 'D', 'Now'];
+export const VARIANT_KEYS = [
+  'M',
+  'K',
+  'L',
+  'I',
+  'J',
+  'H',
+  'F',
+  'G',
+  'E',
+  'A',
+  'B',
+  'C',
+  'D',
+  'Now',
+];
 
 export const VARIANT_NAMES = {
+  M: 'Hero alone; matchups + Targets at the bottom',
   K: 'I, calmer: slim matchups, one-line Targets',
   L: 'K without Targets',
   I: 'Matchups flank the headline, Targets row below',
@@ -43,8 +59,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'K';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'K';
+  const key = hash.get('v') || 'M';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'M';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);

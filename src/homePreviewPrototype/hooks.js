@@ -8,6 +8,7 @@
  *   answer under it, so the payoff shows before anyone types.
  */
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { QUERY_LADDER, splitAddedClause } from '../help/queryHelp';
 import { targetSliceLabel } from '../targets/targetCatalog';
 import hooks from './mock/hooks.json';
@@ -117,7 +118,7 @@ const Bars = ({ series, average }) => {
   );
 };
 
-export const AnswerLadder = ({ onUseQuery, compact = false }) => (
+export const AnswerLadder = ({ onUseQuery, compact = false, referenceUp = false }) => (
   <section
     className={`query-ladder hp-answers${compact ? ' hp-answers-compact' : ''}`}
     aria-labelledby="hp-answers-heading"
@@ -127,6 +128,11 @@ export const AnswerLadder = ({ onUseQuery, compact = false }) => (
         One question, three steps
       </h2>
       <p className="query-ladder-sub">Real answers from last season. Click one to load it.</p>
+      {referenceUp && (
+        <Link to="/help" className="hp-reference-up">
+          Every filter we understand <ArrowRight size={13} aria-hidden="true" />
+        </Link>
+      )}
     </div>
     <ol className="query-ladder-rungs">
       {QUERY_LADDER.map((step, index) => {

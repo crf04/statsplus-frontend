@@ -538,10 +538,60 @@ const Calm = ({ props, withTargets }) => {
     />
   );
 };
+/* M: the hero alone; matchups and Targets move below the ladder. */
+const VariantM = (props) => {
+  const { slate, targets } = props.data;
+  const { best, worst, bestGame, worstGame } = spotPicks(slate);
+  return (
+    <VariantE
+      {...props}
+      ladder={
+        <>
+          <AnswerLadder onUseQuery={props.onUseQuery} compact referenceUp />
+          <section className="hp-bottom" aria-label="Tonight">
+            <div className="hp-bottom-pair">
+              <div className="hp-flank-left">
+                <SlimSpot
+                  kind="Best matchup tonight"
+                  pick={best}
+                  game={bestGame}
+                  onUseQuery={props.onUseQuery}
+                />
+              </div>
+              <div className="hp-flank-right">
+                <SlimSpot
+                  kind="Toughest matchup tonight"
+                  pick={worst}
+                  game={worstGame}
+                  onUseQuery={props.onUseQuery}
+                />
+              </div>
+            </div>
+            {targets && (
+              <div className="hp-tlines hp-bottom-targets">
+                <div className="hp-tlines-head">
+                  <span className="hp-kicker">Your Targets firing tonight</span>
+                  <ProtoLink to="/targets" className="hp-more">
+                    All {targets.firing.length} →
+                  </ProtoLink>
+                </div>
+                {targets.firing.slice(0, 2).map((entry) => (
+                  <TargetLine key={entry.target.id} entry={entry} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      }
+    />
+  );
+};
+
 const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  M: VariantM,
   K: VariantK,
   L: VariantL,
   I: VariantI,

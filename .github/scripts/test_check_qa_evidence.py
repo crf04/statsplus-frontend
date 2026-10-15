@@ -54,9 +54,11 @@ class CheckQaEvidenceTest(unittest.TestCase):
 
     def check(self, body):
         (self.repo / ".body").write_text(body)
+        # The workflow runs from .github/scripts, below the repository root.
+        (self.repo / ".github/scripts").mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
-            [sys.executable, str(SCRIPT), "--body-file", ".body", "--base", self.base, "--head", self.rev()],
-            cwd=self.repo,
+            [sys.executable, str(SCRIPT), "--body-file", str(self.repo / ".body"), "--base", self.base, "--head", self.rev()],
+            cwd=self.repo / ".github/scripts",
             capture_output=True,
             text=True,
             env={**os.environ, "GITHUB_EVENT_PATH": ""},
@@ -120,7 +122,22 @@ class CheckQaEvidenceTest(unittest.TestCase):
 
     def test_a_gates_only_change_needs_no_evidence(self):
         self.commit({"src/App.jsx": "v2"})
-        self.assertEqual(self.check("Live checks: gates only\n\nRefactor; Jest covers it.")[0], 0)
+        self.assertEqual(self.check("Live checks: gates only\n\nsrc/App.test.jsx covers the refactor.")[0], 0)
+
+    def test_a_gates_only_change_must_name_its_tests(self):
+        self.commit({"src/App.jsx": "v2"})
+        code, output = self.check("Live checks: gates only\n\nRefactor; Jest covers it.")
+        self.assertEqual(code, 1)
+        self.assertIn("names the tests", output)
+
+    def test_merging_a_runtime_change_from_master_after_qa_needs_a_new_run(self):
+        tested = self.commit({"src/App.jsx": "v2"})
+        self.git("checkout", "-q", "master")
+        self.commit({"src/api.js": "new endpoint"})
+        self.git("checkout", "-q", "feature")
+        self.git("-c", "core.editor=true", "merge", "-q", "--no-ff", "master")
+        code, _ = self.check("Live checks: user-visible\n\n" + evidence("qa", tested))
+        self.assertEqual(code, 1)
 
     def test_a_change_to_no_runtime_file_needs_nothing(self):
         self.commit({"docs/a.md": "b", ".github/workflows/ci.yml": "x", "src/App.test.jsx": "t"})

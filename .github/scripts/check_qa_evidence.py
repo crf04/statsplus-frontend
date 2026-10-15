@@ -12,9 +12,11 @@ line of its body:
   verify-statsplus.
 - boundary: the body also includes a passed production evidence.md table.
 
-An evidence table counts only when its Frontend revision has the same runtime
-files this pull request changes as the head does, so a later change to the app
-needs a new run. Commit before running QA: uncommitted edits are invisible here.
+A `gates only` pull request names the tests that cover it (a `*.test.js(x)`,
+`__tests__` or `e2e/` path). An evidence table counts only when no runtime file
+differs between its Frontend revision and the head, so a later change to the
+app, including one merged in from master, needs a new run. Commit before
+running QA: uncommitted edits are invisible here.
 
 Usage: check_qa_evidence.py [--body-file FILE] [--base REF] [--head REF]
 Without arguments it reads the pull request event in GitHub Actions.
@@ -57,6 +59,7 @@ NON_RUNTIME = [
 LIVE_CHECKS = re.compile(
     r"^[\s>*_-]*live checks[*_]*:[*_\s]*(user-visible|boundary|gates only)\b", re.I | re.M
 )
+TEST_REFERENCE = re.compile(r"\.test\.jsx?\b|__tests__/|\be2e/\S")
 EVIDENCE_HEADER = re.compile(r"^\s*\|\s*Evidence\s*\|\s*Value\s*\|\s*$")
 ROW = re.compile(r"^\s*\|(.*)\|\s*$")
 
@@ -89,6 +92,7 @@ def evidence_tables(body: str) -> list[dict[str, str]]:
 
 
 def git(*arguments: str) -> subprocess.CompletedProcess:
+    # No pathspecs: --name-only lists paths from the repository root in any cwd.
     return subprocess.run(["git", *arguments], capture_output=True, text=True)
 
 
@@ -99,14 +103,15 @@ def changed_runtime_files(base: str, head: str) -> list[str]:
     return [path for path in result.stdout.split() if is_runtime(path)]
 
 
-def covers(revision: str, head: str, files: list[str]) -> bool:
-    """True when the evidence revision has the head's version of every file."""
+def covers(revision: str, head: str) -> bool:
+    """True when no runtime file differs between the evidence revision and head."""
     if not re.fullmatch(r"[0-9a-f]{7,40}", revision):
         return False
     commit = git("rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}")
     if commit.returncode:
         return False
-    return git("diff", "--quiet", commit.stdout.strip(), head, "--", *files).returncode == 0
+    result = git("diff", "--name-only", "--no-renames", commit.stdout.strip(), head)
+    return result.returncode == 0 and not any(is_runtime(path) for path in result.stdout.split())
 
 
 def problems(body: str, files: list[str], covered) -> list[str]:
@@ -121,7 +126,12 @@ def problems(body: str, files: list[str], covered) -> list[str]:
             "or 'Live checks: gates only' line (see the coordination CLAUDE.md)."
         ]
     if declared == "gates only":
-        return []
+        if TEST_REFERENCE.search(body):
+            return []
+        return [
+            "A gates only change names the tests that cover it: cite a *.test.js(x), "
+            "__tests__ or e2e/ path in the description."
+        ]
     needed = ["qa"] + (["production"] if declared == "boundary" else [])
     found = []
     for table in evidence_tables(body):
@@ -131,8 +141,8 @@ def problems(body: str, files: list[str], covered) -> list[str]:
             found.append(table.get("Environment"))
     return [
         f"A {declared} change needs a passed {environment} evidence.md table "
-        "from verify-statsplus whose Frontend revision has this pull request's "
-        "runtime files. Run it at the current head and paste its evidence.md."
+        "from verify-statsplus whose Frontend revision has the head's runtime files. "
+        "Run it at the current head and paste its evidence.md."
         for environment in needed
         if environment not in found
     ]
@@ -152,7 +162,7 @@ def main() -> int:
         body = pull.get("body") or ""
         base, head = pull["base"]["sha"], pull["head"]["sha"]
     files = changed_runtime_files(base, head)
-    found = problems(body, files, lambda revision: covers(revision, head, files))
+    found = problems(body, files, lambda revision: covers(revision, head))
     for problem in found:
         print(f"::error::{problem}")
     if not found:

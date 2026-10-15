@@ -28,6 +28,7 @@ separately. Include video or other action/result evidence where relevant.
 Paste each verify-statsplus run's `evidence.md`. Once this pull request is
 ready, the QA evidence check fails a runtime change unless user-visible has a
 passed QA table and boundary also a passed production table, each from a
-committed revision with this pull request's runtime files:
+committed revision whose runtime files match the head; gates only names its
+test files instead:
 
 Known failures, untested surfaces, or disabled integrations:

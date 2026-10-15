@@ -2482,6 +2482,9 @@ test('a category only sportsbooks quote is reachable from the strip without beco
 
   await userEvent.click(within(strip).getByRole('button', { name: 'AST' }));
 
+  expect(within(strip).getByRole('button', { name: 'AST' })).toHaveAccessibleDescription(
+    'Quoted by sportsbooks only',
+  );
   const table = screen.getByRole('table', { name: 'AST sportsbook lines' });
   expect(
     within(table)

@@ -287,6 +287,22 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
           <span className="fpb-eyebrow">Showing</span>
           <h2>{panel.selectedPlayer}&rsquo;s games</h2>
         </div>
+        {panel.seasons && (
+          <label className="fpb-season">
+            <span>Season</span>
+            <select
+              className="fp-select"
+              value={panel.season}
+              onChange={(e) => panel.changeSeason(e.target.value)}
+            >
+              {panel.seasons.map((season) => (
+                <option key={season} value={season}>
+                  {season}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {rules.length > 0 ? (
           <ul className="fpb-rules">{rules}</ul>
         ) : (

@@ -1,5 +1,7 @@
 // One state model owns draft filters and the URL patch emitted on Apply.
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchSeasons } from '../seasonsApi';
 import {
   OPPONENT_FILTERS,
   encodeRankRange,
@@ -89,6 +91,7 @@ export const defensiveCategoryItems = (category) =>
 const useFilterPanel = ({
   playerList,
   onApplyFilters,
+  onSeasonChange,
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
@@ -96,6 +99,10 @@ const useFilterPanel = ({
   onOpenSelfFilters,
   appliedFilters,
 }) => {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  // Null until the list arrives, and again if it never does: the control is
+  // only offered when there is a real choice to make.
+  const [seasonChoices, setSeasonChoices] = useState(null);
   const [selectedDefensiveFilter, setSelectedDefensiveFilter] = useState('None');
   const [activeDefensiveCategory, setActiveDefensiveCategory] = useState(
     DEFAULT_DEFENSIVE_CATEGORY,
@@ -120,6 +127,21 @@ const useFilterPanel = ({
   const [touchedControls, setTouchedControls] = useState(() => new Set());
   // controls changed since the last apply, for the "n unapplied" hint.
   const [dirty, setDirty] = useState(() => new Set());
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return undefined;
+    let current = true;
+    fetchSeasons()
+      .then((choices) => {
+        if (current) setSeasonChoices(choices);
+      })
+      .catch(() => {
+        if (current) setSeasonChoices(null);
+      });
+    return () => {
+      current = false;
+    };
+  }, [authLoading, isAuthenticated]);
 
   const markControlTouched = useCallback((control) => {
     setTouchedControls((previous) => {
@@ -480,6 +502,10 @@ const useFilterPanel = ({
     setDirty(new Set());
   };
 
+  // A season is not a draft: choosing one applies at once, beside whatever
+  // else the URL already holds. Clear all leaves it alone.
+  const changeSeason = (season) => onSeasonChange(season);
+
   // back to API defaults for every control, then apply.
   const resetAll = () => {
     onApplyFilters({
@@ -528,6 +554,16 @@ const useFilterPanel = ({
     (summary.opponent ? 1 : 0) +
     (summary.defense?.length || 0) +
     (summary.self?.length || 0);
+
+  const season = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
+  // A link may name a season the list does not (yet) hold; keep it selectable
+  // so the control never shows a season the results are not.
+  const seasonOptions =
+    seasonChoices && seasonChoices.seasons.length >= 2
+      ? seasonChoices.seasons.includes(season) || !season
+        ? seasonChoices.seasons
+        : [season, ...seasonChoices.seasons]
+      : null;
 
   return {
     selectedPlayer,
@@ -584,6 +620,10 @@ const useFilterPanel = ({
     columnRanges,
     seasonGameLogsLoading,
     seasonGameLogsFailed,
+    // season
+    seasons: seasonOptions,
+    season,
+    changeSeason,
     // apply
     apply,
     resetAll,

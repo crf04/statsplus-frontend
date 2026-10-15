@@ -128,6 +128,9 @@ const decodeGame = (game) => {
   };
 };
 
+// An older backend omits the neighbours, which reads the same as having none.
+const decodeNeighbourDate = (value) => (isCalendarDate(value) ? value : null);
+
 export const decodeSlate = (data) => {
   if (!data || !isCalendarDate(data.slate_date) || !Array.isArray(data.games) || !data.freshness) {
     throw createInvalidSlateError();
@@ -137,6 +140,8 @@ export const decodeSlate = (data) => {
 
   return {
     slateDate: data.slate_date,
+    previousGameDate: decodeNeighbourDate(data.previous_game_date),
+    nextGameDate: decodeNeighbourDate(data.next_game_date),
     freshness,
     games: data.games.map(decodeGame),
   };

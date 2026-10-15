@@ -9,6 +9,8 @@
  *   C1 Plain rows   one row per sheet row, label + rank words, big % on the right
  *   C2 Merged       one row per slice, its measures side by side (Cut: poss | pts)
  *   C3 Bars         a diverging bar around league average, the length is the %
+ *   C4 Cards        today's card look (rank squares, pill chips) with the fixes above
+ *   C5 Cards merged C4, one card per slice with its measures side by side
  */
 import { Bookmark } from 'lucide-react';
 import { DIET_BASE_WIRE_NAMES } from '../matchupApi';
@@ -155,6 +157,40 @@ function Leans({ players, base, sliceKey, market }) {
   );
 }
 
+function LeanChips({ players, base, sliceKey, market }) {
+  const leans = leansFor(players, base, sliceKey, market);
+  if (!leans.length) return null;
+  return (
+    <div className="pc-chips">
+      {leans.slice(0, 3).map(({ player, share }) => (
+        <span
+          key={player.id}
+          title={`${player.name}: ${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}, ${share.sigmaDeviation > 0 ? '+' : ''}${share.sigmaDeviation.toFixed(1)}σ vs league`}
+        >
+          {shortName(player.name)} <b>{Math.round(share.share * 100)}%</b>
+        </span>
+      ))}
+      {leans.length > 3 && (
+        <span
+          className="more"
+          title={leans
+            .slice(3)
+            .map(({ player }) => player.name)
+            .join(', ')}
+        >
+          +{leans.length - 3}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const RankSquare = ({ rank }) => (
+  <span className="rank-pill pc-rank" style={{ '--rank': rank }} aria-hidden="true">
+    {rank}
+  </span>
+);
+
 function SaveButton({ row, base, team, players, onCapture }) {
   if (!DIET_BASE_WIRE_NAMES[base]) return null;
   return (
@@ -216,83 +252,131 @@ export default function ProtoSheet(props) {
       {sections.map(({ base, rows }) => (
         <section className="ps-base" key={base}>
           <h3>{BASE_LABELS[base] || base}</h3>
-          {style === 'C2'
-            ? mergeBySlice(rows).map((group) => (
+          {style === 'C4' || style === 'C5' ? (
+            <div className="pc-grid">
+              {(style === 'C5'
+                ? mergeBySlice(rows)
+                : rows.map((row) => ({ slice: row.key, sliceName: rowTitle(row), rows: [row] }))
+              ).map((group) => (
                 <article
                   key={group.slice}
-                  className={`ps-row${group.rows.some((row) => why(base, row)) ? ' why' : ''}`}
+                  className={`pc-card${group.rows.some((row) => why(base, row)) ? ' why' : ''}`}
                 >
-                  <div className="ps-merged">
-                    <div className="ps-label">
-                      <h4>{group.sliceName}</h4>
-                    </div>
-                    <div className="ps-cells">
-                      {group.rows.map((row) => {
-                        const stat = row[windowKey];
-                        const { measure } = splitKey(row.key);
-                        return (
-                          <span key={row.key} title={sigmaTitle(stat)}>
-                            <small>{MEASURE_SHORT[measure] || measure || 'Allowed'}</small>
-                            <b className={tone(stat.percentVsLeagueAverage)}>
-                              {pct(stat.percentVsLeagueAverage)}
-                            </b>
-                            <em>{rankWords(stat.rank).replace('Allows ', '')}</em>
-                          </span>
-                        );
-                      })}
-                    </div>
+                  <div className="pc-top">
+                    <h4>{group.sliceName}</h4>
                     <SaveButton row={group.rows[0]} base={base} {...props} />
                   </div>
-                  <Leans
+                  <div className="pc-stats">
+                    {group.rows.map((row) => {
+                      const stat = row[windowKey];
+                      const { measure } = splitKey(row.key);
+                      return (
+                        <div key={row.key} className="pc-stat" title={sigmaTitle(stat)}>
+                          <RankSquare rank={stat.rank} />
+                          <div>
+                            <b className={tone(stat.percentVsLeagueAverage)}>
+                              {pct(stat.percentVsLeagueAverage)}
+                              <small> vs league</small>
+                            </b>
+                            <span>
+                              {style === 'C5' && measure
+                                ? `${MEASURE_SHORT[measure] || measure} · `
+                                : ''}
+                              {rankWords(stat.rank)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <LeanChips
                     players={players}
                     base={base}
                     sliceKey={group.rows[0].sliceKey}
                     market={market}
                   />
                 </article>
-              ))
-            : rows.map((row) => {
-                const stat = row[windowKey];
-                const value = stat.percentVsLeagueAverage;
-                return (
-                  <article key={row.key} className={`ps-row${why(base, row) ? ' why' : ''}`}>
-                    {style === 'C3' ? (
-                      <div className="ps-bar-row" title={sigmaTitle(stat)}>
-                        <div className="ps-label">
-                          <h4>{rowTitle(row)}</h4>
-                          <span>{rankWords(stat.rank)}</span>
-                        </div>
-                        <div className="ps-bar" aria-hidden="true">
-                          <i
-                            className={tone(value)}
-                            style={{
-                              width: `${Math.min(50, (Math.abs(value ?? 0) / 30) * 50)}%`,
-                              [value >= 0 ? 'left' : 'right']: '50%',
-                            }}
-                          />
-                        </div>
-                        <b className={tone(value)}>{pct(value)}</b>
-                        <SaveButton row={row} base={base} {...props} />
+              ))}
+            </div>
+          ) : style === 'C2' ? (
+            mergeBySlice(rows).map((group) => (
+              <article
+                key={group.slice}
+                className={`ps-row${group.rows.some((row) => why(base, row)) ? ' why' : ''}`}
+              >
+                <div className="ps-merged">
+                  <div className="ps-label">
+                    <h4>{group.sliceName}</h4>
+                  </div>
+                  <div className="ps-cells">
+                    {group.rows.map((row) => {
+                      const stat = row[windowKey];
+                      const { measure } = splitKey(row.key);
+                      return (
+                        <span key={row.key} title={sigmaTitle(stat)}>
+                          <small>{MEASURE_SHORT[measure] || measure || 'Allowed'}</small>
+                          <b className={tone(stat.percentVsLeagueAverage)}>
+                            {pct(stat.percentVsLeagueAverage)}
+                          </b>
+                          <em>{rankWords(stat.rank).replace('Allows ', '')}</em>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <SaveButton row={group.rows[0]} base={base} {...props} />
+                </div>
+                <Leans
+                  players={players}
+                  base={base}
+                  sliceKey={group.rows[0].sliceKey}
+                  market={market}
+                />
+              </article>
+            ))
+          ) : (
+            rows.map((row) => {
+              const stat = row[windowKey];
+              const value = stat.percentVsLeagueAverage;
+              return (
+                <article key={row.key} className={`ps-row${why(base, row) ? ' why' : ''}`}>
+                  {style === 'C3' ? (
+                    <div className="ps-bar-row" title={sigmaTitle(stat)}>
+                      <div className="ps-label">
+                        <h4>{rowTitle(row)}</h4>
+                        <span>{rankWords(stat.rank)}</span>
                       </div>
-                    ) : (
-                      <div className="ps-plain" title={sigmaTitle(stat)}>
-                        <div className="ps-label">
-                          <h4>{rowTitle(row)}</h4>
-                          <span>
-                            {rankWords(stat.rank)} · {stat.allowedPer48.toFixed(1)} per 48
-                          </span>
-                        </div>
-                        <b className={tone(value)}>
-                          {pct(value)}
-                          <small>vs league</small>
-                        </b>
-                        <SaveButton row={row} base={base} {...props} />
+                      <div className="ps-bar" aria-hidden="true">
+                        <i
+                          className={tone(value)}
+                          style={{
+                            width: `${Math.min(50, (Math.abs(value ?? 0) / 30) * 50)}%`,
+                            [value >= 0 ? 'left' : 'right']: '50%',
+                          }}
+                        />
                       </div>
-                    )}
-                    <Leans players={players} base={base} sliceKey={row.sliceKey} market={market} />
-                  </article>
-                );
-              })}
+                      <b className={tone(value)}>{pct(value)}</b>
+                      <SaveButton row={row} base={base} {...props} />
+                    </div>
+                  ) : (
+                    <div className="ps-plain" title={sigmaTitle(stat)}>
+                      <div className="ps-label">
+                        <h4>{rowTitle(row)}</h4>
+                        <span>
+                          {rankWords(stat.rank)} · {stat.allowedPer48.toFixed(1)} per 48
+                        </span>
+                      </div>
+                      <b className={tone(value)}>
+                        {pct(value)}
+                        <small>vs league</small>
+                      </b>
+                      <SaveButton row={row} base={base} {...props} />
+                    </div>
+                  )}
+                  <Leans players={players} base={base} sliceKey={row.sliceKey} market={market} />
+                </article>
+              );
+            })
+          )}
         </section>
       ))}
     </section>

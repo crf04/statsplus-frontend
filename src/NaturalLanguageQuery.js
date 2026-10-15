@@ -199,7 +199,7 @@ const NaturalLanguageQuery = ({
           </h1>
           <p className="landing-tagline">
             {/* PROTOTYPE: variant Y tries a one-line tagline. */}
-            {proto.active && proto.variant === 'Y'
+            {proto.active && ['Y', 'Z'].includes(proto.variant)
               ? 'Name a player, add what matters, get the logs.'
               : 'Name a player, add what matters, and get back the exact games you meant.'}
           </p>

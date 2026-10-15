@@ -3,9 +3,10 @@
 **Question:** should the home page (`/`, the Query Prompt) preview Matchups
 and Targets, and in what shape?
 
-Variants on the real home, switched by `#proto=home&v=Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
+Variants on the real home, switched by `#proto=home&v=Z|Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
+- **Z** Y with three columns: Try a question | Tonight (Best, Toughest) | Your Targets
 - **Y** O with "Ask the box score" and a shorter tagline ("Name a player, add what matters, get the logs.") each on one line
 - **W** split: `/` is the Tonight home (T layout) with a search door; `/search` is the current Query Prompt + Log Workspace; nav Home | Search
 - **X** the same split with the V layout

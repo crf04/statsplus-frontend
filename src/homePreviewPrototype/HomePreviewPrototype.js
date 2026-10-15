@@ -678,14 +678,17 @@ const VariantN = (props) => {
 };
 
 const VariantO = (props) => {
-  const oneLine = props.variant === 'Y';
+  const oneLine = props.variant === 'Y' || props.variant === 'Z';
+  // Z: Targets get a third column of their own.
+  const three = props.variant === 'Z';
   const { bestCard, worstCard, targetList } = useTonight(props);
+  const { targets } = props.data;
   return (
     <VariantE
       {...props}
       heroSlot={<div className={`hp-o-hero${oneLine ? ' hp-one-line' : ''}`}>{props.hero}</div>}
       ladder={
-        <section className="hp-cols">
+        <section className={`hp-cols${three ? ' hp-cols3' : ''}`}>
           <div className="hp-col">
             <div className="hp-col-head">
               <h2 className="hp-section-title">Try a question</h2>
@@ -705,9 +708,24 @@ const VariantO = (props) => {
             <div className="hp-col-stack">
               {bestCard}
               {worstCard}
-              {targetList}
+              {!three && targetList}
             </div>
           </div>
+          {three && (
+            <div className="hp-col">
+              <div className="hp-col-head">
+                <h2 className="hp-section-title">Your Targets</h2>
+                <ProtoLink to="/targets" className="hp-more">
+                  {targets ? `${targets.firing.length} firing →` : 'All →'}
+                </ProtoLink>
+              </div>
+              <div className="hp-col-stack hp-col-targets">
+                {targets?.firing.slice(0, 3).map((entry) => (
+                  <TargetCard key={entry.target.id} entry={entry} density="compact" withMatchup />
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       }
     />
@@ -841,6 +859,7 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  Z: VariantO,
   Y: VariantO,
   W: VariantW,
   X: VariantX,

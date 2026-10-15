@@ -749,7 +749,7 @@ const VariantZ2 = (props) => {
           ) : (
             <LadderPath onUseQuery={props.onUseQuery} />
           )}
-          <section className="hp-cols hp-z2-cols">
+          <section className={`hp-cols hp-z2-cols${withBars ? ' hp-z3-cols' : ''}`}>
             <div className="hp-col">
               <div className="hp-col-head">
                 <h2 className="hp-section-title">Tonight</h2>
@@ -769,11 +769,21 @@ const VariantZ2 = (props) => {
                   {targets ? `All ${targets.firing.length} firing →` : 'All →'}
                 </ProtoLink>
               </div>
-              <div className="hp-z2-targets">
-                {targets?.firing.slice(0, 4).map((entry) => (
-                  <TargetLine key={entry.target.id} entry={entry} />
-                ))}
-              </div>
+              {withBars ? (
+                // Z3: two full cards, one beside each matchup, stretched to
+                // the Tonight column's height.
+                <div className="hp-col-stack hp-z3-targets">
+                  {targets?.firing.slice(0, 2).map((entry) => (
+                    <TargetCard key={entry.target.id} entry={entry} density="compact" withMatchup />
+                  ))}
+                </div>
+              ) : (
+                <div className="hp-z2-targets">
+                  {targets?.firing.slice(0, 4).map((entry) => (
+                    <TargetLine key={entry.target.id} entry={entry} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>

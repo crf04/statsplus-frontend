@@ -2098,3 +2098,33 @@
   width: min(980px, 100%);
   margin: -24px auto 64px;
 }
+
+/* ---- Z3: Targets as tall as Tonight ------------------------------------------ */
+.hp-z3-cols {
+  align-items: stretch;
+}
+.hp-z3-cols > .hp-col {
+  display: flex;
+  flex-direction: column;
+}
+.hp-z3-cols .hp-col-stack {
+  flex: 1;
+}
+.hp-z3-targets .hp-target {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.hp-z3-targets .hp-target + .hp-target {
+  margin-top: 0;
+}
+.hp-z3-targets .hp-target-foot {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.hp-z3-targets .hp-side-more {
+  margin-top: 0;
+}
+.hp-z3-cols .hp-col-stack > .hp-slim {
+  flex: 1;
+}

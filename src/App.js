@@ -10,12 +10,13 @@ import { reportRenderError } from './errorReporting';
 import './App.css';
 // PROTOTYPE (throwaway, branch prototype/home-feature-previews): the standalone
 // build serves captured data to the home page with a fake signed-in user.
-import { PROTO_STANDALONE } from './homePreviewPrototype/prototypeMode';
+import { PROTO_ENABLED, PROTO_STANDALONE, useVariant } from './homePreviewPrototype/prototypeMode';
 import { installMockApi } from './homePreviewPrototype/mock/install';
 
 if (PROTO_STANDALONE) {
   installMockApi();
-  if (window.location.pathname !== '/') window.history.replaceState(null, '', '/#proto=home&v=A');
+  if (!['/', '/search'].includes(window.location.pathname))
+    window.history.replaceState(null, '', '/#proto=home&v=W');
 }
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -64,6 +65,8 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
+  // PROTOTYPE (throwaway): the split variants give search its own page.
+  const { split } = useVariant();
 
   return (
     <header className="app-header">
@@ -72,9 +75,18 @@ function AppNav() {
           CourtAI
         </NavLink>
         <div className="app-links">
-          <NavLink to="/" end>
-            Search
-          </NavLink>
+          {split ? (
+            <>
+              <NavLink to="/" end>
+                Home
+              </NavLink>
+              <NavLink to="/search">Search</NavLink>
+            </>
+          ) : (
+            <NavLink to="/" end>
+              Search
+            </NavLink>
+          )}
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
           <NavLink to="/connect">Connect</NavLink>
@@ -100,6 +112,8 @@ function SignedInShell() {
       <RouteContent>
         <Routes>
           <Route path="/" element={<GameLogFilter />} />
+          {/* PROTOTYPE (throwaway): search on its own page for the split variants. */}
+          {PROTO_ENABLED && <Route path="/search" element={<GameLogFilter />} />}
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/matchups" element={<SlatePage />} />

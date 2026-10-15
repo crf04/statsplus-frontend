@@ -1962,3 +1962,41 @@
     font-size: 11.5px;
   }
 }
+
+/* ---- W/X: search door on the split home ------------------------------------- */
+.hp-door {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 6px 6px 6px 16px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  background: rgba(22, 19, 13, 0.9);
+  color: var(--ct-dim);
+}
+.hp-door:focus-within {
+  border-color: var(--ct-gold);
+}
+.hp-door input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ct-text);
+  font-size: 14px;
+  outline: none;
+}
+.hp-door button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+  font-size: 13px;
+  font-weight: 700;
+}

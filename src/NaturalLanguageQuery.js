@@ -247,7 +247,7 @@ const NaturalLanguageQuery = ({
             type="button"
             className="prompt-browse-button"
             disabled={isLoading || !isAuthenticated}
-            onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
+            onClick={() => navigate(`${location.pathname}?${BROWSE_PARAM}=1`)}
           >
             Browse without a query
           </button>
@@ -279,7 +279,8 @@ const NaturalLanguageQuery = ({
         )}
       </>
     );
-    if (proto.active) {
+    // PROTOTYPE: /search always shows the real Query Prompt.
+    if (proto.active && location.pathname === '/') {
       return (
         <HomePreviewPrototype
           hero={hero}

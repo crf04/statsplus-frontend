@@ -3,6 +3,9 @@
  * game-log search drops to a compact bar (the real form, restyled by
  * `.hp-compact-search`).
  */
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Search } from 'lucide-react';
 import LandingCourt from '../LandingCourt';
 import { DEMO_DATE } from './prototypeMode';
 import { biggestPtsEffects, bestEdgeInGame } from './useHomePreviewData';
@@ -19,12 +22,15 @@ const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
 const firingIn = (targets, gameId) =>
   targets ? targets.firing.filter((entry) => entry.game.gameId === gameId) : [];
 
-const CompactSearch = ({ hero, label = 'Search game logs' }) => (
-  <div className="hp-compact-search">
-    <span className="hp-compact-label">{label}</span>
-    {hero}
-  </div>
-);
+const CompactSearch = ({ hero, label = 'Search game logs', doorOnly = false }) =>
+  doorOnly ? (
+    hero
+  ) : (
+    <div className="hp-compact-search">
+      <span className="hp-compact-label">{label}</span>
+      {hero}
+    </div>
+  );
 
 const GameCard = ({ game, targets }) => {
   const fires = firingIn(targets, game.gameId);
@@ -71,12 +77,12 @@ const Headline = ({ slate, targets, children }) => (
 );
 
 /* T: the slate as a board, Targets alongside. */
-export const VariantT = ({ hero, data }) => {
+export const VariantT = ({ hero, data, doorOnly = false }) => {
   const { slate, targets } = data;
   return (
     <div className="hp-tf hp-t">
       <Headline slate={slate} targets={targets}>
-        <CompactSearch hero={hero} />
+        <CompactSearch hero={hero} doorOnly={doorOnly} />
       </Headline>
       <div className="hp-t-body">
         <section aria-label="Matchups tonight">
@@ -184,7 +190,7 @@ export const VariantU = ({ hero, data, onUseQuery }) => {
 };
 
 /* V: two equal doors under a centred headline. */
-export const VariantV = ({ hero, data }) => {
+export const VariantV = ({ hero, data, doorOnly = false }) => {
   const { slate, targets } = data;
   const games = slate
     ? [...slate.games]
@@ -195,7 +201,7 @@ export const VariantV = ({ hero, data }) => {
   return (
     <div className="hp-tf hp-v">
       <Headline slate={slate} targets={targets}>
-        <CompactSearch hero={hero} />
+        <CompactSearch hero={hero} doorOnly={doorOnly} />
       </Headline>
       <div className="hp-v-doors">
         <section className="hp-v-door" aria-label="Matchups">
@@ -244,3 +250,33 @@ export const VariantV = ({ hero, data }) => {
     </div>
   );
 };
+
+/* W/X: the home has no search form of its own. This door hands whatever is
+   typed to /search, which seeds its Query Prompt from navigation state. */
+const SearchDoor = () => {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  return (
+    <form
+      className="hp-door"
+      onSubmit={(event) => {
+        event.preventDefault();
+        navigate('/search', { state: { query } });
+      }}
+    >
+      <Search size={16} aria-hidden="true" />
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Search game logs: “Maxey last 10 at home”"
+        aria-label="Search game logs"
+      />
+      <button type="submit">
+        Search <ArrowRight size={14} aria-hidden="true" />
+      </button>
+    </form>
+  );
+};
+
+export const VariantW = (props) => <VariantT {...props} hero={<SearchDoor />} doorOnly />;
+export const VariantX = (props) => <VariantV {...props} hero={<SearchDoor />} doorOnly />;

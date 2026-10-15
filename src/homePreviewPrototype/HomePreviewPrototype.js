@@ -40,7 +40,7 @@ import {
   Spotlight,
   SpotlightCard,
 } from './hooks';
-import { VariantT, VariantU, VariantV } from './tonightFirst';
+import { VariantT, VariantU, VariantV, VariantW, VariantX } from './tonightFirst';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -839,6 +839,8 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  W: VariantW,
+  X: VariantX,
   T: VariantT,
   U: VariantU,
   V: VariantV,

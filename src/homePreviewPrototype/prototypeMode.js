@@ -13,6 +13,8 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'home';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
 export const VARIANT_KEYS = [
+  'W',
+  'X',
   'T',
   'U',
   'V',
@@ -39,6 +41,8 @@ export const VARIANT_KEYS = [
 ];
 
 export const VARIANT_NAMES = {
+  W: 'Split: Tonight home at /, search at /search (T layout)',
+  X: 'Split: Tonight home at /, search at /search (V layout)',
   T: 'Tonight board: games grid + Targets, compact search',
   U: 'Court hero about edges; Targets; search at the bottom',
   V: 'Two doors: Matchups | Targets',
@@ -67,7 +71,21 @@ export const VARIANT_NAMES = {
 /* The captured slate. Today (2026-10-14) is preseason with an empty slate. */
 export const DEMO_DATE = '2026-04-10';
 
-const readHash = () => new URLSearchParams(window.location.hash.replace(/^#/, ''));
+/* Navigating to /search drops the hash, so the choice is also kept for the
+   tab's session: the split variants need it on both pages. */
+const STORE = 'proto:home';
+const readHash = () => {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (hash.get('proto')) {
+    window.sessionStorage.setItem(STORE, String(hash));
+    return hash;
+  }
+  return new URLSearchParams(window.sessionStorage.getItem(STORE) || '');
+};
+
+/* W/X move search to its own page: `/` is the Tonight home, `/search` the
+   current Query Prompt and Log Workspace. */
+export const SPLIT_VARIANTS = ['W', 'X'];
 
 export const useVariant = () => {
   const [hash, setHash] = useState(readHash);
@@ -77,8 +95,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'T';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'T';
+  const key = hash.get('v') || 'W';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'W';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);
@@ -86,9 +104,12 @@ export const useVariant = () => {
       next.set('proto', 'home');
       next.set('v', VARIANT_KEYS[(index + delta + VARIANT_KEYS.length) % VARIANT_KEYS.length]);
       window.history.replaceState(window.history.state, '', `#${next}`);
+      window.sessionStorage.setItem(STORE, String(next));
       setHash(next);
+      window.dispatchEvent(new Event('hashchange'));
     },
     [variant],
   );
-  return { active, variant, step };
+  const split = active && SPLIT_VARIANTS.includes(variant);
+  return { active, variant, step, split };
 };

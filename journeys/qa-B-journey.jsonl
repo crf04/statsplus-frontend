@@ -1,0 +1,41 @@
+{"action": "doctor"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/seasons", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 5 games"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "value": "2026-27"}
+{"action": "proof", "name": "qa-c-two-seasons-default-2026-27-desktop"}
+{"action": "click", "target": {"role": "heading", "name": "LeBron James’s games"}}
+{"action": "press", "key": "Tab"}
+{"action": "press", "key": "2"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "value": "2025-26"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "qa-c-two-seasons-switched-2025-26-desktop"}
+{"action": "reload"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "value": "2025-26"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "qa-c-two-seasons-reload-keeps-2025-26-desktop"}
+{"action": "click", "target": {"role": "heading", "name": "LeBron James’s games"}}
+{"action": "press", "key": "Tab"}
+{"action": "press", "key": "2"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2026-27"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2026-27&game_filter=5"}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "value": "2026-27"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 5 games"}}
+{"action": "proof", "name": "qa-c-two-seasons-switched-back-2026-27-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/seasons", "query": {}, "status": 200}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "value": "2025-26"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "qa-c-two-seasons-select-2025-26-phone"}
+{"action": "click", "target": {"role": "heading", "name": "LeBron James’s games"}}
+{"action": "press", "key": "Tab"}
+{"action": "press", "key": "2"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2026-27"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2026-27&game_filter=5"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 5 games"}}
+{"action": "proof", "name": "qa-c-two-seasons-switched-2026-27-phone"}
+{"action": "cleanup"}

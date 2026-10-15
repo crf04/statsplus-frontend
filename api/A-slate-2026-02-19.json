@@ -1,0 +1,260 @@
+{
+ "method": "GET",
+ "path": "/api/games/slate?date=2026-02-19",
+ "status": 200,
+ "response": {
+  "freshness": {
+   "pool": {
+    "providers": {},
+    "retrieved_at": null,
+    "status": "unavailable"
+   },
+   "schedule": {
+    "retrieved_at": "2026-09-09T09:00:11.443428+00:00",
+    "status": "stale"
+   }
+  },
+  "games": [
+   {
+    "away_team": {
+     "name": "Houston Rockets",
+     "targetable_player_count": 0,
+     "team_id": 1610612745,
+     "tricode": "HOU"
+    },
+    "classification": null,
+    "game_id": "0022500792",
+    "home_team": {
+     "name": "Charlotte Hornets",
+     "targetable_player_count": 0,
+     "team_id": 1610612766,
+     "tricode": "CHA"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T00:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Brooklyn Nets",
+     "targetable_player_count": 0,
+     "team_id": 1610612751,
+     "tricode": "BKN"
+    },
+    "classification": null,
+    "game_id": "0022500793",
+    "home_team": {
+     "name": "Cleveland Cavaliers",
+     "targetable_player_count": 0,
+     "team_id": 1610612739,
+     "tricode": "CLE"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T00:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Atlanta Hawks",
+     "targetable_player_count": 0,
+     "team_id": 1610612737,
+     "tricode": "ATL"
+    },
+    "classification": null,
+    "game_id": "0022500794",
+    "home_team": {
+     "name": "Philadelphia 76ers",
+     "targetable_player_count": 0,
+     "team_id": 1610612755,
+     "tricode": "PHI"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T00:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Indiana Pacers",
+     "targetable_player_count": 0,
+     "team_id": 1610612754,
+     "tricode": "IND"
+    },
+    "classification": null,
+    "game_id": "0022500795",
+    "home_team": {
+     "name": "Washington Wizards",
+     "targetable_player_count": 0,
+     "team_id": 1610612764,
+     "tricode": "WAS"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T00:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Detroit Pistons",
+     "targetable_player_count": 0,
+     "team_id": 1610612765,
+     "tricode": "DET"
+    },
+    "classification": null,
+    "game_id": "0022500796",
+    "home_team": {
+     "name": "New York Knicks",
+     "targetable_player_count": 0,
+     "team_id": 1610612752,
+     "tricode": "NYK"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T00:30:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Toronto Raptors",
+     "targetable_player_count": 0,
+     "team_id": 1610612761,
+     "tricode": "TOR"
+    },
+    "classification": null,
+    "game_id": "0022500797",
+    "home_team": {
+     "name": "Chicago Bulls",
+     "targetable_player_count": 0,
+     "team_id": 1610612741,
+     "tricode": "CHI"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T01:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Phoenix Suns",
+     "targetable_player_count": 0,
+     "team_id": 1610612756,
+     "tricode": "PHX"
+    },
+    "classification": null,
+    "game_id": "0022500798",
+    "home_team": {
+     "name": "San Antonio Spurs",
+     "targetable_player_count": 0,
+     "team_id": 1610612759,
+     "tricode": "SAS"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T01:30:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Boston Celtics",
+     "targetable_player_count": 0,
+     "team_id": 1610612738,
+     "tricode": "BOS"
+    },
+    "classification": null,
+    "game_id": "0022500799",
+    "home_team": {
+     "name": "Golden State Warriors",
+     "targetable_player_count": 0,
+     "team_id": 1610612744,
+     "tricode": "GSW"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T03:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Orlando Magic",
+     "targetable_player_count": 0,
+     "team_id": 1610612753,
+     "tricode": "ORL"
+    },
+    "classification": null,
+    "game_id": "0022500800",
+    "home_team": {
+     "name": "Sacramento Kings",
+     "targetable_player_count": 0,
+     "team_id": 1610612758,
+     "tricode": "SAC"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T03:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Denver Nuggets",
+     "targetable_player_count": 0,
+     "team_id": 1610612743,
+     "tricode": "DEN"
+    },
+    "classification": null,
+    "game_id": "0022500801",
+    "home_team": {
+     "name": "Los Angeles Clippers",
+     "targetable_player_count": 0,
+     "team_id": 1610612746,
+     "tricode": "LAC"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-20T03:30:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   }
+  ],
+  "next_game_date": "2026-02-20",
+  "previous_game_date": "2026-02-12",
+  "provenance": {
+   "generation": [],
+   "sources": {
+    "injuries": {
+     "retrieved_at": null,
+     "status": "unavailable"
+    },
+    "pool": {
+     "retrieved_at": null,
+     "status": "unavailable"
+    },
+    "schedule": {
+     "retrieved_at": "2026-09-09T09:00:11.443428+00:00",
+     "status": "stale"
+    }
+   }
+  },
+  "slate_date": "2026-02-19"
+ }
+}

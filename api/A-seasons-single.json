@@ -1,0 +1,11 @@
+{
+ "method": "GET",
+ "path": "/api/games/seasons",
+ "status": 200,
+ "response": {
+  "default_season": "2025-26",
+  "seasons": [
+   "2025-26"
+  ]
+ }
+}

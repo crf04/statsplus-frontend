@@ -1,0 +1,106 @@
+{
+ "method": "GET",
+ "path": "/api/games/slate?date=2026-02-12",
+ "status": 200,
+ "response": {
+  "freshness": {
+   "pool": {
+    "providers": {},
+    "retrieved_at": null,
+    "status": "unavailable"
+   },
+   "schedule": {
+    "retrieved_at": "2026-09-09T09:00:11.443428+00:00",
+    "status": "stale"
+   }
+  },
+  "games": [
+   {
+    "away_team": {
+     "name": "Milwaukee Bucks",
+     "targetable_player_count": 0,
+     "team_id": 1610612749,
+     "tricode": "MIL"
+    },
+    "classification": null,
+    "game_id": "0022500789",
+    "home_team": {
+     "name": "Oklahoma City Thunder",
+     "targetable_player_count": 0,
+     "team_id": 1610612760,
+     "tricode": "OKC"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-13T00:30:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Portland Trail Blazers",
+     "targetable_player_count": 0,
+     "team_id": 1610612757,
+     "tricode": "POR"
+    },
+    "classification": null,
+    "game_id": "0022500790",
+    "home_team": {
+     "name": "Utah Jazz",
+     "targetable_player_count": 0,
+     "team_id": 1610612762,
+     "tricode": "UTA"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-13T02:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   },
+   {
+    "away_team": {
+     "name": "Dallas Mavericks",
+     "targetable_player_count": 0,
+     "team_id": 1610612742,
+     "tricode": "DAL"
+    },
+    "classification": null,
+    "game_id": "0022500791",
+    "home_team": {
+     "name": "Los Angeles Lakers",
+     "targetable_player_count": 0,
+     "team_id": 1610612747,
+     "tricode": "LAL"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-02-13T03:00:00+00:00",
+    "status": {
+     "label": "Final",
+     "state": "final"
+    }
+   }
+  ],
+  "next_game_date": "2026-02-19",
+  "previous_game_date": "2026-02-11",
+  "provenance": {
+   "generation": [],
+   "sources": {
+    "injuries": {
+     "retrieved_at": null,
+     "status": "unavailable"
+    },
+    "pool": {
+     "retrieved_at": null,
+     "status": "unavailable"
+    },
+    "schedule": {
+     "retrieved_at": "2026-09-09T09:00:11.443428+00:00",
+     "status": "stale"
+    }
+   }
+  },
+  "slate_date": "2026-02-12"
+ }
+}

@@ -164,6 +164,64 @@ test('list and workbench fit a phone width', async ({ authenticatedPage: page })
   );
 });
 
+// The rendered size of the smallest visible text under `selector`: its CSS
+// font size times every zoom applied above it.
+const smallestText = (page, selector) =>
+  page.locator(selector).evaluate((root) => {
+    let smallest = Infinity;
+    for (const element of [root, ...root.querySelectorAll('*')]) {
+      const hasText = [...element.childNodes].some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim(),
+      );
+      if (!hasText || element.getClientRects().length === 0) continue;
+      const size = parseFloat(getComputedStyle(element).fontSize) * (element.currentCSSZoom ?? 1);
+      smallest = Math.min(smallest, size);
+    }
+    return smallest;
+  });
+const fitsWidth = (page) =>
+  page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`Targets text renders at least 11px on the list, dialog and detail at ${viewport.width}px`, async ({
+    authenticatedPage: page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await installApiContract(page);
+    await page.goto('/targets');
+    await page.getByRole('button', { name: '+ New Target' }).click();
+    await composeTarget(page, {
+      opponent: 'ATL',
+      base: 'assist_locations',
+      slice: 'AtRimAssists',
+      percent: 30,
+    });
+    await expect(
+      summaryItem(page.getByRole('region', { name: /Lab · Backtest/ }), 'Player-games'),
+    ).toHaveText(/^4 player-games$/);
+    expect(await smallestText(page, '.target-new-modal')).toBeGreaterThanOrEqual(11);
+    expect(await fitsWidth(page)).toBe(true);
+    await page.getByRole('button', { name: 'Save Target' }).click();
+    await expect(page.getByRole('region', { name: 'Backtest games' })).toBeVisible();
+    expect(await smallestText(page, 'main')).toBeGreaterThanOrEqual(11);
+    await page.getByRole('link', { name: '← All Targets' }).click();
+    await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toBeVisible();
+    expect(await smallestText(page, 'main')).toBeGreaterThanOrEqual(11);
+  });
+}
+
+test('the app header keeps its size on the Targets page', async ({ authenticatedPage: page }) => {
+  await installApiContract(page);
+  await page.goto('/help');
+  const elsewhere = await smallestText(page, 'header.app-header');
+  await page.goto('/targets');
+  await expect(page.getByRole('button', { name: '+ New Target' })).toBeVisible();
+  expect(await smallestText(page, 'header.app-header')).toBe(elsewhere);
+});
+
 const backtestPath = (request) => {
   const { pathname } = new URL(request.url());
   return /^\/api\/user\/targets\/(\d+\/backtest|backtests)$/.test(pathname) ? pathname : null;

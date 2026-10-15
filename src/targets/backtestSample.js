@@ -77,12 +77,11 @@ export const publishedSeasonOf = (backtest) => {
 };
 
 /*
- * Why the Backtest reads the season it does, when the reader did not pick it:
- * the default, or, from a backend deployed before the default, a fallback
- * from a published season with no games.
+ * Why the Backtest reads the season it does, when a backend deployed before
+ * the default fell back from a published season with no games. The default
+ * needs no note: the season alone names it.
  */
 export const describeSeasonNote = (backtest) => {
-  if (backtest?.seasonReason === 'default') return `${backtest.season} default season`;
   if (backtest?.seasonReason === 'fallback_no_games')
     return `${nextSeason(backtest.season)} has no games yet, showing ${backtest.season}`;
   return null;
@@ -102,7 +101,7 @@ export const isOtherSeason = (season, published) =>
  */
 export const describeBacktestSeason = (backtest, published = publishedSeasonOf(backtest)) => {
   if (!backtest?.season) return 'season to date';
-  if (backtest.seasonReason === 'default') return describeSeasonNote(backtest);
+  if (backtest.seasonReason === 'default') return backtest.season;
   return isPastSeason(backtest.season, published)
     ? `${backtest.season} season`
     : `${backtest.season} season to date`;

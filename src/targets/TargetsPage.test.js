@@ -945,8 +945,8 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and sends the one 
     ['2025-26', 'true'],
     ['2026-27', 'false'],
   ]);
-  expect(screen.getByText('Lab · Backtest · 2025-26 default season · vs OKC')).toBeInTheDocument();
-  expect(screen.getByText('2025-26 default season', { selector: 'p' })).toBeVisible();
+  expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
+  expect(screen.queryByText(/default season/)).not.toBeInTheDocument();
   expect(screen.queryByText(/has no games yet/)).not.toBeInTheDocument();
   expect(screen.queryByText(/has played/)).not.toBeInTheDocument();
   expect(screen.getByText(/fit tonight/)).toHaveTextContent('1 fit tonight vs OKC');
@@ -964,7 +964,6 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and sends the one 
   ]);
   // A season after the published one is in progress, never a completed one.
   expect(screen.getByText('Lab · Backtest · 2026-27 season to date · vs OKC')).toBeInTheDocument();
-  expect(screen.queryByText('2025-26 default season', { selector: 'p' })).not.toBeInTheDocument();
   expect(screen.getByText(/hidden while the Lab reads another/)).toBeVisible();
   expect(screen.queryByRole('group', { name: 'OKC opponent context' })).not.toBeInTheDocument();
 
@@ -1152,11 +1151,11 @@ test('a sample card labels its Backtest with the default season the backend read
   const [sample] = within(samples).getAllByRole('article');
   await waitFor(() =>
     expect(within(sample).getByRole('region', { name: 'Sample backtest' })).toHaveTextContent(
-      'Backtest · 2025-26 default season',
+      'Backtest · 2025-26',
     ),
   );
   expect(within(sample).queryByText(/has no games yet/)).toBeNull();
-  expect(sample).not.toHaveTextContent('has played');
+  expect(sample).not.toHaveTextContent(/has played|default season/);
 });
 
 test('each saved card labels its Backtest with the season the backend read', async () => {
@@ -1170,10 +1169,10 @@ test('each saved card labels its Backtest with the season the backend read', asy
   const [defaultCard, unavailableCard] = await screen.findAllByRole('article');
   await waitFor(() =>
     expect(within(defaultCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(
-      'Backtest · 2025-26 default season',
+      'Backtest · 2025-26',
     ),
   );
-  expect(defaultCard).not.toHaveTextContent('has played');
+  expect(defaultCard).not.toHaveTextContent(/has played|default season/);
   expect(within(defaultCard).queryByRole('group', { name: 'Backtest season' })).toBeNull();
   await waitFor(() =>
     expect(within(unavailableCard).getByRole('region', { name: 'Backtest' })).toHaveTextContent(

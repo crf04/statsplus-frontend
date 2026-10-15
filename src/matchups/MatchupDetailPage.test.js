@@ -709,6 +709,33 @@ test('renders governed traditional sheet rows without duplicate defensive column
   expect(screen.queryByRole('heading', { name: 'OPP_TOV' })).not.toBeInTheDocument();
 });
 
+test('lists play types by points only, never by possessions', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.playTypes.push({
+    key: 'transition:POSS',
+    sliceKey: 'transition',
+    label: 'Transition POSS',
+    markets: ['PTS'],
+    season: value(14.9, 11, 1.6, 28),
+    last15: value(13.1, 6, 0.9, 22),
+  });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'BOS Defense Sheet' });
+  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+  const playTypes = screen.getByRole('heading', { name: 'Play types' }).closest('section');
+  expect(within(playTypes).getByText('Transition')).toBeVisible();
+  expect(within(playTypes).queryByText('Transition POSS')).not.toBeInTheDocument();
+});
+
 test('renders neutral relative percentages for nonzero values without directional color', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

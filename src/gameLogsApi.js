@@ -25,6 +25,9 @@ const firstRecord = (value) => {
 // non-negative integer is unknown.
 const seasonGameCount = (value) => (Number.isInteger(value) && value >= 0 ? value : null);
 
+// The player's NBA person id, which names their headshot; unknown without one.
+const playerId = (value) => (Number.isInteger(value) && value > 0 ? value : null);
+
 /** Decode the backend's JSON-string-or-object response once at the API seam. */
 export const decodeGameLogsResponse = (payload = {}) => {
   if (!payload || typeof payload !== 'object') {
@@ -44,6 +47,7 @@ export const decodeGameLogsResponse = (payload = {}) => {
     averages: [firstRecord(averages), firstRecord(seasonAverages)],
     seasonGameCount: seasonGameCount(payload.season_game_count),
     nextGame: payload.next_game || null,
+    playerId: playerId(payload.player_id),
   };
 };
 

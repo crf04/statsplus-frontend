@@ -58,6 +58,7 @@ const GameLogFilter = () => {
   const [lineValue, setLineValue] = useState('');
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
+  const [playerId, setPlayerId] = useState(null);
   // How many games the shown averages cover, against the whole season; null
   // until a game-log response arrives for the current Filter Set.
   const [sampleSize, setSampleSize] = useState(null);
@@ -254,6 +255,7 @@ const GameLogFilter = () => {
       // if it never arrives, rather than only once it does.
       setGameLogs([]);
       setAverages([]);
+      setPlayerId(null);
       setSampleSize(null);
 
       return readRevisit(
@@ -270,6 +272,7 @@ const GameLogFilter = () => {
 
           setGameLogs(data.gameLogs);
           setAverages(data.averages);
+          setPlayerId(data.playerId ?? null);
           setSampleSize({
             filtered: data.gameLogs.length,
             season: data.seasonGameCount ?? null,
@@ -306,6 +309,7 @@ const GameLogFilter = () => {
     setGameLogs([]);
     clearSeasonGameLogs();
     setAverages([]);
+    setPlayerId(null);
     setSampleSize(null);
     setSelectedTeam('');
     setGameLogsError(null);
@@ -348,6 +352,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setPlayerId(null);
       setSampleSize(null);
       setAppliedFilters({});
       setGameLogsError(
@@ -368,6 +373,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setPlayerId(null);
       setSampleSize(null);
       return undefined;
     }
@@ -381,6 +387,7 @@ const GameLogFilter = () => {
       setGameLogs([]);
       clearSeasonGameLogs();
       setAverages([]);
+      setPlayerId(null);
       setSampleSize(null);
       setSelectedTeam('');
       return undefined;
@@ -569,7 +576,11 @@ const GameLogFilter = () => {
           </div>
           <Card className="dark-card">
             <Card.Body className="p-3">
-              <PlayerStatsCards averages={averages} selectedPlayer={selectedPlayer} />
+              <PlayerStatsCards
+                averages={averages}
+                selectedPlayer={selectedPlayer}
+                playerId={playerId}
+              />
             </Card.Body>
           </Card>
         </Container>

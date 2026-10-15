@@ -1,8 +1,36 @@
+import { useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { Activity, Target, Clock, TrendingUp, BarChart3, Zap, Shield, Users } from 'lucide-react';
 import './PlayerStatsCards.css';
 
-const PlayerStatsCards = ({ averages, selectedPlayer }) => {
+// NBA's public headshot for a person id; the initials stand in without one.
+const Headshot = ({ playerId, selectedPlayer }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (playerId && !failed) {
+    return (
+      <img
+        className="player-headshot"
+        src={`https://cdn.nba.com/headshots/nba/latest/260x190/${playerId}.png`}
+        alt={selectedPlayer}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <span className="player-initials">
+      {selectedPlayer
+        ? selectedPlayer
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+        : 'PL'}
+    </span>
+  );
+};
+
+const PlayerStatsCards = ({ averages, selectedPlayer, playerId = null }) => {
   if (!Array.isArray(averages) || averages.length !== 2) {
     return null;
   }
@@ -84,14 +112,7 @@ const PlayerStatsCards = ({ averages, selectedPlayer }) => {
         <Col md={3} className="d-flex align-items-center justify-content-center">
           <div className="player-headshot-placeholder">
             <div className="headshot-circle">
-              <span className="player-initials">
-                {selectedPlayer
-                  ? selectedPlayer
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                  : 'PL'}
-              </span>
+              <Headshot key={playerId} playerId={playerId} selectedPlayer={selectedPlayer} />
             </div>
             <h4 className="player-name">{selectedPlayer || 'Select Player'}</h4>
           </div>

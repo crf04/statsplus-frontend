@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   bookMark,
   bookName,
@@ -14,6 +14,7 @@ const BASE_LABELS = {
   assistLocations: 'Assist locations',
   traditional: 'Traditional',
 };
+const BOOKS_SHOWN = 4;
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
 const formatDelta = (value) => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
@@ -44,6 +45,81 @@ const gameWhen = (game) => {
   return `${day}, ${time}`;
 };
 
+const formatPrice = (price) => (price === null ? '—' : price > 0 ? `+${price}` : `${price}`);
+const asOfTime = (stamp) => {
+  const when = new Date(stamp);
+  if (Number.isNaN(when.getTime())) return null;
+  return when.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+};
+
+// Sportsbook quotes for the selected stat. The best price is the backend's
+// call (equal lines only); this table only marks it, with a star as well as
+// weight so colour is not the only signal.
+function BookLines({ market, quote }) {
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => setExpanded(false), [market]);
+  const hidden = quote.books.length - BOOKS_SHOWN;
+  const shown = expanded || hidden <= 0 ? quote.books : quote.books.slice(0, BOOKS_SHOWN);
+  const time = asOfTime(quote.asOf);
+  const price = (value, best) => (
+    <td className={best ? 'book-best' : undefined}>
+      {formatPrice(value)}
+      {best && (
+        <span role="img" aria-label="best price">
+          {' '}
+          ★
+        </span>
+      )}
+    </td>
+  );
+  return (
+    <section className="selection-panel selection-panel-books" aria-label="Sportsbooks">
+      <h3>
+        Sportsbooks · {market}
+        <span className="book-stamp">
+          {quote.closing ? 'Closing' : time ? `as of ${time}` : null}
+        </span>
+      </h3>
+      <div className="selection-table-wrap">
+        <table aria-label={`${market} sportsbook lines`} className="selection-books">
+          <thead>
+            <tr>
+              <th scope="col">Book</th>
+              <th scope="col">Line</th>
+              <th scope="col">Over</th>
+              <th scope="col">Under</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((entry) => (
+              <tr key={entry.book}>
+                <th scope="row">{bookName(entry.book)}</th>
+                <td>{entry.line}</td>
+                {price(entry.over, entry.bestOver)}
+                {price(entry.under, entry.bestUnder)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {hidden > 0 && (
+        <button
+          type="button"
+          className="book-more"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Show fewer' : `+${hidden} more`}
+        </button>
+      )}
+    </section>
+  );
+}
+
 function Cell({ component }) {
   if (!component) return <span className="score-none">—</span>;
   return (
@@ -70,6 +146,17 @@ function Sparkline({ values }) {
 // The strip is the stat selector. A completed game shows its box score; an
 // upcoming game has none yet, so it shows minutes to date and which books post
 // each market. The MIN tile is context, not a choice.
+// The strip's choices are the DFS categories plus any category only sportsbooks
+// quote. The extras feed the Sportsbooks table alone: they are not DFS
+// provenance, have no score row and are never Target candidates.
+const statChoices = (statCategories, bookLines = {}) =>
+  orderCategories([
+    ...new Set([
+      ...statCategories,
+      ...Object.keys(bookLines).filter((m) => bookLines[m].books.length),
+    ]),
+  ]);
+
 function StatStrip({ player, categories, activeStat, onPick }) {
   const line = player.focalGameLine;
   const minutes = player.last10Minutes;
@@ -114,9 +201,14 @@ function StatStrip({ player, categories, activeStat, onPick }) {
                 <span className="selection-visually-hidden" id={`selection-strip-${category}`}>
                   {providers.length
                     ? `Posted by ${providers.map(bookName).join(' and ')}`
-                    : 'Not posted'}
+                    : player.bookLines?.[category]
+                      ? 'Quoted by sportsbooks only'
+                      : 'Not posted'}
                 </span>
-                {books.map((mark) => (
+                {(books.length || !player.bookLines?.[category]
+                  ? books
+                  : player.bookLines[category].books.map((entry) => bookMark(entry.book))
+                ).map((mark) => (
                   <i key={mark} aria-hidden="true">
                     {mark}
                   </i>
@@ -200,14 +292,18 @@ export default function SelectionCard({
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const categories = orderCategories(player.statCategories);
+  const stats = useMemo(
+    () => statChoices(player.statCategories, player.bookLines),
+    [player.statCategories, player.bookLines],
+  );
   const [activeStat, setActiveStat] = useState(
-    categories.includes(sheetMarket) ? sheetMarket : categories[0],
+    stats.includes(sheetMarket) ? sheetMarket : stats[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
     const playerChanged = previousPlayerId.current !== player.id;
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
-    const ordered = orderCategories(player.statCategories);
+    const ordered = stats;
     setActiveStat((current) => {
       if (playerChanged) {
         return ordered.includes(sheetMarket) ? sheetMarket : ordered[0];
@@ -219,7 +315,7 @@ export default function SelectionCard({
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, player.statCategories, sheetMarket]);
+  }, [player.id, stats, sheetMarket]);
   const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
@@ -265,7 +361,7 @@ export default function SelectionCard({
       </div>
       <StatStrip
         player={player}
-        categories={categories}
+        categories={stats}
         activeStat={activeStat}
         onPick={setActiveStat}
       />
@@ -332,7 +428,10 @@ export default function SelectionCard({
           <h3>Games vs this opponent</h3>
           {status === 'loading' && <p role="status">Loading selection logs…</p>}
           {status === 'error' && <p role="alert">{error}</p>}
-          {status === 'ready' && (
+          {status === 'ready' && !categories.includes(activeStat) && (
+            <p className="honest-empty">No games vs this opponent log is kept for {activeStat}.</p>
+          )}
+          {status === 'ready' && categories.includes(activeStat) && (
             <OpponentLog
               table={selection.h2h}
               market={activeStat}
@@ -341,6 +440,9 @@ export default function SelectionCard({
           )}
         </section>
       </div>
+      {player.bookLines?.[activeStat]?.books.length > 0 && (
+        <BookLines market={activeStat} quote={player.bookLines[activeStat]} />
+      )}
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
         .map(({ market }) => (

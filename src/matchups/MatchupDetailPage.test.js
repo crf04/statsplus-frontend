@@ -2361,3 +2361,153 @@ test('AC12: the rank marker sits from fewest at the left to most at the right', 
   expect(marker('Above-the-break 3s').style.left).toBe(`${(2 / 29) * 100}%`);
   expect(marker('Corner 3s', 1).style.left).toBe(`${(16 / 29) * 100}%`);
 });
+
+const quote = (books, overrides = {}) => ({
+  asOf: '2026-10-21T21:04:11Z',
+  closing: false,
+  books,
+  ...overrides,
+});
+const bookRow = (book, line, over, under, best = {}) => ({
+  book,
+  line,
+  over,
+  under,
+  updatedAt: '2026-10-21T21:00:00Z',
+  bestOver: false,
+  bestUnder: false,
+  ...best,
+});
+const openWithBooks = async (bookLines, path = '/matchups/game-1?player=2544') => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.players.find((player) => player.id === 2544).bookLines = bookLines;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup(path);
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+};
+
+test('the Selection card lists each book with its line, Over and Under, and stars the best price only where the backend flagged it', async () => {
+  await openWithBooks({
+    PTS: quote([
+      bookRow('fanduel', 26.5, -135, 110),
+      bookRow('betmgm', 27.5, -110, -120, { bestOver: true }),
+      bookRow('draftkings', 27.5, -110, -115, { bestOver: true }),
+      bookRow('betrivers', 27.5, -115, -105, { bestUnder: true }),
+    ]),
+  });
+
+  const panel = screen.getByRole('region', { name: 'Sportsbooks' });
+  expect(within(panel).getByText('as of 06:04')).toBeVisible();
+  const table = within(panel).getByRole('table', { name: 'PTS sportsbook lines' });
+  expect(
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
+  ).toEqual([
+    'FanDuel26.5-135+110',
+    'BetMGM27.5-110 ★-120',
+    'DraftKings27.5-110 ★-115',
+    'BetRivers27.5-115-105 ★',
+  ]);
+  // The 26.5 line is not compared with the 27.5 lines, so FanDuel has no star.
+  expect(within(table).getAllByRole('img', { name: 'best price' })).toHaveLength(3);
+  const fanduel = within(table).getByRole('row', { name: /FanDuel/ });
+  expect(within(fanduel).queryByRole('img', { name: 'best price' })).not.toBeInTheDocument();
+});
+
+test('the sportsbook table follows the selected stat and labels a closing snapshot', async () => {
+  await openWithBooks({
+    PTS: quote([bookRow('fanduel', 26.5, -135, 110)]),
+    FGA: quote([bookRow('draftkings', 19.5, 100, null)], { closing: true }),
+  });
+  expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
+
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'FGA',
+    }),
+  );
+
+  const table = screen.getByRole('table', { name: 'FGA sportsbook lines' });
+  expect(screen.queryByRole('table', { name: 'PTS sportsbook lines' })).not.toBeInTheDocument();
+  expect(within(table).getByRole('row', { name: /DraftKings/ }).textContent).toBe(
+    'DraftKings19.5+100—',
+  );
+  const panel = screen.getByRole('region', { name: 'Sportsbooks' });
+  expect(within(panel).getByText('Closing')).toBeVisible();
+  expect(within(panel).queryByText(/as of/)).not.toBeInTheDocument();
+});
+
+test('shows four books and puts the rest behind a +N expander', async () => {
+  const names = ['betmgm', 'betrivers', 'draftkings', 'fanatics', 'fanduel', 'williamhill_us'];
+  await openWithBooks({ PTS: quote(names.map((name) => bookRow(name, 27.5, -110, -110))) });
+  const table = screen.getByRole('table', { name: 'PTS sportsbook lines' });
+  expect(within(table).getAllByRole('row')).toHaveLength(5);
+
+  await userEvent.click(screen.getByRole('button', { name: '+2 more' }));
+
+  expect(within(table).getAllByRole('row')).toHaveLength(7);
+  expect(within(table).getByText('Caesars')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Show fewer' })).toBeVisible();
+});
+
+test.each([
+  ['an empty book_lines', {}],
+  ['book_lines for another stat only', { REB: quote([bookRow('fanduel', 8.5, -110, -110)]) }],
+  ['a market with no books', { PTS: quote([]) }],
+  ['the field absent', undefined],
+])('renders no sportsbook panel for %s', async (_name, bookLines) => {
+  await openWithBooks(bookLines);
+
+  expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('table', { name: /sportsbook lines/ })).not.toBeInTheDocument();
+  expect(screen.queryByText('Show fewer')).not.toBeInTheDocument();
+});
+
+test('a category only sportsbooks quote is reachable from the strip without becoming a DFS market', async () => {
+  await openWithBooks({
+    AST: quote([
+      bookRow('betmgm', 6.5, 120, -150, { bestOver: true }),
+      bookRow('fanduel', 6.5, 110, -140),
+    ]),
+  });
+  const strip = screen.getByRole('group', { name: 'Selection log stat' });
+  expect(
+    within(strip)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label')),
+  ).toEqual(['PTS', 'AST', 'FGA']);
+  expect(screen.queryByRole('table', { name: 'AST sportsbook lines' })).not.toBeInTheDocument();
+
+  await userEvent.click(within(strip).getByRole('button', { name: 'AST' }));
+
+  expect(within(strip).getByRole('button', { name: 'AST' })).toHaveAccessibleDescription(
+    'Quoted by sportsbooks only',
+  );
+  const table = screen.getByRole('table', { name: 'AST sportsbook lines' });
+  expect(
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
+  ).toEqual(['BetMGM6.5+120 ★-150', 'FanDuel6.5+110-140']);
+  // Still DFS-only: the posted-by line, the score matrix and the Target path.
+  expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
+  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+  expect(within(matrix).queryByRole('button', { name: 'AST' })).not.toBeInTheDocument();
+  expect(await screen.findByText('No games vs this opponent log is kept for AST.')).toBeVisible();
+});
+
+test('names every allowlisted sportsbook', async () => {
+  const keys = ['draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'betrivers', 'fanatics'];
+  await openWithBooks({ PTS: quote(keys.map((key) => bookRow(key, 27.5, -110, -110))) });
+  await userEvent.click(screen.getByRole('button', { name: '+2 more' }));
+
+  const table = screen.getByRole('table', { name: 'PTS sportsbook lines' });
+  expect(
+    within(table)
+      .getAllByRole('rowheader')
+      .map((cell) => cell.textContent),
+  ).toEqual(['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics']);
+});

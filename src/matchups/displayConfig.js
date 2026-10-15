@@ -27,8 +27,21 @@ const BOOK_NAMES = {
   underdog: 'Underdog',
   draftkings: 'DraftKings',
   fanduel: 'FanDuel',
+  betmgm: 'BetMGM',
+  williamhill_us: 'Caesars',
+  betrivers: 'BetRivers',
+  fanatics: 'Fanatics',
 };
-const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel: 'FD' };
+const BOOK_MARKS = {
+  prizepicks: 'PP',
+  underdog: 'UD',
+  draftkings: 'DK',
+  fanduel: 'FD',
+  betmgm: 'MG',
+  williamhill_us: 'CZ',
+  betrivers: 'BR',
+  fanatics: 'FN',
+};
 export const bookName = (provider) =>
   BOOK_NAMES[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 export const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();

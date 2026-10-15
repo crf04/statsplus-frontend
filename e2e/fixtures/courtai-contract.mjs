@@ -460,6 +460,62 @@ export const matchupPayload = {
         prizepicks: { PTS: 27.5, REB: 7.5 },
         underdog: { PTS: 26.5 },
       },
+      // Sportsbook quotes (parent statsplus#185 section 4). PTS: DraftKings and
+      // BetMGM tie for the best Over at the shared 27.5 line, FanDuel's 26.5
+      // is not compared with them. Five books, so the +1 expander shows.
+      book_lines: {
+        PTS: {
+          as_of: '2026-10-21T21:04:11Z',
+          closing: false,
+          books: [
+            {
+              book: 'fanduel',
+              line: 26.5,
+              over: -135,
+              under: 110,
+              updated_at: '2026-10-21T21:03:02Z',
+              best_over: false,
+              best_under: false,
+            },
+            {
+              book: 'betmgm',
+              line: 27.5,
+              over: -110,
+              under: -120,
+              updated_at: '2026-10-21T21:01:15Z',
+              best_over: true,
+              best_under: false,
+            },
+            {
+              book: 'betrivers',
+              line: 27.5,
+              over: -115,
+              under: -105,
+              updated_at: '2026-10-21T21:00:40Z',
+              best_over: false,
+              best_under: true,
+            },
+            {
+              book: 'draftkings',
+              line: 27.5,
+              over: -110,
+              under: -115,
+              updated_at: '2026-10-21T21:02:40Z',
+              best_over: true,
+              best_under: false,
+            },
+            {
+              book: 'williamhill_us',
+              line: 28.5,
+              over: 105,
+              under: -125,
+              updated_at: '2026-10-21T21:04:11Z',
+              best_over: false,
+              best_under: false,
+            },
+          ],
+        },
+      },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
@@ -493,6 +549,7 @@ export const matchupPayload = {
       provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['STL'] },
       // No book has numbered him yet, so the rail falls back to his Matchup Score.
       lines: {},
+      book_lines: {},
       season_scoring: 20.1,
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
@@ -522,6 +579,33 @@ export const matchupPayload = {
       tricode: 'BOS',
       posted_markets: ['PTS', 'FGA', 'FG3A', 'REB', 'BLK'],
       provenance: { prizepicks: ['PTS', 'FGA', 'FG3A', 'REB'], underdog: ['BLK'] },
+      // One side only (null Under) at a different line, from the closing snapshot.
+      book_lines: {
+        REB: {
+          as_of: '2026-10-21T20:55:00Z',
+          closing: true,
+          books: [
+            {
+              book: 'draftkings',
+              line: 8.5,
+              over: -120,
+              under: 100,
+              updated_at: '2026-10-21T20:55:00Z',
+              best_over: false,
+              best_under: false,
+            },
+            {
+              book: 'fanduel',
+              line: 9.5,
+              over: 135,
+              under: null,
+              updated_at: '2026-10-21T20:54:10Z',
+              best_over: false,
+              best_under: false,
+            },
+          ],
+        },
+      },
       season_scoring: 27.2,
       last_10_minutes: [36, 37, 35, 38, 34, 36, 39, 37, 36, 38],
       diet_shares: {

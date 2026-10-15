@@ -18,7 +18,7 @@ signedOutTest(
       });
     });
     await app.open('/connect');
-    await expect(screen.getByRole('heading', 'Use CourtAI in Claude or ChatGPT')).toBeVisible();
+    await expect(screen.getByRole('heading', 'Ask CourtAI from your chat')).toBeVisible();
     await screen.getByText(CONNECTOR_URL).tap();
 
     expect(await browser.evaluate(() => window.getSelection()?.toString().trim() ?? '')).toBe(
@@ -38,12 +38,13 @@ signedOutTest(
 signedOutTest('Connect setup steps render as numbered lists', async ({ app, screen, browser }) => {
   await app.open('/connect');
   for (const client of ['Claude', 'ChatGPT']) {
-    await expect(screen.getByRole('region', client).getByRole('list')).toBeVisible();
+    await screen.getByRole('tab', client).tap();
+    await expect(screen.getByRole('tabpanel', client).getByRole('list')).toBeVisible();
   }
   expect(
     await browser.evaluate(() =>
       Array.from(
-        document.querySelectorAll('.connect-clients ol'),
+        document.querySelectorAll('.connect-steps'),
         (list) => getComputedStyle(list).listStyleType,
       ),
     ),

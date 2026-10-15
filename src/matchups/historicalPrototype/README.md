@@ -42,3 +42,4 @@ measure names, rank in words (30 = allows the most), one headline % vs league
 
 - `?v=C1` plain rows · `?v=C2` one row per slice, measures side by side · `?v=C3` diverging bars
 - `?v=C4` today's card look (rank squares, pill chips) made readable · `?v=C5` C4 with one card per slice
+- `?v=C6` C2 without cards: play types points only (possessions dropped); shot types and zones pair attempts with makes, the off-market measure dimmed

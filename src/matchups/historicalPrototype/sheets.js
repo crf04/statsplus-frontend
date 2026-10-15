@@ -11,6 +11,9 @@
  *   C3 Bars         a diverging bar around league average, the length is the %
  *   C4 Cards        today's card look (rank squares, pill chips) with the fixes above
  *   C5 Cards merged C4, one card per slice with its measures side by side
+ *   C6 Slices       C2 without cards: play types drop possessions (points only);
+ *                   shot types and zones show attempts beside makes even when only
+ *                   one of them is in the selected market
  */
 import { Bookmark } from 'lucide-react';
 import { DIET_BASE_WIRE_NAMES } from '../matchupApi';
@@ -45,6 +48,8 @@ const SLICE_NAMES = {
   Spotup: 'Spot up',
   Misc: 'Miscellaneous',
   'Less Than 10 ft': 'Under 10 ft',
+  'Catch and Shoot': 'Catch-and-shoot',
+  Pullups: 'Pull-up',
   'In The Paint (Non-RA)': 'Paint (non-restricted)',
   'Above the Break 3': 'Above-the-break 3',
   OPP_BLK: 'Blocks',
@@ -75,7 +80,9 @@ const MEASURE_SHORT = {
 
 const splitKey = (key) => {
   const [slice, measure] = key.includes(':') ? key.split(':') : [key, null];
-  return { slice, measure, sliceName: SLICE_NAMES[slice] || slice };
+  const [, root, value] = /^(.*) ([23]s)$/.exec(slice) || [null, slice, null];
+  const name = SLICE_NAMES[root] || root;
+  return { slice, measure, sliceName: value ? `${name} ${value}` : name };
 };
 const rowTitle = (row) => {
   const { sliceName, measure } = splitKey(row.key);
@@ -234,7 +241,115 @@ const prepare = ({ team, market, windowKey, deviation, surfaceAvailability }) =>
 const sigmaTitle = (stat) =>
   `${stat.allowedPer48.toFixed(1)} per 48 · ${stat.sigmaDeviation > 0 ? '+' : ''}${stat.sigmaDeviation.toFixed(1)}σ · rank ${stat.rank}/30 (30 allows the most)`;
 
+// Attempts before makes, so a slice reads volume then efficiency.
+const MEASURE_ORDER = ['PTS', 'FGA', 'FGM', 'FG2A', 'FG2M', 'FG3A', 'FG3M'];
+const C6_SHORT = {
+  PTS: 'Pts',
+  FGA: 'FGA',
+  FGM: 'FGM',
+  FG2A: '2PA',
+  FG2M: '2PM',
+  FG3A: '3PA',
+  FG3M: '3PM',
+};
+
+// Shot types carry 2PT and 3PT measures; each becomes its own slice so a row
+// pairs attempts with makes of one shot value ("Catch and shoot 3s: 3PA | 3PM").
+const splitByShotValue = (row) => {
+  const { slice, measure } = splitKey(row.key);
+  const value = /^FG([23])/.exec(measure || '')?.[1];
+  return value ? { ...row, key: `${slice} ${value}s:${measure}` } : row;
+};
+
+function SliceSheet(props) {
+  const { team, players, market, windowKey, deviation, surfaceAvailability, selectedPlayer } =
+    props;
+  let hidden = 0;
+  const sections = Object.entries(team.defenseSheet).flatMap(([base, allRows]) => {
+    if (surfaceAvailability[base][windowKey].status !== 'available') return [];
+    const rows = allRows.filter((row) => !row.key.endsWith(':POSS') && row[windowKey] !== null);
+    const groups = mergeBySlice(rows.map(splitByShotValue))
+      .map((group) => ({
+        ...group,
+        rows: [...group.rows].sort(
+          (a, b) =>
+            MEASURE_ORDER.indexOf(splitKey(a.key).measure) -
+            MEASURE_ORDER.indexOf(splitKey(b.key).measure),
+        ),
+      }))
+      .filter((group) => {
+        const inMarket = group.rows.filter(
+          (row) => market === 'All' || row.markets.includes(market),
+        );
+        if (!inMarket.length) return false;
+        const shown = inMarket.some((row) => Math.abs(row[windowKey].sigmaDeviation) >= deviation);
+        if (!shown) hidden += 1;
+        return shown;
+      });
+    return groups.length ? [{ base, groups }] : [];
+  });
+  return (
+    <section className="ps ps-C6" aria-labelledby="defense-sheet-heading">
+      <div className="ps-head">
+        <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+        <p>
+          vs league average, per 48 min{market !== 'All' ? ` · ${market}` : ''} · {hidden} near
+          average hidden
+        </p>
+      </div>
+      {sections.length === 0 && <p className="honest-empty">No rows match these controls.</p>}
+      {sections.map(({ base, groups }) => (
+        <section className="ps-base" key={base}>
+          <h3>{BASE_LABELS[base] || base}</h3>
+          {groups.map((group) => {
+            const why =
+              selectedPlayer &&
+              getDisplayableDietShare(selectedPlayer, base, group.rows[0].sliceKey);
+            return (
+              <article key={group.slice} className={`ps-row${why ? ' why' : ''}`}>
+                <div className="ps-merged">
+                  <div className="ps-label">
+                    <h4>{group.sliceName}</h4>
+                  </div>
+                  <div className="ps-cells">
+                    {group.rows.map((row) => {
+                      const stat = row[windowKey];
+                      const { measure } = splitKey(row.key);
+                      const off = market !== 'All' && !row.markets.includes(market);
+                      return (
+                        <span
+                          key={row.key}
+                          className={off ? 'off' : undefined}
+                          title={sigmaTitle(stat)}
+                        >
+                          {group.rows.length > 1 && <small>{C6_SHORT[measure] || measure}</small>}
+                          <b className={tone(stat.percentVsLeagueAverage)}>
+                            {pct(stat.percentVsLeagueAverage)}
+                          </b>
+                          <em>{rankWords(stat.rank).replace('Allows ', '')}</em>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <SaveButton row={group.rows[0]} base={base} {...props} />
+                </div>
+                <Leans
+                  players={players}
+                  base={base}
+                  sliceKey={group.rows[0].sliceKey}
+                  market={market}
+                />
+              </article>
+            );
+          })}
+        </section>
+      ))}
+    </section>
+  );
+}
+
 export default function ProtoSheet(props) {
+  if (props.style === 'C6') return <SliceSheet {...props} />;
   const { team, players, market, windowKey, selectedPlayer, style } = props;
   const { sections, hidden } = prepare(props);
   const why = (base, row) =>

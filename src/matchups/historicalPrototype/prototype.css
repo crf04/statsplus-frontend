@@ -834,3 +834,11 @@
 .pc-chips .more {
   color: var(--ct-dim);
 }
+
+/* C6: a measure outside the selected market is context, so it reads quieter. */
+.ps-C6 .ps-cells span.off {
+  opacity: 0.55;
+}
+.ps-C6 .ps-cells span {
+  min-width: 72px;
+}

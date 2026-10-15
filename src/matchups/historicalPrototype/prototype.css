@@ -1172,3 +1172,53 @@
     white-space: normal;
   }
 }
+/* C8 players: their own full-width line under the numbers, everyone shown. */
+.rs-players {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-players li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid rgba(232, 163, 61, 0.22);
+  border-radius: 999px;
+  padding: 4px 11px;
+  background: rgba(232, 163, 61, 0.06);
+  font-size: 0.84rem;
+}
+.rs-players span {
+  color: var(--ct-text);
+  font-weight: 500;
+}
+.rs-players b {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.rs-players em {
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  font-style: normal;
+  color: var(--ct-dim);
+}
+.rs-players em.hi {
+  color: #5fd08a;
+}
+.rs-players em.lo {
+  color: #ef7a6c;
+}
+.rs-row.why .rs-players li {
+  border-color: rgba(232, 163, 61, 0.45);
+}
+.rs-players li.below {
+  opacity: 0.55;
+  border-color: var(--ct-line);
+  background: none;
+}

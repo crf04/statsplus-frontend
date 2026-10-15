@@ -21,7 +21,7 @@
  *                   shown as a marker on a fewest→most track, players as a muted
  *                   "leaned on by" line, save revealed on hover
  */
-import { Bookmark, Users } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { DIET_BASE_WIRE_NAMES } from '../matchupApi';
 import { findDietShare, getDisplayableDietShare } from '../displayConfig';
 
@@ -460,26 +460,6 @@ function RefinedSheet(props) {
                 >
                   <div className="rs-name">
                     <h4>{group.sliceName}</h4>
-                    {leans.length > 0 && (
-                      <p
-                        title={leans
-                          .map(
-                            ({ player, share }) =>
-                              `${player.name} ${Math.round(share.share * 100)}%`,
-                          )
-                          .join(', ')}
-                      >
-                        <Users size={12} strokeWidth={2.2} aria-hidden="true" />
-                        {leans
-                          .slice(0, 2)
-                          .map(
-                            ({ player, share }) =>
-                              `${shortName(player.name)} ${Math.round(share.share * 100)}%`,
-                          )
-                          .join(' · ')}
-                        {leans.length > 2 ? ` +${leans.length - 2}` : ''}
-                      </p>
-                    )}
                   </div>
                   {columns.map((measure) => {
                     const row = group.rows.find((item) => roleOf(item) === measure);
@@ -507,6 +487,27 @@ function RefinedSheet(props) {
                     );
                   })}
                   <SaveButton row={group.rows[0]} base={base} {...props} />
+                  {leans.length > 0 && (
+                    <ul className="rs-players" aria-label="Players leaning on this">
+                      {/* Players who lean on it most first; those below league fade. */}
+                      {[...leans]
+                        .sort((x, y) => y.share.sigmaDeviation - x.share.sigmaDeviation)
+                        .map(({ player, share }) => (
+                          <li
+                            key={player.id}
+                            className={share.sigmaDeviation < 0 ? 'below' : undefined}
+                            title={`${player.name}: ${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}, ${share.sigmaDeviation > 0 ? '+' : ''}${share.sigmaDeviation.toFixed(1)}σ vs league`}
+                          >
+                            <span>{player.name}</span>
+                            <b>{Math.round(share.share * 100)}%</b>
+                            <em className={share.sigmaDeviation >= 0 ? 'hi' : 'lo'}>
+                              {share.sigmaDeviation > 0 ? '+' : ''}
+                              {share.sigmaDeviation.toFixed(1)}σ
+                            </em>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
                 </article>
               );
             })}

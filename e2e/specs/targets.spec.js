@@ -179,12 +179,20 @@ const smallestText = (page, selector) =>
     }
     return smallest;
   });
+// The page column's rendered left and right edges.
+const columnEdges = (page) =>
+  page.locator('main').evaluate((main) => {
+    const { left, right } = main.getBoundingClientRect();
+    return [Math.round(left), Math.round(right)];
+  });
 const fitsWidth = (page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
-for (const viewport of [
-  { width: 1440, height: 900 },
-  { width: 390, height: 844 },
+// The zoom enlarges text, not the page column: it keeps the slate column's
+// edges, which line up with the header on desktop.
+for (const { column, ...viewport } of [
+  { width: 1440, height: 900, column: [140, 1300] },
+  { width: 390, height: 844, column: [16, 374] },
 ]) {
   test(`Targets text renders at least 11px on the list, dialog and detail at ${viewport.width}px`, async ({
     authenticatedPage: page,
@@ -207,9 +215,11 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Save Target' }).click();
     await expect(page.getByRole('region', { name: 'Backtest games' })).toBeVisible();
     expect(await smallestText(page, 'main')).toBeGreaterThanOrEqual(11);
+    expect(await columnEdges(page)).toEqual(column);
     await page.getByRole('link', { name: '← All Targets' }).click();
     await expect(card(page, 'ATL vs At-rim assists ≥ 30%')).toBeVisible();
     expect(await smallestText(page, 'main')).toBeGreaterThanOrEqual(11);
+    expect(await columnEdges(page)).toEqual(column);
   });
 }
 

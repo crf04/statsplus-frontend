@@ -5,14 +5,24 @@
   text-align: left;
 }
 
-/* The Targets screens set much of their text at 0.6–0.75rem, which reads too
+/* The Targets screens set much of their text at 0.6-0.75rem, which reads too
    small. Zooming the list, the detail page and the New Target dialog scales
    type and spacing together, the way browser zoom would, so no text renders
-   below 11px and the layout keeps its proportions (crf04/statsplus#176). The
-   app header stays at its normal size. */
+   below 11px (crf04/statsplus#176). The app header stays at its normal size. */
+:root {
+  --targets-zoom: 1.15;
+}
+
 .targets-page,
 .target-new-dialog {
-  zoom: 1.15;
+  zoom: var(--targets-zoom);
+}
+
+/* Lengths inside the zoom are scaled by it, so the slate column's width is
+   divided back out: the page keeps its edges and stays lined up with the
+   header. */
+.targets-page {
+  width: min(calc(1160px / var(--targets-zoom)), calc(100% - 32px / var(--targets-zoom)));
 }
 
 /* Every control on the page answers the keyboard the way the slate and the

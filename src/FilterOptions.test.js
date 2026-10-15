@@ -59,6 +59,12 @@ test('untouched controls emit only the player, and Own stat line is ready withou
   expect(screen.getByRole('option', { name: 'Points (PTS)' })).toBeVisible();
 });
 
+test('Add a filter offers no playtype matchup rating tile', () => {
+  renderPanel();
+  expect(screen.getByRole('button', { name: /\+ Minutes/ })).toBeVisible();
+  expect(screen.queryByRole('button', { name: /\+ Playtype/ })).toBeNull();
+});
+
 test('rows describe a link, teammate clicks flip it and removing last counts two changes', () => {
   renderPanel({ 'players_off[]': ['Anthony Davis'], game_filter: 10 });
   expect(screen.getByRole('button', { name: /without Anthony Davis off court/i })).toBeVisible();

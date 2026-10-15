@@ -18,3 +18,6 @@ export const TARGET_READ_TIMEOUT = parseApiTimeout(
   process.env.REACT_APP_TARGET_READ_TIMEOUT,
   DEFAULT_TARGET_READ_TIMEOUT,
 );
+// The backend cancels a web query at 30 s (statement_timeout); the request
+// gives up just after, instead of hanging open.
+export const GAME_LOGS_TIMEOUT = 35000;

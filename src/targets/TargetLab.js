@@ -6,7 +6,6 @@ import {
   BACKTEST_SEASONS,
   DEFAULT_BACKTEST_SEASON,
   describeBacktestSeason,
-  describeSeasonGames,
   describeSeasonNote,
   isOtherSeason,
   publishedSeasonOf,
@@ -104,7 +103,6 @@ export default function TargetLab({
   // is not the picked season's Backtest, nor a season nobody fit.
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
   const seasonNote = describeSeasonNote(evidence);
-  const seasonGames = describeSeasonGames(evidence, published);
   const otherSeason = isOtherSeason(shownSeason, published);
   const labSeason = useMemo(
     () => ({ season: shownSeason, requested: season, otherSeason }),
@@ -141,7 +139,6 @@ export default function TargetLab({
         )}
       </div>
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
-      {seasonGames && <p className="target-lab-season-games">{seasonGames}</p>}
       {misread && (
         <p className="target-error" role="alert">
           The {season} Backtest is unavailable: the server answered for{' '}

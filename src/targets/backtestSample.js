@@ -109,24 +109,11 @@ export const describeBacktestSeason = (backtest, published = publishedSeasonOf(b
 };
 
 /*
- * How far the season to date has got for this opponent, so a thin one reads
- * as thin. Whether it is too thin is the reader's call; nothing here judges it.
- */
-export const describeSeasonGames = (backtest, published = publishedSeasonOf(backtest)) => {
-  if (!backtest?.season || !backtest.gamesConsidered || isPastSeason(backtest.season, published))
-    return null;
-  const { played } = backtest.gamesConsidered;
-  return `${backtest.target.opponent} has played ${played} ${played === 1 ? 'game' : 'games'} in ${backtest.season}`;
-};
-
-/*
  * A card's Backtest heading: which season it read, once it has read one, and
- * why that season, or how far a season in progress has got.
+ * why that season.
  */
 export function BacktestSeasonLabel({ backtest }) {
-  const note =
-    (backtest?.seasonReason === 'fallback_no_games' && describeSeasonNote(backtest)) ||
-    describeSeasonGames(backtest);
+  const note = backtest?.seasonReason === 'fallback_no_games' && describeSeasonNote(backtest);
   return (
     <>
       Backtest

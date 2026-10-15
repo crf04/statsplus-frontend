@@ -193,3 +193,39 @@ signedInTest(
     await expect(screen.getByRole('cell', '27')).toHaveCount(0);
   },
 );
+
+signedInTest(
+  'the Season select switches the season in the URL and the results, keeping the other filters',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/?player_name=LeBron+James&game_filter=10');
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByRole('combobox', 'Season')).toHaveValue('2025-26');
+    expect(api.sent('/api/games/seasons')).toHaveLength(1);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+
+    await screen.getByRole('combobox', 'Season').selectOption({ value: '2026-27' });
+
+    await expect(browser).toHaveURL(
+      '/?player_name=LeBron+James&season_filter=2026-27&game_filter=10',
+    );
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
+    await expect(screen.getByRole('combobox', 'Season')).toHaveValue('2026-27');
+    expect(api.sent('/api/games/game_logs').at(-1)?.search.get('season_filter')).toBe('2026-27');
+    expect(await overflowsHorizontally(browser)).toBe(false);
+  },
+);
+
+signedInTest(
+  'the Season select is absent when the seasons cannot be read',
+  async ({ app, screen, api }) => {
+    await api.override({
+      '/api/games/seasons': { status: 503, body: { error: { code: 'provider_unavailable' } } },
+    });
+    await app.open('/?player_name=LeBron+James&game_filter=10');
+
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByTestId('filter-panel')).toBeVisible();
+    expect(api.sent('/api/games/seasons')).toHaveLength(1);
+    await expect(screen.getByRole('combobox', 'Season')).toHaveCount(0);
+  },
+);

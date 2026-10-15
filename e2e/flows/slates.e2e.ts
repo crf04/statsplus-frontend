@@ -125,3 +125,50 @@ signedInTest(
     await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
   },
 );
+
+signedInTest(
+  'a Slate with no date opens on today in New York',
+  async ({ app, screen, browser, api }) => {
+    await browser.addInitScript(() => {
+      const RealDate = Date;
+      const instant = RealDate.parse('2026-04-01T02:00:00Z'); // March 31 in New York.
+      window.Date = new Proxy(RealDate, {
+        construct: (target, args) => Reflect.construct(target, args.length ? args : [instant]),
+        apply: () => new RealDate(instant).toString(),
+        get: (target, key) => (key === 'now' ? () => instant : Reflect.get(target, key)),
+      });
+    });
+    await app.open('/matchups');
+
+    await expect(screen.getByRole('heading', 'Tuesday, March 31, 2026')).toBeVisible();
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-03-31');
+    await expect(screen.getByRole('button', 'Today')).toBeDisabled();
+    expect(api.sent('/api/games/slate')[0].search.get('date')).toBe('2026-03-31');
+  },
+);
+
+signedInTest(
+  'an empty Slate jumps to the neighbouring game days',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/slate': {
+        body: slatePayload('2026-02-10', [], {
+          previousGameDate: '2026-01-15',
+          nextGameDate: '2026-03-29',
+        }),
+      },
+    });
+    await app.open('/matchups?date=2026-02-10');
+
+    await expect(screen.getByText('No games on this slate.')).toBeVisible();
+    await expect(
+      screen.getByRole('button', 'Previous game day Thursday, January 15, 2026'),
+    ).toBeVisible();
+    await api.override({});
+    await screen.getByRole('button', 'Next game day Sunday, March 29, 2026').tap();
+
+    await expect(browser).toHaveURL('/matchups?date=2026-03-29');
+    await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
+    expect(api.sent('/api/games/slate').at(-1)?.search.get('date')).toBe('2026-03-29');
+  },
+);

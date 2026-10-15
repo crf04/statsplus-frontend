@@ -24,8 +24,6 @@ const Rank = ({ rank, small }) =>
 
 const Vs = ({ vs }) => <span className={`ttp-vs ttp-vs-${tone(vs)}`}>{fmtVs(vs)}</span>;
 
-const Caption = ({ m }) => <p className="ttp-caption">{m.unit} · rank 1–30, 30 allows the most</p>;
-
 /* ---------------- A: Ledger ---------------- */
 
 /* Each group is its own table so the groups can flow into two columns when
@@ -159,7 +157,9 @@ const BarScale = ({ scale }) => (
    group boundary when that balances within a couple of lines, otherwise
    mid-group with the title repeated. Whether two columns fit is the card's
    call (container query); narrow cards stack the columns. */
-const SPLIT_OVER = 9;
+// Only lists too tall for one column split: Traditional, zones and shot
+// types do; Playtypes and Assists (11 lines) stay whole.
+const SPLIT_OVER = 12;
 const lines = (u) => (u.title ? 1 : 0) + u.rows.length;
 
 const splitUnits = (units) => {
@@ -353,7 +353,6 @@ export const TeamTablesProto = ({ variant, category, data }) => {
   const View = VIEWS[variant][m.kind];
   return (
     <div className={`ttp ttp-${variant}`}>
-      <Caption m={m} />
       <View m={m} />
     </div>
   );

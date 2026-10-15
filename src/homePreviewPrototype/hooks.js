@@ -29,7 +29,7 @@ const BASE_LABELS = {
   shot_zones: 'Shot zones',
 };
 
-const SpotlightCard = ({ kind, pick, game, onUseQuery }) => {
+export const SpotlightCard = ({ kind, pick, game, onUseQuery }) => {
   const up = pick.value >= 0;
   const query = `${pick.name} this year against ${up ? 'bottom' : 'top'} 10 defenses`;
   return (

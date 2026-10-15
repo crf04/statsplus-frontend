@@ -29,7 +29,8 @@ import {
   shortName,
   tipoff,
 } from './parts';
-import { AnswerLadder, Spotlight } from './hooks';
+import hooks from './mock/hooks.json';
+import { AnswerLadder, Spotlight, SpotlightCard } from './hooks';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -303,7 +304,7 @@ const VariantD = ({ hero, ladder, data }) => {
 
 /* E: C's ticker on its own, no Targets. Each game shows its three biggest
    points Matchup effects, favourable or not. */
-const VariantE = ({ hero, ladder, data, middle = null }) => {
+const VariantE = ({ hero, ladder, data, middle = null, heroSlot = null }) => {
   const { slate } = data;
   return (
     <div className="hp-c hp-e">
@@ -337,7 +338,7 @@ const VariantE = ({ hero, ladder, data, middle = null }) => {
         </div>
       </div>
       <div className="landing-container">
-        {hero}
+        {heroSlot || hero}
         {middle}
         {ladder}
       </div>
@@ -363,7 +364,120 @@ const VariantH = (props) => (
   />
 );
 
+/* I/J: the headline stays dead centre; best matchup flanks it on the left,
+   toughest on the right. I puts two Targets in a centred row under it; J
+   stacks one Target under each matchup so the two sides mirror. */
+const spotPicks = (slate) => {
+  const gameOf = (pick) => slate?.games.find((game) => game.gameId === pick.gameId);
+  const { best, worst } = hooks.spotlight;
+  return { best, worst, bestGame: gameOf(best), worstGame: gameOf(worst) };
+};
+
+const TargetsHead = ({ targets }) => (
+  <div className="hp-flank-targets-head">
+    <span className="hp-kicker">Your Targets tonight</span>
+    {targets && (
+      <ProtoLink to="/targets" className="hp-more">
+        {targets.firing.length} of {targets.total} firing →
+      </ProtoLink>
+    )}
+  </div>
+);
+
+const VariantI = (props) => {
+  const { slate, targets } = props.data;
+  const { best, worst, bestGame, worstGame } = spotPicks(slate);
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <div className="hp-flank">
+          <div className="hp-flank-side hp-flank-left">
+            <SpotlightCard
+              kind="Best matchup tonight"
+              pick={best}
+              game={bestGame}
+              onUseQuery={props.onUseQuery}
+            />
+          </div>
+          <div className="hp-flank-center">{props.hero}</div>
+          <div className="hp-flank-side hp-flank-right">
+            <SpotlightCard
+              kind="Toughest matchup tonight"
+              pick={worst}
+              game={worstGame}
+              onUseQuery={props.onUseQuery}
+            />
+          </div>
+        </div>
+      }
+      middle={
+        <section className="hp-flank-targets" aria-label="Your Targets tonight">
+          <TargetsHead targets={targets} />
+          <div className="hp-flank-targets-row">
+            {targets ? (
+              targets.firing
+                .slice(0, 2)
+                .map((entry) => <TargetCard key={entry.target.id} entry={entry} withMatchup />)
+            ) : (
+              <Loading />
+            )}
+          </div>
+        </section>
+      }
+      ladder={<AnswerLadder onUseQuery={props.onUseQuery} />}
+    />
+  );
+};
+
+const VariantJ = (props) => {
+  const { slate, targets } = props.data;
+  const { best, worst, bestGame, worstGame } = spotPicks(slate);
+  const [left, right] = targets ? targets.firing : [];
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <div className="hp-flank hp-flank-j">
+          <div className="hp-flank-side hp-flank-left">
+            <SpotlightCard
+              kind="Best matchup tonight"
+              pick={best}
+              game={bestGame}
+              onUseQuery={props.onUseQuery}
+            />
+            {left && (
+              <>
+                <span className="hp-kicker hp-flank-kicker">Your Target firing</span>
+                <TargetCard entry={left} withMatchup />
+              </>
+            )}
+          </div>
+          <div className="hp-flank-center">{props.hero}</div>
+          <div className="hp-flank-side hp-flank-right">
+            <SpotlightCard
+              kind="Toughest matchup tonight"
+              pick={worst}
+              game={worstGame}
+              onUseQuery={props.onUseQuery}
+            />
+            {right && (
+              <>
+                <span className="hp-kicker hp-flank-kicker">Your Target firing</span>
+                <TargetCard entry={right} withMatchup />
+              </>
+            )}
+          </div>
+        </div>
+      }
+      ladder={<AnswerLadder onUseQuery={props.onUseQuery} />}
+    />
+  );
+};
+
 const VARIANTS = {
+  I: VariantI,
+  J: VariantJ,
   H: VariantH,
   F: VariantF,
   G: VariantG,

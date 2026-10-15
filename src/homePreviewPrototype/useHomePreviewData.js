@@ -43,6 +43,9 @@ export const bestEdgeInGame = (gameId) =>
     .filter((player) => player.market)
     .sort((a, b) => b.value - a.value)[0] || null;
 
+export const ptsScoreFor = (gameId, playerId) =>
+  (edgesByGame.get(gameId) || []).find((player) => player.id === playerId)?.scores.PTS ?? null;
+
 export const useHomePreviewData = () => {
   const [state, setState] = useState({ slate: null, targets: null, error: null });
   useEffect(() => {

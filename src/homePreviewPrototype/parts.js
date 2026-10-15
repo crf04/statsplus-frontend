@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { targetSliceLabel } from '../targets/targetCatalog';
 import { PROTO_STANDALONE } from './prototypeMode';
+import { ptsScoreFor } from './useHomePreviewData';
 
 /* The standalone build has no data behind the other pages, so links there
    are inert; on a dev server they navigate. */
@@ -71,7 +72,7 @@ export const EdgeValue = ({ value, market }) => (
 
 /* A Target that fires on the slate: who it's against, what it asks for, and
    who fits. `density` is how much of the fit list shows. */
-export const TargetCard = ({ entry, density = 'full' }) => {
+export const TargetCard = ({ entry, density = 'full', withMatchup = false }) => {
   const { target, game, players } = entry;
   const shown = density === 'full' ? players.slice(0, 3) : players.slice(0, 2);
   return (
@@ -90,7 +91,7 @@ export const TargetCard = ({ entry, density = 'full' }) => {
         ))}
       </div>
       {density !== 'pill' && (
-        <ul className="hp-fits">
+        <ul className={`hp-fits${withMatchup ? ' hp-fits-matchup' : ''}`}>
           {shown.map((player) => (
             <li key={player.canonicalId}>
               <span className="hp-fit-name">
@@ -102,6 +103,15 @@ export const TargetCard = ({ entry, density = 'full' }) => {
                   <small> lg {Math.round(player.shares[0].leagueAverageShare * 100)}%</small>
                 )}
               </span>
+              {withMatchup && (
+                <span className="hp-fit-matchup">
+                  {ptsScoreFor(game.gameId, player.canonicalId) === null ? (
+                    '–'
+                  ) : (
+                    <EdgeValue value={ptsScoreFor(game.gameId, player.canonicalId)} />
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>

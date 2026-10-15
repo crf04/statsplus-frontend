@@ -926,3 +926,113 @@
 .hp-bars i.is-over {
   background: var(--ct-gold);
 }
+
+/* ---- I/J: matchups flank a centred headline ------------------------------- */
+.hp-e .landing-container:has(.hp-flank) {
+  max-width: 1440px;
+  width: 100%;
+}
+.hp-flank {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+}
+.hp-flank-center {
+  min-width: 0;
+}
+.hp-flank-center .landing-title {
+  font-size: clamp(58px, 8.6vw, 148px);
+}
+.hp-flank-side {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  text-align: left;
+}
+.hp-flank-left {
+  justify-self: end;
+}
+.hp-flank-right {
+  justify-self: start;
+}
+.hp-flank-j {
+  align-items: start;
+}
+.hp-flank-j .hp-flank-side {
+  padding-top: 64px;
+}
+.hp-flank-kicker {
+  margin-top: 8px;
+}
+.hp-flank-side .hp-spot-name {
+  font-size: 26px;
+}
+.hp-flank-side .hp-spot-score b {
+  font-size: 26px;
+}
+.hp-flank-side .hp-target + .hp-target {
+  margin-top: 0;
+}
+.hp-flank-targets {
+  position: relative;
+  z-index: 2;
+  width: min(760px, 100%);
+  margin: -28px auto 64px;
+}
+.hp-flank-targets-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.hp-flank-targets-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.hp-flank-targets-row .hp-target + .hp-target {
+  margin-top: 0;
+}
+.hp-e .landing-container:has(.hp-flank) .hp-answers {
+  max-width: 1100px;
+}
+.hp-fits-matchup li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 52px;
+  gap: 10px;
+}
+.hp-fit-matchup {
+  text-align: right;
+}
+.hp-fit-matchup .hp-edge {
+  font-size: 12px;
+}
+@media (max-width: 1180px) {
+  .hp-flank {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .hp-flank-center {
+    order: -1;
+  }
+  .hp-flank-side {
+    justify-self: stretch;
+    max-width: none;
+  }
+  .hp-flank-j .hp-flank-side {
+    padding-top: 0;
+  }
+  .hp-flank-left {
+    margin-top: -28px;
+  }
+  .hp-flank-targets-row {
+    grid-template-columns: 1fr;
+  }
+}
+.hp-flank-j {
+  margin-bottom: 64px;
+}

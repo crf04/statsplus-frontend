@@ -3,9 +3,11 @@
 **Question:** should the home page (`/`, the Query Prompt) preview Matchups
 and Targets, and in what shape?
 
-Variants on the real home, switched by `#proto=home&v=H|F|G|E|A|B|C|D|Now` (hash,
+Variants on the real home, switched by `#proto=home&v=I|J|H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
+- **I** best matchup left, toughest right, headline centred; two Targets in a centred row below (fits show their PTS matchup)
+- **J** mirrored sides: matchup card + one Target per side
 - **H** E + spotlight + answer ladder
 - **F** E + spotlight: the slate's best and toughest PTS matchup, with the two play types behind each
 - **G** E + answer ladder: each ladder step shows its real result (PTS, games, per-game bars)

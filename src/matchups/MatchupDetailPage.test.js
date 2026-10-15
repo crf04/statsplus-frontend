@@ -400,7 +400,7 @@ test('lists who leans on a slice above league, most first, and leaves off those 
     within(leans)
       .getAllByRole('listitem')
       .map((item) => item.textContent),
-  ).toEqual(['Jayson Tatum 37% +1.2σ', 'Austin Reaves 31% +0.6σ']);
+  ).toEqual(['Jayson Tatum 37%', 'Austin Reaves 31%']);
   // LeBron leans on it 2σ less than league: a soft spot is not his.
   expect(within(leans).queryByText('LeBron James')).not.toBeInTheDocument();
 });
@@ -1039,12 +1039,12 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     within(sheetRow('Restricted area')).getByRole('list', {
       name: 'Players leaning on Restricted area',
     }),
-  ).toHaveTextContent('LeBron James 27% +1.1σ');
+  ).toHaveTextContent(/^LeBron James 27%$/);
   expect(
     within(sheetRow('Catch-and-shoot 3s')).getByRole('list', {
       name: 'Players leaning on Catch-and-shoot 3s',
     }),
-  ).toHaveTextContent('LeBron James 36% +1.2σ');
+  ).toHaveTextContent(/^LeBron James 36%$/);
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {

@@ -680,8 +680,7 @@ function DefenseSheet({
                             key={player.id}
                             title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}`}
                           >
-                            <span>{player.name}</span> <b>{Math.round(share.share * 100)}%</b>{' '}
-                            <em>+{share.sigmaDeviation.toFixed(1)}σ</em>
+                            <span>{player.name}</span> <b>{Math.round(share.share * 100)}%</b>
                           </li>
                         ))}
                       </ul>

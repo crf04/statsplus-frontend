@@ -98,9 +98,17 @@ const scheduleOnlySlateGame = {
 export const slatePayload = (
   date,
   games,
-  { poolFreshnessStatus = 'unavailable', poolRetrievedAt = null, providers = {} } = {},
+  {
+    poolFreshnessStatus = 'unavailable',
+    poolRetrievedAt = null,
+    providers = {},
+    previousGameDate = /** @type {string | null} */ (null),
+    nextGameDate = /** @type {string | null} */ (null),
+  } = {},
 ) => ({
   slate_date: date,
+  previous_game_date: previousGameDate,
+  next_game_date: nextGameDate,
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
@@ -1565,6 +1573,24 @@ const TARGET_LIMIT = 50;
 const HISTORICAL_SLATE_DATE = '2026-03-29';
 const DEFAULT_SLATE_DATE = '2026-01-15';
 
+// The Slate Date the backend assumes when a request names none: today in US Eastern.
+const todaySlateDate = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+// Seasons whose game logs can be read. The default one is what the real endpoint reads when
+// season_filter is omitted; the other is a single-game season so a switch is visible in results.
+export const SEASONS = { seasons: ['2026-27', '2025-26'], default_season: '2025-26' };
+// 2026-27 holds one game per player: that player's latest row, 13 points higher (LeBron: 44).
+const applySeason = (logs, url) =>
+  url.searchParams.get('season_filter') === '2026-27'
+    ? [{ ...logs[0], GAME_DATE: '2026-10-20', PTS: logs[0].PTS + 13 }]
+    : logs;
+
 const RESOLVABLE_SLATES = {
   [DEFAULT_SLATE_DATE]: {
     matchup: matchupPayload,
@@ -2675,9 +2701,14 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    if (url.pathname === '/api/games/seasons') {
+      await route.fulfill({ json: SEASONS });
+      return;
+    }
+
     if (url.pathname === '/api/games/game_logs') {
       const playerName = url.searchParams.get('player_name');
-      const season = seasonsByPlayer[playerName] || gameLogs;
+      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
       await route.fulfill({
         json: {
           game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
@@ -2693,7 +2724,15 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/games/slate') {
-      const date = url.searchParams.get('date') || DEFAULT_SLATE_DATE;
+      const date = url.searchParams.get('date') || todaySlateDate();
+      // Every date but the completed one lists a game, so the nearest game day
+      // on either side is the adjacent date.
+      const adjacent = (days) => {
+        const moved = new Date(`${date}T12:00:00Z`);
+        moved.setUTCDate(moved.getUTCDate() + days);
+        return moved.toISOString().slice(0, 10);
+      };
+      const neighbours = { previousGameDate: adjacent(-1), nextGameDate: adjacent(1) };
       // The completed LAC @ MIL game is on its own date, so a Target aimed at
       // either side of it resolves against game-log participants there. The
       // pool freshness matches the evidence resolution reports for the same
@@ -2702,8 +2741,9 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       await route.fulfill({
         json:
           date === HISTORICAL_SLATE_DATE
-            ? slatePayload(date, [historicalGame])
+            ? slatePayload(date, [historicalGame], neighbours)
             : slatePayload(date, [scheduleOnlySlateGame], {
+                ...neighbours,
                 poolFreshnessStatus: 'fresh',
                 poolRetrievedAt: '2026-01-15T11:50:00Z',
               }),

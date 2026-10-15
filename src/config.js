@@ -15,6 +15,7 @@ const config = {
     TEAMS: '/api/teams',
     GAME_LOGS: '/api/games/game_logs',
     SLATE: '/api/games/slate',
+    SEASONS: '/api/games/seasons',
     MATCHUP: '/api/games/matchup',
     MATCHUP_SELECTION: '/api/games/matchup/selection',
     NEXT_OPPONENT: '/api/players/next-opponent',

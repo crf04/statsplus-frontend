@@ -446,6 +446,21 @@ const GameLogFilter = () => {
   ]);
 
   /*
+   * The Season select is not a Filter Set apply: it writes the season into the
+   * URL beside whatever else is there and stops. Any read follows from the URL
+   * like every other change, so a reader with no player yet can still choose a
+   * season, and nothing is requested for a player nobody named.
+   */
+  const handleSeasonChange = (season) => {
+    if (isRefusedLink) return;
+    const nextSearch = filterSetToSearchParams(
+      mergeFilterSet(urlFilters, { season_filter: season }),
+    );
+    if (nextSearch.toString() === searchParams.toString()) return;
+    setSearchParams(nextSearch, { replace: false });
+  };
+
+  /*
    * Applying a changed Filter Set writes it to the URL for the effect above
    * to request. Reapplying the current Filter Set explicitly refreshes it.
    *
@@ -671,6 +686,7 @@ const GameLogFilter = () => {
               <FilterOptions
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
+                onSeasonChange={handleSeasonChange}
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}
                 seasonGameLogsLoading={seasonGameLogsLoading}

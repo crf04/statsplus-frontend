@@ -3,9 +3,12 @@
 **Question:** should the home page (`/`, the Query Prompt) preview Matchups
 and Targets, and in what shape?
 
-Variants on the real home, switched by `#proto=home&v=E|A|B|C|D|Now` (hash,
+Variants on the real home, switched by `#proto=home&v=H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
+- **H** E + spotlight + answer ladder
+- **F** E + spotlight: the slate's best and toughest PTS matchup, with the two play types behind each
+- **G** E + answer ladder: each ladder step shows its real result (PTS, games, per-game bars)
 - **E** C without Targets: ticker with the 3 biggest PTS effects per game
 - **A** Targets sidebar (two firing Targets) + slate strip under the search
 - **B** "Tonight" board under the search: full scoreboard + two Targets
@@ -21,3 +24,6 @@ calls.
 
 Run: `npm start` then `/#proto=home&v=A`. Standalone (no sign-in):
 `REACT_APP_PROTOTYPE=home npm run build`.
+
+`hooks.json`: the spotlight picks (non-thin, 12+ PPG) from the fifteen Matchups,
+and the three ladder queries' game logs, run through the NL endpoint.

@@ -286,6 +286,7 @@ const NaturalLanguageQuery = ({
           ladder={ladder}
           variant={proto.variant}
           step={proto.step}
+          onUseQuery={setQuery}
         />
       );
     }

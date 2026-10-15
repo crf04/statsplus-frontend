@@ -29,6 +29,7 @@ import {
   shortName,
   tipoff,
 } from './parts';
+import { AnswerLadder, Spotlight } from './hooks';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -302,7 +303,7 @@ const VariantD = ({ hero, ladder, data }) => {
 
 /* E: C's ticker on its own, no Targets. Each game shows its three biggest
    points Matchup effects, favourable or not. */
-const VariantE = ({ hero, ladder, data }) => {
+const VariantE = ({ hero, ladder, data, middle = null }) => {
   const { slate } = data;
   return (
     <div className="hp-c hp-e">
@@ -337,22 +338,50 @@ const VariantE = ({ hero, ladder, data }) => {
       </div>
       <div className="landing-container">
         {hero}
+        {middle}
         {ladder}
       </div>
     </div>
   );
 };
 
-const VARIANTS = { E: VariantE, A: VariantA, B: VariantB, C: VariantC, D: VariantD };
+/* F/G/H: E's ticker plus a reason to stay. */
+const VariantF = (props) => (
+  <VariantE
+    {...props}
+    middle={<Spotlight slate={props.data.slate} onUseQuery={props.onUseQuery} />}
+  />
+);
+const VariantG = (props) => (
+  <VariantE {...props} ladder={<AnswerLadder onUseQuery={props.onUseQuery} />} />
+);
+const VariantH = (props) => (
+  <VariantE
+    {...props}
+    middle={<Spotlight slate={props.data.slate} onUseQuery={props.onUseQuery} />}
+    ladder={<AnswerLadder onUseQuery={props.onUseQuery} />}
+  />
+);
 
-const HomePreviewPrototype = ({ hero, ladder, variant, step }) => {
+const VARIANTS = {
+  H: VariantH,
+  F: VariantF,
+  G: VariantG,
+  E: VariantE,
+  A: VariantA,
+  B: VariantB,
+  C: VariantC,
+  D: VariantD,
+};
+
+const HomePreviewPrototype = ({ hero, ladder, variant, step, onUseQuery }) => {
   const data = useHomePreviewData();
   const Variant = VARIANTS[variant];
   return (
     <>
       <div className="landing-page hp-page">
         {Variant ? (
-          <Variant hero={hero} ladder={ladder} data={data} />
+          <Variant hero={hero} ladder={ladder} data={data} onUseQuery={onUseQuery} />
         ) : (
           <div className="landing-container">
             {hero}

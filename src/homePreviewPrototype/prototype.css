@@ -2063,3 +2063,32 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Z2: questions as one row; Tonight | Targets ----------------------------- */
+.hp-e .landing-container:has(.hp-z2) {
+  max-width: 1120px;
+  width: 100%;
+}
+.hp-e .landing-container:has(.hp-z2) .landing-hero {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.hp-z2 .hp-lpath {
+  margin: -36px auto 56px;
+}
+.hp-z2 .hp-lpath ol {
+  flex-wrap: nowrap;
+}
+.hp-z2-cols {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  gap: 56px;
+}
+.hp-z2-targets .hp-tline:first-child {
+  border-top: 0;
+}
+@media (max-width: 1060px) {
+  .hp-z2 .hp-lpath ol {
+    flex-wrap: wrap;
+  }
+}

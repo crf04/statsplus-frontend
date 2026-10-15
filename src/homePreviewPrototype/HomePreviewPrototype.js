@@ -732,6 +732,50 @@ const VariantO = (props) => {
   );
 };
 
+/* Z2: Z, calmer: the questions as one row, Tonight and Targets side by side. */
+const VariantZ2 = (props) => {
+  const { bestCard, worstCard } = useTonight(props);
+  const { targets } = props.data;
+  return (
+    <VariantE
+      {...props}
+      heroSlot={<div className="hp-o-hero hp-one-line">{props.hero}</div>}
+      ladder={
+        <div className="hp-z2">
+          <LadderPath onUseQuery={props.onUseQuery} />
+          <section className="hp-cols hp-z2-cols">
+            <div className="hp-col">
+              <div className="hp-col-head">
+                <h2 className="hp-section-title">Tonight</h2>
+                <ProtoLink to="/matchups" className="hp-more">
+                  Matchups →
+                </ProtoLink>
+              </div>
+              <div className="hp-col-stack">
+                {bestCard}
+                {worstCard}
+              </div>
+            </div>
+            <div className="hp-col">
+              <div className="hp-col-head">
+                <h2 className="hp-section-title">Your Targets</h2>
+                <ProtoLink to="/targets" className="hp-more">
+                  {targets ? `All ${targets.firing.length} firing →` : 'All →'}
+                </ProtoLink>
+              </div>
+              <div className="hp-z2-targets">
+                {targets?.firing.slice(0, 4).map((entry) => (
+                  <TargetLine key={entry.target.id} entry={entry} />
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      }
+    />
+  );
+};
+
 const VariantP = (props) => {
   const { slate } = props.data;
   const { best, worst } = spotPicks(slate);
@@ -859,6 +903,7 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  Z2: VariantZ2,
   Z: VariantO,
   Y: VariantO,
   W: VariantW,

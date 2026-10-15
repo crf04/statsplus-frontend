@@ -41,6 +41,8 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
   useEffect(() => {
     if (settled) onSettled?.(selectedPlayer, selectedTeam);
   }, [settled, selectedPlayer, selectedTeam, onSettled]);
+  // Unmounted, it has settled for nothing; a remount must answer again.
+  useEffect(() => () => onSettled?.(null), [onSettled]);
 
   useEffect(() => {
     const controller = new AbortController();

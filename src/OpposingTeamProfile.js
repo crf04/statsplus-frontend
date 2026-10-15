@@ -25,6 +25,8 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
   useEffect(() => {
     if (settled) onSettled?.(selectedTeam);
   }, [settled, selectedTeam, onSettled]);
+  // Unmounted, it has settled for nothing; a remount must answer again.
+  useEffect(() => () => onSettled?.(null), [onSettled]);
 
   const fetchTeamStats = useCallback(
     (signal) => {

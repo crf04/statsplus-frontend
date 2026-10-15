@@ -31,8 +31,11 @@ const ChartComponent = lazy(() => import('./ChartComponent'));
 
 // Renders nothing; mounted beside a lazy section inside the same Suspense
 // boundary, its effect runs only once that section's chunk has arrived.
-const OnMount = ({ onMount }) => {
-  useEffect(() => onMount(), [onMount]);
+const OnMount = ({ onMount, onUnmount }) => {
+  useEffect(() => {
+    onMount();
+    return onUnmount;
+  }, [onMount, onUnmount]);
   return null;
 };
 
@@ -91,11 +94,13 @@ const GameLogFilter = () => {
   const [profileSettledFor, setProfileSettledFor] = useState(null);
   const [opponentSettledFor, setOpponentSettledFor] = useState(null);
   const [chartReady, setChartReady] = useState(false);
+  const [panelSettledFor, setPanelSettledFor] = useState(null);
   const handleProfileSettled = useCallback(
-    (player, team) => setProfileSettledFor(`${player}|${team}`),
+    (player, team) => setProfileSettledFor(player === null ? null : `${player}|${team}`),
     [],
   );
   const handleChartReady = useCallback(() => setChartReady(true), []);
+  const handleChartGone = useCallback(() => setChartReady(false), []);
   // Each game-log request starts a new load for the Workspace to reveal whole.
   const [workspaceLoad, setWorkspaceLoad] = useState(0);
   const [revealedLoad, setRevealedLoad] = useState(null);
@@ -502,8 +507,11 @@ const GameLogFilter = () => {
     listsLoading ||
     isGameLogsLoading ||
     !chartReady ||
+    panelSettledFor !== selectedPlayer ||
     profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
     opponentSettledFor !== selectedTeam;
+  // The season range is left out on purpose: it is only the panel's strip,
+  // which says it is loading in place, and the page stays usable meanwhile.
   // Once a load has been revealed, a section re-reading because the user
   // changed it (another opponent, another profile tab) shows its own progress
   // rather than taking the whole Workspace back behind the loading state.
@@ -651,7 +659,7 @@ const GameLogFilter = () => {
                       averages={averages}
                       appliedFilters={appliedFilters}
                     />
-                    <OnMount onMount={handleChartReady} />
+                    <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />
                   </Suspense>
                 </Card.Body>
               </Card>
@@ -672,6 +680,7 @@ const GameLogFilter = () => {
                 averages={averages}
                 lineType={lineType}
                 lineValue={lineValue}
+                onContextSettled={setPanelSettledFor}
               />
             </Col>
           </Row>

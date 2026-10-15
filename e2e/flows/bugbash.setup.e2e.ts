@@ -72,7 +72,7 @@ test('browser audit observes local resources and CSP-blocked WebSockets', async 
     await route.continue();
   });
   await app.open('/connect');
-  await expect(screen.getByRole('heading', 'Use CourtAI in Claude or ChatGPT')).toBeVisible();
+  await expect(screen.getByRole('heading', 'Ask CourtAI from your chat')).toBeVisible();
   await expect
     .poll(() =>
       entries.some((entry) => new URL(entry.url).pathname === '/src/connect/ConnectPage.js'),

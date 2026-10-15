@@ -2768,3 +2768,110 @@ describe('Rebound Types base', () => {
     expect(() => decodeMatchup(candidate)).toThrow('invalid response');
   });
 });
+
+describe('book_lines', () => {
+  const bookQuote = {
+    as_of: '2026-10-21T21:04:11Z',
+    closing: false,
+    books: [
+      {
+        book: 'draftkings',
+        line: 27.5,
+        over: -115,
+        under: -105,
+        updated_at: '2026-10-21T21:02:40Z',
+        best_over: false,
+        best_under: true,
+      },
+      {
+        book: 'fanduel',
+        line: 27.5,
+        over: -110,
+        under: null,
+        updated_at: '2026-10-21T21:03:02Z',
+        best_over: true,
+        best_under: false,
+      },
+    ],
+  };
+  const withBookLines = (bookLines) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    if (bookLines === undefined) delete candidate.players[0].book_lines;
+    else candidate.players[0].book_lines = bookLines;
+    return candidate;
+  };
+
+  test('decodes a quote into camelCase fields without touching the DFS provenance', () => {
+    const [player] = decodeMatchup(withBookLines({ PTS: bookQuote, PRA: bookQuote })).players;
+
+    expect(player.bookLines.PTS).toEqual({
+      asOf: '2026-10-21T21:04:11Z',
+      closing: false,
+      books: [
+        {
+          book: 'draftkings',
+          line: 27.5,
+          over: -115,
+          under: -105,
+          updatedAt: '2026-10-21T21:02:40Z',
+          bestOver: false,
+          bestUnder: true,
+        },
+        {
+          book: 'fanduel',
+          line: 27.5,
+          over: -110,
+          under: null,
+          updatedAt: '2026-10-21T21:03:02Z',
+          bestOver: true,
+          bestUnder: false,
+        },
+      ],
+    });
+    expect(Object.keys(player.bookLines)).toEqual(['PTS', 'PRA']);
+    expect(player.provenance).toEqual({ prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] });
+  });
+
+  test('accepts a market no DFS provider posts for the player', () => {
+    const [player] = decodeMatchup(withBookLines({ AST: bookQuote })).players;
+
+    expect(player.postedMarkets).toEqual(['PTS', 'FGA']);
+    expect(Object.keys(player.bookLines)).toEqual(['AST']);
+  });
+
+  test.each([
+    ['an empty object', {}],
+    ['an absent field (backend not deployed)', undefined],
+  ])('reads %s as no books', (_name, bookLines) => {
+    expect(decodeMatchup(withBookLines(bookLines)).players[0].bookLines).toEqual({});
+  });
+
+  const book = (overrides) => ({ ...bookQuote.books[0], ...overrides });
+  test.each([
+    ['a null book_lines', null],
+    ['an array book_lines', []],
+    ['a market outside the book set', { FGA: bookQuote }],
+    ['a quote that is not an object', { PTS: [] }],
+    ['a quote without books', { PTS: { ...bookQuote, books: undefined } }],
+    ['a missing as_of', { PTS: { ...bookQuote, as_of: undefined } }],
+    ['a non-boolean closing', { PTS: { ...bookQuote, closing: 'false' } }],
+    ['a non-finite line', { PTS: { ...bookQuote, books: [book({ line: null })] } }],
+    ['a string line', { PTS: { ...bookQuote, books: [book({ line: '27.5' })] } }],
+    ['a negative line', { PTS: { ...bookQuote, books: [book({ line: -1 })] } }],
+    ['a fractional price', { PTS: { ...bookQuote, books: [book({ over: -110.5 })] } }],
+    ['a string price', { PTS: { ...bookQuote, books: [book({ under: '-110' })] } }],
+    ['an undefined price', { PTS: { ...bookQuote, books: [book({ over: undefined })] } }],
+    ['a numeric best flag', { PTS: { ...bookQuote, books: [book({ best_over: 1 })] } }],
+    ['a missing best flag', { PTS: { ...bookQuote, books: [book({ best_under: undefined })] } }],
+    ['an empty book key', { PTS: { ...bookQuote, books: [book({ book: '' })] } }],
+    ['a missing updated_at', { PTS: { ...bookQuote, books: [book({ updated_at: undefined })] } }],
+  ])('rejects %s at the response boundary', (_name, bookLines) => {
+    expect(() => decodeMatchup(withBookLines(bookLines))).toThrow('invalid response');
+  });
+
+  test('rejects a non-finite line sent as Infinity', () => {
+    // JSON cannot carry Infinity, but a hand-built payload can.
+    const candidate = withBookLines({ PTS: { ...bookQuote, books: [book({ line: Infinity })] } });
+    expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  });
+});

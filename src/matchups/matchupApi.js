@@ -623,6 +623,7 @@ const decodePlayer = (player, experience, game) => {
     statCategories,
     provenance,
     lines: decodeLines(player.lines, provenance),
+    bookLines: decodeBookLines(player.book_lines),
     focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
@@ -677,6 +678,49 @@ function decodeProvenance(provenance, postedMarkets) {
     throw invalid();
   }
   return decoded;
+}
+
+// Sportsbook quotes ride beside provenance, not inside it: a book can post a
+// market no DFS provider does, so nothing here is checked against the posted
+// markets. A backend that predates the field omits it, which reads as no books.
+const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA'];
+const requireBoolean = (value) => {
+  if (typeof value !== 'boolean') throw invalid();
+  return value;
+};
+const requirePrice = (value) => (value === null ? null : requireInteger(value));
+
+function decodeBookLines(bookLines) {
+  if (bookLines === undefined) return {};
+  if (!isRecord(bookLines)) throw invalid();
+  return Object.fromEntries(
+    Object.entries(bookLines).map(([market, quote]) => {
+      if (!BOOK_LINE_MARKETS.includes(market) || !isRecord(quote) || !Array.isArray(quote.books)) {
+        throw invalid();
+      }
+      return [
+        market,
+        {
+          asOf: requireString(quote.as_of),
+          closing: requireBoolean(quote.closing),
+          books: quote.books.map((book) => {
+            if (!isRecord(book)) throw invalid();
+            const line = requireNumber(book.line);
+            if (line < 0) throw invalid();
+            return {
+              book: requireString(book.book),
+              line,
+              over: requirePrice(book.over),
+              under: requirePrice(book.under),
+              updatedAt: requireString(book.updated_at),
+              bestOver: requireBoolean(book.best_over),
+              bestUnder: requireBoolean(book.best_under),
+            };
+          }),
+        },
+      ];
+    }),
+  );
 }
 
 const decodeLeagueRowWindow = (value) => {

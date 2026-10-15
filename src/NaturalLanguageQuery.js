@@ -198,7 +198,10 @@ const NaturalLanguageQuery = ({
             Ask the <em>box score</em>
           </h1>
           <p className="landing-tagline">
-            Name a player, add what matters, and get back the exact games you meant.
+            {/* PROTOTYPE: variant Y tries a one-line tagline. */}
+            {proto.active && proto.variant === 'Y'
+              ? 'Name a player, add what matters, get the logs.'
+              : 'Name a player, add what matters, and get back the exact games you meant.'}
           </p>
         </div>
 

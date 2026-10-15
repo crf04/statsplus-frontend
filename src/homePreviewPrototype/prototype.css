@@ -2024,3 +2024,8 @@
   display: inline;
   margin-left: 0.06em;
 }
+.hp-one-line .landing-tagline {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(14px, 3.9vw, 19px);
+}

@@ -6,7 +6,7 @@ and Targets, and in what shape?
 Variants on the real home, switched by `#proto=home&v=Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
-- **Y** O with "Ask the box score" on one line
+- **Y** O with "Ask the box score" and a shorter tagline ("Name a player, add what matters, get the logs.") each on one line
 - **W** split: `/` is the Tonight home (T layout) with a search door; `/search` is the current Query Prompt + Log Workspace; nav Home | Search
 - **X** the same split with the V layout
 - **T** Matchups/Targets first: "Tonight" headline, compact search, games grid (3 biggest PTS effects + Targets-firing badge), Targets column

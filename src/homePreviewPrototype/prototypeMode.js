@@ -13,6 +13,7 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'home';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
 export const VARIANT_KEYS = [
+  'Z4',
   'Z3',
   'Z2',
   'Z',
@@ -45,6 +46,7 @@ export const VARIANT_KEYS = [
 ];
 
 export const VARIANT_NAMES = {
+  Z4: 'Z3 with less text',
   Z3: 'Z2 with the bar charts in the questions row',
   Z2: 'Questions as one row; Tonight | Targets below',
   Z: 'Y with three columns: questions | tonight | Targets',
@@ -103,8 +105,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'Z3';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'Z3';
+  const key = hash.get('v') || 'Z4';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'Z4';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);
@@ -120,4 +122,10 @@ export const useVariant = () => {
   );
   const split = active && SPLIT_VARIANTS.includes(variant);
   return { active, variant, step, split };
+};
+
+/* Z4 trims copy across the page; components read it here. */
+export const useTerse = () => {
+  const { active, variant } = useVariant();
+  return active && variant === 'Z4';
 };

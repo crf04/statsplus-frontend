@@ -6,7 +6,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { targetSliceLabel } from '../targets/targetCatalog';
-import { PROTO_STANDALONE } from './prototypeMode';
+import { PROTO_STANDALONE, useTerse } from './prototypeMode';
 import { ptsScoreFor } from './useHomePreviewData';
 
 /* The standalone build has no data behind the other pages, so links there
@@ -73,6 +73,7 @@ export const EdgeValue = ({ value, market }) => (
 /* A Target that fires on the slate: who it's against, what it asks for, and
    who fits. `density` is how much of the fit list shows. */
 export const TargetCard = ({ entry, density = 'full', withMatchup = false }) => {
+  const terse = useTerse();
   const { target, game, players } = entry;
   const shown = density === 'full' ? players.slice(0, 3) : players.slice(0, 2);
   return (
@@ -99,7 +100,7 @@ export const TargetCard = ({ entry, density = 'full', withMatchup = false }) => 
               </span>
               <span className="hp-fit-share">
                 {Math.round(player.shares[0].share * 100)}%
-                {player.shares[0].leagueAverageShare !== null && (
+                {!terse && player.shares[0].leagueAverageShare !== null && (
                   <small> lg {Math.round(player.shares[0].leagueAverageShare * 100)}%</small>
                 )}
               </span>
@@ -118,7 +119,8 @@ export const TargetCard = ({ entry, density = 'full', withMatchup = false }) => 
       )}
       <div className="hp-target-foot">
         <span>
-          <b>{players.length}</b> {players.length === 1 ? 'player fits' : 'players fit'}
+          <b>{players.length}</b>{' '}
+          {terse ? 'fit' : players.length === 1 ? 'player fits' : 'players fit'}
         </span>
         <ArrowRight size={13} aria-hidden="true" />
       </div>

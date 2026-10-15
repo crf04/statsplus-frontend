@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import PrototypeSwitcher from './PrototypeSwitcher';
-import { DEMO_DATE } from './prototypeMode';
+import { DEMO_DATE, useTerse } from './prototypeMode';
 import {
   bestEdgeInGame,
   biggestPtsEffects,
@@ -316,13 +316,14 @@ const VariantD = ({ hero, ladder, data }) => {
    points Matchup effects, favourable or not. */
 const VariantE = ({ hero, ladder, data, middle = null, heroSlot = null }) => {
   const { slate } = data;
+  const terse = useTerse();
   return (
-    <div className="hp-c hp-e">
+    <div className={`hp-c hp-e${terse ? ' hp-terse' : ''}`}>
       <div className="hp-ticker" aria-label="Tonight's slate">
         <ProtoLink to="/matchups" className="hp-ticker-label">
           {slateDay}
           <b>{slate ? slate.games.length : '–'} games</b>
-          <span className="hp-e-legend">PTS matchup</span>
+          {!terse && <span className="hp-e-legend">PTS matchup</span>}
         </ProtoLink>
         <div className="hp-ticker-track">
           {slate?.games.map((game) => (
@@ -334,10 +335,10 @@ const VariantE = ({ hero, ladder, data, middle = null, heroSlot = null }) => {
               <span className="hp-tick-teams">{gameLabel(game)}</span>
               <span className="hp-tick-time">{tipoff(game.scheduledAt)}</span>
               <ul className="hp-e-effects">
-                {biggestPtsEffects(game.gameId).map((player) => (
+                {biggestPtsEffects(game.gameId, terse ? 1 : 3).map((player) => (
                   <li key={player.id}>
                     <span>
-                      {lastName(player.name)} <small>{player.tricode}</small>
+                      {lastName(player.name)} {!terse && <small>{player.tricode}</small>}
                     </span>
                     <EdgeValue value={player.value} />
                   </li>
@@ -735,7 +736,7 @@ const VariantO = (props) => {
 /* Z2: Z, calmer: the questions as one row, Tonight and Targets side by side. */
 const VariantZ2 = (props) => {
   // Z3: the same, with the per-step bar charts kept in the questions row.
-  const withBars = props.variant === 'Z3';
+  const withBars = props.variant === 'Z3' || props.variant === 'Z4';
   const { bestCard, worstCard } = useTonight(props);
   const { targets } = props.data;
   return (
@@ -919,6 +920,7 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  Z4: VariantZ2,
   Z3: VariantZ2,
   Z2: VariantZ2,
   Z: VariantO,

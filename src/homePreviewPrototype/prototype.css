@@ -2128,3 +2128,16 @@
 .hp-z3-cols .hp-col-stack > .hp-slim {
   flex: 1;
 }
+
+/* ---- Z4: less text -------------------------------------------------------- */
+.hp-terse .hp-e-tick {
+  min-width: 0;
+}
+.hp-terse .hp-ticker-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.hp-terse .hp-ticker-label b {
+  font-size: 13px;
+}

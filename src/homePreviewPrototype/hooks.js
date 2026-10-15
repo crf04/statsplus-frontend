@@ -16,6 +16,7 @@ import savedSets from './mock/saved-filter-sets.json';
 import { decodeSavedFilterSets } from '../savedFilterSetsApi';
 import { describeSavedFilterSet } from '../savedFilterSetDescription';
 import { ProtoLink, pct, tipoff } from './parts';
+import { useTerse } from './prototypeMode';
 
 const ordinal = (n) => {
   const tail =
@@ -121,89 +122,98 @@ const Bars = ({ series, average }) => {
   );
 };
 
-export const AnswerLadder = ({ onUseQuery, compact = false, referenceUp = false }) => (
-  <section
-    className={`query-ladder hp-answers${compact ? ' hp-answers-compact' : ''}`}
-    aria-labelledby="hp-answers-heading"
-  >
-    <div className="query-ladder-head">
-      <h2 id="hp-answers-heading" className="query-ladder-title">
-        One question, three steps
-      </h2>
-      <p className="query-ladder-sub">Real answers from last season. Click one to load it.</p>
-      {referenceUp && (
-        <Link to="/help" className="hp-reference-up">
-          Every filter we understand <ArrowRight size={13} aria-hidden="true" />
-        </Link>
-      )}
-    </div>
-    <ol className="query-ladder-rungs">
-      {QUERY_LADDER.map((step, index) => {
-        const { before, added, after } = splitAddedClause(step.query, step.added);
-        const answer = hooks.ladder[index];
-        const previous = hooks.ladder[index - 1];
-        const delta = previous ? Math.round((answer.PTS - previous.PTS) * 10) / 10 : null;
-        return (
-          <li className="query-ladder-rung" key={step.id}>
-            <button
-              type="button"
-              className="query-ladder-button"
-              onClick={() => onUseQuery(step.query)}
-            >
-              <span className="query-ladder-index" aria-hidden="true">
-                {index + 1}
-              </span>
-              <span className="query-ladder-body">
-                <span className="query-ladder-query">
-                  {before}
-                  <mark>{added}</mark>
-                  {after}
+export const AnswerLadder = ({ onUseQuery, compact = false, referenceUp = false }) => {
+  const terse = useTerse();
+  return (
+    <section
+      className={`query-ladder hp-answers${compact ? ' hp-answers-compact' : ''}`}
+      aria-labelledby="hp-answers-heading"
+    >
+      <div className="query-ladder-head">
+        <h2 id="hp-answers-heading" className="query-ladder-title">
+          {terse ? 'Get more specific' : 'One question, three steps'}
+        </h2>
+        {!terse && (
+          <p className="query-ladder-sub">Real answers from last season. Click one to load it.</p>
+        )}
+        {referenceUp && (
+          <Link to="/help" className="hp-reference-up">
+            {terse ? 'All filters' : 'Every filter we understand'}{' '}
+            <ArrowRight size={13} aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+      <ol className="query-ladder-rungs">
+        {QUERY_LADDER.map((step, index) => {
+          const { before, added, after } = splitAddedClause(step.query, step.added);
+          const answer = hooks.ladder[index];
+          const previous = hooks.ladder[index - 1];
+          const delta = previous ? Math.round((answer.PTS - previous.PTS) * 10) / 10 : null;
+          return (
+            <li className="query-ladder-rung" key={step.id}>
+              <button
+                type="button"
+                className="query-ladder-button"
+                onClick={() => onUseQuery(step.query)}
+              >
+                <span className="query-ladder-index" aria-hidden="true">
+                  {index + 1}
                 </span>
-                <span className="hp-answer">
-                  <span className="hp-answer-pts">
-                    <b>{answer.PTS.toFixed(1)}</b> PTS
-                    {delta !== null && (
-                      <small className={delta >= 0 ? 'is-up' : 'is-down'}>
-                        {delta >= 0 ? '+' : '−'}
-                        {Math.abs(delta).toFixed(1)}
-                      </small>
-                    )}
+                <span className="query-ladder-body">
+                  <span className="query-ladder-query">
+                    {before}
+                    <mark>{added}</mark>
+                    {after}
                   </span>
-                  <span className="hp-answer-line" hidden={compact}>
-                    {answer.REB.toFixed(1)} REB · {answer.AST.toFixed(1)} AST ·{' '}
-                    <b>{answer.games}</b> games
+                  <span className="hp-answer">
+                    <span className="hp-answer-pts">
+                      <b>{answer.PTS.toFixed(1)}</b> PTS
+                      {delta !== null && (
+                        <small className={delta >= 0 ? 'is-up' : 'is-down'}>
+                          {delta >= 0 ? '+' : '−'}
+                          {Math.abs(delta).toFixed(1)}
+                        </small>
+                      )}
+                    </span>
+                    <span className="hp-answer-line" hidden={compact}>
+                      {answer.REB.toFixed(1)} REB · {answer.AST.toFixed(1)} AST ·{' '}
+                      <b>{answer.games}</b> games
+                    </span>
+                    <Bars series={answer.series} average={answer.PTS} />
                   </span>
-                  <Bars series={answer.series} average={answer.PTS} />
                 </span>
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ol>
-  </section>
-);
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+};
 
 /* K/L: the spotlight reduced to one reason, the slice whose opponent effect
    pushes hardest in the score's direction. */
 export const SlimSpot = ({ kind, pick, game, onUseQuery }) => {
+  const terse = useTerse();
   const up = pick.value >= 0;
   const reason = [...pick.why].sort((a, b) => (up ? b.pct - a.pct : a.pct - b.pct))[0];
   const query = `${pick.name} this year against ${up ? 'bottom' : 'top'} 10 defenses`;
   return (
     <article className={`hp-slim ${up ? 'is-up' : 'is-down'}`}>
-      <span className="hp-kicker">{kind}</span>
+      <span className="hp-kicker">{terse ? (up ? 'Best' : 'Toughest') : kind}</span>
       <div className="hp-slim-head">
         <h3 className="hp-slim-name">{pick.name}</h3>
         <b className="hp-slim-score">{pct(pick.value, 1)}</b>
       </div>
       <p className="hp-slim-game">
-        {pick.tricode} vs {pick.opponent}
-        {game && ` · ${tipoff(game.scheduledAt)}`} · PTS matchup
+        {terse ? '' : `${pick.tricode} `}vs {pick.opponent}
+        {game && ` · ${tipoff(game.scheduledAt)}`}
+        {!terse && ' · PTS matchup'}
       </p>
       <p className="hp-slim-why">
-        {targetSliceLabel('play_types', reason.key)} is {Math.round(reason.share * 100)}% of his
-        plays; {pick.opponent} {rankPhrase(reason.rank)}.
+        {terse
+          ? `${targetSliceLabel('play_types', reason.key)} ${Math.round(reason.share * 100)}% of plays · ${pick.opponent} ${rankPhrase(reason.rank)}`
+          : `${targetSliceLabel('play_types', reason.key)} is ${Math.round(reason.share * 100)}% of his plays; ${pick.opponent} ${rankPhrase(reason.rank)}.`}
       </p>
       <button type="button" className="hp-slim-cta" onClick={() => onUseQuery(query)}>
         Try it <ArrowRight size={13} aria-hidden="true" />

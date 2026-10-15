@@ -12,7 +12,7 @@ import LandingCourt from './LandingCourt';
 import './ModernSearch.css';
 // PROTOTYPE (throwaway, branch prototype/home-feature-previews)
 import HomePreviewPrototype from './homePreviewPrototype/HomePreviewPrototype';
-import { useVariant } from './homePreviewPrototype/prototypeMode';
+import { useTerse, useVariant } from './homePreviewPrototype/prototypeMode';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -40,6 +40,7 @@ const NaturalLanguageQuery = ({
   const location = useLocation();
   const navigate = useNavigate();
   const proto = useVariant(); // PROTOTYPE (throwaway)
+  const terse = useTerse();
   const wasInWorkspace = useRef(inWorkspace);
 
   // Combined loading state: true if either NL query or game logs are loading
@@ -191,7 +192,8 @@ const NaturalLanguageQuery = ({
         <LandingCourt />
         <div className="landing-header">
           <Link to="/connect" className="landing-connect">
-            <span className="landing-connect-new">New</span> Ask CourtAI in Claude or ChatGPT
+            <span className="landing-connect-new">New</span>{' '}
+            {terse ? 'Claude & ChatGPT' : 'Ask CourtAI in Claude or ChatGPT'}
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
           <h1 className="landing-title">
@@ -199,7 +201,7 @@ const NaturalLanguageQuery = ({
           </h1>
           <p className="landing-tagline">
             {/* PROTOTYPE: variant Y tries a one-line tagline. */}
-            {proto.active && ['Y', 'Z', 'Z2', 'Z3'].includes(proto.variant)
+            {proto.active && ['Y', 'Z', 'Z2', 'Z3', 'Z4'].includes(proto.variant)
               ? 'Name a player, add what matters, get the logs.'
               : 'Name a player, add what matters, and get back the exact games you meant.'}
           </p>
@@ -252,7 +254,7 @@ const NaturalLanguageQuery = ({
             disabled={isLoading || !isAuthenticated}
             onClick={() => navigate(`${location.pathname}?${BROWSE_PARAM}=1`)}
           >
-            Browse without a query
+            {terse ? 'Browse' : 'Browse without a query'}
           </button>
           {onOpenSavedFilterSets && (
             <button
@@ -261,7 +263,7 @@ const NaturalLanguageQuery = ({
               disabled={isLoading}
               onClick={onOpenSavedFilterSets}
             >
-              Saved Filter Sets
+              {terse ? 'Saved' : 'Saved Filter Sets'}
             </button>
           )}
         </div>

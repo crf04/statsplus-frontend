@@ -1377,6 +1377,158 @@ test('the applied-filter badges describe the data after a player change', async 
   await expect(page.getByText('GAMES <= 5')).toHaveCount(badgePlaces);
 });
 
+test('the Log Workspace appears in one piece once every section has answered', async ({
+  authenticatedPage: page,
+}) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  // The opposing team's stats answer last; nothing else may appear before them.
+  await page.route('**/api/teams/stats**', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('category') === 'Traditional') {
+      await held;
+    }
+    await route.fallback();
+  });
+
+  const othersAnswered = Promise.all([
+    page.waitForResponse('**/api/games/game_logs**'),
+    page.waitForResponse('**/api/players/profile**'),
+    page.waitForResponse('**/api/user/saved-filter-sets'),
+  ]);
+  await page.goto('/?player_name=LeBron+James');
+  await othersAnswered;
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Player Profile', exact: true })).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Player Profile', exact: true })).toBeVisible();
+  await expect(page.getByText('Loading game logs…')).toBeHidden();
+});
+
+test("the Log Workspace waits for the filter panel's saved sets", async ({
+  authenticatedPage: page,
+}) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/user/saved-filter-sets', async (route) => {
+    await held;
+    await route.fallback();
+  });
+
+  // Everything else has answered, so only the held read can be keeping it back.
+  const othersAnswered = Promise.all([
+    page.waitForResponse('**/api/games/game_logs**'),
+    page.waitForResponse('**/api/players/profile**'),
+    page.waitForResponse((response) => response.url().includes('category=Traditional')),
+  ]);
+  await page.goto('/?player_name=LeBron+James');
+  await othersAnswered;
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByText('Loading game logs…')).toBeHidden();
+});
+
+test('reopening the Log Workspace waits for every section again', async ({
+  authenticatedPage: page,
+}) => {
+  let holdProfile = false;
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/players/profile**', async (route) => {
+    if (holdProfile) await held;
+    await route.fallback();
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
+
+  holdProfile = true;
+  const logsAnswered = page.waitForResponse('**/api/games/game_logs**');
+  await page.goBack();
+  await logsAnswered;
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Player Profile', exact: true })).toBeVisible();
+});
+
+test('returning to a player waits for that player again', async ({ authenticatedPage: page }) => {
+  let holdProfiles = false;
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/players/profile**', async (route) => {
+    if (holdProfiles) await held;
+    await route.fallback();
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+
+  holdProfiles = true;
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+
+  const logsAnswered = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/games/game_logs') && response.url().includes('LeBron'),
+  );
+  await page.goBack();
+  await logsAnswered;
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+});
+
+test('reopening a Workspace with no player still waits for every section', async ({
+  authenticatedPage: page,
+}) => {
+  let holdSaved = false;
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/user/saved-filter-sets', async (route) => {
+    if (holdSaved) await held;
+    await route.fallback();
+  });
+
+  await page.goto('/?browse=1');
+  await expect(page.getByLabel('Player:')).toBeVisible();
+  await page.getByRole('button', { name: 'Back to search' }).click();
+  await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
+
+  holdSaved = true;
+  const savedRequested = page.waitForRequest('**/api/user/saved-filter-sets');
+  await page.goBack();
+  await savedRequested;
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByLabel('Player:')).toBeHidden();
+
+  release();
+  await expect(page.getByLabel('Player:')).toBeVisible();
+});
+
 test("a player change never leaves the previous player's rows under the new name", async ({
   authenticatedPage: page,
 }) => {

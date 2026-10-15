@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useFirstTouchSender } from './attribution/firstTouch';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
@@ -82,7 +83,8 @@ function AppNav() {
 // A waitlisted account has nothing signed-in to show: the screen replaces the
 // header and every route until the user signs out.
 function SignedInShell() {
-  const { isAuthenticated, waitlist } = useAuth();
+  const { isAuthenticated, waitlist, currentUser } = useAuth();
+  useFirstTouchSender(currentUser?.uid);
   if (isAuthenticated && waitlist) return <WaitlistScreen />;
 
   return (

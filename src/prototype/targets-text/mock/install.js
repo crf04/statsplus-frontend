@@ -10,6 +10,7 @@ import targets from './targets.json';
 import backtests from './backtests.json';
 import baselines from './baselines.json';
 import resolve from './resolve.json';
+import seasonMinutesPor from './season-minutes-por.json';
 
 export const DEMO_URL = '/targets#v=A';
 
@@ -22,6 +23,7 @@ export const installMockApi = () => {
     else if (get && url.endsWith('/api/user/targets/resolve')) data = resolve;
     else if (get && url.endsWith('/api/user/targets/backtests')) data = backtests;
     else if (get && url.endsWith('/api/diet/baselines')) data = baselines;
+    else if (get && url.endsWith('/api/teams/POR/season-minutes')) data = seasonMinutesPor;
     if (data) {
       config.adapter = async () => ({ data, status: 200, statusText: 'OK', headers: {}, config });
     }

@@ -239,3 +239,73 @@ test('Shooting Type reads the league baselines beside the profile', async () => 
   expect(screen.getByText('Catch & shoot')).toBeVisible();
   expect(screen.getByText('lg 32%')).toBeVisible();
 });
+
+test('a late answer for an earlier opponent cannot replace the current court or its readiness', async () => {
+  const pending = {};
+  apiClient.get.mockImplementation((url, { params }) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? new Promise((resolve, reject) => {
+          pending[params.opponent] = { resolve, reject };
+        })
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  const onSettled = jest.fn();
+  const view = (team) => (
+    <PlayerProfile selectedPlayer="LeBron James" selectedTeam={team} onSettled={onSettled} />
+  );
+  const { rerender } = render(view('Boston Celtics'));
+  await act(async () => {});
+  fireEvent.click(screen.getByLabelText('Zone Shooting'));
+  await act(async () => pending.BOS.resolve({ data: zoneMatchup('BOS') }));
+  expect(screen.getByText('Shot zones · vs BOS')).toBeVisible();
+
+  // A new opponent: the Boston court is not shown for it and it is not ready.
+  rerender(view('New York Knicks'));
+  await act(async () => {});
+  expect(screen.queryByText('Shot zones · vs BOS')).not.toBeInTheDocument();
+  expect(screen.getByText('Loading data...')).toBeVisible();
+  expect(onSettled).not.toHaveBeenCalledWith('LeBron James', 'New York Knicks');
+  await act(async () => pending.NYK.resolve({ data: zoneMatchup('NYK') }));
+  expect(screen.getByText('Shot zones · vs NYK')).toBeVisible();
+  expect(onSettled).toHaveBeenLastCalledWith('LeBron James', 'New York Knicks');
+
+  // An answer for an abandoned opponent landing after the current one changes nothing.
+  rerender(view('Los Angeles Lakers'));
+  await act(async () => {});
+  rerender(view('Miami Heat'));
+  await act(async () => pending.MIA.resolve({ data: zoneMatchup('MIA') }));
+  await act(async () => pending.LAL.resolve({ data: zoneMatchup('LAL') }));
+  expect(screen.getByText('Shot zones · vs MIA')).toBeVisible();
+  expect(screen.queryByText('Loading data...')).not.toBeInTheDocument();
+
+  rerender(view('Dallas Mavericks'));
+  await act(async () => {});
+  rerender(view('Denver Nuggets'));
+  await act(async () => pending.DEN.resolve({ data: zoneMatchup('DEN') }));
+  await act(async () => pending.DAL.reject(failedRequest(500)));
+  expect(screen.getByText('Shot zones · vs DEN')).toBeVisible();
+  expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+  expect(onSettled).toHaveBeenLastCalledWith('LeBron James', 'Denver Nuggets');
+});
+
+test('a player the backend cannot score reads as missing data, not a failure', async () => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? Promise.reject(
+          Object.assign(new Error('Request failed with status code 404'), {
+            response: {
+              status: 404,
+              data: {
+                error: { code: 'resource_not_found', details: { reason: 'no_player_diet' } },
+              },
+            },
+          }),
+        )
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(<PlayerProfile selectedPlayer="Cooper Flagg" selectedTeam="Boston Celtics" />);
+  await act(async () => {});
+  fireEvent.click(screen.getByLabelText('Zone Shooting'));
+  await act(async () => {});
+  expect(screen.getByText('No shot zone matchup for Cooper Flagg this season.')).toBeVisible();
+});

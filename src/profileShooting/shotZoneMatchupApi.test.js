@@ -1,4 +1,4 @@
-import { decodeShotZoneMatchup } from './shotZoneMatchupApi';
+import { decodeShotZoneMatchup, shotZoneUnavailable } from './shotZoneMatchupApi';
 
 const payload = (overrides = {}) => ({
   players: [
@@ -75,10 +75,24 @@ test.each([
     }),
     'CHA',
   ],
-  ['more than one player', payload({ players: [{}, {}] }), 'CHA'],
+  [
+    'more than one player',
+    payload({ players: [payload().players[0], payload().players[0]] }),
+    'CHA',
+  ],
   ['no Diet', payload({ players: [{ diet_shares: {} }] }), 'CHA'],
 ])('refuses %s', (_, data, opponent) => {
   expect(() => decodeShotZoneMatchup(data, opponent)).toThrow(
     'The shot zone matchup API returned an invalid response.',
   );
+});
+
+test.each([
+  [404, 'no_player_diet', true],
+  [404, 'player_not_found', true],
+  [404, 'team_not_found', false],
+  [500, 'no_player_diet', false],
+])('a %i with reason %s is an unscorable player: %s', (status, reason, expected) => {
+  const error = { response: { status, data: { error: { code: 'x', details: { reason } } } } };
+  expect(shotZoneUnavailable(error)).toBe(expected);
 });

@@ -33,6 +33,22 @@ test('every region reads his share, then the opponent rank and percent vs league
     '2%· 2nd · −18.6%',
     '2%· 2nd · −18.6%',
   ]);
+  // Fill: what the opponent allows in made shots, green for more, red for less.
+  const fills = [...container.querySelectorAll('svg [fill]')].map((shape) =>
+    shape.getAttribute('fill'),
+  );
+  expect(fills.slice(0, 10)).toEqual([
+    'var(--ct-surface)',
+    'rgba(76, 175, 125, 0.20)', // above the break, +2.3%
+    'rgba(194, 78, 78, 0.78)', // left corner, -18.6%
+    'rgba(194, 78, 78, 0.78)', // right corner
+    'var(--ct-surface)',
+    'rgba(194, 78, 78, 0.36)', // mid-range, -6.7%
+    'var(--ct-surface)',
+    'rgba(194, 78, 78, 0.17)', // paint, -1.4%
+    'var(--ct-surface)',
+    'rgba(194, 78, 78, 0.13)', // restricted area, -0.3%
+  ]);
   // The key reads his largest zone.
   expect(container.querySelector('.ps-key-cell').textContent).toBe('31%18th · −0.3%');
   expect(screen.queryByText('No data for this zone')).not.toBeInTheDocument();
@@ -45,6 +61,8 @@ test('a zone with no opponent row is untinted and the key says so', () => {
     />,
   );
   expect(labels(container)[2]).toBe('12%– · –');
+  const midRange = container.querySelectorAll('svg [fill]')[5];
+  expect(midRange.getAttribute('fill')).toBe('var(--ps-untinted)');
   expect(screen.getByText('No data for this zone')).toBeVisible();
 });
 

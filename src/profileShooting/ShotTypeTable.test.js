@@ -3,6 +3,7 @@ import ShotTypeTable from './ShotTypeTable';
 
 const rows = [
   { SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.203, FGM: 1.4, FGA: 3.5, FG_PCT: 0.402, FG2M: 0.2, FG2A: 0.4, FG2_PCT: 0.5, FG3M: 1.2, FG3A: 3.0, FG3_PCT: 0.388 },
+  { SHOT_TYPE: 'Pullup', FGA_FREQUENCY: 0.239, FGM: 1.6, FGA: 4.1, FG_PCT: 0.398, FG2M: 1.2, FG2A: 2.7, FG2_PCT: 0.449, FG3M: 0.4, FG3A: 1.4, FG3_PCT: 0.296 },
   { SHOT_TYPE: '<10 Ft', FGA_FREQUENCY: 0.529, FGM: 5.2, FGA: 9.0, FG_PCT: 0.575, FG2M: 5.2, FG2A: 9.0, FG2_PCT: 0.575, FG3M: 0, FG3A: 0, FG3_PCT: 0 },
 ]; // prettier-ignore
 
@@ -24,6 +25,13 @@ test('each shot type reads share against league, then FG, 2PT and 3PT as % over 
     '40.2%1.4/3.5',
     '50.0%0.2/0.4',
     '38.8%1.2/3.0',
+  ]);
+  expect(cells('Pull-up')).toEqual([
+    'Pull-up',
+    '24%lg 24%',
+    '39.8%1.6/4.1',
+    '44.9%1.2/2.7',
+    '29.6%0.4/1.4',
   ]);
   // No 3-point attempts reads as a dash, not 0.0%.
   expect(cells('Inside 10 ft')).toEqual([

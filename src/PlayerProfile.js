@@ -9,7 +9,7 @@ import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import ShotTypeTable from './profileShooting/ShotTypeTable';
 import ShotZoneCourt from './profileShooting/ShotZoneCourt';
-import { fetchShotZoneMatchup } from './profileShooting/shotZoneMatchupApi';
+import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import { fetchDietBaselines } from './targets/targetsApi';
 
@@ -97,8 +97,12 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
           else setPlayerError('No data available for this player');
         })
         .catch((error) => {
-          if (!controller.signal.aborted)
-            setPlayerError(withRequestReference('Failed to fetch data. Please try again.', error));
+          if (controller.signal.aborted) return;
+          setPlayerError(
+            selectedProfile === 'Zone Shooting' && shotZoneUnavailable(error)
+              ? `No shot zone matchup for ${selectedPlayer} this season.`
+              : withRequestReference('Failed to fetch data. Please try again.', error),
+          );
         })
         .finally(() => {
           if (controller.signal.aborted) return;

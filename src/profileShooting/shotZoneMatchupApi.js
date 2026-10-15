@@ -109,3 +109,10 @@ export const fetchShotZoneMatchup = async (playerName, opponent, { signal } = {}
   });
   return decodeShotZoneMatchup(response.data, opponent);
 };
+
+/* The backend refuses a player it cannot score (no stored season Diet, or no
+   such player) with a 404 and a reason; that is a fact about the player, not a
+   failure to retry. */
+export const shotZoneUnavailable = (error) =>
+  error?.response?.status === 404 &&
+  ['no_player_diet', 'player_not_found'].includes(error?.response?.data?.error?.details?.reason);

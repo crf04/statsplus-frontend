@@ -2262,6 +2262,12 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       overrides[url.pathname] ??
       overrides[url.pathname.replace(/^(\/api\/user\/targets\/)[^/]+(\/backtest)$/, '$1:id$2')];
 
+    // Accepted even for a waitlisted account, as the backend does.
+    if (url.pathname === '/api/user/attribution' && request.method() === 'POST' && !override) {
+      await route.fulfill({ status: 201, json: { recorded: true } });
+      return;
+    }
+
     if (waitlisted) {
       await route.fulfill(waitlistedResponse);
       return;

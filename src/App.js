@@ -16,7 +16,7 @@ import { installMockApi } from './homePreviewPrototype/mock/install';
 if (PROTO_STANDALONE) {
   installMockApi();
   if (!['/', '/search'].includes(window.location.pathname))
-    window.history.replaceState(null, '', '/#proto=home&v=W');
+    window.history.replaceState(null, '', '/#proto=home&v=O');
 }
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));

@@ -95,8 +95,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'W';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'W';
+  const key = hash.get('v') || 'O';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'O';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);

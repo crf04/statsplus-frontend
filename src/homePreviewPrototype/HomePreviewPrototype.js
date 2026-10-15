@@ -682,6 +682,7 @@ const VariantO = (props) => {
   return (
     <VariantE
       {...props}
+      heroSlot={<div className="hp-o-hero">{props.hero}</div>}
       ladder={
         <section className="hp-cols">
           <div className="hp-col">

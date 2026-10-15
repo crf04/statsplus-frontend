@@ -2000,3 +2000,17 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+/* ---- O: a smaller headline so the two columns come up the page ------------ */
+.hp-o-hero .landing-title {
+  font-size: clamp(46px, 7vw, 100px);
+}
+.hp-o-hero .landing-header {
+  margin-bottom: 28px;
+}
+.hp-o-hero .landing-connect {
+  margin-bottom: 18px;
+}
+.hp-o-hero .landing-hero {
+  padding-bottom: 56px;
+}

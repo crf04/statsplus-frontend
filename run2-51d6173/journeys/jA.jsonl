@@ -1,0 +1,64 @@
+{"action": "doctor"}
+{"_hook": "api", "label": "A-slate-no-date", "path": "/api/games/slate"}
+{"_hook": "api", "label": "A-slate-2026-02-17-empty-both-neighbours", "path": "/api/games/slate?date=2026-02-17"}
+{"_hook": "api", "label": "A-slate-2026-02-12", "path": "/api/games/slate?date=2026-02-12"}
+{"_hook": "api", "label": "A-slate-2026-02-19", "path": "/api/games/slate?date=2026-02-19"}
+{"_hook": "api", "label": "A-slate-2026-04-12", "path": "/api/games/slate?date=2026-04-12"}
+{"_hook": "api", "label": "A-seasons-single", "path": "/api/games/seasons"}
+{"action": "open", "path": "/matchups"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-15"}, "status": 200}
+{"action": "assert", "target": {"label": "Slate date"}, "value": "2026-10-15"}
+{"action": "assert", "target": {"text": "No games on this slate."}}
+{"action": "assert", "target": {"role": "button", "name": "Previous game day Sunday, April 12, 2026"}}
+{"action": "proof", "name": "qa-a-slate-no-date-today-empty-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Previous game day Sunday, April 12, 2026"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-04-12"}, "status": 200}
+{"action": "assert", "url": "/matchups?date=2026-04-12"}
+{"action": "assert", "target": {"label": "Slate date"}, "value": "2026-04-12"}
+{"action": "assert", "target": {"selector": "a[href^='/matchups/']", "index": 0}}
+{"action": "proof", "name": "qa-b-previous-game-day-landed-with-games-desktop"}
+{"action": "open", "path": "/matchups?date=2026-02-17"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-02-17"}, "status": 200}
+{"action": "assert", "target": {"text": "No games on this slate."}}
+{"action": "assert", "target": {"role": "button", "name": "Previous game day Thursday, February 12, 2026"}}
+{"action": "assert", "target": {"role": "button", "name": "Next game day Thursday, February 19, 2026"}}
+{"action": "proof", "name": "qa-b-empty-slate-both-jump-buttons-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Next game day Thursday, February 19, 2026"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-02-19"}, "status": 200}
+{"action": "assert", "url": "/matchups?date=2026-02-19"}
+{"action": "assert", "target": {"selector": "a[href^='/matchups/']", "index": 0}}
+{"action": "proof", "name": "qa-b-next-game-day-landed-with-games-desktop"}
+{"action": "open", "path": "/matchups?date=2026-02-17"}
+{"action": "assert", "target": {"role": "button", "name": "Previous game day Thursday, February 12, 2026"}}
+{"action": "click", "target": {"role": "button", "name": "Previous game day Thursday, February 12, 2026"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-02-12"}, "status": 200}
+{"action": "assert", "url": "/matchups?date=2026-02-12"}
+{"action": "assert", "target": {"selector": "a[href^='/matchups/']", "index": 0}}
+{"action": "proof", "name": "qa-b-previous-game-day-from-both-landed-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/matchups"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-15"}, "status": 200}
+{"action": "assert", "target": {"role": "button", "name": "Previous game day Sunday, April 12, 2026"}}
+{"action": "proof", "name": "qa-a-slate-no-date-today-empty-phone"}
+{"action": "open", "path": "/matchups?date=2026-02-17"}
+{"action": "assert", "target": {"role": "button", "name": "Next game day Thursday, February 19, 2026"}}
+{"action": "proof", "name": "qa-b-empty-slate-both-jump-buttons-phone"}
+{"action": "click", "target": {"role": "button", "name": "Next game day Thursday, February 19, 2026"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-02-19"}, "status": 200}
+{"action": "assert", "target": {"selector": "a[href^='/matchups/']", "index": 0}}
+{"action": "proof", "name": "qa-b-next-game-day-landed-with-games-phone"}
+{"action": "assert-layout"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/seasons", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "assert", "target": {"role": "button", "name": "+ Last N"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "state": "hidden"}
+{"action": "proof", "name": "qa-c-search-single-season-no-select-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/seasons", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "assert", "target": {"role": "button", "name": "+ Last N"}}
+{"action": "assert", "target": {"role": "combobox", "name": "Season"}, "state": "hidden"}
+{"action": "proof", "name": "qa-c-search-single-season-no-select-desktop"}
+{"action": "cleanup"}

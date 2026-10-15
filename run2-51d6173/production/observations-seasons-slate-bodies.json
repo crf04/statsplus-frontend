@@ -1,0 +1,166 @@
+[
+ {
+  "route": "/matchups",
+  "width": "desktop",
+  "console": [],
+  "api": [
+   "GET /api/games/slate?date=2026-10-15 200",
+   "GET /api/user/targets/resolve?date=2026-10-15 200"
+  ],
+  "bodies": {
+   "/api/games/slate?date=2026-10-15": {
+    "games": "[0 games]",
+    "next_game_date": null,
+    "previous_game_date": "2026-04-12",
+    "slate_date": "2026-10-15"
+   }
+  },
+  "url": "http://10.0.0.15:5191/matchups",
+  "gameDayButtons": 1,
+  "seasonSelects": 0,
+  "slateDate": "2026-10-15",
+  "emptySlateText": 1,
+  "gameRows": 0,
+  "overflowPx": 0
+ },
+ {
+  "route": "/matchups?date=2026-02-17",
+  "width": "desktop",
+  "console": [],
+  "api": [
+   "GET /api/games/slate?date=2026-02-17 200",
+   "GET /api/user/targets/resolve?date=2026-02-17 200"
+  ],
+  "bodies": {
+   "/api/games/slate?date=2026-02-17": {
+    "games": "[0 games]",
+    "next_game_date": "2026-02-19",
+    "previous_game_date": "2026-02-12",
+    "slate_date": "2026-02-17"
+   }
+  },
+  "url": "http://10.0.0.15:5191/matchups?date=2026-02-17",
+  "gameDayButtons": 2,
+  "seasonSelects": 0,
+  "slateDate": "2026-02-17",
+  "emptySlateText": 1,
+  "gameRows": 0,
+  "overflowPx": 0
+ },
+ {
+  "route": "/?player_name=LeBron+James&game_filter=5",
+  "width": "desktop",
+  "console": [
+   "error: Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR"
+  ],
+  "api": [
+   "GET /api/user/saved-filter-sets 200",
+   "GET /api/games/seasons 200",
+   "GET /api/players 200",
+   "GET /api/teams 200",
+   "GET /api/players/profile?player_name=LeBron+James&category=Playtypes 200",
+   "GET /api/players/next-opponent?player_name=LeBron+James 200",
+   "GET /api/games/game_logs?player_name=LeBron+James&game_filter=5 200",
+   "GET /api/games/game_logs?player_name=LeBron+James 200",
+   "GET /api/teams/stats?category=Traditional&team=Atlanta+Hawks 200",
+   "GET /api/teams/stats?category=Playtypes&team=Atlanta+Hawks 200"
+  ],
+  "bodies": {
+   "/api/games/seasons": {
+    "default_season": "2025-26",
+    "seasons": [
+     "2025-26"
+    ]
+   }
+  },
+  "url": "http://10.0.0.15:5191/?player_name=LeBron+James&game_filter=5",
+  "gameDayButtons": 0,
+  "seasonSelects": 0,
+  "slateDate": null,
+  "emptySlateText": 0,
+  "gameRows": 0,
+  "overflowPx": 0
+ },
+ {
+  "route": "/matchups",
+  "width": "phone",
+  "console": [],
+  "api": [
+   "GET /api/games/slate?date=2026-10-15 200",
+   "GET /api/user/targets/resolve?date=2026-10-15 200"
+  ],
+  "bodies": {
+   "/api/games/slate?date=2026-10-15": {
+    "games": "[0 games]",
+    "next_game_date": null,
+    "previous_game_date": "2026-04-12",
+    "slate_date": "2026-10-15"
+   }
+  },
+  "url": "http://10.0.0.15:5191/matchups",
+  "gameDayButtons": 1,
+  "seasonSelects": 0,
+  "slateDate": "2026-10-15",
+  "emptySlateText": 1,
+  "gameRows": 0,
+  "overflowPx": 0
+ },
+ {
+  "route": "/matchups?date=2026-02-17",
+  "width": "phone",
+  "console": [],
+  "api": [
+   "GET /api/games/slate?date=2026-02-17 200",
+   "GET /api/user/targets/resolve?date=2026-02-17 200"
+  ],
+  "bodies": {
+   "/api/games/slate?date=2026-02-17": {
+    "games": "[0 games]",
+    "next_game_date": "2026-02-19",
+    "previous_game_date": "2026-02-12",
+    "slate_date": "2026-02-17"
+   }
+  },
+  "url": "http://10.0.0.15:5191/matchups?date=2026-02-17",
+  "gameDayButtons": 2,
+  "seasonSelects": 0,
+  "slateDate": "2026-02-17",
+  "emptySlateText": 1,
+  "gameRows": 0,
+  "overflowPx": 0
+ },
+ {
+  "route": "/?player_name=LeBron+James&game_filter=5",
+  "width": "phone",
+  "console": [
+   "error: Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR"
+  ],
+  "api": [
+   "GET /api/players/profile?player_name=LeBron+James&category=Playtypes 200",
+   "GET /api/players 200",
+   "GET /api/user/saved-filter-sets 200",
+   "GET /api/games/seasons 200",
+   "GET /api/players/next-opponent?player_name=LeBron+James 200",
+   "GET /api/teams 200",
+   "GET /api/games/game_logs?player_name=LeBron+James 200",
+   "GET /api/games/game_logs?player_name=LeBron+James&game_filter=5 200",
+   "GET /api/teams/stats?category=Traditional&team=Atlanta+Hawks 200",
+   "GET /api/teams/stats?category=Playtypes&team=Atlanta+Hawks 200"
+  ],
+  "bodies": {
+   "/api/games/seasons": {
+    "default_season": "2025-26",
+    "seasons": [
+     "2025-26"
+    ]
+   }
+  },
+  "url": "http://10.0.0.15:5191/?player_name=LeBron+James&game_filter=5",
+  "gameDayButtons": 0,
+  "seasonSelects": 0,
+  "slateDate": null,
+  "emptySlateText": 0,
+  "gameRows": 0,
+  "overflowPx": 0
+ }
+]

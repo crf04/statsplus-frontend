@@ -401,3 +401,8 @@
   background: linear-gradient(90deg, rgba(194, 78, 78, 0.7), rgba(255, 255, 255, 0.06), rgba(76, 175, 125, 0.75));
 }
 .pss-zlist { margin-top: 16px; }
+
+/* Corner labels: share, rank and vs league on one rotated line. */
+.pss-rl.pss-rot b,
+.pss-rl.pss-rot small { display: inline; font-size: clamp(8px, 2.4cqw, 11px); }
+.pss-rl.pss-rot small { margin-left: 3px; opacity: 0.9; }

@@ -179,11 +179,11 @@ const Court = ({ slices, opp }) => {
         title={`${s.label}: ${share(s.share)} of his shots (league ${share(s.league)}) · ${opp} ${ordinal(s.rank)} (${signed(s.vsLg)} vs league)`}
       >
         <b>{share(s.share)}</b>
-        {!rot && (
-          <small>
-            {ordinal(s.rank)} · {signed(s.vsLg)}
-          </small>
-        )}
+        {/* Corners: one line along the 3-ft strip, so they keep the rank too. */}
+        <small>
+          {rot && '· '}
+          {ordinal(s.rank)} · {signed(s.vsLg)}
+        </small>
       </div>
     );
   };

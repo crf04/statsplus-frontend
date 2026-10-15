@@ -1217,7 +1217,6 @@
 .rs-row.why .rs-players li {
   border-color: rgba(232, 163, 61, 0.45);
 }
-.rs-players li.below {
   opacity: 0.55;
   border-color: var(--ct-line);
   background: none;

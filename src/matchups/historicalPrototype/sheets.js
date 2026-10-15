@@ -451,7 +451,11 @@ function RefinedSheet(props) {
               const why =
                 selectedPlayer &&
                 getDisplayableDietShare(selectedPlayer, base, group.rows[0].sliceKey);
-              const leans = leansFor(players, base, group.rows[0].sliceKey, market);
+              // Only players who lean on the slice more than league; the live
+              // sheet also lists those below league (|σ| ≥ 0.5), this drops them.
+              const leans = leansFor(players, base, group.rows[0].sliceKey, market).filter(
+                ({ share }) => share.sigmaDeviation > 0,
+              );
               return (
                 <article
                   key={group.slice}
@@ -489,13 +493,12 @@ function RefinedSheet(props) {
                   <SaveButton row={group.rows[0]} base={base} {...props} />
                   {leans.length > 0 && (
                     <ul className="rs-players" aria-label="Players leaning on this">
-                      {/* Players who lean on it most first; those below league fade. */}
+                      {/* Players who lean on it most first. */}
                       {[...leans]
                         .sort((x, y) => y.share.sigmaDeviation - x.share.sigmaDeviation)
                         .map(({ player, share }) => (
                           <li
                             key={player.id}
-                            className={share.sigmaDeviation < 0 ? 'below' : undefined}
                             title={`${player.name}: ${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}, ${share.sigmaDeviation > 0 ? '+' : ''}${share.sigmaDeviation.toFixed(1)}σ vs league`}
                           >
                             <span>{player.name}</span>

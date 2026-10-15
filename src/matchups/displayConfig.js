@@ -20,15 +20,57 @@ export const shouldDisplayDietShare = (base, value) => {
   );
 };
 
-// The focal outcome reads the same in the rail and the dossier. The rail scopes
-// to the selected category; the dossier dates the game it is contextualizing.
-export const formatFocalGameLine = (focalGameLine, categories, { includeDate = false } = {}) =>
-  [
-    `Focal game ${focalGameLine.matchup}`,
-    ...(includeDate ? [focalGameLine.gameDate] : []),
-    `${focalGameLine.minutes.toFixed(1)} MIN`,
-    ...categories.map((category) => `${focalGameLine.stats[category].toFixed(1)} ${category}`),
-  ].join(' · ');
+// Books are named in full where a sentence names them and by a two-letter mark
+// where a row only needs to say which posted him.
+const BOOK_NAMES = {
+  prizepicks: 'PrizePicks',
+  underdog: 'Underdog',
+  draftkings: 'DraftKings',
+  fanduel: 'FanDuel',
+};
+const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel: 'FD' };
+export const bookName = (provider) =>
+  BOOK_NAMES[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
+export const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();
+
+// A Matchup Score reads as a signed whole percent wherever it is shown.
+export const formatScorePercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
+
+/*
+ * Defense Sheet slices in plain English. The wire names a slice by its
+ * provider key (`Arc3Assists`, `OffRebound`); a reader should not have to
+ * know it. Every slice the decoder accepts is named here.
+ */
+const SLICE_NAMES = {
+  Transition: 'Transition',
+  Isolation: 'Isolation',
+  PRBallHandler: 'P&R ball handler',
+  PRRollMan: 'P&R roll man',
+  OffRebound: 'Putbacks',
+  Spotup: 'Spot up',
+  Cut: 'Cut',
+  Handoff: 'Handoff',
+  OffScreen: 'Off screen',
+  Postup: 'Post up',
+  'Restricted Area': 'Restricted area',
+  'In The Paint (Non-RA)': 'Paint (non-restricted)',
+  'Mid-Range': 'Mid-range',
+  'Corner 3': 'Corner 3s',
+  'Above the Break 3': 'Above-the-break 3s',
+  'Catch and Shoot': 'Catch-and-shoot',
+  Pullups: 'Pull-up',
+  'Less Than 10 ft': 'Under 10 ft',
+  Arc3Assists: 'Above-the-break 3s',
+  Corner3Assists: 'Corner 3s',
+  AtRimAssists: 'At the rim',
+  ShortMidRangeAssists: 'Short mid-range',
+  LongMidRangeAssists: 'Long mid-range',
+  OPP_REB: 'Rebounds',
+  OPP_TOV: 'Turnovers forced',
+  OPP_STL: 'Steals',
+  OPP_BLK: 'Blocks',
+};
+export const sliceName = (sliceKey) => SLICE_NAMES[sliceKey] || sliceKey;
 
 // One player's season diet fact for one slice, whether or not it is displayable.
 // Capture reads it for the league average the slice is measured against, which

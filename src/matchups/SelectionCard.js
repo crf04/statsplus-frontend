@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { orderCategories } from './displayConfig';
+import {
+  bookMark,
+  bookName,
+  formatScorePercent as formatPercent,
+  orderCategories,
+} from './displayConfig';
 
 const BASE_ORDER = ['shotTypes', 'shotZones', 'playTypes', 'assistLocations', 'traditional'];
 const BASE_LABELS = {
@@ -9,25 +14,14 @@ const BASE_LABELS = {
   assistLocations: 'Assist locations',
   traditional: 'Traditional',
 };
-const BOOK_NAMES = {
-  prizepicks: 'PrizePicks',
-  underdog: 'Underdog',
-  draftkings: 'DraftKings',
-  fanduel: 'FanDuel',
-};
-const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel: 'FD' };
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 
-const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
 const formatDelta = (value) => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
 const signClass = (value) => {
   if (value > 0) return 'delta-up';
   if (value < 0) return 'delta-down';
   return 'delta-flat';
 };
-const bookName = (provider) =>
-  BOOK_NAMES[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
-const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();
 // A cell's wash is the score: greener up, redder down, nothing for a flat or
 // absent score. Alpha is capped so a large score stays legible.
 const washStyle = (component) => {

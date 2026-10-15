@@ -1,4 +1,4 @@
-import { formatFocalGameLine, shouldDisplayDietShare } from './displayConfig';
+import { shouldDisplayDietShare, sliceName } from './displayConfig';
 
 test.each([
   ['playTypes', { sigmaDeviation: 0.5, volumePerGame: 1 }, true],
@@ -32,23 +32,12 @@ test.each([
   },
 );
 
-const focalGameLine = {
-  gameId: '0022501082',
-  gameDate: '2026-03-29',
-  matchup: 'LAC @ MIL',
-  minutes: 34.5,
-  stats: { PTS: 24, REB: 5, AST: 7 },
-};
-
-test('states the focal game line the same way wherever it is shown', () => {
-  expect(formatFocalGameLine(focalGameLine, ['PTS', 'REB', 'AST'])).toBe(
-    'Focal game LAC @ MIL · 34.5 MIN · 24.0 PTS · 5.0 REB · 7.0 AST',
-  );
-  // The rail scopes to the selected category; the dossier dates the outcome.
-  expect(formatFocalGameLine(focalGameLine, ['REB'])).toBe(
-    'Focal game LAC @ MIL · 34.5 MIN · 5.0 REB',
-  );
-  expect(formatFocalGameLine(focalGameLine, ['PTS'], { includeDate: true })).toBe(
-    'Focal game LAC @ MIL · 2026-03-29 · 34.5 MIN · 24.0 PTS',
-  );
+test.each([
+  ['Arc3Assists', 'Above-the-break 3s'],
+  ['OffRebound', 'Putbacks'],
+  ['Less Than 10 ft', 'Under 10 ft'],
+  ['OPP_REB', 'Rebounds'],
+  ['Catch and Shoot', 'Catch-and-shoot'],
+])('names the %s slice in plain English', (sliceKey, expected) => {
+  expect(sliceName(sliceKey)).toBe(expected);
 });

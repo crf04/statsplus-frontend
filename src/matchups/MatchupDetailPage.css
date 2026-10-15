@@ -15,12 +15,12 @@
 
 .matchup-heading a {
   color: var(--ct-dim);
-  font-size: 0.72rem;
+  font-size: 0.83rem;
 }
 
 .matchup-heading h1 {
   margin: 3px 0 0;
-  font-size: 1.85rem;
+  font-size: 2.13rem;
   line-height: 1;
 }
 
@@ -28,7 +28,7 @@
   margin: 6px 0 3px;
   color: var(--ct-gold);
   font-family: var(--ct-mono);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   letter-spacing: 0.11em;
   text-transform: uppercase;
 }
@@ -37,19 +37,6 @@
 .matchup-page a:focus-visible {
   outline: 2px solid var(--ct-gold);
   outline-offset: 2px;
-}
-
-.matchup-freshness {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px 12px;
-  max-width: 650px;
-  padding: 0;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.62rem;
-  text-transform: capitalize;
 }
 
 .matchup-warning {
@@ -63,12 +50,12 @@
   padding: 8px 10px;
   background: var(--ct-gold-soft);
   font-family: var(--ct-mono);
-  font-size: 0.7rem;
+  font-size: 0.81rem;
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-columns: 290px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
@@ -79,13 +66,6 @@
   min-width: 0;
   flex-direction: column;
   gap: 10px;
-}
-
-.sheet-instruction {
-  margin: 0;
-  color: var(--ct-dim);
-  font-size: 0.7rem;
-  line-height: 1.45;
 }
 
 .detail-controls {
@@ -115,7 +95,7 @@
   min-width: 46px;
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.56rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -132,7 +112,7 @@
   background: transparent;
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.68rem;
+  font-size: 0.79rem;
   font-weight: 700;
 }
 
@@ -174,7 +154,7 @@
   background: transparent;
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.68rem;
+  font-size: 0.79rem;
   font-weight: 700;
 }
 
@@ -227,7 +207,7 @@
 
 .team-tab-name {
   font-family: var(--ct-display);
-  font-size: 1.2rem;
+  font-size: 1.38rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -240,7 +220,7 @@
 .team-tab-name small {
   margin-left: 2px;
   font-family: var(--ct-sans);
-  font-size: 0.6rem;
+  font-size: 0.69rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -250,7 +230,7 @@
 .team-tab-sub {
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.58rem;
+  font-size: 0.67rem;
 }
 
 .segmented button[aria-pressed='true'] {
@@ -259,48 +239,23 @@
   color: var(--ct-gold);
 }
 
-.defense-sheet {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  background: transparent;
-}
-
-.defense-sheet > .section-heading,
-.defense-sheet > .hidden-count,
-.defense-sheet > .honest-empty {
-  grid-column: 1 / -1;
-}
-
 .section-heading h2 {
   margin: 0;
   color: var(--ct-gold);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.hidden-count,
 .honest-empty,
-.no-lean,
 .rail-count,
-.sheet-provenance,
-.window-context,
-.focal-line,
 .selection-provenance {
   margin: 0;
   color: var(--ct-dim);
-  font-size: 0.68rem;
+  font-size: 0.79rem;
 }
 
-.focal-line,
-.window-context {
-  overflow-wrap: anywhere;
-}
-
-.sheet-base,
-.player-rail,
 .injury-report {
   margin: 0;
   border: 1px solid var(--ct-line);
@@ -309,133 +264,21 @@
   background: var(--ct-surface);
 }
 
-.sheet-base > h3 {
-  margin: 0 0 8px;
-  color: var(--ct-dim);
-  font-size: 0.63rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.sheet-rows {
-  display: grid;
-  gap: 0;
-}
-
-.sheet-row {
-  border-bottom: 1px solid var(--ct-line);
-  padding: 7px 6px;
-  background: transparent;
-}
-
-.sheet-row:last-child {
-  border-bottom: 0;
-}
-
-.sheet-row.selection-why {
-  background: var(--ct-gold-soft);
-  box-shadow: inset 2px 0 var(--ct-gold);
-}
-
-.row-stat {
-  display: grid;
-  grid-template-columns: 24px minmax(90px, auto) minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-}
-
-.row-stat h4 {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 650;
-}
-
-/* The capture action sits under the slice it would write a Qualifier for, so it
-   reads as part of the row rather than a fourth column competing with the
-   numbers. It stays quiet until the row is hovered or the action is focused. */
-.row-capture {
-  margin-top: 2px;
-  border: 0;
-  padding: 0;
-  background: none;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: left;
-  cursor: pointer;
-}
-
-.sheet-row:hover .row-capture,
-.row-capture:hover,
-.row-capture:focus-visible {
-  color: var(--ct-gold);
-}
-
-.relative-over,
-.relative-under,
-.relative-neutral {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px 7px;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.65rem;
-  text-align: right;
-}
-
-.relative-over strong,
-.relative-under strong,
-.relative-neutral strong {
-  color: var(--ct-text);
-  font-size: 0.72rem;
-}
-
-.diet-chips,
-.market-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 5px;
-}
-
-.diet-chips span,
-.market-chips span,
 .injury-badge {
   border: 1px solid var(--ct-line-strong);
   border-radius: 999px;
   padding: 1px 7px;
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.58rem;
-}
-
-.no-lean {
-  margin-top: 5px;
+  font-size: 0.67rem;
 }
 
 .injury-list small {
   color: var(--ct-dim);
   font-family: var(--ct-mono);
-  font-size: 0.6rem;
+  font-size: 0.69rem;
 }
 
-.player-rail .section-heading h2 {
-  color: var(--ct-dim);
-  font-size: 0.66rem;
-}
-
-.rail-sort {
-  display: flex;
-  gap: 4px;
-  margin-top: 7px;
-}
-
-.rail-sort button,
-.select-player,
 .selection-close,
 .selection-stat-control button {
   border: 1px solid var(--ct-line-strong);
@@ -443,10 +286,9 @@
   padding: 4px 7px;
   background: transparent;
   color: var(--ct-dim);
-  font-size: 0.6rem;
+  font-size: 0.69rem;
 }
 
-.rail-sort button[aria-pressed='true'],
 .selection-stat-control button[aria-pressed='true'] {
   border-color: var(--ct-gold);
   color: var(--ct-gold);
@@ -459,30 +301,13 @@
   margin-top: 8px;
 }
 
-.player-card,
 .injury-list article {
   border-top: 1px solid var(--ct-line);
   padding: 7px 5px;
 }
 
-.player-card.selected {
-  background: var(--ct-gold-soft);
-  box-shadow: inset 2px 0 var(--ct-gold);
-}
-
-.player-card h3,
-.player-card p,
 .injury-list p {
   margin: 0;
-}
-
-.player-card h3 {
-  font-size: 0.82rem;
-}
-
-.player-card p {
-  color: var(--ct-dim);
-  font-size: 0.64rem;
 }
 
 .player-game-logs {
@@ -506,21 +331,9 @@
   border-bottom-color: var(--ct-gold);
 }
 
-.select-player {
-  margin-top: 5px;
-  color: var(--ct-text);
-}
-
-.minutes-sparkline {
-  width: 68px;
-  height: 20px;
-  margin-top: 4px;
-  color: var(--ct-gold);
-}
-
 .injury-report .section-heading h2 {
   color: var(--ct-dim);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
 }
 
 .injury-list {
@@ -529,18 +342,399 @@
 
 .injury-list article {
   position: relative;
-  font-size: 0.68rem;
+  font-size: 0.79rem;
 }
 
 .injury-list a {
   display: inline-block;
   color: var(--ct-gold);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
 }
 
 .injury-list small {
   display: block;
   margin-top: 3px;
+}
+
+/* The header's one sentence: when, what the sheet is built on, what is missing. */
+.matchup-summary {
+  max-width: 420px;
+  text-align: right;
+}
+
+.matchup-summary p {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.matchup-summary p > span {
+  color: var(--ct-dim);
+}
+
+.matchup-summary p > span.matchup-warning {
+  color: var(--ct-gold);
+}
+
+.tone-up {
+  color: var(--ct-hit);
+}
+
+.tone-down {
+  color: var(--ct-miss);
+}
+
+.tone-flat {
+  color: var(--ct-dim);
+}
+
+/* Player rail: one stat per row, the headline number on the right. */
+.player-rail {
+  margin: 0;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  padding: 12px;
+  background: var(--ct-surface);
+}
+
+.rail-heading h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.rail-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--ct-line);
+  padding: 10px 4px;
+}
+
+.rail-row:first-child {
+  border-top: 0;
+}
+
+.rail-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rail-row.selected {
+  background: var(--ct-gold-soft);
+  box-shadow: inset 2px 0 var(--ct-gold);
+}
+
+/* The row is the button; the name sits above it as its own link. */
+.rail-row-open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rail-row-name {
+  min-width: 0;
+}
+
+.rail-row-name h3 {
+  position: relative;
+  z-index: 1;
+  display: inline;
+  margin: 0;
+  font-size: 1.04rem;
+  font-weight: 650;
+}
+
+.rail-row-name p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 3px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.83rem;
+}
+
+.rail-row-name em {
+  font-style: normal;
+}
+
+.rail-row-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.rail-row-value b {
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.rail-row-value b.tone-up {
+  color: var(--ct-hit);
+}
+
+.rail-row-value b.tone-down {
+  color: var(--ct-miss);
+}
+
+.rail-row-value small {
+  color: var(--ct-dim);
+  font-size: 0.74rem;
+}
+
+.rail-books {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.rail-books i {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 3px;
+  padding: 0 4px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Defense Sheet: no box around a category, one header row naming its
+   measures, one line per slice. */
+.defense-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet-heading h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.sheet-heading p {
+  margin: 3px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.9rem;
+}
+
+.sheet-sections {
+  columns: 2 380px;
+  column-gap: 36px;
+}
+
+.sheet-base {
+  break-inside: avoid;
+  margin: 0 0 26px;
+}
+
+.sheet-base-head,
+.sheet-row,
+.sheet-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(var(--cols, 1), 112px) 30px;
+  column-gap: 14px;
+  align-items: center;
+}
+
+.sheet-base-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+
+.sheet-base-head h3 {
+  margin: 0;
+  color: var(--ct-gold);
+  font-family: var(--ct-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sheet-base-head span {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.sheet-base > .honest-empty {
+  margin-top: 8px;
+}
+
+.sheet-row {
+  position: relative;
+  min-height: 64px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.sheet-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sheet-row.selection-why {
+  padding-left: 12px;
+  background: var(--ct-gold-soft);
+  box-shadow: inset 3px 0 var(--ct-gold);
+}
+
+.sheet-row h4 {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.18rem;
+  font-weight: 600;
+}
+
+.sheet-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+/* A measure outside the selected stat is context beside its partner. */
+.sheet-cell-off {
+  opacity: 0.42;
+}
+
+.sheet-cell b {
+  font-family: var(--ct-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* A fewest-to-most track; the marker carries the rank (30 allows the most). */
+.rank-track {
+  position: relative;
+  width: 92px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(239, 122, 108, 0.45),
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(95, 208, 138, 0.45)
+  );
+}
+
+.rank-track i {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--ct-ink, #0d0c0a);
+  border-radius: 999px;
+  background: hsl(calc((var(--rank) - 1) * 4.1) 62% 46%);
+  color: #fff;
+  font-family: var(--ct-mono);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.sheet-legend {
+  padding-top: 5px;
+}
+
+.sheet-legend span {
+  display: flex;
+  justify-content: space-between;
+  width: 92px;
+  justify-self: center;
+}
+
+.sheet-legend em {
+  color: var(--ct-dim);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+/* Save as Target: an icon at the row's end, revealed on hover or focus and
+   always shown where there is no hover. */
+.sheet-save {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0;
+  background: none;
+  color: var(--ct-gold);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.sheet-row:hover .sheet-save,
+.sheet-save:focus-visible {
+  border-color: var(--ct-line-strong);
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .sheet-save {
+    opacity: 0.7;
+  }
+}
+
+.sheet-leans {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheet-leans li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid rgba(232, 163, 61, 0.22);
+  border-radius: 999px;
+  padding: 4px 11px;
+  background: rgba(232, 163, 61, 0.06);
+  font-size: 0.86rem;
+}
+
+.sheet-leans b {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-weight: 600;
+}
+
+.sheet-leans em {
+  color: var(--ct-hit);
+  font-family: var(--ct-mono);
+  font-size: 0.78rem;
+  font-style: normal;
 }
 
 /* The selection card: name and game on top, the stat strip as the selector,
@@ -564,7 +758,7 @@
 .selection-card-heading h2 {
   margin: 0;
   font-family: var(--ct-display);
-  font-size: 1.55rem;
+  font-size: 1.79rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1;
@@ -573,7 +767,7 @@
 .selection-game {
   margin: 4px 0 0;
   color: var(--ct-dim);
-  font-size: 0.72rem;
+  font-size: 0.83rem;
 }
 
 .selection-close {
@@ -582,7 +776,7 @@
   border-radius: 999px;
   padding: 0;
   color: var(--ct-dim);
-  font-size: 1rem;
+  font-size: 1.15rem;
   line-height: 1;
 }
 
@@ -624,13 +818,13 @@
 
 .selection-strip-tile span {
   color: var(--ct-dim);
-  font-size: 0.58rem;
+  font-size: 0.67rem;
   letter-spacing: 0.04em;
 }
 
 .selection-strip-tile b {
   font-family: var(--ct-mono);
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   font-weight: 500;
 }
 
@@ -690,7 +884,7 @@ button.selection-strip-tile:focus-visible {
   padding: 0 3px;
   color: var(--ct-dim);
   font-family: var(--ct-sans);
-  font-size: 0.56rem;
+  font-size: 0.65rem;
   font-style: normal;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -720,7 +914,7 @@ button.selection-strip-tile:focus-visible {
   margin: 0 0 8px;
   color: var(--ct-dim);
   font-family: var(--ct-display);
-  font-size: 0.92rem;
+  font-size: 1.06rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -745,7 +939,7 @@ button.selection-strip-tile:focus-visible {
   text-align: right;
   white-space: nowrap;
   font-family: var(--ct-mono);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
 }
 
 .selection-table-wrap th:first-child {
@@ -810,14 +1004,14 @@ button.selection-strip-tile:focus-visible {
   margin-left: 4px;
   color: var(--ct-dim);
   font-family: var(--ct-sans);
-  font-size: 0.55rem;
+  font-size: 0.64rem;
 }
 
 /* Opponent log: the average leads, one row per game follows. */
 .selection-log-kicker {
   margin: 0 0 4px;
   color: var(--ct-dim);
-  font-size: 0.68rem;
+  font-size: 0.79rem;
 }
 
 .selection-average {
@@ -826,13 +1020,13 @@ button.selection-strip-tile:focus-visible {
   align-items: baseline;
   gap: 8px;
   margin: 0 0 8px;
-  font-size: 0.72rem;
+  font-size: 0.83rem;
 }
 
 .selection-average b {
   color: var(--ct-gold);
   font-family: var(--ct-display);
-  font-size: 2.1rem;
+  font-size: 2.42rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -845,7 +1039,7 @@ button.selection-strip-tile:focus-visible {
 .selection-log-table th small {
   margin-left: 2px;
   color: var(--ct-dim);
-  font-size: 0.6rem;
+  font-size: 0.69rem;
 }
 
 .selection-log-table td {
@@ -881,12 +1075,12 @@ button.selection-strip-tile:focus-visible {
 .selection-explainer,
 .thin-note {
   color: var(--ct-dim);
-  font-size: 0.68rem;
+  font-size: 0.79rem;
 }
 
 .selection-explainer {
   margin: 12px 0 0;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   opacity: 0.8;
 }
 
@@ -906,32 +1100,8 @@ button.selection-strip-tile:focus-visible {
     gap: 8px;
   }
 
-  .matchup-freshness {
-    justify-content: flex-start;
-  }
-
   .detail-grid {
     grid-template-columns: 1fr;
-  }
-
-  .matchup-sidebar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .team-tabs,
-  .sheet-instruction {
-    grid-column: 1 / -1;
-  }
-
-  .defense-sheet {
-    grid-template-columns: 1fr;
-  }
-
-  .defense-sheet > .section-heading,
-  .defense-sheet > .hidden-count,
-  .defense-sheet > .honest-empty {
-    grid-column: 1;
   }
 
   .selection-panels {
@@ -943,16 +1113,33 @@ button.selection-strip-tile:focus-visible {
   }
 
   .selection-card-heading h2 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+  }
+
+  .matchup-summary {
+    max-width: none;
+    text-align: left;
   }
 }
 
 @media (max-width: 520px) {
-  .matchup-sidebar {
-    grid-template-columns: 1fr;
+  .sheet-base-head,
+  .sheet-row,
+  .sheet-legend {
+    grid-template-columns: minmax(0, 1fr) repeat(var(--cols, 1), 78px) 28px;
+    column-gap: 8px;
   }
 
-  .row-stat {
-    grid-template-columns: 24px minmax(75px, auto) minmax(110px, 1fr);
+  .rank-track,
+  .sheet-legend span {
+    width: 68px;
+  }
+
+  .sheet-cell b {
+    font-size: 1.2rem;
+  }
+
+  .sheet-row h4 {
+    font-size: 1.05rem;
   }
 }

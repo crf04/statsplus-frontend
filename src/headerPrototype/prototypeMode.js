@@ -12,9 +12,13 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'header';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'Now'];
+export const VARIANT_KEYS = ['E', 'F', 'G', 'H', 'A', 'B', 'C', 'D', 'Now'];
 
 export const VARIANT_NAMES = {
+  E: 'Current layout, scaled up ~25%',
+  F: 'Tall masthead that shrinks on scroll',
+  G: 'Left sidebar (no top bar on desktop)',
+  H: 'Centered masthead, nav below',
   A: 'Pill track',
   B: 'Tab rail + search trigger',
   C: 'Broadcast: slate strip over a scoreboard bar',
@@ -32,8 +36,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'header');
-  const key = hash.get('v') || 'A';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'A';
+  const key = hash.get('v') || 'E';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'E';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);

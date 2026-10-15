@@ -2,7 +2,7 @@
  * PROTOTYPE — throwaway. Four structurally different app headers, switched by
  * the floating bar at the bottom (← / → keys). See ./README.md.
  */
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Dropdown } from 'react-bootstrap';
 import { Activity, Bookmark, ChevronDown, LogOut, Plug, Search, Swords, Target } from 'lucide-react';
@@ -256,6 +256,128 @@ const VariantD = () => {
   );
 };
 
+/* ---- E: the current layout, scaled up -------------------------------------
+   Same grid as today; taller bar, larger type, bigger avatar. Answers "is
+   it just too small?" on its own. */
+const VariantE = () => {
+  const links = useLinks();
+  return (
+    <header className="hpE">
+      <div className="hpE-inner">
+        <NavLink className="hpE-brand" to={links[0].href}>
+          <Mark size={28} />
+          <span>CourtAI</span>
+        </NavLink>
+        <nav className="hpE-links" aria-label="Primary">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.href} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <AccountMenu className="hpE-account" />
+      </div>
+    </header>
+  );
+};
+
+/* ---- F: tall masthead that shrinks on scroll ------------------------------
+   Big at the top of the page, compact once you scroll into the data. */
+const useScrolled = (threshold = 40) => {
+  const [scrolled, setScrolled] = useState(() => window.scrollY > threshold);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
+};
+
+const VariantF = () => {
+  const links = useLinks();
+  const scrolled = useScrolled();
+  return (
+    <header className={`hpF${scrolled ? ' is-compact' : ''}`}>
+      <div className="hpF-inner">
+        <NavLink className="hpF-brand" to={links[0].href}>
+          <Mark size={scrolled ? 22 : 34} />
+          <span>CourtAI</span>
+        </NavLink>
+        <nav className="hpF-links" aria-label="Primary">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.href} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <AccountMenu showName={!scrolled} className="hpF-account" />
+      </div>
+    </header>
+  );
+};
+
+/* ---- G: left sidebar ------------------------------------------------------
+   No top bar on desktop: the page gets the full height, nav gets room for
+   icons and an admin section. Phone falls back to a slim top bar. */
+const VariantG = () => {
+  const links = useLinks();
+  const main = links.filter((link) => !link.admin);
+  const ops = links.find((link) => link.admin);
+  const item = ({ to, href, end, label, icon: Icon }) => (
+    <NavLink key={to} to={href} end={end}>
+      <Icon size={18} strokeWidth={1.9} />
+      <span>{label}</span>
+    </NavLink>
+  );
+  return (
+    <aside className="hpG">
+      <NavLink className="hpG-brand" to={links[0].href}>
+        <Mark size={26} />
+        <span>CourtAI</span>
+      </NavLink>
+      <nav className="hpG-nav" aria-label="Primary">
+        {main.map(item)}
+        {ops && (
+          <>
+            <span className="hpG-section">Admin</span>
+            {item(ops)}
+          </>
+        )}
+      </nav>
+      <AccountMenu className="hpG-account" />
+    </aside>
+  );
+};
+
+/* ---- H: centered masthead -------------------------------------------------
+   A publication-style masthead: big centred wordmark, nav on its own row
+   beneath, account tucked in the corner. */
+const VariantH = () => {
+  const links = useLinks();
+  const { day, games } = slateLabel();
+  return (
+    <header className="hpH">
+      <div className="hpH-top">
+        <span className="hpH-date">
+          {day} · {games} games
+        </span>
+        <NavLink className="hpH-brand" to={links[0].href}>
+          <Mark size={30} />
+          <span>CourtAI</span>
+        </NavLink>
+        <AccountMenu className="hpH-account" />
+      </div>
+      <nav className="hpH-nav" aria-label="Primary">
+        {links.map((link) => (
+          <NavLink key={link.to} to={link.href} end={link.end}>
+            {link.label}
+          </NavLink>
+        ))}
+      </nav>
+    </header>
+  );
+};
+
 /* ---- Now: the current header, verbatim, for comparison -------------------- */
 const VariantNow = () => {
   const { isAuthenticated } = useAuth();
@@ -279,7 +401,12 @@ const VariantNow = () => {
   );
 };
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD, Now: VariantNow };
+const VARIANTS = {
+  E: VariantE,
+  F: VariantF,
+  G: VariantG,
+  H: VariantH,
+  A: VariantA, B: VariantB, C: VariantC, D: VariantD, Now: VariantNow };
 
 const HeaderPrototype = ({ variant, step }) => {
   const ref = useRef(null);

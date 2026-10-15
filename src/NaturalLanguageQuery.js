@@ -9,6 +9,11 @@ import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
 import LandingCourt from './LandingCourt';
+import HomeTicker from './home/HomeTicker';
+import HomeTonight from './home/HomeTonight';
+import { useHomeTonight } from './home/useHomeTonight';
+import { useLadderAnswers } from './help/useLadderAnswers';
+import './home/home.css';
 import './ModernSearch.css';
 
 const sampleQueries = [
@@ -29,6 +34,11 @@ const NaturalLanguageQuery = ({
   onOpenSavedFilterSets,
 }) => {
   const { isAuthenticated } = useAuth();
+  // Today's games, the reader's Targets and the ladder's answers belong to the
+  // signed-in Query Prompt only (crf04/statsplus#204).
+  const onLanding = !inWorkspace && isAuthenticated;
+  const tonight = useHomeTonight(onLanding);
+  const ladderAnswers = useLadderAnswers(onLanding);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -184,99 +194,112 @@ const NaturalLanguageQuery = ({
   if (!inWorkspace) {
     return (
       <div className="landing-page">
-        <div className="landing-container">
-          <div className="landing-hero">
-            <LandingCourt />
-            <div className="landing-header">
-              <Link to="/connect" className="landing-connect">
-                <span className="landing-connect-new">New</span> Ask CourtAI in Claude or ChatGPT
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-              <h1 className="landing-title">
-                Ask the <em>box score</em>
-              </h1>
-              <p className="landing-tagline">
-                Name a player, add what matters, and get back the exact games you meant.
-              </p>
-            </div>
+        <div className="landing-stack">
+          {tonight.games && <HomeTicker slateDate={tonight.slateDate} games={tonight.games} />}
+          <div className="landing-container">
+            <div className="landing-hero">
+              <LandingCourt />
+              <div className="landing-header">
+                <Link to="/connect" className="landing-connect">
+                  <span className="landing-connect-new">New</span> Ask CourtAI in Claude or ChatGPT
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+                <h1 className="landing-title">
+                  Ask the <em>box score</em>
+                </h1>
+                <p className="landing-tagline">Name a player, add what matters, get the logs.</p>
+              </div>
 
-            <div className="landing-search-wrapper">
-              <Form onSubmit={handleSubmit} className="landing-search-form">
-                <div className="landing-input-wrapper">
-                  <Search
-                    className={`landing-search-icon ${isLoading ? 'loading' : ''}`}
-                    size={20}
-                  />
-                  <Form.Control
-                    type="text"
-                    placeholder={
-                      isLoading
-                        ? 'Processing query...'
-                        : isAuthenticated
-                          ? sampleQueries[placeholderIdx]
-                          : 'Sign in to enter a query...'
-                    }
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    disabled={isLoading || !isAuthenticated}
-                    className={`landing-search-input ${isLoading ? 'loading' : ''}`}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !query.trim() || !isAuthenticated}
-                    className="landing-search-button"
-                    aria-label="Run it"
-                  >
-                    {isLoading ? (
-                      <div className="custom-spinner"></div>
-                    ) : (
-                      <>
-                        <span className="landing-search-button-label">Run it</span>
-                        <ArrowRight size={18} aria-hidden="true" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Form>
-            </div>
+              <div className="landing-search-wrapper">
+                <Form onSubmit={handleSubmit} className="landing-search-form">
+                  <div className="landing-input-wrapper">
+                    <Search
+                      className={`landing-search-icon ${isLoading ? 'loading' : ''}`}
+                      size={20}
+                    />
+                    <Form.Control
+                      type="text"
+                      placeholder={
+                        isLoading
+                          ? 'Processing query...'
+                          : isAuthenticated
+                            ? sampleQueries[placeholderIdx]
+                            : 'Sign in to enter a query...'
+                      }
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      disabled={isLoading || !isAuthenticated}
+                      className={`landing-search-input ${isLoading ? 'loading' : ''}`}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || !query.trim() || !isAuthenticated}
+                      className="landing-search-button"
+                      aria-label="Run it"
+                    >
+                      {isLoading ? (
+                        <div className="custom-spinner"></div>
+                      ) : (
+                        <>
+                          <span className="landing-search-button-label">Run it</span>
+                          <ArrowRight size={18} aria-hidden="true" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              </div>
 
-            {/* The deterministic door. Disabled rather than hidden when signed
+              {/* The deterministic door. Disabled rather than hidden when signed
               out, so the capability is discoverable and the page does not
               reflow on sign-in. */}
-            <div className="prompt-browse">
-              <button
-                type="button"
-                className="prompt-browse-button"
-                disabled={isLoading || !isAuthenticated}
-                onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
-              >
-                Browse without a query
-              </button>
-              {onOpenSavedFilterSets && (
+              <div className="prompt-browse">
                 <button
                   type="button"
                   className="prompt-browse-button"
-                  disabled={isLoading}
-                  onClick={onOpenSavedFilterSets}
+                  disabled={isLoading || !isAuthenticated}
+                  onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
                 >
-                  Saved Filter Sets
+                  Browse without a query
                 </button>
-              )}
+                {onOpenSavedFilterSets && (
+                  <button
+                    type="button"
+                    className="prompt-browse-button"
+                    disabled={isLoading}
+                    onClick={onOpenSavedFilterSets}
+                  >
+                    Saved Filter Sets
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <QueryLadder
-            onUseQuery={setQuery}
-            disabled={isLoading || !isAuthenticated}
-            currentQuery={query}
-          />
+          <div className="home-wide">
+            <QueryLadder
+              onUseQuery={setQuery}
+              disabled={isLoading || !isAuthenticated}
+              currentQuery={query}
+              answers={ladderAnswers}
+            />
 
-          {error && (
-            <div className="landing-error">
-              <AlertCircle className="landing-error-icon" size={20} />
-              {error}
-            </div>
-          )}
+            {tonight.games && (
+              <HomeTonight
+                games={tonight.games}
+                spotlight={tonight.spotlight}
+                targets={tonight.targets}
+                onUseQuery={setQuery}
+              />
+            )}
+
+            {error && (
+              <div className="landing-error">
+                <AlertCircle className="landing-error-icon" size={20} />
+                {error}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

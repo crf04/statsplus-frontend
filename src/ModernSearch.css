@@ -146,7 +146,7 @@
 }
 
 .landing-header {
-  margin-bottom: 40px;
+  margin-bottom: 28px;
   position: relative;
   text-align: center;
 }
@@ -224,19 +224,24 @@
   text-transform: uppercase;
 }
 
+/* One line, and wider than the content under it: centred on the hero by its
+   own width rather than the container's (crf04/statsplus#204). */
 .landing-title {
-  margin: 0;
+  width: max-content;
+  margin: 0 0 0 50%;
+  transform: translateX(-50%);
   color: var(--ct-text);
   font-family: var(--ct-display);
-  font-size: clamp(58px, 12vw, 156px);
+  font-size: clamp(34px, 12vw, 152px);
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.01em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .landing-title em {
-  display: block;
+  margin-left: 0.06em;
   font-style: normal;
   color: transparent;
   -webkit-text-stroke: 1.5px var(--ct-gold);
@@ -252,11 +257,11 @@
 }
 
 .landing-tagline {
-  max-width: 46ch;
   margin: 18px auto 0;
   color: var(--ct-dim);
   font-family: var(--ct-sans);
-  font-size: 17px;
+  font-size: clamp(14px, 3.9vw, 19px);
+  white-space: nowrap;
   font-weight: 400;
   letter-spacing: 0.01em;
 }

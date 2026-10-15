@@ -13,6 +13,7 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'home';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
 export const VARIANT_KEYS = [
+  'Z3',
   'Z2',
   'Z',
   'Y',
@@ -44,6 +45,7 @@ export const VARIANT_KEYS = [
 ];
 
 export const VARIANT_NAMES = {
+  Z3: 'Z2 with the bar charts in the questions row',
   Z2: 'Questions as one row; Tonight | Targets below',
   Z: 'Y with three columns: questions | tonight | Targets',
   Y: 'O, headline on one line',
@@ -101,8 +103,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'Z2';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'Z2';
+  const key = hash.get('v') || 'Z3';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'Z3';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);

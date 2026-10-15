@@ -3,9 +3,10 @@
 **Question:** should the home page (`/`, the Query Prompt) preview Matchups
 and Targets, and in what shape?
 
-Variants on the real home, switched by `#proto=home&v=Z2|Z|Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
+Variants on the real home, switched by `#proto=home&v=Z3|Z2|Z|Y|O|W|X|T|U|V|R|S|N|O|P|Q|M|K|L|I|J|H|F|G|E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
+- **Z3** Z2 with the per-step bar charts kept: questions as one row of three steps; Tonight | Your Targets below
 - **Z2** questions as one row of chips; Tonight (Best, Toughest) | Your Targets (one-line rows) below
 - **Z** Y with three columns: Try a question | Tonight (Best, Toughest) | Your Targets
 - **Y** O with "Ask the box score" and a shorter tagline ("Name a player, add what matters, get the logs.") each on one line

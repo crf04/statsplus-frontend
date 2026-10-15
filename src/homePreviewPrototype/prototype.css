@@ -2092,3 +2092,9 @@
     flex-wrap: wrap;
   }
 }
+.hp-z2 .hp-answers {
+  position: relative;
+  z-index: 2;
+  width: min(980px, 100%);
+  margin: -24px auto 64px;
+}

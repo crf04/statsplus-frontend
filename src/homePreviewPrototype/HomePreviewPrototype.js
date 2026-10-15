@@ -734,6 +734,8 @@ const VariantO = (props) => {
 
 /* Z2: Z, calmer: the questions as one row, Tonight and Targets side by side. */
 const VariantZ2 = (props) => {
+  // Z3: the same, with the per-step bar charts kept in the questions row.
+  const withBars = props.variant === 'Z3';
   const { bestCard, worstCard } = useTonight(props);
   const { targets } = props.data;
   return (
@@ -742,7 +744,11 @@ const VariantZ2 = (props) => {
       heroSlot={<div className="hp-o-hero hp-one-line">{props.hero}</div>}
       ladder={
         <div className="hp-z2">
-          <LadderPath onUseQuery={props.onUseQuery} />
+          {withBars ? (
+            <AnswerLadder onUseQuery={props.onUseQuery} compact referenceUp />
+          ) : (
+            <LadderPath onUseQuery={props.onUseQuery} />
+          )}
           <section className="hp-cols hp-z2-cols">
             <div className="hp-col">
               <div className="hp-col-head">
@@ -903,6 +909,7 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  Z3: VariantZ2,
   Z2: VariantZ2,
   Z: VariantO,
   Y: VariantO,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   bookMark,
   bookName,
@@ -157,13 +157,11 @@ function Sparkline({ values }) {
 // The strip's choices are the DFS categories plus any category only sportsbooks
 // quote. The extras feed the Sportsbooks table alone: they are not DFS
 // provenance, have no score row and are never Target candidates.
-const statChoices = (player) =>
+const statChoices = (statCategories, bookLines = {}) =>
   orderCategories([
     ...new Set([
-      ...player.statCategories,
-      ...Object.keys(player.bookLines ?? {}).filter(
-        (market) => player.bookLines[market].books.length,
-      ),
+      ...statCategories,
+      ...Object.keys(bookLines).filter((m) => bookLines[m].books.length),
     ]),
   ]);
 
@@ -302,7 +300,10 @@ export default function SelectionCard({
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const categories = orderCategories(player.statCategories);
-  const stats = statChoices(player);
+  const stats = useMemo(
+    () => statChoices(player.statCategories, player.bookLines),
+    [player.statCategories, player.bookLines],
+  );
   const [activeStat, setActiveStat] = useState(
     stats.includes(sheetMarket) ? sheetMarket : stats[0],
   );
@@ -310,7 +311,7 @@ export default function SelectionCard({
   useEffect(() => {
     const playerChanged = previousPlayerId.current !== player.id;
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
-    const ordered = statChoices(player);
+    const ordered = stats;
     setActiveStat((current) => {
       if (playerChanged) {
         return ordered.includes(sheetMarket) ? sheetMarket : ordered[0];
@@ -322,7 +323,7 @@ export default function SelectionCard({
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, player.statCategories, player.bookLines, sheetMarket]);
+  }, [player.id, stats, sheetMarket]);
   const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);

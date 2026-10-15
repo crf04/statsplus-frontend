@@ -2968,7 +2968,7 @@ test('a category only sportsbooks quote is reachable from the strip without beco
   expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
   const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
   expect(within(matrix).queryByRole('button', { name: 'AST' })).not.toBeInTheDocument();
-  expect(screen.getByText('No games vs this opponent log is kept for AST.')).toBeVisible();
+  expect(await screen.findByText('No games vs this opponent log is kept for AST.')).toBeVisible();
 });
 
 test('names every allowlisted sportsbook', async () => {

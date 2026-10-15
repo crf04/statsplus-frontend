@@ -1947,3 +1947,18 @@
     grid-template-columns: 1fr;
   }
 }
+@media (max-width: 600px) {
+  .hp-t-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .hp-gcard {
+    padding: 10px;
+  }
+  .hp-gcard-teams {
+    font-size: 16px;
+  }
+  .hp-gcard li {
+    font-size: 11.5px;
+  }
+}

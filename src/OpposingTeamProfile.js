@@ -6,8 +6,13 @@ import './chartSetup';
 import { RankCube } from './utils';
 import { getApiUrl } from './config';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
+// PROTOTYPE (throwaway, branch prototype/team-profile-tables)
+import { useProto } from './teamTablesPrototype/prototypeMode';
+import PrototypeSwitcher from './teamTablesPrototype/PrototypeSwitcher';
+import { TeamTablesProto } from './teamTablesPrototype/variants';
 
 const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }) => {
+  const proto = useProto();
   const [selectedCategory, setSelectedCategory] = useState('Traditional');
   const [teamStats, setTeamStats] = useState(null);
   const [dateFilter, setDateFilter] = useState('');
@@ -251,6 +256,8 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
 
   const renderTeamStats = () => {
     if (!teamStats) return <p>Select a team and category to view stats.</p>;
+    if (proto.active && proto.variant !== 'Now')
+      return <TeamTablesProto variant={proto.variant} category={selectedCategory} data={teamStats} />;
 
     let statColumns;
     if (selectedCategory === 'Traditional') {
@@ -499,7 +506,10 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
           </Row>
         </Form>
         {renderTeamStats()}
-        {selectedCategory === 'Assists' && renderAssistsBarChart()}
+        {selectedCategory === 'Assists' &&
+          !(proto.active && proto.variant === 'B') &&
+          renderAssistsBarChart()}
+        {proto.active && <PrototypeSwitcher proto={proto} />}
       </Card.Body>
     </Card>
   );

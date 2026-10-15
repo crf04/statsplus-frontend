@@ -20,6 +20,8 @@ signedInTest(
     await expect(cell).toContainText('Tatum +15%');
     await expect(cell).toContainText('James +12%');
     expect(api.sent('/api/games/slate/edges', 'GET')).toHaveLength(1);
+    await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
+    await app.screenshot('home-top');
 
     // Tonight: Best with its reason; no unfavourable Matchup, so no Toughest.
     const best = screen.getByRole('article', 'Best: Austin Reaves');

@@ -105,7 +105,7 @@ test('the ticker lists each game with its effects by last name and links to its 
     </MemoryRouter>,
   );
 
-  expect(screen.getByRole('link', { name: /Fri, Apr 10\s+1 games/ })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /^Fri, Apr 10\s+1 game$/ })).toHaveAttribute(
     'href',
     '/matchups',
   );

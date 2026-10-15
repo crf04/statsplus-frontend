@@ -10,7 +10,7 @@ import { lastName, shortSlateDay, signedPercent } from './homeFormat';
 const HomeTicker = ({ slateDate, games }) => (
   <nav className="home-ticker" aria-label="Today's games">
     <Link to="/matchups" className="home-ticker-label">
-      {shortSlateDay(slateDate)} <b>{games.length} games</b>
+      {shortSlateDay(slateDate)} <b>{games.length === 1 ? '1 game' : `${games.length} games`}</b>
     </Link>
     <div className="home-ticker-track">
       {games.map((game) => (

@@ -2156,6 +2156,48 @@ const fulfillOverride = (route, response) =>
     json: response.body ?? response,
   });
 
+// Shooting Type rows as /api/players/profile returns them (per game, season).
+const SHOOTING_TYPE_PROFILE = [
+  { SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.203, FGM: 1.4, FGA: 3.5, FG_PCT: 0.402, FG2M: 0.2, FG2A: 0.4, FG2_PCT: 0.5, FG2A_FREQUENCY: 0.024, FG3M: 1.2, FG3A: 3.0, FG3_PCT: 0.388, FG3A_FREQUENCY: 0.178 },
+  { SHOT_TYPE: 'Pullup', FGA_FREQUENCY: 0.239, FGM: 1.6, FGA: 4.1, FG_PCT: 0.398, FG2M: 1.2, FG2A: 2.7, FG2_PCT: 0.449, FG2A_FREQUENCY: 0.16, FG3M: 0.4, FG3A: 1.4, FG3_PCT: 0.296, FG3A_FREQUENCY: 0.08 },
+  { SHOT_TYPE: '<10 Ft', FGA_FREQUENCY: 0.529, FGM: 5.2, FGA: 9.0, FG_PCT: 0.575, FG2M: 5.2, FG2A: 9.0, FG2_PCT: 0.575, FG2A_FREQUENCY: 0.529, FG3M: 0, FG3A: 0, FG3_PCT: 0, FG3A_FREQUENCY: 0 },
+]; // prettier-ignore
+
+// The parts of an Unscheduled Matchup the Zone Shooting court reads: the
+// player's Shot-zone Diet and the opponent's season made/attempted rows.
+const SHOT_ZONE_DIET = [
+  ['Restricted Area', 0.313, 0.276, 18, -0.3],
+  ['In The Paint (Non-RA)', 0.294, 0.201, 14, -1.4],
+  ['Mid-Range', 0.116, 0.098, 9, -6.7],
+  ['Corner 3', 0.02, 0.106, 2, -18.6],
+  ['Above the Break 3', 0.257, 0.32, 19, 2.3],
+];
+const unscheduledShotZonePayload = (opponent) => ({
+  players: [
+    {
+      diet_shares: {
+        shot_zones: SHOT_ZONE_DIET.map(([key, share, league]) => ({
+          key,
+          season: { share, league_average_share: league, games_played: 72, volume: 100, volume_unit: 'field_goal_attempts', sigma_deviation: 0 },
+        })),
+      },
+    },
+  ],
+  teams: [
+    {
+      tricode: opponent,
+      defense_sheet: {
+        shot_zones: SHOT_ZONE_DIET.flatMap(([key, , , rank, percent]) =>
+          ['FGM', 'FGA'].map((stat) => ({
+            key: `${key}:${stat}`,
+            season: { rank, percent_vs_league_average: percent, allowed_per_48: 10, sigma_deviation: 0 },
+          })),
+        ),
+      },
+    },
+  ],
+}); // prettier-ignore
+
 export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -2740,7 +2782,22 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/players/profile') {
-      await route.fulfill({ json: { Transition: 1.2, Isolation: 0.9 } });
+      await route.fulfill({
+        json:
+          url.searchParams.get('category') === 'Shooting Type'
+            ? SHOOTING_TYPE_PROFILE
+            : { Transition: 1.2, Isolation: 0.9 },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/matchups/unscheduled') {
+      const opponent = url.searchParams.get('opponent');
+      if (!/^[A-Z]{3}$/.test(opponent || '') || !url.searchParams.get('player_name')) {
+        await route.fulfill({ status: 400, json: { error: { code: 'invalid_input' } } });
+        return;
+      }
+      await route.fulfill({ json: unscheduledShotZonePayload(opponent) });
       return;
     }
 

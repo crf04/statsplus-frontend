@@ -17,6 +17,7 @@ const config = {
     SLATE: '/api/games/slate',
     MATCHUP: '/api/games/matchup',
     MATCHUP_SELECTION: '/api/games/matchup/selection',
+    MATCHUP_UNSCHEDULED: '/api/matchups/unscheduled',
     NEXT_OPPONENT: '/api/players/next-opponent',
     PLAYER_PROFILE: '/api/players/profile',
     TEAM_STATS: '/api/teams/stats',

@@ -5,14 +5,29 @@
  * sideways: the card is half the page on desktop and the full phone width.
  */
 import './prototype.css';
-import { ma, one, pct, share, shotTypes, times, vsTone, zones } from './data';
+import {
+  courtSlices,
+  leagueTypeShare,
+  ma,
+  one,
+  ordinal,
+  pct,
+  points,
+  share,
+  shotTypes,
+  signed,
+  TEAM_CODES,
+  times,
+  vsTone,
+  zones,
+} from './data';
+import baselines from './mock/diet-baselines.json';
 
-const Bar = ({ value, max = 1, tone = 'gold' }) => (
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const Bar = ({ value, max = 1, tone = 'gold', tick = null }) => (
   <span className="pss-bar">
-    <span
-      className={`pss-bar-fill pss-${tone}`}
-      style={{ width: `${Math.max(0, Math.min(1, value / max)) * 100}%` }}
-    />
+    <span className={`pss-bar-fill pss-${tone}`} style={{ width: `${clamp01(value / max) * 100}%` }} />
+    {tick != null && <span className="pss-bar-tick" style={{ left: `${clamp01(tick / max) * 100}%` }} />}
   </span>
 );
 
@@ -33,7 +48,37 @@ const Cell = ({ s }) => (
   </td>
 );
 
-const TypeA = ({ rows }) => (
+const ShareA = ({ r }) => (
+  <>
+    <span className="pss-main">{share(r.share)}</span>
+    <Bar value={r.share} />
+  </>
+);
+
+/* E: league average as a tick on the bar and a second line. */
+const ShareE = ({ r }) => (
+  <>
+    <span className="pss-main">{share(r.share)}</span>
+    <Bar value={r.share} tick={r.league} />
+    <span className="pss-sub">lg {share(r.league)}</span>
+  </>
+);
+
+/* F: the gap to league average, in percentage points. */
+const ShareF = ({ r }) => {
+  const d = r.league == null ? null : r.share - r.league;
+  const tone = d == null || Math.abs(d) < 0.03 ? 'flat' : d > 0 ? 'up' : 'down';
+  return (
+    <>
+      <span className="pss-main">{share(r.share)}</span>
+      <span className={`pss-sub pss-delta pss-delta-${tone}`} title={`League average ${share(r.league)}`}>
+        {points(d)} <span>vs lg</span>
+      </span>
+    </>
+  );
+};
+
+const TypeA = ({ rows, Share = ShareA }) => (
   <table className="pss-table">
     <colgroup>
       <col style={{ width: '27%' }} />
@@ -56,8 +101,7 @@ const TypeA = ({ rows }) => (
         <tr key={r.key}>
           <td className="pss-left pss-name">{r.name}</td>
           <td className="pss-num">
-            <span className="pss-main">{share(r.share)}</span>
-            <Bar value={r.share} />
+            <Share r={r} />
           </td>
           <Cell s={r.fg} />
           <Cell s={r.two} />
@@ -107,264 +151,194 @@ const ZoneA = ({ rows }) => (
   </table>
 );
 
-/* ---------------- B: bar rows, no table ---------------- */
+/* ---------------- E / F: the MCP get_matchup court ---------------- */
 
-const TypeB = ({ rows }) => {
-  const max = Math.max(...rows.map((r) => r.share), 0.01);
-  return (
-    <div className="pss-rows">
-      <div className="pss-legend">
-        <span><i className="pss-key pss-gold" />2PT attempts</span>
-        <span><i className="pss-key pss-slate" />3PT attempts</span>
+/* Fill for what the opponent allows (percent vs league): green = more, red = less. */
+const soft = (p) =>
+  p == null
+    ? 'rgba(255,255,255,0.05)'
+    : `rgba(${p >= 0 ? '76,175,125' : '194,78,78'}, ${Math.min(0.8, 0.12 + Math.abs(p) / 28).toFixed(2)})`;
+
+const HY = 75;
+const R3 = 237.5;
+const HOOP = 40.5;
+const ARC = `M30 0 L30 140 A${R3} ${R3} 0 0 0 470 140 L470 0`;
+const RA = `M190 0 L190 ${HY} A60 60 0 0 0 310 ${HY} L310 0`;
+
+const Court = ({ slices, opp }) => {
+  const fill = (region) => soft(slices[region]?.vsLg);
+  const ground = 'var(--ct-surface)';
+  const label = (region, x, y, rot) => {
+    const s = slices[region];
+    if (!s || s.share == null) return null;
+    return (
+      <div
+        key={`${region}-${x}`}
+        className={`pss-rl${rot ? ' pss-rot' : ''}`}
+        style={{ left: `${(x / 5).toFixed(1)}%`, top: `${(y / 4).toFixed(1)}%` }}
+        title={`${s.label}: ${share(s.share)} of his shots (league ${share(s.league)}) · ${opp} ${ordinal(s.rank)} (${signed(s.vsLg)} vs league)`}
+      >
+        <b>{share(s.share)}</b>
+        {!rot && (
+          <small>
+            {ordinal(s.rank)} · {signed(s.vsLg)}
+          </small>
+        )}
       </div>
-      {rows.map((r) => (
-        <div className="pss-row" key={r.key}>
-          <div className="pss-row-head">
-            <span className="pss-name">{r.name}</span>
-            <span className="pss-row-big">
-              {share(r.share)} <small>of FGA</small>
-            </span>
-          </div>
-          <div className="pss-split" style={{ width: `${(r.share / max) * 100}%` }}>
-            <span className="pss-gold" style={{ flex: r.two.share || 0 }} />
-            <span className="pss-slate" style={{ flex: r.three.share || 0 }} />
-          </div>
-          <div className="pss-row-stats">
-            <span><b>FG</b> {pct(r.fg.pct)} <em>{ma(r.fg)}</em></span>
-            <span><b>2PT</b> {pct(r.two.pct)} <em>{r.two.a > 0 ? ma(r.two) : ''}</em></span>
-            <span><b>3PT</b> {pct(r.three.pct)} <em>{r.three.a > 0 ? ma(r.three) : ''}</em></span>
-          </div>
-        </div>
-      ))}
+    );
+  };
+  return (
+    <div className="pss-courtbox">
+      <svg className="pss-mcourt" viewBox="0 0 500 400" role="img" aria-label="Shot zones half court">
+        <rect width="500" height="400" fill={ground} />
+        <rect width="500" height="400" fill={fill('arc')} />
+        <rect width="30" height="140" fill={fill('corner')} />
+        <rect x="470" width="30" height="140" fill={fill('corner')} />
+        <path d={`${ARC} Z`} fill={ground} />
+        <path d={`${ARC} Z`} fill={fill('mid')} />
+        <rect x="170" width="160" height="190" fill={ground} />
+        <rect x="170" width="160" height="190" fill={fill('paint')} />
+        <path d={`${RA} Z`} fill={ground} />
+        <path d={`${RA} Z`} fill={fill('rim')} />
+        <g fill="none" stroke={ground} strokeWidth="3">
+          <path d={ARC} />
+          <rect x="170" width="160" height="190" />
+          <path d={RA} />
+        </g>
+        <rect width="500" height="400" fill="none" stroke="var(--ct-line-strong)" strokeWidth="2" />
+        <circle cx="250" cy={HOOP} r="7.5" fill="none" stroke="var(--ct-text)" strokeOpacity=".5" strokeWidth="2" />
+        <line x1="220" x2="280" y1={HOOP - 10} y2={HOOP - 10} stroke="var(--ct-text)" strokeOpacity=".5" strokeWidth="3" />
+      </svg>
+      {label('rim', 250, 86)}
+      {label('paint', 250, 162)}
+      {label('mid', 250, 242)}
+      {label('arc', 250, 337)}
+      {label('corner', 18, 70, true)}
+      {label('corner', 483, 70, true)}
     </div>
   );
 };
 
-const ZoneB = ({ rows }) => {
-  const max = Math.max(...rows.map((z) => z.pts), 0.1);
+const CourtKey = ({ slices, opp }) => {
+  const all = Object.values(slices).filter((s) => s.share != null);
+  const s = all.reduce((a, b) => (b.share > a.share ? b : a), all[0]);
+  if (!s) return null;
+  const gap = Object.values(slices).some((x) => x.vsLg == null);
   return (
-    <div className="pss-zrows">
-      <div className="pss-zrow pss-zrow-head">
-        <span>Zone</span>
-        <span>Points per game</span>
-        <span>FG%</span>
-        <span>vs Lg</span>
+    <div className="pss-zkey">
+      <div className="pss-rl pss-static" style={{ background: soft(s.vsLg) }}>
+        <b>{share(s.share)}</b>
+        <small>
+          {ordinal(s.rank)} · {signed(s.vsLg)}
+        </small>
       </div>
-      {rows.map((z) => (
-        <div className="pss-zrow" key={z.key}>
-          <span className="pss-name">{z.name}</span>
-          <span className="pss-zbar">
-            <span className={`pss-zbar-fill ${z.three ? 'pss-slate' : 'pss-gold'}`} style={{ width: `${(z.pts / max) * 100}%` }} />
-            <span className="pss-zbar-label">
-              {one(z.pts)} <em>{share(z.share)}</em>
-            </span>
-          </span>
-          <span className="pss-num">
-            {pct(z.fg.pct)}
-            <em>{ma(z.fg)}</em>
-          </span>
-          <span className="pss-num">
-            <Vs x={z.vsLg} />
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-/* ---------------- C: court map + tiles ---------------- */
-
-const TypeC = ({ rows }) => (
-  <div className="pss-tiles">
-    {rows.map((r) => (
-      <div className="pss-tile" key={r.key}>
-        <div className="pss-tile-name">{r.name}</div>
-        <div className="pss-tile-big">{share(r.share)}</div>
-        <div className="pss-tile-label">of his FGA · {one(r.fg.a)}/g</div>
-        <div className="pss-tile-fg">
-          {pct(r.fg.pct)} <span>FG</span>
-        </div>
-        <div className="pss-tile-split">
-          <div>
-            <span>2PT</span>
-            <b>{pct(r.two.pct, 0)}</b>
-            <em>{r.two.a > 0 ? ma(r.two) : '—'}</em>
-          </div>
-          <div>
-            <span>3PT</span>
-            <b>{pct(r.three.pct, 0)}</b>
-            <em>{r.three.a > 0 ? ma(r.three) : '—'}</em>
-          </div>
-        </div>
+      <div className="pss-lines">
+        <span>Share of his shots from this zone</span>
+        <span>{opp}&apos;s rank (30th = most) · vs league</span>
       </div>
-    ))}
-  </div>
-);
-
-/* Half court, baseline at the top, 10 units = 1 ft. */
-const COURT = {
-  'Restricted Area': { d: 'M210,0 L210,52.5 A40,40 0 0 0 290,52.5 L290,0 Z', at: [250, 46], tight: true },
-  'In The Paint (Non-RA)': {
-    d: 'M170,0 L170,190 L330,190 L330,0 Z M210,0 L210,52.5 A40,40 0 0 0 290,52.5 L290,0 Z',
-    at: [250, 140],
-  },
-  'Mid-Range': {
-    d: 'M30,0 L30,142 A237.5,237.5 0 0 0 470,142 L470,0 Z M170,0 L170,190 L330,190 L330,0 Z',
-    at: [250, 245],
-  },
-  'Left Corner 3': { d: 'M0,0 L30,0 L30,142 L0,142 Z', at: [2, -16], above: true, anchor: 'start' },
-  'Right Corner 3': { d: 'M470,0 L500,0 L500,142 L470,142 Z', at: [498, -16], above: true, anchor: 'end' },
-  'Above the Break 3': {
-    d: 'M0,142 L30,142 A237.5,237.5 0 0 0 470,142 L500,142 L500,400 L0,400 Z',
-    at: [250, 345],
-  },
-};
-
-const heat = (x) => {
-  if (x == null) return 'rgba(255,255,255,0.03)';
-  if (x >= 1) return `rgba(232,163,61,${Math.min(0.75, 0.12 + (x - 1) * 0.45)})`;
-  return `rgba(122,134,153,${Math.min(0.5, 0.08 + (1 - x) * 0.45)})`;
-};
-
-const ZoneC = ({ rows }) => (
-  <div className="pss-court-wrap">
-    <svg className="pss-court" viewBox="-4 -52 508 456" role="img" aria-label="Zone shooting court map">
-      {rows.map((z) => (
-        <path key={z.key} d={COURT[z.key].d} fill={heat(z.vsLg)} fillRule="evenodd" stroke="rgba(255,255,255,0.22)" strokeWidth="2" />
-      ))}
-      {rows.map((z) => {
-        const { at, above, tight, anchor = 'middle' } = COURT[z.key];
-        return (
-          <g key={z.key} transform={`translate(${at[0]},${at[1]})`} textAnchor={anchor}>
-            {above ? (
-              <>
-                <text className="pss-court-small" y="-14">{z.short} · {pct(z.fg.pct, 0)}</text>
-                <text className="pss-court-mid" y="10">{one(z.pts)}</text>
-              </>
-            ) : tight ? (
-              <>
-                <text className="pss-court-small" y="-22">{z.short} · {pct(z.fg.pct, 0)} FG</text>
-                <text className="pss-court-big" y="10">{one(z.pts)}</text>
-                <text className="pss-court-small" y="34">{times(z.vsLg)}</text>
-              </>
-            ) : (
-              <>
-                <text className="pss-court-small" y="-20">{z.short} · {pct(z.fg.pct, 0)} FG</text>
-                <text className="pss-court-big" y="10">{one(z.pts)}</text>
-                <text className="pss-court-small" y="32">{times(z.vsLg)}</text>
-              </>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-    <div className="pss-court-key">
-      <span>Big = points per game · × and shade = emphasis vs league</span>
-      <span className="pss-heat">
-        <i style={{ background: heat(0.3) }} />less
-        <i style={{ background: heat(1) }} />
-        <i style={{ background: heat(2) }} />more
+      {gap && (
+        <>
+          <i className="pss-none" />
+          <span>No data for this zone</span>
+        </>
+      )}
+      <span className="pss-grad" />
+      <span>
+        {opp} allows less → more (made shots, season)
       </span>
     </div>
-  </div>
-);
-
-/* ---------------- D: pivoted columns + points strip ---------------- */
-
-const TypeD = ({ rows }) => {
-  const line = (label, render, cls = '') => (
-    <tr className={cls}>
-      <th className="pss-left">{label}</th>
-      {rows.map((r) => (
-        <td key={r.key} className="pss-num">{render(r)}</td>
-      ))}
-    </tr>
   );
+};
+
+const ZoneList = ({ slices, profile, opp }) => {
+  const fg = (key) => {
+    const a = profile?.[`${key}_FGA`];
+    return { m: profile?.[`${key}_FGM`] ?? 0, a: a ?? 0, pct: a > 0 ? profile?.[`${key}_FG_PCT`] : null };
+  };
+  const rows = Object.values(slices).sort((a, b) => (b.share ?? 0) - (a.share ?? 0));
   return (
-    <table className="pss-table pss-pivot">
+    <table className="pss-table pss-zlist">
+      <colgroup>
+        <col style={{ width: '31%' }} />
+        <col />
+        <col />
+        <col />
+      </colgroup>
       <thead>
         <tr>
-          <th className="pss-left" />
-          {rows.map((r) => (
-            <th key={r.key}>{r.name}</th>
-          ))}
+          <th className="pss-left">Zone</th>
+          <th>Share</th>
+          <th>FG</th>
+          <th>{opp}</th>
         </tr>
       </thead>
       <tbody>
-        {line('Share of FGA', (r) => (
-          <>
-            <span className="pss-main">{share(r.share)}</span>
-            <Bar value={r.share} />
-          </>
-        ), 'pss-strong')}
-        {line('FG%', (r) => <span className="pss-main">{pct(r.fg.pct)}</span>)}
-        {line('FGM/FGA', (r) => <span className="pss-dim">{ma(r.fg)}</span>)}
-        {line('2PT%', (r) => <span className="pss-main">{pct(r.two.pct)}</span>, 'pss-group')}
-        {line('2PM/2PA', (r) => <span className="pss-dim">{r.two.a > 0 ? ma(r.two) : '—'}</span>)}
-        {line('3PT%', (r) => <span className="pss-main">{pct(r.three.pct)}</span>, 'pss-group')}
-        {line('3PM/3PA', (r) => <span className="pss-dim">{r.three.a > 0 ? ma(r.three) : '—'}</span>)}
+        {rows.map((s) => (
+          <tr key={s.key}>
+            <td className="pss-left pss-name">{s.label}</td>
+            <td className="pss-num">
+              <span className="pss-main">{share(s.share)}</span>
+              <span className="pss-sub">lg {share(s.league)}</span>
+            </td>
+            <Cell s={fg(s.key)} />
+            <td className="pss-num">
+              <span className="pss-main">{ordinal(s.rank)}</span>
+              <span className={`pss-sub ${s.vsLg == null ? '' : s.vsLg >= 0 ? 'pss-hit' : 'pss-miss'}`}>{signed(s.vsLg)}</span>
+            </td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
 };
 
-const STRIP = ['#e8a33d', '#c98a28', '#8f6a2c', '#7a8699', '#5d6879', '#a3adbd'];
-
-const ZoneD = ({ rows }) => {
-  const ordered = [...rows];
+const ZoneCourt = ({ matchups, team, profile, withList }) => {
+  const opp = TEAM_CODES[team];
+  if (!opp || !matchups?.opponents?.[opp]) return <p className="pss-caption">Pick an opponent to see the court.</p>;
+  const slices = courtSlices(matchups, opp);
   return (
-    <div>
-      <div className="pss-strip" aria-label="Share of zone points">
-        {ordered.map((z, i) =>
-          z.share > 0 ? (
-            <span key={z.key} style={{ flex: z.share, background: STRIP[i] }} title={`${z.name} ${share(z.share)}`}>
-              {z.share >= 0.12 ? share(z.share) : ''}
-            </span>
-          ) : null,
-        )}
+    <>
+      <div className="pss-sec">
+        <span>Shot zones · vs {opp}</span>
       </div>
-      <div className="pss-zgrid">
-        {ordered.map((z, i) => (
-          <div className="pss-zcell" key={z.key}>
-            <div className="pss-zcell-head">
-              <i className="pss-key" style={{ background: STRIP[i] }} />
-              <span className="pss-name">{z.name}</span>
-            </div>
-            <div className="pss-zcell-big">
-              {one(z.pts)} <small>pts</small>
-              <Vs x={z.vsLg} />
-            </div>
-            <div className="pss-zcell-sub">
-              {pct(z.fg.pct)} FG · {ma(z.fg)}
-            </div>
-          </div>
-        ))}
+      <div className="pss-courtwrap">
+        <Court slices={slices} opp={opp} />
+        <CourtKey slices={slices} opp={opp} />
       </div>
-    </div>
+      {withList && <ZoneList slices={slices} profile={profile} opp={opp} />}
+    </>
   );
 };
 
 /* ---------------- entry points ---------------- */
 
-const TYPE = { A: TypeA, B: TypeB, C: TypeC, D: TypeD };
-const ZONE = { A: ZoneA, B: ZoneB, C: ZoneC, D: ZoneD };
+const withLeague = (rows) => rows.map((r) => ({ ...r, league: leagueTypeShare(baselines, r.key) }));
 
 export const ShootingTypeProto = ({ variant, data }) => {
-  const Variant = TYPE[variant];
+  const rows = withLeague(shotTypes(data));
+  const Share = variant === 'E' ? ShareE : variant === 'F' ? ShareF : ShareA;
   return (
     <div className="pss">
-      <Variant rows={shotTypes(data)} />
-      <Caption>Per game, season. Share = of all his field-goal attempts.</Caption>
+      <TypeA rows={rows} Share={Share} />
+      <Caption>
+        Per game, season. Share = of all his field-goal attempts
+        {variant === 'E' && '; lg = league-average share (tick on the bar).'}
+        {variant === 'F' && '; vs lg = percentage points above or below the league-average share.'}
+        {variant === 'A' && '.'}
+      </Caption>
     </div>
   );
 };
 
-export const ZoneShootingProto = ({ variant, data }) => {
-  const Variant = ZONE[variant];
-  return (
-    <div className="pss">
-      <Variant rows={zones(data)} />
-      <Caption>Per game, season. Share = of his points from the six zones. vs Lg = zone emphasis vs league average.</Caption>
-    </div>
-  );
-};
+export const ZoneShootingProto = ({ variant, data, matchups, team }) => (
+  <div className="pss">
+    {variant === 'A' ? (
+      <>
+        <ZoneA rows={zones(data)} />
+        <Caption>Round 1 table. vs Lg = zone emphasis vs league average.</Caption>
+      </>
+    ) : (
+      <ZoneCourt matchups={matchups} team={team} profile={data} withList={variant === 'F'} />
+    )}
+  </div>
+);

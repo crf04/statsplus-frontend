@@ -9,7 +9,7 @@ import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
 // PROTOTYPE (throwaway, branch prototype/profile-shooting-tables)
-import { sampleData, useProto } from './profileShootingPrototype/prototypeMode';
+import { SAMPLE_PLAYERS, sampleData, useProto } from './profileShootingPrototype/prototypeMode';
 import PrototypeSwitcher from './profileShootingPrototype/PrototypeSwitcher';
 import { ShootingTypeProto, ZoneShootingProto } from './profileShootingPrototype/variants';
 
@@ -122,7 +122,14 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
     }
     const zoneData = proto.active ? sampleData('Zone Shooting', proto.player) : playerData;
     if (proto.active && proto.variant !== 'Now')
-      return <ZoneShootingProto variant={proto.variant} data={zoneData} />;
+      return (
+        <ZoneShootingProto
+          variant={proto.variant}
+          data={zoneData}
+          matchups={SAMPLE_PLAYERS[proto.player].matchups}
+          team={selectedTeam}
+        />
+      );
 
     const zones = [
       'Above the Break 3',

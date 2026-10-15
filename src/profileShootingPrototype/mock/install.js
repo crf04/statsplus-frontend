@@ -10,8 +10,9 @@ import players from './players.json';
 import teams from './teams.json';
 import logs from './logs.json';
 import playtypes from './playtypes.json';
+import dietBaselines from './diet-baselines.json';
 
-export const DEMO_URL = '/?player_name=Jalen+Johnson#proto=shooting&v=A';
+export const DEMO_URL = '/?player_name=Jalen+Johnson#proto=shooting&v=E';
 
 const profile = (params = {}) => {
   if (params.category === 'Playtypes') return playtypes;
@@ -29,12 +30,14 @@ export const installMockApi = () => {
     let data = null;
     if (url.endsWith('/api/players')) data = players;
     else if (url.endsWith('/api/teams')) data = teams;
-    else if (url.endsWith('/api/games/game_logs')) data = logs;
+    // next_game picks the page's opponent, which colours the court.
+    else if (url.endsWith('/api/games/game_logs')) data = { ...logs, next_game: 'Charlotte Hornets' };
     else if (url.endsWith('/api/players/profile')) data = profile(config.params);
     else if (url.endsWith('/api/players/next-opponent'))
       data = { next_game: null, opponent_ranks: [] };
     else if (url.endsWith('/api/user/saved-filter-sets')) data = { saved_filter_sets: [] };
     else if (url.endsWith('/api/teams/stats')) data = {};
+    else if (url.endsWith('/api/diet/baselines')) data = dietBaselines;
     if (data) {
       config.adapter = async () => ({ data, status: 200, statusText: 'OK', headers: {}, config });
     }

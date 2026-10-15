@@ -16,24 +16,29 @@ import vwType from './mock/victor-wembanyama-shooting-type.json';
 import vwZone from './mock/victor-wembanyama-zone-shooting.json';
 import sgaType from './mock/shai-gilgeous-alexander-shooting-type.json';
 import sgaZone from './mock/shai-gilgeous-alexander-zone-shooting.json';
+import jjMatch from './mock/jalen-johnson-matchups.json';
+import scMatch from './mock/stephen-curry-matchups.json';
+import vwMatch from './mock/victor-wembanyama-matchups.json';
+import sgaMatch from './mock/shai-gilgeous-alexander-matchups.json';
 
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'shooting';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D', 'Now'];
+/* Round 2 (2026-10-15): A won for Shooting Type; Zone Shooting becomes the
+   MCP get_matchup court. B/C/D are in this branch's first commit. */
+export const VARIANT_KEYS = ['E', 'F', 'A', 'Now'];
 export const VARIANT_NAMES = {
-  A: 'Tight table, two-line cells',
-  B: 'Bar rows, no table',
-  C: 'Court map + shot-type tiles',
-  D: 'Pivoted columns + points strip',
+  E: 'A + league tick · MCP court',
+  F: 'A + vs-league delta · MCP court + zone list',
+  A: 'Round 1 pick (no league)',
   Now: 'Current tables (for comparison)',
 };
 
 export const SAMPLE_PLAYERS = {
-  'jalen-johnson': { name: 'Jalen Johnson', type: jjType, zone: jjZone },
-  'stephen-curry': { name: 'Stephen Curry', type: scType, zone: scZone },
-  'victor-wembanyama': { name: 'Victor Wembanyama', type: vwType, zone: vwZone },
-  'shai-gilgeous-alexander': { name: 'Shai Gilgeous-Alexander', type: sgaType, zone: sgaZone },
+  'jalen-johnson': { name: 'Jalen Johnson', type: jjType, zone: jjZone, matchups: jjMatch },
+  'stephen-curry': { name: 'Stephen Curry', type: scType, zone: scZone, matchups: scMatch },
+  'victor-wembanyama': { name: 'Victor Wembanyama', type: vwType, zone: vwZone, matchups: vwMatch },
+  'shai-gilgeous-alexander': { name: 'Shai Gilgeous-Alexander', type: sgaType, zone: sgaZone, matchups: sgaMatch },
 };
 const PLAYER_KEYS = Object.keys(SAMPLE_PLAYERS);
 
@@ -57,7 +62,7 @@ export const useProto = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'shooting');
-  const variant = VARIANT_KEYS.includes(hash.get('v')) ? hash.get('v') : 'A';
+  const variant = VARIANT_KEYS.includes(hash.get('v')) ? hash.get('v') : 'E';
   const player = PLAYER_KEYS.includes(hash.get('p')) ? hash.get('p') : PLAYER_KEYS[0];
 
   const write = useCallback((key, value) => {

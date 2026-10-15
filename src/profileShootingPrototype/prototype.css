@@ -326,3 +326,78 @@
   font-size: 12px;
   max-width: 130px;
 }
+
+/* ---------- round 2 ---------- */
+.pss-bar { position: relative; overflow: visible; }
+.pss-bar-fill { border-radius: 2px; }
+.pss-bar-tick {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ct-text);
+  opacity: 0.7;
+}
+.pss-delta { white-space: nowrap; }
+.pss-delta span { color: var(--ct-dim); }
+.pss-delta-up { color: var(--ct-gold-hover); }
+.pss-delta-down { color: #b9b2a2; }
+.pss-delta-flat { color: var(--ct-dim); }
+.pss-hit { color: var(--ct-hit) !important; }
+.pss-miss { color: #d86a6a !important; }
+
+.pss-sec {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+  margin-bottom: 8px;
+}
+.pss-courtwrap { max-width: 440px; margin: 0 auto; }
+.pss-courtbox { position: relative; container-type: inline-size; }
+.pss-mcourt { display: block; width: 100%; height: auto; border-radius: 6px; }
+.pss-rl {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--ct-text);
+}
+.pss-rl b { display: block; font-family: var(--ct-mono); font-size: clamp(12px, 4.4cqw, 16px); font-weight: 700; }
+.pss-rl small { display: block; font-family: var(--ct-mono); font-size: clamp(9px, 3cqw, 11px); opacity: 0.85; }
+.pss-rl.pss-rot { transform: translate(-50%, -50%) rotate(-90deg); }
+.pss-rl.pss-rot b { font-size: clamp(9px, 3.2cqw, 12px); }
+.pss-zkey {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+.pss-rl.pss-static { position: static; transform: none; padding: 3px 8px; border-radius: 4px; }
+.pss-rl.pss-static b { font-size: 13px; }
+.pss-lines { display: grid; gap: 3px; line-height: 1.25; }
+.pss-none {
+  justify-self: center;
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  outline: 1px solid var(--ct-line-strong);
+  outline-offset: -1px;
+}
+.pss-grad {
+  justify-self: center;
+  width: 54px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(194, 78, 78, 0.7), rgba(255, 255, 255, 0.06), rgba(76, 175, 125, 0.75));
+}
+.pss-zlist { margin-top: 16px; }

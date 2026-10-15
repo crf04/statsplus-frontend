@@ -23,3 +23,26 @@ get logs.json games/game_logs --data-urlencode "player_name=Jalen Johnson"
 get playtypes.json players/profile --data-urlencode "player_name=Jalen Johnson" --data-urlencode category=Playtypes
 for P in "Jalen Johnson" "Stephen Curry" "Victor Wembanyama" "Shai Gilgeous-Alexander"; do for C in "Shooting Type" "Zone Shooting"; do
   get "$(echo "$P-$C" | tr 'A-Z ' 'a-z-').json" players/profile --data-urlencode "player_name=$P" --data-urlencode "category=$C"; done; done
+get diet-baselines.json diet/baselines
+# Unscheduled Matchups (the MCP get_matchup source), trimmed to the shot Bases.
+TEAMS=(ATL BOS BKN CHA CHI CLE DAL DEN DET GSW HOU IND LAC LAL MEM MIA MIL MIN NOP NYK OKC ORL PHI PHX POR SAC SAS TOR UTA WAS)
+for P in "Jalen Johnson" "Stephen Curry" "Victor Wembanyama" "Shai Gilgeous-Alexander"; do
+  slug=$(echo "$P" | tr 'A-Z ' 'a-z-'); mkdir -p $W/$slug
+  for O in $TEAMS; do curl -s -G "$API/matchups/unscheduled" -H "Authorization: Bearer $TOK" --data-urlencode "player_name=$P" --data-urlencode "opponent=$O" -o $W/$slug/$O.json; done
+  python3 - $W/$slug $OUT/$slug-matchups.json <<'PY'
+import json, os, sys
+src, dst = sys.argv[1:]
+out = {"diet": None, "opponents": {}, "errors": {}}
+for f in sorted(os.listdir(src)):
+    tri = f[:3]; d = json.load(open(os.path.join(src, f)))
+    if not d.get("players"):
+        out["errors"][tri] = d.get("error") or d; continue
+    pl = d["players"][0]
+    out["diet"] = {b: pl["diet_shares"][b] for b in ("shot_types", "shot_zones")}
+    out["team"] = pl.get("tricode")
+    out["as_of"] = d.get("as_of")
+    out["opponents"][tri] = {b: d["teams"][0]["defense_sheet"][b] for b in ("shot_types", "shot_zones")}
+json.dump(out, open(dst, "w"), separators=(",", ":"))
+print(dst, len(out["opponents"]), "opponents", "errors:", list(out["errors"]))
+PY
+done

@@ -51,3 +51,65 @@ export const times = (x) => (x == null ? '—' : `${x.toFixed(2)}×`);
 
 /* Emphasis vs league, not quality: gold above, dim below. */
 export const vsTone = (x) => (x == null ? 'flat' : x >= 1.15 ? 'up' : x <= 0.85 ? 'down' : 'flat');
+
+/* ---- round 2: league shares and the MCP get_matchup court ---- */
+
+/* /api/diet/baselines keys → the profile's SHOT_TYPE. The Diet share is the
+   profile's FGA_FREQUENCY (checked: 0.203 / 0.239 / 0.529 for Jalen Johnson). */
+const TYPE_DIET_KEY = { 'C&S': 'Catch and Shoot', Pullup: 'Pullups', '<10 Ft': 'Less Than 10 ft' };
+export const leagueTypeShare = (baselines, shotType) =>
+  baselines?.shares?.shot_types?.[TYPE_DIET_KEY[shotType]] ?? null;
+
+export const TEAM_CODES = {
+  'Atlanta Hawks': 'ATL', 'Boston Celtics': 'BOS', 'Brooklyn Nets': 'BKN', 'Charlotte Hornets': 'CHA',
+  'Chicago Bulls': 'CHI', 'Cleveland Cavaliers': 'CLE', 'Dallas Mavericks': 'DAL', 'Denver Nuggets': 'DEN',
+  'Detroit Pistons': 'DET', 'Golden State Warriors': 'GSW', 'Houston Rockets': 'HOU', 'Indiana Pacers': 'IND',
+  'Los Angeles Clippers': 'LAC', 'Los Angeles Lakers': 'LAL', 'Memphis Grizzlies': 'MEM', 'Miami Heat': 'MIA',
+  'Milwaukee Bucks': 'MIL', 'Minnesota Timberwolves': 'MIN', 'New Orleans Pelicans': 'NOP', 'New York Knicks': 'NYK',
+  'Oklahoma City Thunder': 'OKC', 'Orlando Magic': 'ORL', 'Philadelphia 76ers': 'PHI', 'Phoenix Suns': 'PHX',
+  'Portland Trail Blazers': 'POR', 'Sacramento Kings': 'SAC', 'San Antonio Spurs': 'SAS', 'Toronto Raptors': 'TOR',
+  'Utah Jazz': 'UTA', 'Washington Wizards': 'WAS',
+};
+
+/* The MCP court's five regions, in its words. */
+export const COURT_ZONES = {
+  rim: { key: 'Restricted Area', label: 'Restricted area' },
+  paint: { key: 'In The Paint (Non-RA)', label: 'Paint (non-RA)' },
+  mid: { key: 'Mid-Range', label: 'Mid-range' },
+  corner: { key: 'Corner 3', label: 'Corner 3' },
+  arc: { key: 'Above the Break 3', label: 'Above-break 3' },
+};
+
+/* One slice per region, as /api/matchups/unscheduled returns it: his Diet
+   share (of FGA) and the league's, joined to the opponent's season row. The
+   PTS market reads the made-shot rows (`<zone>:FGM`), as the MCP card does. */
+export const courtSlices = (matchups, tricode, row = 'FGM') => {
+  const opp = matchups?.opponents?.[tricode]?.shot_zones || [];
+  return Object.fromEntries(
+    Object.entries(COURT_ZONES).map(([region, { key, label }]) => {
+      const diet = (matchups?.diet?.shot_zones || []).find((s) => s.key === key)?.season;
+      const sheet = opp.find((r) => r.key === `${key}:${row}`)?.season;
+      return [
+        region,
+        {
+          key,
+          label,
+          share: diet?.share ?? null,
+          league: diet?.league_average_share ?? null,
+          sd: diet?.sigma_deviation ?? null,
+          rank: sheet?.rank ?? null,
+          vsLg: sheet?.percent_vs_league_average ?? null,
+        },
+      ];
+    }),
+  );
+};
+
+export const ordinal = (n) => {
+  if (n == null) return '–';
+  const t = n % 100;
+  const s = t >= 11 && t <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th';
+  return `${n}${s}`;
+};
+export const signed = (p) => (p == null ? '–' : `${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(1)}%`);
+export const points = (d) => (d == null ? '–' : `${d >= 0 ? '+' : '−'}${Math.abs(Math.round(d * 100))}`);

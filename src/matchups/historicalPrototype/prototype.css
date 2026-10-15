@@ -379,7 +379,7 @@
   font-weight: 600;
   line-height: 1;
 }
-.pr-c-row i {
+.pr-c-row > i {
   position: absolute;
   left: 4px;
   bottom: 4px;
@@ -445,4 +445,74 @@
   .proto-switcher {
     font-size: 11px;
   }
+}
+.proto-switcher select {
+  max-width: 180px;
+  border: 1px solid #7c3aed;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #fff;
+  color: #1b1030;
+  font:
+    600 12px/1.2 system-ui,
+    sans-serif;
+}
+
+/* ---- Upcoming: book marks, posted-market chips ---- */
+.pr-books {
+  display: inline-flex;
+  gap: 3px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.pr-books i {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 3px;
+  padding: 0 3px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 600;
+}
+.pr-c-name .pr-books {
+  margin: 0 0 0 6px;
+}
+.pr-a-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+.pr-a-chips span {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+}
+.pr-a-chips span.hot {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+.pr-a-chips:hover span {
+  border-color: var(--ct-gold);
+}
+.pr-c-row b.up {
+  color: var(--ct-hit);
+}
+.pr-c-row b.down {
+  color: var(--ct-miss);
+}
+
+@media (max-width: 520px) {
+  .proto-switcher { max-width: 96vw; gap: 6px; padding: 5px 6px; }
+  .proto-switcher > span { overflow: hidden; max-width: 34vw; text-overflow: ellipsis; }
+  .proto-switcher select { max-width: 30vw; }
 }

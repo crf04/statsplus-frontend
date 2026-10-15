@@ -1,41 +1,44 @@
 /*
  * PROTOTYPE — throwaway (branch prototype/historical-matchup-declutter).
  *
- * Question: how much of the historical Matchup page's provenance text can go,
- * and how should a player's line from this game read in the rail?
+ * Question: how much of the Matchup page's provenance text can go, and what
+ * should the player rail say about each player, for a finished game (his line
+ * from that game) and for an upcoming one (his posted lines)?
  *
  * Every variant drops the sheet provenance line, the "Completed-season context"
  * line, the rail instruction and the repeated "No displayed Diet Shares" note,
  * and bumps the small type. They differ in how the evidence header collapses
- * and how the rail shows the game line.
+ * and how the rail reads. The same slot holds the box score after the game and
+ * the lines before it, so the rail keeps its shape across the two.
  */
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { filterSetToSearchParams } from '../../filterUtils';
+import { orderCategories } from '../displayConfig';
+import { lineFor } from './demo';
 
-const MISSING_LABELS = {
-  last15Defense: 'Last 15 defense',
-  injuries: 'Injuries',
-  seasonDefense: 'Season defense',
-  participants: 'Players',
-  schedule: 'Schedule',
-};
+const BOOK_SHORT = { prizepicks: 'PP', underdog: 'UD' };
+const BOOK_NAMES = { prizepicks: 'PrizePicks', underdog: 'Underdog' };
 
+const ET = { timeZone: 'America/New_York' };
 const gameDate = (game) =>
   new Date(game.scheduledAt).toLocaleDateString('en-US', {
+    ...ET,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-    timeZone: 'America/New_York',
   });
-
-const missingSections = (sections) =>
-  Object.keys(MISSING_LABELS).filter((key) => sections[key]?.status !== 'available');
+const clock = (iso) =>
+  new Date(iso).toLocaleTimeString('en-US', { ...ET, hour: 'numeric', minute: '2-digit' });
+const gameWhen = (game) =>
+  `${gameDate(game)} · ${game.status === 'final' ? 'Final' : game.statusLabel || 'Scheduled'}`;
 
 const fmt = (value) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`;
 const gameLogsPath = (player) => `/?${filterSetToSearchParams({ player_name: player.name })}`;
+const average = (values) =>
+  values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 const BOX = ['PTS', 'REB', 'AST', '3PM'];
 const boxColumns = (market) => (market === 'All' || BOX.includes(market) ? BOX : [...BOX, market]);
 
@@ -44,33 +47,82 @@ const bySeasonScoring = (players, market) =>
     .filter((player) => market === 'All' || player.statCategories.includes(market))
     .sort((a, b) => (b.seasonScoring ?? -1) - (a.seasonScoring ?? -1));
 
+const scoreFor = (player, market, windowKey) => {
+  const score = player.scores[market]?.[windowKey];
+  if (!score || (score.blend === null && score.missingInputs.length > 0)) return null;
+  return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
+};
+
+const booksFor = (player) => Object.keys(player.provenance || {});
+const hasNoLineNumbers = (players) => players.every((player) => lineFor(player, 'PTS') === null);
+
+/*
+ * One cell of the rail. After the game: his number. Before it: his line, or,
+ * with today's contract (no line numbers), whether the market is posted.
+ */
+const cellFor = (player, column) => {
+  const line = player.focalGameLine;
+  if (line) return column === 'MIN' ? String(Math.round(line.minutes)) : fmt(line.stats[column]);
+  if (column === 'MIN') {
+    const minutes = average(player.last10Minutes);
+    return minutes === null ? '–' : String(Math.round(minutes));
+  }
+  if (!player.postedMarkets.includes(column)) return '–';
+  const value = lineFor(player, column);
+  return value === null ? '✓' : fmt(value);
+};
+
 /* ------------------------------ Evidence ------------------------------ */
 
-export function ProtoEvidence({ variant, sections, game, reasonFor }) {
-  const missing = missingSections(sections);
+// What the header still has to say, as [key, label, ok, detail] facts.
+const evidenceFacts = (matchup, reasonFor) => {
+  const { sections } = matchup.experience;
+  const upcoming = matchup.experience.mode !== 'historical';
+  const pool = matchup.freshness.pool;
+  const books = pool.providers.map((provider) => provider.name);
+  return [
+    upcoming
+      ? [
+          'lines',
+          'Lines',
+          pool.status !== 'missing' && pool.status !== 'unavailable',
+          books.length
+            ? `${books.map((name) => BOOK_NAMES[name] || name).join(', ')} · ${clock(pool.retrievedAt)}`
+            : 'No lines posted yet',
+        ]
+      : ['seasonDefense', 'Season defense', true, 'Full-season ranks'],
+    [
+      'last15Defense',
+      'Last 15',
+      sections.last15Defense.status === 'available',
+      reasonFor(sections.last15Defense),
+    ],
+    [
+      'injuries',
+      'Injuries',
+      upcoming
+        ? matchup.injuries.status !== 'unavailable'
+        : sections.injuries.status === 'available',
+      upcoming ? 'No injury report yet' : reasonFor(sections.injuries),
+    ],
+  ];
+};
+
+export function ProtoEvidence({ variant, matchup, reasonFor }) {
+  const { game } = matchup;
+  const upcoming = matchup.experience.mode !== 'historical';
+  const facts = evidenceFacts(matchup, reasonFor);
   if (variant === 'A') {
-    const chips = [
-      ['seasonDefense', 'Season defense'],
-      ['last15Defense', 'Last 15'],
-      ['injuries', 'Injuries'],
-    ];
     return (
-      <div className="pe-a" aria-label="Historical matchup evidence">
-        <span className="pe-date">{gameDate(game)} · Final</span>
+      <div className="pe-a" aria-label="Matchup evidence">
+        <span className="pe-date">{gameWhen(game)}</span>
         <ul>
-          {chips.map(([key, label]) => {
-            const ok = sections[key].status === 'available';
-            return (
-              <li
-                key={key}
-                className={ok ? 'ok' : 'missing'}
-                title={ok ? 'Saved' : reasonFor(sections[key])}
-              >
-                <span aria-hidden="true">{ok ? '●' : '○'}</span> {label}
-                {ok ? '' : ' n/a'}
-              </li>
-            );
-          })}
+          {facts.map(([key, label, ok, detail]) => (
+            <li key={key} className={ok ? 'ok' : 'missing'} title={detail}>
+              <span aria-hidden="true">{ok ? '●' : '○'}</span> {label}
+              {ok ? (key === 'lines' ? ` · ${detail}` : '') : ' n/a'}
+            </li>
+          ))}
         </ul>
       </div>
     );
@@ -78,37 +130,39 @@ export function ProtoEvidence({ variant, sections, game, reasonFor }) {
   if (variant === 'B') {
     return (
       <div className="pe-b">
-        <span className="pe-date">{gameDate(game)} · Final</span>
+        <span className="pe-date">{gameWhen(game)}</span>
         <details>
           <summary>About this data</summary>
           <dl>
-            {Object.entries(MISSING_LABELS)
-              .reverse()
-              .map(([key, label]) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>
-                    {sections[key].status === 'available'
-                      ? key === 'seasonDefense'
-                        ? 'Full-season ranks'
-                        : 'Saved'
-                      : reasonFor(sections[key])}
-                  </dd>
-                </div>
-              ))}
+            {facts.map(([key, label, ok, detail]) => (
+              <div key={key}>
+                <dt>{label}</dt>
+                <dd>{ok ? detail : `Unavailable — ${detail}`}</dd>
+              </div>
+            ))}
+            {!upcoming && (
+              <div>
+                <dt>Players</dt>
+                <dd>From game logs</dd>
+              </div>
+            )}
           </dl>
         </details>
       </div>
     );
   }
+  const missing = facts.filter(([, , ok]) => !ok).map(([, label]) => label.toLowerCase());
+  const lines = facts.find(([key]) => key === 'lines');
   return (
     <p className="pe-c">
-      {gameDate(game)} · Final.{' '}
+      {gameWhen(game)}.{' '}
       <span>
-        Full-season defense ranks
-        {missing.length
-          ? `; no ${missing.map((key) => MISSING_LABELS[key].toLowerCase()).join(' or ')} saved for this game.`
-          : '.'}
+        {upcoming
+          ? lines[2]
+            ? `Lines from ${lines[3]}`
+            : 'No lines posted yet'
+          : 'Full-season defense ranks'}
+        {missing.length ? `; no ${missing.join(' or ')} yet.` : '.'}
       </span>
     </p>
   );
@@ -122,16 +176,40 @@ export function ProtoRail(props) {
   return <RailFocus {...props} />;
 }
 
-// A: one card per player, the game line as a small labelled grid.
-function RailGrid({ players, market, selectedId, onSelect, registerTrigger, teamTricode }) {
-  const columns = ['MIN', ...boxColumns(market)];
+const Books = ({ player }) => {
+  const books = booksFor(player);
+  if (!books.length) return null;
+  return (
+    <span className="pr-books" title={books.map((name) => BOOK_NAMES[name] || name).join(', ')}>
+      {books.map((name) => (
+        <i key={name}>{BOOK_SHORT[name] || name}</i>
+      ))}
+    </span>
+  );
+};
+
+// A: one card per player; a small labelled grid holds the box score after the
+// game and the lines before it. Today's contract has no line numbers, so it
+// falls back to the posted markets as chips.
+function RailGrid({
+  players,
+  market,
+  selectedId,
+  onSelect,
+  registerTrigger,
+  teamTricode,
+  upcoming,
+}) {
+  const bare = upcoming && hasNoLineNumbers(players);
+  const columns = [upcoming ? 'L10 MIN' : 'MIN', ...boxColumns(market)];
   return (
     <aside className="player-rail pr-a" aria-label="Players in game">
-      <p className="matchup-eyebrow">{teamTricode} players · this game</p>
+      <p className="matchup-eyebrow">
+        {teamTricode} players · {upcoming ? (bare ? 'posted markets' : 'lines') : 'this game'}
+      </p>
       <div className="pr-a-list">
         {bySeasonScoring(players, market).map((player) => {
           const id = String(player.id);
-          const line = player.focalGameLine;
           return (
             <article
               key={player.id}
@@ -143,32 +221,33 @@ function RailGrid({ players, market, selectedId, onSelect, registerTrigger, team
                   {player.name}
                   <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
                 </Link>
-                {player.seasonScoring !== null && (
-                  <span className="pr-a-ppg">{player.seasonScoring.toFixed(1)} PPG</span>
-                )}
+                <span className="pr-a-ppg">
+                  {upcoming && <Books player={player} />}
+                  {player.seasonScoring !== null && `${player.seasonScoring.toFixed(1)} PPG`}
+                </span>
               </div>
               <button
                 type="button"
                 ref={(node) => registerTrigger(id, node)}
-                className="pr-a-grid"
+                className={bare ? 'pr-a-chips' : 'pr-a-grid'}
                 style={{ '--cols': columns.length }}
                 aria-expanded={selectedId === id}
                 aria-controls="matchup-selection-card"
                 aria-label={`Open ${player.name} selection card`}
                 onClick={() => onSelect(player)}
               >
-                {columns.map((column) => (
-                  <span key={column} className={column === market ? 'hot' : undefined}>
-                    <small>{column}</small>
-                    <b>
-                      {line
-                        ? column === 'MIN'
-                          ? Math.round(line.minutes)
-                          : fmt(line.stats[column])
-                        : '–'}
-                    </b>
-                  </span>
-                ))}
+                {bare
+                  ? orderCategories(player.postedMarkets).map((posted) => (
+                      <span key={posted} className={posted === market ? 'hot' : undefined}>
+                        {posted}
+                      </span>
+                    ))
+                  : columns.map((column) => (
+                      <span key={column} className={column === market ? 'hot' : undefined}>
+                        <small>{column}</small>
+                        <b>{cellFor(player, column === 'L10 MIN' ? 'MIN' : column)}</b>
+                      </span>
+                    ))}
               </button>
             </article>
           );
@@ -178,8 +257,8 @@ function RailGrid({ players, market, selectedId, onSelect, registerTrigger, team
   );
 }
 
-// B: a real box score. Rows open the card; the market column is lit, and with
-// a market picked the Matchup Score sorts and joins as the last column.
+// B: one table, box score after the game and lines before it. Rows open the
+// card; with a market picked its column is lit and the Matchup Score joins.
 function RailTable({
   players,
   market,
@@ -188,19 +267,17 @@ function RailTable({
   onSelect,
   registerTrigger,
   teamTricode,
+  upcoming,
 }) {
-  const columns = ['MIN', ...boxColumns(market)];
-  const scoreFor = (player) => {
-    const score = player.scores[market]?.[windowKey];
-    if (!score || (score.blend === null && score.missingInputs.length > 0)) return null;
-    return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
-  };
+  const bare = upcoming && hasNoLineNumbers(players);
+  const columns = [upcoming ? 'L10' : 'MIN', ...boxColumns(market)];
   const showScore = market !== 'All';
-  const rows = bySeasonScoring(players, market);
   return (
     <aside className="player-rail pr-b" aria-label="Players in game">
       <div className="pr-b-head">
-        <p className="matchup-eyebrow">{teamTricode} box score</p>
+        <p className="matchup-eyebrow">
+          {teamTricode} {upcoming ? (bare ? 'posted markets' : 'lines') : 'box score'}
+        </p>
         <span>Tap a row for the full card</span>
       </div>
       <table>
@@ -208,7 +285,12 @@ function RailTable({
           <tr>
             <th scope="col">Player</th>
             {columns.map((column) => (
-              <th key={column} scope="col" className={column === market ? 'hot' : undefined}>
+              <th
+                key={column}
+                scope="col"
+                className={column === market ? 'hot' : undefined}
+                title={column === 'L10' ? 'Minutes, last 10 games' : undefined}
+              >
                 {column}
               </th>
             ))}
@@ -220,10 +302,9 @@ function RailTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((player) => {
+          {bySeasonScoring(players, market).map((player) => {
             const id = String(player.id);
-            const line = player.focalGameLine;
-            const score = showScore ? scoreFor(player) : null;
+            const score = showScore ? scoreFor(player, market, windowKey) : null;
             return (
               <tr
                 key={player.id}
@@ -253,15 +334,18 @@ function RailTable({
                     </Link>
                   </span>
                 </th>
-                {columns.map((column) => (
-                  <td key={column} className={column === market ? 'hot' : undefined}>
-                    {line
-                      ? column === 'MIN'
-                        ? Math.round(line.minutes)
-                        : fmt(line.stats[column])
-                      : '–'}
-                  </td>
-                ))}
+                {columns.map((column) => {
+                  const value = cellFor(player, column === 'L10' ? 'MIN' : column);
+                  const classes = [
+                    column === market && 'hot',
+                    (value === '–' || column === 'L10') && 'muted',
+                  ].filter(Boolean);
+                  return (
+                    <td key={column} className={classes.join(' ') || undefined}>
+                      {value}
+                    </td>
+                  );
+                })}
                 {showScore && (
                   <td className={score === null ? 'muted' : score >= 0 ? 'up' : 'down'}>
                     {score === null ? '–' : formatPercent(score)}
@@ -276,24 +360,44 @@ function RailTable({
   );
 }
 
-// C: one number per player, the stat the sheet is filtered to (PTS on All),
-// read against his season average where the payload has one.
-function RailFocus({ players, market, selectedId, onSelect, registerTrigger, teamTricode }) {
+// C: one number per player for the stat the sheet is filtered to (PTS on All).
+// After the game: what he did, against his average. Before it: his line,
+// against his average. With no line numbers: his Matchup Score for that stat.
+function RailFocus({
+  players,
+  market,
+  windowKey,
+  selectedId,
+  onSelect,
+  registerTrigger,
+  teamTricode,
+  upcoming,
+}) {
   const stat = market === 'All' ? 'PTS' : market;
   const rows = bySeasonScoring(players, market);
-  const max = Math.max(1, ...rows.map((player) => player.focalGameLine?.stats[stat] ?? 0));
+  const bare = upcoming && hasNoLineNumbers(rows);
+  const valueOf = (player) =>
+    upcoming
+      ? bare
+        ? scoreFor(player, stat, windowKey)
+        : lineFor(player, stat)
+      : (player.focalGameLine?.stats[stat] ?? null);
+  const max = Math.max(1, ...rows.map((player) => Math.abs(valueOf(player) ?? 0)));
   return (
     <aside className="player-rail pr-c" aria-label="Players in game">
       <p className="matchup-eyebrow">
-        {teamTricode} · {stat} this game
+        {teamTricode} · {stat} {upcoming ? (bare ? 'Matchup Score' : 'line') : 'this game'}
       </p>
       <div className="pr-c-list">
         {rows.map((player) => {
           const id = String(player.id);
-          const line = player.focalGameLine;
-          const value = line?.stats[stat] ?? null;
-          const average = stat === 'PTS' ? player.seasonScoring : null;
-          const delta = value !== null && average !== null ? value - average : null;
+          const value = valueOf(player);
+          const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
+          const delta =
+            !bare && value !== null && seasonAverage !== null ? value - seasonAverage : null;
+          const minutes = player.focalGameLine
+            ? `${Math.round(player.focalGameLine.minutes)} min`
+            : `${Math.round(average(player.last10Minutes) ?? 0)} min L10`;
           return (
             <button
               type="button"
@@ -305,20 +409,26 @@ function RailFocus({ players, market, selectedId, onSelect, registerTrigger, tea
               onClick={() => onSelect(player)}
             >
               <span className="pr-c-name">
-                {player.name}
+                <span>
+                  {player.name}
+                  {upcoming && <Books player={player} />}
+                </span>
                 <small>
-                  {line ? `${Math.round(line.minutes)} min` : 'DNP'}
+                  {minutes}
                   {delta !== null && (
-                    <em className={delta >= 0 ? 'up' : 'down'}>
+                    <em className={upcoming ? undefined : delta >= 0 ? 'up' : 'down'}>
                       {' · '}
+                      {upcoming ? 'line ' : ''}
                       {delta >= 0 ? '+' : '−'}
-                      {Math.abs(delta).toFixed(1)} vs {average.toFixed(1)} avg
+                      {Math.abs(delta).toFixed(1)} vs {seasonAverage.toFixed(1)} avg
                     </em>
                   )}
                 </small>
               </span>
-              <b>{value === null ? '–' : fmt(value)}</b>
-              <i style={{ width: `${((value ?? 0) / max) * 100}%` }} aria-hidden="true" />
+              <b className={bare && value !== null ? (value >= 0 ? 'up' : 'down') : undefined}>
+                {value === null ? '–' : bare ? formatPercent(value) : fmt(value)}
+              </b>
+              <i style={{ width: `${(Math.abs(value ?? 0) / max) * 100}%` }} aria-hidden="true" />
             </button>
           );
         })}

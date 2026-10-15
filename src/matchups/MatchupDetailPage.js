@@ -711,7 +711,7 @@ function Detail({ matchup, gameId }) {
     : null;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
-  const P = historical && proto.active;
+  const P = proto.active;
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);
@@ -771,21 +771,18 @@ function Detail({ matchup, gameId }) {
         <div>
           <Link to="/matchups">← Back to slate</Link>
           <p className="matchup-eyebrow">
-            {historical
-              ? 'Historical Matchup · stored evidence'
-              : 'Open Team Sheets · live contract'}
+            {P
+              ? 'Matchup'
+              : historical
+                ? 'Historical Matchup · stored evidence'
+                : 'Open Team Sheets · live contract'}
           </p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
         {P ? (
-          <ProtoEvidence
-            variant={proto.variant}
-            sections={sections}
-            game={matchup.game}
-            reasonFor={sectionReason}
-          />
+          <ProtoEvidence variant={proto.variant} matchup={matchup} reasonFor={sectionReason} />
         ) : historical ? (
           <HistoricalEvidence sections={sections} />
         ) : (
@@ -825,6 +822,7 @@ function Detail({ matchup, gameId }) {
               market={market}
               windowKey={windowKey}
               teamTricode={opposingTeam?.tricode}
+              upcoming={!historical}
               selectedId={selectedId}
               onSelect={(player) => updateSelectedPlayer(player.id)}
               registerTrigger={registerTrigger}

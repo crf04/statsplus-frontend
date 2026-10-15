@@ -1,0 +1,152 @@
+{
+  "archetype": { "rows": [], "thin": true },
+  "experience": {
+    "mode": "current",
+    "player_source": "player_pool",
+    "focal_game": null,
+    "samples": { "context": "season_to_date", "excludes_focal_game": false },
+    "baseline": { "context": "season_to_date", "hindsight": false }
+  },
+  "freshness": {
+    "player_game_logs": { "retrieved_at": "2026-08-23T19:12:19.727615+00:00", "status": "stale" },
+    "player_pool": {
+      "observed_at": null,
+      "providers": {},
+      "retrieved_at": null,
+      "state": "missing",
+      "status": "unavailable"
+    }
+  },
+  "h2h": {
+    "rows": [
+      {
+        "deltas": {
+          "3PM": -0.01806,
+          "AST": 0.032646,
+          "BLK": 0.01285,
+          "FG2A": -0.008368,
+          "FG3A": -0.082502,
+          "FGA": -0.09087,
+          "PA": -0.057973,
+          "PR": -0.023274,
+          "PRA": 0.009372,
+          "PTS": -0.090619,
+          "RA": 0.09999,
+          "REB": 0.067344,
+          "STKS": 0.010924,
+          "STL": -0.001926,
+          "TOV": 0.030594
+        },
+        "game_date": "2026-01-26",
+        "matchup": "CLE vs. ORL",
+        "minutes": 34.766667,
+        "player_id": 1642281,
+        "player_name": "Jaylon Tyson",
+        "row_type": "game",
+        "stats": {
+          "3PM": 2.0,
+          "AST": 4.0,
+          "BLK": 1.0,
+          "FG2A": 7.0,
+          "FG3A": 3.0,
+          "FGA": 10.0,
+          "PA": 18.0,
+          "PR": 23.0,
+          "PRA": 27.0,
+          "PTS": 14.0,
+          "RA": 13.0,
+          "REB": 9.0,
+          "STKS": 2.0,
+          "STL": 1.0,
+          "TOV": 3.0
+        }
+      },
+      {
+        "deltas": {
+          "3PM": 0.017292,
+          "AST": 0.041432,
+          "BLK": -0.015913,
+          "FG2A": -0.085872,
+          "FG3A": -0.013993,
+          "FGA": -0.099865,
+          "PA": 0.074445,
+          "PR": -0.003713,
+          "PRA": 0.037719,
+          "PTS": 0.033013,
+          "RA": 0.004707,
+          "REB": -0.036726,
+          "STKS": -0.046602,
+          "STL": -0.030689,
+          "TOV": 0.006224
+        },
+        "game_date": "2026-01-24",
+        "matchup": "CLE @ ORL",
+        "minutes": 32.3,
+        "player_id": 1642281,
+        "player_name": "Jaylon Tyson",
+        "row_type": "game",
+        "stats": {
+          "3PM": 3.0,
+          "AST": 4.0,
+          "BLK": 0.0,
+          "FG2A": 4.0,
+          "FG3A": 5.0,
+          "FGA": 9.0,
+          "PA": 21.0,
+          "PR": 22.0,
+          "PRA": 26.0,
+          "PTS": 17.0,
+          "RA": 9.0,
+          "REB": 5.0,
+          "STKS": 0.0,
+          "STL": 0.0,
+          "TOV": 2.0
+        }
+      },
+      {
+        "deltas": {
+          "3PM": -0.001034,
+          "AST": 0.036878,
+          "BLK": -0.001002,
+          "FG2A": -0.045695,
+          "FG3A": -0.049507,
+          "FGA": -0.095202,
+          "PA": 0.005801,
+          "PR": -0.013854,
+          "PRA": 0.023024,
+          "PTS": -0.031077,
+          "RA": 0.054101,
+          "REB": 0.017223,
+          "STKS": -0.016781,
+          "STL": -0.015779,
+          "TOV": 0.018857
+        },
+        "game_date": null,
+        "matchup": null,
+        "minutes": 33.533333,
+        "player_id": null,
+        "player_name": null,
+        "row_type": "average",
+        "stats": {
+          "3PM": 2.5,
+          "AST": 4.0,
+          "BLK": 0.5,
+          "FG2A": 5.5,
+          "FG3A": 4.0,
+          "FGA": 9.5,
+          "PA": 19.5,
+          "PR": 22.5,
+          "PRA": 26.5,
+          "PTS": 15.5,
+          "RA": 11.0,
+          "REB": 7.0,
+          "STKS": 1.0,
+          "STL": 0.5,
+          "TOV": 2.5
+        }
+      }
+    ],
+    "thin": false
+  },
+  "player_id": 1642281
+}

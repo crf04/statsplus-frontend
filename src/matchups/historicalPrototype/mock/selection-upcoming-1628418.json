@@ -1,0 +1,110 @@
+{
+  "archetype": { "rows": [], "thin": true },
+  "experience": {
+    "mode": "current",
+    "player_source": "player_pool",
+    "focal_game": null,
+    "samples": { "context": "season_to_date", "excludes_focal_game": false },
+    "baseline": { "context": "season_to_date", "hindsight": false }
+  },
+  "freshness": {
+    "player_game_logs": { "retrieved_at": "2026-08-23T19:12:19.727615+00:00", "status": "stale" },
+    "player_pool": {
+      "observed_at": null,
+      "providers": {},
+      "retrieved_at": null,
+      "state": "missing",
+      "status": "unavailable"
+    }
+  },
+  "h2h": {
+    "rows": [
+      {
+        "deltas": {
+          "3PM": 0.033207,
+          "AST": 0.051439,
+          "BLK": -0.036464,
+          "FG2A": -0.087405,
+          "FG3A": 0.017327,
+          "FGA": -0.070077,
+          "PA": -0.059762,
+          "PR": -0.098533,
+          "PRA": -0.047094,
+          "PTS": -0.111201,
+          "RA": 0.064107,
+          "REB": 0.012668,
+          "STKS": -0.061708,
+          "STL": -0.025244,
+          "TOV": 0.156171
+        },
+        "game_date": "2026-01-24",
+        "matchup": "CLE @ ORL",
+        "minutes": 10.233333,
+        "player_id": 1628418,
+        "player_name": "Thomas Bryant",
+        "row_type": "game",
+        "stats": {
+          "3PM": 1.0,
+          "AST": 1.0,
+          "BLK": 0.0,
+          "FG2A": 1.0,
+          "FG3A": 2.0,
+          "FGA": 3.0,
+          "PA": 5.0,
+          "PR": 7.0,
+          "PRA": 8.0,
+          "PTS": 4.0,
+          "RA": 4.0,
+          "REB": 3.0,
+          "STKS": 0.0,
+          "STL": 0.0,
+          "TOV": 2.0
+        }
+      },
+      {
+        "deltas": {
+          "3PM": 0.033207,
+          "AST": 0.051439,
+          "BLK": -0.036464,
+          "FG2A": -0.087405,
+          "FG3A": 0.017327,
+          "FGA": -0.070077,
+          "PA": -0.059762,
+          "PR": -0.098533,
+          "PRA": -0.047094,
+          "PTS": -0.111201,
+          "RA": 0.064107,
+          "REB": 0.012668,
+          "STKS": -0.061708,
+          "STL": -0.025244,
+          "TOV": 0.156171
+        },
+        "game_date": null,
+        "matchup": null,
+        "minutes": 10.233333,
+        "player_id": null,
+        "player_name": null,
+        "row_type": "average",
+        "stats": {
+          "3PM": 1.0,
+          "AST": 1.0,
+          "BLK": 0.0,
+          "FG2A": 1.0,
+          "FG3A": 2.0,
+          "FGA": 3.0,
+          "PA": 5.0,
+          "PR": 7.0,
+          "PRA": 8.0,
+          "PTS": 4.0,
+          "RA": 4.0,
+          "REB": 3.0,
+          "STKS": 0.0,
+          "STL": 0.0,
+          "TOV": 2.0
+        }
+      }
+    ],
+    "thin": false
+  },
+  "player_id": 1628418
+}

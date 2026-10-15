@@ -1,0 +1,152 @@
+{
+  "archetype": { "rows": [], "thin": true },
+  "experience": {
+    "mode": "current",
+    "player_source": "player_pool",
+    "focal_game": null,
+    "samples": { "context": "season_to_date", "excludes_focal_game": false },
+    "baseline": { "context": "season_to_date", "hindsight": false }
+  },
+  "freshness": {
+    "player_game_logs": { "retrieved_at": "2026-08-23T19:12:19.727615+00:00", "status": "stale" },
+    "player_pool": {
+      "observed_at": null,
+      "providers": {},
+      "retrieved_at": null,
+      "state": "missing",
+      "status": "unavailable"
+    }
+  },
+  "h2h": {
+    "rows": [
+      {
+        "deltas": {
+          "3PM": 0.047358,
+          "AST": 0.045214,
+          "BLK": 0.097223,
+          "FG2A": 0.062546,
+          "FG3A": 0.052358,
+          "FGA": 0.114904,
+          "PA": 0.199433,
+          "PR": 0.11418,
+          "PRA": 0.159393,
+          "PTS": 0.154219,
+          "RA": 0.005174,
+          "REB": -0.04004,
+          "STKS": 0.170855,
+          "STL": 0.073631,
+          "TOV": 0.073095
+        },
+        "game_date": "2026-01-26",
+        "matchup": "ORL @ CLE",
+        "minutes": 9.083333,
+        "player_id": 1641783,
+        "player_name": "Tristan da Silva",
+        "row_type": "game",
+        "stats": {
+          "3PM": 1.0,
+          "AST": 1.0,
+          "BLK": 1.0,
+          "FG2A": 2.0,
+          "FG3A": 2.0,
+          "FGA": 4.0,
+          "PA": 6.0,
+          "PR": 6.0,
+          "PRA": 7.0,
+          "PTS": 5.0,
+          "RA": 2.0,
+          "REB": 1.0,
+          "STKS": 2.0,
+          "STL": 1.0,
+          "TOV": 1.0
+        }
+      },
+      {
+        "deltas": {
+          "3PM": -0.062733,
+          "AST": -0.064878,
+          "BLK": -0.012868,
+          "FG2A": -0.107302,
+          "FG3A": -0.067154,
+          "FGA": -0.174457,
+          "PA": -0.461118,
+          "PR": -0.496035,
+          "PRA": -0.560914,
+          "PTS": -0.39624,
+          "RA": -0.164674,
+          "REB": -0.099796,
+          "STKS": 0.001007,
+          "STL": 0.013875,
+          "TOV": -0.036997
+        },
+        "game_date": "2026-01-24",
+        "matchup": "ORL vs. CLE",
+        "minutes": 19.866667,
+        "player_id": 1641783,
+        "player_name": "Tristan da Silva",
+        "row_type": "game",
+        "stats": {
+          "3PM": 0.0,
+          "AST": 0.0,
+          "BLK": 0.0,
+          "FG2A": 1.0,
+          "FG3A": 2.0,
+          "FGA": 3.0,
+          "PA": 0.0,
+          "PR": 1.0,
+          "PRA": 1.0,
+          "PTS": 0.0,
+          "RA": 1.0,
+          "REB": 1.0,
+          "STKS": 1.0,
+          "STL": 1.0,
+          "TOV": 0.0
+        }
+      },
+      {
+        "deltas": {
+          "3PM": -0.028191,
+          "AST": -0.030336,
+          "BLK": 0.021674,
+          "FG2A": -0.054011,
+          "FG3A": -0.029656,
+          "FGA": -0.083667,
+          "PA": -0.253864,
+          "PR": -0.304575,
+          "PRA": -0.334911,
+          "PTS": -0.223528,
+          "RA": -0.111383,
+          "REB": -0.081047,
+          "STKS": 0.054298,
+          "STL": 0.032624,
+          "TOV": -0.002454
+        },
+        "game_date": null,
+        "matchup": null,
+        "minutes": 14.475,
+        "player_id": null,
+        "player_name": null,
+        "row_type": "average",
+        "stats": {
+          "3PM": 0.5,
+          "AST": 0.5,
+          "BLK": 0.5,
+          "FG2A": 1.5,
+          "FG3A": 2.0,
+          "FGA": 3.5,
+          "PA": 3.0,
+          "PR": 3.5,
+          "PRA": 4.0,
+          "PTS": 2.5,
+          "RA": 1.5,
+          "REB": 1.0,
+          "STKS": 1.5,
+          "STL": 1.0,
+          "TOV": 0.5
+        }
+      }
+    ],
+    "thin": false
+  },
+  "player_id": 1641783
+}

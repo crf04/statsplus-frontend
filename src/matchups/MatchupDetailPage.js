@@ -19,6 +19,11 @@ import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
+// PROTOTYPE (throwaway, branch prototype/historical-matchup-declutter).
+import { useVariant } from './historicalPrototype/prototypeMode';
+import PrototypeSwitcher from './historicalPrototype/PrototypeSwitcher';
+import { ProtoEvidence, ProtoRail } from './historicalPrototype/variants';
+import './historicalPrototype/prototype.css';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -348,7 +353,7 @@ function PlayerRail({
   );
 }
 
-function DietShareChips({ players, base, sliceKey, market }) {
+function DietShareChips({ players, base, sliceKey, market, quiet }) {
   if (!SHARE_LABELS[base]) return null;
   const chips = players
     .filter((player) => market === 'All' || player.statCategories.includes(market))
@@ -359,7 +364,9 @@ function DietShareChips({ players, base, sliceKey, market }) {
     })
     .sort((a, b) => Math.abs(b.share.sigmaDeviation) - Math.abs(a.share.sigmaDeviation));
   if (chips.length === 0)
-    return <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>;
+    return quiet ? null : (
+      <p className="no-lean">No displayed Diet Shares meet the named threshold.</p>
+    );
   return (
     <div className="diet-chips" role="group" aria-label="Players leaning on this slice">
       {chips.map(({ player, share }) => (
@@ -397,6 +404,7 @@ function DefenseSheet({
   surfaceAvailability,
   provenance,
   onCapture,
+  quiet,
 }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
@@ -442,10 +450,13 @@ function DefenseSheet({
         <p className="matchup-eyebrow">Relative concessions · per 48</p>
         <h2 id="defense-sheet-heading">{team.tricode} Defense Sheet</h2>
         {provenance && <p className="sheet-provenance">{provenance}</p>}
+        {quiet && <p className="hidden-count">{hidden} near league avg hidden</p>}
       </div>
-      <p className="hidden-count">
-        {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
-      </p>
+      {!quiet && (
+        <p className="hidden-count">
+          {hidden} {hidden === 1 ? 'row' : 'rows'} hidden near league average.
+        </p>
+      )}
       {visibleCount === 0 && !hasNamedUnavailable && (
         <p className="honest-empty">No Defense Sheet rows match these controls.</p>
       )}
@@ -540,6 +551,7 @@ function DefenseSheet({
                         base={base}
                         sliceKey={row.sliceKey}
                         market={market}
+                        quiet={quiet}
                       />
                     </article>
                   );
@@ -661,6 +673,7 @@ function Detail({ matchup, gameId }) {
     error: null,
   });
   const [capture, setCapture] = useState(null);
+  const proto = useVariant();
   const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
@@ -698,6 +711,7 @@ function Detail({ matchup, gameId }) {
     : null;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
+  const P = historical && proto.active;
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);
@@ -751,7 +765,8 @@ function Detail({ matchup, gameId }) {
     else selectionTriggers.current.delete(playerId);
   };
   return (
-    <>
+    <div className={P ? `proto-hist proto-${proto.variant}` : undefined}>
+      {proto.show && <PrototypeSwitcher variant={proto.variant} onStep={proto.step} />}
       <header className="matchup-heading">
         <div>
           <Link to="/matchups">← Back to slate</Link>
@@ -764,7 +779,14 @@ function Detail({ matchup, gameId }) {
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
         </div>
-        {historical ? (
+        {P ? (
+          <ProtoEvidence
+            variant={proto.variant}
+            sections={sections}
+            game={matchup.game}
+            reasonFor={sectionReason}
+          />
+        ) : historical ? (
           <HistoricalEvidence sections={sections} />
         ) : (
           <Freshness freshness={matchup.freshness} now={now} />
@@ -782,11 +804,13 @@ function Detail({ matchup, gameId }) {
       <div className="detail-grid">
         <div className="matchup-sidebar">
           <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
-          <p className="sheet-instruction">
-            Tap a player to trace their rows across the sheet; use the score card for the full
-            dossier.
-          </p>
-          {historical && sections.injuries.status !== 'available' ? (
+          {!P && (
+            <p className="sheet-instruction">
+              Tap a player to trace their rows across the sheet; use the score card for the full
+              dossier.
+            </p>
+          )}
+          {P ? null : historical && sections.injuries.status !== 'available' ? (
             <section className="injury-report" aria-labelledby="injury-heading">
               <h2 id="injury-heading">Injuries</h2>
               <p className="honest-empty">{sectionReason(sections.injuries)}</p>
@@ -794,24 +818,37 @@ function Detail({ matchup, gameId }) {
           ) : (
             <InjuryReport injuries={matchup.injuries} now={now} />
           )}
-          <PlayerRail
-            players={opposingPlayers}
-            injuries={matchup.injuries}
-            historical={historical}
-            unavailableMessage={
-              historical && !participantsAvailable ? sectionReason(sections.participants) : null
-            }
-            market={market}
-            windowKey={windowKey}
-            targetableCount={
-              !historical && poolAvailable
-                ? (opposingGameTeam?.targetablePlayerCount ?? null)
-                : null
-            }
-            selectedId={selectedId}
-            onSelect={(player) => updateSelectedPlayer(player.id)}
-            registerTrigger={registerTrigger}
-          />
+          {P ? (
+            <ProtoRail
+              variant={proto.variant}
+              players={opposingPlayers}
+              market={market}
+              windowKey={windowKey}
+              teamTricode={opposingTeam?.tricode}
+              selectedId={selectedId}
+              onSelect={(player) => updateSelectedPlayer(player.id)}
+              registerTrigger={registerTrigger}
+            />
+          ) : (
+            <PlayerRail
+              players={opposingPlayers}
+              injuries={matchup.injuries}
+              historical={historical}
+              unavailableMessage={
+                historical && !participantsAvailable ? sectionReason(sections.participants) : null
+              }
+              market={market}
+              windowKey={windowKey}
+              targetableCount={
+                !historical && poolAvailable
+                  ? (opposingGameTeam?.targetablePlayerCount ?? null)
+                  : null
+              }
+              selectedId={selectedId}
+              onSelect={(player) => updateSelectedPlayer(player.id)}
+              registerTrigger={registerTrigger}
+            />
+          )}
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">
@@ -826,6 +863,11 @@ function Detail({ matchup, gameId }) {
                       type="button"
                       aria-pressed={windowKey === item.key}
                       disabled={item.key === 'last15' && last15Blocked}
+                      title={
+                        P && item.key === 'last15' && last15Blocked
+                          ? sectionReason(last15Section)
+                          : undefined
+                      }
                       key={item.key}
                       onClick={() => setWindowKey(item.key)}
                     >
@@ -852,10 +894,10 @@ function Detail({ matchup, gameId }) {
                 </div>
               </div>
             </div>
-            {windowSection?.context && (
+            {!P && windowSection?.context && (
               <p className="window-context">{contextLabel(windowSection)}</p>
             )}
-            {last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
+            {!P && last15Blocked && <p className="honest-empty">{sectionReason(last15Section)}</p>}
             <div
               className="market-tabs"
               role="group"
@@ -911,8 +953,9 @@ function Detail({ matchup, gameId }) {
               deviation={deviation}
               selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
               surfaceAvailability={matchup.league.surfaceAvailability}
+              quiet={P}
               provenance={
-                windowSection
+                windowSection && !P
                   ? `${WINDOWS.find((item) => item.key === windowKey).label} defense provenance: ${contextLabel(windowSection)} · ${sourceLabel(windowSection)}`
                   : null
               }
@@ -922,7 +965,7 @@ function Detail({ matchup, gameId }) {
         </div>
       </div>
       <TargetCaptureModal capture={capture} onHide={() => setCapture(null)} />
-    </>
+    </div>
   );
 }
 

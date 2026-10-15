@@ -1,0 +1,44 @@
+{
+  "archetype": { "rows": [], "thin": true },
+  "experience": {
+    "baseline": { "context": "completed_season", "hindsight": true },
+    "focal_game": {
+      "game_date": "2026-03-11",
+      "game_id": "0022500947",
+      "matchup": "ORL vs. CLE",
+      "minutes": 21.983333,
+      "stats": {
+        "3PM": 2.0,
+        "AST": 1.0,
+        "BLK": 1.0,
+        "FG2A": 2.0,
+        "FG3A": 3.0,
+        "FGA": 5.0,
+        "PA": 9.0,
+        "PR": 12.0,
+        "PRA": 13.0,
+        "PTS": 8.0,
+        "RA": 5.0,
+        "REB": 4.0,
+        "STKS": 1.0,
+        "STL": 0.0,
+        "TOV": 1.0
+      }
+    },
+    "mode": "historical",
+    "player_source": "game_logs",
+    "samples": { "context": "pregame", "excludes_focal_game": true }
+  },
+  "freshness": {
+    "player_game_logs": { "retrieved_at": "2026-08-23T19:12:19.727615+00:00", "status": "stale" },
+    "player_pool": {
+      "observed_at": null,
+      "providers": {},
+      "retrieved_at": null,
+      "state": "missing",
+      "status": "unavailable"
+    }
+  },
+  "h2h": { "rows": [], "thin": true },
+  "player_id": 1641724
+}

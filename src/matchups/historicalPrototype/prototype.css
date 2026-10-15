@@ -1,0 +1,448 @@
+/* PROTOTYPE — throwaway (branch prototype/historical-matchup-declutter). */
+
+/* ---- Shared across A/B/C: bigger small type ---- */
+.proto-hist .matchup-eyebrow {
+  font-size: 0.72rem;
+}
+.proto-hist .matchup-heading a {
+  font-size: 0.8rem;
+}
+.proto-hist .matchup-heading h1 {
+  font-size: 2.1rem;
+}
+.proto-hist .segmented button,
+.proto-hist .market-tabs button {
+  font-size: 0.78rem;
+}
+.proto-hist .control-label {
+  font-size: 0.64rem;
+}
+.proto-hist .section-heading h2 {
+  font-size: 0.95rem;
+}
+.proto-hist .sheet-base > h3 {
+  font-size: 0.72rem;
+}
+.proto-hist .row-stat h4 {
+  font-size: 0.92rem;
+}
+.proto-hist .row-capture {
+  font-size: 0.64rem;
+}
+.proto-hist .relative-over,
+.proto-hist .relative-under,
+.proto-hist .relative-neutral {
+  font-size: 0.76rem;
+}
+.proto-hist .relative-over strong,
+.proto-hist .relative-under strong,
+.proto-hist .relative-neutral strong {
+  font-size: 0.86rem;
+}
+.proto-hist .diet-chips span {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+}
+.proto-hist .hidden-count,
+.proto-hist .honest-empty {
+  font-size: 0.76rem;
+}
+.proto-hist .team-tab-sub {
+  font-size: 0.66rem;
+}
+.proto-hist .team-tab-name small {
+  font-size: 0.66rem;
+}
+.proto-hist .sheet-row {
+  padding: 9px 6px;
+}
+.proto-hist .detail-grid {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+.proto-hist.proto-B .detail-grid {
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+.proto-hist .defense-sheet > .section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.proto-hist .defense-sheet > .section-heading .hidden-count {
+  margin-left: auto;
+}
+.proto-hist .player-game-logs {
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+/* ---- Evidence A: date + status chips ---- */
+.pe-a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.pe-date {
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+}
+.pe-a ul {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pe-a li {
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  cursor: help;
+}
+.pe-a li.ok {
+  color: var(--ct-text);
+}
+.pe-a li.ok span {
+  color: var(--ct-hit);
+}
+.pe-a li.missing {
+  color: var(--ct-dim);
+  opacity: 0.75;
+}
+
+/* ---- Evidence B: date + disclosure ---- */
+.pe-b {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+}
+.pe-b summary {
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+  cursor: pointer;
+  text-align: right;
+}
+.pe-b details[open] dl {
+  position: absolute;
+  right: 0;
+  z-index: 5;
+  width: 340px;
+  margin: 6px 0 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  padding: 10px 12px;
+  background: var(--ct-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+.pe-b dl div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  padding: 4px 0;
+}
+.pe-b dt {
+  color: var(--ct-dim);
+  font-size: 0.74rem;
+}
+.pe-b dd {
+  margin: 0;
+  font-size: 0.76rem;
+}
+
+/* ---- Evidence C: one sentence ---- */
+.pe-c {
+  max-width: 360px;
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 0.82rem;
+  text-align: right;
+}
+.pe-c span {
+  color: var(--ct-dim);
+}
+
+/* ---- Rail A: stat grid cards ---- */
+.pr-a {
+  padding: 12px;
+}
+.pr-a-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pr-a-card {
+  border-top: 1px solid var(--ct-line);
+  padding-top: 9px;
+}
+.pr-a-card:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.pr-a-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.pr-a-ppg {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+}
+.pr-a-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  padding: 0;
+  background: var(--ct-surface-2, rgba(255, 255, 255, 0.02));
+  color: inherit;
+  cursor: pointer;
+}
+.pr-a-grid:hover {
+  border-color: var(--ct-gold);
+}
+.pr-a-grid span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 0 6px;
+}
+.pr-a-grid span + span {
+  border-left: 1px solid var(--ct-line);
+}
+.pr-a-grid small {
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+.pr-a-grid b {
+  font-family: var(--ct-mono);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+.pr-a-grid .hot {
+  background: var(--ct-gold-soft);
+}
+.pr-a-grid .hot b,
+.pr-a-grid .hot small {
+  color: var(--ct-gold);
+}
+.pr-a-card.selected .pr-a-grid {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 1px var(--ct-gold);
+}
+
+/* ---- Rail B: box-score table ---- */
+.pr-b {
+  padding: 12px 8px 6px;
+}
+.pr-b-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 4px 6px;
+}
+.pr-b-head span {
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+}
+.pr-b table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pr-b th,
+.pr-b td {
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--ct-line);
+  font-family: var(--ct-mono);
+  font-size: 0.8rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.pr-b thead th {
+  color: var(--ct-dim);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+.pr-b th[scope='row'],
+.pr-b thead th:first-child {
+  text-align: left;
+  font-family: var(--ct-sans);
+}
+.pr-b th[scope='row'] button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ct-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pr-b-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.pr-b th[scope='row'] a {
+  color: var(--ct-gold);
+  opacity: 0.7;
+}
+.pr-b tbody tr {
+  cursor: pointer;
+}
+.pr-b tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.pr-b tbody tr.selected {
+  background: var(--ct-gold-soft);
+  box-shadow: inset 2px 0 var(--ct-gold);
+}
+.pr-b .hot {
+  color: var(--ct-gold);
+  font-weight: 700;
+}
+.pr-b thead .hot {
+  color: var(--ct-gold);
+}
+.pr-b td.muted {
+  color: var(--ct-dim);
+}
+.pr-b td.up {
+  color: var(--ct-hit);
+}
+.pr-b td.down {
+  color: var(--ct-miss);
+}
+
+/* ---- Rail C: one stat, vs his average ---- */
+.pr-c {
+  padding: 12px;
+}
+.pr-c-list {
+  display: grid;
+  margin-top: 6px;
+}
+.pr-c-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border: 0;
+  border-top: 1px solid var(--ct-line);
+  padding: 9px 4px 11px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pr-c-row:first-child {
+  border-top: 0;
+}
+.pr-c-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.pr-c-row.selected {
+  background: var(--ct-gold-soft);
+  box-shadow: inset 2px 0 var(--ct-gold);
+}
+.pr-c-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+.pr-c-name small {
+  color: var(--ct-dim);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+.pr-c-name em {
+  font-style: normal;
+}
+.pr-c-name .up {
+  color: var(--ct-hit);
+}
+.pr-c-name .down {
+  color: var(--ct-miss);
+}
+.pr-c-row b {
+  font-family: var(--ct-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.pr-c-row i {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  height: 2px;
+  background: var(--ct-gold);
+  opacity: 0.55;
+}
+
+/* ---- Switcher ---- */
+.proto-switcher {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f3f0ff;
+  color: #1b1030;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  font:
+    600 13px/1.2 system-ui,
+    sans-serif;
+  white-space: nowrap;
+}
+.proto-switcher button {
+  border: 0;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+@media (max-width: 820px) {
+  .proto-hist .detail-grid,
+  .proto-hist.proto-B .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .proto-hist .matchup-sidebar {
+    display: flex;
+  }
+  .pe-a,
+  .pe-b {
+    align-items: flex-start;
+  }
+  .pe-a ul {
+    flex-wrap: wrap;
+  }
+  .pe-c {
+    text-align: left;
+  }
+  .pe-b details[open] dl {
+    left: 0;
+    right: auto;
+    width: min(340px, 90vw);
+  }
+  .proto-switcher {
+    font-size: 11px;
+  }
+}

@@ -23,6 +23,14 @@ export const test = base.extend({
     await installApiContract(page);
     await run(page);
   },
+  // Signed in, but every API route answers with the backend's `waitlisted` refusal.
+  waitlistedPage: async ({ page }, run) => {
+    await page.addInitScript((storageKey) => {
+      window.localStorage.setItem(storageKey, 'true');
+    }, E2E_AUTH_STORAGE_KEY);
+    await installApiContract(page, {}, { waitlisted: true });
+    await run(page);
+  },
   adminPage: async ({ page }, run) => {
     await page.addInitScript(
       ({ authKey, adminKey }) => {

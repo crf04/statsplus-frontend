@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { clearRevisitCaches } from '../revisitCache';
 import { auth, googleProvider } from '../firebase/config';
+import { subscribeWaitlisted } from '../utils/waitlistSignal';
 
 // Create the Auth Context
 const AuthContext = createContext();
@@ -51,6 +52,8 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
   const currentUserRef = useRef(getInitialUser());
   const [loading, setLoading] = useState(!isE2EMode);
   const [error, setError] = useState(null);
+  // Set by an authenticated response that says the account is waitlisted.
+  const [waitlist, setWaitlist] = useState(null);
   const [adminState, setAdminState] = useState(() => ({
     loading: !isE2EMode,
     isAdmin: getE2EAdmin(),
@@ -130,6 +133,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
         clearRevisitCaches();
         currentUserRef.current = e2eUser;
+        setWaitlist(null);
         setCurrentUser(e2eUser);
         await refreshAdminClaims(e2eUser);
         setError(null);
@@ -158,6 +162,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
   // Sign out
   const logout = async () => {
     clearRevisitCaches();
+    setWaitlist(null);
     try {
       setError(null);
       if (isE2EMode) {
@@ -192,6 +197,14 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     return null;
   };
 
+  useEffect(
+    () =>
+      subscribeWaitlisted((message, account) => {
+        if (account && currentUserRef.current?.uid === account) setWaitlist({ message });
+      }),
+    [],
+  );
+
   // Listen for authentication state changes
   useEffect(() => {
     if (isE2EMode) {
@@ -219,7 +232,10 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     const unsubscribe = authStateListener(
       authClient,
       async (user) => {
-        if (currentUserRef.current?.uid !== user?.uid) clearRevisitCaches();
+        if (currentUserRef.current?.uid !== user?.uid) {
+          clearRevisitCaches();
+          setWaitlist(null);
+        }
         currentUserRef.current = user;
         setCurrentUser(user);
         setLoading(false);
@@ -230,6 +246,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         console.error('Authentication state error:', authError);
         clearRevisitCaches();
         currentUserRef.current = null;
+        setWaitlist(null);
         setCurrentUser(null);
         setLoading(false);
         setAdminState({
@@ -249,6 +266,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     currentUser,
     loading,
     error,
+    waitlist,
     signInWithGoogle,
     logout,
     getToken,

@@ -2,6 +2,7 @@ import { readRevisit } from '../revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { getIdTokenResult, onIdTokenChanged } from 'firebase/auth';
 import { AuthProvider, useAuth } from './AuthContext';
+import { reportWaitlisted } from '../utils/waitlistSignal';
 
 function AuthProbe() {
   const auth = useAuth();
@@ -9,6 +10,7 @@ function AuthProbe() {
     <div>
       <output data-testid="user">{auth.currentUser?.uid || 'signed-out'}</output>
       <output data-testid="loading">{String(auth.loading)}</output>
+      <output data-testid="waitlist">{auth.waitlist?.message || 'none'}</output>
       <output data-testid="admin">{String(auth.isAdmin)}</output>
       <output data-testid="admin-status">{auth.adminStatus}</output>
       <output data-testid="admin-error">{auth.adminError || ''}</output>
@@ -178,4 +180,65 @@ test('auth listener clears cached results and fences pending reads with no consu
   await readRevisit('logs', 'alice', 'done', load);
   await readRevisit('logs', 'alice', 'pending', load);
   expect(load).toHaveBeenCalledTimes(3);
+});
+
+describe('waitlist', () => {
+  const message = "The beta is full right now. You're on the waitlist and we'll let you in soon.";
+  let listener;
+  beforeEach(() => {
+    onIdTokenChanged.mockImplementation((_auth, next) => {
+      listener = next;
+      return jest.fn();
+    });
+  });
+
+  test('a waitlisted response puts the signed-in user on the waitlist until they leave', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1', email: 'a@example.com' }));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+
+    act(() => reportWaitlisted(message, 'u1'));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent(message);
+
+    await act(async () => listener(null));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a different account does not inherit the waitlist', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    act(() => reportWaitlisted(message, 'u1'));
+    await act(async () => listener({ uid: 'u2' }));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a token refresh for the same account keeps the waitlist', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    act(() => reportWaitlisted(message, 'u1'));
+    await act(async () => listener({ uid: 'u1' }));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent(message);
+  });
+
+  test('a waitlisted response that arrives while signed out is ignored', async () => {
+    renderProvider();
+    await act(async () => listener(null));
+    act(() => reportWaitlisted(message, 'u1'));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a slow answer to the previous account’s request does not waitlist the current account', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    await act(async () => listener({ uid: 'u2' }));
+    act(() => reportWaitlisted(message, 'u1'));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
+
+  test('a waitlisted response from a request sent with no account is ignored', async () => {
+    renderProvider();
+    await act(async () => listener({ uid: 'u1' }));
+    act(() => reportWaitlisted(message, undefined));
+    expect(screen.getByTestId('waitlist')).toHaveTextContent('none');
+  });
 });

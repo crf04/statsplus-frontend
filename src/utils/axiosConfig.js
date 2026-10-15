@@ -3,6 +3,7 @@ import { getIdToken } from 'firebase/auth';
 import { API_TIMEOUT } from '../apiSettings';
 import { auth } from '../firebase/config';
 import { reportApiError } from '../errorReporting';
+import { reportWaitlisted } from './waitlistSignal';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -34,11 +35,13 @@ apiClient.interceptors.request.use(
       if (e2eTokenAvailable) {
         config.headers = config.headers || {};
         config.headers.Authorization = 'Bearer courtai-e2e-token';
+        config.waitlistAccount = 'courtai-e2e-user';
       } else if (user) {
         // Get the Firebase ID token
         const token = await getIdToken(user);
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
+        config.waitlistAccount = user.uid;
       }
     } catch (error) {
       // Firebase can be intentionally unavailable in local development. The
@@ -69,6 +72,10 @@ apiClient.interceptors.response.use(
     }
 
     reportApiError(error);
+
+    if (error.response?.status === 403 && error.response.data?.error?.code === 'waitlisted') {
+      reportWaitlisted(error.response.data.error.message, error.config?.waitlistAccount);
+    }
 
     // Handle 401 Unauthorized responses
     if (error.response?.status === 401) {

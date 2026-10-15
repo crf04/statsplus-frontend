@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import WaitlistScreen from './components/Auth/WaitlistScreen';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
@@ -78,41 +79,54 @@ function AppNav() {
   );
 }
 
+// A waitlisted account has nothing signed-in to show: the screen replaces the
+// header and every route until the user signs out.
+function SignedInShell() {
+  const { isAuthenticated, waitlist } = useAuth();
+  if (isAuthenticated && waitlist) return <WaitlistScreen />;
+
+  return (
+    <>
+      <AppNav />
+      <RouteContent>
+        <Routes>
+          <Route path="/" element={<GameLogFilter />} />
+          <Route path="/help" element={<QueryReferencePage />} />
+          <Route path="/connect" element={<ConnectPage />} />
+          <Route path="/matchups" element={<SlatePage />} />
+          <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+          <Route path="/targets" element={<TargetsPage />} />
+          <Route path="/targets/:targetId" element={<TargetDetailPage />} />
+          <Route
+            path="/operations"
+            element={
+              <AdminProtectedRoute>
+                <OperationsPage />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/operations"
+            element={
+              <AdminProtectedRoute>
+                <OperationsPage />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </RouteContent>
+    </>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div className="App">
           <ProtectedRoute>
-            <AppNav />
-            <RouteContent>
-              <Routes>
-                <Route path="/" element={<GameLogFilter />} />
-                <Route path="/help" element={<QueryReferencePage />} />
-                <Route path="/connect" element={<ConnectPage />} />
-                <Route path="/matchups" element={<SlatePage />} />
-                <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-                <Route path="/targets" element={<TargetsPage />} />
-                <Route path="/targets/:targetId" element={<TargetDetailPage />} />
-                <Route
-                  path="/operations"
-                  element={
-                    <AdminProtectedRoute>
-                      <OperationsPage />
-                    </AdminProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/operations"
-                  element={
-                    <AdminProtectedRoute>
-                      <OperationsPage />
-                    </AdminProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </RouteContent>
+            <SignedInShell />
           </ProtectedRoute>
         </div>
       </BrowserRouter>

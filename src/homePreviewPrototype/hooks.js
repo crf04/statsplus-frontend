@@ -208,3 +208,65 @@ export const SlimSpot = ({ kind, pick, game, onUseQuery }) => {
     </article>
   );
 };
+
+/* O: the ladder as three stacked rows. */
+export const LadderRows = ({ onUseQuery }) => (
+  <ol className="hp-lrows">
+    {QUERY_LADDER.map((step, index) => {
+      const { before, added, after } = splitAddedClause(step.query, step.added);
+      const answer = hooks.ladder[index];
+      const previous = hooks.ladder[index - 1];
+      const delta = previous ? Math.round((answer.PTS - previous.PTS) * 10) / 10 : null;
+      return (
+        <li key={step.id}>
+          <button type="button" className="hp-lrow" onClick={() => onUseQuery(step.query)}>
+            <span className="hp-lrow-query">
+              {before}
+              <mark>{added}</mark>
+              {after}
+            </span>
+            <span className="hp-lrow-answer">
+              <b>{answer.PTS.toFixed(1)}</b>
+              <small>
+                PTS
+                {delta !== null && (
+                  <em className={delta >= 0 ? 'is-up' : 'is-down'}>
+                    {' '}
+                    {delta >= 0 ? '+' : '−'}
+                    {Math.abs(delta).toFixed(1)}
+                  </em>
+                )}
+              </small>
+              <small>{answer.games} games</small>
+            </span>
+            <Bars series={answer.series.slice(-20)} average={answer.PTS} />
+          </button>
+        </li>
+      );
+    })}
+  </ol>
+);
+
+/* Q: the ladder as one line of stepping stones under the search. */
+export const LadderPath = ({ onUseQuery }) => (
+  <div className="hp-lpath">
+    <span className="hp-lpath-label">One question, three steps</span>
+    <ol>
+      {QUERY_LADDER.map((step, index) => {
+        const answer = hooks.ladder[index];
+        return (
+          <li key={step.id}>
+            <button type="button" onClick={() => onUseQuery(step.query)} title={step.query}>
+              <span>{index === 0 ? 'Jalen Johnson this year' : `+ ${step.added}`}</span>
+              <b>{answer.PTS.toFixed(1)}</b>
+              <small>{answer.games}g</small>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+    <Link to="/help" className="hp-reference-up">
+      Every filter we understand <ArrowRight size={13} aria-hidden="true" />
+    </Link>
+  </div>
+);

@@ -24,13 +24,14 @@ import {
   SectionHead,
   TargetCard,
   gameLabel,
+  pct,
   lastName,
   qualifierText,
   shortName,
   tipoff,
 } from './parts';
 import hooks from './mock/hooks.json';
-import { AnswerLadder, SlimSpot, Spotlight, SpotlightCard } from './hooks';
+import { AnswerLadder, LadderPath, LadderRows, SlimSpot, Spotlight, SpotlightCard } from './hooks';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -587,10 +588,200 @@ const VariantM = (props) => {
   );
 };
 
+/* N–Q: the same content as M, arranged four ways. */
+const useTonight = (props) => {
+  const { slate, targets } = props.data;
+  const { best, worst, bestGame, worstGame } = spotPicks(slate);
+  const bestCard = (
+    <SlimSpot
+      kind="Best matchup tonight"
+      pick={best}
+      game={bestGame}
+      onUseQuery={props.onUseQuery}
+    />
+  );
+  const worstCard = (
+    <SlimSpot
+      kind="Toughest matchup tonight"
+      pick={worst}
+      game={worstGame}
+      onUseQuery={props.onUseQuery}
+    />
+  );
+  const targetList = targets ? (
+    <div className="hp-tlines">
+      <div className="hp-tlines-head">
+        <span className="hp-kicker">Your Targets firing tonight</span>
+        <ProtoLink to="/targets" className="hp-more">
+          All {targets.firing.length} →
+        </ProtoLink>
+      </div>
+      {targets.firing.slice(0, 2).map((entry) => (
+        <TargetLine key={entry.target.id} entry={entry} />
+      ))}
+    </div>
+  ) : null;
+  return { bestCard, worstCard, targetList, targets };
+};
+
+const VariantN = (props) => {
+  const [tab, setTab] = useState('tonight');
+  const { bestCard, worstCard, targetList } = useTonight(props);
+  return (
+    <VariantE
+      {...props}
+      ladder={
+        <section className="hp-tabs" aria-label="Tonight and examples">
+          <div className="hp-tabs-bar" role="tablist">
+            {[
+              ['tonight', 'Tonight'],
+              ['ask', 'Try a question'],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                className={tab === key ? 'is-on' : ''}
+                onClick={() => setTab(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {tab === 'tonight' ? (
+            <div className="hp-tabs-panel">
+              <div className="hp-bottom-pair">
+                <div className="hp-flank-left">{bestCard}</div>
+                <div className="hp-flank-right">{worstCard}</div>
+              </div>
+              <div className="hp-bottom-targets">{targetList}</div>
+            </div>
+          ) : (
+            <div className="hp-tabs-panel">
+              <AnswerLadder onUseQuery={props.onUseQuery} compact referenceUp />
+            </div>
+          )}
+        </section>
+      }
+    />
+  );
+};
+
+const VariantO = (props) => {
+  const { bestCard, worstCard, targetList } = useTonight(props);
+  return (
+    <VariantE
+      {...props}
+      ladder={
+        <section className="hp-cols">
+          <div className="hp-col">
+            <div className="hp-col-head">
+              <h2 className="hp-section-title">Try a question</h2>
+              <ProtoLink to="/help" className="hp-more">
+                Every filter →
+              </ProtoLink>
+            </div>
+            <LadderRows onUseQuery={props.onUseQuery} />
+          </div>
+          <div className="hp-col">
+            <div className="hp-col-head">
+              <h2 className="hp-section-title">Tonight</h2>
+              <ProtoLink to="/matchups" className="hp-more">
+                Matchups →
+              </ProtoLink>
+            </div>
+            <div className="hp-col-stack">
+              {bestCard}
+              {worstCard}
+              {targetList}
+            </div>
+          </div>
+        </section>
+      }
+    />
+  );
+};
+
+const VariantP = (props) => {
+  const { slate } = props.data;
+  const { best, worst } = spotPicks(slate);
+  const { targets } = props.data;
+  const band = (
+    <div className="hp-band" aria-label="Tonight at a glance">
+      <button
+        type="button"
+        className="hp-band-item is-up"
+        onClick={() => props.onUseQuery(`${best.name} this year against bottom 10 defenses`)}
+      >
+        <span className="hp-band-k">Best</span>
+        <b>{best.name}</b>
+        <span className="hp-edge is-up">{pct(best.value, 1)}</span>
+        <small>vs {best.opponent}</small>
+      </button>
+      <ProtoLink to="/targets" className="hp-band-item hp-band-targets">
+        <span className="hp-band-k">Your Targets</span>
+        <b>{targets ? `${targets.firing.length} firing` : '…'}</b>
+        {targets && (
+          <small>
+            {targets.firing
+              .slice(0, 2)
+              .map((entry) => `vs ${entry.target.opponent}`)
+              .join(' · ')}
+          </small>
+        )}
+      </ProtoLink>
+      <button
+        type="button"
+        className="hp-band-item is-down"
+        onClick={() => props.onUseQuery(`${worst.name} this year against top 10 defenses`)}
+      >
+        <span className="hp-band-k">Toughest</span>
+        <b>{worst.name}</b>
+        <span className="hp-edge is-down">{pct(worst.value, 1)}</span>
+        <small>vs {worst.opponent}</small>
+      </button>
+    </div>
+  );
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <>
+          {band}
+          {props.hero}
+        </>
+      }
+      ladder={<AnswerLadder onUseQuery={props.onUseQuery} compact referenceUp />}
+    />
+  );
+};
+
+const VariantQ = (props) => {
+  const { bestCard, worstCard, targetList } = useTonight(props);
+  return (
+    <VariantE
+      {...props}
+      middle={<LadderPath onUseQuery={props.onUseQuery} />}
+      ladder={
+        <section className="hp-tri" aria-label="Tonight">
+          <div className="hp-flank-left">{bestCard}</div>
+          <div className="hp-tri-center">{targetList}</div>
+          <div className="hp-flank-right">{worstCard}</div>
+        </section>
+      }
+    />
+  );
+};
+
 const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  N: VariantN,
+  O: VariantO,
+  P: VariantP,
+  Q: VariantQ,
   M: VariantM,
   K: VariantK,
   L: VariantL,

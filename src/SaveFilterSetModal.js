@@ -8,16 +8,18 @@ import { createSavedFilterSet } from './savedFilterSetsApi';
  * else, so what comes back later is the link the user was looking at rather
  * than a snapshot of the results it produced.
  */
-const SaveFilterSetModal = ({ show, onHide, queryString }) => {
+const SaveFilterSetModal = ({ show, onHide, queryString, defaultName = '' }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!show) return;
-    setName('');
+    // The query the user typed is the name they would most likely reach for,
+    // so it starts filled in and stays editable.
+    setName(defaultName.slice(0, 100));
     setError(null);
-  }, [show]);
+  }, [show, defaultName]);
 
   // A duplicate name or a full account is the backend's answer, and it is shown
   // here rather than swallowed, so the save is retryable under a new name.

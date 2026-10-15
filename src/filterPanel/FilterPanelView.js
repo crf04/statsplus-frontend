@@ -26,7 +26,8 @@ const TILES = [
   { key: 'date', title: 'Since', sub: 'a date' },
   { key: 'location', title: 'Home / Away', sub: 'venue' },
   { key: 'minutes', title: 'Minutes', sub: 'played' },
-  { key: 'playtype', title: 'Playtype', sub: 'matchup rating' },
+  // Hidden from Add a filter for now; a linked playtype rule still edits here.
+  { key: 'playtype', title: 'Playtype', sub: 'matchup rating', hidden: true },
   { key: 'defense', title: 'Opp. defense', sub: 'team ranks' },
   { key: 'self', title: 'Own stat line', sub: 'e.g. PTS 20+' },
 ];
@@ -315,7 +316,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
           <>
             <div className="fpb-addlabel">Add a filter</div>
             <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
-              {TILES.map((tile) => (
+              {TILES.filter((tile) => !tile.hidden).map((tile) => (
                 <button
                   key={tile.key}
                   type="button"

@@ -778,3 +778,24 @@
   color: var(--ct-text);
   font: 600 1.3rem var(--ct-display);
 }
+
+/* Both composers, Defense Sheet capture and + New Target, put the form and its
+   Backtest side by side, so a moved threshold is read without scrolling;
+   narrower screens stack them, form first. */
+@media (min-width: 992px) {
+  .modal-dialog.target-compose-dialog {
+    max-width: min(1100px, calc(100vw - 3rem));
+  }
+
+  .target-compose-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+
+  .target-compose-form {
+    position: sticky;
+    top: 0;
+  }
+}

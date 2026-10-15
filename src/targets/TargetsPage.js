@@ -341,7 +341,7 @@ function TargetsPageContent() {
         scrollable
         backdrop="static"
         className="target-new-layer"
-        dialogClassName="target-new-dialog"
+        dialogClassName="target-new-dialog target-compose-dialog"
         contentClassName="target-new-modal"
         backdropClassName="target-new-backdrop"
         aria-labelledby="new-target-heading"
@@ -353,23 +353,27 @@ function TargetsPageContent() {
         </Modal.Header>
         <Modal.Body>
           <LabSeasonProvider>
-            <TargetForm
-              draft={draft}
-              busy={saving}
-              onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-              onSubmit={save}
-              onCancel={dismissComposer}
-            />
-            {saveError && (
-              <p className="target-error" role="alert">
-                {saveError}
-              </p>
-            )}
-            <TargetLab
-              draft={draft}
-              preferences={draftPreferences}
-              onPreferencesChange={setDraftPreferences}
-            />
+            <div className="target-compose-layout">
+              <div className="target-compose-form">
+                <TargetForm
+                  draft={draft}
+                  busy={saving}
+                  onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+                  onSubmit={save}
+                  onCancel={dismissComposer}
+                />
+                {saveError && (
+                  <p className="target-error" role="alert">
+                    {saveError}
+                  </p>
+                )}
+              </div>
+              <TargetLab
+                draft={draft}
+                preferences={draftPreferences}
+                onPreferencesChange={setDraftPreferences}
+              />
+            </div>
           </LabSeasonProvider>
         </Modal.Body>
       </Modal>

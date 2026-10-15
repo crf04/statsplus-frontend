@@ -678,11 +678,12 @@ const VariantN = (props) => {
 };
 
 const VariantO = (props) => {
+  const oneLine = props.variant === 'Y';
   const { bestCard, worstCard, targetList } = useTonight(props);
   return (
     <VariantE
       {...props}
-      heroSlot={<div className="hp-o-hero">{props.hero}</div>}
+      heroSlot={<div className={`hp-o-hero${oneLine ? ' hp-one-line' : ''}`}>{props.hero}</div>}
       ladder={
         <section className="hp-cols">
           <div className="hp-col">
@@ -840,6 +841,7 @@ const VariantK = (props) => <Calm props={props} withTargets />;
 const VariantL = (props) => <Calm props={props} withTargets={false} />;
 
 const VARIANTS = {
+  Y: VariantO,
   W: VariantW,
   X: VariantX,
   T: VariantT,
@@ -873,7 +875,13 @@ const HomePreviewPrototype = ({ hero, ladder, variant, step, onUseQuery }) => {
     <>
       <div className="landing-page hp-page">
         {Variant ? (
-          <Variant hero={hero} ladder={ladder} data={data} onUseQuery={onUseQuery} />
+          <Variant
+            hero={hero}
+            ladder={ladder}
+            data={data}
+            onUseQuery={onUseQuery}
+            variant={variant}
+          />
         ) : (
           <div className="landing-container">
             {hero}

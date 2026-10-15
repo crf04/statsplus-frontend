@@ -2014,3 +2014,13 @@
 .hp-o-hero .landing-hero {
   padding-bottom: 56px;
 }
+
+/* ---- Y: O with the headline on one line ------------------------------------ */
+.hp-one-line .landing-title {
+  font-size: clamp(30px, 8.2vw, 92px);
+  white-space: nowrap;
+}
+.hp-one-line .landing-title em {
+  display: inline;
+  margin-left: 0.06em;
+}

@@ -348,15 +348,18 @@ test('fetches a dated slate through the endpoint catalog and bearer transport', 
 });
 
 test('reads the game-day neighbours and treats absent or null ones as none', () => {
-  const withNeighbours = decodeSlate({
+  const both = decodeSlate({
     ...payload,
     previous_game_date: '2026-01-14',
-    next_game_date: null,
+    next_game_date: '2026-01-20',
   });
-  expect([withNeighbours.previousGameDate, withNeighbours.nextGameDate]).toEqual([
-    '2026-01-14',
-    null,
-  ]);
+  expect([both.previousGameDate, both.nextGameDate]).toEqual(['2026-01-14', '2026-01-20']);
+  const onlyNext = decodeSlate({
+    ...payload,
+    previous_game_date: null,
+    next_game_date: '2026-01-20',
+  });
+  expect([onlyNext.previousGameDate, onlyNext.nextGameDate]).toEqual([null, '2026-01-20']);
   const older = decodeSlate(payload);
   expect([older.previousGameDate, older.nextGameDate]).toEqual([null, null]);
 });

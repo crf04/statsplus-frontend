@@ -107,6 +107,26 @@ test('an empty slate offers its previous and next game days and jumps to them', 
   expect(screen.queryByRole('button', { name: /game day/ })).toBeNull();
 });
 
+test('the next game day button opens that date', async () => {
+  fetchSlate.mockImplementation(async (date) =>
+    date === '2026-07-15'
+      ? { ...slate, slateDate: date, games: [], previousGameDate: null, nextGameDate: '2026-10-21' }
+      : { ...slate, slateDate: date },
+  );
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-07-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Next game day Wednesday, October 21, 2026' }),
+  );
+  await screen.findByRole('heading', { name: 'Wednesday, October 21, 2026' });
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-10-21');
+  expect(fetchSlate).toHaveBeenLastCalledWith('2026-10-21', expect.any(Object));
+});
+
 test('an empty slate with no neighbours, or from an older backend, offers no jump', async () => {
   fetchSlate.mockResolvedValue({
     ...slate,

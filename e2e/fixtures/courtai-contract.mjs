@@ -1585,9 +1585,11 @@ const todaySlateDate = () =>
 // Seasons whose game logs can be read. The default one is what the real endpoint reads when
 // season_filter is omitted; the other is a single-game season so a switch is visible in results.
 export const SEASONS = { seasons: ['2026-27', '2025-26'], default_season: '2025-26' };
-const SEASON_2026_27_LOG = { ...gameLogs[0], GAME_DATE: '2026-10-20', PTS: 44 };
+// 2026-27 holds one game per player: that player's latest row, 13 points higher (LeBron: 44).
 const applySeason = (logs, url) =>
-  url.searchParams.get('season_filter') === '2026-27' ? [SEASON_2026_27_LOG] : logs;
+  url.searchParams.get('season_filter') === '2026-27'
+    ? [{ ...logs[0], GAME_DATE: '2026-10-20', PTS: logs[0].PTS + 13 }]
+    : logs;
 
 const RESOLVABLE_SLATES = {
   [DEFAULT_SLATE_DATE]: {
@@ -2706,10 +2708,10 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     if (url.pathname === '/api/games/game_logs') {
       const playerName = url.searchParams.get('player_name');
-      const season = seasonsByPlayer[playerName] || gameLogs;
+      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
       await route.fulfill({
         json: {
-          game_logs: applyOpponentTricode(applySelfFilters(applySeason(season, url), url), url),
+          game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
           averages: [averages],
           season_averages: [{ ...averages, PTS: 27, AST: 8 }],
           // Like the real endpoint, the season total ignores every filter.
@@ -2723,11 +2725,14 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     if (url.pathname === '/api/games/slate') {
       const date = url.searchParams.get('date') || todaySlateDate();
-      const gameDays = [DEFAULT_SLATE_DATE, HISTORICAL_SLATE_DATE];
-      const neighbours = {
-        previousGameDate: gameDays.filter((day) => day < date).at(-1) ?? null,
-        nextGameDate: gameDays.find((day) => day > date) ?? null,
+      // Every date but the completed one lists a game, so the nearest game day
+      // on either side is the adjacent date.
+      const adjacent = (days) => {
+        const moved = new Date(`${date}T12:00:00Z`);
+        moved.setUTCDate(moved.getUTCDate() + days);
+        return moved.toISOString().slice(0, 10);
       };
+      const neighbours = { previousGameDate: adjacent(-1), nextGameDate: adjacent(1) };
       // The completed LAC @ MIL game is on its own date, so a Target aimed at
       // either side of it resolves against game-log participants there. The
       // pool freshness matches the evidence resolution reports for the same

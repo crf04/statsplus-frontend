@@ -153,8 +153,8 @@ signedInTest(
     await api.override({
       '/api/games/slate': {
         body: slatePayload('2026-02-10', [], {
-          previousGameDate: '2026-01-15',
-          nextGameDate: '2026-03-29',
+          previousGameDate: '2026-02-09',
+          nextGameDate: '2026-02-11',
         }),
       },
     });
@@ -162,13 +162,14 @@ signedInTest(
 
     await expect(screen.getByText('No games on this slate.')).toBeVisible();
     await expect(
-      screen.getByRole('button', 'Previous game day Thursday, January 15, 2026'),
+      screen.getByRole('button', 'Previous game day Monday, February 9, 2026'),
     ).toBeVisible();
     await api.override({});
-    await screen.getByRole('button', 'Next game day Sunday, March 29, 2026').tap();
+    await screen.getByRole('button', 'Next game day Wednesday, February 11, 2026').tap();
 
-    await expect(browser).toHaveURL('/matchups?date=2026-03-29');
-    await expect(screen.getByRole('heading', 'LAC @ MIL')).toBeVisible();
-    expect(api.sent('/api/games/slate').at(-1)?.search.get('date')).toBe('2026-03-29');
+    await expect(browser).toHaveURL('/matchups?date=2026-02-11');
+    await expect(screen.getByRole('heading', 'Wednesday, February 11, 2026')).toBeVisible();
+    await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
+    expect(api.sent('/api/games/slate').at(-1)?.search.get('date')).toBe('2026-02-11');
   },
 );

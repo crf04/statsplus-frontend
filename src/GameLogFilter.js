@@ -451,7 +451,10 @@ const GameLogFilter = () => {
     // Arriving on a link that carries filters but no player leaves the panel
     // holding a Filter Set with nobody to apply it to. Say so, rather than
     // sending the placeholder and reporting a player the user never named.
-    if (!nextFilters.player_name || nextFilters.player_name === 'None') {
+    // A season alone is a complete choice: it is what a reader browsing with
+    // no player yet can set, and it waits in the URL for the player to join it.
+    const isSeasonOnly = Object.keys(nextFilters).every((name) => name === 'season_filter');
+    if (!isSeasonOnly && (!nextFilters.player_name || nextFilters.player_name === 'None')) {
       // A refused link keeps its own alert. That alert names the parameter to
       // fix, and the player selector this advice points at is not on screen to
       // act on — replacing one with the other loses both.

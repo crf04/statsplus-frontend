@@ -212,6 +212,18 @@ signedInTest(
     await expect(screen.getByRole('combobox', 'Season')).toHaveValue('2026-27');
     expect(api.sent('/api/games/game_logs').at(-1)?.search.get('season_filter')).toBe('2026-27');
     expect(await overflowsHorizontally(browser)).toBe(false);
+
+    // A reload, and the same link opened fresh, keep the season.
+    await browser.reload();
+    await expect(screen.getByRole('combobox', 'Season')).toHaveValue('2026-27');
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
+    await app.open('/?player_name=Stephen+Curry&season_filter=2026-27');
+    await expect(screen.getByRole('combobox', 'Season')).toHaveValue('2026-27');
+    // Curry's own 2026-27 game (his 42-point opener plus 13), not LeBron's 44.
+    await expect(screen.getByRole('cell', '55')).toBeVisible();
+    expect(api.sent('/api/games/game_logs').at(-1)?.search.get('player_name')).toBe(
+      'Stephen Curry',
+    );
   },
 );
 

@@ -190,19 +190,16 @@ const postedLine = (player, provider, stat) => {
 };
 
 /*
- * The books that post him in this stat, each with its line, and the one line
- * the row leads with: PrizePicks when it has one, otherwise the first other
- * book that does. No line anywhere is a null headline, never a guess.
+ * The books that post him in this stat, PrizePicks first, each with its line,
+ * and the one line the row leads with: the first book that has one. No line
+ * anywhere is a null headline, never a guess.
  */
 const linesFor = (player, stat) => {
   const books = Object.keys(player.provenance)
     .filter((provider) => player.provenance[provider].includes(stat))
+    .sort((a, b) => Number(b === 'prizepicks') - Number(a === 'prizepicks'))
     .map((provider) => ({ provider, line: postedLine(player, provider, stat) }));
-  const headline =
-    books.find((book) => book.provider === 'prizepicks' && book.line !== null) ||
-    books.find((book) => book.line !== null) ||
-    null;
-  return { books, headline: headline?.line ?? null };
+  return { books, headline: books.find((book) => book.line !== null)?.line ?? null };
 };
 
 const averageOf = (values) =>

@@ -661,10 +661,11 @@ test('renders governed traditional sheet rows without duplicate defensive column
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  // Isolation's points sit near league; its possessions would not.
   boston.defenseSheet.playTypes.push({
-    key: 'Transition:POSS',
-    sliceKey: 'Transition',
-    label: 'Transition POSS',
+    key: 'Isolation:POSS',
+    sliceKey: 'Isolation',
+    label: 'Isolation POSS',
     markets: ['PTS'],
     season: value(14.9, 31, 1.6, 28),
     last15: value(13.1, 6, 0.9, 22),
@@ -672,16 +673,18 @@ test('lists play types by points only, never by possessions', async () => {
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
-  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
-  const playTypes = screen.getByRole('region', { name: 'Play types' });
-  expect(
-    within(playTypes)
+  const playTypeRows = () =>
+    within(screen.getByRole('region', { name: 'Play types' }))
       .getAllByRole('article')
-      .map((row) => row.getAttribute('aria-label')),
-  ).toEqual(['Transition', 'Isolation']);
+      .map((row) => row.getAttribute('aria-label'));
+  expect(playTypeRows()).toEqual(['Transition']);
+  expect(screen.getByText(/1 close to average hidden\./)).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+  expect(playTypeRows()).toEqual(['Transition', 'Isolation']);
   // One Points measure per slice: the possession row's +31% never shows.
-  expect(sheetRow('Transition')).toHaveTextContent('+12%');
-  expect(sheetRow('Transition')).not.toHaveTextContent('31%');
+  expect(sheetRow('Isolation')).toHaveTextContent('+2%');
+  expect(sheetRow('Isolation')).not.toHaveTextContent('31%');
 });
 
 test('renders a reading with no league comparison without a direction or a guessed percent', async () => {
@@ -1923,6 +1926,12 @@ test('AC4: after the game each row shows minutes and what he did, against his av
 });
 
 test('AC5: before the game the row leads with his line, PrizePicks first, other books beside their marks', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // Whatever order the books arrive in, PrizePicks' line leads.
+  const lebronFixture = candidate.players.find((player) => player.id === 2544);
+  lebronFixture.provenance = { underdog: ['PTS'], prizepicks: ['PTS', 'FGA'] };
+  lebronFixture.lines = { underdog: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } };
+  fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   const lebron = await screen.findByRole('article', { name: 'LeBron James player' });

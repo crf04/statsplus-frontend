@@ -117,8 +117,11 @@ const Bars = ({ series, average }) => {
   );
 };
 
-export const AnswerLadder = ({ onUseQuery }) => (
-  <section className="query-ladder hp-answers" aria-labelledby="hp-answers-heading">
+export const AnswerLadder = ({ onUseQuery, compact = false }) => (
+  <section
+    className={`query-ladder hp-answers${compact ? ' hp-answers-compact' : ''}`}
+    aria-labelledby="hp-answers-heading"
+  >
     <div className="query-ladder-head">
       <h2 id="hp-answers-heading" className="query-ladder-title">
         One question, three steps
@@ -157,7 +160,7 @@ export const AnswerLadder = ({ onUseQuery }) => (
                       </small>
                     )}
                   </span>
-                  <span className="hp-answer-line">
+                  <span className="hp-answer-line" hidden={compact}>
                     {answer.REB.toFixed(1)} REB · {answer.AST.toFixed(1)} AST ·{' '}
                     <b>{answer.games}</b> games
                   </span>
@@ -171,3 +174,31 @@ export const AnswerLadder = ({ onUseQuery }) => (
     </ol>
   </section>
 );
+
+/* K/L: the spotlight reduced to one reason, the slice whose opponent effect
+   pushes hardest in the score's direction. */
+export const SlimSpot = ({ kind, pick, game, onUseQuery }) => {
+  const up = pick.value >= 0;
+  const reason = [...pick.why].sort((a, b) => (up ? b.pct - a.pct : a.pct - b.pct))[0];
+  const query = `${pick.name} this year against ${up ? 'bottom' : 'top'} 10 defenses`;
+  return (
+    <article className={`hp-slim ${up ? 'is-up' : 'is-down'}`}>
+      <span className="hp-kicker">{kind}</span>
+      <div className="hp-slim-head">
+        <h3 className="hp-slim-name">{pick.name}</h3>
+        <b className="hp-slim-score">{pct(pick.value, 1)}</b>
+      </div>
+      <p className="hp-slim-game">
+        {pick.tricode} vs {pick.opponent}
+        {game && ` · ${tipoff(game.scheduledAt)}`} · PTS matchup
+      </p>
+      <p className="hp-slim-why">
+        {targetSliceLabel('play_types', reason.key)} is {Math.round(reason.share * 100)}% of his
+        plays; {pick.opponent} {rankPhrase(reason.rank)}.
+      </p>
+      <button type="button" className="hp-slim-cta" onClick={() => onUseQuery(query)}>
+        Try it <ArrowRight size={13} aria-hidden="true" />
+      </button>
+    </article>
+  );
+};

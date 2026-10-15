@@ -30,7 +30,7 @@ import {
   tipoff,
 } from './parts';
 import hooks from './mock/hooks.json';
-import { AnswerLadder, Spotlight, SpotlightCard } from './hooks';
+import { AnswerLadder, SlimSpot, Spotlight, SpotlightCard } from './hooks';
 import './prototype.css';
 
 const slateDay = new Date(`${DEMO_DATE}T12:00:00`).toLocaleDateString([], {
@@ -475,7 +475,75 @@ const VariantJ = (props) => {
   );
 };
 
+/* K: I with less on screen. L: K without Targets. */
+const TargetLine = ({ entry }) => {
+  const top = entry.players[0];
+  return (
+    <ProtoLink to={`/targets/${entry.target.id}`} className="hp-tline">
+      <span className="hp-opp">vs {entry.target.opponent}</span>
+      <span className="hp-tline-crit">
+        {entry.target.qualifiers.map(qualifierText).join(' + ')}
+      </span>
+      <span className="hp-tline-fit">
+        {shortName(top.name)}
+        {entry.players.length > 1 && <small> +{entry.players.length - 1}</small>}
+      </span>
+    </ProtoLink>
+  );
+};
+
+const Calm = ({ props, withTargets }) => {
+  const { slate, targets } = props.data;
+  const { best, worst, bestGame, worstGame } = spotPicks(slate);
+  return (
+    <VariantE
+      {...props}
+      heroSlot={
+        <div className="hp-flank hp-calm">
+          <div className="hp-flank-side hp-flank-left">
+            <SlimSpot
+              kind="Best matchup tonight"
+              pick={best}
+              game={bestGame}
+              onUseQuery={props.onUseQuery}
+            />
+          </div>
+          <div className="hp-flank-center">{props.hero}</div>
+          <div className="hp-flank-side hp-flank-right">
+            <SlimSpot
+              kind="Toughest matchup tonight"
+              pick={worst}
+              game={worstGame}
+              onUseQuery={props.onUseQuery}
+            />
+          </div>
+        </div>
+      }
+      middle={
+        withTargets && targets ? (
+          <section className="hp-tlines" aria-label="Your Targets tonight">
+            <div className="hp-tlines-head">
+              <span className="hp-kicker">Your Targets firing tonight</span>
+              <ProtoLink to="/targets" className="hp-more">
+                All {targets.firing.length} →
+              </ProtoLink>
+            </div>
+            {targets.firing.slice(0, 2).map((entry) => (
+              <TargetLine key={entry.target.id} entry={entry} />
+            ))}
+          </section>
+        ) : null
+      }
+      ladder={<AnswerLadder onUseQuery={props.onUseQuery} compact />}
+    />
+  );
+};
+const VariantK = (props) => <Calm props={props} withTargets />;
+const VariantL = (props) => <Calm props={props} withTargets={false} />;
+
 const VARIANTS = {
+  K: VariantK,
+  L: VariantL,
   I: VariantI,
   J: VariantJ,
   H: VariantH,

@@ -12,12 +12,15 @@ import { useSearchParams } from 'react-router-dom';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'historical';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['O', 'A', 'B', 'C'];
+export const VARIANT_KEYS = ['O', 'A', 'B', 'C', 'C1', 'C2', 'C3'];
 export const VARIANT_NAMES = {
   O: 'Current page (baseline)',
   A: 'Stat grid cards · status chips',
   B: 'Box-score table · "About this data"',
   C: 'One stat, vs his average · one-line note',
+  C1: 'C + sheet: plain rows',
+  C2: 'C + sheet: merged slices',
+  C3: 'C + sheet: bars around league average',
 };
 
 export const useVariant = () => {

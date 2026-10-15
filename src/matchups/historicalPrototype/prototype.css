@@ -512,7 +512,229 @@
 }
 
 @media (max-width: 520px) {
-  .proto-switcher { max-width: 96vw; gap: 6px; padding: 5px 6px; }
-  .proto-switcher > span { overflow: hidden; max-width: 34vw; text-overflow: ellipsis; }
-  .proto-switcher select { max-width: 30vw; }
+  .proto-switcher {
+    max-width: 96vw;
+    gap: 6px;
+    padding: 5px 6px;
+  }
+  .proto-switcher > span {
+    overflow: hidden;
+    max-width: 34vw;
+    text-overflow: ellipsis;
+  }
+  .proto-switcher select {
+    max-width: 30vw;
+  }
+}
+
+/* ---- C1–C3: readable Defense Sheets ---- */
+.ps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ps-head {
+  grid-column: 1 / -1;
+}
+.ps-head h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.ps-head p {
+  margin: 2px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.84rem;
+}
+.ps-base {
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  padding: 14px 16px 8px;
+  background: var(--ct-surface);
+}
+.ps-base > h3 {
+  margin: 0 0 4px;
+  color: var(--ct-gold);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ps-row {
+  border-top: 1px solid var(--ct-line);
+  padding: 11px 2px;
+}
+.ps-base > h3 + .ps-row {
+  border-top: 0;
+}
+.ps-row.why {
+  margin: 0 -8px;
+  padding-inline: 10px;
+  background: var(--ct-gold-soft);
+  box-shadow: inset 3px 0 var(--ct-gold);
+}
+.ps-label h4 {
+  margin: 0;
+  font-family: var(--ct-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.ps-label span {
+  color: var(--ct-dim);
+  font-size: 0.84rem;
+}
+.ps .up {
+  color: var(--ct-hit);
+}
+.ps .down {
+  color: var(--ct-miss);
+}
+.ps .flat {
+  color: var(--ct-dim);
+}
+.ps-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0;
+  background: none;
+  color: var(--ct-dim);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.ps-row:hover .ps-save,
+.ps-save:focus-visible {
+  border-color: var(--ct-line-strong);
+  color: var(--ct-gold);
+  opacity: 1;
+}
+.ps-leans {
+  margin: 6px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.84rem;
+}
+.ps-leans b {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+
+/* C1 plain rows */
+.ps-plain {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+.ps-plain > b {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--ct-display);
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.ps-plain > b small {
+  margin-top: 2px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.68rem;
+  font-weight: 400;
+}
+
+/* C2 merged */
+.ps-merged {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+.ps-cells {
+  display: flex;
+  gap: 16px;
+}
+.ps-cells span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 64px;
+}
+.ps-cells small {
+  color: var(--ct-dim);
+  font-size: 0.72rem;
+}
+.ps-cells b {
+  font-family: var(--ct-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.ps-cells em {
+  color: var(--ct-dim);
+  font-size: 0.7rem;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+/* C3 bars */
+.ps-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(70px, 1fr) 54px auto;
+  gap: 10px;
+  align-items: center;
+}
+.ps-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.ps-bar::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 50%;
+  width: 1px;
+  background: var(--ct-line-strong);
+}
+.ps-bar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+.ps-bar i.up {
+  background: var(--ct-hit);
+}
+.ps-bar i.down {
+  background: var(--ct-miss);
+}
+.ps-bar-row > b {
+  font-family: var(--ct-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 820px) {
+  .ps {
+    grid-template-columns: 1fr;
+  }
+  .ps-bar-row {
+    grid-template-columns: minmax(0, 1fr) 60px 48px auto;
+  }
+  .ps-cells {
+    gap: 10px;
+  }
+  .ps-cells span {
+    min-width: 52px;
+  }
 }

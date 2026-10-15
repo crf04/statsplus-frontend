@@ -17,7 +17,7 @@ production payloads from `mock/` with a fake signed-in user.
 
 Game state (switcher dropdown, `?demo=`):
 
-- *(none)* completed game, real capture
+- _(none)_ completed game, real capture
 - `upcoming` upcoming twin with SAMPLE lines (`mock/make_upcoming.py`; rerunnable)
 - `upcoming-bare` the same twin as today's contract sees it: which books post
   which market, no line numbers. Showing real lines needs a backend contract
@@ -33,3 +33,11 @@ the line, or (no line numbers) the Matchup Score.
 C, opening on the Points tab rather than All, so the rail's one stat and the
 Defense Sheet agree on first paint. Real lines need the backend to add line
 numbers to the matchup response.
+
+## Defense Sheet readability (C1–C3)
+
+Same C rail and header, three sheets (`sheets.js`): plain-English slice and
+measure names, rank in words (30 = allows the most), one headline % vs league
+(σ and per-48 in a tooltip), Save as Target as an icon, leans capped at three.
+
+- `?v=C1` plain rows · `?v=C2` one row per slice, measures side by side · `?v=C3` diverging bars

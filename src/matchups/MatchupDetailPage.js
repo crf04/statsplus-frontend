@@ -23,6 +23,7 @@ import './MatchupDetailPage.css';
 import { useVariant } from './historicalPrototype/prototypeMode';
 import PrototypeSwitcher from './historicalPrototype/PrototypeSwitcher';
 import { ProtoEvidence, ProtoRail } from './historicalPrototype/variants';
+import ProtoSheet from './historicalPrototype/sheets';
 import './historicalPrototype/prototype.css';
 
 const WINDOWS = [
@@ -714,7 +715,7 @@ function Detail({ matchup, gameId }) {
   const P = proto.active;
   // PROTOTYPE: variant C's rail reads one stat, so the page opens on Points
   // and the sheet and the rail agree from the first paint.
-  const protoC = P && proto.variant === 'C';
+  const protoC = P && proto.variant.startsWith('C');
   useEffect(() => {
     if (protoC) setMarket('PTS');
   }, [protoC]);
@@ -948,6 +949,18 @@ function Detail({ matchup, gameId }) {
               <h2 id="defense-sheet-heading">{defenseTeam.tricode} Defense Sheet</h2>
               <p className="honest-empty">Defense Sheet unavailable because stats are missing.</p>
             </section>
+          ) : P && proto.variant.length === 2 ? (
+            <ProtoSheet
+              style={proto.variant}
+              team={defenseTeam}
+              players={opposingPlayers}
+              market={market}
+              windowKey={windowKey}
+              deviation={deviation}
+              selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
+              surfaceAvailability={matchup.league.surfaceAvailability}
+              onCapture={setCapture}
+            />
           ) : (
             <DefenseSheet
               team={defenseTeam}

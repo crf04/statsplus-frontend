@@ -27,6 +27,15 @@ export const tipoff = (iso) =>
 export const pct = (value, digits = 0) =>
   `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value * 100).toFixed(digits)}%`;
 
+const SUFFIXES = new Set(['Jr.', 'Sr.', 'II', 'III', 'IV']);
+
+/* "Wendell Carter Jr." → "Carter". */
+export const lastName = (name) => {
+  const parts = name.split(' ');
+  while (parts.length > 1 && SUFFIXES.has(parts.at(-1))) parts.pop();
+  return parts.at(-1);
+};
+
 export const shortName = (name) => {
   const [first, ...rest] = name.split(' ');
   return rest.length ? `${first[0]}. ${rest.join(' ')}` : name;

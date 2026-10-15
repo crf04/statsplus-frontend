@@ -10,7 +10,12 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import PrototypeSwitcher from './PrototypeSwitcher';
 import { DEMO_DATE } from './prototypeMode';
-import { bestEdgeInGame, topEdges, useHomePreviewData } from './useHomePreviewData';
+import {
+  bestEdgeInGame,
+  biggestPtsEffects,
+  topEdges,
+  useHomePreviewData,
+} from './useHomePreviewData';
 import {
   EdgeRow,
   EdgeValue,
@@ -19,6 +24,7 @@ import {
   SectionHead,
   TargetCard,
   gameLabel,
+  lastName,
   qualifierText,
   shortName,
   tipoff,
@@ -294,7 +300,50 @@ const VariantD = ({ hero, ladder, data }) => {
   );
 };
 
-const VARIANTS = { A: VariantA, B: VariantB, C: VariantC, D: VariantD };
+/* E: C's ticker on its own, no Targets. Each game shows its three biggest
+   points Matchup effects, favourable or not. */
+const VariantE = ({ hero, ladder, data }) => {
+  const { slate } = data;
+  return (
+    <div className="hp-c hp-e">
+      <div className="hp-ticker" aria-label="Tonight's slate">
+        <ProtoLink to="/matchups" className="hp-ticker-label">
+          {slateDay}
+          <b>{slate ? slate.games.length : '–'} games</b>
+          <span className="hp-e-legend">PTS matchup</span>
+        </ProtoLink>
+        <div className="hp-ticker-track">
+          {slate?.games.map((game) => (
+            <ProtoLink
+              key={game.gameId}
+              to={`/matchups/${game.gameId}`}
+              className="hp-tick hp-e-tick"
+            >
+              <span className="hp-tick-teams">{gameLabel(game)}</span>
+              <span className="hp-tick-time">{tipoff(game.scheduledAt)}</span>
+              <ul className="hp-e-effects">
+                {biggestPtsEffects(game.gameId).map((player) => (
+                  <li key={player.id}>
+                    <span>
+                      {lastName(player.name)} <small>{player.tricode}</small>
+                    </span>
+                    <EdgeValue value={player.value} />
+                  </li>
+                ))}
+              </ul>
+            </ProtoLink>
+          ))}
+        </div>
+      </div>
+      <div className="landing-container">
+        {hero}
+        {ladder}
+      </div>
+    </div>
+  );
+};
+
+const VARIANTS = { E: VariantE, A: VariantA, B: VariantB, C: VariantC, D: VariantD };
 
 const HomePreviewPrototype = ({ hero, ladder, variant, step }) => {
   const data = useHomePreviewData();

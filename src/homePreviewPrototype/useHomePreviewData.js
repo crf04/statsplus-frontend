@@ -27,6 +27,15 @@ export const topEdges = (gameId, { market = 'PTS', limit = 3, tricode } = {}) =>
     .slice(0, limit)
     .map((player) => ({ ...player, market, value: player.scores[market] }));
 
+/* The largest PTS Matchup Scores in a game by size, either sign. The 8 PPG
+   floor keeps deep-bench players' noisy scores off the ticker. */
+export const biggestPtsEffects = (gameId, limit = 3) =>
+  (edgesByGame.get(gameId) || [])
+    .filter((player) => player.scores.PTS !== null && (player.ppg ?? 0) >= 8)
+    .sort((a, b) => Math.abs(b.scores.PTS) - Math.abs(a.scores.PTS))
+    .slice(0, limit)
+    .map((player) => ({ ...player, value: player.scores.PTS }));
+
 export const bestEdgeInGame = (gameId) =>
   (edgesByGame.get(gameId) || [])
     .filter((player) => (player.ppg ?? 0) >= 10)

@@ -3,9 +3,10 @@
 **Question:** should the home page (`/`, the Query Prompt) preview Matchups
 and Targets, and in what shape?
 
-Variants on the real home, switched by `#proto=home&v=A|B|C|D|Now` (hash,
+Variants on the real home, switched by `#proto=home&v=E|A|B|C|D|Now` (hash,
 not query: on `/` the query string is the Filter Set) or ←/→:
 
+- **E** C without Targets: ticker with the 3 biggest PTS effects per game
 - **A** Targets sidebar (two firing Targets) + slate strip under the search
 - **B** "Tonight" board under the search: full scoreboard + two Targets
 - **C** Scoreboard ticker above the hero + Target pills under the search

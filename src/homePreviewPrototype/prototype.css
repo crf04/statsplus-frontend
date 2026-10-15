@@ -698,3 +698,37 @@
     margin-top: 0;
   }
 }
+
+/* ---- E: ticker only, three PTS effects per game --------------------------- */
+.hp-e-legend {
+  margin-top: 2px;
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.hp-e-tick {
+  min-width: 168px;
+  align-content: start;
+}
+.hp-e-effects {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hp-e-effects li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #c9c2b2;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.hp-e-effects small {
+  color: var(--ct-dim);
+  font-size: 10px;
+}
+.hp-e-effects .hp-edge {
+  font-size: 12px;
+}

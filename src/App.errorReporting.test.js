@@ -31,11 +31,14 @@ test('a render error keeps the fallback UI and is reported', async () => {
   expect(await screen.findByText('Could not load this page.')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
   await Sentry.flush();
-  const messages = sent.flatMap(([, items]) =>
-    items
-      .filter(([header]) => header.type === 'event')
-      .map(([, payload]) => payload.exception.values[0].value),
-  );
-  expect(messages).toContain('page exploded');
+  // Only the boundary attaches the React component stack; the global error
+  // handler also sees the rethrown error but never adds this context.
+  const boundaryEvents = sent
+    .flatMap(([, items]) => items.filter(([header]) => header.type === 'event'))
+    .map(([, payload]) => payload)
+    .filter((payload) => payload.contexts?.react?.componentStack);
+  expect(boundaryEvents.map((payload) => payload.exception.values[0].value)).toEqual([
+    'page exploded',
+  ]);
   await Sentry.close();
 });

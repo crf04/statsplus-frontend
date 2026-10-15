@@ -3,14 +3,34 @@ import * as Sentry from '@sentry/react';
 let enabled = false;
 
 // Auth tokens, emails and request bodies must never leave the browser, so the
-// event keeps only the exception, the tags and the request URL path.
+// event keeps only the exception, the tags and the page path.
+const redact = (text) =>
+  typeof text === 'string'
+    ? text
+        .replace(/[^\s@/=?&"']+@[^\s@/=?&"']+\.[^\s@/=?&"']+/g, '[email]')
+        .replace(/Bearer\s+[\w.~+/=-]+/gi, 'Bearer [token]')
+        .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, '[token]')
+        .replace(/\b(access_token|id_token|token|key)=[^&\s#]+/gi, '$1=[redacted]')
+    : text;
+
+const pathOnly = (url) => {
+  try {
+    const { origin, pathname } = new URL(url);
+    return `${origin}${pathname}`;
+  } catch {
+    return undefined;
+  }
+};
+
 const scrubEvent = (event) => {
   delete event.user;
   delete event.breadcrumbs;
   delete event.extra;
   delete event.contexts?.replay;
+  delete event.message;
+  for (const value of event.exception?.values || []) value.value = redact(value.value);
   if (event.request) {
-    event.request = { url: event.request.url, method: event.request.method };
+    event.request = { url: pathOnly(event.request.url), method: event.request.method };
   }
   return event;
 };

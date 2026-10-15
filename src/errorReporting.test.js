@@ -122,3 +122,22 @@ test('events carry no tokens, emails, request bodies, tracing or replay', async 
     expect.arrayContaining(['BrowserTracing']),
   );
 });
+
+test('events keep the page path only and drop request headers and exception secrets', async () => {
+  initErrorReporting({ dsn: 'https://key@example.ingest.sentry.io/1', transport });
+  window.history.replaceState(
+    {},
+    '',
+    '/matchups?email=someone@example.com#access_token=secret-token',
+  );
+  reportRenderError(new Error('failed for someone@example.com with Bearer secret-token'), {});
+  await Sentry.flush();
+  window.history.replaceState({}, '', '/');
+  const [event] = events();
+  expect(event.request.url).toBe('http://localhost/matchups');
+  expect(event.request.headers).toBeUndefined();
+  expect(event.request.query_string).toBeUndefined();
+  expect(event.request.cookies).toBeUndefined();
+  expect(event.exception.values[0].value).toBe('failed for [email] with Bearer [token]');
+  expect(JSON.stringify(sent)).not.toMatch(/secret-token|someone@example\.com/);
+});

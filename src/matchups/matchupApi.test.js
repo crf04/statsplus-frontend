@@ -1315,6 +1315,41 @@ test.each([
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
+const withLines = (lines) => ({ ...payload, players: [{ ...payload.players[0], lines }] });
+
+test('decodes each book’s posted line per market', () => {
+  const [player] = decodeMatchup(
+    withLines({ prizepicks: { PTS: 27.5, FGA: 19.5 }, underdog: { PTS: 26.5 } }),
+  ).players;
+
+  expect(player.lines).toEqual({ prizepicks: { PTS: 27.5, FGA: 19.5 }, underdog: { PTS: 26.5 } });
+});
+
+test('reads an absent lines field, and a book with no known line, as no lines', () => {
+  expect(decodeMatchup(payload).players[0].lines).toEqual({});
+  expect(decodeMatchup(withLines({ prizepicks: {} })).players[0].lines).toEqual({
+    prizepicks: {},
+  });
+  expect(decodeMatchup(withLines({ prizepicks: { PTS: 0 } })).players[0].lines).toEqual({
+    prizepicks: { PTS: 0 },
+  });
+});
+
+test.each([
+  ['a line for a market the book does not post', { underdog: { FGA: 19.5 } }],
+  ['a line from a book that posts nothing for him', { sleeper: { PTS: 27.5 } }],
+  ['a line for a market nobody posts', { prizepicks: { REB: 6.5 } }],
+  ['a negative line', { prizepicks: { PTS: -0.5 } }],
+  ['a non-finite line', { prizepicks: { PTS: Infinity } }],
+  ['a line sent as text', { prizepicks: { PTS: '27.5' } }],
+  ['a null line', { prizepicks: { PTS: null } }],
+  ['a book whose lines are not a map', { prizepicks: [27.5] }],
+  ['lines that are not a map', [27.5]],
+  ['null lines', null],
+])('rejects %s', (_name, lines) => {
+  expect(() => decodeMatchup(withLines(lines))).toThrow('invalid response');
+});
+
 test('strictly decodes combo, attempts, and AVG rows from the raw selection response', () => {
   const raw = {
     player_id: 2544,
@@ -1517,11 +1552,14 @@ test('treats an absent experience block as the pre-historical live contract', ()
 });
 
 test('reads a game-log participant that carries no posted-market claim', () => {
-  const [participant] = decodeMatchup(historicalPayload()).players;
+  const candidate = historicalPayload();
+  candidate.players[0].lines = {};
+  const [participant] = decodeMatchup(candidate).players;
 
   expect(participant.playerSource).toBe('game_logs');
   expect(participant.postedMarkets).toEqual([]);
   expect(participant.provenance).toEqual({});
+  expect(participant.lines).toEqual({});
   expect(participant.statCategories).toEqual(['PTS', 'FGA']);
   expect(participant.focalGameLine).toEqual({
     gameId: payload.game.game_id,
@@ -1594,6 +1632,12 @@ test.each([
     'provenance on a game-log participant',
     (candidate) => {
       candidate.players[0].provenance = { prizepicks: ['PTS'] };
+    },
+  ],
+  [
+    'a posted line on a game-log participant',
+    (candidate) => {
+      candidate.players[0].lines = { prizepicks: { PTS: 24.5 } };
     },
   ],
   [

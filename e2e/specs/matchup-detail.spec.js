@@ -82,7 +82,7 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
   // Points read Play types only, softest first, with who leans on each.
   await expect(sheet.getByRole('article')).toHaveText([/^Post up/, /^Transition/]);
   await expect(page.getByRole('list', { name: 'Players leaning on Transition' })).toHaveText(
-    'Kawhi Leonard 22% +1.3σ',
+    'Kawhi Leonard 22%',
   );
   await page.screenshot({
     path: testInfo.outputPath('historical-matchup-desktop.png'),
@@ -106,11 +106,11 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
     /^Steals/,
   ]);
   await expect(page.getByRole('list', { name: 'Players leaning on At the rim' })).toHaveText(
-    'James Harden 38% +2.0σKawhi Leonard 30% +1.3σ',
+    'James Harden 38%Kawhi Leonard 30%',
   );
   await expect(
     page.getByRole('list', { name: 'Players leaning on Above-the-break 3s' }),
-  ).toHaveText('James Harden 31% +1.3σ');
+  ).toHaveText('James Harden 31%');
   await categories.getByRole('button', { name: 'FG3A', exact: true }).click();
   await expect(rail.getByRole('article', { name: 'James Harden player' })).toContainText('9FG3A');
   await categories.getByRole('button', { name: 'PTS', exact: true }).click();
@@ -253,7 +253,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   );
   await expect(sheet.getByRole('article')).toHaveText([/^Transition\+12%/, /^Post up\+10%/]);
   await expect(page.getByRole('list', { name: 'Players leaning on Transition' })).toHaveText(
-    'LeBron James 19% +1.3σAustin Reaves 18% +1.2σ',
+    'LeBron James 19%Austin Reaves 18%',
   );
   await expect(page.getByRole('list', { name: 'Players leaning on Post up' })).toHaveCount(0);
   await page.screenshot({
@@ -288,10 +288,10 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   ]);
   await expect(page.getByText(/OPP|Backcourt|Arc3|AtRim/)).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Players leaning on Restricted area' })).toHaveText(
-    'LeBron James 27% +1.2σAustin Reaves 25% +0.8σ',
+    'LeBron James 27%Austin Reaves 25%',
   );
   await expect(page.getByRole('list', { name: 'Players leaning on At the rim' })).toHaveText(
-    'LeBron James 31% +1.4σ',
+    'LeBron James 31%',
   );
   await expect(
     sheet.getByRole('article', { name: 'Transition' }).getByRole('img'),
@@ -735,7 +735,7 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(page.getByText(/displayed Season Diet Share inputs/)).toBeVisible();
   // The slices his diet leans on are the ones the card points at.
   const transition = page.getByRole('article', { name: 'Transition' });
-  await expect(transition).toContainText('LeBron James 19% +1.3σ');
+  await expect(transition).toContainText('LeBron James 19%');
   await expect(page.getByRole('article', { name: 'Post up' })).toBeVisible();
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
   await expect(page.getByRole('article', { name: 'Post up' })).toHaveCount(0);

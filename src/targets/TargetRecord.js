@@ -134,10 +134,6 @@ export default function TargetRecord({
           const rate = hitShare === null ? '—' : `${Math.round(hitShare * 100)}%`;
           const roundedDifference = rounded(aggregate.difference);
           const aggregateRelative = `${formatAggregatePercent(aggregate.relative)} vs baseline`;
-          const aggregateCount =
-            aggregate.count < games.length
-              ? `${aggregate.count} of ${games.length} player-games used`
-              : null;
           const label = (
             <>
               <small>{column}</small>
@@ -154,7 +150,6 @@ export default function TargetRecord({
                 Hit rate <b>{rate}</b>
                 {margins.length !== aggregate.count ? ` · ${margins.length} player-games` : ''}
               </small>
-              {aggregateCount && <small>{aggregateCount}</small>}
             </>
           );
           return (

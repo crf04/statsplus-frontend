@@ -138,7 +138,7 @@ test('a zero-minute game is absent from per36 arithmetic and never graded as zer
   const summary = screen.getByRole('listitem', { name: 'PTS/36' });
   expect(summary).toHaveTextContent('0%');
   expect(summary).toHaveTextContent('0.0 PTS/36');
-  expect(summary).toHaveTextContent('1 of 2 player-games used');
+  expect(summary).not.toHaveTextContent('player-games used');
   const absent = screen.getByRole('listitem', { name: /2026-01-02/ });
   expect(absent).toHaveClass('grade-unavailable');
   expect(absent).toHaveAttribute('title', expect.stringContaining('— PTS/36'));
@@ -418,7 +418,7 @@ test('missing game values reduce aggregate evidence without changing the valid h
   expect(summary).toHaveTextContent('+5.0 PTS/game');
   expect(summary).toHaveTextContent('+50% vs baseline');
   expect(summary).toHaveTextContent('Hit rate 100%');
-  expect(summary).toHaveTextContent('1 of 2 player-games used');
+  expect(summary).not.toHaveTextContent('player-games used');
   expect(screen.getByRole('listitem', { name: /2026-01-02/ })).toHaveClass('grade-unavailable');
 });
 
@@ -457,7 +457,7 @@ test('an efficiency denominator of zero excludes that game from the aggregate', 
   );
   const summary = screen.getByRole('listitem', { name: 'FG%' });
   expect(summary).toHaveTextContent('0.0 pp');
-  expect(summary).toHaveTextContent('1 of 2 player-games used');
+  expect(summary).not.toHaveTextContent('player-games used');
   expect(screen.getByRole('listitem', { name: /2026-01-02/ })).toHaveClass('grade-unavailable');
 });
 
@@ -499,7 +499,7 @@ test('missing minutes and legacy rates remain visible individually but leave agg
   summary = screen.getByRole('listitem', { name: 'FG%' });
   expect(summary).toHaveTextContent('— pp');
   expect(summary).toHaveTextContent('Hit rate 100% · 1 player-games');
-  expect(summary).toHaveTextContent('0 of 1 player-games used');
+  expect(summary).not.toHaveTextContent('player-games used');
   expect(screen.getByRole('listitem', { name: /2026-01-01/ })).toHaveAttribute(
     'title',
     expect.stringContaining('+10.0 margin'),

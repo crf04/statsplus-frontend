@@ -28,11 +28,15 @@ Each variant keeps its rail shape across states: A's grid and B's table hold
 the box score after the game and lines before it; C's big number is the result,
 the line, or (no line numbers) the Matchup Score.
 
-## Verdict (2026-10-14, provisional)
+## Verdict (2026-10-15)
 
-C, opening on the Points tab rather than All, so the rail's one stat and the
-Defense Sheet agree on first paint. Real lines need the backend to add line
-numbers to the matchup response.
+**C8**: variant C's one-stat player list (opens on Points; All shows points),
+the one-sentence header, and the refined sheet — categories without boxes,
+one row per slice with Attempts | Makes columns, rank as a marker on a
+fewest→most track, softest spots first, every player above league listed
+under the slice. Lines ship with it (backend adds them to the matchup
+response). Spec: crf04/statsplus#179; children crf04/statsplus-backend#372,
+crf04/statsplus-frontend#198.
 
 ## Defense Sheet readability (C1–C3)
 

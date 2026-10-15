@@ -1426,6 +1426,12 @@ const seasonsByPlayer = {
   ...Object.fromEntries(leaguePlayers.map((player) => [player.name, leagueSeason(player)])),
 };
 
+// The game-log route names each player by NBA person id, for their headshot.
+const playerIdsByName = {
+  'Stephen Curry': 201939,
+  ...Object.fromEntries(leaguePlayers.map((player) => [player.name, player.canonical_id])),
+};
+
 // The real endpoint narrows the season by the self filters it is sent. The
 // contract has to narrow too, or a test cannot tell a filtered result set from
 // the unfiltered season the Self Filters ranges are supposed to come from.
@@ -2670,7 +2676,8 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/games/game_logs') {
-      const season = seasonsByPlayer[url.searchParams.get('player_name')] || gameLogs;
+      const playerName = url.searchParams.get('player_name');
+      const season = seasonsByPlayer[playerName] || gameLogs;
       await route.fulfill({
         json: {
           game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
@@ -2679,6 +2686,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           // Like the real endpoint, the season total ignores every filter.
           season_game_count: season.length,
           next_game: 'Atlanta Hawks',
+          player_id: playerIdsByName[playerName] ?? null,
         },
       });
       return;

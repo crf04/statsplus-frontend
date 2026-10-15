@@ -64,7 +64,6 @@ jest.mock('./PerformanceAverages', () => {
 });
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
-jest.mock('./PlayerStatsCards', () => ({ __esModule: true, default: () => null }));
 
 let mockAuthState;
 let mockFilterPatch;
@@ -482,4 +481,44 @@ test('hides the sample size while the next request is in flight', async () => {
     resolveNext({ gameLogs: logs(5), averages, seasonGameCount: 60, nextGame: null }),
   );
   expect(screen.getByText('5 of 60 games')).toBeVisible();
+});
+
+test('shows the headshot for the player each response names, and not a stale one', async () => {
+  const averages = [
+    { MIN: 30, PTS: 20 },
+    { MIN: 34, PTS: 25 },
+  ];
+  const response = (playerId) => ({
+    gameLogs: [],
+    averages,
+    seasonGameCount: 60,
+    nextGame: null,
+    playerId,
+  });
+  fetchGameLogsData.mockResolvedValueOnce(response(203999));
+  renderGameLogFilter(['/?player_name=Nikola+Jokic']);
+  expect(await screen.findByRole('img', { name: 'Nikola Jokic' })).toHaveAttribute(
+    'src',
+    'https://cdn.nba.com/headshots/nba/latest/260x190/203999.png',
+  );
+
+  const pending = [];
+  fetchGameLogsData.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        pending.push(resolve);
+      }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(pending).toHaveLength(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(pending).toHaveLength(2));
+
+  // The newer response carries no id; the superseded one arriving late must not
+  // put an id back.
+  await act(async () => pending[1](response(null)));
+  await act(async () => pending[0](response(203999)));
+
+  expect(screen.queryByRole('img', { name: 'Nikola Jokic' })).not.toBeInTheDocument();
+  expect(screen.getByText('NJ')).toBeVisible();
 });

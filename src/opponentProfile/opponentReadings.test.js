@@ -139,6 +139,8 @@ test('payloads of the wrong shape have no readings', () => {
 test('the bar scale is the widest gap from league, rounded up to 5%', () => {
   expect(barScale([{ rows: [{ vs: -13.1 }, { vs: 2 }] }])).toBe(15);
   expect(barScale([{ rows: [{ vs: 1 }, { vs: null }] }])).toBe(5);
+  // With nothing off average the scale still spans ±5%, never zero.
+  expect(barScale([{ rows: [{ vs: 0 }, { vs: null }] }])).toBe(5);
 });
 
 const group = (title, rows) => ({
@@ -157,6 +159,11 @@ test('lists of up to twelve lines stay in one column', () => {
   expect(shape(splitColumns([group('Volume', 2), group('By shot', 7)]))).toEqual([
     ['Volume:2', 'By shot:7'],
   ]);
+});
+
+test('twelve lines is the most one column holds', () => {
+  expect(splitColumns([group(null, 12)])).toHaveLength(1);
+  expect(shape(splitColumns([group(null, 13)]))).toEqual([['null:7'], ['null:6+']]);
 });
 
 test('longer lists split between groups when that balances', () => {

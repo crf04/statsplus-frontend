@@ -21,9 +21,9 @@ const Rank = ({ rank }) =>
 const Bar = ({ row, scale }) => {
   const width = row.vs === null ? 0 : (Math.min(Math.abs(row.vs), scale) / scale) * 50;
   return (
-    <div className="opp-bars-row">
+    <div className="opp-bars-row" role="listitem">
       <span className="opp-bars-label">
-        {row.label}
+        <span>{row.label}</span>
         {row.value !== null && <span className="opp-bars-value">{row.value}</span>}
       </span>
       <span className="opp-bars-track" aria-hidden="true">
@@ -77,9 +77,11 @@ const Group = ({ group, scale }) => (
         {group.head && <span className="opp-bars-group-head">{group.head}</span>}
       </div>
     )}
-    {group.rows.map((row) => (
-      <Bar key={row.key} row={row} scale={scale} />
-    ))}
+    <div role="list" aria-label={group.title ?? undefined}>
+      {group.rows.map((row) => (
+        <Bar key={row.key} row={row} scale={scale} />
+      ))}
+    </div>
   </div>
 );
 

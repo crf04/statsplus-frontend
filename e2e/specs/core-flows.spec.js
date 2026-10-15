@@ -1825,30 +1825,26 @@ test('@critical the Traditional profile splits opponent rebounds into offensive 
   await page.goto('/?player_name=LeBron+James');
   await expect(page.getByRole('heading', { name: 'Opposing Team Profile' })).toBeVisible();
 
-  // The Traditional view is the default, and every stat renders as one row
-  // whose second cell carries the value, its rank, and its league-average
-  // comparison.
-  const statRow = (label) =>
-    page.getByRole('row').filter({ has: page.getByRole('cell', { name: label, exact: true }) });
-  const readout = (label) => statRow(label).getByRole('cell').nth(1);
+  // The Traditional view is the default, and every stat renders as one bar
+  // that carries its value, its rank, and its league-average comparison.
+  const readout = (label) =>
+    page.getByRole('listitem').filter({ has: page.getByText(label, { exact: true }) });
 
-  const offensive = readout('OREB');
-  await expect(offensive.getByText('10.62', { exact: true })).toBeVisible();
-  await expect(offensive.getByText('7', { exact: true })).toBeVisible();
+  const offensive = readout('Off. rebounds');
+  await expect(offensive.getByText('10.6', { exact: true })).toBeVisible();
+  await expect(offensive.getByTitle('Rank 7 of 30')).toHaveText('7');
   // A negative comparison reads as fewer offensive boards allowed than the
   // league average, which is the whole point of an ascending defensive rank.
-  await expect(offensive.getByText('-4.75%', { exact: true })).toBeVisible();
-  await expect(offensive).not.toContainText('N/A');
+  await expect(offensive.getByText('−4.8%', { exact: true })).toBeVisible();
 
-  const defensive = readout('DREB');
-  await expect(defensive.getByText('33.48', { exact: true })).toBeVisible();
-  await expect(defensive.getByText('24', { exact: true })).toBeVisible();
-  await expect(defensive.getByText('3.86%', { exact: true })).toBeVisible();
-  await expect(defensive).not.toContainText('N/A');
+  const defensive = readout('Def. rebounds');
+  await expect(defensive.getByText('33.5', { exact: true })).toBeVisible();
+  await expect(defensive.getByTitle('Rank 24 of 30')).toHaveText('24');
+  await expect(defensive.getByText('+3.9%', { exact: true })).toBeVisible();
 
   // The split has to agree with the total the profile already published, or the
   // reader is looking at contradictory rebound data.
-  await expect(readout('REB').getByText('44.10', { exact: true })).toBeVisible();
+  await expect(readout('Rebounds').getByText('44.1', { exact: true })).toBeVisible();
 });
 
 test('the workspace draws the game-log chart with the registered Chart.js pieces', async ({

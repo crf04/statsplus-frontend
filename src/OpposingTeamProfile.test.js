@@ -37,6 +37,13 @@ test('Traditional shows each reading as a labelled bar, split into two columns',
   expect(scoring.getByTitle('Rank 7 of 30')).toHaveTextContent('7');
   expect(scoring.getByText('−13%')).toBeInTheDocument();
   expect(within(columns[1]).getByText('Defense events')).toBeInTheDocument();
+  // Bars grow from the centre line in proportion to the gap, on a ±15% scale.
+  const bar = (label) =>
+    screen.getByText(label).closest('[role="listitem"]').querySelector('.opp-bars-fill');
+  expect(bar('Points')).toHaveClass('opp-bars-fill-less');
+  expect(bar('Points').style.right).toBe('50%');
+  expect(parseFloat(bar('Points').style.width)).toBeCloseTo(12.3, 1);
+  expect(parseFloat(bar('FT attempts').style.width)).toBeCloseTo(43.65, 1);
   expect(screen.queryByText('Value (Rank & vs Avg %)')).not.toBeInTheDocument();
 });
 

@@ -7,17 +7,29 @@ import { RankCube } from './utils';
 import { getApiUrl } from './config';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 
-const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
+const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }) => {
   const [selectedCategory, setSelectedCategory] = useState('Traditional');
   const [teamStats, setTeamStats] = useState(null);
   const [dateFilter, setDateFilter] = useState('');
   const [debouncedDateFilter, setDebouncedDateFilter] = useState('');
   const dateTimeoutRef = useRef(null);
   const requestIdRef = useRef(0);
+  // The read last finished for, so "settled" is judged against the current
+  // inputs rather than whatever was on screen before them.
+  const [settledFor, setSettledFor] = useState(null);
+  const readKey = selectedTeam
+    ? `${selectedTeam}|${selectedCategory}|${debouncedDateFilter}`
+    : null;
+  const settled = !readKey || settledFor === readKey;
+
+  useEffect(() => {
+    if (settled) onSettled?.(selectedTeam);
+  }, [settled, selectedTeam, onSettled]);
 
   const fetchTeamStats = useCallback(
     (signal) => {
       const requestId = ++requestIdRef.current;
+      setSettledFor(null);
 
       if (selectedTeam && selectedCategory) {
         const endpoint = getApiUrl('TEAM_STATS');
@@ -38,6 +50,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
               console.error('Received invalid data format for team stats');
               setTeamStats(null);
             }
+            setSettledFor(readKey);
           })
           .catch((error) => {
             if (signal?.aborted || requestId !== requestIdRef.current) return;
@@ -46,12 +59,13 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam }) => {
               error.response?.status || error.message,
             );
             setTeamStats(null);
+            setSettledFor(readKey);
           });
       } else {
         setTeamStats(null);
       }
     },
-    [selectedTeam, selectedCategory, debouncedDateFilter],
+    [selectedTeam, selectedCategory, debouncedDateFilter, readKey],
   );
 
   useEffect(() => {

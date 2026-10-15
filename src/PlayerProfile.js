@@ -9,7 +9,7 @@ import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { formatNumber, formatPercent, toFiniteNumber } from './numberUtils';
 
-const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
+const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
@@ -17,6 +17,10 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
   const [teamLoading, setTeamLoading] = useState(false);
   const [playerError, setPlayerError] = useState(null);
   const [teamError, setTeamError] = useState(null);
+  // The read each half last finished for, so "settled" is judged against the
+  // current inputs rather than a loading flag an effect has yet to raise.
+  const [playerSettledFor, setPlayerSettledFor] = useState(null);
+  const [teamSettledFor, setTeamSettledFor] = useState(null);
   const profileOpponent = selectedProfile === 'Archetype' ? selectedTeam : undefined;
   const hasPlayer = selectedPlayer !== 'None';
   const teamCategory =
@@ -26,12 +30,24 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
         ? 'Assists'
         : null;
   const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
+  const playerReadKey = hasPlayer
+    ? `${selectedPlayer}|${selectedProfile}|${profileOpponent}`
+    : null;
+  const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}` : null;
+  const settled =
+    (!playerReadKey || playerSettledFor === playerReadKey) &&
+    (!teamReadKey || teamSettledFor === teamReadKey);
+
+  useEffect(() => {
+    if (settled) onSettled?.(selectedPlayer, selectedTeam);
+  }, [settled, selectedPlayer, selectedTeam, onSettled]);
 
   useEffect(() => {
     const controller = new AbortController();
     setPlayerData(null);
     setPlayerError(null);
     setPlayerLoading(hasPlayer);
+    setPlayerSettledFor(null);
     if (hasPlayer) {
       apiClient
         .get(getApiUrl('PLAYER_PROFILE'), {
@@ -52,17 +68,20 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
             setPlayerError(withRequestReference('Failed to fetch data. Please try again.', error));
         })
         .finally(() => {
-          if (!controller.signal.aborted) setPlayerLoading(false);
+          if (controller.signal.aborted) return;
+          setPlayerLoading(false);
+          setPlayerSettledFor(playerReadKey);
         });
     }
     return () => controller.abort();
-  }, [selectedPlayer, selectedProfile, profileOpponent, hasPlayer]);
+  }, [selectedPlayer, selectedProfile, profileOpponent, hasPlayer, playerReadKey]);
 
   useEffect(() => {
     const controller = new AbortController();
     setTeamData(null);
     setTeamError(null);
     setTeamLoading(Boolean(comparisonTeam));
+    setTeamSettledFor(null);
     if (comparisonTeam) {
       apiClient
         .get(getApiUrl('TEAM_STATS'), {
@@ -82,11 +101,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam }) => {
             setTeamError(withRequestReference('Failed to fetch data. Please try again.', error));
         })
         .finally(() => {
-          if (!controller.signal.aborted) setTeamLoading(false);
+          if (controller.signal.aborted) return;
+          setTeamLoading(false);
+          setTeamSettledFor(teamReadKey);
         });
     }
     return () => controller.abort();
-  }, [teamCategory, comparisonTeam]);
+  }, [teamCategory, comparisonTeam, teamReadKey]);
 
   const loading = playerLoading || (Boolean(teamCategory) && teamLoading);
   const error = [...new Set([playerError, teamCategory && teamError].filter(Boolean))].join(' ');

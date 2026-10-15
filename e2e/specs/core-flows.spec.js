@@ -1377,6 +1377,32 @@ test('the applied-filter badges describe the data after a player change', async 
   await expect(page.getByText('GAMES <= 5')).toHaveCount(badgePlaces);
 });
 
+test('the Log Workspace appears in one piece once every section has answered', async ({
+  authenticatedPage: page,
+}) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  // The opposing team's stats answer last; nothing else may appear before them.
+  await page.route('**/api/teams/stats**', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('category') === 'Traditional') {
+      await held;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/?player_name=LeBron+James');
+  await expect(page.getByText('Loading game logs…')).toBeVisible();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Player Profile', exact: true })).toBeHidden();
+
+  release();
+  await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Player Profile', exact: true })).toBeVisible();
+  await expect(page.getByText('Loading game logs…')).toBeHidden();
+});
+
 test("a player change never leaves the previous player's rows under the new name", async ({
   authenticatedPage: page,
 }) => {

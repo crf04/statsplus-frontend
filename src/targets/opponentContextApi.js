@@ -1,7 +1,7 @@
 import { apiClient, getApiUrl } from '../config';
 import { TARGET_SLICES } from './targetCatalog';
 
-const TEAM_CODES = {
+export const TEAM_CODES = {
   'Atlanta Hawks': 'ATL',
   'Boston Celtics': 'BOS',
   'Brooklyn Nets': 'BKN',

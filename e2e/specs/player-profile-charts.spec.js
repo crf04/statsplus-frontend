@@ -121,3 +121,54 @@ test('player profile charts render and explain the hovered category', async ({ p
   await expect(shotValues.getByText('Team Defense: -10.00% (Rank: 6)')).toBeVisible();
   await expect(locations.getByText('Arc3 Assists')).toBeHidden();
 });
+
+for (const viewport of [
+  { width: 1440, height: 1000 },
+  { width: 390, height: 844 },
+]) {
+  test(`Shooting Type and Zone Shooting fit the card at ${viewport.width}px and follow the opponent`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript((storageKey) => {
+      window.localStorage.setItem(storageKey, 'true');
+    }, E2E_AUTH_STORAGE_KEY);
+    await installApiContract(page);
+    await page.goto('/?player_name=LeBron+James');
+
+    const card = page.locator('.dark-card', {
+      has: page.getByRole('heading', { name: 'Player Profile', exact: true }),
+    });
+    // Nothing inside the card reaches past its right edge.
+    const overflow = () =>
+      card.evaluate((element) => {
+        const edge = element.getBoundingClientRect().right + 1;
+        return [...element.querySelectorAll('*')].filter(
+          (node) => node.getBoundingClientRect().right > edge,
+        ).length;
+      });
+
+    await card.getByText('Shooting Type', { exact: true }).click();
+    const catchAndShoot = card.getByRole('row', { name: /^Catch & shoot/ });
+    await expect(catchAndShoot).toContainText('20%');
+    await expect(catchAndShoot).toContainText('lg 35%');
+    await expect(catchAndShoot).toContainText('40.2%');
+    await expect(catchAndShoot).toContainText('1.4/3.5');
+    expect(await overflow()).toBe(0);
+
+    await card.getByText('Zone Shooting', { exact: true }).click();
+    await expect(card.getByText('Shot zones · vs ATL')).toBeVisible();
+    await expect(
+      card.getByRole('img', { name: 'Shot zones half court against ATL' }),
+    ).toBeVisible();
+    await expect(card.getByText('31%', { exact: true }).first()).toBeVisible();
+    await expect(card.getByText('18th · −0.3%', { exact: true }).first()).toBeVisible();
+    expect(await overflow()).toBe(0);
+
+    const opponentCard = page.locator('.dark-card', {
+      has: page.getByRole('heading', { name: 'Opposing Team Profile' }),
+    });
+    await opponentCard.getByRole('combobox').first().selectOption('Dallas Mavericks');
+    await expect(card.getByText('Shot zones · vs DAL')).toBeVisible();
+  });
+}

@@ -1,0 +1,218 @@
+/* Shooting Type and Zone Shooting in the Player Profile card. Both size to the
+   card (container queries), never to the viewport, so neither scrolls sideways. */
+
+.ps {
+  --ps-untinted: rgba(255, 255, 255, 0.05);
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  margin-top: 16px;
+  text-align: left;
+  color: var(--ct-text);
+}
+
+.ps-caption {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+
+/* ---------- Shooting Type ---------- */
+.ps-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.ps-col-name {
+  width: 27%;
+}
+.ps-table th {
+  padding: 0 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+  text-align: right;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+.ps-table td {
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--ct-line);
+  text-align: right;
+  vertical-align: top;
+  overflow: hidden;
+}
+.ps-table tbody tr:hover {
+  background: rgba(232, 163, 61, 0.05);
+}
+.ps-table .ps-left {
+  text-align: left;
+}
+.ps-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.ps-main,
+.ps-sub {
+  display: block;
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ps-main {
+  font-size: 14px;
+}
+.ps-sub {
+  margin-top: 2px;
+  min-height: 1.2em;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+.ps-bar {
+  position: relative;
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: var(--ct-line);
+}
+.ps-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ct-gold);
+}
+.ps-bar-tick {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ct-text);
+  opacity: 0.7;
+}
+
+@container (max-width: 360px) {
+  .ps-main,
+  .ps-name {
+    font-size: 12.5px;
+  }
+  .ps-sub {
+    font-size: 10px;
+  }
+  .ps-table th {
+    padding-inline: 2px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .ps-table td {
+    padding-inline: 2px;
+  }
+}
+
+/* ---------- Zone Shooting ---------- */
+.ps-heading {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+}
+.ps-court-wrap {
+  max-width: 440px;
+  margin: 0 auto;
+}
+.ps-court {
+  position: relative;
+  container-type: inline-size;
+}
+.ps-court svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.ps-hoop {
+  stroke: var(--ct-text);
+  stroke-opacity: 0.5;
+}
+.ps-region {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--ct-text);
+}
+.ps-region b,
+.ps-region small {
+  display: block;
+  font-family: var(--ct-mono);
+}
+.ps-region b {
+  font-size: clamp(12px, 4.4cqw, 16px);
+  font-weight: 700;
+}
+.ps-region small {
+  font-size: clamp(9px, 3cqw, 11px);
+  opacity: 0.85;
+}
+.ps-region.ps-corner {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+.ps-region.ps-corner b,
+.ps-region.ps-corner small {
+  display: inline;
+  font-size: clamp(8px, 2.4cqw, 11px);
+}
+.ps-region.ps-corner small {
+  margin-left: 3px;
+}
+.ps-key {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+.ps-region.ps-key-cell {
+  position: static;
+  transform: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.ps-region.ps-key-cell b {
+  font-size: 13px;
+}
+.ps-key-lines {
+  display: grid;
+  gap: 3px;
+  line-height: 1.25;
+}
+.ps-key-none,
+.ps-key-scale {
+  justify-self: center;
+  height: 10px;
+  border-radius: 3px;
+}
+.ps-key-none {
+  width: 22px;
+  background: var(--ps-untinted);
+  outline: 1px solid var(--ct-line-strong);
+  outline-offset: -1px;
+}
+.ps-key-scale {
+  width: 54px;
+  background: linear-gradient(
+    90deg,
+    rgba(194, 78, 78, 0.7),
+    rgba(255, 255, 255, 0.06),
+    rgba(76, 175, 125, 0.75)
+  );
+}

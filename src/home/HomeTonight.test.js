@@ -3,6 +3,11 @@ import { MemoryRouter } from 'react-router-dom';
 import HomeTonight from './HomeTonight';
 import HomeTicker from './HomeTicker';
 
+// Target cards read Conditions through the account's roster cache.
+jest.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({ currentUser: { uid: 'reader-a' }, isAuthenticated: true, loading: false }),
+}));
+
 const reason = {
   base: 'play_types',
   sliceKey: 'Transition',
@@ -106,6 +111,11 @@ test('the ticker lists each game with its effects by last name and links to its 
   );
   const cell = screen.getByRole('link', { name: 'MIA at WAS Matchup' });
   expect(cell).toHaveAttribute('href', '/matchups/g1');
+  expect(cell).toHaveTextContent(
+    new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
+      new Date('2026-04-10T23:00:00Z'),
+    ),
+  );
   expect(
     within(cell)
       .getAllByRole('listitem')
@@ -175,4 +185,12 @@ test('a failed Targets read leaves Tonight on its own', () => {
 
   expect(screen.getByRole('heading', { name: 'Tonight' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Your Targets' })).not.toBeInTheDocument();
+});
+
+test("a Target's saved Conditions show under its criteria", () => {
+  const dated = entry(7, 'WAS', [[10, 'Tyler Herro']]);
+  dated.target.conditions = { defender: null, from: '2026-01-01', to: null, playerMinutes: null };
+  renderTonight({ targets: { total: 1, firing: [dated] } });
+
+  expect(screen.getByRole('link', { name: /fit$/ })).toHaveTextContent('from 2026-01-01');
 });

@@ -383,93 +383,6 @@ const scores = (markets, seasonValue, last15Value, { zeroMarkets = [] } = {}) =>
     ]),
   );
 
-/*
- * Slate Edges for any date that lists the scheduled LAL @ BOS game: the
- * recorded shape of `GET /api/games/slate/edges` (crf04/statsplus#204), with
- * the three players the game's Matchup fixture carries.
- */
-export const slateEdgesPayload = (date, games) => ({
-  slate_date: date,
-  games: games.map((game) => ({
-    game_id: game.game_id,
-    effects:
-      game.game_id === slateGame.game_id
-        ? [
-            {
-              canonical_id: 2544,
-              name: 'LeBron James',
-              tricode: 'LAL',
-              season_scoring: 25.4,
-              value: 0.091,
-              thin: false,
-            },
-            {
-              canonical_id: 1628369,
-              name: 'Jayson Tatum',
-              tricode: 'BOS',
-              season_scoring: 27.2,
-              value: -0.064,
-              thin: false,
-            },
-            {
-              canonical_id: 1630559,
-              name: 'Austin Reaves',
-              tricode: 'LAL',
-              season_scoring: 20.1,
-              value: 0.032,
-              thin: false,
-            },
-          ]
-        : [],
-    scores:
-      game.game_id === slateGame.game_id
-        ? [
-            { canonical_id: 2544, value: 0.091 },
-            { canonical_id: 1628369, value: -0.064 },
-            { canonical_id: 1630559, value: 0.032 },
-          ]
-        : [],
-  })),
-  spotlight: games.some((game) => game.game_id === slateGame.game_id)
-    ? {
-        best: {
-          game_id: slateGame.game_id,
-          canonical_id: 2544,
-          name: 'LeBron James',
-          tricode: 'LAL',
-          opponent: 'BOS',
-          season_scoring: 25.4,
-          value: 0.091,
-          reason: {
-            base: 'play_types',
-            slice_key: 'Transition',
-            share: 0.24,
-            league_average_share: 0.18,
-            opponent_rank: 28,
-            opponent_percent_vs_league: 12.4,
-          },
-        },
-        toughest: {
-          game_id: slateGame.game_id,
-          canonical_id: 1628369,
-          name: 'Jayson Tatum',
-          tricode: 'BOS',
-          opponent: 'LAL',
-          season_scoring: 27.2,
-          value: -0.064,
-          reason: {
-            base: 'play_types',
-            slice_key: 'Isolation',
-            share: 0.19,
-            league_average_share: 0.08,
-            opponent_rank: 3,
-            opponent_percent_vs_league: -11.2,
-          },
-        },
-      }
-    : { best: null, toughest: null },
-});
-
 export const matchupPayload = {
   game: {
     ...slateGame,
@@ -712,6 +625,111 @@ const HISTORICAL_LAST_15_MISSING = [
   'team_defense:assist_locations',
   'team_defense:traditional',
 ];
+
+/*
+ * Slate Edges (crf04/statsplus#204), derived from the scheduled game's own
+ * Matchup fixture by the contract's rules, so the home page and the Matchup
+ * page read the same numbers: season PTS Blend (or the single component when
+ * nothing is missing), effects at 8+ PPG by size, the spotlight from non-thin
+ * Blends at 12+ PPG, and the play-type slice whose opponent reading pushes
+ * hardest in the score's direction.
+ */
+const seasonPoints = (player) => {
+  const season = player.scores?.PTS?.season;
+  if (!season) return null;
+  if (season.blend) return { value: season.blend.value, thin: season.blend.thin, blend: true };
+  const components = Object.values(season.components || {});
+  if ((season.missing_inputs || []).length > 0 || components.length !== 1) return null;
+  return { value: components[0].value, thin: components[0].thin, blend: false };
+};
+
+const edgesFromMatchup = (matchup) => {
+  const tricodeOf = (teamId) => matchup.teams.find((team) => team.team_id === teamId)?.tricode;
+  const scored = matchup.players
+    .map((player) => ({ player, points: seasonPoints(player) }))
+    .filter(({ points }) => points !== null);
+  const effects = scored
+    .filter(({ player }) => player.season_scoring >= 8)
+    .sort((a, b) => Math.abs(b.points.value) - Math.abs(a.points.value))
+    .slice(0, 3)
+    .map(({ player, points }) => ({
+      canonical_id: player.canonical_id,
+      name: player.name,
+      tricode: player.tricode,
+      season_scoring: player.season_scoring,
+      value: points.value,
+      thin: points.thin,
+    }));
+  const pick = (direction) => {
+    const candidate = scored
+      .filter(
+        ({ player, points }) =>
+          points.blend &&
+          !points.thin &&
+          player.season_scoring >= 12 &&
+          points.value * direction > 0,
+      )
+      .sort((a, b) => (b.points.value - a.points.value) * direction)[0];
+    if (!candidate) return null;
+    const { player, points } = candidate;
+    const opponent = matchup.teams.find((team) => team.team_id !== player.team_id);
+    const readings = Object.fromEntries(
+      (opponent.defense_sheet.play_types || []).map((row) => [row.key, row.season]),
+    );
+    const reason = [...(player.diet_shares.play_types || [])]
+      .sort((a, b) => b.season.share - a.season.share)
+      .slice(0, 2)
+      .filter((row) => readings[`${row.key}:PTS`])
+      .sort(
+        (a, b) =>
+          (readings[`${b.key}:PTS`].percent_vs_league_average -
+            readings[`${a.key}:PTS`].percent_vs_league_average) *
+          direction,
+      )[0];
+    const reading = readings[`${reason.key}:PTS`];
+    return {
+      game_id: matchup.game.game_id,
+      canonical_id: player.canonical_id,
+      name: player.name,
+      tricode: player.tricode,
+      opponent: tricodeOf(opponent.team_id),
+      season_scoring: player.season_scoring,
+      value: points.value,
+      reason: {
+        base: 'play_types',
+        slice_key: reason.key,
+        share: reason.season.share,
+        league_average_share: reason.season.league_average_share,
+        opponent_rank: reading.rank,
+        opponent_percent_vs_league: reading.percent_vs_league_average,
+      },
+    };
+  };
+  return {
+    effects,
+    scores: scored.map(({ player, points }) => ({
+      canonical_id: player.canonical_id,
+      value: points.value,
+    })),
+    best: pick(1),
+    toughest: pick(-1),
+  };
+};
+
+export const slateEdgesPayload = (date, games) => {
+  const scheduled = games.some((game) => game.game_id === matchupPayload.game.game_id)
+    ? edgesFromMatchup(matchupPayload)
+    : null;
+  return {
+    slate_date: date,
+    games: games.map((game) => ({
+      game_id: game.game_id,
+      effects: game.game_id === matchupPayload.game.game_id ? scheduled.effects : [],
+      scores: game.game_id === matchupPayload.game.game_id ? scheduled.scores : [],
+    })),
+    spotlight: { best: scheduled?.best ?? null, toughest: scheduled?.toughest ?? null },
+  };
+};
 
 const historicalGame = {
   game_id: HISTORICAL_GAME_ID,

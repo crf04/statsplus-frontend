@@ -12,9 +12,16 @@ import './QueryLadder.css';
  * `currentQuery` rides along to the reference page so a half-typed query
  * survives the trip there and back.
  */
+// What a screen reader hears for an answered rung.
+const answerLabel = (answer, previous) => {
+  const change = previous ? Math.round((answer.points - previous.points) * 10) / 10 : null;
+  const delta = change === null ? '' : `, ${signed(change)} from the step before`;
+  return `${answer.points.toFixed(1)} points per game${delta}, over ${answer.games} games.`;
+};
+
 const signed = (value) => `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}`;
 
-/* One bar per kept game, oldest first; gold where the game beat this rung's average. */
+/* One bar per kept game, oldest first; gold where the game was above this rung's average. */
 const LadderAnswer = ({ answer, previous }) => {
   const peak = Math.max(...answer.series, 1);
   const change = previous ? Math.round((answer.points - previous.points) * 10) / 10 : null;
@@ -32,7 +39,7 @@ const LadderAnswer = ({ answer, previous }) => {
           <i
             // Bars never reorder: a game's position is its date.
             key={game}
-            className={points >= answer.points ? 'is-over' : undefined}
+            className={points > answer.points ? 'is-over' : undefined}
             style={{ height: `${Math.max(6, (points / peak) * 100)}%` }}
           />
         ))}
@@ -85,7 +92,9 @@ const QueryLadder = ({ onUseQuery, disabled = false, currentQuery = '', answers 
               <button
                 type="button"
                 className="query-ladder-button"
-                aria-label={`${step.rung}. Loads ${step.query}. Adds ${step.added}.`}
+                aria-label={`${step.rung}. Loads ${step.query}. Adds ${step.added}.${
+                  answers ? ` ${answerLabel(answers[index], answers[index - 1])}` : ''
+                }`}
                 onClick={() => onUseQuery(step.query)}
                 disabled={disabled}
               >

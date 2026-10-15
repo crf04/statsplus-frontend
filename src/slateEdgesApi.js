@@ -37,8 +37,25 @@ const decodeScore = (score) => {
   return [requireNumber(score.canonical_id), requireNumber(score.value)];
 };
 
+// The contract's bounds, refused rather than rendered: a rank outside 1-30
+// would read as "the 0th most".
+const MAX_EFFECTS = 3;
+const requireRank = (value) => {
+  if (!Number.isInteger(value) || value < 1 || value > 30) throw createInvalidEdgesError();
+  return value;
+};
+const requireShare = (value) => {
+  if (requireNumber(value) < 0 || value > 1) throw createInvalidEdgesError();
+  return value;
+};
+
 const decodeGame = (game) => {
-  if (!isRecord(game) || !Array.isArray(game.effects) || !Array.isArray(game.scores)) {
+  if (
+    !isRecord(game) ||
+    !Array.isArray(game.effects) ||
+    game.effects.length > MAX_EFFECTS ||
+    !Array.isArray(game.scores)
+  ) {
     throw createInvalidEdgesError();
   }
   return {
@@ -54,10 +71,10 @@ const decodeReason = (reason) => {
   return {
     base: requireString(reason.base),
     sliceKey: requireString(reason.slice_key),
-    share: requireNumber(reason.share),
-    leagueAverageShare: requireNumber(reason.league_average_share),
+    share: requireShare(reason.share),
+    leagueAverageShare: requireShare(reason.league_average_share),
     // 30 allows the most of the slice, 1 the fewest.
-    opponentRank: requireNumber(reason.opponent_rank),
+    opponentRank: requireRank(reason.opponent_rank),
     opponentPercentVsLeague: requireNumber(reason.opponent_percent_vs_league),
   };
 };
@@ -102,13 +119,16 @@ export const decodeSlateEdges = (payload) => {
 };
 
 /*
- * The current slate date's edges, or null when the backend does not serve the
+ * One slate date's edges (the current one when no date is named), or null when the backend does not serve the
  * route yet (404): the home page then shows no ticker or Tonight row rather
  * than an error.
  */
-export const fetchSlateEdges = async ({ signal } = {}) => {
+export const fetchSlateEdges = async ({ date, signal } = {}) => {
   try {
-    const response = await apiClient.get(getApiUrl('SLATE_EDGES'), { signal });
+    const response = await apiClient.get(getApiUrl('SLATE_EDGES'), {
+      params: date ? { date } : {},
+      signal,
+    });
     return decodeSlateEdges(response.data);
   } catch (error) {
     if (error?.response?.status === 404) return null;

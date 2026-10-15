@@ -33,12 +33,13 @@ const NaturalLanguageQuery = ({
   // Filter Sets to come back to.
   onOpenSavedFilterSets,
 }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   // Today's games, the reader's Targets and the ladder's answers belong to the
-  // signed-in Query Prompt only (crf04/statsplus#204).
-  const onLanding = !inWorkspace && isAuthenticated;
-  const tonight = useHomeTonight(onLanding);
-  const ladderAnswers = useLadderAnswers(onLanding);
+  // signed-in Query Prompt only, and to the account that is signed in
+  // (crf04/statsplus#204).
+  const landingAccount = !inWorkspace && isAuthenticated ? currentUser?.uid || null : null;
+  const tonight = useHomeTonight(landingAccount);
+  const ladderAnswers = useLadderAnswers(landingAccount);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);

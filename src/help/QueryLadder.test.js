@@ -99,6 +99,23 @@ describe('QueryLadder answers', () => {
     expect([...bars].map((bar) => bar.className)).toEqual(['', 'is-over', 'is-over']);
   });
 
+  test('a game equal to the average is not above it', () => {
+    renderLadder({
+      answers: [{ points: 25, games: 3, series: [20, 25, 30] }, ...answers.slice(1)],
+    });
+
+    const bars = document.querySelectorAll('.query-ladder-rung:first-child .query-ladder-bars i');
+    expect([...bars].map((bar) => bar.className)).toEqual(['', '', 'is-over']);
+  });
+
+  test("a screen reader hears each rung's answer", () => {
+    renderLadder({ answers });
+
+    expect(screen.getByRole('button', { name: /^Narrow it down/ })).toHaveAccessibleName(
+      `Narrow it down. Loads ${QUERY_LADDER[1].query}. Adds without Trae Young. 22.1 points per game, −0.4 from the step before, over 63 games.`,
+    );
+  });
+
   test('without answers the rungs keep their titles and notes', () => {
     renderLadder();
 

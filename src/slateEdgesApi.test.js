@@ -121,18 +121,49 @@ test.each([
     'a pick without a reason',
     { ...payload, spotlight: { best: { ...best, reason: null }, toughest: null } },
   ],
+  [
+    'a fourth effect',
+    {
+      ...payload,
+      games: [{ ...payload.games[0], effects: Array(4).fill(payload.games[0].effects[0]) }],
+    },
+  ],
+  [
+    'a rank above 30',
+    {
+      ...payload,
+      spotlight: { best: { ...best, reason: { ...reason, opponent_rank: 31 } }, toughest: null },
+    },
+  ],
+  [
+    'a fractional rank',
+    {
+      ...payload,
+      spotlight: { best: { ...best, reason: { ...reason, opponent_rank: 2.5 } }, toughest: null },
+    },
+  ],
+  [
+    'a share above one',
+    {
+      ...payload,
+      spotlight: { best: { ...best, reason: { ...reason, share: 29.1 } }, toughest: null },
+    },
+  ],
 ])('refuses %s', (_label, bad) => {
   expect(() => decodeSlateEdges(bad)).toThrow(
     'The slate edges endpoint returned an invalid response.',
   );
 });
 
-test('fetches the current slate date and decodes it', async () => {
+test('fetches the named slate date and decodes it', async () => {
   apiClient.get.mockResolvedValue({ data: payload });
 
-  const edges = await fetchSlateEdges();
+  const edges = await fetchSlateEdges({ date: '2026-04-10' });
 
-  expect(apiClient.get).toHaveBeenCalledWith('/api/games/slate/edges', { signal: undefined });
+  expect(apiClient.get).toHaveBeenCalledWith('/api/games/slate/edges', {
+    params: { date: '2026-04-10' },
+    signal: undefined,
+  });
   expect(edges.spotlight.best.name).toBe('Jaime Jaquez Jr.');
 });
 

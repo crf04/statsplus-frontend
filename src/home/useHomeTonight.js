@@ -7,10 +7,16 @@ import { isRequestCancelled } from '../gameLogsApi';
 /*
  * What the home page knows about today (crf04/statsplus#204): the Slate's
  * games joined to their Slate Edges, and the reader's firing Targets. Each read
- * stands alone, so a failed one drops only its own section. A backend without
+ * stands alone, so a failed one drops only its own section. The Slate is read
+ * first so Edges and Targets are requested for its date. A backend without
  * the edges route (null) reads like a failure: no ticker, no Tonight.
  *
- * `games` is null when there is nothing to show: no edges, or no games today.
+ * `games` is null when there is nothing to show: no edges, no games today, or
+ * edges for another date than the Slate's (the reads straddled midnight ET).
+ * Targets resolved for another date are dropped the same way.
+ *
+ * `account` is the signed-in uid, or null when signed out: switching accounts
+ * rereads, so one reader's Targets never stay on screen for the next.
  */
 const EMPTY = { games: null, spotlight: null, slateDate: null, targets: null };
 
@@ -34,39 +40,57 @@ const firingTargets = (resolved) => ({
     .sort((a, b) => b.players.length - a.players.length),
 });
 
-export const useHomeTonight = (enabled) => {
+export const useHomeTonight = (account) => {
   const [state, setState] = useState(EMPTY);
   useEffect(() => {
-    if (!enabled) {
-      setState(EMPTY);
+    setState(EMPTY);
+    if (!account) {
       return undefined;
     }
     const controller = new AbortController();
     const { signal } = controller;
-    Promise.allSettled([
-      fetchSlate(undefined, { signal }),
-      fetchSlateEdges({ signal }),
-      fetchResolvedTargets({ signal }),
-    ]).then(([slate, edges, resolved]) => {
-      if (signal.aborted) return;
-      const failed = (result) => result.status === 'rejected' && !isRequestCancelled(result.reason);
-      [slate, edges, resolved].filter(failed).forEach((result) => {
-        // Each section is optional; the console keeps the reason for diagnosis.
-        console.warn('Home page read failed', result.reason);
+    const settle = (promise) =>
+      promise.then(
+        (value) => ({ status: 'fulfilled', value }),
+        (reason) => ({ status: 'rejected', reason }),
+      );
+    // The Slate names the date; Edges and Targets are read for that same date,
+    // so the three never straddle midnight ET.
+    settle(fetchSlate(undefined, { signal }))
+      .then(async (slate) => {
+        const date = slate.status === 'fulfilled' ? slate.value.slateDate : undefined;
+        const [edges, resolved] = await Promise.all([
+          date ? settle(fetchSlateEdges({ date, signal })) : { status: 'rejected' },
+          settle(fetchResolvedTargets({ date, signal })),
+        ]);
+        return [slate, edges, resolved];
+      })
+      .then(([slate, edges, resolved]) => {
+        if (signal.aborted) return;
+        const failed = (result) =>
+          result.status === 'rejected' && result.reason && !isRequestCancelled(result.reason);
+        [slate, edges, resolved].filter(failed).forEach((result) => {
+          // Each section is optional; the console keeps the reason for diagnosis.
+          console.warn('Home page read failed', result.reason);
+        });
+        const slateDate = slate.status === 'fulfilled' ? slate.value.slateDate : null;
+        const hasGames =
+          slateDate !== null &&
+          edges.status === 'fulfilled' &&
+          edges.value !== null &&
+          edges.value.slateDate === slateDate &&
+          slate.value.games.length > 0;
+        const targetsToday =
+          resolved.status === 'fulfilled' &&
+          (slateDate === null || resolved.value.slateDate === slateDate);
+        setState({
+          games: hasGames ? joinGames(slate.value, edges.value) : null,
+          spotlight: hasGames ? edges.value.spotlight : null,
+          slateDate: hasGames ? slateDate : null,
+          targets: targetsToday ? firingTargets(resolved.value) : null,
+        });
       });
-      const hasGames =
-        slate.status === 'fulfilled' &&
-        edges.status === 'fulfilled' &&
-        edges.value !== null &&
-        slate.value.games.length > 0;
-      setState({
-        games: hasGames ? joinGames(slate.value, edges.value) : null,
-        spotlight: hasGames ? edges.value.spotlight : null,
-        slateDate: hasGames ? slate.value.slateDate : null,
-        targets: resolved.status === 'fulfilled' ? firingTargets(resolved.value) : null,
-      });
-    });
     return () => controller.abort();
-  }, [enabled]);
+  }, [account]);
   return state;
 };

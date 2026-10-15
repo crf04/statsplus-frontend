@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { formatTip } from '../calendarDate';
 import { formatObservedShare, formatQualifier, targetSliceLabel } from '../targets/targetCatalog';
+import { TargetConditionSummary } from '../targets/TargetConditions';
+import { SeasonMinutesProvider } from '../targets/useTargets';
 import { rankPhrase, signedPercent } from './homeFormat';
 
 /*
@@ -59,6 +61,8 @@ const TargetCard = ({ entry, scores }) => {
         </span>
       </div>
       <p className="home-target-criteria">{target.qualifiers.map(formatQualifier).join(' + ')}</p>
+      {/* Conditions change who fits, so two Targets with the same Qualifiers stay apart. */}
+      <TargetConditionSummary target={target} />
       <ul className="home-target-fits">
         {players.slice(0, 2).map((player) => {
           const score = scores?.get(player.canonicalId);
@@ -124,26 +128,28 @@ const HomeTonight = ({ games, spotlight, targets, onUseQuery }) => {
               <ArrowRight size={13} aria-hidden="true" />
             </Link>
           </div>
-          <div className="home-col-stack">
-            {targets.firing.slice(0, 2).map((entry) => (
-              <TargetCard
-                key={entry.target.id}
-                entry={entry}
-                scores={gameOf(entry.game.gameId)?.scores}
-              />
-            ))}
-            {targets.firing.length === 0 && (
-              <p className="home-empty">
-                {targets.total === 0 ? (
-                  <Link to="/targets">
-                    Set a Target <ArrowRight size={13} aria-hidden="true" />
-                  </Link>
-                ) : (
-                  'None of your Targets fire today'
-                )}
-              </p>
-            )}
-          </div>
+          <SeasonMinutesProvider>
+            <div className="home-col-stack">
+              {targets.firing.slice(0, 2).map((entry) => (
+                <TargetCard
+                  key={entry.target.id}
+                  entry={entry}
+                  scores={gameOf(entry.game.gameId)?.scores}
+                />
+              ))}
+              {targets.firing.length === 0 && (
+                <p className="home-empty">
+                  {targets.total === 0 ? (
+                    <Link to="/targets">
+                      Set a Target <ArrowRight size={13} aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    'None of your Targets fire today'
+                  )}
+                </p>
+              )}
+            </div>
+          </SeasonMinutesProvider>
         </section>
       )}
     </div>

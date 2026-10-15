@@ -16,11 +16,11 @@ const answerFrom = ({ gameLogs, averages }) => {
   return { points: average, games: series.length, series };
 };
 
-export const useLadderAnswers = (enabled) => {
+export const useLadderAnswers = (account) => {
   const [answers, setAnswers] = useState(null);
   useEffect(() => {
-    if (!enabled) {
-      setAnswers(null);
+    setAnswers(null);
+    if (!account) {
       return undefined;
     }
     const controller = new AbortController();
@@ -35,6 +35,6 @@ export const useLadderAnswers = (enabled) => {
         if (!isRequestCancelled(error)) setAnswers(null);
       });
     return () => controller.abort();
-  }, [enabled]);
+  }, [account]);
   return answers;
 };

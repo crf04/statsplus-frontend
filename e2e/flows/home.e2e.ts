@@ -15,21 +15,21 @@ signedInTest(
     const ticker = screen.getByRole('navigation', "Today's games");
     const cell = ticker.getByRole('link', 'LAL at BOS Matchup');
     await expect(cell).toHaveAttribute('href', '/matchups/0022500584');
-    await expect(cell).toContainText('James +9%');
-    await expect(cell).toContainText('Tatum −6%');
+    // Derived from the game's Matchup fixture: the same scores the Matchup shows.
+    await expect(cell).toContainText('Reaves +24%');
+    await expect(cell).toContainText('Tatum +15%');
+    await expect(cell).toContainText('James +12%');
     expect(api.sent('/api/games/slate/edges', 'GET')).toHaveLength(1);
 
-    // Tonight: Best and Toughest with their reasons; Try it fills the prompt.
-    const best = screen.getByRole('article', 'Best: LeBron James');
-    await expect(best).toContainText('+9.1%');
-    await expect(best).toContainText('Transition 24% of plays · BOS allow the 3rd most');
-    await expect(screen.getByRole('article', 'Toughest: Jayson Tatum')).toContainText(
-      'Isolation 19% of plays · LAL allow the 3rd fewest',
-    );
+    // Tonight: Best with its reason; no unfavourable Matchup, so no Toughest.
+    const best = screen.getByRole('article', 'Best: Austin Reaves');
+    await expect(best).toContainText('+24.0%');
+    await expect(best).toContainText('Transition 18% of plays · BOS allow the 4th most');
+    await expect(screen.getByText('No standout matchup')).toBeVisible();
     await best.getByRole('button', 'Try it').tap();
     // The prompt's placeholder rotates, so it is found by role alone.
     await expect(screen.getByRole('textbox')).toHaveValue(
-      'LeBron James this year against bottom 10 defenses',
+      'Austin Reaves this year against bottom 10 defenses',
     );
     await expect(browser).toHaveURL('/');
 

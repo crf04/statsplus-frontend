@@ -11,7 +11,7 @@ signedInTest(
   { tags: ['critical'] },
   async ({ app, screen, browser }) => {
     await app.open('/');
-    await screen.getByRole('link', 'Every filter we understand').tap();
+    await screen.getByRole('link', 'All filters').tap();
 
     await expect(browser).toHaveURL('/help');
     await expect(screen.getByRole('heading', 'Query reference')).toBeVisible();
@@ -38,17 +38,17 @@ signedInTest(
     const draft = 'Luka last 10 games';
     await app.open('/');
     await screen.getByRole('textbox', PROMPT).fill(draft);
-    await screen.getByRole('link', 'Every filter we understand').tap();
+    await screen.getByRole('link', 'All filters').tap();
     await expect(screen.getByRole('heading', 'Query reference')).toBeFocused();
     // Browser Back lands on the entry the link stamped, not one a click pushed.
     await browser.back();
     await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(draft);
-    await screen.getByRole('link', 'Every filter we understand').tap();
+    await screen.getByRole('link', 'All filters').tap();
 
     await screen.getByRole('link', { name: 'Back to search', exact: false }).tap();
     await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(draft);
 
-    await screen.getByRole('link', 'Every filter we understand').tap();
+    await screen.getByRole('link', 'All filters').tap();
     await expect(screen.getByRole('heading', 'Query reference')).toBeVisible();
     await browser.back();
     await expect(screen.getByRole('textbox', PROMPT)).toHaveValue(draft);

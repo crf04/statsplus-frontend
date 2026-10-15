@@ -383,6 +383,93 @@ const scores = (markets, seasonValue, last15Value, { zeroMarkets = [] } = {}) =>
     ]),
   );
 
+/*
+ * Slate Edges for any date that lists the scheduled LAL @ BOS game: the
+ * recorded shape of `GET /api/games/slate/edges` (crf04/statsplus#204), with
+ * the three players the game's Matchup fixture carries.
+ */
+export const slateEdgesPayload = (date, games) => ({
+  slate_date: date,
+  games: games.map((game) => ({
+    game_id: game.game_id,
+    effects:
+      game.game_id === slateGame.game_id
+        ? [
+            {
+              canonical_id: 2544,
+              name: 'LeBron James',
+              tricode: 'LAL',
+              season_scoring: 25.4,
+              value: 0.091,
+              thin: false,
+            },
+            {
+              canonical_id: 1628369,
+              name: 'Jayson Tatum',
+              tricode: 'BOS',
+              season_scoring: 27.2,
+              value: -0.064,
+              thin: false,
+            },
+            {
+              canonical_id: 1630559,
+              name: 'Austin Reaves',
+              tricode: 'LAL',
+              season_scoring: 20.1,
+              value: 0.032,
+              thin: false,
+            },
+          ]
+        : [],
+    scores:
+      game.game_id === slateGame.game_id
+        ? [
+            { canonical_id: 2544, value: 0.091 },
+            { canonical_id: 1628369, value: -0.064 },
+            { canonical_id: 1630559, value: 0.032 },
+          ]
+        : [],
+  })),
+  spotlight: games.some((game) => game.game_id === slateGame.game_id)
+    ? {
+        best: {
+          game_id: slateGame.game_id,
+          canonical_id: 2544,
+          name: 'LeBron James',
+          tricode: 'LAL',
+          opponent: 'BOS',
+          season_scoring: 25.4,
+          value: 0.091,
+          reason: {
+            base: 'play_types',
+            slice_key: 'Transition',
+            share: 0.24,
+            league_average_share: 0.18,
+            opponent_rank: 28,
+            opponent_percent_vs_league: 12.4,
+          },
+        },
+        toughest: {
+          game_id: slateGame.game_id,
+          canonical_id: 1628369,
+          name: 'Jayson Tatum',
+          tricode: 'BOS',
+          opponent: 'LAL',
+          season_scoring: 27.2,
+          value: -0.064,
+          reason: {
+            base: 'play_types',
+            slice_key: 'Isolation',
+            share: 0.19,
+            league_average_share: 0.08,
+            opponent_rank: 3,
+            opponent_percent_vs_league: -11.2,
+          },
+        },
+      }
+    : { best: null, toughest: null },
+});
+
 export const matchupPayload = {
   game: {
     ...slateGame,
@@ -2769,6 +2856,17 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           next_game: 'Atlanta Hawks',
           player_id: playerIdsByName[playerName] ?? null,
         },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate/edges') {
+      const date = url.searchParams.get('date') || todaySlateDate();
+      await route.fulfill({
+        json: slateEdgesPayload(
+          date,
+          date === HISTORICAL_SLATE_DATE ? [historicalGame] : [scheduleOnlySlateGame],
+        ),
       });
       return;
     }

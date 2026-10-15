@@ -240,7 +240,7 @@ test('@critical the query reference is linkable and hands an example back to sea
 }) => {
   await page.goto('/');
 
-  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await page.getByRole('link', { name: 'All filters' }).click();
   await expect(page).toHaveURL(/\/help$/);
   await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'Less Than 10 ft' })).toBeVisible();
@@ -262,7 +262,7 @@ test('@critical consulting the reference does not discard a half-typed query', a
 
   const draft = 'Luka last 10 games';
   await page.getByRole('textbox').fill(draft);
-  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await page.getByRole('link', { name: 'All filters' }).click();
 
   await expect(page.getByRole('heading', { name: 'Query reference' })).toBeFocused();
 
@@ -270,7 +270,7 @@ test('@critical consulting the reference does not discard a half-typed query', a
   await expect(page.getByRole('textbox')).toHaveValue(draft);
 
   // The browser's own Back button has to restore it too, not just our link.
-  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await page.getByRole('link', { name: 'All filters' }).click();
   await expect(page.getByRole('heading', { name: 'Query reference' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('textbox')).toHaveValue(draft);
@@ -290,7 +290,7 @@ test('the landing help and reference stay usable at a narrow viewport', async ({
 
   expect(await overflowsHorizontally()).toBe(false);
 
-  await page.getByRole('link', { name: 'Every filter we understand' }).click();
+  await page.getByRole('link', { name: 'All filters' }).click();
   await expect(page.getByRole('rowheader', { name: 'PRRollMan' })).toBeVisible();
   expect(await overflowsHorizontally()).toBe(false);
 });

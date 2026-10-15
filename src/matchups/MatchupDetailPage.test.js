@@ -2464,3 +2464,47 @@ test.each([
   expect(screen.queryByRole('table', { name: /sportsbook lines/ })).not.toBeInTheDocument();
   expect(screen.queryByText('Show fewer')).not.toBeInTheDocument();
 });
+
+test('a category only sportsbooks quote is reachable from the strip without becoming a DFS market', async () => {
+  await openWithBooks({
+    AST: quote([
+      bookRow('betmgm', 6.5, 120, -150, { bestOver: true }),
+      bookRow('fanduel', 6.5, 110, -140),
+    ]),
+  });
+  const strip = screen.getByRole('group', { name: 'Selection log stat' });
+  expect(
+    within(strip)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label')),
+  ).toEqual(['PTS', 'AST', 'FGA']);
+  expect(screen.queryByRole('table', { name: 'AST sportsbook lines' })).not.toBeInTheDocument();
+
+  await userEvent.click(within(strip).getByRole('button', { name: 'AST' }));
+
+  const table = screen.getByRole('table', { name: 'AST sportsbook lines' });
+  expect(
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
+  ).toEqual(['BetMGM6.5+120 ★-150', 'FanDuel6.5+110-140']);
+  // Still DFS-only: the posted-by line, the score matrix and the Target path.
+  expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
+  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+  expect(within(matrix).queryByRole('button', { name: 'AST' })).not.toBeInTheDocument();
+  expect(screen.getByText('No games vs this opponent log is kept for AST.')).toBeVisible();
+});
+
+test('names every allowlisted sportsbook', async () => {
+  const keys = ['draftkings', 'fanduel', 'betmgm', 'williamhill_us', 'betrivers', 'fanatics'];
+  await openWithBooks({ PTS: quote(keys.map((key) => bookRow(key, 27.5, -110, -110))) });
+  await userEvent.click(screen.getByRole('button', { name: '+2 more' }));
+
+  const table = screen.getByRole('table', { name: 'PTS sportsbook lines' });
+  expect(
+    within(table)
+      .getAllByRole('rowheader')
+      .map((cell) => cell.textContent),
+  ).toEqual(['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics']);
+});

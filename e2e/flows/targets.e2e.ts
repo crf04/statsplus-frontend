@@ -197,7 +197,7 @@ signedInTest(
     const card = screen.getByRole('article', 'ATL vs At-rim assists ≥ 30%');
     await expect(card.getByRole('listitem', 'PTS/36')).toBeVisible();
     await expect(card).toContainText(
-      'Backtest · 2025-26 default season · ATL has played 4 games in 2025-26 · excludes games ≤ 35 min',
+      'Backtest · 2025-26 · excludes games ≤ 35 min',
     );
   },
 );

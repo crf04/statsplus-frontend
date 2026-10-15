@@ -27,3 +27,9 @@ Game state (switcher dropdown, `?demo=`):
 Each variant keeps its rail shape across states: A's grid and B's table hold
 the box score after the game and lines before it; C's big number is the result,
 the line, or (no line numbers) the Matchup Score.
+
+## Verdict (2026-10-14, provisional)
+
+C, opening on the Points tab rather than All, so the rail's one stat and the
+Defense Sheet agree on first paint. Real lines need the backend to add line
+numbers to the matchup response.

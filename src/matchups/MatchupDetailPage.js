@@ -712,6 +712,12 @@ function Detail({ matchup, gameId }) {
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
   const P = proto.active;
+  // PROTOTYPE: variant C's rail reads one stat, so the page opens on Points
+  // and the sheet and the rail agree from the first paint.
+  const protoC = P && proto.variant === 'C';
+  useEffect(() => {
+    if (protoC) setMarket('PTS');
+  }, [protoC]);
   useEffect(() => {
     if (!markets.includes(market)) setMarket('All');
   }, [market, markets]);

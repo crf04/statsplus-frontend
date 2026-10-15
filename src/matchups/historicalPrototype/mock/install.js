@@ -45,7 +45,7 @@ import u201935 from './selection-upcoming-201935.json';
 import u203471 from './selection-upcoming-203471.json';
 
 export const DEMO_GAME_ID = '0022500947';
-export const DEMO_URL = `/matchups/${DEMO_GAME_ID}?v=A`;
+export const DEMO_URL = `/matchups/${DEMO_GAME_ID}?v=C`;
 
 const completed = {
   matchup,

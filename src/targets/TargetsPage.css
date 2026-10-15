@@ -249,13 +249,6 @@
   background: transparent;
 }
 
-.target-capture-source {
-  margin: 0 0 12px;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.68rem;
-}
-
 /* The page composer uses the same accessible dialog behavior as Defense Sheet
    capture, while keeping its wider Lab readable and its body bounded on short
    screens. */

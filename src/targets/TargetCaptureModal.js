@@ -6,7 +6,7 @@ import TargetForm from './TargetForm';
 import TargetLab from './TargetLab';
 import { LabSeasonProvider } from './backtestSample';
 import { SeasonMinutesProvider } from './useTargets';
-import { shareToThresholdPercent, targetSliceLabel } from './targetCatalog';
+import { shareToThresholdPercent } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
 
@@ -131,13 +131,6 @@ function TargetCaptureContent({ capture, onHide }) {
       <Modal.Body>
         {draft && (
           <LabSeasonProvider>
-            <p className="target-capture-source">
-              From the {state.capture.opponent} Defense Sheet ·{' '}
-              {targetSliceLabel(state.capture.base, state.capture.sliceKey)}
-              {typeof state.capture.leagueAverageShare === 'number'
-                ? ' · threshold starts at the league average'
-                : ' · no league average published for this slice'}
-            </p>
             <div className="target-compose-layout">
               <div className="target-compose-form">
                 <TargetForm

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getIdToken } from 'firebase/auth';
 import { API_TIMEOUT } from '../apiSettings';
 import { auth } from '../firebase/config';
+import { reportApiError } from '../errorReporting';
 import { reportWaitlisted } from './waitlistSignal';
 
 // Create axios instance with default configuration
@@ -69,6 +70,8 @@ apiClient.interceptors.response.use(
     ) {
       return Promise.reject(error);
     }
+
+    reportApiError(error);
 
     if (error.response?.status === 403 && error.response.data?.error?.code === 'waitlisted') {
       reportWaitlisted(error.response.data.error.message, error.config?.waitlistAccount);

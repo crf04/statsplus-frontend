@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 're
 import WaitlistScreen from './components/Auth/WaitlistScreen';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import { reportRenderError } from './errorReporting';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -22,6 +23,10 @@ class RouteErrorBoundary extends Component {
 
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+
+  componentDidCatch(error, info) {
+    reportRenderError(error, info);
   }
 
   render() {

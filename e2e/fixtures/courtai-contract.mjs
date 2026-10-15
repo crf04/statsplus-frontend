@@ -2128,6 +2128,28 @@ export const waitlistedResponse = {
   },
 };
 
+/*
+ * The backend's refusal when a user is over a rate limit (crf04/statsplus#157):
+ * 429, Retry-After, and the standard error shape. Pass it as the override of
+ * one route to make only that route rate limited:
+ *   installApiContract(page, { '/api/games/game_logs': RATE_LIMITED });
+ * A Target's own backtest route is keyed '/api/user/targets/:id/backtest'.
+ */
+export const RATE_LIMITED = {
+  status: 429,
+  headers: { 'Retry-After': '3' },
+  body: {
+    error: { code: 'rate_limited', message: 'Too many requests. Try again in 3 seconds.' },
+  },
+};
+
+const fulfillOverride = (route, response) =>
+  route.fulfill({
+    status: response.status || 200,
+    headers: response.headers,
+    json: response.body ?? response,
+  });
+
 export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
@@ -2154,7 +2176,9 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const override = overrides[url.pathname];
+    const override =
+      overrides[url.pathname] ??
+      overrides[url.pathname.replace(/^(\/api\/user\/targets\/)[^/]+(\/backtest)$/, '$1:id$2')];
 
     if (waitlisted) {
       await route.fulfill(waitlistedResponse);
@@ -2196,7 +2220,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
       if (override) {
         const response = typeof override === 'function' ? await override(request) : override;
-        await route.fulfill({ status: response.status || 200, json: response.body ?? response });
+        await fulfillOverride(route, response);
         return;
       }
 
@@ -2219,7 +2243,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     if (override) {
       const response = typeof override === 'function' ? await override(request) : override;
-      await route.fulfill({ status: response.status || 200, json: response.body ?? response });
+      await fulfillOverride(route, response);
       return;
     }
 

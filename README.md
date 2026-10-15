@@ -85,6 +85,8 @@ Codex exploratory QA process.
 
 The Vite configuration preserves the existing `REACT_APP_*` variables and also accepts equivalent `VITE_*` names. See `.env.example` for the full list. The Firebase web config values are public client config by design — the security boundary is Firebase auth rules and the backend's token verification, not these keys.
 
+Error reporting is off unless `REACT_APP_SENTRY_DSN` (or `VITE_SENTRY_DSN`) is set; with it unset nothing is initialized or sent. API responses with a 5xx status are reported with their full `X-Request-ID` as the `request_id` tag, the same ID whose first eight characters appear as `(ref …)`. Source maps upload to Sentry only when `SENTRY_AUTH_TOKEN` (with `SENTRY_ORG` and `SENTRY_PROJECT`) is present at build time.
+
 ## Backend API
 
 This repo is the frontend only. It expects a backend serving:

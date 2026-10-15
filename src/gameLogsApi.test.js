@@ -11,7 +11,7 @@ describe('gameLogsApi', () => {
     apiClient.get.mockReset();
   });
 
-  test('opts game-log requests out of the shared client timeout', async () => {
+  test('bounds a game-log request at 35 s, just past the backend 30 s statement_timeout', async () => {
     apiClient.get.mockResolvedValue({
       data: { game_logs: [], averages: [], season_averages: [] },
     });
@@ -23,8 +23,30 @@ describe('gameLogsApi', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/api/games/game_logs', {
       params: { player_name: 'LeBron James' },
       signal: controller.signal,
-      timeout: 0,
+      timeout: 35000,
     });
+  });
+
+  test('does not retry a rate_limited game-logs request, even after Retry-After', async () => {
+    jest.useFakeTimers({ advanceTimers: true });
+    try {
+      apiClient.get.mockRejectedValue({
+        response: {
+          status: 429,
+          headers: { 'retry-after': '3' },
+          data: { error: { code: 'rate_limited', message: 'Slow down.' } },
+        },
+      });
+
+      await expect(fetchGameLogsData({ player_name: 'LeBron James' })).rejects.toMatchObject({
+        response: { status: 429 },
+      });
+      await jest.advanceTimersByTimeAsync(10000);
+
+      expect(apiClient.get).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('decodes JSON-string and object payloads once and reverses logs for display', () => {
@@ -116,6 +138,35 @@ describe('gameLogsApi', () => {
         message: 'timeout of 15000ms exceeded',
       }),
     ).toBe('The request took too long. Please try again.');
+  });
+
+  // crf04/statsplus#157 contract: 429, Retry-After, and the backend's own sentence.
+  const rateLimitedResponse = (status = 429) => ({
+    response: {
+      status,
+      headers: { 'retry-after': '3', 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' },
+      data: {
+        error: {
+          code: 'rate_limited',
+          message: 'Too many requests. Try again in 3 seconds.',
+        },
+      },
+    },
+  });
+
+  test('shows the backend message for rate_limited, without a request reference', () => {
+    expect(getRequestErrorMessage(rateLimitedResponse(), 'Unable to load game logs.')).toBe(
+      'Too many requests. Try again in 3 seconds.',
+    );
+  });
+
+  test('says to slow down when a 429 arrives without the backend body', () => {
+    expect(
+      getRequestErrorMessage(
+        { message: 'Request failed with status code 429', response: { status: 429, data: '' } },
+        'Unable to load game logs.',
+      ),
+    ).toBe('Too many requests. Try again in a few seconds.');
   });
 
   test('turns transport timeouts into a useful retry message', () => {

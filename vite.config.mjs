@@ -10,6 +10,7 @@ const legacyEnvironmentKeys = [
   'REACT_APP_ENABLE_ANALYTICS',
   'REACT_APP_ENABLE_ERROR_REPORTING',
   'REACT_APP_DEBUG',
+  'REACT_APP_SENTRY_DSN',
   'REACT_APP_API_TIMEOUT',
   'REACT_APP_NL_QUERY_TIMEOUT',
   'REACT_APP_E2E_MODE',
@@ -29,6 +30,7 @@ const viteEnvironmentAliases = {
   REACT_APP_ENABLE_ANALYTICS: 'VITE_ENABLE_ANALYTICS',
   REACT_APP_ENABLE_ERROR_REPORTING: 'VITE_ENABLE_ERROR_REPORTING',
   REACT_APP_DEBUG: 'VITE_DEBUG',
+  REACT_APP_SENTRY_DSN: 'VITE_SENTRY_DSN',
   REACT_APP_API_TIMEOUT: 'VITE_API_TIMEOUT',
   REACT_APP_NL_QUERY_TIMEOUT: 'VITE_NL_QUERY_TIMEOUT',
   REACT_APP_E2E_MODE: 'VITE_E2E_MODE',
@@ -40,14 +42,29 @@ const viteEnvironmentAliases = {
   REACT_APP_FIREBASE_APP_ID: 'VITE_FIREBASE_APP_ID',
 };
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const environmentValues = Object.fromEntries(
     legacyEnvironmentKeys.map((key) => [key, env[key] ?? env[viteEnvironmentAliases[key]] ?? '']),
   );
 
+  // Source maps are uploaded to Sentry only when a token is present at build
+  // time; otherwise the plugin is never loaded and no maps are emitted.
+  const uploadSourceMaps = Boolean(env.SENTRY_AUTH_TOKEN);
+  const sentryPlugins = uploadSourceMaps
+    ? [
+        (await import('@sentry/vite-plugin')).sentryVitePlugin({
+          authToken: env.SENTRY_AUTH_TOKEN,
+          org: env.SENTRY_ORG,
+          project: env.SENTRY_PROJECT,
+          telemetry: false,
+          sourcemaps: { filesToDeleteAfterUpload: ['build/**/*.map'] },
+        }),
+      ]
+    : [];
+
   return {
-    plugins: [react({ include: '**/*.{js,jsx}' })],
+    plugins: [react({ include: '**/*.{js,jsx}' }), ...sentryPlugins],
     esbuild: {
       loader: 'jsx',
       include: /\.js$/,
@@ -84,6 +101,7 @@ export default defineConfig(({ mode }) => {
     build: {
       // Preserve the deployment output contract used by the existing Vercel project.
       outDir: 'build',
+      sourcemap: uploadSourceMaps ? 'hidden' : false,
       rollupOptions: {
         output: {
           manualChunks: {

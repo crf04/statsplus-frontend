@@ -335,7 +335,7 @@ const VariantE = ({ hero, ladder, data, middle = null, heroSlot = null }) => {
               <span className="hp-tick-teams">{gameLabel(game)}</span>
               <span className="hp-tick-time">{tipoff(game.scheduledAt)}</span>
               <ul className="hp-e-effects">
-                {biggestPtsEffects(game.gameId, terse ? 1 : 3).map((player) => (
+                {biggestPtsEffects(game.gameId).map((player) => (
                   <li key={player.id}>
                     <span>
                       {lastName(player.name)} {!terse && <small>{player.tricode}</small>}

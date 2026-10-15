@@ -2141,3 +2141,6 @@
 .hp-terse .hp-ticker-label b {
   font-size: 13px;
 }
+.hp-terse .hp-e-tick {
+  min-width: 140px;
+}

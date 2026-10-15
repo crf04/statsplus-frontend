@@ -254,7 +254,7 @@ const NaturalLanguageQuery = ({
             disabled={isLoading || !isAuthenticated}
             onClick={() => navigate(`${location.pathname}?${BROWSE_PARAM}=1`)}
           >
-            {terse ? 'Browse' : 'Browse without a query'}
+            Browse without a query
           </button>
           {onOpenSavedFilterSets && (
             <button
@@ -263,7 +263,7 @@ const NaturalLanguageQuery = ({
               disabled={isLoading}
               onClick={onOpenSavedFilterSets}
             >
-              {terse ? 'Saved' : 'Saved Filter Sets'}
+              Saved Filter Sets
             </button>
           )}
         </div>

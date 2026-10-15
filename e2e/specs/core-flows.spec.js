@@ -11,6 +11,16 @@ import {
 } from '../fixtures/courtai';
 import { test } from '../fixtures/deployedSmoke';
 
+// The signed-in landing reads the ladder rungs' Game Logs (all Jalen Johnson) on
+// its own; request-seam assertions count only the Log Workspace's requests.
+const isWorkspaceGameLogs = (requestUrl) => {
+  const url = new URL(requestUrl);
+  return (
+    url.pathname === '/api/games/game_logs' &&
+    url.searchParams.get('player_name') !== 'Jalen Johnson'
+  );
+};
+
 const vercelConfig = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
 );
@@ -205,7 +215,7 @@ test('a season the panel cannot express survives an unrelated apply', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -367,7 +377,7 @@ test('@critical structured filters serialize through the game-log request seam',
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -393,7 +403,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -467,7 +477,7 @@ test('@critical applying an untouched panel emits only the controls the user mov
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -516,7 +526,7 @@ test('@critical a link carrying a Filter Set opens the workspace and survives re
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -542,7 +552,7 @@ test('@critical a link without a player waits for one instead of erroring', asyn
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -564,7 +574,7 @@ test('a link with an unusable value names it and applies nothing', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -580,7 +590,7 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -597,7 +607,7 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
 test('@critical a signed-out visitor keeps the link they followed', async ({ page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -629,7 +639,7 @@ test('a bound the link arrived with survives a later apply', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -674,7 +684,7 @@ test('applying a playerless link asks for a player instead of sending a placehol
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(request.url());
     }
   });
@@ -695,7 +705,7 @@ test('applying a playerless link asks for a player instead of sending a placehol
 test('@critical clearing a control clears its parameter', async ({ authenticatedPage: page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -764,7 +774,7 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -821,7 +831,7 @@ test('@critical removing every self filter clears its parameter', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -1241,7 +1251,7 @@ test('an empty workspace is shareable, and the sentinel never reaches a request'
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -1293,7 +1303,7 @@ test('the sentinel is dropped without destroying a link we must refuse', async (
 test('@critical changing player keeps the Filter Set', async ({ authenticatedPage: page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -1570,7 +1580,7 @@ test('a refused link is not quietly replaced by choosing a player', async ({
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });
@@ -1681,7 +1691,7 @@ test('a link carrying filters but no player applies them to the player chosen', 
 }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/games/game_logs') {
+    if (isWorkspaceGameLogs(request.url())) {
       gameLogRequests.push(new URL(request.url()));
     }
   });

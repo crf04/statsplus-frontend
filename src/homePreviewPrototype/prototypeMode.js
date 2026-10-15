@@ -13,6 +13,9 @@ export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'home';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
 export const VARIANT_KEYS = [
+  'T',
+  'U',
+  'V',
   'R',
   'S',
   'N',
@@ -36,6 +39,9 @@ export const VARIANT_KEYS = [
 ];
 
 export const VARIANT_NAMES = {
+  T: 'Tonight board: games grid + Targets, compact search',
+  U: 'Court hero about edges; Targets; search at the bottom',
+  V: 'Two doors: Matchups | Targets',
   R: 'Saved sets left | hero | Tonight right',
   S: 'Left sidebar: saved sets + Targets',
   N: 'Tabs: Tonight | Try a question',
@@ -71,8 +77,8 @@ export const useVariant = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'home');
-  const key = hash.get('v') || 'R';
-  const variant = VARIANT_KEYS.includes(key) ? key : 'R';
+  const key = hash.get('v') || 'T';
+  const variant = VARIANT_KEYS.includes(key) ? key : 'T';
   const step = useCallback(
     (delta) => {
       const index = VARIANT_KEYS.indexOf(variant);

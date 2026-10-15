@@ -400,7 +400,12 @@ function DefenseSheet({
 }) {
   let hidden = 0;
   const sections = Object.entries(team.defenseSheet).map(([base, rows]) => {
-    const marketRows = rows.filter((row) => market === 'All' || row.markets.includes(market));
+    // Play types read by points only; the possession rows repeat the same story.
+    const marketRows = rows.filter(
+      (row) =>
+        !(base === 'playTypes' && row.key.endsWith(':POSS')) &&
+        (market === 'All' || row.markets.includes(market)),
+    );
     const availability = surfaceAvailability[base][windowKey];
     if (availability.status !== 'available') {
       return {

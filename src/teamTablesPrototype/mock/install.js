@@ -31,7 +31,7 @@ const TEAM_STATS = {
   'utah-jazz': { 'traditional': utah_jazz_traditional, 'playtypes': utah_jazz_playtypes, 'assists': utah_jazz_assists, 'zone-shooting': utah_jazz_zone_shooting, 'shooting-type': utah_jazz_shooting_type },
 };
 
-export const DEMO_URL = '/?player_name=Jalen+Johnson#proto=team&v=A';
+export const DEMO_URL = '/?player_name=Jalen+Johnson#proto=team&v=B';
 
 const slug = (s = '') => s.toLowerCase().replace(/ /g, '-');
 const teamStats = ({ team, category } = {}) =>

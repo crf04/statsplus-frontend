@@ -109,6 +109,26 @@
 .ttp-blegend { display: flex; gap: 16px; justify-content: flex-end; padding-top: 8px; font-size: 11px; color: var(--ct-dim); }
 .ttp-key { display: inline-block; position: static; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
+/* B: two columns only when the card is wide enough to keep the bars legible. */
+.ttp-bcols { display: grid; gap: 4px 28px; }
+.ttp-bcol { min-width: 0; }
+.ttp-bcols-2 .ttp-bcol + .ttp-bcol .ttp-bscale { display: none; }
+.ttp-bgroup-split { border-bottom: 0; padding-bottom: 0; }
+.ttp-bgroup-cont { padding-top: 0; }
+.ttp-bgroup-cont > .ttp-bgroup-title { display: none; }
+.ttp-cont { font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--ct-dim); }
+@container (min-width: 600px) {
+  .ttp-bcols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ttp-bcols-2 .ttp-bcol + .ttp-bcol .ttp-bscale { display: grid; }
+  .ttp-bgroup-split { border-bottom: 1px solid var(--ct-line); padding-bottom: 6px; }
+  .ttp-bgroup-cont { padding-top: 4px; }
+  .ttp-bgroup-cont > .ttp-bgroup-title { display: flex; }
+  .ttp-bcols-2 .ttp-brow,
+  .ttp-bcols-2 .ttp-bscale { grid-template-columns: minmax(0, 7.2em) minmax(0, 1fr) 3.7em 20px; gap: 7px; }
+  .ttp-bcols-2 .ttp-blabel { font-size: 13px; }
+  .ttp-bcols-2 .ttp-bvs { font-size: 12px; }
+}
+
 /* ---------- C: Tiles ---------- */
 .ttp-tiles-wrap { display: grid; gap: 14px; }
 .ttp-tiles-title {

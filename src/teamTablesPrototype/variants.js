@@ -155,26 +155,76 @@ const BarScale = ({ scale }) => (
   </div>
 );
 
-const BarsList = ({ m }) => {
-  const all = m.groups.flatMap((g) => g.items);
-  const scale = scaleFor(all);
+/* A unit is a titled run of bars. Long lists split into two columns, at a
+   group boundary when that balances within a couple of lines, otherwise
+   mid-group with the title repeated. Whether two columns fit is the card's
+   call (container query); narrow cards stack the columns. */
+const SPLIT_OVER = 9;
+const lines = (u) => (u.title ? 1 : 0) + u.rows.length;
+
+const splitUnits = (units) => {
+  const total = units.reduce((n, u) => n + lines(u), 0);
+  if (total <= SPLIT_OVER) return [units];
+  let best = null;
+  let seen = 0;
+  units.slice(0, -1).forEach((u, k) => {
+    seen += lines(u);
+    const gap = Math.abs(total - 2 * seen);
+    if (!best || gap < best.gap) best = { k: k + 1, gap };
+  });
+  if (best && best.gap <= 3) return [units.slice(0, best.k), units.slice(best.k)];
+  const half = Math.ceil(total / 2);
+  const left = [];
+  const right = [];
+  let used = 0;
+  units.forEach((u) => {
+    const room = half - used;
+    const take = room - (u.title ? 1 : 0);
+    // Never strand fewer than two bars on either side of a split.
+    if (take < 2 || (lines(u) > room && u.rows.length - take < 2)) right.push(u);
+    else if (lines(u) <= room) left.push(u);
+    else {
+      left.push({ ...u, split: true, rows: u.rows.slice(0, take) });
+      right.push({ ...u, key: `${u.key}-cont`, head: null, cont: true, rows: u.rows.slice(take) });
+    }
+    used += lines(u);
+  });
+  return [left, right];
+};
+
+const BarUnit = ({ u, scale }) => (
+  <div
+    className={`ttp-bgroup${u.split ? ' ttp-bgroup-split' : ''}${u.cont ? ' ttp-bgroup-cont' : ''}`}
+  >
+    {u.title && (
+      <div className="ttp-bgroup-title">
+        <span>
+          {u.title}
+          {u.cont && <span className="ttp-cont"> cont.</span>}
+        </span>
+        {u.head && <span className="ttp-bgroup-head">{u.head}</span>}
+      </div>
+    )}
+    {u.rows.map((r) => (
+      <BarRow key={r.key} label={r.label} sub={r.sub} r={r.r} scale={scale} />
+    ))}
+  </div>
+);
+
+const BarColumns = ({ units, scale }) => {
+  const cols = splitUnits(units);
   return (
     <div className="ttp-bars">
-      <BarScale scale={scale} />
-      {m.groups.map((g) => (
-        <div key={g.title || 'all'} className="ttp-bgroup">
-          {g.title && <div className="ttp-bgroup-title">{g.title}</div>}
-          {g.items.map((it) => (
-            <BarRow
-              key={it.key}
-              label={it.label}
-              sub={it.kind === 'ratio' ? null : fmtValue(it)}
-              r={it}
-              scale={scale}
-            />
-          ))}
-        </div>
-      ))}
+      <div className={`ttp-bcols${cols.length > 1 ? ' ttp-bcols-2' : ''}`}>
+        {cols.map((col, n) => (
+          <div key={n} className="ttp-bcol">
+            <BarScale scale={scale} />
+            {col.map((u) => (
+              <BarUnit key={u.key} u={u} scale={scale} />
+            ))}
+          </div>
+        ))}
+      </div>
       <div className="ttp-blegend">
         <span>
           <i className="ttp-key ttp-bfill-down" /> allows less
@@ -187,36 +237,39 @@ const BarsList = ({ m }) => {
   );
 };
 
+const BarsList = ({ m }) => {
+  const units = m.groups.map((g) => ({
+    key: g.title || 'all',
+    title: g.title,
+    rows: g.items.map((it) => ({
+      key: it.key,
+      label: it.label,
+      sub: it.kind === 'ratio' ? null : fmtValue(it),
+      r: it,
+    })),
+  }));
+  return <BarColumns units={units} scale={scaleFor(m.groups.flatMap((g) => g.items))} />;
+};
+
 const BarsMatrix = ({ m }) => {
   const ranked = m.metrics.filter((x) => m.rows.some((r) => r.cells[x.key].vs != null));
+  const units = m.rows.map((row) => ({
+    key: row.key,
+    title: row.label,
+    head: `${fmtValue(row.cells[row.headline])} ${row.headline === 'PTS' ? 'pts' : 'made'}${
+      row.cells.PCT?.value != null ? ` · ${fmtValue(row.cells.PCT)}` : ''
+    }`,
+    rows: ranked
+      .filter((x) => row.cells[x.key].value != null)
+      .map((x) => ({
+        key: x.key,
+        label: x.label,
+        sub: fmtValue(row.cells[x.key]),
+        r: row.cells[x.key],
+      })),
+  }));
   const scale = scaleFor(m.rows.flatMap((r) => ranked.map((x) => r.cells[x.key])));
-  return (
-    <div className="ttp-bars">
-      <BarScale scale={scale} />
-      {m.rows.map((row) => (
-        <div key={row.key} className="ttp-bgroup">
-          <div className="ttp-bgroup-title">
-            {row.label}
-            <span className="ttp-bgroup-head">
-              {fmtValue(row.cells[row.headline])} {row.headline === 'PTS' ? 'pts' : 'made'}
-              {row.cells.PCT?.value != null && ` · ${fmtValue(row.cells.PCT)}`}
-            </span>
-          </div>
-          {ranked
-            .filter((x) => row.cells[x.key].value != null)
-            .map((x) => (
-              <BarRow
-                key={x.key}
-                label={x.label}
-                sub={fmtValue(row.cells[x.key])}
-                r={row.cells[x.key]}
-                scale={scale}
-              />
-            ))}
-        </div>
-      ))}
-    </div>
-  );
+  return <BarColumns units={units} scale={scale} />;
 };
 
 /* ---------------- C: Tiles ---------------- */

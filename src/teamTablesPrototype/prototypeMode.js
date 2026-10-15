@@ -11,10 +11,10 @@ import { useCallback, useEffect, useState } from 'react';
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'team';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
 
-export const VARIANT_KEYS = ['A', 'B', 'C', 'Now'];
+export const VARIANT_KEYS = ['B', 'A', 'C', 'Now'];
 export const VARIANT_NAMES = {
   A: 'Ledger',
-  B: 'Bars vs league',
+  B: 'Bars vs league (2 columns when long)',
   C: 'Rank tiles',
   Now: 'Current tables',
 };
@@ -39,7 +39,7 @@ export const useProto = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'team');
-  const variant = VARIANT_KEYS.includes(hash.get('v')) ? hash.get('v') : 'A';
+  const variant = VARIANT_KEYS.includes(hash.get('v')) ? hash.get('v') : 'B';
 
   const step = useCallback(
     (delta) => {

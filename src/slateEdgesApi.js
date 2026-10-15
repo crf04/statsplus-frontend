@@ -66,7 +66,10 @@ const decodeGame = (game) => {
   };
 };
 
+// Null when neither of the pick's two largest slices has an opponent reading;
+// the pick still stands.
 const decodeReason = (reason) => {
+  if (reason === null) return null;
   if (!isRecord(reason)) throw createInvalidEdgesError();
   return {
     base: requireString(reason.base),
@@ -81,7 +84,7 @@ const decodeReason = (reason) => {
 
 const decodePick = (pick) => {
   if (pick === null) return null;
-  if (!isRecord(pick)) throw createInvalidEdgesError();
+  if (!isRecord(pick) || !('reason' in pick)) throw createInvalidEdgesError();
   return {
     gameId: requireString(pick.game_id),
     canonicalId: requireNumber(pick.canonical_id),

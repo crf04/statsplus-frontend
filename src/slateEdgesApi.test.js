@@ -91,6 +91,16 @@ test('decodes games, scores by canonical id, and both picks', () => {
   expect(edges.spotlight.toughest.name).toBe('Miles Bridges');
 });
 
+test('a pick whose reason could not be read keeps the pick', () => {
+  const edges = decodeSlateEdges({
+    ...payload,
+    spotlight: { best: { ...best, reason: null }, toughest: null },
+  });
+
+  expect(edges.spotlight.best.name).toBe('Jaime Jaquez Jr.');
+  expect(edges.spotlight.best.reason).toBeNull();
+});
+
 test('an empty slate decodes with no games and no picks', () => {
   expect(
     decodeSlateEdges({
@@ -118,8 +128,12 @@ test.each([
   ],
   ['a toughest pick that is favourable', { ...payload, spotlight: { best: null, toughest: best } }],
   [
-    'a pick without a reason',
-    { ...payload, spotlight: { best: { ...best, reason: null }, toughest: null } },
+    'a pick missing its reason field',
+    { ...payload, spotlight: { best: (({ reason: _r, ...rest }) => rest)(best), toughest: null } },
+  ],
+  [
+    'a reason that is not an object',
+    { ...payload, spotlight: { best: { ...best, reason: 'Transition' }, toughest: null } },
   ],
   [
     'a fourth effect',

@@ -38,10 +38,12 @@ const Pick = ({ kind, pick, game, onUseQuery }) => {
         vs {pick.opponent}
         {game && ` · ${formatTip(game.scheduledAt)}`}
       </p>
-      <p className="home-pick-why">
-        {targetSliceLabel(reason.base, reason.sliceKey)} {formatObservedShare(reason.share)} of
-        plays · {pick.opponent} {rankPhrase(reason.opponentRank)}
-      </p>
+      {reason && (
+        <p className="home-pick-why">
+          {targetSliceLabel(reason.base, reason.sliceKey)} {formatObservedShare(reason.share)} of
+          plays · {pick.opponent} {rankPhrase(reason.opponentRank)}
+        </p>
+      )}
       {/* Fills the Query Prompt; the reader decides whether to run it. */}
       <button type="button" className="home-pick-try" onClick={() => onUseQuery(query)}>
         Try it <ArrowRight size={13} aria-hidden="true" />

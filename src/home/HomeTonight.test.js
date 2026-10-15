@@ -199,3 +199,11 @@ test("a Target's saved Conditions show under its criteria", () => {
 
   expect(screen.getByRole('link', { name: /fit$/ })).toHaveTextContent('from 2026-01-01');
 });
+
+test('a pick without a readable reason shows no reason line', () => {
+  renderTonight({ spotlight: { best: { ...spotlight.best, reason: null }, toughest: null } });
+
+  const best = screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' });
+  expect(best).toHaveTextContent('+6.7%');
+  expect(best).not.toHaveTextContent('of plays');
+});

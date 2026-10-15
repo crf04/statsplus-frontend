@@ -756,6 +756,7 @@ const GameLogFilter = () => {
             // The URL as it stands is what gets saved, so what opens later is
             // the link the user was looking at.
             queryString={searchParams.toString()}
+            defaultName={currentQuery || ''}
           />
           <SavedFilterSetsModal
             show={showSavedFilterSets}

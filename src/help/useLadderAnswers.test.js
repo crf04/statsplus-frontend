@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useLadderAnswers } from './useLadderAnswers';
 import { fetchGameLogsData } from '../gameLogsApi';
 import { QUERY_LADDER } from './queryHelp';
@@ -48,5 +48,21 @@ test('one failed rung leaves the ladder without answers', async () => {
   const { result } = renderHook(() => useLadderAnswers('reader-a'));
 
   await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(3));
+  // Let the rejection settle before reading the outcome.
+  await act(async () => {});
   expect(result.current).toBeNull();
+});
+
+test('switching accounts clears the answers and rereads', async () => {
+  fetchGameLogsData.mockResolvedValue(logs([20]));
+  const { result, rerender } = renderHook(({ account }) => useLadderAnswers(account), {
+    initialProps: { account: 'reader-a' },
+  });
+  await waitFor(() => expect(result.current).not.toBeNull());
+
+  fetchGameLogsData.mockReturnValue(new Promise(() => {}));
+  rerender({ account: 'reader-b' });
+
+  expect(result.current).toBeNull();
+  expect(fetchGameLogsData).toHaveBeenCalledTimes(6);
 });

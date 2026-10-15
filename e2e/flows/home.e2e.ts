@@ -13,7 +13,7 @@ signedInTest(
 
     // The ticker: one cell per game with its biggest points effects.
     const ticker = screen.getByRole('navigation', "Today's games");
-    const cell = ticker.getByRole('link', 'LAL at BOS Matchup');
+    const cell = ticker.getByRole('link', { name: 'LAL at BOS Matchup', exact: false });
     await expect(cell).toHaveAttribute('href', '/matchups/0022500584');
     // Derived from the game's Matchup fixture: the same scores the Matchup shows.
     await expect(cell).toContainText('Reaves +24%');

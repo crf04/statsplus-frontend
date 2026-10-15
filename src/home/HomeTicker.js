@@ -18,7 +18,11 @@ const HomeTicker = ({ slateDate, games }) => (
           key={game.gameId}
           to={`/matchups/${game.gameId}`}
           className="home-tick"
-          aria-label={`${game.away.tricode} at ${game.home.tricode} Matchup`}
+          aria-label={`${game.away.tricode} at ${game.home.tricode} Matchup, ${formatTip(
+            game.scheduledAt,
+          )}${game.effects
+            .map((effect) => `, ${lastName(effect.name)} ${signedPercent(effect.value)}`)
+            .join('')}`}
         >
           <span className="home-tick-teams">
             {game.away.tricode} @ {game.home.tricode}

@@ -109,7 +109,12 @@ test('the ticker lists each game with its effects by last name and links to its 
     'href',
     '/matchups',
   );
-  const cell = screen.getByRole('link', { name: 'MIA at WAS Matchup' });
+  const tip = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
+    new Date('2026-04-10T23:00:00Z'),
+  );
+  const cell = screen.getByRole('link', {
+    name: `MIA at WAS Matchup, ${tip}, Ware +11%, Carter −8%`,
+  });
   expect(cell).toHaveAttribute('href', '/matchups/g1');
   expect(cell).toHaveTextContent(
     new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(

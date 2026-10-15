@@ -136,6 +136,30 @@ test.each([
     },
   ],
   [
+    'a rank below 1',
+    {
+      ...payload,
+      spotlight: { best: { ...best, reason: { ...reason, opponent_rank: 0 } }, toughest: null },
+    },
+  ],
+  [
+    'a negative share',
+    {
+      ...payload,
+      spotlight: { best: { ...best, reason: { ...reason, share: -0.1 } }, toughest: null },
+    },
+  ],
+  [
+    'a league share above one',
+    {
+      ...payload,
+      spotlight: {
+        best: { ...best, reason: { ...reason, league_average_share: 1.5 } },
+        toughest: null,
+      },
+    },
+  ],
+  [
     'a fractional rank',
     {
       ...payload,

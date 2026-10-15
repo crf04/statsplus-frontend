@@ -16,8 +16,12 @@
  *                   one of them is in the selected market
  *   C7 Slice tiles  C6 with each measure as a number tile (rank square + %), no
  *                   box around a category, players as quiet tags under the slice
+ *   C8 Refined      C7 reworked for scanning: each category sorted softest first,
+ *                   measure columns aligned across rows under one header, rank
+ *                   shown as a marker on a fewest→most track, players as a muted
+ *                   "leaned on by" line, save revealed on hover
  */
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Users } from 'lucide-react';
 import { DIET_BASE_WIRE_NAMES } from '../matchupApi';
 import { findDietShare, getDisplayableDietShare } from '../displayConfig';
 
@@ -367,7 +371,163 @@ function SliceSheet(props) {
   );
 }
 
+// A column is a role, not a wire measure: the slice name already says 2s or 3s.
+const ROLE = {
+  PTS: 'Points',
+  FGA: 'Attempts',
+  FG2A: 'Attempts',
+  FG3A: 'Attempts',
+  FGM: 'Makes',
+  FG2M: 'Makes',
+  FG3M: 'Makes',
+};
+const ROLE_ORDER = ['Points', 'Attempts', 'Makes'];
+const roleOf = (row) => ROLE[splitKey(row.key).measure] || 'Allowed';
+
+// Where on the fewest→most scale a rank sits, 0..1 (30 = allows the most).
+const rankPosition = (rank) => (rank - 1) / 29;
+const rankTitle = (stat, measure) =>
+  `${measure ? `${measure}: ` : ''}${rankWords(stat.rank)} (rank ${stat.rank} of 30) · ${stat.allowedPer48.toFixed(1)} per 48 · ${stat.sigmaDeviation > 0 ? '+' : ''}${stat.sigmaDeviation.toFixed(1)}σ`;
+
+function RefinedSheet(props) {
+  const { team, players, market, windowKey, deviation, surfaceAvailability, selectedPlayer } =
+    props;
+  let hidden = 0;
+  const inMarket = (row) => market === 'All' || row.markets.includes(market);
+  const sections = Object.entries(team.defenseSheet).flatMap(([base, allRows]) => {
+    if (surfaceAvailability[base][windowKey].status !== 'available') return [];
+    const rows = allRows.filter((row) => !row.key.endsWith(':POSS') && row[windowKey] !== null);
+    const groups = mergeBySlice(rows.map(splitByShotValue))
+      .map((group) => ({
+        ...group,
+        rows: [...group.rows].sort(
+          (a, b) =>
+            MEASURE_ORDER.indexOf(splitKey(a.key).measure) -
+            MEASURE_ORDER.indexOf(splitKey(b.key).measure),
+        ),
+      }))
+      .filter((group) => {
+        const live = group.rows.filter(inMarket);
+        if (!live.length) return false;
+        const shown = live.some((row) => Math.abs(row[windowKey].sigmaDeviation) >= deviation);
+        if (!shown) hidden += 1;
+        return shown;
+      })
+      // Softest spot first: the slice whose in-market measure is most above league.
+      .map((group) => ({
+        ...group,
+        lead: Math.max(
+          ...group.rows.filter(inMarket).map((row) => row[windowKey].percentVsLeagueAverage ?? 0),
+        ),
+      }))
+      .sort((a, b) => b.lead - a.lead);
+    if (!groups.length) return [];
+    // Columns are the measures any row in this category shows, in order.
+    const columns = [...new Set(groups.flatMap((group) => group.rows.map(roleOf)))].sort(
+      (a, b) => ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b),
+    );
+    return [{ base, groups, columns }];
+  });
+  return (
+    <section className="rs" aria-labelledby="defense-sheet-heading">
+      <header className="rs-head">
+        <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+        <p>
+          Compared with the league average{market !== 'All' ? `, for ${market}` : ''}. Softest spots
+          first.{hidden ? ` ${hidden} close to average hidden.` : ''}
+        </p>
+      </header>
+      {sections.length === 0 && <p className="honest-empty">No rows match these controls.</p>}
+      <div className="rs-sections">
+        {sections.map(({ base, groups, columns }) => (
+          <section className="rs-section" key={base}>
+            <div className="rs-section-head" style={{ '--cols': columns.length }}>
+              <h3>{BASE_LABELS[base] || base}</h3>
+              {columns.map((measure) => (
+                <span key={measure}>{measure}</span>
+              ))}
+            </div>
+            {groups.map((group) => {
+              const why =
+                selectedPlayer &&
+                getDisplayableDietShare(selectedPlayer, base, group.rows[0].sliceKey);
+              const leans = leansFor(players, base, group.rows[0].sliceKey, market);
+              return (
+                <article
+                  key={group.slice}
+                  className={`rs-row${why ? ' why' : ''}`}
+                  style={{ '--cols': columns.length }}
+                >
+                  <div className="rs-name">
+                    <h4>{group.sliceName}</h4>
+                    {leans.length > 0 && (
+                      <p
+                        title={leans
+                          .map(
+                            ({ player, share }) =>
+                              `${player.name} ${Math.round(share.share * 100)}%`,
+                          )
+                          .join(', ')}
+                      >
+                        <Users size={12} strokeWidth={2.2} aria-hidden="true" />
+                        {leans
+                          .slice(0, 2)
+                          .map(
+                            ({ player, share }) =>
+                              `${shortName(player.name)} ${Math.round(share.share * 100)}%`,
+                          )
+                          .join(' · ')}
+                        {leans.length > 2 ? ` +${leans.length - 2}` : ''}
+                      </p>
+                    )}
+                  </div>
+                  {columns.map((measure) => {
+                    const row = group.rows.find((item) => roleOf(item) === measure);
+                    if (!row) return <span key={measure} className="rs-cell empty" />;
+                    const stat = row[windowKey];
+                    const value = stat.percentVsLeagueAverage;
+                    return (
+                      <div
+                        key={measure}
+                        className={`rs-cell${inMarket(row) ? '' : ' off'}`}
+                        title={rankTitle(stat, C6_SHORT[splitKey(row.key).measure])}
+                      >
+                        <b className={tone(value)}>{pct(value)}</b>
+                        <span className="rs-track" aria-label={rankWords(stat.rank)}>
+                          <i
+                            style={{
+                              left: `${rankPosition(stat.rank) * 100}%`,
+                              '--rank': stat.rank,
+                            }}
+                          >
+                            {stat.rank}
+                          </i>
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <SaveButton row={group.rows[0]} base={base} {...props} />
+                </article>
+              );
+            })}
+            <div className="rs-legend" style={{ '--cols': columns.length }} aria-hidden="true">
+              <span />
+              {columns.map((measure) => (
+                <span key={measure}>
+                  <em>fewest</em>
+                  <em>most</em>
+                </span>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function ProtoSheet(props) {
+  if (props.style === 'C8') return <RefinedSheet {...props} />;
   if (props.style === 'C6' || props.style === 'C7') return <SliceSheet {...props} />;
   const { team, players, market, windowKey, selectedPlayer, style } = props;
   const { sections, hidden } = prepare(props);

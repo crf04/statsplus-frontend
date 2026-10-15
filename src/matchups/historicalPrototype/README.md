@@ -44,3 +44,4 @@ measure names, rank in words (30 = allows the most), one headline % vs league
 - `?v=C4` today's card look (rank squares, pill chips) made readable · `?v=C5` C4 with one card per slice
 - `?v=C6` C2 without cards: play types points only (possessions dropped); shot types and zones pair attempts with makes, the off-market measure dimmed
 - `?v=C7` C6 with number tiles (rank square + %), no category box, players as quiet mono tags
+- `?v=C8` refined: softest spots first, aligned measure columns, rank as a marker on a fewest→most track, players as a muted line, save on hover

@@ -91,6 +91,7 @@ export const defensiveCategoryItems = (category) =>
 const useFilterPanel = ({
   playerList,
   onApplyFilters,
+  onSeasonChange,
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
@@ -503,12 +504,7 @@ const useFilterPanel = ({
 
   // A season is not a draft: choosing one applies at once, beside whatever
   // else the URL already holds. Clear all leaves it alone.
-  const changeSeason = (season) =>
-    onApplyFilters(
-      selectedPlayer === 'None'
-        ? { season_filter: season }
-        : { player_name: selectedPlayer, season_filter: season },
-    );
+  const changeSeason = (season) => onSeasonChange(season);
 
   // back to API defaults for every control, then apply.
   const resetAll = () => {

@@ -22,7 +22,15 @@ jest.mock('./savedFilterSetsApi', () => ({
   fetchSavedFilterSets: jest.fn(() => Promise.resolve([])),
   subscribeSavedFilterSets: jest.fn(() => () => {}),
 }));
-jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
+let mockParsed;
+jest.mock('./NaturalLanguageQuery', () => ({
+  __esModule: true,
+  default: ({ onFiltersApplied }) => (
+    <button type="button" onClick={() => onFiltersApplied(mockParsed)}>
+      Apply parsed query
+    </button>
+  ),
+}));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
 jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
@@ -52,6 +60,7 @@ const renderAt = (entry) =>
 const url = () => screen.getByTestId('location').textContent;
 
 beforeEach(() => {
+  mockParsed = { season_filter: '2026-27' };
   apiClient.get.mockImplementation(() => new Promise(() => {}));
   fetchGameLogsData.mockImplementation(() => new Promise(() => {}));
   fetchSeasons.mockResolvedValue({ seasons: ['2026-27', '2025-26'], defaultSeason: '2025-26' });
@@ -96,4 +105,25 @@ test('Clear all empties the other filters from the URL and keeps the season', as
 
   await waitFor(() => expect(url()).toBe('/?player_name=LeBron+James&season_filter=2026-27'));
   expect(screen.getByRole('combobox', { name: 'Season' })).toHaveValue('2026-27');
+});
+
+test('with no player, a season is still written beside the other filters and nothing is requested', async () => {
+  renderAt('/?game_filter=10&location_filter=Home');
+  fireEvent.change(await screen.findByRole('combobox', { name: 'Season' }), {
+    target: { value: '2026-27' },
+  });
+
+  await waitFor(() =>
+    expect(url()).toBe('/?season_filter=2026-27&location_filter=Home&game_filter=10'),
+  );
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
+});
+
+test('a parsed query carrying only a season, with no player, is refused and requests nothing', async () => {
+  renderAt('/?season_filter=2026-27');
+  fireEvent.click(await screen.findByRole('button', { name: 'Apply parsed query' }));
+
+  await screen.findByText('Choose a player before applying these filters.');
+  expect(url()).toBe('/?season_filter=2026-27');
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
 });

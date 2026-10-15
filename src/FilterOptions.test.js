@@ -23,12 +23,14 @@ beforeEach(() => {
 const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
+    const [seasonChoice, setSeasonChoice] = useState(null);
     const [line, setLine] = useState(20);
     return (
       <MemoryRouter>
         <FilterOptions
           playerList={['LeBron James', 'Anthony Davis']}
           onApplyFilters={setResult}
+          onSeasonChange={setSeasonChoice}
           selectedPlayer="LeBron James"
           seasonGameLogs={seasonGameLogs}
           gameLogs={seasonGameLogs.slice(0, 1)}
@@ -40,6 +42,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <output data-testid="patch">{JSON.stringify(result)}</output>
+        <output data-testid="season-choice">{seasonChoice}</output>
       </MemoryRouter>
     );
   };
@@ -272,7 +275,8 @@ test('a season select offers each season, starts on the default and applies at o
   ]);
 
   fireEvent.change(select, { target: { value: '2026-27' } });
-  expect(patch()).toEqual({ player_name: 'LeBron James', season_filter: '2026-27' });
+  expect(screen.getByTestId('season-choice')).toHaveTextContent('2026-27');
+  expect(screen.getByTestId('patch')).toHaveTextContent('null');
 });
 
 test('the season select shows the season in the link and Clear all leaves it out of its patch', async () => {

@@ -2144,3 +2144,11 @@
 .hp-terse .hp-e-tick {
   min-width: 140px;
 }
+
+/* Z4: the headline runs wider than everything under it. */
+.hp-terse .hp-one-line .landing-title {
+  width: max-content;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(34px, 12vw, 152px);
+}

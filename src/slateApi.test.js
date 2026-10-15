@@ -45,6 +45,8 @@ const payload = {
 test('decodes the complete slate freshness boundary and team counts', () => {
   expect(decodeSlate(payload)).toEqual({
     slateDate: '2026-01-15',
+    previousGameDate: null,
+    nextGameDate: null,
     freshness: {
       schedule: { retrievedAt: '2026-01-15T10:00:00.000Z', status: 'fresh' },
       pool: {
@@ -343,4 +345,18 @@ test('fetches a dated slate through the endpoint catalog and bearer transport', 
     params: { date: '2026-01-15' },
     signal: undefined,
   });
+});
+
+test('reads the game-day neighbours and treats absent or null ones as none', () => {
+  const withNeighbours = decodeSlate({
+    ...payload,
+    previous_game_date: '2026-01-14',
+    next_game_date: null,
+  });
+  expect([withNeighbours.previousGameDate, withNeighbours.nextGameDate]).toEqual([
+    '2026-01-14',
+    null,
+  ]);
+  const older = decodeSlate(payload);
+  expect([older.previousGameDate, older.nextGameDate]).toEqual([null, null]);
 });

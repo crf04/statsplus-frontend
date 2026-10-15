@@ -197,14 +197,11 @@ function SlateBoard({ games, renderExtra }) {
   );
 }
 
-// Temporary offseason landing date; remove when current slates resume.
-const defaultSlateDate = '2026-03-11';
-
 export default function SlatePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const requestedDate = searchParams.get('date') ?? defaultSlateDate;
   const todaySlateDate = getTodaySlateDate();
+  const requestedDate = searchParams.get('date') ?? todaySlateDate;
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
@@ -348,6 +345,19 @@ export default function SlatePage() {
             <div className="empty-slate">
               <h2>No games on this slate.</h2>
               <p>Choose another date to keep browsing the season.</p>
+              <div className="empty-slate-jumps">
+                {state.slate.previousGameDate && (
+                  <button type="button" onClick={() => navigate(state.slate.previousGameDate)}>
+                    Previous game day{' '}
+                    <span>{formatCalendarDate(state.slate.previousGameDate)}</span>
+                  </button>
+                )}
+                {state.slate.nextGameDate && (
+                  <button type="button" onClick={() => navigate(state.slate.nextGameDate)}>
+                    Next game day <span>{formatCalendarDate(state.slate.nextGameDate)}</span>
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <SlateBoard

@@ -154,6 +154,19 @@ function Sparkline({ values }) {
 // The strip is the stat selector. A completed game shows its box score; an
 // upcoming game has none yet, so it shows minutes to date and which books post
 // each market. The MIN tile is context, not a choice.
+// The strip's choices are the DFS categories plus any category only sportsbooks
+// quote. The extras feed the Sportsbooks table alone: they are not DFS
+// provenance, have no score row and are never Target candidates.
+const statChoices = (player) =>
+  orderCategories([
+    ...new Set([
+      ...player.statCategories,
+      ...Object.keys(player.bookLines ?? {}).filter(
+        (market) => player.bookLines[market].books.length,
+      ),
+    ]),
+  ]);
+
 function StatStrip({ player, categories, activeStat, onPick }) {
   const line = player.focalGameLine;
   const minutes = player.last10Minutes;
@@ -198,9 +211,14 @@ function StatStrip({ player, categories, activeStat, onPick }) {
                 <span className="selection-visually-hidden" id={`selection-strip-${category}`}>
                   {providers.length
                     ? `Posted by ${providers.map(bookName).join(' and ')}`
-                    : 'Not posted'}
+                    : player.bookLines?.[category]
+                      ? 'Quoted by sportsbooks only'
+                      : 'Not posted'}
                 </span>
-                {books.map((mark) => (
+                {(books.length || !player.bookLines?.[category]
+                  ? books
+                  : player.bookLines[category].books.map((entry) => bookMark(entry.book))
+                ).map((mark) => (
                   <i key={mark} aria-hidden="true">
                     {mark}
                   </i>
@@ -284,14 +302,15 @@ export default function SelectionCard({
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const categories = orderCategories(player.statCategories);
+  const stats = statChoices(player);
   const [activeStat, setActiveStat] = useState(
-    categories.includes(sheetMarket) ? sheetMarket : categories[0],
+    stats.includes(sheetMarket) ? sheetMarket : stats[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
     const playerChanged = previousPlayerId.current !== player.id;
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
-    const ordered = orderCategories(player.statCategories);
+    const ordered = statChoices(player);
     setActiveStat((current) => {
       if (playerChanged) {
         return ordered.includes(sheetMarket) ? sheetMarket : ordered[0];
@@ -303,7 +322,7 @@ export default function SelectionCard({
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, player.statCategories, sheetMarket]);
+  }, [player.id, player.statCategories, player.bookLines, sheetMarket]);
   const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
@@ -349,7 +368,7 @@ export default function SelectionCard({
       </div>
       <StatStrip
         player={player}
-        categories={categories}
+        categories={stats}
         activeStat={activeStat}
         onPick={setActiveStat}
       />
@@ -416,7 +435,10 @@ export default function SelectionCard({
           <h3>Games vs this opponent</h3>
           {status === 'loading' && <p role="status">Loading selection logs…</p>}
           {status === 'error' && <p role="alert">{error}</p>}
-          {status === 'ready' && (
+          {status === 'ready' && !categories.includes(activeStat) && (
+            <p className="honest-empty">No games vs this opponent log is kept for {activeStat}.</p>
+          )}
+          {status === 'ready' && categories.includes(activeStat) && (
             <OpponentLog
               table={selection.h2h}
               market={activeStat}

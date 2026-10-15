@@ -865,11 +865,14 @@ test('selection card lists sportsbook lines per book, starring the best price on
 
   await page.setViewportSize({ width: 393, height: 852 });
   await books.scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
+  // The table wrapper scrolls sideways when its table is wider than the card,
+  // which the document width alone would not show.
+  const fits = () =>
+    books.locator('.selection-table-wrap').evaluate((wrap) => wrap.scrollWidth <= wrap.clientWidth);
+  expect(await fits()).toBe(true);
   await books.getByRole('button', { name: '+1 more' }).click();
   await expect(table.getByRole('row', { name: /^Caesars/ })).toContainText('28.5+105-125');
+  expect(await fits()).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

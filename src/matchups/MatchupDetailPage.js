@@ -501,10 +501,10 @@ const leansFor = (players, base, sliceKey, market) =>
         .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
     : [];
 
-function SheetCell({ row, windowKey, dimmed }) {
+function SheetCell({ row, windowKey }) {
   const stat = row[windowKey];
   return (
-    <div className={`sheet-cell${dimmed ? ' sheet-cell-off' : ''}`} title={cellTitle(stat)}>
+    <div className="sheet-cell" title={cellTitle(stat)}>
       <b className={toneClass(stat.percentVsLeagueAverage)}>
         {formatRelative(stat.percentVsLeagueAverage)}
       </b>
@@ -641,12 +641,7 @@ function DefenseSheet({
                     {columns.map((column) => {
                       const row = group.rows.find((item) => columnOf(item) === column);
                       return row ? (
-                        <SheetCell
-                          key={column}
-                          row={row}
-                          windowKey={windowKey}
-                          dimmed={!inMarket(row)}
-                        />
+                        <SheetCell key={column} row={row} windowKey={windowKey} />
                       ) : (
                         <span key={column} className="sheet-cell-empty" />
                       );

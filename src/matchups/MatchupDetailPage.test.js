@@ -945,10 +945,9 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
     for (const slice of ['Restricted area', 'Corner 3s', 'Pull-up 2s', 'Catch-and-shoot 3s']) {
       expect(sheetRow(slice)).toBeVisible();
     }
-    // Corner 3 attempts feed no combo, so they read dimmed beside the makes.
-    const [attempts, makes] = within(sheetRow('Corner 3s')).getAllByTitle(/per 48/);
-    expect(attempts).toHaveClass('sheet-cell-off');
-    expect(makes).not.toHaveClass('sheet-cell-off');
+    // Corner 3 attempts feed no combo but still show, at full strength, beside the makes.
+    const cells = within(sheetRow('Corner 3s')).getAllByTitle(/per 48/);
+    expect(cells.map((cell) => cell.className)).toEqual(['sheet-cell', 'sheet-cell']);
   }
 });
 
@@ -2194,7 +2193,7 @@ test('AC12: each measure shows one % vs league and its rank on a fewest-to-most 
   ).toEqual(['Rank 30 of 30: allows the most', 'Rank 17 of 30: allows the 14th most']);
 });
 
-test('AC13: slices sort by their in-market measure, and an off-market measure is dimmed', async () => {
+test('AC13: slices sort by their in-market measure, and both measures read at full strength', async () => {
   fetchMatchup.mockResolvedValueOnce(fullSheet());
   renderMatchup();
 
@@ -2206,15 +2205,15 @@ test('AC13: slices sort by their in-market measure, and an off-market measure is
   // PTS reads makes: Restricted area +5% before Corner 3s +1%, whatever the
   // attempts say.
   expect(zoneOrder()).toEqual(['Restricted area', 'Corner 3s']);
-  const [attempts, makes] = within(sheetRow('Corner 3s')).getAllByTitle(/per 48/);
-  expect(attempts).toHaveClass('sheet-cell-off');
-  expect(makes).not.toHaveClass('sheet-cell-off');
+  const cells = () =>
+    within(sheetRow('Corner 3s'))
+      .getAllByTitle(/per 48/)
+      .map((cell) => cell.className);
+  expect(cells()).toEqual(['sheet-cell', 'sheet-cell']);
 
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   expect(zoneOrder()).toEqual(['Corner 3s', 'Restricted area']);
-  const [fgaAttempts, fgaMakes] = within(sheetRow('Corner 3s')).getAllByTitle(/per 48/);
-  expect(fgaAttempts).not.toHaveClass('sheet-cell-off');
-  expect(fgaMakes).toHaveClass('sheet-cell-off');
+  expect(cells()).toEqual(['sheet-cell', 'sheet-cell']);
 });
 
 test('AC14: only players over league who pass the display threshold are listed under a slice', async () => {

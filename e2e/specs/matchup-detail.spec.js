@@ -1029,7 +1029,7 @@ const withMakesBesideAttempts = () => {
   return candidate;
 };
 
-test('the sheet dims off-stat measures, draws no category boxes and reads at the larger type', async ({
+test('the sheet shows both measures at full strength, draws no category boxes and reads at the larger type', async ({
   page,
 }) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
@@ -1037,13 +1037,13 @@ test('the sheet dims off-stat measures, draws no category boxes and reads at the
   await installApiContract(page, { '/api/games/matchup': withMakesBesideAttempts() });
   await page.goto('/matchups/0022500584');
 
-  // On PTS the makes are in the stat and the attempts beside them are not.
+  // On PTS the makes are in the stat; the attempts beside them are not, and read just as strongly.
   const restricted = page.getByRole('article', { name: 'Restricted area' });
   await expect(restricted.getByTitle(/per 48/)).toHaveCount(2);
   const [attempts, makes] = await restricted.getByTitle(/per 48/).all();
   const opacity = async (locator) =>
     Number(await locator.evaluate((node) => getComputedStyle(node).opacity));
-  expect(await opacity(attempts)).toBeLessThan(1);
+  expect(await opacity(attempts)).toBe(1);
   expect(await opacity(makes)).toBe(1);
 
   // A category is a label and a rule, not a box.

@@ -611,11 +611,6 @@
   cursor: default;
 }
 
-/* A measure outside the selected stat is context beside its partner. */
-.sheet-cell-off {
-  opacity: 0.42;
-}
-
 .sheet-cell b {
   font-family: var(--ct-display);
   font-size: 1.4rem;

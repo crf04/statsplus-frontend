@@ -69,41 +69,41 @@ export const useHomeTonight = (account) => {
       if (!earlier) return { slate: today, past: false };
       return { slate: await settle(fetchSlate(earlier, { signal })), past: true };
     };
-    slateToShow()
-      .then(async ({ slate, past }) => {
-        const date = slate.status === 'fulfilled' ? slate.value.slateDate : undefined;
-        const [edges, resolved] = await Promise.all([
-          date ? settle(fetchSlateEdges({ date, signal })) : { status: 'rejected' },
-          settle(fetchResolvedTargets({ date, signal })),
-        ]);
-        return [slate, edges, resolved, past];
-      })
-      .then(([slate, edges, resolved, past]) => {
+    const warnIfFailed = (result) => {
+      if (result.status === 'rejected' && result.reason && !isRequestCancelled(result.reason)) {
+        // Each section is optional; the console keeps the reason for diagnosis.
+        console.warn('Home page read failed', result.reason);
+      }
+    };
+    slateToShow().then(({ slate, past }) => {
+      if (signal.aborted) return;
+      warnIfFailed(slate);
+      const slateDate = slate.status === 'fulfilled' ? slate.value.slateDate : null;
+      // Games and Targets render as each arrives: a slow Targets read must not
+      // hold back the ticker.
+      if (slateDate !== null && slate.value.games.length > 0) {
+        settle(fetchSlateEdges({ date: slateDate, signal })).then((edges) => {
+          if (signal.aborted) return;
+          warnIfFailed(edges);
+          if (edges.status !== 'fulfilled' || edges.value === null) return;
+          if (edges.value.slateDate !== slateDate) return;
+          setState((current) => ({
+            ...current,
+            games: joinGames(slate.value, edges.value),
+            spotlight: edges.value.spotlight,
+            slateDate,
+            past,
+          }));
+        });
+      }
+      settle(fetchResolvedTargets({ date: slateDate ?? undefined, signal })).then((resolved) => {
         if (signal.aborted) return;
-        const failed = (result) =>
-          result.status === 'rejected' && result.reason && !isRequestCancelled(result.reason);
-        [slate, edges, resolved].filter(failed).forEach((result) => {
-          // Each section is optional; the console keeps the reason for diagnosis.
-          console.warn('Home page read failed', result.reason);
-        });
-        const slateDate = slate.status === 'fulfilled' ? slate.value.slateDate : null;
-        const hasGames =
-          slateDate !== null &&
-          edges.status === 'fulfilled' &&
-          edges.value !== null &&
-          edges.value.slateDate === slateDate &&
-          slate.value.games.length > 0;
-        const targetsToday =
-          resolved.status === 'fulfilled' &&
-          (slateDate === null || resolved.value.slateDate === slateDate);
-        setState({
-          games: hasGames ? joinGames(slate.value, edges.value) : null,
-          spotlight: hasGames ? edges.value.spotlight : null,
-          slateDate: hasGames ? slateDate : null,
-          past: hasGames && past,
-          targets: targetsToday ? firingTargets(resolved.value) : null,
-        });
+        warnIfFailed(resolved);
+        if (resolved.status !== 'fulfilled') return;
+        if (slateDate !== null && resolved.value.slateDate !== slateDate) return;
+        setState((current) => ({ ...current, targets: firingTargets(resolved.value) }));
       });
+    });
     return () => controller.abort();
   }, [account]);
   return state;

@@ -293,6 +293,8 @@ const NaturalLanguageQuery = ({
                 spotlight={tonight.spotlight}
                 targets={tonight.targets}
                 onUseQuery={setQuery}
+                slateDate={tonight.slateDate}
+                past={tonight.past}
               />
             )}
 

@@ -21,7 +21,13 @@ const slate = {
 };
 const edges = {
   slateDate: '2026-04-10',
-  games: [{ gameId: 'early', effects: [{ canonicalId: 1 }], scores: new Map([[1, 0.1]]) }],
+  games: [
+    {
+      gameId: 'early',
+      effects: [{ canonicalId: 1, name: 'Austin Reaves', value: 0.2 }],
+      scores: new Map([[1, 0.1]]),
+    },
+  ],
   spotlight: { best: null, toughest: null },
 };
 const resolved = {
@@ -53,7 +59,9 @@ test('joins the Slate to its edges in tip-off order and ranks firing Targets by 
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
-  expect(result.current.games[0].effects).toEqual([{ canonicalId: 1 }]);
+  expect(result.current.games[0].effects).toEqual([
+    { canonicalId: 1, name: 'Austin Reaves', value: 0.2 },
+  ]);
   expect(result.current.games[0].scores.get(1)).toBe(0.1);
   // A game the edges left out shows no effects rather than vanishing.
   expect(result.current.games[1].effects).toEqual([]);
@@ -193,7 +201,7 @@ describe('the last public result', () => {
         scheduledAt: '2026-04-09T23:00:00Z',
         away: { tricode: 'LAL' },
         home: { tricode: 'BOS' },
-        effects: [{ canonicalId: 7 }],
+        effects: [{ canonicalId: 7, name: 'Austin Reaves', value: 0.25 }],
         scores: [[7, 0.25]],
       },
     ],

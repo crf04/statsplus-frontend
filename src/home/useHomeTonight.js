@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchSlate } from '../slateApi';
 import { fetchSlateEdges } from '../slateEdgesApi';
 import { fetchResolvedTargets } from '../targets/targetsApi';
+import { isCalendarDate } from '../calendarDate';
 import { isRequestCancelled } from '../gameLogsApi';
 
 /*
@@ -33,18 +34,49 @@ const EMPTY = { games: null, spotlight: null, slateDate: null, past: false, targ
 
 const CACHE_KEY = 'courtai.homeTonight.v1';
 
-const isGame = (game) =>
-  game !== null &&
-  typeof game === 'object' &&
-  typeof game.gameId === 'string' &&
-  typeof game.scheduledAt === 'string' &&
-  typeof game.away?.tricode === 'string' &&
-  typeof game.home?.tricode === 'string' &&
-  Array.isArray(game.effects) &&
-  Array.isArray(game.scores) &&
-  game.scores.every((pair) => Array.isArray(pair) && pair.length === 2);
+// Everything below is what the ticker and Tonight read; an entry is only
+// trusted when each of those fields has the type and form they render from.
+const isObject = (value) => value !== null && typeof value === 'object';
+const isText = (value) => typeof value === 'string';
+const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const isInstant = (value) => isText(value) && !Number.isNaN(new Date(value).getTime());
 
-const isPick = (pick) => pick === null || typeof pick === 'object';
+const isEffect = (effect) =>
+  isObject(effect) && isNumber(effect.canonicalId) && isText(effect.name) && isNumber(effect.value);
+
+const isGame = (game) =>
+  isObject(game) &&
+  isText(game.gameId) &&
+  isInstant(game.scheduledAt) &&
+  isText(game.away?.tricode) &&
+  isText(game.home?.tricode) &&
+  Array.isArray(game.effects) &&
+  game.effects.every(isEffect) &&
+  Array.isArray(game.scores) &&
+  game.scores.every(
+    (pair) => Array.isArray(pair) && pair.length === 2 && isNumber(pair[0]) && isNumber(pair[1]),
+  );
+
+const isReason = (reason) =>
+  reason === null ||
+  (isObject(reason) &&
+    isText(reason.base) &&
+    isText(reason.sliceKey) &&
+    isNumber(reason.share) &&
+    Number.isInteger(reason.opponentRank) &&
+    reason.opponentRank >= 1 &&
+    reason.opponentRank <= 30);
+
+// `best` helps and `toughest` hurts, as the Slate Edges decoder requires.
+const isPick = (pick, sign) =>
+  pick === null ||
+  (isObject(pick) &&
+    isText(pick.gameId) &&
+    isText(pick.name) &&
+    isText(pick.opponent) &&
+    isNumber(pick.value) &&
+    pick.value * sign > 0 &&
+    isReason(pick.reason));
 
 // The last public result, or EMPTY when there is none or it cannot be trusted.
 const readCache = () => {
@@ -52,15 +84,15 @@ const readCache = () => {
     const entry = JSON.parse(window.localStorage.getItem(CACHE_KEY));
     if (entry === null) return EMPTY;
     if (
-      typeof entry !== 'object' ||
+      !isObject(entry) ||
       !Array.isArray(entry.games) ||
       entry.games.length === 0 ||
       !entry.games.every(isGame) ||
-      typeof entry.slateDate !== 'string' ||
+      !isCalendarDate(entry.slateDate) ||
       typeof entry.past !== 'boolean' ||
-      !entry.spotlight ||
-      !isPick(entry.spotlight.best) ||
-      !isPick(entry.spotlight.toughest)
+      !isObject(entry.spotlight) ||
+      !isPick(entry.spotlight.best, 1) ||
+      !isPick(entry.spotlight.toughest, -1)
     ) {
       clearCache();
       return EMPTY;
@@ -153,17 +185,32 @@ export const useHomeTonight = (landing, account) => {
     // hold back the ticker.
     Promise.all([slateRead, edgesRead]).then(([slate, edges]) => {
       if (signal.aborted) return;
-      // A failed read keeps what is on screen; only an answer replaces it.
-      if (slate.status !== 'fulfilled' || edges.status !== 'fulfilled') return;
-      if (edges.value !== null && edges.value.slateDate !== slate.value.slateDate) return;
-      if (edges.value === null || slate.value.games.length === 0) {
+      // A Slate that failed to read leaves the painted cache alone. Once the
+      // Slate has answered, the cache must not outlive it: whatever the Edges
+      // cannot confirm for the Slate's own date is removed.
+      if (slate.status !== 'fulfilled') return;
+      const confirmed = edges.status === 'fulfilled' ? edges.value : undefined;
+      if (confirmed === undefined) {
+        // Edges failed: keep the paint only if it is for the Slate's own day.
+        setState((current) => {
+          if (current.slateDate === slate.value.slateDate) return current;
+          clearCache();
+          return { ...EMPTY, targets: current.targets };
+        });
+        return;
+      }
+      if (
+        confirmed === null ||
+        confirmed.slateDate !== slate.value.slateDate ||
+        slate.value.games.length === 0
+      ) {
         clearCache();
         setState((current) => ({ ...EMPTY, targets: current.targets }));
         return;
       }
       const fresh = {
-        games: joinGames(slate.value, edges.value),
-        spotlight: edges.value.spotlight,
+        games: joinGames(slate.value, confirmed),
+        spotlight: confirmed.spotlight,
         slateDate: slate.value.slateDate,
         past: slate.value.fallback === fallback,
       };

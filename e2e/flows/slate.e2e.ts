@@ -1,123 +1,13 @@
-// Ported from e2e/specs/slate.spec.js (retired). flows/slates.e2e.ts covers the
-// happy paths with different titles; this file keeps the source titles, in order.
+// Ported from e2e/specs/slate.spec.js. Nine of its ten tests are here, with the
+// source titles in order. The tenth, "authenticated user opens a slate and
+// navigates dates", stays in that spec because it observes browser requests.
+// flows/slates.e2e.ts covers the happy paths with different titles.
 import { expect } from 'e2e';
 import { slateGame, slateGameWithMissingNameSentinels, slatePayload } from '../fixtures/courtai.js';
 import { freezeClock, signedInTest, signedOutTest } from './support/courtai.ts';
 
 // `page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'))` in the source.
 const FIXED_NOW = '2026-01-15T12:00:00Z';
-
-signedInTest(
-  'authenticated user opens a slate and navigates dates',
-  { tags: ['critical'] },
-  async ({ app, screen, browser, api }) => {
-    await freezeClock(browser, FIXED_NOW);
-    await api.override({
-      '/api/games/slate': (request) => {
-        const date = new URL(request.url()).searchParams.get('date') || '2026-01-15';
-        if (date === '2026-01-14') return slatePayload(date, []);
-        if (date === '2026-01-10') {
-          return slatePayload(
-            date,
-            [
-              {
-                ...slateGame,
-                game_id: '0022500541',
-                away_team: {
-                  ...slateGame.away_team,
-                  tricode: 'NYK',
-                  name: 'New York Knicks',
-                },
-                home_team: {
-                  ...slateGame.home_team,
-                  tricode: 'MIL',
-                  name: 'Milwaukee Bucks',
-                },
-                scheduled_at: '2026-01-11T01:00:00Z',
-                status: { state: 'final', label: 'Final' },
-                classification: null,
-              },
-            ],
-            {
-              poolFreshnessStatus: 'fresh',
-              poolRetrievedAt: '2026-01-15T11:50:00Z',
-            },
-          );
-        }
-        return slatePayload(date, [slateGame], {
-          poolFreshnessStatus: 'stale-served',
-          poolRetrievedAt: '2026-01-15T10:00:00Z',
-          providers: {
-            prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
-            underdog: { status: 'missing', retrieved_at: null },
-          },
-        });
-      },
-    });
-
-    await app.open('/matchups?date=2026-01-15');
-
-    await expect(screen.getByRole('heading', 'Thursday, January 15, 2026')).toBeVisible();
-    await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
-    const viewerLocalTip = await browser.evaluate((scheduledAt: string) => {
-      return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
-        new Date(scheduledAt),
-      );
-    }, slateGame.scheduled_at);
-    await expect(screen.getByText(viewerLocalTip)).toBeVisible();
-    await expect(screen.getByText('Los Angeles Lakers at Boston Celtics')).toBeVisible();
-    await expect(
-      screen.getByLabel('9 targetable players, LAL 5, BOS 4', { exact: false }),
-    ).toBeVisible();
-    // One mark per targetable player, grouped away then home.
-    await expect(browser.locator('.slate-pip')).toHaveCount(9);
-    await expect(screen.getByText('NBA Paris Game')).toBeVisible();
-    await expect(screen.getByText('Preseason', { exact: false })).toHaveCount(0);
-    await expect(screen.getByText(/schedule is fresh.*as of/i)).toBeVisible();
-    const freshness = screen.getByRole('group', 'Data freshness');
-    await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
-    await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
-    await expect(
-      screen.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i),
-    ).toBeVisible();
-    await app.screenshot('slate-stale-pool');
-
-    await screen.getByRole('button', 'Previous date').tap();
-    await expect(browser).toHaveURL(/date=2026-01-14/);
-    await expect(screen.getByText('No games on this slate.')).toBeVisible();
-    await app.screenshot('slate-empty');
-
-    await screen.getByLabel('Slate date').fill('');
-    await expect(browser).toHaveURL(/\/matchups\?date=2026-01-15$/);
-    await expect(screen.getByRole('heading', 'Thursday, January 15, 2026')).toBeVisible();
-    expect(
-      api.sent('/api/games/slate').some((request) => request.search.get('date') === '2026-01-15'),
-    ).toBe(true);
-
-    await screen.getByLabel('Slate date').fill('2026-01-10');
-    await expect(browser).toHaveURL(/date=2026-01-10/);
-    await expect(screen.getByRole('heading', 'NYK @ MIL')).toBeVisible();
-    await expect(
-      screen.getByText(/current player pool is not displayed for historical dates/i),
-    ).toBeVisible();
-    await expect(
-      screen.getByText(/final game cards retain the posted targetable counts/i),
-    ).toBeVisible();
-    await expect(
-      screen.getByLabel('9 targetable players, NYK 5, MIL 4', { exact: false }),
-    ).toBeVisible();
-    await app.screenshot('slate-past');
-    expect(
-      api.sent('/api/games/slate').some((request) => request.search.get('date') === '2026-01-10'),
-    ).toBe(true);
-
-    // Today is reachable from any date, not only as recovery from a bad one.
-    await screen.getByRole('button', 'Today').tap();
-    await expect(browser).toHaveURL(/\/matchups\?date=2026-01-15$/);
-    await expect(screen.getByRole('heading', 'Thursday, January 15, 2026')).toBeVisible();
-    await expect(screen.getByRole('button', 'Today')).toBeDisabled();
-  },
-);
 
 signedInTest(
   'falls back to team tricodes when slate team names are unavailable',

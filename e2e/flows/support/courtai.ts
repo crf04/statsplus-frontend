@@ -147,10 +147,11 @@ export const adminTest = withContract.extend<{ signedIn: true }>({
 });
 
 /**
- * Freezes `new Date()`, `Date()` and `Date.now()` at one instant before the
- * app runs, as Playwright's `page.clock.setFixedTime` did: timers keep
- * running. The web engine exposes init scripts rather than a clock. Call it
- * before `app.open`.
+ * Freezes the current time at one instant before the app runs, as Playwright's
+ * `page.clock.setFixedTime` did: `new Date()`, `Date()` and `Date.now()`, and
+ * the implicit now of `Intl.DateTimeFormat#format()` and `#formatToParts()`
+ * (called with no date). Timers keep running. The web engine exposes init
+ * scripts rather than a clock. Call it before `app.open`.
  */
 export const freezeClock = (browser: Browser, iso: string) =>
   browser.addInitScript((frozenIso: string) => {
@@ -161,6 +162,21 @@ export const freezeClock = (browser: Browser, iso: string) =>
       apply: () => new RealDate(instant).toString(),
       get: (target, key) => (key === 'now' ? () => instant : Reflect.get(target, key)),
     });
+    const proto = Intl.DateTimeFormat.prototype;
+    const formatGetter = Object.getOwnPropertyDescriptor(proto, 'format')?.get;
+    if (formatGetter) {
+      Object.defineProperty(proto, 'format', {
+        configurable: true,
+        get() {
+          const bound = formatGetter.call(this);
+          return (date?: Date | number) => bound(date === undefined ? instant : date);
+        },
+      });
+    }
+    const formatToParts = proto.formatToParts;
+    proto.formatToParts = function (this: Intl.DateTimeFormat, date?: Date | number) {
+      return formatToParts.call(this, date === undefined ? instant : date);
+    };
   }, iso);
 
 /** True when the document scrolls sideways. */

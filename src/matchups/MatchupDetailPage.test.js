@@ -1011,9 +1011,10 @@ test('the Selection card highlights the shot make rows behind a combo market for
     { key: 'Restricted Area', season: share },
     { key: 'Corner 3', season: share },
   ];
+  const split = { ...share, shotValues: { 2: share, 3: share } };
   lebron.dietShares.shotTypes = [
-    { key: 'Pullups', season: share },
-    { key: 'Catch and Shoot', season: share },
+    { key: 'Pullups', season: split },
+    { key: 'Catch and Shoot', season: split },
   ];
   lebron.statCategories.push('PRA', 'PR', 'PA');
   for (const combo of ['PRA', 'PR', 'PA']) lebron.scores[combo] = score(0.08, 0.02);
@@ -1029,6 +1030,45 @@ test('the Selection card highlights the shot make rows behind a combo market for
       expect(sheetRow(slice)).toHaveClass('selection-why');
     }
   }
+});
+
+test('pull-up 3s and pull-up 2s each list who leans on that shot, with its own share', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = ['Pullups:FG3A', 'Pullups:FG2A'].map((key) => ({
+    key,
+    sliceKey: 'Pullups',
+    label: key,
+    markets: ['PTS'],
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  }));
+  const lean = (share, sigmaDeviation) => ({ share, volumePerGame: 4, sigmaDeviation });
+  const pullUps = (twos, threes) => [
+    {
+      key: 'Pullups',
+      season: { ...lean(0.4, 1.5), shotValues: twos && { 2: twos, 3: threes } },
+    },
+  ];
+  const [reaves, lebron, tatum] = [1630559, 2544, 1628369].map((id) =>
+    candidate.players.find((player) => player.id === id),
+  );
+  // Reaves leans on pull-up threes, LeBron on pull-up twos; Tatum's split is missing.
+  reaves.dietShares.shotTypes = pullUps(lean(0.1, -0.5), lean(0.3, 1.4));
+  lebron.dietShares.shotTypes = pullUps(lean(0.28, 1.2), lean(0.12, -0.3));
+  tatum.dietShares.shotTypes = pullUps(null, null);
+  for (const player of [reaves, lebron, tatum]) player.statCategories = ['PTS'];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  expect(
+    within(sheetRow('Pull-up 3s')).getByRole('list', { name: 'Players leaning on Pull-up 3s' }),
+  ).toHaveTextContent(/^Austin Reaves 30%$/);
+  expect(
+    within(sheetRow('Pull-up 2s')).getByRole('list', { name: 'Players leaning on Pull-up 2s' }),
+  ).toHaveTextContent(/^LeBron James 28%$/);
 });
 
 test('joins suffixed sheet rows to bare governed Diet slice identities', async () => {
@@ -1059,7 +1099,18 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1, sigmaDeviation: 1.1 } },
   ];
   lebron.dietShares.shotTypes = [
-    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2, sigmaDeviation: 1.2 } },
+    {
+      key: 'Catch and Shoot',
+      season: {
+        share: 0.36,
+        volumePerGame: 4.2,
+        sigmaDeviation: 1.2,
+        shotValues: {
+          2: { share: 0.02, volumePerGame: 0.2, sigmaDeviation: -0.4 },
+          3: { share: 0.34, volumePerGame: 4.0, sigmaDeviation: 1.3 },
+        },
+      },
+    },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup('/matchups/game-1?player=2544');
@@ -1079,7 +1130,7 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     within(sheetRow('Catch-and-shoot 3s')).getByRole('list', {
       name: 'Players leaning on Catch-and-shoot 3s',
     }),
-  ).toHaveTextContent(/^LeBron James 36%$/);
+  ).toHaveTextContent(/^LeBron James 34%$/);
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {

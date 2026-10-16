@@ -90,12 +90,16 @@ export const sliceName = (sliceKey) => SLICE_NAMES[sliceKey] || sliceKey;
 
 // One player's season diet fact for one slice, whether or not it is displayable.
 // Capture reads it for the league average the slice is measured against, which
-// the display gate has no say over.
-export const findDietShare = (player, base, sliceKey) =>
-  player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season || null;
+// the display gate has no say over. A shot value ('2' or '3') reads just the
+// shot type's twos or threes, or nothing when the split is missing.
+export const findDietShare = (player, base, sliceKey, shotValue = null) => {
+  const season = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season;
+  if (!season) return null;
+  return shotValue ? season.shotValues?.[shotValue] || null : season;
+};
 
-export const getDisplayableDietShare = (player, base, sliceKey) => {
-  const value = findDietShare(player, base, sliceKey);
+export const getDisplayableDietShare = (player, base, sliceKey, shotValue = null) => {
+  const value = findDietShare(player, base, sliceKey, shotValue);
   return value && shouldDisplayDietShare(base, value) ? value : null;
 };
 

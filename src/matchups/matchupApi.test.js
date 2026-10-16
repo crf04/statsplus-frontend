@@ -765,6 +765,73 @@ test('decodes Season-only Diet Shares and an unavailable team window without sub
   });
 });
 
+test('decodes a shot type Diet Share with its twos and threes, and a missing split as none', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  const season = (share, volume, leagueAverageShare, sigmaDeviation) => ({
+    share,
+    volume,
+    games_played: 20,
+    volume_unit: 'field_goal_attempts',
+    league_average_share: leagueAverageShare,
+    sigma_deviation: sigmaDeviation,
+  });
+  candidate.players[0].diet_shares = {
+    play_types: [],
+    shot_zones: [],
+    shot_types: [
+      {
+        key: 'Pullups',
+        season: {
+          ...season(0.4, 160, 0.3, 1),
+          shot_values: { 2: season(0.25, 100, 0.15, 2), 3: season(0.15, 60, 0.2, -0.5) },
+        },
+      },
+      { key: 'Catch and Shoot', season: { ...season(0.2, 80, 0.2, 0), shot_values: null } },
+      { key: 'Less Than 10 ft', season: season(0.3, 120, 0.3, 0) },
+    ],
+    assist_locations: [],
+  };
+
+  const [pullUps, catchAndShoot, underTen] =
+    decodeMatchup(candidate).players[0].dietShares.shotTypes;
+  expect(pullUps.season).toEqual({
+    share: 0.4,
+    volume: 160,
+    gamesPlayed: 20,
+    volumeUnit: 'field_goal_attempts',
+    volumePerGame: 8,
+    leagueAverageShare: 0.3,
+    sigmaDeviation: 1,
+    shotValues: {
+      2: {
+        share: 0.25,
+        volume: 100,
+        gamesPlayed: 20,
+        volumeUnit: 'field_goal_attempts',
+        volumePerGame: 5,
+        leagueAverageShare: 0.15,
+        sigmaDeviation: 2,
+      },
+      3: {
+        share: 0.15,
+        volume: 60,
+        gamesPlayed: 20,
+        volumeUnit: 'field_goal_attempts',
+        volumePerGame: 3,
+        leagueAverageShare: 0.2,
+        sigmaDeviation: -0.5,
+      },
+    },
+  });
+  expect(catchAndShoot.season.shotValues).toBeNull();
+  expect(underTen.season.shotValues).toBeNull();
+
+  candidate.players[0].diet_shares.shot_types[0].season.shot_values = {
+    2: season(0.25, 100, 0.15, 2),
+  };
+  expect(() => decodeMatchup(candidate)).toThrow();
+});
+
 test.each([
   ['Season', 'season', 'last_15'],
   ['Last 15', 'last_15', 'season'],

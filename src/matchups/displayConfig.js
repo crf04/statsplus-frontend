@@ -10,13 +10,16 @@ export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
   assistLocations: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
 });
 
-export const shouldDisplayDietShare = (base, value) => {
+// The volume floor reads the player's whole Base, as the backend's thin rule
+// does, so a lean shows however few attempts the one slice (or its twos or
+// threes) holds once his Base clears the floor.
+export const shouldDisplayDietShare = (base, value, baseVolumePerGame) => {
   const threshold = DIET_SHARE_DISPLAY_THRESHOLDS[base];
   return (
     Boolean(threshold) &&
     value.sigmaDeviation !== null &&
     Math.abs(value.sigmaDeviation) >= threshold.minimumSigmaDeviation &&
-    value.volumePerGame >= threshold.minimumVolumePerGame
+    baseVolumePerGame >= threshold.minimumVolumePerGame
   );
 };
 
@@ -90,13 +93,22 @@ export const sliceName = (sliceKey) => SLICE_NAMES[sliceKey] || sliceKey;
 
 // One player's season diet fact for one slice, whether or not it is displayable.
 // Capture reads it for the league average the slice is measured against, which
-// the display gate has no say over.
-export const findDietShare = (player, base, sliceKey) =>
-  player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season || null;
+// the display gate has no say over. A shot value ('2' or '3') reads just the
+// shot type's twos or threes, or nothing when the split is missing.
+export const findDietShare = (player, base, sliceKey, shotValue = null) => {
+  const season = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season;
+  if (!season) return null;
+  return shotValue ? season.shotValues?.[shotValue] || null : season;
+};
 
-export const getDisplayableDietShare = (player, base, sliceKey) => {
-  const value = findDietShare(player, base, sliceKey);
-  return value && shouldDisplayDietShare(base, value) ? value : null;
+export const getDisplayableDietShare = (player, base, sliceKey, shotValue = null) => {
+  const value = findDietShare(player, base, sliceKey, shotValue);
+  if (!value) return null;
+  const baseVolumePerGame = player.dietShares[base].reduce(
+    (total, entry) => total + entry.season.volumePerGame,
+    0,
+  );
+  return shouldDisplayDietShare(base, value, baseVolumePerGame) ? value : null;
 };
 
 // Stat Categories read in box-score order wherever a reader picks one: the

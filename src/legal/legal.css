@@ -197,6 +197,13 @@
   color: var(--ct-gold);
 }
 
+/* Under the home page's sign-up note, centred like it. */
+.legal-signin.legal-signup-terms {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
 .legal-signin-header {
   display: none;
   white-space: nowrap;

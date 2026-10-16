@@ -17,6 +17,7 @@ import { useLadderAnswers } from './help/useLadderAnswers';
 import './home/home.css';
 import './ModernSearch.css';
 import LegalFooter from './legal/LegalFooter';
+import SignInTerms from './legal/SignInTerms';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -268,9 +269,12 @@ const NaturalLanguageQuery = ({
                   </div>
                 </Form>
                 {!isAuthenticated && (
-                  <p className="landing-signup-note">
-                    Free account. Sign up with Google to run it.
-                  </p>
+                  <>
+                    <p className="landing-signup-note">
+                      Free account. Sign up with Google to run it.
+                    </p>
+                    <SignInTerms action="signing up" className="legal-signup-terms" />
+                  </>
                 )}
               </div>
 

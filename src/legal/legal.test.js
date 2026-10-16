@@ -172,6 +172,23 @@ describe('sign-in', () => {
   });
 });
 
+describe('home page sign-up', () => {
+  test('the line under the query box links the Terms and Privacy to a signed-out visitor', async () => {
+    await renderAt('/', 'Ask the box score');
+    const line = screen.getByText(/By signing up you agree to the/);
+
+    expect(within(line).getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+    expect(within(line).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+  });
+
+  test('a signed-in reader is not asked to agree again', async () => {
+    Object.assign(mockAuth, SIGNED_IN);
+    await renderAt('/', 'Ask the box score');
+
+    expect(screen.queryByText(/By signing up you agree to the/)).not.toBeInTheDocument();
+  });
+});
+
 describe('Connect page', () => {
   test('links the Terms and the Privacy Policy', async () => {
     await renderAt('/connect', CONNECT);

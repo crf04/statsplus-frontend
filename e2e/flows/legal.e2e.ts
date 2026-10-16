@@ -76,6 +76,19 @@ signedOutTest(
   },
 );
 
+signedOutTest(
+  'the sign-up line under the home page query box reaches the Terms',
+  async ({ app, screen, browser }) => {
+    await app.open('/');
+    const line = screen.getByText('By signing up you agree to the Terms and Privacy.');
+    await expect(line).toBeVisible();
+    await line.getByRole('link', 'Terms').tap();
+
+    await expect(browser).toHaveURL('/terms');
+    await expect(screen.getByRole('heading', 'Terms of Use')).toBeVisible();
+  },
+);
+
 signedOutTest('responsible gambling gives the helpline as a call link', async ({ app, screen }) => {
   await app.open('/responsible-gambling');
   await expect(screen.getByRole('link', '1-800-GAMBLER')).toHaveAttribute(

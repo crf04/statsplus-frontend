@@ -68,6 +68,16 @@ test('the Connect page links the Terms and the Privacy Policy', async ({ page })
   await expect(page.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeVisible();
 });
 
+test('the sign-up line under the home page query box reaches the Terms', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Free account. Sign up with Google to run it.')).toBeVisible();
+
+  const line = page.getByText('By signing up you agree to the');
+  await expect(line).toBeVisible();
+  await line.getByRole('link', { name: 'Terms' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeVisible();
+});
+
 test('responsible gambling gives the helpline as a call link', async ({ page }) => {
   await page.goto('/responsible-gambling');
   await expect(page.getByRole('link', { name: '1-800-GAMBLER' })).toHaveAttribute(

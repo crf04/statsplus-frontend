@@ -115,4 +115,55 @@ describe('useSignUpThen', () => {
     await act(async () => rerender());
     expect(action).toHaveBeenCalledTimes(1);
   });
+
+  // Auth can render the account before the popup's own promise settles.
+  const signUpWhereAuthSettlesFirst = async (result, rerender, signIn, popup, uid, arg) => {
+    let pending;
+    act(() => {
+      pending = result.current(arg);
+    });
+    await act(async () => {
+      mockAuth = signedInAs(uid, signIn);
+      rerender();
+    });
+    await act(async () => {
+      popup.resolve({ uid });
+      await pending;
+    });
+  };
+
+  test('a second sign-up to the same account still runs its query when auth settles before the popup', async () => {
+    const first = deferred();
+    const second = deferred();
+    const signIn = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const action = jest.fn();
+    mockAuth = signedOut(signIn);
+    const { result, rerender } = renderHook(() => useSignUpThen(action));
+
+    await signUpWhereAuthSettlesFirst(result, rerender, signIn, first, 'u1', 'first query');
+    await act(async () => {
+      mockAuth = signedOut(signIn);
+      rerender();
+    });
+    await signUpWhereAuthSettlesFirst(result, rerender, signIn, second, 'u1', 'second query');
+
+    expect(action.mock.calls).toEqual([['first query'], ['second query']]);
+  });
+
+  test('a popup that returns no account forgets the action, so the next click opens a popup', async () => {
+    const signIn = jest.fn().mockResolvedValueOnce(null).mockReturnValueOnce(deferred().promise);
+    const action = jest.fn();
+    mockAuth = signedOut(signIn);
+    const { result } = renderHook(() => useSignUpThen(action));
+
+    await act(async () => {
+      await result.current('query');
+    });
+    act(() => {
+      result.current('query');
+    });
+
+    expect(signIn).toHaveBeenCalledTimes(2);
+    expect(action).not.toHaveBeenCalled();
+  });
 });

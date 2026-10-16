@@ -17,7 +17,9 @@ export const useSignUpThen = (action) => {
   const { isAuthenticated, currentUser, signInWithGoogle } = useAuth();
   const attempt = useRef(null);
   const latest = useRef(action);
-  const [returnedUid, setReturnedUid] = useState(null);
+  // Bumped each time a popup settles, so the effect below re-checks even when
+  // the returned account is the same one as last time.
+  const [settled, setSettled] = useState(0);
   useEffect(() => {
     latest.current = action;
   });
@@ -27,7 +29,7 @@ export const useSignUpThen = (action) => {
     if (!current || !current.uid || current.uid !== uid) return;
     attempt.current = null;
     latest.current(...current.args);
-  }, [uid, returnedUid]);
+  }, [uid, settled]);
   return useCallback(
     async (...args) => {
       if (isAuthenticated) return latest.current(...args);
@@ -38,7 +40,8 @@ export const useSignUpThen = (action) => {
         const user = await signInWithGoogle({ silent: true });
         if (attempt.current === mine) {
           mine.uid = user?.uid ?? null;
-          setReturnedUid(mine.uid);
+          if (!mine.uid) attempt.current = null;
+          setSettled((count) => count + 1);
         }
       } catch {
         if (attempt.current === mine) attempt.current = null;

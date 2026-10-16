@@ -207,3 +207,29 @@ test('a pick without a readable reason shows no reason line', () => {
   expect(best).toHaveTextContent('+6.7%');
   expect(best).not.toHaveTextContent('of plays');
 });
+
+test('the most recent game day is labelled and links to its date', () => {
+  render(
+    <MemoryRouter>
+      <HomeTicker slateDate="2026-04-10" games={games} past />
+      <HomeTonight
+        games={games}
+        spotlight={spotlight}
+        targets={null}
+        onUseQuery={() => {}}
+        slateDate="2026-04-10"
+        past
+      />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole('link', { name: /^Last game day · Fri, Apr 10/ })).toHaveAttribute(
+    'href',
+    '/matchups?date=2026-04-10',
+  );
+  expect(screen.getByRole('heading', { name: 'Last game day' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Matchups' })).toHaveAttribute(
+    'href',
+    '/matchups?date=2026-04-10',
+  );
+});

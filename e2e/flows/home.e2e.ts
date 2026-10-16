@@ -2,7 +2,7 @@
 // toughest points Matchup, their Targets, and what each ladder rung returns,
 // above and around the Query Prompt (crf04/statsplus#204).
 import { expect } from 'e2e';
-import { slatePayload } from '../fixtures/courtai.js';
+import { slateGame, slatePayload } from '../fixtures/courtai.js';
 import { signedInTest, signedOutTest } from './support/courtai.ts';
 
 signedInTest(
@@ -68,4 +68,25 @@ signedOutTest('signed out shows no previews and no answers', async ({ app, scree
   await expect(screen.getByRole('heading', 'Get more specific')).toBeVisible();
   await expect(screen.getByRole('navigation', "Today's games")).toHaveCount(0);
   expect(api.sent('/api/games/slate/edges')).toHaveLength(0);
+});
+
+signedInTest('no games today shows the last game day, labelled', async ({ app, screen, api }) => {
+  await api.override({
+    '/api/games/slate': (request) => {
+      const date = new URL(request.url()).searchParams.get('date');
+      return {
+        body:
+          date === '2026-01-15'
+            ? slatePayload('2026-01-15', [slateGame])
+            : slatePayload('2026-10-15', [], { previousGameDate: '2026-01-15' }),
+      };
+    },
+  });
+  await app.open('/');
+
+  await expect(screen.getByRole('heading', 'Last game day')).toBeVisible();
+  await expect(
+    screen.getByRole('link', { name: 'Last game day · ', exact: false }).first(),
+  ).toHaveAttribute('href', '/matchups?date=2026-01-15');
+  await expect(screen.getByRole('article', 'Best: Austin Reaves')).toBeVisible();
 });

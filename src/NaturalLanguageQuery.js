@@ -196,7 +196,9 @@ const NaturalLanguageQuery = ({
     return (
       <div className="landing-page">
         <div className="landing-stack">
-          {tonight.games && <HomeTicker slateDate={tonight.slateDate} games={tonight.games} />}
+          {tonight.games && (
+            <HomeTicker slateDate={tonight.slateDate} games={tonight.games} past={tonight.past} />
+          )}
           <div className="landing-container">
             <div className="landing-hero">
               <LandingCourt />
@@ -291,6 +293,8 @@ const NaturalLanguageQuery = ({
                 spotlight={tonight.spotlight}
                 targets={tonight.targets}
                 onUseQuery={setQuery}
+                slateDate={tonight.slateDate}
+                past={tonight.past}
               />
             )}
 

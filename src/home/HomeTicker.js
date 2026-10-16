@@ -7,9 +7,10 @@ import { lastName, shortSlateDay, signedPercent } from './homeFormat';
  * its three biggest points Matchup effects either way. Each cell opens the
  * game's Matchup.
  */
-const HomeTicker = ({ slateDate, games }) => (
-  <nav className="home-ticker" aria-label="Today's games">
-    <Link to="/matchups" className="home-ticker-label">
+const HomeTicker = ({ slateDate, games, past = false }) => (
+  <nav className="home-ticker" aria-label={past ? "Last game day's games" : "Today's games"}>
+    <Link to={past ? `/matchups?date=${slateDate}` : '/matchups'} className="home-ticker-label">
+      {past && 'Last game day · '}
       {shortSlateDay(slateDate)} <b>{games.length === 1 ? '1 game' : `${games.length} games`}</b>
     </Link>
     <div className="home-ticker-track">

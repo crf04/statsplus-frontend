@@ -1,0 +1,42 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "doctor"}
+{"action": "open", "path": "/matchups?date=2026-04-10"}
+{"action": "assert", "target": {"role": "heading", "name": "NOP @ BOS"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-04-10"}, "status": 200}
+{"action": "click", "target": {"selector": "a[href='/matchups/0022501174']"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022501174"}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "text": "Fri, Apr 10, 2026 \u00b7 Final. Full-season defense ranks; no Last 15 or injury report."}}
+{"action": "proof", "name": "h1-historical-unchanged-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "h1-historical-unchanged-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups?date=2026-10-21"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-21"}, "status": 200}
+{"action": "click", "target": {"selector": "a[href='/matchups/0022600901']"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600901"}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "text": "Wed, Oct 21, 2026 \u00b7 Tip-off 7:30 PM. Lines from Dabble and PrizePicks."}}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": "text=/read \\d|injury report|stale|unavailable|missing|Lines last read/i"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": ".matchup-warning"}, "state": "hidden"}
+{"action": "proof", "name": "l1-live-lines-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "l1-live-lines-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": "text=/^Wed, Oct 21, 2026 \u00b7 Tip-off 7:30 PM\\. Lines from Dabble and PrizePicks\\. Lines last read 1\\dm ago\\.$/"}}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": ".matchup-warning:text-matches('^Lines last read 1\\\\dm ago\\\\.$')"}}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": "text=/lines stale|Player pool|injury report|as of/i"}, "state": "hidden"}
+{"action": "proof", "name": "l2-live-lines-stale-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "l2-live-lines-stale-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups?date=2026-10-27"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-27"}, "status": 200}
+{"action": "click", "target": {"selector": "a[href='/matchups/0022600907']"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600907"}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "text": "Tue, Oct 27, 2026 \u00b7 Tip-off 7:30 PM. No lines posted yet."}}
+{"action": "assert", "target": {"within": {"role": "region", "name": "Matchup summary"}, "selector": ".matchup-warning"}, "state": "hidden"}
+{"action": "proof", "name": "n1-live-no-lines-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "n1-live-no-lines-phone"}
+{"action": "assert-layout"}
+{"action": "cleanup"}

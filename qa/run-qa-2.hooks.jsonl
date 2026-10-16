@@ -1,0 +1,4 @@
+{"hook": {"_hook": "seed", "games": [1]}, "rc": 0, "stdout": "{\"seeded_at\": \"2026-10-16T14:39:28.892166+00:00\", \"database\": \"courtai_qa_d4d8f97e88a04f22\", \"games\": [{\"number\": 1, \"game_id\": \"0022600901\", \"matchup\": \"Los Angeles Lakers @ Golden State Warriors\", \"slate_date\": \"2026-10-21\", \"prizepicks_minutes_old_at_seed\": 5, \"dabble_minutes_old_at_seed\": 13, \"prizepicks_lines_recorded\": 2}]}", "stderr": ""}
+{"hook": {"_hook": "mark", "name": "a"}}
+{"hook": {"_hook": "until", "name": "a", "seconds": 150}}
+{"hook": {"_hook": "seed", "games": [7]}, "rc": 0, "stdout": "{\"seeded_at\": \"2026-10-16T14:42:05.071025+00:00\", \"database\": \"courtai_qa_d4d8f97e88a04f22\", \"games\": [{\"number\": 7, \"game_id\": \"0022600907\", \"matchup\": \"New Orleans Pelicans @ Boston Celtics\", \"slate_date\": \"2026-10-27\", \"prizepicks_lines_recorded\": 0}]}", "stderr": ""}

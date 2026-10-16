@@ -26,17 +26,15 @@ decoder and `e2e/fixtures/courtai.js` aligned with that contract.
 2. Add or update the smallest failing Jest or Playwright test.
 3. Make the smallest coherent implementation change.
 4. Update documentation and the browser fixture when public behavior changes.
-5. Run the CI-equivalent completion gate:
+5. Run the completion gate, which runs every command CI runs:
 
    ```bash
-   npm run lint
-   npm run format:check
-   npm run test:ci
-   npm run build
-   npm run test:e2e
-   npm run typecheck:e2e
-   npm run test:flows
+   npm run check
    ```
+
+   It runs lint, format:check, test:ci, build, test:e2e, typecheck:e2e and
+   test:flows in order. CI runs the same commands as parallel jobs, so a
+   command added to `.github/workflows/ci.yml` belongs in `check` too.
 
 ## Agent skills
 

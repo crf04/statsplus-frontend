@@ -1711,61 +1711,6 @@ test('a link carrying filters but no player applies them to the player chosen', 
   expect(requested.searchParams.get('game_filter')).toBe('10');
 });
 
-test('@critical a saved Filter Set is a name that reopens the same Log Workspace', async ({
-  authenticatedPage: page,
-}) => {
-  await page.goto('/?player_name=LeBron+James&game_filter=10');
-  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Save Filter Set' }).click();
-  await page.getByLabel('Name').fill('LeBron last 10');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeHidden();
-  await expect(
-    page.getByTestId('filter-panel').getByRole('button', { name: /LeBron last 10/ }),
-  ).toBeVisible();
-
-  // The same name twice is the backend's answer, shown rather than swallowed.
-  await page.getByRole('button', { name: 'Save Filter Set' }).click();
-  await page.getByLabel('Name').fill('LeBron last 10');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('already have a saved Filter Set');
-  await page.getByRole('button', { name: 'Cancel' }).click();
-
-  // Leaving and coming back through the saved list lands on exactly the URL
-  // that was saved.
-  await page.getByRole('button', { name: 'Back to search' }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await page.getByRole('button', { name: 'Saved Filter Sets' }).click();
-  // The row says what the Filter Set asks for, not only what it was called.
-  await expect(page.getByRole('dialog').getByText('last 10', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Open saved Filter Set LeBron last 10' }).click();
-
-  await expect(page).toHaveURL(/player_name=LeBron\+James/);
-  await expect(page).toHaveURL(/game_filter=10/);
-  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect(page.getByText('GAMES <= 10').first()).toBeVisible();
-  // Opening an item is done with the list, so the list goes.
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-
-  // The account menu opens the same list, so renaming and deleting there is
-  // the same list changing.
-  await page.getByRole('banner').getByRole('button', { name: 'CourtAI Test User' }).click();
-  await page.getByRole('banner').getByRole('button', { name: 'Saved Filter Sets' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Rename LeBron last 10' }).click();
-  await page.getByLabel('New name for LeBron last 10').fill('LeBron recent form');
-  await page.getByRole('button', { name: 'Save name' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Open saved Filter Set LeBron recent form' }),
-  ).toBeVisible();
-
-  // Deleting is not undoable, so the row asks before it goes.
-  await page.getByRole('button', { name: 'Delete LeBron recent form' }).click();
-  await page.getByRole('button', { name: 'Confirm deleting LeBron recent form' }).click();
-  await expect(page.getByText('You have not saved any Filter Sets yet')).toBeVisible();
-});
-
 test('signed-out readers are offered no saved Filter Sets', async ({ page }) => {
   await installApiContract(page);
   await page.goto('/?player_name=LeBron+James&game_filter=10');

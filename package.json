@@ -60,7 +60,8 @@
     "test:flows:agent": "e2e run --tag agent",
     "test:flows:all": "e2e run",
     "test:flows:replay": "e2e run --tag agent --strict-cache",
-    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json",
+    "check": "npm run lint && npm run format:check && npm run test:ci && npm run build && npm run test:e2e && npm run typecheck:e2e && npm run test:flows"
   },
   "jest": {
     "testEnvironment": "jsdom",

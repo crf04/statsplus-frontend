@@ -54,11 +54,11 @@ const PROVIDERS = [
   ],
   [
     'Railway',
-    "Runs our server, database, Redis cache and connector. It holds everything described above, plus cached stats and short-lived counters that limit request rates. Those counters are tied to your account id or IP address and last about a minute. A daily count of each account's calls to OpenAI lasts two days.",
+    "Runs our server, database, Redis cache and connector. It holds everything described above, plus cached stats and short-lived counters that limit request rates. The server's counters are tied to your account id or IP address and last about a minute. The connector keeps a per-minute and a per-day count for each connected account in memory until it restarts. A daily count of each account's calls to OpenAI lasts two days.",
   ],
   [
     'OpenAI',
-    'Reads a plain-English search our own reader is unsure about. It gets the text of that search exactly as you typed it, plus the names of players we matched in it. We attach no account details.',
+    'Reads a plain-English search our own reader is unsure about. It gets the text of that search, including anything personal you type, plus the names of players we matched in it. We attach no account details.',
   ],
   ['Sentry', 'Receives error reports, as under Errors above.'],
   [

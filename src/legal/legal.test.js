@@ -238,22 +238,35 @@ describe('Privacy', () => {
     expect(rowDetail('Where you came from')).toHaveTextContent(
       'When an account signs in, we save a copy on that account once',
     );
+    expect(rowDetail('Where you came from')).toHaveTextContent(
+      'A different person who signs in on the same browser would get a copy too.',
+    );
     // Planned per-account counts (crf04/statsplus#213): labelled planned, one count a day.
     expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
       'We are adding a count, per account and per day (US Eastern)',
     );
     expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
+      'of your successful research actions: loading a Matchup, a player profile or an Opposing Team Profile, running a search or game-log query, and running or backtesting a Target.',
+    );
+    expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
       'It will hold only the count, not which pages or searches.',
+    );
+    expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
+      'We will use it to report weekly activity by where accounts came from.',
     );
     // The server logs name the account, and the search text reaches OpenAI.
     expect(rowDetail('Server logs')).toHaveTextContent('your email and account id');
     expect(rowDetail('Your searches')).toHaveTextContent('the text is also sent to OpenAI');
     // OpenAI gets the raw text, and no account details.
-    expect(rowDetail('OpenAI')).toHaveTextContent('exactly as you typed it');
+    expect(rowDetail('OpenAI')).toHaveTextContent('including anything personal you type');
     expect(rowDetail('OpenAI')).toHaveTextContent('We attach no account details.');
     // Error text can still carry what was typed into a request.
     expect(rowDetail('Errors')).toHaveTextContent('such as a player name');
     expect(rowDetail('Railway')).toHaveTextContent('Redis cache');
+    // Server counters last about a minute; the connector's stay in memory until it restarts.
+    expect(rowDetail('Railway')).toHaveTextContent(
+      'The connector keeps a per-minute and a per-day count for each connected account in memory until it restarts.',
+    );
 
     for (const provider of [
       'Google (Firebase)',

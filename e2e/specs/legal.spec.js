@@ -104,8 +104,9 @@ test.describe('sign-in', () => {
     await expect(note).toBeVisible();
     await note.getByRole('link', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeVisible();
-    // The phone band is 83px today (its links wrap onto a second row); a line of
-    // text under the button would add 14px or more.
+    // The phone band measures 83px (its links wrap onto a second row; App.css
+    // publishes 81px for it, two short on master). A line of text under the
+    // button would add 14px or more.
     expect((await page.getByRole('banner').boundingBox()).height).toBeLessThanOrEqual(84);
   });
 });

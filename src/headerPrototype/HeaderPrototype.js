@@ -10,7 +10,6 @@ import { useAuth } from '../contexts/AuthContext';
 import LoginButton from '../components/Auth/LoginButton';
 import UserProfile from '../components/Auth/UserProfile';
 import PrototypeSwitcher from './PrototypeSwitcher';
-import slate from './mock/slate.json';
 import './prototype.css';
 
 const LINKS = [
@@ -100,6 +99,133 @@ const AccountMenu = ({ showName = true, className = '' }) => {
   );
 };
 
+/* ---- I: fused with the ticker ---------------------------------------------
+   A compact bar in the ticker's own ink with no rule between them, so header
+   and scoreboard read as one console. Nav sits beside the brand; the active
+   page gets the ticker's gold-soft label treatment. */
+const VariantI = () => {
+  const links = useLinks();
+  return (
+    <header className="hpI">
+      <div className="hpI-inner">
+        <NavLink className="hpI-brand" to={links[0].href}>
+          <Mark size={20} />
+          <span>CourtAI</span>
+        </NavLink>
+        <nav className="hpI-nav" aria-label="Primary">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.href} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <AccountMenu className="hpI-account" />
+      </div>
+    </header>
+  );
+};
+
+/* ---- J: quiet, everything right -------------------------------------------
+   The brand stands alone on the left; nav and account share the right edge,
+   so the centre stays empty above the ticker and the big headline. */
+const VariantJ = () => {
+  const links = useLinks();
+  return (
+    <header className="hpJ">
+      <div className="hpJ-inner">
+        <NavLink className="hpJ-brand" to={links[0].href}>
+          <Mark size={24} />
+          <span>CourtAI</span>
+        </NavLink>
+        <nav className="hpJ-nav" aria-label="Primary">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.href} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <span className="hpJ-rule" aria-hidden="true" />
+        <AccountMenu showName={false} className="hpJ-account" />
+      </div>
+    </header>
+  );
+};
+
+/* ---- K: search docks into the header --------------------------------------
+   Sticky compact bar. On the home page the search box joins the header only
+   once the hero search scrolls away; on every other page it is always there.
+   Clicking it returns to the hero search. */
+const useHeroSearchHidden = (onHome) => {
+  const [hidden, setHidden] = useState(!onHome);
+  useEffect(() => {
+    if (!onHome) {
+      setHidden(true);
+      return undefined;
+    }
+    setHidden(false);
+    let observer;
+    const timer = setInterval(() => {
+      const hero = document.querySelector('.landing-search-form');
+      if (!hero) return;
+      clearInterval(timer);
+      observer = new IntersectionObserver(([entry]) => setHidden(!entry.isIntersecting), {
+        rootMargin: '-64px 0px 0px 0px',
+      });
+      observer.observe(hero);
+    }, 200);
+    return () => {
+      clearInterval(timer);
+      observer?.disconnect();
+    };
+  }, [onHome]);
+  return hidden;
+};
+
+const focusHeroSearch = () => {
+  document.querySelector('.landing-page')?.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => document.querySelector('.landing-search-form input')?.focus(), 350);
+};
+
+const VariantK = () => {
+  const links = useLinks();
+  const navigate = useNavigate();
+  const { pathname, search, hash } = useLocation();
+  const onHome = pathname === '/' && !search;
+  const showSearch = useHeroSearchHidden(onHome);
+  const goSearch = () => {
+    if (!onHome) navigate({ pathname: '/', hash });
+    focusHeroSearch();
+  };
+  return (
+    <header className="hpK">
+      <div className="hpK-inner">
+        <NavLink className="hpK-brand" to={links[0].href}>
+          <Mark size={20} />
+          <span>CourtAI</span>
+        </NavLink>
+        <nav className="hpK-nav" aria-label="Primary">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.href} end={link.end}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <button
+          type="button"
+          className={`hpK-search${showSearch ? ' is-shown' : ''}`}
+          onClick={goSearch}
+          tabIndex={showSearch ? 0 : -1}
+          aria-hidden={!showSearch}
+        >
+          <Search size={15} />
+          <span>LeBron James this year</span>
+        </button>
+        <AccountMenu showName={false} className="hpK-account" />
+      </div>
+    </header>
+  );
+};
+
 /* ---- A: pill track ---------------------------------------------------------
    Compact bar; the nav is one segmented control, the active page a filled
    pill. Account collapses to an avatar. */
@@ -125,96 +251,6 @@ const VariantA = () => {
           ))}
         </nav>
         <AccountMenu showName={false} className="hpA-account" />
-      </div>
-    </header>
-  );
-};
-
-/* ---- B: tab rail -----------------------------------------------------------
-   Left-aligned tabs that sit on the bottom border, active one underlined in
-   gold. The right side gets a search trigger, since Search is the home page. */
-const VariantB = () => {
-  const links = useLinks();
-  const navigate = useNavigate();
-  const { hash } = useLocation();
-  return (
-    <header className="hpB">
-      <div className="hpB-inner">
-        <NavLink className="hpB-brand" to={links[0].href}>
-          <Mark size={20} />
-          <span>CourtAI</span>
-        </NavLink>
-        <nav className="hpB-tabs" aria-label="Primary">
-          {links.map((link) => (
-            <NavLink key={link.to} to={link.href} end={link.end}>
-              {link.label}
-              {link.admin && <span className="hpB-badge">Admin</span>}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="hpB-right">
-          <button
-            type="button"
-            className="hpB-search"
-            onClick={() => navigate({ pathname: '/', hash })}
-          >
-            <Search size={15} />
-            <span>Ask about a player…</span>
-            <kbd>/</kbd>
-          </button>
-          <AccountMenu className="hpB-account" />
-        </div>
-      </div>
-    </header>
-  );
-};
-
-/* ---- C: broadcast ----------------------------------------------------------
-   A thin slate strip (date, game count, account) over a scoreboard bar with
-   big condensed uppercase nav. Admin moves up into the strip. */
-const slateLabel = () => {
-  const date = new Date(`${slate.slate_date}T12:00:00`);
-  const day = date
-    .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    .toUpperCase();
-  return { day, games: slate.games.length };
-};
-
-const VariantC = () => {
-  const links = useLinks();
-  const main = links.filter((link) => !link.admin);
-  const ops = links.find((link) => link.admin);
-  const { day, games } = slateLabel();
-  return (
-    <header className="hpC">
-      <div className="hpC-strip">
-        <div className="hpC-inner">
-          <span className="hpC-live">
-            <i /> {day} · {games} GAMES
-          </span>
-          <span className="hpC-strip-right">
-            {ops && (
-              <NavLink to={ops.href} className="hpC-ops">
-                <Activity size={13} /> Operations
-              </NavLink>
-            )}
-            <AccountMenu className="hpC-account" />
-          </span>
-        </div>
-      </div>
-      <div className="hpC-bar">
-        <div className="hpC-inner">
-          <NavLink className="hpC-brand" to={links[0].href}>
-            COURT<b>AI</b>
-          </NavLink>
-          <nav className="hpC-nav" aria-label="Primary">
-            {main.map((link) => (
-              <NavLink key={link.to} to={link.href} end={link.end}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
       </div>
     </header>
   );
@@ -256,40 +292,24 @@ const VariantD = () => {
   );
 };
 
-/* ---- E: the current layout, scaled up -------------------------------------
-   Same grid as today; taller bar, larger type, bigger avatar. Answers "is
-   it just too small?" on its own. */
-const VariantE = () => {
-  const links = useLinks();
-  return (
-    <header className="hpE">
-      <div className="hpE-inner">
-        <NavLink className="hpE-brand" to={links[0].href}>
-          <Mark size={28} />
-          <span>CourtAI</span>
-        </NavLink>
-        <nav className="hpE-links" aria-label="Primary">
-          {links.map((link) => (
-            <NavLink key={link.to} to={link.href} end={link.end}>
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-        <AccountMenu className="hpE-account" />
-      </div>
-    </header>
-  );
-};
-
 /* ---- F: tall masthead that shrinks on scroll ------------------------------
    Big at the top of the page, compact once you scroll into the data. */
+// The home page scrolls inside its own fixed overlay, other pages scroll the
+// window; listen in the capture phase to hear both.
+const scrollTopOf = (target) =>
+  target && target !== document && target.scrollTop !== undefined
+    ? target.scrollTop
+    : window.scrollY;
+
 const useScrolled = (threshold = 40) => {
-  const [scrolled, setScrolled] = useState(() => window.scrollY > threshold);
+  const [scrolled, setScrolled] = useState(false);
+  const { pathname } = useLocation();
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [threshold]);
+    setScrolled(false);
+    const onScroll = (event) => setScrolled(scrollTopOf(event.target) > threshold);
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', onScroll, { capture: true });
+  }, [threshold, pathname]);
   return scrolled;
 };
 
@@ -312,68 +332,6 @@ const VariantF = () => {
         </nav>
         <AccountMenu showName={!scrolled} className="hpF-account" />
       </div>
-    </header>
-  );
-};
-
-/* ---- G: left sidebar ------------------------------------------------------
-   No top bar on desktop: the page gets the full height, nav gets room for
-   icons and an admin section. Phone falls back to a slim top bar. */
-const VariantG = () => {
-  const links = useLinks();
-  const main = links.filter((link) => !link.admin);
-  const ops = links.find((link) => link.admin);
-  const item = ({ to, href, end, label, icon: Icon }) => (
-    <NavLink key={to} to={href} end={end}>
-      <Icon size={18} strokeWidth={1.9} />
-      <span>{label}</span>
-    </NavLink>
-  );
-  return (
-    <aside className="hpG">
-      <NavLink className="hpG-brand" to={links[0].href}>
-        <Mark size={26} />
-        <span>CourtAI</span>
-      </NavLink>
-      <nav className="hpG-nav" aria-label="Primary">
-        {main.map(item)}
-        {ops && (
-          <>
-            <span className="hpG-section">Admin</span>
-            {item(ops)}
-          </>
-        )}
-      </nav>
-      <AccountMenu className="hpG-account" />
-    </aside>
-  );
-};
-
-/* ---- H: centered masthead -------------------------------------------------
-   A publication-style masthead: big centred wordmark, nav on its own row
-   beneath, account tucked in the corner. */
-const VariantH = () => {
-  const links = useLinks();
-  const { day, games } = slateLabel();
-  return (
-    <header className="hpH">
-      <div className="hpH-top">
-        <span className="hpH-date">
-          {day} · {games} games
-        </span>
-        <NavLink className="hpH-brand" to={links[0].href}>
-          <Mark size={30} />
-          <span>CourtAI</span>
-        </NavLink>
-        <AccountMenu className="hpH-account" />
-      </div>
-      <nav className="hpH-nav" aria-label="Primary">
-        {links.map((link) => (
-          <NavLink key={link.to} to={link.href} end={link.end}>
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
     </header>
   );
 };
@@ -402,11 +360,14 @@ const VariantNow = () => {
 };
 
 const VARIANTS = {
-  E: VariantE,
+  I: VariantI,
+  J: VariantJ,
+  K: VariantK,
+  A: VariantA,
+  D: VariantD,
   F: VariantF,
-  G: VariantG,
-  H: VariantH,
-  A: VariantA, B: VariantB, C: VariantC, D: VariantD, Now: VariantNow };
+  Now: VariantNow,
+};
 
 const HeaderPrototype = ({ variant, step }) => {
   const ref = useRef(null);

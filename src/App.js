@@ -19,7 +19,7 @@ import { installMockApi } from './headerPrototype/mock/install';
 if (PROTO_STANDALONE) {
   installMockApi();
   if (!window.location.hash.includes('proto=header'))
-    window.history.replaceState(null, '', `${window.location.pathname}#proto=header&v=E`);
+    window.history.replaceState(null, '', `${window.location.pathname}#proto=header&v=I`);
 }
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));

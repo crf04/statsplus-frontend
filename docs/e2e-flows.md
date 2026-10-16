@@ -65,7 +65,7 @@ Routes are from `src/App.js`; the six research areas also match the coordination
 | User flow                                                                                                                                                                       | e2e coverage                                                       | Retained deeper Playwright coverage                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
 | `/`: sign in/out, prose query, ambiguous player, rejection/retry, shared link and return                                                                                        | `flows/search.e2e.ts`                                              | `specs/core-flows.spec.js`                                                                            |
-| `/`: ticker, Tonight (Best/Toughest, Try it), Your Targets, answered ladder; no games; signed out (sign-up card)                                                                | `flows/home.e2e.ts`                                                | `specs/waitlist.spec.js` (waitlisted banner), `specs/core-flows.spec.js` (sign-up funnel)             |
+| `/`: ticker, Tonight (Best/Toughest, Try it), Your Targets, answered ladder; no games; signed out (sign-up card)                                                                | `flows/home.e2e.ts`, `flows/waitlist.e2e.ts` (waitlisted banner)   | `specs/core-flows.spec.js` (sign-up funnel)                                                           |
 | `/`: browse, structured filters, one request per Apply, pending rows, Back, refused URL, empty/error/reload                                                                     | `flows/log-workspace.e2e.ts`                                       | `specs/core-flows.spec.js`, `filter-panel.spec.js`, `filter-panel-parity.spec.js`                     |
 | Log Workspace analytics, charts, comparisons, date/timezone, player/season switching                                                                                            | `flows/log-workspace.e2e.ts` (rows, filtering, cards and averages) | `specs/p1-analytics.spec.js`, `player-profile-charts.spec.js`, `core-flows.spec.js`                   |
 | `/help`: clauses, examples, draft retention, reload, Back                                                                                                                       | `flows/query-reference.e2e.ts`                                     | `specs/core-flows.spec.js`                                                                            |
@@ -175,3 +175,12 @@ home link, and absence of API or connector requests. e2e exposes no
 clipboard-permission grant, so it uses a local clipboard sink; no automated
 test reads the real browser clipboard since the Playwright Connect spec was
 retired (see `MIGRATION.md`).
+
+The Waitlist flow checks the banner, the public home page it narrows to, the
+disabled search, that no public read is refused and no further refused read is
+sent after the banner, the return to `/` from other paths and query strings,
+Sign out, that a 403 other than `waitlisted` leaves the app in place, and the
+ladder's refusal of query parameters. It observes refusals browser-wide: a catch-all route proxies same-origin
+non-`/api` requests (frames and navigations included) and records their
+statuses, since e2e has no response listener; the contract records `/api`
+statuses.

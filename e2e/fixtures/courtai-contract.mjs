@@ -462,11 +462,14 @@ export const matchupPayload = {
       provenance: {
         prizepicks: COMPLETE_MARKETS,
         underdog: ['PTS', 'TOV'],
+        polymarket: ['PTS'],
       },
-      // The books disagree on his points line; only PrizePicks numbers his rebounds.
+      // Underdog posts his points a point under PrizePicks and Polymarket, whose
+      // line leads; only PrizePicks numbers his rebounds.
       lines: {
         prizepicks: { PTS: 27.5, REB: 7.5 },
         underdog: { PTS: 26.5 },
+        polymarket: { PTS: 27.5 },
       },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],

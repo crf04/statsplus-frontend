@@ -27,8 +27,24 @@ const BOOK_NAMES = {
   underdog: 'Underdog',
   draftkings: 'DraftKings',
   fanduel: 'FanDuel',
+  dabble: 'Dabble',
+  kalshi: 'Kalshi',
+  novig: 'Novig',
+  polymarket: 'Polymarket',
 };
-const BOOK_MARKS = { prizepicks: 'PP', underdog: 'UD', draftkings: 'DK', fanduel: 'FD' };
+const BOOK_MARKS = {
+  prizepicks: 'PP',
+  underdog: 'UD',
+  draftkings: 'DK',
+  fanduel: 'FD',
+  dabble: 'DB',
+  kalshi: 'KX',
+  novig: 'NV',
+  polymarket: 'PM',
+};
+// Prediction markets price the line from what traders pay, so a row leads with
+// one when it can. Listed in the order they win a tie.
+export const MARKET_PROVIDERS = Object.freeze(['polymarket', 'novig', 'kalshi']);
 export const bookName = (provider) =>
   BOOK_NAMES[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 export const bookMark = (provider) => BOOK_MARKS[provider] || provider.slice(0, 2).toUpperCase();

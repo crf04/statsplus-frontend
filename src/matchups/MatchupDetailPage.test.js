@@ -1071,6 +1071,45 @@ test('pull-up 3s and pull-up 2s each list who leans on that shot, with its own s
   ).toHaveTextContent(/^LeBron James 28%$/);
 });
 
+test('a shot value row lists a player at 3 attempts a game, below the whole shot type floor', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = [
+    {
+      key: 'Pullups:FG3A',
+      sliceKey: 'Pullups',
+      label: 'Pullups:FG3A',
+      markets: ['PTS'],
+      season: value(9, 5, 1, 20),
+      last15: value(9, 5, 1, 20),
+    },
+  ];
+  const lean = (share, volumePerGame) => ({ share, volumePerGame, sigmaDeviation: 2 });
+  const reaves = candidate.players.find((player) => player.id === 1630559);
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  reaves.dietShares.shotTypes = [
+    {
+      key: 'Pullups',
+      season: { ...lean(0.4, 6), shotValues: { 2: lean(0.2, 3), 3: lean(0.2, 3) } },
+    },
+  ];
+  lebron.dietShares.shotTypes = [
+    {
+      key: 'Pullups',
+      season: { ...lean(0.4, 6), shotValues: { 2: lean(0.3, 4), 3: lean(0.1, 1.9) } },
+    },
+  ];
+  for (const player of [reaves, lebron]) player.statCategories = ['PTS'];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  expect(
+    within(sheetRow('Pull-up 3s')).getByRole('list', { name: 'Players leaning on Pull-up 3s' }),
+  ).toHaveTextContent(/^Austin Reaves 20%$/);
+});
+
 test('joins suffixed sheet rows to bare governed Diet slice identities', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const defense = candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet;

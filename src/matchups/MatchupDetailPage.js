@@ -449,6 +449,8 @@ const SHARE_LABELS = {
 };
 
 const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);
+// Catch-and-shoot 2s and under-10-ft 3s are too rare to read.
+const isRareShotType = (row) => /^(Catch and Shoot:FG2|Less Than 10 ft:FG3)/.test(row.key);
 const columnOf = (row) => MEASURE_COLUMNS[rowMeasure(row)] || 'Allowed';
 
 /*
@@ -562,7 +564,9 @@ function DefenseSheet({
   const sections = SHEET_BASES.filter((base) => team.defenseSheet[base]).map((base) => {
     // Play types read by points only; the possession rows repeat the same story.
     const rows = team.defenseSheet[base].filter(
-      (row) => !(base === 'playTypes' && rowMeasure(row) === 'POSS'),
+      (row) =>
+        !(base === 'playTypes' && rowMeasure(row) === 'POSS') &&
+        !(base === 'shotTypes' && isRareShotType(row)),
     );
     const marketRows = rows.filter(inMarket);
     const availability = surfaceAvailability[base][windowKey];

@@ -952,6 +952,40 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
   }
 });
 
+test('the Defense Sheet leaves out catch-and-shoot 2s and under-10-ft 3s', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = [
+    'Catch and Shoot:FG3A',
+    'Catch and Shoot:FG2A',
+    'Pullups:FG3A',
+    'Pullups:FG2A',
+    'Less Than 10 ft:FG2A',
+    'Less Than 10 ft:FG3A',
+  ].map((key) => ({
+    key,
+    sliceKey: key.split(':')[0],
+    label: key,
+    markets: ['PTS'],
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  }));
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
+    'section',
+  );
+  const shotTypes = within(sheet)
+    .getByRole('heading', { name: 'Shot types', level: 3 })
+    .closest('section');
+  expect(
+    within(shotTypes)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label')),
+  ).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s', 'Under 10 ft 2s']);
+});
+
 test('the Selection card highlights the shot make rows behind a combo market for his Diet', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

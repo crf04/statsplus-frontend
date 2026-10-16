@@ -5,8 +5,8 @@ import { overflowsHorizontally, signedInTest, signedOutTest } from './support/co
 
 const threshold = async (screen: Screen, percent: number) => {
   const slider = screen.getByLabel('Qualifier 1 threshold percent');
-  await slider.press('Home');
-  for (let value = 0; value < percent; value += 1) await slider.press('ArrowRight');
+  await slider.fill(String(percent));
+  await expect(slider).toHaveValue(String(percent));
 };
 
 const composeAssists = async (screen: Screen) => {
@@ -168,8 +168,7 @@ signedInTest(
     await composeAssists(screen);
     await expect(sampleCount(screen)).toHaveText('4 player-games');
     const minutes = screen.getByRole('slider', 'Player game minutes');
-    await minutes.press('End');
-    for (let value = 48; value > 36; value -= 1) await minutes.press('ArrowLeft');
+    await minutes.fill('36');
     await expect(minutes).toHaveValue('36');
     await expect(sampleCount(screen)).toHaveText('0 player-games');
     await expect(

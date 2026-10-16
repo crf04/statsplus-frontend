@@ -243,23 +243,44 @@
   color: #fff6e4;
 }
 
-.connect-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.connect-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.connect-prompts li {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px 9px 9px;
+.connect-tools li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
   border: 1px solid var(--ct-line-strong);
-  border-radius: 999px;
+  border-radius: 12px;
+}
+
+.connect-tool-answers {
+  margin: 0;
+  color: var(--ct-dim);
   font-size: 14px;
+  line-height: 1.5;
+}
+
+.connect-tool-prompt {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.connect-tool-prompt::before {
+  content: '“';
+}
+
+.connect-tool-prompt::after {
+  content: '”';
 }
 
 .connect-prompt-tool {
@@ -306,10 +327,5 @@
   .connect-chat {
     grid-template-columns: 1fr;
     padding: 14px;
-  }
-
-  .connect-prompts li {
-    align-items: flex-start;
-    border-radius: 12px;
   }
 }

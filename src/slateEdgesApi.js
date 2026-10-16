@@ -126,10 +126,10 @@ export const decodeSlateEdges = (payload) => {
  * route yet (404): the home page then shows no ticker or Tonight row rather
  * than an error.
  */
-export const fetchSlateEdges = async ({ date, signal } = {}) => {
+export const fetchSlateEdges = async ({ date, signal, fallback } = {}) => {
   try {
     const response = await apiClient.get(getApiUrl('SLATE_EDGES'), {
-      params: date ? { date } : {},
+      params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
       signal,
     });
     return decodeSlateEdges(response.data);

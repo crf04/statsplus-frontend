@@ -104,11 +104,13 @@ export const slatePayload = (
     providers = {},
     previousGameDate = /** @type {string | null} */ (null),
     nextGameDate = /** @type {string | null} */ (null),
+    fallback = /** @type {string | null} */ (null),
   } = {},
 ) => ({
   slate_date: date,
   previous_game_date: previousGameDate,
   next_game_date: nextGameDate,
+  fallback,
   freshness: {
     schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     pool: { status: poolFreshnessStatus, retrieved_at: poolRetrievedAt, providers },
@@ -2265,6 +2267,24 @@ const isCalendarDate = (value) =>
   new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 
 // The routes the backend serves without authentication.
+// `fallback=previous_game_day` is only valid on its own (crf04/statsplus#217).
+// Every day in this contract but the completed one lists a game, so the
+// current day never has to fall back and the parameter answers as if absent.
+const invalidFallback = (url) => {
+  const fallback = url.searchParams.get('fallback');
+  return fallback !== null && (fallback !== 'previous_game_day' || url.searchParams.has('date'));
+};
+const refuseFallback = (route) =>
+  route.fulfill({
+    status: 400,
+    json: {
+      error: {
+        code: 'invalid_input',
+        message: 'fallback must be previous_game_day and cannot be combined with date.',
+      },
+    },
+  });
+
 const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/api/games/ladder']);
 
 // The ladder's three Filter Sets, as the backend owns them, each answered from
@@ -2449,6 +2469,14 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     if (override && PUBLIC_ROUTES.has(url.pathname)) {
       const response = typeof override === 'function' ? await override(request) : override;
       await fulfillOverride(route, response);
+      return;
+    }
+
+    if (
+      ['/api/games/slate/edges', '/api/games/slate'].includes(url.pathname) &&
+      invalidFallback(url)
+    ) {
+      await refuseFallback(route);
       return;
     }
 
@@ -2759,6 +2787,10 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
       // Day-scoped resolution, not a Target with the id "resolve".
       if (targetId === 'resolve') {
+        if (invalidFallback(url)) {
+          await refuseFallback(route);
+          return;
+        }
         const date = url.searchParams.get('date');
         if (date !== null && !isCalendarDate(date)) {
           await route.fulfill({
@@ -2768,7 +2800,15 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           return;
         }
         await route.fulfill({
-          json: { success: true, ...resolveTargets(date || DEFAULT_SLATE_DATE, targets) },
+          json: {
+            success: true,
+            // The fallback form names no date: it answers for the current
+            // Slate Date, the day the Slate itself answers for.
+            ...resolveTargets(
+              date || (url.searchParams.has('fallback') ? todaySlateDate() : DEFAULT_SLATE_DATE),
+              targets,
+            ),
+          },
         });
         return;
       }

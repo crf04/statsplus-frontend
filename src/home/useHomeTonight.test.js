@@ -33,7 +33,11 @@ const resolved = {
   ],
 };
 
+const CACHE_KEY = 'courtai.homeTonight.v1';
+const pending = () => new Promise(() => {});
+
 beforeEach(() => {
+  window.localStorage.clear();
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   fetchSlate.mockResolvedValue(slate);
   fetchSlateEdges.mockResolvedValue(edges);
@@ -55,11 +59,6 @@ test('joins the Slate to its edges in tip-off order and ranks firing Targets by 
   expect(result.current.games[1].effects).toEqual([]);
   expect(result.current.targets.total).toBe(3);
   expect(result.current.targets.firing.map((e) => e.target.id)).toEqual([2, 1]);
-  // Edges and Targets are read for the Slate's own date.
-  expect(fetchSlateEdges).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-04-10' }));
-  expect(fetchResolvedTargets).toHaveBeenCalledWith(
-    expect.objectContaining({ date: '2026-04-10' }),
-  );
 });
 
 test('with no account the Slate and Edges are read but Targets are not', async () => {
@@ -68,7 +67,6 @@ test('with no account the Slate and Edges are read but Targets are not', async (
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
   expect(result.current.targets).toBeNull();
-  expect(fetchSlateEdges).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-04-10' }));
   expect(fetchResolvedTargets).not.toHaveBeenCalled();
 });
 
@@ -148,18 +146,157 @@ test('switching accounts clears the previous reader and rereads', async () => {
   expect(result.current.targets).toBeNull();
 });
 
-test('a day with no games shows the most recent game day, marked past', async () => {
-  fetchSlate.mockImplementation((date) =>
-    Promise.resolve(
-      date === '2026-04-10'
-        ? slate
-        : { slateDate: '2026-10-15', games: [], previousGameDate: '2026-04-10' },
-    ),
-  );
+test('the Slate, Edges and Targets are all requested before any of them answers', () => {
+  fetchSlate.mockReturnValue(pending());
+  fetchSlateEdges.mockReturnValue(pending());
+  fetchResolvedTargets.mockReturnValue(pending());
+  renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  // Synchronously after mount: nothing has resolved, yet all three are in flight,
+  // each asking for the previous game day on its own and naming no date.
+  const signal = expect.any(AbortSignal);
+  expect(fetchSlate).toHaveBeenCalledWith(undefined, { signal, fallback: 'previous_game_day' });
+  expect(fetchSlateEdges).toHaveBeenCalledWith({ signal, fallback: 'previous_game_day' });
+  expect(fetchResolvedTargets).toHaveBeenCalledWith({ signal, fallback: 'previous_game_day' });
+});
+
+test('a Slate answered with the previous game day renders as past', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, fallback: 'previous_game_day' });
   const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.past).toBe(true);
   expect(result.current.slateDate).toBe('2026-04-10');
-  expect(fetchSlateEdges).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-04-10' }));
+});
+
+test('a Slate with no fallback renders as today', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, fallback: null });
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  await waitFor(() => expect(result.current.games).not.toBeNull());
+  expect(result.current.past).toBe(false);
+});
+
+test('a failed Slate read keeps the Targets of the day they answered for', async () => {
+  fetchSlate.mockRejectedValue(new Error('boom'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  await waitFor(() => expect(result.current.targets).not.toBeNull());
+  expect(result.current.games).toBeNull();
+});
+
+describe('the last public result', () => {
+  const stored = {
+    games: [
+      {
+        gameId: 'cached',
+        scheduledAt: '2026-04-09T23:00:00Z',
+        away: { tricode: 'LAL' },
+        home: { tricode: 'BOS' },
+        effects: [{ canonicalId: 7 }],
+        scores: [[7, 0.25]],
+      },
+    ],
+    spotlight: { best: null, toughest: null },
+    slateDate: '2026-04-09',
+    past: true,
+  };
+
+  test('paints before any read answers, with scores as a Map and no Targets', () => {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+    fetchSlate.mockReturnValue(pending());
+    fetchSlateEdges.mockReturnValue(pending());
+    fetchResolvedTargets.mockReturnValue(pending());
+    const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+    expect(result.current.games.map((g) => g.gameId)).toEqual(['cached']);
+    expect(result.current.games[0].scores.get(7)).toBe(0.25);
+    expect(result.current.slateDate).toBe('2026-04-09');
+    expect(result.current.past).toBe(true);
+    expect(result.current.targets).toBeNull();
+  });
+
+  test('is replaced by the fresh read when it lands', async () => {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+    const { result } = renderHook(() => useHomeTonight(true, null));
+
+    await waitFor(() => expect(result.current.slateDate).toBe('2026-04-10'));
+    expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+    expect(result.current.past).toBe(false);
+  });
+
+  test('is written from a fresh read and paints on the next visit, never with Targets', async () => {
+    const first = renderHook(() => useHomeTonight(true, 'reader-a'));
+    await waitFor(() => expect(first.result.current.targets).not.toBeNull());
+    await waitFor(() => expect(first.result.current.games).not.toBeNull());
+    first.unmount();
+    expect(Object.keys(JSON.parse(window.localStorage.getItem(CACHE_KEY))).sort()).toEqual([
+      'games',
+      'past',
+      'slateDate',
+      'spotlight',
+    ]);
+
+    fetchSlate.mockReturnValue(pending());
+    fetchSlateEdges.mockReturnValue(pending());
+    fetchResolvedTargets.mockReturnValue(pending());
+    const second = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+    expect(second.result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+    expect(second.result.current.games[0].scores.get(1)).toBe(0.1);
+    expect(second.result.current.targets).toBeNull();
+  });
+
+  test('is cleared when the fresh answer is that there is nothing to show', async () => {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+    fetchSlateEdges.mockResolvedValue(null);
+    const { result } = renderHook(() => useHomeTonight(true, null));
+
+    await waitFor(() => expect(result.current.games).toBeNull());
+    expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
+  });
+
+  test('stays on screen when the reads fail', async () => {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+    fetchSlate.mockRejectedValue(new Error('boom'));
+    const { result } = renderHook(() => useHomeTonight(true, null));
+
+    await waitFor(() => expect(console.warn).toHaveBeenCalled());
+    expect(result.current.games.map((g) => g.gameId)).toEqual(['cached']);
+  });
+
+  test.each([
+    ['text that is not JSON', 'not json{'],
+    [
+      'a game without an id',
+      JSON.stringify({ ...stored, games: [{ ...stored.games[0], gameId: 4 }] }),
+    ],
+    [
+      'scores that are not pairs',
+      JSON.stringify({ ...stored, games: [{ ...stored.games[0], scores: [7] }] }),
+    ],
+    ['a missing spotlight', JSON.stringify({ ...stored, spotlight: undefined })],
+    ['a past flag that is not a boolean', JSON.stringify({ ...stored, past: 'yes' })],
+  ])('an unreadable entry (%s) is ignored and removed', (_name, raw) => {
+    window.localStorage.setItem(CACHE_KEY, raw);
+    fetchSlate.mockReturnValue(pending());
+    fetchSlateEdges.mockReturnValue(pending());
+    const { result } = renderHook(() => useHomeTonight(true, null));
+
+    expect(result.current.games).toBeNull();
+    expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
+  });
+
+  test('storage that throws neither blocks the reads nor the render', async () => {
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    const { result } = renderHook(() => useHomeTonight(true, null));
+
+    await waitFor(() => expect(result.current.games).not.toBeNull());
+    expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+  });
 });

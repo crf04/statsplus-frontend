@@ -674,6 +674,15 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
       freshness: {
         ...matchupPayload.freshness,
         schedule: { status: 'fresh', retrieved_at: '2026-01-14T06:01:00Z' },
+        // Underdog is read as often as the pool; PrizePicks hourly, so the backend keeps it
+        // fresh for 90 minutes.
+        pool: {
+          ...matchupPayload.freshness.pool,
+          providers: {
+            ...matchupPayload.freshness.pool.providers,
+            underdog: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z' },
+          },
+        },
       },
     },
   });
@@ -683,17 +692,24 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
   });
   await page.goto('/matchups/0022500584');
   const summary = page.getByRole('region', { name: 'Matchup summary' });
-  await expect(summary).toContainText('Lines from PrizePicks');
+  await expect(summary).toContainText('Lines from PrizePicks and Underdog');
   await expect(summary).not.toContainText(/stale|as of/);
 
   await page.clock.runFor(6 * 60 * 1000);
   for (const warning of [
     'Schedule stale, as of 30h ago.',
     'Player pool stale, as of 16m ago (older than 15m freshness bar).',
-    'PrizePicks lines stale, as of 16m ago.',
+    'Underdog lines stale, as of 16m ago.',
   ]) {
     await expect(summary.getByText(warning)).toHaveCSS('color', WARNING_COLOUR);
   }
+  await expect(summary).not.toContainText('PrizePicks lines');
+
+  await page.clock.runFor(75 * 60 * 1000);
+  await expect(summary.getByText('PrizePicks lines stale, as of 2h ago.')).toHaveCSS(
+    'color',
+    WARNING_COLOUR,
+  );
   expect(matchupRequests).toBe(1);
 });
 

@@ -52,6 +52,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
         poolRetrievedAt: '2026-01-15T10:00:00Z',
         providers: {
           prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
+          dabble: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
           underdog: { status: 'missing', retrieved_at: null },
         },
       });
@@ -78,8 +79,10 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
   await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
+  // Both were read 20 minutes ago: PrizePicks is polled hourly and is fresh for 90, Dabble for 15.
+  await expect(freshness.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
   await expect(
-    page.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i),
+    freshness.getByText(/dabble pool is stale.*older than 15m freshness bar/i),
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('slate-stale-pool.png'), fullPage: true });
 

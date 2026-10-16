@@ -1891,6 +1891,41 @@ test('AC1: the live header keeps its stale-data warnings in the warning colour',
   expect(screen.queryByRole('heading', { name: 'Injury Report' })).not.toBeInTheDocument();
 });
 
+test('AC1: the live header holds a prizepicks line to a 90m bar and every other provider to 15m', async () => {
+  atInstant('2026-01-15T12:30:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // Both read 40 minutes ago; the backend serves PrizePicks as fresh through 90.
+  candidate.freshness.pool.providers = [
+    { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM.' +
+      ' Player pool stale, as of 40m ago (older than 15m freshness bar).' +
+      ' Underdog lines stale, as of 40m ago.',
+  );
+  expect(within(summary).queryByText(/PrizePicks lines/)).toBeNull();
+});
+
+test('AC1: the live header calls a prizepicks line stale once it is older than 90m', async () => {
+  atInstant('2026-01-15T13:21:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.freshness.pool.providers = [
+    { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(within(summary).getByText('PrizePicks lines stale, as of 2h ago.')).toHaveClass(
+    'matchup-warning',
+  );
+});
+
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();

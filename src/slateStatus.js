@@ -68,6 +68,9 @@ export const derivePoolStatusFromProviders = (providers) => {
 
 export const SCHEDULE_STALE_AFTER_MS = 30 * 60 * 60 * 1000;
 export const POOL_STALE_AFTER_MS = 15 * 60 * 1000;
+// A provider the backend collects less often than every few minutes is served as fresh for its own
+// window (crf04/statsplus-backend#419: PrizePicks, polled hourly through The Odds API, for 90).
+const PROVIDER_STALE_AFTER_MS = new Map([['prizepicks', 90 * 60 * 1000]]);
 
 export const deriveScheduleStatus = (retrievedAt, now = Date.now()) =>
   now - new Date(retrievedAt).getTime() <= SCHEDULE_STALE_AFTER_MS ? 'fresh' : 'stale';
@@ -76,6 +79,7 @@ export const getSurfaceFreshnessPresentation = (surface, surfaceName, now = Date
   let status = surface.status;
   let warning = definitions[status].warning;
   let thresholdNote = null;
+  const poolStaleAfterMs = PROVIDER_STALE_AFTER_MS.get(surface.name) ?? POOL_STALE_AFTER_MS;
 
   if (status === 'fresh' && surface.retrievedAt) {
     if (surfaceName === 'schedule' && deriveScheduleStatus(surface.retrievedAt, now) === 'stale') {
@@ -84,11 +88,11 @@ export const getSurfaceFreshnessPresentation = (surface, surfaceName, now = Date
     }
     if (
       surfaceName === 'pool' &&
-      now - new Date(surface.retrievedAt).getTime() > POOL_STALE_AFTER_MS
+      now - new Date(surface.retrievedAt).getTime() > poolStaleAfterMs
     ) {
       status = 'stale';
       warning = true;
-      thresholdNote = `older than ${POOL_STALE_AFTER_MS / 60000}m freshness bar`;
+      thresholdNote = `older than ${poolStaleAfterMs / 60000}m freshness bar`;
     }
   }
 

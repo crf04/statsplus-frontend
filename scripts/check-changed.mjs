@@ -18,7 +18,6 @@ const present = changed.filter(existsSync);
 const specs = present.filter((f) => /^e2e\/specs\/[^/]+\.spec\.js$/.test(f));
 const flows = present.filter((f) => /^e2e\/flows\/[^/]+\.e2e\.ts$/.test(f));
 const bridge = changed.some((f) => f.startsWith('e2e/bridge/'));
-const jsChanged = changed.some((f) => /\.(js|jsx|mjs|cjs)$/.test(f));
 // Anything that is not docs, CI config, a test file or a single spec/flow can
 // change what the app or the test harness does, so it earns the critical subset.
 const isolated = (f) =>
@@ -28,6 +27,7 @@ const isolated = (f) =>
   /^e2e\/specs\/[^/]+\.spec\.js$/.test(f) ||
   /^e2e\/flows\/[^/]+\.e2e\.ts$/.test(f);
 const critical = changed.some((f) => !isolated(f));
+const nonModule = changed.some((f) => !isolated(f) && !/\.(js|jsx|mjs|cjs|ts|tsx)$/.test(f));
 
 const run = (cmd, args, env = {}) =>
   new Promise((resolve) => {
@@ -69,14 +69,20 @@ for (const [name, args] of [
 }
 
 if (!failed) {
-  if (jsChanged) {
+  // Jest's changedSince follows imports only. Tests also read files such as
+  // vercel.json and index.html from disk, so any other runtime file change runs
+  // the whole (fast) suite.
+  if (nonModule)
+    await step('jest (full: a non-module file changed)', 'npx', ['jest', '--ci'], {
+      TZ: 'Asia/Tokyo',
+    });
+  else
     await step(
       `jest --changedSince=${base.slice(0, 7)}`,
       'npx',
       ['jest', '--ci', `--changedSince=${base}`, '--passWithNoTests'],
       { TZ: 'Asia/Tokyo' },
     );
-  } else skip('jest', 'no JS changed');
 }
 
 if (!failed) {

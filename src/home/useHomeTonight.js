@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchSlate } from '../slateApi';
 import { fetchSlateEdges } from '../slateEdgesApi';
 import { fetchResolvedTargets } from '../targets/targetsApi';
+import { TARGET_SLICES } from '../targets/targetCatalog';
 import { isCalendarDate } from '../calendarDate';
 import { isRequestCancelled } from '../gameLogsApi';
 
@@ -61,6 +62,7 @@ const isReason = (reason) =>
   reason === null ||
   (isObject(reason) &&
     isText(reason.base) &&
+    Object.hasOwn(TARGET_SLICES, reason.base) &&
     isText(reason.sliceKey) &&
     isNumber(reason.share) &&
     Number.isInteger(reason.opponentRank) &&
@@ -185,27 +187,31 @@ export const useHomeTonight = (landing, account) => {
     // hold back the ticker.
     Promise.all([slateRead, edgesRead]).then(([slate, edges]) => {
       if (signal.aborted) return;
-      // A Slate that failed to read leaves the painted cache alone. Once the
-      // Slate has answered, the cache must not outlive it: whatever the Edges
-      // cannot confirm for the Slate's own date is removed.
+      // A Slate that failed to read leaves the painted cache alone. Once it has
+      // answered, the cache is decided before Edges are looked at: an empty
+      // Slate, or one for another day than the painted one, clears it.
       if (slate.status !== 'fulfilled') return;
-      const confirmed = edges.status === 'fulfilled' ? edges.value : undefined;
-      if (confirmed === undefined) {
-        // Edges failed: keep the paint only if it is for the Slate's own day.
-        setState((current) => {
-          if (current.slateDate === slate.value.slateDate) return current;
-          clearCache();
-          return { ...EMPTY, targets: current.targets };
-        });
-        return;
-      }
-      if (
-        confirmed === null ||
-        confirmed.slateDate !== slate.value.slateDate ||
-        slate.value.games.length === 0
-      ) {
+      const empty = () => {
         clearCache();
         setState((current) => ({ ...EMPTY, targets: current.targets }));
+      };
+      if (slate.value.games.length === 0) {
+        empty();
+        return;
+      }
+      setState((current) => {
+        if (current.slateDate === null || current.slateDate === slate.value.slateDate) {
+          return current;
+        }
+        clearCache();
+        return { ...EMPTY, targets: current.targets };
+      });
+      // Edges can then only replace the paint, or clear it when they answer
+      // null or for another day; a failed Edges read keeps a same-day paint.
+      if (edges.status !== 'fulfilled') return;
+      const confirmed = edges.value;
+      if (confirmed === null || confirmed.slateDate !== slate.value.slateDate) {
+        empty();
         return;
       }
       const fresh = {

@@ -134,6 +134,26 @@ test.each([
       },
     }),
   ],
+  [
+    'a reason base that is an inherited property (constructor)',
+    (e) => ({
+      ...e,
+      spotlight: {
+        ...e.spotlight,
+        best: { ...e.spotlight.best, reason: { ...e.spotlight.best.reason, base: 'constructor' } },
+      },
+    }),
+  ],
+  [
+    'a reason base of __proto__',
+    (e) => ({
+      ...e,
+      spotlight: {
+        ...e.spotlight,
+        best: { ...e.spotlight.best, reason: { ...e.spotlight.best.reason, base: '__proto__' } },
+      },
+    }),
+  ],
 ])('the real page renders without crashing from %s, and the entry is removed', (_name, corrupt) => {
   window.localStorage.setItem(CACHE_KEY, JSON.stringify(corrupt(stored)));
   render(<Home />);
@@ -208,6 +228,7 @@ test('Targets for another day than the fresh Slate never show beside the cached 
 test('a failed Slate read leaves the cached paint on screen', async () => {
   window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
   fetchSlate.mockRejectedValue(new Error('offline'));
+  fetchSlateEdges.mockRejectedValue(new Error('offline'));
   render(<Home />);
 
   await waitFor(() => expect(console.warn).toHaveBeenCalled());
@@ -230,4 +251,39 @@ test('the previous account Targets that answer after a switch never render', asy
   });
 
   expect(screen.getByText('no targets')).toBeInTheDocument();
+});
+
+test('an empty Slate for the cached day clears it even when Edges fail', async () => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  fetchSlate.mockResolvedValue({ slateDate: '2026-04-10', games: [], fallback: null });
+  fetchSlateEdges.mockRejectedValue(new Error('boom'));
+  render(<Home />);
+
+  await waitFor(() =>
+    expect(screen.queryByRole('navigation', { name: "Today's games" })).not.toBeInTheDocument(),
+  );
+  expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
+});
+
+test('a cache for another day is not kept when Edges fail', async () => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  fetchSlate.mockResolvedValue({ slateDate: '2026-04-11', games: [game('n')], fallback: null });
+  fetchSlateEdges.mockRejectedValue(new Error('boom'));
+  render(<Home />);
+
+  await waitFor(() =>
+    expect(screen.queryByRole('navigation', { name: "Today's games" })).not.toBeInTheDocument(),
+  );
+  expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
+});
+
+test('a same-day cache with a non-empty Slate stays when Edges fail', async () => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  fetchSlate.mockResolvedValue({ slateDate: '2026-04-10', games: [game('n')], fallback: null });
+  fetchSlateEdges.mockRejectedValue(new Error('boom'));
+  render(<Home />);
+
+  await waitFor(() => expect(console.warn).toHaveBeenCalled());
+  expect(screen.getByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
+  expect(window.localStorage.getItem(CACHE_KEY)).not.toBeNull();
 });

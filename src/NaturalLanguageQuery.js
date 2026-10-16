@@ -4,6 +4,7 @@ import { Form, Button } from 'react-bootstrap';
 import { Search, CheckCircle, AlertCircle, Brain, ArrowRight } from 'lucide-react';
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
+import { useSignUpThen } from './components/Auth/useSignUpThen';
 import { BROWSE_PARAM, convertNLToFilters } from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
@@ -32,14 +33,19 @@ const NaturalLanguageQuery = ({
   // Present only for a signed-in reader, because only an account has saved
   // Filter Sets to come back to.
   onOpenSavedFilterSets,
+  // Shown on the Query Prompt under the ticker, e.g. the waitlist banner.
+  notice = null,
 }) => {
-  const { isAuthenticated, currentUser } = useAuth();
-  // Today's games, the reader's Targets and the ladder's answers belong to the
-  // signed-in Query Prompt only, and to the account that is signed in
-  // (crf04/statsplus#204).
-  const landingAccount = !inWorkspace && isAuthenticated ? currentUser?.uid || null : null;
-  const tonight = useHomeTonight(landingAccount);
-  const ladderAnswers = useLadderAnswers(landingAccount);
+  const { isAuthenticated, currentUser, waitlist } = useAuth();
+  // A waitlisted account has signed up but may not search yet, so it gets the
+  // page without the sign-up calls to action and with the prompt disabled.
+  const waitlisted = isAuthenticated && !!waitlist;
+  const canSearch = isAuthenticated && !waitlisted;
+  // Today's games and the ladder's answers are public; only the reader's
+  // Targets belong to an admitted account (crf04/statsplus#211).
+  const landing = !inWorkspace;
+  const tonight = useHomeTonight(landing, canSearch ? currentUser?.uid || null : null);
+  const ladderAnswers = useLadderAnswers(landing);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -106,15 +112,14 @@ const NaturalLanguageQuery = ({
   // query language demos itself before the user types anything.
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   useEffect(() => {
-    if (inWorkspace || !isAuthenticated) return undefined;
+    if (inWorkspace || waitlisted) return undefined;
     const id = setInterval(() => {
       setPlaceholderIdx((i) => (i + 1) % sampleQueries.length);
     }, 4000);
     return () => clearInterval(id);
-  }, [inWorkspace, isAuthenticated]);
+  }, [inWorkspace, waitlisted]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const runQuery = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
@@ -178,6 +183,15 @@ const NaturalLanguageQuery = ({
     }
   };
 
+  // Signed out, running a query or browsing opens sign-up and then carries on
+  // with what was asked.
+  const submitQuery = useSignUpThen(runQuery);
+  const browse = useSignUpThen(() => navigate(`/?${BROWSE_PARAM}=1`));
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    return submitQuery();
+  };
+
   const getConfidenceColor = (confidence) => {
     if (confidence >= 0.8) return 'success';
     if (confidence >= 0.6) return 'warning';
@@ -199,6 +213,7 @@ const NaturalLanguageQuery = ({
           {tonight.games && (
             <HomeTicker slateDate={tonight.slateDate} games={tonight.games} past={tonight.past} />
           )}
+          {notice && <div className="landing-notice">{notice}</div>}
           <div className="landing-container">
             <div className="landing-hero">
               <LandingCourt />
@@ -225,18 +240,18 @@ const NaturalLanguageQuery = ({
                       placeholder={
                         isLoading
                           ? 'Processing query...'
-                          : isAuthenticated
-                            ? sampleQueries[placeholderIdx]
-                            : 'Sign in to enter a query...'
+                          : waitlisted
+                            ? 'Search opens when your account is off the waitlist'
+                            : sampleQueries[placeholderIdx]
                       }
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      disabled={isLoading || !isAuthenticated}
+                      disabled={isLoading || waitlisted}
                       className={`landing-search-input ${isLoading ? 'loading' : ''}`}
                     />
                     <Button
                       type="submit"
-                      disabled={isLoading || !query.trim() || !isAuthenticated}
+                      disabled={isLoading || !query.trim() || waitlisted}
                       className="landing-search-button"
                       aria-label="Run it"
                     >
@@ -251,17 +266,21 @@ const NaturalLanguageQuery = ({
                     </Button>
                   </div>
                 </Form>
+                {!isAuthenticated && (
+                  <p className="landing-signup-note">
+                    Free account. Sign up with Google to run it.
+                  </p>
+                )}
               </div>
 
-              {/* The deterministic door. Disabled rather than hidden when signed
-              out, so the capability is discoverable and the page does not
-              reflow on sign-in. */}
+              {/* The deterministic door. Signed out it opens sign-up first, and
+              waitlisted it is disabled, so the page does not reflow either way. */}
               <div className="prompt-browse">
                 <button
                   type="button"
                   className="prompt-browse-button"
-                  disabled={isLoading || !isAuthenticated}
-                  onClick={() => navigate(`/?${BROWSE_PARAM}=1`)}
+                  disabled={isLoading || waitlisted}
+                  onClick={() => browse()}
                 >
                   Browse without a query
                 </button>
@@ -282,7 +301,7 @@ const NaturalLanguageQuery = ({
           <div className="home-wide">
             <QueryLadder
               onUseQuery={setQuery}
-              disabled={isLoading || !isAuthenticated}
+              disabled={isLoading || waitlisted}
               currentQuery={query}
               answers={ladderAnswers}
             />
@@ -292,6 +311,7 @@ const NaturalLanguageQuery = ({
                 games={tonight.games}
                 spotlight={tonight.spotlight}
                 targets={tonight.targets}
+                signUp={!isAuthenticated}
                 onUseQuery={setQuery}
                 slateDate={tonight.slateDate}
                 past={tonight.past}
@@ -334,19 +354,19 @@ const NaturalLanguageQuery = ({
                 placeholder={
                   isLoading
                     ? 'Processing query...'
-                    : isAuthenticated
+                    : canSearch
                       ? 'Ask about your favorite player'
                       : 'Login to enter a query'
                 }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                disabled={isLoading || !isAuthenticated}
+                disabled={isLoading || !canSearch}
                 className={`compact-search-input ${isLoading ? 'loading' : ''}`}
                 autoFocus
               />
               <Button
                 type="submit"
-                disabled={isLoading || !query.trim() || !isAuthenticated}
+                disabled={isLoading || !query.trim() || !canSearch}
                 className="compact-search-button"
               >
                 {isLoading ? <div className="custom-spinner-compact"></div> : <Brain size={16} />}

@@ -4,7 +4,7 @@ import { useFirstTouchSender } from './attribution/firstTouch';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminProtectedRoute from './components/Auth/AdminProtectedRoute';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import WaitlistScreen from './components/Auth/WaitlistScreen';
+import WaitlistBanner from './components/Auth/WaitlistBanner';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
@@ -80,12 +80,26 @@ function AppNav() {
   );
 }
 
-// A waitlisted account has nothing signed-in to show: the screen replaces the
-// header and every route until the user signs out.
+// A waitlisted account has nothing signed-in to show but the public home page:
+// a banner explains why, and every other path returns there until it signs out.
+function WaitlistedShell() {
+  return (
+    <>
+      <AppNav />
+      <RouteContent>
+        <Routes>
+          <Route path="/" element={<GameLogFilter notice={<WaitlistBanner />} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </RouteContent>
+    </>
+  );
+}
+
 function SignedInShell() {
   const { isAuthenticated, waitlist, currentUser } = useAuth();
   useFirstTouchSender(currentUser?.uid);
-  if (isAuthenticated && waitlist) return <WaitlistScreen />;
+  if (isAuthenticated && waitlist) return <WaitlistedShell />;
 
   return (
     <>

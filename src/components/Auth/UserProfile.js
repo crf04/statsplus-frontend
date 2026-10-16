@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import SavedFilterSetsModal from '../../SavedFilterSetsModal';
 
 const UserProfile = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, waitlist } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
 
@@ -91,13 +91,16 @@ const UserProfile = () => {
         </Dropdown.Toggle>
 
         <Dropdown.Menu className="mt-2">
-          <Dropdown.Item
-            onClick={() => setShowSavedFilterSets(true)}
-            className="d-flex align-items-center gap-2"
-          >
-            <Bookmark size={16} />
-            Saved Filter Sets
-          </Dropdown.Item>
+          {/* Saved Filter Sets are an admitted account's; a waitlisted read is refused. */}
+          {!waitlist && (
+            <Dropdown.Item
+              onClick={() => setShowSavedFilterSets(true)}
+              className="d-flex align-items-center gap-2"
+            >
+              <Bookmark size={16} />
+              Saved Filter Sets
+            </Dropdown.Item>
+          )}
           <Dropdown.Item
             onClick={handleLogout}
             disabled={isLoggingOut}

@@ -2,17 +2,46 @@ import { expect, test } from '../fixtures/courtai';
 
 const MESSAGE = "The beta is full right now. You're on the waitlist and we'll let you in soon.";
 
-test('a waitlisted user sees the waitlist screen and can sign out', async ({ waitlistedPage }) => {
+test('a waitlisted user sees the public home page under a banner and can sign out', async ({
+  waitlistedPage,
+}) => {
   const page = waitlistedPage;
+  const refused = [];
+  page.on('response', (response) => {
+    if (response.status() === 403) refused.push(new URL(response.url()).pathname);
+  });
   await page.goto('/');
 
-  await expect(
-    page.getByRole('heading', { level: 1, name: "You're on the waitlist" }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toBeVisible();
   await expect(page.getByText(MESSAGE, { exact: true })).toBeVisible();
   await expect(page.getByText('e2e@courtai.test', { exact: true })).toBeVisible();
-  // The signed-in app is replaced, not covered.
-  await expect(page.getByRole('navigation', { name: 'Primary' })).toHaveCount(0);
+  // The signed-in app is narrowed to the public page, not replaced.
+  await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: "Today's games" })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get more specific' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'Best: Austin Reaves' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Targets' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign up free' })).toHaveCount(0);
+  await expect(page.getByRole('textbox')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Browse without a query' })).toBeDisabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  // The account learns it is waitlisted from the refusal of its first
+  // authenticated reads. Once the banner is up, nothing more is sent that
+  // would be refused, and the public sections did not need any of them.
+  const discovery = [...refused];
+  expect(refused).not.toContain('/api/games/slate');
+  expect(refused).not.toContain('/api/games/slate/edges');
+  expect(refused).not.toContain('/api/games/ladder');
+
+  // Every other path returns to the home page.
+  await page
+    .getByRole('navigation', { name: 'Primary' })
+    .getByRole('link', { name: 'Matchups' })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: "Today's games" })).toBeVisible();
+  expect(refused).toEqual(discovery);
 
   await page.getByRole('button', { name: 'Sign out' }).click();
 

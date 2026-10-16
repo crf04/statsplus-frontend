@@ -12,8 +12,9 @@ different job.
 
 Real Google authentication and backend data are intentionally outside the per-PR E2E gate. Popup
 authentication, credentials, and changing live data make a poor deterministic gate. The deployed
-smoke does verify that an unauthenticated Slate request traverses the production proxy and receives
-the backend's stable `401 authentication_required` response. Authenticated flows can be exercised
+smoke does verify that an unauthenticated Matchup request traverses the production proxy and receives
+the backend's stable `401 authentication_required` response. (The Slate, its Edges and the ladder are
+anonymous reads, so they no longer prove that the backend enforces authentication.) Authenticated flows can be exercised
 during exploratory QA or added later as a secret-backed scheduled suite.
 
 The production smoke intentionally fails when the backend is unavailable because a frontend release

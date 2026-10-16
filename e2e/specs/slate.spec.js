@@ -137,11 +137,13 @@ test('signed-out matchups keeps the shared shell and does not redirect', async (
   await expect(page.getByRole('link', { name: 'Matchups' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Sign in to view the slate' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign up free' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('slate-signed-out.png'), fullPage: true });
 
   await page.goto('/matchups/0022500584?player=2544');
   await expect(page).toHaveURL('/matchups/0022500584?player=2544');
   await expect(page.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign up free' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('matchup-signed-out-deep-link.png'),

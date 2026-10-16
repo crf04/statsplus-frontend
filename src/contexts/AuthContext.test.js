@@ -1,6 +1,6 @@
 import { readRevisit } from '../revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getIdTokenResult, onIdTokenChanged } from 'firebase/auth';
+import { getIdTokenResult, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
 import { AuthProvider, useAuth } from './AuthContext';
 import { reportWaitlisted } from '../utils/waitlistSignal';
 
@@ -14,8 +14,15 @@ function AuthProbe() {
       <output data-testid="admin">{String(auth.isAdmin)}</output>
       <output data-testid="admin-status">{auth.adminStatus}</output>
       <output data-testid="admin-error">{auth.adminError || ''}</output>
+      <output data-testid="error">{auth.error || ''}</output>
       <button type="button" onClick={() => auth.refreshAdminClaims(undefined, true)}>
         Refresh claims
+      </button>
+      <button type="button" onClick={() => auth.signInWithGoogle({ silent: true }).catch(() => {})}>
+        Quiet sign-in
+      </button>
+      <button type="button" onClick={() => auth.signInWithGoogle().catch(() => {})}>
+        Sign-in
       </button>
     </div>
   );
@@ -180,6 +187,47 @@ test('auth listener clears cached results and fences pending reads with no consu
   await readRevisit('logs', 'alice', 'done', load);
   await readRevisit('logs', 'alice', 'pending', load);
   expect(load).toHaveBeenCalledTimes(3);
+});
+
+describe('sign-in', () => {
+  test('a silent sign-in keeps the page while the popup is open and records no failure', async () => {
+    let closePopup;
+    signInWithPopup.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        closePopup = () => reject(new Error('popup closed'));
+      }),
+    );
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    renderProvider({ authProvider: {} });
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quiet sign-in' }));
+    await waitFor(() => expect(signInWithPopup).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    await act(async () => closePopup());
+
+    expect(screen.getByTestId('error')).toHaveTextContent('');
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+
+  test('a plain failed sign-in is recorded and holds the loading screen until it ends', async () => {
+    let closePopup;
+    signInWithPopup.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        closePopup = () => reject(new Error('popup closed'));
+      }),
+    );
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    renderProvider({ authProvider: {} });
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign-in' }));
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('true'));
+    await act(async () => closePopup());
+
+    expect(screen.getByTestId('error')).toHaveTextContent('popup closed');
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
 });
 
 describe('waitlist', () => {

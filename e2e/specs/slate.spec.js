@@ -316,6 +316,31 @@ test('provider aggregate uses the oldest timestamp regardless of provider key or
   ).toBeVisible();
 });
 
+test('a slate pool only PrizePicks has read is fresh to 90 minutes, then stale', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-15T12:00:00Z') });
+  await installApiContract(page, {
+    '/api/games/slate': slatePayload('2026-01-15', [slateGame], {
+      poolFreshnessStatus: 'fresh',
+      poolRetrievedAt: '2026-01-15T11:40:00Z',
+      providers: { prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' } },
+    }),
+  });
+
+  await page.goto('/matchups?date=2026-01-15');
+
+  const freshness = page.getByRole('group', { name: 'Data freshness' });
+  await expect(freshness.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();
+  await expect(page.getByText('Targetable counts use the current player pool.')).toBeVisible();
+
+  // 13:11: the pool is 91 minutes old.
+  await page.clock.runFor(71 * 60 * 1000);
+  await expect(
+    freshness.getByText(/player pool is stale.*older than 90m freshness bar/i),
+  ).toBeVisible();
+});
+
 test('slate remains usable at a narrow viewport and from the keyboard', async ({
   authenticatedPage: page,
 }) => {

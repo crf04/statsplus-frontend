@@ -283,6 +283,39 @@ test('holds a prizepicks entry to a 90m bar and every other provider to 15m', as
   expect(fetchSlate).toHaveBeenCalledTimes(1);
 });
 
+test('holds a pool that only prizepicks has read to its 90m bar', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        status: 'fresh',
+        retrievedAt: '2026-01-15T10:45:00.000Z',
+        providers: [
+          { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T10:45:00.000Z' },
+          { name: 'underdog', status: 'missing', retrievedAt: null },
+        ],
+      },
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  // Noon: the pool is 75m old, past the 15m bar but inside prizepicks's 90m.
+  const pool = await screen.findByText('Player pool is fresh — as of 1h ago');
+  expect(pool).not.toHaveClass('freshness-warning');
+  expect(screen.getByText('Targetable counts use the current player pool.')).toBeVisible();
+  // 12:16: 91m old.
+  act(() => jest.advanceTimersByTime(16 * 60000));
+  expect(screen.getByText(/player pool is stale.*older than 90m freshness bar/i)).toHaveClass(
+    'freshness-warning',
+  );
+  expect(screen.getByText(/player pool snapshot is stale/i)).toBeVisible();
+});
+
 test('clearing the date requests today without entering an invalid state', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups?date=2026-01-14']}>

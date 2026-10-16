@@ -713,6 +713,36 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
   expect(matchupRequests).toBe(1);
 });
 
+test('a matchup pool only PrizePicks has read holds its 90 minute bar without refetching', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-15T12:00:00Z') });
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  // The fixture's pool names PrizePicks alone, read at 11:50.
+  await installApiContract(page);
+  let matchupRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup') matchupRequests += 1;
+  });
+  await page.goto('/matchups/0022500584');
+  const summary = page.getByRole('region', { name: 'Matchup summary' });
+  await expect(summary).toContainText('Lines from PrizePicks');
+
+  // 12:41: the pool and its only provider are 51 minutes old, past 15 and inside 90.
+  await page.clock.runFor(41 * 60 * 1000);
+  await expect(summary).not.toContainText(/Player pool|PrizePicks lines/);
+
+  // 13:21: 91 minutes old.
+  await page.clock.runFor(40 * 60 * 1000);
+  for (const warning of [
+    'Player pool stale, as of 2h ago (older than 90m freshness bar).',
+    'PrizePicks lines stale, as of 2h ago.',
+  ]) {
+    await expect(summary.getByText(warning)).toHaveCSS('color', WARNING_COLOUR);
+  }
+  expect(matchupRequests).toBe(1);
+});
+
 test('@critical selection card supports selection, deep links, and tab flips without refetching', async ({
   authenticatedPage: page,
 }, testInfo) => {

@@ -1926,6 +1926,39 @@ test('AC1: the live header calls a prizepicks line stale once it is older than 9
   );
 });
 
+test('AC1: the live header holds a pool that only prizepicks has read to its 90m bar', async () => {
+  atInstant('2026-01-15T12:30:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  // The pool's time is PrizePicks's own, 40 minutes ago.
+  candidate.freshness.pool.providers = [
+    { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+  expect(within(summary).queryByText(/Player pool/)).toBeNull();
+});
+
+test('AC1: the live header calls a pool that only prizepicks has read stale once it is older than 90m', async () => {
+  atInstant('2026-01-15T13:21:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.freshness.pool.providers = [
+    { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(
+    within(summary).getByText('Player pool stale, as of 2h ago (older than 90m freshness bar).'),
+  ).toHaveClass('matchup-warning');
+  expect(within(summary).getByText('PrizePicks lines stale, as of 2h ago.')).toHaveClass(
+    'matchup-warning',
+  );
+});
+
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();

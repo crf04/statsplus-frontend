@@ -72,6 +72,20 @@ export const POOL_STALE_AFTER_MS = 15 * 60 * 1000;
 // window (crf04/statsplus-backend#419: PrizePicks, polled hourly through The Odds API, for 90).
 const PROVIDER_STALE_AFTER_MS = new Map([['prizepicks', 90 * 60 * 1000]]);
 
+// A provider entry is held to its own bar. The pool's aggregate time skips those providers while any
+// other has evidence and follows them alone otherwise, so the pool takes their bar only in that case.
+const staleAfterMs = (surface) => {
+  if (PROVIDER_STALE_AFTER_MS.has(surface.name)) return PROVIDER_STALE_AFTER_MS.get(surface.name);
+  const withEvidence = (surface.providers ?? []).filter((provider) => provider.retrievedAt);
+  if (
+    withEvidence.length > 0 &&
+    withEvidence.every(({ name }) => PROVIDER_STALE_AFTER_MS.has(name))
+  ) {
+    return Math.min(...withEvidence.map(({ name }) => PROVIDER_STALE_AFTER_MS.get(name)));
+  }
+  return POOL_STALE_AFTER_MS;
+};
+
 export const deriveScheduleStatus = (retrievedAt, now = Date.now()) =>
   now - new Date(retrievedAt).getTime() <= SCHEDULE_STALE_AFTER_MS ? 'fresh' : 'stale';
 
@@ -79,7 +93,7 @@ export const getSurfaceFreshnessPresentation = (surface, surfaceName, now = Date
   let status = surface.status;
   let warning = definitions[status].warning;
   let thresholdNote = null;
-  const poolStaleAfterMs = PROVIDER_STALE_AFTER_MS.get(surface.name) ?? POOL_STALE_AFTER_MS;
+  const poolStaleAfterMs = staleAfterMs(surface);
 
   if (status === 'fresh' && surface.retrievedAt) {
     if (surfaceName === 'schedule' && deriveScheduleStatus(surface.retrievedAt, now) === 'stale') {

@@ -111,6 +111,9 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
   await expect(
     page.getByRole('list', { name: 'Players leaning on Above-the-break 3s' }),
   ).toHaveText('James Harden 31%');
+  await expect(
+    page.getByRole('list', { name: 'Players leaning on Catch-and-shoot 3s' }),
+  ).toHaveText('Kawhi Leonard 32%');
   await categories.getByRole('button', { name: 'FG3A', exact: true }).click();
   await expect(rail.getByRole('article', { name: 'James Harden player' })).toContainText('9FG3A');
   await categories.getByRole('button', { name: 'PTS', exact: true }).click();

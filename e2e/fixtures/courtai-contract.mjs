@@ -324,6 +324,21 @@ const dietShare = (
   },
 });
 
+// A shot type's twos and threes, each [share, league average, population
+// sigma, attempts per game], as the backend's season.shot_values carries them.
+const withShotValues = (fact, twos, threes) => {
+  const value = ([share, leagueAverageShare, populationSigma, volumePerGame]) =>
+    dietShare(
+      fact.key,
+      share,
+      leagueAverageShare,
+      populationSigma,
+      volumePerGame,
+      'field_goal_attempts',
+    ).season;
+  return { ...fact, season: { ...fact.season, shot_values: { 2: value(twos), 3: value(threes) } } };
+};
+
 const DEFENSIVE_MARKETS = ['TOV', 'STL', 'BLK', 'STKS'];
 const COMPLETE_MARKETS = [
   'PTS',
@@ -487,7 +502,13 @@ export const matchupPayload = {
         shot_zones: [dietShare('Restricted Area', 0.27, 0.2, 0.06, 5.1, 'field_goal_attempts')],
         // Current-matchup shot_types Catch and Shoot population: mean .24, pstdev .10,
         // shared with Tatum's fact below.
-        shot_types: [dietShare('Catch and Shoot', 0.36, 0.24, 0.1, 4.2, 'field_goal_attempts')],
+        shot_types: [
+          withShotValues(
+            dietShare('Catch and Shoot', 0.36, 0.24, 0.1, 4.2, 'field_goal_attempts'),
+            [0.03, 0.04, 0.02, 0.2],
+            [0.33, 0.21, 0.08, 4],
+          ),
+        ],
         // Current-matchup assist_locations AtRimAssists population: mean .14, pstdev .12,
         // shared with Austin's and Tatum's facts below.
         assist_locations: [dietShare('AtRimAssists', 0.31, 0.14, 0.12, 1.1, 'assists')],
@@ -538,6 +559,7 @@ export const matchupPayload = {
       diet_shares: {
         play_types: [dietShare('Transition', 0.21, 0.0925, 0.075)],
         shot_zones: [dietShare('Restricted Area', 0.29, 0.2, 0.06, 5.1, 'field_goal_attempts')],
+        // No stored twos/threes split: no chip on a shot type row.
         shot_types: [dietShare('Catch and Shoot', 0.39, 0.24, 0.1, 4.8, 'field_goal_attempts')],
         assist_locations: [dietShare('AtRimAssists', 0.33, 0.14, 0.12, 1.2, 'assists')],
       },
@@ -954,7 +976,15 @@ export const historicalMatchupPayload = {
         // Historical shot_zones Restricted Area population: mean .21, pstdev
         // .06, shared with Giannis's fact below.
         shot_zones: [dietShare('Restricted Area', 0.28, 0.21, 0.06, 5.4, 'field_goal_attempts')],
-        shot_types: [dietShare('Catch and Shoot', 0.34, 0.24, 0.09, 4.4, 'field_goal_attempts')],
+        // Catch-and-shoot threes: +1.4 sigma at 4.1 a game, so its chip reads 32%,
+        // not the whole shot type's 34%.
+        shot_types: [
+          withShotValues(
+            dietShare('Catch and Shoot', 0.34, 0.24, 0.09, 4.4, 'field_goal_attempts'),
+            [0.02, 0.03, 0.02, 0.3],
+            [0.32, 0.21, 0.08, 4.1],
+          ),
+        ],
         // Historical assist_locations AtRimAssists population: mean .14,
         // pstdev .12, shared with Harden's and Giannis's facts below.
         assist_locations: [dietShare('AtRimAssists', 0.3, 0.14, 0.12, 1.2, 'assists')],

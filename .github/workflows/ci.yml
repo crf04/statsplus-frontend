@@ -8,8 +8,10 @@ on:
 permissions:
   contents: read
 
+# A pull request's new push cancels its older run. Each master push gets its own
+# group: a shared group would still let a newer push cancel a queued one.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

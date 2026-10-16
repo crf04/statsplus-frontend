@@ -96,31 +96,42 @@ const signIn = (keys: string[]) => {
   for (const key of keys) window.localStorage.setItem(key, 'true');
 };
 
-const withContract = base.extend<{ api: Api }>({
-  api: async ({ browser }, use) => {
-    const requests: SeenRequest[] = [];
-    const page = contractPage(browser, requests);
-    await browser.addInitScript(recordPageErrors, ERRORS_KEY);
-    await installApiContract(page);
-    await use({
-      requests,
-      sent: (path, method) =>
-        requests.filter((r) => r.path === path && (!method || r.method === method)),
-      override: (overrides) => installApiContract(page, overrides),
-    });
-    const errors = await browser.evaluate(
-      (key: string) => JSON.parse(window.sessionStorage.getItem(key) || '[]'),
-      ERRORS_KEY,
-    );
-    expect(errors, 'The page should not throw uncaught errors').toEqual([]);
-  },
-});
+const contractFixture = (options: { waitlisted: boolean }) =>
+  base.extend<{ api: Api }>({
+    api: async ({ browser }, use) => {
+      const requests: SeenRequest[] = [];
+      const page = contractPage(browser, requests);
+      await browser.addInitScript(recordPageErrors, ERRORS_KEY);
+      await installApiContract(page, {}, options);
+      await use({
+        requests,
+        sent: (path, method) =>
+          requests.filter((r) => r.path === path && (!method || r.method === method)),
+        override: (overrides) => installApiContract(page, overrides, options),
+      });
+      const errors = await browser.evaluate(
+        (key: string) => JSON.parse(window.sessionStorage.getItem(key) || '[]'),
+        ERRORS_KEY,
+      );
+      expect(errors, 'The page should not throw uncaught errors').toEqual([]);
+    },
+  });
+
+const withContract = contractFixture({ waitlisted: false });
 
 /** A visitor with no session; `/api` is the hermetic contract. */
 export const signedOutTest = withContract;
 
 /** A signed-in reader through the development auth adapter. */
 export const signedInTest = withContract.extend<{ signedIn: true }>({
+  signedIn: async ({ browser }, use) => {
+    await browser.addInitScript(signIn, [E2E_AUTH_STORAGE_KEY]);
+    await use(true);
+  },
+});
+
+/** Signed in, but every authenticated `/api` route answers with the `waitlisted` refusal. */
+export const waitlistedTest = contractFixture({ waitlisted: true }).extend<{ signedIn: true }>({
   signedIn: async ({ browser }, use) => {
     await browser.addInitScript(signIn, [E2E_AUTH_STORAGE_KEY]);
     await use(true);

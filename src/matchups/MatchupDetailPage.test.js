@@ -881,6 +881,7 @@ test('renders raw injury statuses and keeps the signed-out shell honest', async 
     </MemoryRouter>,
   );
   expect(screen.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Sign up free' })).toBeEnabled();
   await waitFor(() => expect(fetchMatchup).not.toHaveBeenCalled());
 });
 

@@ -9,22 +9,40 @@ const QUERY = 'LeBron James last 10 games';
 const PROMPT = 'LeBron James this year';
 
 signedOutTest(
-  'signing in through the landing unlocks the Query Prompt',
+  'signing in through the header unlocks the Query Prompt',
   { tags: ['critical'] },
   async ({ app, screen }) => {
     await app.open('/');
     await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
-    // Signed out, the prompt says why it is disabled.
-    await expect(screen.getByRole('textbox', 'Sign in to enter a query...')).toBeDisabled();
+    // Signed out, the prompt is open and says what running it costs.
+    await expect(screen.getByRole('textbox', PROMPT)).toBeEnabled();
+    await expect(screen.getByText('Free account. Sign up with Google to run it.')).toBeVisible();
 
-    for (const rung of ['Start with a player', 'Narrow it down', 'Stack the filters']) {
-      await expect(screen.getByRole('button', { name: rung, exact: false })).toBeDisabled();
-    }
+    // A rung only fills the box; nothing is run or signed in.
+    await screen.getByRole('button', { name: 'Start with a player', exact: false }).tap();
+    await expect(screen.getByRole('textbox', PROMPT)).toHaveValue('Jalen Johnson this year');
 
     await screen.getByRole('button', 'Sign in with Google').tap();
 
-    await expect(screen.getByRole('textbox', PROMPT)).toBeEnabled();
     await expect(screen.getByText('CourtAI Test User').first()).toBeVisible();
+    await expect(screen.getByRole('textbox', PROMPT)).toBeEnabled();
+  },
+);
+
+signedOutTest(
+  'running a query signed out signs up and then runs exactly what was typed',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill(QUERY);
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+
+    await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
+    await expect(screen.getByText(`"${QUERY}"`)).toBeVisible();
+    await expect(browser).toHaveURL(/player_name=LeBron\+James/);
+    expect(api.sent('/api/nl-query', 'POST').map((request) => request.body)).toEqual([
+      { query: QUERY },
+    ]);
   },
 );
 
@@ -119,12 +137,12 @@ signedInTest(
   },
 );
 
-signedInTest('signing out removes access to the Query Prompt', async ({ app, screen }) => {
+signedInTest('signing out returns the Query Prompt to sign-up', async ({ app, screen }) => {
   await app.open('/');
   await expect(screen.getByRole('textbox', PROMPT)).toBeEnabled();
   await screen.getByRole('banner').getByRole('button', 'CT CourtAI Test User').tap();
   await screen.getByRole('button', 'Sign out').tap();
-  await expect(screen.getByRole('textbox', 'Sign in to enter a query...')).toBeDisabled();
+  await expect(screen.getByText('Free account. Sign up with Google to run it.')).toBeVisible();
   await expect(screen.getByRole('button', 'Sign in with Google')).toBeVisible();
 });
 

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams } from '../filterUtils';
@@ -1120,7 +1121,10 @@ export default function MatchupDetailPage() {
     return (
       <main className="matchup-page signed-out-detail">
         <h1>Sign in to view this matchup</h1>
-        <p>Use the sign-in control in the navigation to load Defense Sheets and player data.</p>
+        <p>
+          A free account unlocks Defense Sheets and player data. Sign up with Google to open it.
+        </p>
+        <LoginButton size="sm" label="Sign up free" />
       </main>
     );
   }

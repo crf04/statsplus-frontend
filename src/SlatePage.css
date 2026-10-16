@@ -396,6 +396,10 @@
   background: var(--ct-surface);
 }
 
+.signed-out-slate .text-center {
+  text-align: left;
+}
+
 .empty-slate-jumps {
   display: flex;
   flex-wrap: wrap;

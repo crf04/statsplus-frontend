@@ -1,68 +1,56 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useLadderAnswers } from './useLadderAnswers';
-import { fetchGameLogsData } from '../gameLogsApi';
-import { QUERY_LADDER } from './queryHelp';
+import { fetchLadder } from '../ladderApi';
 
-jest.mock('../gameLogsApi', () => ({
-  fetchGameLogsData: jest.fn(),
-  isRequestCancelled: () => false,
-}));
+jest.mock('../ladderApi', () => ({ fetchLadder: jest.fn() }));
+jest.mock('../gameLogsApi', () => ({ isRequestCancelled: () => false }));
 
-const logs = (points) => ({
-  gameLogs: points.map((PTS) => ({ PTS })),
-  averages: [{ PTS: points.reduce((a, b) => a + b, 0) / points.length }],
-});
+const answers = [
+  { points: 25, games: 2, series: [20, 30] },
+  { points: 22, games: 1, series: [22] },
+  { points: 33, games: 3, series: [31, 33, 35] },
+];
 
 afterEach(() => jest.clearAllMocks());
 
-test("reads each rung's own Filter Set and answers in rung order", async () => {
-  fetchGameLogsData
-    .mockResolvedValueOnce(logs([20, 30]))
-    .mockResolvedValueOnce(logs([22]))
-    .mockResolvedValueOnce(logs([31, 33, 35]));
-  const { result } = renderHook(() => useLadderAnswers('reader-a'));
+test('reads the ladder once and answers in rung order', async () => {
+  fetchLadder.mockResolvedValue(answers);
+  const { result } = renderHook(() => useLadderAnswers(true));
 
   await waitFor(() => expect(result.current).not.toBeNull());
-  expect(fetchGameLogsData.mock.calls.map(([filters]) => filters)).toEqual(
-    QUERY_LADDER.map((step) => step.filters),
-  );
-  expect(result.current).toEqual([
-    { points: 25, games: 2, series: [20, 30] },
-    { points: 22, games: 1, series: [22] },
-    { points: 33, games: 3, series: [31, 33, 35] },
-  ]);
+  expect(fetchLadder).toHaveBeenCalledTimes(1);
+  expect(result.current).toEqual(answers);
 });
 
-test('signed out reads nothing', () => {
-  const { result } = renderHook(() => useLadderAnswers(null));
+test('off the Query Prompt reads nothing', () => {
+  const { result } = renderHook(() => useLadderAnswers(false));
 
   expect(result.current).toBeNull();
-  expect(fetchGameLogsData).not.toHaveBeenCalled();
+  expect(fetchLadder).not.toHaveBeenCalled();
 });
 
-test('one failed rung leaves the ladder without answers', async () => {
-  fetchGameLogsData
-    .mockResolvedValueOnce(logs([20]))
-    .mockRejectedValueOnce(new Error('boom'))
-    .mockResolvedValueOnce(logs([31]));
-  const { result } = renderHook(() => useLadderAnswers('reader-a'));
+test('a failed read leaves the ladder without answers', async () => {
+  fetchLadder.mockRejectedValue(new Error('boom'));
+  const { result } = renderHook(() => useLadderAnswers(true));
 
-  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(3));
+  await waitFor(() => expect(fetchLadder).toHaveBeenCalledTimes(1));
   // Let the rejection settle before reading the outcome.
   await act(async () => {});
   expect(result.current).toBeNull();
 });
 
-test('switching accounts clears the answers and rereads', async () => {
-  fetchGameLogsData.mockResolvedValue(logs([20]));
-  const { result, rerender } = renderHook(({ account }) => useLadderAnswers(account), {
-    initialProps: { account: 'reader-a' },
+test('leaving the Query Prompt clears the answers and returning rereads', async () => {
+  fetchLadder.mockResolvedValue(answers);
+  const { result, rerender } = renderHook(({ enabled }) => useLadderAnswers(enabled), {
+    initialProps: { enabled: true },
   });
   await waitFor(() => expect(result.current).not.toBeNull());
 
-  fetchGameLogsData.mockReturnValue(new Promise(() => {}));
-  rerender({ account: 'reader-b' });
-
+  rerender({ enabled: false });
   expect(result.current).toBeNull();
-  expect(fetchGameLogsData).toHaveBeenCalledTimes(6);
+
+  fetchLadder.mockReturnValue(new Promise(() => {}));
+  rerender({ enabled: true });
+  expect(result.current).toBeNull();
+  expect(fetchLadder).toHaveBeenCalledTimes(2);
 });

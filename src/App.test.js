@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import App from './App';
 import config, { getApiUrl } from './config';
+import apiClient from './utils/axiosConfig';
+import { homeGet } from './home/publicHomeFixtures';
 
 const mockAuth = {
   currentUser: null,
@@ -21,7 +23,7 @@ jest.mock('./contexts/AuthContext', () => ({
 jest.mock('./utils/axiosConfig', () => ({
   __esModule: true,
   default: {
-    get: () => Promise.resolve({ data: [] }),
+    get: jest.fn(() => Promise.resolve({ data: [] })),
     post: () => Promise.resolve({ data: {} }),
   },
 }));
@@ -32,24 +34,71 @@ beforeEach(() => {
 
 afterEach(() => {
   console.log.mockRestore();
+  apiClient.get.mockImplementation(() => Promise.resolve({ data: [] }));
+  apiClient.get.mockClear();
   Object.assign(mockAuth, { currentUser: null, isAuthenticated: false, waitlist: null });
 });
 
-test('a waitlisted user sees the waitlist screen instead of the signed-in app', async () => {
+test('a waitlisted user sees the public home page under a waitlist banner', async () => {
+  apiClient.get.mockImplementation(homeGet);
   Object.assign(mockAuth, {
-    currentUser: { email: 'fan@example.com' },
+    currentUser: { uid: 'waiting', email: 'fan@example.com' },
     isAuthenticated: true,
     waitlist: { message: 'The beta is full right now.' },
   });
   render(<App />);
 
-  expect(
-    await screen.findByRole('heading', { name: "You're on the waitlist" }),
-  ).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: "You're on the waitlist" })).toBeVisible();
   expect(screen.getByText('The beta is full right now.')).toBeInTheDocument();
   expect(screen.getByText('fan@example.com')).toBeInTheDocument();
-  expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'Ask the box score' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled();
+  expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
+  expect(await screen.findByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4');
+  expect(screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Your Targets' })).not.toBeInTheDocument();
+  expect(screen.getByRole('textbox')).toBeDisabled();
+  // Only the anonymous reads: every other route would be refused as waitlisted.
+  expect(apiClient.get.mock.calls.map(([url]) => new URL(url).pathname).sort()).toEqual([
+    '/api/games/ladder',
+    '/api/games/slate',
+    '/api/games/slate/edges',
+  ]);
+});
+
+test('a waitlisted user is sent back to the home page from any other path', async () => {
+  apiClient.get.mockImplementation(homeGet);
+  Object.assign(mockAuth, {
+    currentUser: { uid: 'waiting', email: 'fan@example.com' },
+    isAuthenticated: true,
+    waitlist: { message: 'The beta is full right now.' },
+  });
+  window.history.pushState({}, '', '/targets');
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { name: 'Ask the box score' })).toBeVisible();
+  expect(window.location.pathname).toBe('/');
+  window.history.pushState({}, '', '/');
+});
+
+test('a signed-out visitor sees the public home page with a sign-up card, and no Targets request', async () => {
+  apiClient.get.mockImplementation(homeGet);
+  render(<App />);
+
+  expect(await screen.findByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4');
+  expect(screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' })).toBeInTheDocument();
+  expect(
+    within(screen.getByRole('region', { name: 'Your Targets' })).getByRole('button', {
+      name: 'Sign up free',
+    }),
+  ).toBeEnabled();
+  expect(screen.queryByRole('heading', { name: "You're on the waitlist" })).not.toBeInTheDocument();
+  expect(apiClient.get.mock.calls.map(([url]) => new URL(url).pathname).sort()).toEqual([
+    '/api/games/ladder',
+    '/api/games/slate',
+    '/api/games/slate/edges',
+  ]);
 });
 
 test('renders the CourtAI search landing page', async () => {
@@ -57,7 +106,7 @@ test('renders the CourtAI search landing page', async () => {
 
   expect(await screen.findByRole('heading', { name: 'Ask the box score' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /start with a player/i })).toBeInTheDocument();
-  expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Sign in to enter a query...');
+  expect(screen.getByRole('textbox')).toBeEnabled();
   expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument();
 });
 

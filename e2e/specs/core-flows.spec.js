@@ -38,7 +38,7 @@ test('@smoke public landing page explains how to authenticate', async ({ deploye
 
   await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
-  await expect(page.getByRole('textbox')).toBeDisabled();
+  await expect(page.getByRole('textbox')).toBeEnabled();
   expect(rawBypassHeaders).toHaveLength(0);
 });
 
@@ -65,9 +65,7 @@ test('@smoke deployed Matchups shell and deep links resolve', async ({ deployedP
   expect(bundledAssets.join('\n')).not.toContain(productionBackendOrigin);
 });
 
-test('@smoke production Matchups API routing reaches authenticated backend', async ({
-  request,
-}) => {
+test('@smoke production Matchup API routing reaches authenticated backend', async ({ request }) => {
   test.skip(!process.env.E2E_BASE_URL, 'Only meaningful against a deployed environment.');
   test.skip(
     process.env.E2E_PROTECTED_PREVIEW === 'true',
@@ -75,7 +73,7 @@ test('@smoke production Matchups API routing reaches authenticated backend', asy
   );
 
   const response = await request.get(
-    new URL('/api/games/slate?date=2026-01-15', process.env.E2E_BASE_URL).href,
+    new URL('/api/games/matchup?game_id=0022500584', process.env.E2E_BASE_URL).href,
   );
 
   expect(response.status()).toBe(401);
@@ -1230,20 +1228,43 @@ test('@critical the escape hatch reaches a result with no language model', async
   expect(parserCalls).toHaveLength(0);
 });
 
-test('@critical the manual entry control is present but disabled when signed out', async ({
+test('@critical signed out, Run it signs up and then runs exactly the typed query', async ({
+  page,
+}) => {
+  await installApiContract(page);
+  const parserBodies = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/nl-query') {
+      parserBodies.push(request.postDataJSON());
+    }
+  });
+  await page.goto('/');
+
+  const box = page.getByRole('textbox');
+  await expect(box).toBeEnabled();
+  await expect(page.getByText('Free account. Sign up with Google to run it.')).toBeVisible();
+  await box.fill('LeBron James last 10 games');
+  await page.getByRole('button', { name: 'Run it' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByText('CourtAI Test User')).toBeVisible();
+  await expect(page).toHaveURL(/player_name=LeBron\+James/);
+  expect(parserBodies).toEqual([{ query: 'LeBron James last 10 games' }]);
+});
+
+test('@critical signed out, Browse without a query signs up and opens the browse workspace', async ({
   page,
 }) => {
   await installApiContract(page);
   await page.goto('/');
 
-  // Rendered rather than hidden, so the page does not shift on sign-in and the
-  // capability is discoverable before you have an account.
   const browse = page.getByRole('button', { name: 'Browse without a query' });
-  await expect(browse).toBeVisible();
-  await expect(browse).toBeDisabled();
-
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
   await expect(browse).toBeEnabled();
+  await browse.click();
+
+  await expect(page).toHaveURL(/\/\?browse=1$/);
+  await expect(page.getByLabel('Player:')).toBeVisible();
+  await expect(page.getByText('CourtAI Test User')).toBeVisible();
 });
 
 test('an empty workspace is shareable, and the sentinel never reaches a request', async ({

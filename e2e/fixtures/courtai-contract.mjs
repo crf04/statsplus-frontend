@@ -2264,6 +2264,37 @@ const isCalendarDate = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 
+// The routes the backend serves without authentication.
+const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/api/games/ladder']);
+
+// The ladder's three Filter Sets, as the backend owns them, each answered from
+// the same game-log composition `/api/games/game_logs` serves for them.
+const LADDER_FILTER_SETS = [
+  ['start', 'player_name=Jalen+Johnson'],
+  ['narrow', 'player_name=Jalen+Johnson&players_off[]=Trae+Young'],
+  [
+    'stack',
+    'player_name=Jalen+Johnson&players_off[]=Trae+Young&teams_against[]=OPP_PTS&rank_filter[]=10&minutes_filter=25,48',
+  ],
+];
+
+const ladderPayload = () => ({
+  rungs: LADDER_FILTER_SETS.map(([id, query]) => {
+    const url = new URL(`http://fixture.invalid/api/games/game_logs?${query}`);
+    const name = url.searchParams.get('player_name');
+    const kept = applyOpponentTricode(
+      applySelfFilters(applySeason(seasonsByPlayer[name] || gameLogs, url), url),
+      url,
+    );
+    return {
+      id,
+      points: kept.length > 0 ? averages.PTS : null,
+      games: kept.length,
+      series: kept.map((log) => log.PTS),
+    };
+  }),
+});
+
 // The backend's refusal of every authenticated route for a waitlisted account
 // (crf04/statsplus#157, Boundary contract).
 export const waitlistedResponse = {
@@ -2409,6 +2440,69 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       const recorded = attributionRecorded;
       attributionRecorded = true;
       await route.fulfill({ status: recorded ? 200 : 201, json: { recorded: !recorded } });
+      return;
+    }
+
+    // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211):
+    // answered whoever asks, a waitlisted account included, and whatever
+    // Authorization header comes with them.
+    if (override && PUBLIC_ROUTES.has(url.pathname)) {
+      const response = typeof override === 'function' ? await override(request) : override;
+      await fulfillOverride(route, response);
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate/edges') {
+      const date = url.searchParams.get('date') || todaySlateDate();
+      await route.fulfill({
+        json: slateEdgesPayload(
+          date,
+          date === HISTORICAL_SLATE_DATE ? [historicalGame] : [scheduleOnlySlateGame],
+        ),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate') {
+      const date = url.searchParams.get('date') || todaySlateDate();
+      // Every date but the completed one lists a game, so the nearest game day
+      // on either side is the adjacent date.
+      const adjacent = (days) => {
+        const moved = new Date(`${date}T12:00:00Z`);
+        moved.setUTCDate(moved.getUTCDate() + days);
+        return moved.toISOString().slice(0, 10);
+      };
+      const neighbours = { previousGameDate: adjacent(-1), nextGameDate: adjacent(1) };
+      // The completed LAC @ MIL game is on its own date, so a Target aimed at
+      // either side of it resolves against game-log participants there. The
+      // pool freshness matches the evidence resolution reports for the same
+      // date: a stored Player Pool on the scheduled date, none on the
+      // completed one, where the participants are the game's own logs.
+      await route.fulfill({
+        json:
+          date === HISTORICAL_SLATE_DATE
+            ? slatePayload(date, [historicalGame], neighbours)
+            : slatePayload(date, [scheduleOnlySlateGame], {
+                ...neighbours,
+                poolFreshnessStatus: 'fresh',
+                poolRetrievedAt: '2026-01-15T11:50:00Z',
+              }),
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/games/ladder') {
+      // The backend refuses any query parameter rather than ignoring it.
+      if ([...url.searchParams.keys()].length > 0) {
+        await route.fulfill({
+          status: 400,
+          json: {
+            error: { code: 'invalid_input', message: 'The ladder takes no query parameters.' },
+          },
+        });
+        return;
+      }
+      await route.fulfill({ json: ladderPayload() });
       return;
     }
 
@@ -2919,45 +3013,6 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           next_game: 'Atlanta Hawks',
           player_id: playerIdsByName[playerName] ?? null,
         },
-      });
-      return;
-    }
-
-    if (url.pathname === '/api/games/slate/edges') {
-      const date = url.searchParams.get('date') || todaySlateDate();
-      await route.fulfill({
-        json: slateEdgesPayload(
-          date,
-          date === HISTORICAL_SLATE_DATE ? [historicalGame] : [scheduleOnlySlateGame],
-        ),
-      });
-      return;
-    }
-
-    if (url.pathname === '/api/games/slate') {
-      const date = url.searchParams.get('date') || todaySlateDate();
-      // Every date but the completed one lists a game, so the nearest game day
-      // on either side is the adjacent date.
-      const adjacent = (days) => {
-        const moved = new Date(`${date}T12:00:00Z`);
-        moved.setUTCDate(moved.getUTCDate() + days);
-        return moved.toISOString().slice(0, 10);
-      };
-      const neighbours = { previousGameDate: adjacent(-1), nextGameDate: adjacent(1) };
-      // The completed LAC @ MIL game is on its own date, so a Target aimed at
-      // either side of it resolves against game-log participants there. The
-      // pool freshness matches the evidence resolution reports for the same
-      // date: a stored Player Pool on the scheduled date, none on the
-      // completed one, where the participants are the game's own logs.
-      await route.fulfill({
-        json:
-          date === HISTORICAL_SLATE_DATE
-            ? slatePayload(date, [historicalGame], neighbours)
-            : slatePayload(date, [scheduleOnlySlateGame], {
-                ...neighbours,
-                poolFreshnessStatus: 'fresh',
-                poolRetrievedAt: '2026-01-15T11:50:00Z',
-              }),
       });
       return;
     }

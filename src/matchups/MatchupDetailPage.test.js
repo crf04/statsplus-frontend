@@ -1976,9 +1976,9 @@ test('AC5: before the game the row leads with his line, PrizePicks first, other 
   // Minutes before the game are his last-10 average: (35 + 36 + 38) / 3.
   expect(within(lebron).getByText('36 min last 10')).toBeVisible();
   const lebronBooks = within(lebron).getByLabelText(
-    'PTS posted by PrizePicks and Underdog at 26.5',
+    'PTS posted by PrizePicks and Underdog at 26.5, 1 lower than PrizePicks',
   );
-  expect(lebronBooks).toHaveTextContent('PPUD 26.5');
+  expect(lebronBooks).toHaveTextContent('PPUD −1');
 
   // PrizePicks posts Austin without a number, so Underdog's line leads.
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
@@ -1989,6 +1989,101 @@ test('AC5: before the game the row leads with his line, PrizePicks first, other 
   );
   // The live rail keeps its injury badges.
   expect(within(austin).getByText('Game-time decision')).toHaveClass('injury-badge');
+});
+
+describe('#212: the rail leads with the market line and flags books that disagree', () => {
+  const railFor = async (provenance, lines) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    lebron.provenance = provenance;
+    lebron.lines = lines;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    return screen.findByRole('article', { name: 'LeBron James player' });
+  };
+  const books = (row) => row.querySelector('.rail-books');
+
+  test('a market and a DFS book that agree: market headline, bare marks, no flag', async () => {
+    const row = await railFor(
+      { dabble: ['PTS'], polymarket: ['PTS'] },
+      { dabble: { PTS: 7.5 }, polymarket: { PTS: 7.5 } },
+    );
+    expect(within(row).getByText('7.5')).toBeVisible();
+    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
+    expect(books(row)).toHaveTextContent('DBPM');
+    expect(books(row)).toHaveAttribute('aria-label', 'PTS posted by Dabble and Polymarket');
+    expect(row).not.toHaveClass('lines-disagree');
+    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
+  });
+
+  test('Dabble 1 lower than the market: market headline, DB −1, flagged', async () => {
+    const row = await railFor(
+      { dabble: ['PTS'], polymarket: ['PTS'] },
+      { dabble: { PTS: 6.5 }, polymarket: { PTS: 7.5 } },
+    );
+    expect(within(row).getByText('7.5')).toBeVisible();
+    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
+    expect(books(row)).toHaveTextContent('DB −1PM');
+    expect(books(row)).toHaveAttribute(
+      'aria-label',
+      'PTS posted by Dabble at 6.5, 1 lower than the market and Polymarket',
+    );
+    expect(row).toHaveClass('lines-disagree');
+    expect(within(row).getByText('Lines disagree')).toBeInTheDocument();
+  });
+
+  test('only DFS books: PrizePicks leads under the old rule and the caption says line', async () => {
+    const row = await railFor(
+      { dabble: ['PTS'], prizepicks: ['PTS'] },
+      { dabble: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } },
+    );
+    expect(within(row).getByText('27.5')).toBeVisible();
+    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
+    expect(within(row).queryByText(/market line/)).not.toBeInTheDocument();
+    expect(books(row)).toHaveTextContent('PPDB −1');
+  });
+
+  test('two markets that disagree: Polymarket leads, Kalshi and Novig show their gaps', async () => {
+    const row = await railFor(
+      { kalshi: ['PTS'], novig: ['PTS'], polymarket: ['PTS'] },
+      { kalshi: { PTS: 8 }, novig: { PTS: 7 }, polymarket: { PTS: 7.5 } },
+    );
+    expect(within(row).getByText('7.5')).toBeVisible();
+    expect(books(row)).toHaveTextContent('KX +0.5NV −0.5PM');
+    expect(books(row)).toHaveAttribute(
+      'aria-label',
+      'PTS posted by Kalshi at 8, 0.5 higher than the market, Novig at 7, 0.5 lower than the market and Polymarket',
+    );
+    // 8 against 7 spans a full point.
+    expect(row).toHaveClass('lines-disagree');
+  });
+
+  test('a market line outranks PrizePicks and Novig outranks Kalshi', async () => {
+    const row = await railFor(
+      { prizepicks: ['PTS'], kalshi: ['PTS'], novig: ['PTS'] },
+      { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
+    );
+    expect(within(row).getByText('8')).toBeVisible();
+    expect(books(row)).toHaveTextContent('PP +1.5KX +0.5NV');
+  });
+
+  test('a 0.5 gap is shown but not flagged', async () => {
+    const row = await railFor(
+      { dabble: ['PTS'], novig: ['PTS'] },
+      { dabble: { PTS: 7 }, novig: { PTS: 7.5 } },
+    );
+    expect(within(row).getByText('7.5')).toBeVisible();
+    expect(books(row)).toHaveTextContent('DB −0.5NV');
+    expect(row).not.toHaveClass('lines-disagree');
+    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
+  });
+
+  test('a market that posts without a number does not lead', async () => {
+    const row = await railFor({ polymarket: ['PTS'], dabble: ['PTS'] }, { dabble: { PTS: 6.5 } });
+    expect(within(row).getByText('6.5')).toBeVisible();
+    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
+    expect(row).not.toHaveClass('lines-disagree');
+  });
 });
 
 test('AC6: with no line for that stat the row leads with his Matchup Score, never a made-up line', async () => {

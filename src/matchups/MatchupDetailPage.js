@@ -8,6 +8,7 @@ import { filterSetToSearchParams } from '../filterUtils';
 import { getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import {
+  MARKET_PROVIDERS,
   UNAVAILABLE_RELATIVE_LABEL,
   bookMark,
   bookName,
@@ -191,16 +192,33 @@ const postedLine = (player, provider, stat) => {
 
 /*
  * The books that post him in this stat, PrizePicks first, each with its line,
- * and the one line the row leads with: the first book that has one. No line
- * anywhere is a null headline, never a guess.
+ * and the one line the row leads with. A prediction market's line leads when
+ * one posts it (Polymarket, then Novig, then Kalshi); otherwise the first book
+ * that has one. No line anywhere is a null headline, never a guess. The row is
+ * flagged when the posted lines span a full point or more.
  */
+const DISAGREEMENT_SPAN = 1;
 const linesFor = (player, stat) => {
   const books = Object.keys(player.provenance)
     .filter((provider) => player.provenance[provider].includes(stat))
     .sort((a, b) => Number(b === 'prizepicks') - Number(a === 'prizepicks'))
     .map((provider) => ({ provider, line: postedLine(player, provider, stat) }));
-  return { books, headline: books.find((book) => book.line !== null)?.line ?? null };
+  const posted = (provider) =>
+    books.find((book) => book.provider === provider && book.line !== null);
+  const market = MARKET_PROVIDERS.map(posted).find(Boolean);
+  const lead = market ?? books.find((book) => book.line !== null);
+  const lines = books.map((book) => book.line).filter((line) => line !== null);
+  return {
+    books,
+    headline: lead?.line ?? null,
+    headlineProvider: lead?.provider ?? null,
+    fromMarket: Boolean(market),
+    flagged: lines.length > 1 && Math.max(...lines) - Math.min(...lines) >= DISAGREEMENT_SPAN,
+  };
 };
+
+// A book's gap from the headline: "+0.5", "−1". Trailing zeros are trimmed.
+const signedGap = (gap) => `${gap < 0 ? '−' : '+'}${Math.abs(Math.round(gap * 100) / 100)}`;
 
 const averageOf = (values) =>
   values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
@@ -213,6 +231,7 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   let caption;
   let meta;
   let marks = null;
+  let flagged = false;
   if (historical) {
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
@@ -233,7 +252,8 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
       </>
     );
   } else {
-    const { books, headline } = linesFor(player, stat);
+    const { books, headline, headlineProvider, fromMarket, ...rest } = linesFor(player, stat);
+    flagged = rest.flagged;
     const score = headline === null ? scoreFor(player, stat, windowKey) : null;
     value =
       headline !== null ? (
@@ -246,26 +266,32 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
     caption =
       headline !== null
         ? seasonAverage !== null
-          ? `line · ${seasonAverage.toFixed(1)} avg`
-          : 'line'
+          ? `${fromMarket ? 'market line' : 'line'} · ${seasonAverage.toFixed(1)} avg`
+          : fromMarket
+            ? 'market line'
+            : 'line'
         : 'Matchup Score';
     const minutes = averageOf(player.last10Minutes);
     meta = minutes === null ? null : `${Math.round(minutes)} min last 10`;
+    const differs = (line) => line !== null && line !== headline;
+    const against = fromMarket ? 'the market' : headlineProvider && bookName(headlineProvider);
     marks = books.length ? (
       <span
         className="rail-books"
         aria-label={`${stat} posted by ${listWords(
-          books.map(({ provider, line }) =>
-            line !== null && line !== headline
-              ? `${bookName(provider)} at ${formatStat(line)}`
-              : bookName(provider),
-          ),
+          books.map(({ provider, line }) => {
+            if (!differs(line)) return bookName(provider);
+            const gap = line - headline;
+            return `${bookName(provider)} at ${formatStat(line)}, ${Math.abs(
+              Math.round(gap * 100) / 100,
+            )} ${gap < 0 ? 'lower' : 'higher'} than ${against}`;
+          }),
         )}`}
       >
         {books.map(({ provider, line }) => (
-          <i key={provider} aria-hidden="true">
+          <i key={provider} aria-hidden="true" className={differs(line) ? 'differs' : undefined}>
             {bookMark(provider)}
-            {line !== null && line !== headline ? ` ${formatStat(line)}` : ''}
+            {differs(line) ? ` ${signedGap(line - headline)}` : ''}
           </i>
         ))}
       </span>
@@ -274,7 +300,7 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   return (
     <article
       aria-label={`${player.name} player`}
-      className={`rail-row${selected ? ' selected' : ''}`}
+      className={`rail-row${selected ? ' selected' : ''}${flagged ? ' lines-disagree' : ''}`}
     >
       <div className="rail-row-name">
         <h3>
@@ -296,6 +322,7 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
         {value}
         <small>{caption}</small>
         {marks}
+        {flagged && <span className="selection-visually-hidden">Lines disagree</span>}
       </div>
       {/* The whole row opens the selection card; the name above stays its own link. */}
       <button

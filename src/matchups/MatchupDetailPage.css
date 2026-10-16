@@ -511,6 +511,14 @@
   font-weight: 600;
 }
 
+/* A flagged row lights the marks of the books off the headline in the gold
+   accent. */
+.rail-row.lines-disagree .rail-books i.differs {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+
 /* Defense Sheet: no box around a category, one header row naming its
    measures, one line per slice. */
 .defense-sheet {

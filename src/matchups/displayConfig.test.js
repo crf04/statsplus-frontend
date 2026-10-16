@@ -1,4 +1,4 @@
-import { shouldDisplayDietShare, sliceName } from './displayConfig';
+import { bookMark, bookName, shouldDisplayDietShare, sliceName } from './displayConfig';
 
 test.each([
   ['playTypes', { sigmaDeviation: 0.5, volumePerGame: 1 }, true],
@@ -40,4 +40,18 @@ test.each([
   ['Catch and Shoot', 'Catch-and-shoot'],
 ])('names the %s slice in plain English', (sliceKey, expected) => {
   expect(sliceName(sliceKey)).toBe(expected);
+});
+
+test.each([
+  ['dabble', 'Dabble', 'DB'],
+  ['kalshi', 'Kalshi', 'KX'],
+  ['novig', 'Novig', 'NV'],
+  ['polymarket', 'Polymarket', 'PM'],
+  ['prizepicks', 'PrizePicks', 'PP'],
+  ['underdog', 'Underdog', 'UD'],
+  ['draftkings', 'DraftKings', 'DK'],
+  ['fanduel', 'FanDuel', 'FD'],
+])('names the %s book %s and marks it %s', (provider, name, mark) => {
+  expect(bookName(provider)).toBe(name);
+  expect(bookMark(provider)).toBe(mark);
 });

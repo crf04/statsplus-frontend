@@ -86,9 +86,8 @@ describe.each(PAGES)('$path', ({ path, heading, title }) => {
 
   test('opens for a waitlisted account instead of the waitlist screen', async () => {
     Object.assign(mockAuth, SIGNED_IN, { waitlist: { message: 'The beta is full right now.' } });
-    renderAt(path);
+    await renderAt(path, heading);
 
-    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: "You're on the waitlist" }),
     ).not.toBeInTheDocument();

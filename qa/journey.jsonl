@@ -1,0 +1,93 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "doctor"}
+{"action": "open", "path": "/matchups?date=2026-10-21"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-21"}, "status": 200}
+{"action": "assert", "target": {"selector": "text=/^prizepicks pool is fresh \u2014 as of \\d+m ago$/"}}
+{"action": "assert", "target": {"selector": "text=/^dabble pool is fresh \u2014 as of \\d+m ago$/"}}
+{"action": "proof", "name": "a1-slate-prizepicks-40m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "a1-slate-prizepicks-40m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "click", "target": {"selector": "a[href='/matchups/0022600901']"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600901"}, "status": 200}
+{"action": "assert", "target": {"role": "region", "name": "Matchup summary"}}
+{"action": "proof", "name": "a2-matchup-both-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "a2-matchup-both-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"selector": "text=/^Lines last read \\d{1,2}m ago\\.$/"}}
+{"action": "assert", "target": {"selector": "text=/^Lines last read [45]\\d+m ago\\.$/"}, "state": "hidden"}
+{"action": "proof", "name": "a3-matchup-dabble-stale-prizepicks-42m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "a3-matchup-dabble-stale-prizepicks-42m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups/0022600902"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600902"}, "status": 200}
+{"action": "assert", "target": {"role": "region", "name": "Matchup summary"}}
+{"action": "proof", "name": "b1-matchup-prizepicks-89m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "b1-matchup-prizepicks-89m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"text": "Lines last read 2h ago."}}
+{"action": "proof", "name": "b2-matchup-prizepicks-past-90m-stale-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "b2-matchup-prizepicks-past-90m-stale-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups?date=2026-10-23"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-23"}, "status": 200}
+{"action": "assert", "target": {"text": "prizepicks pool is fresh \u2014 as of 1h ago"}}
+{"action": "assert", "target": {"selector": "text=/^dabble pool is fresh \u2014 as of \\d+m ago$/"}}
+{"action": "proof", "name": "c1-slate-both-near-bar-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "c1-slate-both-near-bar-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"text": "prizepicks pool is stale \u2014 as of 2h ago (older than 90m freshness bar)"}}
+{"action": "assert", "target": {"selector": "text=/^dabble pool is stale \u2014 as of \\d+m ago \\(older than 15m freshness bar\\)$/"}}
+{"action": "proof", "name": "c2-slate-each-past-its-bar-stale-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "c2-slate-each-past-its-bar-stale-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups?date=2026-10-24"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-24"}, "status": 200}
+{"action": "assert", "target": {"selector": "text=/^Player pool is fresh \u2014 as of \\d+m ago$/"}}
+{"action": "assert", "target": {"selector": "text=/^prizepicks pool is fresh \u2014 as of \\d+m ago$/"}}
+{"action": "proof", "name": "d1-slate-prizepicks-only-pool-40m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "d1-slate-prizepicks-only-pool-40m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "click", "target": {"selector": "a[href='/matchups/0022600904']"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600904"}, "status": 200}
+{"action": "assert", "target": {"role": "region", "name": "Matchup summary"}}
+{"action": "assert", "target": {"selector": "text=/^Lines last read/"}, "state": "hidden"}
+{"action": "proof", "name": "d2-matchup-prizepicks-only-pool-40m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "d2-matchup-prizepicks-only-pool-40m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups?date=2026-10-25"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/slate", "query": {"date": "2026-10-25"}, "status": 200}
+{"action": "assert", "target": {"text": "Player pool is fresh \u2014 as of 1h ago"}}
+{"action": "assert", "target": {"text": "prizepicks pool is fresh \u2014 as of 1h ago"}}
+{"action": "proof", "name": "e1-slate-prizepicks-only-pool-89m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "e1-slate-prizepicks-only-pool-89m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"text": "Player pool is stale \u2014 as of 2h ago (older than 90m freshness bar)"}}
+{"action": "assert", "target": {"text": "prizepicks pool is stale \u2014 as of 2h ago (older than 90m freshness bar)"}}
+{"action": "proof", "name": "e2-slate-prizepicks-only-pool-past-90m-stale-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "e2-slate-prizepicks-only-pool-past-90m-stale-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/matchups/0022600906"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600906"}, "status": 200}
+{"action": "assert", "target": {"role": "region", "name": "Matchup summary"}}
+{"action": "proof", "name": "f1-matchup-prizepicks-only-pool-89m-fresh-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "f1-matchup-prizepicks-only-pool-89m-fresh-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"text": "Lines last read 2h ago."}}
+{"action": "proof", "name": "f2-matchup-prizepicks-only-pool-past-90m-stale-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "f2-matchup-prizepicks-only-pool-past-90m-stale-phone"}
+{"action": "assert-layout"}
+{"action": "cleanup"}

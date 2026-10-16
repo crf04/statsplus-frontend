@@ -1,0 +1,11 @@
+--- /Users/chrisfu/.t3/worktrees/statsplus/t3code-62b14da4/.agents/skills/verify-statsplus/scripts/qa-backend.py	2026-10-15 23:11:01
++++ qa-backend.py	2026-10-16 03:26:05
+@@ -99,6 +99,8 @@
+         'ENABLE_LLM_FALLBACK': 'false', 'DFS_BOARD_ENABLED': 'false',
+         'DFS_ENABLED_PROVIDERS': '', 'INJURY_REPORT_ENABLED': 'false',
+         'ROTOWIRE_PERMISSION_GRANTED': 'false', 'LOG_LEVEL': 'WARNING',
++        # Pinned-copy change (statsplus-frontend#222 QA): read posted lines from the projection archive.
++        'PROJECTION_ARCHIVE_READ_ENABLED': 'true',
+     })
+ 
+ 

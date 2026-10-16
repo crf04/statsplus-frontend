@@ -1,0 +1,109 @@
+{"action":"require-environment","name":"qa"}
+{"action":"doctor"}
+{"_hook":"seed","games":[1]}
+{"action":"open","path":"/matchups?date={{DATE1}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"{{DATE1}}"},"status":200}
+{"action":"assert","target":{"selector":"text=/^prizepicks pool is fresh — as of \\d+m ago$/"}}
+{"action":"assert","target":{"selector":"text=/^dabble pool is fresh — as of \\d+m ago$/"}}
+{"action":"proof","name":"a1-slate-prizepicks-40m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"a1-slate-prizepicks-40m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"action":"click","target":{"selector":"a[href='/matchups/{{GAME1}}']"}}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"{{GAME1}}"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"_hook":"mark","name":"a"}
+{"action":"proof","name":"a2-matchup-both-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"a2-matchup-both-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"until","name":"a","seconds":150}
+{"action":"assert","target":{"selector":"text=/^Lines last read \\d{1,2}m ago\\.$/"}}
+{"action":"assert","target":{"selector":"text=/^Lines last read [45]\\d+m ago\\.$/"},"state":"hidden"}
+{"action":"proof","name":"a3-matchup-dabble-stale-prizepicks-42m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"a3-matchup-dabble-stale-prizepicks-42m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"seed","games":[2]}
+{"action":"open","path":"/matchups/{{GAME2}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"{{GAME2}}"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"_hook":"mark","name":"b"}
+{"action":"proof","name":"b1-matchup-prizepicks-89m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"b1-matchup-prizepicks-89m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"until","name":"b","seconds":150}
+{"action":"assert","target":{"text":"Lines last read 2h ago."}}
+{"action":"proof","name":"b2-matchup-prizepicks-past-90m-stale-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"b2-matchup-prizepicks-past-90m-stale-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"seed","games":[3]}
+{"action":"open","path":"/matchups?date={{DATE3}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"{{DATE3}}"},"status":200}
+{"action":"assert","target":{"text":"prizepicks pool is fresh — as of 1h ago"}}
+{"action":"assert","target":{"selector":"text=/^dabble pool is fresh — as of \\d+m ago$/"}}
+{"_hook":"mark","name":"c"}
+{"action":"proof","name":"c1-slate-both-near-bar-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"c1-slate-both-near-bar-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"until","name":"c","seconds":150}
+{"action":"assert","target":{"text":"prizepicks pool is stale — as of 2h ago (older than 90m freshness bar)"}}
+{"action":"assert","target":{"selector":"text=/^dabble pool is stale — as of \\d+m ago \\(older than 15m freshness bar\\)$/"}}
+{"action":"proof","name":"c2-slate-each-past-its-bar-stale-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"c2-slate-each-past-its-bar-stale-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"seed","games":[4]}
+{"action":"open","path":"/matchups?date={{DATE4}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"{{DATE4}}"},"status":200}
+{"action":"assert","target":{"selector":"text=/^Player pool is fresh — as of \\d+m ago$/"}}
+{"action":"assert","target":{"selector":"text=/^prizepicks pool is fresh — as of \\d+m ago$/"}}
+{"action":"proof","name":"d1-slate-prizepicks-only-pool-40m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"d1-slate-prizepicks-only-pool-40m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"action":"click","target":{"selector":"a[href='/matchups/{{GAME4}}']"}}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"{{GAME4}}"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"assert","target":{"selector":"text=/^Lines last read/"},"state":"hidden"}
+{"action":"proof","name":"d2-matchup-prizepicks-only-pool-40m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"d2-matchup-prizepicks-only-pool-40m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"seed","games":[5]}
+{"action":"open","path":"/matchups?date={{DATE5}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"{{DATE5}}"},"status":200}
+{"action":"assert","target":{"text":"Player pool is fresh — as of 1h ago"}}
+{"action":"assert","target":{"text":"prizepicks pool is fresh — as of 1h ago"}}
+{"_hook":"mark","name":"e"}
+{"action":"proof","name":"e1-slate-prizepicks-only-pool-89m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"e1-slate-prizepicks-only-pool-89m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"until","name":"e","seconds":150}
+{"action":"assert","target":{"text":"Player pool is stale — as of 2h ago (older than 90m freshness bar)"}}
+{"action":"assert","target":{"text":"prizepicks pool is stale — as of 2h ago (older than 90m freshness bar)"}}
+{"action":"proof","name":"e2-slate-prizepicks-only-pool-past-90m-stale-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"e2-slate-prizepicks-only-pool-past-90m-stale-phone"}
+{"action":"assert-layout"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"seed","games":[6]}
+{"action":"open","path":"/matchups/{{GAME6}}"}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"{{GAME6}}"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"_hook":"mark","name":"f"}
+{"action":"proof","name":"f1-matchup-prizepicks-only-pool-89m-fresh-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"f1-matchup-prizepicks-only-pool-89m-fresh-phone"}
+{"action":"viewport","name":"desktop"}
+{"_hook":"until","name":"f","seconds":150}
+{"action":"assert","target":{"text":"Lines last read 2h ago."}}
+{"action":"proof","name":"f2-matchup-prizepicks-only-pool-past-90m-stale-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"proof","name":"f2-matchup-prizepicks-only-pool-past-90m-stale-phone"}
+{"action":"assert-layout"}
+{"action":"cleanup"}

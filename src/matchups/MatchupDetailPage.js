@@ -427,6 +427,8 @@ const SHARE_LABELS = {
 };
 
 const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);
+// Catch-and-shoot 2s and under-10-ft 3s are too rare to read.
+const isRareShotType = (row) => /^(Catch and Shoot:FG2|Less Than 10 ft:FG3)/.test(row.key);
 const columnOf = (row) => MEASURE_COLUMNS[rowMeasure(row)] || 'Allowed';
 
 /*
@@ -444,6 +446,7 @@ const groupBySlice = (base, rows) => {
       groups.set(id, {
         id,
         sliceKey: row.sliceKey,
+        shotValue: shotValue || null,
         name: shotValue ? `${name} ${shotValue}s` : name,
         rows: [],
       });
@@ -495,13 +498,14 @@ const sliceLeagueAverageShare = (players, base, sliceKey) => {
 };
 
 // Who leans on a slice more than the league does, most first. Players below
-// league are left off: the sheet lists who a soft spot is for.
-const leansFor = (players, base, sliceKey, market) =>
+// league are left off: the sheet lists who a soft spot is for. A shot type row
+// reads his twos or threes of it, not the whole shot type.
+const leansFor = (players, base, sliceKey, shotValue, market) =>
   SHARE_LABELS[base]
     ? players
         .filter((player) => market === 'All' || player.statCategories.includes(market))
         .flatMap((player) => {
-          const share = getDisplayableDietShare(player, base, sliceKey);
+          const share = getDisplayableDietShare(player, base, sliceKey, shotValue);
           return share && share.sigmaDeviation > 0 ? [{ player, share }] : [];
         })
         .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
@@ -540,7 +544,9 @@ function DefenseSheet({
   const sections = SHEET_BASES.filter((base) => team.defenseSheet[base]).map((base) => {
     // Play types read by points only; the possession rows repeat the same story.
     const rows = team.defenseSheet[base].filter(
-      (row) => !(base === 'playTypes' && rowMeasure(row) === 'POSS'),
+      (row) =>
+        !(base === 'playTypes' && rowMeasure(row) === 'POSS') &&
+        !(base === 'shotTypes' && isRareShotType(row)),
     );
     const marketRows = rows.filter(inMarket);
     const availability = surfaceAvailability[base][windowKey];
@@ -635,8 +641,9 @@ function DefenseSheet({
               </div>
               {groups.map((group) => {
                 const why =
-                  selectedPlayer && getDisplayableDietShare(selectedPlayer, base, group.sliceKey);
-                const leans = leansFor(players, base, group.sliceKey, market);
+                  selectedPlayer &&
+                  getDisplayableDietShare(selectedPlayer, base, group.sliceKey, group.shotValue);
+                const leans = leansFor(players, base, group.sliceKey, group.shotValue, market);
                 return (
                   <article
                     key={group.id}

@@ -25,6 +25,11 @@ test.each([
   ['assistLocations', { sigmaDeviation: -0.49, volumePerGame: 9 }, false],
   ['assistLocations', { sigmaDeviation: 9, volumePerGame: 0.99 }, false],
   ['assistLocations', { sigmaDeviation: null, volumePerGame: 9 }, false],
+  ['shotValues', { sigmaDeviation: 0.5, volumePerGame: 2 }, true],
+  ['shotValues', { sigmaDeviation: -0.5, volumePerGame: 2 }, true],
+  ['shotValues', { sigmaDeviation: 0.49, volumePerGame: 9 }, false],
+  ['shotValues', { sigmaDeviation: 9, volumePerGame: 1.99 }, false],
+  ['shotValues', { sigmaDeviation: null, volumePerGame: 9 }, false],
 ])(
   '%s gating returns %s for the named sigma deviation and volume floors',
   (base, value, expected) => {

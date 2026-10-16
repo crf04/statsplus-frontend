@@ -8,6 +8,9 @@ export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
   shotZones: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
   shotTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 4 }),
   assistLocations: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
+  // A shot type's twos or threes alone: a lower floor, so a +2 sigma pull-up
+  // threes shooter at 3 a game still shows.
+  shotValues: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 2 }),
 });
 
 export const shouldDisplayDietShare = (base, value) => {
@@ -90,13 +93,17 @@ export const sliceName = (sliceKey) => SLICE_NAMES[sliceKey] || sliceKey;
 
 // One player's season diet fact for one slice, whether or not it is displayable.
 // Capture reads it for the league average the slice is measured against, which
-// the display gate has no say over.
-export const findDietShare = (player, base, sliceKey) =>
-  player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season || null;
+// the display gate has no say over. A shot value ('2' or '3') reads just the
+// shot type's twos or threes, or nothing when the split is missing.
+export const findDietShare = (player, base, sliceKey, shotValue = null) => {
+  const season = player.dietShares[base]?.find((entry) => entry.key === sliceKey)?.season;
+  if (!season) return null;
+  return shotValue ? season.shotValues?.[shotValue] || null : season;
+};
 
-export const getDisplayableDietShare = (player, base, sliceKey) => {
-  const value = findDietShare(player, base, sliceKey);
-  return value && shouldDisplayDietShare(base, value) ? value : null;
+export const getDisplayableDietShare = (player, base, sliceKey, shotValue = null) => {
+  const value = findDietShare(player, base, sliceKey, shotValue);
+  return value && shouldDisplayDietShare(shotValue ? 'shotValues' : base, value) ? value : null;
 };
 
 // Stat Categories read in box-score order wherever a reader picks one: the

@@ -344,6 +344,21 @@
   font-size: 14px;
 }
 
+.home-signup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.home-signup p {
+  margin: 0;
+}
+
+.home-signup .text-center {
+  text-align: left;
+}
+
 @media (max-width: 760px) {
   .home-tonight {
     grid-template-columns: minmax(0, 1fr);

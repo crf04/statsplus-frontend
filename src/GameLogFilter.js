@@ -42,8 +42,12 @@ const OnMount = ({ onMount, onUnmount }) => {
 const listNames = (names) =>
   names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
-const GameLogFilter = () => {
-  const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
+// `notice` is shown at the top of the Query Prompt, under the scoreboard ticker.
+const GameLogFilter = ({ notice = null }) => {
+  const { isAuthenticated, waitlist, loading: authLoading, currentUser } = useAuth();
+  // Every authenticated read and write on this page needs an admitted account:
+  // a waitlisted one is refused them all, so it is treated as not searching.
+  const canSearch = isAuthenticated && !waitlist;
   const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
@@ -126,7 +130,7 @@ const GameLogFilter = () => {
       return undefined;
     }
 
-    if (!isAuthenticated) {
+    if (!canSearch) {
       setPlayerList([]);
       setTeams([]);
       setListsError(null);
@@ -191,7 +195,7 @@ const GameLogFilter = () => {
         controller.abort();
       }
     };
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, canSearch]);
 
   const abortGameLogsRequest = useCallback(() => {
     const currentRequest = gameLogsRequestRef.current;
@@ -217,7 +221,7 @@ const GameLogFilter = () => {
   const loadSeasonGameLogs = useCallback(() => {
     const player = urlFilters.player_name;
     const season = urlFilters.season_filter;
-    if (!player || authLoading || !isAuthenticated) return;
+    if (!player || authLoading || !canSearch) return;
     if (seasonRequestRef.current.player === player && seasonRequestRef.current.season === season)
       return;
 
@@ -251,7 +255,7 @@ const GameLogFilter = () => {
         setSeasonGameLogsLoading(false);
         setSeasonGameLogsFailed(!isRequestCancelled(error));
       });
-  }, [authLoading, isAuthenticated, urlFilters.player_name, urlFilters.season_filter]);
+  }, [authLoading, canSearch, urlFilters.player_name, urlFilters.season_filter]);
 
   // One player's season must never bound another player's sliders.
   const playerSeasonGameLogs = useMemo(
@@ -398,7 +402,7 @@ const GameLogFilter = () => {
 
     // Signing out mid-flight must not publish protected logs underneath the
     // sign-in prompt, so drop anything already in the air.
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && !canSearch) {
       abortGameLogsRequest();
       setGameLogs([]);
       clearSeasonGameLogs();
@@ -438,7 +442,7 @@ const GameLogFilter = () => {
     clearSeasonGameLogs,
     hasBrowseSentinel,
     inWorkspace,
-    isAuthenticated,
+    canSearch,
     requestGameLogs,
     returnToQueryPrompt,
     urlFilters,
@@ -507,7 +511,7 @@ const GameLogFilter = () => {
     const nextSearch = filterSetToSearchParams(nextFilters);
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
-      if (authLoading || !isAuthenticated) return { ok: false, reason: 'authentication' };
+      if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
       requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: !selectedTeam });
       return { ok: true };
     }
@@ -558,11 +562,12 @@ const GameLogFilter = () => {
         onFiltersApplied={handleNLQueryResults}
         onQueryUpdate={setCurrentQuery}
         gameLogsLoading={isGameLogsLoading}
+        notice={notice}
         inWorkspace={inWorkspace}
         // The saved list is reachable from the Query Prompt as well as from the
         // Workspace, so coming back to a saved Filter Set does not require
         // building one first.
-        onOpenSavedFilterSets={isAuthenticated ? () => setShowSavedFilterSets(true) : undefined}
+        onOpenSavedFilterSets={canSearch ? () => setShowSavedFilterSets(true) : undefined}
       />
 
       {!inWorkspace && (authLoading || listsLoading) && (
@@ -581,10 +586,11 @@ const GameLogFilter = () => {
           {gameLogsError}
         </Alert>
       )}
-      {inWorkspace && !authLoading && !isAuthenticated && (
+      {inWorkspace && !authLoading && !canSearch && (
         <Alert variant="info" className="mx-3" role="status">
-          Sign in to load these game logs. This link is kept as-is, so signing in opens exactly what
-          it points at.
+          {isAuthenticated
+            ? 'Game logs open once your account is off the waitlist.'
+            : 'Sign in to load these game logs. This link is kept as-is, so signing in opens exactly what it points at.'}
         </Alert>
       )}
       {showWorkspaceLoading && (
@@ -614,7 +620,7 @@ const GameLogFilter = () => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {isAuthenticated && (
+            {canSearch && (
               <div className="d-flex align-items-center gap-2 ms-auto">
                 {/* There is nothing to save until the URL carries a Filter
                     Set, and a refused link is one we would not open again —
@@ -748,7 +754,7 @@ const GameLogFilter = () => {
 
       {/* Saving and the saved list belong to an account, so neither exists for
           a signed-out reader. */}
-      {isAuthenticated && (
+      {canSearch && (
         <>
           <SaveFilterSetModal
             show={showSaveFilterSet}

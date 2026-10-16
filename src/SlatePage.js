@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import LoginButton from './components/Auth/LoginButton';
 import { fetchSlate } from './slateApi';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
@@ -259,7 +260,8 @@ export default function SlatePage() {
     return (
       <main className="slate-page signed-out-slate">
         <h1>Sign in to view the slate</h1>
-        <p>Use the sign-in control in the navigation to load schedule and player-pool data.</p>
+        <p>A free account unlocks schedule and player-pool data. Sign up with Google to open it.</p>
+        <LoginButton size="sm" label="Sign up free" />
       </main>
     );
   }

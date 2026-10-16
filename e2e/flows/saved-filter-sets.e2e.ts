@@ -87,7 +87,7 @@ signedOutTest(
 
     await app.open('/');
     await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
-    await expect(screen.getByRole('button', 'Browse without a query')).toBeDisabled();
+    await expect(screen.getByRole('button', 'Browse without a query')).toBeEnabled();
     await expect(screen.getByRole('button', 'Saved Filter Sets')).toHaveCount(0);
   },
 );

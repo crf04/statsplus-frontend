@@ -185,6 +185,17 @@ test('no firing Target and no Targets at all read differently', () => {
   expect(screen.getByRole('link', { name: 'Set a Target' })).toHaveAttribute('href', '/targets');
 });
 
+test('signed out, Your Targets is a sign-up card instead of Targets', () => {
+  renderTonight({ signUp: true });
+
+  const column = screen.getByRole('region', { name: 'Your Targets' });
+  expect(column).toHaveTextContent(
+    'A Target watches one opponent and flags every player who fits, on game day.',
+  );
+  expect(within(column).getByRole('button', { name: 'Sign up free' })).toBeInTheDocument();
+  expect(within(column).queryByRole('link')).not.toBeInTheDocument();
+});
+
 test('a failed Targets read leaves Tonight on its own', () => {
   renderTonight({ targets: null });
 

@@ -17,7 +17,8 @@ Counts: `npx playwright test --list --reporter=json` lists 166 test/project pair
 | Source                                                                                                                         | e2e                            | Status  | Assertions (source → e2e) | Passing                      | Defect check                                | Notes                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ | ------- | ------------------------- | ---------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | specs/connect.spec.js (4 tests)                                                                                                | flows/connect.e2e.ts (4 tests) | retired | 14 → 19                   | desktop 4/4 x3, phone 4/4 x3 | 5 mutations, all caught; see "connect"      | File deleted 2026-10-16 with the user's approval. See "connect" below                                                                                                                                                                                                                                                                             |
-| specs/attribution.spec.js (2 tests)                                                                                            |                                | todo    | 9 →                       |                              |                                             |                                                                                                                                                                                                                                                                                                                                                   |
+| specs/attribution.spec.js: the landing UTM and ref reach the attribution endpoint once, even from a waitlisted account | | stays | 4 → | | not ported | Counts the requests the client sends; see "attribution" |
+| specs/attribution.spec.js: 401 without a bearer, 400 for bad bodies, 201 on the first write, 200 afterwards | flows/attribution.e2e.ts | ported | 5 → 6 | desktop 1/1 x3, phone 1/1 x3 | 19 mutations (16 defects, 3 controls), both runners: see "attribution" | The source stays too; not retired |
 | specs/core-flows.spec.js (59 tests)                                                                                            |                                | todo    | 352 →                     |                              |                                             | Search, Log Workspace, Saved Filter Sets, `/help` and sign-up funnel have e2e flows that cover the happy paths (docs/e2e-flows.md) but are not literal ports. Includes 3 `@smoke` tests (also on `mobile-chromium`); the production ones skip without `E2E_BASE_URL` (2 skipped in the last full run). Split into one row per test before porting |
 | specs/deployed-smoke-config.spec.js (1 test)                                                                                   |                                | todo    | 1 →                       |                              |                                             | Config unit-style test, no UI. Likely `stays`                                                                                                                                                                                                                                                                                                     |
 | specs/filter-panel-parity.spec.js (12 tests)                                                                                   |                                | todo    | 25 →                      |                              |                                             | Uses `toHaveScreenshot` baselines (`filter-panel-parity.spec.js-snapshots`); e2e supports `toHaveScreenshot`, minus some options (see Gaps)                                                                                                                                                                                                       |
@@ -69,6 +70,39 @@ Mutations that cover the ported tests (disposable copies with `~/.agents/scripts
 
 Earlier in the session the full five-test port was also run against 36 mutations and Playwright; those results no longer describe the committed state and are not kept here.
 
+### attribution
+
+| Source test | e2e test | Status | Assertions | Notes |
+| --- | --- | --- | --- | --- |
+| the landing UTM and ref reach the attribution endpoint once, even from a waitlisted account | none | stays | 4 → | Counts every request the client sends to the attribution endpoint. e2e has no request or response events; `browser.route` substitutes miss redirected requests, CSP-blocked attempts and frames. Evidence: `/tmp/attribution-review/` (round 1: the 307 redirect and the cross-origin duplicate passed the port and failed the source) and `/tmp/attribution-review-r2/` (round 2: a two-hop 307, a duplicate plus a storage reset and a detached iframe escaped the patched port; a manual redirect and a cross-origin GET failed it falsely). Each patch opened new edge cases, so the test stays in Playwright. |
+| 401 without a bearer, 400 for bad bodies, 201 on the first write, 200 afterwards (inside `attribution endpoint contract in the fixture`) | same (leaf title; the describe name is in a comment) | ported | 5 → 6 | A contract test through `fetch`, with no request observation. Extra assertion: exactly six POSTs reached the endpoint (`api.sent`, the contract's own record), so the app's own send did not take the first write. Not retired: the source spec still runs it. |
+
+Mutations for the ported test (disposable copy via `~/.agents/scripts/mutate.py`, both runners; `src/` untouched). Rows marked CONTROL are harmless and must pass: they do.
+
+| # | Mutation | File | e2e | Playwright |
+| --- | --- | --- | --- | --- |
+| 1 | already-sent check removed (the app's own send takes the first write) | firstTouch.js | caught | caught |
+| 2 | 401 becomes 403 | courtai-contract.mjs | caught | caught |
+| 3 | 401 message reworded | courtai-contract.mjs | caught | caught |
+| 4 | 401 code reworded | courtai-contract.mjs | caught | caught |
+| 5 | bearer not checked | courtai-contract.mjs | caught | caught |
+| 6 | array body accepted | courtai-contract.mjs | caught | caught |
+| 7 | string body accepted | courtai-contract.mjs | caught | caught |
+| 8 | numeric ref accepted | courtai-contract.mjs | caught | caught |
+| 9 | 400 code reworded | courtai-contract.mjs | caught | caught |
+| 10 | 400 becomes 422 | courtai-contract.mjs | caught | caught |
+| 11 | first write answers 200 | courtai-contract.mjs | caught | caught |
+| 12 | repeat write answers 201 | courtai-contract.mjs | caught | caught |
+| 13 | first write `recorded: false` | courtai-contract.mjs | caught | caught |
+| 14 | repeat write `recorded: true` | courtai-contract.mjs | caught | caught |
+| 15 | write-once not tracked | courtai-contract.mjs | caught | caught |
+| 16 | 201 body gains a field | courtai-contract.mjs | caught | caught |
+| 17 | CONTROL 400 message reworded | courtai-contract.mjs | passes | passes |
+| 18 | CONTROL `landed_at` as a UTC string | firstTouch.js | passes | passes |
+| 19 | CONTROL `referrer` always null | firstTouch.js | passes | passes |
+
+Defect check: not run for this slice (rows 1-16 above are the mutations).
+
 ### connect
 
 | Source test                                                                | e2e test                                                                   | Assertions           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -88,7 +122,7 @@ Differences from the source that are not literal:
 
 | Source                                                                                                        | e2e                                                                                                                                               | Used by                                                 |
 | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| e2e/fixtures/courtai.js (`test` fixtures `page`, `authenticatedPage`, `waitlistedPage`, `installApiContract`) | e2e/flows/support/courtai.ts (`signedOutTest`, `signedInTest`, `waitlistedTest`, `adminTest`, `api`), which reuses `installApiContract` unchanged | every flow in e2e/flows, including connect and waitlist |
+| e2e/fixtures/courtai.js (`test` fixtures `page`, `authenticatedPage`, `waitlistedPage`, `installApiContract`) | e2e/flows/support/courtai.ts (`signedOutTest`, `signedInTest`, `waitlistedTest`, `adminTest`, `api`), which reuses `installApiContract` unchanged | every flow in e2e/flows, including connect, waitlist and attribution |
 | playwright.config.mjs `webServer`                                                                             | e2e.config.ts `app.command` -> `e2e/bridge/server.mjs {port}`                                                                                     | all targets                                             |
 
 ## Gaps
@@ -97,6 +131,7 @@ Differences from the source that are not literal:
 - `toHaveScreenshot` is supported (`same`); only `fullPage`, `clip`, `animations`, `caret`, `scale` and `stylePath` are `missing`. `filter-panel-parity.spec.js` can be checked for those options before it is called `stays`; its Linux baselines are the other thing to settle.
 - Real clipboard read: e2e cannot grant clipboard permission, so no test reads the real clipboard any more. The sink checks what the app writes, not that the browser accepts it. `docs/e2e-flows.md` says so.
 - `page.on('response')` has no listener form, `browser.waitForResponse` needs an open page (`APP_NOT_OPEN` before `app.open`) and resolves once, and `route.continue` hides the response. A proxy route can record statuses but missed or misreported these Codex mutations against the source: 307 to a non-API 403, 308 to a non-API 403, 307 to an API 403, a two-hop 307 to 308 to 403, a cross-origin 403 blocked by the bridge CSP (all passed the port, failed the source), and a detached iframe keepalive 403 (failed the port, passed the source). Tests that observe responses therefore stay in Playwright ("waitlist"). A response event or `route.fetch()` would change that; feedback not sent.
+- Request observation: e2e has no `page.on('request'|'response'|'requestfailed')` and no `route.fetch()`. A `browser.route` sees the first request of a redirect but not the followed ones and never sees CSP-blocked attempts (the bridge sends `connect-src 'self'`; production sends none), and patching each hole opened another. Tests that count what the client sent or received stay in Playwright: `attribution` (send-once) and `waitlist` (the two refusal tests), with the mutation evidence cited in each section. The catch-all proxy `observeResponses` that shared these limits was removed with the waitlist revert, so nothing in the e2e flows still depends on it. Feedback drafted with `--dry-run`, not sent.
 - `expect(...).toHaveCount(0)` passes at once when the node is absent, so a check that something never appears is only as strong as the wait before it.
 - Two mutations escaped both suites on the full five-test port: `forbidden` 403 responses never settling in the axios handler, and an erroneous waitlisting delayed 700 ms. They concern the staying `other 403 responses` test, so they stay Playwright's weakness too.
 - `e2e run --grep "other 403 responses"` selects tests by title (one check per target), so a mutation run can target one test. An earlier note here said there was no title filter; that was wrong.

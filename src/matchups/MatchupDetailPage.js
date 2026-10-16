@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -78,96 +78,74 @@ const gameStatus = (game) =>
       ? 'Postponed'
       : `Tip-off ${clock(game.scheduledAt)}`;
 
-// Which books the live sheet's lines come from, and when they were read.
-const linesSource = (matchup) => {
+// A book with lines in the pool; a missing or unavailable one has none.
+const hasLines = (surface) => !['missing', 'unavailable'].includes(surface.status);
+
+// The books the live sheet's lines come from. The pool names the books it
+// read; an older pool names none, so the players' provenance stands in.
+const linesBooks = (matchup) => {
   const { pool } = matchup.freshness;
-  const books = pool.providers.length
-    ? pool.providers.map((provider) => provider.name)
-    : [...new Set(matchup.players.flatMap((player) => Object.keys(player.provenance)))];
-  if (['missing', 'unavailable'].includes(pool.status) || books.length === 0) {
-    return 'No lines posted yet';
+  if (!hasLines(pool)) return [];
+  if (pool.providers.length) {
+    return pool.providers.filter(hasLines).map((provider) => provider.name);
   }
-  return `Lines from ${listWords(books.map(bookName))}${
-    pool.retrievedAt ? `, read ${clock(pool.retrievedAt)}` : ''
-  }`;
+  return [...new Set(matchup.players.flatMap((player) => Object.keys(player.provenance)))];
 };
 
-const FRESHNESS_NAMES = {
-  schedule: 'Schedule',
-  pool: 'Player pool',
-  stats: 'Defense stats',
-  injuries: 'Injury report',
+// The live header warns only when the lines themselves are old: the oldest
+// read among the books it names, once it crosses the pool's freshness bar.
+const staleLinesWarning = (matchup, now) => {
+  const { pool } = matchup.freshness;
+  const surfaces = pool.providers.length ? pool.providers.filter(hasLines) : [pool];
+  const stale = surfaces.filter(
+    (surface) =>
+      surface.retrievedAt && getSurfaceFreshnessPresentation(surface, 'pool', now).warning,
+  );
+  if (!stale.length) return null;
+  const oldest = stale.reduce((a, b) =>
+    new Date(a.retrievedAt) <= new Date(b.retrievedAt) ? a : b,
+  );
+  return `Lines last read ${formatAge(oldest.retrievedAt, now)}.`;
 };
-
-// The live header's stale-data warnings, one short sentence each.
-const freshnessWarnings = (freshness, now) => [
-  ...['schedule', 'pool', 'stats', 'injuries'].flatMap((name) => {
-    const surface = freshness[name];
-    const presentation = getSurfaceFreshnessPresentation(surface, name, now);
-    if (!presentation.warning) return [];
-    return [
-      {
-        key: name,
-        text: `${FRESHNESS_NAMES[name]} ${presentation.status}, as of ${formatAge(
-          surface.retrievedAt,
-          now,
-        )}${presentation.thresholdNote ? ` (${presentation.thresholdNote})` : ''}.`,
-      },
-    ];
-  }),
-  ...freshness.pool.providers.flatMap((provider) => {
-    const presentation = getSurfaceFreshnessPresentation(provider, 'pool', now);
-    if (!presentation.warning) return [];
-    return [
-      {
-        key: `pool-${provider.name}`,
-        text: `${bookName(provider.name)} lines ${presentation.status}, as of ${formatAge(
-          provider.retrievedAt,
-          now,
-        )}.`,
-      },
-    ];
-  }),
-];
 
 /*
- * One sentence in place of the provenance block: when the game is, what the
- * sheet is built on, and what this matchup does not have. The live header's
- * stale-data warnings follow it in the warning colour.
+ * One sentence in place of the provenance block: when the game is and what
+ * the sheet is built on. A finished game also says what it does not have; a
+ * live one adds a warning only when its lines are stale.
  */
 function MatchupSummary({ matchup, now }) {
   const { game, experience } = matchup;
-  const historical = experience.mode === 'historical';
-  const missing = [];
-  if (historical) {
+  if (experience.mode === 'historical') {
+    const missing = [];
     if (experience.sections.last15Defense.status !== 'available') missing.push('Last 15');
     if (experience.sections.injuries.status !== 'available') missing.push('injury report');
-  } else {
-    if (
-      Object.values(matchup.league.surfaceAvailability).every(
-        (windows) => windows.last15.status !== 'available',
-      )
-    ) {
-      missing.push('Last 15');
-    }
-    if (matchup.injuries.status === 'unavailable') missing.push('injury report');
+    return (
+      <section className="matchup-summary" aria-label="Matchup summary">
+        <p>
+          {gameDay(game)} · {gameStatus(game)}.{' '}
+          <span>
+            Full-season defense ranks
+            {missing.length ? `; no ${listWords(missing, 'or')}.` : '.'}
+          </span>
+        </p>
+      </section>
+    );
   }
-  const builtOn = historical ? 'Full-season defense ranks' : linesSource(matchup);
-  const warnings = historical ? [] : freshnessWarnings(matchup.freshness, now);
+  const books = linesBooks(matchup);
+  const warning = books.length ? staleLinesWarning(matchup, now) : null;
   return (
     <section className="matchup-summary" aria-label="Matchup summary">
       <p>
         {gameDay(game)} · {gameStatus(game)}.{' '}
         <span>
-          {builtOn}
-          {missing.length ? `; no ${listWords(missing, 'or')}.` : '.'}
+          {books.length ? `Lines from ${listWords(books.map(bookName))}.` : 'No lines posted yet.'}
         </span>
-        {warnings.map((warning) => (
-          <Fragment key={warning.key}>
+        {warning && (
+          <>
             {' '}
-            <span className="matchup-warning">{warning.text}</span>
-          </Fragment>
-        ))}
+            <span className="matchup-warning">{warning}</span>
+          </>
+        )}
       </p>
     </section>
   );
@@ -449,6 +427,8 @@ const SHARE_LABELS = {
 };
 
 const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);
+// Catch-and-shoot 2s and under-10-ft 3s are too rare to read.
+const isRareShotType = (row) => /^(Catch and Shoot:FG2|Less Than 10 ft:FG3)/.test(row.key);
 const columnOf = (row) => MEASURE_COLUMNS[rowMeasure(row)] || 'Allowed';
 
 /*
@@ -466,6 +446,7 @@ const groupBySlice = (base, rows) => {
       groups.set(id, {
         id,
         sliceKey: row.sliceKey,
+        shotValue: shotValue || null,
         name: shotValue ? `${name} ${shotValue}s` : name,
         rows: [],
       });
@@ -517,13 +498,14 @@ const sliceLeagueAverageShare = (players, base, sliceKey) => {
 };
 
 // Who leans on a slice more than the league does, most first. Players below
-// league are left off: the sheet lists who a soft spot is for.
-const leansFor = (players, base, sliceKey, market) =>
+// league are left off: the sheet lists who a soft spot is for. A shot type row
+// reads his twos or threes of it, not the whole shot type.
+const leansFor = (players, base, sliceKey, shotValue, market) =>
   SHARE_LABELS[base]
     ? players
         .filter((player) => market === 'All' || player.statCategories.includes(market))
         .flatMap((player) => {
-          const share = getDisplayableDietShare(player, base, sliceKey);
+          const share = getDisplayableDietShare(player, base, sliceKey, shotValue);
           return share && share.sigmaDeviation > 0 ? [{ player, share }] : [];
         })
         .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
@@ -562,7 +544,9 @@ function DefenseSheet({
   const sections = SHEET_BASES.filter((base) => team.defenseSheet[base]).map((base) => {
     // Play types read by points only; the possession rows repeat the same story.
     const rows = team.defenseSheet[base].filter(
-      (row) => !(base === 'playTypes' && rowMeasure(row) === 'POSS'),
+      (row) =>
+        !(base === 'playTypes' && rowMeasure(row) === 'POSS') &&
+        !(base === 'shotTypes' && isRareShotType(row)),
     );
     const marketRows = rows.filter(inMarket);
     const availability = surfaceAvailability[base][windowKey];
@@ -657,8 +641,9 @@ function DefenseSheet({
               </div>
               {groups.map((group) => {
                 const why =
-                  selectedPlayer && getDisplayableDietShare(selectedPlayer, base, group.sliceKey);
-                const leans = leansFor(players, base, group.sliceKey, market);
+                  selectedPlayer &&
+                  getDisplayableDietShare(selectedPlayer, base, group.sliceKey, group.shotValue);
+                const leans = leansFor(players, base, group.sliceKey, group.shotValue, market);
                 return (
                   <article
                     key={group.id}

@@ -47,6 +47,7 @@ test('decodes the complete slate freshness boundary and team counts', () => {
     slateDate: '2026-01-15',
     previousGameDate: null,
     nextGameDate: null,
+    fallback: null,
     freshness: {
       schedule: { retrievedAt: '2026-01-15T10:00:00.000Z', status: 'fresh' },
       pool: {
@@ -362,4 +363,31 @@ test('reads the game-day neighbours and treats absent or null ones as none', () 
   expect([onlyNext.previousGameDate, onlyNext.nextGameDate]).toEqual([null, '2026-01-20']);
   const older = decodeSlate(payload);
   expect([older.previousGameDate, older.nextGameDate]).toEqual([null, null]);
+});
+
+test('reads the fallback marker, and a backend that omits it reads as none', () => {
+  expect(decodeSlate({ ...payload, fallback: 'previous_game_day' }).fallback).toBe(
+    'previous_game_day',
+  );
+  expect(decodeSlate({ ...payload, fallback: null }).fallback).toBeNull();
+  expect(decodeSlate(payload).fallback).toBeNull();
+  expect(() => decodeSlate({ ...payload, fallback: 'tomorrow' })).toThrow(
+    'The slate endpoint returned an invalid response.',
+  );
+});
+
+test('sends the fallback option as the fallback parameter and nothing otherwise', async () => {
+  apiClient.get.mockResolvedValue({ data: payload });
+
+  await fetchSlate(undefined, { fallback: 'previous_game_day' });
+  expect(apiClient.get).toHaveBeenLastCalledWith(getApiUrl('SLATE'), {
+    params: { fallback: 'previous_game_day' },
+    signal: undefined,
+  });
+
+  await fetchSlate();
+  expect(apiClient.get).toHaveBeenLastCalledWith(getApiUrl('SLATE'), {
+    params: {},
+    signal: undefined,
+  });
 });

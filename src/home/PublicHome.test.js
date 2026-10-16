@@ -145,7 +145,9 @@ test('waitlisted, the public sections show, search is disabled and there is no s
   renderHome();
 
   await screen.findByRole('navigation', { name: "Today's games" });
-  expect(screen.getByRole('button', { name: /Start with a player/ })).toHaveTextContent('22.4');
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /Start with a player/ })).toHaveTextContent('22.4'),
+  );
   expect(screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Your Targets' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Sign up free' })).not.toBeInTheDocument();

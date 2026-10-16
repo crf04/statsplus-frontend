@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import App from './App';
 import config, { getApiUrl } from './config';
 import apiClient from './utils/axiosConfig';
@@ -54,7 +54,9 @@ test('a waitlisted user sees the public home page under a waitlist banner', asyn
   expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled();
   expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
   expect(await screen.findByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4');
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4'),
+  );
   expect(screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Your Targets' })).not.toBeInTheDocument();
   expect(screen.getByRole('textbox')).toBeDisabled();
@@ -86,7 +88,9 @@ test('a signed-out visitor sees the public home page with a sign-up card, and no
   render(<App />);
 
   expect(await screen.findByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4');
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4'),
+  );
   expect(screen.getByRole('article', { name: 'Best: Jaime Jaquez Jr.' })).toBeInTheDocument();
   expect(
     within(screen.getByRole('region', { name: 'Your Targets' })).getByRole('button', {

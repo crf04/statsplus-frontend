@@ -131,6 +131,15 @@ const decodeGame = (game) => {
 // An older backend omits the neighbours, which reads the same as having none.
 const decodeNeighbourDate = (value) => (isCalendarDate(value) ? value : null);
 
+// The always-present `fallback` names a Slate answered for the previous game
+// day because the current one has no games (crf04/statsplus#217). A backend
+// that predates it omits the field, which reads as no fallback.
+const decodeFallback = (value) => {
+  if (value === undefined || value === null) return null;
+  if (value !== 'previous_game_day') throw createInvalidSlateError();
+  return value;
+};
+
 export const decodeSlate = (data) => {
   if (!data || !isCalendarDate(data.slate_date) || !Array.isArray(data.games) || !data.freshness) {
     throw createInvalidSlateError();
@@ -142,14 +151,15 @@ export const decodeSlate = (data) => {
     slateDate: data.slate_date,
     previousGameDate: decodeNeighbourDate(data.previous_game_date),
     nextGameDate: decodeNeighbourDate(data.next_game_date),
+    fallback: decodeFallback(data.fallback),
     freshness,
     games: data.games.map(decodeGame),
   };
 };
 
-export const fetchSlate = async (date, { signal } = {}) => {
+export const fetchSlate = async (date, { signal, fallback } = {}) => {
   const response = await apiClient.get(getApiUrl('SLATE'), {
-    params: date ? { date } : {},
+    params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
     signal,
   });
   return decodeSlate(response.data);

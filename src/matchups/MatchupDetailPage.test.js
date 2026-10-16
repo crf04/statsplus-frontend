@@ -952,6 +952,40 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
   }
 });
 
+test('the Defense Sheet leaves out catch-and-shoot 2s and under-10-ft 3s', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = [
+    'Catch and Shoot:FG3A',
+    'Catch and Shoot:FG2A',
+    'Pullups:FG3A',
+    'Pullups:FG2A',
+    'Less Than 10 ft:FG2A',
+    'Less Than 10 ft:FG3A',
+  ].map((key) => ({
+    key,
+    sliceKey: key.split(':')[0],
+    label: key,
+    markets: ['PTS'],
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  }));
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
+    'section',
+  );
+  const shotTypes = within(sheet)
+    .getByRole('heading', { name: 'Shot types', level: 3 })
+    .closest('section');
+  expect(
+    within(shotTypes)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label')),
+  ).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s', 'Under 10 ft 2s']);
+});
+
 test('the Selection card highlights the shot make rows behind a combo market for his Diet', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
@@ -977,9 +1011,10 @@ test('the Selection card highlights the shot make rows behind a combo market for
     { key: 'Restricted Area', season: share },
     { key: 'Corner 3', season: share },
   ];
+  const split = { ...share, shotValues: { 2: share, 3: share } };
   lebron.dietShares.shotTypes = [
-    { key: 'Pullups', season: share },
-    { key: 'Catch and Shoot', season: share },
+    { key: 'Pullups', season: split },
+    { key: 'Catch and Shoot', season: split },
   ];
   lebron.statCategories.push('PRA', 'PR', 'PA');
   for (const combo of ['PRA', 'PR', 'PA']) lebron.scores[combo] = score(0.08, 0.02);
@@ -995,6 +1030,85 @@ test('the Selection card highlights the shot make rows behind a combo market for
       expect(sheetRow(slice)).toHaveClass('selection-why');
     }
   }
+});
+
+test('pull-up 3s and pull-up 2s each list who leans on that shot, with its own share', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = ['Pullups:FG3A', 'Pullups:FG2A'].map((key) => ({
+    key,
+    sliceKey: 'Pullups',
+    label: key,
+    markets: ['PTS'],
+    season: value(9, 5, 1, 20),
+    last15: value(9, 5, 1, 20),
+  }));
+  const lean = (share, sigmaDeviation) => ({ share, volumePerGame: 4, sigmaDeviation });
+  const pullUps = (twos, threes) => [
+    {
+      key: 'Pullups',
+      season: { ...lean(0.4, 1.5), shotValues: twos && { 2: twos, 3: threes } },
+    },
+  ];
+  const [reaves, lebron, tatum] = [1630559, 2544, 1628369].map((id) =>
+    candidate.players.find((player) => player.id === id),
+  );
+  // Reaves leans on pull-up threes, LeBron on pull-up twos; Tatum's split is missing.
+  reaves.dietShares.shotTypes = pullUps(lean(0.1, -0.5), lean(0.3, 1.4));
+  lebron.dietShares.shotTypes = pullUps(lean(0.28, 1.2), lean(0.12, -0.3));
+  tatum.dietShares.shotTypes = pullUps(null, null);
+  for (const player of [reaves, lebron, tatum]) player.statCategories = ['PTS'];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  expect(
+    within(sheetRow('Pull-up 3s')).getByRole('list', { name: 'Players leaning on Pull-up 3s' }),
+  ).toHaveTextContent(/^Austin Reaves 30%$/);
+  expect(
+    within(sheetRow('Pull-up 2s')).getByRole('list', { name: 'Players leaning on Pull-up 2s' }),
+  ).toHaveTextContent(/^LeBron James 28%$/);
+});
+
+test('a shot value row reads the whole shot type floor, not its own attempts', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  boston.defenseSheet.shotTypes = [
+    {
+      key: 'Pullups:FG3A',
+      sliceKey: 'Pullups',
+      label: 'Pullups:FG3A',
+      markets: ['PTS'],
+      season: value(9, 5, 1, 20),
+      last15: value(9, 5, 1, 20),
+    },
+  ];
+  const lean = (share, volumePerGame) => ({ share, volumePerGame, sigmaDeviation: 2 });
+  const reaves = candidate.players.find((player) => player.id === 1630559);
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  reaves.dietShares.shotTypes = [
+    {
+      key: 'Pullups',
+      season: { ...lean(0.4, 6), shotValues: { 2: lean(0.2, 3), 3: lean(0.2, 3) } },
+    },
+  ];
+  lebron.dietShares.shotTypes = [
+    {
+      key: 'Pullups',
+      // More pull-up threes than Austin, but 3.5 shot-type attempts in all.
+      season: { ...lean(0.4, 3.5), shotValues: { 2: lean(0.1, 0.5), 3: lean(0.3, 3) } },
+    },
+  ];
+  for (const player of [reaves, lebron]) player.statCategories = ['PTS'];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  expect(
+    within(sheetRow('Pull-up 3s')).getByRole('list', { name: 'Players leaning on Pull-up 3s' }),
+  ).toHaveTextContent(/^Austin Reaves 20%$/);
 });
 
 test('joins suffixed sheet rows to bare governed Diet slice identities', async () => {
@@ -1025,7 +1139,18 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     { key: 'Restricted Area', season: { share: 0.27, volumePerGame: 5.1, sigmaDeviation: 1.1 } },
   ];
   lebron.dietShares.shotTypes = [
-    { key: 'Catch and Shoot', season: { share: 0.36, volumePerGame: 4.2, sigmaDeviation: 1.2 } },
+    {
+      key: 'Catch and Shoot',
+      season: {
+        share: 0.36,
+        volumePerGame: 4.2,
+        sigmaDeviation: 1.2,
+        shotValues: {
+          2: { share: 0.02, volumePerGame: 0.2, sigmaDeviation: -0.4 },
+          3: { share: 0.34, volumePerGame: 4.0, sigmaDeviation: 1.3 },
+        },
+      },
+    },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup('/matchups/game-1?player=2544');
@@ -1045,7 +1170,7 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
     within(sheetRow('Catch-and-shoot 3s')).getByRole('list', {
       name: 'Players leaning on Catch-and-shoot 3s',
     }),
-  ).toHaveTextContent(/^LeBron James 36%$/);
+  ).toHaveTextContent(/^LeBron James 34%$/);
 });
 
 test('player switches clamp the card stat and team toggles remain user-controlled', async () => {
@@ -1861,12 +1986,38 @@ test('AC1: an upcoming game names its tip-off and the books and time its lines w
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings, read 8:50 PM.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings.',
   );
   expect(summary.querySelector('.matchup-warning')).toBeNull();
 });
 
-test('AC1: the live header keeps its stale-data warnings in the warning colour', async () => {
+test('AC1: a live header names only the books with lines and leaves other gaps unsaid', async () => {
+  atInstant('2026-01-15T12:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
+  candidate.injuries.unavailableReason = 'permission_required';
+  candidate.freshness.injuries = { status: 'unavailable', retrievedAt: null };
+  candidate.freshness.stats = { status: 'stale', retrievedAt: '2026-01-13T10:00:00Z' };
+  candidate.freshness.pool = {
+    status: 'partial',
+    retrievedAt: '2026-01-15T11:54:00Z',
+    providers: [
+      { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:54:00Z' },
+      { name: 'novig', status: 'missing', retrievedAt: null },
+      { name: 'kalshi', status: 'fresh', retrievedAt: '2026-01-15T11:54:00Z' },
+    ],
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and Kalshi.',
+  );
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+});
+
+test('AC1: the live header warns once, in the warning colour, when its lines are stale', async () => {
   atInstant('2026-01-15T12:30:00Z');
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
@@ -1877,38 +2028,31 @@ test('AC1: the live header keeps its stale-data warnings in the warning colour',
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM;' +
-      ' no injury report.' +
-      ' Player pool stale, as of 40m ago (older than 15m freshness bar).' +
-      ' Injury report unavailable, as of age unavailable.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog.' +
+      ' Lines last read 40m ago.',
   );
-  const warnings = within(summary).getAllByText(/as of/);
-  expect(warnings.map((warning) => warning.className)).toEqual([
-    'matchup-warning',
-    'matchup-warning',
-  ]);
-  // AC2: the unavailable report lives in the sentence, not a box of its own.
+  expect(within(summary).getByText('Lines last read 40m ago.')).toHaveClass('matchup-warning');
+  // AC2: the unavailable report has no box of its own.
   expect(screen.queryByRole('heading', { name: 'Injury Report' })).not.toBeInTheDocument();
 });
 
 test('AC1: the live header holds a prizepicks line to a 90m bar and every other provider to 15m', async () => {
   atInstant('2026-01-15T12:30:00Z');
   const candidate = JSON.parse(JSON.stringify(matchup));
-  // Both read 40 minutes ago; the backend serves PrizePicks as fresh through 90.
+  // PrizePicks was read 40 minutes ago and is fresh through 90; Underdog, read 19 minutes ago, is past its 15.
   candidate.freshness.pool.providers = [
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
-    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T12:11:00Z' },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  // The warning names Underdog's age, not the older PrizePicks line's.
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM.' +
-      ' Player pool stale, as of 40m ago (older than 15m freshness bar).' +
-      ' Underdog lines stale, as of 40m ago.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog.' +
+      ' Lines last read 19m ago.',
   );
-  expect(within(summary).queryByText(/PrizePicks lines/)).toBeNull();
 });
 
 test('AC1: the live header calls a prizepicks line stale once it is older than 90m', async () => {
@@ -1916,20 +2060,19 @@ test('AC1: the live header calls a prizepicks line stale once it is older than 9
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.freshness.pool.providers = [
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
+    { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T13:15:00Z' },
   ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
-  expect(within(summary).getByText('PrizePicks lines stale, as of 2h ago.')).toHaveClass(
-    'matchup-warning',
-  );
+  expect(within(summary).getByText('Lines last read 2h ago.')).toHaveClass('matchup-warning');
 });
 
 test('AC1: the live header holds a pool that only prizepicks has read to its 90m bar', async () => {
   atInstant('2026-01-15T12:30:00Z');
   const candidate = JSON.parse(JSON.stringify(matchup));
-  // The pool's time is PrizePicks's own, 40 minutes ago.
+  // PrizePicks alone, read 40 minutes ago.
   candidate.freshness.pool.providers = [
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
   ];
@@ -1937,8 +2080,8 @@ test('AC1: the live header holds a pool that only prizepicks has read to its 90m
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe('Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks.');
   expect(summary.querySelector('.matchup-warning')).toBeNull();
-  expect(within(summary).queryByText(/Player pool/)).toBeNull();
 });
 
 test('AC1: the live header calls a pool that only prizepicks has read stale once it is older than 90m', async () => {
@@ -1951,12 +2094,10 @@ test('AC1: the live header calls a pool that only prizepicks has read stale once
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
-  expect(
-    within(summary).getByText('Player pool stale, as of 2h ago (older than 90m freshness bar).'),
-  ).toHaveClass('matchup-warning');
-  expect(within(summary).getByText('PrizePicks lines stale, as of 2h ago.')).toHaveClass(
-    'matchup-warning',
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks. Lines last read 2h ago.',
   );
+  expect(within(summary).getByText('Lines last read 2h ago.')).toHaveClass('matchup-warning');
 });
 
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
@@ -2397,6 +2538,44 @@ test('AC14: only players over league who pass the display threshold are listed u
   expect(
     within(sheetRow('Transition')).queryByRole('list', { name: /Players leaning/ }),
   ).not.toBeInTheDocument();
+});
+
+test("the volume floor reads the player's whole Base, not the one slice he leans on", async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes = [
+    {
+      key: 'Less Than 10 ft:FG2M',
+      sliceKey: 'Less Than 10 ft',
+      label: 'Less Than 10 ft FG2M',
+      markets: ['PTS'],
+      season: value(9, 5, 1, 20),
+      last15: value(9, 5, 1, 20),
+    },
+  ];
+  // All his shots in a slice are twos, so its 2s read the slice's own share.
+  const slice = (key, share, volumePerGame, sigmaDeviation) => {
+    const value = { share, volumePerGame, leagueAverageShare: 0.4, sigmaDeviation };
+    return { key, season: { ...value, shotValues: { 2: value, 3: null } } };
+  };
+  // Austin: 3 inside shots a game, but 5 shot-type attempts in all.
+  candidate.players[0].dietShares.shotTypes = [
+    slice('Less Than 10 ft', 0.6, 3, 1.5),
+    slice('Catch and Shoot', 0.4, 2, -0.6),
+  ];
+  // LeBron: 3.5 shot-type attempts a game in all, under the floor of 4.
+  candidate.players[1].dietShares.shotTypes = [
+    slice('Less Than 10 ft', 0.7, 2.5, 2),
+    slice('Pullups', 0.3, 1, -0.5),
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(
+    within(sheetRow('Under 10 ft 2s')).getByRole('list', {
+      name: 'Players leaning on Under 10 ft 2s',
+    }),
+  ).toHaveTextContent(/^Austin Reaves 60%$/);
 });
 
 test('AC15: Save as Target is an icon at the row end that captures the slice', async () => {

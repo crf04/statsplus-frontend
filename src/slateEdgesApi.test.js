@@ -216,3 +216,14 @@ test('any other failure is surfaced', async () => {
 
   await expect(fetchSlateEdges()).rejects.toEqual({ response: { status: 503 } });
 });
+
+test('sends the fallback option as the fallback parameter', async () => {
+  apiClient.get.mockResolvedValue({ data: payload });
+
+  await fetchSlateEdges({ fallback: 'previous_game_day' });
+
+  expect(apiClient.get).toHaveBeenCalledWith('/api/games/slate/edges', {
+    params: { fallback: 'previous_game_day' },
+    signal: undefined,
+  });
+});

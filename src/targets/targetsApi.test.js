@@ -1376,3 +1376,14 @@ test.each(['create', 'update', 'preferences', 'delete'])(
     expect(load).toHaveBeenCalledTimes(2);
   },
 );
+
+test('resolves with the fallback parameter when the caller asks for the previous game day', async () => {
+  apiClient.get.mockResolvedValue({ data: resolvePayload([]) });
+
+  await fetchResolvedTargets({ fallback: 'previous_game_day' });
+
+  expect(apiClient.get).toHaveBeenLastCalledWith('/api/user/targets/resolve', {
+    params: { fallback: 'previous_game_day' },
+    signal: undefined,
+  });
+});

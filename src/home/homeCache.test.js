@@ -287,3 +287,39 @@ test('a same-day cache with a non-empty Slate stays when Edges fail', async () =
   expect(screen.getByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
   expect(window.localStorage.getItem(CACHE_KEY)).not.toBeNull();
 });
+
+test.each([
+  ['a Slate for a new day', { slateDate: '2026-04-11', games: [game('n')], fallback: null }],
+  ['an empty Slate for the cached day', { slateDate: '2026-04-10', games: [], fallback: null }],
+])('%s clears the cached day while Edges are still pending', async (_label, slate) => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  fetchSlate.mockResolvedValue(slate);
+  render(<Home />);
+
+  await waitFor(() =>
+    expect(screen.queryByRole('navigation', { name: "Today's games" })).not.toBeInTheDocument(),
+  );
+  expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
+});
+
+test('a new day that replaces the cached day is the one stored for the next visit', async () => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  let answerSlate;
+  let answerEdges;
+  fetchSlate.mockReturnValue(new Promise((resolve) => (answerSlate = resolve)));
+  fetchSlateEdges.mockReturnValue(new Promise((resolve) => (answerEdges = resolve)));
+  render(<Home />);
+
+  await act(async () => {
+    answerSlate({ slateDate: '2026-04-11', games: [game('n')], fallback: null });
+  });
+  await act(async () => {
+    answerEdges({ slateDate: '2026-04-11', games: [], spotlight: { best: null, toughest: null } });
+  });
+
+  expect(screen.getByRole('navigation', { name: "Today's games" })).toBeInTheDocument();
+  expect(JSON.parse(window.localStorage.getItem(CACHE_KEY))).toMatchObject({
+    slateDate: '2026-04-11',
+    games: [{ gameId: 'n' }],
+  });
+});

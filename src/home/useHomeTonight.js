@@ -156,7 +156,8 @@ export const useHomeTonight = (landing, account) => {
   const [state, setState] = useState(() => (landing ? readCache() : EMPTY));
   useEffect(() => {
     // Targets are never cached, and a new account starts without the last one's.
-    setState(landing ? readCache() : EMPTY);
+    const cached = landing ? readCache() : EMPTY;
+    setState(cached);
     if (!landing) {
       return undefined;
     }
@@ -183,35 +184,33 @@ export const useHomeTonight = (landing, account) => {
     edgesRead.then(warnIfFailed);
     targetsRead?.then(warnIfFailed);
 
+    // The day on screen from the cache, kept here rather than read inside a
+    // state updater, so storage writes happen in the order they are made.
+    let paintedDate = cached.slateDate;
+    const dropPaint = () => {
+      clearCache();
+      paintedDate = null;
+      setState((current) => ({ ...EMPTY, targets: current.targets }));
+    };
+    // A Slate that failed to read leaves the painted cache alone. Once it has
+    // answered, the cache is decided at once, without waiting for Edges: an
+    // empty Slate, or one for another day than the painted one, clears it.
+    slateRead.then((slate) => {
+      if (signal.aborted || slate.status !== 'fulfilled') return;
+      const { games, slateDate } = slate.value;
+      if (games.length === 0 || (paintedDate !== null && paintedDate !== slateDate)) dropPaint();
+    });
     // Games and Targets render as each arrives: a slow Targets read must not
-    // hold back the ticker.
+    // hold back the ticker. Edges can only replace the paint, or clear it when
+    // they answer null or for another day; a failed Edges read keeps a
+    // same-day paint.
     Promise.all([slateRead, edgesRead]).then(([slate, edges]) => {
       if (signal.aborted) return;
-      // A Slate that failed to read leaves the painted cache alone. Once it has
-      // answered, the cache is decided before Edges are looked at: an empty
-      // Slate, or one for another day than the painted one, clears it.
-      if (slate.status !== 'fulfilled') return;
-      const empty = () => {
-        clearCache();
-        setState((current) => ({ ...EMPTY, targets: current.targets }));
-      };
-      if (slate.value.games.length === 0) {
-        empty();
-        return;
-      }
-      setState((current) => {
-        if (current.slateDate === null || current.slateDate === slate.value.slateDate) {
-          return current;
-        }
-        clearCache();
-        return { ...EMPTY, targets: current.targets };
-      });
-      // Edges can then only replace the paint, or clear it when they answer
-      // null or for another day; a failed Edges read keeps a same-day paint.
+      if (slate.status !== 'fulfilled' || slate.value.games.length === 0) return;
       if (edges.status !== 'fulfilled') return;
       const confirmed = edges.value;
       if (confirmed === null || confirmed.slateDate !== slate.value.slateDate) {
-        empty();
+        dropPaint();
         return;
       }
       const fresh = {
@@ -221,6 +220,7 @@ export const useHomeTonight = (landing, account) => {
         past: slate.value.fallback === fallback,
       };
       writeCache(fresh);
+      paintedDate = fresh.slateDate;
       setState((current) => ({ ...current, ...fresh }));
     });
     if (targetsRead) {

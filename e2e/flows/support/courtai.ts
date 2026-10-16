@@ -146,6 +146,23 @@ export const adminTest = withContract.extend<{ signedIn: true }>({
   },
 });
 
+/**
+ * Freezes `new Date()`, `Date()` and `Date.now()` at one instant before the
+ * app runs, as Playwright's `page.clock.setFixedTime` did: timers keep
+ * running. The web engine exposes init scripts rather than a clock. Call it
+ * before `app.open`.
+ */
+export const freezeClock = (browser: Browser, iso: string) =>
+  browser.addInitScript((frozenIso: string) => {
+    const RealDate = Date;
+    const instant = RealDate.parse(frozenIso);
+    window.Date = new Proxy(RealDate, {
+      construct: (target, args) => Reflect.construct(target, args.length ? args : [instant]),
+      apply: () => new RealDate(instant).toString(),
+      get: (target, key) => (key === 'now' ? () => instant : Reflect.get(target, key)),
+    });
+  }, iso);
+
 /** True when the document scrolls sideways. */
 export const overflowsHorizontally = (browser: Browser) =>
   browser.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

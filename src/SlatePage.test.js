@@ -164,7 +164,8 @@ test('shows an age for every available freshness surface and names degraded surf
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
   expect(screen.getByRole('group', { name: 'Data freshness' })).toBeVisible();
   expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toBeVisible();
-  expect(screen.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i)).toHaveClass(
+  // Polled hourly, a prizepicks entry the backend serves as fresh is not stale at 20 minutes.
+  expect(screen.getByText('prizepicks pool is fresh — as of 20m ago')).not.toHaveClass(
     'freshness-warning',
   );
   expect(screen.getByText('underdog pool is missing')).toBeVisible();
@@ -237,6 +238,82 @@ test('labels a fresh pool snapshot stale when it crosses the 15m bar', async () 
   expect(screen.getByText(/player pool snapshot is stale/i)).toBeVisible();
   expect(screen.queryByText(/use the current player pool/i)).not.toBeInTheDocument();
   expect(fetchSlate).toHaveBeenCalledTimes(1);
+});
+
+test('holds a prizepicks entry to a 90m bar and every other provider to 15m', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        status: 'fresh',
+        retrievedAt: '2026-01-15T11:50:00.000Z',
+        providers: [
+          { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T10:45:00.000Z' },
+          { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00.000Z' },
+        ],
+      },
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  // Noon: prizepicks is 75m old, underdog 10m.
+  const prizepicks = await screen.findByText('prizepicks pool is fresh — as of 1h ago');
+  expect(prizepicks).not.toHaveClass('freshness-warning');
+  expect(screen.getByText('underdog pool is fresh — as of 10m ago')).not.toHaveClass(
+    'freshness-warning',
+  );
+  // 12:06: underdog is 16m old and past its bar; prizepicks is 81m and is not.
+  act(() => jest.advanceTimersByTime(6 * 60000));
+  expect(
+    screen.getByText('underdog pool is stale — as of 16m ago (older than 15m freshness bar)'),
+  ).toHaveClass('freshness-warning');
+  expect(screen.getByText('prizepicks pool is fresh — as of 1h ago')).not.toHaveClass(
+    'freshness-warning',
+  );
+  // 12:16: prizepicks is 91m old.
+  act(() => jest.advanceTimersByTime(10 * 60000));
+  expect(
+    screen.getByText('prizepicks pool is stale — as of 2h ago (older than 90m freshness bar)'),
+  ).toHaveClass('freshness-warning');
+  expect(fetchSlate).toHaveBeenCalledTimes(1);
+});
+
+test('holds a pool that only prizepicks has read to its 90m bar', async () => {
+  fetchSlate.mockResolvedValue({
+    ...slate,
+    freshness: {
+      ...slate.freshness,
+      pool: {
+        status: 'fresh',
+        retrievedAt: '2026-01-15T10:45:00.000Z',
+        providers: [
+          { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T10:45:00.000Z' },
+          { name: 'underdog', status: 'missing', retrievedAt: null },
+        ],
+      },
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  // Noon: the pool is 75m old, past the 15m bar but inside prizepicks's 90m.
+  const pool = await screen.findByText('Player pool is fresh — as of 1h ago');
+  expect(pool).not.toHaveClass('freshness-warning');
+  expect(screen.getByText('Targetable counts use the current player pool.')).toBeVisible();
+  // 12:16: 91m old.
+  act(() => jest.advanceTimersByTime(16 * 60000));
+  expect(
+    screen.getByText('Player pool is stale — as of 2h ago (older than 90m freshness bar)'),
+  ).toHaveClass('freshness-warning');
+  expect(screen.getByText(/player pool snapshot is stale/i)).toBeVisible();
 });
 
 test('clearing the date requests today without entering an invalid state', async () => {

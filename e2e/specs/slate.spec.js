@@ -1,9 +1,13 @@
-// Stays in Playwright: of the ten Slate tests, the other nine moved to
-// e2e/flows/slate.e2e.ts and this spec was cut down to the one test that
-// observes browser requests. It asserts that the browser asked for the slate of
-// 2026-01-15 and of 2026-01-10 with `page.on('request')`. e2e's `api.sent` sees
-// only what reaches the /api contract, so a request that arrives by redirect
-// passes here and fails there (see "slate" in MIGRATION.md).
+// Stays in Playwright: of the Slate tests, nine moved to e2e/flows/slate.e2e.ts
+// and this spec keeps the two that e2e cannot port.
+// - "authenticated user opens a slate and navigates dates" observes browser
+//   requests with `page.on('request')`. e2e's `api.sent` sees only what reaches
+//   the /api contract, so a request that arrives by redirect passes here and
+//   fails there.
+// - "a slate pool only PrizePicks has read is fresh to 90 minutes, then stale"
+//   advances the page clock with `page.clock.runFor`. e2e has no clock, and
+//   `freezeClock` pins time without advancing it.
+// See "slate" in MIGRATION.md.
 import { expect, installApiContract, slateGame, slatePayload, test } from '../fixtures/courtai';
 
 test('@critical authenticated user opens a slate and navigates dates', async ({
@@ -51,6 +55,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
         poolRetrievedAt: '2026-01-15T10:00:00Z',
         providers: {
           prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
+          dabble: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' },
           underdog: { status: 'missing', retrieved_at: null },
         },
       });
@@ -77,8 +82,10 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
   await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
+  // Both were read 20 minutes ago: PrizePicks is polled hourly and is fresh for 90, Dabble for 15.
+  await expect(freshness.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
   await expect(
-    page.getByText(/prizepicks pool is stale.*older than 15m freshness bar/i),
+    freshness.getByText(/dabble pool is stale.*older than 15m freshness bar/i),
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('slate-stale-pool.png'), fullPage: true });
 
@@ -110,4 +117,29 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page).toHaveURL(/\/matchups\?date=2026-01-15$/);
   await expect(page.getByRole('heading', { name: 'Thursday, January 15, 2026' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Today' })).toBeDisabled();
+});
+
+test('a slate pool only PrizePicks has read is fresh to 90 minutes, then stale', async ({
+  authenticatedPage: page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-15T12:00:00Z') });
+  await installApiContract(page, {
+    '/api/games/slate': slatePayload('2026-01-15', [slateGame], {
+      poolFreshnessStatus: 'fresh',
+      poolRetrievedAt: '2026-01-15T11:40:00Z',
+      providers: { prizepicks: { status: 'fresh', retrieved_at: '2026-01-15T11:40:00Z' } },
+    }),
+  });
+
+  await page.goto('/matchups?date=2026-01-15');
+
+  const freshness = page.getByRole('group', { name: 'Data freshness' });
+  await expect(freshness.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();
+  await expect(page.getByText('Targetable counts use the current player pool.')).toBeVisible();
+
+  // 13:11: the pool is 91 minutes old.
+  await page.clock.runFor(71 * 60 * 1000);
+  await expect(
+    freshness.getByText('Player pool is stale — as of 2h ago (older than 90m freshness bar)'),
+  ).toBeVisible();
 });

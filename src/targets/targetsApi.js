@@ -560,9 +560,9 @@ export const fetchTargets = async ({ signal } = {}) => {
  * computes, so the Slate and a Target detail opened from it always agree
  * about which day they are showing.
  */
-export const fetchResolvedTargets = async ({ date, signal } = {}) => {
+export const fetchResolvedTargets = async ({ date, signal, fallback } = {}) => {
   const response = await apiClient.get(targetsUrl('/resolve'), {
-    params: date ? { date } : {},
+    params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
     signal,
   });
   return decodeResolvedTargets(response.data);

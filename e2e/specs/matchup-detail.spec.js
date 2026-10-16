@@ -111,6 +111,9 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
   await expect(
     page.getByRole('list', { name: 'Players leaning on Above-the-break 3s' }),
   ).toHaveText('James Harden 31%');
+  await expect(
+    page.getByRole('list', { name: 'Players leaning on Catch-and-shoot 3s' }),
+  ).toHaveText('Kawhi Leonard 32%');
   await categories.getByRole('button', { name: 'FG3A', exact: true }).click();
   await expect(rail.getByRole('article', { name: 'James Harden player' })).toContainText('9FG3A');
   await categories.getByRole('button', { name: 'PTS', exact: true }).click();
@@ -663,6 +666,15 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
       freshness: {
         ...matchupPayload.freshness,
         schedule: { status: 'fresh', retrieved_at: '2026-01-14T06:01:00Z' },
+        // Underdog is read as often as the pool, one minute before the clock starts; PrizePicks
+        // was read at 11:50 and hourly, so the backend keeps it fresh for 90 minutes.
+        pool: {
+          ...matchupPayload.freshness.pool,
+          providers: {
+            ...matchupPayload.freshness.pool.providers,
+            underdog: { status: 'fresh', retrieved_at: '2026-01-15T11:59:00Z' },
+          },
+        },
       },
     },
   });
@@ -672,13 +684,44 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
   });
   await page.goto('/matchups/0022500584');
   const summary = page.getByRole('region', { name: 'Matchup summary' });
-  await expect(summary).toContainText('Lines from PrizePicks');
+  await expect(summary).toContainText('Lines from PrizePicks and Underdog.');
   await expect(summary.locator('.matchup-warning')).toHaveCount(0);
 
-  // The lines cross the 15m bar and warn; the schedule crossing 30h stays unsaid.
-  await page.clock.runFor(6 * 60 * 1000);
-  await expect(summary.getByText('Lines last read 16m ago.')).toHaveCSS('color', WARNING_COLOUR);
+  // 12:31: Underdog (read 12:00 minus one minute) is past 15m and warns with its own age; PrizePicks,
+  // read 41 minutes ago, is inside its 90 and does not set the age. The schedule crossing 30h stays unsaid.
+  await page.clock.runFor(31 * 60 * 1000);
+  await expect(summary.getByText('Lines last read 32m ago.')).toHaveCSS('color', WARNING_COLOUR);
+  await expect(summary).not.toContainText('41m');
   await expect(summary).not.toContainText('Schedule');
+
+  // 13:21: PrizePicks is 91 minutes old, and now the oldest line that warns.
+  await page.clock.runFor(50 * 60 * 1000);
+  await expect(summary.getByText('Lines last read 2h ago.')).toHaveCSS('color', WARNING_COLOUR);
+  expect(matchupRequests).toBe(1);
+});
+
+test('a matchup pool only PrizePicks has read holds its 90 minute bar without refetching', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-15T12:00:00Z') });
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  // The fixture's pool names PrizePicks alone, read at 11:50.
+  await installApiContract(page);
+  let matchupRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup') matchupRequests += 1;
+  });
+  await page.goto('/matchups/0022500584');
+  const summary = page.getByRole('region', { name: 'Matchup summary' });
+  await expect(summary).toContainText('Lines from PrizePicks.');
+
+  // 12:41: the only provider is 51 minutes old, past 15 and inside 90.
+  await page.clock.runFor(41 * 60 * 1000);
+  await expect(summary.locator('.matchup-warning')).toHaveCount(0);
+
+  // 13:21: 91 minutes old.
+  await page.clock.runFor(40 * 60 * 1000);
+  await expect(summary.getByText('Lines last read 2h ago.')).toHaveCSS('color', WARNING_COLOUR);
   expect(matchupRequests).toBe(1);
 });
 

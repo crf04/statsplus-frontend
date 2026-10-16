@@ -1,0 +1,229 @@
+/* The legal sheets: one reading column, left-aligned inside the centred shell. */
+.legal-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+  color: var(--ct-text);
+  text-align: left;
+}
+
+.legal-title {
+  margin: 0 0 8px;
+  font-family: var(--ct-display);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Route entry focuses the heading (tabIndex -1) for screen readers; it is not
+   a control, so it draws no focus ring. */
+.legal-title:focus {
+  outline: none;
+}
+
+.legal-updated {
+  margin: 0 0 20px;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.legal-lede {
+  margin: 0 0 40px;
+  color: var(--ct-dim);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.legal-section {
+  margin-bottom: 36px;
+}
+
+.legal-section > h2 {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ct-line-strong);
+  color: var(--ct-gold);
+  font-family: var(--ct-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.legal-section p,
+.legal-section li {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.legal-section p {
+  margin: 0 0 12px;
+}
+
+/* Tailwind's preflight strips list markers; these lists are read as lists. */
+.legal-section ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  list-style: disc;
+}
+
+.legal-section li {
+  margin-bottom: 6px;
+}
+
+.legal-section li::marker {
+  color: var(--ct-gold);
+}
+
+.legal-section a,
+.legal-footer a {
+  color: var(--ct-gold);
+}
+
+.legal-section a:hover,
+.legal-footer a:hover {
+  color: var(--ct-gold-hover);
+}
+
+.legal-helpline {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* What each page collects, as a plain table */
+.legal-table {
+  width: 100%;
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--ct-line);
+  vertical-align: top;
+  text-align: left;
+}
+
+.legal-table th {
+  width: 30%;
+  font-weight: 600;
+}
+
+.legal-table td {
+  color: #ddd5c4;
+}
+
+/* Footer on every page */
+.legal-footer {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+  border-top: 1px solid var(--ct-line);
+  color: var(--ct-dim);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.legal-footer p {
+  margin: 0;
+}
+
+.legal-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  margin-bottom: 10px;
+}
+
+.legal-footer-links a {
+  color: var(--ct-dim);
+  text-decoration: none;
+}
+
+.legal-footer-links a:hover,
+.legal-footer-links a.active {
+  color: var(--ct-gold);
+}
+
+.legal-footer a:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .legal-page {
+    padding: 28px 18px 56px;
+  }
+
+  /* A row's name sits above its detail; two columns leave the detail too narrow. */
+  .legal-table tr,
+  .legal-table th,
+  .legal-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .legal-table th {
+    padding: 12px 0 2px;
+    border-bottom: 0;
+  }
+
+  .legal-table td {
+    padding: 0 0 12px;
+  }
+}
+
+/* Beside the sign-in control. Under the header's button it sits inside .app-nav's
+   min-height, so the header keeps its height, but only on one line: where the
+   header is narrower the same sentence moves to the footer instead. */
+.legal-signin {
+  margin: 4px 0 0;
+  color: var(--ct-dim);
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.legal-signin a {
+  color: var(--ct-dim);
+  text-decoration: underline;
+}
+
+.legal-signin a:hover {
+  color: var(--ct-gold);
+}
+
+.legal-signin-header {
+  display: none;
+  white-space: nowrap;
+}
+
+.legal-footer .legal-signin-footer {
+  margin: 0 0 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.legal-footer .legal-signin-footer a {
+  color: var(--ct-dim);
+}
+
+@media (min-width: 1000px) {
+  .legal-signin-header {
+    display: block;
+  }
+
+  .legal-footer .legal-signin-footer {
+    display: none;
+  }
+}
+
+/* The Query Prompt is a fixed full-viewport layer that covers the shell's
+   footer, so it renders one of its own inside the layer. */
+.App:has(.landing-page) > .legal-footer {
+  display: none;
+}

@@ -15,6 +15,7 @@ import { useHomeTonight } from './home/useHomeTonight';
 import { useLadderAnswers } from './help/useLadderAnswers';
 import './home/home.css';
 import './ModernSearch.css';
+import LegalFooter from './legal/LegalFooter';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -305,6 +306,9 @@ const NaturalLanguageQuery = ({
               </div>
             )}
           </div>
+          {/* This page is a fixed layer that covers whatever follows it in the
+              document, so it carries its own footer (legal.css hides the shell's). */}
+          <LegalFooter />
         </div>
       </div>
     );

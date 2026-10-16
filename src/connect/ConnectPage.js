@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { PRIVACY_PATH, TERMS_PATH } from '../legal/legalConfig';
 import MatchupCardFrame from './MatchupCardFrame';
 import './ConnectPage.css';
 
@@ -101,6 +103,13 @@ const NOTES = [
     'Every answer ends with the date its data is as of. Dates use US Eastern time and default to today.',
   ],
   ['Your account', 'Answers come from your own CourtAI sign-in, so your Targets come along.'],
+  [
+    'Terms and privacy',
+    <>
+      CourtAI is for people 21 and over. Read the <Link to={TERMS_PATH}>Terms</Link> and the{' '}
+      <Link to={PRIVACY_PATH}>Privacy Policy</Link>, which says what the connector stores.
+    </>,
+  ],
 ];
 
 const ClientTabs = () => {

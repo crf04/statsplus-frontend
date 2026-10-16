@@ -313,3 +313,7 @@
     border-radius: 12px;
   }
 }
+
+.connect-notes dd a {
+  color: var(--ct-gold);
+}

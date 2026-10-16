@@ -1985,12 +1985,38 @@ test('AC1: an upcoming game names its tip-off and the books and time its lines w
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings, read 8:50 PM.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and DraftKings.',
   );
   expect(summary.querySelector('.matchup-warning')).toBeNull();
 });
 
-test('AC1: the live header keeps its stale-data warnings in the warning colour', async () => {
+test('AC1: a live header names only the books with lines and leaves other gaps unsaid', async () => {
+  atInstant('2026-01-15T12:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
+  candidate.injuries.unavailableReason = 'permission_required';
+  candidate.freshness.injuries = { status: 'unavailable', retrievedAt: null };
+  candidate.freshness.stats = { status: 'stale', retrievedAt: '2026-01-13T10:00:00Z' };
+  candidate.freshness.pool = {
+    status: 'partial',
+    retrievedAt: '2026-01-15T11:54:00Z',
+    providers: [
+      { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:54:00Z' },
+      { name: 'novig', status: 'missing', retrievedAt: null },
+      { name: 'kalshi', status: 'fresh', retrievedAt: '2026-01-15T11:54:00Z' },
+    ],
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog and Kalshi.',
+  );
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+});
+
+test('AC1: the live header warns once, in the warning colour, when its lines are stale', async () => {
   atInstant('2026-01-15T12:30:00Z');
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
@@ -2001,17 +2027,11 @@ test('AC1: the live header keeps its stale-data warnings in the warning colour',
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
   expect(normalized(summary)).toBe(
-    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog, read 8:50 PM;' +
-      ' no injury report.' +
-      ' Player pool stale, as of 40m ago (older than 15m freshness bar).' +
-      ' Injury report unavailable, as of age unavailable.',
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from PrizePicks and Underdog.' +
+      ' Lines last read 40m ago.',
   );
-  const warnings = within(summary).getAllByText(/as of/);
-  expect(warnings.map((warning) => warning.className)).toEqual([
-    'matchup-warning',
-    'matchup-warning',
-  ]);
-  // AC2: the unavailable report lives in the sentence, not a box of its own.
+  expect(within(summary).getByText('Lines last read 40m ago.')).toHaveClass('matchup-warning');
+  // AC2: the unavailable report has no box of its own.
   expect(screen.queryByRole('heading', { name: 'Injury Report' })).not.toBeInTheDocument();
 });
 

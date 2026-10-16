@@ -226,7 +226,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   const sheet = page.getByRole('region', { name: 'What BOS allows' });
   await expect(page.getByRole('heading', { name: 'What BOS allows' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Matchup summary' })).toHaveText(
-    /^\w{3}, Jan 1[56], 2026 · Tip-off \d{1,2}:30\s[AP]M\. Lines from PrizePicks, read \d{1,2}:50\s[AP]M\.$/,
+    /^\w{3}, Jan 1[56], 2026 · Tip-off \d{1,2}:30\s[AP]M\. Lines from PrizePicks\.$/,
   );
 
   // The page opens on PTS: the rail leads with each player's posted line, or
@@ -465,15 +465,9 @@ test('matchup renders disabled injuries and unavailable surfaces without inventi
 
   await page.goto('/matchups/0022500584');
   const summary = page.getByRole('region', { name: 'Matchup summary' });
-  await expect(summary).toContainText('No lines posted yet; no injury report.');
-  // Today's live warnings stay, in the warning colour.
-  for (const warning of [
-    'Player pool unavailable, as of age unavailable.',
-    'Defense stats stale, as of 2d ago.',
-    'Injury report unavailable, as of age unavailable.',
-  ]) {
-    await expect(summary.getByText(warning)).toHaveCSS('color', WARNING_COLOUR);
-  }
+  // Missing lines say so once; the stale stats and absent report go unsaid.
+  await expect(summary).toHaveText(/ · Tip-off .*\. No lines posted yet\.$/);
+  await expect(summary.locator('.matchup-warning')).toHaveCount(0);
   await expect(page.getByText('No posted players are available for this market.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Injury Report' })).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
@@ -607,11 +601,6 @@ test('matchup keeps stale unmatched injury entries visible', async ({ page }, te
   });
 
   await page.goto('/matchups/0022500584');
-  await expect(
-    page
-      .getByRole('region', { name: 'Matchup summary' })
-      .getByText('Injury report stale, as of 35m ago.'),
-  ).toHaveCSS('color', WARNING_COLOUR);
   await expect(page.getByText('Gabe Vincent')).toBeVisible();
   await expect(page.getByText('Probable')).toBeVisible();
   expect(consoleErrors).toEqual([]);
@@ -687,16 +676,12 @@ test('matchup freshness ages cross named bars without refetching', async ({ page
   await page.goto('/matchups/0022500584');
   const summary = page.getByRole('region', { name: 'Matchup summary' });
   await expect(summary).toContainText('Lines from PrizePicks');
-  await expect(summary).not.toContainText(/stale|as of/);
+  await expect(summary.locator('.matchup-warning')).toHaveCount(0);
 
+  // The lines cross the 15m bar and warn; the schedule crossing 30h stays unsaid.
   await page.clock.runFor(6 * 60 * 1000);
-  for (const warning of [
-    'Schedule stale, as of 30h ago.',
-    'Player pool stale, as of 16m ago (older than 15m freshness bar).',
-    'PrizePicks lines stale, as of 16m ago.',
-  ]) {
-    await expect(summary.getByText(warning)).toHaveCSS('color', WARNING_COLOUR);
-  }
+  await expect(summary.getByText('Lines last read 16m ago.')).toHaveCSS('color', WARNING_COLOUR);
+  await expect(summary).not.toContainText('Schedule');
   expect(matchupRequests).toBe(1);
 });
 

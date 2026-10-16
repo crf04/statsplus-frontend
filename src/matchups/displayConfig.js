@@ -8,18 +8,18 @@ export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
   shotZones: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
   shotTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 4 }),
   assistLocations: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
-  // A shot type's twos or threes alone: a lower floor, so a +2 sigma pull-up
-  // threes shooter at 3 a game still shows.
-  shotValues: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 2 }),
 });
 
-export const shouldDisplayDietShare = (base, value) => {
+// The volume floor reads the player's whole Base, as the backend's thin rule
+// does, so a lean shows however few attempts the one slice (or its twos or
+// threes) holds once his Base clears the floor.
+export const shouldDisplayDietShare = (base, value, baseVolumePerGame) => {
   const threshold = DIET_SHARE_DISPLAY_THRESHOLDS[base];
   return (
     Boolean(threshold) &&
     value.sigmaDeviation !== null &&
     Math.abs(value.sigmaDeviation) >= threshold.minimumSigmaDeviation &&
-    value.volumePerGame >= threshold.minimumVolumePerGame
+    baseVolumePerGame >= threshold.minimumVolumePerGame
   );
 };
 
@@ -103,7 +103,12 @@ export const findDietShare = (player, base, sliceKey, shotValue = null) => {
 
 export const getDisplayableDietShare = (player, base, sliceKey, shotValue = null) => {
   const value = findDietShare(player, base, sliceKey, shotValue);
-  return value && shouldDisplayDietShare(shotValue ? 'shotValues' : base, value) ? value : null;
+  if (!value) return null;
+  const baseVolumePerGame = player.dietShares[base].reduce(
+    (total, entry) => total + entry.season.volumePerGame,
+    0,
+  );
+  return shouldDisplayDietShare(base, value, baseVolumePerGame) ? value : null;
 };
 
 // Stat Categories read in box-score order wherever a reader picks one: the

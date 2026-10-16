@@ -1071,7 +1071,7 @@ test('pull-up 3s and pull-up 2s each list who leans on that shot, with its own s
   ).toHaveTextContent(/^LeBron James 28%$/);
 });
 
-test('a shot value row lists a player at 3 attempts a game, below the whole shot type floor', async () => {
+test('a shot value row reads the whole shot type floor, not its own attempts', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
   boston.defenseSheet.shotTypes = [
@@ -1096,7 +1096,8 @@ test('a shot value row lists a player at 3 attempts a game, below the whole shot
   lebron.dietShares.shotTypes = [
     {
       key: 'Pullups',
-      season: { ...lean(0.4, 6), shotValues: { 2: lean(0.3, 4), 3: lean(0.1, 1.9) } },
+      // More pull-up threes than Austin, but 3.5 shot-type attempts in all.
+      season: { ...lean(0.4, 3.5), shotValues: { 2: lean(0.1, 0.5), 3: lean(0.3, 3) } },
     },
   ];
   for (const player of [reaves, lebron]) player.statCategories = ['PTS'];
@@ -2473,6 +2474,44 @@ test('AC14: only players over league who pass the display threshold are listed u
   expect(
     within(sheetRow('Transition')).queryByRole('list', { name: /Players leaning/ }),
   ).not.toBeInTheDocument();
+});
+
+test("the volume floor reads the player's whole Base, not the one slice he leans on", async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes = [
+    {
+      key: 'Less Than 10 ft:FG2M',
+      sliceKey: 'Less Than 10 ft',
+      label: 'Less Than 10 ft FG2M',
+      markets: ['PTS'],
+      season: value(9, 5, 1, 20),
+      last15: value(9, 5, 1, 20),
+    },
+  ];
+  // All his shots in a slice are twos, so its 2s read the slice's own share.
+  const slice = (key, share, volumePerGame, sigmaDeviation) => {
+    const value = { share, volumePerGame, leagueAverageShare: 0.4, sigmaDeviation };
+    return { key, season: { ...value, shotValues: { 2: value, 3: null } } };
+  };
+  // Austin: 3 inside shots a game, but 5 shot-type attempts in all.
+  candidate.players[0].dietShares.shotTypes = [
+    slice('Less Than 10 ft', 0.6, 3, 1.5),
+    slice('Catch and Shoot', 0.4, 2, -0.6),
+  ];
+  // LeBron: 3.5 shot-type attempts a game in all, under the floor of 4.
+  candidate.players[1].dietShares.shotTypes = [
+    slice('Less Than 10 ft', 0.7, 2.5, 2),
+    slice('Pullups', 0.3, 1, -0.5),
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  expect(
+    within(sheetRow('Under 10 ft 2s')).getByRole('list', {
+      name: 'Players leaning on Under 10 ft 2s',
+    }),
+  ).toHaveTextContent(/^Austin Reaves 60%$/);
 });
 
 test('AC15: Save as Target is an icon at the row end that captures the slice', async () => {

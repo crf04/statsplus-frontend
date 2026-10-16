@@ -22,7 +22,7 @@ const COLLECTED = [
   ],
   [
     'Where you came from',
-    'When you first open CourtAI, your browser saves the first page you landed on (its path only), the campaign tags and ref code in the link, the website that sent you, and the time. It stays in your browser until you sign in. Then we save it once on your account, so we can see which links bring people here. Signing out does not clear it.',
+    'When you first open CourtAI, your browser saves the first page you landed on (its path only), the campaign tags and ref code in the link, the address of the website that sent you, and the time. It stays in your browser, even after you sign in or out, until you clear your browser data. When an account signs in, we save a copy on that account once, so we can see which links bring people here. A different person who signs in on the same browser would get a copy too.',
   ],
   [
     'What you save',
@@ -33,8 +33,8 @@ const COLLECTED = [
     'The text of a plain-English search goes to our server to be understood and is written to our server logs with your email and account id. If our own reader is unsure, the text is also sent to OpenAI.',
   ],
   [
-    'Activity counts',
-    'We keep a count, per account and per day (US Eastern), of how many times you open a Matchup, a player profile, an Opposing Team Profile, a search or a Target run. We keep no log of each request, and the counts do not include what you searched for. We use them to see which features people use and to report weekly activity by where accounts came from. An admin can label an account, for example as a friend or team member, so reports can set it apart.',
+    'Activity counts (planned)',
+    'We are adding a count, per account and per day (US Eastern), of your successful research actions: loading a Matchup, a player profile or an Opposing Team Profile, running a search or game-log query, and running or backtesting a Target. It will hold only the count, not which pages or searches. We will use it to report weekly activity by where accounts came from. An admin will be able to label an account, for example as a friend or team member, so reports can set it apart.',
   ],
   [
     'Server logs',
@@ -42,7 +42,7 @@ const COLLECTED = [
   ],
   [
     'Errors',
-    'If CourtAI breaks, Sentry receives the error, the page path, browser details and the request reference. We set it to leave out your account details, search text and session recordings.',
+    'If CourtAI breaks, Sentry receives the error, the page path, browser details and the request reference. We set it to leave out your account details, session recordings and request bodies, and to remove emails and tokens from error text. An error message can still contain something typed into a request, such as a player name.',
   ],
 ];
 
@@ -54,16 +54,16 @@ const PROVIDERS = [
   ],
   [
     'Railway',
-    'Runs our server, database and connector. It holds everything described above, plus a cache of stats and short-lived counters that limit request rates. Those counters are tied to your account id or IP address and last about a minute. A daily count of AI-assisted searches per account lasts two days.',
+    "Runs our server, database, Redis cache and connector. It holds everything described above, plus cached stats and short-lived counters that limit request rates. Those counters are tied to your account id or IP address and last about a minute. A daily count of each account's calls to OpenAI lasts two days.",
   ],
   [
     'OpenAI',
-    'Reads a plain-English search our own reader is unsure about. It gets the text of that search and the names of players we matched in it. It does not get your name, email or account id.',
+    'Reads a plain-English search our own reader is unsure about. It gets the text of that search exactly as you typed it, plus the names of players we matched in it. We attach no account details.',
   ],
   ['Sentry', 'Receives error reports, as under Errors above.'],
   [
     'Google Fonts and NBA.com',
-    'Your browser loads fonts from Google and player photos from NBA.com, so they see your IP address and browser details, as any site you visit would.',
+    'Your browser loads fonts from Google and player photos from NBA.com, so they see your IP address and browser details, as any site you visit would. Some connector cards in Claude or ChatGPT load Google Fonts the same way.',
   ],
 ];
 

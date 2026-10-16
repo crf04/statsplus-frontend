@@ -65,8 +65,12 @@ signedOutTest(
   async ({ app, screen, browser }) => {
     await app.open('/connect');
     const notes = screen.getByRole('region', 'Good to know');
-    await notes.getByRole('link', 'Terms').tap();
+    await notes.getByRole('link', 'Privacy Policy').tap();
+    await expect(browser).toHaveURL('/privacy');
+    await expect(screen.getByRole('heading', 'Privacy Policy')).toBeVisible();
 
+    await browser.back();
+    await notes.getByRole('link', 'Terms').tap();
     await expect(browser).toHaveURL('/terms');
     await expect(screen.getByRole('heading', 'Terms of Use')).toBeVisible();
   },

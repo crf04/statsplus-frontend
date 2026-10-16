@@ -28,16 +28,18 @@ for (const { path, heading } of PAGES) {
 
   test(`${path} opens for a signed-in reader`, async ({ authenticatedPage }) => {
     const page = authenticatedPage;
-    await page.goto(path);
+    await page.goto(`${path}?ref=x-picks`);
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${path}\\?ref=x-picks$`));
     await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
     await expect(page.getByText('By signing in you agree to the')).toHaveCount(0);
   });
 
   test(`${path} opens for a waitlisted account`, async ({ waitlistedPage }) => {
     const page = waitlistedPage;
-    await page.goto(path);
+    await page.goto(`${path}?ref=x-picks`);
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${path}\\?ref=x-picks$`));
     await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toHaveCount(0);
     await expect(legalNav(page)).toBeVisible();
   });
@@ -96,15 +98,15 @@ test.describe('sign-in', () => {
   test('phone: the same line sits in the footer and the header does not grow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/connect');
-    const headerHeight = (await page.getByRole('banner').boundingBox()).height;
 
     await expect(page.getByRole('banner').getByText('By signing in you agree to the')).toBeHidden();
     const note = page.getByRole('contentinfo').getByText('By signing in you agree to the');
     await expect(note).toBeVisible();
     await note.getByRole('link', { name: 'Privacy' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeVisible();
-    // The band is the same one a page without the line would have.
-    expect((await page.getByRole('banner').boundingBox()).height).toBe(headerHeight);
+    // The phone band is 83px today (its links wrap onto a second row); a line of
+    // text under the button would add 14px or more.
+    expect((await page.getByRole('banner').boundingBox()).height).toBeLessThanOrEqual(84);
   });
 });
 

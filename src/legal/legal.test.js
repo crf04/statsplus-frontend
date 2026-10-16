@@ -76,6 +76,14 @@ describe.each(PAGES)('$path', ({ path, heading, title }) => {
     await waitFor(() => expect(document.title).toBe(title));
   });
 
+  test('moves focus to its heading on entry', async () => {
+    await renderAt(path, heading);
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 1, name: heading })).toHaveFocus(),
+    );
+  });
+
   test('opens for a waitlisted account instead of the waitlist screen', async () => {
     Object.assign(mockAuth, SIGNED_IN, { waitlist: { message: 'The beta is full right now.' } });
     renderAt(path);
@@ -125,15 +133,15 @@ describe('footer', () => {
     expect(footer).toHaveTextContent('Source: NBA.com');
   });
 
-  test('is on every page, including a waitlisted account on the waitlist screen', async () => {
+  test('is on the legal pages for a waitlisted account', async () => {
     Object.assign(mockAuth, SIGNED_IN, { waitlist: { message: 'The beta is full right now.' } });
-    await renderAt('/', "You're on the waitlist");
+    await renderAt('/terms', 'Terms of Use');
 
     expect(
       within(screen.getByRole('navigation', { name: 'Legal' })).getByRole('link', {
-        name: 'Terms',
+        name: 'Privacy',
       }),
-    ).toHaveAttribute('href', '/terms');
+    ).toHaveAttribute('href', '/privacy');
   });
 
   test('says that signing in accepts the Terms and Privacy to a signed-out visitor only', async () => {
@@ -225,17 +233,27 @@ describe('Privacy', () => {
     );
     // First-touch attribution: browser first, the account once a sign-in sends it.
     expect(rowDetail('Where you came from')).toHaveTextContent(
-      'stays in your browser until you sign in. Then we save it once on your account',
+      'It stays in your browser, even after you sign in or out, until you clear your browser data.',
     );
-    expect(rowDetail('Where you came from')).toHaveTextContent('Signing out does not clear it.');
-    // Planned per-account counts (crf04/statsplus#213): a count per day, no request log.
-    expect(rowDetail('Activity counts')).toHaveTextContent(
-      'a count, per account and per day (US Eastern)',
+    expect(rowDetail('Where you came from')).toHaveTextContent(
+      'When an account signs in, we save a copy on that account once',
     );
-    expect(rowDetail('Activity counts')).toHaveTextContent('We keep no log of each request');
+    // Planned per-account counts (crf04/statsplus#213): labelled planned, one count a day.
+    expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
+      'We are adding a count, per account and per day (US Eastern)',
+    );
+    expect(rowDetail('Activity counts (planned)')).toHaveTextContent(
+      'It will hold only the count, not which pages or searches.',
+    );
     // The server logs name the account, and the search text reaches OpenAI.
     expect(rowDetail('Server logs')).toHaveTextContent('your email and account id');
     expect(rowDetail('Your searches')).toHaveTextContent('the text is also sent to OpenAI');
+    // OpenAI gets the raw text, and no account details.
+    expect(rowDetail('OpenAI')).toHaveTextContent('exactly as you typed it');
+    expect(rowDetail('OpenAI')).toHaveTextContent('We attach no account details.');
+    // Error text can still carry what was typed into a request.
+    expect(rowDetail('Errors')).toHaveTextContent('such as a player name');
+    expect(rowDetail('Railway')).toHaveTextContent('Redis cache');
 
     for (const provider of [
       'Google (Firebase)',
@@ -249,17 +267,17 @@ describe('Privacy', () => {
     }
   });
 
-  test('describes the connector grant and promises no sale and no ads', async () => {
+  test('describes the connector grant, deletion, and promises no sale and no ads', async () => {
     await renderAt('/privacy', 'Privacy Policy');
     const main = within(screen.getByRole('main'));
+    const says = (text) => expect(main.getByText(text, { exact: false })).toBeInTheDocument();
 
-    expect(
-      main.getByText('A grant stops working after 30 days without use.', { exact: false }),
-    ).toBeInTheDocument();
-    expect(
-      main.getByText('We do not sell your personal data.', { exact: false }),
-    ).toBeInTheDocument();
-    expect(main.getByText('CourtAI shows no ads', { exact: false })).toBeInTheDocument();
+    says('We collect what Google sends when you sign in, what you save, and the technical records');
+    says('your Google sign-in refresh token, encrypted. A grant stops working after 30 days');
+    says('We log each connector request: the tool, the filters the assistant passed');
+    says('We keep your account data until you ask us to delete it.');
+    says('We do not sell your personal data.');
+    says('CourtAI shows no ads');
   });
 });
 

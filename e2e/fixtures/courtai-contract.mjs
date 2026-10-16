@@ -626,6 +626,111 @@ const HISTORICAL_LAST_15_MISSING = [
   'team_defense:traditional',
 ];
 
+/*
+ * Slate Edges (crf04/statsplus#204), derived from the scheduled game's own
+ * Matchup fixture by the contract's rules, so the home page and the Matchup
+ * page read the same numbers: season PTS Blend (or the single component when
+ * nothing is missing), effects at 8+ PPG by size, the spotlight from non-thin
+ * Blends at 12+ PPG, and the play-type slice whose opponent reading pushes
+ * hardest in the score's direction.
+ */
+const seasonPoints = (player) => {
+  const season = player.scores?.PTS?.season;
+  if (!season) return null;
+  if (season.blend) return { value: season.blend.value, thin: season.blend.thin, blend: true };
+  const components = Object.values(season.components || {});
+  if ((season.missing_inputs || []).length > 0 || components.length !== 1) return null;
+  return { value: components[0].value, thin: components[0].thin, blend: false };
+};
+
+const edgesFromMatchup = (matchup) => {
+  const tricodeOf = (teamId) => matchup.teams.find((team) => team.team_id === teamId)?.tricode;
+  const scored = matchup.players
+    .map((player) => ({ player, points: seasonPoints(player) }))
+    .filter(({ points }) => points !== null);
+  const effects = scored
+    .filter(({ player }) => player.season_scoring >= 8)
+    .sort((a, b) => Math.abs(b.points.value) - Math.abs(a.points.value))
+    .slice(0, 3)
+    .map(({ player, points }) => ({
+      canonical_id: player.canonical_id,
+      name: player.name,
+      tricode: player.tricode,
+      season_scoring: player.season_scoring,
+      value: points.value,
+      thin: points.thin,
+    }));
+  const pick = (direction) => {
+    const candidate = scored
+      .filter(
+        ({ player, points }) =>
+          points.blend &&
+          !points.thin &&
+          player.season_scoring >= 12 &&
+          points.value * direction > 0,
+      )
+      .sort((a, b) => (b.points.value - a.points.value) * direction)[0];
+    if (!candidate) return null;
+    const { player, points } = candidate;
+    const opponent = matchup.teams.find((team) => team.team_id !== player.team_id);
+    const readings = Object.fromEntries(
+      (opponent.defense_sheet.play_types || []).map((row) => [row.key, row.season]),
+    );
+    const reason = [...(player.diet_shares.play_types || [])]
+      .sort((a, b) => b.season.share - a.season.share)
+      .slice(0, 2)
+      .filter((row) => readings[`${row.key}:PTS`])
+      .sort(
+        (a, b) =>
+          (readings[`${b.key}:PTS`].percent_vs_league_average -
+            readings[`${a.key}:PTS`].percent_vs_league_average) *
+          direction,
+      )[0];
+    const reading = readings[`${reason.key}:PTS`];
+    return {
+      game_id: matchup.game.game_id,
+      canonical_id: player.canonical_id,
+      name: player.name,
+      tricode: player.tricode,
+      opponent: tricodeOf(opponent.team_id),
+      season_scoring: player.season_scoring,
+      value: points.value,
+      reason: {
+        base: 'play_types',
+        slice_key: reason.key,
+        share: reason.season.share,
+        league_average_share: reason.season.league_average_share,
+        opponent_rank: reading.rank,
+        opponent_percent_vs_league: reading.percent_vs_league_average,
+      },
+    };
+  };
+  return {
+    effects,
+    scores: scored.map(({ player, points }) => ({
+      canonical_id: player.canonical_id,
+      value: points.value,
+    })),
+    best: pick(1),
+    toughest: pick(-1),
+  };
+};
+
+export const slateEdgesPayload = (date, games) => {
+  const scheduled = games.some((game) => game.game_id === matchupPayload.game.game_id)
+    ? edgesFromMatchup(matchupPayload)
+    : null;
+  return {
+    slate_date: date,
+    games: games.map((game) => ({
+      game_id: game.game_id,
+      effects: game.game_id === matchupPayload.game.game_id ? scheduled.effects : [],
+      scores: game.game_id === matchupPayload.game.game_id ? scheduled.scores : [],
+    })),
+    spotlight: { best: scheduled?.best ?? null, toughest: scheduled?.toughest ?? null },
+  };
+};
+
 const historicalGame = {
   game_id: HISTORICAL_GAME_ID,
   away_team: {
@@ -2811,6 +2916,17 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           next_game: 'Atlanta Hawks',
           player_id: playerIdsByName[playerName] ?? null,
         },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/games/slate/edges') {
+      const date = url.searchParams.get('date') || todaySlateDate();
+      await route.fulfill({
+        json: slateEdgesPayload(
+          date,
+          date === HISTORICAL_SLATE_DATE ? [historicalGame] : [scheduleOnlySlateGame],
+        ),
       });
       return;
     }

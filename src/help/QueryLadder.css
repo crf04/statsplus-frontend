@@ -118,24 +118,6 @@
   color: var(--ct-dim);
 }
 
-.query-ladder-reference {
-  margin: 24px 0 0;
-  text-align: center;
-}
-
-.query-ladder-reference a {
-  color: var(--ct-dim);
-  font-size: 13.5px;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  padding-bottom: 2px;
-}
-
-.query-ladder-reference a:hover {
-  color: var(--ct-gold);
-  border-bottom-color: rgba(232, 163, 61, 0.5);
-}
-
 @media (max-width: 640px) {
   .query-ladder {
     margin-top: 28px;
@@ -160,4 +142,85 @@
     border-left: 0;
     border-top: 1px solid var(--ct-line);
   }
+}
+
+/* The reference link rides the header's right edge. */
+.query-ladder-head .query-ladder-reference {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--ct-gold);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.query-ladder-head .query-ladder-reference:hover {
+  color: var(--ct-gold-hover);
+}
+
+/* Answers (crf04/statsplus#204) */
+.query-ladder-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ct-line);
+}
+
+.query-ladder-points {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ct-dim);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.query-ladder-points b {
+  color: var(--ct-text);
+  font-family: var(--ct-mono);
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.query-ladder-points small {
+  font-family: var(--ct-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.query-ladder-points .is-up {
+  color: var(--ct-hit);
+}
+
+.query-ladder-points .is-down {
+  color: var(--ct-miss);
+}
+
+.query-ladder-games {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+}
+
+.query-ladder-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 24px;
+  margin-top: 6px;
+}
+
+.query-ladder-bars i {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.query-ladder-bars i.is-over {
+  background: var(--ct-gold);
 }

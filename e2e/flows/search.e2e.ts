@@ -150,6 +150,10 @@ signedInTest(
     expect(api.sent('/api/nl-query', 'POST').map((request) => request.body)).toEqual([
       { query: 'Jalen last 10 games' },
     ]);
-    expect(api.sent('/api/games/game_logs')).toHaveLength(0);
+    // The landing ladder reads its own rungs (Jalen Johnson); the query reads none.
+    const queryReads = api
+      .sent('/api/games/game_logs')
+      .filter((request) => request.search.get('player_name') !== 'Jalen Johnson');
+    expect(queryReads).toHaveLength(0);
   },
 );

@@ -12,17 +12,22 @@ const changed = [
     ...lines(git('diff', '--name-only', base)), // committed + staged + unstaged
     ...lines(git('ls-files', '--others', '--exclude-standard')),
   ]),
-].filter(existsSync);
+]; // includes deletions: removing a file can break the app too
 
-const under = (...prefixes) => changed.filter((f) => prefixes.some((p) => f.startsWith(p)));
-const specs = changed.filter((f) => f.startsWith('e2e/specs/') && f.endsWith('.spec.js'));
-const flows = changed.filter((f) => /^e2e\/flows\/[^/]+\.e2e\.ts$/.test(f));
+const present = changed.filter(existsSync);
+const specs = present.filter((f) => /^e2e\/specs\/[^/]+\.spec\.js$/.test(f));
+const flows = present.filter((f) => /^e2e\/flows\/[^/]+\.e2e\.ts$/.test(f));
+const bridge = changed.some((f) => f.startsWith('e2e/bridge/'));
 const jsChanged = changed.some((f) => /\.(js|jsx|mjs|cjs)$/.test(f));
-const critical =
-  under('src/', 'e2e/fixtures', 'e2e/support', 'e2e/flows/support', 'e2e/bridge').length > 0 ||
-  changed.some((f) =>
-    /^(vite|playwright)\.config|^e2e(\.bugbash)?\.config\.ts$|^package(-lock)?\.json$/.test(f),
-  );
+// Anything that is not docs, CI config, a test file or a single spec/flow can
+// change what the app or the test harness does, so it earns the critical subset.
+const isolated = (f) =>
+  /\.md$/.test(f) ||
+  /^(docs|\.github)\//.test(f) ||
+  /\.test\.(js|jsx|mjs)$/.test(f) ||
+  /^e2e\/specs\/[^/]+\.spec\.js$/.test(f) ||
+  /^e2e\/flows\/[^/]+\.e2e\.ts$/.test(f);
+const critical = changed.some((f) => !isolated(f));
 
 const run = (cmd, args, env = {}) =>
   new Promise((resolve) => {
@@ -86,7 +91,9 @@ if (!failed) {
   else skip('playwright changed specs', 'no e2e/specs changes');
   if (critical)
     await step('playwright @critical', 'npx', ['playwright', 'test', '--grep', '@critical']);
-  else skip('playwright @critical', 'no src, fixture, bridge or config changes');
+  else skip('playwright @critical', 'only docs, CI or individual test files changed');
+  if (bridge) await step('fixture bridge tests', 'node', ['--test', 'e2e/bridge/server.test.mjs']);
+  else skip('fixture bridge tests', 'no e2e/bridge changes');
   if (flows.length)
     await step(`e2e flows ${flows.length} changed file(s)`, 'npx', [
       'e2e',
@@ -105,7 +112,7 @@ if (!failed) {
       '--exclude-tag',
       'agent',
     ]);
-  else skip('e2e flows critical', 'no src, fixture, bridge or config changes');
+  else skip('e2e flows critical', 'only docs, CI or individual test files changed');
 }
 
 console.log(`\ncheck:changed summary\n${summary.join('\n')}`);

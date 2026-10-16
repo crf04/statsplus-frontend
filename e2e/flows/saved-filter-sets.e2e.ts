@@ -14,6 +14,9 @@ signedInTest(
     await screen.getByLabel('Name').fill('LeBron last 10');
     await screen.getByRole('button', 'Save').tap();
     await expect(screen.getByRole('heading', 'Save this Filter Set')).toBeHidden();
+    await expect(
+      screen.getByTestId('filter-panel').getByRole('button', /LeBron last 10/),
+    ).toBeVisible();
     const [saved] = api.sent('/api/user/saved-filter-sets', 'POST');
     expect(saved.body).toMatchObject({ name: 'LeBron last 10' });
     expect(String((saved.body as { query_string: string }).query_string)).toContain(

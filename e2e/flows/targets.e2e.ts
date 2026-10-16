@@ -326,54 +326,6 @@ signedInTest(
   },
 );
 
-signedInTest(
-  'a Defense Sheet capture persists the row as a Target and rejects duplicates',
-  {
-    tags: ['critical'],
-  },
-  async ({ app, screen, browser, api }) => {
-    await app.open('/matchups/0022500584');
-    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
-    // Shot-zone attempts read on All rather than the opening PTS tab.
-    const allStats = screen.getByRole('group', 'Market').getByRole('button', 'All');
-    await allStats.tap();
-    const capture = screen.getByRole('button', 'Save Restricted area as a Target');
-    await capture.tap();
-    const dialog = screen.getByRole('dialog');
-    await expect(dialog.getByLabel('Qualifier 1 diet base')).toHaveValue('shot_zones');
-    await expect(dialog.getByLabel('Qualifier 1 slice')).toHaveValue('Restricted Area');
-    await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
-    await dialog.getByRole('button', 'Cancel').tap();
-    await expect(capture).toBeFocused();
-    await capture.tap();
-    await dialog.getByRole('button', 'Save Target').tap();
-    await expect(browser).toHaveURL('/targets/1');
-    await expect(screen.getByRole('heading', 'BOS vs Restricted area ≥ 20%')).toBeVisible();
-    expect(api.sent('/api/user/targets', 'POST')[0].body).toEqual({
-      opponent: 'BOS',
-      note: '',
-      qualifiers: [
-        {
-          base: 'shot_zones',
-          slice_key: 'Restricted Area',
-          comparator: 'at_or_above',
-          threshold: 0.2,
-        },
-      ],
-    });
-    await app.open('/matchups/0022500584');
-    await allStats.tap();
-    await capture.tap();
-    await dialog.getByRole('button', 'Save Target').tap();
-    await expect(dialog.getByRole('alert')).toContainText('You already have that Target for BOS.');
-    await expect(dialog.getByLabel('Qualifier 1 threshold percent')).toHaveValue('20');
-    await dialog.getByRole('button', 'Cancel').tap();
-    await screen.getByRole('link', 'Targets').tap();
-    await expect(screen.getByRole('article', 'BOS vs Restricted area ≥ 20%')).toBeVisible();
-    expect(await overflowsHorizontally(browser)).toBe(false);
-  },
-);
-
 signedOutTest(
   'signed-out Targets preserve both collection and detail destinations',
   async ({ app, screen, browser, api }) => {

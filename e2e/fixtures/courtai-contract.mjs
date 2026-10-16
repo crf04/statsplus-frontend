@@ -100,7 +100,7 @@ export const slatePayload = (
   games,
   {
     poolFreshnessStatus = 'unavailable',
-    poolRetrievedAt = null,
+    poolRetrievedAt = /** @type {string | null} */ (null),
     providers = {},
     previousGameDate = /** @type {string | null} */ (null),
     nextGameDate = /** @type {string | null} */ (null),

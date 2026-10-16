@@ -35,5 +35,13 @@ export default {
       engine: web({ viewport: { width: 390, height: 844 }, timezoneId: 'Asia/Tokyo' }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/phone.log' } },
     },
+    {
+      // West of UTC, where a UTC-midnight date formatted in the viewer's zone
+      // shows the previous day. The other targets are east of it (Tokyo); the
+      // Playwright suite ran in the machine's zone (New York here, UTC in CI).
+      name: 'desktop-west',
+      engine: web({ viewport: { width: 1440, height: 900 }, timezoneId: 'America/New_York' }),
+      app: { ...app, command: { ...app.command, log: '.e2e/logs/desktop-west.log' } },
+    },
   ],
 } satisfies E2EConfig;

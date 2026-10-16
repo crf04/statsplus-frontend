@@ -70,12 +70,12 @@ Routes are from `src/App.js`; the six research areas also match the coordination
 | Log Workspace analytics, charts, comparisons, date/timezone, player/season switching                                                                                            | `flows/log-workspace.e2e.ts` (rows, filtering, cards and averages)  | `specs/p1-analytics.spec.js`, `player-profile-charts.spec.js`, `core-flows.spec.js`                    |
 | `/help`: clauses, examples, draft retention, reload, Back                                                                                                                       | `flows/query-reference.e2e.ts`                                      | `specs/core-flows.spec.js`                                                                             |
 | Saved Filter Sets: save, duplicate refusal, Cancel/reopen resets, reload, rename, delete, empty/auth                                                                            | `flows/saved-filter-sets.e2e.ts`                                    | `specs/core-flows.spec.js`, `filter-panel.spec.js`                                                     |
-| `/matchups`: dates, games, empty/error/recovery, invalid dates, auth                                                                                                            | `flows/slates.e2e.ts`                                               | `specs/slate.spec.js`                                                                                  |
+| `/matchups`: dates, games, empty/error/recovery, invalid dates, auth                                                                                                            | `flows/slates.e2e.ts`, `flows/slate.e2e.ts`                         | `specs/slate.spec.js` (date navigation, request checks)                                                |
 | `/matchups/:gameId`: live and historical sheets, stat/team changes, selection logs, player-log handoff, return to slate, deep links, close, empty/error                         | `flows/matchups.e2e.ts`                                             | `specs/matchup-detail.spec.js` (windows, deviations, sorting, freshness, keyboard, selection handoff)  |
 | Defense Sheet capture into a Target                                                                                                                                             | `flows/targets.e2e.ts`                                              | `specs/matchup-detail.spec.js`                                                                         |
 | `/targets`, `/targets/:targetId`: samples, create/edit/revert/delete, Lab, Backtest, logs handoff, Conditions, grading preferences, Slate fits, context/retry, empty/error/auth | `flows/targets.e2e.ts`                                              | `specs/targets.spec.js`                                                                                |
 | `/operations`, `/admin/operations`: visitor/reader denial, admin health, every exposed mutation, confirmation, retry, stale/empty diagnostics                                   | `flows/operations.e2e.ts`                                           | `specs/operations-console.spec.js`                                                                     |
-| Unknown URL falls back to Search                                                                                                                                                | `flows/search.e2e.ts`                                               | `specs/slate.spec.js`                                                                                  |
+| Unknown URL falls back to Search                                                                                                                                                | `flows/search.e2e.ts`, `flows/slate.e2e.ts`                         | none                                                                                                   |
 | Production route assets, authenticated API routing, protected-preview credential handling                                                                                       | existing runner retained                                            | `specs/route-assets.spec.js`, `deployed-smoke-config.spec.js`, `core-flows.spec.js`                    |
 
 Keep Playwright alongside e2e for its established screenshot baselines, browser-clock
@@ -182,3 +182,16 @@ ladder's refusal of query parameters. `specs/waitlist.spec.js` keeps the two
 tests that observe browser responses (every 403 before and after navigation,
 and a 403 awaited before `goto`), because e2e has no response listener (see
 `MIGRATION.md`).
+
+The Slate flows add `flows/slate.e2e.ts`, a port of nine of the ten tests in the
+Playwright Slate spec: freshness wording and ages, the historical pool message,
+the pool status that wins over provider evidence, the oldest provider
+timestamp, the team-name fallback, the signed-out shell, the unknown-path
+redirect, and keyboard order at a narrow viewport. The tenth, date navigation,
+stays in `specs/slate.spec.js` because it counts what the browser requested,
+and a redirected request never reaches the contract log (`api.sent`). The fixed
+clock is an init script that freezes `Date` and the implicit now of `Intl`
+formatting (`freezeClock` in `flows/support/courtai.ts`), since e2e has no
+clock; its screenshots capture the viewport, not the full page. The
+`desktop-west` target (America/New_York) runs every flow so a date formatted in
+the viewer's zone is also checked west of UTC.

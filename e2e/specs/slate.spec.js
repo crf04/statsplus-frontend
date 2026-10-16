@@ -337,7 +337,7 @@ test('a slate pool only PrizePicks has read is fresh to 90 minutes, then stale',
   // 13:11: the pool is 91 minutes old.
   await page.clock.runFor(71 * 60 * 1000);
   await expect(
-    freshness.getByText(/player pool is stale.*older than 90m freshness bar/i),
+    freshness.getByText('Player pool is stale — as of 2h ago (older than 90m freshness bar)'),
   ).toBeVisible();
 });
 

@@ -269,17 +269,17 @@ test('holds a prizepicks entry to a 90m bar and every other provider to 15m', as
   );
   // 12:06: underdog is 16m old and past its bar; prizepicks is 81m and is not.
   act(() => jest.advanceTimersByTime(6 * 60000));
-  expect(screen.getByText(/underdog pool is stale.*older than 15m freshness bar/i)).toHaveClass(
-    'freshness-warning',
-  );
+  expect(
+    screen.getByText('underdog pool is stale — as of 16m ago (older than 15m freshness bar)'),
+  ).toHaveClass('freshness-warning');
   expect(screen.getByText('prizepicks pool is fresh — as of 1h ago')).not.toHaveClass(
     'freshness-warning',
   );
   // 12:16: prizepicks is 91m old.
   act(() => jest.advanceTimersByTime(10 * 60000));
-  expect(screen.getByText(/prizepicks pool is stale.*older than 90m freshness bar/i)).toHaveClass(
-    'freshness-warning',
-  );
+  expect(
+    screen.getByText('prizepicks pool is stale — as of 2h ago (older than 90m freshness bar)'),
+  ).toHaveClass('freshness-warning');
   expect(fetchSlate).toHaveBeenCalledTimes(1);
 });
 
@@ -310,9 +310,9 @@ test('holds a pool that only prizepicks has read to its 90m bar', async () => {
   expect(screen.getByText('Targetable counts use the current player pool.')).toBeVisible();
   // 12:16: 91m old.
   act(() => jest.advanceTimersByTime(16 * 60000));
-  expect(screen.getByText(/player pool is stale.*older than 90m freshness bar/i)).toHaveClass(
-    'freshness-warning',
-  );
+  expect(
+    screen.getByText('Player pool is stale — as of 2h ago (older than 90m freshness bar)'),
+  ).toHaveClass('freshness-warning');
   expect(screen.getByText(/player pool snapshot is stale/i)).toBeVisible();
 });
 

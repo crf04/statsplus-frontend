@@ -7,10 +7,6 @@ export const QUERY_LADDER = [
     rung: 'Start with a player',
     query: 'Jalen Johnson this year',
     added: 'this year',
-    // The Filter Set the rung's query parses to, read directly so the home
-    // page can show its answer without the parser. No season: the backend's
-    // default season is what "this year" means.
-    filters: { player_name: 'Jalen Johnson' },
     note: 'A name and a period is a complete query. Everything else narrows it.',
   },
   {
@@ -18,7 +14,6 @@ export const QUERY_LADDER = [
     rung: 'Narrow it down',
     query: 'Jalen Johnson this year without Trae Young',
     added: 'without Trae Young',
-    filters: { player_name: 'Jalen Johnson', 'players_off[]': ['Trae Young'] },
     note: 'Ask what he does when the offence runs through him instead.',
   },
   {
@@ -27,13 +22,6 @@ export const QUERY_LADDER = [
     query:
       'Jalen Johnson this year without Trae Young against bottom 10 defenses playing 25+ minutes',
     added: 'against bottom 10 defenses playing 25+ minutes',
-    filters: {
-      player_name: 'Jalen Johnson',
-      'players_off[]': ['Trae Young'],
-      'teams_against[]': ['OPP_PTS'],
-      'rank_filter[]': ['10'],
-      minutes_filter: '25,48',
-    },
     note: 'Filters combine. Keep adding clauses until the sample is the one you mean.',
   },
 ];

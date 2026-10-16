@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 test('joins the Slate to its edges in tip-off order and ranks firing Targets by fits', async () => {
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
@@ -62,17 +62,41 @@ test('joins the Slate to its edges in tip-off order and ranks firing Targets by 
   );
 });
 
-test('signed out reads nothing', () => {
-  const { result } = renderHook(() => useHomeTonight(null));
+test('with no account the Slate and Edges are read but Targets are not', async () => {
+  const { result } = renderHook(() => useHomeTonight(true, null));
+
+  await waitFor(() => expect(result.current.games).not.toBeNull());
+  expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+  expect(result.current.targets).toBeNull();
+  expect(fetchSlateEdges).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-04-10' }));
+  expect(fetchResolvedTargets).not.toHaveBeenCalled();
+});
+
+test('off the Query Prompt reads nothing', () => {
+  const { result } = renderHook(() => useHomeTonight(false, 'reader-a'));
 
   expect(result.current.games).toBeNull();
   expect(fetchSlate).not.toHaveBeenCalled();
 });
 
+test('signing in rereads and adds Targets to the games already shown', async () => {
+  const { result, rerender } = renderHook(({ account }) => useHomeTonight(true, account), {
+    initialProps: { account: null },
+  });
+  await waitFor(() => expect(result.current.games).not.toBeNull());
+  expect(fetchResolvedTargets).not.toHaveBeenCalled();
+
+  rerender({ account: 'reader-a' });
+
+  await waitFor(() => expect(result.current.targets).not.toBeNull());
+  expect(result.current.targets.total).toBe(3);
+  expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+});
+
 test('no games today shows no ticker or Tonight row', async () => {
   fetchSlate.mockResolvedValue({ slateDate: '2026-10-15', games: [] });
   fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-10-15', entries: [] });
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.targets).not.toBeNull());
   expect(result.current.games).toBeNull();
@@ -80,7 +104,7 @@ test('no games today shows no ticker or Tonight row', async () => {
 
 test('a backend without the edges route reads like no games', async () => {
   fetchSlateEdges.mockResolvedValue(null);
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.targets).not.toBeNull());
   expect(result.current.games).toBeNull();
@@ -88,7 +112,7 @@ test('a backend without the edges route reads like no games', async () => {
 
 test('a failed Targets read keeps the games', async () => {
   fetchResolvedTargets.mockRejectedValue(new Error('boom'));
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.targets).toBeNull();
@@ -96,7 +120,7 @@ test('a failed Targets read keeps the games', async () => {
 
 test('edges for another date than the Slate show no games', async () => {
   fetchSlateEdges.mockResolvedValue({ ...edges, slateDate: '2026-04-11' });
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.targets).not.toBeNull());
   expect(result.current.games).toBeNull();
@@ -104,14 +128,14 @@ test('edges for another date than the Slate show no games', async () => {
 
 test('Targets resolved for another date are dropped', async () => {
   fetchResolvedTargets.mockResolvedValue({ ...resolved, slateDate: '2026-04-11' });
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.targets).toBeNull();
 });
 
 test('switching accounts clears the previous reader and rereads', async () => {
-  const { result, rerender } = renderHook(({ account }) => useHomeTonight(account), {
+  const { result, rerender } = renderHook(({ account }) => useHomeTonight(true, account), {
     initialProps: { account: 'reader-a' },
   });
   await waitFor(() => expect(result.current.targets).not.toBeNull());
@@ -132,7 +156,7 @@ test('a day with no games shows the most recent game day, marked past', async ()
         : { slateDate: '2026-10-15', games: [], previousGameDate: '2026-04-10' },
     ),
   );
-  const { result } = renderHook(() => useHomeTonight('reader-a'));
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
   expect(result.current.past).toBe(true);

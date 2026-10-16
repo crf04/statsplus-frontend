@@ -4,6 +4,7 @@ import { formatTip } from '../calendarDate';
 import { formatObservedShare, formatQualifier, targetSliceLabel } from '../targets/targetCatalog';
 import { TargetConditionSummary } from '../targets/TargetConditions';
 import { SeasonMinutesProvider } from '../targets/useTargets';
+import LoginButton from '../components/Auth/LoginButton';
 import { rankPhrase, signedPercent } from './homeFormat';
 
 /*
@@ -11,6 +12,8 @@ import { rankPhrase, signedPercent } from './homeFormat';
  * the slate's most and least favourable points Matchup with the one play-type
  * slice behind each; Your Targets is the two firing Targets with the most fits,
  * each fit carrying its own points Matchup score from the same Slate Edges.
+ * Targets belong to an account, so a signed-out visitor gets a sign-up card in
+ * that column and a waitlisted account gets no column (crf04/statsplus#211).
  */
 const Pick = ({ kind, pick, game, onUseQuery }) => {
   if (!pick) {
@@ -95,7 +98,15 @@ const TargetCard = ({ entry, scores }) => {
   );
 };
 
-const HomeTonight = ({ games, spotlight, targets, onUseQuery, slateDate = null, past = false }) => {
+const HomeTonight = ({
+  games,
+  spotlight,
+  targets,
+  signUp = false,
+  onUseQuery,
+  slateDate = null,
+  past = false,
+}) => {
   const gameOf = (gameId) => games.find((game) => game.gameId === gameId);
   return (
     <div className="home-tonight">
@@ -121,6 +132,19 @@ const HomeTonight = ({ games, spotlight, targets, onUseQuery, slateDate = null, 
           />
         </div>
       </section>
+      {signUp && (
+        <section className="home-col" aria-labelledby="home-targets-heading">
+          <div className="home-col-head">
+            <h2 id="home-targets-heading">Your Targets</h2>
+          </div>
+          <div className="home-col-stack">
+            <div className="home-empty home-signup">
+              <p>A Target watches one opponent and flags every player who fits, on game day.</p>
+              <LoginButton size="sm" label="Sign up free" />
+            </div>
+          </div>
+        </section>
+      )}
       {targets && (
         <section className="home-col" aria-labelledby="home-targets-heading">
           <div className="home-col-head">

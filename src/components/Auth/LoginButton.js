@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
 
-const LoginButton = ({ className = '', size = 'lg' }) => {
+const LoginButton = ({ className = '', size = 'lg', label = 'Sign in with Google' }) => {
   const { signInWithGoogle, loading, error } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -66,7 +66,7 @@ const LoginButton = ({ className = '', size = 'lg' }) => {
                 fill="#EA4335"
               />
             </svg>
-            Sign in with Google
+            {label}
           </>
         )}
       </Button>

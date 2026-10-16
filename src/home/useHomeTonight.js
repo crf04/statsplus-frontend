@@ -17,7 +17,9 @@ import { isRequestCancelled } from '../gameLogsApi';
  * edges for another date than the Slate's (the reads straddled midnight ET).
  * Targets resolved for another date are dropped the same way.
  *
- * `account` is the signed-in uid, or null when signed out: switching accounts
+ * The Slate and Edges are public (crf04/statsplus#211): `landing` is whether
+ * the Query Prompt is on screen. `account` is the uid of a signed-in, admitted
+ * reader, or null: only an account reads Targets, and switching accounts
  * rereads, so one reader's Targets never stay on screen for the next.
  */
 const EMPTY = { games: null, spotlight: null, slateDate: null, past: false, targets: null };
@@ -42,11 +44,11 @@ const firingTargets = (resolved) => ({
     .sort((a, b) => b.players.length - a.players.length),
 });
 
-export const useHomeTonight = (account) => {
+export const useHomeTonight = (landing, account) => {
   const [state, setState] = useState(EMPTY);
   useEffect(() => {
     setState(EMPTY);
-    if (!account) {
+    if (!landing) {
       return undefined;
     }
     const controller = new AbortController();
@@ -96,6 +98,7 @@ export const useHomeTonight = (account) => {
           }));
         });
       }
+      if (!account) return;
       settle(fetchResolvedTargets({ date: slateDate ?? undefined, signal })).then((resolved) => {
         if (signal.aborted) return;
         warnIfFailed(resolved);
@@ -105,6 +108,6 @@ export const useHomeTonight = (account) => {
       });
     });
     return () => controller.abort();
-  }, [account]);
+  }, [landing, account]);
   return state;
 };

@@ -1,6 +1,8 @@
 // Flow: Home. A signed-in reader sees today's games, the slate's best and
 // toughest points Matchup, their Targets, and what each ladder rung returns,
-// above and around the Query Prompt (crf04/statsplus#204).
+// above and around the Query Prompt (crf04/statsplus#204). The games, Tonight
+// and the ladder are public, so a signed-out visitor sees them too, with a
+// sign-up card where Targets would be (crf04/statsplus#211).
 import { expect } from 'e2e';
 import { slateGame, slatePayload } from '../fixtures/courtai.js';
 import { signedInTest, signedOutTest } from './support/courtai.ts';
@@ -35,12 +37,13 @@ signedInTest(
     );
     await expect(browser).toHaveURL('/');
 
-    // The ladder answers come from the rungs' own Game Logs requests.
+    // The ladder answers come from one anonymous ladder read.
     await expect(screen.getByRole('heading', 'Get more specific')).toBeVisible();
     const firstRung = screen.getByRole('button', { name: 'Start with a player', exact: false });
     await expect(firstRung).toContainText('PTS');
     await expect(firstRung).toContainText('2 games');
-    expect(api.sent('/api/games/game_logs', 'GET').length).toBeGreaterThanOrEqual(3);
+    expect(api.sent('/api/games/ladder', 'GET')).toHaveLength(1);
+    expect(api.sent('/api/games/game_logs')).toHaveLength(0);
 
     await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
     await app.screenshot('home-today');
@@ -61,14 +64,30 @@ signedInTest('no games today leaves the Query Prompt on its own', async ({ app, 
   await expect(screen.getByRole('heading', 'Tonight')).toHaveCount(0);
 });
 
-signedOutTest('signed out shows no previews and no answers', async ({ app, screen, api }) => {
-  await app.open('/');
+signedOutTest(
+  'signed out sees the same public sections and a sign-up card for Targets',
+  { tags: ['critical'] },
+  async ({ app, screen, api }) => {
+    await app.open('/');
 
-  await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
-  await expect(screen.getByRole('heading', 'Get more specific')).toBeVisible();
-  await expect(screen.getByRole('navigation', "Today's games")).toHaveCount(0);
-  expect(api.sent('/api/games/slate/edges')).toHaveLength(0);
-});
+    await expect(screen.getByRole('heading', 'Ask the box score')).toBeVisible();
+    const ticker = screen.getByRole('navigation', "Today's games");
+    await expect(
+      ticker.getByRole('link', { name: 'LAL at BOS Matchup', exact: false }),
+    ).toBeVisible();
+    const firstRung = screen.getByRole('button', { name: 'Start with a player', exact: false });
+    await expect(firstRung).toContainText('2 games');
+    await expect(screen.getByRole('article', 'Best: Austin Reaves')).toContainText('+24.0%');
+    const targets = screen.getByRole('region', 'Your Targets');
+    await expect(targets.getByRole('button', 'Sign up free')).toBeVisible();
+    await expect(screen.getByText('Free account. Sign up with Google to run it.')).toBeVisible();
+    expect(api.sent('/api/user/targets/resolve')).toHaveLength(0);
+    expect(api.sent('/api/games/game_logs')).toHaveLength(0);
+    // Every read behind these sections is sent with no credentials.
+    expect(api.requests.filter((r) => r.authorization !== undefined)).toEqual([]);
+    await app.screenshot('home-signed-out');
+  },
+);
 
 signedInTest('no games today shows the last game day, labelled', async ({ app, screen, api }) => {
   await api.override({

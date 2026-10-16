@@ -126,8 +126,10 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     [authClient],
   );
 
-  // Sign in with Google
-  const signInWithGoogle = async () => {
+  // Sign in with Google. `silent` is for a caller that shows the page it is
+  // already on while the popup is open and owns a cancelled or failed attempt:
+  // it neither swaps the page for the loading screen nor records an error.
+  const signInWithGoogle = async ({ silent = false } = {}) => {
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
@@ -147,15 +149,15 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       }
 
       setError(null);
-      setLoading(true);
+      if (!silent) setLoading(true);
       const result = await signInWithPopup(authClient, authProvider);
       return result.user;
     } catch (error) {
       console.error('Google sign-in error:', error);
-      setError(error.message);
+      if (!silent) setError(error.message);
       throw error;
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

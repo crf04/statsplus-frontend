@@ -1076,6 +1076,10 @@ button.selection-strip-tile:focus-visible {
   margin-top: 28px;
 }
 
+.signed-out-detail .text-center {
+  text-align: left;
+}
+
 @media (max-width: 820px) {
   .matchup-page {
     width: min(100% - 18px, 1240px);

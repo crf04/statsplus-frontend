@@ -104,6 +104,7 @@ signedOutTest(
   async ({ app, screen, browser, api }) => {
     await app.open('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'Sign in to view the slate')).toBeVisible();
+    await expect(screen.getByRole('button', 'Sign up free')).toBeVisible();
     await expect(screen.getByRole('navigation', 'Primary')).toBeVisible();
     expect(api.sent('/api/games/slate')).toHaveLength(0);
 

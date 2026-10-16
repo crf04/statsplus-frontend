@@ -41,11 +41,12 @@ const PAGES = [
 
 const CONNECT = 'Ask CourtAI from your chat';
 
-// Each route is lazy: wait for its own heading so nothing resolves after the test.
+// Each route is lazy: wait for its own heading so nothing resolves after the test. A cold
+// transform cache can take longer than findBy's default second to load one.
 const renderAt = async (path, heading) => {
   window.history.pushState({}, '', path);
   const view = render(<App />);
-  await screen.findByRole('heading', { name: heading });
+  await screen.findByRole('heading', { name: heading }, { timeout: 8000 });
   return view;
 };
 
@@ -272,13 +273,30 @@ describe('Privacy', () => {
     );
     // The server logs name the account, and the search text reaches OpenAI.
     expect(rowDetail('Server logs')).toHaveTextContent('your email and account id');
-    expect(rowDetail('Your searches')).toHaveTextContent('the text is also sent to OpenAI');
+    expect(rowDetail('Your searches')).toHaveTextContent(
+      'If our own reader is unsure, the text is also sent to OpenAI.',
+    );
+    // Shadow sampling (LLM_SHADOW_SAMPLE_RATE=0.1 in production): a tenth of the searches our
+    // reader is sure about also go to OpenAI, in the background, and the answer is still ours.
+    expect(rowDetail('Your searches')).toHaveTextContent(
+      "About one in ten of the searches our reader is sure about is sent too, in the background, only so we can check how often the two agree; you still get our reader's answer.",
+    );
     // OpenAI gets the raw text, and no account details.
+    expect(rowDetail('OpenAI')).toHaveTextContent(
+      'It also reads about one in ten of the searches our reader is sure about, in the background, so we can compare its answer with ours.',
+    );
     expect(rowDetail('OpenAI')).toHaveTextContent('including anything personal you type');
+    expect(rowDetail('OpenAI')).toHaveTextContent(
+      'We write the compared search and the result of the comparison to our server logs.',
+    );
     expect(rowDetail('OpenAI')).toHaveTextContent('We attach no account details.');
     // Error text can still carry what was typed into a request.
     expect(rowDetail('Errors')).toHaveTextContent('such as a player name');
     expect(rowDetail('Railway')).toHaveTextContent('Redis cache');
+    // The daily OpenAI count covers the unsure searches, not the background checks.
+    expect(rowDetail('Railway')).toHaveTextContent(
+      "A daily count of each account's OpenAI calls for searches our reader is unsure about lasts two days.",
+    );
     // Server counters last about a minute; the connector's stay in memory until it restarts.
     expect(rowDetail('Railway')).toHaveTextContent(
       'The connector keeps a per-minute and a per-day count for each connected account in memory until it restarts.',

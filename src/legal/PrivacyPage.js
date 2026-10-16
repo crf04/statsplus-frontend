@@ -30,7 +30,7 @@ const COLLECTED = [
   ],
   [
     'Your searches',
-    'The text of a plain-English search goes to our server to be understood and is written to our server logs with your email and account id. If our own reader is unsure, the text is also sent to OpenAI.',
+    "The text of a plain-English search goes to our server to be understood and is written to our server logs with your email and account id. If our own reader is unsure, the text is also sent to OpenAI. About one in ten of the searches our reader is sure about is sent too, in the background, only so we can check how often the two agree; you still get our reader's answer.",
   ],
   [
     'Activity counts (planned)',
@@ -54,11 +54,11 @@ const PROVIDERS = [
   ],
   [
     'Railway',
-    "Runs our server, database, Redis cache and connector. It holds everything described above, plus cached stats and short-lived counters that limit request rates. The server's counters are tied to your account id or IP address and last about a minute. The connector keeps a per-minute and a per-day count for each connected account in memory until it restarts. A daily count of each account's calls to OpenAI lasts two days.",
+    "Runs our server, database, Redis cache and connector. It holds everything described above, plus cached stats and short-lived counters that limit request rates. The server's counters are tied to your account id or IP address and last about a minute. The connector keeps a per-minute and a per-day count for each connected account in memory until it restarts. A daily count of each account's OpenAI calls for searches our reader is unsure about lasts two days.",
   ],
   [
     'OpenAI',
-    'Reads a plain-English search our own reader is unsure about. It gets the text of that search, including anything personal you type, plus the names of players we matched in it. We attach no account details.',
+    'Reads a plain-English search our own reader is unsure about. It also reads about one in ten of the searches our reader is sure about, in the background, so we can compare its answer with ours. It gets the text of that search, including anything personal you type, plus the names of players we matched in it. We attach no account details. We write the compared search and the result of the comparison to our server logs.',
   ],
   ['Sentry', 'Receives error reports, as under Errors above.'],
   [

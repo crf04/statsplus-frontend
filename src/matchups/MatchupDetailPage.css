@@ -725,13 +725,6 @@
   font-weight: 600;
 }
 
-.sheet-leans em {
-  color: var(--ct-hit);
-  font-family: var(--ct-mono);
-  font-size: 0.78rem;
-  font-style: normal;
-}
-
 /* The selection card: name and game on top, the stat strip as the selector,
    then the Score Matrix and the opponent log side by side in two panels. */
 .selection-card {

@@ -5,8 +5,11 @@ import './bootstrap-subset.scss';
 import App from './App';
 import './theme.css';
 import { initErrorReporting } from './errorReporting';
+import { captureFirstTouch } from './attribution/firstTouch';
 
 initErrorReporting();
+// Before the router: unknown routes redirect to `/` and drop the query string.
+captureFirstTouch();
 
 const rootElement = document.getElementById('root');
 

@@ -1,8 +1,12 @@
 /*
  * Small formatting shared by the home page's ticker and Tonight row.
  */
-export const signedPercent = (value, digits = 0) =>
-  `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value * 100).toFixed(digits)}%`;
+// A value that rounds to zero reads "0%", never "−0%".
+export const signedPercent = (value, digits = 0) => {
+  const shown = Math.abs(value * 100).toFixed(digits);
+  const sign = Number(shown) === 0 ? '' : value > 0 ? '+' : '−';
+  return `${sign}${shown}%`;
+};
 
 const SUFFIXES = new Set(['Jr.', 'Sr.', 'II', 'III', 'IV']);
 

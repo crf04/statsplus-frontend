@@ -11,6 +11,8 @@ import { isRequestCancelled } from '../gameLogsApi';
  * first so Edges and Targets are requested for its date. A backend without
  * the edges route (null) reads like a failure: no ticker, no Tonight.
  *
+ * `past` is true when that is the most recent game day rather than today.
+ *
  * `games` is null when there is nothing to show: no edges, no games today, or
  * edges for another date than the Slate's (the reads straddled midnight ET).
  * Targets resolved for another date are dropped the same way.
@@ -18,7 +20,7 @@ import { isRequestCancelled } from '../gameLogsApi';
  * `account` is the signed-in uid, or null when signed out: switching accounts
  * rereads, so one reader's Targets never stay on screen for the next.
  */
-const EMPTY = { games: null, spotlight: null, slateDate: null, targets: null };
+const EMPTY = { games: null, spotlight: null, slateDate: null, past: false, targets: null };
 
 const joinGames = (slate, edges) => {
   const byId = new Map(edges.games.map((game) => [game.gameId, game]));
@@ -56,16 +58,27 @@ export const useHomeTonight = (account) => {
       );
     // The Slate names the date; Edges and Targets are read for that same date,
     // so the three never straddle midnight ET.
-    settle(fetchSlate(undefined, { signal }))
-      .then(async (slate) => {
+    // A day with no games shows the most recent game day instead, so the page
+    // always has a slate to show (crf04/statsplus#204, amended edge state).
+    const slateToShow = async () => {
+      const today = await settle(fetchSlate(undefined, { signal }));
+      const earlier =
+        today.status === 'fulfilled' &&
+        today.value.games.length === 0 &&
+        today.value.previousGameDate;
+      if (!earlier) return { slate: today, past: false };
+      return { slate: await settle(fetchSlate(earlier, { signal })), past: true };
+    };
+    slateToShow()
+      .then(async ({ slate, past }) => {
         const date = slate.status === 'fulfilled' ? slate.value.slateDate : undefined;
         const [edges, resolved] = await Promise.all([
           date ? settle(fetchSlateEdges({ date, signal })) : { status: 'rejected' },
           settle(fetchResolvedTargets({ date, signal })),
         ]);
-        return [slate, edges, resolved];
+        return [slate, edges, resolved, past];
       })
-      .then(([slate, edges, resolved]) => {
+      .then(([slate, edges, resolved, past]) => {
         if (signal.aborted) return;
         const failed = (result) =>
           result.status === 'rejected' && result.reason && !isRequestCancelled(result.reason);
@@ -87,6 +100,7 @@ export const useHomeTonight = (account) => {
           games: hasGames ? joinGames(slate.value, edges.value) : null,
           spotlight: hasGames ? edges.value.spotlight : null,
           slateDate: hasGames ? slateDate : null,
+          past: hasGames && past,
           targets: targetsToday ? firingTargets(resolved.value) : null,
         });
       });

@@ -123,3 +123,19 @@ test('switching accounts clears the previous reader and rereads', async () => {
   await waitFor(() => expect(fetchResolvedTargets).toHaveBeenCalledTimes(2));
   expect(result.current.targets).toBeNull();
 });
+
+test('a day with no games shows the most recent game day, marked past', async () => {
+  fetchSlate.mockImplementation((date) =>
+    Promise.resolve(
+      date === '2026-04-10'
+        ? slate
+        : { slateDate: '2026-10-15', games: [], previousGameDate: '2026-04-10' },
+    ),
+  );
+  const { result } = renderHook(() => useHomeTonight('reader-a'));
+
+  await waitFor(() => expect(result.current.games).not.toBeNull());
+  expect(result.current.past).toBe(true);
+  expect(result.current.slateDate).toBe('2026-04-10');
+  expect(fetchSlateEdges).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-04-10' }));
+});

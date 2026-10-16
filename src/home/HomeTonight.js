@@ -95,14 +95,14 @@ const TargetCard = ({ entry, scores }) => {
   );
 };
 
-const HomeTonight = ({ games, spotlight, targets, onUseQuery }) => {
+const HomeTonight = ({ games, spotlight, targets, onUseQuery, slateDate = null, past = false }) => {
   const gameOf = (gameId) => games.find((game) => game.gameId === gameId);
   return (
     <div className="home-tonight">
       <section className="home-col" aria-labelledby="home-tonight-heading">
         <div className="home-col-head">
-          <h2 id="home-tonight-heading">Tonight</h2>
-          <Link to="/matchups">
+          <h2 id="home-tonight-heading">{past ? 'Last game day' : 'Tonight'}</h2>
+          <Link to={past ? `/matchups?date=${slateDate}` : '/matchups'}>
             Matchups <ArrowRight size={13} aria-hidden="true" />
           </Link>
         </div>

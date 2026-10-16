@@ -153,23 +153,40 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(setup).getByRole('tabpanel', { name: 'ChatGPT' })).toBeInTheDocument();
 });
 
-test('the page shows the real card and one working question per tool', async () => {
+test('the page shows the real card and one working question for each connector tool', async () => {
   await renderConnectRoute();
 
   expect(
     screen.getByTitle('CourtAI Matchup card: Cade Cunningham against Charlotte'),
   ).toHaveAttribute('src', '/mcp-cards/matchup.html');
 
-  const prompts = within(screen.getByRole('region', { name: 'Try asking' })).getAllByRole(
+  const tools = within(screen.getByRole('region', { name: 'What you can ask' })).getAllByRole(
     'listitem',
   );
-  expect(prompts.map((item) => item.textContent)).toEqual([
-    "SlateWhat's on the slate for April 10, 2026?",
-    "MatchupShow Cade Cunningham's matchup against Charlotte.",
-    'Game logsHow has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
-    'TargetsWhich players fit my Targets today?',
-    'BacktestBacktest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
+  // Every tool the connector registers, each with a prompt it answers.
+  expect(
+    tools.map((item) => [
+      item.querySelector('.connect-prompt-tool').textContent,
+      item.querySelector('.connect-tool-prompt').textContent,
+    ]),
+  ).toEqual([
+    ['Slate', "What's on the slate for April 10, 2026?"],
+    ['Matchup', "Show Cade Cunningham's matchup against Charlotte."],
+    [
+      'Game logs',
+      'How has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
+    ],
+    ['Rotation', "How have Ausar Thompson's minutes looked lately?"],
+    ['Injury report', "Who's on the injury report today?"],
+    ['Injury Scenarios', "Which teammates move when tonight's injured players sit?"],
+    ['On/off splits', 'How did Detroit play with Cade Cunningham off the floor in 2025-26?'],
+    ['Targets', 'Which players fit my Targets today?'],
+    [
+      'Backtest',
+      'Backtest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
+    ],
   ]);
+  expect(within(tools[4]).getByText(/stored from 11:00 ET on game days/)).toBeInTheDocument();
 
   const notes = screen.getByRole('region', { name: 'Good to know' });
   expect(within(notes).getByText(/It doesn.t make picks/)).toBeInTheDocument();

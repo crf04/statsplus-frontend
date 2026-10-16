@@ -8,20 +8,56 @@ export const CONNECTOR_URL = 'https://statsplus-mcp-production.up.railway.app/mc
 
 const COPIED_MS = 2000;
 
-// One question per tool, each answered by the production connector when this
-// list last changed (2026-10-13). A Slate needs a date with games, so the
-// example names one rather than "tonight".
-const EXAMPLE_PROMPTS = [
-  { tool: 'Slate', prompt: "What's on the slate for April 10, 2026?" },
-  { tool: 'Matchup', prompt: "Show Cade Cunningham's matchup against Charlotte." },
+// Every connector tool, each prompt answered by the production connector when
+// this list last changed (2026-10-16). A Slate needs a date with games, so the
+// example names one rather than "tonight". The injury report is stored only on
+// game days, so those two examples ask about today.
+const TOOLS = [
+  {
+    tool: 'Slate',
+    answers: "A date's games, and the players whose Matchups stand out in each.",
+    prompt: "What's on the slate for April 10, 2026?",
+  },
+  {
+    tool: 'Matchup',
+    answers:
+      "A player's Matchup Score against an opponent, and the play types and zones behind it.",
+    prompt: "Show Cade Cunningham's matchup against Charlotte.",
+  },
   {
     tool: 'Game logs',
+    answers: 'How a player did in past games, filtered by opponent rank or teammates out.',
     prompt:
       'How has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
   },
-  { tool: 'Targets', prompt: 'Which players fit my Targets today?' },
+  {
+    tool: 'Rotation',
+    answers: 'Who starts, how many minutes a player plays and when, and whose minutes changed.',
+    prompt: "How have Ausar Thompson's minutes looked lately?",
+  },
+  {
+    tool: 'Injury report',
+    answers: 'The official NBA injury report for a date, stored from 11:00 ET on game days.',
+    prompt: "Who's on the injury report today?",
+  },
+  {
+    tool: 'Injury Scenarios',
+    answers: 'How each teammate produced in games a Questionable, Doubtful or Out player missed.',
+    prompt: "Which teammates move when tonight's injured players sit?",
+  },
+  {
+    tool: 'On/off splits',
+    answers: "A team's per-36 rates with chosen players on or off the floor.",
+    prompt: 'How did Detroit play with Cade Cunningham off the floor in 2025-26?',
+  },
+  {
+    tool: 'Targets',
+    answers: 'Which opposing players fit your saved Targets on a date.',
+    prompt: 'Which players fit my Targets today?',
+  },
   {
     tool: 'Backtest',
+    answers: 'How players who fit a Target you describe did against that opponent.',
     prompt:
       'Backtest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
   },
@@ -252,13 +288,17 @@ const ConnectPage = () => {
       </section>
 
       <section className="connect-section" aria-labelledby="connect-prompts-heading">
-        <h2 id="connect-prompts-heading">Try asking</h2>
-        <p className="connect-note">Paste one into a chat with CourtAI turned on.</p>
-        <ul className="connect-prompts">
-          {EXAMPLE_PROMPTS.map(({ tool, prompt }) => (
+        <h2 id="connect-prompts-heading">What you can ask</h2>
+        <p className="connect-note">
+          CourtAI has one tool per kind of question. Paste an example into a chat with CourtAI
+          turned on, or ask in your own words.
+        </p>
+        <ul className="connect-tools">
+          {TOOLS.map(({ tool, answers, prompt }) => (
             <li key={tool}>
               <span className="connect-prompt-tool">{tool}</span>
-              {prompt}
+              <p className="connect-tool-answers">{answers}</p>
+              <p className="connect-tool-prompt">{prompt}</p>
             </li>
           ))}
         </ul>

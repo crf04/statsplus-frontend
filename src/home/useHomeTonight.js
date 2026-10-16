@@ -2,20 +2,29 @@ import { useEffect, useState } from 'react';
 import { fetchSlate } from '../slateApi';
 import { fetchSlateEdges } from '../slateEdgesApi';
 import { fetchResolvedTargets } from '../targets/targetsApi';
+import { TARGET_SLICES } from '../targets/targetCatalog';
+import { isCalendarDate } from '../calendarDate';
 import { isRequestCancelled } from '../gameLogsApi';
 
 /*
  * What the home page knows about today (crf04/statsplus#204): the Slate's
  * games joined to their Slate Edges, and the reader's firing Targets. Each read
- * stands alone, so a failed one drops only its own section. The Slate is read
- * first so Edges and Targets are requested for its date. A backend without
- * the edges route (null) reads like a failure: no ticker, no Tonight.
+ * stands alone, so a failed one drops only its own section. The three are
+ * requested at once with `fallback=previous_game_day` and no date, so each
+ * falls back to the most recent game day by itself (crf04/statsplus#217). A
+ * backend without the edges route (null) reads like a failure: no ticker, no
+ * Tonight.
  *
- * `past` is true when that is the most recent game day rather than today.
+ * `past` is true when the Slate answered with that fallback day rather than
+ * today.
  *
  * `games` is null when there is nothing to show: no edges, no games today, or
  * edges for another date than the Slate's (the reads straddled midnight ET).
  * Targets resolved for another date are dropped the same way.
+ *
+ * The last public result (games, spotlight, date, past; never Targets) is kept
+ * in localStorage and painted on mount before any read answers, then replaced
+ * by the fresh one. An unreadable entry is ignored and removed.
  *
  * The Slate and Edges are public (crf04/statsplus#211): `landing` is whether
  * the Query Prompt is on screen. `account` is the uid of a signed-in, admitted
@@ -23,6 +32,105 @@ import { isRequestCancelled } from '../gameLogsApi';
  * rereads, so one reader's Targets never stay on screen for the next.
  */
 const EMPTY = { games: null, spotlight: null, slateDate: null, past: false, targets: null };
+
+const CACHE_KEY = 'courtai.homeTonight.v1';
+
+// Everything below is what the ticker and Tonight read; an entry is only
+// trusted when each of those fields has the type and form they render from.
+const isObject = (value) => value !== null && typeof value === 'object';
+const isText = (value) => typeof value === 'string';
+const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const isInstant = (value) => isText(value) && !Number.isNaN(new Date(value).getTime());
+
+const isEffect = (effect) =>
+  isObject(effect) && isNumber(effect.canonicalId) && isText(effect.name) && isNumber(effect.value);
+
+const isGame = (game) =>
+  isObject(game) &&
+  isText(game.gameId) &&
+  isInstant(game.scheduledAt) &&
+  isText(game.away?.tricode) &&
+  isText(game.home?.tricode) &&
+  Array.isArray(game.effects) &&
+  game.effects.every(isEffect) &&
+  Array.isArray(game.scores) &&
+  game.scores.every(
+    (pair) => Array.isArray(pair) && pair.length === 2 && isNumber(pair[0]) && isNumber(pair[1]),
+  );
+
+const isReason = (reason) =>
+  reason === null ||
+  (isObject(reason) &&
+    isText(reason.base) &&
+    Object.hasOwn(TARGET_SLICES, reason.base) &&
+    isText(reason.sliceKey) &&
+    isNumber(reason.share) &&
+    Number.isInteger(reason.opponentRank) &&
+    reason.opponentRank >= 1 &&
+    reason.opponentRank <= 30);
+
+// `best` helps and `toughest` hurts, as the Slate Edges decoder requires.
+const isPick = (pick, sign) =>
+  pick === null ||
+  (isObject(pick) &&
+    isText(pick.gameId) &&
+    isText(pick.name) &&
+    isText(pick.opponent) &&
+    isNumber(pick.value) &&
+    pick.value * sign > 0 &&
+    isReason(pick.reason));
+
+// The last public result, or EMPTY when there is none or it cannot be trusted.
+const readCache = () => {
+  try {
+    const entry = JSON.parse(window.localStorage.getItem(CACHE_KEY));
+    if (entry === null) return EMPTY;
+    if (
+      !isObject(entry) ||
+      !Array.isArray(entry.games) ||
+      entry.games.length === 0 ||
+      !entry.games.every(isGame) ||
+      !isCalendarDate(entry.slateDate) ||
+      typeof entry.past !== 'boolean' ||
+      !isObject(entry.spotlight) ||
+      !isPick(entry.spotlight.best, 1) ||
+      !isPick(entry.spotlight.toughest, -1)
+    ) {
+      clearCache();
+      return EMPTY;
+    }
+    return {
+      ...EMPTY,
+      games: entry.games.map((game) => ({ ...game, scores: new Map(game.scores) })),
+      spotlight: entry.spotlight,
+      slateDate: entry.slateDate,
+      past: entry.past,
+    };
+  } catch {
+    clearCache();
+    return EMPTY;
+  }
+};
+
+function clearCache() {
+  try {
+    window.localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Storage can be unavailable (private mode); the cache is best effort.
+  }
+}
+
+const writeCache = ({ games, spotlight, slateDate, past }) => {
+  try {
+    const stored = games.map((game) => ({ ...game, scores: [...game.scores] }));
+    window.localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ games: stored, spotlight, slateDate, past }),
+    );
+  } catch {
+    // Storage can be unavailable or full; the cache is best effort.
+  }
+};
 
 const joinGames = (slate, edges) => {
   const byId = new Map(edges.games.map((game) => [game.gameId, game]));
@@ -45,68 +153,86 @@ const firingTargets = (resolved) => ({
 });
 
 export const useHomeTonight = (landing, account) => {
-  const [state, setState] = useState(EMPTY);
+  const [state, setState] = useState(() => (landing ? readCache() : EMPTY));
   useEffect(() => {
-    setState(EMPTY);
+    // Targets are never cached, and a new account starts without the last one's.
+    const cached = landing ? readCache() : EMPTY;
+    setState(cached);
     if (!landing) {
       return undefined;
     }
     const controller = new AbortController();
     const { signal } = controller;
+    const fallback = 'previous_game_day';
     const settle = (promise) =>
       promise.then(
         (value) => ({ status: 'fulfilled', value }),
         (reason) => ({ status: 'rejected', reason }),
       );
-    // The Slate names the date; Edges and Targets are read for that same date,
-    // so the three never straddle midnight ET.
-    // A day with no games shows the most recent game day instead, so the page
-    // always has a slate to show (crf04/statsplus#204, amended edge state).
-    const slateToShow = async () => {
-      const today = await settle(fetchSlate(undefined, { signal }));
-      const earlier =
-        today.status === 'fulfilled' &&
-        today.value.games.length === 0 &&
-        today.value.previousGameDate;
-      if (!earlier) return { slate: today, past: false };
-      return { slate: await settle(fetchSlate(earlier, { signal })), past: true };
-    };
     const warnIfFailed = (result) => {
       if (result.status === 'rejected' && result.reason && !isRequestCancelled(result.reason)) {
         // Each section is optional; the console keeps the reason for diagnosis.
         console.warn('Home page read failed', result.reason);
       }
     };
-    slateToShow().then(({ slate, past }) => {
+    // All three reads start now; none waits on another. The Slate names the
+    // date each answered for, so a read that straddled midnight ET is dropped.
+    const slateRead = settle(fetchSlate(undefined, { signal, fallback }));
+    const edgesRead = settle(fetchSlateEdges({ signal, fallback }));
+    const targetsRead = account ? settle(fetchResolvedTargets({ signal, fallback })) : null;
+    slateRead.then(warnIfFailed);
+    edgesRead.then(warnIfFailed);
+    targetsRead?.then(warnIfFailed);
+
+    // The day on screen from the cache, kept here rather than read inside a
+    // state updater, so storage writes happen in the order they are made.
+    let paintedDate = cached.slateDate;
+    const dropPaint = () => {
+      clearCache();
+      paintedDate = null;
+      setState((current) => ({ ...EMPTY, targets: current.targets }));
+    };
+    // A Slate that failed to read leaves the painted cache alone. Once it has
+    // answered, the cache is decided at once, without waiting for Edges: an
+    // empty Slate, or one for another day than the painted one, clears it.
+    slateRead.then((slate) => {
+      if (signal.aborted || slate.status !== 'fulfilled') return;
+      const { games, slateDate } = slate.value;
+      if (games.length === 0 || (paintedDate !== null && paintedDate !== slateDate)) dropPaint();
+    });
+    // Games and Targets render as each arrives: a slow Targets read must not
+    // hold back the ticker. Edges can only replace the paint, or clear it when
+    // they answer null or for another day; a failed Edges read keeps a
+    // same-day paint.
+    Promise.all([slateRead, edgesRead]).then(([slate, edges]) => {
       if (signal.aborted) return;
-      warnIfFailed(slate);
-      const slateDate = slate.status === 'fulfilled' ? slate.value.slateDate : null;
-      // Games and Targets render as each arrives: a slow Targets read must not
-      // hold back the ticker.
-      if (slateDate !== null && slate.value.games.length > 0) {
-        settle(fetchSlateEdges({ date: slateDate, signal })).then((edges) => {
-          if (signal.aborted) return;
-          warnIfFailed(edges);
-          if (edges.status !== 'fulfilled' || edges.value === null) return;
-          if (edges.value.slateDate !== slateDate) return;
-          setState((current) => ({
-            ...current,
-            games: joinGames(slate.value, edges.value),
-            spotlight: edges.value.spotlight,
-            slateDate,
-            past,
-          }));
-        });
+      if (slate.status !== 'fulfilled' || slate.value.games.length === 0) return;
+      if (edges.status !== 'fulfilled') return;
+      const confirmed = edges.value;
+      if (confirmed === null || confirmed.slateDate !== slate.value.slateDate) {
+        dropPaint();
+        return;
       }
-      if (!account) return;
-      settle(fetchResolvedTargets({ date: slateDate ?? undefined, signal })).then((resolved) => {
+      const fresh = {
+        games: joinGames(slate.value, confirmed),
+        spotlight: confirmed.spotlight,
+        slateDate: slate.value.slateDate,
+        past: slate.value.fallback === fallback,
+      };
+      writeCache(fresh);
+      paintedDate = fresh.slateDate;
+      setState((current) => ({ ...current, ...fresh }));
+    });
+    if (targetsRead) {
+      Promise.all([slateRead, targetsRead]).then(([slate, resolved]) => {
         if (signal.aborted) return;
-        warnIfFailed(resolved);
         if (resolved.status !== 'fulfilled') return;
-        if (slateDate !== null && resolved.value.slateDate !== slateDate) return;
+        if (slate.status === 'fulfilled' && resolved.value.slateDate !== slate.value.slateDate) {
+          return;
+        }
         setState((current) => ({ ...current, targets: firingTargets(resolved.value) }));
       });
-    });
+    }
     return () => controller.abort();
   }, [landing, account]);
   return state;

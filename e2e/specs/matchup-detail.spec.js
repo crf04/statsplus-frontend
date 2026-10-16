@@ -233,10 +233,12 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   const rail = page.getByRole('complementary', { name: 'Targetable players' });
   await expect(rail).toContainText('By season scoring · 2 targetable returned');
   const lebron = rail.getByRole('article', { name: 'LeBron James player' });
-  await expect(lebron).toContainText('27.5line · 25.4 avg');
+  await expect(lebron).toContainText('27.5market line · 25.4 avg');
   await expect(
-    lebron.getByLabel('PTS posted by PrizePicks and Underdog at 26.5, 1 lower than PrizePicks'),
-  ).toHaveText('PPUD −1');
+    lebron.getByLabel(
+      'PTS posted by PrizePicks, Underdog at 26.5, 1 lower than the market and Polymarket',
+    ),
+  ).toHaveText('PPUD −1PM');
   await expect(lebron.getByText('Lines disagree')).toHaveCount(1);
   const austin = rail.getByRole('article', { name: 'Austin Reaves player' });
   await expect(austin).toContainText('+24%Matchup Score');

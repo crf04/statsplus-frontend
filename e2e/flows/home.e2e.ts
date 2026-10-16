@@ -4,7 +4,7 @@
 // and the ladder are public, so a signed-out visitor sees them too, with a
 // sign-up card where Targets would be (crf04/statsplus#211).
 import { expect } from 'e2e';
-import { slateGame, slatePayload } from '../fixtures/courtai.js';
+import { slateEdgesPayload, slateGame, slatePayload } from '../fixtures/courtai.js';
 import { signedInTest, signedOutTest } from './support/courtai.ts';
 
 signedInTest(
@@ -23,6 +23,19 @@ signedInTest(
     await expect(cell).toContainText('James +12%');
     expect(api.sent('/api/games/slate/edges', 'GET')).toHaveLength(1);
     await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
+    // Each home read asks for the previous game day itself and names no date.
+    for (const path of [
+      '/api/games/slate',
+      '/api/games/slate/edges',
+      '/api/user/targets/resolve',
+    ]) {
+      const [request] = api.sent(path, 'GET');
+      expect([path, request.search.get('fallback'), request.search.has('date')]).toEqual([
+        path,
+        'previous_game_day',
+        false,
+      ]);
+    }
     await app.screenshot('home-top');
 
     // Tonight: Best with its reason; no unfavourable Matchup, so no Toughest.
@@ -90,16 +103,20 @@ signedOutTest(
 );
 
 signedInTest('no games today shows the last game day, labelled', async ({ app, screen, api }) => {
+  // One fallback read answers each of the three: the Slate says so, and
+  // Edges and Targets name the same day.
   await api.override({
     '/api/games/slate': (request) => {
-      const date = new URL(request.url()).searchParams.get('date');
+      expect(new URL(request.url()).searchParams.get('fallback')).toBe('previous_game_day');
+      expect(new URL(request.url()).searchParams.has('date')).toBe(false);
       return {
-        body:
-          date === '2026-01-15'
-            ? slatePayload('2026-01-15', [slateGame])
-            : slatePayload('2026-10-15', [], { previousGameDate: '2026-01-15' }),
+        body: slatePayload('2026-01-15', [slateGame], {
+          previousGameDate: '2026-01-14',
+          fallback: 'previous_game_day',
+        }),
       };
     },
+    '/api/games/slate/edges': { body: slateEdgesPayload('2026-01-15', [slateGame]) },
   });
   await app.open('/');
 

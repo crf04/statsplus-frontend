@@ -17,6 +17,8 @@ Within each card, player chips are ordered by descending absolute sigma deviatio
 
 **Amended for the readable Matchup sheet (crf04/statsplus#179).** The display gate above is unchanged, but the Matchup Defense Sheet now lists only the players who lean on a slice more than league (`sigma_deviation > 0`), as `<name> <share>% +<σ>σ`, highest sigma first. A soft spot is read for the players it suits, so those below league are left off the sheet.
 
+**Amended: the volume floor reads the whole Base.** The per-game floor is now the player's volume across every slice of the Base, summed as each slice's `volume / games_played`, which is how the backend's thin rule counts it. A shot type's twos or threes row reads the same shot-type total against the 4 FGA floor, replacing their own 2 FGA floor. A slice-level floor hid real leans in slices that are a small part of a busy player's game, such as Kevon Looney's cuts at 14% of his possessions. The sigma gate still decides whether the slice itself is a lean.
+
 ## Considered options
 
 **Only positive deviations of at least 1σ** (the previous rule). Replaced by the requested ±0.5σ cutoff so cards show more players and include both higher and lower shares than the league average. The chip's signed sigma distinguishes the direction.

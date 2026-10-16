@@ -426,6 +426,31 @@ function decodeDefensiveColumns(columns, availability) {
   );
 }
 
+const decodeDietSeason = (season) => {
+  if (!isRecord(season)) throw invalid();
+  if (!Number.isInteger(season.games_played) || season.games_played <= 0) throw invalid();
+  const share = requireNumber(season.share);
+  const volume = requireNumber(season.volume);
+  if (share < 0 || volume < 0) throw invalid();
+  return {
+    share,
+    volume,
+    gamesPlayed: season.games_played,
+    volumeUnit: requireString(season.volume_unit),
+    volumePerGame: volume / season.games_played,
+    leagueAverageShare: requireNumberOrNull(season.league_average_share),
+    sigmaDeviation: requireNumberOrNull(season.sigma_deviation),
+  };
+};
+
+// A shot type's twos and threes, each its own share of all his FGA. Absent
+// (an older backend) or null (no stored split) reads as no split.
+const decodeShotValues = (shotValues) => {
+  if (shotValues === undefined || shotValues === null) return null;
+  if (!isRecord(shotValues)) throw invalid();
+  return { 2: decodeDietSeason(shotValues['2']), 3: decodeDietSeason(shotValues['3']) };
+};
+
 const decodeDietShares = (dietShares) => {
   if (
     !isRecord(dietShares) ||
@@ -441,23 +466,13 @@ const decodeDietShares = (dietShares) => {
           if (!isRecord(entry) || Object.hasOwn(entry, 'last_15') || !isRecord(entry.season)) {
             throw invalid();
           }
-          const season = entry.season;
-          if (!Number.isInteger(season.games_played) || season.games_played <= 0) throw invalid();
-          const share = requireNumber(season.share);
-          const volume = requireNumber(season.volume);
-          if (share < 0 || volume < 0) throw invalid();
-          const leagueAverageShare = requireNumberOrNull(season.league_average_share);
-          const sigmaDeviation = requireNumberOrNull(season.sigma_deviation);
           return {
             key: requireString(entry.key),
             season: {
-              share,
-              volume,
-              gamesPlayed: season.games_played,
-              volumeUnit: requireString(season.volume_unit),
-              volumePerGame: volume / season.games_played,
-              leagueAverageShare,
-              sigmaDeviation,
+              ...decodeDietSeason(entry.season),
+              ...(base === 'shot_types'
+                ? { shotValues: decodeShotValues(entry.season.shot_values) }
+                : {}),
             },
           };
         }),

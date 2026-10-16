@@ -86,7 +86,7 @@ test('signed out, the query box, Run it and Browse are enabled while "Try it" on
 test('Run it signs up and then runs exactly the typed query', async () => {
   const onFiltersApplied = jest.fn(() => ({ ok: true }));
   apiClient.post.mockResolvedValue({ data: { player_name: 'LeBron James' } });
-  mockAuth.signInWithGoogle.mockResolvedValue({});
+  mockAuth.signInWithGoogle.mockResolvedValue({ uid: 'new-reader' });
   const { again } = renderHome({ onFiltersApplied });
   fireEvent.change(screen.getByRole('textbox'), { target: { value: 'LeBron James this year' } });
 
@@ -107,7 +107,7 @@ test('Run it signs up and then runs exactly the typed query', async () => {
 });
 
 test('Browse signs up and then opens the browse workspace', async () => {
-  mockAuth.signInWithGoogle.mockResolvedValue({});
+  mockAuth.signInWithGoogle.mockResolvedValue({ uid: 'new-reader' });
   const { again } = renderHome();
 
   fireEvent.click(screen.getByRole('button', { name: 'Browse without a query' }));

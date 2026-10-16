@@ -119,8 +119,8 @@ const NaturalLanguageQuery = ({
     return () => clearInterval(id);
   }, [inWorkspace, waitlisted]);
 
-  const runQuery = async () => {
-    if (!query.trim()) return;
+  const runQuery = async (submitted) => {
+    if (!submitted.trim()) return;
 
     setLoading(true);
     setError('');
@@ -140,7 +140,7 @@ const NaturalLanguageQuery = ({
       const response = await apiClient.post(
         getApiUrl('NL_QUERY'),
         {
-          query: query.trim(),
+          query: submitted.trim(),
         },
         { signal: controller.signal, timeout: NL_QUERY_TIMEOUT },
       );
@@ -172,7 +172,7 @@ const NaturalLanguageQuery = ({
 
       // Update parent with the successful query
       if (onQueryUpdate) {
-        onQueryUpdate(query.trim());
+        onQueryUpdate(submitted.trim());
       }
     } catch (err) {
       if (isRequestCancelled(err) || queryRequestRef.current.id !== requestId) return;
@@ -189,7 +189,7 @@ const NaturalLanguageQuery = ({
   const browse = useSignUpThen(() => navigate(`/?${BROWSE_PARAM}=1`));
   const handleSubmit = (e) => {
     e.preventDefault();
-    return submitQuery();
+    return submitQuery(query);
   };
 
   const getConfidenceColor = (confidence) => {

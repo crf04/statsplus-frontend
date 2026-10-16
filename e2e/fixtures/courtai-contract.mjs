@@ -2489,6 +2489,16 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/games/ladder') {
+      // The backend refuses any query parameter rather than ignoring it.
+      if ([...url.searchParams.keys()].length > 0) {
+        await route.fulfill({
+          status: 400,
+          json: {
+            error: { code: 'invalid_input', message: 'The ladder takes no query parameters.' },
+          },
+        });
+        return;
+      }
       await route.fulfill({ json: ladderPayload() });
       return;
     }

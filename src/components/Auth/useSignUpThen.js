@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 /*
@@ -9,29 +9,39 @@ import { useAuth } from '../../contexts/AuthContext';
  * blocked. The action runs from an effect once the account exists, so it sees
  * the signed-in render rather than the one that asked. A cancelled or failed
  * attempt forgets the action and says nothing: the page and what the visitor
- * typed stay as they were.
+ * typed stay as they were. While a popup is open, further triggers are ignored,
+ * and the action runs only for the account that popup returned, so an
+ * unrelated sign-in elsewhere runs nothing.
  */
 export const useSignUpThen = (action) => {
-  const { isAuthenticated, signInWithGoogle } = useAuth();
-  const pending = useRef(null);
+  const { isAuthenticated, currentUser, signInWithGoogle } = useAuth();
+  const attempt = useRef(null);
   const latest = useRef(action);
+  const [returnedUid, setReturnedUid] = useState(null);
   useEffect(() => {
     latest.current = action;
   });
+  const uid = currentUser?.uid ?? null;
   useEffect(() => {
-    if (!isAuthenticated || !pending.current) return;
-    const { args } = pending.current;
-    pending.current = null;
-    latest.current(...args);
-  }, [isAuthenticated]);
+    const current = attempt.current;
+    if (!current || !current.uid || current.uid !== uid) return;
+    attempt.current = null;
+    latest.current(...current.args);
+  }, [uid, returnedUid]);
   return useCallback(
     async (...args) => {
       if (isAuthenticated) return latest.current(...args);
-      pending.current = { args };
+      if (attempt.current) return undefined;
+      const mine = { args, uid: null };
+      attempt.current = mine;
       try {
-        await signInWithGoogle({ silent: true });
+        const user = await signInWithGoogle({ silent: true });
+        if (attempt.current === mine) {
+          mine.uid = user?.uid ?? null;
+          setReturnedUid(mine.uid);
+        }
       } catch {
-        pending.current = null;
+        if (attempt.current === mine) attempt.current = null;
       }
       return undefined;
     },

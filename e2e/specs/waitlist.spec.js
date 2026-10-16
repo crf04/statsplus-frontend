@@ -71,3 +71,31 @@ test('other 403 responses leave the signed-in app in place', async ({ authentica
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
   await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toHaveCount(0);
 });
+
+for (const search of ['?browse=1', '?player_name=LeBron+James']) {
+  test(`a waitlisted account opening /${search} lands on the public home page under the banner`, async ({
+    waitlistedPage: page,
+  }) => {
+    await page.goto(`/${search}`);
+
+    await expect(page.getByRole('heading', { name: "You're on the waitlist" })).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { name: 'Get more specific' })).toBeVisible();
+    await expect(page.getByRole('textbox')).toBeDisabled();
+  });
+}
+
+test('the ladder route refuses any query parameter like the backend', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/');
+  const refusal = await page.evaluate(async () => {
+    const response = await fetch('/api/games/ladder?player_name=LeBron+James');
+    return { status: response.status, body: await response.json() };
+  });
+
+  expect(refusal).toEqual({
+    status: 400,
+    body: { error: { code: 'invalid_input', message: 'The ladder takes no query parameters.' } },
+  });
+});

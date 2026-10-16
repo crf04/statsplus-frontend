@@ -26,7 +26,13 @@ decoder and `e2e/fixtures/courtai.js` aligned with that contract.
 2. Add or update the smallest failing Jest or Playwright test.
 3. Make the smallest coherent implementation change.
 4. Update documentation and the browser fixture when public behavior changes.
-5. Run the completion gate, which runs every command CI runs:
+5. Inner loop: run `npm run check:changed`. It runs lint, format:check,
+   typecheck:e2e and build, Jest only for tests affected by the diff against
+   `origin/master`, and browser specs and flows only for changed files, plus the
+   `@critical` subset when `src/`, fixtures, the bridge or config changed.
+6. Completion gate: `npm run check` is the full suite and must pass in CI (all
+   three jobs green: validate, E2E, e2e flows) before a pull request is marked
+   ready or merged.
 
    ```bash
    npm run check

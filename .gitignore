@@ -11,6 +11,7 @@
 /playwright-report
 /test-results
 /blob-report
+.eslintcache
 
 # production
 /build

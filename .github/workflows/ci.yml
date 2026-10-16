@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -38,7 +42,6 @@ jobs:
 
   e2e:
     name: E2E
-    needs: validate
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
@@ -75,7 +78,6 @@ jobs:
 
   flows:
     name: e2e flows
-    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

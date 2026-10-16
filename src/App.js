@@ -8,6 +8,9 @@ import WaitlistBanner from './components/Auth/WaitlistBanner';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
+import LegalFooter from './legal/LegalFooter';
+import SignInTerms from './legal/SignInTerms';
+import { PRIVACY_PATH, RESPONSIBLE_GAMBLING_PATH, TERMS_PATH } from './legal/legalConfig';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -18,6 +21,9 @@ const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
+const TermsPage = lazy(() => import('./legal/TermsPage'));
+const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
+const ResponsibleGamblingPage = lazy(() => import('./legal/ResponsibleGamblingPage'));
 
 class RouteErrorBoundary extends Component {
   state = { failed: false };
@@ -73,7 +79,14 @@ function AppNav() {
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
-          {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
+          {isAuthenticated ? (
+            <UserProfile />
+          ) : (
+            <>
+              <LoginButton size="sm" />
+              <SignInTerms className="legal-signin-header" />
+            </>
+          )}
         </div>
       </nav>
     </header>
@@ -140,13 +153,53 @@ function SignedInShell() {
   );
 }
 
+// The legal pages are public: they are routed ahead of the signed-in shell, which
+// sends unknown paths to `/` and shows a waitlisted account only its waitlist.
+function LegalShell({ children }) {
+  const { currentUser } = useAuth();
+  useFirstTouchSender(currentUser?.uid);
+  return (
+    <>
+      <AppNav />
+      <RouteContent>{children}</RouteContent>
+    </>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div className="App">
           <ProtectedRoute>
-            <SignedInShell />
+            <Routes>
+              <Route
+                path={TERMS_PATH}
+                element={
+                  <LegalShell>
+                    <TermsPage />
+                  </LegalShell>
+                }
+              />
+              <Route
+                path={PRIVACY_PATH}
+                element={
+                  <LegalShell>
+                    <PrivacyPage />
+                  </LegalShell>
+                }
+              />
+              <Route
+                path={RESPONSIBLE_GAMBLING_PATH}
+                element={
+                  <LegalShell>
+                    <ResponsibleGamblingPage />
+                  </LegalShell>
+                }
+              />
+              <Route path="*" element={<SignedInShell />} />
+            </Routes>
+            <LegalFooter />
           </ProtectedRoute>
         </div>
       </BrowserRouter>

@@ -28,7 +28,9 @@ const signedInAs = (uid, signInWithGoogle) => ({
 });
 
 describe('useSignUpThen', () => {
-  test('a double click opens one popup; after it is cancelled a retry that succeeds runs the action once', async () => {
+  // Firebase only reports a closed popup seconds later, so a click in that gap
+  // must open a fresh popup rather than wait on the old one.
+  test('a click while a popup is pending opens a new one, and only the newest action runs, once', async () => {
     const first = deferred();
     const second = deferred();
     const signIn = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
@@ -39,30 +41,30 @@ describe('useSignUpThen', () => {
     let a;
     let b;
     act(() => {
-      a = result.current('ladder');
-      b = result.current('ladder');
+      a = result.current('first');
     });
-    expect(signIn).toHaveBeenCalledTimes(1);
+    act(() => {
+      b = result.current('second');
+    });
+    expect(signIn).toHaveBeenCalledTimes(2);
 
     await act(async () => {
-      first.reject(new Error('popup closed'));
-      await Promise.all([a, b]);
+      first.reject(new Error('auth/cancelled-popup-request'));
+      await a;
     });
     expect(action).not.toHaveBeenCalled();
 
-    let c;
-    act(() => {
-      c = result.current('retry');
+    await act(async () => {
+      second.resolve({ uid: 'u1' });
+      await b;
     });
-    expect(signIn).toHaveBeenCalledTimes(2);
     await act(async () => {
       mockAuth = signedInAs('u1', signIn);
       rerender();
-      second.resolve({ uid: 'u1' });
-      await c;
     });
-    expect(action).toHaveBeenCalledTimes(1);
-    expect(action).toHaveBeenCalledWith('retry');
+    expect(action.mock.calls).toEqual([['second']]);
+    await act(async () => rerender());
+    expect(action.mock.calls).toEqual([['second']]);
   });
 
   test('another account signing in while the popup is open runs nothing', async () => {

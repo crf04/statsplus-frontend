@@ -6,13 +6,21 @@ import {
   orderCategories,
 } from './displayConfig';
 
-const BASE_ORDER = ['shotTypes', 'shotZones', 'playTypes', 'assistLocations', 'traditional'];
+const BASE_ORDER = [
+  'shotTypes',
+  'shotZones',
+  'playTypes',
+  'assistLocations',
+  'traditional',
+  'reboundTypes',
+];
 const BASE_LABELS = {
   playTypes: 'Play types',
   shotZones: 'Shot zones',
   shotTypes: 'Shot types',
   assistLocations: 'Assist locations',
   traditional: 'Traditional',
+  reboundTypes: 'Rebound types',
 };
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
 

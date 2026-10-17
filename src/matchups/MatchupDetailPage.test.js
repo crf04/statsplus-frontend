@@ -658,6 +658,117 @@ test('renders governed traditional sheet rows without duplicate defensive column
   expect(within(boxScore).queryByText(/OPP/)).not.toBeInTheDocument();
 });
 
+test('shows the Rebound Types section for REB and not for PTS', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.reboundTypes = {
+    season: { status: 'available', unavailableReason: null },
+    last15: { status: 'available', unavailableReason: null },
+  };
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.reboundTypes = [
+    ['DefTwoPtRebounds', 22.1, 9, 1.4, 25],
+    ['DefThreePtRebounds', 9.3, -12, -1.5, 4],
+    ['FTDefRebounds', 1.2, 5, 1.1, 18],
+    ['OffTwoPtRebounds', 7.4, 14, 1.6, 27],
+    ['OffThreePtRebounds', 3.1, 6, 1.2, 19],
+    ['FTOffRebounds', 0.8, -7, -1.3, 12],
+  ].map(([key, allowed, percent, sigma, rank]) => ({
+    key,
+    sliceKey: key,
+    label: key,
+    markets: ['REB', 'PR', 'RA', 'PRA'],
+    season: value(allowed, percent, sigma, rank),
+    last15: value(allowed, percent, sigma, rank),
+  }));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('REB');
+  lebron.statCategories.push('REB');
+  lebron.provenance.prizepicks.push('REB');
+  const reboundShare = (share, volumePerGame) => [
+    {
+      key: 'OffTwoPtRebounds',
+      season: { share, volumePerGame, sigmaDeviation: 1.8, leagueAverageShare: 0.05 },
+    },
+  ];
+  // LeBron clears both floors; Austin leans nearly as far but boards under one a game, so his lean is shown thin.
+  const austin = candidate.players.find((player) => player.id === 1630559);
+  austin.postedMarkets.push('REB');
+  austin.statCategories.push('REB');
+  austin.provenance.prizepicks.push('REB');
+  austin.scores.REB = austin.scores.PTS;
+  austin.dietShares.reboundTypes = reboundShare(0.3, 0.6);
+  lebron.scores.REB = lebron.scores.PTS;
+  lebron.dietShares.reboundTypes = reboundShare(0.38, 2.4);
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'REB' }));
+  const section = screen.getByRole('region', { name: 'Rebound Types' });
+  expect(
+    within(section)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label')),
+  ).toEqual([
+    'OREB off 2PT misses',
+    'DREB off 2PT misses',
+    'OREB off 3PT misses',
+    'DREB off FT misses',
+    'OREB off FT misses',
+    'DREB off 3PT misses',
+  ]);
+  expect(within(section).getByRole('article', { name: 'OREB off 2PT misses' })).toHaveTextContent(
+    '+14%',
+  );
+  const leans = within(section).getByRole('list', {
+    name: 'Players leaning on OREB off 2PT misses',
+  });
+  const items = within(leans).getAllByRole('listitem');
+  expect(items.map((item) => item.textContent)).toEqual([
+    'Austin Reaves 30% · thin',
+    'LeBron James 38%',
+  ]);
+  expect(items[0]).toHaveAttribute(
+    'title',
+    '30% of his rebounds · thin sample (0.6 rebounds per game)',
+  );
+  expect(items[1]).toHaveAttribute('title', '38% of his rebounds');
+  expect(
+    within(section).queryByRole('button', { name: /Save .* as a Target/ }),
+  ).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.queryByRole('region', { name: 'Rebound Types' })).not.toBeInTheDocument();
+});
+
+test('an unavailable Rebound Types base explains itself for REB and stays silent for PTS', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.reboundTypes = {
+    season: { status: 'available', unavailableReason: null },
+    last15: { status: 'missing', unavailableReason: 'window_not_ready' },
+  };
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.reboundTypes = [];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('REB');
+  lebron.statCategories.push('REB');
+  lebron.provenance.prizepicks.push('REB');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  await userEvent.click(screen.getByRole('button', { name: 'REB' }));
+  expect(screen.getByRole('heading', { name: 'Rebound Types' })).toBeVisible();
+  expect(
+    screen.getByText(
+      'Rebound Types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+    ),
+  ).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.queryByRole('heading', { name: 'Rebound Types' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Rebound Types unavailable/)).not.toBeInTheDocument();
+});
+
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

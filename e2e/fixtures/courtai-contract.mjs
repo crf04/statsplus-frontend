@@ -148,6 +148,29 @@ const defensiveColumns = (offset = 0) => ({
   },
 });
 
+/*
+ * Rebound Types is a breakdown of OPP_REB, so a team's six slices add up to its
+ * Season OPP_REB (45, plus the team offset, carried by the second slice) and the
+ * league averages add up to the league OPP_REB average (46). Last 15 slices add
+ * up to the same total, since the fixture withholds Last 15 OPP_REB itself.
+ * Relative percent and sigma are derived from the league figures.
+ */
+const REBOUND_TYPES = [
+  { key: 'DefTwoPtRebounds', average: 21, sigma: 1.5, season: 19, last15: 18.6, ranks: [6, 5] },
+  { key: 'DefThreePtRebounds', average: 12, sigma: 0.5, season: 12.6, last15: 13, ranks: [24, 26] },
+  { key: 'FTDefRebounds', average: 1.3, sigma: 0.08, season: 1.4, last15: 1.3, ranks: [26, 15] },
+  { key: 'OffTwoPtRebounds', average: 7.2, sigma: 0.6, season: 8.2, last15: 8.4, ranks: [27, 28] },
+  { key: 'OffThreePtRebounds', average: 3.5, sigma: 0.5, season: 2.9, last15: 3, ranks: [5, 7] },
+  { key: 'FTOffRebounds', average: 1, sigma: 0.08, season: 0.9, last15: 0.7, ranks: [8, 3] },
+];
+const reboundValue = (allowed, average, sigma, rank) =>
+  defenseValue(
+    allowed,
+    Math.round(((allowed - average) / average) * 100),
+    Math.round(((allowed - average) / sigma) * 10) / 10,
+    rank,
+  );
+
 const teamSheet = (team, playTypes, offset = 0) => ({
   team_id: team.team_id,
   tricode: team.tricode,
@@ -233,6 +256,15 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(19 + offset, -2, -0.3, 13),
       ),
     ],
+    rebound_types: REBOUND_TYPES.map(({ key, average, sigma, season, last15, ranks }, index) =>
+      defenseRow(
+        key,
+        key,
+        ['REB', 'PR', 'RA', 'PRA'],
+        reboundValue(season + (index === 1 ? offset : 0), average, sigma, ranks[0]),
+        reboundValue(last15 + (index === 1 ? offset : 0), average, sigma, ranks[1]),
+      ),
+    ),
   },
   defensive_columns: defensiveColumns(offset),
 });
@@ -246,7 +278,14 @@ const leagueRow = (key, seasonAverage, seasonSigma, last15Average, last15Sigma) 
 
 const league = {
   surface_availability: Object.fromEntries(
-    ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
+    [
+      'play_types',
+      'shot_zones',
+      'shot_types',
+      'assist_locations',
+      'traditional',
+      'rebound_types',
+    ].map((base) => [
       base,
       {
         season: { status: 'available', unavailable_reason: null },
@@ -286,6 +325,9 @@ const league = {
       leagueRow('OPP_BLK', 4.9, 0.6, 4.8, 0.5),
       leagueRow('OPP_PF', 19.5, 1.2, 19.2, 1.1),
     ],
+    rebound_types: REBOUND_TYPES.map(({ key, average, sigma }) =>
+      leagueRow(key, average, sigma, average, sigma),
+    ),
   },
   defensive_columns: Object.fromEntries(
     [
@@ -514,6 +556,9 @@ export const matchupPayload = {
         // Current-matchup assist_locations AtRimAssists population: mean .14, pstdev .12,
         // shared with Austin's and Tatum's facts below.
         assist_locations: [dietShare('AtRimAssists', 0.31, 0.14, 0.12, 1.1, 'assists')],
+        // Rebound Types OffTwoPtRebounds population: mean .05, pstdev .04.
+        // 1.75 sigma above league and 2.4 rebounds a game: the lean renders.
+        rebound_types: [dietShare('OffTwoPtRebounds', 0.12, 0.05, 0.04, 2.4, 'rebounds')],
       },
       injury_badge_ref: null,
       scores: scores(COMPLETE_MARKETS, 0.12, -0.02),
@@ -523,8 +568,8 @@ export const matchupPayload = {
       name: 'Austin Reaves',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
-      posted_markets: ['PTS', 'FG3A', 'STL'],
-      provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['STL'] },
+      posted_markets: ['PTS', 'FG3A', 'STL', 'REB'],
+      provenance: { prizepicks: ['PTS', 'FG3A', 'REB'], underdog: ['STL'] },
       // No book has numbered him yet, so the rail falls back to his Matchup Score.
       lines: {},
       season_scoring: 20.1,
@@ -543,9 +588,12 @@ export const matchupPayload = {
         // assist_locations population), but under the assist-locations volume
         // floor (1/g): hidden by volume, not sigma.
         assist_locations: [dietShare('AtRimAssists', 0.35, 0.14, 0.12, 0.8, 'assists')],
+        // 1.75 sigma above the same OffTwoPtRebounds population, but 0.6
+        // rebounds a game is under the 1/g floor: the lean renders thin.
+        rebound_types: [dietShare('OffTwoPtRebounds', 0.12, 0.05, 0.04, 0.6, 'rebounds')],
       },
       injury_badge_ref: 'injury-austin',
-      scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08, {
+      scores: scores(['PTS', 'FG3A', 'STL', 'REB'], 0.24, 0.08, {
         zeroMarkets: ['FG3A'],
       }),
     },
@@ -1149,15 +1197,15 @@ export const austinSelectionPayload = {
         '2025-12-18',
         'MIA @ BOS',
         33,
-        { PTS: 22, FG3A: 7, STL: 1 },
-        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+        { PTS: 22, FG3A: 7, STL: 1, REB: 4 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004, REB: 0.01 },
       ),
       selectionLine(
         null,
         'AVG',
         33,
-        { PTS: 22, FG3A: 7, STL: 1 },
-        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+        { PTS: 22, FG3A: 7, STL: 1, REB: 4 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004, REB: 0.01 },
       ),
     ],
   },

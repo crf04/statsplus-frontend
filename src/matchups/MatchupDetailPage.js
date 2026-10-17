@@ -15,7 +15,9 @@ import {
   bookName,
   findDietShare,
   formatScorePercent,
+  dietBaseVolumePerGame,
   getDisplayableDietShare,
+  isThinDietShare,
   orderCategories,
   sliceName,
 } from './displayConfig';
@@ -394,13 +396,21 @@ function PlayerRail({
 
 /* ---------------------------- Defense Sheet ---------------------------- */
 
-const SHEET_BASES = ['playTypes', 'shotTypes', 'shotZones', 'assistLocations', 'traditional'];
+const SHEET_BASES = [
+  'playTypes',
+  'shotTypes',
+  'shotZones',
+  'assistLocations',
+  'traditional',
+  'reboundTypes',
+];
 const BASE_LABELS = {
   playTypes: 'Play types',
   shotTypes: 'Shot types',
   shotZones: 'Shot zones',
   assistLocations: 'Assists by location',
   traditional: 'Box score',
+  reboundTypes: 'Rebound Types',
 };
 // Each category names its measures once, in its header row.
 const BASE_COLUMNS = {
@@ -409,6 +419,7 @@ const BASE_COLUMNS = {
   shotZones: ['Attempts', 'Makes'],
   assistLocations: ['Allowed'],
   traditional: ['Allowed'],
+  reboundTypes: ['Allowed'],
 };
 const MEASURE_COLUMNS = {
   PTS: 'Points',
@@ -419,11 +430,14 @@ const MEASURE_COLUMNS = {
   FG2M: 'Makes',
   FG3M: 'Makes',
 };
+// Bases that publish no rows while unavailable still belong to these markets.
+const BASE_MARKETS = { reboundTypes: ['REB', 'PR', 'RA', 'PRA'] };
 const SHARE_LABELS = {
   playTypes: 'possessions',
   shotZones: 'FGA',
   shotTypes: 'FGA',
   assistLocations: 'assists',
+  reboundTypes: 'rebounds',
 };
 
 const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);
@@ -506,7 +520,9 @@ const leansFor = (players, base, sliceKey, shotValue, market) =>
         .filter((player) => market === 'All' || player.statCategories.includes(market))
         .flatMap((player) => {
           const share = getDisplayableDietShare(player, base, sliceKey, shotValue);
-          return share && share.sigmaDeviation > 0 ? [{ player, share }] : [];
+          if (!share || share.sigmaDeviation <= 0) return [];
+          const volume = dietBaseVolumePerGame(player, base);
+          return [{ player, share, thin: isThinDietShare(base, volume), volume }];
         })
         .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
     : [];
@@ -554,7 +570,11 @@ function DefenseSheet({
       return {
         base,
         availability,
-        relevant: marketRows.length > 0,
+        // An unavailable base may carry no rows to name its markets, so the
+        // markets it supports decide whether this selection is waiting on it.
+        relevant:
+          marketRows.length > 0 ||
+          (BASE_MARKETS[base] ? market === 'All' || BASE_MARKETS[base].includes(market) : false),
         legacyUnavailableRow: null,
         groups: [],
       };
@@ -688,12 +708,18 @@ function DefenseSheet({
                     )}
                     {leans.length > 0 && (
                       <ul className="sheet-leans" aria-label={`Players leaning on ${group.name}`}>
-                        {leans.map(({ player, share }) => (
+                        {leans.map(({ player, share, thin, volume }) => (
                           <li
                             key={player.id}
-                            title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}`}
+                            className={thin ? 'lean-thin' : undefined}
+                            title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}${
+                              thin
+                                ? ` · thin sample (${volume.toFixed(1)} ${SHARE_LABELS[base]} per game)`
+                                : ''
+                            }`}
                           >
                             <span>{player.name}</span> <b>{Math.round(share.share * 100)}%</b>
+                            {thin && <em> · thin</em>}
                           </li>
                         ))}
                       </ul>

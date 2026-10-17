@@ -104,6 +104,12 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
     /^Blocks/,
     /^Rebounds/,
     /^Steals/,
+    /^OREB off 2PT misses/,
+    /^DREB off 3PT misses/,
+    /^DREB off FT misses/,
+    /^DREB off 2PT misses/,
+    /^OREB off FT misses/,
+    /^OREB off 3PT misses/,
   ]);
   await expect(page.getByRole('list', { name: 'Players leaning on At the rim' })).toHaveText(
     'James Harden 38%Kawhi Leonard 30%',
@@ -271,6 +277,25 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await market.getByRole('button', { name: 'REB' }).click();
   await expect(lebron).toContainText('7.5line');
   await expect(lebron.getByLabel('REB posted by PrizePicks')).toHaveText('PP');
+  await expect(sheet.getByRole('heading', { level: 3, name: 'Rebound Types' })).toBeVisible();
+  await expect(
+    sheet.getByRole('article', { name: 'OREB off 2PT misses' }).getByTitle(/rank 27 of 30/),
+  ).toContainText('+14%');
+  await expect(
+    page.getByRole('list', { name: 'Players leaning on OREB off 2PT misses' }),
+  ).toHaveText('LeBron James 12%Austin Reaves 12% · thin');
+  const reboundLeans = page
+    .getByRole('list', { name: 'Players leaning on OREB off 2PT misses' })
+    .getByRole('listitem');
+  await expect(reboundLeans.nth(0)).toHaveAttribute('title', '12% of his rebounds');
+  await expect(reboundLeans.nth(1)).toHaveAttribute(
+    'title',
+    '12% of his rebounds · thin sample (0.6 rebounds per game)',
+  );
+  await expect(sheet.getByRole('button', { name: /Save OREB .* as a Target/ })).toHaveCount(0);
+  await market.getByRole('button', { name: 'PTS' }).click();
+  await expect(sheet.getByRole('heading', { level: 3, name: 'Rebound Types' })).toHaveCount(0);
+  await market.getByRole('button', { name: 'REB' }).click();
 
   await market.getByRole('button', { name: 'All' }).click();
   await expect(sheet.getByRole('heading', { level: 3 })).toHaveText([
@@ -279,6 +304,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     'Shot zones',
     'Assists by location',
     'Box score',
+    'Rebound Types',
   ]);
   await expect(sheet.getByRole('article')).toHaveText([
     /^Transition/,
@@ -291,6 +317,12 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     /^Blocks/,
     /^Rebounds/,
     /^Steals/,
+    /^OREB off 2PT misses/,
+    /^DREB off 3PT misses/,
+    /^DREB off FT misses/,
+    /^DREB off 2PT misses/,
+    /^OREB off FT misses/,
+    /^OREB off 3PT misses/,
   ]);
   await expect(page.getByText(/OPP|Backcourt|Arc3|AtRim/)).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Players leaning on Restricted area' })).toHaveText(

@@ -727,6 +727,16 @@
   font-size: 0.86rem;
 }
 
+.sheet-leans li.lean-thin {
+  border-style: dashed;
+  background: transparent;
+}
+
+.sheet-leans em {
+  color: var(--ct-dim);
+  font-style: normal;
+}
+
 .sheet-leans b {
   color: var(--ct-gold);
   font-family: var(--ct-mono);

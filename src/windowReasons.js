@@ -9,4 +9,5 @@ const LAST_15_NOT_OPEN =
 export const WINDOW_REASONS = {
   insufficient_governed_games: LAST_15_NOT_OPEN,
   window_not_ready: LAST_15_NOT_OPEN,
+  publication_inactive: 'Not published yet.',
 };

@@ -769,6 +769,28 @@ test('an unavailable Rebound Types base explains itself for REB and stays silent
   expect(screen.queryByText(/Rebound Types unavailable/)).not.toBeInTheDocument();
 });
 
+test('an inactive Rebound Types publication reads as not published yet', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.reboundTypes = {
+    season: { status: 'missing', unavailableReason: 'publication_inactive' },
+    last15: { status: 'missing', unavailableReason: 'publication_inactive' },
+  };
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.reboundTypes = [];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('REB');
+  lebron.statCategories.push('REB');
+  lebron.provenance.prizepicks.push('REB');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'REB' }));
+  expect(
+    screen.getByText('Rebound Types unavailable for Season: Not published yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/publication_inactive/)).not.toBeInTheDocument();
+});
+
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

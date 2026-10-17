@@ -18,7 +18,7 @@ jest.mock('../contexts/AuthContext', () => ({
   }),
 }));
 
-const CONNECTOR_URL = 'https://statsplus-mcp-production.up.railway.app/mcp';
+const CONNECTOR_URL = 'https://mcp.courtai.app/mcp';
 
 const installClipboard = (writeText) => {
   Object.defineProperty(navigator, 'clipboard', {
@@ -81,7 +81,7 @@ test('copying puts exactly the connector URL on the clipboard and confirms it', 
   userEvent.click(screen.getByRole('button', { name: 'Copy connector URL' }));
 
   expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
-  expect(clipboardText).toBe('https://statsplus-mcp-production.up.railway.app/mcp');
+  expect(clipboardText).toBe('https://mcp.courtai.app/mcp');
 });
 
 test('a blocked clipboard leaves the URL on the page and the button ready to retry', async () => {

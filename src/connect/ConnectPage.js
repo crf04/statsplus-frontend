@@ -4,7 +4,7 @@ import './ConnectPage.css';
 
 // The page always describes the production connector, so this is not an
 // environment setting. The copy button reads the same constant the page shows.
-export const CONNECTOR_URL = 'https://statsplus-mcp-production.up.railway.app/mcp';
+export const CONNECTOR_URL = 'https://mcp.courtai.app/mcp';
 
 const COPIED_MS = 2000;
 

@@ -72,7 +72,7 @@ jobs:
         run: npm run test:e2e -- --shard ${{ matrix.shard }}/2 --reporter=line,blob
 
       - name: Upload browser test blob report
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-blob-${{ matrix.shard }}
@@ -81,7 +81,7 @@ jobs:
           retention-days: 14
 
       - name: Upload browser test failure evidence
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results-${{ matrix.shard }}
@@ -106,41 +106,45 @@ jobs:
           test "$RESULT" = success
 
       - name: Check out repository
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/setup-node@v4
         with:
           node-version: 22.22.3
           cache: npm
 
       - name: Install dependencies
-        if: ${{ !cancelled() }}
+        if: always()
         run: npm ci
 
       - name: Download blob reports
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/download-artifact@v4
         with:
           pattern: playwright-blob-*
           path: all-blob-reports
           merge-multiple: true
-        continue-on-error: true
+
+      - name: Require both shard blob reports
+        if: always()
+        run: |
+          ls all-blob-reports
+          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 2
 
       - name: Merge shard reports
-        if: ${{ !cancelled() }}
+        if: always()
         run: npx playwright merge-reports --reporter html,line ./all-blob-reports
-        continue-on-error: true
 
       - name: Upload browser test evidence
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-evidence
           path: playwright-report/
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 14
 
   flows-target:

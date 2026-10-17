@@ -394,13 +394,21 @@ function PlayerRail({
 
 /* ---------------------------- Defense Sheet ---------------------------- */
 
-const SHEET_BASES = ['playTypes', 'shotTypes', 'shotZones', 'assistLocations', 'traditional'];
+const SHEET_BASES = [
+  'playTypes',
+  'shotTypes',
+  'shotZones',
+  'assistLocations',
+  'traditional',
+  'reboundTypes',
+];
 const BASE_LABELS = {
   playTypes: 'Play types',
   shotTypes: 'Shot types',
   shotZones: 'Shot zones',
   assistLocations: 'Assists by location',
   traditional: 'Box score',
+  reboundTypes: 'Rebound Types',
 };
 // Each category names its measures once, in its header row.
 const BASE_COLUMNS = {
@@ -409,6 +417,7 @@ const BASE_COLUMNS = {
   shotZones: ['Attempts', 'Makes'],
   assistLocations: ['Allowed'],
   traditional: ['Allowed'],
+  reboundTypes: ['Allowed'],
 };
 const MEASURE_COLUMNS = {
   PTS: 'Points',

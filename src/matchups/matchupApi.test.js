@@ -2580,3 +2580,191 @@ test.each([
     'selection endpoint returned an invalid response',
   );
 });
+
+describe('Rebound Types base', () => {
+  const SLICES = [
+    ['DefTwoPtRebounds', 22.1, 9, 1.4, 25],
+    ['DefThreePtRebounds', 9.3, -12, -1.5, 4],
+    ['FTDefRebounds', 1.2, 5, 0.6, 18],
+    ['OffTwoPtRebounds', 7.4, 14, 1.6, 27],
+    ['OffThreePtRebounds', 3.1, 6, 0.7, 19],
+    ['FTOffRebounds', 0.8, -7, -0.8, 12],
+  ];
+  const withReboundTypes = () => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    candidate.league.surface_availability.rebound_types = {
+      season: { status: 'available', unavailable_reason: null },
+      last_15: { status: 'available', unavailable_reason: null },
+    };
+    candidate.league.defense_sheet.rebound_types = SLICES.map(([key, allowed]) => ({
+      key,
+      season: { average_allowed_per_48: allowed - 1, sigma: 0.5 },
+      last_15: { average_allowed_per_48: allowed - 1, sigma: 0.5 },
+    }));
+    candidate.teams[0].defense_sheet.rebound_types = SLICES.map(
+      ([key, allowed, percent, sigma, rank]) => ({
+        key,
+        label: key,
+        markets: ['REB', 'PR', 'RA', 'PRA'],
+        season: {
+          allowed_per_48: allowed,
+          percent_vs_league_average: percent,
+          sigma_deviation: sigma,
+          rank,
+        },
+        last_15: {
+          allowed_per_48: allowed,
+          percent_vs_league_average: percent,
+          sigma_deviation: sigma,
+          rank,
+        },
+      }),
+    );
+    candidate.teams[1].defense_sheet.rebound_types = [];
+    candidate.players[0].diet_shares.rebound_types = [
+      {
+        key: 'DefThreePtRebounds',
+        season: {
+          share: 0.4,
+          volume: 60,
+          games_played: 20,
+          volume_unit: 'rebounds',
+          league_average_share: 0.25,
+          sigma_deviation: 1.5,
+        },
+      },
+    ];
+    candidate.players[0].scores.PTS.season.components.rebound_types = {
+      value: 0.05,
+      thin: true,
+    };
+    return candidate;
+  };
+
+  test('decodes the six slices after the Box score rows, with the diet and score component', () => {
+    const decoded = decodeMatchup(withReboundTypes());
+
+    expect(decoded.league.surfaceAvailability.reboundTypes.season).toEqual({
+      status: 'available',
+      unavailableReason: null,
+    });
+    expect(decoded.teams[0].defenseSheet.reboundTypes.map((row) => row.sliceKey)).toEqual([
+      'DefTwoPtRebounds',
+      'DefThreePtRebounds',
+      'FTDefRebounds',
+      'OffTwoPtRebounds',
+      'OffThreePtRebounds',
+      'FTOffRebounds',
+    ]);
+    expect(decoded.teams[0].defenseSheet.reboundTypes[3]).toEqual({
+      key: 'OffTwoPtRebounds',
+      sliceKey: 'OffTwoPtRebounds',
+      label: 'OffTwoPtRebounds',
+      markets: ['REB', 'PR', 'RA', 'PRA'],
+      season: { allowedPer48: 7.4, percentVsLeagueAverage: 14, sigmaDeviation: 1.6, rank: 27 },
+      last15: { allowedPer48: 7.4, percentVsLeagueAverage: 14, sigmaDeviation: 1.6, rank: 27 },
+    });
+    expect(decoded.teams[1].defenseSheet.reboundTypes).toEqual([]);
+    expect(decoded.league.defenseSheet.reboundTypes[1].season).toEqual({
+      averageAllowedPer48: 8.3,
+      sigma: 0.5,
+    });
+    expect(decoded.players[0].dietShares.reboundTypes).toEqual([
+      {
+        key: 'DefThreePtRebounds',
+        season: {
+          share: 0.4,
+          volume: 60,
+          gamesPlayed: 20,
+          volumeUnit: 'rebounds',
+          volumePerGame: 3,
+          leagueAverageShare: 0.25,
+          sigmaDeviation: 1.5,
+        },
+      },
+    ]);
+    expect(decoded.players[0].scores.PTS.season.components.reboundTypes).toEqual({
+      value: 0.05,
+      thin: true,
+    });
+  });
+
+  test('a response without the base decodes to the same shape as before it existed', () => {
+    const decoded = decodeMatchup(payload);
+
+    expect(Object.keys(decoded.league.surfaceAvailability)).toEqual([
+      'playTypes',
+      'shotZones',
+      'shotTypes',
+      'assistLocations',
+      'traditional',
+    ]);
+    expect(Object.keys(decoded.league.defenseSheet)).toEqual([
+      'playTypes',
+      'shotZones',
+      'shotTypes',
+      'assistLocations',
+      'traditional',
+    ]);
+    expect(Object.keys(decoded.teams[0].defenseSheet)).toEqual([
+      'playTypes',
+      'shotZones',
+      'shotTypes',
+      'assistLocations',
+      'traditional',
+    ]);
+    expect(Object.keys(decoded.players[0].dietShares)).toEqual([
+      'playTypes',
+      'shotZones',
+      'shotTypes',
+      'assistLocations',
+    ]);
+  });
+
+  test('an unavailable base carries no rows and does not block the response', () => {
+    const candidate = withReboundTypes();
+    candidate.league.surface_availability.rebound_types = {
+      season: { status: 'missing', unavailable_reason: 'window_not_ready' },
+      last_15: { status: 'missing', unavailable_reason: 'window_not_ready' },
+    };
+    candidate.league.defense_sheet.rebound_types = [];
+    candidate.teams[0].defense_sheet.rebound_types = [];
+
+    const decoded = decodeMatchup(candidate);
+    expect(decoded.league.surfaceAvailability.reboundTypes.season.status).toBe('missing');
+    expect(decoded.teams[0].defenseSheet.reboundTypes).toEqual([]);
+  });
+
+  test.each([
+    [
+      'rows with no availability entry',
+      (candidate) => delete candidate.league.surface_availability.rebound_types,
+    ],
+    [
+      'team rows the league sheet does not carry',
+      (candidate) => delete candidate.league.defense_sheet.rebound_types,
+    ],
+    [
+      'markets other than REB, PR, RA and PRA',
+      (candidate) => {
+        candidate.teams[0].defense_sheet.rebound_types[0].markets = ['PTS'];
+      },
+    ],
+    [
+      'a base the contract does not name',
+      (candidate) => {
+        candidate.teams[0].defense_sheet.dunks = [];
+      },
+    ],
+  ])('rejects %s', (_name, mutate) => {
+    const candidate = withReboundTypes();
+    mutate(candidate);
+    expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  });
+
+  test('still requires the original bases', () => {
+    const candidate = withReboundTypes();
+    delete candidate.teams[0].defense_sheet.assist_locations;
+    expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  });
+});

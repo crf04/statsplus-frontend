@@ -658,6 +658,57 @@ test('renders governed traditional sheet rows without duplicate defensive column
   expect(within(boxScore).queryByText(/OPP/)).not.toBeInTheDocument();
 });
 
+test('shows the Rebound Types section for REB and not for PTS', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.reboundTypes = {
+    season: { status: 'available', unavailableReason: null },
+    last15: { status: 'available', unavailableReason: null },
+  };
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.reboundTypes = [
+    ['DefTwoPtRebounds', 22.1, 9, 1.4, 25],
+    ['DefThreePtRebounds', 9.3, -12, -1.5, 4],
+    ['FTDefRebounds', 1.2, 5, 1.1, 18],
+    ['OffTwoPtRebounds', 7.4, 14, 1.6, 27],
+    ['OffThreePtRebounds', 3.1, 6, 1.2, 19],
+    ['FTOffRebounds', 0.8, -7, -1.3, 12],
+  ].map(([key, allowed, percent, sigma, rank]) => ({
+    key,
+    sliceKey: key,
+    label: key,
+    markets: ['REB', 'PR', 'RA', 'PRA'],
+    season: value(allowed, percent, sigma, rank),
+    last15: value(allowed, percent, sigma, rank),
+  }));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('REB');
+  lebron.statCategories.push('REB');
+  lebron.provenance.prizepicks.push('REB');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'REB' }));
+  const section = screen.getByRole('region', { name: 'Rebound Types' });
+  expect(
+    within(section)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label')),
+  ).toEqual([
+    'OREB off 2PT misses',
+    'DREB off 2PT misses',
+    'OREB off 3PT misses',
+    'DREB off FT misses',
+    'OREB off FT misses',
+    'DREB off 3PT misses',
+  ]);
+  expect(within(section).getByRole('article', { name: 'OREB off 2PT misses' })).toHaveTextContent(
+    '+14%',
+  );
+
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.queryByRole('region', { name: 'Rebound Types' })).not.toBeInTheDocument();
+});
+
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

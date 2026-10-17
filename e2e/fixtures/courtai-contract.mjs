@@ -233,6 +233,22 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(19 + offset, -2, -0.3, 13),
       ),
     ],
+    rebound_types: [
+      ['DefTwoPtRebounds', 22.1, 9, 1.4, 25, 21.4, 5, 0.8, 19],
+      ['DefThreePtRebounds', 9.3, -12, -1.5, 4, 9.9, -6, -0.9, 11],
+      ['FTDefRebounds', 1.2, 5, 1.1, 18, 1.1, 2, 0.4, 15],
+      ['OffTwoPtRebounds', 7.4, 14, 1.6, 27, 7.1, 9, 1.2, 24],
+      ['OffThreePtRebounds', 3.1, 6, 1.2, 19, 3, 4, 0.9, 17],
+      ['FTOffRebounds', 0.8, -7, -1.3, 12, 0.8, -3, -0.4, 14],
+    ].map(([key, season, seasonRelative, seasonSigma, seasonRank, last15, ...rest]) =>
+      defenseRow(
+        key,
+        key,
+        ['REB', 'PR', 'RA', 'PRA'],
+        defenseValue(season + offset, seasonRelative, seasonSigma, seasonRank),
+        defenseValue(last15 + offset, ...rest),
+      ),
+    ),
   },
   defensive_columns: defensiveColumns(offset),
 });
@@ -246,7 +262,14 @@ const leagueRow = (key, seasonAverage, seasonSigma, last15Average, last15Sigma) 
 
 const league = {
   surface_availability: Object.fromEntries(
-    ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
+    [
+      'play_types',
+      'shot_zones',
+      'shot_types',
+      'assist_locations',
+      'traditional',
+      'rebound_types',
+    ].map((base) => [
       base,
       {
         season: { status: 'available', unavailable_reason: null },
@@ -285,6 +308,14 @@ const league = {
       leagueRow('OPP_STL', 7.5, 0.8, 7.6, 0.7),
       leagueRow('OPP_BLK', 4.9, 0.6, 4.8, 0.5),
       leagueRow('OPP_PF', 19.5, 1.2, 19.2, 1.1),
+    ],
+    rebound_types: [
+      leagueRow('DefTwoPtRebounds', 20.3, 1.5, 20.4, 1.4),
+      leagueRow('DefThreePtRebounds', 10.5, 0.9, 10.5, 0.9),
+      leagueRow('FTDefRebounds', 1.1, 0.2, 1.1, 0.2),
+      leagueRow('OffTwoPtRebounds', 6.5, 0.6, 6.5, 0.6),
+      leagueRow('OffThreePtRebounds', 2.9, 0.3, 2.9, 0.3),
+      leagueRow('FTOffRebounds', 0.9, 0.2, 0.9, 0.2),
     ],
   },
   defensive_columns: Object.fromEntries(

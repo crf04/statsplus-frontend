@@ -37,6 +37,12 @@ test.each([
   ['OffRebound', 'Putbacks'],
   ['Less Than 10 ft', 'Under 10 ft'],
   ['OPP_REB', 'Rebounds'],
+  ['DefTwoPtRebounds', 'DREB off 2PT misses'],
+  ['DefThreePtRebounds', 'DREB off 3PT misses'],
+  ['FTDefRebounds', 'DREB off FT misses'],
+  ['OffTwoPtRebounds', 'OREB off 2PT misses'],
+  ['OffThreePtRebounds', 'OREB off 3PT misses'],
+  ['FTOffRebounds', 'OREB off FT misses'],
   ['Catch and Shoot', 'Catch-and-shoot'],
 ])('names the %s slice in plain English', (sliceKey, expected) => {
   expect(sliceName(sliceKey)).toBe(expected);

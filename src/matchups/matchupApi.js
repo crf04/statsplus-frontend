@@ -55,8 +55,32 @@ const MARKET_CATEGORIES = new Set([
   'STKS',
 ]);
 
-const DEFENSE_BASES = ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'];
+const DEFENSE_BASES = [
+  'play_types',
+  'shot_zones',
+  'shot_types',
+  'assist_locations',
+  'traditional',
+  'rebound_types',
+];
+// The backend adds Rebound Types after this decoder ships (crf04/statsplus#234),
+// so a response may omit it everywhere it would appear and still decode.
+const OPTIONAL_BASES = new Set(['rebound_types']);
 const DIET_BASES = DEFENSE_BASES.filter((base) => base !== 'traditional');
+
+// A response names every required base and, of the optional ones, only those it
+// has published. Returns the bases present, in contract order.
+const presentBases = (value, bases) => {
+  const keys = Object.keys(value);
+  if (
+    keys.length !== new Set(keys).size ||
+    keys.some((key) => !bases.includes(key)) ||
+    bases.some((base) => !OPTIONAL_BASES.has(base) && !Object.hasOwn(value, base))
+  ) {
+    throw invalid();
+  }
+  return bases.filter((base) => Object.hasOwn(value, base));
+};
 
 /*
  * The wire names a base in snake case and this decoder hands it over in camel
@@ -64,10 +88,11 @@ const DIET_BASES = DEFENSE_BASES.filter((base) => base !== 'traditional');
  * Qualifier, say — reads the pairing from here rather than spelling the four
  * names a second time. `traditional` is absent because it is a team-only base
  * with no player diet behind it, which is exactly what makes a Defense Sheet
- * row on that base uncapturable.
+ * row on that base uncapturable. `rebound_types` is absent because a Target
+ * cannot qualify on it yet.
  */
 export const DIET_BASE_WIRE_NAMES = Object.fromEntries(
-  DIET_BASES.map((base) => [camelKey(base), base]),
+  DIET_BASES.filter((base) => !OPTIONAL_BASES.has(base)).map((base) => [camelKey(base), base]),
 );
 
 const EXPERIENCE_MODES = ['historical', 'current'];
@@ -109,8 +134,21 @@ const ASSIST_LOCATION_SLICES = new Set([
   'ShortMidRangeAssists',
   'LongMidRangeAssists',
 ]);
+const REBOUND_TYPE_SLICES = new Set([
+  'DefTwoPtRebounds',
+  'DefThreePtRebounds',
+  'FTDefRebounds',
+  'OffTwoPtRebounds',
+  'OffThreePtRebounds',
+  'FTOffRebounds',
+]);
 const TRADITIONAL_SLICES = new Set(['OPP_REB', 'OPP_TOV', 'OPP_STL', 'OPP_BLK']);
-const ADDITIVE_SHEET_BASES = new Set(['play_types', 'assist_locations', 'traditional']);
+const ADDITIVE_SHEET_BASES = new Set([
+  'play_types',
+  'assist_locations',
+  'traditional',
+  'rebound_types',
+]);
 
 const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   if (base === 'play_types') {
@@ -133,6 +171,7 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
     }[statKey];
   }
   if (base === 'assist_locations') return ['AST', 'PA', 'RA', 'PRA'];
+  if (base === 'rebound_types') return ['REB', 'PR', 'RA', 'PRA'];
   return {
     OPP_REB: ['REB', 'PR', 'RA', 'PRA'],
     OPP_TOV: ['TOV'],
@@ -150,7 +189,7 @@ const expectedSheetMarkets = (base, sliceKey, statKey) => [
 const decodeSheetIdentity = (base, key) => {
   let sliceKey;
   let statKey;
-  if (base === 'assist_locations' || base === 'traditional') {
+  if (base === 'assist_locations' || base === 'traditional' || base === 'rebound_types') {
     sliceKey = key;
     statKey = key;
   } else {
@@ -163,6 +202,7 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey)) ||
     (base === 'shot_types' && SHOT_TYPE_SLICES.has(sliceKey)) ||
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
+    (base === 'rebound_types' && REBOUND_TYPE_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!recognizedSlice && ADDITIVE_SHEET_BASES.has(base)) return null;
   const valid =
@@ -174,6 +214,7 @@ const decodeSheetIdentity = (base, key) => {
       SHOT_TYPE_SLICES.has(sliceKey) &&
       ['FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
+    (base === 'rebound_types' && REBOUND_TYPE_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
   return { sliceKey, acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey) };
@@ -285,14 +326,9 @@ const decodeAvailabilityState = (value) => {
 };
 
 const decodeSurfaceAvailability = (availability) => {
-  if (
-    !isRecord(availability) ||
-    Object.keys(availability).sort().join() !== [...DEFENSE_BASES].sort().join()
-  ) {
-    throw invalid();
-  }
+  if (!isRecord(availability)) throw invalid();
   return Object.fromEntries(
-    DEFENSE_BASES.map((base) => {
+    presentBases(availability, DEFENSE_BASES).map((base) => {
       const windows = availability[base];
       if (
         !isRecord(windows) ||
@@ -364,11 +400,11 @@ const decodeSheetRow = (row, availability, base) => {
 };
 
 const decodeDefenseSheet = (sheet, surfaceAvailability) => {
-  if (!isRecord(sheet) || Object.keys(sheet).sort().join() !== [...DEFENSE_BASES].sort().join())
-    throw invalid();
+  if (!isRecord(sheet)) throw invalid();
   return Object.fromEntries(
-    Object.entries(sheet).map(([base, rows]) => {
-      if (!Array.isArray(rows)) throw invalid();
+    presentBases(sheet, DEFENSE_BASES).map((base) => {
+      const rows = sheet[base];
+      if (!Array.isArray(rows) || !surfaceAvailability[camelKey(base)]) throw invalid();
       return [
         camelKey(base),
         rows
@@ -452,13 +488,10 @@ const decodeShotValues = (shotValues) => {
 };
 
 const decodeDietShares = (dietShares) => {
-  if (
-    !isRecord(dietShares) ||
-    Object.keys(dietShares).sort().join() !== [...DIET_BASES].sort().join()
-  )
-    throw invalid();
+  if (!isRecord(dietShares)) throw invalid();
   return Object.fromEntries(
-    Object.entries(dietShares).map(([base, entries]) => {
+    presentBases(dietShares, DIET_BASES).map((base) => {
+      const entries = dietShares[base];
       if (!Array.isArray(entries)) throw invalid();
       return [
         camelKey(base),
@@ -664,13 +697,10 @@ const decodeLeague = (league) => {
     throw invalid();
   }
   const surfaceAvailability = decodeSurfaceAvailability(league.surface_availability);
-  if (Object.keys(league.defense_sheet).sort().join() !== [...DEFENSE_BASES].sort().join()) {
-    throw invalid();
-  }
   const defenseSheet = Object.fromEntries(
-    DEFENSE_BASES.map((base) => {
+    presentBases(league.defense_sheet, DEFENSE_BASES).map((base) => {
       const rows = league.defense_sheet[base];
-      if (!Array.isArray(rows)) throw invalid();
+      if (!Array.isArray(rows) || !surfaceAvailability[camelKey(base)]) throw invalid();
       const decodedRows = rows
         .map((row) => {
           if (!isRecord(row)) throw invalid();
@@ -741,7 +771,7 @@ const validateLeagueCoverage = (league, teams) => {
   for (const [base, leagueRows] of Object.entries(league.defenseSheet)) {
     const leagueKeys = new Set(leagueRows.map((row) => row.key));
     const teamKeys = new Set(
-      teams.flatMap((team) => team.defenseSheet[base].map((row) => row.key)),
+      teams.flatMap((team) => (team.defenseSheet[base] ?? []).map((row) => row.key)),
     );
     if ([...teamKeys].some((key) => !leagueKeys.has(key))) {
       throw invalid();
@@ -752,6 +782,7 @@ const validateLeagueCoverage = (league, teams) => {
 const validateStructuralZeroPercentages = (league, teams) => {
   for (const team of teams) {
     for (const [base, rows] of Object.entries(team.defenseSheet)) {
+      if (!league.defenseSheet[base]) throw invalid();
       const leagueRows = new Map(league.defenseSheet[base].map((row) => [row.key, row]));
       for (const row of rows) {
         for (const windowKey of ['season', 'last15']) {

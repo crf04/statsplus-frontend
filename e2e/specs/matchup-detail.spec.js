@@ -105,11 +105,11 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
     /^Rebounds/,
     /^Steals/,
     /^OREB off 2PT misses/,
-    /^DREB off 2PT misses/,
-    /^OREB off 3PT misses/,
-    /^DREB off FT misses/,
-    /^OREB off FT misses/,
     /^DREB off 3PT misses/,
+    /^DREB off FT misses/,
+    /^DREB off 2PT misses/,
+    /^OREB off FT misses/,
+    /^OREB off 3PT misses/,
   ]);
   await expect(page.getByRole('list', { name: 'Players leaning on At the rim' })).toHaveText(
     'James Harden 38%Kawhi Leonard 30%',
@@ -310,11 +310,11 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     /^Rebounds/,
     /^Steals/,
     /^OREB off 2PT misses/,
-    /^DREB off 2PT misses/,
-    /^OREB off 3PT misses/,
-    /^DREB off FT misses/,
-    /^OREB off FT misses/,
     /^DREB off 3PT misses/,
+    /^DREB off FT misses/,
+    /^DREB off 2PT misses/,
+    /^OREB off FT misses/,
+    /^OREB off 3PT misses/,
   ]);
   await expect(page.getByText(/OPP|Backcourt|Arc3|AtRim/)).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Players leaning on Restricted area' })).toHaveText(

@@ -148,6 +148,29 @@ const defensiveColumns = (offset = 0) => ({
   },
 });
 
+/*
+ * Rebound Types is a breakdown of OPP_REB, so a team's six slices add up to its
+ * Season OPP_REB (45, plus the team offset, carried by the second slice) and the
+ * league averages add up to the league OPP_REB average (46). Last 15 slices add
+ * up to the same total, since the fixture withholds Last 15 OPP_REB itself.
+ * Relative percent and sigma are derived from the league figures.
+ */
+const REBOUND_TYPES = [
+  { key: 'DefTwoPtRebounds', average: 21, sigma: 1.5, season: 19, last15: 18.6, ranks: [6, 5] },
+  { key: 'DefThreePtRebounds', average: 12, sigma: 0.5, season: 12.6, last15: 13, ranks: [24, 26] },
+  { key: 'FTDefRebounds', average: 1.3, sigma: 0.08, season: 1.4, last15: 1.3, ranks: [26, 15] },
+  { key: 'OffTwoPtRebounds', average: 7.2, sigma: 0.6, season: 8.2, last15: 8.4, ranks: [27, 28] },
+  { key: 'OffThreePtRebounds', average: 3.5, sigma: 0.5, season: 2.9, last15: 3, ranks: [5, 7] },
+  { key: 'FTOffRebounds', average: 1, sigma: 0.08, season: 0.9, last15: 0.7, ranks: [8, 3] },
+];
+const reboundValue = (allowed, average, sigma, rank) =>
+  defenseValue(
+    allowed,
+    Math.round(((allowed - average) / average) * 100),
+    Math.round(((allowed - average) / sigma) * 10) / 10,
+    rank,
+  );
+
 const teamSheet = (team, playTypes, offset = 0) => ({
   team_id: team.team_id,
   tricode: team.tricode,
@@ -233,20 +256,13 @@ const teamSheet = (team, playTypes, offset = 0) => ({
         defenseValue(19 + offset, -2, -0.3, 13),
       ),
     ],
-    rebound_types: [
-      ['DefTwoPtRebounds', 22.1, 9, 1.4, 25, 21.4, 5, 0.8, 19],
-      ['DefThreePtRebounds', 9.3, -12, -1.5, 4, 9.9, -6, -0.9, 11],
-      ['FTDefRebounds', 1.2, 5, 1.1, 18, 1.1, 2, 0.4, 15],
-      ['OffTwoPtRebounds', 7.4, 14, 1.6, 27, 7.1, 9, 1.2, 24],
-      ['OffThreePtRebounds', 3.1, 6, 1.2, 19, 3, 4, 0.9, 17],
-      ['FTOffRebounds', 0.8, -7, -1.3, 12, 0.8, -3, -0.4, 14],
-    ].map(([key, season, seasonRelative, seasonSigma, seasonRank, last15, ...rest]) =>
+    rebound_types: REBOUND_TYPES.map(({ key, average, sigma, season, last15, ranks }, index) =>
       defenseRow(
         key,
         key,
         ['REB', 'PR', 'RA', 'PRA'],
-        defenseValue(season + offset, seasonRelative, seasonSigma, seasonRank),
-        defenseValue(last15 + offset, ...rest),
+        reboundValue(season + (index === 1 ? offset : 0), average, sigma, ranks[0]),
+        reboundValue(last15 + (index === 1 ? offset : 0), average, sigma, ranks[1]),
       ),
     ),
   },
@@ -309,14 +325,9 @@ const league = {
       leagueRow('OPP_BLK', 4.9, 0.6, 4.8, 0.5),
       leagueRow('OPP_PF', 19.5, 1.2, 19.2, 1.1),
     ],
-    rebound_types: [
-      leagueRow('DefTwoPtRebounds', 20.3, 1.5, 20.4, 1.4),
-      leagueRow('DefThreePtRebounds', 10.5, 0.9, 10.5, 0.9),
-      leagueRow('FTDefRebounds', 1.1, 0.2, 1.1, 0.2),
-      leagueRow('OffTwoPtRebounds', 6.5, 0.6, 6.5, 0.6),
-      leagueRow('OffThreePtRebounds', 2.9, 0.3, 2.9, 0.3),
-      leagueRow('FTOffRebounds', 0.9, 0.2, 0.9, 0.2),
-    ],
+    rebound_types: REBOUND_TYPES.map(({ key, average, sigma }) =>
+      leagueRow(key, average, sigma, average, sigma),
+    ),
   },
   defensive_columns: Object.fromEntries(
     [

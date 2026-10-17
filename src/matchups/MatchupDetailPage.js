@@ -428,6 +428,8 @@ const MEASURE_COLUMNS = {
   FG2M: 'Makes',
   FG3M: 'Makes',
 };
+// Bases that publish no rows while unavailable still belong to these markets.
+const BASE_MARKETS = { reboundTypes: ['REB', 'PR', 'RA', 'PRA'] };
 const SHARE_LABELS = {
   playTypes: 'possessions',
   shotZones: 'FGA',
@@ -564,7 +566,11 @@ function DefenseSheet({
       return {
         base,
         availability,
-        relevant: marketRows.length > 0,
+        // An unavailable base may carry no rows to name its markets, so the
+        // markets it supports decide whether this selection is waiting on it.
+        relevant:
+          marketRows.length > 0 ||
+          (BASE_MARKETS[base] ? market === 'All' || BASE_MARKETS[base].includes(market) : false),
         legacyUnavailableRow: null,
         groups: [],
       };

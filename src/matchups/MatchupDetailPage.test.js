@@ -736,6 +736,35 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
   expect(screen.queryByRole('region', { name: 'Rebound Types' })).not.toBeInTheDocument();
 });
 
+test('an unavailable Rebound Types base explains itself for REB and stays silent for PTS', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.league.surfaceAvailability.reboundTypes = {
+    season: { status: 'available', unavailableReason: null },
+    last15: { status: 'missing', unavailableReason: 'window_not_ready' },
+  };
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.reboundTypes = [];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('REB');
+  lebron.statCategories.push('REB');
+  lebron.provenance.prizepicks.push('REB');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  await userEvent.click(screen.getByRole('button', { name: 'REB' }));
+  expect(screen.getByRole('heading', { name: 'Rebound Types' })).toBeVisible();
+  expect(
+    screen.getByText(
+      'Rebound Types unavailable for Last 15: Last 15 has not opened yet; it opens once every team has played 15 games.',
+    ),
+  ).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
+  expect(screen.queryByRole('heading', { name: 'Rebound Types' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Rebound Types unavailable/)).not.toBeInTheDocument();
+});
+
 test('lists play types by points only, never by possessions', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

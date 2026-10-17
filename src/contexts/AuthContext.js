@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   onIdTokenChanged,
@@ -130,6 +132,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
   // already on while the popup is open and owns a cancelled or failed attempt:
   // it neither swaps the page for the loading screen nor records an error.
   const signInWithGoogle = async ({ silent = false } = {}) => {
+    let redirecting = false;
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
@@ -150,14 +153,24 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
 
       setError(null);
       if (!silent) setLoading(true);
-      const result = await signInWithPopup(authClient, authProvider);
-      return result.user;
+      try {
+        const result = await signInWithPopup(authClient, authProvider);
+        return result.user;
+      } catch (popupError) {
+        if (popupError?.code !== 'auth/popup-blocked') throw popupError;
+        // A blocked popup (ad blocker, Safari) cannot be retried; leave the page
+        // for Google and finish in the redirect result on return. The page is
+        // navigating away, so keep the loading screen and report no user.
+        await signInWithRedirect(authClient, authProvider);
+        redirecting = true;
+        return undefined;
+      }
     } catch (error) {
       console.error('Google sign-in error:', error);
       if (!silent) setError(error.message);
       throw error;
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && !redirecting) setLoading(false);
     }
   };
 
@@ -229,6 +242,18 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       return undefined;
     }
 
+    // Completes a sign-in that left the page through signInWithRedirect. The
+    // user itself arrives through the auth listener below; only a failure needs
+    // reporting. The listener clears the error on its first callback, so the
+    // failure is set after that one.
+    let redirectCancelled = false;
+    if (typeof getRedirectResult === 'function') {
+      Promise.resolve(getRedirectResult(authClient)).catch((redirectError) => {
+        console.error('Google redirect sign-in error:', redirectError);
+        if (!redirectCancelled) setError(redirectError?.message || 'Google sign-in failed.');
+      });
+    }
+
     const authStateListener =
       typeof onIdTokenChanged === 'function' ? onIdTokenChanged : onAuthStateChanged;
     const unsubscribe = authStateListener(
@@ -261,7 +286,10 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       },
     );
 
-    return unsubscribe;
+    return () => {
+      redirectCancelled = true;
+      unsubscribe();
+    };
   }, [authClient, refreshAdminClaims]);
 
   const value = {

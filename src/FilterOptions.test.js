@@ -307,3 +307,42 @@ test.each([
   await act(async () => {});
   expect(screen.queryByRole('combobox', { name: 'Season' })).toBeNull();
 });
+
+test('Own stat line offers USG% bounded by games that report it and emits it on a 0-100 scale', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, USG_PCT: 25 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, USG_PCT: 33.3 },
+    { GAME_DATE: '2026-01-03', MATCHUP: 'LAL vs. DEN', PTS: 12, USG_PCT: null },
+    { GAME_DATE: '2026-01-04', MATCHUP: 'LAL vs. UTA', PTS: 14 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, USG_PCT: 40 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'USG_PCT' } });
+  // null and missing values are not zeros: the minimum is 25.0, not 0.0
+  expect(screen.getByRole('slider', { name: 'Minimum USG_PCT' })).toHaveAttribute(
+    'aria-valuenow',
+    '25',
+  );
+  expect(screen.getByRole('slider', { name: 'Maximum USG_PCT' })).toHaveAttribute(
+    'aria-valuenow',
+    '40',
+  );
+  expect(screen.getByText('25.0–40.0')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('USG% 25.0–40.0')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'self_filters[USG_PCT]': '25,40',
+  });
+});
+
+test('USG% offers no range when no game reports it', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, USG_PCT: null },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'USG_PCT' } });
+  expect(screen.queryByRole('slider', { name: 'Minimum USG_PCT' })).toBeNull();
+});

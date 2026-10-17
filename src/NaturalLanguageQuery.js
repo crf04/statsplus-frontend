@@ -122,6 +122,8 @@ const NaturalLanguageQuery = ({
   const runQuery = async (submitted) => {
     if (!submitted.trim()) return;
 
+    // A query resumed after sign-in returns to a blank input; show what ran.
+    setQuery(submitted);
     setLoading(true);
     setError('');
     setLastResult(null);
@@ -185,8 +187,8 @@ const NaturalLanguageQuery = ({
 
   // Signed out, running a query or browsing opens sign-up and then carries on
   // with what was asked.
-  const submitQuery = useSignUpThen(runQuery);
-  const browse = useSignUpThen(() => navigate(`/?${BROWSE_PARAM}=1`));
+  const submitQuery = useSignUpThen('query', runQuery);
+  const browse = useSignUpThen('browse', () => navigate(`/?${BROWSE_PARAM}=1`));
   const handleSubmit = (e) => {
     e.preventDefault();
     return submitQuery(query);

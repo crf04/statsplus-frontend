@@ -1,171 +1,135 @@
 import { act, renderHook } from '@testing-library/react';
-import { useSignUpThen } from './useSignUpThen';
+import { SIGN_UP_THEN_STORAGE_KEY, useSignUpThen } from './useSignUpThen';
 
 let mockAuth;
 jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockAuth,
 }));
 
-const deferred = () => {
-  let resolve;
-  let reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-};
-
-const signedOut = (signInWithGoogle) => ({
+const signedOut = (signInWithGoogle = jest.fn().mockResolvedValue(undefined)) => ({
   isAuthenticated: false,
   currentUser: null,
+  loading: false,
   signInWithGoogle,
 });
-const signedInAs = (uid, signInWithGoogle) => ({
+const signedInAs = (uid) => ({
   isAuthenticated: true,
   currentUser: { uid },
-  signInWithGoogle,
+  loading: false,
+  signInWithGoogle: jest.fn(),
 });
+const stored = () => JSON.parse(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY));
+
+beforeEach(() => window.sessionStorage.clear());
 
 describe('useSignUpThen', () => {
-  // Firebase only reports a closed popup seconds later, so a click in that gap
-  // must open a fresh popup rather than wait on the old one.
-  test('a click while a popup is pending opens a new one, and only the newest action runs, once', async () => {
-    const first = deferred();
-    const second = deferred();
-    const signIn = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+  test('a signed-out trigger stores the key and arguments, starts sign-in, and runs nothing yet', async () => {
+    const signIn = jest.fn().mockResolvedValue(undefined);
     const action = jest.fn();
     mockAuth = signedOut(signIn);
-    const { result, rerender } = renderHook(() => useSignUpThen(action));
-
-    let a;
-    let b;
-    act(() => {
-      a = result.current('first');
-    });
-    act(() => {
-      b = result.current('second');
-    });
-    expect(signIn).toHaveBeenCalledTimes(2);
+    const { result } = renderHook(() => useSignUpThen('query', action));
 
     await act(async () => {
-      first.reject(new Error('auth/cancelled-popup-request'));
-      await a;
+      await result.current('LeBron last 10 games');
     });
-    expect(action).not.toHaveBeenCalled();
 
-    await act(async () => {
-      second.resolve({ uid: 'u1' });
-      await b;
-    });
-    await act(async () => {
-      mockAuth = signedInAs('u1', signIn);
-      rerender();
-    });
-    expect(action.mock.calls).toEqual([['second']]);
-    await act(async () => rerender());
-    expect(action.mock.calls).toEqual([['second']]);
-  });
-
-  test('another account signing in while the popup is open runs nothing', async () => {
-    const popup = deferred();
-    const signIn = jest.fn().mockReturnValue(popup.promise);
-    const action = jest.fn();
-    mockAuth = signedOut(signIn);
-    const { result, rerender } = renderHook(() => useSignUpThen(action));
-
-    let pending;
-    act(() => {
-      pending = result.current('query');
-    });
-    await act(async () => {
-      mockAuth = signedInAs('other-tab', signIn);
-      rerender();
-    });
-    expect(action).not.toHaveBeenCalled();
-
-    await act(async () => {
-      popup.reject(new Error('popup closed'));
-      await pending;
-    });
+    expect(signIn).toHaveBeenCalledWith({ silent: true });
+    expect(stored()).toMatchObject({ key: 'query', args: ['LeBron last 10 games'] });
     expect(action).not.toHaveBeenCalled();
   });
 
-  test('runs once for the account the popup returned, when mockAuth state reflects it', async () => {
-    const popup = deferred();
-    const signIn = jest.fn().mockReturnValue(popup.promise);
-    const action = jest.fn();
-    mockAuth = signedOut(signIn);
-    const { result, rerender } = renderHook(() => useSignUpThen(action));
-
-    let pending;
-    act(() => {
-      pending = result.current('query');
+  test('a newer trigger replaces the stored entry', async () => {
+    mockAuth = signedOut();
+    const { result } = renderHook(() => useSignUpThen('query', jest.fn()));
+    await act(async () => {
+      await result.current('first');
     });
     await act(async () => {
-      popup.resolve({ uid: 'u1' });
-      await pending;
+      await result.current('second');
     });
-    expect(action).not.toHaveBeenCalled();
 
-    await act(async () => {
-      mockAuth = signedInAs('u1', signIn);
-      rerender();
-    });
-    expect(action).toHaveBeenCalledTimes(1);
-    expect(action).toHaveBeenCalledWith('query');
-    await act(async () => rerender());
-    expect(action).toHaveBeenCalledTimes(1);
+    expect(stored()).toMatchObject({ key: 'query', args: ['second'] });
   });
 
-  // Auth can render the account before the popup's own promise settles.
-  const signUpWhereAuthSettlesFirst = async (result, rerender, signIn, popup, uid, arg) => {
-    let pending;
-    act(() => {
-      pending = result.current(arg);
-    });
-    await act(async () => {
-      mockAuth = signedInAs(uid, signIn);
-      rerender();
-    });
-    await act(async () => {
-      popup.resolve({ uid });
-      await pending;
-    });
-  };
+  test('a sign-in that fails to start forgets the action', async () => {
+    mockAuth = signedOut(jest.fn().mockRejectedValue(new Error('redirect failed')));
+    const { result } = renderHook(() => useSignUpThen('query', jest.fn()));
 
-  test('a second sign-up to the same account still runs its query when auth settles before the popup', async () => {
-    const first = deferred();
-    const second = deferred();
-    const signIn = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
-    const action = jest.fn();
-    mockAuth = signedOut(signIn);
-    const { result, rerender } = renderHook(() => useSignUpThen(action));
-
-    await signUpWhereAuthSettlesFirst(result, rerender, signIn, first, 'u1', 'first query');
     await act(async () => {
-      mockAuth = signedOut(signIn);
-      rerender();
+      await result.current('LeBron');
     });
-    await signUpWhereAuthSettlesFirst(result, rerender, signIn, second, 'u1', 'second query');
 
-    expect(action.mock.calls).toEqual([['first query'], ['second query']]);
+    expect(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY)).toBeNull();
   });
 
-  test('a popup that returns no account forgets the action, so the next click opens a popup', async () => {
-    const signIn = jest.fn().mockResolvedValueOnce(null).mockReturnValueOnce(deferred().promise);
+  test('a signed-in trigger runs the action at once and stores nothing', async () => {
     const action = jest.fn();
-    mockAuth = signedOut(signIn);
-    const { result } = renderHook(() => useSignUpThen(action));
+    mockAuth = signedInAs('u1');
+    const { result } = renderHook(() => useSignUpThen('query', action));
 
     await act(async () => {
-      await result.current('query');
-    });
-    act(() => {
-      result.current('query');
+      await result.current('Curry');
     });
 
-    expect(signIn).toHaveBeenCalledTimes(2);
-    expect(action).not.toHaveBeenCalled();
+    expect(action.mock.calls).toEqual([['Curry']]);
+    expect(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY)).toBeNull();
+  });
+
+  describe('on return from the redirect', () => {
+    const entry = (key, args, at = Date.now()) =>
+      window.sessionStorage.setItem(SIGN_UP_THEN_STORAGE_KEY, JSON.stringify({ key, args, at }));
+
+    test('runs the stored action exactly once with the original arguments, then clears the entry', async () => {
+      const action = jest.fn();
+      entry('query', ['LeBron last 10 games']);
+      mockAuth = signedInAs('u1');
+      const { rerender } = renderHook(() => useSignUpThen('query', action));
+      await act(async () => rerender());
+
+      expect(action.mock.calls).toEqual([['LeBron last 10 games']]);
+      expect(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY)).toBeNull();
+    });
+
+    test('waits for auth to settle, then runs for the signed-in account', async () => {
+      const action = jest.fn();
+      entry('query', ['Curry']);
+      mockAuth = { ...signedOut(), loading: true };
+      const { rerender } = renderHook(() => useSignUpThen('query', action));
+      expect(action).not.toHaveBeenCalled();
+
+      mockAuth = signedInAs('u1');
+      await act(async () => rerender());
+
+      expect(action.mock.calls).toEqual([['Curry']]);
+    });
+
+    test('returning signed out runs nothing and clears the entry', async () => {
+      const action = jest.fn();
+      entry('query', ['Curry']);
+      mockAuth = signedOut();
+      renderHook(() => useSignUpThen('query', action));
+
+      expect(action).not.toHaveBeenCalled();
+      expect(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY)).toBeNull();
+    });
+
+    test('an entry for another action is left alone and does not run', async () => {
+      const action = jest.fn();
+      entry('browse', []);
+      mockAuth = signedInAs('u1');
+      renderHook(() => useSignUpThen('query', action));
+
+      expect(action).not.toHaveBeenCalled();
+      expect(stored()).toMatchObject({ key: 'browse', args: [] });
+    });
+
+    test('an entry from a long-past attempt does not run', async () => {
+      const action = jest.fn();
+      entry('query', ['Curry'], Date.now() - 60 * 60 * 1000);
+      mockAuth = signedInAs('u1');
+      renderHook(() => useSignUpThen('query', action));
+
+      expect(action).not.toHaveBeenCalled();
+    });
   });
 });

@@ -8,6 +8,10 @@
       "source": "/api/:path*",
       "destination": "https://statsplus-backend-production.up.railway.app/api/:path*"
     },
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://courtai-6eccf.firebaseapp.com/__/auth/:path*"
+    },
     { "source": "/:path*", "destination": "/index.html" }
   ]
 }

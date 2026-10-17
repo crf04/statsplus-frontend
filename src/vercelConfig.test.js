@@ -43,13 +43,17 @@ describe('Vercel deployment configuration', () => {
     });
   });
 
-  test('proxies API requests before applying the SPA fallback', () => {
-    expect(vercelConfig.rewrites).toHaveLength(2);
+  test('proxies API and Firebase auth requests before applying the SPA fallback', () => {
+    expect(vercelConfig.rewrites).toHaveLength(3);
     expect(vercelConfig.rewrites[0]).toEqual({
       source: '/api/:path*',
       destination: 'https://statsplus-backend-production.up.railway.app/api/:path*',
     });
-    expect(vercelConfig.rewrites[1]).toEqual({ source: '/:path*', destination: '/index.html' });
+    expect(vercelConfig.rewrites[1]).toEqual({
+      source: '/__/auth/:path*',
+      destination: 'https://courtai-6eccf.firebaseapp.com/__/auth/:path*',
+    });
+    expect(vercelConfig.rewrites[2]).toEqual({ source: '/:path*', destination: '/index.html' });
   });
 
   test('keeps hermetic Playwright runs free of deployment credentials and preserves evidence', () => {

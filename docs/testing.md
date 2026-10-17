@@ -196,7 +196,11 @@ or an older default-branch harness. Protected Preview smoke validates its URL an
 the encrypted repository secret is missing. Playwright trace and video are disabled whenever the
 secret is present; screenshots remain available for failure evidence.
 
-For branch protection, require both `validate` and `E2E` before merging.
+For branch protection, require both `validate` and `E2E` before merging. `E2E` and `e2e flows` are
+aggregate jobs over matrix legs (Playwright shards `1/2` and `2/2`; one e2e flows leg per target):
+each passes only when every leg passed, so the required names are unchanged. `playwright-evidence`
+is the merged HTML report; `e2e-flow-evidence-<target>` and `playwright-test-results-<shard>` hold
+per-leg evidence.
 
 The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
 tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA

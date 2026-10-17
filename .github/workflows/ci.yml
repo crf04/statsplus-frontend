@@ -42,12 +42,16 @@ jobs:
       - name: Build application
         run: npm run build
 
-  e2e:
-    name: E2E
+  e2e-shard:
+    name: E2E shard ${{ matrix.shard }}/2
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -65,25 +69,94 @@ jobs:
         run: npx playwright install chromium
 
       - name: Run hermetic browser tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard ${{ matrix.shard }}/2 --reporter=line,blob
+
+      - name: Upload browser test blob report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-blob-${{ matrix.shard }}
+          path: blob-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload browser test failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ matrix.shard }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Required check "E2E": passes only when every shard passed, and merges the
+  # shard blob reports into the single HTML report that used to be uploaded.
+  e2e:
+    name: E2E
+    needs: [e2e-shard]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require every shard to pass
+        env:
+          RESULT: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "e2e-shard: $RESULT"
+          test "$RESULT" = success
+
+      - name: Check out repository
+        if: always()
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: always()
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+
+      - name: Install dependencies
+        if: always()
+        run: npm ci
+
+      - name: Download blob reports
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-blob-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Require both shard blob reports
+        if: always()
+        run: |
+          ls all-blob-reports
+          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 2
+
+      - name: Merge shard reports
+        if: always()
+        run: npx playwright merge-reports --reporter html,line ./all-blob-reports
 
       - name: Upload browser test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-evidence
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
+          path: playwright-report/
+          if-no-files-found: error
           retention-days: 14
 
-  flows:
-    name: e2e flows
+  flows-target:
+    name: e2e flows (${{ matrix.target }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       E2E_TELEMETRY_DISABLED: '1'
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [desktop, phone, desktop-west]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -95,13 +168,13 @@ jobs:
         run: npm run typecheck:e2e
       - name: Install e2e engine Chromium
         run: npx e2e-web install chromium --with-deps
-      - name: Run desktop and phone flows without model credentials
-        run: npm run test:flows
+      - name: Run ${{ matrix.target }} flows without model credentials
+        run: npm run test:flows -- --target ${{ matrix.target }}
       - name: Upload e2e report and failure evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: e2e-flow-evidence
+          name: e2e-flow-evidence-${{ matrix.target }}
           include-hidden-files: true
           path: |
             .e2e/report.json
@@ -110,3 +183,18 @@ jobs:
             .e2e/results/
           if-no-files-found: warn
           retention-days: 14
+
+  # Required check "e2e flows": passes only when every target leg passed.
+  flows:
+    name: e2e flows
+    needs: [flows-target]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every target to pass
+        env:
+          RESULT: ${{ needs.flows-target.result }}
+        run: |
+          echo "flows-target: $RESULT"
+          test "$RESULT" = success

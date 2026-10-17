@@ -32,7 +32,6 @@ jest.mock('firebase/app', () => ({
 jest.mock('firebase/auth', () => ({
   getAuth: jest.fn(() => ({ currentUser: null })),
   getIdToken: jest.fn(() => Promise.resolve('test-token')),
-  signInWithPopup: jest.fn(() => Promise.resolve({ user: null })),
   signInWithRedirect: jest.fn(() => Promise.resolve()),
   getRedirectResult: jest.fn(() => Promise.resolve(null)),
   signOut: jest.fn(() => Promise.resolve()),

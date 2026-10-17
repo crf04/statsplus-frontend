@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   onIdTokenChanged,
@@ -52,6 +53,9 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
   const currentUserRef = useRef(getInitialUser());
   const [loading, setLoading] = useState(!isE2EMode);
   const [error, setError] = useState(null);
+  // A failed redirect sign-in. The auth listener clears the error on every
+  // callback; this keeps the redirect's failure through whichever settles last.
+  const redirectErrorRef = useRef(null);
   // Set by an authenticated response that says the account is waitlisted.
   const [waitlist, setWaitlist] = useState(null);
   const [adminState, setAdminState] = useState(() => ({
@@ -126,10 +130,11 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
     [authClient],
   );
 
-  // Sign in with Google. `silent` is for a caller that shows the page it is
-  // already on while the popup is open and owns a cancelled or failed attempt:
+  // Sign in with Google by redirect. `silent` is for a caller that shows the
+  // page it is already on until the redirect starts and owns a failed attempt:
   // it neither swaps the page for the loading screen nor records an error.
   const signInWithGoogle = async ({ silent = false } = {}) => {
+    let redirecting = false;
     try {
       if (isE2EMode) {
         window.localStorage.setItem(E2E_AUTH_STORAGE_KEY, 'true');
@@ -148,16 +153,22 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         throw configurationError;
       }
 
+      redirectErrorRef.current = null;
       setError(null);
       if (!silent) setLoading(true);
-      const result = await signInWithPopup(authClient, authProvider);
-      return result.user;
+      // No popup: ad blockers and Safari break it, and a closed popup cannot be
+      // told from a blocked one. The page leaves for Google and the account
+      // arrives through the auth listener on return, so there is no user to
+      // return here and the loading screen stays up while the page navigates.
+      await signInWithRedirect(authClient, authProvider);
+      redirecting = true;
+      return undefined;
     } catch (error) {
       console.error('Google sign-in error:', error);
       if (!silent) setError(error.message);
       throw error;
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && !redirecting) setLoading(false);
     }
   };
 
@@ -229,6 +240,19 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       return undefined;
     }
 
+    // Completes a sign-in that left the page through signInWithRedirect. The
+    // user itself arrives through the auth listener below; only a failure needs
+    // reporting, and redirectErrorRef keeps it from the listener's clearing.
+    let redirectCancelled = false;
+    if (typeof getRedirectResult === 'function') {
+      Promise.resolve(getRedirectResult(authClient)).catch((redirectError) => {
+        console.error('Google redirect sign-in error:', redirectError);
+        if (redirectCancelled) return;
+        redirectErrorRef.current = redirectError?.message || 'Google sign-in failed.';
+        setError(redirectErrorRef.current);
+      });
+    }
+
     const authStateListener =
       typeof onIdTokenChanged === 'function' ? onIdTokenChanged : onAuthStateChanged;
     const unsubscribe = authStateListener(
@@ -241,7 +265,7 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
         currentUserRef.current = user;
         setCurrentUser(user);
         setLoading(false);
-        setError(null);
+        setError(redirectErrorRef.current);
         await refreshAdminClaims(user);
       },
       (authError) => {
@@ -261,7 +285,10 @@ export function AuthProvider({ children, authClient = auth, authProvider = googl
       },
     );
 
-    return unsubscribe;
+    return () => {
+      redirectCancelled = true;
+      unsubscribe();
+    };
   }, [authClient, refreshAdminClaims]);
 
   const value = {

@@ -1,6 +1,11 @@
 import { readRevisit } from '../revisitCache';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getIdTokenResult, onIdTokenChanged, signInWithPopup } from 'firebase/auth';
+import {
+  getIdTokenResult,
+  getRedirectResult,
+  onIdTokenChanged,
+  signInWithRedirect,
+} from 'firebase/auth';
 import { AuthProvider, useAuth } from './AuthContext';
 import { reportWaitlisted } from '../utils/waitlistSignal';
 
@@ -43,6 +48,8 @@ beforeEach(() => {
     next(null);
     return jest.fn();
   });
+  getRedirectResult.mockResolvedValue(null);
+  signInWithRedirect.mockResolvedValue(undefined);
 });
 
 test('represents a signed-out Firebase listener state', async () => {
@@ -190,11 +197,28 @@ test('auth listener clears cached results and fences pending reads with no consu
 });
 
 describe('sign-in', () => {
-  test('a silent sign-in keeps the page while the popup is open and records no failure', async () => {
-    let closePopup;
-    signInWithPopup.mockReturnValue(
+  test('signing in redirects with the auth client and provider, never a popup', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const authProvider = {};
+    renderProvider({ authProvider });
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign-in' }));
+    await waitFor(() => expect(signInWithRedirect).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(signInWithRedirect).toHaveBeenCalledWith(configuredAuth, authProvider);
+    expect(screen.getByTestId('error')).toHaveTextContent('');
+    expect(screen.getByTestId('loading')).toHaveTextContent('true');
+  });
+
+  test('a silent sign-in keeps the page while the redirect starts and records no failure', async () => {
+    let failRedirect;
+    signInWithRedirect.mockReturnValue(
       new Promise((_resolve, reject) => {
-        closePopup = () => reject(new Error('popup closed'));
+        failRedirect = () => reject(new Error('redirect failed'));
       }),
     );
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -202,31 +226,58 @@ describe('sign-in', () => {
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Quiet sign-in' }));
-    await waitFor(() => expect(signInWithPopup).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(signInWithRedirect).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
-    await act(async () => closePopup());
+    await act(async () => failRedirect());
 
     expect(screen.getByTestId('error')).toHaveTextContent('');
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
   });
 
-  test('a plain failed sign-in is recorded and holds the loading screen until it ends', async () => {
-    let closePopup;
-    signInWithPopup.mockReturnValue(
-      new Promise((_resolve, reject) => {
-        closePopup = () => reject(new Error('popup closed'));
-      }),
-    );
+  test('a plain sign-in that cannot start is recorded and ends the loading screen', async () => {
+    signInWithRedirect.mockRejectedValue(new Error('redirect failed'));
     jest.spyOn(console, 'error').mockImplementation(() => {});
     renderProvider({ authProvider: {} });
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign-in' }));
-    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('true'));
-    await act(async () => closePopup());
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('redirect failed'));
 
-    expect(screen.getByTestId('error')).toHaveTextContent('popup closed');
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+
+  test('a redirect failure that arrives after the auth listener is still shown', async () => {
+    let failRedirect;
+    getRedirectResult.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        failRedirect = () => reject(new Error('redirect failed'));
+      }),
+    );
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    renderProvider();
+    await waitFor(() => expect(screen.getByTestId('admin-status')).toHaveTextContent('signed_out'));
+
+    await act(async () => failRedirect());
+
+    expect(screen.getByTestId('error')).toHaveTextContent('redirect failed');
+    expect(getRedirectResult).toHaveBeenCalledTimes(1);
+    expect(getRedirectResult).toHaveBeenCalledWith(configuredAuth);
+  });
+
+  test('a redirect failure that arrives before the auth listener is still shown', async () => {
+    let fireListener;
+    onIdTokenChanged.mockImplementation((_auth, next) => {
+      fireListener = () => next(null);
+      return jest.fn();
+    });
+    getRedirectResult.mockRejectedValue(new Error('redirect failed'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    renderProvider();
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('redirect failed'));
+
+    await act(async () => fireListener());
+
+    expect(screen.getByTestId('error')).toHaveTextContent('redirect failed');
   });
 });
 

@@ -1,54 +1,74 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 /*
  * A gated action that doubles as sign-up (crf04/statsplus#211): Google sign-in
  * creates the account, so a signed-out visitor who runs a query or browses is
- * asked to sign in and then gets exactly what they asked for. The returned
- * function must be called from the click or submit itself, so the popup is not
- * blocked. The action runs from an effect once the account exists, so it sees
- * the signed-in render rather than the one that asked. A cancelled or failed
- * attempt forgets the action and says nothing: the page and what the visitor
- * typed stay as they were. A trigger while a popup is still pending replaces
- * that attempt (Firebase reports a closed popup only seconds later, and the
- * visitor should not have to wait it out), so only the newest action can run.
- * It runs only for the account its popup returned, so an unrelated sign-in
- * elsewhere runs nothing.
+ * asked to sign in and then gets exactly what they asked for.
+ *
+ * Sign-in leaves the page for Google (a redirect, never a popup), so the action
+ * cannot wait in memory. The returned function stores `{ key, args }` in
+ * sessionStorage, then starts the redirect. `key` names the action and must be
+ * stable across page loads; `args` must be JSON-serializable. When the page
+ * loads again and auth has settled, a hook whose key matches the stored entry
+ * removes it and runs the action once with the stored args if the visitor is
+ * signed in; if they are signed out (cancelled or failed redirect) it just
+ * removes it. The action runs from an effect, so it sees the signed-in render.
+ * A newer trigger replaces the stored entry, and an entry older than ten
+ * minutes is ignored so it cannot fire on a later, unrelated visit.
  */
-export const useSignUpThen = (action) => {
-  const { isAuthenticated, currentUser, signInWithGoogle } = useAuth();
-  const attempt = useRef(null);
+export const SIGN_UP_THEN_STORAGE_KEY = 'courtai:sign-up-then';
+const MAX_AGE_MS = 10 * 60 * 1000;
+
+const readEntry = () => {
+  try {
+    const entry = JSON.parse(window.sessionStorage.getItem(SIGN_UP_THEN_STORAGE_KEY));
+    return entry && typeof entry.key === 'string' && Array.isArray(entry.args) ? entry : null;
+  } catch {
+    return null;
+  }
+};
+
+const clearEntry = () => {
+  try {
+    window.sessionStorage.removeItem(SIGN_UP_THEN_STORAGE_KEY);
+  } catch {
+    // Storage unavailable: nothing was stored.
+  }
+};
+
+export const useSignUpThen = (key, action) => {
+  const { isAuthenticated, currentUser, loading, signInWithGoogle } = useAuth();
   const latest = useRef(action);
-  // Bumped each time a popup settles, so the effect below re-checks even when
-  // the returned account is the same one as last time.
-  const [settled, setSettled] = useState(0);
   useEffect(() => {
     latest.current = action;
   });
   const uid = currentUser?.uid ?? null;
   useEffect(() => {
-    const current = attempt.current;
-    if (!current || !current.uid || current.uid !== uid) return;
-    attempt.current = null;
-    latest.current(...current.args);
-  }, [uid, settled]);
+    if (loading) return;
+    const entry = readEntry();
+    if (!entry || entry.key !== key) return;
+    clearEntry();
+    if (uid && Date.now() - entry.at < MAX_AGE_MS) latest.current(...entry.args);
+  }, [key, loading, uid]);
   return useCallback(
     async (...args) => {
       if (isAuthenticated) return latest.current(...args);
-      const mine = { args, uid: null };
-      attempt.current = mine;
       try {
-        const user = await signInWithGoogle({ silent: true });
-        if (attempt.current === mine) {
-          mine.uid = user?.uid ?? null;
-          if (!mine.uid) attempt.current = null;
-          setSettled((count) => count + 1);
-        }
+        window.sessionStorage.setItem(
+          SIGN_UP_THEN_STORAGE_KEY,
+          JSON.stringify({ key, args, at: Date.now() }),
+        );
       } catch {
-        if (attempt.current === mine) attempt.current = null;
+        // Without storage the visitor still signs in; the action is not resumed.
+      }
+      try {
+        await signInWithGoogle({ silent: true });
+      } catch {
+        clearEntry();
       }
       return undefined;
     },
-    [isAuthenticated, signInWithGoogle],
+    [key, isAuthenticated, signInWithGoogle],
   );
 };

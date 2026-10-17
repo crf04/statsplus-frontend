@@ -346,3 +346,27 @@ test('USG% offers no range when no game reports it', () => {
   fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'USG_PCT' } });
   expect(screen.queryByRole('slider', { name: 'Minimum USG_PCT' })).toBeNull();
 });
+
+test('USG% keyboard steps land on the 0.1 grid when season values have two decimals', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, USG_PCT: 24.87 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, USG_PCT: 33.37 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, USG_PCT: 40.12 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'USG_PCT' } });
+  // bounds round outward to 24.8 and 40.2
+  expect(screen.getByText('24.8–40.2')).toBeVisible();
+  const min = screen.getByRole('slider', { name: 'Minimum USG_PCT' });
+  const max = screen.getByRole('slider', { name: 'Maximum USG_PCT' });
+  fireEvent.focus(min);
+  fireEvent.keyDown(min, { key: 'ArrowRight' });
+  fireEvent.keyDown(min, { key: 'ArrowRight' });
+  fireEvent.focus(max);
+  fireEvent.keyDown(max, { key: 'ArrowLeft' });
+  fireEvent.keyDown(max, { key: 'ArrowLeft' });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('USG% 25.0–40.0')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[USG_PCT]': '25,40' });
+});

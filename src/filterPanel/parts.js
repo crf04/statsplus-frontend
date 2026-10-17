@@ -6,17 +6,12 @@ import {
   DEFENSIVE_CATEGORY_PILL_LABELS,
   STAT_COLUMNS,
   STAT_LABELS,
+  STAT_PRECISION,
   defensiveCategoryItems,
 } from './useFilterPanel';
 
 export const fmt = (value, digits = 0) =>
   digits === 0 ? String(Math.round(value)) : formatNumber(value, digits);
-
-/* Stats whose slider and chip do not follow the default precision. */
-const STAT_PRECISION = {
-  FG_PCT: { digits: 2, step: 0.01 },
-  USG_PCT: { digits: 1, step: 0.1 },
-};
 
 /* Thin two-thumb range. Values are read beside the label, not inside the
    thumbs, so the thumbs can be small and the track can be the full width. */

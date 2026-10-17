@@ -1,7 +1,9 @@
 import {
   bookMark,
   bookName,
+  dietBaseVolumePerGame,
   getDisplayableDietShare,
+  isThinDietShare,
   shouldDisplayDietShare,
   sliceName,
 } from './displayConfig';
@@ -35,7 +37,7 @@ test.each([
   ['reboundTypes', { sigmaDeviation: -0.5 }, 1, true],
   ['reboundTypes', { sigmaDeviation: 0.49 }, 9, false],
   ['reboundTypes', { sigmaDeviation: -0.49 }, 9, false],
-  ['reboundTypes', { sigmaDeviation: 9 }, 0.99, false],
+  ['reboundTypes', { sigmaDeviation: 9 }, 0.99, true],
   ['reboundTypes', { sigmaDeviation: 9 }, 1, true],
   ['reboundTypes', { sigmaDeviation: null }, 9, false],
 ])(
@@ -75,6 +77,15 @@ test.each([
   expect(bookMark(provider)).toBe(mark);
 });
 
+test.each([
+  ['reboundTypes', 0.99, true],
+  ['reboundTypes', 1, false],
+  ['reboundTypes', 0.6, true],
+  ['assistLocations', 0.5, false],
+])('%s at %s a game is thin: %s', (base, baseVolumePerGame, expected) => {
+  expect(isThinDietShare(base, baseVolumePerGame)).toBe(expected);
+});
+
 test('a rebound lean reads the whole Base volume, not the one slice', () => {
   const entry = (key, volumePerGame, sigmaDeviation) => ({
     key,
@@ -87,7 +98,17 @@ test('a rebound lean reads the whole Base volume, not the one slice', () => {
   expect(getDisplayableDietShare(spread, 'reboundTypes', 'OffTwoPtRebounds')).toEqual(
     spread.dietShares.reboundTypes[0].season,
   );
-  // 0.4 + 0.59 = 0.99 across the Base: under the floor, however far the slice leans.
+  expect(dietBaseVolumePerGame(spread, 'reboundTypes')).toBeCloseTo(1.2, 9);
+  expect(isThinDietShare('reboundTypes', dietBaseVolumePerGame(spread, 'reboundTypes'))).toBe(
+    false,
+  );
+  // 0.4 + 0.59 = 0.99 across the Base: under the floor, so shown and thin.
   const thin = player(entry('OffTwoPtRebounds', 0.4, 1.5), entry('DefTwoPtRebounds', 0.59, 0.1));
-  expect(getDisplayableDietShare(thin, 'reboundTypes', 'OffTwoPtRebounds')).toBeNull();
+  expect(getDisplayableDietShare(thin, 'reboundTypes', 'OffTwoPtRebounds')).toEqual(
+    thin.dietShares.reboundTypes[0].season,
+  );
+  expect(isThinDietShare('reboundTypes', dietBaseVolumePerGame(thin, 'reboundTypes'))).toBe(true);
+  // A thin sample under 0.5 sigma is still not a lean.
+  const flat = player(entry('OffTwoPtRebounds', 0.4, 0.49), entry('DefTwoPtRebounds', 0.2, 0.1));
+  expect(getDisplayableDietShare(flat, 'reboundTypes', 'OffTwoPtRebounds')).toBeNull();
 });

@@ -15,7 +15,9 @@ import {
   bookName,
   findDietShare,
   formatScorePercent,
+  dietBaseVolumePerGame,
   getDisplayableDietShare,
+  isThinDietShare,
   orderCategories,
   sliceName,
 } from './displayConfig';
@@ -518,7 +520,9 @@ const leansFor = (players, base, sliceKey, shotValue, market) =>
         .filter((player) => market === 'All' || player.statCategories.includes(market))
         .flatMap((player) => {
           const share = getDisplayableDietShare(player, base, sliceKey, shotValue);
-          return share && share.sigmaDeviation > 0 ? [{ player, share }] : [];
+          if (!share || share.sigmaDeviation <= 0) return [];
+          const volume = dietBaseVolumePerGame(player, base);
+          return [{ player, share, thin: isThinDietShare(base, volume), volume }];
         })
         .sort((a, b) => b.share.sigmaDeviation - a.share.sigmaDeviation)
     : [];
@@ -704,12 +708,18 @@ function DefenseSheet({
                     )}
                     {leans.length > 0 && (
                       <ul className="sheet-leans" aria-label={`Players leaning on ${group.name}`}>
-                        {leans.map(({ player, share }) => (
+                        {leans.map(({ player, share, thin, volume }) => (
                           <li
                             key={player.id}
-                            title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}`}
+                            className={thin ? 'lean-thin' : undefined}
+                            title={`${Math.round(share.share * 100)}% of his ${SHARE_LABELS[base]}${
+                              thin
+                                ? ` · thin sample (${volume.toFixed(1)} ${SHARE_LABELS[base]} per game)`
+                                : ''
+                            }`}
                           >
                             <span>{player.name}</span> <b>{Math.round(share.share * 100)}%</b>
+                            {thin && <em> · thin</em>}
                           </li>
                         ))}
                       </ul>

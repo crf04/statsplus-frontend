@@ -14,15 +14,27 @@ export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
 // The volume floor reads the player's whole Base, as the backend's thin rule
 // does, so a lean shows however few attempts the one slice (or its twos or
 // threes) holds once his Base clears the floor.
+//
+// A base in THIN_FLAGGED_BASES shows a lean under the floor, marked thin, instead
+// of withholding it: the reader sees the diet and is told the sample is small.
+const THIN_FLAGGED_BASES = new Set(['reboundTypes']);
+
+export const isThinDietShare = (base, baseVolumePerGame) =>
+  THIN_FLAGGED_BASES.has(base) &&
+  baseVolumePerGame < DIET_SHARE_DISPLAY_THRESHOLDS[base].minimumVolumePerGame;
+
 export const shouldDisplayDietShare = (base, value, baseVolumePerGame) => {
   const threshold = DIET_SHARE_DISPLAY_THRESHOLDS[base];
   return (
     Boolean(threshold) &&
     value.sigmaDeviation !== null &&
     Math.abs(value.sigmaDeviation) >= threshold.minimumSigmaDeviation &&
-    baseVolumePerGame >= threshold.minimumVolumePerGame
+    (THIN_FLAGGED_BASES.has(base) || baseVolumePerGame >= threshold.minimumVolumePerGame)
   );
 };
+
+export const dietBaseVolumePerGame = (player, base) =>
+  player.dietShares[base].reduce((total, entry) => total + entry.season.volumePerGame, 0);
 
 // Books are named in full where a sentence names them and by a two-letter mark
 // where a row only needs to say which posted him.
@@ -111,11 +123,7 @@ export const findDietShare = (player, base, sliceKey, shotValue = null) => {
 export const getDisplayableDietShare = (player, base, sliceKey, shotValue = null) => {
   const value = findDietShare(player, base, sliceKey, shotValue);
   if (!value) return null;
-  const baseVolumePerGame = player.dietShares[base].reduce(
-    (total, entry) => total + entry.season.volumePerGame,
-    0,
-  );
-  return shouldDisplayDietShare(base, value, baseVolumePerGame) ? value : null;
+  return shouldDisplayDietShare(base, value, dietBaseVolumePerGame(player, base)) ? value : null;
 };
 
 // Stat Categories read in box-score order wherever a reader picks one: the

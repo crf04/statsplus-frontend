@@ -568,8 +568,8 @@ export const matchupPayload = {
       name: 'Austin Reaves',
       team_id: slateGame.away_team.team_id,
       tricode: 'LAL',
-      posted_markets: ['PTS', 'FG3A', 'STL'],
-      provenance: { prizepicks: ['PTS', 'FG3A'], underdog: ['STL'] },
+      posted_markets: ['PTS', 'FG3A', 'STL', 'REB'],
+      provenance: { prizepicks: ['PTS', 'FG3A', 'REB'], underdog: ['STL'] },
       // No book has numbered him yet, so the rail falls back to his Matchup Score.
       lines: {},
       season_scoring: 20.1,
@@ -588,9 +588,12 @@ export const matchupPayload = {
         // assist_locations population), but under the assist-locations volume
         // floor (1/g): hidden by volume, not sigma.
         assist_locations: [dietShare('AtRimAssists', 0.35, 0.14, 0.12, 0.8, 'assists')],
+        // 1.75 sigma above the same OffTwoPtRebounds population, but 0.6
+        // rebounds a game is under the 1/g floor: the lean renders thin.
+        rebound_types: [dietShare('OffTwoPtRebounds', 0.12, 0.05, 0.04, 0.6, 'rebounds')],
       },
       injury_badge_ref: 'injury-austin',
-      scores: scores(['PTS', 'FG3A', 'STL'], 0.24, 0.08, {
+      scores: scores(['PTS', 'FG3A', 'STL', 'REB'], 0.24, 0.08, {
         zeroMarkets: ['FG3A'],
       }),
     },
@@ -1194,15 +1197,15 @@ export const austinSelectionPayload = {
         '2025-12-18',
         'MIA @ BOS',
         33,
-        { PTS: 22, FG3A: 7, STL: 1 },
-        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+        { PTS: 22, FG3A: 7, STL: 1, REB: 4 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004, REB: 0.01 },
       ),
       selectionLine(
         null,
         'AVG',
         33,
-        { PTS: 22, FG3A: 7, STL: 1 },
-        { PTS: 0.022, FG3A: 0.013, STL: -0.004 },
+        { PTS: 22, FG3A: 7, STL: 1, REB: 4 },
+        { PTS: 0.022, FG3A: 0.013, STL: -0.004, REB: 0.01 },
       ),
     ],
   },

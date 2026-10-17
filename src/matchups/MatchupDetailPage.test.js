@@ -689,7 +689,7 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
       season: { share, volumePerGame, sigmaDeviation: 1.8, leagueAverageShare: 0.05 },
     },
   ];
-  // LeBron clears both floors; Austin leans just as far but boards under one a game.
+  // LeBron clears both floors; Austin leans nearly as far but boards under one a game, so his lean is shown thin.
   const austin = candidate.players.find((player) => player.id === 1630559);
   austin.postedMarkets.push('REB');
   austin.statCategories.push('REB');
@@ -722,12 +722,16 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
   const leans = within(section).getByRole('list', {
     name: 'Players leaning on OREB off 2PT misses',
   });
-  expect(leans).toHaveTextContent('LeBron James 38%');
-  expect(within(leans).queryByText('Austin Reaves')).not.toBeInTheDocument();
-  expect(within(leans).getByText('LeBron James').closest('li')).toHaveAttribute(
+  const items = within(leans).getAllByRole('listitem');
+  expect(items.map((item) => item.textContent)).toEqual([
+    'Austin Reaves 30% · thin',
+    'LeBron James 38%',
+  ]);
+  expect(items[0]).toHaveAttribute(
     'title',
-    '38% of his rebounds',
+    '30% of his rebounds · thin sample (0.6 rebounds per game)',
   );
+  expect(items[1]).toHaveAttribute('title', '38% of his rebounds');
   expect(
     within(section).queryByRole('button', { name: /Save .* as a Target/ }),
   ).not.toBeInTheDocument();

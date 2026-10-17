@@ -545,6 +545,9 @@ export const matchupPayload = {
         // Current-matchup assist_locations AtRimAssists population: mean .14, pstdev .12,
         // shared with Austin's and Tatum's facts below.
         assist_locations: [dietShare('AtRimAssists', 0.31, 0.14, 0.12, 1.1, 'assists')],
+        // Rebound Types OffTwoPtRebounds population: mean .05, pstdev .04.
+        // 1.75 sigma above league and 2.4 rebounds a game: the lean renders.
+        rebound_types: [dietShare('OffTwoPtRebounds', 0.12, 0.05, 0.04, 2.4, 'rebounds')],
       },
       injury_badge_ref: null,
       scores: scores(COMPLETE_MARKETS, 0.12, -0.02),

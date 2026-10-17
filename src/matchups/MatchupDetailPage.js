@@ -433,6 +433,7 @@ const SHARE_LABELS = {
   shotZones: 'FGA',
   shotTypes: 'FGA',
   assistLocations: 'assists',
+  reboundTypes: 'rebounds',
 };
 
 const rowMeasure = (row) => (row.key.includes(':') ? row.key.split(':')[1] : null);

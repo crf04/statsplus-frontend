@@ -281,6 +281,10 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(
     sheet.getByRole('article', { name: 'OREB off 2PT misses' }).getByTitle(/rank 27 of 30/),
   ).toContainText('+14%');
+  await expect(
+    page.getByRole('list', { name: 'Players leaning on OREB off 2PT misses' }),
+  ).toHaveText('LeBron James 12%');
+  await expect(sheet.getByRole('button', { name: /Save OREB .* as a Target/ })).toHaveCount(0);
   await market.getByRole('button', { name: 'PTS' }).click();
   await expect(sheet.getByRole('heading', { level: 3, name: 'Rebound Types' })).toHaveCount(0);
   await market.getByRole('button', { name: 'REB' }).click();

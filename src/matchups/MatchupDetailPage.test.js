@@ -683,6 +683,21 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
   lebron.postedMarkets.push('REB');
   lebron.statCategories.push('REB');
   lebron.provenance.prizepicks.push('REB');
+  const reboundShare = (share, volumePerGame) => [
+    {
+      key: 'OffTwoPtRebounds',
+      season: { share, volumePerGame, sigmaDeviation: 1.8, leagueAverageShare: 0.05 },
+    },
+  ];
+  // LeBron clears both floors; Austin leans just as far but boards under one a game.
+  const austin = candidate.players.find((player) => player.id === 1630559);
+  austin.postedMarkets.push('REB');
+  austin.statCategories.push('REB');
+  austin.provenance.prizepicks.push('REB');
+  austin.scores.REB = austin.scores.PTS;
+  austin.dietShares.reboundTypes = reboundShare(0.3, 0.6);
+  lebron.scores.REB = lebron.scores.PTS;
+  lebron.dietShares.reboundTypes = reboundShare(0.38, 2.4);
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -704,6 +719,18 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
   expect(within(section).getByRole('article', { name: 'OREB off 2PT misses' })).toHaveTextContent(
     '+14%',
   );
+  const leans = within(section).getByRole('list', {
+    name: 'Players leaning on OREB off 2PT misses',
+  });
+  expect(leans).toHaveTextContent('LeBron James 38%');
+  expect(within(leans).queryByText('Austin Reaves')).not.toBeInTheDocument();
+  expect(within(leans).getByText('LeBron James').closest('li')).toHaveAttribute(
+    'title',
+    '38% of his rebounds',
+  );
+  expect(
+    within(section).queryByRole('button', { name: /Save .* as a Target/ }),
+  ).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'PTS' }));
   expect(screen.queryByRole('region', { name: 'Rebound Types' })).not.toBeInTheDocument();

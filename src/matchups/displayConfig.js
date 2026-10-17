@@ -8,6 +8,7 @@ export const DIET_SHARE_DISPLAY_THRESHOLDS = Object.freeze({
   shotZones: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
   shotTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 4 }),
   assistLocations: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
+  reboundTypes: Object.freeze({ minimumSigmaDeviation: 0.5, minimumVolumePerGame: 1 }),
 });
 
 // The volume floor reads the player's whole Base, as the backend's thin rule

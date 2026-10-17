@@ -3,7 +3,7 @@
 import { expect } from 'e2e';
 import { signedOutTest } from './support/courtai.ts';
 
-const CONNECTOR_URL = 'https://statsplus-mcp-production.up.railway.app/mcp';
+const CONNECTOR_URL = 'https://mcp.courtai.app/mcp';
 
 signedOutTest(
   'a signed-out visitor can copy the connector URL by hand or with the button',

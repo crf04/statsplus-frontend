@@ -45,6 +45,7 @@ export const STAT_COLUMNS = [
   'FGA',
   'FGM',
   'FG_PCT',
+  'USG_PCT',
   'FG2A',
   'FG2M',
   'FG3A',
@@ -73,6 +74,7 @@ export const STAT_LABELS = {
   FGA: 'FG attempts',
   FGM: 'FG made',
   FG_PCT: 'FG%',
+  USG_PCT: 'USG%',
   FG2A: '2PT attempts',
   FG2M: '2PT made',
   FG3A: '3PT attempts',
@@ -84,6 +86,19 @@ export const STAT_LABELS = {
   FD_PTS: 'FanDuel pts',
   PLAYTYPE_RTG: 'Playtype rating',
 };
+
+/* Stats whose slider and chip do not follow the default precision. Bounds sit
+   on the step grid so every value the slider reaches is what the chip shows. */
+export const STAT_PRECISION = {
+  FG_PCT: { digits: 2, step: 0.01 },
+  USG_PCT: { digits: 1, step: 0.1 },
+};
+
+const FLOAT_SLACK = 1e-9;
+const floorToGrid = (value, { digits, step }) =>
+  Number((Math.floor(value / step + FLOAT_SLACK) * step).toFixed(digits));
+const ceilToGrid = (value, { digits, step }) =>
+  Number((Math.ceil(value / step - FLOAT_SLACK) * step).toFixed(digits));
 
 export const defensiveCategoryItems = (category) =>
   OPPONENT_FILTERS.find((group) => group.category === category)?.items ?? [];
@@ -167,7 +182,14 @@ const useFilterPanel = ({
       const values = seasonGameLogs
         .map((log) => toFiniteNumber(log[col]))
         .filter((value) => value !== null);
-      if (values.length > 0) acc[col] = { min: Math.min(...values), max: Math.max(...values) };
+      if (values.length > 0) {
+        const precision = STAT_PRECISION[col];
+        const low = Math.min(...values);
+        const high = Math.max(...values);
+        acc[col] = precision
+          ? { min: floorToGrid(low, precision), max: ceilToGrid(high, precision) }
+          : { min: low, max: high };
+      }
       return acc;
     }, {});
     setColumnRanges(ranges);

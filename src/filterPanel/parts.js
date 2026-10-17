@@ -6,6 +6,7 @@ import {
   DEFENSIVE_CATEGORY_PILL_LABELS,
   STAT_COLUMNS,
   STAT_LABELS,
+  STAT_PRECISION,
   defensiveCategoryItems,
 } from './useFilterPanel';
 
@@ -132,7 +133,8 @@ export const StatRange = ({ panel }) => {
       </div>
     );
   }
-  const digits = column === 'FG_PCT' ? 2 : bounds.max - bounds.min < 10 ? 1 : 0;
+  const precision = STAT_PRECISION[column];
+  const digits = precision ? precision.digits : bounds.max - bounds.min < 10 ? 1 : 0;
   return (
     <div className="fp-statrange">
       <div className="fp-rowlabel">
@@ -145,7 +147,7 @@ export const StatRange = ({ panel }) => {
         value={panel.selfFilterRange}
         min={bounds.min}
         max={bounds.max}
-        step={column === 'FG_PCT' ? 0.01 : 0.1 * (digits ? 1 : 10)}
+        step={precision ? precision.step : 0.1 * (digits ? 1 : 10)}
         digits={digits}
         onChange={panel.setSelfFilterRange}
         labels={[`Minimum ${column}`, `Maximum ${column}`]}
@@ -160,9 +162,14 @@ export const StatRange = ({ panel }) => {
 };
 
 export const selfChipLabel = (filter) => {
-  const digits =
-    filter.column === 'FG_PCT' ? 2 : filter.range.every((v) => Number.isInteger(v)) ? 0 : 1;
-  return `${filter.column} ${fmt(filter.range[0], digits)}–${fmt(filter.range[1], digits)}`;
+  const precision = STAT_PRECISION[filter.column];
+  const digits = precision
+    ? precision.digits
+    : filter.range.every((v) => Number.isInteger(v))
+      ? 0
+      : 1;
+  const name = filter.column === 'USG_PCT' ? STAT_LABELS.USG_PCT : filter.column;
+  return `${name} ${fmt(filter.range[0], digits)}–${fmt(filter.range[1], digits)}`;
 };
 
 /* Team Filter editor: category tabs, metric, rank window, add. */

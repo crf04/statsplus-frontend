@@ -961,6 +961,14 @@ button.selection-strip-tile:focus-visible {
   font-weight: 500;
 }
 
+/* Base names wrap onto two lines so every Base and the Blend fit the panel;
+   the cells below stay on one line. */
+.selection-matrix thead th {
+  white-space: normal;
+  vertical-align: bottom;
+  line-height: 1.2;
+}
+
 .selection-table-wrap tbody th {
   font-weight: 600;
 }

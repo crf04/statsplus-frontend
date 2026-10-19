@@ -1760,6 +1760,15 @@ const applySelfFilters = (logs, url) =>
     return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
   }, logs);
 
+// The real endpoint reads date_filter and date_to as an inclusive calendar range
+// (YYYY-MM-DD strings order as dates), so a Filter Set's end date has to cut
+// the games here too or a journey cannot tell a range from a start date.
+const applyDateRange = (logs, url) => {
+  const from = url.searchParams.get('date_filter');
+  const to = url.searchParams.get('date_to');
+  return logs.filter((log) => (!from || log.GAME_DATE >= from) && (!to || log.GAME_DATE <= to));
+};
+
 // The real endpoint restricts the read to games against one specific opponent
 // when it is sent a tricode. The contract has to restrict too, or a journey
 // cannot tell a Filter Set fixed to one opponent from the whole season.
@@ -3241,7 +3250,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
       await route.fulfill({
         json: {
-          game_logs: applyOpponentTricode(applySelfFilters(season, url), url),
+          game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),
           averages: [averages],
           season_averages: [{ ...averages, PTS: 27, AST: 8 }],
           // Like the real endpoint, the season total ignores every filter.

@@ -14,6 +14,7 @@ import HomeTicker from './home/HomeTicker';
 import HomeTonight from './home/HomeTonight';
 import { useHomeTonight } from './home/useHomeTonight';
 import { useLadderAnswers } from './help/useLadderAnswers';
+import SiteFooter from './legal/SiteFooter';
 import './home/home.css';
 import './ModernSearch.css';
 
@@ -331,6 +332,9 @@ const NaturalLanguageQuery = ({
               </div>
             )}
           </div>
+          {/* The landing page is a fixed, scrolling layer over the app shell, so
+          the shell's footer sits beneath it: this one replaces it here. */}
+          <SiteFooter />
         </div>
       </div>
     );

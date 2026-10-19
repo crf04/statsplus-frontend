@@ -613,6 +613,7 @@ const decodePlayer = (player, experience, game) => {
     throw invalid();
   }
   const provenance = gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets);
+  const decodedLines = decodeLines(player.lines, provenance);
   return {
     id: requireInteger(player.canonical_id),
     name: requireString(player.name),
@@ -622,8 +623,9 @@ const decodePlayer = (player, experience, game) => {
     postedMarkets,
     statCategories,
     provenance,
-    lines: decodeLines(player.lines, provenance),
+    lines: decodedLines,
     bookLines: decodeBookLines(player.book_lines),
+    linePrices: decodeLinePrices(player.line_prices, decodedLines),
     focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
     last10Minutes: player.last_10_minutes.map(requireNumber),
@@ -718,6 +720,37 @@ function decodeBookLines(bookLines) {
             };
           }),
         },
+      ];
+    }),
+  );
+}
+
+/*
+ * Per-pick Over and Under prices from the providers whose price sits on one
+ * pick, beside the line they price. A price exists only where that provider's
+ * line does, and a side nobody prices is null, never both. The field is
+ * additive, so an absent one reads as no prices.
+ */
+const LINE_PRICE_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi'];
+
+function decodeLinePrices(linePrices, lines) {
+  if (linePrices === undefined) return {};
+  if (!isRecord(linePrices)) throw invalid();
+  return Object.fromEntries(
+    Object.entries(linePrices).map(([provider, markets]) => {
+      if (!LINE_PRICE_PROVIDERS.includes(provider) || !isRecord(markets)) throw invalid();
+      const posted = Object.hasOwn(lines, provider) ? lines[provider] : {};
+      return [
+        provider,
+        Object.fromEntries(
+          Object.entries(markets).map(([market, sides]) => {
+            if (!Object.hasOwn(posted, market) || !isRecord(sides)) throw invalid();
+            const over = requirePrice(sides.over);
+            const under = requirePrice(sides.under);
+            if (over === null && under === null) throw invalid();
+            return [market, { over, under }];
+          }),
+        ),
       ];
     }),
   );

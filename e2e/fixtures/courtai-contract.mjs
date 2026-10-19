@@ -588,6 +588,15 @@ export const matchupPayload = {
           ],
         },
       },
+      // Per-pick prices (parent statsplus#247). Polymarket prices the 27.5 headline:
+      // its Over ties BetMGM and DraftKings, which win as sportsbooks, and its
+      // Under beats every book. Underdog prices 26.5, a line no sportsbook or
+      // headline shares with it, so its price is not compared. PrizePicks
+      // never carries a price.
+      line_prices: {
+        underdog: { PTS: { over: -112, under: -112 } },
+        polymarket: { PTS: { over: -110, under: -102 } },
+      },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
@@ -631,6 +640,7 @@ export const matchupPayload = {
       // No book has numbered him yet, so the rail falls back to his Matchup Score.
       lines: {},
       book_lines: {},
+      line_prices: {},
       season_scoring: 20.1,
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
@@ -663,6 +673,8 @@ export const matchupPayload = {
       tricode: 'BOS',
       posted_markets: ['PTS', 'FGA', 'FG3A', 'REB', 'BLK'],
       provenance: { prizepicks: ['PTS', 'FGA', 'FG3A', 'REB'], underdog: ['BLK'] },
+      lines: { prizepicks: { REB: 9.5 } },
+      line_prices: {},
       // One side only (null Under) at a different line, from the closing snapshot.
       book_lines: {
         REB: {
@@ -1037,6 +1049,7 @@ const historicalParticipant = ({
   provenance: {},
   lines: {},
   book_lines: {},
+  line_prices: {},
   stat_categories: HISTORICAL_CATEGORIES,
   focal_game_line: historicalFocalLine(team, minutes, focalStats),
   season_scoring: seasonScoring,

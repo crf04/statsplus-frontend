@@ -222,14 +222,14 @@ test('a pick without a readable reason shows no reason line', () => {
 test('the most recent game day is labelled and links to its date', () => {
   render(
     <MemoryRouter>
-      <HomeTicker slateDate="2026-04-10" games={games} past />
+      <HomeTicker slateDate="2026-04-10" games={games} fallback="previous_game_day" />
       <HomeTonight
         games={games}
         spotlight={spotlight}
         targets={null}
         onUseQuery={() => {}}
         slateDate="2026-04-10"
-        past
+        fallback="previous_game_day"
       />
     </MemoryRouter>,
   );
@@ -242,5 +242,31 @@ test('the most recent game day is labelled and links to its date', () => {
   expect(screen.getByRole('link', { name: 'Matchups' })).toHaveAttribute(
     'href',
     '/matchups?date=2026-04-10',
+  );
+});
+
+test('the next game day is labelled and links to its date', () => {
+  render(
+    <MemoryRouter>
+      <HomeTicker slateDate="2026-10-20" games={games} fallback="next_game_day" />
+      <HomeTonight
+        games={games}
+        spotlight={spotlight}
+        targets={null}
+        onUseQuery={() => {}}
+        slateDate="2026-10-20"
+        fallback="next_game_day"
+      />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole('link', { name: /^Next game day · Tue, Oct 20/ })).toHaveAttribute(
+    'href',
+    '/matchups?date=2026-10-20',
+  );
+  expect(screen.getByRole('heading', { name: 'Next game day' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Matchups' })).toHaveAttribute(
+    'href',
+    '/matchups?date=2026-10-20',
   );
 });

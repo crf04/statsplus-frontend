@@ -1,16 +1,19 @@
 import { Link } from 'react-router-dom';
 import { formatTip } from '../calendarDate';
-import { lastName, shortSlateDay, signedPercent } from './homeFormat';
+import { dayName, lastName, matchupsPath, shortSlateDay, signedPercent } from './homeFormat';
 
 /*
  * The scoreboard under the header: every game today, in tip-off order, with
  * its three biggest points Matchup effects either way. Each cell opens the
  * game's Matchup.
  */
-const HomeTicker = ({ slateDate, games, past = false }) => (
-  <nav className="home-ticker" aria-label={past ? "Last game day's games" : "Today's games"}>
-    <Link to={past ? `/matchups?date=${slateDate}` : '/matchups'} className="home-ticker-label">
-      {past && 'Last game day · '}
+const HomeTicker = ({ slateDate, games, fallback = null }) => (
+  <nav
+    className="home-ticker"
+    aria-label={fallback ? `${dayName(fallback)}'s games` : "Today's games"}
+  >
+    <Link to={matchupsPath(fallback, slateDate)} className="home-ticker-label">
+      {fallback && `${dayName(fallback)} · `}
       {shortSlateDay(slateDate)} <b>{games.length === 1 ? '1 game' : `${games.length} games`}</b>
     </Link>
     <div className="home-ticker-track">

@@ -14,7 +14,7 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ currentUser: { uid: 'reader-a' }, isAuthenticated: true, loading: false }),
 }));
 
-const CACHE_KEY = 'courtai.homeTonight.v1';
+const CACHE_KEY = 'courtai.homeTonight.v2';
 const pending = () => new Promise(() => {});
 
 const stored = {
@@ -39,7 +39,7 @@ const stored = {
     toughest: null,
   },
   slateDate: '2026-04-10',
-  past: false,
+  fallback: null,
 };
 
 // The page as the home route draws it from the hook's state.

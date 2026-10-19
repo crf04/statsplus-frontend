@@ -213,7 +213,11 @@ const NaturalLanguageQuery = ({
       <div className="landing-page">
         <div className="landing-stack">
           {tonight.games && (
-            <HomeTicker slateDate={tonight.slateDate} games={tonight.games} past={tonight.past} />
+            <HomeTicker
+              slateDate={tonight.slateDate}
+              games={tonight.games}
+              fallback={tonight.fallback}
+            />
           )}
           {notice && <div className="landing-notice">{notice}</div>}
           <div className="landing-container">
@@ -316,7 +320,7 @@ const NaturalLanguageQuery = ({
                 signUp={!isAuthenticated}
                 onUseQuery={setQuery}
                 slateDate={tonight.slateDate}
-                past={tonight.past}
+                fallback={tonight.fallback}
               />
             )}
 

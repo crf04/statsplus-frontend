@@ -369,6 +369,7 @@ test('reads the fallback marker, and a backend that omits it reads as none', () 
   expect(decodeSlate({ ...payload, fallback: 'previous_game_day' }).fallback).toBe(
     'previous_game_day',
   );
+  expect(decodeSlate({ ...payload, fallback: 'next_game_day' }).fallback).toBe('next_game_day');
   expect(decodeSlate({ ...payload, fallback: null }).fallback).toBeNull();
   expect(decodeSlate(payload).fallback).toBeNull();
   expect(() => decodeSlate({ ...payload, fallback: 'tomorrow' })).toThrow(

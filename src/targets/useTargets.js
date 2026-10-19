@@ -73,7 +73,13 @@ const useAccountRead = (
   read,
   empty,
   scope,
-  { lazy = false, failure = LOAD_FAILURE, keepPrevious = false, failureState } = {},
+  {
+    lazy = false,
+    waiting = false,
+    failure = LOAD_FAILURE,
+    keepPrevious = false,
+    failureState,
+  } = {},
 ) => {
   const { isAuthenticated, loading: authLoading, currentUser } = useAuth();
   const owner = useRef();
@@ -82,7 +88,7 @@ const useAccountRead = (
   const [requests, setRequests] = useState(lazy ? 0 : 1);
 
   useEffect(() => {
-    if (requests === 0 || authLoading || !isAuthenticated) {
+    if (requests === 0 || waiting || authLoading || !isAuthenticated) {
       setState({ status: 'idle', error: null, ...empty });
       return undefined;
     }
@@ -119,6 +125,7 @@ const useAccountRead = (
     empty,
     failure,
     requests,
+    waiting,
     keepPrevious,
     failureState,
     currentUser?.uid,
@@ -145,7 +152,8 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  * other surfaces pass none, which is the Slate's own current date, and read
  * the date back off the response rather than working it out a second time.
  */
-export const useResolvedTargets = (date) => useAccountRead(readResolution, EMPTY_RESOLUTION, date);
+export const useResolvedTargets = (date, options) =>
+  useAccountRead(readResolution, EMPTY_RESOLUTION, date, options);
 
 const EMPTY_PREVIEW = { status: 'idle', error: null, unavailable: null, preview: null, key: null };
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import { fetchSlate } from './slateApi';
@@ -201,8 +201,13 @@ function SlateBoard({ games, renderExtra }) {
 export default function SlatePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const replaceTo = useNavigate();
   const todaySlateDate = getTodaySlateDate();
-  const requestedDate = searchParams.get('date') ?? todaySlateDate;
+  const explicitDate = searchParams.get('date');
+  const requestedDate = explicitDate ?? todaySlateDate;
+  // The Slate read with no date names the day itself (crf04/statsplus#242);
+  // when it fell back, the day is kept here until the URL carries it.
+  const resolvedFallback = useRef(null);
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
@@ -212,7 +217,11 @@ export default function SlatePage() {
    * a Target that cannot be resolved says so on its own line and leaves the
    * board intact.
    */
-  const resolvedTargets = useResolvedTargets(requestedDate || undefined);
+  const resolvedTargets = useResolvedTargets(
+    explicitDate ?? (state.status === 'ready' ? state.slate.slateDate : undefined),
+    // With no date in the URL the day is not known until the Slate answers.
+    { waiting: explicitDate === null && state.status !== 'ready' },
+  );
   const liveEntries = resolvedTargets.entries.filter((entry) => entry.game);
   const now = useMinuteNow(state.status === 'ready');
   const slateDate =
@@ -239,9 +248,27 @@ export default function SlatePage() {
       return undefined;
     }
     const controller = new AbortController();
+    const resolved = resolvedFallback.current;
+    resolvedFallback.current = null;
+    if (explicitDate !== null && resolved?.slateDate === explicitDate) {
+      setState({ status: 'ready', slate: resolved, error: null });
+      return undefined;
+    }
     setState({ status: 'loading', slate: null, error: null });
-    fetchSlate(requestedDate || undefined, { signal: controller.signal })
-      .then((slate) => setState({ status: 'ready', slate, error: null }))
+    fetchSlate(explicitDate ?? undefined, {
+      signal: controller.signal,
+      ...(explicitDate === null ? { fallback: 'next_game_day' } : {}),
+    })
+      .then((slate) => {
+        if (explicitDate === null && slate.fallback) {
+          // Show the resolved day in the URL; the rerun that follows reuses
+          // this Slate rather than loading it a second time.
+          resolvedFallback.current = slate;
+          replaceTo(`/matchups?date=${slate.slateDate}`, { replace: true });
+          return;
+        }
+        setState({ status: 'ready', slate, error: null });
+      })
       .catch((error) => {
         if (!isRequestCancelled(error)) {
           setState({
@@ -252,7 +279,7 @@ export default function SlatePage() {
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, requestedDate]);
+  }, [authLoading, isAuthenticated, explicitDate, requestedDate, replaceTo]);
 
   const navigate = (nextDate) => setSearchParams(nextDate ? { date: nextDate } : {});
 

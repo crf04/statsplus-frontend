@@ -132,11 +132,13 @@ const decodeGame = (game) => {
 const decodeNeighbourDate = (value) => (isCalendarDate(value) ? value : null);
 
 // The always-present `fallback` names a Slate answered for the previous game
-// day because the current one has no games (crf04/statsplus#217). A backend
-// that predates it omits the field, which reads as no fallback.
+// day, or for the next one, because the current one has no games
+// (crf04/statsplus#217, #242). A backend that predates it omits the field,
+// which reads as no fallback.
+const FALLBACKS = new Set(['previous_game_day', 'next_game_day']);
 const decodeFallback = (value) => {
   if (value === undefined || value === null) return null;
-  if (value !== 'previous_game_day') throw createInvalidSlateError();
+  if (!FALLBACKS.has(value)) throw createInvalidSlateError();
   return value;
 };
 

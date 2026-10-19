@@ -17,6 +17,7 @@ const game = (gameId, scheduledAt) => ({
 
 const slate = {
   slateDate: '2026-04-10',
+  fallback: null,
   games: [game('late', '2026-04-11T02:00:00Z'), game('early', '2026-04-10T23:00:00Z')],
 };
 const edges = {
@@ -39,7 +40,7 @@ const resolved = {
   ],
 };
 
-const CACHE_KEY = 'courtai.homeTonight.v1';
+const CACHE_KEY = 'courtai.homeTonight.v2';
 const pending = () => new Promise(() => {});
 
 beforeEach(() => {
@@ -161,20 +162,54 @@ test('the Slate, Edges and Targets are all requested before any of them answers'
   renderHook(() => useHomeTonight(true, 'reader-a'));
 
   // Synchronously after mount: nothing has resolved, yet all three are in flight,
-  // each asking for the previous game day on its own and naming no date.
+  // each asking for the next game day on its own and naming no date.
   const signal = expect.any(AbortSignal);
-  expect(fetchSlate).toHaveBeenCalledWith(undefined, { signal, fallback: 'previous_game_day' });
-  expect(fetchSlateEdges).toHaveBeenCalledWith({ signal, fallback: 'previous_game_day' });
-  expect(fetchResolvedTargets).toHaveBeenCalledWith({ signal, fallback: 'previous_game_day' });
+  expect(fetchSlate).toHaveBeenCalledWith(undefined, { signal, fallback: 'next_game_day' });
+  expect(fetchSlateEdges).toHaveBeenCalledWith({ signal, fallback: 'next_game_day' });
+  expect(fetchResolvedTargets).toHaveBeenCalledWith({ signal, fallback: 'next_game_day' });
 });
 
-test('a Slate answered with the previous game day renders as past', async () => {
+test('a Slate answered with the previous game day keeps its fallback', async () => {
   fetchSlate.mockResolvedValue({ ...slate, fallback: 'previous_game_day' });
   const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
-  expect(result.current.past).toBe(true);
+  expect(result.current.fallback).toBe('previous_game_day');
   expect(result.current.slateDate).toBe('2026-04-10');
+});
+
+test('a Slate answered with the next game day keeps its fallback', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, fallback: 'next_game_day' });
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  await waitFor(() => expect(result.current.games).not.toBeNull());
+  expect(result.current.fallback).toBe('next_game_day');
+});
+
+test('Targets resolved for the next game day are kept with its games', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-10-20', fallback: 'next_game_day' });
+  fetchSlateEdges.mockResolvedValue({ ...edges, slateDate: '2026-10-20' });
+  fetchResolvedTargets.mockResolvedValue({ ...resolved, slateDate: '2026-10-20' });
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  await waitFor(() => expect(result.current.targets).not.toBeNull());
+  expect(result.current.slateDate).toBe('2026-10-20');
+  expect(result.current.targets.firing.map((e) => e.target.id)).toEqual([2, 1]);
+});
+
+test('a next game day result is written and paints on the return visit', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-10-20', fallback: 'next_game_day' });
+  fetchSlateEdges.mockResolvedValue({ ...edges, slateDate: '2026-10-20' });
+  const first = renderHook(() => useHomeTonight(true, null));
+  await waitFor(() => expect(first.result.current.fallback).toBe('next_game_day'));
+  first.unmount();
+
+  fetchSlate.mockReturnValue(pending());
+  fetchSlateEdges.mockReturnValue(pending());
+  const again = renderHook(() => useHomeTonight(true, null));
+  expect(again.result.current.fallback).toBe('next_game_day');
+  expect(again.result.current.slateDate).toBe('2026-10-20');
+  expect(again.result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
 });
 
 test('a Slate with no fallback renders as today', async () => {
@@ -182,7 +217,7 @@ test('a Slate with no fallback renders as today', async () => {
   const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
 
   await waitFor(() => expect(result.current.games).not.toBeNull());
-  expect(result.current.past).toBe(false);
+  expect(result.current.fallback).toBeNull();
 });
 
 test('a failed Slate read keeps the Targets of the day they answered for', async () => {
@@ -207,7 +242,7 @@ describe('the last public result', () => {
     ],
     spotlight: { best: null, toughest: null },
     slateDate: '2026-04-09',
-    past: true,
+    fallback: 'previous_game_day',
   };
 
   test('paints before any read answers, with scores as a Map and no Targets', () => {
@@ -220,7 +255,7 @@ describe('the last public result', () => {
     expect(result.current.games.map((g) => g.gameId)).toEqual(['cached']);
     expect(result.current.games[0].scores.get(7)).toBe(0.25);
     expect(result.current.slateDate).toBe('2026-04-09');
-    expect(result.current.past).toBe(true);
+    expect(result.current.fallback).toBe('previous_game_day');
     expect(result.current.targets).toBeNull();
   });
 
@@ -230,7 +265,7 @@ describe('the last public result', () => {
 
     await waitFor(() => expect(result.current.slateDate).toBe('2026-04-10'));
     expect(result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
-    expect(result.current.past).toBe(false);
+    expect(result.current.fallback).toBeNull();
   });
 
   test('is written from a fresh read and paints on the next visit, never with Targets', async () => {
@@ -239,8 +274,8 @@ describe('the last public result', () => {
     await waitFor(() => expect(first.result.current.games).not.toBeNull());
     first.unmount();
     expect(Object.keys(JSON.parse(window.localStorage.getItem(CACHE_KEY))).sort()).toEqual([
+      'fallback',
       'games',
-      'past',
       'slateDate',
       'spotlight',
     ]);
@@ -284,7 +319,7 @@ describe('the last public result', () => {
       JSON.stringify({ ...stored, games: [{ ...stored.games[0], scores: [7] }] }),
     ],
     ['a missing spotlight', JSON.stringify({ ...stored, spotlight: undefined })],
-    ['a past flag that is not a boolean', JSON.stringify({ ...stored, past: 'yes' })],
+    ['a fallback outside the vocabulary', JSON.stringify({ ...stored, fallback: 'yes' })],
   ])('an unreadable entry (%s) is ignored and removed', (_name, raw) => {
     window.localStorage.setItem(CACHE_KEY, raw);
     fetchSlate.mockReturnValue(pending());

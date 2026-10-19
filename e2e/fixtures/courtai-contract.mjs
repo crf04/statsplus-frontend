@@ -2347,12 +2347,16 @@ const isCalendarDate = (value) =>
   new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 
 // The routes the backend serves without authentication.
-// `fallback=previous_game_day` is only valid on its own (crf04/statsplus#217).
+// `fallback=previous_game_day` or `next_game_day` is only valid on its own
+// (crf04/statsplus#217, #242).
 // Every day in this contract but the completed one lists a game, so the
 // current day never has to fall back and the parameter answers as if absent.
 const invalidFallback = (url) => {
   const fallback = url.searchParams.get('fallback');
-  return fallback !== null && (fallback !== 'previous_game_day' || url.searchParams.has('date'));
+  return (
+    fallback !== null &&
+    (!['previous_game_day', 'next_game_day'].includes(fallback) || url.searchParams.has('date'))
+  );
 };
 const refuseFallback = (route) =>
   route.fulfill({
@@ -2360,7 +2364,8 @@ const refuseFallback = (route) =>
     json: {
       error: {
         code: 'invalid_input',
-        message: 'fallback must be previous_game_day and cannot be combined with date.',
+        message:
+          'fallback must be previous_game_day or next_game_day and cannot be combined with date.',
       },
     },
   });

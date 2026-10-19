@@ -7,7 +7,13 @@
 
 // Providers whose price sits on one pick, in the order they win a tie after
 // the sportsbooks.
-export const PRICED_PROVIDERS = Object.freeze(['underdog', 'novig', 'polymarket', 'kalshi']);
+export const PRICED_PROVIDERS = Object.freeze([
+  'underdog',
+  'novig',
+  'polymarket',
+  'kalshi',
+  'dabble',
+]);
 
 export const formatPrice = (price) => (price > 0 ? `+${price}` : `−${Math.abs(price)}`);
 

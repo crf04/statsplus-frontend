@@ -524,6 +524,7 @@ export const matchupPayload = {
         prizepicks: COMPLETE_MARKETS,
         underdog: ['PTS', 'TOV'],
         polymarket: ['PTS'],
+        dabble: ['PTS'],
       },
       // Underdog posts his points a point under PrizePicks and Polymarket, whose
       // line leads; only PrizePicks numbers his rebounds.
@@ -531,6 +532,7 @@ export const matchupPayload = {
         prizepicks: { PTS: 27.5, REB: 7.5 },
         underdog: { PTS: 26.5 },
         polymarket: { PTS: 27.5 },
+        dabble: { PTS: 27.5 },
       },
       // Sportsbook quotes (parent statsplus#185 section 4). PTS: DraftKings and
       // BetMGM tie for the best Over at the shared 27.5 line, FanDuel's 26.5
@@ -592,10 +594,12 @@ export const matchupPayload = {
       // its Over ties BetMGM and DraftKings, which win as sportsbooks, and its
       // Under beats every book. Underdog prices 26.5, a line no sportsbook or
       // headline shares with it, so its price is not compared. PrizePicks
-      // never carries a price.
+      // never carries a price. Dabble's even line is −122 (statsplus#263),
+      // which no book or market beats.
       line_prices: {
         underdog: { PTS: { over: -112, under: -112 } },
         polymarket: { PTS: { over: -110, under: -102 } },
+        dabble: { PTS: { over: -122, under: -122 } },
       },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],

@@ -128,6 +128,50 @@ function BookLines({ market, quote }) {
   );
 }
 
+// The DFS apps that price a pick, in the order their rows are listed. Dabble's
+// price is the owner's −122 for an even line (statsplus#263).
+const DFS_PRICED = ['underdog', 'dabble'];
+
+// The decoder admits a price only beside that provider's line for the market.
+const dfsQuotes = (player, market) =>
+  DFS_PRICED.flatMap((provider) => {
+    const quote = player.linePrices?.[provider]?.[market];
+    return quote ? [{ provider, line: player.lines[provider][market], ...quote }] : [];
+  });
+
+// Renders nothing when neither app prices the stat, whatever the books quote.
+function DfsLines({ player, market }) {
+  const quotes = dfsQuotes(player, market);
+  if (quotes.length === 0) return null;
+  return (
+    <section className="selection-panel selection-panel-books" aria-label="DFS">
+      <h3>DFS · {market}</h3>
+      <div className="selection-table-wrap">
+        <table aria-label={`${market} DFS lines`} className="selection-books">
+          <thead>
+            <tr>
+              <th scope="col">App</th>
+              <th scope="col">Line</th>
+              <th scope="col">Over</th>
+              <th scope="col">Under</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quotes.map((entry) => (
+              <tr key={entry.provider}>
+                <th scope="row">{bookName(entry.provider)}</th>
+                <td>{entry.line}</td>
+                <td>{formatPrice(entry.over)}</td>
+                <td>{formatPrice(entry.under)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function Cell({ component }) {
   if (!component) return <span className="score-none">—</span>;
   return (
@@ -460,6 +504,7 @@ export default function SelectionCard({
           quote={player.bookLines[activeStat]}
         />
       )}
+      <DfsLines player={player} market={activeStat} />
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
         .map(({ market }) => (

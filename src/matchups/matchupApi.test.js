@@ -2908,6 +2908,14 @@ describe('line_prices', () => {
     });
   });
 
+  test('decodes Dabble at the line it posts', () => {
+    const candidate = withLinePrices({ dabble: { PTS: { over: -122, under: -122 } } });
+
+    expect(decodeMatchup(candidate).players[0].linePrices).toEqual({
+      dabble: { PTS: { over: -122, under: -122 } },
+    });
+  });
+
   test.each([
     ['an absent line_prices', undefined],
     ['an empty line_prices', {}],
@@ -2917,7 +2925,6 @@ describe('line_prices', () => {
 
   test.each([
     ['PrizePicks, which posts the market', { prizepicks: { PTS: { over: -110, under: -110 } } }],
-    ['Dabble, which posts the market', { dabble: { PTS: { over: -110, under: -110 } } }],
     [
       'a market missing from that provider lines',
       { underdog: { REB: { over: -110, under: -110 } } },

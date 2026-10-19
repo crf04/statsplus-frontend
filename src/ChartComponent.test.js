@@ -28,7 +28,7 @@ test('without an explicit line the chart draws the season average', () => {
   );
   const line = barProps.options.plugins.annotation.annotations.line1;
   expect(line.yMin).toBe(24.7);
-  expect(line.label.content).toBe('Season avg: 24.7');
+  expect(line.label.content).toEqual(['Season avg: 24.7']);
 });
 
 const postedLine = {
@@ -54,10 +54,10 @@ const lineLabel = (lineValue, lineIsPosted) => {
 };
 
 test('the posted line is labelled with its provider and game', () => {
-  expect(lineLabel('26.5', true)).toBe('PrizePicks 26.5 · GSW vs LAL · Wed, Oct 21');
+  expect(lineLabel('26.5', true)).toEqual(['PrizePicks 26.5', 'GSW vs LAL · Wed, Oct 21']);
 });
 
 test('a typed line keeps the plain label, even at the posted value', () => {
-  expect(lineLabel('30', false)).toBe('Line: 30');
-  expect(lineLabel('26.5', false)).toBe('Line: 26.5');
+  expect(lineLabel('30', false)).toEqual(['Line: 30']);
+  expect(lineLabel('26.5', false)).toEqual(['Line: 26.5']);
 });

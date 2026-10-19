@@ -14,11 +14,15 @@ const getPer36Value = (average, stat) => {
   return value !== null && minutes !== null && minutes !== 0 ? (value / minutes) * 36 : 0;
 };
 
-// "PrizePicks 26.5 · GSW vs LAL · Wed, Oct 21": whose line it is, and for which game.
+// Whose line it is, then which game, on two lines so a phone-width chart fits
+// it: "PrizePicks 26.5" / "GSW vs LAL · Wed, Oct 21".
 const postedLineLabel = ({ value, provider, matchup, gameDate }) =>
-  [`${bookName(provider)} ${formatNumber(value, 1)}`, matchup, gameDate && shortSlateDay(gameDate)]
+  [
+    `${bookName(provider)} ${formatNumber(value, 1)}`,
+    [matchup, gameDate && shortSlateDay(gameDate)].filter(Boolean).join(' · '),
+  ]
     .filter(Boolean)
-    .join(' · ');
+    .join('\n');
 
 const ChartComponent = ({
   gameLogs,
@@ -98,7 +102,7 @@ const ChartComponent = ({
               borderWidth: 1.5,
               borderDash: [6, 4],
               label: {
-                content: lineLabel,
+                content: lineLabel.split('\n'),
                 // chartjs-plugin-annotation 3 draws a label only with `display`.
                 display: true,
                 position: 'start',

@@ -45,39 +45,35 @@ test('a refused send keeps the draft in the popover', async ({ authenticatedPage
   await expect(popover.getByRole('textbox', { name: 'Your feedback' })).toHaveValue('Keep this');
 });
 
-const failSaveFilterSet = async (page) => {
+const failSavedFilterSetsLoad = async (page) => {
   await page.route('**/api/user/saved-filter-sets', (route) =>
-    route.request().method() === 'POST'
-      ? route.fulfill({
-          status: 503,
-          headers: {
-            'x-request-id': '3f9a12bc-7e1d-4c1d-8e21-aaaaaaaaaaaa',
-            'access-control-allow-origin': '*',
-            'access-control-expose-headers': 'x-request-id',
-          },
-          json: { error: { code: 'unavailable', message: 'Saving is unavailable.' } },
-        })
-      : route.fallback(),
+    route.fulfill({
+      status: 503,
+      headers: {
+        'x-request-id': '3f9a12bc-7e1d-4c1d-8e21-aaaaaaaaaaaa',
+        'access-control-allow-origin': '*',
+        'access-control-expose-headers': 'x-request-id',
+      },
+      json: { error: { code: 'unavailable', message: 'Saved sets are unavailable.' } },
+    }),
   );
-  await page.goto('/');
-  await page.getByRole('textbox').fill('LeBron James last 10 games');
-  await page.getByRole('textbox').press('Enter');
-  await page.getByRole('button', { name: 'Save Filter Set' }).click();
-  const modal = page.getByRole('dialog', { name: 'Save this Filter Set' });
-  await modal.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.goto('/privacy');
+  await page.getByRole('button', { name: /CourtAI Test User/ }).click();
+  await page.getByRole('button', { name: 'Saved Filter Sets' }).click();
+  const modal = page.getByRole('dialog', { name: 'Saved Filter Sets' });
   await modal.getByRole('button', { name: 'Report this' }).click();
   return modal;
 };
 
-test('Report this from a failed Save Filter Set takes typing inside the modal', async ({
+test('Report this from a failed Saved Filter Sets load takes typing inside the modal', async ({
   authenticatedPage: page,
 }) => {
-  const modal = await failSaveFilterSet(page);
+  const modal = await failSavedFilterSetsLoad(page);
 
   const box = page.getByRole('textbox', { name: 'Your feedback' });
   await expect(box).toBeFocused();
-  await page.keyboard.type('It would not save');
-  await expect(box).toHaveValue('It would not save');
+  await page.keyboard.type('It would not load');
+  await expect(box).toHaveValue('It would not load');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);
   await expect(modal).toBeVisible();
@@ -87,7 +83,7 @@ test('Report this from a failed Save Filter Set takes typing inside the modal', 
 test('closing the popover from inside the modal returns focus to Report this', async ({
   authenticatedPage: page,
 }) => {
-  const modal = await failSaveFilterSet(page);
+  const modal = await failSavedFilterSetsLoad(page);
   await page.getByRole('button', { name: 'Close feedback' }).click();
   await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);
   await expect(modal.getByRole('button', { name: 'Report this' })).toBeFocused();
@@ -96,8 +92,8 @@ test('closing the popover from inside the modal returns focus to Report this', a
 test('a send from inside the modal returns focus to Report this and confirms in the modal', async ({
   authenticatedPage: page,
 }) => {
-  const modal = await failSaveFilterSet(page);
-  await page.getByRole('textbox', { name: 'Your feedback' }).fill('It would not save');
+  const modal = await failSavedFilterSetsLoad(page);
+  await page.getByRole('textbox', { name: 'Your feedback' }).fill('It would not load');
   await page.getByRole('button', { name: 'Send' }).click();
 
   await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);

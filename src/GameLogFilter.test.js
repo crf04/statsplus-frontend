@@ -263,25 +263,108 @@ test('an end date before the start date is refused naming date_to', async () => 
   expect(fetchGameLogsData).not.toHaveBeenCalled();
 });
 
-test('saves the Log Workspace URL exactly as it stands', async () => {
-  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
-
-  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole('button', { name: 'Save Filter Set' }));
-  fireEvent.change(await screen.findByLabelText('Name'), {
-    target: { value: 'LeBron last 10' },
-  });
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+describe('Share', () => {
+  afterEach(() => {
+    delete navigator.share;
+    delete navigator.clipboard;
   });
 
-  expect(createSavedFilterSet).toHaveBeenCalledWith({
-    name: 'LeBron last 10',
-    queryString: 'player_name=LeBron+James&game_filter=10',
+  test('copies the exact Log Workspace link and confirms it', async () => {
+    let clipboardText = '';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text) => {
+          clipboardText = text;
+          return Promise.resolve();
+        },
+      },
+    });
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    });
+
+    expect(clipboardText).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument(), {
+      timeout: 3000,
+    });
+  });
+
+  test('copies the link when the native share sheet fails rather than being dismissed', async () => {
+    let clipboardText = '';
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: () => Promise.reject(new DOMException('Blocked', 'NotAllowedError')),
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text) => {
+          clipboardText = text;
+          return Promise.resolve();
+        },
+      },
+    });
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    });
+
+    expect(clipboardText).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
+
+  test('hands the exact link to the native share sheet when there is one', async () => {
+    let shared;
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: (data) => {
+        shared = data;
+        return Promise.reject(new DOMException('Dismissed', 'AbortError'));
+      },
+    });
+    const writeText = jest.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    });
+
+    expect(shared.url).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  test('offers nothing to share until the URL carries a Filter Set', async () => {
+    renderGameLogFilter(['/?browse=1']);
+
+    expect(await screen.findByRole('button', { name: 'Back to search' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+  });
+
+  test('offers nothing to share for a refused link or a signed-out reader', async () => {
+    const refused = renderGameLogFilter(['/?player_name=LeBron+James&game_filter=abc']);
+    expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+    refused.unmount();
+
+    mockAuthState.isAuthenticated = false;
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+    await waitFor(() => expect(screen.getByText(/Sign in to load these game logs/)).toBeVisible());
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
   });
 });
 
-test('reaches the saved list from the Query Prompt and from the Log Workspace', async () => {
+test('reaches the saved list from the Query Prompt; the Workspace keeps it in the panel', async () => {
   const promptRender = renderGameLogFilter(['/']);
 
   await act(async () => {
@@ -291,12 +374,12 @@ test('reaches the saved list from the Query Prompt and from the Log Workspace', 
   expect(fetchSavedFilterSets).toHaveBeenCalledTimes(1);
   promptRender.unmount();
 
-  renderGameLogFilter(['/?player_name=LeBron+James']);
+  // Saving and the saved list are the filter panel's Saved tab now, so the
+  // Workspace toolbar carries neither.
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
   await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
-  });
-  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Saved Filter Sets' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
 });
 
 test('offers no save affordance and no saved list while signed out', async () => {
@@ -363,11 +446,15 @@ test('replays a saved Filter Set with its opponent still fixed', async () => {
   );
 });
 
-test('offers nothing to save until the URL carries a Filter Set', async () => {
-  renderGameLogFilter(['/?browse=1']);
+test('a refused link, which has no panel, keeps the way out to the saved list', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=0']);
 
-  expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
   expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
 });
 
 test('names the tab after the player the URL shows, and hands the default back', async () => {

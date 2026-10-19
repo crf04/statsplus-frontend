@@ -10,29 +10,34 @@ signedInTest(
     await app.open('/?player_name=LeBron+James&game_filter=10');
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
 
-    await screen.getByRole('button', 'Save Filter Set').tap();
-    await screen.getByLabel('Name').fill('LeBron last 10');
-    await screen.getByRole('button', 'Save').tap();
-    await expect(screen.getByRole('heading', 'Save this Filter Set')).toBeHidden();
-    await expect(
-      screen.getByTestId('filter-panel').getByRole('button', /LeBron last 10/),
-    ).toBeVisible();
+    const panel = screen.getByTestId('filter-panel');
+    await panel.getByRole('button', 'Save').tap();
+    await screen.getByLabel('Name this Filter Set').fill('LeBron last 10');
+    await panel.getByRole('button', 'Save').tap();
+    await expect(screen.getByLabel('Name this Filter Set')).toBeHidden();
+    await expect(panel.getByText('Saved as LeBron last 10').first()).toBeVisible();
     const [saved] = api.sent('/api/user/saved-filter-sets', 'POST');
     expect(saved.body).toMatchObject({ name: 'LeBron last 10' });
     expect(String((saved.body as { query_string: string }).query_string)).toContain(
       'game_filter=10',
     );
+    await panel.getByRole('tab', /^Saved/).tap();
+    await expect(panel.getByRole('button', 'Open saved Filter Set LeBron last 10')).toBeVisible();
+    await panel.getByRole('tab', 'Filters').tap();
 
     // The same name twice is the backend's refusal, shown rather than swallowed.
-    await screen.getByRole('button', 'Save Filter Set').tap();
-    await screen.getByLabel('Name').fill('LeBron last 10');
-    await screen.getByRole('button', 'Save').tap();
+    await app.open('/?player_name=LeBron+James&game_filter=5');
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await panel.getByRole('button', 'Save').tap();
+    await screen.getByLabel('Name this Filter Set').fill('LeBron last 10');
+    await panel.getByRole('button', 'Save').tap();
     await expect(screen.getByRole('alert')).toContainText('already have a saved Filter Set');
-    await screen.getByRole('button', 'Cancel').tap();
-    await screen.getByRole('button', 'Save Filter Set').tap();
-    await expect(screen.getByLabel('Name')).toHaveValue('');
-    await expect(screen.getByRole('dialog').getByRole('alert')).toHaveCount(0);
-    await screen.getByRole('button', 'Cancel').tap();
+    await expect(screen.getByLabel('Name this Filter Set')).toHaveValue('LeBron last 10');
+    await panel.getByRole('button', 'Cancel').tap();
+    await panel.getByRole('button', 'Save').tap();
+    await expect(screen.getByLabel('Name this Filter Set')).toHaveValue('');
+    await expect(panel.getByRole('alert')).toHaveCount(0);
+    await panel.getByRole('button', 'Cancel').tap();
 
     await screen.getByRole('button', 'Back to search').tap();
     await expect(browser).toHaveURL('/');
@@ -100,7 +105,7 @@ signedInTest(
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
 
     await agent.act('save these filters as {name}', { params: { name: 'LeBron last 10' } });
-    await expect(screen.getByRole('heading', 'Save this Filter Set')).toBeHidden();
+    await expect(screen.getByLabel('Name this Filter Set')).toBeHidden();
     await screen.getByRole('button', 'Back to search').tap();
     await screen.getByRole('button', 'Saved Filter Sets').tap();
     await expect(screen.getByRole('button', 'Open saved Filter Set LeBron last 10')).toBeVisible();
@@ -119,10 +124,11 @@ signedInTest(
     await expect(screen.getByRole('cell', '27')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toHaveCount(0);
 
-    await screen.getByRole('button', 'Save Filter Set').tap();
-    await screen.getByLabel('Name').fill('LeBron early January');
-    await screen.getByRole('button', 'Save').tap();
-    await expect(screen.getByRole('heading', 'Save this Filter Set')).toBeHidden();
+    const panel = screen.getByTestId('filter-panel');
+    await panel.getByRole('button', 'Save').tap();
+    await screen.getByLabel('Name this Filter Set').fill('LeBron early January');
+    await panel.getByRole('button', 'Save').tap();
+    await expect(screen.getByLabel('Name this Filter Set')).toBeHidden();
     const [saved] = api.sent('/api/user/saved-filter-sets', 'POST');
     expect((saved.body as { query_string: string }).query_string).toBe(
       'player_name=LeBron+James&date_filter=2025-01-01&date_to=2025-01-08',

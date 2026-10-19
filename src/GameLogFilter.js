@@ -1,6 +1,6 @@
 import { readRevisit } from './revisitCache';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
@@ -10,7 +10,6 @@ import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
-import SaveFilterSetModal from './SaveFilterSetModal';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
@@ -50,6 +49,7 @@ const GameLogFilter = ({ notice = null }) => {
   // a waitlisted one is refused them all, so it is treated as not searching.
   const canSearch = isAuthenticated && !waitlist;
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
   const { filters: urlFilters, invalid: urlInvalid } = useMemo(
@@ -95,8 +95,8 @@ const GameLogFilter = ({ notice = null }) => {
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
-  const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   // The Workspace is revealed in one piece. Each section that reads on its own
   // reports what it last finished reading for, and the Workspace stays behind
   // one loading state until every section has finished for what is on screen.
@@ -353,6 +353,34 @@ const GameLogFilter = ({ notice = null }) => {
     setSelectedTeam('');
     setGameLogsError(null);
   }, [abortGameLogsRequest, clearSeasonGameLogs]);
+
+  // The URL is the whole view, so sharing it hands over exactly these game
+  // logs. Phones get their own share sheet; elsewhere the link is copied.
+  const shareLink = async () => {
+    const url = `${window.location.origin}${pathname}?${searchParams.toString()}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url });
+        return;
+      } catch (error) {
+        // Dismissing the share sheet is a choice; any other failure falls
+        // back to copying.
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+    } catch {
+      // A blocked clipboard leaves the link in the address bar to copy by hand.
+    }
+  };
+
+  useEffect(() => {
+    if (!linkCopied) return undefined;
+    const timer = setTimeout(() => setLinkCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [linkCopied]);
 
   // The sentinel only ever says "Workspace, no filters yet". Alongside filters
   // it is already untrue, so it is dropped rather than carried into a link
@@ -631,27 +659,26 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {canSearch && (
+            {/* Saving and the saved list live in the filter panel's Saved
+                tab. Share hands on the applied link, so it waits for a URL
+                that carries a Filter Set we would open; a refused link has no
+                panel, so its way back out to the saved list stays here. */}
+            {canSearch && (hasUrlFilterSet || isRefusedLink) && (
               <div className="d-flex align-items-center gap-2 ms-auto">
-                {/* There is nothing to save until the URL carries a Filter
-                    Set, and a refused link is one we would not open again —
-                    but the saved list is still the way back out of either. */}
                 {hasUrlFilterSet && !isRefusedLink && (
+                  <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
+                    <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
+                  </button>
+                )}
+                {isRefusedLink && (
                   <button
                     type="button"
                     className="btn btn-back-to-search"
-                    onClick={() => setShowSaveFilterSet(true)}
+                    onClick={() => setShowSavedFilterSets(true)}
                   >
-                    Save Filter Set
+                    Saved Filter Sets
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-back-to-search"
-                  onClick={() => setShowSavedFilterSets(true)}
-                >
-                  Saved Filter Sets
-                </button>
               </div>
             )}
           </div>
@@ -721,6 +748,7 @@ const GameLogFilter = ({ notice = null }) => {
                 lineType={lineType}
                 lineValue={lineValue}
                 onContextSettled={setPanelSettledFor}
+                defaultSaveName={currentQuery || ''}
               />
             </Col>
           </Row>
@@ -767,23 +795,13 @@ const GameLogFilter = ({ notice = null }) => {
         </Container>
       )}
 
-      {/* Saving and the saved list belong to an account, so neither exists for
-          a signed-out reader. */}
+      {/* The saved list belongs to an account, so it does not exist for a
+          signed-out reader. */}
       {canSearch && (
-        <>
-          <SaveFilterSetModal
-            show={showSaveFilterSet}
-            onHide={() => setShowSaveFilterSet(false)}
-            // The URL as it stands is what gets saved, so what opens later is
-            // the link the user was looking at.
-            queryString={searchParams.toString()}
-            defaultName={currentQuery || ''}
-          />
-          <SavedFilterSetsModal
-            show={showSavedFilterSets}
-            onHide={() => setShowSavedFilterSets(false)}
-          />
-        </>
+        <SavedFilterSetsModal
+          show={showSavedFilterSets}
+          onHide={() => setShowSavedFilterSets(false)}
+        />
       )}
     </>
   );

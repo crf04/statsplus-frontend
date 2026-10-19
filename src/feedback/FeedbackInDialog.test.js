@@ -1,8 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import SaveFilterSetModal from '../SaveFilterSetModal';
-import { createSavedFilterSet } from '../savedFilterSetsApi';
+import SavedFilterSetsModal from '../SavedFilterSetsModal';
+import { fetchSavedFilterSets } from '../savedFilterSetsApi';
 import ErrorMessage from './ErrorMessage';
 import FeedbackButton from './FeedbackButton';
 import { FeedbackProvider } from './FeedbackContext';
@@ -11,7 +11,7 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, currentUser: { email: 'sam@example.com' } }),
 }));
 jest.mock('../utils/axiosConfig', () => ({ __esModule: true, default: { post: jest.fn() } }));
-jest.mock('../savedFilterSetsApi', () => ({ createSavedFilterSet: jest.fn() }));
+jest.mock('../savedFilterSetsApi', () => ({ fetchSavedFilterSets: jest.fn() }));
 
 const renderInProvider = (ui) =>
   render(
@@ -20,23 +20,20 @@ const renderInProvider = (ui) =>
     </MemoryRouter>,
   );
 
-test('Report this from a failed Save Filter Set takes typing despite the modal focus trap', async () => {
-  createSavedFilterSet.mockRejectedValue({
+test('Report this from a failed Saved Filter Sets load takes typing despite the modal focus trap', async () => {
+  fetchSavedFilterSets.mockRejectedValue({
     response: { status: 500, headers: { 'x-request-id': '3f9a12bc-0000' }, data: {} },
   });
   const onHide = jest.fn();
-  renderInProvider(
-    <SaveFilterSetModal show onHide={onHide} queryString="a=1" defaultName="Mine" />,
-  );
-  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  renderInProvider(<SavedFilterSetsModal show onHide={onHide} />);
   await userEvent.click(await screen.findByRole('button', { name: 'Report this' }));
 
   const box = screen.getByRole('textbox', { name: 'Your feedback' });
-  await userEvent.type(box, 'It would not save');
+  await userEvent.type(box, 'It would not load');
   // The modal reclaims focus from anything outside it a moment later.
   await new Promise((resolve) => setTimeout(resolve, 100));
   await userEvent.type(box, '!');
-  expect(box).toHaveValue('It would not save!');
+  expect(box).toHaveValue('It would not load!');
   expect(box).toHaveFocus();
   // Escape closes the popover and leaves the dialog it was opened from.
   await userEvent.keyboard('{Escape}');

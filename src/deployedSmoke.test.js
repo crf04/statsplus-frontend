@@ -162,16 +162,34 @@ describe('deployed smoke URL and fixture wiring', () => {
     );
     expect(workflowSource).toContain('github.event.repository.default_branch');
     expect(workflowSource).toContain(
-      'run: node scripts/validate-deployment-url.mjs production "$E2E_BASE_URL"',
+      'run: node scripts/validate-deployment-url.mjs "$RELEASE_CHECK_MODE" "$E2E_BASE_URL" "$E2E_API_BASE_URL" "$E2E_MCP_BASE_URL"',
     );
     expect(workflowSource).toContain('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.');
     expect(workflowSource.indexOf('Validate protected preview deployment URL')).toBeLessThan(
       workflowSource.indexOf('VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.'),
     );
     expect(workflowSource).toContain(
-      "E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || 'https://statsplus-frontend.vercel.app' }}",
+      "E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && (inputs.base_url || (inputs.mode == 'staging' && 'https://staging.courtai.app' || 'https://statsplus-frontend.vercel.app')) || 'https://statsplus-frontend.vercel.app' }}",
     );
     expect(workflowSource).not.toContain('github.event.deployment_status.environment_url');
+  });
+
+  test('dispatches the Release Check against staging with explicit API and MCP URLs', () => {
+    const workflowSource = fs.readFileSync(
+      path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
+      'utf8',
+    );
+
+    expect(workflowSource).toContain('- staging');
+    expect(workflowSource).toContain('api_base_url:');
+    expect(workflowSource).toContain('mcp_base_url:');
+    expect(workflowSource).toContain("(inputs.mode == 'production' || inputs.mode == 'staging')");
+    expect(workflowSource).toMatch(
+      /E2E_API_BASE_URL: .*inputs\.mode == 'production' && 'https:\/\/statsplus-backend-production\.up\.railway\.app' \|\| ''/,
+    );
+    expect(workflowSource).toMatch(
+      /E2E_MCP_BASE_URL: .*inputs\.mode == 'production' && 'https:\/\/mcp\.courtai\.app' \|\| ''/,
+    );
   });
 
   test('uses the immutable workflow revision for manual smoke runs', () => {
@@ -192,15 +210,85 @@ describe('deployed smoke URL and fixture wiring', () => {
     ]);
   });
 
+  const productionApi = 'https://statsplus-backend-production.up.railway.app';
+  const productionMcp = 'https://mcp.courtai.app';
+  const stagingApi = 'https://statsplus-backend-staging.up.railway.app';
+  const stagingMcp = 'https://mcp-staging.courtai.app';
+  const stagingUrl = 'https://staging.courtai.app';
+
   test.each([
-    { label: 'public production alias', url: productionUrl, status: 0 },
-    { label: 'immutable deployment URL', url: deploymentUrl, status: 1 },
-  ])('validates the production URL for $label', ({ url, status }) => {
-    const result = spawnSync(
-      process.execPath,
-      ['scripts/validate-deployment-url.mjs', 'production', url],
-      { cwd: process.cwd(), encoding: 'utf8' },
-    );
+    {
+      label: 'public production alias',
+      args: ['production', productionUrl, productionApi, productionMcp],
+      status: 0,
+    },
+    {
+      label: 'immutable deployment URL',
+      args: ['production', deploymentUrl, productionApi, productionMcp],
+      status: 1,
+    },
+    {
+      label: 'staging frontend, API and MCP',
+      args: ['staging', stagingUrl, stagingApi, stagingMcp],
+      status: 0,
+    },
+    { label: 'production without API and MCP', args: ['production', productionUrl], status: 1 },
+    { label: 'staging without API and MCP', args: ['staging', stagingUrl], status: 1 },
+    {
+      label: 'staging frontend in production mode',
+      args: ['production', stagingUrl, productionApi, productionMcp],
+      status: 1,
+    },
+    {
+      label: 'production frontend in staging mode',
+      args: ['staging', productionUrl, stagingApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'production API against staging',
+      args: ['staging', stagingUrl, productionApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'production MCP against staging',
+      args: ['staging', stagingUrl, stagingApi, productionMcp],
+      status: 1,
+    },
+    {
+      label: 'staging MCP against production',
+      args: ['production', productionUrl, productionApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'another host',
+      args: ['staging', 'https://evil.example/', stagingApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'a lookalike staging host',
+      args: ['staging', 'https://staging.courtai.app.evil.example/', stagingApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'an MCP URL with a path',
+      args: ['production', productionUrl, productionApi, `${productionMcp}/mcp`],
+      status: 1,
+    },
+    {
+      label: 'plain http',
+      args: ['staging', stagingUrl.replace('https', 'http'), stagingApi, stagingMcp],
+      status: 1,
+    },
+    {
+      label: 'an unknown mode',
+      args: ['preview', productionUrl, productionApi, productionMcp],
+      status: 1,
+    },
+  ])('validates Release Check targets for $label', ({ args, status }) => {
+    const result = spawnSync(process.execPath, ['scripts/validate-deployment-url.mjs', ...args], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    });
 
     expect(result.status).toBe(status);
   });

@@ -83,6 +83,135 @@ test('@smoke production Matchup API routing reaches authenticated backend', asyn
   });
 });
 
+// Release Check (crf04/statsplus#249). The checks below run logged out against a
+// deployed frontend (E2E_BASE_URL), the API it serves (E2E_API_BASE_URL) and the
+// MCP server (E2E_MCP_BASE_URL). They only read: every browser request must be a
+// GET, and the one POST, an unauthenticated /mcp call, is refused before it acts.
+const apiBaseUrl = () =>
+  process.env.E2E_API_BASE_URL || 'https://statsplus-backend-production.up.railway.app';
+const mcpBaseUrl = () => process.env.E2E_MCP_BASE_URL || 'https://mcp.courtai.app';
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+const requireDeployedTarget = () =>
+  test.skip(!process.env.E2E_BASE_URL, 'The Release Check needs a deployed frontend.');
+
+const collectWrites = (page) => {
+  const writes = [];
+  page.on('request', (request) => {
+    if (!SAFE_METHODS.has(request.method())) writes.push(`${request.method()} ${request.url()}`);
+  });
+  return writes;
+};
+
+const getJson = async (request, url) => {
+  const response = await request.get(url);
+  expect(response.status(), url).toBe(200);
+  return response.json();
+};
+
+// The public home reads the Slate and its Edges anonymously. The page asks for
+// the most recent game day when today has none, so the check does too.
+const readPublicSlate = async (request) => {
+  const query = '?fallback=previous_game_day';
+  const slate = await getJson(request, `${apiBaseUrl()}/api/games/slate${query}`);
+  const edges = await getJson(request, `${apiBaseUrl()}/api/games/slate/edges${query}`);
+  expect(slate.games.length, 'the API serves at least one game').toBeGreaterThan(0);
+  const edgeGames = edges.games.filter((game) => game.effects.length > 0);
+  expect(edgeGames.length, 'the API serves edges for at least one game').toBeGreaterThan(0);
+  const slateGame = (id) => slate.games.find((game) => game.game_id === id);
+  return { slate, edgeGames, slateGame };
+};
+
+const lastName = (name) => {
+  const parts = name.split(' ');
+  while (parts.length > 1 && ['Jr.', 'Sr.', 'II', 'III', 'IV'].includes(parts.at(-1))) parts.pop();
+  return parts.at(-1);
+};
+const signedPercent = (value) => {
+  const shown = Math.abs(value * 100).toFixed(0);
+  return `${Number(shown) === 0 ? '' : value > 0 ? '+' : '−'}${shown}%`;
+};
+
+test('@smoke public home Slate renders the games and edges the API serves', async ({
+  deployedPage: page,
+  request,
+}) => {
+  requireDeployedTarget();
+  const writes = collectWrites(page);
+  const { slate, edgeGames, slateGame } = await readPublicSlate(request);
+
+  await page.goto('/');
+
+  for (const game of slate.games) {
+    await expect(page.locator(`a[href="/matchups/${game.game_id}"]`)).toBeVisible();
+  }
+  for (const edgeGame of edgeGames.slice(0, 3)) {
+    const { away_team: away, home_team: home } = slateGame(edgeGame.game_id);
+    const cell = page.locator(`a[href="/matchups/${edgeGame.game_id}"]`);
+    await expect(cell).toContainText(`${away.tricode} @ ${home.tricode}`);
+    for (const effect of edgeGame.effects) {
+      await expect(cell).toContainText(lastName(effect.name));
+      await expect(cell).toContainText(signedPercent(effect.value));
+    }
+  }
+  expect(writes).toEqual([]);
+});
+
+test('@smoke Matchup deep links from the Slate resolve and their data is served', async ({
+  deployedPage: page,
+  request,
+}) => {
+  requireDeployedTarget();
+  const writes = collectWrites(page);
+  const { edgeGames } = await readPublicSlate(request);
+  const gameId = edgeGames[0].game_id;
+
+  // A Matchup is a signed-in read: logged out, the real route answers with its
+  // sign-in gate (not the landing redirect or a blank page) and the API answers
+  // for that game with the stable authentication error, not a 404 or a 5xx.
+  await page.goto('/');
+  await page.locator(`a[href="/matchups/${gameId}"]`).click();
+  await expect(page).toHaveURL(new RegExp(`/matchups/${gameId}$`));
+  await expect(page.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();
+
+  const response = await request.get(`${apiBaseUrl()}/api/games/matchup?game_id=${gameId}`);
+  expect(response.status()).toBe(401);
+  await expect(response.json()).resolves.toMatchObject({
+    error: { code: 'authentication_required' },
+  });
+  expect(writes).toEqual([]);
+});
+
+test('@smoke MCP serves OAuth authorization-server metadata for its own issuer', async ({
+  request,
+}) => {
+  requireDeployedTarget();
+  const mcp = new URL(mcpBaseUrl());
+  const metadata = await getJson(request, `${mcp.origin}/.well-known/oauth-authorization-server`);
+
+  expect(new URL(metadata.issuer).origin).toBe(mcp.origin);
+  for (const endpoint of ['authorization_endpoint', 'token_endpoint']) {
+    expect(new URL(metadata[endpoint]).origin, endpoint).toBe(mcp.origin);
+  }
+});
+
+test('@smoke MCP rejects an unauthenticated /mcp request with the protected-resource challenge', async ({
+  request,
+}) => {
+  requireDeployedTarget();
+  const mcp = new URL(mcpBaseUrl());
+  const response = await request.post(`${mcp.origin}/mcp`, { data: {} });
+
+  expect(response.status()).toBe(401);
+  const challenge = response.headers()['www-authenticate'] ?? '';
+  expect(challenge).toMatch(/^Bearer /);
+  const resourceMetadata = /resource_metadata="([^"]+)"/.exec(challenge)?.[1];
+  expect(resourceMetadata, 'the challenge names the protected-resource metadata').toBeTruthy();
+  expect(new URL(resourceMetadata).origin).toBe(mcp.origin);
+  const protectedResource = await getJson(request, resourceMetadata);
+  expect(new URL(protectedResource.resource).origin).toBe(mcp.origin);
+});
+
 test('@critical the development auth adapter unlocks the search seam', async ({ page }) => {
   await installApiContract(page);
   await page.goto('/');

@@ -58,6 +58,26 @@ E2E_BASE_URL=https://statsplus-frontend.vercel.app \
   npm run test:e2e:smoke
 ```
 
+The same command is the Release Check (crf04/statsplus#249). It also reads `E2E_API_BASE_URL`
+(default `https://statsplus-backend-production.up.railway.app`) and `E2E_MCP_BASE_URL` (default
+`https://mcp.courtai.app`), and runs logged out and read-only against any frontend, API and MCP:
+the public landing page, the public home Slate rendering the games and edges the API serves,
+Matchup deep links from that Slate resolving to the Matchup route with the API answering for the
+game, MCP OAuth authorization-server metadata with a matching issuer, and `/mcp` refusing an
+unauthenticated request with a protected-resource challenge. A Matchup itself is a signed-in
+read, so logged out the check proves its route and its API answer, not the signed-in document.
+
+```bash
+E2E_BASE_URL=https://staging.courtai.app \
+  E2E_API_BASE_URL=<staging backend> E2E_MCP_BASE_URL=https://mcp-staging.courtai.app \
+  npm run test:e2e:smoke
+```
+
+The `Deployed smoke test` workflow dispatches it with mode `production` or `staging`.
+`scripts/validate-deployment-url.mjs` accepts only the production trio and the `staging.courtai.app`
+trio (a staging backend named `statsplus-backend-staging*.up.railway.app` and `mcp-staging.courtai.app`);
+staging has no API or MCP defaults.
+
 Protected preview smoke is a manual workflow dispatch. It accepts only an HTTPS
 `statsplus-frontend-<deployment-id>-chris-fus-projects.vercel.app` URL, checks that URL before
 installing dependencies, and then reads `VERCEL_AUTOMATION_BYPASS_SECRET` from the encrypted GitHub

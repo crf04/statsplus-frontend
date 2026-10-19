@@ -5,32 +5,47 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run a public production check or a protected preview check
+        description: Run a Release Check against production or staging, or a protected preview check
         required: true
         type: choice
         options:
           - production
+          - staging
           - protected-preview
       base_url:
-        description: StatsPlus Vercel deployment URL to test
-        required: true
+        description: Frontend URL to test. Defaults to the public production alias or https://staging.courtai.app; required for protected-preview
+        required: false
+        type: string
+      api_base_url:
+        description: API base URL. Defaults to production's backend; required for staging
+        required: false
+        type: string
+      mcp_base_url:
+        description: MCP base URL. Defaults to https://mcp.courtai.app; required for staging
+        required: false
         type: string
 
 permissions:
   contents: read
 
 jobs:
+  # The Release Check (crf04/statsplus#249): logged out and read-only, against a
+  # frontend, its API and the MCP server. Staging has no defaults for API or MCP.
   production-smoke:
     if: >-
       github.repository == 'crf04/statsplus-frontend' &&
       ((github.event_name == 'deployment_status' &&
       github.event.deployment_status.state == 'success' &&
       github.event.deployment.environment == 'Production') ||
-      (github.event_name == 'workflow_dispatch' && inputs.mode == 'production'))
+      (github.event_name == 'workflow_dispatch' &&
+      (inputs.mode == 'production' || inputs.mode == 'staging')))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.base_url || 'https://statsplus-frontend.vercel.app' }}
+      RELEASE_CHECK_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'production' }}
+      E2E_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && (inputs.base_url || (inputs.mode == 'staging' && 'https://staging.courtai.app' || 'https://statsplus-frontend.vercel.app')) || 'https://statsplus-frontend.vercel.app' }}
+      E2E_API_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && (inputs.api_base_url || (inputs.mode == 'production' && 'https://statsplus-backend-production.up.railway.app' || '')) || 'https://statsplus-backend-production.up.railway.app' }}
+      E2E_MCP_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && (inputs.mcp_base_url || (inputs.mode == 'production' && 'https://mcp.courtai.app' || '')) || 'https://mcp.courtai.app' }}
     steps:
       - name: Check out trusted smoke harness
         uses: actions/checkout@v4
@@ -44,8 +59,8 @@ jobs:
           node-version: 22.22.3
           cache: npm
 
-      - name: Validate production deployment URL
-        run: node scripts/validate-deployment-url.mjs production "$E2E_BASE_URL"
+      - name: Validate Release Check URLs
+        run: node scripts/validate-deployment-url.mjs "$RELEASE_CHECK_MODE" "$E2E_BASE_URL" "$E2E_API_BASE_URL" "$E2E_MCP_BASE_URL"
 
       - name: Install dependencies
         run: npm ci
@@ -53,14 +68,14 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run public production smoke test
+      - name: Run Release Check
         run: npm run test:e2e:smoke
 
-      - name: Upload production smoke evidence
+      - name: Upload Release Check evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deployed-production-smoke-evidence
+          name: deployed-release-check-evidence
           path: |
             playwright-report/
             test-results/

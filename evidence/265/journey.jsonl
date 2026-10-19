@@ -1,0 +1,66 @@
+{"action":"require-environment","name":"qa"}
+{"action":"doctor"}
+{"action":"open","path":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01","date_to":"2026-01-31"},"status":200}
+{"action":"assert","target":{"text":"15 of 60 games match"}}
+{"action":"assert","target":{"within":{"selector":".game-logs-main"},"text":"Date >= 2026-01-01"}}
+{"action":"assert","target":{"within":{"selector":".game-logs-main"},"text":"Date <= 2026-01-31"}}
+{"action":"assert","target":{"role":"button","name":"until Jan 31, 2026"}}
+{"action":"click","target":{"role":"button","name":"since Jan 1, 2026"}}
+{"action":"assert","target":{"label":"Since date"},"value":"2026-01-01"}
+{"action":"assert","target":{"label":"Until date"},"value":"2026-01-31"}
+{"action":"proof","name":"range-link-desktop"}
+{"action":"open","path":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-01-01"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01"},"status":200}
+{"action":"assert","target":{"text":"45 of 60 games match"}}
+{"action":"click","target":{"role":"button","name":"since Jan 1, 2026"}}
+{"action":"fill","target":{"label":"Until date"},"value":"2026-01-31"}
+{"action":"click","target":{"role":"button","name":"Done"}}
+{"action":"click","target":{"role":"button","name":"Apply 1 change"}}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01","date_to":"2026-01-31"},"status":200}
+{"action":"assert","url":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action":"assert","target":{"text":"15 of 60 games match"}}
+{"action":"click","target":{"role":"button","name":"Save Filter Set"}}
+{"action":"fill","target":{"label":"Name"},"value":"QA January range"}
+{"action":"click","target":{"role":"button","name":"Save"}}
+{"action":"assert-response","method":"POST","path":"/api/user/saved-filter-sets","query":{},"status":201}
+{"action":"assert","target":{"role":"heading","name":"Save this Filter Set"},"state":"hidden"}
+{"action":"open","path":"/?browse=1"}
+{"action":"click","target":{"role":"button","name":"Saved Filter Sets"}}
+{"action":"click","target":{"role":"button","name":"Open saved Filter Set QA January range"}}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01","date_to":"2026-01-31"},"status":200}
+{"action":"assert","url":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action":"assert","target":{"text":"15 of 60 games match"}}
+{"action":"assert","target":{"role":"button","name":"until Jan 31, 2026"}}
+{"action":"proof","name":"range-saved-reopened-desktop"}
+{"action":"click","target":{"role":"button","name":"Saved Filter Sets"}}
+{"action":"click","target":{"role":"button","name":"Delete QA January range"}}
+{"action":"click","target":{"role":"button","name":"Confirm deleting QA January range"}}
+{"action":"assert","target":{"role":"button","name":"Open saved Filter Set QA January range"},"state":"hidden"}
+{"action":"open","path":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-02-01&date_to=2026-01-31"}
+{"action":"assert","target":{"role":"alert"},"text":"date_to is not a value we can apply"}
+{"action":"assert","target":{"role":"button","name":"Save Filter Set"},"state":"hidden"}
+{"action":"assert","url":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-02-01&date_to=2026-01-31"}
+{"action":"proof","name":"range-refused-desktop"}
+{"action":"open","path":"/privacy"}
+{"action":"assert","target":{"selector":"main.legal-page p:has-text(\"read your CourtAI data and, when you ask, save Targets and Saved Filter Sets to your account. This policy\")"}}
+{"action":"proof","name":"privacy-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert-layout"}
+{"action":"proof","name":"privacy-phone"}
+{"action":"open","path":"/?player_name=LeBron+James&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01","date_to":"2026-01-31"},"status":200}
+{"action":"assert","target":{"text":"15 of 60 games match"}}
+{"action":"assert","target":{"role":"button","name":"until Jan 31, 2026"}}
+{"action":"assert-layout"}
+{"action":"proof","name":"range-link-phone"}
+{"action":"click","target":{"role":"button","name":"until Jan 31, 2026"}}
+{"action":"assert","target":{"label":"Until date"},"value":"2026-01-31"}
+{"action":"fill","target":{"label":"Until date"},"value":"2026-01-15"}
+{"action":"click","target":{"role":"button","name":"Done"}}
+{"action":"click","target":{"role":"button","name":"Apply 1 change"}}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"LeBron James","season_filter":"2025-26","date_filter":"2026-01-01","date_to":"2026-01-15"},"status":200}
+{"action":"assert","target":{"text":"7 of 60 games match"}}
+{"action":"assert-layout"}
+{"action":"proof","name":"range-edited-phone"}
+{"action":"cleanup"}

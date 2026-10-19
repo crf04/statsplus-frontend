@@ -1,4 +1,4 @@
-import type { VercelConfig } from '@vercel/config/v1';
+import { routes, type VercelConfig } from '@vercel/config/v1';
 
 const DEFAULT_API_ORIGIN = 'https://statsplus-backend-production.up.railway.app';
 
@@ -26,14 +26,11 @@ export const config: VercelConfig = {
   buildCommand: 'npm run build',
   outputDirectory: 'build',
   rewrites: [
-    {
-      source: '/api/:path*',
-      destination: `${resolveApiOrigin(process.env.STATSPLUS_API_ORIGIN)}/api/:path*`,
-    },
-    {
-      source: '/__/auth/:path*',
-      destination: 'https://courtai-6eccf.firebaseapp.com/__/auth/:path*',
-    },
-    { source: '/:path*', destination: '/index.html' },
+    routes.rewrite(
+      '/api/:path*',
+      `${resolveApiOrigin(process.env.STATSPLUS_API_ORIGIN)}/api/:path*`,
+    ),
+    routes.rewrite('/__/auth/:path*', 'https://courtai-6eccf.firebaseapp.com/__/auth/:path*'),
+    routes.rewrite('/:path*', '/index.html'),
   ],
 };

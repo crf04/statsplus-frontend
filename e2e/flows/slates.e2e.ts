@@ -1,7 +1,7 @@
 // Flow: Slates (/matchups). A signed-in reader opens a dated slate, steps
 // between dates, reaches an empty slate, and recovers from a rejected one.
 import { expect } from 'e2e';
-import { slatePayload } from '../fixtures/courtai.js';
+import { slateGame, slatePayload } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest, signedOutTest } from './support/courtai.ts';
 
 signedInTest(
@@ -47,6 +47,40 @@ signedInTest(
     await expect(browser).toHaveURL(`/matchups?date=${today}`);
     await expect(screen.getByLabel('Slate date')).toHaveValue(today);
     await expect(screen.getByRole('button', 'Today')).toBeDisabled();
+  },
+);
+
+signedInTest(
+  'no date and no games today opens the next game day and shows it in the URL',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/slate': (request) => {
+        const search = new URL(request.url()).searchParams;
+        // The open request names no date; the URL only follows the answer.
+        return {
+          body: slatePayload('2026-10-20', [slateGame], {
+            previousGameDate: '2026-04-12',
+            fallback: search.has('date') ? null : 'next_game_day',
+          }),
+        };
+      },
+    });
+    await app.open('/matchups');
+
+    await expect(browser).toHaveURL('/matchups?date=2026-10-20');
+    await expect(screen.getByRole('heading', 'Tuesday, October 20, 2026')).toBeVisible();
+    await expect(screen.getByLabel('Slate date')).toHaveValue('2026-10-20');
+    await expect(screen.getByText('No games on this slate.')).toHaveCount(0);
+    await expect(screen.getByText('1 game')).toBeVisible();
+    const [first, ...rest] = api.sent('/api/games/slate', 'GET');
+    expect([first.search.get('fallback'), first.search.has('date'), rest]).toEqual([
+      'next_game_day',
+      false,
+      [],
+    ]);
+    // Targets are read for the resolved day, not for today.
+    const reads = api.sent('/api/user/targets/resolve', 'GET');
+    expect(reads.map((read) => read.search.get('date'))).toEqual(['2026-10-20']);
   },
 );
 
@@ -128,8 +162,13 @@ signedInTest(
 );
 
 signedInTest(
-  'a Slate with no date opens on today in New York',
+  'a Slate with no date shows the day the backend answers for, today in New York',
   async ({ app, screen, browser, api }) => {
+    // The backend names the day (crf04/statsplus#242); today having games, it
+    // answers today's with no fallback and the URL is left alone.
+    await api.override({
+      '/api/games/slate': { body: slatePayload('2026-03-31', [slateGame]) },
+    });
     await browser.addInitScript(() => {
       const RealDate = Date;
       const instant = RealDate.parse('2026-04-01T02:00:00Z'); // March 31 in New York.
@@ -144,7 +183,12 @@ signedInTest(
     await expect(screen.getByRole('heading', 'Tuesday, March 31, 2026')).toBeVisible();
     await expect(screen.getByLabel('Slate date')).toHaveValue('2026-03-31');
     await expect(screen.getByRole('button', 'Today')).toBeDisabled();
-    expect(api.sent('/api/games/slate')[0].search.get('date')).toBe('2026-03-31');
+    const [request] = api.sent('/api/games/slate');
+    expect([request.search.has('date'), request.search.get('fallback')]).toEqual([
+      false,
+      'next_game_day',
+    ]);
+    await expect(browser).toHaveURL('/matchups');
   },
 );
 

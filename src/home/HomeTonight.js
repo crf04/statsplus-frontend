@@ -5,7 +5,7 @@ import { formatObservedShare, formatQualifier, targetSliceLabel } from '../targe
 import { TargetConditionSummary } from '../targets/TargetConditions';
 import { SeasonMinutesProvider } from '../targets/useTargets';
 import LoginButton from '../components/Auth/LoginButton';
-import { rankPhrase, signedPercent } from './homeFormat';
+import { dayName, matchupsPath, rankPhrase, signedPercent } from './homeFormat';
 
 /*
  * The home page's Tonight | Your Targets row (crf04/statsplus#204). Tonight is
@@ -105,15 +105,15 @@ const HomeTonight = ({
   signUp = false,
   onUseQuery,
   slateDate = null,
-  past = false,
+  fallback = null,
 }) => {
   const gameOf = (gameId) => games.find((game) => game.gameId === gameId);
   return (
     <div className="home-tonight">
       <section className="home-col" aria-labelledby="home-tonight-heading">
         <div className="home-col-head">
-          <h2 id="home-tonight-heading">{past ? 'Last game day' : 'Tonight'}</h2>
-          <Link to={past ? `/matchups?date=${slateDate}` : '/matchups'}>
+          <h2 id="home-tonight-heading">{dayName(fallback) ?? 'Tonight'}</h2>
+          <Link to={matchupsPath(fallback, slateDate)}>
             Matchups <ArrowRight size={13} aria-hidden="true" />
           </Link>
         </div>

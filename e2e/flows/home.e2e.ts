@@ -23,7 +23,7 @@ signedInTest(
     await expect(cell).toContainText('James +12%');
     expect(api.sent('/api/games/slate/edges', 'GET')).toHaveLength(1);
     await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
-    // Each home read asks for the previous game day itself and names no date.
+    // Each home read asks for the next game day itself and names no date.
     for (const path of [
       '/api/games/slate',
       '/api/games/slate/edges',
@@ -32,7 +32,7 @@ signedInTest(
       const [request] = api.sent(path, 'GET');
       expect([path, request.search.get('fallback'), request.search.has('date')]).toEqual([
         path,
-        'previous_game_day',
+        'next_game_day',
         false,
       ]);
     }
@@ -102,27 +102,58 @@ signedOutTest(
   },
 );
 
-signedInTest('no games today shows the last game day, labelled', async ({ app, screen, api }) => {
-  // One fallback read answers each of the three: the Slate says so, and
-  // Edges and Targets name the same day.
-  await api.override({
-    '/api/games/slate': (request) => {
-      expect(new URL(request.url()).searchParams.get('fallback')).toBe('previous_game_day');
-      expect(new URL(request.url()).searchParams.has('date')).toBe(false);
-      return {
-        body: slatePayload('2026-01-15', [slateGame], {
-          previousGameDate: '2026-01-14',
-          fallback: 'previous_game_day',
-        }),
-      };
-    },
-    '/api/games/slate/edges': { body: slateEdgesPayload('2026-01-15', [slateGame]) },
-  });
-  await app.open('/');
+signedInTest(
+  'no game day ahead shows the last game day, labelled',
+  async ({ app, screen, api }) => {
+    // One fallback read answers each of the three: the Slate says so, and
+    // Edges and Targets name the same day.
+    await api.override({
+      '/api/games/slate': (request) => {
+        expect(new URL(request.url()).searchParams.get('fallback')).toBe('next_game_day');
+        expect(new URL(request.url()).searchParams.has('date')).toBe(false);
+        return {
+          body: slatePayload('2026-01-15', [slateGame], {
+            previousGameDate: '2026-01-14',
+            fallback: 'previous_game_day',
+          }),
+        };
+      },
+      '/api/games/slate/edges': { body: slateEdgesPayload('2026-01-15', [slateGame]) },
+    });
+    await app.open('/');
 
-  await expect(screen.getByRole('heading', 'Last game day')).toBeVisible();
-  await expect(
-    screen.getByRole('link', { name: 'Last game day · ', exact: false }).first(),
-  ).toHaveAttribute('href', '/matchups?date=2026-01-15');
-  await expect(screen.getByRole('article', 'Best: Austin Reaves')).toBeVisible();
-});
+    await expect(screen.getByRole('heading', 'Last game day')).toBeVisible();
+    await expect(
+      screen.getByRole('link', { name: 'Last game day · ', exact: false }).first(),
+    ).toHaveAttribute('href', '/matchups?date=2026-01-15');
+    await expect(screen.getByRole('article', 'Best: Austin Reaves')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'no games today previews the next game day, labelled, linking to its date',
+  async ({ app, screen, api }) => {
+    await api.override({
+      '/api/games/slate': (request) => {
+        expect(new URL(request.url()).searchParams.get('fallback')).toBe('next_game_day');
+        expect(new URL(request.url()).searchParams.has('date')).toBe(false);
+        return {
+          body: slatePayload('2026-10-20', [slateGame], {
+            previousGameDate: '2026-04-12',
+            fallback: 'next_game_day',
+          }),
+        };
+      },
+      '/api/games/slate/edges': { body: slateEdgesPayload('2026-10-20', [slateGame]) },
+    });
+    await app.open('/');
+
+    await expect(screen.getByRole('heading', 'Next game day')).toBeVisible();
+    await expect(screen.getByText('Last game day')).toHaveCount(0);
+    await expect(screen.getByText('Tonight')).toHaveCount(0);
+    const label = screen.getByRole('link', { name: 'Next game day · ', exact: false }).first();
+    await expect(label).toContainText(/tue, oct 20/i);
+    await expect(label).toHaveAttribute('href', '/matchups?date=2026-10-20');
+    await expect(screen.getByRole('article', 'Best: Austin Reaves')).toBeVisible();
+  },
+);

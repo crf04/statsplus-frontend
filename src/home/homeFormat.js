@@ -34,3 +34,13 @@ export const shortSlateDay = (date) =>
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));
+
+/*
+ * How the home page names the day it shows. Today is "Tonight" and opens the
+ * plain Slate; a fallback day is named and opens its own date
+ * (crf04/statsplus#242).
+ */
+const DAY_NAMES = { previous_game_day: 'Last game day', next_game_day: 'Next game day' };
+export const dayName = (fallback) => DAY_NAMES[fallback] ?? null;
+export const matchupsPath = (fallback, slateDate) =>
+  fallback ? `/matchups?date=${slateDate}` : '/matchups';

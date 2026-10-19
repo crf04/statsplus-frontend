@@ -10,19 +10,20 @@ import { isRequestCancelled } from '../gameLogsApi';
  * What the home page knows about today (crf04/statsplus#204): the Slate's
  * games joined to their Slate Edges, and the reader's firing Targets. Each read
  * stands alone, so a failed one drops only its own section. The three are
- * requested at once with `fallback=previous_game_day` and no date, so each
- * falls back to the most recent game day by itself (crf04/statsplus#217). A
+ * requested at once with `fallback=next_game_day` and no date, so each
+ * falls forward to the next game day by itself when today has none, or back to
+ * the most recent one when no next is scheduled (crf04/statsplus#217, #242). A
  * backend without the edges route (null) reads like a failure: no ticker, no
  * Tonight.
  *
- * `past` is true when the Slate answered with that fallback day rather than
- * today.
+ * `fallback` is what the Slate answered with: null for today, or
+ * `previous_game_day` / `next_game_day` for the day it fell back to.
  *
  * `games` is null when there is nothing to show: no edges, no games today, or
  * edges for another date than the Slate's (the reads straddled midnight ET).
  * Targets resolved for another date are dropped the same way.
  *
- * The last public result (games, spotlight, date, past; never Targets) is kept
+ * The last public result (games, spotlight, date, fallback; never Targets) is kept
  * in localStorage and painted on mount before any read answers, then replaced
  * by the fresh one. An unreadable entry is ignored and removed.
  *
@@ -31,9 +32,11 @@ import { isRequestCancelled } from '../gameLogsApi';
  * reader, or null: only an account reads Targets, and switching accounts
  * rereads, so one reader's Targets never stay on screen for the next.
  */
-const EMPTY = { games: null, spotlight: null, slateDate: null, past: false, targets: null };
+const EMPTY = { games: null, spotlight: null, slateDate: null, fallback: null, targets: null };
 
-const CACHE_KEY = 'courtai.homeTonight.v1';
+const FALLBACKS = new Set(['previous_game_day', 'next_game_day']);
+
+const CACHE_KEY = 'courtai.homeTonight.v2';
 
 // Everything below is what the ticker and Tonight read; an entry is only
 // trusted when each of those fields has the type and form they render from.
@@ -91,7 +94,7 @@ const readCache = () => {
       entry.games.length === 0 ||
       !entry.games.every(isGame) ||
       !isCalendarDate(entry.slateDate) ||
-      typeof entry.past !== 'boolean' ||
+      !(entry.fallback === null || FALLBACKS.has(entry.fallback)) ||
       !isObject(entry.spotlight) ||
       !isPick(entry.spotlight.best, 1) ||
       !isPick(entry.spotlight.toughest, -1)
@@ -104,7 +107,7 @@ const readCache = () => {
       games: entry.games.map((game) => ({ ...game, scores: new Map(game.scores) })),
       spotlight: entry.spotlight,
       slateDate: entry.slateDate,
-      past: entry.past,
+      fallback: entry.fallback,
     };
   } catch {
     clearCache();
@@ -120,12 +123,12 @@ function clearCache() {
   }
 }
 
-const writeCache = ({ games, spotlight, slateDate, past }) => {
+const writeCache = ({ games, spotlight, slateDate, fallback }) => {
   try {
     const stored = games.map((game) => ({ ...game, scores: [...game.scores] }));
     window.localStorage.setItem(
       CACHE_KEY,
-      JSON.stringify({ games: stored, spotlight, slateDate, past }),
+      JSON.stringify({ games: stored, spotlight, slateDate, fallback }),
     );
   } catch {
     // Storage can be unavailable or full; the cache is best effort.
@@ -163,7 +166,7 @@ export const useHomeTonight = (landing, account) => {
     }
     const controller = new AbortController();
     const { signal } = controller;
-    const fallback = 'previous_game_day';
+    const fallback = 'next_game_day';
     const settle = (promise) =>
       promise.then(
         (value) => ({ status: 'fulfilled', value }),
@@ -217,7 +220,7 @@ export const useHomeTonight = (landing, account) => {
         games: joinGames(slate.value, confirmed),
         spotlight: confirmed.spotlight,
         slateDate: slate.value.slateDate,
-        past: slate.value.fallback === fallback,
+        fallback: slate.value.fallback,
       };
       writeCache(fresh);
       paintedDate = fresh.slateDate;

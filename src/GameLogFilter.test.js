@@ -62,7 +62,17 @@ jest.mock('./PerformanceAverages', () => {
   const { default: ActualPerformanceAverages } = jest.requireActual('./PerformanceAverages');
   return { __esModule: true, default: ActualPerformanceAverages };
 });
-jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
+jest.mock('./ChartComponent', () => ({
+  __esModule: true,
+  default: ({ postedLine }) => {
+    const { createElement } = jest.requireActual('react');
+    return createElement(
+      'output',
+      { 'data-testid': 'chart-posted-line' },
+      postedLine?.lines?.PTS?.provider ?? 'none',
+    );
+  },
+}));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
 
 let mockAuthState;
@@ -521,4 +531,31 @@ test('shows the headshot for the player each response names, and not a stale one
 
   expect(screen.queryByRole('img', { name: 'Nikola Jokic' })).not.toBeInTheDocument();
   expect(screen.getByText('NJ')).toBeVisible();
+});
+
+test('the next request drops the posted line of the one before until it answers', async () => {
+  const averages = [
+    { MIN: 30, PTS: 20 },
+    { MIN: 34, PTS: 25 },
+  ];
+  fetchGameLogsData.mockResolvedValueOnce({
+    gameLogs: [],
+    averages,
+    seasonGameCount: 60,
+    nextGame: null,
+    postedLine: {
+      gameDate: '2026-10-21',
+      matchup: 'DEN vs GSW',
+      lines: { PTS: { value: 27.5, provider: 'prizepicks' } },
+    },
+  });
+  renderGameLogFilter(['/?player_name=Nikola+Jokic']);
+  await waitFor(() =>
+    expect(screen.getByTestId('chart-posted-line')).toHaveTextContent('prizepicks'),
+  );
+
+  fetchGameLogsData.mockRejectedValueOnce(new Error('down'));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(screen.getByTestId('chart-posted-line')).toHaveTextContent('none');
 });

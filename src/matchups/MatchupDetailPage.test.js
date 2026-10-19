@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import { bookName } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
 
 jest.mock('../contexts/AuthContext');
@@ -3022,4 +3023,211 @@ test('names every allowlisted sportsbook', async () => {
       .getAllByRole('rowheader')
       .map((cell) => cell.textContent),
   ).toEqual(['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics']);
+});
+
+describe('rail price line', () => {
+  const openRail = async ({ bookLines = {}, linePrices = {}, lines = {} }) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    lebron.bookLines = bookLines;
+    lebron.linePrices = linePrices;
+    lebron.lines = { ...lebron.lines, ...lines };
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    return screen.findByRole('article', { name: 'LeBron James player' });
+  };
+  const priceLine = (row) => within(row).queryByRole('group', { name: /^Best / });
+  const text = (element) => normalized(element).trim();
+
+  test('shows the best Over and Under across books and priced providers with their marks', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('draftkings', 27.5, -110, -115),
+          bookRow('betmgm', 27.5, -108, -120),
+          bookRow('fanduel', 26.5, -135, 110),
+        ]),
+      },
+      lines: { novig: { PTS: 27.5 } },
+      linePrices: { novig: { PTS: { over: -106, under: -102 } } },
+    });
+
+    expect(text(priceLine(row))).toBe('o −106 NV u −102 NV');
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −106 at Novig, best Under −102 at Novig, line 27.5',
+    );
+    expect(within(row).queryByText(/^books /)).not.toBeInTheDocument();
+  });
+
+  test('a tie goes to the sportsbook, then underdog, novig, polymarket, kalshi', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, -110, -110)]) },
+      lines: { novig: { PTS: 27.5 }, underdog: { PTS: 27.5 }, kalshi: { PTS: 27.5 } },
+      linePrices: {
+        kalshi: { PTS: { over: 100, under: -105 } },
+        novig: { PTS: { over: -110, under: -105 } },
+        underdog: { PTS: { over: -110, under: -112 } },
+      },
+    });
+
+    // Over -110 ties between DK, UD and NV: DK. Under -105 ties between NV and KX: NV.
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over +100 at Kalshi, best Under −105 at Novig, line 27.5',
+    );
+  });
+
+  test('equal best prices pick the first source in tie order', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('fanduel', 27.5, -110, -115)]) },
+      lines: { novig: { PTS: 27.5 }, underdog: { PTS: 27.5 } },
+      linePrices: {
+        novig: { PTS: { over: -110, under: -115 } },
+        underdog: { PTS: { over: -110, under: -115 } },
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('o −110 FD u −115 FD');
+  });
+
+  test('prices at the books line with a gold note when nothing prices the headline', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('draftkings', 26.5, -115, -105),
+          bookRow('fanduel', 26.5, -120, 100),
+          bookRow('betmgm', 28.5, 120, -150),
+        ]),
+      },
+      lines: { underdog: { PTS: 26.5 } },
+      linePrices: { underdog: { PTS: { over: -112, under: -112 } } },
+    });
+
+    expect(text(priceLine(row))).toBe('books 26.5 o −112 UD u +100 FD');
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −112 at Underdog, best Under +100 at FanDuel, line 26.5',
+    );
+    expect(within(row).getByText('books 26.5')).toBeVisible();
+  });
+
+  test('breaks a tie between the most posted books lines toward the lower line', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([bookRow('draftkings', 26.5, -110, -110), bookRow('fanduel', 25.5, -105, -125)]),
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('books 25.5 o −105 FD u −125 FD');
+  });
+
+  test('a side nobody prices shows a dash, and no price at all shows no line', async () => {
+    const one = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, 135, null)]) },
+    });
+    expect(text(priceLine(one))).toBe('o +135 DK u —');
+    expect(priceLine(one)).toHaveAccessibleName(
+      'Best Over +135 at DraftKings, no Under price, line 27.5',
+    );
+  });
+
+  test('shows no price line when neither side is priced anywhere', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, null, null)]) },
+      linePrices: {},
+    });
+
+    expect(priceLine(row)).not.toBeInTheDocument();
+    expect(row).not.toHaveTextContent('books');
+  });
+
+  test('DFS entry providers never contribute a price', async () => {
+    const row = await openRail({
+      lines: { prizepicks: { PTS: 27.5 } },
+      linePrices: { prizepicks: { PTS: { over: -110, under: -110 } } },
+    });
+
+    expect(priceLine(row)).not.toBeInTheDocument();
+  });
+
+  test('historical rows show no price line even when priced quotes are present', async () => {
+    const candidate = historicalMatchup();
+    for (const player of candidate.players) {
+      player.bookLines = { PTS: quote([bookRow('draftkings', 27.5, -110, -110)]) };
+      player.lines = { novig: { PTS: 27.5 } };
+      player.linePrices = { novig: { PTS: { over: -106, under: -102 } } };
+    }
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('complementary', { name: 'Players in game' });
+
+    expect(screen.queryByRole('group', { name: /^Best / })).not.toBeInTheDocument();
+  });
+
+  test('the books line counts every sportsbook posting, priced or not', async () => {
+    const setup = {
+      bookLines: {
+        PTS: quote([
+          bookRow('draftkings', 26.5, null, null),
+          bookRow('fanduel', 26.5, null, null),
+          bookRow('betmgm', 25.5, -110, -110),
+        ]),
+      },
+      lines: { underdog: { PTS: 26.5 } },
+      linePrices: { underdog: { PTS: { over: -105, under: -105 } } },
+    };
+    const row = await openRail(setup);
+
+    expect(text(priceLine(row))).toBe('books 26.5 o −105 UD u −105 UD');
+  });
+
+  test('a book posting the headline with no price does not make the headline priced', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([bookRow('draftkings', 27.5, null, null), bookRow('fanduel', 26.5, -120, 100)]),
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('books 26.5 o −120 FD u +100 FD');
+  });
+
+  test('a provider priced at another line never wins', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, -110, -115)]) },
+      lines: { novig: { PTS: 26.5 }, polymarket: { PTS: 27.5 } },
+      linePrices: {
+        novig: { PTS: { over: 150, under: 150 } },
+        polymarket: { PTS: { over: -112, under: -105 } },
+      },
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −110 at DraftKings, best Under −105 at Polymarket, line 27.5',
+    );
+  });
+
+  test.each([
+    ['underdog', 'novig'],
+    ['novig', 'polymarket'],
+    ['polymarket', 'kalshi'],
+  ])('an equal price goes to %s before %s', async (first, second) => {
+    const price = { PTS: { over: -110, under: -110 } };
+    const row = await openRail({
+      lines: { [first]: { PTS: 27.5 }, [second]: { PTS: 27.5 } },
+      // Served in the opposite order to the tie order.
+      linePrices: { [second]: price, [first]: price },
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      `Best Over −110 at ${bookName(first)}, best Under −110 at ${bookName(first)}, line 27.5`,
+    );
+  });
+
+  test('an equal price goes to the sportsbook served first', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([bookRow('fanduel', 27.5, -110, -110), bookRow('betmgm', 27.5, -110, -110)]),
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('o −110 FD u −110 FD');
+  });
 });

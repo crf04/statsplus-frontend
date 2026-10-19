@@ -249,6 +249,15 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     ),
   ).toHaveText('PPUD −1PM');
   await expect(lebron.getByText('Lines disagree')).toHaveCount(1);
+  // The 27.5 headline is priced by the books and Polymarket: BetMGM wins the
+  // Over tie as a sportsbook, Polymarket's Under beats every book. Underdog's
+  // 26.5 price is for another line and is not compared.
+  const prices = lebron.getByRole('group', { name: /^Best Over/ });
+  await expect(prices).toHaveText('o −110 MG u −102 PM');
+  await expect(prices).toHaveAccessibleName(
+    'Best Over −110 at BetMGM, best Under −102 at Polymarket, line 27.5',
+  );
+  await expect(lebron.getByText(/^books /)).toHaveCount(0);
   const austin = rail.getByRole('article', { name: 'Austin Reaves player' });
   await expect(austin).toContainText('+24%Matchup Score');
   await expect(austin.getByText('Game-time decision')).toBeVisible();
@@ -277,6 +286,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await market.getByRole('button', { name: 'REB' }).click();
   await expect(lebron).toContainText('7.5line');
   await expect(lebron.getByLabel('REB posted by PrizePicks')).toHaveText('PP');
+  await expect(lebron.getByRole('group', { name: /^Best / })).toHaveCount(0);
   await expect(sheet.getByRole('heading', { level: 3, name: 'Rebound Types' })).toBeVisible();
   await expect(
     sheet.getByRole('article', { name: 'OREB off 2PT misses' }).getByTitle(/rank 27 of 30/),

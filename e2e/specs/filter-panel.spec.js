@@ -78,7 +78,8 @@ test('no scheduled game hides opponent context and saved sets still navigate', a
   const panel = await open(page, { next_game: null, opponent_ranks: [] });
   await expect(panel.getByText(/of 72 games match/)).toBeVisible();
   await expect(panel.getByText(/^Next:/)).toHaveCount(0);
-  await panel.getByRole('button', { name: /JJ last 10 at home/ }).click();
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await panel.getByRole('button', { name: 'Open saved Filter Set JJ last 10 at home' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('location_filter')).toBe('Home');
 });
 
@@ -216,15 +217,26 @@ test('signed-out shared readers send no account or next-opponent requests', asyn
   expect(accountReads).toEqual([]);
 });
 
-test('opening a Saved Filter Set marks its visible name as open', async ({ page }) => {
+test('opening a Saved Filter Set names it and marks its row as the one applied', async ({
+  page,
+}) => {
   const panel = await open(page, { next_game: null, opponent_ranks: [] });
-  const saved = panel.getByRole('button', { name: /JJ last 10 at home/ });
-  await saved.click();
-  await expect
-    .poll(() =>
-      saved.evaluate((element) => getComputedStyle(element.querySelector('b'), '::after').content),
-    )
-    .toBe('" · open"');
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await panel.getByRole('button', { name: 'Open saved Filter Set JJ last 10 at home' }).click();
+  await expect(panel.getByRole('tab', { name: 'Filters' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  // Named under the heading and in place of Save.
+  await expect(panel.getByText('Saved as JJ last 10 at home', { exact: true })).toHaveCount(2);
+  await expect(panel.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await expect(
+    panel.getByRole('button', { name: 'Open saved Filter Set JJ last 10 at home' }),
+  ).toHaveAttribute('aria-current', 'true');
+  await expect(
+    panel.getByRole('button', { name: 'Open saved Filter Set JJ without Trae' }),
+  ).not.toHaveAttribute('aria-current');
 });
 
 test('switching seasons for one player reloads bounds and withholds the previous season', async ({
@@ -277,7 +289,8 @@ test('switching seasons for one player reloads bounds and withholds the previous
   await page.goto('/?player_name=Jalen+Johnson&game_filter=10&season_filter=2023-24');
   const panel = page.getByTestId('filter-panel');
   await expect(panel.getByText(/of 1 games match/)).toBeVisible();
-  await panel.getByRole('button', { name: /Season B/ }).click();
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await panel.getByRole('button', { name: 'Open saved Filter Set Season B' }).click();
   await expect.poll(() => seasonRequests).toEqual(['2023-24', '2024-25']);
   await panel.getByRole('button', { name: '+ Own stat line' }).click();
   await panel.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
@@ -291,7 +304,7 @@ test('switching seasons for one player reloads bounds and withholds the previous
   await expect(panel.getByRole('button', { name: /2025-01-01 ATL @ CHA/ })).toBeVisible();
 });
 
-test('the panel lists only Saved Filter Sets for the player on screen', async ({ page }) => {
+test('the Saved tab lists the player on screen first, then the others', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1100 });
   await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
   await installParityApi(page);
@@ -319,10 +332,17 @@ test('the panel lists only Saved Filter Sets for the player on screen', async ({
   );
   await page.goto(PARITY_PATH);
   const panel = page.getByTestId('filter-panel');
-  await expect(panel.getByRole('button', { name: /JJ at home/ })).toBeVisible();
-  await expect(panel.getByRole('button', { name: /Trae at home/ })).toHaveCount(0);
-  await expect(panel.getByRole('button', { name: /No player/ })).toHaveCount(0);
-  await expect(panel.getByText(/^Saved Filter Sets\s*1$/)).toBeVisible();
+  await expect(panel.getByRole('tab', { name: 'Saved 3' })).toBeVisible();
+  await panel.getByRole('tab', { name: 'Saved 3' }).click();
+  await expect(panel.getByRole('heading', { level: 3 })).toHaveText([
+    'For Jalen Johnson',
+    'Other players',
+  ]);
+  const [mine, others] = await panel.getByRole('list').all();
+  await expect(mine.getByRole('button', { name: /^Open saved Filter Set/ })).toHaveAccessibleName(
+    'Open saved Filter Set JJ at home',
+  );
+  await expect(others.getByRole('button', { name: /^Open saved Filter Set/ })).toHaveCount(2);
 });
 
 test('a player with no Saved Filter Sets is told so by name', async ({ page }) => {
@@ -347,6 +367,56 @@ test('a player with no Saved Filter Sets is told so by name', async ({ page }) =
   );
   await page.goto(PARITY_PATH);
   const panel = page.getByTestId('filter-panel');
-  await expect(panel.getByText('No saved sets for Jalen Johnson yet.')).toBeVisible();
-  await expect(panel.getByRole('button', { name: /Trae at home/ })).toHaveCount(0);
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await expect(
+    panel.getByText('No saved sets for Jalen Johnson yet.', { exact: false }),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole('button', { name: 'Open saved Filter Set Trae at home' }),
+  ).toBeVisible();
+});
+
+test('naming a set keeps Apply reachable when a filter changes mid-name', async ({ page }) => {
+  const panel = await open(page, { next_game: null, opponent_ranks: [] });
+  await panel.getByRole('button', { name: 'Save', exact: true }).click();
+  await panel.getByLabel('Name this Filter Set').fill('Draft');
+  await panel.getByRole('button', { name: 'Remove last' }).click();
+  await expect(panel.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: 'Apply 1 change' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('game_filter')).toBeNull();
+});
+
+test('a long saved-set description wraps inside the phone Saved tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  await installParityApi(page);
+  await page.route('**/api/players/next-opponent?**', (route) =>
+    route.fulfill({ json: { next_game: null, opponent_ranks: [] } }),
+  );
+  await page.route('**/api/user/saved-filter-sets', (route) =>
+    route.fulfill({
+      json: {
+        saved_filter_sets: [
+          {
+            id: 'three',
+            name: 'Without three',
+            query_string:
+              'player_name=Jalen+Johnson&players_off%5B%5D=Anthony+Davis&players_off%5B%5D=Austin+Reaves&players_off%5B%5D=Rui+Hachimura',
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto(PARITY_PATH);
+  const panel = page.getByTestId('filter-panel');
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await expect(
+    panel.getByText('without Anthony Davis, Austin Reaves and Rui Hachimura'),
+  ).toBeVisible();
+  expect(await panel.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+  const chip = await panel
+    .getByText('without Anthony Davis, Austin Reaves and Rui Hachimura')
+    .boundingBox();
+  const box = await panel.boundingBox();
+  expect(chip.x + chip.width).toBeLessThanOrEqual(box.x + box.width);
 });

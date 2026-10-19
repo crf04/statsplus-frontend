@@ -263,24 +263,6 @@ test('an end date before the start date is refused naming date_to', async () => 
   expect(fetchGameLogsData).not.toHaveBeenCalled();
 });
 
-test('saves the Log Workspace URL exactly as it stands', async () => {
-  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
-
-  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole('button', { name: 'Save Filter Set' }));
-  fireEvent.change(await screen.findByLabelText('Name'), {
-    target: { value: 'LeBron last 10' },
-  });
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-  });
-
-  expect(createSavedFilterSet).toHaveBeenCalledWith({
-    name: 'LeBron last 10',
-    queryString: 'player_name=LeBron+James&game_filter=10',
-  });
-});
-
 describe('Share', () => {
   afterEach(() => {
     delete navigator.share;
@@ -365,7 +347,7 @@ describe('Share', () => {
   test('offers nothing to share until the URL carries a Filter Set', async () => {
     renderGameLogFilter(['/?browse=1']);
 
-    expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Back to search' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
   });
 
@@ -382,7 +364,7 @@ describe('Share', () => {
   });
 });
 
-test('reaches the saved list from the Query Prompt and from the Log Workspace', async () => {
+test('reaches the saved list from the Query Prompt; the Workspace keeps it in the panel', async () => {
   const promptRender = renderGameLogFilter(['/']);
 
   await act(async () => {
@@ -392,12 +374,12 @@ test('reaches the saved list from the Query Prompt and from the Log Workspace', 
   expect(fetchSavedFilterSets).toHaveBeenCalledTimes(1);
   promptRender.unmount();
 
-  renderGameLogFilter(['/?player_name=LeBron+James']);
+  // Saving and the saved list are the filter panel's Saved tab now, so the
+  // Workspace toolbar carries neither.
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
   await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
-  await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
-  });
-  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Saved Filter Sets' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
 });
 
 test('offers no save affordance and no saved list while signed out', async () => {
@@ -464,11 +446,15 @@ test('replays a saved Filter Set with its opponent still fixed', async () => {
   );
 });
 
-test('offers nothing to save until the URL carries a Filter Set', async () => {
-  renderGameLogFilter(['/?browse=1']);
+test('a refused link, which has no panel, keeps the way out to the saved list', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&game_filter=0']);
 
-  expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+  expect(await screen.findByRole('alert')).toHaveTextContent('game_filter');
   expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Saved Filter Sets' }));
+  });
+  expect(await screen.findByRole('heading', { name: 'Saved Filter Sets' })).toBeVisible();
 });
 
 test('names the tab after the player the URL shows, and hands the default back', async () => {

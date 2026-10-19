@@ -22,12 +22,12 @@ import './SavedFilterSetsModal.css';
  * so the parameters are the only description that can be relied on.
  */
 
-const Parameters = ({ described }) => (
+const Parameters = ({ described, hidePlayer }) => (
   <span className="saved-filter-set-parameters">
     {/* A refused link decodes to no Filter Set at all, so it has no parameters
         to show. Its player is still read off the raw URL, because a row has to
         stay identifiable enough to delete. */}
-    {described.player && (
+    {described.player && !hidePlayer && (
       <span className="saved-filter-set-parameter saved-filter-set-player">{described.player}</span>
     )}
     {described.refused ? (
@@ -57,7 +57,15 @@ const Parameters = ({ described }) => (
  * back through the list's single mutation path, so what a rejection does is the
  * same wherever it came from.
  */
-const SavedFilterSetRow = ({ savedFilterSet, isMutating, onOpen, onRename, onDelete }) => {
+export const SavedFilterSetRow = ({
+  savedFilterSet,
+  isMutating,
+  onOpen,
+  onRename,
+  onDelete,
+  isCurrent = false,
+  hidePlayer = false,
+}) => {
   const [interaction, setInteraction] = useState(null);
   const [draftName, setDraftName] = useState(savedFilterSet.name);
 
@@ -101,15 +109,23 @@ const SavedFilterSetRow = ({ savedFilterSet, isMutating, onOpen, onRename, onDel
   const isConfirming = interaction === 'confirm-delete';
 
   return (
-    <li className={`saved-filter-set-row${isConfirming ? ' saved-filter-set-row-confirming' : ''}`}>
+    <li
+      className={`saved-filter-set-row${isConfirming ? ' saved-filter-set-row-confirming' : ''}${
+        isCurrent ? ' saved-filter-set-row-current' : ''
+      }`}
+    >
       <button
         type="button"
         className="saved-filter-set-open"
         aria-label={`Open saved Filter Set ${savedFilterSet.name}`}
+        aria-current={isCurrent ? 'true' : undefined}
         onClick={() => onOpen()}
       >
         <span className="saved-filter-set-name">{savedFilterSet.name}</span>
-        <Parameters described={describeSavedFilterSet(savedFilterSet.queryString)} />
+        <Parameters
+          described={describeSavedFilterSet(savedFilterSet.queryString)}
+          hidePlayer={hidePlayer}
+        />
       </button>
       {isConfirming ? (
         // Deleting is not undoable, so it asks on the row rather than removing

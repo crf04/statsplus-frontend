@@ -10,7 +10,6 @@ import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
-import SaveFilterSetModal from './SaveFilterSetModal';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
@@ -95,7 +94,6 @@ const GameLogFilter = ({ notice = null }) => {
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
-  const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   // The Workspace is revealed in one piece. Each section that reads on its own
@@ -660,32 +658,26 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {canSearch && (
+            {/* Saving and the saved list live in the filter panel's Saved
+                tab. Share hands on the applied link, so it waits for a URL
+                that carries a Filter Set we would open; a refused link has no
+                panel, so its way back out to the saved list stays here. */}
+            {canSearch && (hasUrlFilterSet || isRefusedLink) && (
               <div className="d-flex align-items-center gap-2 ms-auto">
-                {/* There is nothing to save until the URL carries a Filter
-                    Set, and a refused link is one we would not open again —
-                    but the saved list is still the way back out of either. */}
                 {hasUrlFilterSet && !isRefusedLink && (
-                  <>
-                    <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
-                      <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-back-to-search"
-                      onClick={() => setShowSaveFilterSet(true)}
-                    >
-                      Save Filter Set
-                    </button>
-                  </>
+                  <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
+                    <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
+                  </button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-back-to-search"
-                  onClick={() => setShowSavedFilterSets(true)}
-                >
-                  Saved Filter Sets
-                </button>
+                {isRefusedLink && (
+                  <button
+                    type="button"
+                    className="btn btn-back-to-search"
+                    onClick={() => setShowSavedFilterSets(true)}
+                  >
+                    Saved Filter Sets
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -755,6 +747,7 @@ const GameLogFilter = ({ notice = null }) => {
                 lineType={lineType}
                 lineValue={lineValue}
                 onContextSettled={setPanelSettledFor}
+                defaultSaveName={currentQuery || ''}
               />
             </Col>
           </Row>
@@ -801,23 +794,13 @@ const GameLogFilter = ({ notice = null }) => {
         </Container>
       )}
 
-      {/* Saving and the saved list belong to an account, so neither exists for
-          a signed-out reader. */}
+      {/* The saved list belongs to an account, so it does not exist for a
+          signed-out reader. */}
       {canSearch && (
-        <>
-          <SaveFilterSetModal
-            show={showSaveFilterSet}
-            onHide={() => setShowSaveFilterSet(false)}
-            // The URL as it stands is what gets saved, so what opens later is
-            // the link the user was looking at.
-            queryString={searchParams.toString()}
-            defaultName={currentQuery || ''}
-          />
-          <SavedFilterSetsModal
-            show={showSavedFilterSets}
-            onHide={() => setShowSavedFilterSets(false)}
-          />
-        </>
+        <SavedFilterSetsModal
+          show={showSavedFilterSets}
+          onHide={() => setShowSavedFilterSets(false)}
+        />
       )}
     </>
   );

@@ -1,6 +1,6 @@
 import { readRevisit } from './revisitCache';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
@@ -49,6 +49,7 @@ const GameLogFilter = ({ notice = null }) => {
   // a waitlisted one is refused them all, so it is treated as not searching.
   const canSearch = isAuthenticated && !waitlist;
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
   const { filters: urlFilters, invalid: urlInvalid } = useMemo(
@@ -96,6 +97,7 @@ const GameLogFilter = ({ notice = null }) => {
   const [listsError, setListsError] = useState(null);
   const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   // The Workspace is revealed in one piece. Each section that reads on its own
   // reports what it last finished reading for, and the Workspace stays behind
   // one loading state until every section has finished for what is on screen.
@@ -352,6 +354,32 @@ const GameLogFilter = ({ notice = null }) => {
     setSelectedTeam('');
     setGameLogsError(null);
   }, [abortGameLogsRequest, clearSeasonGameLogs]);
+
+  // The URL is the whole view, so sharing it hands over exactly these game
+  // logs. Phones get their own share sheet; elsewhere the link is copied.
+  const shareLink = async () => {
+    const url = `${window.location.origin}${pathname}?${searchParams.toString()}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url });
+      } catch {
+        // Dismissing the share sheet is not an error worth reporting.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+    } catch {
+      // A blocked clipboard leaves the link in the address bar to copy by hand.
+    }
+  };
+
+  useEffect(() => {
+    if (!linkCopied) return undefined;
+    const timer = setTimeout(() => setLinkCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [linkCopied]);
 
   // The sentinel only ever says "Workspace, no filters yet". Alongside filters
   // it is already untrue, so it is dropped rather than carried into a link
@@ -636,13 +664,18 @@ const GameLogFilter = ({ notice = null }) => {
                     Set, and a refused link is one we would not open again —
                     but the saved list is still the way back out of either. */}
                 {hasUrlFilterSet && !isRefusedLink && (
-                  <button
-                    type="button"
-                    className="btn btn-back-to-search"
-                    onClick={() => setShowSaveFilterSet(true)}
-                  >
-                    Save Filter Set
-                  </button>
+                  <>
+                    <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
+                      <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-back-to-search"
+                      onClick={() => setShowSaveFilterSet(true)}
+                    >
+                      Save Filter Set
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

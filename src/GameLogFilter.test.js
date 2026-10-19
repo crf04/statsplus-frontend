@@ -281,6 +281,63 @@ test('saves the Log Workspace URL exactly as it stands', async () => {
   });
 });
 
+describe('Share', () => {
+  afterEach(() => {
+    delete navigator.share;
+    delete navigator.clipboard;
+  });
+
+  test('copies the exact Log Workspace link and confirms it', async () => {
+    let clipboardText = '';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text) => {
+          clipboardText = text;
+          return Promise.resolve();
+        },
+      },
+    });
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    });
+
+    expect(clipboardText).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
+
+  test('hands the exact link to the native share sheet when there is one', async () => {
+    let shared;
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: (data) => {
+        shared = data;
+        return Promise.reject(new DOMException('Dismissed', 'AbortError'));
+      },
+    });
+    renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
+
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    });
+
+    expect(shared.url).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  test('offers nothing to share until the URL carries a Filter Set', async () => {
+    renderGameLogFilter(['/?browse=1']);
+
+    expect(await screen.findByRole('button', { name: 'Saved Filter Sets' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+  });
+});
+
 test('reaches the saved list from the Query Prompt and from the Log Workspace', async () => {
   const promptRender = renderGameLogFilter(['/']);
 

@@ -4,7 +4,7 @@ import {
 } from '../e2e/fixtures/deployedSmokeConfig.js';
 
 // node validate-deployment-url.mjs <protected-preview> <frontend-url>
-// node validate-deployment-url.mjs <production|staging> <frontend-url> <api-url> <mcp-url>
+// node validate-deployment-url.mjs <production|staging|compatibility> <frontend-url> <api-url> <mcp-url>
 const [mode, deploymentUrl, apiUrl, mcpUrl] = process.argv.slice(2);
 
 const diagnosticOrigin = (candidate) => {
@@ -18,7 +18,7 @@ const diagnosticOrigin = (candidate) => {
 const allowed =
   mode === 'protected-preview'
     ? isAllowedDeploymentUrl(deploymentUrl, mode)
-    : ['production', 'staging'].includes(mode) &&
+    : ['production', 'staging', 'compatibility'].includes(mode) &&
       isAllowedReleaseCheckTarget(mode, { frontend: deploymentUrl, api: apiUrl, mcp: mcpUrl });
 
 if (!allowed) {

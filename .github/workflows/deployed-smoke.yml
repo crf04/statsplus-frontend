@@ -9,23 +9,24 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run a Release Check against production or staging, or a protected preview check
+        description: Run a Release Check against production or staging, a compatibility check (the production frontend against the staging API and MCP), or a protected preview check
         required: true
         type: choice
         options:
           - production
           - staging
+          - compatibility
           - protected-preview
       base_url:
         description: Frontend URL to test. Defaults to the public production alias or https://staging.courtai.app; required for protected-preview
         required: false
         type: string
       api_base_url:
-        description: API base URL. Defaults to production's backend; required for staging
+        description: API base URL. Defaults to production's backend; required for staging and compatibility
         required: false
         type: string
       mcp_base_url:
-        description: MCP base URL. Defaults to https://mcp.courtai.app; required for staging
+        description: MCP base URL. Defaults to https://mcp.courtai.app; required for staging and compatibility
         required: false
         type: string
       release_id:
@@ -46,7 +47,7 @@ jobs:
       github.event.deployment_status.state == 'success' &&
       github.event.deployment.environment == 'Production') ||
       (github.event_name == 'workflow_dispatch' &&
-      (inputs.mode == 'production' || inputs.mode == 'staging')))
+      (inputs.mode == 'production' || inputs.mode == 'staging' || inputs.mode == 'compatibility')))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

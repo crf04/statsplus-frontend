@@ -42,6 +42,12 @@ const releaseCheckTargets = {
     api: /^statsplus-backend-staging[a-z0-9-]*\.up\.railway\.app$/,
     mcp: /^mcp-staging\.courtai\.app$/,
   },
+  // The frontend serving production against the candidate backend and MCP on staging.
+  compatibility: {
+    frontend: /^statsplus-frontend\.vercel\.app$/,
+    api: /^statsplus-backend-staging[a-z0-9-]*\.up\.railway\.app$/,
+    mcp: /^mcp-staging\.courtai\.app$/,
+  },
 };
 
 export const isAllowedReleaseCheckTarget = (mode, { frontend, api, mcp }) => {

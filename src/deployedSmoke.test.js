@@ -5,6 +5,7 @@ import YAML from 'yaml';
 import {
   bootstrapVercelBypassCookie,
   isAllowedDeploymentUrl,
+  isAllowedReleaseCheckTarget,
 } from '../e2e/fixtures/deployedSmokeConfig';
 
 const deploymentUrl = 'https://statsplus-frontend-pj8o7a8n2-chris-fus-projects.vercel.app/';
@@ -187,13 +188,36 @@ describe('deployed smoke URL and fixture wiring', () => {
       required: false,
       type: 'string',
     });
-    // The named run must still be the one that runs the Release Check for a dispatch.
-    expect(workflow.jobs['production-smoke'].if).toMatch(
-      /^github\.repository == 'crf04\/statsplus-frontend' &&\s+\(\(github\.event_name == 'deployment_status'/,
+    // The named run must still be the one that runs the Release Check for a dispatch:
+    // the whole active condition, so appending `&& false` (a skipped job) is noticed.
+    expect(workflow.jobs['production-smoke'].if.replace(/\s+/g, ' ').trim()).toBe(
+      "github.repository == 'crf04/statsplus-frontend' && ((github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production') || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'production' || inputs.mode == 'staging' || inputs.mode == 'compatibility')))",
     );
-    expect(workflow.jobs['production-smoke'].if).toContain(
-      "(inputs.mode == 'production' || inputs.mode == 'staging')",
-    );
+  });
+
+  test('the compatibility Release Check pairs the production frontend with the staging API and MCP only', () => {
+    const staging = {
+      api: 'https://statsplus-backend-staging.up.railway.app',
+      mcp: 'https://mcp-staging.courtai.app',
+    };
+    const check = (target) => isAllowedReleaseCheckTarget('compatibility', target);
+
+    expect(check({ frontend: 'https://statsplus-frontend.vercel.app', ...staging })).toBe(true);
+    expect(check({ frontend: 'https://staging.courtai.app', ...staging })).toBe(false);
+    expect(
+      check({
+        frontend: 'https://statsplus-frontend.vercel.app',
+        api: 'https://statsplus-backend-production.up.railway.app',
+        mcp: staging.mcp,
+      }),
+    ).toBe(false);
+    expect(
+      check({
+        frontend: 'https://statsplus-frontend.vercel.app',
+        api: staging.api,
+        mcp: 'https://mcp.courtai.app',
+      }),
+    ).toBe(false);
   });
 
   test('dispatches the Release Check against staging with explicit API and MCP URLs', () => {
@@ -205,7 +229,9 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource).toContain('- staging');
     expect(workflowSource).toContain('api_base_url:');
     expect(workflowSource).toContain('mcp_base_url:');
-    expect(workflowSource).toContain("(inputs.mode == 'production' || inputs.mode == 'staging')");
+    expect(workflowSource).toContain(
+      "(inputs.mode == 'production' || inputs.mode == 'staging' || inputs.mode == 'compatibility')",
+    );
     expect(workflowSource).toMatch(
       /E2E_API_BASE_URL: .*inputs\.mode == 'production' && 'https:\/\/statsplus-backend-production\.up\.railway\.app' \|\| ''/,
     );

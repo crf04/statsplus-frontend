@@ -683,9 +683,7 @@ function decodeProvenance(provenance, postedMarkets) {
 // Sportsbook quotes ride beside provenance, not inside it: a book can post a
 // market no DFS provider does, so nothing here is checked against the posted
 // markets. The contract (statsplus#185 section 4) makes the key required, with
-// {} for no books. A missing key is accepted anyway as a deliberate rollout
-// exception: this frontend may deploy before statsplus-backend#377. Tighten it
-// to a rejection once #377 is live in production.
+// {} for no books, so a missing key is rejected like any other malformed field.
 const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA'];
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw invalid();
@@ -694,7 +692,6 @@ const requireBoolean = (value) => {
 const requirePrice = (value) => (value === null ? null : requireInteger(value));
 
 function decodeBookLines(bookLines) {
-  if (bookLines === undefined) return {};
   if (!isRecord(bookLines)) throw invalid();
   return Object.fromEntries(
     Object.entries(bookLines).map(([market, quote]) => {

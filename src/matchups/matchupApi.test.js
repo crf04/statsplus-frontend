@@ -128,6 +128,7 @@ const payload = {
       tricode: 'LAL',
       posted_markets: ['PTS', 'FGA'],
       provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
+      book_lines: {},
       season_scoring: 25.4,
       last_10_minutes: [35, 36],
       diet_shares: {
@@ -2839,15 +2840,13 @@ describe('book_lines', () => {
     expect(Object.keys(player.bookLines)).toEqual(['AST']);
   });
 
-  test.each([
-    ['an empty object', {}],
-    ['an absent field (backend not deployed)', undefined],
-  ])('reads %s as no books', (_name, bookLines) => {
-    expect(decodeMatchup(withBookLines(bookLines)).players[0].bookLines).toEqual({});
+  test('reads an empty object as no books', () => {
+    expect(decodeMatchup(withBookLines({})).players[0].bookLines).toEqual({});
   });
 
   const book = (overrides) => ({ ...bookQuote.books[0], ...overrides });
   test.each([
+    ['an absent book_lines', undefined],
     ['a null book_lines', null],
     ['an array book_lines', []],
     ['a market outside the book set', { FGA: bookQuote }],

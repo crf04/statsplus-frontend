@@ -1036,6 +1036,7 @@ const historicalParticipant = ({
   posted_markets: [],
   provenance: {},
   lines: {},
+  book_lines: {},
   stat_categories: HISTORICAL_CATEGORIES,
   focal_game_line: historicalFocalLine(team, minutes, focalStats),
   season_scoring: seasonScoring,

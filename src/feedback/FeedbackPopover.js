@@ -113,6 +113,7 @@ export default function FeedbackPopover() {
     closeFeedback(id);
     showToast(
       withScreenshot && !screenshot ? `${SENT_MESSAGE} ${SCREENSHOT_MISSED_NOTE}` : SENT_MESSAGE,
+      container,
     );
   };
 

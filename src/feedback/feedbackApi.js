@@ -2,6 +2,7 @@ import config, { apiClient, getApiUrl } from '../config';
 
 export const X_HANDLE_PATTERN = /^[A-Za-z0-9_]{1,15}$/;
 export const MESSAGE_MAX_LENGTH = 4000;
+const APP_VERSION_MAX_LENGTH = 64;
 export const SCREENSHOT_MAX_BYTES = 2 * 1024 * 1024;
 const SCREENSHOT_TIMEOUT_MS = 10000;
 
@@ -9,8 +10,15 @@ export const SENT_MESSAGE = 'Sent. Thanks — Chris reads every one.';
 export const SCREENSHOT_MISSED_NOTE = 'The screenshot couldn’t be attached.';
 export const SEND_FAILED_MESSAGE = 'Couldn’t send. Try again.';
 
-/** The build's commit SHA when it exposes one, else the configured version. */
-export const getAppVersion = () => config.APP_COMMIT || config.APP_VERSION;
+/**
+ * The build's commit SHA when it exposes one, else the release the Sentry
+ * plugin injected at build time, else the configured version.
+ */
+export const getAppVersion = () =>
+  String(config.APP_COMMIT || globalThis.SENTRY_RELEASE?.id || config.APP_VERSION).slice(
+    0,
+    APP_VERSION_MAX_LENGTH,
+  );
 
 const decodedBytes = (dataUrl) => Math.floor(((dataUrl.length - dataUrl.indexOf(',') - 1) * 3) / 4);
 

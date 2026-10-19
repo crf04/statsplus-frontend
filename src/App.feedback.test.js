@@ -65,6 +65,7 @@ afterEach(() => {
   console.log.mockRestore();
   jest.clearAllMocks();
   config.APP_COMMIT = '';
+  delete globalThis.SENTRY_RELEASE;
   Object.assign(mockAuth, { currentUser: null, isAuthenticated: false, waitlist: null });
   window.history.pushState({}, '', '/');
 });
@@ -128,6 +129,29 @@ describe('sending', () => {
   });
 
   test('the build commit is the app version when the build has one', async () => {
+    config.APP_COMMIT = 'c703b57';
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await userEvent.type(messageBox(), 'Hello');
+    await userEvent.click(sendButton());
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalled());
+    expect(postedBody().app_version).toBe('c703b57');
+  });
+
+  test('the injected Sentry release is the version when the build has no commit', async () => {
+    globalThis.SENTRY_RELEASE = { id: 'courtai@9.9.9' };
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await userEvent.type(messageBox(), 'Hello');
+    await userEvent.click(sendButton());
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalled());
+    expect(postedBody().app_version).toBe('courtai@9.9.9');
+  });
+
+  test('the commit comes before the Sentry release', async () => {
+    globalThis.SENTRY_RELEASE = { id: 'courtai@9.9.9' };
     config.APP_COMMIT = 'c703b57';
     signIn();
     render(<App />);

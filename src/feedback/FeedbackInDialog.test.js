@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import SaveFilterSetModal from '../SaveFilterSetModal';
 import { createSavedFilterSet } from '../savedFilterSetsApi';
 import ErrorMessage from './ErrorMessage';
+import FeedbackButton from './FeedbackButton';
 import { FeedbackProvider } from './FeedbackContext';
 
 jest.mock('../contexts/AuthContext', () => ({
@@ -58,6 +59,7 @@ test('the popover opens inside the dialog that holds the error, above its backdr
 test('the popover goes when the dialog that hosts it does', async () => {
   const Host = ({ open }) => (
     <FeedbackProvider>
+      <FeedbackButton />
       {open && (
         <div role="dialog" aria-label="Operator confirmation">
           <ErrorMessage message="The action failed. (ref 3f9a12bc)" />
@@ -71,6 +73,7 @@ test('the popover goes when the dialog that hosts it does', async () => {
     </MemoryRouter>,
   );
   await userEvent.click(screen.getByRole('button', { name: 'Report this' }));
+  await userEvent.type(screen.getByRole('textbox', { name: 'Your feedback' }), 'stale draft');
   expect(screen.getByRole('dialog', { name: 'Send feedback' })).toBeVisible();
 
   rerender(
@@ -78,7 +81,34 @@ test('the popover goes when the dialog that hosts it does', async () => {
       <Host open={false} />
     </MemoryRouter>,
   );
+  // A popover left in a detached dialog is invisible, so the state is the proof.
   await waitFor(() =>
-    expect(screen.queryByRole('dialog', { name: 'Send feedback' })).not.toBeInTheDocument(),
+    expect(screen.getByRole('button', { name: 'Feedback' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    ),
+  );
+
+  // Nothing of the old open is left: one click opens a fresh, empty popover.
+  await userEvent.click(screen.getByRole('button', { name: 'Feedback' }));
+  const fresh = screen.getByRole('dialog', { name: 'Send feedback' });
+  expect(within(fresh).getByRole('textbox', { name: 'Your feedback' })).toHaveValue('');
+  expect(within(fresh).getByText('Feedback')).toBeVisible();
+  expect(fresh).not.toHaveTextContent('error ref');
+});
+
+test('the confirmation toast appears inside the dialog that hosted the popover', async () => {
+  renderInProvider(
+    <div role="dialog" aria-label="Operator confirmation" aria-modal="true">
+      <ErrorMessage message="The action failed. (ref 3f9a12bc)" />
+    </div>,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Report this' }));
+  await userEvent.type(screen.getByRole('textbox', { name: 'Your feedback' }), 'It failed');
+  await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+  const host = screen.getByRole('dialog', { name: 'Operator confirmation' });
+  expect(await within(host).findByRole('status')).toHaveTextContent(
+    'Sent. Thanks — Chris reads every one.',
   );
 });

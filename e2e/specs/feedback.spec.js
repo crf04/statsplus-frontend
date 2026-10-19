@@ -45,9 +45,7 @@ test('a refused send keeps the draft in the popover', async ({ authenticatedPage
   await expect(popover.getByRole('textbox', { name: 'Your feedback' })).toHaveValue('Keep this');
 });
 
-test('Report this from a failed Save Filter Set takes typing inside the modal', async ({
-  authenticatedPage: page,
-}) => {
+const failSaveFilterSet = async (page) => {
   await page.route('**/api/user/saved-filter-sets', (route) =>
     route.request().method() === 'POST'
       ? route.fulfill({
@@ -68,6 +66,13 @@ test('Report this from a failed Save Filter Set takes typing inside the modal', 
   const modal = page.getByRole('dialog', { name: 'Save this Filter Set' });
   await modal.getByRole('button', { name: 'Save', exact: true }).click();
   await modal.getByRole('button', { name: 'Report this' }).click();
+  return modal;
+};
+
+test('Report this from a failed Save Filter Set takes typing inside the modal', async ({
+  authenticatedPage: page,
+}) => {
+  const modal = await failSaveFilterSet(page);
 
   const box = page.getByRole('textbox', { name: 'Your feedback' });
   await expect(box).toBeFocused();
@@ -77,6 +82,27 @@ test('Report this from a failed Save Filter Set takes typing inside the modal', 
   await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);
   await expect(modal).toBeVisible();
   await expect(modal.getByRole('button', { name: 'Report this' })).toBeFocused();
+});
+
+test('closing the popover from inside the modal returns focus to Report this', async ({
+  authenticatedPage: page,
+}) => {
+  const modal = await failSaveFilterSet(page);
+  await page.getByRole('button', { name: 'Close feedback' }).click();
+  await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);
+  await expect(modal.getByRole('button', { name: 'Report this' })).toBeFocused();
+});
+
+test('a send from inside the modal returns focus to Report this and confirms in the modal', async ({
+  authenticatedPage: page,
+}) => {
+  const modal = await failSaveFilterSet(page);
+  await page.getByRole('textbox', { name: 'Your feedback' }).fill('It would not save');
+  await page.getByRole('button', { name: 'Send' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'Send feedback' })).toHaveCount(0);
+  await expect(modal.getByRole('button', { name: 'Report this' })).toBeFocused();
+  await expect(modal.getByRole('status')).toHaveText('Sent. Thanks — Chris reads every one.');
 });
 
 test('the popover sits below the phone header and scrolls on a short screen', async ({

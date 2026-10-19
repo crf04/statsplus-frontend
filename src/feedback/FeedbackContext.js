@@ -12,6 +12,15 @@ const TOAST_MS = 3200;
 /** The dialog an opener sits in, if any: the popover must live inside it to take focus. */
 const dialogAround = (opener) => opener?.closest?.('[role="dialog"]') ?? null;
 
+const toastElement = ({ text, container }) => {
+  const toast = (
+    <div className="feedback-toast" role="status" data-feedback-layer>
+      <Check size={14} aria-hidden="true" /> {text}
+    </div>
+  );
+  return container?.isConnected ? createPortal(toast, container) : toast;
+};
+
 /**
  * The Feedback state for a signed-in account: whether the popover is open and
  * which error reference it carries, the references of the error messages now
@@ -68,21 +77,22 @@ export function FeedbackProvider({ children }) {
       // After the click that closed it has settled, so a control the user
       // clicked instead keeps focus.
       window.setTimeout(() => {
-        const { opener } = current;
-        if (
-          opener?.isConnected &&
-          (!document.activeElement || document.activeElement === document.body)
-        ) {
-          opener.focus();
-        }
+        const { opener, container } = current;
+        const active = document.activeElement;
+        // A dialog's focus trap meanwhile parks focus on the dialog itself,
+        // which is no deliberate choice by the user either.
+        const undecided = !active || active === document.body || active === container;
+        if (opener?.isConnected && undecided) opener.focus();
       }, 0);
     },
     [showPanel],
   );
 
-  const showToast = useCallback((text) => {
+  // `container` is the dialog the popover was in: the toast appears there too,
+  // above the dialog's backdrop and inside what its screen reader users hear.
+  const showToast = useCallback((text, container = null) => {
     window.clearTimeout(toastTimer.current);
-    setToast(text);
+    setToast({ text, container });
     toastTimer.current = window.setTimeout(() => setToast(null), TOAST_MS);
   }, []);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
@@ -110,11 +120,7 @@ export function FeedbackProvider({ children }) {
       {value && (
         <div className="feedback-layer">
           {popover && (panel.container ? createPortal(popover, panel.container) : popover)}
-          {toast && (
-            <div className="feedback-toast" role="status" data-feedback-layer>
-              <Check size={14} aria-hidden="true" /> {toast}
-            </div>
-          )}
+          {toast && toastElement(toast)}
         </div>
       )}
     </FeedbackContext.Provider>

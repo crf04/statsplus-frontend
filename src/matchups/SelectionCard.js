@@ -69,7 +69,6 @@ const asOfTime = (stamp) => {
 // weight so colour is not the only signal.
 function BookLines({ market, quote }) {
   const [expanded, setExpanded] = useState(false);
-  useEffect(() => setExpanded(false), [market]);
   const hidden = quote.books.length - BOOKS_SHOWN;
   const shown = expanded || hidden <= 0 ? quote.books : quote.books.slice(0, BOOKS_SHOWN);
   const time = asOfTime(quote.asOf);
@@ -449,7 +448,12 @@ export default function SelectionCard({
         </section>
       </div>
       {player.bookLines?.[activeStat]?.books.length > 0 && (
-        <BookLines market={activeStat} quote={player.bookLines[activeStat]} />
+        // Keyed so a new player or stat starts collapsed again.
+        <BookLines
+          key={`${player.id}:${activeStat}`}
+          market={activeStat}
+          quote={player.bookLines[activeStat]}
+        />
       )}
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)

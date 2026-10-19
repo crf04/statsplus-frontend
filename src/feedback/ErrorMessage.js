@@ -32,7 +32,7 @@ export default function ErrorMessage({ message }) {
       <button
         type="button"
         className="feedback-report-link"
-        onClick={() => feedback.openFeedback({ reference })}
+        onClick={(event) => feedback.openFeedback({ reference, opener: event.currentTarget })}
       >
         Report this
       </button>

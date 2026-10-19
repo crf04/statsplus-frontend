@@ -80,6 +80,14 @@
   transform: rotate(45deg);
 }
 
+.feedback-body {
+  /* Short screens (a phone on its side) scroll the popover, not the page. The
+     popover's own padding and border take the extra 34px. */
+  max-height: calc(100vh - var(--ct-header-height) - 50px);
+  max-height: calc(100dvh - var(--ct-header-height) - 50px);
+  overflow-y: auto;
+}
+
 .feedback-head {
   display: flex;
   justify-content: space-between;
@@ -299,7 +307,7 @@
     left: 8px;
     right: 8px;
     width: auto;
-    top: calc(var(--ct-header-height) - 34px);
+    top: calc(var(--ct-header-height) + 8px);
     z-index: 2600;
   }
 

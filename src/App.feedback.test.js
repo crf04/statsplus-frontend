@@ -167,6 +167,87 @@ describe('sending', () => {
   });
 });
 
+describe('the page sent', () => {
+  test('is the path and query, without the hash', async () => {
+    window.history.pushState({}, '', '/privacy?utm_source=x&tab=2#section-3');
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await userEvent.type(messageBox(), 'Hello');
+    await userEvent.click(sendButton());
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalled());
+    expect(postedBody().page).toBe('/privacy?utm_source=x&tab=2');
+  });
+});
+
+describe('a send that finishes after its popover was dismissed', () => {
+  test('shows the toast but leaves a newer draft open and intact', async () => {
+    let finish;
+    apiClient.post.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await userEvent.type(messageBox(), 'First message');
+    await userEvent.click(sendButton());
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await openFromHeader();
+    await userEvent.type(messageBox(), 'Second draft');
+    finish({ data: { sent: true } });
+
+    expect(await screen.findByRole('status')).toHaveTextContent(SENT);
+    expect(popover()).toBeVisible();
+    expect(messageBox()).toHaveValue('Second draft');
+    expect(sendButton()).toBeEnabled();
+  });
+});
+
+describe('focus after closing', () => {
+  test.each([
+    [
+      'the close button',
+      () => userEvent.click(screen.getByRole('button', { name: 'Close feedback' })),
+    ],
+    ['Escape', () => userEvent.keyboard('{Escape}')],
+    ['a click outside', () => userEvent.click(screen.getByRole('navigation', { name: 'Primary' }))],
+    [
+      'a successful send',
+      async () => {
+        await userEvent.type(messageBox(), 'Hello');
+        await userEvent.click(sendButton());
+      },
+    ],
+  ])('returns to the header button after %s', async (_name, close) => {
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await close();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Feedback' })).toHaveFocus());
+  });
+
+  test('returns to the Report this link that opened it', async () => {
+    apiClient.get.mockRejectedValue(SERVER_ERROR);
+    window.history.pushState({}, '', '/matchups');
+    signIn();
+    render(<App />);
+    const link = await screen.findByRole('button', { name: 'Report this' });
+    await userEvent.click(link);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(link).toHaveFocus());
+  });
+
+  test('stays on a control the user clicked outside the popover', async () => {
+    signIn();
+    render(<App />);
+    await openFromHeader();
+    await userEvent.click(screen.getByRole('link', { name: 'Terms' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Feedback' })).not.toHaveFocus();
+  });
+});
+
 describe('closing', () => {
   test.each([
     [
@@ -316,6 +397,7 @@ describe('a failed send', () => {
     await userEvent.type(messageBox(), 'My draft');
     await userEvent.click(sendButton());
     expect(await within(popover()).findByRole('alert')).toHaveTextContent('x_handle is invalid.');
+    expect(messageBox()).toHaveValue('My draft');
   });
 
   test('a request that never reached the server says to try again', async () => {

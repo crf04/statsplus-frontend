@@ -13,7 +13,7 @@ export default function FeedbackButton() {
       aria-label="Feedback"
       aria-expanded={Boolean(panel)}
       data-feedback-trigger
-      onClick={() => (panel ? closeFeedback() : openFeedback())}
+      onClick={(event) => (panel ? closeFeedback() : openFeedback({ opener: event.currentTarget }))}
     >
       <MessageSquarePlus size={16} aria-hidden="true" />
       <span>Feedback</span>

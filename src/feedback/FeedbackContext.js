@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +8,10 @@ import { FeedbackContext } from './useFeedback';
 import './feedback.css';
 
 const TOAST_MS = 3200;
+
+/** The dialog an opener sits in, if any: the popover must live inside it to take focus. */
+const dialogAround = (opener) => opener?.closest?.('[role="dialog"]') ?? null;
+
 /**
  * The Feedback state for a signed-in account: whether the popover is open and
  * which error reference it carries, the references of the error messages now
@@ -18,8 +23,15 @@ export function FeedbackProvider({ children }) {
   const { pathname } = useLocation();
   const [panel, setPanel] = useState(null);
   const [toast, setToast] = useState(null);
+  const panelRef = useRef(null);
+  const nextId = useRef(0);
   const onScreen = useRef([]);
   const toastTimer = useRef(null);
+
+  const showPanel = useCallback((next) => {
+    panelRef.current = next;
+    setPanel(next);
+  }, []);
 
   const registerReference = useCallback((reference) => {
     const entry = { reference };
@@ -29,11 +41,44 @@ export function FeedbackProvider({ children }) {
     };
   }, []);
 
-  const openFeedback = useCallback(({ reference } = {}) => {
-    const latest = onScreen.current[onScreen.current.length - 1]?.reference ?? null;
-    setPanel({ reference: reference ?? latest });
-  }, []);
-  const closeFeedback = useCallback(() => setPanel(null), []);
+  // `opener` is the element that asked: focus returns to it on close, and a
+  // dialog around it hosts the popover so the dialog's focus trap lets it type.
+  const openFeedback = useCallback(
+    ({ reference, opener } = {}) => {
+      const current = panelRef.current;
+      const latest = onScreen.current[onScreen.current.length - 1]?.reference ?? null;
+      const nextOpener = opener ?? current?.opener ?? null;
+      showPanel({
+        id: current?.id ?? ++nextId.current,
+        reference: reference ?? latest,
+        opener: nextOpener,
+        container: dialogAround(nextOpener),
+      });
+    },
+    [showPanel],
+  );
+
+  // With an id, closes only the open that id belongs to, so a send that
+  // finishes after its popover was dismissed leaves a newer draft alone.
+  const closeFeedback = useCallback(
+    (id) => {
+      const current = panelRef.current;
+      if (!current || (id !== undefined && id !== current.id)) return;
+      showPanel(null);
+      // After the click that closed it has settled, so a control the user
+      // clicked instead keeps focus.
+      window.setTimeout(() => {
+        const { opener } = current;
+        if (
+          opener?.isConnected &&
+          (!document.activeElement || document.activeElement === document.body)
+        ) {
+          opener.focus();
+        }
+      }, 0);
+    },
+    [showPanel],
+  );
 
   const showToast = useCallback((text) => {
     window.clearTimeout(toastTimer.current);
@@ -44,11 +89,11 @@ export function FeedbackProvider({ children }) {
 
   // A popover opened on one page does not follow the user to another.
   useEffect(() => {
-    setPanel(null);
-  }, [pathname]);
+    showPanel(null);
+  }, [pathname, showPanel]);
   useEffect(() => {
-    if (!isAuthenticated) setPanel(null);
-  }, [isAuthenticated]);
+    if (!isAuthenticated) showPanel(null);
+  }, [isAuthenticated, showPanel]);
 
   const value = useMemo(
     () =>
@@ -56,14 +101,17 @@ export function FeedbackProvider({ children }) {
     [isAuthenticated, panel, openFeedback, closeFeedback, registerReference, showToast],
   );
 
+  const popover = panel && (
+    <FeedbackPopover key={`${panel.id}-${panel.container ? 'in' : 'out'}`} />
+  );
   return (
     <FeedbackContext.Provider value={value}>
       {children}
       {value && (
-        <div className="feedback-layer" data-feedback-layer>
-          {panel && <FeedbackPopover />}
+        <div className="feedback-layer">
+          {popover && (panel.container ? createPortal(popover, panel.container) : popover)}
           {toast && (
-            <div className="feedback-toast" role="status">
+            <div className="feedback-toast" role="status" data-feedback-layer>
               <Check size={14} aria-hidden="true" /> {toast}
             </div>
           )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { isCalendarDate } from '../calendarDate';
 import { useSeasonMinutes } from './useTargets';
 import { useBacktestSample, useLabSeason } from './backtestSample';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 // The track's first stop, left of every real floor, meaning no floor at all.
 const NO_FLOOR = -1;
@@ -182,7 +183,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
           {roster.status === 'loading' && <p role="status">Loading {opponent} roster…</p>}
           {roster.status === 'error' && (
             <p role="alert">
-              {roster.error}{' '}
+              <ErrorMessage message={roster.error} />{' '}
               <button type="button" onClick={roster.reload}>
                 Retry roster
               </button>
@@ -248,7 +249,7 @@ export function TargetConditionRows({ opponent, conditions, onChange }) {
         <div className="target-condition">
           {roster.status === 'error' && !defender && (
             <p role="alert">
-              {roster.error}{' '}
+              <ErrorMessage message={roster.error} />{' '}
               <button type="button" onClick={roster.reload}>
                 Retry roster
               </button>

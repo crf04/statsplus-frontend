@@ -1021,7 +1021,16 @@
   flex: none;
   padding: 0 18px;
 }
-/* While a set is being named, the form is the whole footer. */
-.fpb-foot:has(.fpt-save-form) > :not(.fpt-save-form) {
-  display: none;
+/* While a set is being named, the form takes its own row above Apply, which
+   stays reachable: editing a filter mid-name needs Apply before Save. */
+.fpb-foot:has(.fpt-save-form) {
+  flex-wrap: wrap;
+}
+.fpb-foot .fpt-save-form {
+  flex-basis: 100%;
+}
+/* A long description wraps inside the panel instead of running past it. */
+.fpt-saved .saved-filter-set-parameter {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

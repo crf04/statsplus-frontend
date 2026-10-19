@@ -375,3 +375,48 @@ test('a player with no Saved Filter Sets is told so by name', async ({ page }) =
     panel.getByRole('button', { name: 'Open saved Filter Set Trae at home' }),
   ).toBeVisible();
 });
+
+test('naming a set keeps Apply reachable when a filter changes mid-name', async ({ page }) => {
+  const panel = await open(page, { next_game: null, opponent_ranks: [] });
+  await panel.getByRole('button', { name: 'Save', exact: true }).click();
+  await panel.getByLabel('Name this Filter Set').fill('Draft');
+  await panel.getByRole('button', { name: 'Remove last' }).click();
+  await expect(panel.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: 'Apply 1 change' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('game_filter')).toBeNull();
+});
+
+test('a long saved-set description wraps inside the phone Saved tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  await installParityApi(page);
+  await page.route('**/api/players/next-opponent?**', (route) =>
+    route.fulfill({ json: { next_game: null, opponent_ranks: [] } }),
+  );
+  await page.route('**/api/user/saved-filter-sets', (route) =>
+    route.fulfill({
+      json: {
+        saved_filter_sets: [
+          {
+            id: 'three',
+            name: 'Without three',
+            query_string:
+              'player_name=Jalen+Johnson&players_off%5B%5D=Anthony+Davis&players_off%5B%5D=Austin+Reaves&players_off%5B%5D=Rui+Hachimura',
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto(PARITY_PATH);
+  const panel = page.getByTestId('filter-panel');
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await expect(
+    panel.getByText('without Anthony Davis, Austin Reaves and Rui Hachimura'),
+  ).toBeVisible();
+  expect(await panel.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+  const chip = await panel
+    .getByText('without Anthony Davis, Austin Reaves and Rui Hachimura')
+    .boundingBox();
+  const box = await panel.boundingBox();
+  expect(chip.x + chip.width).toBeLessThanOrEqual(box.x + box.width);
+});

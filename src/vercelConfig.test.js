@@ -2,9 +2,36 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const vercelConfig = JSON.parse(
-  fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
-);
+const PRODUCTION_API_ORIGIN = 'https://statsplus-backend-production.up.railway.app';
+const STAGING_API_ORIGIN = 'https://statsplus-backend-staging.up.railway.app';
+
+// Vercel evaluates vercel.ts at build time; run it the same way in a fresh process.
+const loadVercelConfig = ({ apiOrigin } = {}) => {
+  const env = { ...process.env, NODE_NO_WARNINGS: '1' };
+  delete env.STATSPLUS_API_ORIGIN;
+  if (apiOrigin !== undefined) env.STATSPLUS_API_ORIGIN = apiOrigin;
+
+  return JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        "import { config } from './vercel.ts'; process.stdout.write(JSON.stringify(config));",
+      ],
+      { cwd: process.cwd(), encoding: 'utf8', env },
+    ),
+  );
+};
+
+const productionRewrites = (apiOrigin) => [
+  { source: '/api/:path*', destination: `${apiOrigin}/api/:path*` },
+  {
+    source: '/__/auth/:path*',
+    destination: 'https://courtai-6eccf.firebaseapp.com/__/auth/:path*',
+  },
+  { source: '/:path*', destination: '/index.html' },
+];
 
 const loadPlaywrightUseConfig = ({ baseUrl, vercelAutomationBypassSecret } = {}) => {
   const env = { ...process.env };
@@ -35,25 +62,43 @@ const loadPlaywrightUseConfig = ({ baseUrl, vercelAutomationBypassSecret } = {})
 };
 
 describe('Vercel deployment configuration', () => {
-  test('builds the Vite application into the configured deployment directory', () => {
-    expect(vercelConfig).toMatchObject({
+  test('is the only Vercel configuration file', () => {
+    expect(fs.existsSync(path.resolve(process.cwd(), 'vercel.json'))).toBe(false);
+  });
+
+  test('without STATSPLUS_API_ORIGIN, builds and routes exactly as the former vercel.json did', () => {
+    expect(loadVercelConfig()).toEqual({
       framework: 'vite',
       buildCommand: 'npm run build',
       outputDirectory: 'build',
+      rewrites: productionRewrites(PRODUCTION_API_ORIGIN),
     });
   });
 
-  test('proxies API and Firebase auth requests before applying the SPA fallback', () => {
-    expect(vercelConfig.rewrites).toHaveLength(3);
-    expect(vercelConfig.rewrites[0]).toEqual({
-      source: '/api/:path*',
-      destination: 'https://statsplus-backend-production.up.railway.app/api/:path*',
-    });
-    expect(vercelConfig.rewrites[1]).toEqual({
-      source: '/__/auth/:path*',
-      destination: 'https://courtai-6eccf.firebaseapp.com/__/auth/:path*',
-    });
-    expect(vercelConfig.rewrites[2]).toEqual({ source: '/:path*', destination: '/index.html' });
+  test('treats an empty STATSPLUS_API_ORIGIN as unset', () => {
+    expect(loadVercelConfig({ apiOrigin: '' }).rewrites).toEqual(
+      productionRewrites(PRODUCTION_API_ORIGIN),
+    );
+  });
+
+  test('sends /api to the origin named by STATSPLUS_API_ORIGIN and leaves other rewrites alone', () => {
+    expect(loadVercelConfig({ apiOrigin: STAGING_API_ORIGIN }).rewrites).toEqual(
+      productionRewrites(STAGING_API_ORIGIN),
+    );
+  });
+
+  test.each([
+    'http://statsplus-backend-staging.up.railway.app',
+    'statsplus-backend-staging.up.railway.app',
+    'https://statsplus-backend-staging.up.railway.app/',
+    'https://statsplus-backend-staging.up.railway.app/api',
+    'https://statsplus-backend-staging.up.railway.app?x=1',
+    'ftp://example.com',
+    ' ',
+  ])('fails the build for STATSPLUS_API_ORIGIN=%j', (apiOrigin) => {
+    expect(() => loadVercelConfig({ apiOrigin })).toThrow(
+      /STATSPLUS_API_ORIGIN must be an https origin/,
+    );
   });
 
   test('keeps hermetic Playwright runs free of deployment credentials and preserves evidence', () => {

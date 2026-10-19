@@ -26,6 +26,7 @@ const ChartComponent = ({
   lineValue,
   averages,
   postedLine,
+  lineIsPosted,
   appliedFilters,
 }) => {
   const explicitLineValue = toFiniteNumber(lineValue);
@@ -33,7 +34,7 @@ const ChartComponent = ({
     explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[1]?.[lineType], 0);
   const posted = postedLineFor(postedLine, lineType);
   const lineLabel =
-    posted && explicitLineValue === posted.value
+    lineIsPosted && posted
       ? postedLineLabel(posted)
       : explicitLineValue !== null
         ? `Line: ${lineValue}`

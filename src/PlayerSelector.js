@@ -12,6 +12,7 @@ const PlayerSelector = ({
   setLineType,
   lineValue,
   setLineValue,
+  setLineIsPosted,
   playerList,
   averages,
   postedLine,
@@ -39,12 +40,13 @@ const PlayerSelector = ({
     if (lineEditedForRef.current === lineKey) return;
     // Another player or Line Type: an earlier edit no longer applies.
     lineEditedForRef.current = null;
-    const value =
-      postedLineFor(postedLine, lineType)?.value ?? toFiniteNumber(averages?.[1]?.[lineType]);
+    const posted = postedLineFor(postedLine, lineType);
+    const value = posted?.value ?? toFiniteNumber(averages?.[1]?.[lineType]);
     if (value !== null) {
       setLineValue(formatNumber(value, 1));
+      setLineIsPosted(Boolean(posted));
     }
-  }, [lineKey, lineType, averages, postedLine, setLineValue]);
+  }, [lineKey, lineType, averages, postedLine, setLineValue, setLineIsPosted]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -95,6 +97,7 @@ const PlayerSelector = ({
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
       lineEditedForRef.current = lineKey;
       setLineValue(value);
+      setLineIsPosted(false);
     }
   };
 

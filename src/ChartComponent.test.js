@@ -37,7 +37,7 @@ const postedLine = {
   lines: { PTS: { value: 26.5, provider: 'prizepicks' } },
 };
 
-const lineLabel = (lineValue) => {
+const lineLabel = (lineValue, lineIsPosted) => {
   render(
     <ChartComponent
       gameLogs={[{ GAME_DATE: '2026-01-01', PTS: 20 }]}
@@ -45,15 +45,17 @@ const lineLabel = (lineValue) => {
       lineValue={lineValue}
       averages={averages}
       postedLine={postedLine}
+      lineIsPosted={lineIsPosted}
     />,
   );
   return barProps.options.plugins.annotation.annotations.line1.label.content;
 };
 
 test('the posted line is labelled with its provider and game', () => {
-  expect(lineLabel('26.5')).toBe('PrizePicks 26.5 · GSW vs LAL · Wed, Oct 21');
+  expect(lineLabel('26.5', true)).toBe('PrizePicks 26.5 · GSW vs LAL · Wed, Oct 21');
 });
 
-test('a typed line that is not the posted one keeps the plain label', () => {
-  expect(lineLabel('30')).toBe('Line: 30');
+test('a typed line keeps the plain label, even at the posted value', () => {
+  expect(lineLabel('30', false)).toBe('Line: 30');
+  expect(lineLabel('26.5', false)).toBe('Line: 26.5');
 });

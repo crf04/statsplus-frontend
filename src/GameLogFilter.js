@@ -70,6 +70,8 @@ const GameLogFilter = ({ notice = null }) => {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [lineType, setLineType] = useState('PTS');
   const [lineValue, setLineValue] = useState('');
+  // Whether the line shown is the posted line rather than a typed or average one.
+  const [lineIsPosted, setLineIsPosted] = useState(false);
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
@@ -680,6 +682,7 @@ const GameLogFilter = ({ notice = null }) => {
                     setLineType={setLineType}
                     lineValue={lineValue}
                     setLineValue={setLineValue}
+                    setLineIsPosted={setLineIsPosted}
                     playerList={playerList}
                     averages={averages}
                     postedLine={postedLine}
@@ -691,6 +694,7 @@ const GameLogFilter = ({ notice = null }) => {
                       lineValue={lineValue}
                       averages={averages}
                       postedLine={postedLine}
+                      lineIsPosted={lineIsPosted}
                       appliedFilters={appliedFilters}
                     />
                     <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />

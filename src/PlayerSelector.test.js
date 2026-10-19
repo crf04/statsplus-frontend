@@ -17,18 +17,23 @@ const postedLine = {
 const Harness = ({ averages, posted = null, player = '' }) => {
   const [lineType, setLineType] = useState('PTS');
   const [lineValue, setLineValue] = useState('');
+  const [lineIsPosted, setLineIsPosted] = useState(false);
   return (
-    <PlayerSelector
-      selectedPlayer={player}
-      setSelectedPlayer={() => {}}
-      lineType={lineType}
-      setLineType={setLineType}
-      lineValue={lineValue}
-      setLineValue={setLineValue}
-      playerList={[]}
-      averages={averages}
-      postedLine={posted}
-    />
+    <>
+      <PlayerSelector
+        selectedPlayer={player}
+        setSelectedPlayer={() => {}}
+        lineType={lineType}
+        setLineType={setLineType}
+        lineValue={lineValue}
+        setLineValue={setLineValue}
+        setLineIsPosted={setLineIsPosted}
+        playerList={[]}
+        averages={averages}
+        postedLine={posted}
+      />
+      <output data-testid="line-source">{lineIsPosted ? 'posted' : 'not posted'}</output>
+    </>
   );
 };
 
@@ -46,6 +51,15 @@ test('changing the line type fills the new stat season average', () => {
 test('defaults the line to his next game posted line for the stat', () => {
   render(<Harness averages={[filtered, season]} posted={postedLine} />);
   expect(screen.getByLabelText('Line Value:')).toHaveValue('26.5');
+  expect(screen.getByTestId('line-source')).toHaveTextContent('posted');
+});
+
+test('typing the posted value makes it a typed line, not the posted one', () => {
+  render(<Harness averages={[filtered, season]} posted={postedLine} />);
+  const line = screen.getByLabelText('Line Value:');
+  fireEvent.change(line, { target: { value: '30' } });
+  fireEvent.change(line, { target: { value: '26.5' } });
+  expect(screen.getByTestId('line-source')).toHaveTextContent('not posted');
 });
 
 test('FG3M takes the 3PM posted line, and a stat without one the season average', () => {
@@ -54,6 +68,7 @@ test('FG3M takes the 3PM posted line, and a stat without one the season average'
   expect(screen.getByLabelText('Line Value:')).toHaveValue('4.5');
   fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'REB' } });
   expect(screen.getByLabelText('Line Value:')).toHaveValue('5.1');
+  expect(screen.getByTestId('line-source')).toHaveTextContent('not posted');
 });
 
 test('a typed line survives a refetch until the stat or player changes', () => {

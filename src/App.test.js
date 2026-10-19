@@ -114,7 +114,7 @@ test.each([
 
   expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
   expect(screen.getByText('Effective October 19, 2026')).toBeInTheDocument();
-  expect(document.title).toBe(`${title} | CourtAI`);
+  await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
   expect(window.location.pathname).toBe(path);
   expect(apiClient.get).not.toHaveBeenCalled();
   window.history.pushState({}, '', '/');
@@ -138,6 +138,16 @@ test.each([
   window.history.pushState({}, '', '/');
 });
 
+test('a page other than the landing page carries the shell footer', async () => {
+  window.history.pushState({}, '', '/terms');
+  render(<App />);
+
+  await screen.findByRole('heading', { level: 1, name: 'Terms of Service' });
+  const legal = screen.getByRole('navigation', { name: 'Legal' });
+  expect(within(legal).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+  window.history.pushState({}, '', '/');
+});
+
 test.each([
   ['signed out', {}],
   [
@@ -149,7 +159,13 @@ test.each([
   Object.assign(mockAuth, auth);
   render(<App />);
 
-  const legal = await screen.findByRole('navigation', { name: 'Legal' });
+  // The landing page carries its own footer over the shell's, which CSS hides there.
+  const landing = await waitFor(() => {
+    const page = document.querySelector('.landing-page');
+    expect(page).not.toBeNull();
+    return page;
+  });
+  const legal = within(landing).getByRole('navigation', { name: 'Legal' });
   expect(
     within(legal)
       .getAllByRole('link')

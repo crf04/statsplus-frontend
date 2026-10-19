@@ -19,3 +19,13 @@
 .site-footer a:hover {
   color: var(--ct-gold);
 }
+
+/* The landing page covers the shell with a fixed layer and carries its own
+   footer (NaturalLanguageQuery.js); the shell's would sit unreachable beneath. */
+.App:has(.landing-page) > .site-footer {
+  display: none;
+}
+
+.landing-page .site-footer {
+  margin-top: 48px;
+}

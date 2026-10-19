@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRequestErrorMessage, withRequestReference } from '../gameLogsApi';
 import { deleteSavedFilterSet, renameSavedFilterSet } from '../savedFilterSetsApi';
 import { describeSavedFilterSet } from '../savedFilterSetDescription';
+import ErrorMessage from '../feedback/ErrorMessage';
 import { SavedFilterSetRow } from '../SavedFilterSetsModal';
 
 const samePlayer = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -22,7 +23,9 @@ const SavedTab = ({ player, saved, current, onOpened }) => {
     return (
       <div className="fpt-saved">
         <p role="status" className="fp-note">
-          {withRequestReference('Could not load Saved Filter Sets.', saved.error)}
+          <ErrorMessage
+            message={withRequestReference('Could not load Saved Filter Sets.', saved.error)}
+          />
         </p>
         <button type="button" className="fp-link" onClick={saved.retry}>
           Retry saved sets
@@ -84,7 +87,7 @@ const SavedTab = ({ player, saved, current, onOpened }) => {
     <div className="fpt-saved">
       {error && (
         <p role="alert" className="fpt-error">
-          {error}
+          <ErrorMessage message={error} />
         </p>
       )}
       <h3 className="fpt-group">For {player}</h3>

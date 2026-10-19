@@ -27,6 +27,7 @@ import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -1182,7 +1183,11 @@ export default function MatchupDetailPage() {
   return (
     <main className="matchup-page">
       {state.status === 'loading' && <p role="status">Loading matchup…</p>}
-      {state.status === 'error' && <p role="alert">{state.error}</p>}
+      {state.status === 'error' && (
+        <p role="alert">
+          <ErrorMessage message={state.error} />
+        </p>
+      )}
       {state.status === 'ready' && <Detail matchup={state.matchup} gameId={gameId} />}
     </main>
   );

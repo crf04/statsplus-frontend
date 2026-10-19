@@ -16,6 +16,7 @@ import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
 import { useResolvedTargets } from './targets/useTargets';
 import './SlatePage.css';
+import ErrorMessage from './feedback/ErrorMessage';
 
 const surfaceStatusText = (name, surface, presentation, now) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt, now)}` : '';
@@ -344,7 +345,11 @@ export default function SlatePage() {
       {!slateDate && <p>Requested date “{requestedDate}” is invalid.</p>}
 
       {state.status === 'loading' && <p role="status">Loading slate…</p>}
-      {state.status === 'error' && <p role="alert">{state.error}</p>}
+      {state.status === 'error' && (
+        <p role="alert">
+          <ErrorMessage message={state.error} />
+        </p>
+      )}
       {state.status === 'ready' && (
         <>
           <div className="slate-status">

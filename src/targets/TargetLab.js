@@ -16,6 +16,7 @@ import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 /*
  * One line that always says where the Lab stands, so a reader who cannot see
@@ -147,7 +148,7 @@ export default function TargetLab({
       )}
       {status === 'error' && (
         <p className="target-error" role="alert">
-          {error}{' '}
+          <ErrorMessage message={error} />{' '}
           <button type="button" onClick={retry}>
             Retry backtest
           </button>

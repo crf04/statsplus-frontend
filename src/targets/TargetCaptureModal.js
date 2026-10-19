@@ -9,6 +9,7 @@ import { SeasonMinutesProvider } from './useTargets';
 import { shareToThresholdPercent } from './targetCatalog';
 import { createTarget } from './targetsApi';
 import './TargetsPage.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 /*
  * A Defense Sheet row is already an observation about one team and one slice,
@@ -145,7 +146,7 @@ function TargetCaptureContent({ capture, onHide }) {
                 />
                 {error && (
                   <p className="target-error" role="alert">
-                    {error}
+                    <ErrorMessage message={error} />
                   </p>
                 )}
               </div>

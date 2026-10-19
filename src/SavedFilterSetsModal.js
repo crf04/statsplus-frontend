@@ -9,6 +9,7 @@ import {
   renameSavedFilterSet,
 } from './savedFilterSetsApi';
 import './SavedFilterSetsModal.css';
+import ErrorMessage from './feedback/ErrorMessage';
 
 /*
  * The saved list is the same list wherever it is opened from: the Query Prompt,
@@ -251,7 +252,7 @@ const SavedFilterSetsModal = ({ show, onHide }) => {
       <Modal.Body>
         {error && (
           <Alert variant="danger" role="alert">
-            {error}
+            <ErrorMessage message={error} />
           </Alert>
         )}
         {isLoading && (

@@ -11,6 +11,7 @@ import { SeasonMinutesProvider, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
 import './TargetWorkbench.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 function TargetDetail({ target, reload }) {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ function TargetDetail({ target, reload }) {
       </div>
       {error && (
         <p className="target-error" role="alert">
-          {error}
+          <ErrorMessage message={error} />
         </p>
       )}
       <div className="target-workbench">
@@ -119,7 +120,11 @@ function TargetDetailContent() {
   return (
     <main className="slate-page targets-page">
       {status === 'loading' && <p role="status">Loading this Target…</p>}
-      {status === 'error' && <p role="alert">{error}</p>}
+      {status === 'error' && (
+        <p role="alert">
+          <ErrorMessage message={error} />
+        </p>
+      )}
       {(target || status === 'ready') &&
         (target ? (
           <TargetDetail key={target.id} target={target} reload={reload} />

@@ -7,6 +7,8 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 're
 import WaitlistBanner from './components/Auth/WaitlistBanner';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import { FeedbackProvider } from './feedback/FeedbackContext';
+import FeedbackButton from './feedback/FeedbackButton';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import './App.css';
@@ -76,7 +78,14 @@ function AppNav() {
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
-          {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
+          {isAuthenticated ? (
+            <>
+              <FeedbackButton />
+              <UserProfile />
+            </>
+          ) : (
+            <LoginButton size="sm" />
+          )}
         </div>
       </nav>
     </header>
@@ -154,11 +163,13 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="App">
-          <ProtectedRoute>
-            <SignedInShell />
-          </ProtectedRoute>
-        </div>
+        <FeedbackProvider>
+          <div className="App">
+            <ProtectedRoute>
+              <SignedInShell />
+            </ProtectedRoute>
+          </div>
+        </FeedbackProvider>
       </BrowserRouter>
     </AuthProvider>
   );

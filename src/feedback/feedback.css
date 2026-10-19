@@ -1,0 +1,323 @@
+/*
+ * The Feedback popover, header button, "Report this" links and toast. Every
+ * rule hangs off a feedback-* class so global button, label and toggle styles
+ * cannot leak in.
+ */
+
+.feedback-layer {
+  font-family: var(--ct-sans);
+  color: var(--ct-text);
+  text-align: left;
+}
+
+.feedback-layer button,
+.app-auth .feedback-trigger,
+.feedback-report-link {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.feedback-layer code {
+  font-family: var(--ct-mono);
+  font-size: 0.86em;
+  color: var(--ct-text);
+}
+
+/* ---------------- header button ---------------- */
+
+.app-auth:has(.feedback-trigger) {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.app-auth .feedback-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ct-dim);
+  font-size: 0.88rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ct-line-strong);
+}
+
+.app-auth .feedback-trigger:hover,
+.app-auth .feedback-trigger.is-open {
+  color: var(--ct-gold);
+  border-color: rgba(232, 163, 61, 0.5);
+}
+
+/* ---------------- popover ---------------- */
+
+.feedback-popover {
+  position: fixed;
+  top: calc(var(--ct-header-height) + 8px);
+  right: max(16px, calc((100vw - 1160px) / 2));
+  width: 360px;
+  z-index: 2300;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+  padding: 14px 16px 16px;
+}
+
+.feedback-popover::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 150px;
+  width: 10px;
+  height: 10px;
+  background: var(--ct-surface);
+  border-left: 1px solid var(--ct-line-strong);
+  border-top: 1px solid var(--ct-line-strong);
+  transform: rotate(45deg);
+}
+
+.feedback-body {
+  /* Short screens (a phone on its side) scroll the popover, not the page. The
+     popover's own padding and border take the extra 34px. */
+  max-height: calc(100vh - var(--ct-header-height) - 50px);
+  max-height: calc(100dvh - var(--ct-header-height) - 50px);
+  overflow-y: auto;
+}
+
+.feedback-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.feedback-layer .feedback-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--ct-dim);
+}
+
+.feedback-layer .feedback-icon:hover {
+  color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+
+.feedback-popover textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+  color: var(--ct-text);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.feedback-popover textarea:focus {
+  outline: none;
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+}
+
+.feedback-popover textarea::placeholder {
+  color: #6f6858;
+}
+
+.feedback-x {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.feedback-x-label {
+  font-size: 13px;
+  color: var(--ct-dim);
+  white-space: nowrap;
+}
+
+.feedback-x-label em {
+  font-style: normal;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.feedback-x-field {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 200px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+  padding: 0 10px;
+}
+
+.feedback-x-field:focus-within {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+}
+
+.feedback-x-field.is-bad {
+  border-color: var(--ct-miss);
+}
+
+.feedback-x-field > span {
+  color: var(--ct-dim);
+  font-size: 15px;
+}
+
+.feedback-x-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 0 7px 2px;
+}
+
+.feedback-x-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ct-miss);
+  text-align: right;
+}
+
+.feedback-options {
+  margin-top: 8px;
+}
+
+.feedback-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--ct-dim);
+  margin: 6px 0;
+  cursor: pointer;
+}
+
+.feedback-check input {
+  accent-color: var(--ct-gold);
+  margin-top: 2px;
+}
+
+.feedback-fine {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ct-dim);
+  line-height: 1.45;
+}
+
+.feedback-send-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--ct-miss);
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.feedback-layer .feedback-send {
+  background: var(--ct-gold);
+  color: #1a1307;
+  font-weight: 600;
+  border-radius: var(--ct-radius-ctl);
+  padding: 8px 18px;
+  font-size: 14px;
+}
+
+.feedback-layer .feedback-send:hover:not(:disabled) {
+  background: var(--ct-gold-hover);
+}
+
+.feedback-layer .feedback-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------------- toast ---------------- */
+
+.feedback-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 78px;
+  transform: translateX(-50%);
+  z-index: 2400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ct-surface-2);
+  border: 1px solid var(--ct-line-strong);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.feedback-toast svg {
+  color: var(--ct-hit);
+}
+
+/* ---------------- Report this ---------------- */
+
+.feedback-report-link {
+  color: var(--ct-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 0.95em;
+}
+
+/* ---------------- phone ---------------- */
+
+@media (max-width: 620px) {
+  .app-auth:has(.feedback-trigger) {
+    gap: 10px;
+  }
+
+  .app-auth .feedback-trigger span {
+    display: none;
+  }
+
+  .app-auth .feedback-trigger {
+    padding: 7px;
+  }
+
+  .feedback-popover {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    top: calc(var(--ct-header-height) + 8px);
+    z-index: 2600;
+  }
+
+  .feedback-popover::before {
+    display: none;
+  }
+
+  .feedback-toast {
+    bottom: 132px;
+    white-space: normal;
+    max-width: calc(100vw - 24px);
+  }
+}

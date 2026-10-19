@@ -21,6 +21,7 @@ import {
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
 import useDocumentTitle from './useDocumentTitle';
+import ErrorMessage from './feedback/ErrorMessage';
 
 // The chart-bearing sections render only in the workspace, so their chart
 // libraries load on demand instead of delaying the landing prompt.
@@ -616,12 +617,12 @@ const GameLogFilter = ({ notice = null }) => {
       )}
       {listsError && (
         <Alert variant="warning" className="mx-3" role="alert">
-          Unable to load player and team lists. {listsError}
+          Unable to load player and team lists. <ErrorMessage message={listsError} />
         </Alert>
       )}
       {gameLogsError && (
         <Alert variant="danger" className="mx-3" role="alert">
-          {gameLogsError}
+          <ErrorMessage message={gameLogsError} />
         </Alert>
       )}
       {inWorkspace && !authLoading && !canSearch && (

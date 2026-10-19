@@ -3,6 +3,7 @@ import TargetRecord from './TargetRecord';
 import { BacktestSeasonLabel } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
 import { useTargetPreview } from './useTargets';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const samples = [
   {
@@ -59,7 +60,7 @@ function SampleCard({ target, onAdd }) {
           </p>
           {status === 'error' ? (
             <p className="target-error" role="alert">
-              {error}{' '}
+              <ErrorMessage message={error} />{' '}
               <button className="target-ghost" type="button" onClick={retry}>
                 Retry backtest
               </button>

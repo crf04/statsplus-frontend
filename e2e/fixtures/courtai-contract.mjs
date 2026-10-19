@@ -2668,6 +2668,40 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    // Feedback is accepted for a waitlisted account too (crf04/statsplus#258).
+    if (url.pathname === '/api/user/feedback' && request.method() === 'POST' && !override) {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'unauthorized', message: 'Missing E2E bearer token.' } },
+        });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      const message = typeof body?.message === 'string' ? body.message.trim() : '';
+      const handle = typeof body?.x_handle === 'string' ? body.x_handle.replace(/^@/, '') : null;
+      const valid =
+        message.length >= 1 &&
+        message.length <= 4000 &&
+        (handle === null || /^[A-Za-z0-9_]{1,15}$/.test(handle)) &&
+        (body.error_ref == null || /^[0-9a-f]{8}$/.test(body.error_ref)) &&
+        (body.viewport == null || /^\d{2,5}x\d{2,5}$/.test(body.viewport));
+      await route.fulfill(
+        valid
+          ? { status: 201, json: { sent: true } }
+          : {
+              status: 400,
+              json: { error: { code: 'invalid_feedback', message: 'Invalid feedback body.' } },
+            },
+      );
+      return;
+    }
+
     // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211):
     // answered whoever asks, a waitlisted account included, and whatever
     // Authorization header comes with them.

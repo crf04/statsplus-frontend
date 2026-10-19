@@ -17,6 +17,7 @@ import { useLadderAnswers } from './help/useLadderAnswers';
 import SiteFooter from './legal/SiteFooter';
 import './home/home.css';
 import './ModernSearch.css';
+import ErrorMessage from './feedback/ErrorMessage';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -328,7 +329,7 @@ const NaturalLanguageQuery = ({
             {error && (
               <div className="landing-error">
                 <AlertCircle className="landing-error-icon" size={20} />
-                {error}
+                <ErrorMessage message={error} />
               </div>
             )}
           </div>
@@ -395,7 +396,7 @@ const NaturalLanguageQuery = ({
           {error && (
             <div className="compact-error">
               <AlertCircle className="compact-error-icon" size={16} />
-              {error}
+              <ErrorMessage message={error} />
             </div>
           )}
 

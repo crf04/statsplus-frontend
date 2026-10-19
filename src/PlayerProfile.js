@@ -12,6 +12,7 @@ import ShotZoneCourt from './profileShooting/ShotZoneCourt';
 import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import { fetchDietBaselines } from './targets/targetsApi';
+import ErrorMessage from './feedback/ErrorMessage';
 
 const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
@@ -198,7 +199,11 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
     }
 
     if (error) {
-      return <p className="text-danger">{error}</p>;
+      return (
+        <p className="text-danger">
+          <ErrorMessage message={error} />
+        </p>
+      );
     }
 
     switch (selectedProfile) {

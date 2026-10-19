@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { createSavedFilterSet } from '../savedFilterSetsApi';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 /*
  * Save sits beside Apply and names the set in place. It stores the URL's
@@ -60,7 +61,7 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
       >
         {error && (
           <p role="alert" className="fpt-error">
-            {error}
+            <ErrorMessage message={error} />
           </p>
         )}
         <input

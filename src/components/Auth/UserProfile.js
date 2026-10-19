@@ -3,6 +3,7 @@ import { Dropdown } from 'react-bootstrap';
 import { Bookmark, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import SavedFilterSetsModal from '../../SavedFilterSetsModal';
+import { FeedbackMenuItem } from '../../feedbackPrototype/FeedbackPrototype'; // PROTOTYPE
 
 const UserProfile = () => {
   const { currentUser, logout, waitlist } = useAuth();
@@ -101,6 +102,7 @@ const UserProfile = () => {
               Saved Filter Sets
             </Dropdown.Item>
           )}
+          <FeedbackMenuItem Item={Dropdown.Item} />
           <Dropdown.Item
             onClick={handleLogout}
             disabled={isLoggingOut}

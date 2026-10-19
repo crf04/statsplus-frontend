@@ -10,6 +10,18 @@ import UserProfile from './components/Auth/UserProfile';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/feedback-look): feedback variants
+// ride the hash (#proto=feedback&v=A); the standalone build serves captured
+// data with a fake signed-in user.
+import {
+  FeedbackHeaderSlot,
+  FeedbackLayer,
+  FeedbackProtoProvider,
+} from './feedbackPrototype/FeedbackPrototype';
+import { PROTO_ENABLED, PROTO_STANDALONE } from './feedbackPrototype/prototypeMode';
+import { installMockApi } from './feedbackPrototype/mock/install';
+
+if (PROTO_ENABLED) installMockApi({ standalone: PROTO_STANDALONE });
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));
@@ -76,6 +88,7 @@ function AppNav() {
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
+          <FeedbackHeaderSlot />
           {isAuthenticated ? <UserProfile /> : <LoginButton size="sm" />}
         </div>
       </nav>
@@ -154,11 +167,14 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="App">
-          <ProtectedRoute>
-            <SignedInShell />
-          </ProtectedRoute>
-        </div>
+        <FeedbackProtoProvider>
+          <div className="App">
+            <ProtectedRoute>
+              <SignedInShell />
+            </ProtectedRoute>
+            <FeedbackLayer />
+          </div>
+        </FeedbackProtoProvider>
       </BrowserRouter>
     </AuthProvider>
   );

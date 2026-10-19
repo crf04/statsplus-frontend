@@ -82,13 +82,24 @@ export const Editor = ({ which, panel, onDone }) => {
     );
   if (which === 'date')
     body = (
-      <input
-        className="fp-input"
-        type="date"
-        aria-label="Since date"
-        value={panel.dateFilter}
-        onChange={(e) => panel.changeDate(e.target.value)}
-      />
+      <>
+        <input
+          className="fp-input"
+          type="date"
+          aria-label="Since date"
+          max={panel.dateTo || undefined}
+          value={panel.dateFilter}
+          onChange={(e) => panel.changeDate(e.target.value)}
+        />
+        <input
+          className="fp-input"
+          type="date"
+          aria-label="Until date"
+          min={panel.dateFilter || undefined}
+          value={panel.dateTo}
+          onChange={(e) => panel.changeDateTo(e.target.value)}
+        />
+      </>
     );
   if (which === 'location')
     body = (
@@ -201,6 +212,17 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
         onRemove={() => panel.changeDate('')}
       >
         {formatDate(s.date)}
+      </Rule>,
+    );
+  if (s.dateTo)
+    rules.push(
+      <Rule
+        key="dt"
+        kind="until"
+        onEdit={() => setEditing('date')}
+        onRemove={() => panel.changeDateTo('')}
+      >
+        {formatDate(s.dateTo)}
       </Rule>,
     );
   if (s.location)

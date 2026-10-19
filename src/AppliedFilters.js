@@ -28,6 +28,8 @@ const AppliedFilters = ({ filters }) => {
       return renderBadge(key, `PLAYTYPE_RTG <= ${value}`);
     } else if (key === 'date_filter') {
       return renderBadge(key, `Date >= ${value}`);
+    } else if (key === 'date_to') {
+      return renderBadge(key, `Date <= ${value}`);
     } else if (key === 'game_filter') {
       return renderBadge(key, `GAMES <= ${value}`);
     } else if (key === 'players_on' || key === 'players_on[]') {

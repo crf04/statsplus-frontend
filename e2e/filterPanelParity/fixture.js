@@ -45,6 +45,8 @@ const gameLogs = (params) => {
   let rows = base.game_logs;
   const date = params.get('date_filter');
   if (date) rows = rows.filter((row) => row.GAME_DATE >= date);
+  const dateTo = params.get('date_to');
+  if (dateTo) rows = rows.filter((row) => row.GAME_DATE <= dateTo);
   const location = params.get('location_filter');
   if (location === 'Home') rows = rows.filter((row) => row.MATCHUP.includes('vs.'));
   if (location === 'Away') rows = rows.filter((row) => row.MATCHUP.includes('@'));

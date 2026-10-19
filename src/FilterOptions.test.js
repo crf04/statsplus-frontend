@@ -25,6 +25,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
     const [result, setResult] = useState(null);
     const [seasonChoice, setSeasonChoice] = useState(null);
     const [line, setLine] = useState(20);
+    const [applied, setApplied] = useState(appliedFilters);
     return (
       <MemoryRouter>
         <FilterOptions
@@ -38,9 +39,12 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
           lineValue={line}
           averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
-          appliedFilters={appliedFilters}
+          appliedFilters={applied}
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
+        <button onClick={() => setApplied({ date_filter: '2026-03-01' })}>
+          Open a link without an end date
+        </button>
         <output data-testid="patch">{JSON.stringify(result)}</output>
         <output data-testid="season-choice">{seasonChoice}</output>
       </MemoryRouter>
@@ -127,6 +131,7 @@ test('a linked Team Filter remains encoded and Clear all clears every applied fi
     'players_on[]': [],
     'players_off[]': [],
     date_filter: null,
+    date_to: null,
     'teams_against[]': [],
     'rank_filter[]': [],
     opponent_tricode: null,
@@ -157,6 +162,45 @@ test('single playtype bounds prefill defaults, and clearing Since emits a blank 
     playstyle_RTG_max: 80,
     date_filter: null,
   });
+});
+
+test('the end date prefills, emits on change, and Clear all blanks it', () => {
+  renderPanel({ date_filter: '2026-01-01', date_to: '2026-01-31' });
+  fireEvent.click(screen.getByRole('button', { name: /^until/i }));
+  expect(screen.getByLabelText('Since date')).toHaveValue('2026-01-01');
+  expect(screen.getByLabelText('Until date')).toHaveValue('2026-01-31');
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    date_filter: '2026-01-01',
+    date_to: '2026-01-31',
+  });
+  fireEvent.change(screen.getByLabelText('Until date'), { target: { value: '2026-02-15' } });
+  apply();
+  expect(patch().date_to).toBe('2026-02-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+  expect(patch().date_to).toBeNull();
+  expect(patch().date_filter).toBeNull();
+});
+
+test('an end date typed into a blank panel is emitted', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Since/ }));
+  fireEvent.change(screen.getByLabelText('Until date'), { target: { value: '2026-01-31' } });
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', date_to: '2026-01-31' });
+});
+
+test('opening a different Filter Set clears an end date the old one left behind', () => {
+  renderPanel({ date_filter: '2026-01-01', date_to: '2026-01-31' });
+  expect(screen.getByRole('button', { name: /^until/i })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Open a link without an end date' }));
+  expect(screen.queryByRole('button', { name: /^until/i })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /^since/i }));
+  expect(screen.getByLabelText('Since date')).toHaveValue('2026-03-01');
+  expect(screen.getByLabelText('Until date')).toHaveValue('');
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', date_filter: '2026-03-01' });
 });
 
 test('Team Filter categories scope metrics and switching drops a stale selection', () => {

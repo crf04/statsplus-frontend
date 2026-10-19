@@ -242,6 +242,27 @@ test('keeps a refused link unchanged, refuses a panel apply, and accepts a parse
   );
 });
 
+test('a date range in the URL reaches the game-log request and shows both badges', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&date_filter=2026-01-01&date_to=2026-01-31']);
+
+  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+  expect(fetchGameLogsData.mock.calls[0][0]).toEqual({
+    player_name: 'LeBron James',
+    date_filter: '2026-01-01',
+    date_to: '2026-01-31',
+  });
+  expect(screen.getByText('Date <= 2026-01-31')).toBeVisible();
+});
+
+test('an end date before the start date is refused naming date_to', async () => {
+  renderGameLogFilter(['/?player_name=LeBron+James&date_filter=2026-02-01&date_to=2026-01-31']);
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'This link could not be opened: date_to is not a value we can apply. No filters were applied.',
+  );
+  expect(fetchGameLogsData).not.toHaveBeenCalled();
+});
+
 test('saves the Log Workspace URL exactly as it stands', async () => {
   renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
 

@@ -499,17 +499,18 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
 
   // The floating search toggle does not cover the toolbar.
   await page.evaluate(() => window.scrollTo(0, 0));
-  const save = page.getByRole('button', { name: 'Save Filter Set' });
-  const saveBox = await save.boundingBox();
+  const back = page.getByRole('button', { name: 'Back to search' });
+  const backBox = await back.boundingBox();
   const searchBox = await page.getByRole('button', { name: 'Open search' }).boundingBox();
   expect(
-    saveBox.y + saveBox.height <= searchBox.y ||
-      searchBox.y + searchBox.height <= saveBox.y ||
-      saveBox.x + saveBox.width <= searchBox.x ||
-      searchBox.x + searchBox.width <= saveBox.x,
+    backBox.y + backBox.height <= searchBox.y ||
+      searchBox.y + searchBox.height <= backBox.y ||
+      backBox.x + backBox.width <= searchBox.x ||
+      searchBox.x + searchBox.width <= backBox.x,
   ).toBe(true);
-  await save.click();
-  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeVisible();
+  // Save sits beside Apply in the filter panel and names the set in place.
+  await page.getByTestId('filter-panel').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByLabel('Name this Filter Set')).toBeVisible();
 });
 
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {

@@ -21,6 +21,16 @@
   border-left-color: var(--ct-gold);
 }
 
+/* The set the Log Workspace has applied right now. */
+.saved-filter-set-row-current {
+  background: var(--ct-gold-soft);
+  border-left-color: var(--ct-gold);
+}
+
+.saved-filter-set-row-current .saved-filter-set-name {
+  color: var(--ct-gold);
+}
+
 .saved-filter-set-row-confirming {
   border-left-color: var(--ct-miss);
   background: var(--ct-miss-soft);

@@ -4,6 +4,9 @@
  * The baselines in ./filter-panel-parity.spec.js-snapshots were generated from
  * the prototype's verdict J (tag prototype/filter-panel-j). The real build
  * passes when it reproduces them on the same data, with no baseline updates.
+ * crf04/statsplus#257 then changed the design on purpose: Saved Filter Sets
+ * moved into a Saved tab and Save beside Apply. Its baselines come from that
+ * build, and a later change regenerates them only when it changes the design.
  *
  *   Real build (default):    npx playwright test filter-panel-parity --project=chromium
  *   Against the prototype:   PARITY_TARGET=prototype E2E_BASE_URL=<deployment> npx playwright test ...
@@ -60,16 +63,18 @@ test.describe('filter panel matches the design reference', () => {
 
   test('panel with the opponent list expanded', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
-    await panel.getByRole('button', { name: '+ 14 more' }).click();
+    await panel.getByRole('button', { name: '+ 10 more' }).click();
     await expect(panel.getByRole('button', { name: 'Show fewer' })).toBeVisible();
     await expect(panel).toHaveScreenshot('panel-1920-opponent-expanded.png', SHOT);
   });
 
-  test('panel with saved sets expanded', async ({ page }) => {
+  test('panel on the Saved tab', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
-    await panel.getByRole('button', { name: '+ 5 more' }).click();
-    await expect(panel.getByRole('button', { name: /JJ 25\+ PTS nights/ })).toBeVisible();
-    await expect(panel).toHaveScreenshot('panel-1920-saved-expanded.png', SHOT);
+    await panel.getByRole('tab', { name: /^Saved/ }).click();
+    await expect(
+      panel.getByRole('button', { name: 'Open saved Filter Set JJ 25+ PTS nights' }),
+    ).toBeVisible();
+    await expect(panel).toHaveScreenshot('panel-1920-saved-tab.png', SHOT);
   });
 
   test('panel on a phone', async ({ page }) => {
@@ -132,9 +137,14 @@ test.describe('filter panel behaves like the design reference', () => {
 
   test('a Saved Filter Set opens its URL', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
-    await panel.getByRole('button', { name: /JJ last 10 at home/ }).click();
+    await panel.getByRole('tab', { name: /^Saved/ }).click();
+    await panel.getByRole('button', { name: 'Open saved Filter Set JJ last 10 at home' }).click();
     await expect.poll(() => search(page).get('location_filter')).toBe('Home');
     expect(search(page).get('game_filter')).toBe('10');
     expect(search(page).getAll('players_off[]')).toEqual([]);
+    await expect(panel.getByRole('tab', { name: 'Filters' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 });

@@ -1,8 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { withRequestReference } from '../gameLogsApi';
-import { fetchSavedFilterSets, subscribeSavedFilterSets } from '../savedFilterSetsApi';
-import { describeSavedFilterSet } from '../savedFilterSetDescription';
 import { toFiniteNumber } from '../numberUtils';
 import { opponentFilterLabel } from '../opponentFilters';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,31 +69,6 @@ const SeasonStrip = ({ seasonLogs, keptDates, lineType, line, stripRows = 4 }) =
       </div>
     </div>
   );
-};
-
-const useSavedSets = () => {
-  const { isAuthenticated, currentUser } = useAuth();
-  const [sets, setSets] = useState(null);
-  const [error, setError] = useState(false);
-  const [revision, setRevision] = useState(0);
-  useEffect(() => subscribeSavedFilterSets(() => setRevision((value) => value + 1)), []);
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setSets(null);
-      return undefined;
-    }
-    const controller = new AbortController();
-    setError(false);
-    fetchSavedFilterSets({ signal: controller.signal })
-      .then((sets) => {
-        if (!controller.signal.aborted) setSets(sets);
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted) setError(error || true);
-      });
-    return () => controller.abort();
-  }, [isAuthenticated, currentUser?.uid, revision]);
-  return { sets, error, retry: () => setRevision((value) => value + 1) };
 };
 
 // Words, not numbers: the fewest end has no fixed slot on a 1-30 scale when fewer teams are ranked.
@@ -193,11 +164,8 @@ const OpponentExtremes = ({ rows, expanded, onToggle, panel, data, extremes }) =
 const MATCH_HEIGHT = 92;
 const BLOCK_GAP = 12;
 const HEADING_HEIGHT = 34;
-const SUMMARY_HEIGHT = 28;
 const OPPONENT_ROW_HEIGHT = 32;
 const MORE_HEIGHT = 30;
-const SAVED_ROW_HEIGHT = 46;
-const SAVED_MINIMUM = 2;
 
 // The count is the strip's title: how many of the season's games the
 // filters kept, over the cells that show which ones.
@@ -225,73 +193,10 @@ const MatchStrip = ({ seasonLogs, keptDates, lineType, line }) => {
   );
 };
 
-const samePlayer = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
-
-// The panel sits beside one player's games, so it lists only that player's
-// sets; the Saved Filter Sets modal still lists every set on the account.
-const SavedFilterSets = ({ player, rows, expanded, onToggle, saved }) => {
-  const { sets: allSets, error, retry } = saved;
-  const navigate = useNavigate();
-  if (error)
-    return (
-      <div className="fpx-list">
-        <div className="fpx-list-head">Saved Filter Sets</div>
-        <p role="status" className="fp-note">
-          {withRequestReference('Could not load Saved Filter Sets.', error)}
-        </p>
-        <button type="button" className="fp-link" onClick={retry}>
-          Retry saved sets
-        </button>
-      </div>
-    );
-  if (!allSets) return null;
-  const sets = allSets.filter(
-    (set) => samePlayer(describeSavedFilterSet(set.queryString).player) === samePlayer(player),
-  );
-  const canonicalSearch = (search) => {
-    const params = new URLSearchParams(search);
-    params.sort();
-    return params.toString();
-  };
-  const currentSearch = canonicalSearch(window.location.search);
-  const shown = expanded ? sets : sets.slice(0, rows);
-  const hidden = sets.length - shown.length;
-  return (
-    <div className="fpx-list">
-      <div className="fpx-list-head">
-        <span>Saved Filter Sets</span>
-        <span className="fp-val">{sets.length}</span>
-      </div>
-      {sets.length === 0 && <p className="fp-note">No saved sets for {player} yet.</p>}
-      {shown.map((set) => {
-        const described = describeSavedFilterSet(set.queryString);
-        const current = canonicalSearch(set.queryString) === currentSearch;
-        return (
-          <button
-            key={set.id}
-            type="button"
-            className={`fpx-saved${current ? ' is-current' : ''}`}
-            onClick={() => navigate(`/?${set.queryString}`)}
-          >
-            <b>{set.name}</b>
-            <span>
-              {described.parameters.map((parameter) => parameter.label).join(' · ') || 'no filters'}
-            </span>
-          </button>
-        );
-      })}
-      {(hidden > 0 || (expanded && sets.length > rows)) && (
-        <button type="button" className="fpx-ext-more" onClick={onToggle}>
-          {expanded ? 'Show fewer' : `+ ${hidden} more`}
-        </button>
-      )}
-    </div>
-  );
-};
-
-// Everything is always shown; spare height goes to opponent rows first, then
-// saved sets. When even the minimum does not fit, the panel scrolls.
-const FilterPanelContext = ({ panel, extra }) => {
+// Everything is always shown; spare height goes to the opponent rows. When
+// even the minimum does not fit, the panel scrolls. Saved Filter Sets are the
+// panel's Saved tab; their read is passed in so the reveal still waits for it.
+const FilterPanelContext = ({ panel, extra, saved }) => {
   const [ref, height] = useHeight();
   const { isAuthenticated } = useAuth();
   const [opponent, setOpponent] = useState(null);
@@ -312,12 +217,11 @@ const FilterPanelContext = ({ panel, extra }) => {
       });
     return () => controller.abort();
   }, [isAuthenticated, panel.selectedPlayer]);
-  const saved = useSavedSets();
   // The Workspace reveals in one piece, so it waits for this panel's own reads.
   const settled =
     !isAuthenticated ||
     ((!panel.selectedPlayer || opponentFor === panel.selectedPlayer) &&
-      (saved.sets !== null || Boolean(saved.error)));
+      (!saved || saved.sets !== null || Boolean(saved.error)));
   const { onContextSettled } = extra;
   useEffect(() => {
     onContextSettled?.(settled ? panel.selectedPlayer : null);
@@ -337,7 +241,6 @@ const FilterPanelContext = ({ panel, extra }) => {
     })
     .sort((a, b) => a.place - b.place || a.label.localeCompare(b.label));
   const [oppOpen, setOppOpen] = useState(false);
-  const [savedOpen, setSavedOpen] = useState(false);
   const { ensureSeason } = panel;
   useEffect(() => {
     ensureSeason();
@@ -349,38 +252,19 @@ const FilterPanelContext = ({ panel, extra }) => {
   // On a phone the panel stacks under the chart, so nothing needs filling:
   // show a fixed amount instead of measuring.
   const phone = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-  let spare =
-    height -
-    (MATCH_HEIGHT +
-      BLOCK_GAP +
-      HEADING_HEIGHT +
-      SUMMARY_HEIGHT +
-      BLOCK_GAP +
-      HEADING_HEIGHT +
-      SAVED_MINIMUM * SAVED_ROW_HEIGHT +
-      MORE_HEIGHT);
+  const canvas = height - (MATCH_HEIGHT + BLOCK_GAP + HEADING_HEIGHT);
   let oppRows = 0;
   if (phone) {
     oppRows = 5;
-    spare = MORE_HEIGHT + SAVED_ROW_HEIGHT;
   } else if (!oppOpen) {
     const all = extremes.length;
-    const canvas = spare + SUMMARY_HEIGHT;
     if (canvas >= all * OPPONENT_ROW_HEIGHT) {
       oppRows = all;
-      spare = canvas - all * OPPONENT_ROW_HEIGHT;
     } else {
       const fit = Math.floor((canvas - MORE_HEIGHT) / OPPONENT_ROW_HEIGHT);
-      if (fit >= 2) {
-        oppRows = fit;
-        spare = canvas - fit * OPPONENT_ROW_HEIGHT - MORE_HEIGHT;
-      }
+      if (fit >= 2) oppRows = fit;
     }
   }
-  // An expanded opponent list takes the spare height, and the panel scrolls.
-  const savedRows = oppOpen
-    ? SAVED_MINIMUM
-    : SAVED_MINIMUM + Math.max(0, Math.floor(spare / SAVED_ROW_HEIGHT));
 
   return (
     <div className="fp-filler is-j" ref={ref}>
@@ -420,13 +304,6 @@ const FilterPanelContext = ({ panel, extra }) => {
         panel={panel}
         data={opponent}
         extremes={extremes}
-      />
-      <SavedFilterSets
-        player={panel.selectedPlayer}
-        rows={savedRows}
-        expanded={savedOpen}
-        onToggle={() => setSavedOpen((open) => !open)}
-        saved={saved}
       />
     </div>
   );

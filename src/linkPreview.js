@@ -26,6 +26,7 @@ const describeFilters = (filters) => {
     parts.push(`${low}-${high} minutes`);
   }
   if (filters.date_filter) parts.push(`since ${filters.date_filter}`);
+  if (filters.date_to) parts.push(`through ${filters.date_to}`);
   if (filters['players_on[]']?.length) parts.push(`with ${listNames(filters['players_on[]'])}`);
   if (filters['players_off[]']?.length)
     parts.push(`without ${listNames(filters['players_off[]'])}`);

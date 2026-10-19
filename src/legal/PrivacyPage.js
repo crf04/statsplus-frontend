@@ -10,8 +10,8 @@ const PrivacyPage = () => (
     <p>
       CourtAI (&ldquo;we&rdquo;) runs courtai.app, an NBA stats research tool, and the CourtAI
       connector at mcp.courtai.app that lets AI apps such as Claude and ChatGPT read your CourtAI
-      data. This policy explains what we collect, why, and the choices you have. Questions go to{' '}
-      <SupportEmail />.
+      data and, when you ask, save Targets and Saved Filter Sets to your account. This policy
+      explains what we collect, why, and the choices you have. Questions go to <SupportEmail />.
     </p>
 
     <h2>What we collect</h2>

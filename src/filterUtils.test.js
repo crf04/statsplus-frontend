@@ -110,6 +110,20 @@ describe('filterSetFromSearchParams', () => {
     expect(filters).toEqual({ player_name: 'LeBron James' });
   });
 
+  test('decodes date_to beside date_filter and refuses an end before the start', () => {
+    expect(decode('player_name=A+B&date_filter=2026-01-01&date_to=2026-01-31')).toEqual({
+      filters: { player_name: 'A B', date_filter: '2026-01-01', date_to: '2026-01-31' },
+      invalid: [],
+    });
+    expect(decode('date_to=2026-01-31').filters).toEqual({ date_to: '2026-01-31' });
+    expect(decode('date_filter=2026-01-01&date_to=2026-01-01').invalid).toEqual([]);
+    expect(decode('date_filter=2026-02-01&date_to=2026-01-31')).toEqual({
+      filters: {},
+      invalid: ['date_to'],
+    });
+    expect(decode('date_to=2026-02-30').invalid).toEqual(['date_to']);
+  });
+
   test('empty search parameters decode to an empty Filter Set', () => {
     expect(decode('')).toEqual({ filters: {}, invalid: [] });
   });
@@ -251,12 +265,26 @@ describe('filterSetToSearchParams', () => {
   const roundTrip = (filters) =>
     filterSetFromSearchParams(filterSetToSearchParams(filters)).filters;
 
+  test('encodes date_to immediately after date_filter', () => {
+    expect(
+      filterSetToSearchParams({
+        location_filter: 'Home',
+        date_to: '2026-01-31',
+        date_filter: '2026-01-01',
+        player_name: 'LeBron James',
+      }).toString(),
+    ).toBe(
+      'player_name=LeBron+James&date_filter=2026-01-01&date_to=2026-01-31&location_filter=Home',
+    );
+  });
+
   test('round-trips every recognised parameter through the decode direction', () => {
     const filters = {
       player_name: 'LeBron James',
       season_filter: '2023-24',
       minutes_filter: '20,40',
       date_filter: '2026-01-09',
+      date_to: '2026-02-09',
       location_filter: 'Home',
       game_filter: 10,
       opponent_tricode: 'OKC',

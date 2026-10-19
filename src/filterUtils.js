@@ -261,6 +261,16 @@ export const filterSetFromSearchParams = (searchParams) => {
   readText('season_filter', isCanonicalSeason);
   readDecoded('minutes_filter', (value) => numericRange(value, { whole: true }));
   readDecoded('date_filter', parseCalendarDate);
+  readDecoded('date_to', parseCalendarDate);
+  // ISO calendar dates order as strings. An end before the start matches no
+  // game, so the range is refused rather than shown as an empty table.
+  if (
+    hasValue(filters.date_filter) &&
+    hasValue(filters.date_to) &&
+    filters.date_to < filters.date_filter
+  ) {
+    reject('date_to');
+  }
   readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
   readDecoded('game_filter', (value) => {
     const parsed = wholeNumber(value);
@@ -349,6 +359,7 @@ const SCALAR_FILTER_NAMES = [
   'season_filter',
   'minutes_filter',
   'date_filter',
+  'date_to',
   'location_filter',
   'game_filter',
   'opponent_tricode',

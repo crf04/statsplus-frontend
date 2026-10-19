@@ -41,3 +41,10 @@ test('an opponent rank reads as league ranks, never a bare sign', () => {
   expect(screen.getByText('Isolation (ranks 11–19)')).toBeVisible();
   expect(screen.getByText('Rebounds Allowed (ranks 21–30)')).toBeVisible();
 });
+
+test('shows the start and end of a date range as separate badges', () => {
+  render(<AppliedFilters filters={{ date_filter: '2026-01-01', date_to: '2026-01-31' }} />);
+
+  expect(screen.getByText('Date >= 2026-01-01')).toBeVisible();
+  expect(screen.getByText('Date <= 2026-01-31')).toBeVisible();
+});

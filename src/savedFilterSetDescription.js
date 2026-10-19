@@ -72,6 +72,7 @@ export const describeSavedFilterSet = (queryString) => {
     add('minutes_filter', `${low}–${high} min`);
   }
   if (filters.date_filter) add('date_filter', `since ${filters.date_filter}`);
+  if (filters.date_to) add('date_to', `through ${filters.date_to}`);
   if (filters['players_on[]']?.length) {
     add('players_on[]', `with ${listNames(filters['players_on[]'])}`, 'on');
   }

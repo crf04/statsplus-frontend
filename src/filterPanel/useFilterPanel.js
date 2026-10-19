@@ -133,6 +133,7 @@ const useFilterPanel = ({
   const [locationFilter, setLocationFilter] = useState('Both');
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
   const [dateFilter, setDateFilter] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [gameFilter, setGameFilter] = useState(0);
   const [playstyleMatchupRating, setPlaystyleMatchupRating] = useState([0, 200]);
   const [selectedSelfFilter, setSelectedSelfFilter] = useState('');
@@ -215,6 +216,7 @@ const useFilterPanel = ({
     setLocationFilter('Both');
     setMinutesFilter([0, 48]);
     setDateFilter('');
+    setDateTo('');
     setGameFilter(0);
     setPlaystyleMatchupRating([0, 200]);
     setSelectedSelfFilter('');
@@ -240,6 +242,10 @@ const useFilterPanel = ({
       if (appliedFilters.date_filter) {
         setDateFilter(appliedFilters.date_filter);
         prepopulatedControls.add('date_filter');
+      }
+      if (appliedFilters.date_to) {
+        setDateTo(appliedFilters.date_to);
+        prepopulatedControls.add('date_to');
       }
       if (appliedFilters.minutes_filter && typeof appliedFilters.minutes_filter === 'string') {
         const parts = appliedFilters.minutes_filter.split(',');
@@ -432,6 +438,10 @@ const useFilterPanel = ({
     setDateFilter(value);
     markControlTouched('date_filter');
   };
+  const changeDateTo = (value) => {
+    setDateTo(value);
+    markControlTouched('date_to');
+  };
   const changeGames = (value) => {
     setGameFilter(value);
     markControlTouched('game_filter');
@@ -493,6 +503,7 @@ const useFilterPanel = ({
         .map((p) => p.name);
     }
     if (touchedControls.has('date_filter')) filterParams.date_filter = dateFilter || null;
+    if (touchedControls.has('date_to')) filterParams.date_to = dateTo || null;
     if (touchedControls.has('teams_against')) {
       filterParams['teams_against[]'] = activeFilters.map((filter) => filter.filter);
       filterParams['rank_filter[]'] = activeFilters.map((filter) => filter.number);
@@ -536,6 +547,7 @@ const useFilterPanel = ({
       'players_on[]': [],
       'players_off[]': [],
       date_filter: null,
+      date_to: null,
       'teams_against[]': [],
       'rank_filter[]': [],
       opponent_tricode: null,
@@ -555,6 +567,7 @@ const useFilterPanel = ({
   const summary = {
     players: activePlayers.length > 0 ? activePlayers : null,
     date: dateFilter || null,
+    dateTo: dateTo || null,
     games: Number(gameFilter) > 0 ? Number(gameFilter) : null,
     location: locationFilter !== 'Both' ? locationFilter : null,
     minutes: minutesFilter[0] !== 0 || minutesFilter[1] !== 48 ? minutesFilter : null,
@@ -569,6 +582,7 @@ const useFilterPanel = ({
   const activeCount =
     (summary.players?.length || 0) +
     (summary.date ? 1 : 0) +
+    (summary.dateTo ? 1 : 0) +
     (summary.games ? 1 : 0) +
     (summary.location ? 1 : 0) +
     (summary.minutes ? 1 : 0) +
@@ -604,6 +618,8 @@ const useFilterPanel = ({
     // games
     dateFilter,
     changeDate,
+    dateTo,
+    changeDateTo,
     gameFilter,
     changeGames,
     locationFilter,

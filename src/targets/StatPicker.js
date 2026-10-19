@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { STAT_GROUPS } from './statValues';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 export default function StatPicker({ columns, gradedBy, onChange }) {
   const [open, setOpen] = useState(false);
@@ -59,7 +60,7 @@ export default function StatPicker({ columns, gradedBy, onChange }) {
 export function StatSaveStatus({ state }) {
   return state.error ? (
     <p role="alert">
-      {state.error}{' '}
+      <ErrorMessage message={state.error} />{' '}
       <button type="button" onClick={state.retry}>
         Retry saving stats
       </button>

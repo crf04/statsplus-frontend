@@ -19,6 +19,7 @@ import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
 import './TargetsPage.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 // A card only depends on its own Target, its own Backtest read and its own
 // resolved entry; memoizing it keeps N-1 cards from re-rendering (and
@@ -115,7 +116,9 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
               <StatSaveStatus state={stats} />
             </>
           ) : (
-            <p className="target-empty">{read?.error || 'Reading the season…'}</p>
+            <p className="target-empty">
+              <ErrorMessage message={read?.error || 'Reading the season…'} />
+            </p>
           )}
         </section>
       </article>
@@ -364,7 +367,7 @@ function TargetsPageContent() {
                 />
                 {saveError && (
                   <p className="target-error" role="alert">
-                    {saveError}
+                    <ErrorMessage message={saveError} />
                   </p>
                 )}
               </div>
@@ -379,7 +382,11 @@ function TargetsPageContent() {
       </Modal>
 
       {status === 'loading' && <p role="status">Loading your Targets…</p>}
-      {status === 'error' && <p role="alert">{error}</p>}
+      {status === 'error' && (
+        <p role="alert">
+          <ErrorMessage message={error} />
+        </p>
+      )}
       {/* A revisit keeps the previous list mounted, kept-previous targets and
        * all, while it reloads in the background rather than blanking the
        * page for a read that is very likely to say the same thing again. */}

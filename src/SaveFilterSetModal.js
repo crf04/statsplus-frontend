@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Form, Modal } from 'react-bootstrap';
 import { getRequestErrorMessage } from './gameLogsApi';
 import { createSavedFilterSet } from './savedFilterSetsApi';
+import ErrorMessage from './feedback/ErrorMessage';
 
 /*
  * Saving stores the Log Workspace's bare query string under a name and nothing
@@ -56,7 +57,7 @@ const SaveFilterSetModal = ({ show, onHide, queryString, defaultName = '' }) => 
         <Modal.Body>
           {error && (
             <Alert variant="danger" role="alert">
-              {error}
+              <ErrorMessage message={error} />
             </Alert>
           )}
           <Form.Group controlId="saved-filter-set-name">

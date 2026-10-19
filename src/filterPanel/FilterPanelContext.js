@@ -7,6 +7,7 @@ import { toFiniteNumber } from '../numberUtils';
 import { opponentFilterLabel } from '../opponentFilters';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchNextOpponent } from '../nextOpponentApi';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const useHeight = () => {
   const ref = useRef(null);
@@ -237,7 +238,9 @@ const SavedFilterSets = ({ player, rows, expanded, onToggle, saved }) => {
       <div className="fpx-list">
         <div className="fpx-list-head">Saved Filter Sets</div>
         <p role="status" className="fp-note">
-          {withRequestReference('Could not load Saved Filter Sets.', error)}
+          <ErrorMessage
+            message={withRequestReference('Could not load Saved Filter Sets.', error)}
+          />
         </p>
         <button type="button" className="fp-link" onClick={retry}>
           Retry saved sets

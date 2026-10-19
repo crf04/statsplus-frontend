@@ -5,6 +5,7 @@ import {
   formatScorePercent as formatPercent,
   orderCategories,
 } from './displayConfig';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const BASE_ORDER = [
   'shotTypes',
@@ -434,7 +435,11 @@ export default function SelectionCard({
         >
           <h3>Games vs this opponent</h3>
           {status === 'loading' && <p role="status">Loading selection logs…</p>}
-          {status === 'error' && <p role="alert">{error}</p>}
+          {status === 'error' && (
+            <p role="alert">
+              <ErrorMessage message={error} />
+            </p>
+          )}
           {status === 'ready' && !categories.includes(activeStat) && (
             <p className="honest-empty">No games vs this opponent log is kept for {activeStat}.</p>
           )}

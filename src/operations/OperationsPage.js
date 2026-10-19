@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getOperationsErrorMessage, operationsApi } from './operationsApi';
 import './OperationsPage.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const formatDate = (value) => {
   if (!value) return 'Not recorded';
@@ -177,7 +178,7 @@ function MutationDialog({
         <p className="operations-dialog-note">This creates a durable, audited operator job.</p>
         {state.status === 'error' && (
           <p className="operations-inline-error" role="alert">
-            {state.message}
+            <ErrorMessage message={state.message} />
           </p>
         )}
         <div className="operations-dialog-actions">
@@ -853,7 +854,9 @@ export default function OperationsPage() {
         <h1>Operations Console</h1>
         <div className="operations-state operations-state-error" role="alert">
           <h2>Diagnostics unavailable</h2>
-          <p>{diagnostics.error}</p>
+          <p>
+            <ErrorMessage message={diagnostics.error} />
+          </p>
           <button type="button" className="operations-button" onClick={() => diagnostics.refresh()}>
             Retry diagnostics
           </button>
@@ -890,7 +893,8 @@ export default function OperationsPage() {
       </div>
       {diagnostics.error && (
         <div className="operations-state operations-state-warning" role="alert">
-          <strong>Showing last known diagnostics.</strong> {diagnostics.error}
+          <strong>Showing last known diagnostics.</strong>{' '}
+          <ErrorMessage message={diagnostics.error} />
         </div>
       )}
       {mutation.status === 'success' && (

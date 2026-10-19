@@ -91,6 +91,8 @@ export default defineConfig(async ({ mode }) => {
     // are exposed to client code.
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+      // Vercel exposes the deployed commit at build time.
+      'process.env.APP_COMMIT_SHA': JSON.stringify((env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7)),
       ...Object.fromEntries(
         Object.entries(environmentValues).map(([key, value]) => [
           `process.env.${key}`,

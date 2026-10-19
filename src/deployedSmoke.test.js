@@ -211,6 +211,27 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflow.jobs['production-smoke'].env.E2E_API_BASE_URL).toContain('inputs.api_base_url');
   });
 
+  test('the smoke command selects the smoke tests and cannot pass by selecting none', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'));
+    const config = fs.readFileSync(path.resolve(process.cwd(), 'playwright.config.mjs'), 'utf8');
+
+    expect(pkg.scripts['test:e2e:smoke']).toBe('playwright test --grep @smoke');
+    expect(pkg.scripts['test:e2e:smoke']).not.toMatch(/pass-with-no-tests/);
+    expect(config).not.toMatch(/passWithNoTests/);
+
+    // Playwright refuses to start inside a Jest worker, so hand it a clean environment.
+    const { JEST_WORKER_ID: _worker, ...cleanEnv } = process.env;
+    const listed = spawnSync('npm', ['run', '--silent', 'test:e2e:smoke', '--', '--list'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: cleanEnv,
+    });
+    expect(`${listed.status} ${listed.stderr}`.trim()).toBe('0');
+    const total = /Total: (\d+) tests?/.exec(listed.stdout)?.[1];
+    expect(Number(total)).toBeGreaterThan(0);
+    expect(listed.stdout).toContain('@smoke');
+  }, 60000);
+
   test('the compatibility Release Check pairs the production frontend with the staging API and MCP only', () => {
     const staging = {
       api: 'https://statsplus-backend-staging.up.railway.app',

@@ -174,6 +174,20 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource).not.toContain('github.event.deployment_status.environment_url');
   });
 
+  test('names a Release Check dispatch after its mode and release_id so the Nightly Release finds its own run', () => {
+    const workflowSource = fs.readFileSync(
+      path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
+      'utf8',
+    );
+
+    expect(workflowSource).toContain(
+      "run-name: ${{ inputs.release_id && format('Release Check {0} {1}', inputs.mode, inputs.release_id) || github.workflow }}",
+    );
+    expect(workflowSource).toMatch(
+      /release_id:\n\s+description: .*\n\s+required: false\n\s+type: string/,
+    );
+  });
+
   test('dispatches the Release Check against staging with explicit API and MCP URLs', () => {
     const workflowSource = fs.readFileSync(
       path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),

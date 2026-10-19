@@ -1,5 +1,9 @@
 name: Deployed smoke test
 
+# A dispatch that carries a release_id is named "Release Check <mode> <release_id>"
+# so the Nightly Release (crf04/statsplus#249) can find the run it started and no other.
+run-name: ${{ inputs.release_id && format('Release Check {0} {1}', inputs.mode, inputs.release_id) || github.workflow }}
+
 on:
   deployment_status:
   workflow_dispatch:
@@ -22,6 +26,10 @@ on:
         type: string
       mcp_base_url:
         description: MCP base URL. Defaults to https://mcp.courtai.app; required for staging
+        required: false
+        type: string
+      release_id:
+        description: Unique id from the Nightly Release; put in the run name so the caller finds this run
         required: false
         type: string
 

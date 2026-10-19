@@ -291,7 +291,7 @@ const SavedFilterSets = ({ player, rows, expanded, onToggle, saved }) => {
 
 // Everything is always shown; spare height goes to opponent rows first, then
 // saved sets. When even the minimum does not fit, the panel scrolls.
-const FilterPanelContext = ({ panel, extra }) => {
+const FilterPanelContext = ({ panel, extra, hideSaved }) => {
   const [ref, height] = useHeight();
   const { isAuthenticated } = useAuth();
   const [opponent, setOpponent] = useState(null);
@@ -421,13 +421,16 @@ const FilterPanelContext = ({ panel, extra }) => {
         data={opponent}
         extremes={extremes}
       />
-      <SavedFilterSets
-        player={panel.selectedPlayer}
-        rows={savedRows}
-        expanded={savedOpen}
-        onToggle={() => setSavedOpen((open) => !open)}
-        saved={saved}
-      />
+      {/* PROTOTYPE (throwaway): a placement variant moves the list. */}
+      {!hideSaved && (
+        <SavedFilterSets
+          player={panel.selectedPlayer}
+          rows={savedRows}
+          expanded={savedOpen}
+          onToggle={() => setSavedOpen((open) => !open)}
+          saved={saved}
+        />
+      )}
     </div>
   );
 };

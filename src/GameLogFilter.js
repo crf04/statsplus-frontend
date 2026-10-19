@@ -12,6 +12,10 @@ import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
 import SaveFilterSetModal from './SaveFilterSetModal';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
+// PROTOTYPE (throwaway): saved-set placement variants.
+import { usePlacement } from './savedSetsPlacementPrototype/mode';
+import { Switcher } from './savedSetsPlacementPrototype/parts';
+import { Rail } from './savedSetsPlacementPrototype/variants';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
@@ -48,6 +52,7 @@ const GameLogFilter = ({ notice = null }) => {
   // Every authenticated read and write on this page needs an admitted account:
   // a waitlisted one is refused them all, so it is treated as not searching.
   const canSearch = isAuthenticated && !waitlist;
+  const placement = usePlacement();
   const [searchParams, setSearchParams] = useSearchParams();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
@@ -630,7 +635,7 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {canSearch && (
+            {canSearch && (!placement || placement === 'O') && (
               <div className="d-flex align-items-center gap-2 ms-auto">
                 {/* There is nothing to save until the URL carries a Filter
                     Set, and a refused link is one we would not open again —
@@ -671,6 +676,7 @@ const GameLogFilter = ({ notice = null }) => {
         // Hidden rather than unmounted while loading, so every section reads at
         // once instead of each waiting for the one before it to appear.
         <Container fluid className={`game-log-filter py-2${showWorkspaceLoading ? ' d-none' : ''}`}>
+          {placement === 'C' && canSearch && <Rail player={selectedPlayer} />}
           <Row className="mb-5">
             <Col md={8}>
               <Card className="dark-card">
@@ -766,6 +772,7 @@ const GameLogFilter = ({ notice = null }) => {
         </Container>
       )}
 
+      {placement && <Switcher />}
       {/* Saving and the saved list belong to an account, so neither exists for
           a signed-out reader. */}
       {canSearch && (

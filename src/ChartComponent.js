@@ -99,7 +99,8 @@ const ChartComponent = ({
               borderDash: [6, 4],
               label: {
                 content: lineLabel,
-                enabled: true,
+                // chartjs-plugin-annotation 3 draws a label only with `display`.
+                display: true,
                 position: 'start',
                 backgroundColor: '#1e1a12',
                 color: '#e8a33d',

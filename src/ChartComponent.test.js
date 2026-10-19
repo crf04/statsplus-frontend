@@ -48,7 +48,9 @@ const lineLabel = (lineValue, lineIsPosted) => {
       lineIsPosted={lineIsPosted}
     />,
   );
-  return barProps.options.plugins.annotation.annotations.line1.label.content;
+  const { label } = barProps.options.plugins.annotation.annotations.line1;
+  expect(label.display).toBe(true);
+  return label.content;
 };
 
 test('the posted line is labelled with its provider and game', () => {

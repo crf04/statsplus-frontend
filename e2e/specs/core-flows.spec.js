@@ -101,16 +101,34 @@ const getJson = async (request, url) => {
   return response.json();
 };
 
-// The public home reads the Slate and its Edges anonymously. The page asks for
-// the most recent game day when today has none, so the check does too.
-const readPublicSlate = async (request) => {
-  const query = '?fallback=previous_game_day';
-  const slate = await getJson(request, `${apiBaseUrl()}/api/games/slate${query}`);
-  const edges = await getJson(request, `${apiBaseUrl()}/api/games/slate/edges${query}`);
-  expect(slate.games.length, 'the API serves at least one game').toBeGreaterThan(0);
-  const edgeGames = edges.games.filter((game) => game.effects.length > 0);
-  expect(edgeGames.length, 'the API serves edges for at least one game').toBeGreaterThan(0);
+// The public home reads the Slate and its Edges anonymously, and which day it asks
+// for is the page's business. The check records the responses the page itself
+// fetches and asserts what it rendered against exactly those bodies.
+const openPublicHome = async (page) => {
+  const bodies = { slate: [], edges: [] };
+  page.on('response', (response) => {
+    const { pathname } = new URL(response.url());
+    const kind =
+      pathname === '/api/games/slate'
+        ? 'slate'
+        : pathname === '/api/games/slate/edges'
+          ? 'edges'
+          : null;
+    if (kind && response.ok()) bodies[kind].push(response.json());
+  });
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+
+  expect(bodies.slate.length, 'the page fetched the Slate').toBeGreaterThan(0);
+  expect(bodies.edges.length, 'the page fetched the Slate edges').toBeGreaterThan(0);
+  // The last response is the one the page settled on (a fallback may follow an empty day).
+  const slate = await bodies.slate.at(-1);
+  const edges = await bodies.edges.at(-1);
+  expect(slate.games.length, 'the page was served at least one game').toBeGreaterThan(0);
   const slateGame = (id) => slate.games.find((game) => game.game_id === id);
+  const edgeGames = edges.games.filter(
+    (game) => game.effects.length > 0 && slateGame(game.game_id),
+  );
   return { slate, edgeGames, slateGame };
 };
 
@@ -125,18 +143,19 @@ const signedPercent = (value) => {
   return `${Number(shown) === 0 ? '' : value > 0 ? '+' : '−'}${shown}%`;
 };
 
-test('@smoke public home Slate renders the games and edges the API serves', async ({
+test('@smoke public home Slate renders the games and edges the page was served', async ({
   deployedPage: page,
-  request,
 }) => {
   requireDeployedTarget();
-  const { slate, edgeGames, slateGame } = await readPublicSlate(request);
-
-  await page.goto('/');
+  const { slate, edgeGames, slateGame } = await openPublicHome(page);
 
   for (const game of slate.games) {
     await expect(page.locator(`a[href="/matchups/${game.game_id}"]`)).toBeVisible();
   }
+  // Edges only exist once lines are posted; with none served, none may be shown.
+  await expect(page.locator('.home-tick-effects li')).toHaveCount(
+    edgeGames.reduce((total, game) => total + game.effects.length, 0),
+  );
   for (const edgeGame of edgeGames.slice(0, 3)) {
     const { away_team: away, home_team: home } = slateGame(edgeGame.game_id);
     const cell = page.locator(`a[href="/matchups/${edgeGame.game_id}"]`);
@@ -159,13 +178,12 @@ test('@smoke Matchup deep links from the Slate resolve and their data is served'
   request,
 }) => {
   requireDeployedTarget();
-  const { edgeGames } = await readPublicSlate(request);
-  const gameId = edgeGames[0].game_id;
+  const { slate, edgeGames } = await openPublicHome(page);
+  const gameId = (edgeGames[0] ?? slate.games[0]).game_id;
 
   // A Matchup is a signed-in read: logged out, the real route answers with its
   // sign-in gate (not the landing redirect or a blank page) and the API answers
   // for that game with the stable authentication error, not a 404 or a 5xx.
-  await page.goto('/');
   await page.locator(`a[href="/matchups/${gameId}"]`).click();
   await expect(page).toHaveURL(new RegExp(`/matchups/${gameId}$`));
   await expect(page.getByRole('heading', { name: 'Sign in to view this matchup' })).toBeVisible();

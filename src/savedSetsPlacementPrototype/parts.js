@@ -45,7 +45,7 @@ export const SetRow = ({ set, current, withPlayer, onOpened }) => {
       type="button"
       className={`sp-row${current ? ' is-current' : ''}`}
       onClick={() => {
-        navigate(`/?${set.queryString}`);
+        navigate(`/?${set.queryString}${window.location.hash}`);
         onOpened?.();
       }}
     >

@@ -122,7 +122,7 @@ export const Rail = ({ player }) => {
               title={[set.described.player, ...set.described.parameters.map((p) => p.label)].join(
                 ' · ',
               )}
-              onClick={() => navigate(`/?${set.queryString}`)}
+              onClick={() => navigate(`/?${set.queryString}${window.location.hash}`)}
             >
               {current && <BookmarkCheck size={13} />}
               {other && <span className="sp-pill-player">{initials(set.described.player)}</span>}

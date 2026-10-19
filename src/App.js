@@ -10,6 +10,15 @@ import UserProfile from './components/Auth/UserProfile';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/saved-sets-placement): the standalone
+// build replays captured data to the Log Workspace with a fake signed-in user.
+import { PROTO_STANDALONE } from './savedSetsPlacementPrototype/mode';
+import { DEMO_URL, installMockApi } from './savedSetsPlacementPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.search) window.history.replaceState(null, '', DEMO_URL);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

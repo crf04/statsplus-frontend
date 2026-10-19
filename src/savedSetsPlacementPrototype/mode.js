@@ -18,8 +18,12 @@ export const VARIANT_NAMES = {
 const readHash = () =>
   new URLSearchParams(typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, ''));
 
+// The public no-login build: captured data, a fake signed-in user, always on.
+export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'saved-place';
+
 export const isPrototypeActive = () =>
-  process.env.NODE_ENV !== 'production' && readHash().get('proto') === 'place';
+  PROTO_STANDALONE ||
+  (process.env.NODE_ENV !== 'production' && readHash().get('proto') === 'place');
 
 const readVariant = () => {
   const key = (readHash().get('v') || 'A').toUpperCase();

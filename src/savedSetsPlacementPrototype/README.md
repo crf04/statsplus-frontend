@@ -23,3 +23,11 @@ shipped modal.
 Removing it: delete this folder and the blocks marked `PROTOTYPE (throwaway)`
 in `GameLogFilter.js`, `filterPanel/FilterPanel.js`, `FilterPanelView.js`,
 `FilterPanelContext.js`.
+
+## Public link
+
+https://statsplus-saved-proto.vercel.app — no sign-in. Built with
+`vercel deploy --yes --build-env REACT_APP_PROTOTYPE=saved-place`, then
+`vercel alias set <url> statsplus-saved-proto.vercel.app`. It replays
+`mock/recorded.json` (captured with `live-shots --record`) and synthetic sets
+from `mock/sets.js`; saving, renaming and deleting are in memory.

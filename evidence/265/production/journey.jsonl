@@ -1,0 +1,52 @@
+{"action": "require-environment", "name": "production"}
+{"action": "doctor"}
+{"action": "open", "path": "/?player_name=Jalen%20Brunson&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01", "date_to": "2026-01-31"}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": ".game-logs-main"}, "text": "Date >= 2026-01-01"}}
+{"action": "assert", "target": {"within": {"selector": ".game-logs-main"}, "text": "Date <= 2026-01-31"}}
+{"action": "assert", "target": {"role": "button", "name": "until Jan 31, 2026"}}
+{"action": "click", "target": {"role": "button", "name": "since Jan 1, 2026"}}
+{"action": "assert", "target": {"label": "Since date"}, "value": "2026-01-01"}
+{"action": "assert", "target": {"label": "Until date"}, "value": "2026-01-31"}
+{"action": "proof", "name": "prod-range-link-desktop"}
+{"action": "fill", "target": {"label": "Until date"}, "value": "2026-01-15"}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01", "date_to": "2026-01-15"}, "status": 200}
+{"action": "assert", "url": "/?player_name=Jalen+Brunson&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-15"}
+{"action": "assert", "target": {"role": "button", "name": "until Jan 15, 2026"}}
+{"action": "proof", "name": "prod-range-edited-desktop"}
+{"action": "open", "path": "/?player_name=Jalen+Brunson&season_filter=2025-26&date_filter=2026-02-01&date_to=2026-01-31"}
+{"action": "assert", "target": {"role": "alert"}, "text": "date_to is not a value we can apply"}
+{"action": "assert", "target": {"role": "button", "name": "Save Filter Set"}, "state": "hidden"}
+{"action": "proof", "name": "prod-range-refused-desktop"}
+{"action": "open", "path": "/?player_name=Jalen+Brunson&season_filter=2025-26&date_filter=2026-01-01"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01"}, "status": 200}
+{"action": "assert", "target": {"role": "button", "name": "since Jan 1, 2026"}}
+{"action": "assert", "target": {"role": "button", "name": "until Jan 31, 2026"}, "state": "hidden"}
+{"action": "proof", "name": "prod-plain-desktop"}
+{"action": "open", "path": "/privacy"}
+{"action": "assert", "target": {"selector": "main.legal-page p:has-text(\"read your CourtAI data and, when you ask, save Targets and Saved Filter Sets to your account. This policy\")"}}
+{"action": "proof", "name": "prod-privacy-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert-layout"}
+{"action": "proof", "name": "prod-privacy-phone"}
+{"action": "open", "path": "/?player_name=Jalen%20Brunson&season_filter=2025-26&date_filter=2026-01-01&date_to=2026-01-31"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01", "date_to": "2026-01-31"}, "status": 200}
+{"action": "assert", "target": {"role": "button", "name": "until Jan 31, 2026"}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "prod-range-link-phone"}
+{"action": "click", "target": {"role": "button", "name": "until Jan 31, 2026"}}
+{"action": "assert", "target": {"label": "Until date"}, "value": "2026-01-31"}
+{"action": "fill", "target": {"label": "Until date"}, "value": "2026-01-15"}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01", "date_to": "2026-01-15"}, "status": 200}
+{"action": "assert", "target": {"role": "button", "name": "until Jan 15, 2026"}}
+{"action": "assert-layout"}
+{"action": "proof", "name": "prod-range-edited-phone"}
+{"action": "open", "path": "/?player_name=Jalen+Brunson&season_filter=2025-26&date_filter=2026-01-01"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jalen Brunson", "season_filter": "2025-26", "date_filter": "2026-01-01"}, "status": 200}
+{"action": "assert-layout"}
+{"action": "proof", "name": "prod-plain-phone"}
+{"action": "cleanup"}

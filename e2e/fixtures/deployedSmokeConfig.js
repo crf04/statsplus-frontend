@@ -7,6 +7,56 @@ const containsUnsafeCookieValueCharacter = (value) =>
     return code <= 0x20 || code === 0x7f || character === ';';
   });
 
+const isBareHttpsOrigin = (candidate) => {
+  if (typeof candidate !== 'string' || candidate.length === 0) return null;
+  if (candidate !== candidate.trim()) return null;
+
+  let url;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return null;
+  }
+
+  return url.protocol === 'https:' &&
+    url.username === '' &&
+    url.password === '' &&
+    url.port === '' &&
+    url.pathname === '/' &&
+    url.search === '' &&
+    url.hash === ''
+    ? url
+    : null;
+};
+
+// The Release Check targets (crf04/statsplus#249): the only frontend, API and MCP
+// origins it may be pointed at. The API and MCP hosts are matched exactly for
+// production; the staging backend and MCP are separate Railway services.
+const releaseCheckTargets = {
+  production: {
+    api: /^statsplus-backend-production\.up\.railway\.app$/,
+    mcp: /^mcp\.courtai\.app$/,
+  },
+  staging: {
+    frontend: /^staging\.courtai\.app$/,
+    api: /^statsplus-backend-staging[a-z0-9-]*\.up\.railway\.app$/,
+    mcp: /^mcp-staging\.courtai\.app$/,
+  },
+};
+
+export const isAllowedReleaseCheckTarget = (mode, { frontend, api, mcp }) => {
+  const target = releaseCheckTargets[mode];
+  if (!target) return false;
+  const frontendHost = isBareHttpsOrigin(frontend)?.hostname;
+  const apiHost = isBareHttpsOrigin(api)?.hostname;
+  const mcpHost = isBareHttpsOrigin(mcp)?.hostname;
+  if (!frontendHost || !apiHost || !mcpHost) return false;
+  const frontendAllowed = target.frontend
+    ? target.frontend.test(frontendHost)
+    : isAllowedDeploymentUrl(frontend, mode);
+  return frontendAllowed && target.api.test(apiHost) && target.mcp.test(mcpHost);
+};
+
 export const isAllowedDeploymentUrl = (candidate, mode = 'any') => {
   if (typeof candidate !== 'string' || candidate.length === 0) return false;
   if (candidate !== candidate.trim()) return false;
@@ -99,4 +149,20 @@ export const bootstrapVercelBypassCookie = async ({
   } finally {
     await requestContext.dispose();
   }
+};
+
+// The Release Check reads only. Every browser request that is not a GET, HEAD or
+// OPTIONS is aborted before it leaves the browser and recorded, so a page that
+// tries to write fails its test without the write ever reaching a server.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+export const blockWrites = async (browserContext) => {
+  const blocked = [];
+  await browserContext.route('**/*', (route) => {
+    const request = route.request();
+    if (SAFE_METHODS.has(request.method())) return route.fallback();
+    blocked.push(`${request.method()} ${request.url()}`);
+    return route.abort();
+  });
+  return blocked;
 };

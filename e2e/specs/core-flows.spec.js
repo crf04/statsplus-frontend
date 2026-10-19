@@ -104,7 +104,7 @@ const getJson = async (request, url) => {
 // The public home reads the Slate and its Edges anonymously, and which day it asks
 // for is the page's business. The check records the responses the page itself
 // fetches and asserts what it rendered against exactly those bodies.
-const openPublicHome = async (page) => {
+const openPublicHome = async (page, request) => {
   const bodies = { slate: [], edges: [] };
   page.on('response', (response) => {
     const { pathname } = new URL(response.url());
@@ -114,7 +114,10 @@ const openPublicHome = async (page) => {
         : pathname === '/api/games/slate/edges'
           ? 'edges'
           : null;
-    if (kind && response.ok()) bodies[kind].push(response.json());
+    if (kind && response.ok()) {
+      const { pathname: path, search } = new URL(response.url());
+      bodies[kind].push({ target: `${path}${search}`, body: response.json() });
+    }
   });
   await page.goto('/');
   await page.waitForLoadState('networkidle');
@@ -122,8 +125,28 @@ const openPublicHome = async (page) => {
   expect(bodies.slate.length, 'the page fetched the Slate').toBeGreaterThan(0);
   expect(bodies.edges.length, 'the page fetched the Slate edges').toBeGreaterThan(0);
   // The last response is the one the page settled on (a fallback may follow an empty day).
-  const slate = await bodies.slate.at(-1);
-  const edges = await bodies.edges.at(-1);
+  const { target: slateTarget, body: slateBody } = bodies.slate.at(-1);
+  const { target: edgesTarget, body: edgesBody } = bodies.edges.at(-1);
+  const slate = await slateBody;
+  const edges = await edgesBody;
+
+  // Tie the frontend under test to the configured API: the same requests, sent
+  // to E2E_API_BASE_URL, must answer 200 with the same games and edge effects.
+  const replayedSlate = await getJson(request, `${apiBaseUrl()}${slateTarget}`);
+  const replayedEdges = await getJson(request, `${apiBaseUrl()}${edgesTarget}`);
+  const gameIds = (body) => body.games.map((game) => game.game_id).sort();
+  expect(gameIds(replayedSlate), 'the configured API serves the page its games').toEqual(
+    gameIds(slate),
+  );
+  const effectsByGame = (body) =>
+    Object.fromEntries(
+      body.games
+        .map((game) => [game.game_id, game.effects.map(({ name, value }) => [name, value])])
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
+  expect(effectsByGame(replayedEdges), 'the configured API serves the page its edges').toEqual(
+    effectsByGame(edges),
+  );
   expect(slate.games.length, 'the page was served at least one game').toBeGreaterThan(0);
   const slateGame = (id) => slate.games.find((game) => game.game_id === id);
   const edgeGames = edges.games.filter(
@@ -145,12 +168,15 @@ const signedPercent = (value) => {
 
 test('@smoke public home Slate renders the games and edges the page was served', async ({
   deployedPage: page,
+  request,
 }) => {
   requireDeployedTarget();
-  const { slate, edgeGames, slateGame } = await openPublicHome(page);
+  const { slate, edgeGames, slateGame } = await openPublicHome(page, request);
 
   for (const game of slate.games) {
-    await expect(page.locator(`a[href="/matchups/${game.game_id}"]`)).toBeVisible();
+    const cell = page.locator(`a[href="/matchups/${game.game_id}"]`);
+    await expect(cell).toBeVisible();
+    await expect(cell).toContainText(`${game.away_team.tricode} @ ${game.home_team.tricode}`);
   }
   // Edges only exist once lines are posted; with none served, none may be shown.
   await expect(page.locator('.home-tick-effects li')).toHaveCount(
@@ -178,7 +204,7 @@ test('@smoke Matchup deep links from the Slate resolve and their data is served'
   request,
 }) => {
   requireDeployedTarget();
-  const { slate, edgeGames } = await openPublicHome(page);
+  const { slate, edgeGames } = await openPublicHome(page, request);
   const gameId = (edgeGames[0] ?? slate.games[0]).game_id;
 
   // A Matchup is a signed-in read: logged out, the real route answers with its

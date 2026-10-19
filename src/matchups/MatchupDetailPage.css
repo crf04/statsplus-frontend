@@ -929,6 +929,38 @@ button.selection-strip-tile:focus-visible {
   border-color: rgba(232, 163, 61, 0.35);
 }
 
+.selection-panel-books {
+  margin-top: 12px;
+}
+
+.selection-panel-books h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.book-stamp {
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  font-weight: 500;
+}
+
+.selection-books .book-best {
+  color: var(--ct-gold);
+  font-weight: 700;
+}
+
+.book-more {
+  margin-top: 6px;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--ct-gold);
+  font: inherit;
+  font-size: 0.66rem;
+  cursor: pointer;
+}
+
 .selection-table-wrap {
   overflow-x: auto;
 }

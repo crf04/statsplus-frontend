@@ -845,6 +845,45 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await page.screenshot({ path: testInfo.outputPath('selection-card-narrow.png'), fullPage: true });
 });
 
+test('selection card lists sportsbook lines per book, starring the best price only among equal lines', async ({
+  authenticatedPage: page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.goto('/matchups/0022500584?player=2544');
+  const books = page.getByRole('region', { name: 'Sportsbooks' });
+  const table = books.getByRole('table', { name: 'PTS sportsbook lines' });
+
+  // Five books: the first four, the fifth behind an expander.
+  await expect(table.getByRole('row')).toHaveCount(5);
+  await expect(table.getByRole('row', { name: /^FanDuel/ })).toContainText('26.5-135+110');
+  await expect(table.getByRole('row', { name: /^BetMGM/ })).toContainText('27.5-110 ★-120');
+  await expect(table.getByRole('row', { name: /^DraftKings/ })).toContainText('27.5-110 ★-115');
+  await expect(table.getByRole('row', { name: /^BetRivers/ })).toContainText('27.5-115-105 ★');
+  await expect(table.getByRole('img', { name: 'best price' })).toHaveCount(3);
+  await expect(table.getByRole('row', { name: /^FanDuel/ }).getByRole('img')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png'), fullPage: true });
+
+  await page.setViewportSize({ width: 393, height: 852 });
+  await books.scrollIntoViewIfNeeded();
+  // The table wrapper scrolls sideways when its table is wider than the card,
+  // which the document width alone would not show.
+  const fits = () =>
+    books.locator('.selection-table-wrap').evaluate((wrap) => wrap.scrollWidth <= wrap.clientWidth);
+  expect(await fits()).toBe(true);
+  await books.getByRole('button', { name: '+1 more' }).click();
+  await expect(table.getByRole('row', { name: /^Caesars/ })).toContainText('28.5+105-125');
+  expect(await fits()).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.screenshot({ path: testInfo.outputPath('book-lines-phone.png'), fullPage: true });
+
+  // No books for Austin Reaves: no panel at all.
+  await page.goto('/matchups/0022500584?player=1630559');
+  await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Sportsbooks' })).toHaveCount(0);
+});
+
 test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({
   authenticatedPage: page,
 }, testInfo) => {

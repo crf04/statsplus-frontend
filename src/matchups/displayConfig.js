@@ -47,6 +47,10 @@ const BOOK_NAMES = {
   kalshi: 'Kalshi',
   novig: 'Novig',
   polymarket: 'Polymarket',
+  betmgm: 'BetMGM',
+  williamhill_us: 'Caesars',
+  betrivers: 'BetRivers',
+  fanatics: 'Fanatics',
 };
 const BOOK_MARKS = {
   prizepicks: 'PP',
@@ -57,6 +61,10 @@ const BOOK_MARKS = {
   kalshi: 'KX',
   novig: 'NV',
   polymarket: 'PM',
+  betmgm: 'MG',
+  williamhill_us: 'CZ',
+  betrivers: 'BR',
+  fanatics: 'FN',
 };
 // Prediction markets price the line from what traders pay, so a row leads with
 // one when it can. Listed in the order they win a tie.

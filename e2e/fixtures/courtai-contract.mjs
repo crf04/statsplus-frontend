@@ -1736,6 +1736,19 @@ const playerIdsByName = {
   ...Object.fromEntries(leaguePlayers.map((player) => [player.name, player.canonical_id])),
 };
 
+// His next game's posted lines (crf04/statsplus#238); null for everyone else.
+const postedLinesByName = {
+  'Stephen Curry': {
+    game_id: '0022600012',
+    game_date: '2026-10-21',
+    matchup: 'GSW vs LAL',
+    lines: {
+      PTS: { value: 26.5, provider: 'prizepicks' },
+      '3PM': { value: 4.5, provider: 'underdog' },
+    },
+  },
+};
+
 // The real endpoint narrows the season by the self filters it is sent. The
 // contract has to narrow too, or a test cannot tell a filtered result set from
 // the unfiltered season the Self Filters ranges are supposed to come from.
@@ -3235,6 +3248,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           season_game_count: season.length,
           next_game: 'Atlanta Hawks',
           player_id: playerIdsByName[playerName] ?? null,
+          posted_line: postedLinesByName[playerName] ?? null,
         },
       });
       return;

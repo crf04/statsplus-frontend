@@ -1,5 +1,10 @@
 import { apiClient, getApiUrl } from './config';
-import { decodeGameLogsResponse, fetchGameLogsData, getRequestErrorMessage } from './gameLogsApi';
+import {
+  decodeGameLogsResponse,
+  fetchGameLogsData,
+  getRequestErrorMessage,
+  postedLineFor,
+} from './gameLogsApi';
 
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
@@ -70,6 +75,7 @@ describe('gameLogsApi', () => {
       seasonGameCount: 71,
       nextGame: 'Boston Celtics',
       playerId: null,
+      postedLine: null,
     });
   });
 
@@ -91,6 +97,46 @@ describe('gameLogsApi', () => {
   test('reads the player id that names their headshot', () => {
     expect(decodeGameLogsResponse({ game_logs: [], player_id: 2544 }).playerId).toBe(2544);
   });
+
+  test('reads his next game posted lines, dropping a market without a number', () => {
+    const { postedLine } = decodeGameLogsResponse({
+      game_logs: [],
+      posted_line: {
+        game_id: '0022600012',
+        game_date: '2026-10-21',
+        matchup: 'LAL vs GSW',
+        lines: {
+          PTS: { value: 27.5, provider: 'prizepicks' },
+          '3PM': { value: 2.5, provider: 'underdog' },
+          REB: { value: '7.5', provider: 'prizepicks' },
+          AST: { value: 8.5 },
+        },
+      },
+    });
+    expect(postedLine).toEqual({
+      gameDate: '2026-10-21',
+      matchup: 'LAL vs GSW',
+      lines: {
+        PTS: { value: 27.5, provider: 'prizepicks' },
+        '3PM': { value: 2.5, provider: 'underdog' },
+      },
+    });
+    expect(postedLineFor(postedLine, 'FG3M')).toEqual({
+      value: 2.5,
+      provider: 'underdog',
+      gameDate: '2026-10-21',
+      matchup: 'LAL vs GSW',
+    });
+    expect(postedLineFor(postedLine, 'REB')).toBeNull();
+    expect(postedLineFor(null, 'PTS')).toBeNull();
+  });
+
+  test.each([undefined, null, 'x', {}, { lines: {} }, { lines: { PTS: { value: null } } }])(
+    'reads posted lines of %p as none',
+    (value) => {
+      expect(decodeGameLogsResponse({ game_logs: [], posted_line: value }).postedLine).toBeNull();
+    },
+  );
 
   test.each([undefined, null, 0, -1, 2.5, '2544'])(
     'reads a player id of %p as unknown',

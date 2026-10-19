@@ -105,6 +105,88 @@ test('a signed-out visitor sees the public home page with a sign-up card, and no
   ]);
 });
 
+test.each([
+  ['/privacy', 'Privacy Policy'],
+  ['/terms', 'Terms of Service'],
+])('a signed-out visitor can read %s', async (path, title) => {
+  window.history.pushState({}, '', path);
+  render(<App />);
+
+  const heading = await screen.findByRole('heading', { level: 1, name: title });
+  expect(heading).toBeVisible();
+  // A client-side route change moves no focus on its own; the page takes it.
+  expect(heading).toHaveFocus();
+  expect(screen.getByText('Effective October 19, 2026')).toBeInTheDocument();
+  await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
+  expect(window.location.pathname).toBe(path);
+  expect(apiClient.get).not.toHaveBeenCalled();
+  window.history.pushState({}, '', '/');
+});
+
+test.each([
+  ['/privacy', 'Privacy Policy'],
+  ['/terms', 'Terms of Service'],
+  ['/privacy?utm_source=google', 'Privacy Policy'],
+])('a waitlisted user can still read %s', async (path, title) => {
+  apiClient.get.mockImplementation(homeGet);
+  Object.assign(mockAuth, {
+    currentUser: { uid: 'waiting', email: 'fan@example.com' },
+    isAuthenticated: true,
+    waitlist: { message: 'The beta is full right now.' },
+  });
+  window.history.pushState({}, '', path);
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+  expect(`${window.location.pathname}${window.location.search}`).toBe(path);
+  expect(
+    within(screen.getByRole('navigation', { name: 'Legal' })).getByRole('link', { name: 'Terms' }),
+  ).toHaveAttribute('href', '/terms');
+  window.history.pushState({}, '', '/');
+});
+
+test('a page other than the landing page carries the shell footer', async () => {
+  window.history.pushState({}, '', '/terms');
+  render(<App />);
+
+  await screen.findByRole('heading', { level: 1, name: 'Terms of Service' });
+  const legal = screen.getByRole('navigation', { name: 'Legal' });
+  expect(within(legal).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+  window.history.pushState({}, '', '/');
+});
+
+test.each([
+  ['signed out', {}],
+  [
+    'waitlisted',
+    { currentUser: { uid: 'w' }, isAuthenticated: true, waitlist: { message: 'Full.' } },
+  ],
+])('every page links the legal pages and support when %s', async (_state, auth) => {
+  apiClient.get.mockImplementation(homeGet);
+  Object.assign(mockAuth, auth);
+  render(<App />);
+
+  // The landing page carries its own footer over the shell's, which CSS hides there.
+  const landing = await waitFor(() => {
+    const page = document.querySelector('.landing-page');
+    expect(page).not.toBeNull();
+    return page;
+  });
+  const legal = within(landing).getByRole('navigation', { name: 'Legal' });
+  expect(
+    within(legal)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]),
+  ).toEqual([
+    ['Privacy', '/privacy'],
+    ['Terms', '/terms'],
+    ['support@courtai.app', 'mailto:support@courtai.app'],
+  ]);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4'),
+  );
+});
+
 test('renders the CourtAI search landing page', async () => {
   render(<App />);
 

@@ -1854,3 +1854,18 @@ test('a rate-limited game-logs read shows the backend message and is not retried
   // The page asks twice, for the season and for the filter; neither is repeated.
   expect(reads).toEqual(['?player_name=LeBron+James', '?player_name=LeBron+James&game_filter=10']);
 });
+
+test('the line defaults to his next game posted line, else the season average', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?player_name=Stephen+Curry');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  const lineValue = page.getByLabel('Line Value:');
+  await expect(lineValue).toHaveValue('26.5');
+
+  await page.getByLabel('Line Type:').selectOption('FG3M');
+  await expect(lineValue).toHaveValue('4.5');
+  // No posted REB line: the season average, as before.
+  await page.getByLabel('Line Type:').selectOption('REB');
+  await expect(lineValue).toHaveValue('7.5');
+});

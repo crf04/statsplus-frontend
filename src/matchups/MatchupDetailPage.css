@@ -1193,3 +1193,35 @@ button.selection-strip-tile:focus-visible {
     font-size: 1.05rem;
   }
 }
+
+/* The best Over and Under price: one quiet line under the headline and marks. */
+.rail-price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px 8px;
+  margin-top: 2px;
+  color: var(--ct-dim);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-price em {
+  flex-basis: 100%;
+  color: var(--ct-gold);
+  font-style: normal;
+}
+
+.rail-row-value .rail-price b {
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.rail-price i {
+  font-size: 0.64rem;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}

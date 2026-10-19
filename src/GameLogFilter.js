@@ -70,9 +70,13 @@ const GameLogFilter = ({ notice = null }) => {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [lineType, setLineType] = useState('PTS');
   const [lineValue, setLineValue] = useState('');
+  // Whether the line shown is the posted line rather than a typed or average one.
+  const [lineIsPosted, setLineIsPosted] = useState(false);
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
+  // The player's posted lines for his next game, which the line defaults to.
+  const [postedLine, setPostedLine] = useState(null);
   // How many games the shown averages cover, against the whole season; null
   // until a game-log response arrives for the current Filter Set.
   const [sampleSize, setSampleSize] = useState(null);
@@ -287,6 +291,7 @@ const GameLogFilter = ({ notice = null }) => {
       setGameLogs([]);
       setAverages([]);
       setPlayerId(null);
+      setPostedLine(null);
       setSampleSize(null);
 
       return readRevisit(
@@ -304,6 +309,7 @@ const GameLogFilter = ({ notice = null }) => {
           setGameLogs(data.gameLogs);
           setAverages(data.averages);
           setPlayerId(data.playerId ?? null);
+          setPostedLine(data.postedLine ?? null);
           setSampleSize({
             filtered: data.gameLogs.length,
             season: data.seasonGameCount ?? null,
@@ -341,6 +347,7 @@ const GameLogFilter = ({ notice = null }) => {
     clearSeasonGameLogs();
     setAverages([]);
     setPlayerId(null);
+    setPostedLine(null);
     setSampleSize(null);
     setSelectedTeam('');
     setGameLogsError(null);
@@ -387,6 +394,7 @@ const GameLogFilter = ({ notice = null }) => {
       clearSeasonGameLogs();
       setAverages([]);
       setPlayerId(null);
+      setPostedLine(null);
       setSampleSize(null);
       setAppliedFilters({});
       setGameLogsError(
@@ -408,6 +416,7 @@ const GameLogFilter = ({ notice = null }) => {
       clearSeasonGameLogs();
       setAverages([]);
       setPlayerId(null);
+      setPostedLine(null);
       setSampleSize(null);
       return undefined;
     }
@@ -422,6 +431,7 @@ const GameLogFilter = ({ notice = null }) => {
       clearSeasonGameLogs();
       setAverages([]);
       setPlayerId(null);
+      setPostedLine(null);
       setSampleSize(null);
       setSelectedTeam('');
       return undefined;
@@ -672,8 +682,10 @@ const GameLogFilter = ({ notice = null }) => {
                     setLineType={setLineType}
                     lineValue={lineValue}
                     setLineValue={setLineValue}
+                    setLineIsPosted={setLineIsPosted}
                     playerList={playerList}
                     averages={averages}
+                    postedLine={postedLine}
                   />
                   <Suspense fallback={null}>
                     <ChartComponent
@@ -681,6 +693,8 @@ const GameLogFilter = ({ notice = null }) => {
                       lineType={lineType}
                       lineValue={lineValue}
                       averages={averages}
+                      postedLine={postedLine}
+                      lineIsPosted={lineIsPosted}
                       appliedFilters={appliedFilters}
                     />
                     <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />

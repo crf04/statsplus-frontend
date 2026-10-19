@@ -124,10 +124,11 @@ signedInTest(
     await expect(screen.getByRole('cell', '27')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toHaveCount(0);
 
-    await screen.getByRole('button', 'Save Filter Set').tap();
-    await screen.getByLabel('Name').fill('LeBron early January');
-    await screen.getByRole('button', 'Save').tap();
-    await expect(screen.getByRole('heading', 'Save this Filter Set')).toBeHidden();
+    const panel = screen.getByTestId('filter-panel');
+    await panel.getByRole('button', 'Save').tap();
+    await screen.getByLabel('Name this Filter Set').fill('LeBron early January');
+    await panel.getByRole('button', 'Save').tap();
+    await expect(screen.getByLabel('Name this Filter Set')).toBeHidden();
     const [saved] = api.sent('/api/user/saved-filter-sets', 'POST');
     expect((saved.body as { query_string: string }).query_string).toBe(
       'player_name=LeBron+James&date_filter=2025-01-01&date_to=2025-01-08',

@@ -312,61 +312,63 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
     <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
         {tabs}
-        {body || (
-          <>
-            <div className="fpb-head">
-              <span className="fpb-eyebrow">Showing</span>
-              <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-              {savedName && <p className="fpt-current">Saved as {savedName}</p>}
-            </div>
-            {panel.seasons && (
-              <label className="fpb-season">
-                <span>Season</span>
-                <select
-                  className="fp-select"
-                  value={panel.season}
-                  onChange={(e) => panel.changeSeason(e.target.value)}
-                >
-                  {panel.seasons.map((season) => (
-                    <option key={season} value={season}>
-                      {season}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {rules.length > 0 ? (
-              <ul className="fpb-rules">{rules}</ul>
-            ) : (
-              <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
-            )}
+        {body}
+        {/* The filters stay mounted under the Saved tab: the panel's context
+            reports when the Workspace has settled, and an Apply sent from the
+            Saved tab would otherwise wait for it forever. */}
+        <div className="fpt-filters" hidden={Boolean(body)}>
+          <div className="fpb-head">
+            <span className="fpb-eyebrow">Showing</span>
+            <h2>{panel.selectedPlayer}&rsquo;s games</h2>
+            {savedName && <p className="fpt-current">Saved as {savedName}</p>}
+          </div>
+          {panel.seasons && (
+            <label className="fpb-season">
+              <span>Season</span>
+              <select
+                className="fp-select"
+                value={panel.season}
+                onChange={(e) => panel.changeSeason(e.target.value)}
+              >
+                {panel.seasons.map((season) => (
+                  <option key={season} value={season}>
+                    {season}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {rules.length > 0 ? (
+            <ul className="fpb-rules">{rules}</ul>
+          ) : (
+            <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
+          )}
 
-            {editing ? (
-              <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
-            ) : (
-              <>
-                <div className="fpb-addlabel">Add a filter</div>
-                <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
-                  {TILES.filter((tile) => !tile.hidden).map((tile) => (
-                    <button
-                      key={tile.key}
-                      type="button"
-                      className="fpb-tile"
-                      onClick={() => {
-                        if (tile.key === 'self') panel.ensureSeason();
-                        setEditing(tile.key);
-                      }}
-                    >
-                      <b>+ {tile.title}</b>
-                      <span>{tile.sub}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {filler}
-          </>
-        )}
+          {editing ? (
+            <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
+          ) : (
+            <>
+              <div className="fpb-addlabel">Add a filter</div>
+              <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
+                {TILES.filter((tile) => !tile.hidden).map((tile) => (
+                  <button
+                    key={tile.key}
+                    type="button"
+                    className="fpb-tile"
+                    onClick={() => {
+                      if (tile.key === 'self') panel.ensureSeason();
+                      setEditing(tile.key);
+                    }}
+                  >
+                    <b>+ {tile.title}</b>
+                    <span>{tile.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {filler}
+        </div>
       </div>
 
       <div className="fpb-foot">

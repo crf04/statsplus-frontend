@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { createSavedFilterSet } from '../savedFilterSetsApi';
@@ -15,12 +15,19 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  // Each naming form is its own attempt; a save that answers after the reader
+  // has moved on or started another must not close or mark the newer one.
+  const attempt = useRef(0);
 
-  // A different Filter Set is a different thing to save.
-  useEffect(() => {
+  const stopNaming = () => {
+    attempt.current += 1;
     setNaming(false);
     setError(null);
-  }, [location.search]);
+    setIsSaving(false);
+  };
+
+  // A different Filter Set is a different thing to save.
+  useEffect(stopNaming, [location.search]);
 
   if (naming)
     return (
@@ -28,6 +35,9 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
         className="fpt-save-form"
         onSubmit={async (event) => {
           event.preventDefault();
+          // Unapplied changes mean the URL is not what the panel shows.
+          if (dirty || isSaving || !name.trim()) return;
+          const mine = attempt.current;
           setIsSaving(true);
           setError(null);
           try {
@@ -35,15 +45,15 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
               name: name.trim(),
               queryString: location.search.replace(/^\?/, ''),
             });
-            setNaming(false);
+            if (attempt.current === mine) stopNaming();
           } catch (saveError) {
+            if (attempt.current !== mine) return;
             setError(
               getRequestErrorMessage(
                 saveError,
                 'Unable to save this Filter Set. Please try again.',
               ),
             );
-          } finally {
             setIsSaving(false);
           }
         }}
@@ -62,18 +72,18 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
           aria-label="Name this Filter Set"
           onChange={(event) => setName(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') setNaming(false);
+            if (event.key === 'Escape') stopNaming();
           }}
         />
-        <button type="submit" className="fp-btn-primary" disabled={isSaving || !name.trim()}>
+        <button
+          type="submit"
+          className="fp-btn-primary"
+          disabled={isSaving || dirty || !name.trim()}
+          title={dirty ? 'Apply your changes first' : undefined}
+        >
           Save
         </button>
-        <button
-          type="button"
-          className="fp-link"
-          disabled={isSaving}
-          onClick={() => setNaming(false)}
-        >
+        <button type="button" className="fp-link" onClick={stopNaming}>
           Cancel
         </button>
       </form>
@@ -93,6 +103,7 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
       disabled={dirty}
       title={dirty ? 'Apply your changes first' : undefined}
       onClick={() => {
+        attempt.current += 1;
         // The query the user typed is the name they would most likely reach for.
         setName(defaultName.slice(0, 100));
         setError(null);

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import FilterOptions from '../FilterOptions';
 import {
   createSavedFilterSet,
@@ -7,6 +7,7 @@ import {
   fetchSavedFilterSets,
   renameSavedFilterSet,
 } from '../savedFilterSetsApi';
+import { fetchNextOpponent } from '../nextOpponentApi';
 
 let mockAuth;
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => mockAuth }));
@@ -14,13 +15,34 @@ jest.mock('../seasonsApi', () => ({ fetchSeasons: jest.fn(() => Promise.reject(n
 jest.mock('../nextOpponentApi', () => ({
   fetchNextOpponent: jest.fn(() => new Promise(() => {})),
 }));
-jest.mock('../savedFilterSetsApi', () => ({
-  fetchSavedFilterSets: jest.fn(),
-  subscribeSavedFilterSets: () => () => {},
-  createSavedFilterSet: jest.fn(),
-  renameSavedFilterSet: jest.fn(),
-  deleteSavedFilterSet: jest.fn(),
-}));
+// An account store behind the real notify-and-reload seam: every mutation
+// changes what the next read returns and tells subscribers to read again.
+jest.mock('../savedFilterSetsApi', () => {
+  const listeners = new Set();
+  const store = { sets: [] };
+  const notify = () => listeners.forEach((listener) => listener());
+  return {
+    store,
+    fetchSavedFilterSets: jest.fn(async () => store.sets.map((set) => ({ ...set }))),
+    subscribeSavedFilterSets: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    createSavedFilterSet: jest.fn(async ({ name, queryString }) => {
+      store.sets = [{ id: 99, name, queryString }, ...store.sets];
+      notify();
+    }),
+    renameSavedFilterSet: jest.fn(async ({ id, name }) => {
+      store.sets = store.sets.map((set) => (set.id === id ? { ...set, name } : set));
+      notify();
+    }),
+    deleteSavedFilterSet: jest.fn(async ({ id }) => {
+      store.sets = store.sets.filter((set) => set.id !== id);
+      notify();
+    }),
+  };
+});
+const { store } = jest.requireMock('../savedFilterSetsApi');
 
 global.ResizeObserver = class {
   observe() {}
@@ -35,8 +57,17 @@ const SETS = [
 ];
 
 const Location = () => <output data-testid="location">{useLocation().search}</output>;
+// Another applied link that is not saved, reached without the panel.
+const GoElsewhere = () => {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => navigate('/?player_name=LeBron+James&game_filter=7')}>
+      Go elsewhere
+    </button>
+  );
+};
 
-const renderPanel = async (url, appliedFilters = {}) => {
+const renderPanel = async (url, appliedFilters = {}, extra = {}) => {
   render(
     <MemoryRouter initialEntries={[url]}>
       <FilterOptions
@@ -52,8 +83,10 @@ const renderPanel = async (url, appliedFilters = {}) => {
         onOpenSelfFilters={() => {}}
         appliedFilters={appliedFilters}
         defaultSaveName="lebron last ten"
+        {...extra}
       />
       <Location />
+      <GoElsewhere />
     </MemoryRouter>,
   );
   await act(async () => {});
@@ -64,7 +97,7 @@ const savedTab = () => screen.getByRole('tab', { name: /^Saved/ });
 beforeEach(() => {
   mockAuth = { isAuthenticated: true, currentUser: { uid: 'u1' }, waitlist: null };
   jest.clearAllMocks();
-  fetchSavedFilterSets.mockResolvedValue(SETS);
+  store.sets = SETS.map((set) => ({ ...set }));
 });
 
 test('the Saved tab lists the player on screen first, then other players', async () => {
@@ -80,7 +113,12 @@ test('the Saved tab lists the player on screen first, then other players', async
       .getAllByRole('button', { name: /^Open saved Filter Set/ })
       .map((b) => b.getAttribute('aria-label')),
   ).toEqual(['Open saved Filter Set LeBron last 10', 'Open saved Filter Set LeBron at home']);
+  // Each row says what its link asks for; the player chip only where it differs.
+  expect(within(lists[0]).getByText('last 10')).toBeVisible();
+  expect(within(lists[0]).getByText('home')).toBeVisible();
+  expect(within(lists[0]).queryByText('LeBron James')).toBeNull();
   expect(within(lists[1]).getByText('Austin Reaves')).toBeVisible();
+  expect(within(lists[1]).getByText('away')).toBeVisible();
   expect(screen.queryByRole('button', { name: /\+ Minutes/ })).toBeNull();
 });
 
@@ -119,7 +157,6 @@ test('the applied Filter Set that is saved is named, in any parameter order', as
 });
 
 test('Save names the applied link in place and stores its query string', async () => {
-  createSavedFilterSet.mockResolvedValue(undefined);
   await renderPanel('/?player_name=LeBron+James&game_filter=5', {
     player_name: 'LeBron James',
     game_filter: 5,
@@ -137,6 +174,9 @@ test('Save names the applied link in place and stores its query string', async (
     queryString: 'player_name=LeBron+James&game_filter=5',
   });
   expect(screen.queryByLabelText('Name this Filter Set')).toBeNull();
+  // The list reloads, so the applied link is now the saved one.
+  expect(await screen.findByText('LeBron last 5', { selector: '.fpb-foot b' })).toBeVisible();
+  expect(savedTab()).toHaveAccessibleName('Saved 4');
 });
 
 test('a refused save keeps the name and says why', async () => {
@@ -173,8 +213,6 @@ test('Save waits for unapplied changes to be applied', async () => {
 });
 
 test('rename and delete work from the Saved tab', async () => {
-  renameSavedFilterSet.mockResolvedValue(undefined);
-  deleteSavedFilterSet.mockResolvedValue(undefined);
   await renderPanel('/?player_name=LeBron+James', { player_name: 'LeBron James' });
   fireEvent.click(savedTab());
 
@@ -186,12 +224,17 @@ test('rename and delete work from the Saved tab', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
   });
   expect(renameSavedFilterSet).toHaveBeenCalledWith({ id: 3, name: 'LeBron home games' });
+  expect(
+    await screen.findByRole('button', { name: 'Open saved Filter Set LeBron home games' }),
+  ).toBeVisible();
 
   fireEvent.click(screen.getByRole('button', { name: 'Delete Reaves away' }));
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deleting Reaves away' }));
   });
   expect(deleteSavedFilterSet).toHaveBeenCalledWith({ id: 1 });
+  expect(screen.queryByRole('button', { name: 'Open saved Filter Set Reaves away' })).toBeNull();
+  expect(savedTab()).toHaveAccessibleName('Saved 2');
 });
 
 test.each([
@@ -206,7 +249,7 @@ test.each([
     'Could not load Saved Filter Sets.',
   ],
 ])('a %i load failure with headers %j reads %j in the Saved tab', async (status, headers, text) => {
-  fetchSavedFilterSets.mockRejectedValue(
+  fetchSavedFilterSets.mockRejectedValueOnce(
     Object.assign(new Error(`Request failed with status code ${status}`), {
       response: { status, headers, data: {} },
     }),
@@ -235,4 +278,115 @@ test('a browse link carries no Filter Set, so it offers the Saved tab but no Sav
   await renderPanel('/?browse=1', {});
   expect(savedTab()).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+});
+
+test('the Saved tab keeps the panel reporting the Workspace as settled', async () => {
+  fetchNextOpponent.mockResolvedValueOnce({ next_game: null, opponent_ranks: [] });
+  const onContextSettled = jest.fn();
+  await renderPanel(
+    '/?player_name=LeBron+James',
+    { player_name: 'LeBron James' },
+    {
+      onContextSettled,
+    },
+  );
+  fireEvent.click(savedTab());
+  await act(async () => {});
+  // Leaving the filters must not withdraw the settled signal, or an Apply from
+  // the Saved tab would hide the Workspace behind its loading state for good.
+  expect(onContextSettled).not.toHaveBeenLastCalledWith(null);
+  expect(onContextSettled).toHaveBeenLastCalledWith('LeBron James');
+});
+
+test('a link with the same teammates in another order is the same saved set', async () => {
+  store.sets = [
+    {
+      id: 7,
+      name: 'Without both',
+      queryString:
+        'player_name=LeBron+James&players_off%5B%5D=Anthony+Davis&players_off%5B%5D=Austin+Reaves&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=5&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=-8',
+    },
+  ];
+  await renderPanel(
+    '/?player_name=LeBron+James&players_off%5B%5D=Austin+Reaves&players_off%5B%5D=Anthony+Davis&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=-8&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=5',
+    { player_name: 'LeBron James' },
+  );
+  expect(screen.getByText('Without both', { selector: '.fpb-foot b' })).toBeVisible();
+});
+
+test('a defensive category paired with another rank is a different Filter Set', async () => {
+  store.sets = [
+    {
+      id: 8,
+      name: 'Pairs',
+      queryString:
+        'player_name=LeBron+James&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=5&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=-8',
+    },
+  ];
+  await renderPanel(
+    '/?player_name=LeBron+James&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=-8&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=5',
+    { player_name: 'LeBron James' },
+  );
+  expect(screen.getByRole('button', { name: 'Save' })).toBeVisible();
+});
+
+test('the naming form refuses to save once the panel holds unapplied changes', async () => {
+  await renderPanel('/?player_name=LeBron+James&game_filter=5', {
+    player_name: 'LeBron James',
+    game_filter: 5,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(screen.getByLabelText('Name this Filter Set'), { target: { value: 'Stale' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Remove last' }));
+  expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await act(async () => {
+    fireEvent.submit(screen.getByLabelText('Name this Filter Set').closest('form'));
+  });
+  expect(createSavedFilterSet).not.toHaveBeenCalled();
+});
+
+test('Cancel closes the naming form and the next Save starts fresh', async () => {
+  await renderPanel('/?player_name=LeBron+James&game_filter=5', {
+    player_name: 'LeBron James',
+    game_filter: 5,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(screen.getByLabelText('Name this Filter Set'), { target: { value: 'Draft' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByLabelText('Name this Filter Set')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(screen.getByLabelText('Name this Filter Set')).toHaveValue('lebron last ten');
+});
+
+test('opening another link closes the naming form', async () => {
+  await renderPanel('/?player_name=LeBron+James&game_filter=5', {
+    player_name: 'LeBron James',
+    game_filter: 5,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.click(savedTab());
+  fireEvent.click(screen.getByRole('button', { name: 'Open saved Filter Set Reaves away' }));
+  expect(screen.queryByLabelText('Name this Filter Set')).toBeNull();
+});
+
+test('a save that answers after the reader moved on leaves the newer form alone', async () => {
+  let answer;
+  createSavedFilterSet.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+  );
+  await renderPanel('/?player_name=LeBron+James&game_filter=5', {
+    player_name: 'LeBron James',
+    game_filter: 5,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(screen.getByLabelText('Name this Filter Set'), { target: { value: 'Slow' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Go elsewhere' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(screen.getByLabelText('Name this Filter Set'), { target: { value: 'Newer' } });
+  await act(async () => answer());
+  expect(screen.getByLabelText('Name this Filter Set')).toHaveValue('Newer');
 });

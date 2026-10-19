@@ -612,10 +612,11 @@
     display: flex;
     flex-direction: column;
   }
-  .fp-pinned .fp-scroll > * {
+  .fp-pinned .fp-scroll > *,
+  .fp-pinned .fpt-filters > * {
     flex-shrink: 0;
   }
-  .fp-pinned .fp-scroll > .fp-filler {
+  .fp-pinned .fp-scroll .fp-filler {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -730,7 +731,7 @@
 /* ---- I: next opponent's extreme ranks --------------------------------- */
 
 @media (min-width: 768px) {
-  .fp-pinned .fp-scroll > .fp-filler.is-expanded {
+  .fp-pinned .fp-scroll .fp-filler.is-expanded {
     flex: none;
     overflow: visible;
   }
@@ -851,7 +852,7 @@
 /* ---- J: count folded into the strip, compact tiles ------------------- */
 
 @media (min-width: 768px) {
-  .fp-pinned .fp-scroll > .fp-filler.is-j {
+  .fp-pinned .fp-scroll .fp-filler.is-j {
     gap: 12px;
     overflow: visible;
     padding-top: 6px;
@@ -902,6 +903,15 @@
 }
 
 /* ---- Filters | Saved tabs ---------------------------------------------- */
+
+/* The filters' wrapper lays its children out as the scroll area's own, and
+   stays mounted (hidden) under the Saved tab. */
+.fpt-filters {
+  display: contents;
+}
+.fpt-filters[hidden] {
+  display: none;
+}
 
 .fpt-tabs {
   display: flex;

@@ -32,10 +32,20 @@ const useSavedFilterSets = () => {
   return { sets, error, retry: () => setRevision((value) => value + 1) };
 };
 
+/*
+ * Two links are the same Filter Set when they carry the same parameters in any
+ * order, including the order of repeated values. A defensive category and its
+ * rank travel as a pair in matching positions, so they are compared as pairs.
+ */
 const canonical = (search) => {
   const params = new URLSearchParams(search);
-  params.sort();
-  return params.toString();
+  const teams = params.getAll('teams_against[]');
+  const ranks = params.getAll('rank_filter[]');
+  const entries = [...params]
+    .filter(([key]) => key !== 'teams_against[]' && key !== 'rank_filter[]')
+    .map(([key, value]) => `${key}=${value}`);
+  teams.forEach((team, index) => entries.push(`teams_against[]=${team}|${ranks[index] ?? ''}`));
+  return entries.sort().join('&');
 };
 
 /** The saved set whose parameters are the applied Filter Set's, in any order. */

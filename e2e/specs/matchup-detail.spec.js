@@ -245,13 +245,14 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   await expect(lebron).toContainText('27.5market line · 25.4 avg');
   await expect(
     lebron.getByLabel(
-      'PTS posted by PrizePicks, Underdog at 26.5, 1 lower than the market and Polymarket',
+      'PTS posted by PrizePicks, Underdog at 26.5, 1 lower than the market, Polymarket and Dabble',
     ),
-  ).toHaveText('PPUD −1PM');
+  ).toHaveText('PPUD −1PMDB');
   await expect(lebron.getByText('Lines disagree')).toHaveCount(1);
   // The 27.5 headline is priced by the books and Polymarket: BetMGM wins the
-  // Over tie as a sportsbook, Polymarket's Under beats every book. Underdog's
-  // 26.5 price is for another line and is not compared.
+  // Over tie as a sportsbook, Polymarket's Under beats every book, and
+  // Dabble's −122 beats neither. Underdog's 26.5 price is for another line
+  // and is not compared.
   const prices = lebron.getByRole('group', { name: /^Best Over/ });
   await expect(prices).toHaveText('o −110 MG u −102 PM');
   await expect(prices).toHaveAccessibleName(
@@ -871,6 +872,13 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await expect(table.getByRole('row', { name: /^BetRivers/ })).toContainText('27.5-115-105 ★');
   await expect(table.getByRole('img', { name: 'best price' })).toHaveCount(3);
   await expect(table.getByRole('row', { name: /^FanDuel/ }).getByRole('img')).toHaveCount(0);
+  // Underdog and Dabble price his points at their own lines.
+  const dfs = page
+    .getByRole('region', { name: 'DFS' })
+    .getByRole('table', { name: 'PTS DFS lines' });
+  await expect(dfs.getByRole('row')).toHaveCount(3);
+  await expect(dfs.getByRole('row', { name: /^Underdog/ })).toContainText('26.5-112-112');
+  await expect(dfs.getByRole('row', { name: /^Dabble/ })).toContainText('27.5-122-122');
   await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png'), fullPage: true });
 
   await page.setViewportSize({ width: 393, height: 852 });
@@ -892,6 +900,7 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Sportsbooks' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'DFS' })).toHaveCount(0);
 });
 
 test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({

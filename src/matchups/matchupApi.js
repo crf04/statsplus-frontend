@@ -731,7 +731,7 @@ function decodeBookLines(bookLines) {
  * line does, and a side nobody prices is null, never both. The field is
  * additive, so an absent one reads as no prices.
  */
-const LINE_PRICE_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi'];
+const LINE_PRICE_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi', 'dabble'];
 
 function decodeLinePrices(linePrices, lines) {
   if (linePrices === undefined) return {};

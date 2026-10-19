@@ -2978,6 +2978,66 @@ test.each([
   expect(screen.queryByText('Show fewer')).not.toBeInTheDocument();
 });
 
+describe('Selection card DFS prices', () => {
+  const openWithDfs = async ({ lines, linePrices, bookLines = {} }) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    lebron.lines = lines;
+    lebron.linePrices = linePrices;
+    lebron.bookLines = bookLines;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup('/matchups/game-1?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+  const rows = (table) =>
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
+
+  test('lists Underdog and Dabble with their own line, Over and Under, with no sportsbook quoting him', async () => {
+    await openWithDfs({
+      lines: { underdog: { PTS: 26.5 }, dabble: { PTS: 27.5 }, novig: { PTS: 27.5 } },
+      linePrices: {
+        dabble: { PTS: { over: -122, under: -122 } },
+        underdog: { PTS: { over: -112, under: null } },
+        novig: { PTS: { over: -106, under: -102 } },
+      },
+    });
+
+    const panel = screen.getByRole('region', { name: 'DFS' });
+    expect(within(panel).getByRole('heading', { name: 'DFS · PTS' })).toBeVisible();
+    // Novig is a prediction market, not a DFS app, so it has no row here.
+    expect(rows(within(panel).getByRole('table', { name: 'PTS DFS lines' }))).toEqual([
+      'Underdog26.5-112—',
+      'Dabble27.5-122-122',
+    ]);
+    expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
+  });
+
+  test('sits beside the sportsbook panel and follows the selected stat', async () => {
+    await openWithDfs({
+      lines: { dabble: { PTS: 27.5, FGA: 8.5 } },
+      linePrices: { dabble: { FGA: { over: -122, under: -122 } } },
+      bookLines: { PTS: quote([bookRow('fanduel', 26.5, -135, 110)]) },
+    });
+
+    expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
+    // Dabble posts PTS but prices only FGA, so PTS has no DFS panel.
+    expect(screen.queryByRole('region', { name: 'DFS' })).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'FGA',
+      }),
+    );
+
+    expect(rows(screen.getByRole('table', { name: 'FGA DFS lines' }))).toEqual([
+      'Dabble8.5-122-122',
+    ]);
+  });
+});
+
 test('a category only sportsbooks quote is reachable from the strip without becoming a DFS market', async () => {
   await openWithBooks({
     AST: quote([
@@ -3139,6 +3199,18 @@ describe('rail price line', () => {
     expect(row).not.toHaveTextContent('books');
   });
 
+  test('a Dabble even line competes at its own price', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, -130, -115)]) },
+      lines: { dabble: { PTS: 27.5 } },
+      linePrices: { dabble: { PTS: { over: -122, under: -122 } } },
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −122 at Dabble, best Under −115 at DraftKings, line 27.5',
+    );
+  });
+
   test('DFS entry providers never contribute a price', async () => {
     const row = await openRail({
       lines: { prizepicks: { PTS: 27.5 } },
@@ -3208,6 +3280,7 @@ describe('rail price line', () => {
     ['underdog', 'novig'],
     ['novig', 'polymarket'],
     ['polymarket', 'kalshi'],
+    ['kalshi', 'dabble'],
   ])('an equal price goes to %s before %s', async (first, second) => {
     const price = { PTS: { over: -110, under: -110 } };
     const row = await openRail({

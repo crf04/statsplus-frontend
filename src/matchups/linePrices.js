@@ -25,10 +25,12 @@ const sourcesFor = (player, stat) => {
     if (!quote || line === undefined) return [];
     return [{ provider, line, over: quote.over, under: quote.under, sportsbook: false }];
   });
-  return [...books, ...priced].filter((source) => source.over !== null || source.under !== null);
+  return [...books, ...priced];
 };
+const hasPrice = (source) => source.over !== null || source.under !== null;
 
-// The line most sportsbooks post; ties go to the lower line.
+// The line most sportsbooks post, counting every posting whether or not it is
+// priced; ties go to the lower line.
 const sportsbookLine = (sources) => {
   const counts = new Map();
   for (const source of sources.filter((s) => s.sportsbook)) {
@@ -56,10 +58,11 @@ const bestSide = (sources, side) =>
  */
 export const bestPrices = (player, stat, headline) => {
   const sources = sourcesFor(player, stat);
-  const atHeadline = headline !== null && sources.some((source) => source.line === headline);
+  const priced = sources.filter(hasPrice);
+  const atHeadline = headline !== null && priced.some((source) => source.line === headline);
   const line = atHeadline ? headline : sportsbookLine(sources);
   if (line === null) return null;
-  const atLine = sources.filter((source) => source.line === line);
+  const atLine = priced.filter((source) => source.line === line);
   return {
     line,
     offHeadline: !atHeadline,

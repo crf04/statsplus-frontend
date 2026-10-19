@@ -2879,8 +2879,18 @@ describe('line_prices', () => {
   const withLinePrices = (linePrices) => {
     const candidate = JSON.parse(JSON.stringify(payload));
     const player = candidate.players[0];
-    player.provenance = { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'], novig: ['PTS'] };
-    player.lines = { underdog: { PTS: 26.5 }, novig: { PTS: 27.5 } };
+    player.provenance = {
+      prizepicks: ['PTS', 'FGA'],
+      underdog: ['PTS'],
+      novig: ['PTS'],
+      dabble: ['PTS'],
+    };
+    player.lines = {
+      underdog: { PTS: 26.5 },
+      novig: { PTS: 27.5 },
+      prizepicks: { PTS: 27.5 },
+      dabble: { PTS: 27.5 },
+    };
     if (linePrices === undefined) delete player.line_prices;
     else player.line_prices = linePrices;
     return candidate;
@@ -2906,8 +2916,8 @@ describe('line_prices', () => {
   });
 
   test.each([
-    ['a provider outside the four', { prizepicks: { PTS: { over: -110, under: -110 } } }],
-    ['an entry-scope provider', { dabble: { PTS: { over: -110, under: -110 } } }],
+    ['PrizePicks, which posts the market', { prizepicks: { PTS: { over: -110, under: -110 } } }],
+    ['Dabble, which posts the market', { dabble: { PTS: { over: -110, under: -110 } } }],
     [
       'a market missing from that provider lines',
       { underdog: { REB: { over: -110, under: -110 } } },

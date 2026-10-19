@@ -195,6 +195,22 @@ describe('deployed smoke URL and fixture wiring', () => {
     );
   });
 
+  test('the deployed-page fixture applies compatibility routing and the job tells it the mode', () => {
+    const fixture = fs.readFileSync(
+      path.resolve(process.cwd(), 'e2e/fixtures/deployedSmoke.js'),
+      'utf8',
+    );
+    const workflow = YAML.parse(
+      fs.readFileSync(path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'), 'utf8'),
+    );
+
+    expect(fixture).toMatch(
+      /const blockedWrites = await blockWrites\(context\);\s+await routeApiToCandidate\(context\);/,
+    );
+    expect(workflow.jobs['production-smoke'].env.RELEASE_CHECK_MODE).toContain('inputs.mode');
+    expect(workflow.jobs['production-smoke'].env.E2E_API_BASE_URL).toContain('inputs.api_base_url');
+  });
+
   test('the compatibility Release Check pairs the production frontend with the staging API and MCP only', () => {
     const staging = {
       api: 'https://statsplus-backend-staging.up.railway.app',

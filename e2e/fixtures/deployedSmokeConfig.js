@@ -172,3 +172,22 @@ export const blockWrites = async (browserContext) => {
   });
   return blocked;
 };
+
+// Compatibility Release Check (crf04/statsplus#249): the frontend serving production
+// must render the candidate backend's answers. Its same-origin /api requests go to
+// the production API through the deployment's rewrite, so in this mode only, the
+// browser's /api reads are fetched from E2E_API_BASE_URL and handed back as the page's
+// own responses. Everything else, and every write, is untouched (writes are still aborted).
+export const routeApiToCandidate = async (browserContext, env = process.env) => {
+  if (env.RELEASE_CHECK_MODE !== 'compatibility') return false;
+  const frontendOrigin = new URL(env.E2E_BASE_URL).origin;
+  const apiOrigin = new URL(env.E2E_API_BASE_URL).origin;
+  await browserContext.route(`${frontendOrigin}/api/**`, async (route) => {
+    const request = route.request();
+    if (request.method() !== 'GET') return route.fallback();
+    const { pathname, search } = new URL(request.url());
+    const response = await route.fetch({ url: `${apiOrigin}${pathname}${search}` });
+    return route.fulfill({ response });
+  });
+  return true;
+};

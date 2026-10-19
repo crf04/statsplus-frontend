@@ -2874,3 +2874,52 @@ describe('book_lines', () => {
     expect(() => decodeMatchup(candidate)).toThrow('invalid response');
   });
 });
+
+describe('line_prices', () => {
+  const withLinePrices = (linePrices) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    const player = candidate.players[0];
+    player.provenance = { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'], novig: ['PTS'] };
+    player.lines = { underdog: { PTS: 26.5 }, novig: { PTS: 27.5 } };
+    if (linePrices === undefined) delete player.line_prices;
+    else player.line_prices = linePrices;
+    return candidate;
+  };
+
+  test('decodes each provider market into integer Over and Under prices', () => {
+    const candidate = withLinePrices({
+      underdog: { PTS: { over: -112, under: -112 } },
+      novig: { PTS: { over: -106, under: null } },
+    });
+
+    expect(decodeMatchup(candidate).players[0].linePrices).toEqual({
+      underdog: { PTS: { over: -112, under: -112 } },
+      novig: { PTS: { over: -106, under: null } },
+    });
+  });
+
+  test.each([
+    ['an absent line_prices', undefined],
+    ['an empty line_prices', {}],
+  ])('reads %s as no prices', (_name, linePrices) => {
+    expect(decodeMatchup(withLinePrices(linePrices)).players[0].linePrices).toEqual({});
+  });
+
+  test.each([
+    ['a provider outside the four', { prizepicks: { PTS: { over: -110, under: -110 } } }],
+    ['an entry-scope provider', { dabble: { PTS: { over: -110, under: -110 } } }],
+    [
+      'a market missing from that provider lines',
+      { underdog: { REB: { over: -110, under: -110 } } },
+    ],
+    ['a provider with no lines at all', { kalshi: { PTS: { over: -110, under: -110 } } }],
+    ['a decimal price', { underdog: { PTS: { over: -110.5, under: -110 } } }],
+    ['a string price', { underdog: { PTS: { over: '-110', under: -110 } } }],
+    ['a missing side', { underdog: { PTS: { over: -110 } } }],
+    ['both sides null', { underdog: { PTS: { over: null, under: null } } }],
+    ['a null line_prices', null],
+    ['an array line_prices', []],
+  ])('rejects %s at the response boundary', (_name, linePrices) => {
+    expect(() => decodeMatchup(withLinePrices(linePrices))).toThrow('invalid response');
+  });
+});

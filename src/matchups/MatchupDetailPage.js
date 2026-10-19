@@ -22,6 +22,7 @@ import {
   sliceName,
 } from './displayConfig';
 import { WINDOW_REASONS } from '../windowReasons';
+import { bestPrices, formatPrice } from './linePrices';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
@@ -201,6 +202,41 @@ const linesFor = (player, stat) => {
 // A book's gap from the headline: "+0.5", "−1". Trailing zeros are trimmed.
 const signedGap = (gap) => `${gap < 0 ? '−' : '+'}${Math.abs(Math.round(gap * 100) / 100)}`;
 
+// "Best Over −106 at Novig, best Under −102 at Novig, line 26.5"; a side no
+// source prices says so.
+const priceLabel = (best) => {
+  const side = (name, quote) =>
+    quote
+      ? `best ${name} ${formatPrice(quote.price)} at ${bookName(quote.provider)}`
+      : `no ${name} price`;
+  const label = `${side('Over', best.over)}, ${side('Under', best.under)}, line ${formatStat(best.line)}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+function RailPrices({ best }) {
+  const side = (letter, quote) => (
+    <span>
+      {letter} {quote ? <b>{formatPrice(quote.price)}</b> : <b>—</b>}
+      {quote && (
+        <>
+          {' '}
+          <i>{bookMark(quote.provider)}</i>
+        </>
+      )}
+    </span>
+  );
+  return (
+    <span className="rail-price" role="group" aria-label={priceLabel(best)}>
+      {best.offHeadline && (
+        <>
+          <em>books {formatStat(best.line)}</em>{' '}
+        </>
+      )}
+      {side('o', best.over)} {side('u', best.under)}
+    </span>
+  );
+}
+
 const averageOf = (values) =>
   values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 
@@ -212,6 +248,7 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   let caption;
   let meta;
   let marks = null;
+  let prices = null;
   let flagged = false;
   if (historical) {
     const focal = player.focalGameLine;
@@ -277,6 +314,8 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
         ))}
       </span>
     ) : null;
+    const best = bestPrices(player, stat, headline);
+    if (best && (best.over || best.under)) prices = <RailPrices best={best} />;
   }
   return (
     <article
@@ -303,6 +342,7 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
         {value}
         <small>{caption}</small>
         {marks}
+        {prices}
         {flagged && <span className="selection-visually-hidden">Lines disagree</span>}
       </div>
       {/* The whole row opens the selection card; the name above stays its own link. */}

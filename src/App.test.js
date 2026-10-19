@@ -105,6 +105,65 @@ test('a signed-out visitor sees the public home page with a sign-up card, and no
   ]);
 });
 
+test.each([
+  ['/privacy', 'Privacy Policy'],
+  ['/terms', 'Terms of Service'],
+])('a signed-out visitor can read %s', async (path, title) => {
+  window.history.pushState({}, '', path);
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+  expect(screen.getByText('Effective October 19, 2026')).toBeInTheDocument();
+  expect(document.title).toBe(`${title} | CourtAI`);
+  expect(window.location.pathname).toBe(path);
+  expect(apiClient.get).not.toHaveBeenCalled();
+  window.history.pushState({}, '', '/');
+});
+
+test.each([
+  ['/privacy', 'Privacy Policy'],
+  ['/terms', 'Terms of Service'],
+])('a waitlisted user can still read %s', async (path, title) => {
+  apiClient.get.mockImplementation(homeGet);
+  Object.assign(mockAuth, {
+    currentUser: { uid: 'waiting', email: 'fan@example.com' },
+    isAuthenticated: true,
+    waitlist: { message: 'The beta is full right now.' },
+  });
+  window.history.pushState({}, '', path);
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+  expect(window.location.pathname).toBe(path);
+  window.history.pushState({}, '', '/');
+});
+
+test.each([
+  ['signed out', {}],
+  [
+    'waitlisted',
+    { currentUser: { uid: 'w' }, isAuthenticated: true, waitlist: { message: 'Full.' } },
+  ],
+])('every page links the legal pages and support when %s', async (_state, auth) => {
+  apiClient.get.mockImplementation(homeGet);
+  Object.assign(mockAuth, auth);
+  render(<App />);
+
+  const legal = await screen.findByRole('navigation', { name: 'Legal' });
+  expect(
+    within(legal)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]),
+  ).toEqual([
+    ['Privacy', '/privacy'],
+    ['Terms', '/terms'],
+    ['support@courtai.app', 'mailto:support@courtai.app'],
+  ]);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: /start with a player/i })).toHaveTextContent('22.4'),
+  );
+});
+
 test('renders the CourtAI search landing page', async () => {
   render(<App />);
 

@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 're
 import WaitlistBanner from './components/Auth/WaitlistBanner';
 import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
+import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import './App.css';
 
@@ -18,6 +19,8 @@ const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
+const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
+const TermsPage = lazy(() => import('./legal/TermsPage'));
 
 class RouteErrorBoundary extends Component {
   state = { failed: false };
@@ -80,8 +83,9 @@ function AppNav() {
   );
 }
 
-// A waitlisted account has nothing signed-in to show but the public home page:
-// a banner explains why, and every other path returns there until it signs out.
+// A waitlisted account has nothing signed-in to show but the public home page
+// and the legal pages: a banner explains why, and every other path returns home
+// until it signs out.
 function WaitlistedShell() {
   const { search } = useLocation();
   // A link's query string would open the workspace, which a waitlisted account
@@ -93,9 +97,12 @@ function WaitlistedShell() {
       <RouteContent>
         <Routes>
           <Route path="/" element={<GameLogFilter notice={<WaitlistBanner />} />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
+      <SiteFooter />
     </>
   );
 }
@@ -113,6 +120,8 @@ function SignedInShell() {
           <Route path="/" element={<GameLogFilter />} />
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />
           <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
           <Route path="/targets" element={<TargetsPage />} />
@@ -136,6 +145,7 @@ function SignedInShell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
+      <SiteFooter />
     </>
   );
 }

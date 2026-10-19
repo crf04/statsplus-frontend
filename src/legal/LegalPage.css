@@ -1,0 +1,67 @@
+.legal-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 32px 96px;
+  color: var(--ct-text);
+  /* the app shell centres its content; a policy reads as a left-aligned sheet */
+  text-align: left;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.legal-page-title {
+  font-family: var(--ct-display);
+  font-size: 3.2rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0 0 8px;
+}
+
+.legal-page-title:focus {
+  outline: none;
+}
+
+.legal-page-effective {
+  color: var(--ct-dim);
+  margin: 0 0 32px;
+}
+
+.legal-page h2 {
+  font-family: var(--ct-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ct-gold);
+  margin: 40px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+
+.legal-page p,
+.legal-page li {
+  color: var(--ct-text);
+}
+
+.legal-page ul {
+  padding-left: 20px;
+  margin: 0 0 16px;
+}
+
+.legal-page li {
+  margin-bottom: 8px;
+}
+
+.legal-page a {
+  color: var(--ct-gold);
+}
+
+@media (max-width: 600px) {
+  .legal-page {
+    padding: 28px 20px 72px;
+  }
+
+  .legal-page-title {
+    font-size: 2.4rem;
+  }
+}

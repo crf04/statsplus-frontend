@@ -132,11 +132,11 @@ function BookLines({ market, quote }) {
 // price is the owner's −122 for an even line (statsplus#263).
 const DFS_PRICED = ['underdog', 'dabble'];
 
+// The decoder admits a price only beside that provider's line for the market.
 const dfsQuotes = (player, market) =>
   DFS_PRICED.flatMap((provider) => {
     const quote = player.linePrices?.[provider]?.[market];
-    const line = player.lines?.[provider]?.[market];
-    return quote && line !== undefined ? [{ provider, line, ...quote }] : [];
+    return quote ? [{ provider, line: player.lines[provider][market], ...quote }] : [];
   });
 
 // Renders nothing when neither app prices the stat, whatever the books quote.

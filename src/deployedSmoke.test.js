@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import YAML from 'yaml';
 import {
   bootstrapVercelBypassCookie,
   isAllowedDeploymentUrl,
@@ -175,16 +176,23 @@ describe('deployed smoke URL and fixture wiring', () => {
   });
 
   test('names a Release Check dispatch after its mode and release_id so the Nightly Release finds its own run', () => {
-    const workflowSource = fs.readFileSync(
-      path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
-      'utf8',
+    const workflow = YAML.parse(
+      fs.readFileSync(path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'), 'utf8'),
     );
 
-    expect(workflowSource).toContain(
-      "run-name: ${{ inputs.release_id && format('Release Check {0} {1}', inputs.mode, inputs.release_id) || github.workflow }}",
+    expect(workflow['run-name']).toBe(
+      "${{ inputs.release_id && format('Release Check {0} {1}', inputs.mode, inputs.release_id) || github.workflow }}",
     );
-    expect(workflowSource).toMatch(
-      /release_id:\n\s+description: .*\n\s+required: false\n\s+type: string/,
+    expect(workflow.on.workflow_dispatch.inputs.release_id).toMatchObject({
+      required: false,
+      type: 'string',
+    });
+    // The named run must still be the one that runs the Release Check for a dispatch.
+    expect(workflow.jobs['production-smoke'].if).toMatch(
+      /^github\.repository == 'crf04\/statsplus-frontend' &&\s+\(\(github\.event_name == 'deployment_status'/,
+    );
+    expect(workflow.jobs['production-smoke'].if).toContain(
+      "(inputs.mode == 'production' || inputs.mode == 'staging')",
     );
   });
 

@@ -132,7 +132,24 @@ signedInTest(
 
 signedInTest(
   'no games today previews the next game day, labelled, linking to its date',
-  async ({ app, screen, api }) => {
+  async ({ app, screen, api, browser }) => {
+    // A saved Target aimed at BOS fires on the fixture's 2026-01-15 game.
+    await app.open('/targets');
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('combobox', 'Opponent').selectOption({ value: 'BOS' });
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'assist_locations' });
+    await screen.getByLabel('Qualifier 1 slice').selectOption({ value: 'AtRimAssists' });
+    await screen.getByLabel('Qualifier 1 threshold percent').fill('30');
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('heading', 'BOS vs At-rim assists ≥ 30%')).toBeVisible();
+    // The backend resolves Targets for the day the Slate fell forward to; the
+    // fixture answers for 2026-01-15, so its answer is relabelled to that day.
+    const resolution = await browser.evaluate(async () => {
+      const response = await fetch('/api/user/targets/resolve?date=2026-01-15', {
+        headers: { Authorization: 'Bearer courtai-e2e-token' },
+      });
+      return response.json();
+    });
     await api.override({
       '/api/games/slate': (request) => {
         expect(new URL(request.url()).searchParams.get('fallback')).toBe('next_game_day');
@@ -146,7 +163,12 @@ signedInTest(
       },
       '/api/games/slate/edges': { body: slateEdgesPayload('2026-10-20', [slateGame]) },
     });
-    await app.open('/');
+    // Registered after the override, which installs the contract again.
+    await browser.route('**/api/user/targets/resolve**', async (route) => {
+      expect(new URL(route.request.url).searchParams.get('fallback')).toBe('next_game_day');
+      await route.fulfill({ json: { ...resolution, slate_date: '2026-10-20' } });
+    });
+    await screen.getByRole('link', 'Search').tap();
 
     await expect(screen.getByRole('heading', 'Next game day')).toBeVisible();
     await expect(screen.getByText('Last game day')).toHaveCount(0);
@@ -155,5 +177,10 @@ signedInTest(
     await expect(label).toContainText(/tue, oct 20/i);
     await expect(label).toHaveAttribute('href', '/matchups?date=2026-10-20');
     await expect(screen.getByRole('article', 'Best: Austin Reaves')).toBeVisible();
+    // Targets are resolved for the same day, so the firing one shows.
+    const targets = screen.getByRole('region', 'Your Targets');
+    await expect(targets).toContainText('BOS');
+    await expect(targets).toContainText('At-rim assists');
+    await expect(targets).not.toContainText('None of your Targets fire today');
   },
 );

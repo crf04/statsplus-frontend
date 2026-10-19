@@ -279,7 +279,7 @@ export default function SlatePage() {
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, explicitDate, replaceTo]);
+  }, [authLoading, isAuthenticated, explicitDate, requestedDate, replaceTo]);
 
   const navigate = (nextDate) => setSearchParams(nextDate ? { date: nextDate } : {});
 

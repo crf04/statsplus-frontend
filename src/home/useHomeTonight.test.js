@@ -186,6 +186,32 @@ test('a Slate answered with the next game day keeps its fallback', async () => {
   expect(result.current.fallback).toBe('next_game_day');
 });
 
+test('Targets resolved for the next game day are kept with its games', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-10-20', fallback: 'next_game_day' });
+  fetchSlateEdges.mockResolvedValue({ ...edges, slateDate: '2026-10-20' });
+  fetchResolvedTargets.mockResolvedValue({ ...resolved, slateDate: '2026-10-20' });
+  const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));
+
+  await waitFor(() => expect(result.current.targets).not.toBeNull());
+  expect(result.current.slateDate).toBe('2026-10-20');
+  expect(result.current.targets.firing.map((e) => e.target.id)).toEqual([2, 1]);
+});
+
+test('a next game day result is written and paints on the return visit', async () => {
+  fetchSlate.mockResolvedValue({ ...slate, slateDate: '2026-10-20', fallback: 'next_game_day' });
+  fetchSlateEdges.mockResolvedValue({ ...edges, slateDate: '2026-10-20' });
+  const first = renderHook(() => useHomeTonight(true, null));
+  await waitFor(() => expect(first.result.current.fallback).toBe('next_game_day'));
+  first.unmount();
+
+  fetchSlate.mockReturnValue(pending());
+  fetchSlateEdges.mockReturnValue(pending());
+  const again = renderHook(() => useHomeTonight(true, null));
+  expect(again.result.current.fallback).toBe('next_game_day');
+  expect(again.result.current.slateDate).toBe('2026-10-20');
+  expect(again.result.current.games.map((g) => g.gameId)).toEqual(['early', 'late']);
+});
+
 test('a Slate with no fallback renders as today', async () => {
   fetchSlate.mockResolvedValue({ ...slate, fallback: null });
   const { result } = renderHook(() => useHomeTonight(true, 'reader-a'));

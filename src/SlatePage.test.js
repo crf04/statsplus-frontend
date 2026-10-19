@@ -2,6 +2,7 @@ import { act } from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import SlatePage from './SlatePage';
+import { getTodaySlateDate } from './calendarDate';
 import { fetchSlate } from './slateApi';
 import { fetchResolvedTargets } from './targets/targetsApi';
 
@@ -119,6 +120,58 @@ test('with no date and no games today it opens the next game day and puts its da
     date: '2026-10-20',
     signal: expect.any(AbortSignal),
   });
+});
+
+test('with no date and no next game day it opens the previous one and puts its date in the URL', async () => {
+  fetchSlate.mockImplementation(async (date) => ({
+    ...slate,
+    slateDate: '2026-04-12',
+    fallback: date === undefined ? 'previous_game_day' : null,
+  }));
+  fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-04-12', entries: [] });
+  render(
+    <MemoryRouter initialEntries={['/matchups']}>
+      <SlatePage />
+      <Url />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole('heading', { name: 'Sunday, April 12, 2026' });
+  expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-04-12');
+  expect(screen.getByLabelText('Slate date')).toHaveValue('2026-04-12');
+  await waitFor(() => expect(fetchResolvedTargets).toHaveBeenCalledTimes(1));
+  expect(fetchResolvedTargets).toHaveBeenCalledWith({
+    date: '2026-04-12',
+    signal: expect.any(AbortSignal),
+  });
+  expect(fetchSlate).toHaveBeenCalledTimes(1);
+});
+
+test('an undated page left open past midnight in New York reads the new day', async () => {
+  // 03:30 UTC on Sep 12 is 23:30 on Sep 11 in New York.
+  jest.setSystemTime(new Date('2026-09-12T03:30:00Z'));
+  fetchSlate.mockImplementation(async () => ({
+    ...slate,
+    slateDate: getTodaySlateDate(),
+    fallback: null,
+  }));
+  render(
+    <MemoryRouter initialEntries={['/matchups']}>
+      <SlatePage />
+      <Url />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
+  expect(fetchSlate).toHaveBeenCalledTimes(1);
+
+  // The minute clock ticks across 00:00 in New York.
+  await act(async () => {
+    jest.advanceTimersByTime(60 * 60 * 1000);
+  });
+
+  await screen.findByRole('heading', { name: 'Saturday, September 12, 2026' });
+  expect(fetchSlate).toHaveBeenCalledTimes(2);
+  expect(screen.getByLabelText('Current URL')).not.toHaveTextContent('date=');
 });
 
 test('an explicit date is read as named, with no fallback', async () => {

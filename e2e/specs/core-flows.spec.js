@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   averages,
   curryGameLogs,
@@ -21,10 +19,7 @@ const isWorkspaceGameLogs = (requestUrl) => {
   );
 };
 
-const vercelConfig = JSON.parse(
-  fs.readFileSync(path.resolve(process.cwd(), 'vercel.json'), 'utf8'),
-);
-const productionBackendOrigin = new URL(vercelConfig.rewrites[0].destination).origin;
+const productionBackendOrigin = 'https://statsplus-backend-production.up.railway.app';
 
 test('@smoke public landing page explains how to authenticate', async ({ deployedPage: page }) => {
   const rawBypassHeaders = [];

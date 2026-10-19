@@ -362,10 +362,12 @@ const GameLogFilter = ({ notice = null }) => {
     if (navigator.share) {
       try {
         await navigator.share({ title: document.title, url });
-      } catch {
-        // Dismissing the share sheet is not an error worth reporting.
+        return;
+      } catch (error) {
+        // Dismissing the share sheet is a choice; any other failure falls
+        // back to copying.
+        if (error?.name === 'AbortError') return;
       }
-      return;
     }
     try {
       await navigator.clipboard.writeText(url);

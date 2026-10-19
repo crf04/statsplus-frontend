@@ -1,11 +1,13 @@
 import { expect, test as base } from './courtai';
 import { request } from '@playwright/test';
-import { bootstrapVercelBypassCookie } from './deployedSmokeConfig';
+import { blockWrites, bootstrapVercelBypassCookie } from './deployedSmokeConfig';
 
 export const test = base.extend({
   deployedPage: async ({ page, context }, run) => {
+    const blockedWrites = await blockWrites(context);
     await bootstrapVercelBypassCookie({ browserContext: context, requestApi: request });
     await run(page);
+    expect(blockedWrites, 'The Release Check is read-only; these writes were aborted').toEqual([]);
   },
 });
 

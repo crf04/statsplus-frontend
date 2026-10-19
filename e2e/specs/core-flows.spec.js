@@ -85,23 +85,15 @@ test('@smoke production Matchup API routing reaches authenticated backend', asyn
 
 // Release Check (crf04/statsplus#249). The checks below run logged out against a
 // deployed frontend (E2E_BASE_URL), the API it serves (E2E_API_BASE_URL) and the
-// MCP server (E2E_MCP_BASE_URL). They only read: every browser request must be a
-// GET, and the one POST, an unauthenticated /mcp call, is refused before it acts.
+// MCP server (E2E_MCP_BASE_URL). They only read: the deployedPage fixture aborts
+// any non-GET browser request, and the one POST, an unauthenticated /mcp call, is
+// refused by the server before it acts.
 const apiBaseUrl = () =>
   process.env.E2E_API_BASE_URL || 'https://statsplus-backend-production.up.railway.app';
 const mcpBaseUrl = () => process.env.E2E_MCP_BASE_URL || 'https://mcp.courtai.app';
-const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 const requireDeployedTarget = () =>
   test.skip(!process.env.E2E_BASE_URL, 'The Release Check needs a deployed frontend.');
-
-const collectWrites = (page) => {
-  const writes = [];
-  page.on('request', (request) => {
-    if (!SAFE_METHODS.has(request.method())) writes.push(`${request.method()} ${request.url()}`);
-  });
-  return writes;
-};
 
 const getJson = async (request, url) => {
   const response = await request.get(url);
@@ -122,6 +114,7 @@ const readPublicSlate = async (request) => {
   return { slate, edgeGames, slateGame };
 };
 
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const lastName = (name) => {
   const parts = name.split(' ');
   while (parts.length > 1 && ['Jr.', 'Sr.', 'II', 'III', 'IV'].includes(parts.at(-1))) parts.pop();
@@ -137,7 +130,6 @@ test('@smoke public home Slate renders the games and edges the API serves', asyn
   request,
 }) => {
   requireDeployedTarget();
-  const writes = collectWrites(page);
   const { slate, edgeGames, slateGame } = await readPublicSlate(request);
 
   await page.goto('/');
@@ -149,12 +141,17 @@ test('@smoke public home Slate renders the games and edges the API serves', asyn
     const { away_team: away, home_team: home } = slateGame(edgeGame.game_id);
     const cell = page.locator(`a[href="/matchups/${edgeGame.game_id}"]`);
     await expect(cell).toContainText(`${away.tricode} @ ${home.tricode}`);
-    for (const effect of edgeGame.effects) {
-      await expect(cell).toContainText(lastName(effect.name));
-      await expect(cell).toContainText(signedPercent(effect.value));
+    // Each effect's own name and percentage sit together in one list item.
+    const items = cell.locator('.home-tick-effects li');
+    await expect(items).toHaveCount(edgeGame.effects.length);
+    for (const [index, effect] of edgeGame.effects.entries()) {
+      await expect(items.nth(index)).toHaveText(
+        new RegExp(
+          `^${escapeRegExp(lastName(effect.name))}\\s*${escapeRegExp(signedPercent(effect.value))}$`,
+        ),
+      );
     }
   }
-  expect(writes).toEqual([]);
 });
 
 test('@smoke Matchup deep links from the Slate resolve and their data is served', async ({
@@ -162,7 +159,6 @@ test('@smoke Matchup deep links from the Slate resolve and their data is served'
   request,
 }) => {
   requireDeployedTarget();
-  const writes = collectWrites(page);
   const { edgeGames } = await readPublicSlate(request);
   const gameId = edgeGames[0].game_id;
 
@@ -179,7 +175,6 @@ test('@smoke Matchup deep links from the Slate resolve and their data is served'
   await expect(response.json()).resolves.toMatchObject({
     error: { code: 'authentication_required' },
   });
-  expect(writes).toEqual([]);
 });
 
 test('@smoke MCP serves OAuth authorization-server metadata for its own issuer', async ({
@@ -189,10 +184,10 @@ test('@smoke MCP serves OAuth authorization-server metadata for its own issuer',
   const mcp = new URL(mcpBaseUrl());
   const metadata = await getJson(request, `${mcp.origin}/.well-known/oauth-authorization-server`);
 
-  expect(new URL(metadata.issuer).origin).toBe(mcp.origin);
-  for (const endpoint of ['authorization_endpoint', 'token_endpoint']) {
-    expect(new URL(metadata[endpoint]).origin, endpoint).toBe(mcp.origin);
-  }
+  // The server emits its issuer with a trailing slash; nothing else is accepted.
+  expect(metadata.issuer).toBe(`${mcp.origin}/`);
+  expect(metadata.authorization_endpoint).toBe(`${mcp.origin}/authorize`);
+  expect(metadata.token_endpoint).toBe(`${mcp.origin}/token`);
 });
 
 test('@smoke MCP rejects an unauthenticated /mcp request with the protected-resource challenge', async ({
@@ -206,10 +201,9 @@ test('@smoke MCP rejects an unauthenticated /mcp request with the protected-reso
   const challenge = response.headers()['www-authenticate'] ?? '';
   expect(challenge).toMatch(/^Bearer /);
   const resourceMetadata = /resource_metadata="([^"]+)"/.exec(challenge)?.[1];
-  expect(resourceMetadata, 'the challenge names the protected-resource metadata').toBeTruthy();
-  expect(new URL(resourceMetadata).origin).toBe(mcp.origin);
+  expect(resourceMetadata).toBe(`${mcp.origin}/.well-known/oauth-protected-resource/mcp`);
   const protectedResource = await getJson(request, resourceMetadata);
-  expect(new URL(protectedResource.resource).origin).toBe(mcp.origin);
+  expect(protectedResource.resource).toBe(`${mcp.origin}/mcp`);
 });
 
 test('@critical the development auth adapter unlocks the search seam', async ({ page }) => {

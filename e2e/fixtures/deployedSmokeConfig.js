@@ -150,3 +150,19 @@ export const bootstrapVercelBypassCookie = async ({
     await requestContext.dispose();
   }
 };
+
+// The Release Check reads only. Every browser request that is not a GET, HEAD or
+// OPTIONS is aborted before it leaves the browser and recorded, so a page that
+// tries to write fails its test without the write ever reaching a server.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+export const blockWrites = async (browserContext) => {
+  const blocked = [];
+  await browserContext.route('**/*', (route) => {
+    const request = route.request();
+    if (SAFE_METHODS.has(request.method())) return route.fallback();
+    blocked.push(`${request.method()} ${request.url()}`);
+    return route.abort();
+  });
+  return blocked;
+};

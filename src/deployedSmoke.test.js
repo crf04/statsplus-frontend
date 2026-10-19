@@ -192,6 +192,18 @@ describe('deployed smoke URL and fixture wiring', () => {
     );
   });
 
+  test('runs the smoke suite itself in both the Release Check and protected preview jobs', () => {
+    const workflowSource = fs.readFileSync(
+      path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
+      'utf8',
+    );
+
+    expect(workflowSource).toMatch(/- name: Run Release Check\n\s+run: npm run test:e2e:smoke\n/);
+    expect(workflowSource).toMatch(
+      /E2E_PROTECTED_PREVIEW=true \\\n\s+VERCEL_AUTOMATION_BYPASS_SECRET="\$protected_secret" \\\n\s+npm run test:e2e:smoke\n/,
+    );
+  });
+
   test('uses the immutable workflow revision for manual smoke runs', () => {
     const workflowSource = fs.readFileSync(
       path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),

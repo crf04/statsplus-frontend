@@ -3,7 +3,10 @@ import { Bar } from 'react-chartjs-2';
 import './chartSetup';
 import MetricsDashboardRow from './MetricsDashboardRow';
 import AppliedFilters from './AppliedFilters';
-import { numericOrZero, toFiniteNumber } from './numberUtils';
+import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
+import { postedLineFor } from './gameLogsApi';
+import { bookName } from './matchups/displayConfig';
+import { shortSlateDay } from './home/homeFormat';
 
 const getPer36Value = (average, stat) => {
   const value = toFiniteNumber(average?.[stat]);
@@ -11,10 +14,30 @@ const getPer36Value = (average, stat) => {
   return value !== null && minutes !== null && minutes !== 0 ? (value / minutes) * 36 : 0;
 };
 
-const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilters }) => {
+// "PrizePicks 26.5 · GSW vs LAL · Wed, Oct 21": whose line it is, and for which game.
+const postedLineLabel = ({ value, provider, matchup, gameDate }) =>
+  [`${bookName(provider)} ${formatNumber(value, 1)}`, matchup, gameDate && shortSlateDay(gameDate)]
+    .filter(Boolean)
+    .join(' · ');
+
+const ChartComponent = ({
+  gameLogs,
+  lineType,
+  lineValue,
+  averages,
+  postedLine,
+  appliedFilters,
+}) => {
   const explicitLineValue = toFiniteNumber(lineValue);
   const numericLineValue =
     explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[1]?.[lineType], 0);
+  const posted = postedLineFor(postedLine, lineType);
+  const lineLabel =
+    posted && explicitLineValue === posted.value
+      ? postedLineLabel(posted)
+      : explicitLineValue !== null
+        ? `Line: ${lineValue}`
+        : `Season avg: ${numericLineValue.toFixed(1)}`;
 
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
@@ -74,10 +97,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
               borderWidth: 1.5,
               borderDash: [6, 4],
               label: {
-                content:
-                  explicitLineValue !== null
-                    ? `Line: ${lineValue}`
-                    : `Season avg: ${numericLineValue.toFixed(1)}`,
+                content: lineLabel,
                 enabled: true,
                 position: 'start',
                 backgroundColor: '#1e1a12',
@@ -154,7 +174,7 @@ const ChartComponent = ({ gameLogs, lineType, lineValue, averages, appliedFilter
         },
       },
     }),
-    [gameLogs, lineType, lineValue, explicitLineValue, numericLineValue],
+    [gameLogs, lineType, lineLabel, numericLineValue],
   );
 
   const overLineCount = (logs) =>

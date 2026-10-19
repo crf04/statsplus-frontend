@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
 import { lineTypeOptions } from './utils';
 import './PlayerSelector.css'; // Import the CSS file
 import { formatNumber, toFiniteNumber } from './numberUtils';
+import { postedLineFor } from './gameLogsApi';
 
 const PlayerSelector = ({
   selectedPlayer,
@@ -13,6 +14,7 @@ const PlayerSelector = ({
   setLineValue,
   playerList,
   averages,
+  postedLine,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -27,13 +29,22 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // Auto-populate lineValue with the season average when lineType changes or averages are available
+  // A value typed for this player and Line Type is kept while the logs
+  // refetch; changing either one defaults the line again.
+  const lineEditedForRef = useRef(null);
+  const lineKey = `${selectedPlayer}|${lineType}`;
+
+  // The line defaults to his next game's posted line, else the season average.
   useEffect(() => {
-    const avgValue = toFiniteNumber(averages?.[1]?.[lineType]);
-    if (avgValue !== null) {
-      setLineValue(formatNumber(avgValue, 1));
+    if (lineEditedForRef.current === lineKey) return;
+    // Another player or Line Type: an earlier edit no longer applies.
+    lineEditedForRef.current = null;
+    const value =
+      postedLineFor(postedLine, lineType)?.value ?? toFiniteNumber(averages?.[1]?.[lineType]);
+    if (value !== null) {
+      setLineValue(formatNumber(value, 1));
     }
-  }, [lineType, averages, setLineValue]);
+  }, [lineKey, lineType, averages, postedLine, setLineValue]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -82,6 +93,7 @@ const PlayerSelector = ({
   const handleLineValueChange = (e) => {
     const value = e.target.value;
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
+      lineEditedForRef.current = lineKey;
       setLineValue(value);
     }
   };
@@ -137,16 +149,7 @@ const PlayerSelector = ({
           <Form.Select
             id="player-selector-line-type"
             value={lineType}
-            onChange={(e) => {
-              const newLineType = e.target.value;
-              setLineType(newLineType);
-              // Auto-populate with average for the new line type
-              const average = toFiniteNumber(averages?.[1]?.[newLineType]);
-              if (average !== null) {
-                const avgValue = Math.round(average * 2) / 2;
-                setLineValue(formatNumber(avgValue, 1));
-              }
-            }}
+            onChange={(e) => setLineType(e.target.value)}
             className="player-selector-select"
           >
             {lineTypeOptions.map((option) => (

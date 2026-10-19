@@ -28,6 +28,36 @@ const seasonGameCount = (value) => (Number.isInteger(value) && value >= 0 ? valu
 // The player's NBA person id, which names their headshot; unknown without one.
 const playerId = (value) => (Number.isInteger(value) && value > 0 ? value : null);
 
+// The player's posted lines for his next game (crf04/statsplus#238): one
+// `{ value, provider }` per market, or null when none is posted. A market whose
+// value is not a number is dropped rather than drawn.
+const postedLine = (value) => {
+  if (!value || typeof value !== 'object' || !value.lines || typeof value.lines !== 'object') {
+    return null;
+  }
+  const lines = Object.fromEntries(
+    Object.entries(value.lines).filter(
+      ([, line]) =>
+        Number.isFinite(line?.value) && typeof line.provider === 'string' && line.provider,
+    ),
+  );
+  if (Object.keys(lines).length === 0) return null;
+  return {
+    gameDate: typeof value.game_date === 'string' ? value.game_date : null,
+    matchup: typeof value.matchup === 'string' ? value.matchup : null,
+    lines,
+  };
+};
+
+// Line Types are market keys except FG3M, whose market is spelled 3PM.
+const MARKET_FOR_LINE_TYPE = { FG3M: '3PM' };
+
+/** The posted line for one Line Type, with its game, or null when none is posted. */
+export const postedLineFor = (posted, lineType) => {
+  const line = posted?.lines?.[MARKET_FOR_LINE_TYPE[lineType] || lineType];
+  return line ? { ...line, gameDate: posted.gameDate, matchup: posted.matchup } : null;
+};
+
 /** Decode the backend's JSON-string-or-object response once at the API seam. */
 export const decodeGameLogsResponse = (payload = {}) => {
   if (!payload || typeof payload !== 'object') {
@@ -48,6 +78,7 @@ export const decodeGameLogsResponse = (payload = {}) => {
     seasonGameCount: seasonGameCount(payload.season_game_count),
     nextGame: payload.next_game || null,
     playerId: playerId(payload.player_id),
+    postedLine: postedLine(payload.posted_line),
   };
 };
 

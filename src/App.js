@@ -87,10 +87,10 @@ function AppNav() {
 // and the legal pages: a banner explains why, and every other path returns home
 // until it signs out.
 function WaitlistedShell() {
-  const { search } = useLocation();
+  const { pathname, search } = useLocation();
   // A link's query string would open the workspace, which a waitlisted account
-  // cannot use, so it too returns to the bare home page.
-  if (search) return <Navigate to="/" replace />;
+  // cannot use, so it too returns to the bare home page. Other pages ignore it.
+  if (pathname === '/' && search) return <Navigate to="/" replace />;
   return (
     <>
       <AppNav />

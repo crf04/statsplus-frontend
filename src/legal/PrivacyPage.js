@@ -45,8 +45,9 @@ const PrivacyPage = () => (
       <li>
         <strong>Technical data.</strong> Your IP address, used to rate-limit visitors who are not
         signed in. Server logs, which record requests and, for natural-language searches, your
-        account ID and the start of the search text. Error reports, from which we strip email
-        addresses, sign-in tokens and personal details before they are sent.
+        account ID and the start of the search text. Error reports, which are not linked to your
+        account and from which we remove email addresses and sign-in tokens before they are sent;
+        they can still contain other text from the error, such as a search you typed.
       </li>
     </ul>
 
@@ -71,7 +72,7 @@ const PrivacyPage = () => (
         <strong>Railway</strong> hosts our servers, database and logs.
       </li>
       <li>
-        <strong>Sentry</strong> receives error reports, scrubbed as described above.
+        <strong>Sentry</strong> receives error reports, as described above.
       </li>
       <li>
         <strong>OpenAI</strong> receives the text of some natural-language searches, along with
@@ -87,17 +88,19 @@ const PrivacyPage = () => (
     <h2>Cookies and browser storage</h2>
     <p>
       We do not use advertising or tracking cookies. Google sign-in keeps your session in your
-      browser&rsquo;s storage. We also store how you first arrived (until it is attached to your
-      account), a short-lived copy of the home page&rsquo;s data, and, during sign-in, the action to
-      resume afterwards.
+      browser&rsquo;s storage. We also store how you first arrived, a copy of the home page&rsquo;s
+      data so it loads faster, and, during sign-in, the action to resume afterwards. Clearing your
+      browser&rsquo;s site data removes them.
     </p>
 
     <h2>How long we keep it</h2>
     <p>
       We keep account data and what you create while your account exists. A connected AI app&rsquo;s
-      credential expires after 30 days without use, or sooner if it is revoked. Logs and error
-      reports are kept only as long as our hosting and error-reporting providers retain them.
-      Rate-limit counters expire within days.
+      access stops working after 30 days without use; its encrypted credential is deleted when that
+      access is revoked, and otherwise kept until you ask us to delete your data. Logs and error
+      reports are kept only as long as our hosting and error-reporting providers retain them. The
+      website&rsquo;s rate-limit counters expire within days; the connector&rsquo;s are held in
+      memory and cleared when it restarts.
     </p>
 
     <h2>Your choices</h2>

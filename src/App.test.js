@@ -112,7 +112,10 @@ test.each([
   window.history.pushState({}, '', path);
   render(<App />);
 
-  expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+  const heading = await screen.findByRole('heading', { level: 1, name: title });
+  expect(heading).toBeVisible();
+  // A client-side route change moves no focus on its own; the page takes it.
+  expect(heading).toHaveFocus();
   expect(screen.getByText('Effective October 19, 2026')).toBeInTheDocument();
   await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
   expect(window.location.pathname).toBe(path);
@@ -123,6 +126,7 @@ test.each([
 test.each([
   ['/privacy', 'Privacy Policy'],
   ['/terms', 'Terms of Service'],
+  ['/privacy?utm_source=google', 'Privacy Policy'],
 ])('a waitlisted user can still read %s', async (path, title) => {
   apiClient.get.mockImplementation(homeGet);
   Object.assign(mockAuth, {
@@ -134,7 +138,10 @@ test.each([
   render(<App />);
 
   expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
-  expect(window.location.pathname).toBe(path);
+  expect(`${window.location.pathname}${window.location.search}`).toBe(path);
+  expect(
+    within(screen.getByRole('navigation', { name: 'Legal' })).getByRole('link', { name: 'Terms' }),
+  ).toHaveAttribute('href', '/terms');
   window.history.pushState({}, '', '/');
 });
 

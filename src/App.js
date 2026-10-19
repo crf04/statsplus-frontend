@@ -9,6 +9,16 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { reportRenderError } from './errorReporting';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/rail-odds): the standalone build serves
+// captured opening-night Matchups with a fake signed-in user.
+import { PROTO_STANDALONE } from './matchups/railOddsPrototype/prototypeMode';
+import { DEMO_URL, installMockApi } from './matchups/railOddsPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.pathname.startsWith('/matchups/'))
+    window.history.replaceState(null, '', DEMO_URL);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

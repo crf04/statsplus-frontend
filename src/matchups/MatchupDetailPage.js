@@ -24,6 +24,11 @@ import {
 import { WINDOW_REASONS } from '../windowReasons';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
+// PROTOTYPE (throwaway, branch prototype/rail-odds)
+import { useOddsVariant } from './railOddsPrototype/prototypeMode';
+import { readQuote } from './railOddsPrototype/odds';
+import { OddsA, OddsB, OddsC, OddsD } from './railOddsPrototype/RailOdds';
+import PrototypeSwitcher from './railOddsPrototype/PrototypeSwitcher';
 import '../readings.css';
 import './MatchupDetailPage.css';
 
@@ -213,6 +218,8 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   let meta;
   let marks = null;
   let flagged = false;
+  const oddsVariant = useOddsVariant(); // PROTOTYPE
+  let odds = null; // PROTOTYPE
   if (historical) {
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
@@ -235,6 +242,12 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   } else {
     const { books, headline, headlineProvider, fromMarket, ...rest } = linesFor(player, stat);
     flagged = rest.flagged;
+    // PROTOTYPE: sportsbook prices for this stat, in the chosen layout.
+    const quote = oddsVariant ? readQuote(player, stat, headline) : null;
+    if (quote) {
+      const Odds = { A: OddsA, B: OddsB, C: OddsC, D: OddsD }[oddsVariant];
+      odds = <Odds quote={quote} headline={headline} />;
+    }
     const score = headline === null ? scoreFor(player, stat, windowKey) : null;
     value =
       headline !== null ? (
@@ -281,7 +294,9 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
   return (
     <article
       aria-label={`${player.name} player`}
-      className={`rail-row${selected ? ' selected' : ''}${flagged ? ' lines-disagree' : ''}`}
+      className={`rail-row${selected ? ' selected' : ''}${flagged ? ' lines-disagree' : ''}${
+        odds ? ` ro-row ro-row-${oddsVariant}` : ''
+      }`}
     >
       <div className="rail-row-name">
         <h3>
@@ -302,9 +317,12 @@ function RailRow({ player, stat, historical, windowKey, injury, selected, onSele
       <div className="rail-row-value">
         {value}
         <small>{caption}</small>
+        {oddsVariant === 'B' && odds}
         {marks}
         {flagged && <span className="selection-visually-hidden">Lines disagree</span>}
+        {oddsVariant === 'A' && odds}
       </div>
+      {(oddsVariant === 'C' || oddsVariant === 'D') && odds}
       {/* The whole row opens the selection card; the name above stays its own link. */}
       <button
         ref={(node) => register(serializedPlayerId, node)}
@@ -1144,6 +1162,7 @@ export default function MatchupDetailPage() {
       {state.status === 'loading' && <p role="status">Loading matchup…</p>}
       {state.status === 'error' && <p role="alert">{state.error}</p>}
       {state.status === 'ready' && <Detail matchup={state.matchup} gameId={gameId} />}
+      <PrototypeSwitcher gameId={gameId} />
     </main>
   );
 }

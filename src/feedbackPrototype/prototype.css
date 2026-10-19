@@ -292,6 +292,74 @@
   margin-top: 8px;
 }
 
+.fbp-a-x {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.fbp-a-x-label {
+  font-size: 13px;
+  color: var(--ct-dim);
+  white-space: nowrap;
+}
+
+.fbp-a-x-label em {
+  font-style: normal;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.fbp-a-x-field {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 200px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+  padding: 0 10px;
+}
+
+.fbp-a-x-field:focus-within {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+}
+
+.fbp-a-x-field.is-bad {
+  border-color: var(--ct-miss);
+}
+
+.fbp-a-x-field > span {
+  color: var(--ct-dim);
+  font-size: 15px;
+}
+
+.fbp-a-x-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 0 7px 2px;
+}
+
+.fbp-a-x-err {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ct-miss);
+  text-align: right;
+}
+
+.fbp-inbox a {
+  color: #8a5a12;
+}
+
 .fbp-a-reflink {
   color: var(--ct-gold) !important;
   text-decoration: underline !important;

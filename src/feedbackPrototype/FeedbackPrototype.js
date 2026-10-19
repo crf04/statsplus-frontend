@@ -63,12 +63,13 @@ export function FeedbackProtoProvider({ children }) {
   }, [proto.variant]);
 
   const send = useCallback(
-    ({ message, kind, replyOk, screenshot, ref, via }) => {
+    ({ message, kind, replyOk, screenshot, ref, via, xHandle }) => {
       setOutbox((items) => [
         {
           id: Date.now(),
           message,
           kind,
+          xHandle,
           replyOk,
           screenshot,
           ref,
@@ -143,12 +144,20 @@ function AHeader() {
   );
 }
 
+const X_HANDLE = /^[A-Za-z0-9_]{1,15}$/;
+
 function APopover() {
   const { panel, close, send, currentUser } = useProto();
   const page = usePage();
   const [message, setMessage] = useState('');
   const [replyOk, setReplyOk] = useState(true);
   const [screenshot, setScreenshot] = useState(false);
+  // Remembered on this device, so a regular fills it in once.
+  const [xHandle, setXHandle] = useState(
+    () => window.localStorage.getItem('courtai:feedback-x-handle') || '',
+  );
+  const handle = xHandle.trim().replace(/^@/, '');
+  const handleOk = handle === '' || X_HANDLE.test(handle);
   const box = useRef(null);
   useEffect(() => {
     box.current?.focus();
@@ -173,6 +182,28 @@ function APopover() {
             : 'What’s working, what’s broken, what’s missing?'
         }
       />
+      <label className="fbp-a-x">
+        <span className="fbp-a-x-label">
+          X handle <em>optional</em>
+        </span>
+        <span className={`fbp-a-x-field ${handleOk ? '' : 'is-bad'}`}>
+          <span aria-hidden="true">@</span>
+          <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={16}
+            value={xHandle}
+            placeholder="yourhandle"
+            onChange={(e) => setXHandle(e.target.value.replace(/^\s*@+/, ''))}
+          />
+        </span>
+      </label>
+      {!handleOk && (
+        <p className="fbp-a-x-err">Letters, numbers and underscores, up to 15 characters.</p>
+      )}
       <div className="fbp-a-opts">
         <ReplyCheck checked={replyOk} onChange={setReplyOk} email={currentUser?.email} />
         <label className="fbp-check">
@@ -198,9 +229,18 @@ function APopover() {
         <button
           type="button"
           className="fbp-primary"
-          disabled={!message.trim()}
+          disabled={!message.trim() || !handleOk}
           onClick={() => {
-            send({ message, replyOk, screenshot, ref, via: 'Header link' });
+            if (handle) window.localStorage.setItem('courtai:feedback-x-handle', handle);
+            else window.localStorage.removeItem('courtai:feedback-x-handle');
+            send({
+              message,
+              replyOk,
+              screenshot,
+              ref,
+              via: 'Header link',
+              xHandle: handle || null,
+            });
             close();
           }}
         >
@@ -858,6 +898,16 @@ function InboxPreview({ onClose }) {
               <dd>CourtAI &lt;feedback@courtai.app&gt;</dd>
               <dt>Reply-To</dt>
               <dd>{m.replyOk ? `${m.name} <${m.email}>` : '— (didn’t ask for a reply)'}</dd>
+              <dt>X</dt>
+              <dd>
+                {m.xHandle ? (
+                  <a href={`https://x.com/${m.xHandle}`} target="_blank" rel="noreferrer">
+                    @{m.xHandle}
+                  </a>
+                ) : (
+                  '—'
+                )}
+              </dd>
             </dl>
             <blockquote>{m.message}</blockquote>
             <dl className="fbp-mail-ctx">

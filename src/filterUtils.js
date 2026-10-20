@@ -161,6 +161,39 @@ export const convertNLToFilters = (nlResult = {}) => {
 };
 
 /**
+ * Ambiguous player references. The parser leaves a reference it could not
+ * resolve out of the Filter Set and lists its candidates in `player_choices`
+ * (crf04/statsplus#264). A response without the field has none.
+ */
+export const getPlayerChoices = (nlResult) => {
+  const choices = nlResult?.player_choices;
+  if (!Array.isArray(choices)) return [];
+  return choices.filter(
+    (choice) =>
+      choice &&
+      ['main', 'with', 'without'].includes(choice.role) &&
+      Array.isArray(choice.candidates) &&
+      choice.candidates.length > 0,
+  );
+};
+
+/** The parsed query with each chosen name inserted into the slot its role names. */
+export const applyPlayerChoices = (nlResult, choices, chosenNames) => {
+  const resolved = { ...nlResult };
+  choices.forEach((choice, index) => {
+    const name = chosenNames[index];
+    if (choice.role === 'main') {
+      resolved.player_name = name;
+      return;
+    }
+    const slot = choice.role === 'with' ? 'players_on' : 'players_off';
+    const names = Array.isArray(resolved[slot]) ? resolved[slot] : [];
+    resolved[slot] = names.includes(name) ? names : [...names, name];
+  });
+  return resolved;
+};
+
+/**
  * URL decoding.
  *
  * A shared link carries the game-log API's own parameter names, so a link is

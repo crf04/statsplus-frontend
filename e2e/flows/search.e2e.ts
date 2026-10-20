@@ -175,3 +175,70 @@ signedInTest(
     expect(queryReads).toHaveLength(0);
   },
 );
+
+signedInTest(
+  'an ambiguous name asks which player and applies the one chosen',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill('Ball last 10 games');
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+    await expect(screen.getByRole('button', 'LaMelo Ball CHA')).toBeVisible();
+    await expect(screen.getByRole('button', 'Lonzo Ball CLE')).toBeVisible();
+    // Nothing is applied before the choice.
+    await expect(browser).toHaveURL('/');
+
+    await screen.getByRole('button', 'Lonzo Ball CLE').tap();
+
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await expect(browser).toHaveURL('/?player_name=Lonzo+Ball&game_filter=10');
+    expect(api.sent('/api/nl-query', 'POST').map((request) => request.body)).toEqual([
+      { query: 'Ball last 10 games' },
+    ]);
+  },
+);
+
+signedInTest(
+  'a long list of candidates scrolls inside the panel so the last one can be chosen on a phone',
+  async ({ app, screen, browser }) => {
+    await browser.setViewport({ width: 375, height: 667 });
+    await app.open('/?player_name=LeBron+James&game_filter=10');
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await screen.getByRole('button', 'Open search').tap();
+    await screen
+      .getByRole('textbox', 'Ask about your favorite player')
+      .fill('Williams with Ball without Davis');
+    await screen.getByRole('textbox', 'Ask about your favorite player').press('Enter');
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+
+    // The panel fits the viewport; its own scroll reaches the rest.
+    const fits = await browser.evaluate(() => {
+      const panel = document.querySelector('.player-choices');
+      return panel !== null && panel.getBoundingClientRect().bottom <= window.innerHeight;
+    });
+    expect(fits).toBe(true);
+
+    await screen.getByRole('button', 'Player 14 Williams CLE').tap();
+    await screen.getByRole('button', 'Lonzo Ball CLE').tap();
+    await screen.getByRole('button', 'Terence Davis CLE').tap();
+
+    await expect(browser).toHaveURL(/player_name=Player\+14\+Williams/);
+  },
+);
+
+signedInTest(
+  'browsing without a query abandons a pending question',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill('Ball last 10 games');
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+
+    await screen.getByRole('button', 'Browse without a query').tap();
+
+    await expect(browser).toHaveURL(/browse=1/);
+    await expect(screen.getByText('Which player did you mean?')).toBeHidden();
+    expect(api.sent('/api/nl-query', 'POST')).toHaveLength(1);
+  },
+);

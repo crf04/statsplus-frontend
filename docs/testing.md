@@ -224,7 +224,8 @@ per-leg evidence.
 
 The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
 tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA
-`evidence.md` table from verify-statsplus, `boundary` also a passed production table, and
+`evidence.md` table from verify-statsplus, `boundary` also a passed production table (or a staging
+one when the change needs a merged backend change that is not released yet), and
 `gates only` a cited test file (`*.test.js(x)`, `__tests__/` or `e2e/`). A table counts only when no
 runtime file differs between its Frontend revision and the head, so commit before QA and rerun it
 after a later runtime commit, including one merged in from master.

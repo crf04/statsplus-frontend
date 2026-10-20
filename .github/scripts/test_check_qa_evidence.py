@@ -112,6 +112,14 @@ class CheckQaEvidenceTest(unittest.TestCase):
         code, _ = self.check("Live checks: boundary\n\n" + evidence("qa", head) + "\n" + evidence("production", head))
         self.assertEqual(code, 0)
 
+    def test_staging_evidence_stands_in_for_production_on_a_boundary_change(self):
+        head = self.commit({"src/api.js": "v2"})
+        code, _ = self.check("Live checks: boundary\n\n" + evidence("qa", head) + "\n" + evidence("staging", head))
+        self.assertEqual(code, 0)
+        code, output = self.check("Live checks: user-visible\n\n" + evidence("staging", head))
+        self.assertEqual(code, 1)
+        self.assertIn("needs a passed qa evidence.md table", output)
+
     def test_a_runtime_change_must_say_which_live_checks_apply(self):
         head = self.commit({"package.json": "{}"})
         for body in [evidence("qa", head), "Live checks: <!-- user-visible, boundary, or gates only -->"]:

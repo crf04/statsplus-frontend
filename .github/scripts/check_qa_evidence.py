@@ -10,7 +10,8 @@ line of its body:
 - gates only: the owning gates are enough; no evidence table is required.
 - user-visible: the body includes a passed QA evidence.md table from
   verify-statsplus.
-- boundary: the body also includes a passed production evidence.md table.
+- boundary: the body also includes a passed production evidence.md table, or a
+  staging one when the change needs a merged backend change not yet released.
 
 A `gates only` pull request names the tests that cover it (a `*.test.js(x)`,
 `__tests__` or `e2e/` path). An evidence table counts only when no runtime file
@@ -138,7 +139,9 @@ def problems(body: str, files: list[str], covered) -> list[str]:
         frontend = table.get("Frontend", "")
         revision = frontend.rsplit("@", 1)[-1].strip("` ")
         if table.get("Result") == "passed" and covered(revision):
-            found.append(table.get("Environment"))
+            environment = table.get("Environment")
+            # Staging stands in for production when the backend is not released.
+            found.append("production" if environment == "staging" else environment)
     return [
         f"A {declared} change needs a passed {environment} evidence.md table "
         "from verify-statsplus whose Frontend revision has the head's runtime files. "

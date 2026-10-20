@@ -1,7 +1,7 @@
 import Capabilities from './Capabilities';
 import { CONNECT_CLIP } from './connectClip';
 import CopyPrompt from './CopyPrompt';
-import InlineClip from './InlineClip';
+import ClipPlayer from './ClipPlayer';
 import { Anatomy, OutcomeRuns } from './OutcomeRuns';
 import ResearchRun from './ResearchRun';
 import './ConnectGuide.css';
@@ -116,7 +116,7 @@ const ConnectGuide = ({ setup }) => (
             <div>
               <Asking />
             </div>
-            <InlineClip clip={CONNECT_CLIP} />
+            <ClipPlayer clip={CONNECT_CLIP} />
           </div>
         ) : (
           <Asking />

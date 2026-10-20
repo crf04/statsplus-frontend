@@ -252,12 +252,24 @@ test('the recorded runs stay folded until opened', async () => {
   expect(research.getByRole('button', { name: 'Copy brief' })).toBeVisible();
 });
 
-test('with no clip configured, Ask one question shows no video and no X link', async () => {
+test('Ask one question shows the clip poster and its tweet, and plays the video only when asked', async () => {
   await renderConnectRoute();
 
   const ask = screen.getByRole('region', { name: 'Ask one question' });
-  expect(ask.querySelector('video')).toBeNull();
-  expect(within(ask).queryByRole('complementary')).not.toBeInTheDocument();
-  expect(within(ask).queryByRole('link', { name: /Watch on X/ })).not.toBeInTheDocument();
+  const clip = within(ask).getByRole('complementary', { name: 'CourtAI in a chat' });
+  expect(within(clip).getByRole('link', { name: /Watch on X/ })).toHaveAttribute(
+    'href',
+    'https://x.com/bighatprops/status/2110903548514852970',
+  );
+  expect(clip.querySelector('.clip-caption')).toHaveTextContent('CourtAI in a chat · 1:00');
+  expect(document.querySelector('video')).toBeNull();
+
+  await userEvent.click(within(clip).getByRole('button', { name: 'Play: CourtAI in a chat' }));
+
+  const video = document.querySelector('dialog[open] video');
+  expect(video).toHaveAttribute('src', '/clips/courtai-in-a-chat.mp4');
+  expect(video).toHaveAttribute('poster', '/clips/courtai-in-a-chat.jpg');
+
+  await userEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(document.querySelector('video')).toBeNull();
 });

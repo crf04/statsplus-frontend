@@ -1,0 +1,11 @@
+{"action":"doctor"}
+{"action":"open","path":"/matchups?date=2026-10-20"}
+{"action":"assert","target":{"role":"heading","name":"BOS @ DET"}}
+{"action":"assert-response","path":"/api/games/slate","status":200,"method":"GET","query":{"date":"2026-10-20"}}
+{"action":"click","target":{"selector":"a[href='/matchups/0022600001']"}}
+{"action":"assert","url":"/matchups/0022600001"}
+{"action":"assert","target":{"role":"heading","name":"What DET allows"}}
+{"action":"assert-response","path":"/api/games/matchup","status":200,"method":"GET","query":{"game_id":"0022600001"}}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"proof","name":"prod-matchup-bos-det-desktop"}
+{"action":"cleanup"}

@@ -1,0 +1,136 @@
+{"action": "doctor"}
+{"action": "open", "path": "/?player_name=Jayson+Tatum"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jayson Tatum"}, "status": 200}
+{"action": "assert", "target": {"text": "16 of 16 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "26.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Novig\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Polymarket\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetMGM\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"DraftKings\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Fanatics\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"FanDuel\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Caesars\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetRivers\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-default-desktop"}
+{"action": "click", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "24.5"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"3/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-underdog-desktop"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Jaylen Brown"}
+{"action": "click", "target": {"role": "option", "name": "Jaylen Brown"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jaylen Brown"}, "status": 200}
+{"action": "assert", "target": {"text": "71 of 71 games match"}}
+{"action": "assert", "target": {"label": "Player:"}, "value": "Jaylen Brown"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"62/71\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-switch-to-brown-desktop"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Jayson Tatum"}
+{"action": "click", "target": {"role": "option", "name": "Jayson Tatum"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jayson Tatum"}, "status": 200}
+{"action": "assert", "target": {"text": "16 of 16 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "26.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-back-to-tatum-default-desktop"}
+{"action": "click", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetRivers\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetRivers\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "27.5"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-betrivers-desktop"}
+{"action": "fill", "target": {"label": "Line Value:"}, "value": "20"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetRivers\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"10/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-typed-20-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "RA"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "8.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"11/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-reb-default-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "p"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "26.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"BetRivers\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-typed-reset-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/?player_name=Jayson+Tatum"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jayson Tatum"}, "status": 200}
+{"action": "assert", "target": {"text": "16 of 16 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "26.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-default-phone"}
+{"action": "click", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "24.5"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"3/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-pts-underdog-phone"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Jaylen Brown"}
+{"action": "click", "target": {"role": "option", "name": "Jaylen Brown"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jaylen Brown"}, "status": 200}
+{"action": "assert", "target": {"text": "71 of 71 games match"}}
+{"action": "assert", "target": {"label": "Player:"}, "value": "Jaylen Brown"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"62/71\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-switch-to-brown-phone"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Jayson Tatum"}
+{"action": "click", "target": {"role": "option", "name": "Jayson Tatum"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Jayson Tatum"}, "status": 200}
+{"action": "assert", "target": {"text": "16 of 16 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "26.5"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Dabble\")"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"selector": "[role=group][aria-labelledby=line-sources-label] button.line-source:has-text(\"Underdog\")"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"selector": "div.text-2xl.tabular-nums:text-is(\"1/16\")"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "prod-back-to-tatum-default-phone"}
+{"action": "assert-layout"}
+{"action": "cleanup"}

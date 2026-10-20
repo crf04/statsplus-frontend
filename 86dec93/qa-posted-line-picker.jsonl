@@ -1,0 +1,132 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "doctor"}
+{"_hook": "seed", "games": [1]}
+{"action": "open", "path": "/?player_name=LeBron+James"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "31/60"}}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "text": "LAL vs GSW · Thu, Oct 22"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "PrizePicks 21.5"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 21.5, Over −122, Under −122"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Underdog 20.5, Over −112, Under −112"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "DraftKings 20.5, Over −115, Under −105"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "FanDuel 20.5, Over −110, Under −110"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "PrizePicks 21.5"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-default-majority-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "22.5"}
+{"action": "assert", "target": {"text": "24/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-betrivers-desktop"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Austin Reaves"}
+{"action": "click", "target": {"role": "option", "name": "Austin Reaves"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Austin Reaves"}, "status": 200}
+{"_hook": "capture", "name": "AVG2", "stat": "PTS", "player": "Austin Reaves"}
+{"action": "assert", "target": {"label": "Player:"}, "value": "Austin Reaves"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "{{AVG2}}"}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}, "state": "hidden"}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-switch-to-reaves-desktop"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "LeBron James"}
+{"action": "click", "target": {"role": "option", "name": "LeBron James"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"text": "31/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-back-to-lebron-default-desktop"}
+{"action": "fill", "target": {"label": "Line Value:"}, "value": "25"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "25"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"text": "15/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-typed-25-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "RA"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "6.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 6.5, Over −105, Under −115"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Underdog 6.5, Over −120, Under −105"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "DraftKings 6.5, Over −125, Under +100"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "FanDuel 7.5, Over −105, Under −120"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 6.5, Over −105, Under −115"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "state": "hidden"}
+{"action": "assert", "target": {"text": "23/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-reb-default-desktop"}
+{"action": "press", "key": "p"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"text": "31/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-typed-reset-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/?player_name=LeBron+James"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "31/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-default-majority-phone"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "22.5"}
+{"action": "assert", "target": {"text": "24/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-pts-betrivers-phone"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "Austin Reaves"}
+{"action": "click", "target": {"role": "option", "name": "Austin Reaves"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "Austin Reaves"}, "status": 200}
+{"_hook": "capture", "name": "AVG2", "stat": "PTS", "player": "Austin Reaves"}
+{"action": "assert", "target": {"label": "Player:"}, "value": "Austin Reaves"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "{{AVG2}}"}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}, "state": "hidden"}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-switch-to-reaves-phone"}
+{"action": "fill", "target": {"label": "Player:"}, "value": "LeBron James"}
+{"action": "click", "target": {"role": "option", "name": "LeBron James"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "20.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Novig 20.5, Over −110, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "BetRivers 22.5, Over −105, Under −125"}, "attribute": "aria-pressed", "value": "false"}
+{"action": "assert", "target": {"text": "31/60"}}
+{"action": "snapshot"}
+{"action": "snapshot"}
+{"action": "proof", "name": "qa-back-to-lebron-default-phone"}
+{"action": "assert-layout"}
+{"action": "cleanup"}

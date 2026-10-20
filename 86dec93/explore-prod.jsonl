@@ -1,0 +1,8 @@
+{"action":"doctor"}
+{"action":"open","path":"/?player_name=Jayson+Tatum"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"Jayson Tatum"},"status":200}
+{"action":"assert","target":{"selector":".sample-size-text"}}
+{"action":"open","path":"/?player_name=Jaylen+Brown"}
+{"action":"assert-response","method":"GET","path":"/api/games/game_logs","query":{"player_name":"Jaylen Brown"},"status":200}
+{"action":"assert","target":{"selector":".sample-size-text"}}
+{"action":"cleanup"}

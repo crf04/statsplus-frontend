@@ -1,0 +1,32 @@
+--- /Users/chrisfu/.t3/worktrees/statsplus/t3code-58679d10/.agents/skills/verify-statsplus/scripts/qa-backend.py	2026-10-20 11:10:06
++++ helper-pin/qa-backend.py	2026-10-20 12:16:56
+@@ -99,6 +99,8 @@
+         'ENABLE_LLM_FALLBACK': 'false', 'DFS_BOARD_ENABLED': 'false',
+         'DFS_ENABLED_PROVIDERS': '', 'INJURY_REPORT_ENABLED': 'false',
+         'ROTOWIRE_PERMISSION_GRANTED': 'false', 'LOG_LEVEL': 'WARNING',
++        # Pinned-copy change (statsplus#274 QA): serve posted lines, line_prices and sportsbook book_lines.
++        'PROJECTION_ARCHIVE_READ_ENABLED': 'true', 'ODDS_API_ENABLED': 'true',
+         # Feedback is composed and logged, never emailed (crf04/statsplus#258).
+         'FEEDBACK_DELIVERY': 'log',
+     })
+--- /Users/chrisfu/.t3/worktrees/statsplus/t3code-58679d10/.agents/skills/verify-statsplus/scripts/control-statsplus.mjs	2026-10-20 11:10:06
++++ helper-pin/control-statsplus.mjs	2026-10-20 12:16:56
+@@ -585,6 +585,18 @@
+   const responses = createResponseTracker(origin, network);
+   page.on("request", (request) => responses.request(request));
+   page.on("response", (response) => responses.response(response));
++  // Pinned-copy change (statsplus#274 QA): keep each game_logs response body (game data, no headers or tokens).
++  let gameLogBodies = 0;
++  page.on("response", async (response) => {
++    const url = new URL(response.url());
++    if (url.origin !== origin || url.pathname !== "/api/games/game_logs") return;
++    try {
++      const body = await response.text();
++      mkdirSync(join(out, "responses"), { recursive: true, mode: 0o700 });
++      gameLogBodies += 1;
++      writeFileSync(join(out, "responses", `game_logs-${String(gameLogBodies).padStart(2, "0")}.json`), body);
++    } catch {}
++  });
+   await page.goto(origin);
+   try {
+     await page.evaluate(async (token) => {

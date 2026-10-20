@@ -251,3 +251,13 @@ test('the recorded runs stay folded until opened', async () => {
 
   expect(research.getByRole('button', { name: 'Copy brief' })).toBeVisible();
 });
+
+test('with no clip configured, Ask one question shows no video and no X link', async () => {
+  await renderConnectRoute();
+
+  const ask = screen.getByRole('region', { name: 'Ask one question' });
+  expect(ask.querySelector('video')).toBeNull();
+  expect(within(ask).queryByRole('complementary')).not.toBeInTheDocument();
+  expect(within(ask).queryByRole('link', { name: /Watch on X/ })).not.toBeInTheDocument();
+  expect(document.querySelector('video')).toBeNull();
+});

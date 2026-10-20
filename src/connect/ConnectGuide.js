@@ -1,5 +1,7 @@
 import Capabilities from './Capabilities';
+import { CONNECT_CLIP } from './connectClip';
 import CopyPrompt from './CopyPrompt';
+import InlineClip from './InlineClip';
 import { Anatomy, OutcomeRuns } from './OutcomeRuns';
 import ResearchRun from './ResearchRun';
 import './ConnectGuide.css';
@@ -51,6 +53,29 @@ const Lesson = ({ id, children }) => {
   );
 };
 
+const Asking = () => (
+  <>
+    <p className="guide-p">
+      Turn CourtAI on in a chat and ask in your own words. You don&apos;t need tool names; the chat
+      picks the tool from your question. A few habits get you better answers:
+    </p>
+    <ol className="guide-ask">
+      {ASKING.map(({ rule, why, prompt }) => (
+        <li key={rule}>
+          <div>
+            <p className="guide-rule">{rule}</p>
+            <p className="guide-why">{why}</p>
+          </div>
+          <div className="guide-try">
+            <p className="guide-try-prompt">{prompt}</p>
+            <CopyPrompt text={prompt} label="Copy" />
+          </div>
+        </li>
+      ))}
+    </ol>
+  </>
+);
+
 const Replay = ({ label, children }) => (
   <details className="guide-fold">
     <summary>
@@ -86,24 +111,16 @@ const ConnectGuide = ({ setup }) => (
       </Lesson>
 
       <Lesson id="guide-ask">
-        <p className="guide-p">
-          Turn CourtAI on in a chat and ask in your own words. You don&apos;t need tool names; the
-          chat picks the tool from your question. A few habits get you better answers:
-        </p>
-        <ol className="guide-ask">
-          {ASKING.map(({ rule, why, prompt }) => (
-            <li key={rule}>
-              <div>
-                <p className="guide-rule">{rule}</p>
-                <p className="guide-why">{why}</p>
-              </div>
-              <div className="guide-try">
-                <p className="guide-try-prompt">{prompt}</p>
-                <CopyPrompt text={prompt} label="Copy" />
-              </div>
-            </li>
-          ))}
-        </ol>
+        {CONNECT_CLIP ? (
+          <div className="clip-intro">
+            <div>
+              <Asking />
+            </div>
+            <InlineClip clip={CONNECT_CLIP} />
+          </div>
+        ) : (
+          <Asking />
+        )}
       </Lesson>
 
       <Lesson id="guide-outcome">

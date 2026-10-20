@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
 import { lineTypeOptions } from './utils';
 import './PlayerSelector.css'; // Import the CSS file
-import { formatNumber, toFiniteNumber } from './numberUtils';
-import { lineSourceId, lineSourcesFor, postedLineFor } from './gameLogsApi';
+import { formatNumber } from './numberUtils';
+import { lineSourceId, lineSourcesFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
 import { formatPrice } from './matchups/linePrices';
 import { shortSlateDay } from './home/homeFormat';
@@ -69,11 +69,10 @@ const PlayerSelector = ({
   lineType,
   setLineType,
   lineValue,
-  setLineValue,
+  onTypeLineValue,
   lineSource,
-  setLineSource,
+  onChooseSource,
   playerList,
-  averages,
   postedLine,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,35 +88,7 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // The player and Line Type the line and its source were last set for, and
-  // whether a value was typed for them; a typed value holds while the logs
-  // refetch. Loading another player sets nothing, so the earlier source cannot
-  // carry over to him.
-  const lineForRef = useRef({ key: null, typed: false });
-  const lineKey = `${selectedPlayer}|${lineType}`;
-
-  // The line is the chosen source's, else his next game's default posted line,
-  // else the season average, and follows that source when the logs refetch.
-  // Another player or Line Type, or a chosen source no longer posting, takes
-  // the default again.
-  useEffect(() => {
-    const sameKey = lineForRef.current.key === lineKey;
-    if (sameKey && lineForRef.current.typed) return;
-    const chosen = sameKey && lineSource ? postedLineFor(postedLine, lineType, lineSource) : null;
-    const posted = chosen ?? postedLineFor(postedLine, lineType);
-    const value = posted?.line ?? toFiniteNumber(averages?.[1]?.[lineType]);
-    if (value !== null) {
-      lineForRef.current = { key: lineKey, typed: false };
-      setLineValue(formatNumber(value, 1));
-      setLineSource(posted ? lineSourceId(posted) : null);
-    }
-  }, [lineKey, lineType, lineSource, averages, postedLine, setLineValue, setLineSource]);
-
   const sources = lineSourcesFor(postedLine, lineType);
-  const chooseSource = (source) => {
-    lineForRef.current = { key: lineKey, typed: false };
-    setLineSource(lineSourceId(source));
-  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -166,9 +137,7 @@ const PlayerSelector = ({
   const handleLineValueChange = (e) => {
     const value = e.target.value;
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
-      lineForRef.current = { key: lineKey, typed: true };
-      setLineValue(value);
-      setLineSource(null);
+      onTypeLineValue(value);
     }
   };
 
@@ -256,7 +225,7 @@ const PlayerSelector = ({
             posted={postedLine}
             sources={sources}
             lineSource={lineSource}
-            onChoose={chooseSource}
+            onChoose={(source) => onChooseSource(lineSourceId(source))}
           />
         </Col>
       )}

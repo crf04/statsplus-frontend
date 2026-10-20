@@ -6,7 +6,7 @@ This repository uses a single-context domain-document layout.
 
 Read these when they exist:
 
-- `GLOSSARY.md` at the repository root
+- `GLOSSARY.md` in the coordination repository (`crf04/statsplus`), which owns the shared vocabulary; this repository has none of its own
 - Relevant ADRs under `docs/adr/`
 
 If they do not exist, proceed silently. Domain-modeling skills create them when terminology or architectural decisions are resolved.
@@ -15,7 +15,6 @@ If they do not exist, proceed silently. Domain-modeling skills create them when 
 
 ```text
 /
-├── GLOSSARY.md
 ├── docs/
 │   └── adr/
 └── src/
@@ -23,7 +22,7 @@ If they do not exist, proceed silently. Domain-modeling skills create them when 
 
 ## Vocabulary
 
-Use terminology defined in `GLOSSARY.md`. Avoid synonyms that its glossary explicitly rejects.
+Use terminology defined in the coordination repository's `GLOSSARY.md`. Avoid synonyms that its glossary explicitly rejects.
 
 If a required concept is absent, reconsider whether new terminology is necessary or flag the gap for domain modeling.
 

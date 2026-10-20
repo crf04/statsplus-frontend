@@ -6,6 +6,8 @@ Run-specific gate counts, mutations, and review verdicts belong on the pull requ
 
 ## Merge order
 
+Historical: #157 and #155 merged long ago; the instructions below no longer apply.
+
 Merge [#157](https://github.com/crf04/statsplus-frontend/pull/157) before
 [#155](https://github.com/crf04/statsplus-frontend/pull/155). It repairs three
 request-observation races in the existing Playwright tests. #155 is rebased on

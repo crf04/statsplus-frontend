@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import PlayerSelector from './PlayerSelector';
 import ChartComponent from './ChartComponent';
 import { decodeGameLogsResponse } from './gameLogsApi';
@@ -254,4 +254,95 @@ test('a typed line overrides the chosen source until the player changes', () => 
     <Harness averages={[filtered, season]} posted={{ ...sourcedLine }} player="LeBron James" />,
   );
   expect(pressedSources()).toEqual(['Dabble 26.5, Over −122, Under −122']);
+});
+
+const allSources = () =>
+  within(screen.getByRole('group', { name: 'Posted Lines:' }))
+    .getAllByRole('button')
+    .map((button) => button.getAttribute('aria-label'));
+
+test('a chosen source follows its line through a refetch, else the default returns', () => {
+  const gameLogs = [{ GAME_DATE: '2026-04-10', PTS: 28 }];
+  const { rerender } = render(
+    <Harness
+      averages={[filtered, season]}
+      posted={sourcedLine}
+      player="Stephen Curry"
+      gameLogs={gameLogs}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: /^BetRivers/ }));
+  expect(screen.getByText('1/1')).toBeVisible();
+
+  const moved = decodePosted({
+    game_date: '2026-10-21',
+    matchup: 'GSW vs LAL',
+    lines: { PTS: { value: 26.5, provider: 'dabble' } },
+    provider_lines: { dabble: { PTS: 26.5 } },
+    book_lines: { PTS: { books: [{ book: 'betrivers', line: 28.5, over: 104, under: -130 }] } },
+  });
+  rerender(
+    <Harness
+      averages={[filtered, season]}
+      posted={moved}
+      player="Stephen Curry"
+      gameLogs={gameLogs}
+    />,
+  );
+  expect(screen.getByLabelText('Line Value:')).toHaveValue('28.5');
+  expect(pressedSources()).toEqual(['BetRivers 28.5, Over +104, Under −130']);
+  expect(chartLine.yMin).toBe(28.5);
+  expect(chartLine.label.content).toEqual(['BetRivers 28.5', 'GSW vs LAL · Wed, Oct 21']);
+  expect(screen.getByText('0/1')).toBeVisible();
+
+  const withdrawn = decodePosted({
+    game_date: '2026-10-21',
+    matchup: 'GSW vs LAL',
+    lines: { PTS: { value: 26.5, provider: 'dabble' } },
+    provider_lines: { dabble: { PTS: 26.5 } },
+  });
+  rerender(
+    <Harness
+      averages={[filtered, season]}
+      posted={withdrawn}
+      player="Stephen Curry"
+      gameLogs={gameLogs}
+    />,
+  );
+  expect(screen.getByLabelText('Line Value:')).toHaveValue('26.5');
+  expect(pressedSources()).toEqual(['Dabble 26.5']);
+  expect(chartLine.label.content).toEqual(['Dabble 26.5', 'GSW vs LAL · Wed, Oct 21']);
+  expect(screen.getByText('1/1')).toBeVisible();
+});
+
+test('a provider or book the app does not know is offered under its own key', () => {
+  render(
+    <Harness
+      averages={[filtered, season]}
+      posted={decodePosted({
+        lines: { PTS: { value: 26.5, provider: 'zebrabet' } },
+        provider_lines: { acmepicks: { PTS: 25.5 } },
+        book_lines: { PTS: { books: [{ book: 'zebrabet', line: 26.5, over: -105, under: -115 }] } },
+      })}
+    />,
+  );
+  expect(allSources()).toEqual(['Acmepicks 25.5', 'Zebrabet 26.5, Over −105, Under −115']);
+  expect(pressedSources()).toEqual(['Zebrabet 26.5, Over −105, Under −115']);
+});
+
+test('a default `lines` names by a book key selects that book', () => {
+  render(
+    <Harness
+      averages={[filtered, season]}
+      posted={decodePosted({
+        lines: { PTS: { value: 26.5, provider: 'draftkings' } },
+        provider_lines: { dabble: { PTS: 26.5 } },
+        book_lines: {
+          PTS: { books: [{ book: 'draftkings', line: 26.5, over: -110, under: -115 }] },
+        },
+      })}
+    />,
+  );
+  expect(allSources()).toEqual(['Dabble 26.5', 'DraftKings 26.5, Over −110, Under −115']);
+  expect(pressedSources()).toEqual(['DraftKings 26.5, Over −110, Under −115']);
 });

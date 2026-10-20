@@ -89,28 +89,31 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // A value typed or a source chosen for this player and Line Type is kept
-  // while the logs refetch; changing either one defaults the line again.
-  const lineEditedForRef = useRef(null);
+  // The player and Line Type the line was last set for, and whether a value
+  // was typed for them; a typed value holds while the logs refetch.
+  const lineForRef = useRef({ key: null, typed: false });
   const lineKey = `${selectedPlayer}|${lineType}`;
 
-  // The line defaults to his next game's posted line, else the season average.
+  // The line is the chosen source's, else his next game's default posted line,
+  // else the season average, and follows that source when the logs refetch.
+  // Another player or Line Type, or a chosen source no longer posting, takes
+  // the default again.
   useEffect(() => {
-    if (lineEditedForRef.current === lineKey) return;
-    // Another player or Line Type: an earlier edit no longer applies.
-    lineEditedForRef.current = null;
-    const posted = postedLineFor(postedLine, lineType);
+    const sameKey = lineForRef.current.key === lineKey;
+    if (sameKey && lineForRef.current.typed) return;
+    lineForRef.current = { key: lineKey, typed: false };
+    const chosen = sameKey && lineSource ? postedLineFor(postedLine, lineType, lineSource) : null;
+    const posted = chosen ?? postedLineFor(postedLine, lineType);
     const value = posted?.line ?? toFiniteNumber(averages?.[1]?.[lineType]);
     if (value !== null) {
       setLineValue(formatNumber(value, 1));
       setLineSource(posted ? lineSourceId(posted) : null);
     }
-  }, [lineKey, lineType, averages, postedLine, setLineValue, setLineSource]);
+  }, [lineKey, lineType, lineSource, averages, postedLine, setLineValue, setLineSource]);
 
   const sources = lineSourcesFor(postedLine, lineType);
   const chooseSource = (source) => {
-    lineEditedForRef.current = lineKey;
-    setLineValue(formatNumber(source.line, 1));
+    lineForRef.current = { key: lineKey, typed: false };
     setLineSource(lineSourceId(source));
   };
 
@@ -161,7 +164,7 @@ const PlayerSelector = ({
   const handleLineValueChange = (e) => {
     const value = e.target.value;
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
-      lineEditedForRef.current = lineKey;
+      lineForRef.current = { key: lineKey, typed: true };
       setLineValue(value);
       setLineSource(null);
     }

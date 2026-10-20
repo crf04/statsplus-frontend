@@ -19,15 +19,18 @@ exact frontend/backend revisions and commands; explain any omitted check.
 | Owning repository gates | | |
 | QA user journeys against the selected backend and isolated database | | |
 | Production read-only compatibility check | | |
+| Staging check (merged backend not yet released) | | |
 
 For boundary changes, attach desktop and phone screenshots from the local
-frontend connected to production Railway. User-visible changes need labelled
+frontend connected to production Railway, or to staging when the change needs a
+merged backend change that is not released yet; name it on an
+`Unreleased backend: crf04/statsplus-backend#N` line. User-visible changes need labelled
 desktop and phone screenshots from QA or production. Label QA screenshots
 separately. Include video or other action/result evidence where relevant.
 
 Paste each verify-statsplus run's `evidence.md`. Once this pull request is
 ready, the QA evidence check fails a runtime change unless user-visible has a
-passed QA table and boundary also a passed production table, each from a
+passed QA table and boundary also a passed production (or staging) table, each from a
 committed revision whose runtime files match the head; gates only names its
 test files instead:
 

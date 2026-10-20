@@ -3,9 +3,9 @@ import snapshot from './matchupCardSnapshot.json';
 
 // The connector's own Matchup card: public/mcp-cards/matchup.html is the
 // `ui://` resource statsplus-mcp serves for get_matchup (crf04/statsplus-mcp
-// f7a0748), and the snapshot is the structuredContent of a live production
-// get_matchup(player="Cade Cunningham", opponent="CHA") captured 2026-10-13,
-// less one model directive in its footer (crf04/statsplus#147).
+// 59c5905), and the snapshot is the structuredContent of get_matchup(player=
+// "Cade Cunningham", opponent="CHA") against the production backend, captured
+// 2026-10-20, less one model directive in its footer (crf04/statsplus#147).
 export const CARD_SRC = '/mcp-cards/matchup.html';
 
 const PROTOCOL = '2026-01-26';

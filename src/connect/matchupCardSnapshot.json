@@ -17,62 +17,242 @@
     ]
   },
   "rank_scale": "1-30, 30 = allows the most of the metric (1 = allows the fewest)",
-  "bases": ["Shot types", "Shot zones", "Play types", "Assist locations", "Traditional"],
+  "bases": [
+    "Shot types",
+    "Shot zones",
+    "Play types",
+    "Assist locations",
+    "Traditional",
+    "Rebound types"
+  ],
   "diet": [
     {
       "base": "Shot types",
       "slices": [
-        { "slice": "Less Than 10 ft", "share": "46%", "league_share": "43%", "sd": "+0.2 SD" },
-        { "slice": "Pull-ups", "share": "40%", "league_share": "24%", "sd": "+1.1 SD" },
-        { "slice": "Catch & shoot", "share": "13%", "league_share": "32%", "sd": "-1.3 SD" }
+        {
+          "slice": "Less Than 10 ft",
+          "share": "46%",
+          "league_share": "43%",
+          "sd": "+0.2 SD"
+        },
+        {
+          "slice": "Pull-ups",
+          "share": "40%",
+          "league_share": "24%",
+          "sd": "+1.1 SD"
+        },
+        {
+          "slice": "Catch & shoot",
+          "share": "13%",
+          "league_share": "32%",
+          "sd": "-1.3 SD"
+        }
       ]
     },
     {
       "base": "Shot zones",
       "slices": [
-        { "slice": "Above-break 3", "share": "29%", "league_share": "32%", "sd": "-0.2 SD" },
-        { "slice": "Paint (non-RA)", "share": "28%", "league_share": "20%", "sd": "+0.9 SD" },
-        { "slice": "Restricted area", "share": "26%", "league_share": "28%", "sd": "-0.1 SD" },
-        { "slice": "Mid-range", "share": "15%", "league_share": "10%", "sd": "+0.8 SD" },
-        { "slice": "Corner 3", "share": "2%", "league_share": "11%", "sd": "-1.3 SD" }
+        {
+          "slice": "Above-break 3",
+          "share": "29%",
+          "league_share": "32%",
+          "sd": "-0.2 SD"
+        },
+        {
+          "slice": "Paint (non-RA)",
+          "share": "28%",
+          "league_share": "20%",
+          "sd": "+0.9 SD"
+        },
+        {
+          "slice": "Restricted area",
+          "share": "26%",
+          "league_share": "28%",
+          "sd": "-0.1 SD"
+        },
+        {
+          "slice": "Mid-range",
+          "share": "15%",
+          "league_share": "10%",
+          "sd": "+0.8 SD"
+        },
+        {
+          "slice": "Corner 3",
+          "share": "2%",
+          "league_share": "11%",
+          "sd": "-1.3 SD"
+        }
       ]
     },
     {
       "base": "Play types",
       "slices": [
-        { "slice": "PnR ball handler", "share": "37%", "league_share": "18%", "sd": "+1.6 SD" },
-        { "slice": "Transition", "share": "19%", "league_share": "18%", "sd": "+0.1 SD" },
-        { "slice": "Isolation", "share": "12%", "league_share": "8%", "sd": "+0.9 SD" },
-        { "slice": "Spot up", "share": "8%", "league_share": "25%", "sd": "-1.5 SD" },
-        { "slice": "Handoff", "share": "8%", "league_share": "6%", "sd": "+0.5 SD" },
-        { "slice": "Misc", "share": "5%", "league_share": "5%", "sd": "-0.1 SD" },
-        { "slice": "Post up", "share": "4%", "league_share": "8%", "sd": "-0.6 SD" },
-        { "slice": "Off screen", "share": "4%", "league_share": "5%", "sd": "-0.4 SD" },
-        { "slice": "Cut", "share": "2%", "league_share": "8%", "sd": "-0.9 SD" },
-        { "slice": "Putback", "share": "1%", "league_share": "6%", "sd": "-0.8 SD" }
+        {
+          "slice": "PnR ball handler",
+          "share": "37%",
+          "league_share": "18%",
+          "sd": "+1.6 SD"
+        },
+        {
+          "slice": "Transition",
+          "share": "19%",
+          "league_share": "18%",
+          "sd": "+0.1 SD"
+        },
+        {
+          "slice": "Isolation",
+          "share": "12%",
+          "league_share": "8%",
+          "sd": "+0.9 SD"
+        },
+        {
+          "slice": "Spot up",
+          "share": "8%",
+          "league_share": "25%",
+          "sd": "-1.5 SD"
+        },
+        {
+          "slice": "Handoff",
+          "share": "8%",
+          "league_share": "6%",
+          "sd": "+0.5 SD"
+        },
+        {
+          "slice": "Misc",
+          "share": "5%",
+          "league_share": "5%",
+          "sd": "-0.1 SD"
+        },
+        {
+          "slice": "Post up",
+          "share": "4%",
+          "league_share": "8%",
+          "sd": "-0.6 SD"
+        },
+        {
+          "slice": "Off screen",
+          "share": "4%",
+          "league_share": "5%",
+          "sd": "-0.4 SD"
+        },
+        {
+          "slice": "Cut",
+          "share": "2%",
+          "league_share": "8%",
+          "sd": "-0.9 SD"
+        },
+        {
+          "slice": "Putback",
+          "share": "1%",
+          "league_share": "6%",
+          "sd": "-0.8 SD"
+        }
       ]
     },
     {
       "base": "Assist locations",
       "slices": [
-        { "slice": "Rim", "share": "49%", "league_share": "37%", "sd": "+1.5 SD" },
-        { "slice": "Arc 3", "share": "22%", "league_share": "29%", "sd": "-1.0 SD" },
-        { "slice": "Short mid-range", "share": "18%", "league_share": "17%", "sd": "+0.2 SD" },
-        { "slice": "Corner 3", "share": "11%", "league_share": "13%", "sd": "-0.5 SD" },
-        { "slice": "Long mid-range", "share": "1%", "league_share": "5%", "sd": "-1.5 SD" }
+        {
+          "slice": "Rim",
+          "share": "49%",
+          "league_share": "37%",
+          "sd": "+1.5 SD"
+        },
+        {
+          "slice": "Arc 3",
+          "share": "22%",
+          "league_share": "29%",
+          "sd": "-1.0 SD"
+        },
+        {
+          "slice": "Short mid-range",
+          "share": "18%",
+          "league_share": "17%",
+          "sd": "+0.2 SD"
+        },
+        {
+          "slice": "Corner 3",
+          "share": "11%",
+          "league_share": "13%",
+          "sd": "-0.5 SD"
+        },
+        {
+          "slice": "Long mid-range",
+          "share": "1%",
+          "league_share": "5%",
+          "sd": "-1.5 SD"
+        }
+      ]
+    },
+    {
+      "base": "Rebound types",
+      "slices": [
+        {
+          "slice": "DREB off 2PT misses",
+          "share": "43%",
+          "league_share": "33%",
+          "sd": "+1.6 SD"
+        },
+        {
+          "slice": "DREB off 3PT misses",
+          "share": "38%",
+          "league_share": "35%",
+          "sd": "+0.4 SD"
+        },
+        {
+          "slice": "OREB off 2PT misses",
+          "share": "11%",
+          "league_share": "15%",
+          "sd": "-0.5 SD"
+        },
+        {
+          "slice": "OREB off 3PT misses",
+          "share": "4%",
+          "league_share": "11%",
+          "sd": "-1.5 SD"
+        },
+        {
+          "slice": "DREB off FT misses",
+          "share": "3%",
+          "league_share": "5%",
+          "sd": "-0.7 SD"
+        },
+        {
+          "slice": "OREB off FT misses",
+          "share": "0%",
+          "league_share": "1%",
+          "sd": "-0.5 SD"
+        }
       ]
     }
   ],
   "markets": [
     {
       "market": "PTS",
-      "season": { "value": 0.003507, "label": "+0.4% vs league (favourable)", "thin": false },
-      "last15": { "value": -0.009619, "label": "-1% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": 0.003507,
+        "label": "+0.4% vs league (favourable)",
+        "thin": false
+      },
+      "last15": {
+        "value": -0.009619,
+        "label": "-1% vs league (unfavourable)",
+        "thin": false
+      },
       "last15_agrees": null,
       "components": {
-        "Shot types": { "value": -0.003022, "thin": false },
-        "Shot zones": { "value": -0.011112, "thin": false },
-        "Play types": { "value": 0.024656, "thin": false },
+        "Shot types": {
+          "value": -0.003022,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": -0.011112,
+          "thin": false
+        },
+        "Play types": {
+          "value": 0.024656,
+          "thin": false
+        },
         "Assist locations": null,
         "Traditional": null
       },
@@ -92,45 +272,121 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
-            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 13,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 25,
+              "vs_league": "+6%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-6%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
-            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
-            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 19,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 14,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 18,
+              "vs_league": "-0.3%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 9,
+              "vs_league": "-7%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-19%"
+            }
           ]
         },
         {
           "base": "Play types",
           "slices": [
-            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
-            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
-            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
-            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
-            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
-            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
-            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
-            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
-            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
-            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+            {
+              "slice": "PnR ball handler",
+              "opponent_rank": 26,
+              "vs_league": "+12%"
+            },
+            {
+              "slice": "Transition",
+              "opponent_rank": 9,
+              "vs_league": "-5%"
+            },
+            {
+              "slice": "Isolation",
+              "opponent_rank": 8,
+              "vs_league": "-8%"
+            },
+            {
+              "slice": "Spot up",
+              "opponent_rank": 4,
+              "vs_league": "-12%"
+            },
+            {
+              "slice": "Handoff",
+              "opponent_rank": 18,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Misc",
+              "opponent_rank": 16,
+              "vs_league": "+1%"
+            },
+            {
+              "slice": "Post up",
+              "opponent_rank": 19,
+              "vs_league": "+14%"
+            },
+            {
+              "slice": "Off screen",
+              "opponent_rank": 25,
+              "vs_league": "+16%"
+            },
+            {
+              "slice": "Cut",
+              "opponent_rank": 7,
+              "vs_league": "-9%"
+            },
+            {
+              "slice": "Putback",
+              "opponent_rank": 4,
+              "vs_league": "-11%"
+            }
           ]
         }
       ]
     },
     {
       "market": "REB",
-      "season": { "value": -0.101277, "label": "-10% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.099181,
+        "label": "-10% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
       "last15_agrees": {
-        "value": -0.100724,
-        "label": "-10% vs league (unfavourable)",
+        "value": -0.105048,
+        "label": "-11% vs league (unfavourable)",
         "thin": false
       },
       "components": {
@@ -138,7 +394,14 @@
         "Shot zones": null,
         "Play types": null,
         "Assist locations": null,
-        "Traditional": { "value": -0.101277, "thin": false }
+        "Traditional": {
+          "value": -0.101277,
+          "thin": false
+        },
+        "Rebound types": {
+          "value": -0.097084,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -150,6 +413,17 @@
           "diet_share": null,
           "row": "sheet:traditional:OPP_REB",
           "filter_match": "exact"
+        },
+        {
+          "base": "Rebound types",
+          "slice": "DREB off 2PT misses",
+          "metric": "defensive rebounds off two-point misses allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-16%",
+          "diet_share": "43%",
+          "filter": "Traditional: Rebounds allowed",
+          "filter_match": "nearest",
+          "nearest_reason": "Rebounds allowed filter ranks rebounds allowed per 48; the Matchup ranked defensive rebounds off two-point misses allowed per 48"
         }
       ],
       "bases": [
@@ -163,12 +437,51 @@
               "vs_league": "-10%"
             }
           ]
+        },
+        {
+          "base": "Rebound types",
+          "slices": [
+            {
+              "slice": "DREB off 2PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off 3PT misses",
+              "opponent_rank": 10,
+              "vs_league": "-0.6%"
+            },
+            {
+              "slice": "OREB off 2PT misses",
+              "opponent_rank": 9,
+              "vs_league": "-4%"
+            },
+            {
+              "slice": "OREB off 3PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-39%"
+            },
+            {
+              "slice": "OREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-43%"
+            }
+          ]
         }
       ]
     },
     {
       "market": "AST",
-      "season": { "value": -0.025682, "label": "-3% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.025682,
+        "label": "-3% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
       "last15_agrees": {
         "value": -0.13761,
@@ -179,7 +492,10 @@
         "Shot types": null,
         "Shot zones": null,
         "Play types": null,
-        "Assist locations": { "value": -0.025682, "thin": false },
+        "Assist locations": {
+          "value": -0.025682,
+          "thin": false
+        },
         "Traditional": null
       },
       "drivers": [
@@ -198,23 +514,57 @@
         {
           "base": "Assist locations",
           "slices": [
-            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
-            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
-            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
-            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+            {
+              "slice": "Rim",
+              "opponent_rank": 16,
+              "vs_league": "-0.4%"
+            },
+            {
+              "slice": "Arc 3",
+              "opponent_rank": 15,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Short mid-range",
+              "opponent_rank": 13,
+              "vs_league": "-0.8%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            },
+            {
+              "slice": "Long mid-range",
+              "opponent_rank": 19,
+              "vs_league": "+3%"
+            }
           ]
         }
       ]
     },
     {
       "market": "3PM",
-      "season": { "value": 0.013232, "label": "+1% vs league (favourable)", "thin": false },
+      "season": {
+        "value": 0.013232,
+        "label": "+1% vs league (favourable)",
+        "thin": false
+      },
       "last15": null,
-      "last15_agrees": { "value": 0.136775, "label": "+14% vs league (favourable)", "thin": false },
+      "last15_agrees": {
+        "value": 0.136775,
+        "label": "+14% vs league (favourable)",
+        "thin": false
+      },
       "components": {
-        "Shot types": { "value": 0.013885, "thin": false },
-        "Shot zones": { "value": 0.012578, "thin": false },
+        "Shot types": {
+          "value": 0.013885,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": 0.012578,
+          "thin": false
+        },
         "Play types": null,
         "Assist locations": null,
         "Traditional": null
@@ -245,38 +595,93 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": null, "vs_league": null },
-            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 25,
+              "vs_league": "+6%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-6%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": null, "vs_league": null },
-            { "slice": "Restricted area", "opponent_rank": null, "vs_league": null },
-            { "slice": "Mid-range", "opponent_rank": null, "vs_league": null },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 19,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-19%"
+            }
           ]
         }
       ]
     },
     {
       "market": "PRA",
-      "season": { "value": -0.018598, "label": "-2% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.018303,
+        "label": "-2% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
       "last15_agrees": {
-        "value": -0.054654,
-        "label": "-5% vs league (unfavourable)",
+        "value": -0.055263,
+        "label": "-6% vs league (unfavourable)",
         "thin": false
       },
       "components": {
-        "Shot types": { "value": -0.001836, "thin": false },
-        "Shot zones": { "value": -0.006751, "thin": false },
-        "Play types": { "value": 0.014979, "thin": false },
-        "Assist locations": { "value": -0.006461, "thin": false },
-        "Traditional": { "value": -0.014267, "thin": false }
+        "Shot types": {
+          "value": -0.001836,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": -0.006751,
+          "thin": false
+        },
+        "Play types": {
+          "value": 0.014979,
+          "thin": false
+        },
+        "Assist locations": {
+          "value": -0.006461,
+          "thin": false
+        },
+        "Traditional": {
+          "value": -0.014267,
+          "thin": false
+        },
+        "Rebound types": {
+          "value": -0.013677,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -290,58 +695,151 @@
           "filter_match": "exact"
         },
         {
-          "base": "Shot zones",
-          "slice": "Above-break 3",
-          "metric": "Above-break 3 field goals made allowed per 48",
-          "opponent_rank": 19,
-          "vs_league": "+2%",
-          "diet_share": "29%",
-          "row": "sheet:shot_zones:Above the Break 3:FGM",
-          "filter_match": "exact"
+          "base": "Rebound types",
+          "slice": "DREB off 2PT misses",
+          "metric": "defensive rebounds off two-point misses allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-16%",
+          "diet_share": "43%",
+          "filter": "Traditional: Rebounds allowed",
+          "filter_match": "nearest",
+          "nearest_reason": "Rebounds allowed filter ranks rebounds allowed per 48; the Matchup ranked defensive rebounds off two-point misses allowed per 48"
         }
       ],
       "bases": [
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
-            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 13,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 25,
+              "vs_league": "+6%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-6%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
-            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
-            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 19,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 14,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 18,
+              "vs_league": "-0.3%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 9,
+              "vs_league": "-7%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-19%"
+            }
           ]
         },
         {
           "base": "Play types",
           "slices": [
-            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
-            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
-            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
-            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
-            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
-            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
-            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
-            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
-            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
-            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+            {
+              "slice": "PnR ball handler",
+              "opponent_rank": 26,
+              "vs_league": "+12%"
+            },
+            {
+              "slice": "Transition",
+              "opponent_rank": 9,
+              "vs_league": "-5%"
+            },
+            {
+              "slice": "Isolation",
+              "opponent_rank": 8,
+              "vs_league": "-8%"
+            },
+            {
+              "slice": "Spot up",
+              "opponent_rank": 4,
+              "vs_league": "-12%"
+            },
+            {
+              "slice": "Handoff",
+              "opponent_rank": 18,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Misc",
+              "opponent_rank": 16,
+              "vs_league": "+1%"
+            },
+            {
+              "slice": "Post up",
+              "opponent_rank": 19,
+              "vs_league": "+14%"
+            },
+            {
+              "slice": "Off screen",
+              "opponent_rank": 25,
+              "vs_league": "+16%"
+            },
+            {
+              "slice": "Cut",
+              "opponent_rank": 7,
+              "vs_league": "-9%"
+            },
+            {
+              "slice": "Putback",
+              "opponent_rank": 4,
+              "vs_league": "-11%"
+            }
           ]
         },
         {
           "base": "Assist locations",
           "slices": [
-            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
-            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
-            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
-            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+            {
+              "slice": "Rim",
+              "opponent_rank": 16,
+              "vs_league": "-0.4%"
+            },
+            {
+              "slice": "Arc 3",
+              "opponent_rank": 15,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Short mid-range",
+              "opponent_rank": 13,
+              "vs_league": "-0.8%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            },
+            {
+              "slice": "Long mid-range",
+              "opponent_rank": 19,
+              "vs_league": "+3%"
+            }
           ]
         },
         {
@@ -354,19 +852,74 @@
               "vs_league": "-10%"
             }
           ]
+        },
+        {
+          "base": "Rebound types",
+          "slices": [
+            {
+              "slice": "DREB off 2PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off 3PT misses",
+              "opponent_rank": 10,
+              "vs_league": "-0.6%"
+            },
+            {
+              "slice": "OREB off 2PT misses",
+              "opponent_rank": 9,
+              "vs_league": "-4%"
+            },
+            {
+              "slice": "OREB off 3PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-39%"
+            },
+            {
+              "slice": "OREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-43%"
+            }
+          ]
         }
       ]
     },
     {
       "market": "PA",
-      "season": { "value": -0.005041, "label": "-0.5% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.005041,
+        "label": "-0.5% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
-      "last15_agrees": { "value": -0.0471, "label": "-5% vs league (unfavourable)", "thin": false },
+      "last15_agrees": {
+        "value": -0.0471,
+        "label": "-5% vs league (unfavourable)",
+        "thin": false
+      },
       "components": {
-        "Shot types": { "value": -0.002137, "thin": false },
-        "Shot zones": { "value": -0.007858, "thin": false },
-        "Play types": { "value": 0.017436, "thin": false },
-        "Assist locations": { "value": -0.007521, "thin": false },
+        "Shot types": {
+          "value": -0.002137,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": -0.007858,
+          "thin": false
+        },
+        "Play types": {
+          "value": 0.017436,
+          "thin": false
+        },
+        "Assist locations": {
+          "value": -0.007521,
+          "thin": false
+        },
         "Traditional": null
       },
       "drivers": [
@@ -395,63 +948,175 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
-            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 13,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 25,
+              "vs_league": "+6%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-6%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
-            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
-            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 19,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 14,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 18,
+              "vs_league": "-0.3%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 9,
+              "vs_league": "-7%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-19%"
+            }
           ]
         },
         {
           "base": "Play types",
           "slices": [
-            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
-            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
-            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
-            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
-            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
-            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
-            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
-            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
-            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
-            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+            {
+              "slice": "PnR ball handler",
+              "opponent_rank": 26,
+              "vs_league": "+12%"
+            },
+            {
+              "slice": "Transition",
+              "opponent_rank": 9,
+              "vs_league": "-5%"
+            },
+            {
+              "slice": "Isolation",
+              "opponent_rank": 8,
+              "vs_league": "-8%"
+            },
+            {
+              "slice": "Spot up",
+              "opponent_rank": 4,
+              "vs_league": "-12%"
+            },
+            {
+              "slice": "Handoff",
+              "opponent_rank": 18,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Misc",
+              "opponent_rank": 16,
+              "vs_league": "+1%"
+            },
+            {
+              "slice": "Post up",
+              "opponent_rank": 19,
+              "vs_league": "+14%"
+            },
+            {
+              "slice": "Off screen",
+              "opponent_rank": 25,
+              "vs_league": "+16%"
+            },
+            {
+              "slice": "Cut",
+              "opponent_rank": 7,
+              "vs_league": "-9%"
+            },
+            {
+              "slice": "Putback",
+              "opponent_rank": 4,
+              "vs_league": "-11%"
+            }
           ]
         },
         {
           "base": "Assist locations",
           "slices": [
-            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
-            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
-            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
-            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+            {
+              "slice": "Rim",
+              "opponent_rank": 16,
+              "vs_league": "-0.4%"
+            },
+            {
+              "slice": "Arc 3",
+              "opponent_rank": 15,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Short mid-range",
+              "opponent_rank": 13,
+              "vs_league": "-0.8%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            },
+            {
+              "slice": "Long mid-range",
+              "opponent_rank": 19,
+              "vs_league": "+3%"
+            }
           ]
         }
       ]
     },
     {
       "market": "PR",
-      "season": { "value": -0.016216, "label": "-2% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.015822,
+        "label": "-2% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
       "last15_agrees": {
-        "value": -0.026768,
+        "value": -0.027582,
         "label": "-3% vs league (unfavourable)",
         "thin": false
       },
       "components": {
-        "Shot types": { "value": -0.002453, "thin": false },
-        "Shot zones": { "value": -0.00902, "thin": false },
-        "Play types": { "value": 0.020015, "thin": false },
+        "Shot types": {
+          "value": -0.002453,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": -0.00902,
+          "thin": false
+        },
+        "Play types": {
+          "value": 0.020015,
+          "thin": false
+        },
         "Assist locations": null,
-        "Traditional": { "value": -0.019063, "thin": false }
+        "Traditional": {
+          "value": -0.019063,
+          "thin": false
+        },
+        "Rebound types": {
+          "value": -0.018274,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -465,48 +1130,121 @@
           "filter_match": "exact"
         },
         {
-          "base": "Shot zones",
-          "slice": "Above-break 3",
-          "metric": "Above-break 3 field goals made allowed per 48",
-          "opponent_rank": 19,
-          "vs_league": "+2%",
-          "diet_share": "29%",
-          "row": "sheet:shot_zones:Above the Break 3:FGM",
-          "filter_match": "exact"
+          "base": "Rebound types",
+          "slice": "DREB off 2PT misses",
+          "metric": "defensive rebounds off two-point misses allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-16%",
+          "diet_share": "43%",
+          "filter": "Traditional: Rebounds allowed",
+          "filter_match": "nearest",
+          "nearest_reason": "Rebounds allowed filter ranks rebounds allowed per 48; the Matchup ranked defensive rebounds off two-point misses allowed per 48"
         }
       ],
       "bases": [
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 13, "vs_league": "-1%" },
-            { "slice": "Pull-ups", "opponent_rank": 25, "vs_league": "+6%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-6%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 13,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 25,
+              "vs_league": "+6%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-6%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 19, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": 14, "vs_league": "-1%" },
-            { "slice": "Restricted area", "opponent_rank": 18, "vs_league": "-0.3%" },
-            { "slice": "Mid-range", "opponent_rank": 9, "vs_league": "-7%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-19%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 19,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 14,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 18,
+              "vs_league": "-0.3%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 9,
+              "vs_league": "-7%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-19%"
+            }
           ]
         },
         {
           "base": "Play types",
           "slices": [
-            { "slice": "PnR ball handler", "opponent_rank": 26, "vs_league": "+12%" },
-            { "slice": "Transition", "opponent_rank": 9, "vs_league": "-5%" },
-            { "slice": "Isolation", "opponent_rank": 8, "vs_league": "-8%" },
-            { "slice": "Spot up", "opponent_rank": 4, "vs_league": "-12%" },
-            { "slice": "Handoff", "opponent_rank": 18, "vs_league": "+2%" },
-            { "slice": "Misc", "opponent_rank": 16, "vs_league": "+1%" },
-            { "slice": "Post up", "opponent_rank": 19, "vs_league": "+14%" },
-            { "slice": "Off screen", "opponent_rank": 25, "vs_league": "+16%" },
-            { "slice": "Cut", "opponent_rank": 7, "vs_league": "-9%" },
-            { "slice": "Putback", "opponent_rank": 4, "vs_league": "-11%" }
+            {
+              "slice": "PnR ball handler",
+              "opponent_rank": 26,
+              "vs_league": "+12%"
+            },
+            {
+              "slice": "Transition",
+              "opponent_rank": 9,
+              "vs_league": "-5%"
+            },
+            {
+              "slice": "Isolation",
+              "opponent_rank": 8,
+              "vs_league": "-8%"
+            },
+            {
+              "slice": "Spot up",
+              "opponent_rank": 4,
+              "vs_league": "-12%"
+            },
+            {
+              "slice": "Handoff",
+              "opponent_rank": 18,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Misc",
+              "opponent_rank": 16,
+              "vs_league": "+1%"
+            },
+            {
+              "slice": "Post up",
+              "opponent_rank": 19,
+              "vs_league": "+14%"
+            },
+            {
+              "slice": "Off screen",
+              "opponent_rank": 25,
+              "vs_league": "+16%"
+            },
+            {
+              "slice": "Cut",
+              "opponent_rank": 7,
+              "vs_league": "-9%"
+            },
+            {
+              "slice": "Putback",
+              "opponent_rank": 4,
+              "vs_league": "-11%"
+            }
           ]
         },
         {
@@ -517,6 +1255,41 @@
               "metric": "rebounds allowed per 48",
               "opponent_rank": 2,
               "vs_league": "-10%"
+            }
+          ]
+        },
+        {
+          "base": "Rebound types",
+          "slices": [
+            {
+              "slice": "DREB off 2PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off 3PT misses",
+              "opponent_rank": 10,
+              "vs_league": "-0.6%"
+            },
+            {
+              "slice": "OREB off 2PT misses",
+              "opponent_rank": 9,
+              "vs_league": "-4%"
+            },
+            {
+              "slice": "OREB off 3PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-39%"
+            },
+            {
+              "slice": "OREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-43%"
             }
           ]
         }
@@ -524,19 +1297,33 @@
     },
     {
       "market": "RA",
-      "season": { "value": -0.052817, "label": "-5% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": -0.052064,
+        "label": "-5% vs league (unfavourable)",
+        "thin": false
+      },
       "last15": null,
       "last15_agrees": {
-        "value": -0.12437,
-        "label": "-12% vs league (unfavourable)",
+        "value": -0.125922,
+        "label": "-13% vs league (unfavourable)",
         "thin": false
       },
       "components": {
         "Shot types": null,
         "Shot zones": null,
         "Play types": null,
-        "Assist locations": { "value": -0.016463, "thin": false },
-        "Traditional": { "value": -0.036353, "thin": false }
+        "Assist locations": {
+          "value": -0.016463,
+          "thin": false
+        },
+        "Traditional": {
+          "value": -0.036353,
+          "thin": false
+        },
+        "Rebound types": {
+          "value": -0.034848,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -550,25 +1337,46 @@
           "filter_match": "exact"
         },
         {
-          "base": "Assist locations",
-          "slice": "Rim",
-          "metric": "rim assists allowed per 48",
-          "opponent_rank": 16,
-          "vs_league": "-0.4%",
-          "diet_share": "49%",
-          "row": "sheet:assist_locations:AtRimAssists",
-          "filter_match": "exact"
+          "base": "Rebound types",
+          "slice": "DREB off 2PT misses",
+          "metric": "defensive rebounds off two-point misses allowed per 48",
+          "opponent_rank": 2,
+          "vs_league": "-16%",
+          "diet_share": "43%",
+          "filter": "Traditional: Rebounds allowed",
+          "filter_match": "nearest",
+          "nearest_reason": "Rebounds allowed filter ranks rebounds allowed per 48; the Matchup ranked defensive rebounds off two-point misses allowed per 48"
         }
       ],
       "bases": [
         {
           "base": "Assist locations",
           "slices": [
-            { "slice": "Rim", "opponent_rank": 16, "vs_league": "-0.4%" },
-            { "slice": "Arc 3", "opponent_rank": 15, "vs_league": "-1%" },
-            { "slice": "Short mid-range", "opponent_rank": 13, "vs_league": "-0.8%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" },
-            { "slice": "Long mid-range", "opponent_rank": 19, "vs_league": "+3%" }
+            {
+              "slice": "Rim",
+              "opponent_rank": 16,
+              "vs_league": "-0.4%"
+            },
+            {
+              "slice": "Arc 3",
+              "opponent_rank": 15,
+              "vs_league": "-1%"
+            },
+            {
+              "slice": "Short mid-range",
+              "opponent_rank": 13,
+              "vs_league": "-0.8%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            },
+            {
+              "slice": "Long mid-range",
+              "opponent_rank": 19,
+              "vs_league": "+3%"
+            }
           ]
         },
         {
@@ -581,17 +1389,66 @@
               "vs_league": "-10%"
             }
           ]
+        },
+        {
+          "base": "Rebound types",
+          "slices": [
+            {
+              "slice": "DREB off 2PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off 3PT misses",
+              "opponent_rank": 10,
+              "vs_league": "-0.6%"
+            },
+            {
+              "slice": "OREB off 2PT misses",
+              "opponent_rank": 9,
+              "vs_league": "-4%"
+            },
+            {
+              "slice": "OREB off 3PT misses",
+              "opponent_rank": 2,
+              "vs_league": "-16%"
+            },
+            {
+              "slice": "DREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-39%"
+            },
+            {
+              "slice": "OREB off FT misses",
+              "opponent_rank": 1,
+              "vs_league": "-43%"
+            }
+          ]
         }
       ]
     },
     {
       "market": "FGA",
-      "season": { "value": 0.001322, "label": "+0.1% vs league (favourable)", "thin": false },
-      "last15": { "value": -0.016174, "label": "-2% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": 0.001322,
+        "label": "+0.1% vs league (favourable)",
+        "thin": false
+      },
+      "last15": {
+        "value": -0.016174,
+        "label": "-2% vs league (unfavourable)",
+        "thin": false
+      },
       "last15_agrees": null,
       "components": {
-        "Shot types": { "value": -0.001549, "thin": false },
-        "Shot zones": { "value": 0.004193, "thin": false },
+        "Shot types": {
+          "value": -0.001549,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": 0.004193,
+          "thin": false
+        },
         "Play types": null,
         "Assist locations": null,
         "Traditional": null
@@ -612,31 +1469,77 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 18, "vs_league": "+0.5%" },
-            { "slice": "Pull-ups", "opponent_rank": 17, "vs_league": "+2%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 18,
+              "vs_league": "+0.5%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 17,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-4%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 21, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": 15, "vs_league": "+2%" },
-            { "slice": "Restricted area", "opponent_rank": 17, "vs_league": "+0.8%" },
-            { "slice": "Mid-range", "opponent_rank": 10, "vs_league": "-3%" },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 21,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 15,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 17,
+              "vs_league": "+0.8%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 10,
+              "vs_league": "-3%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            }
           ]
         }
       ]
     },
     {
       "market": "FG2A",
-      "season": { "value": 0.003077, "label": "+0.3% vs league (favourable)", "thin": false },
-      "last15": { "value": -0.144771, "label": "-14% vs league (unfavourable)", "thin": false },
+      "season": {
+        "value": 0.003077,
+        "label": "+0.3% vs league (favourable)",
+        "thin": false
+      },
+      "last15": {
+        "value": -0.144771,
+        "label": "-14% vs league (unfavourable)",
+        "thin": false
+      },
       "last15_agrees": null,
       "components": {
-        "Shot types": { "value": 0.004057, "thin": false },
-        "Shot zones": { "value": 0.002098, "thin": false },
+        "Shot types": {
+          "value": 0.004057,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": 0.002098,
+          "thin": false
+        },
         "Play types": null,
         "Assist locations": null,
         "Traditional": null
@@ -667,31 +1570,77 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": 18, "vs_league": "+0.5%" },
-            { "slice": "Pull-ups", "opponent_rank": 17, "vs_league": "+2%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": 18,
+              "vs_league": "+0.5%"
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 17,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-4%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": null, "vs_league": null },
-            { "slice": "Paint (non-RA)", "opponent_rank": 15, "vs_league": "+2%" },
-            { "slice": "Restricted area", "opponent_rank": 17, "vs_league": "+0.8%" },
-            { "slice": "Mid-range", "opponent_rank": 10, "vs_league": "-3%" },
-            { "slice": "Corner 3", "opponent_rank": null, "vs_league": null }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": 15,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": 17,
+              "vs_league": "+0.8%"
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": 10,
+              "vs_league": "-3%"
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": null,
+              "vs_league": null
+            }
           ]
         }
       ]
     },
     {
       "market": "FG3A",
-      "season": { "value": -0.001167, "label": "-0.1% vs league (unfavourable)", "thin": false },
-      "last15": { "value": 0.12787, "label": "+13% vs league (favourable)", "thin": false },
+      "season": {
+        "value": -0.001167,
+        "label": "-0.1% vs league (unfavourable)",
+        "thin": false
+      },
+      "last15": {
+        "value": 0.12787,
+        "label": "+13% vs league (favourable)",
+        "thin": false
+      },
       "last15_agrees": null,
       "components": {
-        "Shot types": { "value": -0.011238, "thin": false },
-        "Shot zones": { "value": 0.008904, "thin": false },
+        "Shot types": {
+          "value": -0.011238,
+          "thin": false
+        },
+        "Shot zones": {
+          "value": 0.008904,
+          "thin": false
+        },
         "Play types": null,
         "Assist locations": null,
         "Traditional": null
@@ -712,19 +1661,51 @@
         {
           "base": "Shot types",
           "slices": [
-            { "slice": "Less Than 10 ft", "opponent_rank": null, "vs_league": null },
-            { "slice": "Pull-ups", "opponent_rank": 10, "vs_league": "-2%" },
-            { "slice": "Catch & shoot", "opponent_rank": 11, "vs_league": "-4%" }
+            {
+              "slice": "Less Than 10 ft",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Pull-ups",
+              "opponent_rank": 10,
+              "vs_league": "-2%"
+            },
+            {
+              "slice": "Catch & shoot",
+              "opponent_rank": 11,
+              "vs_league": "-4%"
+            }
           ]
         },
         {
           "base": "Shot zones",
           "slices": [
-            { "slice": "Above-break 3", "opponent_rank": 21, "vs_league": "+2%" },
-            { "slice": "Paint (non-RA)", "opponent_rank": null, "vs_league": null },
-            { "slice": "Restricted area", "opponent_rank": null, "vs_league": null },
-            { "slice": "Mid-range", "opponent_rank": null, "vs_league": null },
-            { "slice": "Corner 3", "opponent_rank": 2, "vs_league": "-18%" }
+            {
+              "slice": "Above-break 3",
+              "opponent_rank": 21,
+              "vs_league": "+2%"
+            },
+            {
+              "slice": "Paint (non-RA)",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Restricted area",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Mid-range",
+              "opponent_rank": null,
+              "vs_league": null
+            },
+            {
+              "slice": "Corner 3",
+              "opponent_rank": 2,
+              "vs_league": "-18%"
+            }
           ]
         }
       ]
@@ -749,7 +1730,10 @@
         "Shot zones": null,
         "Play types": null,
         "Assist locations": null,
-        "Traditional": { "value": -0.025373, "thin": false }
+        "Traditional": {
+          "value": -0.025373,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -797,7 +1781,10 @@
         "Shot zones": null,
         "Play types": null,
         "Assist locations": null,
-        "Traditional": { "value": -0.081903, "thin": false }
+        "Traditional": {
+          "value": -0.081903,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -815,7 +1802,12 @@
         {
           "base": "Traditional",
           "slices": [
-            { "slice": "Blocks", "metric": "blocks per 48", "opponent_rank": 9, "vs_league": "-8%" }
+            {
+              "slice": "Blocks",
+              "metric": "blocks per 48",
+              "opponent_rank": 9,
+              "vs_league": "-8%"
+            }
           ]
         }
       ]
@@ -840,7 +1832,10 @@
         "Shot zones": null,
         "Play types": null,
         "Assist locations": null,
-        "Traditional": { "value": -0.046281, "thin": false }
+        "Traditional": {
+          "value": -0.046281,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -858,7 +1853,12 @@
         {
           "base": "Traditional",
           "slices": [
-            { "slice": "Blocks", "metric": "blocks per 48", "opponent_rank": 9, "vs_league": "-8%" }
+            {
+              "slice": "Blocks",
+              "metric": "blocks per 48",
+              "opponent_rank": 9,
+              "vs_league": "-8%"
+            }
           ]
         }
       ]
@@ -883,7 +1883,10 @@
         "Shot zones": null,
         "Play types": null,
         "Assist locations": null,
-        "Traditional": { "value": -0.123777, "thin": false }
+        "Traditional": {
+          "value": -0.123777,
+          "thin": false
+        }
       },
       "drivers": [
         {
@@ -918,9 +1921,11 @@
     "Each slice's opponent rank and % vs league come from its row for that market (scored rows over possessions, then the furthest from league average); a slice with no such row has none.",
     "The backend sends no Blend for defensive markets (TOV, STL, BLK, STKS); their score is the Traditional component alone."
   ],
+  "posted_lines": [],
+  "no_posted_lines": "Posted lines: none; an Unscheduled Matchup has no posted lines.",
   "provenance": {
     "assist_locations_l15": {
-      "age_seconds": 4404129,
+      "age_seconds": 5009981,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -939,7 +1944,7 @@
       "version": 5
     },
     "assist_locations_season": {
-      "age_seconds": 4401794,
+      "age_seconds": 5007646,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -958,7 +1963,7 @@
       "version": 4
     },
     "exact_shot_zones": {
-      "age_seconds": 2917196,
+      "age_seconds": 3523048,
       "coverage_cutoff": "2026-09-09T08:45:00+00:00",
       "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
       "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -977,7 +1982,7 @@
       "version": 4
     },
     "exact_shot_zones_opponent_l15": {
-      "age_seconds": 3130738,
+      "age_seconds": 3736591,
       "coverage_cutoff": "2026-09-06T07:57:51+00:00",
       "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
       "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
@@ -996,7 +2001,7 @@
       "version": 3
     },
     "exact_shot_zones_opponent_season": {
-      "age_seconds": 3130738,
+      "age_seconds": 3736591,
       "coverage_cutoff": "2026-09-06T07:57:51+00:00",
       "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
       "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
@@ -1016,7 +2021,7 @@
     },
     "generation": [
       {
-        "age_seconds": 4404129,
+        "age_seconds": 5009981,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1035,7 +2040,7 @@
         "version": 5
       },
       {
-        "age_seconds": 4401794,
+        "age_seconds": 5007646,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1054,7 +2059,7 @@
         "version": 4
       },
       {
-        "age_seconds": 2917196,
+        "age_seconds": 3523048,
         "coverage_cutoff": "2026-09-09T08:45:00+00:00",
         "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
         "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -1073,7 +2078,7 @@
         "version": 4
       },
       {
-        "age_seconds": 3130738,
+        "age_seconds": 3736591,
         "coverage_cutoff": "2026-09-06T07:57:51+00:00",
         "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
         "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
@@ -1092,7 +2097,7 @@
         "version": 3
       },
       {
-        "age_seconds": 3130738,
+        "age_seconds": 3736591,
         "coverage_cutoff": "2026-09-06T07:57:51+00:00",
         "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
         "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
@@ -1111,7 +2116,7 @@
         "version": 2
       },
       {
-        "age_seconds": 2917512,
+        "age_seconds": 3523364,
         "coverage_cutoff": "2026-09-09T08:45:00+00:00",
         "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
         "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -1130,7 +2135,7 @@
         "version": 6
       },
       {
-        "age_seconds": 4242035,
+        "age_seconds": 4847887,
         "coverage_cutoff": "2026-08-24T19:37:25+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
@@ -1149,7 +2154,7 @@
         "version": 1
       },
       {
-        "age_seconds": 4245337,
+        "age_seconds": 4851189,
         "coverage_cutoff": "2026-08-24T19:37:25+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
@@ -1168,7 +2173,7 @@
         "version": 3
       },
       {
-        "age_seconds": 2697649,
+        "age_seconds": 3303501,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1187,26 +2192,26 @@
         "version": 1
       },
       {
-        "age_seconds": 4353206,
+        "age_seconds": 214514,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": null,
         "event_catalog_publication_id": null,
-        "fence": 3,
+        "fence": 4,
         "freshness": "stale",
         "legacy_fallback_allowed": false,
         "manifest_id": null,
-        "payload_checksum": "e43dcb0aef889793278aeafd811349cf0db05683582c29fed08e56517c42e2c9",
-        "publication_id": "1bf3a07a-741a-4f7c-9bef-977a22066b15",
-        "retrieved_at": "2026-08-23T19:12:19.727615+00:00",
+        "payload_checksum": "0ee1a904d24e811262c513d746add120848802d145e8095238a23b07d19398af",
+        "publication_id": "b0aadb25-1dcf-489c-bbf8-68938fec65e0",
+        "retrieved_at": "2026-10-17T17:08:03.734728+00:00",
         "season": "2025-26",
         "source": "database",
         "status": "active",
         "stream_key": "player_game_logs",
         "unavailable_reason": null,
-        "version": 3
+        "version": 4
       },
       {
-        "age_seconds": 4401823,
+        "age_seconds": 5007675,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1225,7 +2230,64 @@
         "version": 5
       },
       {
-        "age_seconds": 2917512,
+        "age_seconds": 222332,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "d0da3fef5c0539dd1ff4d0e53a495ce0240b5092ed99112ca6716fea925bbb67",
+        "publication_id": "50ac8f48-c9d2-438c-a65c-77c4291a443f",
+        "retrieved_at": "2026-10-17T14:57:46.031843+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "player_rebound_types",
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "age_seconds": 222311,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "dcea602fe5913096ddf299ce120f1a34bb243c85f9c0b28dc850d9a57a1da952",
+        "publication_id": "6928ca2a-b6be-47a3-afb8-fe0c10d671f7",
+        "retrieved_at": "2026-10-17T14:58:07.308966+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "rebound_types_l15",
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "age_seconds": 222298,
+        "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+        "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+        "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+        "fence": 1,
+        "freshness": "stale",
+        "legacy_fallback_allowed": false,
+        "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+        "payload_checksum": "6c105caa2fd264e0466cbd2549fc0b787e92e7b67e39f3d818615599c5113579",
+        "publication_id": "c1754311-2d12-412b-a57f-9e903c2f6a4f",
+        "retrieved_at": "2026-10-17T14:58:20.358273+00:00",
+        "season": "2025-26",
+        "source": "database",
+        "status": "active",
+        "stream_key": "rebound_types_season",
+        "unavailable_reason": null,
+        "version": 1
+      },
+      {
+        "age_seconds": 3523364,
         "coverage_cutoff": "2026-09-09T08:45:00+00:00",
         "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
         "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -1244,7 +2306,7 @@
         "version": 5
       },
       {
-        "age_seconds": 4267213,
+        "age_seconds": 4873065,
         "coverage_cutoff": "2026-08-24T10:52:39+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "642b443d-9195-4d9d-ad59-a384b1d3d882",
@@ -1263,7 +2325,7 @@
         "version": 3
       },
       {
-        "age_seconds": 3307951,
+        "age_seconds": 3913803,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1282,7 +2344,7 @@
         "version": 7
       },
       {
-        "age_seconds": 3307993,
+        "age_seconds": 3913845,
         "coverage_cutoff": "2026-08-21T16:26:09+00:00",
         "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
         "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1302,7 +2364,7 @@
       }
     ],
     "grouped_shot_types": {
-      "age_seconds": 2917512,
+      "age_seconds": 3523364,
       "coverage_cutoff": "2026-09-09T08:45:00+00:00",
       "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
       "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -1321,7 +2383,7 @@
       "version": 6
     },
     "grouped_shot_types_opponent_l15": {
-      "age_seconds": 4242035,
+      "age_seconds": 4847887,
       "coverage_cutoff": "2026-08-24T19:37:25+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
@@ -1340,7 +2402,7 @@
       "version": 1
     },
     "grouped_shot_types_opponent_season": {
-      "age_seconds": 4245337,
+      "age_seconds": 4851189,
       "coverage_cutoff": "2026-08-24T19:37:25+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
@@ -1359,7 +2421,7 @@
       "version": 3
     },
     "player_assist_locations": {
-      "age_seconds": 2697649,
+      "age_seconds": 3303501,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1378,26 +2440,26 @@
       "version": 1
     },
     "player_game_logs": {
-      "age_seconds": 4353206,
+      "age_seconds": 214514,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": null,
       "event_catalog_publication_id": null,
-      "fence": 3,
+      "fence": 4,
       "freshness": "stale",
       "legacy_fallback_allowed": false,
       "manifest_id": null,
-      "payload_checksum": "e43dcb0aef889793278aeafd811349cf0db05683582c29fed08e56517c42e2c9",
-      "publication_id": "1bf3a07a-741a-4f7c-9bef-977a22066b15",
-      "retrieved_at": "2026-08-23T19:12:19.727615+00:00",
+      "payload_checksum": "0ee1a904d24e811262c513d746add120848802d145e8095238a23b07d19398af",
+      "publication_id": "b0aadb25-1dcf-489c-bbf8-68938fec65e0",
+      "retrieved_at": "2026-10-17T17:08:03.734728+00:00",
       "season": "2025-26",
       "source": "database",
       "status": "active",
       "stream_key": "player_game_logs",
       "unavailable_reason": null,
-      "version": 3
+      "version": 4
     },
     "player_per36": {
-      "age_seconds": 4401823,
+      "age_seconds": 5007675,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1414,6 +2476,63 @@
       "stream_key": "player_per36",
       "unavailable_reason": null,
       "version": 5
+    },
+    "player_rebound_types": {
+      "age_seconds": 222332,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "d0da3fef5c0539dd1ff4d0e53a495ce0240b5092ed99112ca6716fea925bbb67",
+      "publication_id": "50ac8f48-c9d2-438c-a65c-77c4291a443f",
+      "retrieved_at": "2026-10-17T14:57:46.031843+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "player_rebound_types",
+      "unavailable_reason": null,
+      "version": 1
+    },
+    "rebound_types_l15": {
+      "age_seconds": 222311,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "dcea602fe5913096ddf299ce120f1a34bb243c85f9c0b28dc850d9a57a1da952",
+      "publication_id": "6928ca2a-b6be-47a3-afb8-fe0c10d671f7",
+      "retrieved_at": "2026-10-17T14:58:07.308966+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "rebound_types_l15",
+      "unavailable_reason": null,
+      "version": 1
+    },
+    "rebound_types_season": {
+      "age_seconds": 222298,
+      "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+      "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+      "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+      "fence": 1,
+      "freshness": "stale",
+      "legacy_fallback_allowed": false,
+      "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+      "payload_checksum": "6c105caa2fd264e0466cbd2549fc0b787e92e7b67e39f3d818615599c5113579",
+      "publication_id": "c1754311-2d12-412b-a57f-9e903c2f6a4f",
+      "retrieved_at": "2026-10-17T14:58:20.358273+00:00",
+      "season": "2025-26",
+      "source": "database",
+      "status": "active",
+      "stream_key": "rebound_types_season",
+      "unavailable_reason": null,
+      "version": 1
     },
     "sources": {},
     "synergy:l15": {
@@ -1436,7 +2555,7 @@
       "version": null
     },
     "synergy_play_types": {
-      "age_seconds": 2917512,
+      "age_seconds": 3523364,
       "coverage_cutoff": "2026-09-09T08:45:00+00:00",
       "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
       "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
@@ -1474,7 +2593,7 @@
       "version": null
     },
     "synergy_play_types_opponent_season": {
-      "age_seconds": 4267213,
+      "age_seconds": 4873065,
       "coverage_cutoff": "2026-08-24T10:52:39+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "642b443d-9195-4d9d-ad59-a384b1d3d882",
@@ -1493,7 +2612,7 @@
       "version": 3
     },
     "traditional_opponent_l15": {
-      "age_seconds": 3307951,
+      "age_seconds": 3913803,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1512,7 +2631,7 @@
       "version": 7
     },
     "traditional_opponent_season": {
-      "age_seconds": 3307993,
+      "age_seconds": 3913845,
       "coverage_cutoff": "2026-08-21T16:26:09+00:00",
       "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
       "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
@@ -1532,7 +2651,11 @@
     }
   },
   "data_as_of": [
-    "Data as of the 2025-26 season's 2026-09-09 play-type Diets, shot-zone Diets and shot-type Diets, the 2025-26 season's 2026-09-06 shot-zone defense, the 2025-26 season's 2026-08-24 play-type defense and shot-type defense, and the 2025-26 season's 2026-08-21 game logs, per-36 rates, assist-location Diets, team defense and assist-location defense.",
-    "Stale: game logs, per-36 rates and assist-location defense (50 days old), play-type Diets, shot-zone Diets and shot-type Diets (33 days old), assist-location Diets (31 days old), team defense (38 days old), play-type defense and shot-type defense (49 days old), shot-zone defense (36 days old)."
-  ]
+    "Data as of the 2025-26 season's 2026-09-09 play-type Diets, shot-zone Diets and shot-type Diets, the 2025-26 season's 2026-09-06 shot-zone defense, the 2025-26 season's 2026-08-24 play-type defense and shot-type defense, and the 2025-26 season's 2026-08-21 game logs, per-36 rates, assist-location Diets, team defense, assist-location defense, player rebound types, rebound types l15 and rebound types season.",
+    "Stale: game logs, player rebound types, rebound types l15 and rebound types season (2 days old), per-36 rates and assist-location defense (57 days old), play-type Diets, shot-zone Diets and shot-type Diets (40 days old), assist-location Diets (38 days old), team defense (45 days old), play-type defense and shot-type defense (56 days old), shot-zone defense (43 days old)."
+  ],
+  "data_age": {
+    "as_of": "2026-08-21",
+    "state": "stale"
+  }
 }

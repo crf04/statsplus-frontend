@@ -175,3 +175,26 @@ signedInTest(
     expect(queryReads).toHaveLength(0);
   },
 );
+
+signedInTest(
+  'an ambiguous name asks which player and applies the one chosen',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill('Ball last 10 games');
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+    await expect(screen.getByRole('button', 'LaMelo Ball CHA')).toBeVisible();
+    await expect(screen.getByRole('button', 'Lonzo Ball CLE')).toBeVisible();
+    // Nothing is applied before the choice.
+    await expect(browser).toHaveURL('/');
+
+    await screen.getByRole('button', 'Lonzo Ball CLE').tap();
+
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await expect(browser).toHaveURL('/?player_name=Lonzo+Ball&game_filter=10');
+    expect(api.sent('/api/nl-query', 'POST').map((request) => request.body)).toEqual([
+      { query: 'Ball last 10 games' },
+    ]);
+  },
+);

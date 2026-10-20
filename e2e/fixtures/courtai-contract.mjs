@@ -3268,6 +3268,28 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/nl-query') {
+      // "Ball" names two players, so the parser asks instead of choosing; the
+      // main player is left null and the Filter Set holds back (statsplus#264).
+      if (/\bball\b/i.test(request.postDataJSON()?.query ?? '')) {
+        await route.fulfill({
+          json: {
+            player_name: null,
+            game_count: 10,
+            confidence: 0.9,
+            player_choices: [
+              {
+                role: 'main',
+                text: 'Ball',
+                candidates: [
+                  { name: 'LaMelo Ball', team: 'CHA' },
+                  { name: 'Lonzo Ball', team: 'CLE' },
+                ],
+              },
+            ],
+          },
+        });
+        return;
+      }
       await route.fulfill({
         json: {
           player_name: 'LeBron James',

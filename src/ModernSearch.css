@@ -1288,6 +1288,97 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+/* Which player did you mean? Shown under the prompt until every ambiguous
+   name has been answered. Buttons wrap, so it holds at phone width. */
+.player-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  text-align: left;
+  color: #c9c2b2;
+  background: rgba(232, 163, 61, 0.06);
+  border: 1px solid rgba(232, 163, 61, 0.3);
+  border-radius: 16px;
+}
+
+.player-choices-compact {
+  gap: 8px;
+  margin-top: 0;
+  padding: 12px 14px;
+  width: 800px;
+  max-width: 90vw;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
+  font-size: 14px;
+  box-shadow: 0 10px 40px rgba(232, 163, 61, 0.15);
+}
+
+.player-choices-title {
+  margin: 0;
+  font-weight: 600;
+  color: #f6b950;
+}
+
+.player-choices-reference {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-choices-text {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.player-choices-text::before {
+  content: '\201C';
+}
+
+.player-choices-text::after {
+  content: '\201D';
+}
+
+.player-choices-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-choice-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 14px;
+  color: inherit;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(232, 163, 61, 0.45);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.player-choice-button:hover,
+.player-choice-button[aria-pressed='true'] {
+  color: #f6b950;
+  background: rgba(232, 163, 61, 0.16);
+}
+
+.player-choice-button:focus-visible {
+  outline: 2px solid #f6b950;
+  outline-offset: 2px;
+}
+
+.player-choice-team {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
 .prompt-browse {
   display: flex;
   flex-wrap: wrap;

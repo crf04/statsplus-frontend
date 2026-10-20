@@ -189,4 +189,148 @@ describe('NaturalLanguageQuery', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /narrow it down/i })).toBeInTheDocument();
   });
+
+  describe('ambiguous player references', () => {
+    const BALL = {
+      role: 'main',
+      text: 'Ball',
+      candidates: [
+        { name: 'LaMelo Ball', team: 'CHA' },
+        { name: 'Lonzo Ball', team: 'CLE' },
+      ],
+    };
+    const DAVIS = {
+      role: 'with',
+      text: 'Davis',
+      candidates: [
+        { name: 'Anthony Davis', team: 'DAL' },
+        { name: 'Terence Davis', team: null },
+      ],
+    };
+
+    const ask = async (data, props = {}) => {
+      apiClient.post.mockResolvedValue({ data });
+      const onFiltersApplied = jest.fn(() => ({ ok: true }));
+      const onQueryUpdate = jest.fn();
+      render(
+        <MemoryRouter>
+          <NaturalLanguageQuery
+            onFiltersApplied={onFiltersApplied}
+            onQueryUpdate={onQueryUpdate}
+            {...props}
+          />
+        </MemoryRouter>,
+      );
+      // The compact layout hides its input until the search is opened.
+      if (props.inWorkspace) fireEvent.click(screen.getByRole('button', { name: 'Open search' }));
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Ball last 10' } });
+      fireEvent.submit(input.closest('form'));
+      return { onFiltersApplied, onQueryUpdate, input };
+    };
+
+    test('asks which player and applies nothing until one is chosen', async () => {
+      const { onFiltersApplied, onQueryUpdate } = await ask({
+        player_name: null,
+        game_count: 10,
+        player_choices: [BALL],
+      });
+
+      expect(await screen.findByText('Which player did you mean?')).toBeInTheDocument();
+      expect(screen.getByText('Ball')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'LaMelo Ball CHA' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Lonzo Ball CLE' })).toBeInTheDocument();
+      expect(onFiltersApplied).not.toHaveBeenCalled();
+      expect(onQueryUpdate).not.toHaveBeenCalled();
+    });
+
+    test('choosing a candidate fills the player slot and applies as usual', async () => {
+      const { onFiltersApplied, onQueryUpdate } = await ask({
+        player_name: null,
+        game_count: 10,
+        player_choices: [BALL],
+      });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Lonzo Ball CLE' }));
+
+      expect(onFiltersApplied).toHaveBeenCalledTimes(1);
+      expect(onFiltersApplied).toHaveBeenCalledWith({
+        player_name: 'Lonzo Ball',
+        game_filter: 10,
+      });
+      expect(onQueryUpdate).toHaveBeenCalledWith('Ball last 10');
+      expect(screen.queryByText('Which player did you mean?')).not.toBeInTheDocument();
+    });
+
+    test('several references wait for every answer and fill their own slots', async () => {
+      const { onFiltersApplied } = await ask({
+        player_name: null,
+        players_on: ['Karl-Anthony Towns'],
+        player_choices: [BALL, DAVIS, { ...DAVIS, role: 'without', text: 'Williams' }],
+      });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'LaMelo Ball CHA' }));
+      expect(onFiltersApplied).not.toHaveBeenCalled();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Anthony Davis DAL' })[0]);
+      expect(onFiltersApplied).not.toHaveBeenCalled();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Terence Davis' })[1]);
+
+      expect(onFiltersApplied).toHaveBeenCalledWith({
+        player_name: 'LaMelo Ball',
+        'players_on[]': ['Karl-Anthony Towns', 'Anthony Davis'],
+        'players_off[]': ['Terence Davis'],
+      });
+    });
+
+    test('is reachable with the keyboard in the compact layout', async () => {
+      const { onFiltersApplied } = await ask(
+        { player_name: null, player_choices: [BALL] },
+        { inWorkspace: true },
+      );
+
+      const button = await screen.findByRole('button', { name: 'LaMelo Ball CHA' });
+      expect(button.tagName).toBe('BUTTON');
+      expect(button).not.toBeDisabled();
+      fireEvent.click(button);
+      expect(onFiltersApplied).toHaveBeenCalledWith({ player_name: 'LaMelo Ball' });
+    });
+
+    test('a new query clears the pending choices', async () => {
+      const { onFiltersApplied, input } = await ask({
+        player_name: null,
+        player_choices: [BALL],
+      });
+      await screen.findByText('Which player did you mean?');
+
+      apiClient.post.mockResolvedValue({ data: { player_name: 'LeBron James' } });
+      fireEvent.change(input, { target: { value: 'LeBron this year' } });
+      fireEvent.submit(input.closest('form'));
+
+      await waitFor(() =>
+        expect(onFiltersApplied).toHaveBeenCalledWith({ player_name: 'LeBron James' }),
+      );
+      expect(screen.queryByText('Which player did you mean?')).not.toBeInTheDocument();
+      expect(onFiltersApplied).toHaveBeenCalledTimes(1);
+    });
+
+    test.each([
+      ['an empty player_choices', { player_choices: [] }],
+      ['no player_choices field', {}],
+    ])('%s applies at once, exactly as before', async (_label, extra) => {
+      const { onFiltersApplied, onQueryUpdate } = await ask({
+        player_name: 'LeBron James',
+        game_count: 10,
+        ...extra,
+      });
+
+      await waitFor(() =>
+        expect(onFiltersApplied).toHaveBeenCalledWith({
+          player_name: 'LeBron James',
+          game_filter: 10,
+        }),
+      );
+      expect(onQueryUpdate).toHaveBeenCalledWith('Ball last 10');
+      expect(screen.queryByText('Which player did you mean?')).not.toBeInTheDocument();
+    });
+  });
 });

@@ -346,3 +346,20 @@ test('a default `lines` names by a book key selects that book', () => {
   expect(allSources()).toEqual(['Dabble 26.5', 'DraftKings 26.5, Over −110, Under −115']);
   expect(pressedSources()).toEqual(['DraftKings 26.5, Over −110, Under −115']);
 });
+
+test('a player loaded through an empty response takes his own default source', () => {
+  const { rerender } = render(
+    <Harness averages={[filtered, season]} posted={sourcedLine} player="Stephen Curry" />,
+  );
+  expect(pressedSources()).toEqual(['Dabble 26.5, Over −122, Under −122']);
+  rerender(<Harness averages={[]} posted={null} player="LeBron James" />);
+  const nextPlayerPosted = decodePosted({
+    lines: { PTS: { value: 22.5, provider: 'underdog' } },
+    provider_lines: { dabble: { PTS: 21.5 }, underdog: { PTS: 22.5 } },
+  });
+  rerender(
+    <Harness averages={[filtered, season]} posted={nextPlayerPosted} player="LeBron James" />,
+  );
+  expect(screen.getByLabelText('Line Value:')).toHaveValue('22.5');
+  expect(pressedSources()).toEqual(['Underdog 22.5']);
+});

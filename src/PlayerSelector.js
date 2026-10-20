@@ -89,8 +89,10 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // The player and Line Type the line was last set for, and whether a value
-  // was typed for them; a typed value holds while the logs refetch.
+  // The player and Line Type the line and its source were last set for, and
+  // whether a value was typed for them; a typed value holds while the logs
+  // refetch. Loading another player sets nothing, so the earlier source cannot
+  // carry over to him.
   const lineForRef = useRef({ key: null, typed: false });
   const lineKey = `${selectedPlayer}|${lineType}`;
 
@@ -101,11 +103,11 @@ const PlayerSelector = ({
   useEffect(() => {
     const sameKey = lineForRef.current.key === lineKey;
     if (sameKey && lineForRef.current.typed) return;
-    lineForRef.current = { key: lineKey, typed: false };
     const chosen = sameKey && lineSource ? postedLineFor(postedLine, lineType, lineSource) : null;
     const posted = chosen ?? postedLineFor(postedLine, lineType);
     const value = posted?.line ?? toFiniteNumber(averages?.[1]?.[lineType]);
     if (value !== null) {
+      lineForRef.current = { key: lineKey, typed: false };
       setLineValue(formatNumber(value, 1));
       setLineSource(posted ? lineSourceId(posted) : null);
     }

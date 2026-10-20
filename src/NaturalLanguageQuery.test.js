@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import apiClient from './utils/axiosConfig';
 
@@ -371,6 +371,30 @@ describe('NaturalLanguageQuery', () => {
         player_name: 'Lonzo Ball',
         game_filter: 10,
       });
+    });
+
+    test('navigating away abandons the question', async () => {
+      const Away = () => {
+        const navigate = useNavigate();
+        return <button onClick={() => navigate('/?browse=1')}>Go away</button>;
+      };
+      const onFiltersApplied = jest.fn(() => ({ ok: true }));
+      apiClient.post.mockResolvedValue({ data: { player_name: null, player_choices: [BALL] } });
+      render(
+        <MemoryRouter>
+          <Away />
+          <NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />
+        </MemoryRouter>,
+      );
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Ball last 10' } });
+      fireEvent.submit(input.closest('form'));
+      await screen.findByText('Which player did you mean?');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Go away' }));
+
+      expect(screen.queryByText('Which player did you mean?')).not.toBeInTheDocument();
+      expect(onFiltersApplied).not.toHaveBeenCalled();
     });
 
     test('a new query clears the pending choices', async () => {

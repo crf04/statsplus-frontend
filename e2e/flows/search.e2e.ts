@@ -226,3 +226,19 @@ signedInTest(
     await expect(browser).toHaveURL(/player_name=Player\+14\+Williams/);
   },
 );
+
+signedInTest(
+  'browsing without a query abandons a pending question',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/');
+    await screen.getByRole('textbox', PROMPT).fill('Ball last 10 games');
+    await screen.getByRole('textbox', PROMPT).press('Enter');
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+
+    await screen.getByRole('button', 'Browse without a query').tap();
+
+    await expect(browser).toHaveURL(/browse=1/);
+    await expect(screen.getByText('Which player did you mean?')).toBeHidden();
+    expect(api.sent('/api/nl-query', 'POST')).toHaveLength(1);
+  },
+);

@@ -137,6 +137,12 @@ const NaturalLanguageQuery = ({
     wasInWorkspace.current = inWorkspace;
   }, [inWorkspace]);
 
+  // A question belongs to the page it was asked on. Any navigation — Browse,
+  // Back, a link — abandons it; the picker's own apply clears it first.
+  useEffect(() => {
+    setPending(null);
+  }, [location.key]);
+
   // Close expanded search bar when transitioning to results page
   useEffect(() => {
     if (inWorkspace && !isLoading) {

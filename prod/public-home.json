@@ -1,0 +1,102 @@
+{
+  "desktop": {
+    "url": "http://127.0.0.1:5188/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "tickerLinks": [
+      {
+        "href": "/matchups",
+        "text": "Tue, Oct 20 3 games"
+      },
+      {
+        "href": "/matchups/0022600001",
+        "text": "BOS @ DET3:00 PM"
+      },
+      {
+        "href": "/matchups/0022600002",
+        "text": "PHI @ NYK7:00 PMJames−6%Brown−6%Embiid−6%"
+      },
+      {
+        "href": "/matchups/0022600003",
+        "text": "OKC @ SAS9:30 PMHarper−10%Wembanyama−9%Castle−9%"
+      }
+    ],
+    "signUpMentions": 2,
+    "alerts": [],
+    "invalidResponseText": 0,
+    "horizontalOverflowPx": 0,
+    "responses": [
+      {
+        "method": "GET",
+        "path": "/api/games/ladder",
+        "query": "",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slate",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slate/edges",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      }
+    ],
+    "pass": true
+  },
+  "phone": {
+    "url": "http://127.0.0.1:5188/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "tickerLinks": [
+      {
+        "href": "/matchups",
+        "text": "Tue, Oct 20 3 games"
+      },
+      {
+        "href": "/matchups/0022600001",
+        "text": "BOS @ DET3:00 PM"
+      },
+      {
+        "href": "/matchups/0022600002",
+        "text": "PHI @ NYK7:00 PMJames−6%Brown−6%Embiid−6%"
+      },
+      {
+        "href": "/matchups/0022600003",
+        "text": "OKC @ SAS9:30 PMHarper−10%Wembanyama−9%Castle−9%"
+      }
+    ],
+    "signUpMentions": 2,
+    "alerts": [],
+    "invalidResponseText": 0,
+    "horizontalOverflowPx": 0,
+    "responses": [
+      {
+        "method": "GET",
+        "path": "/api/games/slate/edges",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slate",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/ladder",
+        "query": "",
+        "status": 200
+      }
+    ],
+    "pass": true
+  }
+}

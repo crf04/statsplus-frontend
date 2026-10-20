@@ -1,0 +1,45 @@
+{"action":"doctor"}
+{"action":"open","path":"/"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"fallback":"next_game_day"},"status":200}
+{"action":"assert","target":{"role":"navigation","name":"Today's games"}}
+{"action":"assert","target":{"role":"heading","name":"Tonight"}}
+{"action":"assert","target":{"selector":"a[href='/matchups/0022600001']"}}
+{"action":"assert","target":{"selector":"a[href='/matchups/0022600002']"}}
+{"action":"assert","target":{"selector":"a[href='/matchups/0022600003']"}}
+{"action":"proof","name":"home-signed-in-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"role":"heading","name":"Tonight"}}
+{"action":"proof","name":"home-signed-in-phone"}
+{"action":"assert-layout"}
+{"action":"viewport","name":"desktop"}
+{"action":"open","path":"/matchups?date=2026-10-20"}
+{"action":"assert-response","method":"GET","path":"/api/games/slate","query":{"date":"2026-10-20"},"status":200}
+{"action":"assert","target":{"role":"heading","name":"BOS @ DET"}}
+{"action":"assert","target":{"role":"heading","name":"PHI @ NYK"}}
+{"action":"assert","target":{"role":"heading","name":"OKC @ SAS"}}
+{"action":"snapshot"}
+{"action":"proof","name":"slate-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"role":"heading","name":"BOS @ DET"}}
+{"action":"proof","name":"slate-phone"}
+{"action":"assert-layout"}
+{"action":"viewport","name":"desktop"}
+{"action":"click","target":{"selector":"a[href='/matchups/0022600001']"}}
+{"action":"assert","url":"/matchups/0022600001"}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"0022600001"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"snapshot"}
+{"action":"proof","name":"matchup-bos-det-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"proof","name":"matchup-bos-det-phone"}
+{"action":"viewport","name":"desktop"}
+{"action":"open","path":"/matchups/0022600002"}
+{"action":"assert-response","method":"GET","path":"/api/games/matchup","query":{"game_id":"0022600002"},"status":200}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"snapshot"}
+{"action":"proof","name":"matchup-phi-nyk-desktop"}
+{"action":"viewport","name":"phone"}
+{"action":"assert","target":{"role":"region","name":"Matchup summary"}}
+{"action":"proof","name":"matchup-phi-nyk-phone"}
+{"action":"cleanup"}

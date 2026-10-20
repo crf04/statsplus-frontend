@@ -1,0 +1,198 @@
+{
+  "desktop": {
+    "url": "http://127.0.0.1:5188/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "tickerLinks": [
+      {
+        "href": "/matchups?date=2026-04-12",
+        "text": "Last game day · Sun, Apr 12 15 games"
+      },
+      {
+        "href": "/matchups/0022501186",
+        "text": "ORL @ BOS6:00 PMCarter−8%Banchero−7%Wagner−7%"
+      },
+      {
+        "href": "/matchups/0022501187",
+        "text": "WAS @ CLE6:00 PMTyson+8%Strus+6%Reese−3%"
+      },
+      {
+        "href": "/matchups/0022501188",
+        "text": "DET @ IND6:00 PMToppin−9%Thompson+9%Jackson−8%"
+      },
+      {
+        "href": "/matchups/0022501189",
+        "text": "ATL @ MIA6:00 PMRisacher+2%Ware+2%Kispert+2%"
+      },
+      {
+        "href": "/matchups/0022501190",
+        "text": "CHA @ NYK6:00 PMBridges−5%Bridges−4%Clarkson−4%"
+      },
+      {
+        "href": "/matchups/0022501191",
+        "text": "MIL @ PHI6:00 PMGrimes+3%George+2%Oubre+1%"
+      },
+      {
+        "href": "/matchups/0022501192",
+        "text": "BKN @ TOR6:00 PMMurray-Boyles+6%Poeltl+6%Ingram−5%"
+      },
+      {
+        "href": "/matchups/0022501193",
+        "text": "CHI @ DAL8:30 PMThompson+7%Jones+6%Christie+5%"
+      },
+      {
+        "href": "/matchups/0022501194",
+        "text": "MEM @ HOU8:30 PMEason+6%Sheppard+4%Small−2%"
+      },
+      {
+        "href": "/matchups/0022501195",
+        "text": "NOP @ MIN8:30 PMDiVincenzo+4%Fears+1%Queen0%"
+      },
+      {
+        "href": "/matchups/0022501196",
+        "text": "PHX @ OKC8:30 PMDort−6%McCain−6%Wiggins−5%"
+      },
+      {
+        "href": "/matchups/0022501197",
+        "text": "DEN @ SAS8:30 PMValančiūnas−5%Jokić−5%Barnes+3%"
+      },
+      {
+        "href": "/matchups/0022501198",
+        "text": "UTA @ LAL8:30 PMLaRavia+12%Smart+12%Hachimura+11%"
+      },
+      {
+        "href": "/matchups/0022501199",
+        "text": "GSW @ LAC8:30 PMSantos−2%Horford−1%Porziņģis−1%"
+      },
+      {
+        "href": "/matchups/0022501200",
+        "text": "SAC @ POR8:30 PMAvdija+6%Holiday+6%Love+5%"
+      }
+    ],
+    "signUpMentions": 2,
+    "alerts": [],
+    "invalidResponseText": 0,
+    "horizontalOverflowPx": 0,
+    "responses": [
+      {
+        "method": "GET",
+        "path": "/api/games/slate",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slate/edges",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/ladder",
+        "query": "",
+        "status": 200
+      }
+    ],
+    "pass": true
+  },
+  "phone": {
+    "url": "http://127.0.0.1:5188/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "tickerLinks": [
+      {
+        "href": "/matchups?date=2026-04-12",
+        "text": "Last game day · Sun, Apr 12 15 games"
+      },
+      {
+        "href": "/matchups/0022501186",
+        "text": "ORL @ BOS6:00 PMCarter−8%Banchero−7%Wagner−7%"
+      },
+      {
+        "href": "/matchups/0022501187",
+        "text": "WAS @ CLE6:00 PMTyson+8%Strus+6%Reese−3%"
+      },
+      {
+        "href": "/matchups/0022501188",
+        "text": "DET @ IND6:00 PMToppin−9%Thompson+9%Jackson−8%"
+      },
+      {
+        "href": "/matchups/0022501189",
+        "text": "ATL @ MIA6:00 PMRisacher+2%Ware+2%Kispert+2%"
+      },
+      {
+        "href": "/matchups/0022501190",
+        "text": "CHA @ NYK6:00 PMBridges−5%Bridges−4%Clarkson−4%"
+      },
+      {
+        "href": "/matchups/0022501191",
+        "text": "MIL @ PHI6:00 PMGrimes+3%George+2%Oubre+1%"
+      },
+      {
+        "href": "/matchups/0022501192",
+        "text": "BKN @ TOR6:00 PMMurray-Boyles+6%Poeltl+6%Ingram−5%"
+      },
+      {
+        "href": "/matchups/0022501193",
+        "text": "CHI @ DAL8:30 PMThompson+7%Jones+6%Christie+5%"
+      },
+      {
+        "href": "/matchups/0022501194",
+        "text": "MEM @ HOU8:30 PMEason+6%Sheppard+4%Small−2%"
+      },
+      {
+        "href": "/matchups/0022501195",
+        "text": "NOP @ MIN8:30 PMDiVincenzo+4%Fears+1%Queen0%"
+      },
+      {
+        "href": "/matchups/0022501196",
+        "text": "PHX @ OKC8:30 PMDort−6%McCain−6%Wiggins−5%"
+      },
+      {
+        "href": "/matchups/0022501197",
+        "text": "DEN @ SAS8:30 PMValančiūnas−5%Jokić−5%Barnes+3%"
+      },
+      {
+        "href": "/matchups/0022501198",
+        "text": "UTA @ LAL8:30 PMLaRavia+12%Smart+12%Hachimura+11%"
+      },
+      {
+        "href": "/matchups/0022501199",
+        "text": "GSW @ LAC8:30 PMSantos−2%Horford−1%Porziņģis−1%"
+      },
+      {
+        "href": "/matchups/0022501200",
+        "text": "SAC @ POR8:30 PMAvdija+6%Holiday+6%Love+5%"
+      }
+    ],
+    "signUpMentions": 2,
+    "alerts": [],
+    "invalidResponseText": 0,
+    "horizontalOverflowPx": 0,
+    "responses": [
+      {
+        "method": "GET",
+        "path": "/api/games/slate",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slate/edges",
+        "query": "?fallback=next_game_day",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/ladder",
+        "query": "",
+        "status": 200
+      }
+    ],
+    "pass": true
+  }
+}

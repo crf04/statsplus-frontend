@@ -2032,3 +2032,41 @@ test('the line defaults to his next game posted line, else the season average', 
   await page.getByLabel('Line Type:').selectOption('REB');
   await expect(lineValue).toHaveValue('7.5');
 });
+
+test('choosing a posted line source redraws the line and its over counts', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?player_name=Stephen+Curry');
+  const lineValue = page.getByLabel('Line Value:');
+  const sources = page.getByRole('group', { name: 'Posted Lines:' });
+  await expect(lineValue).toHaveValue('26.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(
+    'Dabble 26.5, Over −122, Under −122',
+  );
+  await expect(sources.getByRole('button')).toHaveText([
+    /^Dabble/,
+    /^Underdog/,
+    /^DraftKings/,
+    /^FanDuel/,
+    /^BetRivers/,
+  ]);
+
+  await page.getByLabel('Line Type:').selectOption('FG3M');
+  await expect(lineValue).toHaveValue('4.5');
+  await expect(page.getByText('0/2', { exact: true })).toBeVisible();
+
+  await sources.getByRole('button', { name: /^Hardrockbet 3\.5/ }).click();
+  await expect(lineValue).toHaveValue('3.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(
+    'Hardrockbet 3.5, Over −160, no Under price',
+  );
+  await expect(page.getByText('1/2', { exact: true })).toBeVisible();
+
+  await lineValue.fill('5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveCount(0);
+  await expect(page.getByText('0/2', { exact: true })).toBeVisible();
+
+  await page.getByLabel('Line Type:').selectOption('PTS');
+  await expect(lineValue).toHaveValue('26.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(/^Dabble/);
+});

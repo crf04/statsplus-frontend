@@ -59,7 +59,7 @@ A few decisions worth calling out:
 - Player profile pages with summaries, averages, recent game logs, assist profiles, and 2-vs-3 distribution charts
 - Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them
 - Targets: saved, backtested conditions that resolve against the day's games
-- Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists
+- Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists, and list every provider and book posting it to pick from
 - Connect page for the MCP connector, an in-app feedback widget, and a public home page with legal pages
 - Responsive layout via Tailwind + Bootstrap + custom CSS
 

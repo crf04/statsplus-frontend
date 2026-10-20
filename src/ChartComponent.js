@@ -16,9 +16,9 @@ const getPer36Value = (average, stat) => {
 
 // Whose line it is, then which game, on two lines so a phone-width chart fits
 // it: "PrizePicks 26.5" / "GSW vs LAL · Wed, Oct 21".
-const postedLineLabel = ({ value, provider, matchup, gameDate }) =>
+const postedLineLabel = ({ key, line, matchup, gameDate }) =>
   [
-    `${bookName(provider)} ${formatNumber(value, 1)}`,
+    `${bookName(key)} ${formatNumber(line, 1)}`,
     [matchup, gameDate && shortSlateDay(gameDate)].filter(Boolean).join(' · '),
   ]
     .filter(Boolean)
@@ -30,19 +30,18 @@ const ChartComponent = ({
   lineValue,
   averages,
   postedLine,
-  lineIsPosted,
+  lineSource,
   appliedFilters,
 }) => {
   const explicitLineValue = toFiniteNumber(lineValue);
   const numericLineValue =
     explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[1]?.[lineType], 0);
-  const posted = postedLineFor(postedLine, lineType);
-  const lineLabel =
-    lineIsPosted && posted
-      ? postedLineLabel(posted)
-      : explicitLineValue !== null
-        ? `Line: ${lineValue}`
-        : `Season avg: ${numericLineValue.toFixed(1)}`;
+  const posted = lineSource ? postedLineFor(postedLine, lineType, lineSource) : null;
+  const lineLabel = posted
+    ? postedLineLabel(posted)
+    : explicitLineValue !== null
+      ? `Line: ${lineValue}`
+      : `Season avg: ${numericLineValue.toFixed(1)}`;
 
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.

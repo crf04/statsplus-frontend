@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 import ChartComponent from './ChartComponent';
+import { decodeGameLogsResponse } from './gameLogsApi';
 
 let barProps;
 jest.mock('react-chartjs-2', () => ({
@@ -31,13 +32,16 @@ test('without an explicit line the chart draws the season average', () => {
   expect(line.label.content).toEqual(['Season avg: 24.7']);
 });
 
-const postedLine = {
-  gameDate: '2026-10-21',
-  matchup: 'GSW vs LAL',
-  lines: { PTS: { value: 26.5, provider: 'prizepicks' } },
-};
+const { postedLine } = decodeGameLogsResponse({
+  game_logs: [],
+  posted_line: {
+    game_date: '2026-10-21',
+    matchup: 'GSW vs LAL',
+    lines: { PTS: { value: 26.5, provider: 'prizepicks' } },
+  },
+});
 
-const lineLabel = (lineValue, lineIsPosted) => {
+const lineLabel = (lineValue, lineSource) => {
   render(
     <ChartComponent
       gameLogs={[{ GAME_DATE: '2026-01-01', PTS: 20 }]}
@@ -45,7 +49,7 @@ const lineLabel = (lineValue, lineIsPosted) => {
       lineValue={lineValue}
       averages={averages}
       postedLine={postedLine}
-      lineIsPosted={lineIsPosted}
+      lineSource={lineSource}
     />,
   );
   const { label } = barProps.options.plugins.annotation.annotations.line1;
@@ -54,10 +58,13 @@ const lineLabel = (lineValue, lineIsPosted) => {
 };
 
 test('the posted line is labelled with its provider and game', () => {
-  expect(lineLabel('26.5', true)).toEqual(['PrizePicks 26.5', 'GSW vs LAL · Wed, Oct 21']);
+  expect(lineLabel('26.5', 'provider:prizepicks')).toEqual([
+    'PrizePicks 26.5',
+    'GSW vs LAL · Wed, Oct 21',
+  ]);
 });
 
 test('a typed line keeps the plain label, even at the posted value', () => {
-  expect(lineLabel('30', false)).toEqual(['Line: 30']);
-  expect(lineLabel('26.5', false)).toEqual(['Line: 26.5']);
+  expect(lineLabel('30', null)).toEqual(['Line: 30']);
+  expect(lineLabel('26.5', null)).toEqual(['Line: 26.5']);
 });

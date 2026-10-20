@@ -3,7 +3,65 @@ import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
 import { lineTypeOptions } from './utils';
 import './PlayerSelector.css'; // Import the CSS file
 import { formatNumber, toFiniteNumber } from './numberUtils';
-import { postedLineFor } from './gameLogsApi';
+import { lineSourceId, lineSourcesFor, postedLineFor } from './gameLogsApi';
+import { bookName } from './matchups/displayConfig';
+import { formatPrice } from './matchups/linePrices';
+import { shortSlateDay } from './home/homeFormat';
+
+const hasPrice = (source) => source.over !== null || source.under !== null;
+
+// "DraftKings 26.5, Over −110, Under −115"; a provider with no per-pick price
+// is named with its line alone.
+const sourceLabel = (source) =>
+  [
+    `${bookName(source.key)} ${formatNumber(source.line, 1)}`,
+    ...(hasPrice(source)
+      ? [
+          source.over === null ? 'no Over price' : `Over ${formatPrice(source.over)}`,
+          source.under === null ? 'no Under price' : `Under ${formatPrice(source.under)}`,
+        ]
+      : []),
+  ].join(', ');
+
+function LineSourcePicker({ posted, sources, lineSource, onChoose }) {
+  const game = [posted.matchup, posted.gameDate && shortSlateDay(posted.gameDate)]
+    .filter(Boolean)
+    .join(' · ');
+  return (
+    <div className="line-sources" role="group" aria-labelledby="line-sources-label">
+      <div className="line-sources-head">
+        <span id="line-sources-label" className="player-selector-label">
+          Posted Lines:
+        </span>
+        {game && <span className="line-sources-game">{game}</span>}
+      </div>
+      <div className="line-sources-list">
+        {sources.map((source) => {
+          const id = lineSourceId(source);
+          return (
+            <button
+              key={id}
+              type="button"
+              className="line-source"
+              aria-pressed={lineSource === id}
+              aria-label={sourceLabel(source)}
+              onClick={() => onChoose(source)}
+            >
+              <span className="line-source-name">{bookName(source.key)}</span>
+              <span className="line-source-line">{formatNumber(source.line, 1)}</span>
+              {hasPrice(source) && (
+                <span className="line-source-prices">
+                  <span>o {source.over === null ? '—' : formatPrice(source.over)}</span>
+                  <span>u {source.under === null ? '—' : formatPrice(source.under)}</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const PlayerSelector = ({
   selectedPlayer,
@@ -12,7 +70,8 @@ const PlayerSelector = ({
   setLineType,
   lineValue,
   setLineValue,
-  setLineIsPosted,
+  lineSource,
+  setLineSource,
   playerList,
   averages,
   postedLine,
@@ -30,8 +89,8 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // A value typed for this player and Line Type is kept while the logs
-  // refetch; changing either one defaults the line again.
+  // A value typed or a source chosen for this player and Line Type is kept
+  // while the logs refetch; changing either one defaults the line again.
   const lineEditedForRef = useRef(null);
   const lineKey = `${selectedPlayer}|${lineType}`;
 
@@ -41,12 +100,19 @@ const PlayerSelector = ({
     // Another player or Line Type: an earlier edit no longer applies.
     lineEditedForRef.current = null;
     const posted = postedLineFor(postedLine, lineType);
-    const value = posted?.value ?? toFiniteNumber(averages?.[1]?.[lineType]);
+    const value = posted?.line ?? toFiniteNumber(averages?.[1]?.[lineType]);
     if (value !== null) {
       setLineValue(formatNumber(value, 1));
-      setLineIsPosted(Boolean(posted));
+      setLineSource(posted ? lineSourceId(posted) : null);
     }
-  }, [lineKey, lineType, averages, postedLine, setLineValue, setLineIsPosted]);
+  }, [lineKey, lineType, averages, postedLine, setLineValue, setLineSource]);
+
+  const sources = lineSourcesFor(postedLine, lineType);
+  const chooseSource = (source) => {
+    lineEditedForRef.current = lineKey;
+    setLineValue(formatNumber(source.line, 1));
+    setLineSource(lineSourceId(source));
+  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -97,7 +163,7 @@ const PlayerSelector = ({
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
       lineEditedForRef.current = lineKey;
       setLineValue(value);
-      setLineIsPosted(false);
+      setLineSource(null);
     }
   };
 
@@ -179,6 +245,16 @@ const PlayerSelector = ({
           />
         </Form.Group>
       </Col>
+      {sources.length > 0 && (
+        <Col xs={12}>
+          <LineSourcePicker
+            posted={postedLine}
+            sources={sources}
+            lineSource={lineSource}
+            onChoose={chooseSource}
+          />
+        </Col>
+      )}
     </Row>
   );
 };

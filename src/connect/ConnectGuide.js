@@ -18,7 +18,7 @@ const LESSONS = [
 const ASKING = [
   {
     rule: 'Name the player and the opponent',
-    why: 'That is enough for a Matchup, even with no game scheduled.',
+    why: 'That is enough for a Matchup, even with no game scheduled. It reads the latest season CourtAI has, and says which.',
     prompt: "Show Cade Cunningham's matchup against Charlotte.",
   },
   {

@@ -276,6 +276,13 @@ test('arrow keys move between the outcome runs and show the chosen run', async (
 
   fireEvent.keyDown(second, { key: 'ArrowLeft' });
   expect(first).toHaveAttribute('aria-selected', 'true');
+  expect(first).toHaveAttribute('aria-controls', panel.id);
+
+  fireEvent.keyDown(first, { key: 'ArrowLeft' });
+  expect(outcome.getByRole('tab', { name: 'Find a type of player' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
 });
 
 test('Ask one question shows the clip poster and its tweet, and plays the video only when asked', async () => {

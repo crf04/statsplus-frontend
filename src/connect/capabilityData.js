@@ -49,7 +49,7 @@ export const CAPABILITIES = [
     what: 'Fifteen markets, from rebounds and threes to PRA and steals plus blocks, each with its Season and Last 15 score.',
     prompt: "Show Cade Cunningham's assists matchup against Charlotte.",
     answer:
-      '−3% vs league, and the Last 15 agrees (−14%). His rim assists are 49% of the total; Charlotte ranks 16th there.',
+      'On the completed 2025-26 season: −3% vs league, and the Last 15 agrees (−14%). His rim assists are 49% of the total; Charlotte ranks 16th there.',
     card: true,
   },
   {
@@ -59,7 +59,7 @@ export const CAPABILITIES = [
     what: 'An Unscheduled Matchup: any player or team against any opponent, any day, offseason included.',
     prompt: "Show Cade Cunningham's matchup against Charlotte.",
     answer:
-      'Points +0.4% vs league. The edge is his pick-and-roll: 37% of his plays, and Charlotte ranks 26th against it.',
+      'On the completed 2025-26 season: points +0.4% vs league. The edge is his pick-and-roll: 37% of his plays, and Charlotte ranks 26th against it.',
     card: true,
   },
   {
@@ -69,7 +69,7 @@ export const CAPABILITIES = [
     what: 'His Diet in every Base: shot types, zones, play types, assist locations and rebound types, against the league share.',
     prompt: "What does Cade Cunningham's shot diet look like against Charlotte?",
     answer:
-      'Pick-and-roll ball handler on 37% of his plays (league 18%); pull-ups are 40% of his shots (league 24%).',
+      'On the completed 2025-26 season: pick-and-roll ball handler on 37% of his plays (league 18%); pull-ups are 40% of his shots (league 24%).',
   },
   {
     group: 'history',

@@ -1,0 +1,181 @@
+.clip-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 32px;
+  align-items: start;
+}
+
+.clip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.clip-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 10px;
+  background: #000;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.clip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s;
+}
+
+.clip-thumb:hover img {
+  transform: scale(1.03);
+}
+
+.clip-thumb:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.clip-play {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ct-gold);
+  color: #1a1206;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.clip-duration {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-family: var(--ct-mono);
+  font-size: 11.5px;
+}
+
+.clip-caption {
+  margin: 4px 0 0;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.clip-caption strong {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+
+.clip-x {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ct-dim);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.clip-x:hover {
+  color: var(--ct-text);
+}
+
+.clip-dialog {
+  width: min(960px, 94vw);
+  max-width: none;
+  padding: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 14px;
+  background: #120f0a;
+  color: var(--ct-text);
+  overflow: visible;
+}
+
+.clip-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.clip-dialog-body {
+  position: relative;
+}
+
+.clip-dialog-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px 14px 0 0;
+  background: #000;
+}
+
+.clip-dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.clip-dialog-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.clip-dialog-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 50%;
+  background: #1f1b14;
+  color: var(--ct-text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  /* phone: the clip becomes a row above the lesson */
+  .clip-intro {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .clip {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    column-gap: 14px;
+    align-content: center;
+    order: -1;
+  }
+
+  .clip-thumb {
+    grid-row: span 2;
+  }
+
+  .clip-caption {
+    align-self: end;
+  }
+
+  .clip .clip-x {
+    align-self: start;
+  }
+
+  .clip-dialog-close {
+    top: 8px;
+    right: 8px;
+  }
+}

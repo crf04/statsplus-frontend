@@ -1,0 +1,234 @@
+.rr {
+  --rr-kept: 104, 186, 166;
+  --rr-mixed: 232, 163, 61;
+  --rr-dropped: 150, 140, 125;
+  --rr-lead: 128, 160, 230;
+
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 14px;
+  background: #120f0a;
+  overflow: hidden;
+}
+
+.rr-brief {
+  padding: 22px 24px;
+  background: radial-gradient(520px 220px at 0% 0%, rgba(232, 163, 61, 0.07), transparent 70%);
+}
+
+.rr-brief-parts {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px 14px 4px 14px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.rr-brief-parts > div {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.rr-brief-parts dt {
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rr-brief-parts dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.rr-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 0;
+  padding: 14px 24px;
+  border-top: 1px solid var(--ct-line-strong);
+  border-bottom: 1px solid var(--ct-line-strong);
+  list-style: none;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.rr-tally strong {
+  margin-right: 4px;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 22px;
+}
+
+.rr-tally .rr-kept strong {
+  color: rgb(var(--rr-kept));
+}
+
+.rr-tally .rr-mixed strong {
+  color: rgb(var(--rr-mixed));
+}
+
+.rr-tally .rr-dropped strong {
+  color: rgb(var(--rr-dropped));
+}
+
+.rr-trace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+
+.rr-phase {
+  padding: 20px 24px;
+}
+
+.rr-phase + .rr-phase {
+  border-left: 1px solid var(--ct-line-strong);
+}
+
+.rr-phase-head h3 {
+  margin: 0 0 2px;
+  font-family: var(--ct-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rr-phase-head p {
+  margin: 0 0 14px;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.rr-calls {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rr-calls li {
+  padding: 10px 0;
+  border-top: 1px solid var(--ct-line);
+}
+
+.rr-verdict {
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid rgba(var(--rr-v), 0.6);
+  border-radius: 999px;
+  color: rgb(var(--rr-v));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rr-lead {
+  --rr-v: var(--rr-lead);
+}
+
+.rr-kept {
+  --rr-v: var(--rr-kept);
+}
+
+.rr-mixed {
+  --rr-v: var(--rr-mixed);
+}
+
+.rr-dropped {
+  --rr-v: var(--rr-dropped);
+}
+
+.rr-report {
+  padding: 20px 24px 22px;
+  border-top: 1px solid var(--ct-line-strong);
+  background: rgba(232, 163, 61, 0.05);
+}
+
+.rr-report ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.rr-item {
+  padding: 12px 14px;
+  border: 1px solid var(--ct-line);
+  border-left: 3px solid rgb(var(--rr-v));
+  border-radius: 10px;
+  background: #120f0a;
+}
+
+.rr-item-kept {
+  --rr-v: var(--rr-kept);
+}
+
+.rr-item-mixed {
+  --rr-v: var(--rr-mixed);
+}
+
+.rr-item-dropped {
+  --rr-v: var(--rr-dropped);
+}
+
+.rr-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14.5px;
+}
+
+.rr-item-head .rr-verdict {
+  margin-left: 0;
+}
+
+.rr-item-dropped .rr-item-head strong {
+  color: var(--ct-dim);
+  text-decoration: line-through;
+  text-decoration-color: rgba(var(--rr-dropped), 0.7);
+}
+
+.rr-item-body {
+  margin: 0;
+  color: #d7cfbd;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+@media (max-width: 860px) {
+  .rr-trace {
+    grid-template-columns: 1fr;
+  }
+
+  .rr-phase + .rr-phase {
+    border-left: none;
+    border-top: 1px solid var(--ct-line-strong);
+  }
+}
+
+@media (max-width: 560px) {
+  .rr-brief,
+  .rr-phase,
+  .rr-report {
+    padding: 18px 16px;
+  }
+
+  .rr-tally {
+    padding: 12px 16px;
+  }
+
+  .rr-brief-parts > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

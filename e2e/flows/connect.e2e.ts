@@ -139,6 +139,44 @@ signedOutTest(
   },
 );
 
+signedOutTest(
+  'the guide links its five lessons, folds its replays and opens all 21 capabilities',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect');
+
+    const contents = screen.getByRole('navigation', 'In this guide');
+    const lessons = [
+      ['Connect CourtAI', '#guide-setup'],
+      ['Ask one question', '#guide-ask'],
+      ['Hand it an outcome', '#guide-outcome'],
+      ['Let it run the research', '#guide-research'],
+      ['Everything it can do', '#guide-tools'],
+    ];
+    await expect(contents.getByRole('link')).toHaveCount(lessons.length);
+    await expect(screen.getByRole('heading', { level: 2 })).toHaveCount(lessons.length);
+    for (const [index, [title, href]] of lessons.entries()) {
+      await expect(contents.getByRole('link').nth(index)).toHaveAccessibleName(title);
+      await expect(contents.getByRole('link').nth(index)).toHaveAttribute('href', href);
+      await expect(screen.getByRole('heading', { level: 2 }).nth(index)).toHaveAccessibleName(
+        title,
+      );
+    }
+
+    const outcome = screen.getByRole('region', 'Hand it an outcome');
+    await expect(outcome.getByRole('tab', 'Scan the injury report')).toBeHidden();
+    await outcome.getByText('Step through four runs').tap();
+    await expect(outcome.getByRole('tab', 'Scan the injury report')).toBeVisible();
+
+    await contents.getByRole('link', 'Everything it can do').tap();
+    await expect(browser).toHaveURL(/#guide-tools$/);
+    const tools = screen.getByRole('region', 'Everything it can do');
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(6);
+    await tools.getByRole('button', 'Show all 21 (15 more)').tap();
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(21);
+    await expect(tools.getByRole('button', 'Show all 21 (15 more)')).toHaveCount(0);
+  },
+);
+
 signedOutTest('the home page points to the Connect page', async ({ app, screen, browser }) => {
   await app.open('/');
 

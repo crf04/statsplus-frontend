@@ -68,7 +68,7 @@ Routes are from `src/App.js`; the six research areas also match the coordination
 | `/`: ticker, Tonight (Best/Toughest, Try it), Your Targets, answered ladder; no games; signed out (sign-up card)                                                                | `flows/home.e2e.ts`, `flows/waitlist.e2e.ts` (waitlisted redirects) | `specs/waitlist.spec.js` (banner and refusal observation), `specs/core-flows.spec.js` (sign-up funnel) |
 | `/`: browse, structured filters, one request per Apply, pending rows, Back, refused URL, empty/error/reload                                                                     | `flows/log-workspace.e2e.ts`                                        | `specs/core-flows.spec.js`, `filter-panel.spec.js`, `filter-panel-parity.spec.js`                      |
 | Log Workspace analytics, charts, comparisons, date/timezone, player/season switching                                                                                            | `flows/log-workspace.e2e.ts` (rows, filtering, cards and averages)  | `specs/p1-analytics.spec.js`, `player-profile-charts.spec.js`, `core-flows.spec.js`                    |
-| `/connect`: copyable connector URL, setup lists, card layout, no API requests                                                                                                   | `flows/connect.e2e.ts`                                              | none                                                                                                   |
+| `/connect`: copyable connector URL, setup lists, card layout, guide lessons, no API requests                                                                                    | `flows/connect.e2e.ts`                                              | none                                                                                                   |
 | Feedback widget: send with screenshot, refused send keeps the draft, focus inside modals, phone popover                                                                         | none                                                                | `specs/feedback.spec.js`                                                                               |
 | `/help`: clauses, examples, draft retention, reload, Back                                                                                                                       | `flows/query-reference.e2e.ts`                                      | `specs/core-flows.spec.js`                                                                             |
 | Saved Filter Sets: save, duplicate refusal, Cancel/reopen resets, reload, rename, delete, empty/auth                                                                            | `flows/saved-filter-sets.e2e.ts`                                    | `specs/core-flows.spec.js`, `filter-panel.spec.js`                                                     |
@@ -173,7 +173,8 @@ fixture origin, as the persona instructs, and do not connect external accounts.
 `npm run test:flows` also runs the HTTP bridge regression tests. The Connect
 flow checks selectable URL text, clipboard payload and feedback, feedback
 reset, numbered setup lists, the connector card's frame sizing and layout, the
-home link, and absence of API or connector requests. e2e exposes no
+guide's five lessons, a folded replay opening and "Show all" revealing all 21
+capabilities, the home link, and absence of API or connector requests. e2e exposes no
 clipboard-permission grant, so it uses a local clipboard sink; no automated
 test reads the real browser clipboard since the Playwright Connect spec was
 retired (see `MIGRATION.md`).

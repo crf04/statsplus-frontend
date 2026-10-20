@@ -2925,6 +2925,20 @@ describe('line_prices', () => {
 
   test.each([
     ['PrizePicks, which posts the market', { prizepicks: { PTS: { over: -110, under: -110 } } }],
+    ['a provider this build does not know', { fliff: { PTS: { over: -115, under: -105 } } }],
+    ['a provider this build does not know, in any shape', { fliff: 'unpriced' }],
+  ])('ignores %s and keeps the known prices', (_name, unknown) => {
+    const candidate = withLinePrices({
+      ...unknown,
+      underdog: { PTS: { over: -112, under: -112 } },
+    });
+
+    expect(decodeMatchup(candidate).players[0].linePrices).toEqual({
+      underdog: { PTS: { over: -112, under: -112 } },
+    });
+  });
+
+  test.each([
     [
       'a market missing from that provider lines',
       { underdog: { REB: { over: -110, under: -110 } } },

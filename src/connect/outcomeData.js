@@ -29,8 +29,8 @@ export const OUTCOMES = [
     id: 'injuries',
     label: 'Scan the injury report',
     prompt:
-      "Scan today's injury report and tell me who benefits if the key players sit. Give me the three strongest spots, with the evidence and sample sizes for each.",
-    note: 'Replayed for March 20, 2026, a past game day, so "today" is that date. Today’s report is stored from 11:00 ET.',
+      'Scan the March 20, 2026 injury report and tell me who benefits if the key players sit. Give me the three strongest spots, with the evidence and sample sizes for each.',
+    note: 'Leave the date out to scan today’s report, which is stored from 11:00 ET on game days.',
     calls: [
       {
         tool: 'Injury report',

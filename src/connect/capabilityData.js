@@ -67,7 +67,7 @@ export const CAPABILITIES = [
     tool: 'Matchup',
     title: 'See how he scores',
     what: 'His Diet in every Base: shot types, zones, play types, assist locations and rebound types, against the league share.',
-    prompt: "What does Cade Cunningham's shot diet look like?",
+    prompt: "What does Cade Cunningham's shot diet look like against Charlotte?",
     answer:
       'Pick-and-roll ball handler on 37% of his plays (league 18%); pull-ups are 40% of his shots (league 24%).',
   },
@@ -86,7 +86,7 @@ export const CAPABILITIES = [
     title: 'Stack the filters',
     what: 'Several opponent ranks at once, plus home or away, minutes, one opponent and a date window.',
     prompt:
-      'Jalen Duren at home against teams that allow the most rebounds and the most roll-man points.',
+      'Jalen Duren at home last season against teams that allow the most rebounds and the most roll-man points.',
     answer: '3 games, flagged as a thin sample: 15.0 rebounds against 10.5 for his season.',
   },
   {
@@ -94,7 +94,7 @@ export const CAPABILITIES = [
     tool: 'Game logs',
     title: 'Filter on his own stat line',
     what: 'Keep only games where he hit a mark: 30-point nights, 10-assist games, a usage range.',
-    prompt: "Show Cade Cunningham's 35-point games.",
+    prompt: "Show Cade Cunningham's 35-point games last season.",
     answer: '4 games: 42.3 points, 10.3 rebounds and 10.0 assists in 39.8 minutes.',
   },
   {
@@ -166,7 +166,8 @@ export const CAPABILITIES = [
     tool: 'Backtest',
     title: 'Test a type of player',
     what: 'Describe players by their Diet and see how everyone who fit did against an opponent.',
-    prompt: 'Backtest players who run 25% or more of their plays in transition against Washington.',
+    prompt:
+      'Backtest players who ran 25% or more of their plays in transition against Washington last season.',
     answer: '35 players over 79 games: +1.2 points against their own average, above it in 49%.',
     card: true,
   },
@@ -175,7 +176,7 @@ export const CAPABILITIES = [
     tool: 'Backtest',
     title: 'Add conditions',
     what: "Narrow the opponent's games: a date range, a defender's minutes, each player's own minutes.",
-    prompt: 'Backtest rim-heavy players against OKC in games Chet Holmgren sat.',
+    prompt: 'Backtest rim-heavy players against OKC last season in games Chet Holmgren sat.',
     answer:
       '13 of OKC’s 82 games kept. Rebounds +1.1 against their own average (above it in 54%); points flat.',
     card: true,

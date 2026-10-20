@@ -250,6 +250,32 @@ test('the recorded runs stay folded until opened', async () => {
   fireEvent.click(research.getByText('Step through the whole run'));
 
   expect(research.getByRole('button', { name: 'Copy brief' })).toBeVisible();
+  expect(research.getByText(/over his 18\.5 line in 16 of 21\./)).toBeVisible();
+});
+
+test('arrow keys move between the outcome runs and show the chosen run', async () => {
+  await renderConnectRoute();
+
+  const outcome = within(screen.getByRole('region', { name: 'Hand it an outcome' }));
+  fireEvent.click(outcome.getByText('Step through four runs'));
+  const first = outcome.getByRole('tab', { name: 'Scan the injury report' });
+  first.focus();
+
+  fireEvent.keyDown(first, { key: 'ArrowRight' });
+
+  const second = outcome.getByRole('tab', { name: 'Scout a game' });
+  expect(second).toHaveAttribute('aria-selected', 'true');
+  expect(second).toHaveFocus();
+  expect(first).toHaveAttribute('tabindex', '-1');
+  const panel = outcome.getByRole('tabpanel', { name: 'Scout a game' });
+  expect(
+    within(panel).getByText(
+      /^Scout DET @ CHA on April 10, 2026\. Tell me where Detroit has an edge/,
+    ),
+  ).toBeVisible();
+
+  fireEvent.keyDown(second, { key: 'ArrowLeft' });
+  expect(first).toHaveAttribute('aria-selected', 'true');
 });
 
 test('Ask one question shows the clip poster and its tweet, and plays the video only when asked', async () => {
@@ -271,5 +297,11 @@ test('Ask one question shows the clip poster and its tweet, and plays the video 
   expect(video).toHaveAttribute('poster', '/clips/courtai-in-a-chat.jpg');
 
   await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(document.querySelector('video')).toBeNull();
+
+  // Escape closes a native dialog without the Close button; the video goes with it.
+  await userEvent.click(within(clip).getByRole('button', { name: 'Play: CourtAI in a chat' }));
+  expect(document.querySelector('dialog[open] video')).not.toBeNull();
+  fireEvent(document.querySelector('dialog'), new Event('close'));
   expect(document.querySelector('video')).toBeNull();
 });

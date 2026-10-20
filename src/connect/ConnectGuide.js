@@ -178,7 +178,7 @@ const ConnectGuide = ({ setup }) => (
               &ldquo;over the line in two thirds of them&rdquo; turns its judgement into your rule.
             </li>
             <li>
-              <strong>Keep going in the same chat.</strong> &ldquo;Dig into the Queta lean&rdquo; or
+              <strong>Keep going in the same chat.</strong> &ldquo;Look closer at Queta&rdquo; or
               &ldquo;run the same check on the other five games&rdquo; picks up where it stopped.
             </li>
           </ul>

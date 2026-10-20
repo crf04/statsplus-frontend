@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import apiClient from './utils/axiosConfig';
@@ -293,6 +294,83 @@ describe('NaturalLanguageQuery', () => {
       expect(button).not.toBeDisabled();
       fireEvent.click(button);
       expect(onFiltersApplied).toHaveBeenCalledWith({ player_name: 'LaMelo Ball' });
+    });
+
+    test('two candidates with one name are told apart by team', async () => {
+      await ask({
+        player_name: null,
+        player_choices: [
+          {
+            role: 'main',
+            text: 'Smith',
+            candidates: [
+              { name: 'John Smith', team: 'CHA' },
+              { name: 'John Smith', team: 'CLE' },
+            ],
+          },
+          DAVIS,
+        ],
+      });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'John Smith CHA' }));
+
+      expect(screen.getByRole('button', { name: 'John Smith CHA' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      expect(screen.getByRole('button', { name: 'John Smith CLE' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+    });
+
+    test.each([
+      ['a suffix', 'Michael Porter Jr.'],
+      ['an accent', 'Nikola Jokić'],
+    ])('keeps the catalog name with %s exactly as sent', async (_label, name) => {
+      const { onFiltersApplied } = await ask({
+        player_name: null,
+        player_choices: [
+          {
+            role: 'main',
+            text: 'x',
+            candidates: [
+              { name, team: 'DEN' },
+              { name: 'Someone Else', team: 'BOS' },
+            ],
+          },
+        ],
+      });
+
+      fireEvent.click(await screen.findByRole('button', { name: `${name} DEN` }));
+
+      expect(onFiltersApplied).toHaveBeenCalledWith({ player_name: name });
+    });
+
+    test('Tab reaches the candidates in order and Enter chooses one', async () => {
+      const { onFiltersApplied } = await ask({
+        player_name: null,
+        game_count: 10,
+        player_choices: [BALL],
+      });
+      await screen.findByText('Which player did you mean?');
+
+      // Focus starts in the query box and Tab walks the page until it reaches
+      // the first candidate.
+      screen.getByRole('textbox').focus();
+      const lamelo = screen.getByRole('button', { name: 'LaMelo Ball CHA' });
+      for (let presses = 0; presses < 10 && document.activeElement !== lamelo; presses += 1) {
+        userEvent.tab();
+      }
+      expect(lamelo).toHaveFocus();
+      userEvent.tab();
+      expect(screen.getByRole('button', { name: 'Lonzo Ball CLE' })).toHaveFocus();
+      userEvent.keyboard('{enter}');
+
+      expect(onFiltersApplied).toHaveBeenCalledWith({
+        player_name: 'Lonzo Ball',
+        game_filter: 10,
+      });
     });
 
     test('a new query clears the pending choices', async () => {

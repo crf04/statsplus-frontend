@@ -1310,6 +1310,11 @@
   width: 800px;
   max-width: 90vw;
   box-sizing: border-box;
+  /* The wrapper is fixed under the header and the search button, so a long list scrolls inside the
+     panel instead of running off the screen. */
+  max-height: calc(100vh - var(--ct-header-height) - 100px);
+  max-height: calc(100dvh - var(--ct-header-height) - 100px);
+  overflow-y: auto;
   background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
   font-size: 14px;
   box-shadow: 0 10px 40px rgba(232, 163, 61, 0.15);

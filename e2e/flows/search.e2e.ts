@@ -198,3 +198,31 @@ signedInTest(
     ]);
   },
 );
+
+signedInTest(
+  'a long list of candidates scrolls inside the panel so the last one can be chosen on a phone',
+  async ({ app, screen, browser }) => {
+    await browser.setViewport({ width: 375, height: 667 });
+    await app.open('/?player_name=LeBron+James&game_filter=10');
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+    await screen.getByRole('button', 'Open search').tap();
+    await screen
+      .getByRole('textbox', 'Ask about your favorite player')
+      .fill('Williams with Ball without Davis');
+    await screen.getByRole('textbox', 'Ask about your favorite player').press('Enter');
+    await expect(screen.getByText('Which player did you mean?')).toBeVisible();
+
+    // The panel fits the viewport; its own scroll reaches the rest.
+    const fits = await browser.evaluate(() => {
+      const panel = document.querySelector('.player-choices');
+      return panel !== null && panel.getBoundingClientRect().bottom <= window.innerHeight;
+    });
+    expect(fits).toBe(true);
+
+    await screen.getByRole('button', 'Player 14 Williams CLE').tap();
+    await screen.getByRole('button', 'Lonzo Ball CLE').tap();
+    await screen.getByRole('button', 'Terence Davis CLE').tap();
+
+    await expect(browser).toHaveURL(/player_name=Player\+14\+Williams/);
+  },
+);

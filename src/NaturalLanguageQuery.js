@@ -45,13 +45,13 @@ const PlayerChoices = ({ choices, chosen, onChoose, variant }) => (
       <div className="player-choices-reference" role="group" aria-label={choice.text} key={index}>
         <span className="player-choices-text">{choice.text}</span>
         <div className="player-choices-options">
-          {choice.candidates.map((candidate) => (
+          {choice.candidates.map((candidate, candidateIndex) => (
             <button
               type="button"
-              key={`${candidate.name}|${candidate.team}`}
+              key={candidateIndex}
               className="player-choice-button"
-              aria-pressed={chosen[index] === candidate.name}
-              onClick={() => onChoose(index, candidate.name)}
+              aria-pressed={chosen[index] === candidateIndex}
+              onClick={() => onChoose(index, candidateIndex)}
             >
               {candidate.name}
               {candidate.team && <span className="player-choice-team">{candidate.team}</span>}
@@ -188,13 +188,16 @@ const NaturalLanguageQuery = ({
     }
   };
 
-  const choosePlayer = (index, name) => {
+  // `chosen` holds each reference's candidate index, so two candidates with one
+  // name stay distinct; only the name goes into the Filter Set.
+  const choosePlayer = (index, candidateIndex) => {
     const chosen = [...pending.chosen];
-    chosen[index] = name;
-    if (pending.choices.every((_, i) => chosen[i])) {
+    chosen[index] = candidateIndex;
+    if (pending.choices.every((_, i) => chosen[i] !== undefined)) {
       const { result, choices, submitted } = pending;
+      const names = choices.map((choice, i) => choice.candidates[chosen[i]].name);
       setPending(null);
-      applyParsedQuery(applyPlayerChoices(result, choices, chosen), submitted, () => {});
+      applyParsedQuery(applyPlayerChoices(result, choices, names), submitted, () => {});
       return;
     }
     setPending({ ...pending, chosen });

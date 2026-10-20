@@ -1,0 +1,17 @@
+--- helper-pin/control-statsplus.mjs	2026-10-20 12:16:56
++++ helper-pin-prod/control-statsplus.mjs	2026-10-20 12:22:34
+@@ -589,12 +589,12 @@
+   let gameLogBodies = 0;
+   page.on("response", async (response) => {
+     const url = new URL(response.url());
+-    if (url.origin !== origin || url.pathname !== "/api/games/game_logs") return;
++    if (url.origin !== origin || !["/api/games/game_logs", "/api/games/matchup", "/api/games/slate"].includes(url.pathname)) return;
+     try {
+       const body = await response.text();
+       mkdirSync(join(out, "responses"), { recursive: true, mode: 0o700 });
+       gameLogBodies += 1;
+-      writeFileSync(join(out, "responses", `game_logs-${String(gameLogBodies).padStart(2, "0")}.json`), body);
++      writeFileSync(join(out, "responses", `${url.pathname.split("/").pop()}-${String(gameLogBodies).padStart(2, "0")}-${url.searchParams.get("game_id") || url.searchParams.get("player_name") || ""}.json`), body);
+     } catch {}
+   });
+   await page.goto(origin);

@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import SlatePage from './SlatePage';
 import { getTodaySlateDate } from './calendarDate';
 import { fetchSlate } from './slateApi';
+import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 import { fetchResolvedTargets } from './targets/targetsApi';
 
 jest.mock('./slateApi', () => ({ fetchSlate: jest.fn() }));
@@ -487,6 +488,30 @@ test('explains mixed provider counts without claiming the whole pool is missing'
   expect(screen.getByText('9')).toBeVisible();
   expect(document.querySelectorAll('.slate-pip')).toHaveLength(9);
   expect(screen.queryByText(/no targetable players/i)).not.toBeInTheDocument();
+});
+
+test('shows every game of a partial pool, the one without a pool at zero', async () => {
+  jest.setSystemTime(new Date('2026-10-20T20:50:00Z'));
+  const { decodeSlate } = jest.requireActual('./slateApi');
+  fetchSlate.mockResolvedValue(decodeSlate(partialPoolSlatePayload));
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-10-20']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText(/counts reflect the available boards/i)).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^BOS @ DET, .*0 targetable players, BOS 0, DET 0/ }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^PHI @ NYK, .*15 targetable players, PHI 7, NYK 8/ }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^OKC @ SAS, .*18 targetable players, OKC 9, SAS 9/ }),
+  ).toBeVisible();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
 test('groups the slate into tip-time windows in schedule order', async () => {

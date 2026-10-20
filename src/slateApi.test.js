@@ -1,5 +1,6 @@
 import { decodeSlate, fetchSlate } from './slateApi';
 import { apiClient, getApiUrl } from './config';
+import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
@@ -104,16 +105,6 @@ test.each([
       },
     },
   ],
-  [
-    'frontend-derived pool freshness status',
-    {
-      ...payload,
-      freshness: {
-        ...payload.freshness,
-        pool: { status: 'partial', retrieved_at: null, providers: {} },
-      },
-    },
-  ],
   ...['text', 7, null].map((schedule) => [
     `primitive schedule surface ${String(schedule)}`,
     { ...payload, freshness: { ...payload.freshness, schedule } },
@@ -127,6 +118,25 @@ test.each([
   expect(() => decodeSlate(malformedPayload)).toThrow(
     'The slate endpoint returned an invalid response.',
   );
+});
+
+test('decodes a partial pool beside a game whose pool is missing', () => {
+  const slate = decodeSlate(partialPoolSlatePayload);
+
+  expect(slate.freshness.pool).toEqual(
+    expect.objectContaining({ status: 'partial', retrievedAt: '2026-10-20T20:43:59.528Z' }),
+  );
+  expect(
+    slate.games.map((game) => [
+      `${game.away.tricode} @ ${game.home.tricode}`,
+      game.away.targetablePlayerCount,
+      game.home.targetablePlayerCount,
+    ]),
+  ).toEqual([
+    ['BOS @ DET', 0, 0],
+    ['PHI @ NYK', 7, 8],
+    ['OKC @ SAS', 9, 9],
+  ]);
 });
 
 test('accepts schedule staleness and an unavailable aggregate pool from the backend contract', () => {

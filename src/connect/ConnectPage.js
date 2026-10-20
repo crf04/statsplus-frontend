@@ -97,9 +97,10 @@ const CLIENTS = [
     name: 'ChatGPT',
     note: (
       <>
-        On the web, with a Plus, Pro, Business, Enterprise or Education plan. Availability may
-        depend on your workspace settings. If ChatGPT asks for Developer mode, enable it before
-        adding the connector.
+        On the web, with a Plus, Pro, Business, Enterprise or Education plan. You can only add
+        MCP servers on desktop, not in the ChatGPT phone app. Availability may depend on your
+        workspace settings. If ChatGPT asks for Developer mode, enable it before adding the
+        connector.
       </>
     ),
     steps: [

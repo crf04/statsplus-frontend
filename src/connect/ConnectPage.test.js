@@ -127,6 +127,7 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   );
   panel = within(setup).getByRole('tabpanel', { name: 'ChatGPT' });
   expect(within(panel).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
+  expect(within(panel).getByText(/only add MCP servers on desktop/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom MCP server/)).toBeInTheDocument();
   expect(within(panel).getByText(/sign in with google/i)).toBeInTheDocument();
   expect(within(setup).getByText(/Add custom connector/)).not.toBeVisible();

@@ -24,11 +24,14 @@ See [the e2e flow map](e2e-flows.md) for setup, subscription login, replay, rout
 
 ## Commands
 
-Install the browser once after `npm install`:
+Install the browser once after `npm ci`:
 
 ```bash
 npx playwright install chromium
 ```
+
+The e2e flows also need `npx e2e-web install chromium` and Node 22.22.3+ (or 24.8+); see
+[e2e-flows.md](e2e-flows.md#run).
 
 Run the full hermetic E2E suite:
 
@@ -138,7 +141,7 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests. On the live
 game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on his points, and only
-PrizePicks numbers his rebounds), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
+PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
 Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
 carries `lines: {}`.
 
@@ -194,7 +197,7 @@ that drifted from it has to be able to fail a journey.
 
 ## CI and failure evidence
 
-The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical
+The `CI` workflow runs Jest/build validation (`validate`), the hermetic Chromium suite (`E2E`) and the e2e flows (`e2e flows`) as parallel jobs. Critical
 journeys run at a desktop viewport, and the public smoke test also runs at a Pixel 7 viewport. Failed
 hermetic runs without a bypass secret retain an HTML report, trace, screenshot, and video for 14 days.
 Credential-bearing deployed smoke runs retain the HTML report and screenshots, but force trace and video off so the raw
@@ -216,7 +219,7 @@ or an older default-branch harness. Protected Preview smoke validates its URL an
 the encrypted repository secret is missing. Playwright trace and video are disabled whenever the
 secret is present; screenshots remain available for failure evidence.
 
-For branch protection, require both `validate` and `E2E` before merging. `E2E` and `e2e flows` are
+Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evidence` and `parent-links` before merging. `E2E` and `e2e flows` are
 aggregate jobs over matrix legs (Playwright shards `1/2` and `2/2`; one e2e flows leg per target):
 each passes only when every leg passed, so the required names are unchanged. `playwright-evidence`
 is the merged HTML report; `e2e-flow-evidence-<target>` and `playwright-test-results-<shard>` hold

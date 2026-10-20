@@ -12,6 +12,7 @@ line of its body:
   verify-statsplus.
 - boundary: the body also includes a passed production evidence.md table, or a
   staging one when the change needs a merged backend change not yet released.
+  The body names that backend pull request on an `Unreleased backend:` line.
 
 A `gates only` pull request names the tests that cover it (a `*.test.js(x)`,
 `__tests__` or `e2e/` path). An evidence table counts only when no runtime file
@@ -59,6 +60,11 @@ NON_RUNTIME = [
 
 LIVE_CHECKS = re.compile(
     r"^[\s>*_-]*live checks[*_]*:[*_\s]*(user-visible|boundary|gates only)\b", re.I | re.M
+)
+UNRELEASED_BACKEND = re.compile(
+    r"^[\s>*_-]*unreleased backend[*_]*:[*_\s]*"
+    r"(?:(?:crf04/)?statsplus-backend#\d+|https://github\.com/crf04/statsplus-backend/pull/\d+)",
+    re.I | re.M,
 )
 TEST_REFERENCE = re.compile(r"\.test\.jsx?\b|__tests__/|\be2e/\S")
 EVIDENCE_HEADER = re.compile(r"^\s*\|\s*Evidence\s*\|\s*Value\s*\|\s*$")
@@ -134,14 +140,17 @@ def problems(body: str, files: list[str], covered) -> list[str]:
             "__tests__ or e2e/ path in the description."
         ]
     needed = ["qa"] + (["production"] if declared == "boundary" else [])
+    staging_counts = bool(UNRELEASED_BACKEND.search(body))
     found = []
     for table in evidence_tables(body):
         frontend = table.get("Frontend", "")
         revision = frontend.rsplit("@", 1)[-1].strip("` ")
         if table.get("Result") == "passed" and covered(revision):
             environment = table.get("Environment")
-            # Staging stands in for production when the backend is not released.
-            found.append("production" if environment == "staging" else environment)
+            # Staging stands in for production only for a named unreleased backend change.
+            if environment == "staging" and staging_counts:
+                environment = "production"
+            found.append(environment)
     return [
         f"A {declared} change needs a passed {environment} evidence.md table "
         "from verify-statsplus whose Frontend revision has the head's runtime files. "

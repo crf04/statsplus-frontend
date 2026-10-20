@@ -114,8 +114,17 @@ class CheckQaEvidenceTest(unittest.TestCase):
 
     def test_staging_evidence_stands_in_for_production_on_a_boundary_change(self):
         head = self.commit({"src/api.js": "v2"})
-        code, _ = self.check("Live checks: boundary\n\n" + evidence("qa", head) + "\n" + evidence("staging", head))
-        self.assertEqual(code, 0)
+        tables = evidence("qa", head) + "\n" + evidence("staging", head)
+        code, output = self.check("Live checks: boundary\n\n" + tables)
+        self.assertEqual(code, 1)
+        self.assertIn("needs a passed production evidence.md table", output)
+        for line in [
+            "Unreleased backend: crf04/statsplus-backend#490",
+            "Unreleased backend: https://github.com/crf04/statsplus-backend/pull/490",
+        ]:
+            with self.subTest(line=line):
+                code, _ = self.check(f"Live checks: boundary\n{line}\n\n" + tables)
+                self.assertEqual(code, 0)
         code, output = self.check("Live checks: user-visible\n\n" + evidence("staging", head))
         self.assertEqual(code, 1)
         self.assertIn("needs a passed qa evidence.md table", output)

@@ -265,6 +265,32 @@ test('accepts clarified freshness with derived schedule and provider-only pool t
   );
 });
 
+test('decodes a partial pool the backend reports for the slate', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        status: 'partial',
+        retrieved_at: '2026-10-20T20:43:59Z',
+        providers: {
+          underdog: { status: 'fresh', retrieved_at: '2026-10-20T20:44:01Z' },
+          dabble: { status: 'fresh', retrieved_at: '2026-10-20T20:43:59Z' },
+        },
+      },
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual({
+    status: 'partial',
+    retrievedAt: '2026-10-20T20:43:59.000Z',
+    providers: [
+      { name: 'underdog', status: 'fresh', retrievedAt: '2026-10-20T20:44:01.000Z' },
+      { name: 'dabble', status: 'fresh', retrievedAt: '2026-10-20T20:43:59.000Z' },
+    ],
+  });
+});
+
 test('strictly decodes injury identities and enforces the v1 team envelope', () => {
   const injuryPayload = JSON.parse(JSON.stringify(payload));
   injuryPayload.injuries = {

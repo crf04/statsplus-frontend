@@ -42,7 +42,7 @@ const definitions = {
       'Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate.',
   },
   partial: {
-    inboundSurfaces: [],
+    inboundSurfaces: ['pool'],
     allowsNullRetrievedAt: true,
     warning: true,
     currentPoolMessage: 'Player pool is partial; targetable counts reflect the available boards.',

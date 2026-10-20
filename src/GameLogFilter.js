@@ -5,6 +5,7 @@ import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
+import { useLineSelection } from './lineSelection';
 import FilterOptions from './FilterOptions';
 import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
@@ -70,14 +71,12 @@ const GameLogFilter = ({ notice = null }) => {
   useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [lineType, setLineType] = useState('PTS');
-  const [lineValue, setLineValue] = useState('');
-  // Whether the line shown is the posted line rather than a typed or average one.
-  const [lineIsPosted, setLineIsPosted] = useState(false);
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
   // The player's posted lines for his next game, which the line defaults to.
   const [postedLine, setPostedLine] = useState(null);
+  const line = useLineSelection({ player: selectedPlayer, lineType, postedLine, averages });
   // How many games the shown averages cover, against the whole season; null
   // until a game-log response arrives for the current Filter Set.
   const [sampleSize, setSampleSize] = useState(null);
@@ -708,21 +707,21 @@ const GameLogFilter = ({ notice = null }) => {
                     setSelectedPlayer={handleSelectPlayer}
                     lineType={lineType}
                     setLineType={setLineType}
-                    lineValue={lineValue}
-                    setLineValue={setLineValue}
-                    setLineIsPosted={setLineIsPosted}
+                    lineValue={line.lineValue}
+                    onTypeLineValue={line.typeLineValue}
+                    lineSource={line.lineSource}
+                    onChooseSource={line.chooseSource}
                     playerList={playerList}
-                    averages={averages}
                     postedLine={postedLine}
                   />
                   <Suspense fallback={null}>
                     <ChartComponent
                       gameLogs={gameLogs}
                       lineType={lineType}
-                      lineValue={lineValue}
+                      lineValue={line.lineValue}
                       averages={averages}
                       postedLine={postedLine}
-                      lineIsPosted={lineIsPosted}
+                      lineSource={line.lineSource}
                       appliedFilters={appliedFilters}
                     />
                     <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />
@@ -746,7 +745,7 @@ const GameLogFilter = ({ notice = null }) => {
                 gameLogsError={gameLogsError}
                 averages={averages}
                 lineType={lineType}
-                lineValue={lineValue}
+                lineValue={line.lineValue}
                 onContextSettled={setPanelSettledFor}
                 defaultSaveName={currentQuery || ''}
               />

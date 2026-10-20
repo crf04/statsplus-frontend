@@ -1742,15 +1742,61 @@ const playerIdsByName = {
   ...Object.fromEntries(leaguePlayers.map((player) => [player.name, player.canonical_id])),
 };
 
-// His next game's posted lines (crf04/statsplus#238); null for everyone else.
+const curryBook = (book, line, over, under) => ({
+  book,
+  line,
+  over,
+  under,
+  updated_at: '2026-10-21T15:00:00Z',
+  best_over: false,
+  best_under: false,
+});
+
+/*
+ * His next game's posted lines (crf04/statsplus#238); null for everyone else.
+ * Its sources disagree (crf04/statsplus#274): most post 26.5 points and 4.5
+ * threes, the line `lines` names, while BetRivers posts 27.5 points and two
+ * books post 3.5 threes, which one of his two logged games clears. Hard Rock
+ * is a book the app has no name for.
+ */
 const postedLinesByName = {
   'Stephen Curry': {
     game_id: '0022600012',
     game_date: '2026-10-21',
     matchup: 'GSW vs LAL',
     lines: {
-      PTS: { value: 26.5, provider: 'prizepicks' },
-      '3PM': { value: 4.5, provider: 'underdog' },
+      PTS: { value: 26.5, provider: 'dabble' },
+      '3PM': { value: 4.5, provider: 'novig' },
+    },
+    provider_lines: {
+      dabble: { PTS: 26.5 },
+      novig: { '3PM': 4.5 },
+      underdog: { PTS: 26.5, '3PM': 4.5 },
+    },
+    line_prices: {
+      dabble: { PTS: { over: -122, under: -122 } },
+      novig: { '3PM': { over: -105, under: -115 } },
+      underdog: { PTS: { over: -112, under: -112 } },
+    },
+    book_lines: {
+      PTS: {
+        as_of: '2026-10-21T15:00:00Z',
+        closing: false,
+        books: [
+          curryBook('draftkings', 26.5, -110, -115),
+          curryBook('fanduel', 26.5, -114, -106),
+          curryBook('betrivers', 27.5, 102, -128),
+        ],
+      },
+      '3PM': {
+        as_of: '2026-10-21T15:00:00Z',
+        closing: false,
+        books: [
+          curryBook('draftkings', 3.5, -165, 130),
+          curryBook('fanduel', 4.5, 110, -140),
+          curryBook('hardrockbet', 3.5, -160, null),
+        ],
+      },
     },
   },
 };

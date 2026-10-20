@@ -12,6 +12,7 @@ jest.mock('./config', () => ({
   getApiUrl: (name) => `/api/${name.toLowerCase()}`,
 }));
 jest.mock('./gameLogsApi', () => ({
+  ...jest.requireActual('./gameLogsApi'),
   fetchGameLogsData: jest.fn(),
   getRequestErrorMessage: jest.fn(() => 'request failed'),
   isRequestCancelled: jest.fn(() => false),
@@ -69,7 +70,7 @@ jest.mock('./ChartComponent', () => ({
     return createElement(
       'output',
       { 'data-testid': 'chart-posted-line' },
-      postedLine?.lines?.PTS?.provider ?? 'none',
+      postedLine?.markets?.PTS?.default.key ?? 'none',
     );
   },
 }));
@@ -654,7 +655,12 @@ test('the next request drops the posted line of the one before until it answers'
     postedLine: {
       gameDate: '2026-10-21',
       matchup: 'DEN vs GSW',
-      lines: { PTS: { value: 27.5, provider: 'prizepicks' } },
+      markets: {
+        PTS: {
+          default: { kind: 'provider', key: 'prizepicks', line: 27.5, over: null, under: null },
+          sources: [],
+        },
+      },
     },
   });
   renderGameLogFilter(['/?player_name=Nikola+Jokic']);

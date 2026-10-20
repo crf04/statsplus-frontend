@@ -28,34 +28,104 @@ const seasonGameCount = (value) => (Number.isInteger(value) && value >= 0 ? valu
 // The player's NBA person id, which names their headshot; unknown without one.
 const playerId = (value) => (Number.isInteger(value) && value > 0 ? value : null);
 
-// The player's posted lines for his next game (crf04/statsplus#238): one
-// `{ value, provider }` per market, or null when none is posted. A market whose
-// value is not a number is dropped rather than drawn.
+const isRecord = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+const price = (value) => (Number.isInteger(value) ? value : null);
+
+/*
+ * Every provider and book posting one market for his next game
+ * (crf04/statsplus#274), as LineSource records:
+ * { kind: 'provider' | 'book', key, line, over, under }, prices American or
+ * null. Providers come first, PrizePicks then alphabetical as the backend
+ * breaks a tie, then books in the order they are served. A key the app does
+ * not know is kept; a posting without a numeric line is dropped.
+ */
+const lineSources = (value, market) => {
+  const providers = Object.entries(isRecord(value.provider_lines) ? value.provider_lines : {})
+    .filter(([, markets]) => Number.isFinite(markets?.[market]))
+    .sort(([a], [b]) => (b === 'prizepicks') - (a === 'prizepicks') || (a < b ? -1 : 1))
+    .map(([key, markets]) => ({
+      kind: 'provider',
+      key,
+      line: markets[market],
+      over: price(value.line_prices?.[key]?.[market]?.over),
+      under: price(value.line_prices?.[key]?.[market]?.under),
+    }));
+  const books = value.book_lines?.[market]?.books;
+  return [
+    ...providers,
+    ...(Array.isArray(books) ? books : [])
+      .filter((book) => typeof book?.book === 'string' && book.book && Number.isFinite(book.line))
+      .map((book) => ({
+        kind: 'book',
+        key: book.book,
+        line: book.line,
+        over: price(book.over),
+        under: price(book.under),
+      })),
+  ];
+};
+
+/*
+ * The player's posted lines for his next game (crf04/statsplus#238), or null
+ * when none is posted. Each market holds the source `lines` names, which the
+ * line defaults to, and every source a user can choose instead; an older
+ * response with no sources leaves only the default. A market whose value is
+ * not a number is dropped rather than drawn.
+ */
 const postedLine = (value) => {
-  if (!value || typeof value !== 'object' || !value.lines || typeof value.lines !== 'object') {
-    return null;
-  }
-  const lines = Object.fromEntries(
-    Object.entries(value.lines).filter(
-      ([, line]) =>
-        Number.isFinite(line?.value) && typeof line.provider === 'string' && line.provider,
-    ),
+  if (!isRecord(value) || !isRecord(value.lines)) return null;
+  const markets = Object.fromEntries(
+    Object.entries(value.lines)
+      .filter(
+        ([, line]) =>
+          Number.isFinite(line?.value) && typeof line.provider === 'string' && line.provider,
+      )
+      .map(([market, { value: line, provider }]) => {
+        const sources = lineSources(value, market);
+        const named = sources.find((source) => source.key === provider && source.line === line);
+        const fallback = { kind: 'provider', key: provider, line, over: null, under: null };
+        return [
+          market,
+          {
+            default: named ?? fallback,
+            sources: named || sources.length === 0 ? sources : [fallback, ...sources],
+          },
+        ];
+      }),
   );
-  if (Object.keys(lines).length === 0) return null;
+  if (Object.keys(markets).length === 0) return null;
   return {
     gameDate: typeof value.game_date === 'string' ? value.game_date : null,
     matchup: typeof value.matchup === 'string' ? value.matchup : null,
-    lines,
+    markets,
   };
 };
 
 // Line Types are market keys except FG3M, whose market is spelled 3PM.
 const MARKET_FOR_LINE_TYPE = { FG3M: '3PM' };
 
-/** The posted line for one Line Type, with its game, or null when none is posted. */
-export const postedLineFor = (posted, lineType) => {
-  const line = posted?.lines?.[MARKET_FOR_LINE_TYPE[lineType] || lineType];
-  return line ? { ...line, gameDate: posted.gameDate, matchup: posted.matchup } : null;
+/** Names one LineSource among a market's sources. */
+export const lineSourceId = (source) => `${source.kind}:${source.key}`;
+
+/** Every source a user can choose for one Line Type; empty when none is listed. */
+export const lineSourcesFor = (posted, lineType) =>
+  posted?.markets?.[MARKET_FOR_LINE_TYPE[lineType] || lineType]?.sources ?? [];
+
+/**
+ * The posted line one source draws for one Line Type, with its game: the
+ * source `sourceId` names, or the default when none is named. Null when that
+ * market or source is not posted.
+ */
+export const postedLineFor = (posted, lineType, sourceId) => {
+  const market = posted?.markets?.[MARKET_FOR_LINE_TYPE[lineType] || lineType];
+  if (!market) return null;
+  const source =
+    sourceId === undefined
+      ? market.default
+      : [market.default, ...market.sources].find(
+          (candidate) => lineSourceId(candidate) === sourceId,
+        );
+  return source ? { ...source, gameDate: posted.gameDate, matchup: posted.matchup } : null;
 };
 
 /** Decode the backend's JSON-string-or-object response once at the API seam. */

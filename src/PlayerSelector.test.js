@@ -1,105 +1,75 @@
-import { useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import PlayerSelector from './PlayerSelector';
+import { decodeGameLogsResponse } from './gameLogsApi';
 
-const filtered = { PTS: 31.3, REB: 9.2 };
-const season = { PTS: 24.7, REB: 5.1 };
+const decodePosted = (postedLine) =>
+  decodeGameLogsResponse({ game_logs: [], posted_line: postedLine }).postedLine;
 
-const postedLine = {
-  gameDate: '2026-10-21',
+const sourcedLine = decodePosted({
+  game_date: '2026-10-21',
   matchup: 'GSW vs LAL',
-  lines: {
-    PTS: { value: 26.5, provider: 'prizepicks' },
-    '3PM': { value: 4.5, provider: 'underdog' },
+  lines: { PTS: { value: 26.5, provider: 'dabble' } },
+  provider_lines: { dabble: { PTS: 26.5 } },
+  line_prices: { dabble: { PTS: { over: -122, under: -122 } } },
+  book_lines: {
+    PTS: {
+      books: [
+        { book: 'draftkings', line: 26.5, over: -110, under: -115 },
+        { book: 'betrivers', line: 27.5, over: 102, under: null },
+      ],
+    },
   },
-};
-
-const Harness = ({ averages, posted = null, player = '' }) => {
-  const [lineType, setLineType] = useState('PTS');
-  const [lineValue, setLineValue] = useState('');
-  const [lineIsPosted, setLineIsPosted] = useState(false);
-  return (
-    <>
-      <PlayerSelector
-        selectedPlayer={player}
-        setSelectedPlayer={() => {}}
-        lineType={lineType}
-        setLineType={setLineType}
-        lineValue={lineValue}
-        setLineValue={setLineValue}
-        setLineIsPosted={setLineIsPosted}
-        playerList={[]}
-        averages={averages}
-        postedLine={posted}
-      />
-      <output data-testid="line-source">{lineIsPosted ? 'posted' : 'not posted'}</output>
-    </>
-  );
-};
-
-test('auto-fills the line with the season average, not the filtered average', () => {
-  render(<Harness averages={[filtered, season]} />);
-  expect(screen.getByLabelText('Line Value:')).toHaveValue('24.7');
 });
 
-test('changing the line type fills the new stat season average', () => {
-  render(<Harness averages={[filtered, season]} />);
-  fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'REB' } });
-  expect(screen.getByLabelText('Line Value:')).toHaveValue('5.1');
-});
-
-test('defaults the line to his next game posted line for the stat', () => {
-  render(<Harness averages={[filtered, season]} posted={postedLine} />);
-  expect(screen.getByLabelText('Line Value:')).toHaveValue('26.5');
-  expect(screen.getByTestId('line-source')).toHaveTextContent('posted');
-});
-
-test('typing the posted value makes it a typed line, not the posted one', () => {
-  render(<Harness averages={[filtered, season]} posted={postedLine} />);
-  const line = screen.getByLabelText('Line Value:');
-  fireEvent.change(line, { target: { value: '30' } });
-  fireEvent.change(line, { target: { value: '26.5' } });
-  expect(screen.getByTestId('line-source')).toHaveTextContent('not posted');
-});
-
-test('FG3M takes the 3PM posted line, and a stat without one the season average', () => {
-  render(<Harness averages={[filtered, { ...season, FG3M: 3.9 }]} posted={postedLine} />);
-  fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'FG3M' } });
-  expect(screen.getByLabelText('Line Value:')).toHaveValue('4.5');
-  fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'REB' } });
-  expect(screen.getByLabelText('Line Value:')).toHaveValue('5.1');
-  expect(screen.getByTestId('line-source')).toHaveTextContent('not posted');
-});
-
-test('a typed line survives a refetch until the stat or player changes', () => {
-  const { rerender } = render(
-    <Harness averages={[filtered, season]} posted={postedLine} player="Stephen Curry" />,
-  );
-  const line = screen.getByLabelText('Line Value:');
-  fireEvent.change(line, { target: { value: '30' } });
-
-  // A filter change refetches: new averages and posted-line objects, same values.
-  rerender(
-    <Harness
-      averages={[{ ...filtered }, { ...season }]}
-      posted={{ ...postedLine }}
-      player="Stephen Curry"
+const renderSelector = (props) =>
+  render(
+    <PlayerSelector
+      selectedPlayer="Stephen Curry"
+      setSelectedPlayer={() => {}}
+      lineType="PTS"
+      setLineType={() => {}}
+      lineValue=""
+      onTypeLineValue={() => {}}
+      lineSource={null}
+      onChooseSource={() => {}}
+      playerList={[]}
+      postedLine={null}
+      {...props}
     />,
   );
-  expect(line).toHaveValue('30');
 
-  rerender(
-    <Harness
-      averages={[filtered, { ...season }]}
-      posted={{ ...postedLine }}
-      player="LeBron James"
-    />,
+const sourceLabels = (options) =>
+  within(screen.getByRole('group', { name: 'Posted Lines:' }))
+    .getAllByRole('button', options)
+    .map((button) => button.getAttribute('aria-label'));
+
+test('without sources for the Line Type there is nothing to pick', () => {
+  renderSelector({
+    postedLine: decodePosted({ lines: { PTS: { value: 26.5, provider: 'prizepicks' } } }),
+  });
+  expect(screen.queryByRole('group', { name: 'Posted Lines:' })).not.toBeInTheDocument();
+});
+
+test('lists every provider and book with its line, prices and game; the named one pressed', () => {
+  renderSelector({ postedLine: sourcedLine, lineSource: 'book:betrivers' });
+  expect(screen.getByRole('group', { name: 'Posted Lines:' })).toHaveTextContent(
+    'GSW vs LAL · Wed, Oct 21',
   );
-  expect(line).toHaveValue('26.5');
+  expect(sourceLabels()).toEqual([
+    'Dabble 26.5, Over −122, Under −122',
+    'DraftKings 26.5, Over −110, Under −115',
+    'BetRivers 27.5, Over +102, no Under price',
+  ]);
+  expect(sourceLabels({ pressed: true })).toEqual(['BetRivers 27.5, Over +102, no Under price']);
+});
 
-  fireEvent.change(line, { target: { value: '30' } });
-  fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'REB' } });
-  expect(line).toHaveValue('5.1');
-  fireEvent.change(screen.getByLabelText('Line Type:'), { target: { value: 'PTS' } });
-  expect(line).toHaveValue('26.5');
+test('a provider or book the app does not know is offered under its own key', () => {
+  renderSelector({
+    postedLine: decodePosted({
+      lines: { PTS: { value: 26.5, provider: 'zebrabet' } },
+      provider_lines: { acmepicks: { PTS: 25.5 } },
+      book_lines: { PTS: { books: [{ book: 'zebrabet', line: 26.5, over: -105, under: -115 }] } },
+    }),
+  });
+  expect(sourceLabels()).toEqual(['Acmepicks 25.5', 'Zebrabet 26.5, Over −105, Under −115']);
 });

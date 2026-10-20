@@ -91,6 +91,102 @@
   border-bottom: none;
 }
 
+/* Every provider and book posting the Line Type, one chip each. */
+.line-sources {
+  margin-top: 16px;
+}
+
+.line-sources-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.line-sources-head .player-selector-label {
+  margin-bottom: 0;
+}
+
+.line-sources-game {
+  color: #9b937f;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+.line-sources-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.line-source {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  border: 1px solid #3a3428;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #c9c2b2;
+  font: inherit;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.line-source:hover {
+  border-color: rgba(232, 163, 61, 0.6);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.line-source:focus-visible {
+  outline: 2px solid #e8a33d;
+  outline-offset: 2px;
+}
+
+.line-source[aria-pressed='true'] {
+  border-color: #e8a33d;
+  background-color: rgba(232, 163, 61, 0.12);
+}
+
+.line-source-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: #9b937f;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.line-source-line {
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.line-source[aria-pressed='true'] .line-source-line {
+  color: #e8a33d;
+}
+
+.line-source-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  color: #9b937f;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .player-selector-row {
@@ -104,5 +200,14 @@
   }
   .player-selector-label {
     font-size: 0.8rem;
+  }
+
+  .line-sources-list {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px;
+  }
+
+  .line-source {
+    padding: 6px 8px;
   }
 }

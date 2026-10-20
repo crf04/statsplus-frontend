@@ -141,7 +141,7 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests. On the live
 game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on his points, and only
-PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
+PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices plus an unknown Fliff price the decoder skips, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
 Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
 carries `lines: {}`.
 

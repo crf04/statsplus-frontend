@@ -595,11 +595,13 @@ export const matchupPayload = {
       // Under beats every book. Underdog prices 26.5, a line no sportsbook or
       // headline shares with it, so its price is not compared. PrizePicks
       // never carries a price. Dabble's even line is −122 (statsplus#263),
-      // which no book or market beats.
+      // which no book or market beats. Fliff stands for a provider the backend
+      // adds before this build knows it: the decoder skips its prices.
       line_prices: {
         underdog: { PTS: { over: -112, under: -112 } },
         polymarket: { PTS: { over: -110, under: -102 } },
         dabble: { PTS: { over: -122, under: -122 } },
+        fliff: { PTS: { over: -140, under: 110 } },
       },
       season_scoring: 25.4,
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],

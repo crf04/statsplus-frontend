@@ -105,20 +105,20 @@ jobs:
           echo "e2e-shard: $RESULT"
           test "$RESULT" = success
 
-      - name: Check out repository
+      # Only package-lock.json is needed: it pins the Playwright that merges
+      # the shard blob reports, so this job skips npm ci.
+      - name: Check out package-lock.json
         if: always()
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: package-lock.json
+          sparse-checkout-cone-mode: false
 
       - name: Set up Node.js
         if: always()
         uses: actions/setup-node@v4
         with:
           node-version: 22.22.3
-          cache: npm
-
-      - name: Install dependencies
-        if: always()
-        run: npm ci
 
       - name: Download blob reports
         if: always()
@@ -136,7 +136,9 @@ jobs:
 
       - name: Merge shard reports
         if: always()
-        run: npx playwright merge-reports --reporter html,line ./all-blob-reports
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/playwright'].version")
+          npx --yes "playwright@$version" merge-reports --reporter html,line ./all-blob-reports
 
       - name: Upload browser test evidence
         if: always()

@@ -5,6 +5,7 @@ import GameLogFilter from './GameLogFilter';
 import { apiClient } from './config';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData } from './gameLogsApi';
+import { fetchNextOpponent } from './nextOpponentApi';
 import { createSavedFilterSet, fetchSavedFilterSets } from './savedFilterSetsApi';
 
 jest.mock('./config', () => ({
@@ -17,6 +18,9 @@ jest.mock('./gameLogsApi', () => ({
   isRequestCancelled: jest.fn(() => false),
 }));
 jest.mock('./contexts/AuthContext', () => ({ useAuth: jest.fn() }));
+jest.mock('./nextOpponentApi', () => ({
+  fetchNextOpponent: jest.fn(async () => ({ next_game: null, opponent_ranks: [] })),
+}));
 jest.mock('./savedFilterSetsApi', () => ({
   fetchSavedFilterSets: jest.fn(),
   createSavedFilterSet: jest.fn(),
@@ -111,6 +115,7 @@ beforeEach(() => {
   useAuth.mockImplementation(() => mockAuthState);
   apiClient.get.mockImplementation(() => new Promise(() => {}));
   fetchGameLogsData.mockImplementation(() => new Promise(() => {}));
+  fetchNextOpponent.mockResolvedValue({ next_game: null, opponent_ranks: [] });
   fetchSavedFilterSets.mockResolvedValue([]);
   createSavedFilterSet.mockResolvedValue(undefined);
 });
@@ -508,6 +513,19 @@ test.each([
   );
   expect(fetchGameLogsData).not.toHaveBeenCalled();
   expect(screen.queryByText('request failed')).not.toBeInTheDocument();
+});
+
+test("the comparison opponent defaults to the player's next scheduled opponent", async () => {
+  fetchNextOpponent.mockResolvedValue({
+    next_game: { game_id: '0022600101', date: '2026-10-22', opponent: 'CHA', home: true },
+    opponent_ranks: [],
+  });
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
+  renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+  await waitFor(() =>
+    expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Charlotte Hornets'),
+  );
+  expect(fetchNextOpponent).toHaveBeenCalledWith('Stephen Curry', expect.anything());
 });
 
 test('unchanged Apply refreshes logs while preserving the comparison opponent', async () => {

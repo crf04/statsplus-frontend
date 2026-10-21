@@ -1,0 +1,96 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "doctor"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5"}
+{"action": "proof", "name": "01-default-pts-desktop"}
+{"action": "click", "target": {"role": "button", "name": "last 5 games"}}
+{"action": "fill", "target": {"label": "Last N games"}, "value": "3"}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "assert", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "r"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=REB"}
+{"action": "assert", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "02-reb-unapplied-edit-kept-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "3"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=3&line_type=REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "3 of 60 games"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "proof", "name": "03-apply-keeps-reb-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=3&line_type=AST"}
+{"action": "back"}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=REB"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "04-back-skips-stat-change-desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=REB"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "05-shared-link-reb-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "proof", "name": "05-shared-link-reb-phone"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=AST"}
+{"action": "proof", "name": "06-phone-change-to-ast-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=XYZ"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "assert", "target": {"role": "alert"}, "state": "hidden"}
+{"action": "proof", "name": "07-unknown-falls-back-pts-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "proof", "name": "07-unknown-falls-back-pts-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=REB"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "click", "target": {"within": {"selector": "[data-testid=filter-panel]"}, "role": "button", "name": "Save"}}
+{"action": "fill", "target": {"label": "Name this Filter Set"}, "value": "QA line type set"}
+{"action": "click", "target": {"within": {"selector": "[data-testid=filter-panel]"}, "role": "button", "name": "Save"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/saved-filter-sets", "query": {}, "status": 201}
+{"action": "assert", "target": {"within": {"selector": ".fpb-head"}, "text": "Saved as QA line type set"}}
+{"action": "proof", "name": "08-saved-without-line-type-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "target": {"within": {"selector": ".fpb-head"}, "text": "Saved as QA line type set"}}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=3&line_type=AST"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "3"}, "status": 200}
+{"action": "click", "target": {"role": "tab", "name": "Saved 1"}}
+{"action": "click", "target": {"role": "button", "name": "Open saved Filter Set QA line type set"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "5"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=AST"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "09-open-saved-keeps-ast-desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=3&line_type=REB"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "season_filter": "2025-26", "game_filter": "3"}, "status": 200}
+{"action": "click", "target": {"selector": "#user-dropdown"}}
+{"action": "click", "target": {"within": {"selector": ".dropdown-menu"}, "text": "Saved Filter Sets"}}
+{"action": "click", "target": {"role": "button", "name": "Open saved Filter Set QA line type set"}}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&game_filter=5&line_type=REB"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "proof", "name": "10-modal-open-keeps-reb-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "proof", "name": "10-modal-open-keeps-reb-phone"}
+{"action": "cleanup"}

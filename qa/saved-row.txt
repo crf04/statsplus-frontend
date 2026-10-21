@@ -1,0 +1,5 @@
+       name       |                         query_string                         | line_type_pos 
+------------------+--------------------------------------------------------------+---------------
+ QA line type set | player_name=LeBron+James&season_filter=2025-26&game_filter=5 |             0
+(1 row)
+

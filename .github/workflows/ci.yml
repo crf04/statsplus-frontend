@@ -105,13 +105,16 @@ jobs:
           echo "e2e-shard: $RESULT"
           test "$RESULT" = success
 
-      # Only package-lock.json is needed: it pins the Playwright that merges
-      # the shard blob reports, so this job skips npm ci.
-      - name: Check out package-lock.json
+      # The merge needs only Playwright, installed by npm ci against the lock
+      # file. Its two package directories are cached by the lock file's hash,
+      # so a hit skips the install and still runs only code the lock file pins.
+      - name: Check out package files
         if: always()
         uses: actions/checkout@v4
         with:
-          sparse-checkout: package-lock.json
+          sparse-checkout: |
+            package.json
+            package-lock.json
           sparse-checkout-cone-mode: false
 
       - name: Set up Node.js
@@ -119,6 +122,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.22.3
+
+      - name: Restore Playwright from an earlier npm ci
+        id: playwright
+        if: always()
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules/playwright
+            node_modules/playwright-core
+          key: merge-reports-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: always() && steps.playwright.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Download blob reports
         if: always()
@@ -137,9 +154,7 @@ jobs:
 
       - name: Merge shard reports
         if: always()
-        run: |
-          version=$(node -p "require('./package-lock.json').packages['node_modules/playwright'].version")
-          npx --yes "playwright@$version" merge-reports --reporter html,line ./all-blob-reports
+        run: node node_modules/playwright/cli.js merge-reports --reporter html,line ./all-blob-reports
 
       - name: Upload browser test evidence
         if: always()

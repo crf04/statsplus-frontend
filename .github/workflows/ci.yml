@@ -43,7 +43,7 @@ jobs:
         run: npm run build
 
   e2e-shard:
-    name: E2E shard ${{ matrix.shard }}/2
+    name: E2E shard ${{ matrix.shard }}/${{ strategy.job-total }}
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -69,7 +69,7 @@ jobs:
         run: npx playwright install chromium
 
       - name: Run hermetic browser tests
-        run: npm run test:e2e -- --shard ${{ matrix.shard }}/2 --reporter=line,blob
+        run: npm run test:e2e -- --shard ${{ matrix.shard }}/${{ strategy.job-total }} --reporter=line,blob
 
       - name: Upload browser test blob report
         if: always()
@@ -128,11 +128,12 @@ jobs:
           path: all-blob-reports
           merge-multiple: true
 
-      - name: Require both shard blob reports
+      # One blob per entry of the e2e-shard matrix above.
+      - name: Require every shard blob report
         if: always()
         run: |
           ls all-blob-reports
-          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 2
+          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 3
 
       - name: Merge shard reports
         if: always()

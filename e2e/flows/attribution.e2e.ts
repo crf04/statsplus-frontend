@@ -57,3 +57,6 @@ signedInTest(
     expect(api.sent('/api/user/attribution', 'POST')).toHaveLength(6);
   },
 );
+
+const mutationTypeError: number = "not a number";
+void mutationTypeError;

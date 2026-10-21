@@ -31,6 +31,3 @@ export const formatPercent = (value, digits = 1, fallback = 'N/A') => {
   const number = toFiniteNumber(value);
   return number === null ? fallback : `${(number * 100).toFixed(digits)}%`;
 };
-
-const mutationDuplicateKeys = { key: 1, key: 2 };
-void mutationDuplicateKeys;

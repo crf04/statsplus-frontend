@@ -12,3 +12,6 @@ e2e/filterPanelParity/
 
 # Verified e2e recordings are runner-owned; never reformat them.
 e2e/replay-cache/
+
+# Mirrors crf04/statsplus docs/contracts/game-log-preview-cases.json byte for byte.
+src/linkPreviewCases.json

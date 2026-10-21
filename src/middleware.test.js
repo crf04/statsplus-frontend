@@ -3,7 +3,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import middleware, { config } from '../middleware';
+import middleware, { config, describeLink } from '../middleware';
 
 const indexHtml = fs.readFileSync(path.resolve(process.cwd(), 'index.html'), 'utf8');
 
@@ -55,4 +55,54 @@ test('falls back to the static document when it cannot be fetched', async () => 
   fetch.mockResolvedValueOnce(new Response('', { status: 503 }));
 
   expect(await middleware(request('?player_name=LeBron+James'))).toBeUndefined();
+});
+
+// 23:30 in New York on Oct 21 is already Oct 22 in UTC; the posted-line day is ET.
+const LATE_ON_OCT_21_ET = new Date('2026-10-22T03:30:00Z');
+
+const describedHead = async (search) => {
+  const response = await describeLink(request(search), LATE_ON_OCT_21_ET);
+  return (await response.text()).replace(/\s+/g, ' ');
+};
+
+test("unfurls a player link as a large card of that day's results", async () => {
+  const html = await describedHead(
+    '?player_name=LeBron%20James&game_filter=10&line_type=REB&utm_source=x',
+  );
+
+  const image =
+    'https://courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;game_filter=10&amp;line_type=REB&amp;line_date=2026-10-21';
+  expect(html).toContain(`<meta property="og:image" content="${image}" />`);
+  expect(html).toContain('<meta property="og:image:width" content="1200" />');
+  expect(html).toContain('<meta property="og:image:height" content="630" />');
+  expect(html).toContain(
+    '<meta property="og:image:alt" content="LeBron James Game Logs | CourtAI" />',
+  );
+  expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+  expect(html).toContain(`<meta name="twitter:image" content="${image}" />`);
+  expect(html).not.toContain('logo512.png');
+});
+
+test('leaves the default and unusable Line Types out of the image URL', async () => {
+  const image =
+    'https://courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;line_date=2026-10-21';
+  for (const search of [
+    '?player_name=LeBron+James',
+    '?player_name=LeBron+James&line_type=PTS',
+    '?player_name=LeBron+James&line_type=XYZ',
+  ]) {
+    expect(await describedHead(search)).toContain(
+      `<meta property="og:image" content="${image}" />`,
+    );
+  }
+});
+
+test('keeps the logo and the small card for a link that charts no stat', async () => {
+  const html = await describedHead('?player_name=LeBron+James&line_type=None');
+
+  expect(html).toContain('<title>LeBron James Game Logs | CourtAI</title>');
+  expect(html).toContain('<meta property="og:image" content="https://courtai.app/logo512.png" />');
+  expect(html).toContain('<meta name="twitter:card" content="summary" />');
+  expect(html).not.toContain('og:image:');
+  expect(html).not.toContain('twitter:image');
 });

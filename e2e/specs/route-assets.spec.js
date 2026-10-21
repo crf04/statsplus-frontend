@@ -98,28 +98,57 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
       recoveryPage.getByRole('heading', { name: 'Sign in to view the slate' }),
     ).toBeVisible();
 
-    // A tab still holding the previous build: the asset is gone once, and the
-    // automatic reload picks up the current build without showing the alert.
+    // A tab still holding the previous build: each missing asset reloads it
+    // once onto the current build, with no alert in between. A failure it has
+    // already reloaded for shows the alert instead of reloading again.
     const searchCss = chunks.find((chunk) =>
       chunk.modules.some((id) => id.endsWith('/src/GameLogFilter.js')),
     )?.css;
     expect(searchCss?.length).toBeGreaterThan(0);
-    for (const [route, assetUrl, heading, fail] of [
-      ['/matchups', chunkUrl, 'Sign in to view the slate', missingAsset],
-      ['/', `${origin}/${searchCss[0]}`, 'Ask the box score', (r) => r.abort()],
-    ]) {
-      const stalePage = await recoveryContext.newPage();
-      let staleLoads = 0;
-      stalePage.on('load', () => {
-        staleLoads += 1;
-      });
-      await stalePage.route(assetUrl, fail, { times: 1 });
-      await stalePage.goto(`${origin}${route}`);
-      await expect(stalePage.getByRole('heading', { name: heading, exact: true })).toBeVisible();
-      expect(staleLoads, `${route} reloaded once for ${assetUrl}`).toBe(2);
-      await expect(stalePage.getByRole('alert')).toHaveCount(0);
-      await stalePage.close();
-    }
+    const searchCssUrl = `${origin}/${searchCss[0]}`;
+    const stalePage = await recoveryContext.newPage();
+    await stalePage.addInitScript(() => {
+      new MutationObserver(() => {
+        if (document.querySelector('[role="alert"]')) sessionStorage.setItem('test:alerted', '1');
+      }).observe(document, { childList: true, subtree: true });
+    });
+    let staleLoads = 0;
+    stalePage.on('load', () => {
+      staleLoads += 1;
+    });
+    const alerted = () => stalePage.evaluate(() => sessionStorage.getItem('test:alerted'));
+
+    await stalePage.route(chunkUrl, missingAsset, { times: 1 });
+    await stalePage.goto(`${origin}/matchups`);
+    await expect(
+      stalePage.getByRole('heading', { name: 'Sign in to view the slate' }),
+    ).toBeVisible();
+    expect(staleLoads, 'reloaded once for the missing Slate chunk').toBe(2);
+
+    await stalePage.route(searchCssUrl, (route) => route.abort(), { times: 1 });
+    await stalePage.getByRole('link', { name: 'Search', exact: true }).click();
+    await expect(
+      stalePage.getByRole('heading', { name: 'Ask the box score', exact: true }),
+    ).toBeVisible();
+    expect(staleLoads, 'reloaded once more for the missing Search stylesheet').toBe(3);
+    expect(await alerted(), 'no alert while reloading').toBeNull();
+
+    await stalePage.route(chunkUrl, missingAsset);
+    await stalePage.getByRole('link', { name: 'Matchups', exact: true }).click();
+    await expect(stalePage.getByRole('alert')).toContainText('Could not load this page.');
+    expect(staleLoads, 'no reload for a failure already reloaded for').toBe(3);
+    await stalePage.close();
+
+    const cssPage = await recoveryContext.newPage();
+    let cssLoads = 0;
+    cssPage.on('load', () => {
+      cssLoads += 1;
+    });
+    await cssPage.route(searchCssUrl, (route) => route.abort());
+    await cssPage.goto(`${origin}/`);
+    await expect(cssPage.getByRole('alert')).toContainText('Could not load this page.');
+    expect(cssLoads, 'one reload for a stylesheet that stays missing').toBe(2);
+    await cssPage.close();
     await recoveryContext.close();
 
     for (const [route, heading] of [

@@ -83,6 +83,14 @@ test("unfurls a player link as a large card of that day's results", async () => 
   expect(html).not.toContain('logo512.png');
 });
 
+test('escapes a player name in the image alt text', async () => {
+  const html = await describedHead('?player_name=Luka+%22Magic%22+Don%C4%8Di%C4%87+%26+Co');
+
+  expect(html).toContain(
+    '<meta property="og:image:alt" content="Luka &quot;Magic&quot; Dončić &amp; Co Game Logs | CourtAI" />',
+  );
+});
+
 test('leaves the default and unusable Line Types out of the image URL', async () => {
   const image =
     'https://courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;line_date=2026-10-21';

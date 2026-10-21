@@ -23,7 +23,11 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
        const result = await build({ build: { outDir: process.argv[1] }, logLevel: 'silent' });
        console.log(JSON.stringify(result.output
          .filter(output => output.type === 'chunk')
-         .map(chunk => ({ fileName: chunk.fileName, modules: Object.keys(chunk.modules) }))));`,
+         .map(chunk => ({
+           fileName: chunk.fileName,
+           modules: Object.keys(chunk.modules),
+           css: [...(chunk.viteMetadata?.importedCss ?? [])],
+         }))));`,
       outDir,
     ]);
     const chunks = JSON.parse(stdout);
@@ -66,16 +70,21 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
     await recoveryPage.unroute(chunkUrl);
 
     // Replay the missing-asset HTML response produced by the deployment's SPA
-    // rewrite. Restoring the network alone cannot clear React.lazy's rejection.
-    await recoveryPage.route(chunkUrl, (route) =>
+    // rewrite. A tab reloads once for a missing asset, then keeps the alert.
+    const missingAsset = (route) =>
       route.fulfill({
         status: 200,
         contentType: 'text/html',
         body: '<!doctype html><html></html>',
-      }),
-    );
+      });
+    let loads = 0;
+    recoveryPage.on('load', () => {
+      loads += 1;
+    });
+    await recoveryPage.route(chunkUrl, missingAsset);
     await recoveryPage.reload();
     await expect(recoveryPage.getByRole('alert')).toContainText('Could not load this page.');
+    expect(loads, 'one automatic reload after the manual one').toBe(2);
     await expect(recoveryPage.getByRole('navigation', { name: 'Primary' })).toBeVisible();
     await recoveryPage.getByRole('link', { name: 'Targets', exact: true }).click();
     await expect(
@@ -88,6 +97,29 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
     await expect(
       recoveryPage.getByRole('heading', { name: 'Sign in to view the slate' }),
     ).toBeVisible();
+
+    // A tab still holding the previous build: the asset is gone once, and the
+    // automatic reload picks up the current build without showing the alert.
+    const searchCss = chunks.find((chunk) =>
+      chunk.modules.some((id) => id.endsWith('/src/GameLogFilter.js')),
+    )?.css;
+    expect(searchCss?.length).toBeGreaterThan(0);
+    for (const [route, assetUrl, heading, fail] of [
+      ['/matchups', chunkUrl, 'Sign in to view the slate', missingAsset],
+      ['/', `${origin}/${searchCss[0]}`, 'Ask the box score', (r) => r.abort()],
+    ]) {
+      const stalePage = await recoveryContext.newPage();
+      let staleLoads = 0;
+      stalePage.on('load', () => {
+        staleLoads += 1;
+      });
+      await stalePage.route(assetUrl, fail, { times: 1 });
+      await stalePage.goto(`${origin}${route}`);
+      await expect(stalePage.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+      expect(staleLoads, `${route} reloaded once for ${assetUrl}`).toBe(2);
+      await expect(stalePage.getByRole('alert')).toHaveCount(0);
+      await stalePage.close();
+    }
     await recoveryContext.close();
 
     for (const [route, heading] of [

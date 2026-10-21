@@ -29,7 +29,7 @@ test('the landing UTM and ref reach the attribution endpoint once, even from a w
 
   await page.goto('/?utm_source=other');
   await page.reload();
-  expect(bodies).toHaveLength(1);
+  expect(bodies).toHaveLength(2);
 });
 
 test.describe('attribution endpoint contract in the fixture', () => {

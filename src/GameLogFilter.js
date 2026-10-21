@@ -16,6 +16,7 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   BROWSE_PARAM,
+  LINE_TYPE_PARAM,
   filterSetFromSearchParams,
   filterSetToSearchParams,
   mergeFilterSet,
@@ -23,6 +24,9 @@ import {
 import { linkPreviewFor } from './linkPreview';
 import useDocumentTitle from './useDocumentTitle';
 import ErrorMessage from './feedback/ErrorMessage';
+import { lineTypeOptions } from './utils';
+
+const DEFAULT_LINE_TYPE = 'PTS';
 
 // The chart-bearing sections render only in the workspace, so their chart
 // libraries load on demand instead of delaying the landing prompt.
@@ -70,7 +74,30 @@ const GameLogFilter = ({ notice = null }) => {
   // The tab and any link preview say the same thing about the same URL.
   useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
-  const [lineType, setLineType] = useState('PTS');
+  // Which stat the chart shows is a view of the results, kept in the URL so a
+  // shared link opens on it. It is not a filter, so an unusable value quietly
+  // means the default rather than refusing the link.
+  const lineTypes = searchParams.getAll(LINE_TYPE_PARAM);
+  const lineType =
+    lineTypes.length === 1 && lineTypeOptions.includes(lineTypes[0])
+      ? lineTypes[0]
+      : DEFAULT_LINE_TYPE;
+  const setLineType = (next) =>
+    setSearchParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.delete(LINE_TYPE_PARAM);
+        if (next !== DEFAULT_LINE_TYPE) updated.set(LINE_TYPE_PARAM, next);
+        return updated;
+      },
+      { replace: true },
+    );
+  // Writing the Filter Set rebuilds the query string from filters alone, which
+  // would silently reset the chart's stat, so the current one is carried over.
+  const withLineType = (nextSearch) => {
+    if (lineType !== DEFAULT_LINE_TYPE) nextSearch.set(LINE_TYPE_PARAM, lineType);
+    return nextSearch;
+  };
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
@@ -495,8 +522,8 @@ const GameLogFilter = ({ notice = null }) => {
    */
   const handleSeasonChange = (season) => {
     if (isRefusedLink) return;
-    const nextSearch = filterSetToSearchParams(
-      mergeFilterSet(urlFilters, { season_filter: season }),
+    const nextSearch = withLineType(
+      filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: season })),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
     setSearchParams(nextSearch, { replace: false });
@@ -546,7 +573,7 @@ const GameLogFilter = ({ notice = null }) => {
       return { ok: false, reason: 'needsPlayer' };
     }
 
-    const nextSearch = filterSetToSearchParams(nextFilters);
+    const nextSearch = withLineType(filterSetToSearchParams(nextFilters));
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };

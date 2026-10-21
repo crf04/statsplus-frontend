@@ -450,7 +450,7 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
   );
 
 /**
- * The only non-filter search parameter.
+ * A non-filter search parameter.
  *
  * Manual entry lands with an empty Filter Set, which is indistinguishable from
  * a fresh visit, so the escape hatch navigates to this sentinel to declare
@@ -459,3 +459,15 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
  * exist — any URL carrying filters stays a pure API query string.
  */
 export const BROWSE_PARAM = 'browse';
+
+/**
+ * The other non-filter search parameter: which stat the chart and the line are
+ * drawn for.
+ *
+ * It is a view of the results rather than a filter, and the game-log API never
+ * reads it, so like the sentinel it is never part of a Filter Set and never
+ * reaches a request or a Saved Filter Set. It exists so a shared link opens on
+ * the same stat. The default is omitted, and a value outside the Line Type
+ * options falls back to the default instead of refusing the link.
+ */
+export const LINE_TYPE_PARAM = 'line_type';

@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
         if: always()
         run: |
           ls all-blob-reports
-          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 3
+          test "$(find all-blob-reports -name '*.zip' | wc -l)" -eq 5
 
       - name: Merge shard reports
         if: always()

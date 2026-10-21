@@ -11,6 +11,7 @@ import { FeedbackProvider } from './feedback/FeedbackContext';
 import FeedbackButton from './feedback/FeedbackButton';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
+import { isReloadingForMissingAsset } from './staleBuild';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -32,10 +33,13 @@ class RouteErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    reportRenderError(error, info);
+    if (!isReloadingForMissingAsset()) reportRenderError(error, info);
   }
 
   render() {
+    if (this.state.failed && isReloadingForMissingAsset()) {
+      return <p role="status">Loading page…</p>;
+    }
     if (this.state.failed) {
       return (
         <div role="alert">

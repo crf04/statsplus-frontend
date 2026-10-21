@@ -6,8 +6,10 @@ import App from './App';
 import './theme.css';
 import { initErrorReporting } from './errorReporting';
 import { captureFirstTouch } from './attribution/firstTouch';
+import { listenForMissingAssets } from './staleBuild';
 
 initErrorReporting();
+listenForMissingAssets();
 // Before the router: unknown routes redirect to `/` and drop the query string.
 captureFirstTouch();
 

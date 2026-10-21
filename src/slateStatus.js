@@ -49,6 +49,14 @@ const definitions = {
     historicalPoolMessage:
       'Past slate — the partial player pool is not displayed. Final game cards retain the posted targetable counts returned for this slate.',
   },
+  closing: {
+    inboundSurfaces: ['pool'],
+    allowsNullRetrievedAt: false,
+    warning: false,
+    currentPoolMessage: 'Lines closed at tip; showing closing lines.',
+    historicalPoolMessage:
+      'Past slate — lines closed at tip. Game cards retain the closing targetable counts returned for this slate.',
+  },
 };
 
 export const getStatusPresentation = (status) => definitions[status];
@@ -63,6 +71,10 @@ export const derivePoolStatusFromProviders = (providers) => {
   const statuses = new Set(providers.map(({ status }) => status));
   if (statuses.size === 0) return null;
   if (statuses.size === 1) return statuses.values().next().value;
+  // A tipped game's board closes; the providers that never posted it stay missing.
+  if ([...statuses].every((status) => status === 'closing' || status === 'missing')) {
+    return 'closing';
+  }
   return 'partial';
 };
 

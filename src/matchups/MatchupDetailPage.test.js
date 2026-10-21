@@ -2234,6 +2234,28 @@ test('AC1: the live header calls a pool that only prizepicks has read stale once
   expect(within(summary).getByText('Lines last read 2h ago.')).toHaveClass('matchup-warning');
 });
 
+test('a closing pool shows its closing lines with a neutral note, however old', async () => {
+  atInstant('2026-01-16T02:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.freshness.pool = {
+    status: 'closing',
+    retrievedAt: '2026-01-15T11:50:00Z',
+    providers: [
+      { name: 'underdog', status: 'closing', retrievedAt: '2026-01-15T11:50:00Z' },
+      { name: 'prizepicks', status: 'missing', retrievedAt: null },
+    ],
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog.' +
+      ' Lines closed at tip; showing closing lines.',
+  );
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+});
+
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();

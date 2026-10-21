@@ -41,12 +41,23 @@ const loadPage = async () => {
   return page;
 };
 
+// Each loaded page adds its own listener; a real reload would discard it.
+const listeners = [];
+
 beforeEach(() => {
   sessionStorage.clear();
   jest.spyOn(console, 'error').mockImplementation(() => {});
+  const add = window.addEventListener.bind(window);
+  jest.spyOn(window, 'addEventListener').mockImplementation((type, listener, options) => {
+    listeners.push([type, listener]);
+    add(type, listener, options);
+  });
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  listeners.splice(0).forEach(([type, listener]) => window.removeEventListener(type, listener));
+  jest.restoreAllMocks();
+});
 
 test('a missing asset reloads silently once, then shows the alert and reports it', async () => {
   mockPage.error = missingChunk;
@@ -69,5 +80,18 @@ test('an error thrown by a downloaded module shows the alert without reloading',
   const page = await loadPage();
   expect(await page.screen.findByRole('alert')).toHaveTextContent('Could not load this page.');
   expect(mockPage.reports).toEqual(['teamId is not defined']);
+  page.cleanup();
+});
+
+// JAVASCRIPT-REACT-C: the SPA rewrite answers a missing chunk with index.html.
+test('a missing chunk served as HTML reloads silently once', async () => {
+  mockPage.error = new TypeError(
+    "'text/html' is not a valid JavaScript MIME type for module script 'https://www.courtai.app/assets/SlatePage-KtSmTdZd.js'.",
+  );
+
+  const page = await loadPage();
+  expect(page.screen.getByRole('status')).toHaveTextContent('Loading page…');
+  expect(page.screen.queryByRole('alert')).toBeNull();
+  expect(mockPage.reports).toEqual([]);
   page.cleanup();
 });

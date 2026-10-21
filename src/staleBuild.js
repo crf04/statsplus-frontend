@@ -3,6 +3,7 @@ const MISSING_ASSET = [
   /^Unable to preload CSS/,
   /dynamically imported module/i,
   /^Importing a module script failed/,
+  /is not a valid JavaScript MIME type/,
 ];
 let reloading = false;
 

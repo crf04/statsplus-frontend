@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { isMissingAsset } from './staleBuild';
 
 let enabled = false;
 
@@ -85,6 +86,7 @@ export const reportRenderError = (error, info) => {
   if (!enabled) return;
   Sentry.withScope((scope) => {
     if (info?.componentStack) scope.setContext('react', { componentStack: info.componentStack });
+    if (isMissingAsset(error)) scope.setTag('missing_asset', 'true');
     Sentry.captureException(error);
   });
 };

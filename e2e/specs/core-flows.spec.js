@@ -363,6 +363,9 @@ test('@critical leaving is one action however many filters were applied', async 
     await page.getByLabel('Last N games', { exact: true }).fill(games);
     await page.getByRole('button', { name: /^Apply/ }).click();
     await expect(page).toHaveURL(new RegExp(`game_filter=${games}`));
+    // The Workspace hides whole until the applied Filter Set's game logs
+    // arrive; read the panel again only once it is back.
+    await expect(page.getByText(`GAMES <= ${games}`).first()).toBeVisible();
   }
 
   await page.getByRole('button', { name: 'Back to search' }).click();

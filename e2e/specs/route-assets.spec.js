@@ -118,20 +118,38 @@ test('production routes and the Search prompt defer chart downloads', async ({ b
     });
     const alerted = () => stalePage.evaluate(() => sessionStorage.getItem('test:alerted'));
 
-    await stalePage.route(chunkUrl, missingAsset, { times: 1 });
+    // A one-shot route (`times: 1`) is torn down the moment it has served its
+    // request, without waiting, and the reload the app starts in that window
+    // can stall. Each failure is served once by a route that stays registered
+    // until the reload has been verified, then is removed.
+    const once = (handler) => {
+      let served = false;
+      return (route) => {
+        if (served) return route.continue();
+        served = true;
+        return handler(route);
+      };
+    };
+
+    await stalePage.route(chunkUrl, once(missingAsset));
     await stalePage.goto(`${origin}/matchups`);
     await expect(
       stalePage.getByRole('heading', { name: 'Sign in to view the slate' }),
     ).toBeVisible();
     expect(staleLoads, 'reloaded once for the missing Slate chunk').toBe(2);
+    await stalePage.unroute(chunkUrl);
 
-    await stalePage.route(searchCssUrl, (route) => route.abort(), { times: 1 });
+    await stalePage.route(
+      searchCssUrl,
+      once((route) => route.abort()),
+    );
     await stalePage.getByRole('link', { name: 'Search', exact: true }).click();
     await expect(
       stalePage.getByRole('heading', { name: 'Ask the box score', exact: true }),
     ).toBeVisible();
     expect(staleLoads, 'reloaded once more for the missing Search stylesheet').toBe(3);
     expect(await alerted(), 'no alert while reloading').toBeNull();
+    await stalePage.unroute(searchCssUrl);
 
     await stalePage.route(chunkUrl, missingAsset);
     await stalePage.getByRole('link', { name: 'Matchups', exact: true }).click();

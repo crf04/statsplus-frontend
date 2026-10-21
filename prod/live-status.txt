@@ -1,0 +1,1 @@
+file_mtime 2026-10-21T02:35:13+00:00 pool.state= closing pool.status= None pool.retrieved_at= 2026-10-19T11:06:10.106867+00:00 {'dabble': 'closing', 'kalshi': 'missing', 'novig': 'closing', 'polymarket': 'closing', 'prizepicks': 'missing', 'underdog': 'closing'} [('BOS @ DET', 'closing'), ('PHI @ NYK', 'closing'), ('OKC @ SAS', 'closing')]

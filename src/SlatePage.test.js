@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import SlatePage from './SlatePage';
 import { getTodaySlateDate } from './calendarDate';
 import { fetchSlate } from './slateApi';
+import { closingPoolSlatePayload } from './slateClosingPoolFixture';
 import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 import { fetchResolvedTargets } from './targets/targetsApi';
 
@@ -511,6 +512,32 @@ test('shows every game of a partial pool, the one without a pool at zero', async
   expect(
     screen.getByRole('link', { name: /^OKC @ SAS, .*18 targetable players, OKC 9, SAS 9/ }),
   ).toBeVisible();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+test('shows every game of a closing slate with a neutral note, not a warning', async () => {
+  jest.setSystemTime(new Date('2026-10-21T02:20:00Z'));
+  const { decodeSlate } = jest.requireActual('./slateApi');
+  fetchSlate.mockResolvedValue(decodeSlate(closingPoolSlatePayload));
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-10-20']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('Lines closed at tip; showing closing lines.')).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^BOS @ DET, .*19 targetable players, BOS 9, DET 10/ }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^PHI @ NYK, .*15 targetable players, PHI 7, NYK 8/ }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /^OKC @ SAS, .*18 targetable players, OKC 9, SAS 9/ }),
+  ).toBeVisible();
+  expect(screen.getByText(/^Player pool is closing/)).not.toHaveClass('freshness-warning');
+  expect(screen.getByText(/^underdog pool is closing/)).not.toHaveClass('freshness-warning');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 

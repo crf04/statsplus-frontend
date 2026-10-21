@@ -6,7 +6,7 @@ import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams } from '../filterUtils';
-import { getSurfaceFreshnessPresentation } from '../slateStatus';
+import { getStatusPresentation, getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import {
   MARKET_PROVIDERS,
@@ -144,6 +144,9 @@ function MatchupSummary({ matchup, now }) {
         <span>
           {books.length ? `Lines from ${listWords(books.map(bookName))}.` : 'No lines posted yet.'}
         </span>
+        {matchup.freshness.pool.status === 'closing' && (
+          <> {getStatusPresentation('closing').currentPoolMessage}</>
+        )}
         {warning && (
           <>
             {' '}

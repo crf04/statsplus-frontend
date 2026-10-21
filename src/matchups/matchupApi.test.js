@@ -1,4 +1,5 @@
 import { apiClient } from '../config';
+import { closingPoolSlatePayload } from '../slateClosingPoolFixture';
 import { decodeMatchup, decodeMatchupSelection, fetchMatchupSelection } from './matchupApi';
 
 jest.mock('../config', () => ({
@@ -289,6 +290,51 @@ test('decodes a partial pool the backend reports for the slate', () => {
       { name: 'dabble', status: 'fresh', retrievedAt: '2026-10-20T20:43:59.000Z' },
     ],
   });
+});
+
+test('decodes the closing pool the backend reports once every game has tipped', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: closingPoolSlatePayload.freshness.pool,
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual({
+    status: 'closing',
+    retrievedAt: '2026-10-16T04:05:12.213Z',
+    providers: [
+      { name: 'dabble', status: 'closing', retrievedAt: '2026-10-16T04:05:12.213Z' },
+      { name: 'kalshi', status: 'missing', retrievedAt: null },
+      { name: 'novig', status: 'closing', retrievedAt: '2026-10-19T10:22:27.107Z' },
+      { name: 'polymarket', status: 'closing', retrievedAt: '2026-10-20T18:54:24.833Z' },
+      { name: 'prizepicks', status: 'missing', retrievedAt: null },
+      { name: 'underdog', status: 'closing', retrievedAt: '2026-10-20T18:54:26.472Z' },
+    ],
+  });
+});
+
+test('decodes a pool whose providers are closing, live and missing as partial', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        state: 'live',
+        retrieved_at: '2026-10-20T22:40:00Z',
+        providers: {
+          dabble: { status: 'closing', retrieved_at: '2026-10-20T18:50:00Z' },
+          underdog: { status: 'fresh', retrieved_at: '2026-10-20T22:40:00Z' },
+          kalshi: { status: 'missing', retrieved_at: null },
+        },
+      },
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual(
+    expect.objectContaining({ status: 'partial', retrievedAt: '2026-10-20T22:40:00.000Z' }),
+  );
 });
 
 test('strictly decodes injury identities and enforces the v1 team envelope', () => {

@@ -390,3 +390,48 @@ test('a save that answers after the reader moved on leaves the newer form alone'
   await act(async () => answer());
   expect(screen.getByLabelText('Name this Filter Set')).toHaveValue('Newer');
 });
+
+test('saving stores the Filter Set without the Line Type the chart is on', async () => {
+  await renderPanel('/?player_name=LeBron+James&game_filter=5&line_type=REB', {
+    player_name: 'LeBron James',
+    game_filter: 5,
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(screen.getByLabelText('Name this Filter Set'), {
+    target: { value: 'Rebounds view' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  });
+
+  expect(createSavedFilterSet).toHaveBeenCalledWith({
+    name: 'Rebounds view',
+    queryString: 'player_name=LeBron+James&game_filter=5',
+  });
+});
+
+test('a saved set stays the current one whichever Line Type the chart is on', async () => {
+  await renderPanel('/?player_name=LeBron+James&game_filter=10&line_type=REB', {
+    player_name: 'LeBron James',
+    game_filter: 10,
+  });
+
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  expect(screen.getByText('LeBron last 10', { selector: '.fpb-foot b' })).toBeVisible();
+});
+
+test('a Line Type alone is not a Filter Set to save', async () => {
+  await renderPanel('/?browse=1&line_type=REB');
+
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+});
+
+test('opening a saved set keeps the Line Type the chart is on', async () => {
+  await renderPanel('/?player_name=LeBron+James&line_type=REB', { player_name: 'LeBron James' });
+  fireEvent.click(savedTab());
+  fireEvent.click(screen.getByRole('button', { name: 'Open saved Filter Set Reaves away' }));
+
+  expect(screen.getByTestId('location')).toHaveTextContent(
+    '?player_name=Austin+Reaves&location_filter=Away&line_type=REB',
+  );
+});

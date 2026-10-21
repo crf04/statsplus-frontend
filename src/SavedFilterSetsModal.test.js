@@ -28,9 +28,9 @@ const LocationProbe = () => {
   );
 };
 
-const renderModal = (onHide = jest.fn()) => {
+const renderModal = (onHide = jest.fn(), from = '/matchups') => {
   render(
-    <MemoryRouter initialEntries={['/matchups']}>
+    <MemoryRouter initialEntries={[from]}>
       <SavedFilterSetsModal show onHide={onHide} />
       <LocationProbe />
     </MemoryRouter>,
@@ -133,6 +133,20 @@ test('opening a saved Filter Set navigates to its query string and closes the li
     ),
   );
   expect(onHide).toHaveBeenCalled();
+});
+
+test('opening a saved Filter Set keeps the Line Type the chart is on', async () => {
+  renderModal(jest.fn(), '/?player_name=LeBron+James&line_type=REB');
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open saved Filter Set Curry at home' }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/?player_name=Stephen+Curry&home_away=home&line_type=REB',
+    ),
+  );
 });
 
 test('renames an item and reloads the list', async () => {

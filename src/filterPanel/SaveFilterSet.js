@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { filterQueryString } from '../filterUtils';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { createSavedFilterSet } from '../savedFilterSetsApi';
 import ErrorMessage from '../feedback/ErrorMessage';
@@ -11,7 +12,7 @@ import ErrorMessage from '../feedback/ErrorMessage';
  * name instead.
  */
 const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
-  const location = useLocation();
+  const filterQuery = filterQueryString(useLocation().search);
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState(null);
@@ -28,7 +29,7 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
   };
 
   // A different Filter Set is a different thing to save.
-  useEffect(stopNaming, [location.search]);
+  useEffect(stopNaming, [filterQuery]);
 
   if (naming)
     return (
@@ -44,7 +45,7 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
           try {
             await createSavedFilterSet({
               name: name.trim(),
-              queryString: location.search.replace(/^\?/, ''),
+              queryString: filterQuery,
             });
             if (attempt.current === mine) stopNaming();
           } catch (saveError) {

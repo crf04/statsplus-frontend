@@ -24,10 +24,15 @@ jest.mock('./savedFilterSetsApi', () => ({
 jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
 jest.mock('./FilterOptions', () => ({
   __esModule: true,
-  default: ({ onApplyFilters }) => (
-    <button type="button" onClick={() => onApplyFilters({ game_filter: 5 })}>
-      Apply test filters
-    </button>
+  default: ({ onApplyFilters, onSeasonChange }) => (
+    <>
+      <button type="button" onClick={() => onApplyFilters({ game_filter: 5 })}>
+        Apply test filters
+      </button>
+      <button type="button" onClick={() => onSeasonChange('2024-25')}>
+        Choose 2024-25
+      </button>
+    </>
   ),
 }));
 jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
@@ -105,6 +110,14 @@ test('applying a filter keeps the chosen Line Type', async () => {
 
   await waitFor(() => expect(url()).toBe(`${PLAYER}&game_filter=5&line_type=REB`));
   expect(await lineTypeSelect()).toHaveValue('REB');
+});
+
+test('choosing a season keeps the chosen Line Type', async () => {
+  renderAt([`${PLAYER}&line_type=REB`]);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose 2024-25' }));
+
+  await waitFor(() => expect(url()).toBe(`${PLAYER}&season_filter=2024-25&line_type=REB`));
 });
 
 test('removing the browse sentinel keeps the Line Type', async () => {

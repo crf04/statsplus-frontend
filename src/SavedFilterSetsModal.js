@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { lineTypeFromSearch, withLineType } from './filterUtils';
 import { getRequestErrorMessage } from './gameLogsApi';
 import { describeSavedFilterSet } from './savedFilterSetDescription';
 import {
@@ -186,6 +187,7 @@ export const SavedFilterSetRow = ({
 
 const SavedFilterSetsModal = ({ show, onHide }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [savedFilterSets, setSavedFilterSets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -231,7 +233,7 @@ const SavedFilterSetsModal = ({ show, onHide }) => {
   };
 
   const handleOpen = (savedFilterSet) => {
-    navigate(`/?${savedFilterSet.queryString}`);
+    navigate(`/?${withLineType(savedFilterSet.queryString, lineTypeFromSearch(location.search))}`);
     onHide();
   };
 

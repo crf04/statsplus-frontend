@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { filterQueryString } from '../filterUtils';
 import useFilterPanel from './useFilterPanel';
 import FilterPanelView from './FilterPanelView';
 import FilterPanelContext from './FilterPanelContext';
@@ -41,11 +42,10 @@ export default function FilterPanel(props) {
   const [tab, setTab] = useState('filters');
   // Saved Filter Sets belong to an admitted account.
   const canSave = isAuthenticated && !waitlist;
-  const current = findSavedFilterSet(saved.sets, location.search);
+  const filterQuery = filterQueryString(location.search);
+  const current = findSavedFilterSet(saved.sets, filterQuery);
   // `/?browse=1` carries no Filter Set yet, so there is nothing to save.
-  const hasFilterSet = [...new URLSearchParams(location.search).keys()].some(
-    (key) => key !== 'browse',
-  );
+  const hasFilterSet = filterQuery !== '';
 
   // Another player is another panel; it opens on its filters.
   useEffect(() => setTab('filters'), [panel.selectedPlayer]);

@@ -220,10 +220,10 @@ the encrypted repository secret is missing. Playwright trace and video are disab
 secret is present; screenshots remain available for failure evidence.
 
 Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evidence` and `parent-links` before merging. `E2E` and `e2e flows` are
-aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; two e2e flows slices per
-target, `1/2` and `2/2`): each passes only when every leg passed, so the required names are
-unchanged. `playwright-evidence` is the merged HTML report; `e2e-flow-evidence-<target>-<slice>` and
-`playwright-test-results-<shard>` hold per-leg evidence.
+aggregate jobs over matrix legs (Playwright shards `1/2` and `2/2`; one e2e flows leg per target):
+each passes only when every leg passed, so the required names are unchanged. `playwright-evidence`
+is the merged HTML report; `e2e-flow-evidence-<target>` and `playwright-test-results-<shard>` hold
+per-leg evidence.
 
 The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
 tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA

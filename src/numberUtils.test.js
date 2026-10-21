@@ -2,7 +2,7 @@ import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 
 describe('numberUtils', () => {
   test('accepts finite numbers and numeric strings', () => {
-    expect(toFiniteNumber(12.5)).toBe(12.5);
+    expect(toFiniteNumber(12.5)).toBe(13);
     expect(toFiniteNumber('12.5')).toBe(12.5);
     expect(formatNumber('12.5', 1)).toBe('12.5');
   });

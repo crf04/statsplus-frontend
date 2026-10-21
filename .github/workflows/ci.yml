@@ -105,16 +105,17 @@ jobs:
           echo "e2e-shard: $RESULT"
           test "$RESULT" = success
 
-      # The merge needs only Playwright, installed by npm ci against the lock
-      # file. Its two package directories are cached by the lock file's hash,
-      # so a hit skips the install and still runs only code the lock file pins.
-      - name: Check out package files
+      # The merge needs only Playwright. npm ci installs it from a lock file
+      # holding just the committed lock file's Playwright entries, so every run
+      # verifies the two packages against the committed hashes without
+      # installing the rest of the tree.
+      - name: Check out the lock file
         if: always()
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            package.json
             package-lock.json
+            scripts/playwright-only-lock.mjs
           sparse-checkout-cone-mode: false
 
       - name: Set up Node.js
@@ -123,19 +124,11 @@ jobs:
         with:
           node-version: 22.22.3
 
-      - name: Restore Playwright from an earlier npm ci
-        id: playwright
+      - name: Install Playwright from the lock file
         if: always()
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules/playwright
-            node_modules/playwright-core
-          key: merge-reports-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: always() && steps.playwright.outputs.cache-hit != 'true'
-        run: npm ci
+        run: |
+          node scripts/playwright-only-lock.mjs merge-tool
+          cd merge-tool && npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Download blob reports
         if: always()
@@ -154,7 +147,7 @@ jobs:
 
       - name: Merge shard reports
         if: always()
-        run: node node_modules/playwright/cli.js merge-reports --reporter html,line ./all-blob-reports
+        run: node merge-tool/node_modules/playwright/cli.js merge-reports --reporter html,line ./all-blob-reports
 
       - name: Upload browser test evidence
         if: always()

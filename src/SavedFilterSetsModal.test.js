@@ -95,6 +95,29 @@ test('describes a Saved Filter Set by every parameter its URL carries', async ()
   );
 });
 
+test('describes a defensive rank range by the ranks it covers', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    {
+      id: 10,
+      name: 'mid defenses',
+      queryString:
+        'player_name=Jalen+Johnson&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=3,8' +
+        '&teams_against%5B%5D=Isolation&rank_filter%5B%5D=4,4',
+    },
+  ]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: /Open saved Filter Set/ });
+  expect(row).toHaveTextContent(
+    [
+      'mid defenses',
+      'Jalen Johnson',
+      'vs ranks 23–28 Points Allowed D',
+      'vs rank 27 Isolation D',
+    ].join(''),
+  );
+});
+
 test('says a Filter Set with no parameters covers every logged game', async () => {
   fetchSavedFilterSets.mockResolvedValue([
     { id: 3, name: 'all of it', queryString: 'player_name=Stephen+Curry' },

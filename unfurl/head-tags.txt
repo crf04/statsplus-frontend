@@ -1,0 +1,29 @@
+GET /?player_name=LeBron%20James&game_filter=10&line_type=REB  (User-Agent: Slackbot-LinkExpanding)
+<meta property="og:type" content="website"
+<meta property="og:title" content="LeBron James Game Logs | CourtAI"
+<meta property="og:image" content="https://statsplus-frontend-i75ncyh36-chris-fus-projects.vercel.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;game_filter=10&amp;line_type=REB&amp;line_date=2026-10-22"
+<meta property="og:image:width" content="1200"
+<meta property="og:image:height" content="630"
+<meta property="og:image:alt" content="LeBron James Game Logs | CourtAI"
+<meta name="twitter:card" content="summary_large_image"
+<meta name="twitter:image" content="https://statsplus-frontend-i75ncyh36-chris-fus-projects.vercel.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;game_filter=10&amp;line_type=REB&amp;line_date=2026-10-22"
+<meta name="twitter:title" content="LeBron James Game Logs | CourtAI"
+
+GET /?player_name=LeBron%20James&game_filter=10  (User-Agent: Slackbot-LinkExpanding)
+<meta property="og:type" content="website"
+<meta property="og:title" content="LeBron James Game Logs | CourtAI"
+<meta property="og:image" content="https://statsplus-frontend-i75ncyh36-chris-fus-projects.vercel.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;game_filter=10&amp;line_date=2026-10-22"
+<meta property="og:image:width" content="1200"
+<meta property="og:image:height" content="630"
+<meta property="og:image:alt" content="LeBron James Game Logs | CourtAI"
+<meta name="twitter:card" content="summary_large_image"
+<meta name="twitter:image" content="https://statsplus-frontend-i75ncyh36-chris-fus-projects.vercel.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;game_filter=10&amp;line_date=2026-10-22"
+<meta name="twitter:title" content="LeBron James Game Logs | CourtAI"
+
+GET /?player_name=LeBron%20James&game_filter=10&line_type=None  (User-Agent: Slackbot-LinkExpanding)
+<meta property="og:type" content="website"
+<meta property="og:title" content="LeBron James Game Logs | CourtAI"
+<meta property="og:image" content="https://courtai.app/logo512.png"
+<meta name="twitter:card" content="summary"
+<meta name="twitter:title" content="LeBron James Game Logs | CourtAI"
+

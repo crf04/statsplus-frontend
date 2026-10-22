@@ -2,7 +2,8 @@ import { render, renderHook, screen } from '@testing-library/react';
 import ChartComponent from './ChartComponent';
 import { decodeGameLogsResponse, postedLineFor } from './gameLogsApi';
 import { useLineSelection } from './lineSelection';
-import { cases } from './linkPreviewCases.json';
+import { linkPreviewFor } from './linkPreview';
+import { cases, filter_cases as filterCases } from './linkPreviewCases.json';
 
 jest.mock('react-chartjs-2', () => ({ Bar: () => null }));
 jest.mock('./chartSetup', () => ({}));
@@ -38,10 +39,15 @@ test.each(cases)('$name', ({ line_type, lines, season_averages, values, expect: 
       lineSource={lineSource}
     />,
   );
-  // The Hit Rate card reads "L<last 5>" then "L<last 10>".
-  const [, last10] = screen.getAllByText(/^\s*L\d+\/\d+\s*$/);
-  const [, hits, games] = last10.textContent.match(/L(\d+)\/(\d+)/);
+  // The Hit Rate card leads with every matching game, before its L5 and L10.
+  const [, hits, games] = screen.getByText(/^\d+\/\d+$/).textContent.match(/(\d+)\/(\d+)/);
   expect(Number(games)).toBe(expected.games);
   // With no line the card makes no claim, while the page counts against zero.
   if (expected.hits !== null) expect(Number(hits)).toBe(expected.hits);
+});
+
+// The card's filters line uses the words of the link's description.
+test.each(filterCases)('filters for $query', ({ query, filters }) => {
+  const { description } = linkPreviewFor(new URLSearchParams(query));
+  expect(description).toBe(`${filters}. Explore on CourtAI.`);
 });

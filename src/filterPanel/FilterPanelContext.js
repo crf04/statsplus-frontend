@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toFiniteNumber } from '../numberUtils';
 import { opponentFilterLabel } from '../opponentFilters';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchNextOpponent } from '../nextOpponentApi';
 
 const useHeight = () => {
   const ref = useRef(null);
@@ -199,30 +198,12 @@ const MatchStrip = ({ seasonLogs, keptDates, lineType, line }) => {
 const FilterPanelContext = ({ panel, extra, saved }) => {
   const [ref, height] = useHeight();
   const { isAuthenticated } = useAuth();
-  const [opponent, setOpponent] = useState(null);
-  // The player the next-opponent read last finished for, answered or not.
-  const [opponentFor, setOpponentFor] = useState(null);
-  useEffect(() => {
-    setOpponent(null);
-    setOpponentFor(null);
-    if (!isAuthenticated || !panel.selectedPlayer) return undefined;
-    const controller = new AbortController();
-    fetchNextOpponent(panel.selectedPlayer, { signal: controller.signal })
-      .then((data) => {
-        if (!controller.signal.aborted) setOpponent(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!controller.signal.aborted) setOpponentFor(panel.selectedPlayer);
-      });
-    return () => controller.abort();
-  }, [isAuthenticated, panel.selectedPlayer]);
   // The Workspace reveals in one piece, so it waits for this panel's own reads.
   const settled =
     !isAuthenticated ||
-    ((!panel.selectedPlayer || opponentFor === panel.selectedPlayer) &&
+    ((!panel.selectedPlayer || extra.nextOpponentFor === panel.selectedPlayer) &&
       (!saved || saved.sets !== null || Boolean(saved.error)));
-  const { onContextSettled } = extra;
+  const { onContextSettled, nextOpponent: opponent } = extra;
   useEffect(() => {
     onContextSettled?.(settled ? panel.selectedPlayer : null);
   }, [onContextSettled, settled, panel.selectedPlayer]);

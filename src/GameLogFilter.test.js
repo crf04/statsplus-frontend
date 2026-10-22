@@ -52,12 +52,18 @@ jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }))
 jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
 jest.mock('./OpposingTeamProfile', () => ({
   __esModule: true,
-  default: ({ selectedTeam, setSelectedTeam }) => (
-    <div>
-      <output data-testid="comparison-opponent">{selectedTeam}</output>
-      <button onClick={() => setSelectedTeam('Denver Nuggets')}>Compare Denver</button>
-    </div>
-  ),
+  default: (props) => {
+    if (mockRealOpposingProfile) {
+      const Actual = jest.requireActual('./OpposingTeamProfile').default;
+      return <Actual {...props} />;
+    }
+    return (
+      <div>
+        <output data-testid="comparison-opponent">{props.selectedTeam}</output>
+        <button onClick={() => props.setSelectedTeam('Denver Nuggets')}>Compare Denver</button>
+      </div>
+    );
+  },
 }));
 jest.mock('./PerformanceAverages', () => {
   const { default: ActualPerformanceAverages } = jest.requireActual('./PerformanceAverages');
@@ -79,6 +85,7 @@ jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
 let mockAuthState;
 let mockFilterPatch;
 let mockParsedFilters;
+let mockRealOpposingProfile;
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -105,10 +112,30 @@ const renderGameLogFilter = (initialEntries, initialIndex) =>
     </MemoryRouter>,
   );
 
+const TEAMS = ['Atlanta Hawks', 'Boston Celtics', 'Charlotte Hornets', 'Denver Nuggets'];
+const nextGameAgainst = (opponent_name) => ({
+  next_game: { game_id: '1', date: '2026-01-05', opponent: 'CHA', opponent_name, home: true },
+  opponent_ranks: [],
+});
+// The lists and the next-opponent read answer by endpoint; anything else
+// (team stats) stays in flight.
+const mockReads = ({ nextOpponent = nextGameAgainst('Boston Celtics') } = {}) =>
+  apiClient.get.mockImplementation((url) => {
+    if (url === '/api/teams') return Promise.resolve({ data: TEAMS });
+    if (url === '/api/players') return Promise.resolve({ data: [] });
+    if (url === '/api/next_opponent') {
+      return nextOpponent instanceof Error
+        ? Promise.reject(nextOpponent)
+        : Promise.resolve({ data: nextOpponent });
+    }
+    return new Promise(() => {});
+  });
+
 beforeEach(() => {
   mockAuthState = { isAuthenticated: true, loading: false };
   mockFilterPatch = { game_filter: 5 };
   mockParsedFilters = { player_name: 'Stephen Curry', game_filter: 10 };
+  mockRealOpposingProfile = false;
   useAuth.mockImplementation(() => mockAuthState);
   apiClient.get.mockImplementation(() => new Promise(() => {}));
   fetchGameLogsData.mockImplementation(() => new Promise(() => {}));
@@ -513,7 +540,8 @@ test.each([
 
 test('unchanged Apply refreshes logs while preserving the comparison opponent', async () => {
   mockFilterPatch = { game_filter: 10 };
-  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  mockReads();
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
   renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
   await waitFor(() =>
     expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics'),
@@ -529,16 +557,117 @@ test('unchanged Apply refreshes logs while preserving the comparison opponent', 
 
 test('unchanged Apply recovers from an initial failure with a default comparison opponent', async () => {
   mockFilterPatch = { game_filter: 10 };
+  mockReads();
   fetchGameLogsData.mockRejectedValue(new Error('initial failure'));
   renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
   await screen.findByText('request failed');
   expect(screen.getByTestId('comparison-opponent')).toBeEmptyDOMElement();
-  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: 'Boston Celtics' });
+  fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
   await act(async () =>
     fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
   );
   expect(screen.queryByText('request failed')).not.toBeInTheDocument();
   expect(screen.getByTestId('comparison-opponent')).toHaveTextContent('Boston Celtics');
+});
+
+describe('the Opposing Team Profile opens on the next opponent', () => {
+  const nextOpponentCalls = () =>
+    apiClient.get.mock.calls.filter(([url]) => url === '/api/next_opponent');
+
+  beforeEach(() => {
+    mockRealOpposingProfile = true;
+    fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
+  });
+
+  test('the team select and the team-stats request name the next opponent, not the first team', async () => {
+    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    renderGameLogFilter(['/?player_name=Stephen+Curry']);
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/team_stats',
+      expect.objectContaining({
+        params: expect.objectContaining({ team: 'Charlotte Hornets' }),
+      }),
+    );
+    expect(apiClient.get).not.toHaveBeenCalledWith(
+      '/api/team_stats',
+      expect.objectContaining({
+        params: expect.objectContaining({ team: 'Atlanta Hawks' }),
+      }),
+    );
+  });
+
+  test.each([
+    ['has no next game', { next_game: null, opponent_ranks: [] }],
+    ['names a team outside the list', nextGameAgainst('Seattle SuperSonics')],
+    ['fails', new Error('boom')],
+  ])('falls back to the first team when the read %s', async (_label, nextOpponent) => {
+    mockReads({ nextOpponent });
+    renderGameLogFilter(['/?player_name=Stephen+Curry']);
+
+    await waitFor(() => expect(screen.getAllByRole('combobox')[0]).toHaveValue('Atlanta Hawks'));
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/team_stats',
+      expect.objectContaining({
+        params: expect.objectContaining({ team: 'Atlanta Hawks' }),
+      }),
+    );
+  });
+
+  test('sends one next-opponent request per player load', async () => {
+    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    renderGameLogFilter(['/?player_name=Stephen+Curry']);
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    expect(nextOpponentCalls()).toHaveLength(1);
+    expect(nextOpponentCalls()[0][1].params).toEqual({ player_name: 'Stephen Curry' });
+  });
+
+  test('a team picked by hand survives an unchanged Apply', async () => {
+    mockFilterPatch = { game_filter: 10 };
+    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Denver Nuggets' } });
+    await act(async () =>
+      fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' })),
+    );
+
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Denver Nuggets');
+    expect(nextOpponentCalls()).toHaveLength(1);
+  });
+
+  test('the Workspace stays behind its loading state until the default opponent is chosen', async () => {
+    let answer;
+    mockReads();
+    const reads = apiClient.get.getMockImplementation();
+    apiClient.get.mockImplementation((url, options) =>
+      url === '/api/next_opponent'
+        ? new Promise((resolve) => {
+            answer = () => resolve({ data: nextGameAgainst('Charlotte Hornets') });
+          })
+        : reads(url, options),
+    );
+    renderGameLogFilter(['/?player_name=Stephen+Curry']);
+
+    // The logs have answered; the default opponent waits on the read.
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+    await act(async () => {});
+    expect(screen.getByText('Loading game logs…')).toBeVisible();
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('');
+    expect(apiClient.get).not.toHaveBeenCalledWith('/api/team_stats', expect.anything());
+    await act(async () => answer());
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+  });
 });
 
 test('a rate_limited game-logs read shows the backend message, once', async () => {

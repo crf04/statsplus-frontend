@@ -14,6 +14,7 @@ import PlayerStatsCards from './PlayerStatsCards';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { fetchNextOpponent } from './nextOpponentApi';
 import {
   BROWSE_PARAM,
   filterSetFromSearchParams,
@@ -70,6 +71,12 @@ const GameLogFilter = ({ notice = null }) => {
   // The tab and any link preview say the same thing about the same URL.
   useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
+  // The player whose game logs are loading and still need a default opponent,
+  // chosen once the logs, the team list and the next-opponent read are all in.
+  const [defaultTeamFor, setDefaultTeamFor] = useState(null);
+  // The next-opponent read, which the filter panel renders and the default
+  // opponent comes from. `player` is whom it last finished for, answered or not.
+  const [nextOpponentRead, setNextOpponentRead] = useState({ player: null, data: null });
   const [lineType, setLineType] = useState('PTS');
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
@@ -114,12 +121,7 @@ const GameLogFilter = ({ notice = null }) => {
   const [revealedLoad, setRevealedLoad] = useState(null);
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
-  const teamsRef = useRef([]);
   const wasInWorkspace = useRef(false);
-
-  useEffect(() => {
-    teamsRef.current = teams;
-  }, [teams]);
 
   // Player/team lists are protected data. Fetch them only after auth has
   // settled, and refetch on every auth transition (login/logout).
@@ -206,6 +208,7 @@ const GameLogFilter = ({ notice = null }) => {
     currentRequest.controller?.abort();
     gameLogsRequestRef.current = { id: currentRequest.id + 1, controller: null };
     setIsGameLogsLoading(false);
+    setDefaultTeamFor(null);
   }, []);
 
   const seasonRequestRef = useRef({ player: null, controller: null });
@@ -284,6 +287,7 @@ const GameLogFilter = ({ notice = null }) => {
       setIsGameLogsLoading(true);
       setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
+      setDefaultTeamFor(updateSelectedTeam ? params.player_name : null);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
       // at the start is what keeps that true while the request is in flight and
@@ -314,16 +318,16 @@ const GameLogFilter = ({ notice = null }) => {
             filtered: data.gameLogs.length,
             season: data.seasonGameCount ?? null,
           });
-          if (updateSelectedTeam) {
-            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
-          }
           return { ok: true, data };
         })
         .catch((error) => {
           const stale = gameLogsRequestRef.current.id !== requestId;
           if (stale || isRequestCancelled(error)) {
+            if (!stale) setDefaultTeamFor(null);
             return { stale, cancelled: true };
           }
+
+          setDefaultTeamFor(null);
 
           setGameLogsError(
             getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
@@ -338,6 +342,28 @@ const GameLogFilter = ({ notice = null }) => {
     },
     [currentUser?.uid],
   );
+
+  useEffect(() => {
+    setNextOpponentRead({ player: null, data: null });
+    if (!isAuthenticated || !inWorkspace || isRefusedLink) return undefined;
+    const controller = new AbortController();
+    fetchNextOpponent(selectedPlayer, { signal: controller.signal })
+      .catch(() => null)
+      .then((data) => {
+        if (!controller.signal.aborted) setNextOpponentRead({ player: selectedPlayer, data });
+      });
+    return () => controller.abort();
+  }, [isAuthenticated, inWorkspace, isRefusedLink, selectedPlayer]);
+
+  // A team the user picked is never here: only a load that was asked to choose
+  // a default sets defaultTeamFor.
+  useEffect(() => {
+    if (defaultTeamFor === null || defaultTeamFor !== selectedPlayer) return;
+    if (isGameLogsLoading || listsLoading || nextOpponentRead.player !== selectedPlayer) return;
+    const nextOpponent = nextOpponentRead.data?.next_game?.opponent_name;
+    setSelectedTeam(teams.includes(nextOpponent) ? nextOpponent : teams[0] || 'Atlanta Hawks');
+    setDefaultTeamFor(null);
+  }, [defaultTeamFor, selectedPlayer, isGameLogsLoading, listsLoading, nextOpponentRead, teams]);
 
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
@@ -566,6 +592,7 @@ const GameLogFilter = ({ notice = null }) => {
     authLoading ||
     listsLoading ||
     isGameLogsLoading ||
+    defaultTeamFor !== null ||
     !chartReady ||
     panelSettledFor !== selectedPlayer ||
     profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
@@ -747,6 +774,10 @@ const GameLogFilter = ({ notice = null }) => {
                 lineType={lineType}
                 lineValue={line.lineValue}
                 onContextSettled={setPanelSettledFor}
+                nextOpponent={
+                  nextOpponentRead.player === selectedPlayer ? nextOpponentRead.data : null
+                }
+                nextOpponentFor={nextOpponentRead.player}
                 defaultSaveName={currentQuery || ''}
               />
             </Col>

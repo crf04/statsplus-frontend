@@ -110,6 +110,17 @@ describe('filterSetFromSearchParams', () => {
     expect(filters).toEqual({ player_name: 'LeBron James' });
   });
 
+  test('line_type is a view of the results, not part of a Filter Set', () => {
+    expect(decode('player_name=A+B&line_type=REB')).toEqual({
+      filters: { player_name: 'A B' },
+      invalid: [],
+    });
+    expect(decode('line_type=XYZ&line_type=REB')).toEqual({ filters: {}, invalid: [] });
+    expect(filterSetToSearchParams({ player_name: 'A B', line_type: 'REB' }).toString()).toBe(
+      'player_name=A+B',
+    );
+  });
+
   test('decodes date_to beside date_filter and refuses an end before the start', () => {
     expect(decode('player_name=A+B&date_filter=2026-01-01&date_to=2026-01-31')).toEqual({
       filters: { player_name: 'A B', date_filter: '2026-01-01', date_to: '2026-01-31' },

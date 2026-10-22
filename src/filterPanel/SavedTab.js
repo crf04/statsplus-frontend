@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { lineTypeFromSearch, withLineType } from '../filterUtils';
 import { getRequestErrorMessage, withRequestReference } from '../gameLogsApi';
 import { deleteSavedFilterSet, renameSavedFilterSet } from '../savedFilterSetsApi';
 import { describeSavedFilterSet } from '../savedFilterSetDescription';
@@ -16,6 +17,7 @@ const samePlayer = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, '
  */
 const SavedTab = ({ player, saved, current, onOpened }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState(null);
   const [isMutating, setIsMutating] = useState(false);
 
@@ -65,7 +67,7 @@ const SavedTab = ({ player, saved, current, onOpened }) => {
       isCurrent={current?.id === set.id}
       hidePlayer={hidePlayer}
       onOpen={() => {
-        navigate(`/?${set.queryString}`);
+        navigate(`/?${withLineType(set.queryString, lineTypeFromSearch(location.search))}`);
         onOpened();
       }}
       onRename={(name) =>

@@ -18,9 +18,12 @@ import { fetchNextOpponent } from './nextOpponentApi';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
+  filterQueryString,
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  lineTypeFromSearch,
   mergeFilterSet,
+  withLineType,
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
 import useDocumentTitle from './useDocumentTitle';
@@ -55,9 +58,12 @@ const GameLogFilter = ({ notice = null }) => {
   const { pathname } = useLocation();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
+  // Decoded from the Filter Set's parameters alone, so a change of view such as
+  // the Line Type leaves the Filter Set, and everything that follows it, as is.
+  const filterQuery = filterQueryString(searchParams);
   const { filters: urlFilters, invalid: urlInvalid } = useMemo(
-    () => filterSetFromSearchParams(searchParams),
-    [searchParams],
+    () => filterSetFromSearchParams(new URLSearchParams(filterQuery)),
+    [filterQuery],
   );
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
   const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
@@ -82,7 +88,22 @@ const GameLogFilter = ({ notice = null }) => {
   // The next-opponent read, which the filter panel renders and the default
   // opponent comes from. `player` is whom it last finished for, answered or not.
   const [nextOpponentRead, setNextOpponentRead] = useState({ player: null, data: null });
-  const [lineType, setLineType] = useState('PTS');
+  // Which stat the chart shows is a view of the results, kept in the URL so a
+  // shared link opens on it. It is not a filter, so an unusable value quietly
+  // means the default rather than refusing the link.
+  const lineType = lineTypeFromSearch(searchParams);
+  const setLineType = (next) =>
+    setSearchParams((current) => withLineType(current, next), { replace: true });
+  // A Parsed Query answers after the reader may have moved on, so a write reads
+  // the address bar as it is then, not as it was when the write began.
+  const currentSearchRef = useRef(searchParams);
+  useEffect(() => {
+    currentSearchRef.current = searchParams;
+  }, [searchParams]);
+  // Writing the Filter Set rebuilds the query string from filters alone, which
+  // would silently reset the chart's stat, so the current one is carried over.
+  const withCurrentLineType = (nextSearch) =>
+    withLineType(nextSearch, lineTypeFromSearch(currentSearchRef.current));
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
@@ -546,8 +567,8 @@ const GameLogFilter = ({ notice = null }) => {
    */
   const handleSeasonChange = (season) => {
     if (isRefusedLink) return;
-    const nextSearch = filterSetToSearchParams(
-      mergeFilterSet(urlFilters, { season_filter: season }),
+    const nextSearch = withCurrentLineType(
+      filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: season })),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
     setSearchParams(nextSearch, { replace: false });
@@ -597,9 +618,9 @@ const GameLogFilter = ({ notice = null }) => {
       return { ok: false, reason: 'needsPlayer' };
     }
 
-    const nextSearch = filterSetToSearchParams(nextFilters);
+    const nextSearch = withCurrentLineType(filterSetToSearchParams(nextFilters));
     // An apply that changes nothing is not a place to come back to.
-    if (nextSearch.toString() === searchParams.toString()) {
+    if (nextSearch.toString() === currentSearchRef.current.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
       requestGameLogs(nextFilters, { bypass: true });
       return { ok: true };

@@ -1,0 +1,82 @@
+{"action": "doctor"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=10&line_type=REB"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "game_filter": "10"}, "status": 200}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "10 of 60 games"}}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}}
+{"action": "assert", "target": {"role": "heading", "name": "Game Logs"}}
+{"action": "assert", "target": {"role": "table"}}
+{"action": "assert", "url": "/?player_name=LeBron+James&game_filter=10&line_type=REB"}
+{"action": "proof", "name": "01-link-reb-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}}
+{"action": "proof", "name": "01-link-reb-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "click", "target": {"role": "button", "name": "last 10 games"}}
+{"action": "fill", "target": {"label": "Last N games"}, "value": "5"}
+{"action": "click", "target": {"role": "button", "name": "Done"}}
+{"action": "click", "target": {"role": "button", "name": "Apply 1 change"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "game_filter": "5"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&game_filter=5&line_type=REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "5 of 60 games"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "proof", "name": "02-apply-keeps-reb-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "url": "/?player_name=LeBron+James&game_filter=5&line_type=AST"}
+{"action": "assert", "target": {"role": "group", "name": "Posted Lines:"}}
+{"action": "proof", "name": "02-change-to-ast-desktop"}
+{"action": "back"}
+{"action": "assert", "url": "/?player_name=LeBron+James&game_filter=10&line_type=REB"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "10 of 60 games"}}
+{"action": "proof", "name": "02-back-skips-stat-change-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "url": "/?player_name=LeBron+James&game_filter=10&line_type=AST"}
+{"action": "proof", "name": "02-phone-change-to-ast-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "assert", "target": {"selector": ".fpb-season"}, "state": "hidden"}
+{"action": "proof", "name": "03-no-season-select-desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=10&line_type=XYZ"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "game_filter": "10"}, "status": 200}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "10 of 60 games"}}
+{"action": "assert", "target": {"role": "alert"}, "state": "hidden"}
+{"action": "proof", "name": "04-unknown-falls-back-pts-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "proof", "name": "04-unknown-falls-back-pts-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=10&line_type=REB"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "game_filter": "10"}, "status": 200}
+{"action": "click", "target": {"role": "tab", "name": "Saved 2"}}
+{"action": "click", "target": {"role": "button", "name": "Open saved Filter Set lebron"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "url": "/?player_name=LeBron+James&line_type=REB"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "60 of 60 games"}}
+{"action": "proof", "name": "05-panel-open-saved-keeps-reb-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "proof", "name": "05-panel-open-saved-keeps-reb-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James&game_filter=10&line_type=AST"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James", "game_filter": "10"}, "status": 200}
+{"action": "click", "target": {"selector": "#user-dropdown"}}
+{"action": "click", "target": {"within": {"selector": ".dropdown-menu"}, "text": "Saved Filter Sets"}}
+{"action": "click", "target": {"role": "button", "name": "Open saved Filter Set Lebron against top rebounds"}}
+{"action": "assert", "url": "/?player_name=LeBron+James&season_filter=2025-26&teams_against%5B%5D=OPP_REB&rank_filter%5B%5D=10&line_type=AST"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "assert", "target": {"within": {"selector": ".sample-size-text"}, "text": "21 of 60 games"}}
+{"action": "proof", "name": "05-modal-open-saved-keeps-ast-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "AST"}
+{"action": "proof", "name": "05-modal-open-saved-keeps-ast-phone"}
+{"action": "cleanup"}

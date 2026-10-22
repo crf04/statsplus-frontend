@@ -116,6 +116,10 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(panel).getByRole('list').tagName).toBe('OL');
   expect(within(panel).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom connector/)).toBeInTheDocument();
+  expect(within(panel).getByRole('link', { name: 'Customize → Connectors' })).toHaveAttribute(
+    'href',
+    'https://claude.ai/customize/connectors',
+  );
 
   tabs[0].focus();
   fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
@@ -311,4 +315,19 @@ test('Ask one question shows the clip poster and its tweet, and plays the video 
   expect(document.querySelector('dialog[open] video')).not.toBeNull();
   fireEvent(document.querySelector('dialog'), new Event('close'));
   expect(document.querySelector('video')).toBeNull();
+});
+
+test('Ask Claude opens a new Claude chat with exactly that prompt filled in', async () => {
+  await renderConnectRoute();
+
+  const ask = within(screen.getByRole('region', { name: 'Ask one question' }));
+  const habit = ask.getByText('Say the stat').closest('li');
+  const link = within(habit).getByRole('link', { name: 'Ask Claude' });
+
+  expect(link).toHaveAttribute(
+    'href',
+    "https://claude.ai/new?q=Show%20Cade%20Cunningham's%20assists%20matchup%20against%20Charlotte.",
+  );
+  expect(link).toHaveAttribute('target', '_blank');
+  expect(ask.getAllByRole('link', { name: 'Ask Claude' })).toHaveLength(4);
 });

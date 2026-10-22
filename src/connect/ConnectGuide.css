@@ -114,6 +114,7 @@
 
 .guide-try {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
@@ -123,15 +124,25 @@
 }
 
 .guide-try-prompt {
+  /* Below this width the buttons wrap under the prompt instead of squeezing it. */
+  flex: 1 1 13rem;
   margin: 0;
   font-size: 14px;
   line-height: 1.45;
 }
 
-.guide-try .guide-copy {
+.guide-try-actions {
+  display: flex;
   flex: none;
+  gap: 6px;
+}
+
+.guide-try .guide-copy {
+  display: inline-flex;
+  align-items: center;
   min-height: 34px;
   padding: 0 12px;
+  text-decoration: none;
 }
 
 @media (max-width: 960px) {

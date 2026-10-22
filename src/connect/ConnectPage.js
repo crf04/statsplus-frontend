@@ -7,6 +7,9 @@ import './ConnectPage.css';
 // environment setting. The copy button reads the same constant the page shows.
 export const CONNECTOR_URL = 'https://mcp.courtai.app/mcp';
 
+// Claude has no link that adds a connector, so step 1 opens the page where you add one.
+const CLAUDE_CONNECTORS_URL = 'https://claude.ai/customize/connectors';
+
 const COPIED_MS = 2000;
 
 const CLIENTS = [
@@ -22,8 +25,11 @@ const CLIENTS = [
     ),
     steps: [
       <>
-        Open <strong>Customize → Connectors</strong>, select <strong>+ Add</strong>, then{' '}
-        <strong>Add custom connector</strong>.
+        Open{' '}
+        <a href={CLAUDE_CONNECTORS_URL} target="_blank" rel="noreferrer">
+          <strong>Customize → Connectors</strong>
+        </a>
+        , select <strong>+ Add</strong>, then <strong>Add custom connector</strong>.
       </>,
       <>Name it CourtAI, paste the connector URL and select Continue.</>,
       <>Review the authentication settings Claude detects and select Continue.</>,

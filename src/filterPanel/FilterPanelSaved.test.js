@@ -7,14 +7,10 @@ import {
   fetchSavedFilterSets,
   renameSavedFilterSet,
 } from '../savedFilterSetsApi';
-import { fetchNextOpponent } from '../nextOpponentApi';
 
 let mockAuth;
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => mockAuth }));
 jest.mock('../seasonsApi', () => ({ fetchSeasons: jest.fn(() => Promise.reject(new Error('x'))) }));
-jest.mock('../nextOpponentApi', () => ({
-  fetchNextOpponent: jest.fn(() => new Promise(() => {})),
-}));
 // An account store behind the real notify-and-reload seam: every mutation
 // changes what the next read returns and tells subscribers to read again.
 jest.mock('../savedFilterSetsApi', () => {
@@ -281,13 +277,13 @@ test('a browse link carries no Filter Set, so it offers the Saved tab but no Sav
 });
 
 test('the Saved tab keeps the panel reporting the Workspace as settled', async () => {
-  fetchNextOpponent.mockResolvedValueOnce({ next_game: null, opponent_ranks: [] });
   const onContextSettled = jest.fn();
   await renderPanel(
     '/?player_name=LeBron+James',
     { player_name: 'LeBron James' },
     {
       onContextSettled,
+      nextOpponentFor: 'LeBron James',
     },
   );
   fireEvent.click(savedTab());

@@ -212,6 +212,16 @@ const GameLogFilter = ({ notice = null }) => {
     setSelectedTeam('');
   }, []);
 
+  // A hand-picked team belongs to the player on screen, so a retry of a failed
+  // load keeps it instead of choosing the default again.
+  const chooseTeam = useCallback(
+    (team) => {
+      teamPlayerRef.current = selectedPlayer;
+      setSelectedTeam(team);
+    },
+    [selectedPlayer],
+  );
+
   const abortGameLogsRequest = useCallback(() => {
     const currentRequest = gameLogsRequestRef.current;
     currentRequest.controller?.abort();
@@ -809,7 +819,7 @@ const GameLogFilter = ({ notice = null }) => {
                 <OpposingTeamProfile
                   teams={teams}
                   selectedTeam={selectedTeam}
-                  setSelectedTeam={setSelectedTeam}
+                  setSelectedTeam={chooseTeam}
                   onSettled={setOpponentSettledFor}
                 />
               </Suspense>

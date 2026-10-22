@@ -777,6 +777,57 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
       expect(screen.getAllByRole('combobox')[0]).not.toHaveValue('');
     },
   );
+
+  test('the Workspace stays hidden when the logs answer last and the opponent stats are still pending', async () => {
+    let answerLogs;
+    let answerStats;
+    mockRealFilterOptions = true;
+    mockReads();
+    const reads = apiClient.get.getMockImplementation();
+    apiClient.get.mockImplementation((url, options) =>
+      url === '/api/team_stats'
+        ? new Promise((resolve) => {
+            answerStats = () => resolve({ data: {} });
+          })
+        : reads(url, options),
+    );
+    // Only the load at the URL's own filter is held back; the Workspace's
+    // first request is not what this test is about.
+    fetchGameLogsData.mockImplementation((params) =>
+      params.game_filter
+        ? new Promise((resolve) => {
+            answerLogs = () => resolve({ gameLogs: [], averages: [], nextGame: null });
+          })
+        : Promise.resolve({ gameLogs: [], averages: [], nextGame: null }),
+    );
+    renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+
+    // The next-opponent read has answered first and the logs finish last.
+    await act(async () => {});
+    expect(screen.getByText('Loading game logs…')).toBeVisible();
+    await act(async () => answerLogs());
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Boston Celtics');
+    expect(screen.getByText('Loading game logs…')).toBeVisible();
+    await act(async () => answerStats());
+    await waitFor(() => expect(screen.queryByText('Loading game logs…')).not.toBeInTheDocument());
+  });
+
+  test('a team picked after the first game-log read failed survives the retry', async () => {
+    mockRealFilterOptions = true;
+    mockFilterPatch = { game_filter: 10 };
+    mockReads({ teamStats: {} });
+    fetchGameLogsData.mockRejectedValue(new Error('initial failure'));
+    renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+    await screen.findByText('request failed');
+    await waitFor(() => expect(screen.queryByText('Loading game logs…')).not.toBeInTheDocument());
+
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Denver Nuggets' } });
+    fetchGameLogsData.mockResolvedValue({ gameLogs: [], averages: [], nextGame: null });
+    await act(async () =>
+      fireEvent.click(screen.getByRole('button', { name: 'Apply', exact: true })),
+    );
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Denver Nuggets');
+  });
 });
 
 test('a rate_limited game-logs read shows the backend message, once', async () => {

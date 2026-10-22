@@ -83,6 +83,17 @@ test("unfurls a player link as a large card of that day's results", async () => 
   expect(html).not.toContain('logo512.png');
 });
 
+test('points the image at the origin the link was shared from', async () => {
+  const response = await describeLink(
+    new Request('https://staging.courtai.app/?player_name=LeBron+James'),
+    LATE_ON_OCT_21_ET,
+  );
+
+  expect(await response.text()).toContain(
+    '<meta property="og:image" content="https://staging.courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;line_date=2026-10-21" />',
+  );
+});
+
 test('escapes a player name in the image alt text', async () => {
   const html = await describedHead('?player_name=Luka+%22Magic%22+Don%C4%8Di%C4%87+%26+Co');
 

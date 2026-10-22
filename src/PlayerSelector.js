@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
-import { lineTypeOptions } from './utils';
+import { lineTypeOptions } from './filterUtils';
 import './PlayerSelector.css'; // Import the CSS file
 import { formatNumber } from './numberUtils';
 import { lineSourceId, lineSourcesFor } from './gameLogsApi';

@@ -1,6 +1,29 @@
 import { parseCalendarDate } from './calendarDate';
 import { parseRank } from './opponentFilters';
-import { lineTypeOptions } from './utils';
+
+export const lineTypeOptions = [
+  'None',
+  'PTS',
+  'FD_PTS',
+  'PRA',
+  'PA',
+  'RA',
+  'PR',
+  'AST',
+  'REB',
+  'FTM',
+  'FTA',
+  'STL',
+  'BLK',
+  'STKS',
+  'FG3M',
+  'FG3A',
+  'FG2M',
+  'FG2A',
+  'FGM',
+  'FGA',
+  'TOV',
+];
 /**
  * Shared filter translation and cleaning.
  *

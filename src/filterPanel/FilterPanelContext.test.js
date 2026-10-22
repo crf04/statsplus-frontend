@@ -9,9 +9,6 @@ jest.mock('../contexts/AuthContext', () => ({
     currentUser: mockAuthenticated ? { uid: 'u1' } : null,
   }),
 }));
-jest.mock('../nextOpponentApi', () => ({
-  fetchNextOpponent: jest.fn(() => new Promise(() => {})),
-}));
 
 beforeEach(() => {
   mockAuthenticated = false;
@@ -45,4 +42,56 @@ test('the season strip with no typed line classifies games against the season av
 
   expect(screen.getByLabelText('2026-01-01 ATL vs. BOS · PTS 21 (under)')).toHaveClass('is-under');
   expect(screen.getByLabelText('2026-01-03 ATL @ NYK · PTS 19 (under)')).toHaveClass('is-under');
+});
+
+describe('the next-opponent read passed down by the Workspace', () => {
+  const panel = { selectedPlayer: 'Jalen Johnson', ensureSeason: jest.fn() };
+  const nextOpponent = {
+    next_game: {
+      game_id: '1',
+      date: '2026-01-05',
+      opponent: 'CHA',
+      opponent_name: 'Charlotte Hornets',
+      home: false,
+    },
+    opponent_ranks: [
+      {
+        group: 'Traditional',
+        label: 'Points allowed',
+        unit: 'count',
+        value: 120.5,
+        most_rank: 2,
+        ranked_teams: 30,
+        team_filter: null,
+        vs_league_pct: 5,
+      },
+    ],
+  };
+  const renderContext = (extra) =>
+    render(
+      <MemoryRouter>
+        <FilterPanelContext panel={panel} extra={extra} />
+      </MemoryRouter>,
+    );
+
+  test('shows the opponent extremes it was given and reports settled once the read is for this player', () => {
+    mockAuthenticated = true;
+    const onContextSettled = jest.fn();
+    renderContext({ onContextSettled, nextOpponent, nextOpponentFor: 'Jalen Johnson' });
+
+    expect(screen.getByText('Next: @ CHA · Jan 5')).toBeVisible();
+    expect(screen.getByText('1 most · 0 fewest')).toBeVisible();
+    expect(onContextSettled).toHaveBeenLastCalledWith('Jalen Johnson');
+  });
+
+  test.each([
+    ['has not finished', null],
+    ['finished for the previous player', 'Trae Young'],
+  ])('is not settled while the read %s', (_label, nextOpponentFor) => {
+    mockAuthenticated = true;
+    const onContextSettled = jest.fn();
+    renderContext({ onContextSettled, nextOpponent: null, nextOpponentFor });
+
+    expect(onContextSettled).toHaveBeenLastCalledWith(null);
+  });
 });

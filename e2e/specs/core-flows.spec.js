@@ -1533,6 +1533,28 @@ test('@critical changing player clears the Filter Set', async ({ authenticatedPa
   await expect(page).not.toHaveURL(/game_filter/);
 });
 
+test('changing player discards an unapplied filter draft', async ({ authenticatedPage: page }) => {
+  await page.goto('/?player_name=LeBron+James&game_filter=5');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  // Typed but never applied, so it lives only in the panel.
+  await page.getByLabel('Last N games', { exact: true }).fill('7');
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
+  const switched = page.url();
+  expect(new URL(switched).search).toBe('?player_name=Stephen+Curry');
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('');
+
+  // Applying straight away has no draft left to bring back.
+  await page.getByRole('button', { name: /^Apply/ }).click();
+  await expect(page).toHaveURL(switched);
+});
+
 test('the applied-filter badges describe the data after a player change', async ({
   authenticatedPage: page,
 }) => {

@@ -20,6 +20,7 @@ jest.mock('./gameLogsApi', () => ({
 jest.mock('./contexts/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('./savedFilterSetsApi', () => ({
   fetchSavedFilterSets: jest.fn(),
+  subscribeSavedFilterSets: jest.fn(() => () => {}),
   createSavedFilterSet: jest.fn(),
   renameSavedFilterSet: jest.fn(),
   deleteSavedFilterSet: jest.fn(),
@@ -42,14 +43,30 @@ jest.mock('./NaturalLanguageQuery', () => ({
 }));
 jest.mock('./FilterOptions', () => ({
   __esModule: true,
-  default: ({ onApplyFilters }) => (
-    <button type="button" onClick={() => onApplyFilters(mockFilterPatch)}>
-      Apply test filters
-    </button>
-  ),
+  default: (props) => {
+    if (mockRealFilterOptions) {
+      const Actual = jest.requireActual('./FilterOptions').default;
+      return <Actual {...props} />;
+    }
+    return (
+      <button type="button" onClick={() => props.onApplyFilters(mockFilterPatch)}>
+        Apply test filters
+      </button>
+    );
+  },
 }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
-jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
+// Reports itself settled only when a test asks to see the Workspace reveal.
+jest.mock('./PlayerProfile', () => ({
+  __esModule: true,
+  default: function MockPlayerProfile({ selectedPlayer, selectedTeam, onSettled }) {
+    const { useEffect } = jest.requireActual('react');
+    useEffect(() => {
+      if (mockRealFilterOptions) onSettled(selectedPlayer, selectedTeam);
+    }, [onSettled, selectedPlayer, selectedTeam]);
+    return null;
+  },
+}));
 jest.mock('./OpposingTeamProfile', () => ({
   __esModule: true,
   default: (props) => {
@@ -82,10 +99,18 @@ jest.mock('./ChartComponent', () => ({
 }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
 
+// The real filter panel measures itself.
+global.ResizeObserver = class {
+  observe() {}
+  disconnect() {}
+};
+window.matchMedia = () => ({ matches: false });
+
 let mockAuthState;
 let mockFilterPatch;
 let mockParsedFilters;
 let mockRealOpposingProfile;
+let mockRealFilterOptions;
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -119,15 +144,18 @@ const nextGameAgainst = (opponent_name) => ({
 });
 // The lists and the next-opponent read answer by endpoint; anything else
 // (team stats) stays in flight.
-const mockReads = ({ nextOpponent = nextGameAgainst('Boston Celtics') } = {}) =>
-  apiClient.get.mockImplementation((url) => {
+const mockReads = ({ nextOpponent = nextGameAgainst('Boston Celtics'), teamStats } = {}) =>
+  apiClient.get.mockImplementation((url, options) => {
     if (url === '/api/teams') return Promise.resolve({ data: TEAMS });
     if (url === '/api/players') return Promise.resolve({ data: [] });
     if (url === '/api/next_opponent') {
-      return nextOpponent instanceof Error
-        ? Promise.reject(nextOpponent)
-        : Promise.resolve({ data: nextOpponent });
+      const answer =
+        typeof nextOpponent === 'function'
+          ? nextOpponent(options.params.player_name)
+          : nextOpponent;
+      return answer instanceof Error ? Promise.reject(answer) : Promise.resolve({ data: answer });
     }
+    if (url === '/api/team_stats' && teamStats) return Promise.resolve({ data: teamStats });
     return new Promise(() => {});
   });
 
@@ -136,6 +164,7 @@ beforeEach(() => {
   mockFilterPatch = { game_filter: 5 };
   mockParsedFilters = { player_name: 'Stephen Curry', game_filter: 10 };
   mockRealOpposingProfile = false;
+  mockRealFilterOptions = false;
   useAuth.mockImplementation(() => mockAuthState);
   apiClient.get.mockImplementation(() => new Promise(() => {}));
   fetchGameLogsData.mockImplementation(() => new Promise(() => {}));
@@ -617,13 +646,15 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     );
   });
 
-  test('sends one next-opponent request per player load', async () => {
+  test('sends one next-opponent request per player load, with the real filter panel mounted', async () => {
+    mockRealFilterOptions = true;
     mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
 
     await waitFor(() =>
       expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
     );
+    await act(async () => {});
     expect(nextOpponentCalls()).toHaveLength(1);
     expect(nextOpponentCalls()[0][1].params).toEqual({ player_name: 'Stephen Curry' });
   });
@@ -644,9 +675,69 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     expect(nextOpponentCalls()).toHaveLength(1);
   });
 
+  test('a team picked by hand survives a filter change for the same player', async () => {
+    mockFilterPatch = { game_filter: 5 };
+    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Denver Nuggets' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('game_filter=5'));
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(2));
+    await act(async () => {});
+
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Denver Nuggets');
+    expect(nextOpponentCalls()).toHaveLength(1);
+  });
+
+  test('a team picked by hand survives browser Back to the same player', async () => {
+    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    renderGameLogFilter(
+      ['/?player_name=Stephen+Curry&game_filter=10', '/?player_name=Stephen+Curry&game_filter=5'],
+      1,
+    );
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Denver Nuggets' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('game_filter=10'));
+    await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(2));
+    await act(async () => {});
+
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Denver Nuggets');
+    expect(nextOpponentCalls()).toHaveLength(1);
+  });
+
+  test("a different player gets that player's next opponent, not the previous team", async () => {
+    mockReads({
+      nextOpponent: (player) =>
+        nextGameAgainst(player === 'Stephen Curry' ? 'Charlotte Hornets' : 'Boston Celtics'),
+    });
+    renderGameLogFilter(['/?player_name=Stephen+Curry']);
+    await waitFor(() =>
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
+    );
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Denver Nuggets' } });
+
+    mockParsedFilters = { player_name: 'LeBron James' };
+    fireEvent.click(screen.getByRole('button', { name: 'Apply parsed query' }));
+
+    await waitFor(() => expect(screen.getAllByRole('combobox')[0]).toHaveValue('Boston Celtics'));
+    expect(nextOpponentCalls().map(([, options]) => options.params.player_name)).toEqual([
+      'Stephen Curry',
+      'LeBron James',
+    ]);
+  });
+
   test('the Workspace stays behind its loading state until the default opponent is chosen', async () => {
     let answer;
-    mockReads();
+    mockRealFilterOptions = true;
+    mockReads({ teamStats: {} });
     const reads = apiClient.get.getMockImplementation();
     apiClient.get.mockImplementation((url, options) =>
       url === '/api/next_opponent'
@@ -657,7 +748,8 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     );
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
 
-    // The logs have answered; the default opponent waits on the read.
+    // The logs and every other read have answered; the default opponent waits
+    // on the next-opponent read alone.
     await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
     await act(async () => {});
     expect(screen.getByText('Loading game logs…')).toBeVisible();
@@ -667,7 +759,24 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     await waitFor(() =>
       expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
     );
+    await waitFor(() => expect(screen.queryByText('Loading game logs…')).not.toBeInTheDocument());
   });
+
+  test.each([
+    ['answers', nextGameAgainst('Charlotte Hornets')],
+    ['has no next game', { next_game: null, opponent_ranks: [] }],
+    ['fails', new Error('boom')],
+  ])(
+    'the Workspace reveals once the read %s and everything else has settled',
+    async (_label, nextOpponent) => {
+      mockRealFilterOptions = true;
+      mockReads({ nextOpponent, teamStats: {} });
+      renderGameLogFilter(['/?player_name=Stephen+Curry']);
+
+      await waitFor(() => expect(screen.queryByText('Loading game logs…')).not.toBeInTheDocument());
+      expect(screen.getAllByRole('combobox')[0]).not.toHaveValue('');
+    },
+  );
 });
 
 test('a rate_limited game-logs read shows the backend message, once', async () => {

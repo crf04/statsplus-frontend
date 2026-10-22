@@ -71,6 +71,10 @@ const GameLogFilter = ({ notice = null }) => {
   // The tab and any link preview say the same thing about the same URL.
   useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
+  // The player the current team was chosen for, by default or by hand. A load
+  // for anyone else picks a new default; a filter change for the same player
+  // keeps the team. A ref because requestGameLogs reads it without re-running.
+  const teamPlayerRef = useRef(null);
   // The player whose game logs are loading and still need a default opponent,
   // chosen once the logs, the team list and the next-opponent read are all in.
   const [defaultTeamFor, setDefaultTeamFor] = useState(null);
@@ -203,6 +207,11 @@ const GameLogFilter = ({ notice = null }) => {
     };
   }, [authLoading, canSearch]);
 
+  const clearSelectedTeam = useCallback(() => {
+    teamPlayerRef.current = null;
+    setSelectedTeam('');
+  }, []);
+
   const abortGameLogsRequest = useCallback(() => {
     const currentRequest = gameLogsRequestRef.current;
     currentRequest.controller?.abort();
@@ -277,7 +286,7 @@ const GameLogFilter = ({ notice = null }) => {
   // publish data if it is still the latest request; older requests are
   // cancelled and ignored when their promises settle.
   const requestGameLogs = useCallback(
-    (params, { updateSelectedTeam = true, bypass = false } = {}) => {
+    (params, { bypass = false } = {}) => {
       const previousRequest = gameLogsRequestRef.current;
       previousRequest.controller?.abort();
 
@@ -287,7 +296,7 @@ const GameLogFilter = ({ notice = null }) => {
       setIsGameLogsLoading(true);
       setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
-      setDefaultTeamFor(updateSelectedTeam ? params.player_name : null);
+      setDefaultTeamFor(teamPlayerRef.current === params.player_name ? null : params.player_name);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
       // at the start is what keeps that true while the request is in flight and
@@ -355,13 +364,14 @@ const GameLogFilter = ({ notice = null }) => {
     return () => controller.abort();
   }, [isAuthenticated, inWorkspace, isRefusedLink, selectedPlayer]);
 
-  // A team the user picked is never here: only a load that was asked to choose
-  // a default sets defaultTeamFor.
+  // A team already chosen for this player is never here: only a load for a
+  // different player sets defaultTeamFor.
   useEffect(() => {
     if (defaultTeamFor === null || defaultTeamFor !== selectedPlayer) return;
     if (isGameLogsLoading || listsLoading || nextOpponentRead.player !== selectedPlayer) return;
     const nextOpponent = nextOpponentRead.data?.next_game?.opponent_name;
     setSelectedTeam(teams.includes(nextOpponent) ? nextOpponent : teams[0] || 'Atlanta Hawks');
+    teamPlayerRef.current = selectedPlayer;
     setDefaultTeamFor(null);
   }, [defaultTeamFor, selectedPlayer, isGameLogsLoading, listsLoading, nextOpponentRead, teams]);
 
@@ -375,9 +385,9 @@ const GameLogFilter = ({ notice = null }) => {
     setPlayerId(null);
     setPostedLine(null);
     setSampleSize(null);
-    setSelectedTeam('');
+    clearSelectedTeam();
     setGameLogsError(null);
-  }, [abortGameLogsRequest, clearSeasonGameLogs]);
+  }, [abortGameLogsRequest, clearSeasonGameLogs, clearSelectedTeam]);
 
   // The URL is the whole view, so sharing it hands over exactly these game
   // logs. Phones get their own share sheet; elsewhere the link is copied.
@@ -487,7 +497,7 @@ const GameLogFilter = ({ notice = null }) => {
       setPlayerId(null);
       setPostedLine(null);
       setSampleSize(null);
-      setSelectedTeam('');
+      clearSelectedTeam();
       return undefined;
     }
 
@@ -498,7 +508,7 @@ const GameLogFilter = ({ notice = null }) => {
     // request only to abort it.
     if (hasBrowseSentinel) return undefined;
 
-    requestGameLogs(urlFilters, { updateSelectedTeam: true });
+    requestGameLogs(urlFilters);
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
@@ -507,6 +517,7 @@ const GameLogFilter = ({ notice = null }) => {
     hasBrowseSentinel,
     inWorkspace,
     canSearch,
+    clearSelectedTeam,
     requestGameLogs,
     returnToQueryPrompt,
     urlFilters,
@@ -576,7 +587,7 @@ const GameLogFilter = ({ notice = null }) => {
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === searchParams.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
-      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: !selectedTeam });
+      requestGameLogs(nextFilters, { bypass: true });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.

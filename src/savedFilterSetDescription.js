@@ -1,5 +1,5 @@
 import { filterSetFromSearchParams } from './filterUtils';
-import { opponentFilterLabel } from './opponentFilters';
+import { describeRank, opponentFilterLabel } from './opponentFilters';
 
 /*
  * Describe a Saved Filter Set by the parameters it carries.
@@ -30,12 +30,16 @@ const describeSelfFilter = (stat, value) => {
  * name, `teams_against[]` holds a defensive category rather than a team, and
  * `rank_filter[]` is a league position whose sign is the whole meaning:
  * positive counts from the best defenses, negative from the worst. A bare
- * "(5)" says none of that, so the description spells out top or bottom.
+ * "(5)" says none of that, so the description spells out top or bottom. A
+ * "low,high" range has no single end to count from, so it reads as the ranks
+ * it covers.
  */
-export const describeDefensiveFilter = (category, rank) =>
-  rank === undefined || rank === null
-    ? `vs ${opponentFilterLabel(category)} D`
-    : `vs ${rank > 0 ? 'top' : 'bottom'} ${Math.abs(rank)} ${opponentFilterLabel(category)} D`;
+export const describeDefensiveFilter = (category, rank) => {
+  const label = opponentFilterLabel(category);
+  if (rank === undefined || rank === null) return `vs ${label} D`;
+  if (typeof rank === 'string') return `vs ${describeRank(rank)} ${label} D`;
+  return `vs ${rank > 0 ? 'top' : 'bottom'} ${Math.abs(rank)} ${label} D`;
+};
 
 /**
  * Read a saved query string back as the facts a list row shows.

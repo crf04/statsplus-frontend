@@ -645,13 +645,17 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     mockReads({ nextOpponent });
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
 
-    await waitFor(() => expect(screen.getAllByRole('combobox')[0]).toHaveValue('Atlanta Hawks'));
-    expect(apiClient.get).toHaveBeenCalledWith(
-      '/api/team_stats',
-      expect.objectContaining({
-        params: expect.objectContaining({ team: 'Atlanta Hawks' }),
-      }),
+    // An empty select already shows its first option, so wait for the request
+    // that proves the fallback was chosen rather than for the displayed value.
+    await waitFor(() =>
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/api/team_stats',
+        expect.objectContaining({
+          params: expect.objectContaining({ team: 'Atlanta Hawks' }),
+        }),
+      ),
     );
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('Atlanta Hawks');
   });
 
   test('sends one next-opponent request per player load, with the real filter panel mounted', async () => {

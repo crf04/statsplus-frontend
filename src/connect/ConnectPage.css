@@ -220,6 +220,14 @@
   font-family: var(--ct-mono);
 }
 
+.connect-steps a {
+  color: var(--ct-gold);
+}
+
+.connect-steps a strong {
+  color: inherit;
+}
+
 .connect-steps strong {
   font-weight: 600;
   color: #fff6e4;

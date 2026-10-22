@@ -38,6 +38,9 @@ const ASKING = [
   },
 ];
 
+// Opens a new Claude chat with the prompt in the composer.
+const claudeChatUrl = (prompt) => `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
+
 const Lesson = ({ id, children }) => {
   const index = LESSONS.findIndex((lesson) => lesson.id === id);
   return (
@@ -57,7 +60,8 @@ const Asking = () => (
   <>
     <p className="guide-p">
       Turn CourtAI on in a chat and ask in your own words. You don&apos;t need tool names; the chat
-      picks the tool from your question. A few habits get you better answers:
+      picks the tool from your question. <strong>Ask Claude</strong> opens a new Claude chat with
+      the prompt filled in. A few habits get you better answers:
     </p>
     <ol className="guide-ask">
       {ASKING.map(({ rule, why, prompt }) => (
@@ -68,7 +72,17 @@ const Asking = () => (
           </div>
           <div className="guide-try">
             <p className="guide-try-prompt">{prompt}</p>
-            <CopyPrompt text={prompt} label="Copy" />
+            <div className="guide-try-actions">
+              <CopyPrompt text={prompt} label="Copy" />
+              <a
+                className="guide-copy"
+                href={claudeChatUrl(prompt)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ask Claude
+              </a>
+            </div>
           </div>
         </li>
       ))}

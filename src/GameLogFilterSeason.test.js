@@ -9,6 +9,9 @@ jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
   getApiUrl: (name) => `/api/${name.toLowerCase()}`,
 }));
+jest.mock('./nextOpponentApi', () => ({
+  fetchNextOpponent: jest.fn(async () => ({ next_game: null, opponent_ranks: [] })),
+}));
 jest.mock('./gameLogsApi', () => ({
   ...jest.requireActual('./gameLogsApi'),
   fetchGameLogsData: jest.fn(),

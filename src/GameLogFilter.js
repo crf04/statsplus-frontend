@@ -14,6 +14,8 @@ import PlayerStatsCards from './PlayerStatsCards';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { fetchNextOpponent } from './nextOpponentApi';
+import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
   filterSetFromSearchParams,
@@ -294,6 +296,16 @@ const GameLogFilter = ({ notice = null }) => {
       setPostedLine(null);
       setSampleSize(null);
 
+      // The opposing team defaults to the player's next scheduled opponent. Its
+      // read runs beside the game logs; without one, the old default stands.
+      const nextOpponentRead = updateSelectedTeam
+        ? fetchNextOpponent(params.player_name, { signal: controller.signal }).then(
+            ({ next_game: game }) =>
+              game && Object.keys(TEAM_CODES).find((team) => TEAM_CODES[team] === game.opponent),
+            () => null,
+          )
+        : null;
+
       return readRevisit(
         'logs',
         currentUser?.uid,
@@ -301,7 +313,8 @@ const GameLogFilter = ({ notice = null }) => {
         () => fetchGameLogsData(params, { signal: controller.signal }),
         { signal: controller.signal, bypass },
       )
-        .then((data) => {
+        .then((data) => Promise.all([data, nextOpponentRead]))
+        .then(([data, nextOpponent]) => {
           if (gameLogsRequestRef.current.id !== requestId) {
             return { stale: true };
           }
@@ -315,7 +328,9 @@ const GameLogFilter = ({ notice = null }) => {
             season: data.seasonGameCount ?? null,
           });
           if (updateSelectedTeam) {
-            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
+            setSelectedTeam(
+              nextOpponent || data.nextGame || teamsRef.current[0] || 'Atlanta Hawks',
+            );
           }
           return { ok: true, data };
         })

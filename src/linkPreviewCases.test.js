@@ -2,8 +2,13 @@ import { render, renderHook, screen } from '@testing-library/react';
 import ChartComponent from './ChartComponent';
 import { decodeGameLogsResponse, postedLineFor } from './gameLogsApi';
 import { useLineSelection } from './lineSelection';
+import { lineFromSearch } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
-import { cases, filter_cases as filterCases } from './linkPreviewCases.json';
+import {
+  cases,
+  filter_cases as filterCases,
+  line_cases as lineCases,
+} from './linkPreviewCases.json';
 
 jest.mock('react-chartjs-2', () => ({ Bar: () => null }));
 jest.mock('./chartSetup', () => ({}));
@@ -11,18 +16,28 @@ jest.mock('./AppliedFilters', () => ({ __esModule: true, default: () => null }))
 
 // The backend draws the link preview's line and hit count by these rules, so
 // they must stay what the Game Logs page shows for the same link and day.
-test.each(cases)('$name', ({ line_type, lines, season_averages, values, expect: expected }) => {
+test.each(cases)('$name', (testCase) => {
+  const { line_type, link_line, lines, season_averages, values, expect: expected } = testCase;
   const { gameLogs, averages, postedLine } = decodeGameLogsResponse({
     game_logs: values.map((value) => ({ [line_type]: value })),
     season_averages,
     posted_line: { lines },
   });
+  // A link line arrives the way the page reads it, through the URL.
+  const link =
+    link_line === undefined ? null : lineFromSearch(new URLSearchParams({ line: link_line }));
   const { result } = renderHook(() =>
-    useLineSelection({ player: 'Player', lineType: line_type, postedLine, averages }),
+    useLineSelection({ player: 'Player', lineType: line_type, postedLine, averages, link }),
   );
   const { lineValue, lineSource } = result.current;
 
-  const source = lineSource ? 'posted' : lineValue === '' ? null : 'season_average';
+  const source = lineSource
+    ? 'posted'
+    : lineValue === ''
+      ? null
+      : link !== null
+        ? 'link'
+        : 'season_average';
   expect(lineValue).toBe(expected.line ?? '');
   expect(source).toBe(expected.source);
   expect(lineSource ? postedLineFor(postedLine, line_type, lineSource).key : null).toBe(
@@ -50,4 +65,9 @@ test.each(cases)('$name', ({ line_type, lines, season_averages, values, expect: 
 test.each(filterCases)('filters for $query', ({ query, filters }) => {
   const { description } = linkPreviewFor(new URLSearchParams(query));
   expect(description).toBe(`${filters}. Explore on CourtAI.`);
+});
+
+// Which `line` values a link may carry, and how each is shown.
+test.each(lineCases)('line $line', ({ line, valid, shown }) => {
+  expect(lineFromSearch(new URLSearchParams({ line }))).toBe(valid ? shown : null);
 });

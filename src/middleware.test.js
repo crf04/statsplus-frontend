@@ -116,6 +116,24 @@ test('leaves the default and unusable Line Types out of the image URL', async ()
   }
 });
 
+test("draws the sender's line, as shown, between the Line Type and the day", async () => {
+  const html = await describedHead('?line=24.50&player_name=LeBron+James&line_type=REB');
+
+  expect(html).toContain(
+    '<meta property="og:image" content="https://courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;line_type=REB&amp;line=24.5&amp;line_date=2026-10-21" />',
+  );
+});
+
+test('leaves an unusable line out of the image URL', async () => {
+  const image =
+    'https://courtai.app/api/games/game_logs/preview.png?player_name=LeBron+James&amp;line_date=2026-10-21';
+  for (const search of ['&line=0', '&line=abc', '&line=24.5&line=25']) {
+    expect(await describedHead(`?player_name=LeBron+James${search}`)).toContain(
+      `<meta property="og:image" content="${image}" />`,
+    );
+  }
+});
+
 test('keeps the logo and the small card for a link that charts no stat', async () => {
   const html = await describedHead('?player_name=LeBron+James&line_type=None');
 

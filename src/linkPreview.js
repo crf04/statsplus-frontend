@@ -1,7 +1,9 @@
 import {
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  lineFromSearch,
   lineTypeFromSearch,
+  withLine,
   withLineType,
 } from './filterUtils';
 import { describeDefensiveFilter } from './savedFilterSetDescription';
@@ -39,10 +41,11 @@ const describeFilters = (filters) => {
 };
 
 // The backend draws the link's results as a picture (crf04/statsplus#285).
-// `line_date` is the day whose posted line the picture uses, and a new day is a
-// new URL, so a chat app that keeps the first image it fetched shows that day's.
-const previewImagePath = (filters, lineType, lineDate) => {
-  const params = withLineType(filterSetToSearchParams(filters), lineType);
+// `line` is the sender's own line, drawn instead of the posted one. `line_date`
+// is the day whose posted line the picture uses, and a new day is a new URL, so
+// a chat app that keeps the first image it fetched shows that day's.
+const previewImagePath = (filters, lineType, line, lineDate) => {
+  const params = withLine(withLineType(filterSetToSearchParams(filters), lineType), line);
   params.set('line_date', lineDate);
   return `/api/games/game_logs/preview.png?${params}`;
 };
@@ -64,7 +67,11 @@ export const linkPreviewFor = (searchParams, { lineDate } = {}) => {
   const description = `${summary[0].toUpperCase()}${summary.slice(1)}. Explore on ${SITE_NAME}.`;
   const lineType = lineTypeFromSearch(searchParams);
   if (!lineDate || lineType === 'None') return { title, description };
-  return { title, description, image: previewImagePath(filters, lineType, lineDate) };
+  return {
+    title,
+    description,
+    image: previewImagePath(filters, lineType, lineFromSearch(searchParams), lineDate),
+  };
 };
 
 const escapeHtml = (value) =>

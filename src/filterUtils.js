@@ -498,6 +498,18 @@ export const LINE_TYPE_PARAM = 'line_type';
 const DEFAULT_LINE_TYPE = 'PTS';
 
 /**
+ * The third non-filter search parameter: the Line Value the sender chose, when
+ * it differs from the default line, so a shared link shows the same number.
+ * Like the Line Type it is a view of the results, never part of a Filter Set.
+ */
+export const LINE_PARAM = 'line';
+const LINE_PATTERN = /^\d{1,3}(\.\d{1,2})?$/;
+
+/** A line the URL can carry, as it is shown (`24.50` is `24.5`); null otherwise. */
+export const parseLine = (value) =>
+  LINE_PATTERN.test(value) && Number(value) > 0 ? String(Number(value)) : null;
+
+/**
  * The query string with only its Filter Set left: what is requested, saved,
  * and compared against Saved Filter Sets. A change to anything else is a change
  * of view, not of Filter Set.
@@ -506,6 +518,7 @@ export const filterQueryString = (search) => {
   const params = new URLSearchParams(search);
   params.delete(BROWSE_PARAM);
   params.delete(LINE_TYPE_PARAM);
+  params.delete(LINE_PARAM);
   return params.toString();
 };
 
@@ -518,5 +531,17 @@ export const withLineType = (search, lineType) => {
   const params = new URLSearchParams(search);
   params.delete(LINE_TYPE_PARAM);
   if (lineType !== DEFAULT_LINE_TYPE) params.set(LINE_TYPE_PARAM, lineType);
+  return params;
+};
+
+export const lineFromSearch = (search) => {
+  const values = new URLSearchParams(search).getAll(LINE_PARAM);
+  return values.length === 1 ? parseLine(values[0]) : null;
+};
+
+export const withLine = (search, line) => {
+  const params = new URLSearchParams(search);
+  params.delete(LINE_PARAM);
+  if (line !== null) params.set(LINE_PARAM, line);
   return params;
 };

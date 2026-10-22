@@ -655,13 +655,24 @@ const GameLogFilter = ({ notice = null }) => {
     inWorkspace && !isRefusedLink && sectionsLoading && revealedLoad !== workspaceLoad;
 
   /*
-   * Choosing a player patches the player into the Filter Set rather than
-   * replacing it, so comparing two players under identical conditions is one
-   * action, and a link that carries filters but no player is answered by
-   * naming one. It travels the same apply path as the panel, so the request
-   * still comes from the address bar.
+   * Choosing a different player starts that player from a clean Filter Set:
+   * filters chosen for one player rarely suit another. Only the season stays,
+   * since Clear all leaves it alone too. A link that carries filters but no
+   * player is answered by naming one, so there the player is patched in. It
+   * travels the same apply path as the panel, so the request still comes from
+   * the address bar.
    */
-  const handleSelectPlayer = (player) => handleApplyFilters({ player_name: player });
+  const handleSelectPlayer = (player) => {
+    if (!urlFilters.player_name || urlFilters.player_name === player) {
+      return handleApplyFilters({ player_name: player });
+    }
+    const cleared = Object.fromEntries(Object.keys(urlFilters).map((name) => [name, null]));
+    return handleApplyFilters({
+      ...cleared,
+      player_name: player,
+      season_filter: urlFilters.season_filter,
+    });
+  };
 
   // Handler for natural language query results
   const handleNLQueryResults = (filters) => handleApplyFilters(filters, true);

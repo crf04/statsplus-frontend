@@ -1085,6 +1085,10 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   ).toBeVisible();
 });
 
+// An unfiltered player's own game-log read asks exactly what the season read
+// does, so a player change can show up twice in a row.
+const distinctRuns = (players) => players.filter((player, i) => player !== players[i - 1]);
+
 test('an open Self Filters control follows a player change to that season', async ({
   authenticatedPage: page,
 }) => {
@@ -1113,7 +1117,7 @@ test('an open Self Filters control follows a player change to that season', asyn
   // player-switch-stat.spec.js (#159) owns the immediate-selection stat-reset regression.
   await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
 
-  await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
+  await expect.poll(() => distinctRuns(seasonRequests)).toEqual(['LeBron James', 'Stephen Curry']);
   // The ranges on offer are this player's, not the one we arrived on.
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('18–42', { exact: true })).toBeVisible();
@@ -1233,7 +1237,7 @@ test('a player left and returned to gets a fresh season request', async ({
   // player-switch-stat.spec.js (#159) owns the immediate-selection stat-reset regression.
   await expect(page.getByText('Player: LeBron James', { exact: true }).first()).toBeVisible();
   await expect
-    .poll(() => seasonRequests)
+    .poll(() => distinctRuns(seasonRequests))
     .toEqual(['LeBron James', 'Stephen Curry', 'LeBron James']);
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
@@ -1487,7 +1491,7 @@ test('the sentinel is dropped without destroying a link we must refuse', async (
   await expect(page).not.toHaveURL(/browse/);
 });
 
-test('@critical changing player keeps the Filter Set', async ({ authenticatedPage: page }) => {
+test('@critical changing player clears the Filter Set', async ({ authenticatedPage: page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
     if (isWorkspaceGameLogs(request.url())) {
@@ -1512,28 +1516,43 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
-  // Comparing two players under identical conditions is one action, so the
-  // filter the user applied is still on the wire for the new player.
+  // Filters chosen for one player rarely suit another, so the new player
+  // starts from a clean Filter Set.
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
   await expect
     .poll(() =>
-      gameLogRequests.some(
-        (url) =>
-          url.searchParams.get('player_name') === 'Stephen Curry' &&
-          url.searchParams.get('game_filter') === '5',
-      ),
+      gameLogRequests.some((url) => url.searchParams.get('player_name') === 'Stephen Curry'),
     )
     .toBe(true);
   const afterChange = gameLogRequests.findLast(
-    (url) =>
-      url.searchParams.get('player_name') === 'Stephen Curry' &&
-      url.searchParams.has('game_filter'),
+    (url) => url.searchParams.get('player_name') === 'Stephen Curry',
   );
-  expect(afterChange.searchParams.get('player_name')).toBe('Stephen Curry');
-  expect(afterChange.searchParams.get('game_filter')).toBe('5');
+  expect(afterChange.searchParams.has('game_filter')).toBe(false);
 
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
-  await expect(page).toHaveURL(/game_filter=5/);
+  await expect(page).not.toHaveURL(/game_filter/);
+});
+
+test('changing player discards an unapplied filter draft', async ({ authenticatedPage: page }) => {
+  await page.goto('/?player_name=LeBron+James&game_filter=5');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  // Typed but never applied, so it lives only in the panel.
+  await page.getByLabel('Last N games', { exact: true }).fill('7');
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
+  const switched = page.url();
+  expect(new URL(switched).search).toBe('?player_name=Stephen+Curry');
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('');
+
+  // Applying straight away has no draft left to bring back.
+  await page.getByRole('button', { name: /^Apply/ }).click();
+  await expect(page).toHaveURL(switched);
 });
 
 test('the applied-filter badges describe the data after a player change', async ({
@@ -1566,12 +1585,12 @@ test('the applied-filter badges describe the data after a player change', async 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
-  // The new player's rows are what is on screen, and every place the badges
-  // render is still describing the Filter Set that fetched them.
+  // The new player's rows are what is on screen, fetched with no filters, so
+  // no place the badges render still names the previous player's filter.
   await expect(page.getByRole('cell', { name: '77', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
-  await expect(page.getByText('GAMES <= 5')).toHaveCount(badgePlaces);
+  await expect(page.getByText('GAMES <= 5')).toHaveCount(0);
 });
 
 test('the Log Workspace appears in one piece once every section has answered', async ({

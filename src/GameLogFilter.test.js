@@ -55,7 +55,14 @@ jest.mock('./FilterOptions', () => ({
     );
   },
 }));
-jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PlayerSelector', () => ({
+  __esModule: true,
+  default: ({ setSelectedPlayer }) => (
+    <button type="button" onClick={() => setSelectedPlayer('Stephen Curry')}>
+      Choose Stephen Curry
+    </button>
+  ),
+}));
 // Reports itself settled only when a test asks to see the Workspace reveal.
 jest.mock('./PlayerProfile', () => ({
   __esModule: true,
@@ -200,6 +207,39 @@ test('pushes an applied filter so browser Back returns to the previous filter UR
   fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
   await waitFor(() =>
     expect(screen.getByTestId('location')).toHaveTextContent('/?player_name=LeBron+James'),
+  );
+});
+
+test('choosing a different player clears the filters and keeps the season', async () => {
+  renderGameLogFilter([
+    '/?player_name=LeBron+James&season_filter=2024-25&game_filter=5&location_filter=Home&self_filters%5BPTS%5D=20%2C60',
+  ]);
+
+  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: 'Choose Stephen Curry' }));
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location').textContent).toBe(
+      '/?player_name=Stephen+Curry&season_filter=2024-25',
+    ),
+  );
+  await waitFor(() =>
+    expect(fetchGameLogsData).toHaveBeenLastCalledWith(
+      { player_name: 'Stephen Curry', season_filter: '2024-25' },
+      expect.anything(),
+    ),
+  );
+});
+
+test('choosing a player for a link with filters but no player applies those filters', async () => {
+  renderGameLogFilter(['/?game_filter=5']);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose Stephen Curry' }));
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location').textContent).toBe(
+      '/?player_name=Stephen+Curry&game_filter=5',
+    ),
   );
 });
 

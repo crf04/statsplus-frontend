@@ -15,6 +15,7 @@ import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { fetchNextOpponent } from './nextOpponentApi';
+import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
   filterSetFromSearchParams,
@@ -379,8 +380,11 @@ const GameLogFilter = ({ notice = null }) => {
   useEffect(() => {
     if (defaultTeamFor === null || defaultTeamFor !== selectedPlayer) return;
     if (isGameLogsLoading || listsLoading || nextOpponentRead.player !== selectedPlayer) return;
-    const nextOpponent = nextOpponentRead.data?.next_game?.opponent_name;
-    setSelectedTeam(teams.includes(nextOpponent) ? nextOpponent : teams[0] || 'Atlanta Hawks');
+    // Matched by tricode: the schedule's opponent_name is the short team name
+    // ("Cavaliers"), not the full name the team list uses.
+    const opponent = nextOpponentRead.data?.next_game?.opponent;
+    const nextOpponent = teams.find((team) => TEAM_CODES[team] === opponent);
+    setSelectedTeam(nextOpponent || teams[0] || 'Atlanta Hawks');
     teamPlayerRef.current = selectedPlayer;
     setDefaultTeamFor(null);
   }, [defaultTeamFor, selectedPlayer, isGameLogsLoading, listsLoading, nextOpponentRead, teams]);

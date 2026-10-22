@@ -138,13 +138,21 @@ const renderGameLogFilter = (initialEntries, initialIndex) =>
   );
 
 const TEAMS = ['Atlanta Hawks', 'Boston Celtics', 'Charlotte Hornets', 'Denver Nuggets'];
-const nextGameAgainst = (opponent_name) => ({
-  next_game: { game_id: '1', date: '2026-01-05', opponent: 'CHA', opponent_name, home: true },
+// The schedule names opponents by their short name, as production does.
+const SHORT_NAMES = { BOS: 'Celtics', CHA: 'Hornets', SEA: 'SuperSonics' };
+const nextGameAgainst = (opponent) => ({
+  next_game: {
+    game_id: '1',
+    date: '2026-01-05',
+    opponent,
+    opponent_name: SHORT_NAMES[opponent],
+    home: true,
+  },
   opponent_ranks: [],
 });
 // The lists and the next-opponent read answer by endpoint; anything else
 // (team stats) stays in flight.
-const mockReads = ({ nextOpponent = nextGameAgainst('Boston Celtics'), teamStats } = {}) =>
+const mockReads = ({ nextOpponent = nextGameAgainst('BOS'), teamStats } = {}) =>
   apiClient.get.mockImplementation((url, options) => {
     if (url === '/api/teams') return Promise.resolve({ data: TEAMS });
     if (url === '/api/players') return Promise.resolve({ data: [] });
@@ -609,7 +617,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
   });
 
   test('the team select and the team-stats request name the next opponent, not the first team', async () => {
-    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    mockReads({ nextOpponent: nextGameAgainst('CHA') });
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
 
     await waitFor(() =>
@@ -631,7 +639,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
 
   test.each([
     ['has no next game', { next_game: null, opponent_ranks: [] }],
-    ['names a team outside the list', nextGameAgainst('Seattle SuperSonics')],
+    ['names a team outside the list', nextGameAgainst('SEA')],
     ['fails', new Error('boom')],
   ])('falls back to the first team when the read %s', async (_label, nextOpponent) => {
     mockReads({ nextOpponent });
@@ -648,7 +656,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
 
   test('sends one next-opponent request per player load, with the real filter panel mounted', async () => {
     mockRealFilterOptions = true;
-    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    mockReads({ nextOpponent: nextGameAgainst('CHA') });
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
 
     await waitFor(() =>
@@ -661,7 +669,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
 
   test('a team picked by hand survives an unchanged Apply', async () => {
     mockFilterPatch = { game_filter: 10 };
-    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    mockReads({ nextOpponent: nextGameAgainst('CHA') });
     renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
     await waitFor(() =>
       expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
@@ -677,7 +685,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
 
   test('a team picked by hand survives a filter change for the same player', async () => {
     mockFilterPatch = { game_filter: 5 };
-    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    mockReads({ nextOpponent: nextGameAgainst('CHA') });
     renderGameLogFilter(['/?player_name=Stephen+Curry&game_filter=10']);
     await waitFor(() =>
       expect(screen.getAllByRole('combobox')[0]).toHaveValue('Charlotte Hornets'),
@@ -694,7 +702,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
   });
 
   test('a team picked by hand survives browser Back to the same player', async () => {
-    mockReads({ nextOpponent: nextGameAgainst('Charlotte Hornets') });
+    mockReads({ nextOpponent: nextGameAgainst('CHA') });
     renderGameLogFilter(
       ['/?player_name=Stephen+Curry&game_filter=10', '/?player_name=Stephen+Curry&game_filter=5'],
       1,
@@ -715,8 +723,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
 
   test("a different player gets that player's next opponent, not the previous team", async () => {
     mockReads({
-      nextOpponent: (player) =>
-        nextGameAgainst(player === 'Stephen Curry' ? 'Charlotte Hornets' : 'Boston Celtics'),
+      nextOpponent: (player) => nextGameAgainst(player === 'Stephen Curry' ? 'CHA' : 'BOS'),
     });
     renderGameLogFilter(['/?player_name=Stephen+Curry']);
     await waitFor(() =>
@@ -742,7 +749,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
     apiClient.get.mockImplementation((url, options) =>
       url === '/api/next_opponent'
         ? new Promise((resolve) => {
-            answer = () => resolve({ data: nextGameAgainst('Charlotte Hornets') });
+            answer = () => resolve({ data: nextGameAgainst('CHA') });
           })
         : reads(url, options),
     );
@@ -763,7 +770,7 @@ describe('the Opposing Team Profile opens on the next opponent', () => {
   });
 
   test.each([
-    ['answers', nextGameAgainst('Charlotte Hornets')],
+    ['answers', nextGameAgainst('CHA')],
     ['has no next game', { next_game: null, opponent_ranks: [] }],
     ['fails', new Error('boom')],
   ])(

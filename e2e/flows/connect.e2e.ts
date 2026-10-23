@@ -202,6 +202,32 @@ signedOutTest(
 
     const strip = screen.getByRole('region', 'Who cooks the Kings?');
     await expect(strip.getByText('New tutorial · Part 1')).toBeVisible();
+    // Desktop: the 260 px thumbnail sits left of the text. Phone (<=760 px): stacked, full width.
+    const layout = await browser.evaluate(() => {
+      const box = (selector: string) => {
+        const rect = document.querySelector(selector)!.getBoundingClientRect();
+        return { left: rect.left, top: rect.top, width: rect.width, bottom: rect.bottom };
+      };
+      return {
+        phone: window.innerWidth <= 760,
+        strip: box('.home-tutorial'),
+        thumb: box('.home-tutorial-thumb'),
+        text: box('.home-tutorial-text'),
+      };
+    });
+    if (layout.phone) {
+      expect(layout.text.top).toBeGreaterThanOrEqual(layout.thumb.bottom);
+      expect(layout.thumb.width).toBeGreaterThan(layout.strip.width * 0.8);
+    } else {
+      expect(Math.round(layout.thumb.width)).toBe(260);
+      expect(layout.text.left).toBeGreaterThanOrEqual(layout.thumb.left + layout.thumb.width);
+    }
+
+    await strip.getByRole('button', 'Play: Who cooks the Kings?').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeVisible();
+    await screen.getByRole('button', 'Close').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeHidden();
+
     await strip.getByRole('button', 'Watch · 1:16').tap();
     await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeVisible();
     await screen.getByRole('button', 'Close').tap();

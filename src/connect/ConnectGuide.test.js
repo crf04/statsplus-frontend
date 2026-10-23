@@ -61,4 +61,5 @@ test('a tutorial poster plays its own video in the dialog', async () => {
   const videos = container.querySelectorAll('video');
   expect(videos).toHaveLength(1);
   expect(videos[0].getAttribute('src')).toBe('/clips/first.mp4');
+  expect(videos[0].closest('dialog')).toHaveAttribute('open');
 });

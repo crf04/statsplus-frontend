@@ -45,7 +45,7 @@
   background: var(--ct-surface-2);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   color: var(--ct-text);
-  font-family: inherit;
+  font-family: var(--ct-sans);
   font-size: 0.8125rem;
   font-weight: 400;
   letter-spacing: normal;

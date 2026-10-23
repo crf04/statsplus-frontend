@@ -118,6 +118,24 @@ test('describes a defensive rank range by the ranks it covers', async () => {
   );
 });
 
+test('a saved Defense Sheet row filter reads as its label and reopens the same filter', async () => {
+  const queryString =
+    'player_name=Jarace+Walker&teams_against%5B%5D=sheet%3Ashot_zones%3ACorner+3%3AFGA' +
+    '&rank_filter%5B%5D=10';
+  fetchSavedFilterSets.mockResolvedValue([{ id: 11, name: 'corner threes', queryString }]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: 'Open saved Filter Set corner threes' });
+  expect(row).toHaveTextContent(
+    ['corner threes', 'Jarace Walker', 'vs top 10 Corner 3 Attempts D'].join(''),
+  );
+  expect(row).not.toHaveTextContent('sheet:');
+
+  fireEvent.click(row);
+
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`/?${queryString}`));
+});
+
 test('says a Filter Set with no parameters covers every logged game', async () => {
   fetchSavedFilterSets.mockResolvedValue([
     { id: 3, name: 'all of it', queryString: 'player_name=Stephen+Curry' },

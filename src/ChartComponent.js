@@ -77,7 +77,7 @@ const ChartComponent = ({
           data,
           backgroundColor: backgroundColors,
           borderWidth: 0,
-          borderRadius: 3,
+          borderRadius: 10,
           borderSkipped: 'bottom',
         },
       ],

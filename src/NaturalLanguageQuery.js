@@ -17,6 +17,7 @@ import QueryLadder from './help/QueryLadder';
 import LandingCourt from './LandingCourt';
 import HomeTicker from './home/HomeTicker';
 import HomeTonight from './home/HomeTonight';
+import HomeTutorial from './home/HomeTutorial';
 import { useHomeTonight } from './home/useHomeTonight';
 import { useLadderAnswers } from './help/useLadderAnswers';
 import SiteFooter from './legal/SiteFooter';
@@ -389,6 +390,7 @@ const NaturalLanguageQuery = ({
           </div>
 
           <div className="home-wide">
+            <HomeTutorial />
             <QueryLadder
               onUseQuery={setQuery}
               disabled={isLoading || waitlisted}

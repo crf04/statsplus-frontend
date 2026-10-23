@@ -194,3 +194,21 @@ signedOutTest('the home page points to the Connect page', async ({ app, screen, 
     screen.getByRole('heading', 'Ask CourtAI from your chat', { level: 1 }),
   ).toBeVisible();
 });
+
+signedOutTest(
+  'the home page plays the newest tutorial and links the rest on Connect',
+  async ({ app, screen, browser }) => {
+    await app.open('/');
+
+    const strip = screen.getByRole('region', 'Who cooks the Kings?');
+    await expect(strip.getByText('New tutorial · Part 1')).toBeVisible();
+    await strip.getByRole('button', 'Watch · 1:16').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeVisible();
+    await screen.getByRole('button', 'Close').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeHidden();
+
+    await strip.getByRole('link', 'All tutorials').tap();
+    await expect(browser).toHaveURL(/\/connect#guide-tutorials$/);
+    await expect(screen.getByRole('region', 'Watch the tutorials')).toBeVisible();
+  },
+);

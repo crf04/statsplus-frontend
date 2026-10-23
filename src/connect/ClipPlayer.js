@@ -7,10 +7,8 @@ const XLink = ({ href }) => (
   </a>
 );
 
-/* A landscape screen recording is unreadable at sidebar width, so the page shows
-   its poster and plays it full size in a dialog. */
-const ClipPlayer = ({ clip }) => {
-  const [open, setOpen] = useState(false);
+/* The clip full size in a modal dialog while `open`; closing it calls onClose. */
+export const ClipDialog = ({ clip, open, onClose }) => {
   const dialogRef = useRef(null);
 
   useEffect(() => {
@@ -23,8 +21,46 @@ const ClipPlayer = ({ clip }) => {
   const close = () => {
     const dialog = dialogRef.current;
     if (dialog?.close) dialog.close();
-    setOpen(false);
+    onClose();
   };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="clip-dialog"
+      aria-label={clip.title}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) close();
+      }}
+    >
+      {open && (
+        <div className="clip-dialog-body">
+          <video
+            className="clip-dialog-video"
+            src={clip.src}
+            poster={clip.poster}
+            controls
+            autoPlay
+            playsInline
+          />
+          <div className="clip-dialog-foot">
+            <p className="clip-dialog-title">{clip.title}</p>
+            <XLink href={clip.tweetUrl} />
+          </div>
+          <button type="button" className="clip-dialog-close" onClick={close} aria-label="Close">
+            ×
+          </button>
+        </div>
+      )}
+    </dialog>
+  );
+};
+
+/* A landscape screen recording is unreadable at sidebar width, so the page shows
+   its poster and plays it full size in a dialog. */
+const ClipPlayer = ({ clip }) => {
+  const [open, setOpen] = useState(false);
 
   return (
     <aside className={clip.summary ? 'clip clip-has-summary' : 'clip'} aria-label={clip.title}>
@@ -47,35 +83,7 @@ const ClipPlayer = ({ clip }) => {
       </p>
       {clip.summary && <p className="clip-summary">{clip.summary}</p>}
       <XLink href={clip.tweetUrl} />
-      <dialog
-        ref={dialogRef}
-        className="clip-dialog"
-        aria-label={clip.title}
-        onClose={() => setOpen(false)}
-        onClick={(event) => {
-          if (event.target === dialogRef.current) close();
-        }}
-      >
-        {open && (
-          <div className="clip-dialog-body">
-            <video
-              className="clip-dialog-video"
-              src={clip.src}
-              poster={clip.poster}
-              controls
-              autoPlay
-              playsInline
-            />
-            <div className="clip-dialog-foot">
-              <p className="clip-dialog-title">{clip.title}</p>
-              <XLink href={clip.tweetUrl} />
-            </div>
-            <button type="button" className="clip-dialog-close" onClick={close} aria-label="Close">
-              ×
-            </button>
-          </div>
-        )}
-      </dialog>
+      <ClipDialog clip={clip} open={open} onClose={() => setOpen(false)} />
     </aside>
   );
 };

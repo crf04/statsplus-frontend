@@ -30,16 +30,12 @@ decoder and `e2e/fixtures/courtai.js` aligned with that contract.
    typecheck:e2e and build, Jest only for tests affected by the diff against
    `origin/master`, and browser specs and flows only for changed files, plus the
    `@critical` subset when `src/`, fixtures, the bridge or config changed.
-6. Completion gate: `npm run check` is the full suite and must pass in CI (all
-   three jobs green: validate, E2E, e2e flows) before a pull request is marked
-   ready or merged.
-
-   ```bash
-   npm run check
-   ```
-
-   It runs lint, format:check, test:ci, build, test:e2e, typecheck:e2e and
-   test:flows in order. CI runs the same commands as parallel jobs, so a
+6. Completion gate: push and let CI run the full suite. All three jobs
+   (validate, E2E, e2e flows) must be green before a pull request is marked
+   ready or merged. Do not run the full suite locally first; CI runs it in
+   parallel and faster. Run `npm run check` locally only to reproduce a CI
+   failure. It runs lint, format:check, test:ci, build, test:e2e, typecheck:e2e
+   and test:flows in order. CI runs the same commands as parallel jobs, so a
    command added to `.github/workflows/ci.yml` belongs in `check` too.
 
 ## Agent skills

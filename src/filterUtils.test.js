@@ -207,6 +207,19 @@ describe('filterSetFromSearchParams', () => {
     expect(filters['teams_against[]']).toEqual(['Arc3Assists']);
   });
 
+  test('a Defense Sheet row filter survives the URL round trip', () => {
+    const { filters, invalid } = decode(
+      'teams_against%5B%5D=sheet%3Ashot_zones%3ARestricted+Area%3AFGM&rank_filter%5B%5D=10',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters['teams_against[]']).toEqual(['sheet:shot_zones:Restricted Area:FGM']);
+    expect(filterSetToSearchParams(filters).getAll('teams_against[]')).toEqual([
+      'sheet:shot_zones:Restricted Area:FGM',
+    ]);
+    expect(decode(filterSetToSearchParams(filters).toString()).filters).toEqual(filters);
+  });
+
   test('canonicalises a specific opponent to the tricode the API reads', () => {
     // Which tricodes exist is the API's vocabulary, but the case is not: a
     // hand-typed link must produce the request the API honours.

@@ -19,8 +19,19 @@ describe('QueryReferencePage', () => {
     });
 
     OPPONENT_FILTERS.flatMap((group) => group.items).forEach((item) => {
-      expect(screen.getByRole('rowheader', { name: item.token })).toBeInTheDocument();
+      const name = item.token.startsWith('sheet:') ? item.label : item.token;
+      expect(screen.getByRole('rowheader', { name })).toBeInTheDocument();
     });
+  });
+
+  test('names a Defense Sheet row filter by its label, never its token', () => {
+    renderPage();
+
+    expect(screen.getByRole('heading', { name: 'Shot zone defense' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Restricted Area Makes' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Play type volume' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Isolation Possessions' })).toBeInTheDocument();
+    expect(screen.queryByText(/sheet:/)).not.toBeInTheDocument();
   });
 
   test('documents the stat threshold its stacked examples use', () => {

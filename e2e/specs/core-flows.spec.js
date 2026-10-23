@@ -636,6 +636,54 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '11,20']);
 });
 
+test('a Defense Sheet row filter sends its exact token and survives a reload', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByRole('tab', { name: 'Shot zone' }).click();
+  await page.getByLabel('Defensive metric').selectOption({ label: 'Restricted Area Makes' });
+  await page
+    .getByTestId('filter-panel')
+    .getByRole('button', { name: 'Add: Restricted Area Makes, ranks 21–30' })
+    .click();
+  const appliedCount = gameLogRequests.length;
+  await page.getByRole('button', { name: /^Apply/ }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
+  const request = new URL(gameLogRequests.at(-1));
+  expect(request.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:shot_zones:Restricted Area:FGM',
+  ]);
+  expect(request.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll('teams_against[]'))
+    .toEqual(['sheet:shot_zones:Restricted Area:FGM']);
+  await expect(page.getByText('Restricted Area Makes (ranks 21–30)').first()).toBeVisible();
+
+  const reloadCount = gameLogRequests.length;
+  await page.reload();
+
+  await expect(page.getByText('Restricted Area Makes (ranks 21–30)').first()).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(reloadCount);
+  const restored = new URL(gameLogRequests.at(-1));
+  expect(restored.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:shot_zones:Restricted Area:FGM',
+  ]);
+  expect(restored.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect(page.getByText(/sheet:/)).toHaveCount(0);
+});
+
 test('@critical applying an untouched panel emits only the controls the user moved', async ({
   authenticatedPage: page,
 }) => {

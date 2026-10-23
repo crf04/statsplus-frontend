@@ -16,8 +16,10 @@ const hasFilterValue = (value) => value !== null && value !== undefined && value
 
 export const DEFENSIVE_CATEGORY_PILL_LABELS = {
   'General defense': 'General',
+  'Shot zone defense': 'Shot zone',
   'Shot type defense': 'Shot type',
   'Play type defense': 'Play type',
+  'Play type volume': 'Play volume',
   'Assists allowed': 'Assists',
 };
 

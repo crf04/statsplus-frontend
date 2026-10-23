@@ -45,6 +45,7 @@ const ClipPlayer = ({ clip }) => {
       <p className="clip-caption">
         <strong>{clip.title}</strong> · {clip.duration}
       </p>
+      {clip.summary && <p className="clip-summary">{clip.summary}</p>}
       <XLink href={clip.tweetUrl} />
       <dialog
         ref={dialogRef}

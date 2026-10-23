@@ -3366,6 +3366,19 @@ test('badges only the trailing section with its season and names a short Last 15
   expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
 });
 
+test('a past game served after the Season Cutover carries no season badge', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.asOfSeason = '2026-27';
+  candidate.trailing = [];
+  Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
+    windows.season.season = '2025-26';
+  });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.queryAllByText(/\d{4}-\d{2} season/)).toHaveLength(0);
+});
+
 test('reads a section season from its experience section when the Surface does not name one', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.asOfSeason = '2026-27';

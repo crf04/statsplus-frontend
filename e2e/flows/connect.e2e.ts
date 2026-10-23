@@ -236,5 +236,15 @@ signedOutTest(
     await strip.getByRole('link', 'All tutorials').tap();
     await expect(browser).toHaveURL(/\/connect#guide-tutorials$/);
     await expect(screen.getByRole('region', 'Watch the tutorials')).toBeVisible();
+    // Scrolled to the top of the window below the sticky header, and still there
+    // once the card above has settled its height.
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    );
+    const top = await browser.evaluate(
+      () => document.getElementById('guide-tutorials')?.getBoundingClientRect().top ?? null,
+    );
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top).toBeLessThan(200);
   },
 );

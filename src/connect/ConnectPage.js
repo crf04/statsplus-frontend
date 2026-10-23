@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import ConnectGuide from './ConnectGuide';
 import MatchupCardFrame from './MatchupCardFrame';
 import './ConnectPage.css';
@@ -139,6 +140,33 @@ const ClientTabs = () => {
   );
 };
 
+// A link from another page to a lesson (/connect#guide-tutorials) arrives before this
+// lazy page renders, so the browser never scrolls to it. Scroll once rendered, and
+// again while the card above settles its height, until the visitor scrolls.
+const SETTLE_MS = 5000;
+const STOP_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+
+const useScrollToHash = () => {
+  const { hash } = useLocation();
+  useEffect(() => {
+    const target = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (!target) return undefined;
+    const scroll = () => target.scrollIntoView({ block: 'start' });
+    scroll();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(scroll);
+    observer.observe(document.body);
+    const stop = () => observer.disconnect();
+    const timer = setTimeout(stop, SETTLE_MS);
+    STOP_EVENTS.forEach((type) => window.addEventListener(type, stop, { passive: true }));
+    return () => {
+      stop();
+      clearTimeout(timer);
+      STOP_EVENTS.forEach((type) => window.removeEventListener(type, stop));
+    };
+  }, [hash]);
+};
+
 /**
  * Public setup guide for the CourtAI MCP connector. It makes no API calls,
  * so a signed-out visitor can read it before creating an account.
@@ -151,6 +179,7 @@ const ConnectPage = () => {
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
+  useScrollToHash();
 
   useEffect(() => {
     if (!copied) return undefined;

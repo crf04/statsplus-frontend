@@ -5,6 +5,7 @@ import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
 import './TargetRecord.css';
+import HelpTip from '../help/HelpTip';
 
 const gameDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -244,7 +245,10 @@ export function TargetGameRows({
   return (
     <section className="target-game-rows" aria-label="Backtest games">
       <h2 className="target-games-heading">
-        <span>Games</span>
+        <span>
+          Games
+          <HelpTip tip="targetGames" />
+        </span>
         <small>
           {games.length} · newest first · graded on {gradedBy}
         </small>

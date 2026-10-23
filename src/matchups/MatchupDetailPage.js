@@ -29,6 +29,7 @@ import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -411,7 +412,10 @@ function PlayerRail({
   return (
     <aside className="player-rail" aria-label={label}>
       <div className="rail-heading">
-        <p className="matchup-eyebrow">{label}</p>
+        <p className="matchup-eyebrow">
+          {label}
+          {!historical && <HelpTip tip="matchupRail" />}
+        </p>
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>
           {teamTricode ? `${teamTricode} · ` : ''}
@@ -680,7 +684,10 @@ function DefenseSheet({
   return (
     <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
       <header className="sheet-heading">
-        <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+        <div className="help-tip-heading">
+          <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+          <HelpTip tip="defenseSheet" />
+        </div>
         <p>
           Compared with the league average, softest spots first.
           {hidden ? ` ${hidden} close to average hidden.` : ''}
@@ -1080,8 +1087,9 @@ function Detail({ matchup, gameId }) {
           <section className="detail-controls" aria-label="Defense Sheet controls">
             <div className="control-row">
               <div className="control-group">
-                <span className="control-label" aria-hidden="true">
-                  Window
+                <span className="control-label">
+                  <span aria-hidden="true">Window</span>
+                  <HelpTip tip="matchupWindow" />
                 </span>
                 <div className="segmented" role="group" aria-label="Stat window">
                   {windows.map((item) => (
@@ -1103,8 +1111,9 @@ function Detail({ matchup, gameId }) {
                 </div>
               </div>
               <div className="control-group">
-                <span className="control-label" aria-hidden="true">
-                  Show
+                <span className="control-label">
+                  <span aria-hidden="true">Show</span>
+                  <HelpTip tip="matchupShow" />
                 </span>
                 <div className="segmented" role="group" aria-label="Deviation filter">
                   {DEVIATIONS.map((item) => (

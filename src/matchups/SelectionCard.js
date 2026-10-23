@@ -6,6 +6,7 @@ import {
   orderCategories,
 } from './displayConfig';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 const BASE_ORDER = [
   'shotTypes',
@@ -420,7 +421,10 @@ export default function SelectionCard({
       />
       <div className="selection-panels">
         <section className="selection-panel" aria-label="Score Matrix">
-          <h3>Score Matrix</h3>
+          <div className="help-tip-heading">
+            <h3>Score Matrix</h3>
+            <HelpTip tip="scoreMatrix" />
+          </div>
           <div className="selection-table-wrap">
             <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
               <thead>

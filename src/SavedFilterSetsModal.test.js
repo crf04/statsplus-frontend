@@ -172,6 +172,20 @@ test('opening a saved Filter Set keeps the Line Type the chart is on', async () 
   );
 });
 
+test('opening a saved Filter Set drops the line', async () => {
+  renderModal(jest.fn(), '/?player_name=LeBron+James&line_type=REB&line=8.5');
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open saved Filter Set Curry at home' }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location').textContent).toMatch(
+      /\?player_name=Stephen\+Curry&home_away=home&line_type=REB$/,
+    ),
+  );
+});
+
 test('renames an item and reloads the list', async () => {
   renameSavedFilterSet.mockResolvedValue(undefined);
   // The list is reloaded rather than patched in place, so the order shown is

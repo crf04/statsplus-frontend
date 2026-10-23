@@ -21,8 +21,10 @@ import {
   filterQueryString,
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  lineFromSearch,
   lineTypeFromSearch,
   mergeFilterSet,
+  withLine,
   withLineType,
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
@@ -92,8 +94,11 @@ const GameLogFilter = ({ notice = null }) => {
   // shared link opens on it. It is not a filter, so an unusable value quietly
   // means the default rather than refusing the link.
   const lineType = lineTypeFromSearch(searchParams);
+  // A line belongs to one player and stat, so a new Line Type drops it.
   const setLineType = (next) =>
-    setSearchParams((current) => withLineType(current, next), { replace: true });
+    setSearchParams((current) => withLine(withLineType(current, next), null), { replace: true });
+  // The Line Value the URL carries when it is not the default line.
+  const linkLine = lineFromSearch(searchParams);
   // A Parsed Query answers after the reader may have moved on, so a write reads
   // the address bar as it is then, not as it was when the write began.
   const currentSearchRef = useRef(searchParams);
@@ -101,15 +106,36 @@ const GameLogFilter = ({ notice = null }) => {
     currentSearchRef.current = searchParams;
   }, [searchParams]);
   // Writing the Filter Set rebuilds the query string from filters alone, which
-  // would silently reset the chart's stat, so the current one is carried over.
-  const withCurrentLineType = (nextSearch) =>
-    withLineType(nextSearch, lineTypeFromSearch(currentSearchRef.current));
+  // would silently reset the chart's stat and line, so the current ones are
+  // carried over. The line is only carried for the same player.
+  const withCurrentView = (nextSearch) => {
+    const current = currentSearchRef.current;
+    const samePlayer = nextSearch.get('player_name') === current.get('player_name');
+    return withLine(
+      withLineType(nextSearch, lineTypeFromSearch(current)),
+      samePlayer ? lineFromSearch(current) : null,
+    );
+  };
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
   // The player's posted lines for his next game, which the line defaults to.
   const [postedLine, setPostedLine] = useState(null);
-  const line = useLineSelection({ player: selectedPlayer, lineType, postedLine, averages });
+  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
+  const line = useLineSelection({
+    player: selectedPlayer,
+    lineType,
+    postedLine,
+    averages,
+    link: linkLine,
+    pending: isGameLogsLoading,
+  });
+  // The URL follows the Line Value, replacing the history entry so Back undoes
+  // filters rather than lines.
+  useEffect(() => {
+    if (line.link === undefined || line.link === linkLine) return;
+    setSearchParams((current) => withLine(current, line.link), { replace: true });
+  }, [line.link, linkLine, setSearchParams]);
   // How many games the shown averages cover, against the whole season; null
   // until a game-log response arrives for the current Filter Set.
   const [sampleSize, setSampleSize] = useState(null);
@@ -123,7 +149,6 @@ const GameLogFilter = ({ notice = null }) => {
   const [seasonGameLogsLoading, setSeasonGameLogsLoading] = useState(false);
   const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
-  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
@@ -567,7 +592,7 @@ const GameLogFilter = ({ notice = null }) => {
    */
   const handleSeasonChange = (season) => {
     if (isRefusedLink) return;
-    const nextSearch = withCurrentLineType(
+    const nextSearch = withCurrentView(
       filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: season })),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
@@ -618,7 +643,7 @@ const GameLogFilter = ({ notice = null }) => {
       return { ok: false, reason: 'needsPlayer' };
     }
 
-    const nextSearch = withCurrentLineType(filterSetToSearchParams(nextFilters));
+    const nextSearch = withCurrentView(filterSetToSearchParams(nextFilters));
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === currentSearchRef.current.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };

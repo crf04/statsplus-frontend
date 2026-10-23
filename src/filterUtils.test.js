@@ -1,6 +1,8 @@
 import {
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  filterQueryString,
+  lineFromSearch,
   mergeFilterSet,
   cleanFilterParams,
   convertNLToFilters,
@@ -119,6 +121,13 @@ describe('filterSetFromSearchParams', () => {
     expect(filterSetToSearchParams({ player_name: 'A B', line_type: 'REB' }).toString()).toBe(
       'player_name=A+B',
     );
+  });
+
+  test('line is a view of the results, left out of the Filter Set query string', () => {
+    expect(filterQueryString('player_name=A+B&line_type=REB&line=24.5&browse=1')).toBe(
+      'player_name=A+B',
+    );
+    expect(lineFromSearch('player_name=A+B&line=24.5&line=25')).toBeNull();
   });
 
   test('decodes date_to beside date_filter and refuses an end before the start', () => {

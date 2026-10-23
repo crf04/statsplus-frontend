@@ -328,3 +328,21 @@ test('reports a failed load and says when nothing is saved yet', async () => {
 
   expect(await screen.findByText(/have not saved any Filter Sets yet/i)).toBeVisible();
 });
+
+test('a saved retired Play type volume filter reads as its label and reopens unchanged', async () => {
+  const queryString =
+    'player_name=Jarace+Walker&teams_against%5B%5D=sheet%3Aplay_types%3AIsolation%3APOSS' +
+    '&rank_filter%5B%5D=10';
+  fetchSavedFilterSets.mockResolvedValue([{ id: 12, name: 'iso volume', queryString }]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: 'Open saved Filter Set iso volume' });
+  expect(row).toHaveTextContent(
+    ['iso volume', 'Jarace Walker', 'vs top 10 Isolation Possessions D'].join(''),
+  );
+  expect(row).not.toHaveTextContent('sheet:');
+
+  fireEvent.click(row);
+
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`/?${queryString}`));
+});

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-23T17:32:04.782Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Add to my targets\" in \"Sample\" (1 of 2)",
+        "target": {
+          "role": "button",
+          "name": "Add to my targets",
+          "within": "Sample",
+          "position": {
+            "index": 0,
+            "of": 2
+          }
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Save Target\" in \"Opponent\"",
+        "target": {
+          "role": "button",
+          "name": "Save Target",
+          "within": "Opponent"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/targets.e2e.ts::the%20agent%20copies%20a%20sample%20into%20a%20personal%20Target",
+      "targetId": "desktop-west",
+      "instructionDigest": "11bf7f3602f39af8ee56e239aa54399d1cd64a6d7208c7ae774cdb4404fd745c",
+      "paramsDigest": "1606bf50d47917b590e41080a6fd7b58880f8045994559a579dd8e70cded57f3",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Added and saved “ORL vs P&R ball handler ≥ 25%.” The target detail page shows the same opponent, play-type qualifier (P&R ball handler), and ≥25% threshold, confirming its criteria were unchanged.",
+    "startPath": "/targets",
+    "endPath": "/targets/1",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "Backtest up to date."
+      },
+      {
+        "role": "status",
+        "name": "25%"
+      },
+      {
+        "role": "status",
+        "name": "any"
+      },
+      {
+        "role": "link",
+        "name": "← All Targets"
+      },
+      {
+        "role": "button",
+        "name": "Delete"
+      },
+      {
+        "role": "heading",
+        "name": "Lab · Backtest · 2025-26 · vs ORL"
+      },
+      {
+        "role": "button",
+        "name": "2025-26",
+        "states": [
+          "pressed"
+        ]
+      },
+      {
+        "role": "button",
+        "name": "2026-27"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Targets"
+      },
+      {
+        "text": "No Targets active today"
+      },
+      {
+        "role": "button",
+        "name": "+ New Target"
+      },
+      {
+        "role": "heading",
+        "name": "No Targets yet."
+      },
+      {
+        "text": "Choose + New Target or start with a sample below."
+      },
+      {
+        "role": "heading",
+        "name": "Sample Targets"
+      },
+      {
+        "text": "Sample"
+      },
+      {
+        "role": "button",
+        "name": "Add to my targets"
+      }
+    ],
+    "endWaitMs": 11982,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

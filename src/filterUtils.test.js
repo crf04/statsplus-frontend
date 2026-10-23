@@ -207,6 +207,16 @@ describe('filterSetFromSearchParams', () => {
     expect(filters['teams_against[]']).toEqual(['Arc3Assists']);
   });
 
+  test('a retired Play type volume token still survives the URL round trip', () => {
+    const { filters, invalid } = decode(
+      'teams_against%5B%5D=sheet%3Aplay_types%3AIsolation%3APOSS&rank_filter%5B%5D=10',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters['teams_against[]']).toEqual(['sheet:play_types:Isolation:POSS']);
+    expect(decode(filterSetToSearchParams(filters).toString()).filters).toEqual(filters);
+  });
+
   test('a Defense Sheet row filter survives the URL round trip', () => {
     const { filters, invalid } = decode(
       'teams_against%5B%5D=sheet%3Ashot_zones%3ARestricted+Area%3AFGM&rank_filter%5B%5D=10',

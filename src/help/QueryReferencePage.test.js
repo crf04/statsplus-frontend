@@ -29,9 +29,14 @@ describe('QueryReferencePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Shot zone defense' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'Restricted Area Makes' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Play type volume' })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Isolation Possessions' })).toBeInTheDocument();
     expect(screen.queryByText(/sheet:/)).not.toBeInTheDocument();
+  });
+
+  test('no longer lists Play type volume', () => {
+    renderPage();
+
+    expect(screen.queryByRole('heading', { name: 'Play type volume' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Possessions/)).not.toBeInTheDocument();
   });
 
   test('documents the stat threshold its stacked examples use', () => {

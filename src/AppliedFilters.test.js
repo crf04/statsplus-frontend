@@ -49,15 +49,27 @@ test('a Defense Sheet row filter reads as its label, never its token', () => {
         'teams_against[]': [
           'sheet:shot_zones:Restricted Area:FGM',
           'sheet:shot_types:Pullups:FG3A',
-          'sheet:play_types:PRRollMan:POSS',
         ],
-        'rank_filter[]': ['10', '-5', '11,20'],
+        'rank_filter[]': ['10', '-5'],
       }}
     />,
   );
 
   expect(screen.getByText('Restricted Area Makes (ranks 21–30)')).toBeVisible();
   expect(screen.getByText('Pull-Up 3PA (ranks 1–5)')).toBeVisible();
+  expect(screen.queryByText(/sheet:/)).not.toBeInTheDocument();
+});
+
+test('a retired Play type volume filter still reads as its label', () => {
+  render(
+    <AppliedFilters
+      filters={{
+        'teams_against[]': ['sheet:play_types:PRRollMan:POSS'],
+        'rank_filter[]': ['11,20'],
+      }}
+    />,
+  );
+
   expect(screen.getByText('P&R Roll-Man Possessions (ranks 11–20)')).toBeVisible();
   expect(screen.queryByText(/sheet:/)).not.toBeInTheDocument();
 });

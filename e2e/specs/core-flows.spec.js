@@ -636,6 +636,34 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '11,20']);
 });
 
+test('a shared link with a retired Play type volume filter still loads and sends it', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto(
+    '/?player_name=LeBron+James&teams_against[]=sheet:play_types:Isolation:POSS&rank_filter[]=10',
+  );
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByText('Isolation Possessions (ranks 21–30)').first()).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  const request = new URL(gameLogRequests.at(-1));
+  expect(request.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:play_types:Isolation:POSS',
+  ]);
+  expect(request.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect(page.getByText(/sheet:/)).toHaveCount(0);
+
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await expect(page.getByRole('tab', { name: 'Play volume' })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Shot zone' })).toBeVisible();
+});
+
 test('a Defense Sheet row filter sends its exact token and survives a reload', async ({
   authenticatedPage: page,
 }) => {

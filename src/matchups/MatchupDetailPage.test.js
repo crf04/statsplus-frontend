@@ -3338,6 +3338,9 @@ const mixedSeasonMatchup = () => {
     windows.last15.windowGames = 6;
   });
   candidate.league.surfaceAvailability.playTypes.season.season = '2025-26';
+  candidate.trailing = [
+    { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ];
   return candidate;
 };
 
@@ -3396,6 +3399,9 @@ test('reads a section season from its experience section when the Surface does n
     last15Defense: section('2026-27'),
     injuries: { status: 'available', unavailableReason: null },
   };
+  candidate.trailing = [
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+  ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   await openFullSheet();
 

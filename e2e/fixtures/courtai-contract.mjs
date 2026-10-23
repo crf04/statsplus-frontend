@@ -1245,6 +1245,19 @@ export const historicalMatchupPayload = {
   },
 };
 
+// The same 2025-26 game served after a Season Cutover to 2026-27: its sections
+// read the game's own season and nothing is trailing.
+export const postCutoverHistoricalMatchupPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(historicalMatchupPayload));
+  candidate.as_of = { season: '2026-27' };
+  Object.values(candidate.league.surface_availability).forEach((windows) => {
+    windows.season.season = '2025-26';
+  });
+  candidate.experience.sections.season_defense.season = '2025-26';
+  candidate.trailing = [];
+  return candidate;
+})();
+
 const selectionLine = (date, matchup, minutes, values, deltas) => ({
   row_type: date === null ? 'average' : 'game',
   game_date: date,

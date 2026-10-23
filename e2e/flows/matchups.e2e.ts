@@ -1,5 +1,8 @@
 import { expect } from 'e2e';
-import { servingSeasonMatchupPayload } from '../fixtures/courtai.js';
+import {
+  postCutoverHistoricalMatchupPayload,
+  servingSeasonMatchupPayload,
+} from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
 
 signedInTest(
@@ -207,5 +210,19 @@ signedInTest(
     ).toBeVisible();
     await expect(screen.getByRole('region', 'Play types').getByText('Last 15')).toHaveCount(0);
     await app.screenshot('matchup-last-n');
+  },
+);
+
+signedInTest(
+  'a past game served after the Season Cutover carries no season badge',
+  async ({ app, screen, browser, api }) => {
+    await api.override({ '/api/games/matchup': { body: postCutoverHistoricalMatchupPayload } });
+    await app.open('/matchups/0022501082');
+    await expect(screen.getByRole('heading', 'What MIL allows')).toBeVisible();
+    await screen.getByRole('group', 'Stat category').getByRole('button', 'All').tap();
+    await expect(screen.getByRole('article', 'Above-the-break 3s')).toBeVisible();
+    await expect(screen.getByText('2025-26 season')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('matchup-post-cutover-historical');
   },
 );

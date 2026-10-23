@@ -27,7 +27,7 @@ const ClipPlayer = ({ clip }) => {
   };
 
   return (
-    <aside className="clip" aria-label={clip.title}>
+    <aside className={clip.summary ? 'clip clip-has-summary' : 'clip'} aria-label={clip.title}>
       <button
         type="button"
         className="clip-thumb"

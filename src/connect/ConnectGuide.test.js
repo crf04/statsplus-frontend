@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ConnectGuide from './ConnectGuide';
 
 jest.mock('./connectClip', () => ({ CONNECT_CLIP: null }));
@@ -47,5 +48,17 @@ test('Watch the tutorials lists every tutorial in order, each with its X post', 
       .getAllByRole('link', { name: /Watch on X/ })
       .map((link) => link.getAttribute('href')),
   ).toEqual(['https://x.com/CourtAI_App/status/2', 'https://x.com/CourtAI_App/status/1']);
+  expect(within(tutorials).getByText('The newer one.')).toBeInTheDocument();
   expect(within(tutorials).getByText('The older one.')).toBeInTheDocument();
+});
+
+test('a tutorial poster plays its own video in the dialog', async () => {
+  const { container } = render(<ConnectGuide setup={null} />);
+
+  expect(container.querySelector('video')).toBeNull();
+  await userEvent.click(screen.getByRole('button', { name: 'Play: First tutorial' }));
+
+  const videos = container.querySelectorAll('video');
+  expect(videos).toHaveLength(1);
+  expect(videos[0].getAttribute('src')).toBe('/clips/first.mp4');
 });

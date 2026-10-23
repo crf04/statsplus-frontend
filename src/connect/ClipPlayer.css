@@ -176,6 +176,10 @@
   }
 
   .clip-thumb {
+    grid-row: span 2;
+  }
+
+  .clip-has-summary .clip-thumb {
     grid-row: span 3;
   }
 

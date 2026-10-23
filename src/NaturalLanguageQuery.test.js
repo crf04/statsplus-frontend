@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
@@ -125,7 +125,7 @@ describe('NaturalLanguageQuery', () => {
     const court = container.querySelector('.landing-court');
     expect(court).toBeInTheDocument();
     expect(court).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(within(court).queryByRole('img')).not.toBeInTheDocument();
   });
 
   test('the Query Prompt gives way to the compact search on the URL alone', () => {

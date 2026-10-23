@@ -7,9 +7,11 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from './slateStatus';
+import { servingSeasonDecoders } from './servingSeason';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
 const MISSING_TEAM_NAME_SENTINEL = 'None';
+const { decodeTrailing } = servingSeasonDecoders(createInvalidSlateError);
 
 const decodeRetrievedAt = (value) => {
   if (value === null) return null;
@@ -156,6 +158,7 @@ export const decodeSlate = (data) => {
     fallback: decodeFallback(data.fallback),
     freshness,
     games: data.games.map(decodeGame),
+    trailing: decodeTrailing(data.trailing),
   };
 };
 

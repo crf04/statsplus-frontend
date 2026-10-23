@@ -5,6 +5,7 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from '../slateStatus';
+import { servingSeasonDecoders } from '../servingSeason';
 
 const invalid = () => new Error('The matchup endpoint returned an invalid response.');
 const selectionInvalid = () =>
@@ -26,6 +27,7 @@ const requireNumber = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
 };
+const { decodeSeason, decodeWindowGames, decodeTrailing } = servingSeasonDecoders(invalid);
 const decodeRelativePercentage = (value) => (value === null ? null : requireNumber(value));
 const requireNumberOrNull = (value) => (value === null ? null : requireNumber(value));
 const requireInteger = (value) => {
@@ -228,6 +230,9 @@ const decodeRetrievedAt = (value) => {
 };
 
 const SECTION_STATE_KEYS = ['status', 'source', 'context', 'unavailable_reason'];
+// Additive Serving Season fields (crf04/statsplus#304). A trailing section's
+// season differs from `as_of.season` and keeps its section's provenance.
+const OPTIONAL_SECTION_STATE_KEYS = ['season', 'window_games'];
 // The mode owns its evidence vocabulary. A completed season cannot be described
 // as pregame, and a live slate cannot be described as hindsight, so a response
 // that mixes them is incoherent rather than merely unusual.
@@ -255,8 +260,11 @@ const SECTION_PROVENANCE = {
 // Only the schedule section carries collection provenance. It is immutable
 // evidence of a completed season, never an age-based staleness signal.
 const decodeExperienceSection = (section, name, mode) => {
-  const allowedKeys =
-    name === 'schedule' ? [...SECTION_STATE_KEYS, 'collected_at'] : SECTION_STATE_KEYS;
+  const allowedKeys = [
+    ...SECTION_STATE_KEYS,
+    ...OPTIONAL_SECTION_STATE_KEYS,
+    ...(name === 'schedule' ? ['collected_at'] : []),
+  ];
   if (
     !isRecord(section) ||
     SECTION_STATE_KEYS.some((key) => !Object.hasOwn(section, key)) ||
@@ -278,6 +286,8 @@ const decodeExperienceSection = (section, name, mode) => {
     context: section.context,
     unavailableReason: section.unavailable_reason,
     collectedAt: decodeRetrievedAt(section.collected_at ?? null),
+    season: decodeSeason(section.season),
+    windowGames: decodeWindowGames(section.window_games),
   };
 };
 
@@ -322,6 +332,8 @@ const decodeAvailabilityState = (value) => {
   return {
     status: value.status,
     unavailableReason: value.unavailable_reason,
+    season: decodeSeason(value.season),
+    windowGames: decodeWindowGames(value.window_games),
   };
 };
 
@@ -1195,7 +1207,18 @@ export const decodeMatchup = (data) => {
     players.map((player) => player.focalGameLine?.gameDate).filter(Boolean),
   );
   if (focalDates.size > 1) throw invalid();
-  return { game, experience, league, teams, players, injuries, freshness };
+  if (data.as_of !== undefined && !isRecord(data.as_of)) throw invalid();
+  return {
+    game,
+    experience,
+    league,
+    teams,
+    players,
+    injuries,
+    freshness,
+    asOfSeason: decodeSeason(data.as_of?.season),
+    trailing: decodeTrailing(data.trailing),
+  };
 };
 
 export const fetchMatchup = async (gameId, { signal } = {}) => {

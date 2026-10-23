@@ -211,6 +211,12 @@
   list-style: none;
 }
 
+.slate-trailing-note {
+  margin: 16px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.86rem;
+}
+
 .slate-window {
   display: grid;
   grid-template-columns: 92px minmax(0, 1fr);

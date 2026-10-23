@@ -1,4 +1,5 @@
 import { expect } from 'e2e';
+import { servingSeasonMatchupPayload } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
 
 signedInTest(
@@ -180,5 +181,30 @@ signedInTest(
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
     await expect(screen.getByRole('heading', 'What BOS allows')).toHaveCount(0);
+  },
+);
+
+signedInTest(
+  'a trailing section names its season and a short Last 15 names its games',
+  async ({ app, screen, browser, api }) => {
+    await api.override({ '/api/games/matchup': { body: servingSeasonMatchupPayload } });
+    await app.open('/matchups/0022500584');
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    await screen.getByRole('group', 'Market').getByRole('button', 'All').tap();
+    await expect(
+      screen.getByRole('region', 'Play types').getByText('2025-26 season'),
+    ).toBeVisible();
+    await expect(screen.getByText('2025-26 season')).toHaveCount(1);
+    await expect(screen.getByRole('button', 'Last 15')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('matchup-trailing-season');
+
+    await screen.getByRole('button', 'Last 6').tap();
+    await expect(screen.getByRole('button', 'Last 6')).toHaveAttribute('aria-pressed', 'true');
+    await expect(screen.getByText('2025-26 season')).toHaveCount(0);
+    await expect(
+      screen.getByText('Play types unavailable for Last 6: provider_unsupported.'),
+    ).toBeVisible();
+    await app.screenshot('matchup-last-n');
   },
 );

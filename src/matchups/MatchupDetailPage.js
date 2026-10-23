@@ -21,7 +21,8 @@ import {
   orderCategories,
   sliceName,
 } from './displayConfig';
-import { WINDOW_REASONS } from '../windowReasons';
+import { SEASON_WINDOW_REASONS, WINDOW_REASONS } from '../windowReasons';
+import { trailingSeason } from '../servingSeason';
 import { bestPrices, formatPrice } from './linePrices';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
@@ -45,12 +46,28 @@ const SECTION_REASONS = {
   no_game_log_rows: 'No canonical game-log rows exist for this game.',
   player_pool_unavailable: 'No Player Pool snapshot is available for this game.',
 };
-const surfaceReason = (unavailableReason) =>
-  WINDOW_REASONS[unavailableReason] ||
+const surfaceReason = (unavailableReason, windowKey = 'last15') =>
+  (windowKey === 'season' ? SEASON_WINDOW_REASONS : WINDOW_REASONS)[unavailableReason] ||
   SECTION_REASONS[unavailableReason] ||
   `${unavailableReason}.`;
 const sectionReason = (section) => surfaceReason(section.unavailableReason);
-const windowLabel = (windowKey) => WINDOWS.find((window) => window.key === windowKey)?.label;
+const WINDOW_SECTIONS = { season: 'seasonDefense', last15: 'last15Defense' };
+
+// Before a team has played 15 games, Last 15 covers the games so far and is
+// named by their count.
+const matchupWindows = (matchup) => {
+  const counts = [
+    matchup.experience.sections?.last15Defense,
+    ...Object.values(matchup.league.surfaceAvailability).map((windows) => windows.last15),
+  ]
+    .map((state) => state?.windowGames)
+    .filter((games) => Number.isInteger(games) && games < 15);
+  return counts.length
+    ? WINDOWS.map((window) =>
+        window.key === 'last15' ? { ...window, label: `Last ${Math.min(...counts)}` } : window,
+      )
+    : WINDOWS;
+};
 
 // "a", "a and b", "a, b and c".
 const listWords = (words, conjunction = 'and') =>
@@ -597,6 +614,9 @@ function DefenseSheet({
   deviation,
   selectedPlayer,
   surfaceAvailability,
+  windowName,
+  windowSection,
+  publishedSeason,
   onCapture,
 }) {
   const inMarket = (row) => market === 'All' || row.markets.includes(market);
@@ -675,15 +695,23 @@ function DefenseSheet({
       <div className="sheet-sections">
         {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
           const label = BASE_LABELS[base];
+          const season = trailingSeason(
+            availability.season ?? windowSection?.season,
+            publishedSeason,
+          );
+          const title = (
+            <div className="sheet-base-title">
+              <h3 id={`base-${base}`}>{label}</h3>
+              {season && <span className="sheet-season">{season} season</span>}
+            </div>
+          );
           if (availability.status !== 'available') {
             return relevant ? (
               <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
-                <div className="sheet-base-head">
-                  <h3 id={`base-${base}`}>{label}</h3>
-                </div>
+                <div className="sheet-base-head">{title}</div>
                 <p className="honest-empty">
-                  {label} unavailable for {windowLabel(windowKey)}:{' '}
-                  {surfaceReason(availability.unavailableReason)}
+                  {label} unavailable for {windowName}:{' '}
+                  {surfaceReason(availability.unavailableReason, windowKey)}
                 </p>
               </section>
             ) : null;
@@ -698,7 +726,7 @@ function DefenseSheet({
               style={{ '--cols': columns.length }}
             >
               <div className="sheet-base-head">
-                <h3 id={`base-${base}`}>{label}</h3>
+                {title}
                 {columns.map((column) => (
                   <span key={column}>{column}</span>
                 ))}
@@ -783,9 +811,7 @@ function DefenseSheet({
                 </div>
               )}
               {legacyUnavailableRow && (
-                <p className="honest-empty">
-                  Opponent rebounds unavailable for {windowLabel(windowKey)}.
-                </p>
+                <p className="honest-empty">Opponent rebounds unavailable for {windowName}.</p>
               )}
             </section>
           );
@@ -936,6 +962,8 @@ function Detail({ matchup, gameId }) {
   // A chosen stat the other side does not have falls back the same way.
   const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
+  const windows = matchupWindows(matchup);
+  const windowName = windows.find((item) => item.key === windowKey).label;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
   const injuriesAvailable = historical
@@ -1047,7 +1075,7 @@ function Detail({ matchup, gameId }) {
                   Window
                 </span>
                 <div className="segmented" role="group" aria-label="Stat window">
-                  {WINDOWS.map((item) => (
+                  {windows.map((item) => (
                     <button
                       type="button"
                       aria-pressed={windowKey === item.key}
@@ -1115,6 +1143,7 @@ function Detail({ matchup, gameId }) {
               }
               error={selectionState.error}
               windowKey={windowKey}
+              windowName={windowName}
               sheetMarket={market}
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
               historical={historical}
@@ -1138,6 +1167,9 @@ function Detail({ matchup, gameId }) {
               deviation={deviation}
               selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
               surfaceAvailability={matchup.league.surfaceAvailability}
+              windowName={windowName}
+              windowSection={sections?.[WINDOW_SECTIONS[windowKey]]}
+              publishedSeason={matchup.asOfSeason}
               onCapture={setCapture}
             />
           )}

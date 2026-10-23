@@ -107,8 +107,12 @@ export const slatePayload = (
     previousGameDate = /** @type {string | null} */ (null),
     nextGameDate = /** @type {string | null} */ (null),
     fallback = /** @type {string | null} */ (null),
+    trailing = /** @type {{ family: string, serving_season: string, rule: string }[] | undefined} */ (
+      undefined
+    ),
   } = {},
 ) => ({
+  ...(trailing === undefined ? {} : { trailing }),
   slate_date: date,
   previous_game_date: previousGameDate,
   next_game_date: nextGameDate,
@@ -791,7 +795,35 @@ export const matchupPayload = {
     stats: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
     injuries: { status: 'fresh', retrieved_at: '2026-01-15T11:55:00Z' },
   },
+  as_of: {
+    season: '2025-26',
+    season_defense: '2026-01-14',
+    last_15_defense: '2026-01-14',
+    player_diets: '2026-01-15',
+  },
 };
+
+// The live game after a Season Cutover to 2026-27 (crf04/statsplus#304): play
+// types still serve 2025-26 while Synergy trails, and every open Last 15
+// window covers the 6 games each team has played.
+export const SYNERGY_TRAILING = {
+  family: 'synergy',
+  serving_season: '2025-26',
+  rule: 'NBA has published 2026-27 and every team has played 10 games',
+};
+export const servingSeasonMatchupPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.as_of.season = '2026-27';
+  Object.entries(candidate.league.surface_availability).forEach(([base, windows]) => {
+    windows.season.season = base === 'play_types' ? '2025-26' : '2026-27';
+    if (windows.last_15.status === 'available') {
+      windows.last_15.season = '2026-27';
+      windows.last_15.window_games = 6;
+    }
+  });
+  candidate.trailing = [SYNERGY_TRAILING];
+  return candidate;
+})();
 
 // Production LAC @ MIL 0022501082: every Season defense Surface published, no
 // point-in-time Last 15, no archived DFS markets, canonical game-log players.

@@ -145,6 +145,12 @@ PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_pr
 Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
 carries `lines: {}`.
 
+Both Matchups carry `as_of.season` and no Serving Season fields, as today's backend sends them.
+`servingSeasonMatchupPayload` is the live game after a Season Cutover to 2026-27
+(crf04/statsplus#304): play types still serve 2025-26 under a `trailing` Synergy entry, and each
+open Last 15 window carries `window_games: 6`. `slatePayload` takes a `trailing` option for the
+Slate note. A flow overrides the route with them; the defaults stay single-season.
+
 Target resolution is composed from those same two Matchups rather than canned, so the shares and
 Defense Sheet readings a Target shows are the ones the Matchup page shows for the same game.
 `0022500584` resolves on `2026-01-15` against the stored Player Pool and `0022501082` on

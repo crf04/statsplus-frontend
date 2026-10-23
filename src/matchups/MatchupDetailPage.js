@@ -696,7 +696,10 @@ function DefenseSheet({
             publishedSeason,
           );
           // The toggle names the shortest Last 15; a section covering more says so.
-          const games = windowKey === 'last15' ? last15Games(availability, windowSection) : null;
+          const games =
+            windowKey === 'last15' && availability.status === 'available'
+              ? last15Games(availability, windowSection)
+              : null;
           const title = (
             <div className="sheet-base-title">
               <h3 id={`base-${base}`}>{label}</h3>

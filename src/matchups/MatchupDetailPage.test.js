@@ -3490,3 +3490,20 @@ test('a section’s own Last 15 count, null included, wins over its experience s
     within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
   ).not.toBeInTheDocument();
 });
+
+test('an unavailable Last 15 section names its reason, not a game count', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'provider_unsupported',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  const boxScore = screen.getByRole('region', { name: 'Box score' });
+  expect(
+    within(boxScore).getByText('Box score unavailable for Last 6: provider_unsupported.'),
+  ).toBeVisible();
+  expect(within(boxScore).queryByText(/^Last \d+$/)).not.toBeInTheDocument();
+});

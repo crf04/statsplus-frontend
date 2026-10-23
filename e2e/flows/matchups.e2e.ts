@@ -205,6 +205,7 @@ signedInTest(
     await expect(
       screen.getByText('Play types unavailable for Last 6: provider_unsupported.'),
     ).toBeVisible();
+    await expect(screen.getByRole('region', 'Play types').getByText('Last 15')).toHaveCount(0);
     await app.screenshot('matchup-last-n');
   },
 );

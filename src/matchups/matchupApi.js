@@ -166,6 +166,7 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   }
   if (base === 'shot_types') {
     return {
+      PTS: ['PTS', 'PA', 'PR', 'PRA'],
       FG2M: ['PTS', 'PA', 'PR', 'PRA'],
       FG2A: ['FGA', 'FG2A'],
       FG3M: ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
@@ -214,12 +215,18 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey) && ['FGA', 'FGM'].includes(statKey)) ||
     (base === 'shot_types' &&
       SHOT_TYPE_SLICES.has(sliceKey) &&
-      ['FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
+      ['PTS', 'FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
     (base === 'rebound_types' && REBOUND_TYPE_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
-  return { sliceKey, acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey) };
+  return {
+    sliceKey,
+    acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey),
+    // The `<slice>:PTS` shot-type row (crf04/statsplus#315) is validated but
+    // never shown: the Matchup sheet renders makes and attempts only.
+    hidden: base === 'shot_types' && statKey === 'PTS',
+  };
 };
 
 const decodeRetrievedAt = (value) => {
@@ -401,7 +408,7 @@ const decodeSheetRow = (row, availability, base) => {
     )
   )
     throw invalid();
-  return {
+  const decoded = {
     key,
     sliceKey: identity.sliceKey,
     label: requireString(row.label),
@@ -409,6 +416,7 @@ const decodeSheetRow = (row, availability, base) => {
     season: decodeSheetWindow(row.season, availability.season, decodeWindowValue, base, key),
     last15: decodeSheetWindow(row.last_15, availability.last15, decodeWindowValue, base, key),
   };
+  return identity.hidden ? null : decoded;
 };
 
 const decodeDefenseSheet = (sheet, surfaceAvailability) => {
@@ -799,7 +807,7 @@ const decodeLeague = (league) => {
           const key = requireString(row.key);
           const identity = decodeSheetIdentity(base, key);
           if (identity === null) return null;
-          return {
+          const decoded = {
             key,
             sliceKey: identity.sliceKey,
             season: decodeSheetWindow(
@@ -817,6 +825,7 @@ const decodeLeague = (league) => {
               key,
             ),
           };
+          return identity.hidden ? null : decoded;
         })
         .filter(Boolean);
       if (new Set(decodedRows.map((row) => row.key)).size !== decodedRows.length) throw invalid();

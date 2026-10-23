@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import { payload as rawMatchupPayload } from './matchupPayloadFixture';
 import { bookName } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
 
@@ -1118,6 +1119,68 @@ test('the Defense Sheet leaves out catch-and-shoot 2s and under-10-ft 3s', async
       .getAllByRole('article')
       .map((row) => row.getAttribute('aria-label')),
   ).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s', 'Under 10 ft 2s']);
+});
+
+test('decoded shot-type Points rows leave the rendered Shot types section unchanged', async () => {
+  const rawWindow = {
+    allowed_per_48: 9,
+    percent_vs_league_average: 5,
+    sigma_deviation: 1,
+    rank: 20,
+  };
+  const rawRow = (key, markets) => ({
+    key,
+    label: key,
+    markets,
+    season: rawWindow,
+    last_15: rawWindow,
+  });
+  const decodeBostonShotTypes = (withPoints) => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.teams[1].defense_sheet.shot_types = [
+      rawRow('Catch and Shoot:FG3A', ['FGA', 'FG3A']),
+      rawRow('Catch and Shoot:FG3M', ['3PM', 'PTS', 'PA', 'PR', 'PRA']),
+      rawRow('Pullups:FG3A', ['FGA', 'FG3A']),
+      rawRow('Pullups:FG3M', ['3PM', 'PTS', 'PA', 'PR', 'PRA']),
+      rawRow('Pullups:FG2M', ['PTS', 'PA', 'PR', 'PRA']),
+      ...(withPoints
+        ? ['Catch and Shoot', 'Pullups', 'Less Than 10 ft'].map((slice) =>
+            rawRow(`${slice}:PTS`, ['PTS', 'PA', 'PR', 'PRA']),
+          )
+        : []),
+    ];
+    raw.league.defense_sheet.shot_types = raw.teams[1].defense_sheet.shot_types.map(({ key }) => ({
+      key,
+      season: { average_allowed_per_48: 9, sigma: 1 },
+      last_15: { average_allowed_per_48: 9, sigma: 1 },
+    }));
+    return jest.requireActual('./matchupApi').decodeMatchup(raw).teams[1].defenseSheet.shotTypes;
+  };
+  const renderedRows = async (withPoints) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes =
+      decodeBostonShotTypes(withPoints);
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    const { unmount } = renderMatchup();
+    const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
+      'section',
+    );
+    const shotTypes = within(sheet)
+      .getByRole('heading', { name: 'Shot types', level: 3 })
+      .closest('section');
+    const rows = within(shotTypes)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label'));
+    const text = shotTypes.textContent;
+    unmount();
+    return { rows, text };
+  };
+
+  const without = await renderedRows(false);
+  const withPoints = await renderedRows(true);
+  expect(without.rows).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s']);
+  expect(withPoints.rows).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s']);
+  expect(withPoints.text).toBe(without.text);
 });
 
 test('the Selection card highlights the shot make rows behind a combo market for his Diet', async () => {

@@ -54,8 +54,10 @@ const sectionReason = (section) => surfaceReason(section.unavailableReason);
 const WINDOW_SECTIONS = { season: 'seasonDefense', last15: 'last15Defense' };
 
 // Before a team has played 15 games, Last 15 covers the games so far and is
-// named by their count. A section's own count wins over its window's.
-const last15Games = (state, section) => state?.windowGames ?? section?.windowGames ?? 15;
+// named by their count. A section's own count wins over its window's, and a
+// null count is a full window.
+const last15Games = (state, section) =>
+  (state?.windowGames === undefined ? section?.windowGames : state.windowGames) ?? 15;
 const shortestLast15 = (matchup) =>
   Math.min(
     ...Object.values(matchup.league.surfaceAvailability).map((windows) =>

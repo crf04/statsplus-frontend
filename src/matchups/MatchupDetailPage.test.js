@@ -3464,3 +3464,29 @@ test('explains a Season window short of governed games in its own words', async 
   ).toBeVisible();
   expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
 });
+
+test('a section’s own Last 15 count, null included, wins over its experience section’s', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 6 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});

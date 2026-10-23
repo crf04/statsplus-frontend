@@ -202,13 +202,11 @@ signedInTest(
     });
     await app.open('/');
 
-    await expect(
-      screen
-        .getByRole('region', 'Tonight')
-        .getByText(
-          'Scores use 2025-26 team defense and Diets until every team has played 10 games.',
-        ),
-    ).toBeVisible();
+    const note = screen
+      .getByRole('region', 'Tonight')
+      .getByText('Scores use 2025-26 team defense and Diets until every team has played 10 games.');
+    await note.scrollIntoView();
+    await expect(note).toBeVisible();
     expect(await overflowsHorizontally(browser)).toBe(false);
     await app.screenshot('home-trailing-note');
   },

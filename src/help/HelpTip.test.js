@@ -27,13 +27,26 @@ test('opens a note explaining the section and closes it again from the button', 
   expect(button).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('Escape closes the note and returns focus to its button', async () => {
-  renderTip();
-  const button = screen.getByRole('button', { name: 'About Defense Sheet' });
+test('Escape closes the note, returns focus to its button and leaves the card around it open', async () => {
+  const closeCard = jest.fn();
+  render(
+    <section
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') closeCard();
+      }}
+    >
+      <HelpTip tip="scoreMatrix" />
+    </section>,
+  );
+  const button = screen.getByRole('button', { name: 'About Score Matrix' });
   await userEvent.click(button);
   await userEvent.keyboard('{Escape}');
   expect(screen.queryByRole('note')).toBeNull();
   expect(button).toHaveFocus();
+  expect(closeCard).not.toHaveBeenCalled();
+
+  await userEvent.keyboard('{Escape}');
+  expect(closeCard).toHaveBeenCalledTimes(1);
 });
 
 test('a press outside the tip closes the note; a press inside it does not', async () => {

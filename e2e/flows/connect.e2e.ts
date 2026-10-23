@@ -236,5 +236,62 @@ signedOutTest(
     await strip.getByRole('link', 'All tutorials').tap();
     await expect(browser).toHaveURL(/\/connect#guide-tutorials$/);
     await expect(screen.getByRole('region', 'Watch the tutorials')).toBeVisible();
+    // Scrolled to the top of the window below the sticky header, and still there
+    // once the card above has settled its height.
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    );
+    const top = await browser.evaluate(
+      () => document.getElementById('guide-tutorials')?.getBoundingClientRect().top ?? null,
+    );
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top).toBeLessThan(200);
+  },
+);
+
+// Grows the page above the lesson, as the Matchup card does when it settles, then reports
+// where the lesson sits once the observer has had time to react.
+const growAboveLesson = (id: string) =>
+  `(() => {
+    // Browser scroll anchoring would hide the shift this simulates.
+    document.documentElement.style.overflowAnchor = 'none';
+    const lesson = document.getElementById(${JSON.stringify(id)});
+    const spacer = document.createElement('div');
+    spacer.style.height = '600px';
+    document.body.prepend(spacer);
+    return new Promise((resolve) =>
+      setTimeout(() => resolve(lesson.getBoundingClientRect().top), 500),
+    );
+  })()`;
+
+signedOutTest(
+  'a fresh load of a lesson link holds the lesson until the visitor presses a key',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect#guide-tools');
+    await expect(screen.getByRole('region', 'Everything it can do')).toBeVisible();
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)),
+    );
+    // Layout settling before any input: the lesson is kept at the top.
+    const held = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(held).toBeGreaterThanOrEqual(0);
+    expect(held).toBeLessThan(200);
+    // After a key press the page no longer re-aligns.
+    await browser.keyboard.press('Shift');
+    const free = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(free).toBeGreaterThanOrEqual(600);
+  },
+);
+
+signedOutTest(
+  'a lesson link stops re-aligning after five seconds without input',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect#guide-tools');
+    await expect(screen.getByRole('region', 'Everything it can do')).toBeVisible();
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 5500)),
+    );
+    const free = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(free).toBeGreaterThanOrEqual(600);
   },
 );

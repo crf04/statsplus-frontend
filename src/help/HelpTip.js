@@ -27,21 +27,22 @@ export default function HelpTip({ tip }) {
     const onPointerDown = (event) => {
       if (!root.current.contains(event.target)) setOpen(false);
     };
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
-      setOpen(false);
-      button.current.focus();
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [open]);
 
   return (
-    <span className="help-tip" ref={root}>
+    <span
+      className="help-tip"
+      ref={root}
+      onKeyDown={(event) => {
+        // Escape closes the note only, not a card or dialog the tip sits in.
+        if (event.key !== 'Escape' || !open) return;
+        event.stopPropagation();
+        setOpen(false);
+        button.current.focus();
+      }}
+    >
       <button
         ref={button}
         type="button"

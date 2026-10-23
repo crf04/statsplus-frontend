@@ -140,7 +140,7 @@ signedOutTest(
 );
 
 signedOutTest(
-  'the guide links its five lessons, folds its replays and opens all 21 capabilities',
+  'the guide links its six lessons, folds its replays and opens all 21 capabilities',
   async ({ app, screen, browser }) => {
     await app.open('/connect');
 
@@ -148,6 +148,7 @@ signedOutTest(
     const lessons = [
       ['Connect CourtAI', '#guide-setup'],
       ['Ask one question', '#guide-ask'],
+      ['Watch the tutorials', '#guide-tutorials'],
       ['Hand it an outcome', '#guide-outcome'],
       ['Let it run the research', '#guide-research'],
       ['Everything it can do', '#guide-tools'],
@@ -161,6 +162,13 @@ signedOutTest(
         title,
       );
     }
+
+    const tutorials = screen.getByRole('region', 'Watch the tutorials');
+    await expect(tutorials.getByRole('button', 'Play: Who cooks the Kings?')).toBeVisible();
+    await expect(tutorials.getByRole('link', 'Watch on X')).toHaveAttribute(
+      'href',
+      'https://x.com/CourtAI_App/status/2113463424667496619',
+    );
 
     const outcome = screen.getByRole('region', 'Hand it an outcome');
     await expect(outcome.getByRole('tab', 'Scan the injury report')).toBeHidden();

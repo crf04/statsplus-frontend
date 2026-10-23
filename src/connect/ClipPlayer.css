@@ -78,6 +78,19 @@
   font-weight: 600;
 }
 
+.clip-summary {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tutorials {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 28px 24px;
+}
+
 .clip-x {
   display: inline-flex;
   align-items: center;
@@ -164,6 +177,15 @@
 
   .clip-thumb {
     grid-row: span 2;
+  }
+
+  .clip-has-summary .clip-thumb {
+    grid-row: span 3;
+  }
+
+  .tutorials {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .clip-caption {

@@ -4,11 +4,13 @@ import CopyPrompt from './CopyPrompt';
 import ClipPlayer from './ClipPlayer';
 import { Anatomy, OutcomeRuns } from './OutcomeRuns';
 import ResearchRun from './ResearchRun';
+import { TUTORIALS } from './tutorialList';
 import './ConnectGuide.css';
 
 const LESSONS = [
   { id: 'guide-setup', title: 'Connect CourtAI' },
   { id: 'guide-ask', title: 'Ask one question' },
+  { id: 'guide-tutorials', title: 'Watch the tutorials' },
   { id: 'guide-outcome', title: 'Hand it an outcome' },
   { id: 'guide-research', title: 'Let it run the research' },
   { id: 'guide-tools', title: 'Everything it can do' },
@@ -135,6 +137,18 @@ const ConnectGuide = ({ setup }) => (
         ) : (
           <Asking />
         )}
+      </Lesson>
+
+      <Lesson id="guide-tutorials">
+        <p className="guide-p">
+          Short videos of real chats, start to finish, newest first. Each one shows a question worth
+          asking and the calls the chat makes to answer it.
+        </p>
+        <div className="tutorials">
+          {TUTORIALS.map((tutorial) => (
+            <ClipPlayer key={tutorial.src} clip={tutorial} />
+          ))}
+        </div>
       </Lesson>
 
       <Lesson id="guide-outcome">

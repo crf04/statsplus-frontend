@@ -27,7 +27,7 @@ const ClipPlayer = ({ clip }) => {
   };
 
   return (
-    <aside className="clip" aria-label={clip.title}>
+    <aside className={clip.summary ? 'clip clip-has-summary' : 'clip'} aria-label={clip.title}>
       <button
         type="button"
         className="clip-thumb"
@@ -45,6 +45,7 @@ const ClipPlayer = ({ clip }) => {
       <p className="clip-caption">
         <strong>{clip.title}</strong> · {clip.duration}
       </p>
+      {clip.summary && <p className="clip-summary">{clip.summary}</p>}
       <XLink href={clip.tweetUrl} />
       <dialog
         ref={dialogRef}

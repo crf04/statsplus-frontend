@@ -158,7 +158,7 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(setup).getByRole('tabpanel', { name: 'ChatGPT' })).toBeInTheDocument();
 });
 
-test('the page shows the real card and a guide of five lessons, each linked from its contents', async () => {
+test('the page shows the real card and a guide of six lessons, each linked from its contents', async () => {
   await renderConnectRoute();
 
   expect(
@@ -171,6 +171,7 @@ test('the page shows the real card and a guide of five lessons, each linked from
   const lessons = [
     ['Connect CourtAI', '#guide-setup'],
     ['Ask one question', '#guide-ask'],
+    ['Watch the tutorials', '#guide-tutorials'],
     ['Hand it an outcome', '#guide-outcome'],
     ['Let it run the research', '#guide-research'],
     ['Everything it can do', '#guide-tools'],

@@ -144,12 +144,22 @@ const ClientTabs = () => {
 // lazy page renders, so the browser never scrolls to it. Scroll once rendered, and
 // again while the card above settles its height, until the visitor scrolls.
 const SETTLE_MS = 5000;
-const STOP_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+const STOP_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown', 'click'];
+
+const lessonFor = (hash) => {
+  let id = hash.slice(1);
+  try {
+    id = decodeURIComponent(id);
+  } catch {
+    // A malformed fragment is matched as typed rather than crashing the page.
+  }
+  return id && document.getElementById(id);
+};
 
 const useScrollToHash = () => {
   const { hash } = useLocation();
   useEffect(() => {
-    const target = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+    const target = lessonFor(hash);
     if (!target) return undefined;
     const scroll = () => target.scrollIntoView({ block: 'start' });
     scroll();

@@ -8,8 +8,13 @@ import './ConnectPage.css';
 // environment setting. The copy button reads the same constant the page shows.
 export const CONNECTOR_URL = 'https://mcp.courtai.app/mcp';
 
-// Claude has no link that adds a connector, so step 1 opens the page where you add one.
-const CLAUDE_CONNECTORS_URL = 'https://claude.ai/customize/connectors';
+// Claude's install links open its Add custom connector dialog with the name and URL filled in;
+// the admin path opens the organization-wide dialog for a Team or Enterprise Owner.
+const claudeInstallLink = (path) =>
+  `https://claude.ai/${path}?modal=add-custom-connector&connectorName=CourtAI` +
+  `&connectorUrl=${encodeURIComponent(CONNECTOR_URL)}`;
+const CLAUDE_INSTALL_URL = claudeInstallLink('customize/connectors');
+const CLAUDE_ORG_INSTALL_URL = claudeInstallLink('admin-settings/connectors');
 
 const COPIED_MS = 2000;
 
@@ -19,20 +24,22 @@ const CLIENTS = [
     name: 'Claude',
     note: (
       <>
-        Web or desktop app. On a Team or Enterprise plan, an Owner first adds CourtAI under{' '}
-        <strong>Organization settings → Connectors</strong>; members then find it under{' '}
-        <strong>Customize → Connectors</strong> and start at step 5.
+        Web or desktop app. On a Team or Enterprise plan, an Owner first adds CourtAI with the{' '}
+        <a href={CLAUDE_ORG_INSTALL_URL} target="_blank" rel="noreferrer">
+          organization install link
+        </a>
+        ; members then find it under <strong>Customize → Connectors</strong> and start at step 4.
       </>
     ),
     steps: [
       <>
-        Open{' '}
-        <a href={CLAUDE_CONNECTORS_URL} target="_blank" rel="noreferrer">
-          <strong>Customize → Connectors</strong>
+        Select{' '}
+        <a href={CLAUDE_INSTALL_URL} target="_blank" rel="noreferrer">
+          <strong>Add CourtAI to Claude</strong>
         </a>
-        , select <strong>+ Add</strong>, then <strong>Add custom connector</strong>.
+        . Claude opens <strong>Add custom connector</strong> with the name and URL filled in; check
+        them and select Continue.
       </>,
-      <>Name it CourtAI, paste the connector URL and select Continue.</>,
       <>Review the authentication settings Claude detects and select Continue.</>,
       <>
         If asked for an OAuth client, choose <strong>Register automatically</strong>, then select

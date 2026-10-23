@@ -116,9 +116,13 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(panel).getByRole('list').tagName).toBe('OL');
   expect(within(panel).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom connector/)).toBeInTheDocument();
-  expect(within(panel).getByRole('link', { name: 'Customize → Connectors' })).toHaveAttribute(
+  expect(within(panel).getByRole('link', { name: 'Add CourtAI to Claude' })).toHaveAttribute(
     'href',
-    'https://claude.ai/customize/connectors',
+    'https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=CourtAI&connectorUrl=https%3A%2F%2Fmcp.courtai.app%2Fmcp',
+  );
+  expect(within(panel).getByRole('link', { name: 'organization install link' })).toHaveAttribute(
+    'href',
+    'https://claude.ai/admin-settings/connectors?modal=add-custom-connector&connectorName=CourtAI&connectorUrl=https%3A%2F%2Fmcp.courtai.app%2Fmcp',
   );
 
   tabs[0].focus();

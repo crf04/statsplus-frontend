@@ -24,6 +24,15 @@ const postedLineLabel = ({ key, line, matchup, gameDate }) =>
     .filter(Boolean)
     .join('\n');
 
+// A quarter of the bar's width, at most 10px, so narrow phone bars do not
+// turn into pills. Chart.js draws bars at 0.9 × 0.8 of each category slot.
+const barCornerRadius = ({ chart, dataset }) => {
+  const area = chart.chartArea;
+  if (!area || !dataset?.data?.length) return 10;
+  const barWidth = (area.width / dataset.data.length) * 0.72;
+  return Math.min(10, Math.round(barWidth / 4));
+};
+
 const ChartComponent = ({
   gameLogs,
   lineType,
@@ -77,7 +86,7 @@ const ChartComponent = ({
           data,
           backgroundColor: backgroundColors,
           borderWidth: 0,
-          borderRadius: 10,
+          borderRadius: barCornerRadius,
           borderSkipped: 'bottom',
         },
       ],

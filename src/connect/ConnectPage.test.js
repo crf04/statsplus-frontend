@@ -27,8 +27,8 @@ const installClipboard = (writeText) => {
   });
 };
 
-const renderConnectRoute = async () => {
-  window.history.pushState({}, '', '/connect');
+const renderConnectRoute = async (hash = '') => {
+  window.history.pushState({}, '', `/connect${hash}`);
   render(<App />);
   const heading = await screen.findByRole('heading', {
     level: 1,
@@ -331,4 +331,9 @@ test('Ask Claude opens a new Claude chat with exactly that prompt filled in', as
   );
   expect(link).toHaveAttribute('target', '_blank');
   expect(ask.getAllByRole('link', { name: 'Ask Claude' })).toHaveLength(4);
+});
+
+it('opens at the page for a malformed fragment instead of failing the route', async () => {
+  await renderConnectRoute('#%E0%A4%A');
+  expect(screen.queryByText('Could not load this page')).not.toBeInTheDocument();
 });

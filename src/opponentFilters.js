@@ -144,66 +144,6 @@ export const OPPONENT_FILTERS = [
     ],
   },
   {
-    category: 'Play type volume',
-    items: [
-      {
-        token: 'sheet:play_types:Transition:POSS',
-        label: 'Transition Possessions',
-        means: 'Transition possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Isolation:POSS',
-        label: 'Isolation Possessions',
-        means: 'Isolation possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:PRBallHandler:POSS',
-        label: 'P&R Ball-Handler Possessions',
-        means: 'P&R Ball-Handler possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:PRRollMan:POSS',
-        label: 'P&R Roll-Man Possessions',
-        means: 'P&R Roll-Man possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:OffRebound:POSS',
-        label: 'Putback Possessions',
-        means: 'Putback possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Spotup:POSS',
-        label: 'Spot-Up Possessions',
-        means: 'Spot-Up possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Cut:POSS',
-        label: 'Cut Possessions',
-        means: 'Cut possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Handoff:POSS',
-        label: 'Handoff Possessions',
-        means: 'Handoff possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:OffScreen:POSS',
-        label: 'Off-Screen Possessions',
-        means: 'Off-Screen possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Misc:POSS',
-        label: 'Miscellaneous Possessions',
-        means: 'Miscellaneous possessions allowed',
-      },
-      {
-        token: 'sheet:play_types:Postup:POSS',
-        label: 'Post-Up Possessions',
-        means: 'Post-Up possessions allowed',
-      },
-    ],
-  },
-  {
     category: 'Assists allowed',
     items: [
       { token: 'AtRimAssists', label: 'At-Rim Assists', means: 'Assists on shots at the rim' },
@@ -229,9 +169,29 @@ export const OPPONENT_FILTERS = [
   },
 ];
 
-const labelByToken = new Map(
-  OPPONENT_FILTERS.flatMap((group) => group.items).map((item) => [item.token, item.label]),
-);
+/*
+ * Tokens the dropdown no longer offers (Play type volume, removed by the founder on
+ * 2026-10-23, crf04/statsplus#311). The backend still accepts them, so a shared URL or
+ * Saved Filter Set that carries one keeps its readable label.
+ */
+export const RETIRED_OPPONENT_FILTER_LABELS = {
+  'sheet:play_types:Transition:POSS': 'Transition Possessions',
+  'sheet:play_types:Isolation:POSS': 'Isolation Possessions',
+  'sheet:play_types:PRBallHandler:POSS': 'P&R Ball-Handler Possessions',
+  'sheet:play_types:PRRollMan:POSS': 'P&R Roll-Man Possessions',
+  'sheet:play_types:OffRebound:POSS': 'Putback Possessions',
+  'sheet:play_types:Spotup:POSS': 'Spot-Up Possessions',
+  'sheet:play_types:Cut:POSS': 'Cut Possessions',
+  'sheet:play_types:Handoff:POSS': 'Handoff Possessions',
+  'sheet:play_types:OffScreen:POSS': 'Off-Screen Possessions',
+  'sheet:play_types:Misc:POSS': 'Miscellaneous Possessions',
+  'sheet:play_types:Postup:POSS': 'Post-Up Possessions',
+};
+
+const labelByToken = new Map([
+  ...OPPONENT_FILTERS.flatMap((group) => group.items).map((item) => [item.token, item.label]),
+  ...Object.entries(RETIRED_OPPONENT_FILTER_LABELS),
+]);
 
 /** The short display name for an opponent filter token; unknown tokens pass through. */
 export const opponentFilterLabel = (token) => labelByToken.get(token) ?? token;

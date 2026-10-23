@@ -1,4 +1,4 @@
-import { OPPONENT_FILTERS, describeRank } from './opponentFilters';
+import { OPPONENT_FILTERS, RETIRED_OPPONENT_FILTER_LABELS, describeRank } from './opponentFilters';
 import opponentFilterLabels from './opponentFilterLabels.json';
 
 describe('describeRank', () => {
@@ -14,10 +14,10 @@ describe('describeRank', () => {
 });
 
 // The backend draws these labels on link preview cards from its mirror of
-// crf04/statsplus docs/contracts/opponent-filter-labels.json.
-test('the opponent filter labels contract matches the vocabulary', () => {
+// crf04/statsplus docs/contracts/opponent-filter-labels.json, which keeps retired tokens too.
+test('the opponent filter labels contract matches the vocabulary and the retired tokens', () => {
   const labels = Object.fromEntries(
     OPPONENT_FILTERS.flatMap(({ items }) => items.map(({ token, label }) => [token, label])),
   );
-  expect(opponentFilterLabels).toEqual(labels);
+  expect(opponentFilterLabels).toEqual({ ...labels, ...RETIRED_OPPONENT_FILTER_LABELS });
 });

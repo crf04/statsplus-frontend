@@ -582,6 +582,24 @@
   text-align: center;
 }
 
+.sheet-base-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.sheet-base-head .sheet-season {
+  padding: 1px 7px;
+  border: 1px solid var(--ct-gold-soft);
+  border-radius: 999px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-text);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
 .sheet-base > .honest-empty {
   margin-top: 8px;
 }

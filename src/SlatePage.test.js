@@ -1028,3 +1028,39 @@ test('a refused Targets read leaves the board standing and does not claim zero',
   expect(screen.getByText('Targets unavailable', { exact: false })).toBeVisible();
   expect(screen.queryByText(/Targets active/)).not.toBeInTheDocument();
 });
+
+test('notes under the board which inputs trail and until when, and says nothing when none do', async () => {
+  fetchSlate.mockResolvedValueOnce({
+    ...slate,
+    trailing: [
+      {
+        family: 'team_defense',
+        servingSeason: '2025-26',
+        rule: 'every team has played 10 games',
+      },
+      {
+        family: 'player_diets',
+        servingSeason: '2025-26',
+        rule: 'every team has played 10 games',
+      },
+    ],
+  });
+  const { unmount } = render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole('note')).toHaveTextContent(
+    'Scores use 2025-26 team defense and Diets until every team has played 10 games.',
+  );
+  unmount();
+
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('link', { name: /^LAL @ BOS/ });
+  expect(screen.queryByRole('note')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Scores use/)).not.toBeInTheDocument();
+});

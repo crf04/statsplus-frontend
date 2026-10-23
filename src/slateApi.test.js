@@ -476,3 +476,22 @@ test('sends the fallback option as the fallback parameter and nothing otherwise'
     signal: undefined,
   });
 });
+
+test('reads the families a Slate scores from an earlier season', () => {
+  const trailing = [
+    { family: 'team_defense', serving_season: '2025-26', rule: 'every team has played 10 games' },
+    { family: 'synergy', serving_season: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ];
+
+  expect(decodeSlate({ ...payload, trailing }).trailing).toEqual([
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+    { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ]);
+  expect(decodeSlate({ ...payload, trailing: [] }).trailing).toEqual([]);
+  expect(() =>
+    decodeSlate({
+      ...payload,
+      trailing: [{ family: 'synergy', serving_season: '25-26', rule: 'x' }],
+    }),
+  ).toThrow('The slate endpoint returned an invalid response.');
+});

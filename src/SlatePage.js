@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import { fetchSlate } from './slateApi';
+import { trailingNote } from './servingSeason';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   formatCalendarDate,
@@ -294,6 +295,7 @@ export default function SlatePage() {
     );
   }
 
+  const note = state.status === 'ready' ? trailingNote(state.slate.trailing) : null;
   return (
     <main className="slate-page">
       <section className="slate-heading">
@@ -394,14 +396,21 @@ export default function SlatePage() {
               </div>
             </div>
           ) : (
-            <SlateBoard
-              games={state.slate.games}
-              renderExtra={(game) => (
-                <SlateGameTargets
-                  entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
-                />
+            <>
+              <SlateBoard
+                games={state.slate.games}
+                renderExtra={(game) => (
+                  <SlateGameTargets
+                    entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
+                  />
+                )}
+              />
+              {note && (
+                <p className="slate-trailing-note" role="note">
+                  {note}
+                </p>
               )}
-            />
+            </>
           )}
         </>
       )}

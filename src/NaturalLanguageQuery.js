@@ -407,6 +407,7 @@ const NaturalLanguageQuery = ({
                 onUseQuery={setQuery}
                 slateDate={tonight.slateDate}
                 fallback={tonight.fallback}
+                trailing={tonight.trailing}
               />
             )}
 

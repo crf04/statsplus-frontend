@@ -160,3 +160,29 @@ test('waitlisted, the public sections show, search is disabled and there is no s
     '/api/games/slate/edges',
   ]);
 });
+
+test('Tonight notes once which inputs its scores take from an earlier season', async () => {
+  const trailing = [
+    { family: 'team_defense', serving_season: '2025-26', rule: 'every team has played 10 games' },
+    { family: 'player_diets', serving_season: '2025-26', rule: 'every team has played 10 games' },
+  ];
+  apiClient.get.mockImplementation((url) =>
+    new URL(url, 'http://localhost').pathname === '/api/games/slate'
+      ? homeGet(url).then(({ data }) => ({ data: { ...data, trailing } }))
+      : homeGet(url),
+  );
+  renderHome();
+
+  const tonight = await screen.findByRole('region', { name: 'Tonight' });
+  expect(await within(tonight).findByRole('note')).toHaveTextContent(
+    'Scores use 2025-26 team defense and Diets until every team has played 10 games.',
+  );
+});
+
+test('Tonight carries no season note when nothing trails', async () => {
+  renderHome();
+
+  const tonight = await screen.findByRole('region', { name: 'Tonight' });
+  await within(tonight).findByRole('article', { name: 'Best: Jaime Jaquez Jr.' });
+  expect(within(tonight).queryByRole('note')).not.toBeInTheDocument();
+});

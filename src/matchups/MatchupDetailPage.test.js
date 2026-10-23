@@ -3326,3 +3326,184 @@ describe('rail price line', () => {
     expect(text(priceLine(row))).toBe('o −110 FD u −110 FD');
   });
 });
+
+// After a Season Cutover to 2026-27: play types still serve 2025-26 and every
+// Last 15 window covers the 6 games each team has played.
+const mixedSeasonMatchup = () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.asOfSeason = '2026-27';
+  Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
+    windows.season.season = '2026-27';
+    windows.last15.season = '2026-27';
+    windows.last15.windowGames = 6;
+  });
+  candidate.league.surfaceAvailability.playTypes.season.season = '2025-26';
+  return candidate;
+};
+
+const openFullSheet = async () => {
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+};
+
+test('badges only the trailing section with its season and names a short Last 15 by its games', async () => {
+  fetchMatchup.mockResolvedValueOnce(mixedSeasonMatchup());
+  await openFullSheet();
+
+  expect(screen.getAllByText('2025-26 season')).toHaveLength(1);
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).getByText('2025-26 season'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).queryByText(/season$/),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Last 15' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(screen.getByRole('button', { name: 'Last 6' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
+});
+
+test('reads a section season from its experience section when the Surface does not name one', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.asOfSeason = '2026-27';
+  const section = (season) => ({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'pregame',
+    unavailableReason: null,
+    season,
+  });
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: section('2025-26'),
+    last15Defense: section('2026-27'),
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.getAllByText('2025-26 season')).toHaveLength(3);
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
+});
+
+test('explains a withheld Season window in its own words, not the Last 15 sentence', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.season = {
+    status: 'missing',
+    unavailableReason: 'window_not_ready',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(
+    screen.getByText('Box score unavailable for Season: Season numbers have not opened yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/window_not_ready/)).not.toBeInTheDocument();
+});
+
+test('a Matchup without serving seasons reads Last 15 and carries no season badge', async () => {
+  fetchMatchup.mockResolvedValueOnce(matchup);
+  await openFullSheet();
+
+  expect(screen.queryByText(/\d{4}-\d{2} season/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Last 15' })).toBeEnabled();
+});
+
+test('names the shortest Last 15 on the toggle and badges a section that covers more games', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});
+
+test('reads the Last 15 game count from its experience section when the Surfaces carry none', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 4 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.getByRole('button', { name: 'Last 4' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Last 15' })).not.toBeInTheDocument();
+});
+
+test('explains a Season window short of governed games in its own words', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.season = {
+    status: 'unavailable',
+    unavailableReason: 'insufficient_governed_games',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(
+    screen.getByText('Box score unavailable for Season: Season numbers have not opened yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
+});
+
+test('a section’s own Last 15 count, null included, wins over its experience section’s', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 6 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});
+
+test('an unavailable Last 15 section names its reason, not a game count', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'provider_unsupported',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  const boxScore = screen.getByRole('region', { name: 'Box score' });
+  expect(
+    within(boxScore).getByText('Box score unavailable for Last 6: provider_unsupported.'),
+  ).toBeVisible();
+  expect(within(boxScore).queryByText(/^Last \d+$/)).not.toBeInTheDocument();
+});

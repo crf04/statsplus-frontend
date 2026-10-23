@@ -335,6 +335,7 @@ export default function SelectionCard({
   status,
   error,
   windowKey,
+  windowName = WINDOW_LABELS[windowKey],
   sheetMarket,
   whyRelevant,
   historical,
@@ -509,7 +510,7 @@ export default function SelectionCard({
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
         .map(({ market }) => (
           <p className="honest-empty" key={`degraded-${market}`}>
-            No score components were computable for {market} in {WINDOW_LABELS[windowKey]}.
+            No score components were computable for {market} in {windowName}.
           </p>
         ))}
       {/* Component evidence can survive a score the contract could not
@@ -518,7 +519,7 @@ export default function SelectionCard({
         .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
         .map(({ market, score }) => (
           <p className="honest-empty" key={`withheld-${market}`}>
-            {market} Matchup Score unavailable in {WINDOW_LABELS[windowKey]}: missing{' '}
+            {market} Matchup Score unavailable in {windowName}: missing{' '}
             {score.missingInputs.join(', ')}.
           </p>
         ))}

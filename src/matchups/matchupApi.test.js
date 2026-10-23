@@ -3026,3 +3026,109 @@ describe('line_prices', () => {
     expect(() => decodeMatchup(withLinePrices(linePrices))).toThrow('invalid response');
   });
 });
+
+// A current Matchup after a Season Cutover to 2026-27, with play types and
+// team defense still on 2025-26 and a Last 15 of 6 games.
+const servingSeasonPayload = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.as_of = { season: '2026-27', season_defense: '2026-10-28' };
+  Object.values(candidate.league.surface_availability).forEach((windows) => {
+    windows.season.season = '2026-27';
+    windows.last_15.season = '2026-27';
+    windows.last_15.window_games = 6;
+  });
+  candidate.league.surface_availability.play_types.season.season = '2025-26';
+  candidate.experience = {
+    mode: 'current',
+    player_source: 'player_pool',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'current_season_catalog'),
+      participants: experienceSection('available', 'player_pool', 'posted_markets'),
+      season_defense: {
+        ...experienceSection('available', 'team_matchup_publication', 'pregame'),
+        season: '2025-26',
+        window_games: null,
+      },
+      last_15_defense: {
+        ...experienceSection('available', 'team_matchup_publication', 'pregame'),
+        season: '2026-27',
+        window_games: 6,
+      },
+      injuries: experienceSection('available', 'rotowire', 'current'),
+    },
+  };
+  candidate.trailing = [
+    { family: 'team_defense', serving_season: '2025-26', rule: 'every team has played 10 games' },
+  ];
+  return candidate;
+};
+
+test('reads each section window’s Serving Season, Last 15 game count, and the trailing families', () => {
+  const decoded = decodeMatchup(servingSeasonPayload());
+
+  expect(decoded.asOfSeason).toBe('2026-27');
+  expect(decoded.league.surfaceAvailability.playTypes).toEqual({
+    season: { status: 'available', unavailableReason: null, season: '2025-26' },
+    last15: { status: 'available', unavailableReason: null, season: '2026-27', windowGames: 6 },
+  });
+  expect(decoded.league.surfaceAvailability.shotZones.season.season).toBe('2026-27');
+  expect(decoded.experience.sections.seasonDefense).toEqual({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'pregame',
+    unavailableReason: null,
+    collectedAt: null,
+    season: '2025-26',
+    windowGames: null,
+  });
+  expect(decoded.experience.sections.last15Defense.windowGames).toBe(6);
+  expect(decoded.trailing).toEqual([
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+  ]);
+});
+
+test('reads a Matchup without Serving Season fields as one season with nothing trailing', () => {
+  const decoded = decodeMatchup(payload);
+
+  expect(decoded.asOfSeason).toBeUndefined();
+  expect(decoded.trailing).toBeUndefined();
+  expect(decoded.league.surfaceAvailability.playTypes.season.season).toBeUndefined();
+  expect(decoded.league.surfaceAvailability.playTypes.last15.windowGames).toBeUndefined();
+});
+
+test('leaves a trailing family this build cannot name out of the list', () => {
+  const candidate = servingSeasonPayload();
+  candidate.trailing.push({ family: 'officials', serving_season: '2025-26', rule: 'later' });
+
+  expect(decodeMatchup(candidate).trailing.map((entry) => entry.family)).toEqual(['team_defense']);
+});
+
+test.each([
+  [
+    'a season not written YYYY-YY',
+    (c) => (c.league.surface_availability.play_types.season.season = '2025'),
+  ],
+  [
+    'a fractional window game count',
+    (c) => (c.league.surface_availability.traditional.last_15.window_games = 6.5),
+  ],
+  [
+    'a negative window game count',
+    (c) => (c.experience.sections.last_15_defense.window_games = -1),
+  ],
+  [
+    'a section season that is not a string',
+    (c) => (c.experience.sections.season_defense.season = 2025),
+  ],
+  ['a trailing block that is not a list', (c) => (c.trailing = {})],
+  ['a trailing family without a rule', (c) => (c.trailing[0].rule = '')],
+  ['a trailing family without a serving season', (c) => delete c.trailing[0].serving_season],
+  ['an as_of that is not a record', (c) => (c.as_of = '2026-27')],
+])('refuses %s', (_name, mutate) => {
+  const candidate = servingSeasonPayload();
+  mutate(candidate);
+
+  expect(() => decodeMatchup(candidate)).toThrow(
+    'The matchup endpoint returned an invalid response.',
+  );
+});

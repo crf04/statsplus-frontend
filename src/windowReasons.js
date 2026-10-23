@@ -11,3 +11,12 @@ export const WINDOW_REASONS = {
   window_not_ready: LAST_15_NOT_OPEN,
   publication_inactive: 'Not published yet.',
 };
+
+// A Season window has its own readiness, so it never reads the Last 15 sentence.
+const SEASON_NOT_OPEN = 'Season numbers have not opened yet.';
+
+export const SEASON_WINDOW_REASONS = {
+  ...WINDOW_REASONS,
+  insufficient_governed_games: SEASON_NOT_OPEN,
+  window_not_ready: SEASON_NOT_OPEN,
+};

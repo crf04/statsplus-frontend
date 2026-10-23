@@ -6,6 +6,7 @@ import { TargetConditionSummary } from '../targets/TargetConditions';
 import { SeasonMinutesProvider } from '../targets/useTargets';
 import LoginButton from '../components/Auth/LoginButton';
 import { dayName, matchupsPath, rankPhrase, signedPercent } from './homeFormat';
+import { trailingNote } from '../servingSeason';
 
 /*
  * The home page's Tonight | Your Targets row (crf04/statsplus#204). Tonight is
@@ -106,8 +107,10 @@ const HomeTonight = ({
   onUseQuery,
   slateDate = null,
   fallback = null,
+  trailing,
 }) => {
   const gameOf = (gameId) => games.find((game) => game.gameId === gameId);
+  const note = trailingNote(trailing);
   return (
     <div className="home-tonight">
       <section className="home-col" aria-labelledby="home-tonight-heading">
@@ -130,6 +133,11 @@ const HomeTonight = ({
             game={spotlight.toughest && gameOf(spotlight.toughest.gameId)}
             onUseQuery={onUseQuery}
           />
+          {note && (
+            <p className="home-trailing-note" role="note">
+              {note}
+            </p>
+          )}
         </div>
       </section>
       {signUp && (

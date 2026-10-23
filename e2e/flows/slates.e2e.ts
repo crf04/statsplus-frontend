@@ -218,3 +218,29 @@ signedInTest(
     expect(api.sent('/api/games/slate').at(-1)?.search.get('date')).toBe('2026-02-11');
   },
 );
+
+signedInTest(
+  'a slate scored from an earlier season says so once under the board',
+  async ({ app, screen, browser, api }) => {
+    const rule = 'every team has played 10 games';
+    await api.override({
+      '/api/games/slate': {
+        body: slatePayload('2026-01-15', [slateGame], {
+          trailing: [
+            { family: 'team_defense', serving_season: '2025-26', rule },
+            { family: 'player_diets', serving_season: '2025-26', rule },
+          ],
+        }),
+      },
+    });
+    await app.open('/matchups?date=2026-01-15');
+    await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
+    await expect(
+      screen.getByText(
+        'Scores use 2025-26 team defense and Diets until every team has played 10 games.',
+      ),
+    ).toBeVisible();
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('slate-trailing-note');
+  },
+);

@@ -3414,3 +3414,53 @@ test('a Matchup without serving seasons reads Last 15 and carries no season badg
   expect(screen.queryByText(/\d{4}-\d{2} season/)).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Last 15' })).toBeEnabled();
 });
+
+test('names the shortest Last 15 on the toggle and badges a section that covers more games', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});
+
+test('reads the Last 15 game count from its experience section when the Surfaces carry none', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 4 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.getByRole('button', { name: 'Last 4' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Last 15' })).not.toBeInTheDocument();
+});
+
+test('explains a Season window short of governed games in its own words', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.season = {
+    status: 'unavailable',
+    unavailableReason: 'insufficient_governed_games',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(
+    screen.getByText('Box score unavailable for Season: Season numbers have not opened yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
+});

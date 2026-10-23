@@ -54,20 +54,14 @@ const sectionReason = (section) => surfaceReason(section.unavailableReason);
 const WINDOW_SECTIONS = { season: 'seasonDefense', last15: 'last15Defense' };
 
 // Before a team has played 15 games, Last 15 covers the games so far and is
-// named by their count.
-const matchupWindows = (matchup) => {
-  const counts = [
-    matchup.experience.sections?.last15Defense,
-    ...Object.values(matchup.league.surfaceAvailability).map((windows) => windows.last15),
-  ]
-    .map((state) => state?.windowGames)
-    .filter((games) => Number.isInteger(games) && games < 15);
-  return counts.length
-    ? WINDOWS.map((window) =>
-        window.key === 'last15' ? { ...window, label: `Last ${Math.min(...counts)}` } : window,
-      )
-    : WINDOWS;
-};
+// named by their count. A section's own count wins over its window's.
+const last15Games = (state, section) => state?.windowGames ?? section?.windowGames ?? 15;
+const shortestLast15 = (matchup) =>
+  Math.min(
+    ...Object.values(matchup.league.surfaceAvailability).map((windows) =>
+      last15Games(windows.last15, matchup.experience.sections?.last15Defense),
+    ),
+  );
 
 // "a", "a and b", "a, b and c".
 const listWords = (words, conjunction = 'and') =>
@@ -699,10 +693,15 @@ function DefenseSheet({
             availability.season ?? windowSection?.season,
             publishedSeason,
           );
+          // The toggle names the shortest Last 15; a section covering more says so.
+          const games = windowKey === 'last15' ? last15Games(availability, windowSection) : null;
           const title = (
             <div className="sheet-base-title">
               <h3 id={`base-${base}`}>{label}</h3>
               {season && <span className="sheet-season">{season} season</span>}
+              {games !== null && `Last ${games}` !== windowName && (
+                <span className="sheet-season">Last {games}</span>
+              )}
             </div>
           );
           if (availability.status !== 'available') {
@@ -962,7 +961,10 @@ function Detail({ matchup, gameId }) {
   // A chosen stat the other side does not have falls back the same way.
   const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
-  const windows = matchupWindows(matchup);
+  const shortest = shortestLast15(matchup);
+  const windows = WINDOWS.map((item) =>
+    item.key === 'last15' && shortest < 15 ? { ...item, label: `Last ${shortest}` } : item,
+  );
   const windowName = windows.find((item) => item.key === windowKey).label;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';

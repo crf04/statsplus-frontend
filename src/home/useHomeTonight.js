@@ -23,6 +23,9 @@ import { isRequestCancelled } from '../gameLogsApi';
  * edges for another date than the Slate's (the reads straddled midnight ET).
  * Targets resolved for another date are dropped the same way.
  *
+ * `trailing` is the Slate's list of families scored from an earlier season.
+ * It is read fresh, never painted from the cache.
+ *
  * The last public result (games, spotlight, date, fallback; never Targets) is kept
  * in localStorage and painted on mount before any read answers, then replaced
  * by the fresh one. An unreadable entry is ignored and removed.
@@ -221,6 +224,7 @@ export const useHomeTonight = (landing, account) => {
         spotlight: confirmed.spotlight,
         slateDate: slate.value.slateDate,
         fallback: slate.value.fallback,
+        trailing: slate.value.trailing,
       };
       writeCache(fresh);
       paintedDate = fresh.slateDate;

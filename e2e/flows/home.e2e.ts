@@ -5,7 +5,7 @@
 // sign-up card where Targets would be (crf04/statsplus#211).
 import { expect } from 'e2e';
 import { slateEdgesPayload, slateGame, slatePayload } from '../fixtures/courtai.js';
-import { signedInTest, signedOutTest } from './support/courtai.ts';
+import { overflowsHorizontally, signedInTest, signedOutTest } from './support/courtai.ts';
 
 signedInTest(
   'the home page previews today and answers the ladder',
@@ -182,5 +182,34 @@ signedInTest(
     await expect(targets).toContainText('BOS');
     await expect(targets).toContainText('At-rim assists');
     await expect(targets).not.toContainText('None of your Targets fire today');
+  },
+);
+
+signedInTest(
+  'Tonight notes once which inputs its scores take from an earlier season',
+  async ({ app, screen, api, browser }) => {
+    const rule = 'every team has played 10 games';
+    await api.override({
+      '/api/games/slate': {
+        body: slatePayload('2026-01-15', [slateGame], {
+          trailing: [
+            { family: 'team_defense', serving_season: '2025-26', rule },
+            { family: 'player_diets', serving_season: '2025-26', rule },
+          ],
+        }),
+      },
+      '/api/games/slate/edges': { body: slateEdgesPayload('2026-01-15', [slateGame]) },
+    });
+    await app.open('/');
+
+    await expect(
+      screen
+        .getByRole('region', 'Tonight')
+        .getByText(
+          'Scores use 2025-26 team defense and Diets until every team has played 10 games.',
+        ),
+    ).toBeVisible();
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('home-trailing-note');
   },
 );

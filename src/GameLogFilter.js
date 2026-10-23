@@ -121,12 +121,14 @@ const GameLogFilter = ({ notice = null }) => {
   const [playerId, setPlayerId] = useState(null);
   // The player's posted lines for his next game, which the line defaults to.
   const [postedLine, setPostedLine] = useState(null);
+  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const line = useLineSelection({
     player: selectedPlayer,
     lineType,
     postedLine,
     averages,
     link: linkLine,
+    pending: isGameLogsLoading,
   });
   // The URL follows the Line Value, replacing the history entry so Back undoes
   // filters rather than lines.
@@ -147,7 +149,6 @@ const GameLogFilter = ({ notice = null }) => {
   const [seasonGameLogsLoading, setSeasonGameLogsLoading] = useState(false);
   const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
-  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);

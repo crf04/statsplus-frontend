@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
 import { apiClient } from './config';
@@ -155,6 +155,54 @@ test('a chosen source that moves on a refetch moves the line in the URL', async 
 
   await waitFor(() => expect(url()).toBe(`${PLAYER}&game_filter=5&line=20`));
   expect(await lineValue()).toHaveValue('20.0');
+});
+
+test('a chosen source holds the line while a refetch is pending', async () => {
+  renderAt([PLAYER]);
+  await loaded();
+  fireEvent.click(screen.getByRole('button', { name: /^Dabble 21.5/ }));
+  await waitFor(() => expect(url()).toBe(`${PLAYER}&line=21.5`));
+
+  let finish;
+  fetchGameLogsData.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+  await waitFor(() => expect(fetchGameLogsData).toHaveBeenCalledTimes(2));
+  expect(url()).toBe(`${PLAYER}&game_filter=5&line=21.5`);
+
+  await act(async () => finish(lebron));
+  expect(await lineValue()).toHaveValue('21.5');
+  expect(url()).toBe(`${PLAYER}&game_filter=5&line=21.5`);
+});
+
+test('a chosen source that a refetch no longer posts drops the line', async () => {
+  renderAt([PLAYER]);
+  await loaded();
+  fireEvent.click(screen.getByRole('button', { name: /^Dabble 21.5/ }));
+  await waitFor(() => expect(url()).toBe(`${PLAYER}&line=21.5`));
+
+  fetchGameLogsData.mockResolvedValue(
+    decodeGameLogsResponse({
+      game_logs: [{ GAME_DATE: '2026-04-01', PTS: 25 }],
+      season_averages: [{ PTS: 24.4 }],
+      posted_line: null,
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Apply test filters' }));
+
+  await waitFor(async () => expect(await lineValue()).toHaveValue('24.4'));
+  await waitFor(() => expect(url()).toBe(`${PLAYER}&game_filter=5`));
+});
+
+test.each(['22.5', '22.50'])('typing the default line, as %p, removes it', async (value) => {
+  renderAt([PLAYER]);
+  await loaded();
+  await type('30');
+  await waitFor(() => expect(url()).toBe(`${PLAYER}&line=30`));
+
+  await type(value);
+
+  await waitFor(() => expect(url()).toBe(PLAYER));
+  expect(await lineValue()).toHaveValue(value);
 });
 
 test('a link carrying a line opens on it, as if typed', async () => {

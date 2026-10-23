@@ -2551,7 +2551,7 @@ test('AC8: the sheet is headed by what the team allows and how to read it', asyn
   renderMatchup();
 
   const heading = await screen.findByRole('heading', { name: 'What BOS allows' });
-  expect(heading.nextElementSibling).toHaveTextContent(
+  expect(heading.closest('header').querySelector('p')).toHaveTextContent(
     'Compared with the league average, softest spots first. 1 close to average hidden.',
   );
 });

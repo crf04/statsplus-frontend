@@ -21,6 +21,7 @@ import {
   normalizeConditions,
   validConditions,
 } from './TargetConditions';
+import HelpTip from '../help/HelpTip';
 
 /*
  * A new Qualifier starts without a threshold. A pre-filled one would make the
@@ -288,7 +289,10 @@ export default function TargetForm({
         </div>
 
         <section className="target-form-card" aria-label="Backtest">
-          <span className="target-label target-section-label">Backtest</span>
+          <span className="target-label target-section-label">
+            Backtest
+            <HelpTip tip="targetLab" />
+          </span>
           <TargetBacktestRows
             conditions={draft.conditions}
             onChange={(conditions) => onChange({ conditions })}

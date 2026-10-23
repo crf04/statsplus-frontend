@@ -1,0 +1,72 @@
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.35em;
+}
+
+.help-tip-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ct-dim);
+  cursor: pointer;
+}
+
+.help-tip-button:hover,
+.help-tip-button[aria-expanded='true'] {
+  color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+
+.help-tip-button:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 1px;
+}
+
+.help-tip-bubble {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -8px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  width: min(19rem, calc(100vw - 16px));
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface-2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  color: var(--ct-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  transform: translateX(var(--help-tip-shift, 0));
+}
+
+.help-tip-bubble b {
+  color: var(--ct-gold);
+  font-weight: 600;
+}
+
+.help-tip-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.help-tip-heading .help-tip {
+  margin-left: 0;
+}

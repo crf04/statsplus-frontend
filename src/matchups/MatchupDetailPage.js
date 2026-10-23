@@ -613,6 +613,7 @@ function DefenseSheet({
   windowName,
   windowSection,
   publishedSeason,
+  trailing,
   onCapture,
 }) {
   const inMarket = (row) => market === 'All' || row.markets.includes(market);
@@ -694,6 +695,7 @@ function DefenseSheet({
           const season = trailingSeason(
             availability.season ?? windowSection?.season,
             publishedSeason,
+            trailing,
           );
           // The toggle names the shortest Last 15; a section covering more says so.
           const games =
@@ -1177,6 +1179,7 @@ function Detail({ matchup, gameId }) {
               windowName={windowName}
               windowSection={sections?.[WINDOW_SECTIONS[windowKey]]}
               publishedSeason={matchup.asOfSeason}
+              trailing={matchup.trailing}
               onCapture={setCapture}
             />
           )}

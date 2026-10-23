@@ -3338,6 +3338,9 @@ const mixedSeasonMatchup = () => {
     windows.last15.windowGames = 6;
   });
   candidate.league.surfaceAvailability.playTypes.season.season = '2025-26';
+  candidate.trailing = [
+    { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ];
   return candidate;
 };
 
@@ -3366,6 +3369,31 @@ test('badges only the trailing section with its season and names a short Last 15
   expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
 });
 
+// A past game's sections read that game's own season. Only a trailing family
+// serving that same season badges a section.
+test.each([
+  ['a 2025-26 game with nothing trailing', '2025-26', []],
+  [
+    'a 2024-25 game while play types trail 2025-26',
+    '2024-25',
+    [{ family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' }],
+  ],
+])(
+  'a past game served after the Season Cutover carries no season badge: %s',
+  async (_name, gameSeason, trailing) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    candidate.asOfSeason = '2026-27';
+    candidate.trailing = trailing;
+    Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = gameSeason;
+    });
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    await openFullSheet();
+
+    expect(screen.queryAllByText(/\d{4}-\d{2} season/)).toHaveLength(0);
+  },
+);
+
 test('reads a section season from its experience section when the Surface does not name one', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.asOfSeason = '2026-27';
@@ -3383,6 +3411,9 @@ test('reads a section season from its experience section when the Surface does n
     last15Defense: section('2026-27'),
     injuries: { status: 'available', unavailableReason: null },
   };
+  candidate.trailing = [
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+  ];
   fetchMatchup.mockResolvedValueOnce(candidate);
   await openFullSheet();
 

@@ -76,6 +76,12 @@ export const trailingNote = (trailing) => {
   return `Scores use ${clauses.join(', and ')}.`;
 };
 
-// The season a section served, when it differs from the Published Season.
-export const trailingSeason = (servedSeason, publishedSeason) =>
-  servedSeason && publishedSeason && servedSeason !== publishedSeason ? servedSeason : null;
+// The season a section served, while a trailing family serves it. A past
+// game's sections read that game's own season, which differs from the
+// Published Season without trailing.
+export const trailingSeason = (servedSeason, publishedSeason, trailing) =>
+  servedSeason &&
+  servedSeason !== publishedSeason &&
+  trailing?.some((entry) => entry.servingSeason === servedSeason)
+    ? servedSeason
+    : null;

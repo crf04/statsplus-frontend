@@ -26,8 +26,8 @@ afterEach(() => {
   delete global.fetch;
 });
 
-test('runs only for the Workspace route', () => {
-  expect(config).toEqual({ matcher: '/' });
+test('runs only for the Workspace, Slate and Matchup routes', () => {
+  expect(config).toEqual({ matcher: ['/', '/matchups', '/matchups/:gameId'] });
 });
 
 test('describes a player link in the served document head', async () => {
@@ -142,4 +142,89 @@ test('keeps the logo and the small card for a link that charts no stat', async (
   expect(html).toContain('<meta name="twitter:card" content="summary" />');
   expect(html).not.toContain('og:image:');
   expect(html).not.toContain('twitter:image');
+});
+
+describe('Slate and Matchup links', () => {
+  // Saturday Oct 24 in New York, already Sunday in UTC.
+  const SATURDAY_NIGHT_ET = new Date('2026-10-25T02:30:00Z');
+
+  const describedPath = async (pathAndSearch) => {
+    const response = await describeLink(request(pathAndSearch.slice(1)), SATURDAY_NIGHT_ET);
+    return response && (await response.text()).replace(/\s+/g, ' ');
+  };
+
+  const tags = (html) =>
+    Object.fromEntries(
+      Object.entries(rawTags(html)).map(([key, value]) => [key, value.replaceAll('&amp;', '&')]),
+    );
+  const rawTags = (html) => ({
+    title: /<title>([^<]*)<\/title>/.exec(html)[1],
+    ogTitle: /property="og:title" content="([^"]*)"/.exec(html)[1],
+    ogDescription: /property="og:description" content="([^"]*)"/.exec(html)[1],
+    ogImage: /property="og:image" content="([^"]*)"/.exec(html)[1],
+    twitterImage: /name="twitter:image" content="([^"]*)"/.exec(html)[1],
+    width: /property="og:image:width" content="([^"]*)"/.exec(html)[1],
+    height: /property="og:image:height" content="([^"]*)"/.exec(html)[1],
+    alt: /property="og:image:alt" content="([^"]*)"/.exec(html)[1],
+    card: /name="twitter:card" content="([^"]*)"/.exec(html)[1],
+  });
+
+  const slateTags = (title, image) => ({
+    title,
+    ogTitle: title,
+    ogDescription: 'Softest and toughest points matchups in every game.',
+    ogImage: image,
+    twitterImage: image,
+    width: '1200',
+    height: '630',
+    alt: title,
+    card: 'summary_large_image',
+  });
+
+  test("describes /matchups with today's ET Slate Date", async () => {
+    expect(tags(await describedPath('/matchups'))).toEqual(
+      slateTags(
+        'NBA Slate · Saturday, Oct 24 | CourtAI',
+        'https://courtai.app/api/games/slate/preview.png?v=2026-10-24',
+      ),
+    );
+  });
+
+  test('describes /matchups with the date asked for, ignoring other params', async () => {
+    expect(tags(await describedPath('/matchups?date=2026-01-02&player=Jokic'))).toEqual(
+      slateTags(
+        'NBA Slate · Friday, Jan 2 | CourtAI',
+        'https://courtai.app/api/games/slate/preview.png?date=2026-01-02&v=2026-10-24',
+      ),
+    );
+  });
+
+  test('describes a Matchup by its game id', async () => {
+    const title = 'NBA Matchup | CourtAI';
+    const image =
+      'https://courtai.app/api/games/matchup/preview.png?game_id=0022600105&v=2026-10-24';
+    expect(tags(await describedPath('/matchups/0022600105?player=Jokic'))).toEqual({
+      ...slateTags(title, image),
+      ogDescription: "Every player's points Matchup Score in this game, softest to toughest.",
+    });
+  });
+
+  test.each([
+    '/matchups?date=2026-13-01',
+    '/matchups?date=',
+    '/matchups?date=tomorrow',
+    '/matchups/002260010',
+    '/matchups/00226001055',
+    '/matchups/abcdefghij',
+    '/matchups/0022600105/extra',
+  ])('leaves %s to the static document', async (target) => {
+    expect(await describedPath(target)).toBeUndefined();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test('still describes a Workspace link', async () => {
+    expect(await describedPath('/?player_name=LeBron+James')).toContain(
+      '<title>LeBron James Game Logs | CourtAI</title>',
+    );
+  });
 });

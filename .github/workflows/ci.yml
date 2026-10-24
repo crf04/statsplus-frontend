@@ -1,8 +1,17 @@
 name: CI
 
+# master has strict branch protection (required checks validate, E2E and e2e
+# flows; branch must be up to date), so the pull request run already tested the
+# exact tree that gets merged. A push run would repeat it. The one push that
+# still runs is a change to the files that key the npm cache below: a cache
+# saved on a pull request ref is unreadable by other pull requests, so master
+# has to save it for them.
 on:
   push:
     branches: [main, master]
+    paths:
+      - package-lock.json
+      - .github/workflows/ci.yml
   pull_request:
 
 permissions:

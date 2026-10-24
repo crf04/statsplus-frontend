@@ -367,19 +367,88 @@ const slateA2 = () => `<div class="card c">
   <div class="dim" style="font:600 22px 'Barlow Condensed';margin-top:10px">Points Matchup Score vs league · the defense's rank in his biggest slice (30th = allows the most)</div>
 </div>`;
 
+// ---------- ROUND 3: how many players, and Slate B with both directions ----------
+// Everyone the backend scores in BKN @ CLE (prod /api/games/slate/edges, 2026-10-24): 12 players.
+// Only players with a points Matchup Score appear, so a game shows its targetable rotation, not 30 names.
+const FULL = {
+  away: [['Egor Dëmin', 3], ['Keon Ellis', 3], ['Michael Porter Jr.', 2], ['Julius Randle', 0.3], ["Day'Ron Sharpe", -4]],
+  home: [['Jarrett Allen', 6], ['Evan Mobley', 3], ['Jaylon Tyson', 3], ['Peyton Watson', 0.4], ['Sam Merrill', -3], ['Donovan Mitchell', -5], ['James Harden', -6]],
+};
+const fmt = (n) => (Math.abs(n) < 1 ? (n > 0 ? '+0%' : '−0%') : sign(Math.round(n)));
+const fullSide = (tri, name, ps, rowH) => `<div style="flex:1;display:flex;flex-direction:column;gap:${rowH > 50 ? 12 : 6}px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px"><div class="tri" style="font-size:72px">${tri}</div><div class="dim" style="font:600 26px 'Barlow Condensed'">${name}</div></div>
+  ${ps.map(([p, n]) => `<div style="display:flex;align-items:center;gap:10px;font:700 ${rowH > 50 ? 32 : 28}px 'Barlow Condensed'">
+    <div style="width:220px;white-space:nowrap">${p}</div>${dbar(n, 15, rowH > 50 ? 24 : 20)}<div style="width:58px;text-align:right;color:${Math.abs(n) < 1 ? 'var(--dim)' : col(n)}">${fmt(n)}</div></div>`).join('')}
+</div>`;
+const matchupFull = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · Matchup')}
+  <div style="display:flex;gap:40px;margin-top:10px;flex:1">
+    ${fullSide('BKN', 'Nets · away', FULL.away, 40)}
+    <div style="width:2px;background:var(--line)"></div>
+    ${fullSide('CLE', 'Cavaliers · home', FULL.home, 40)}
+  </div>
+  <div style="display:flex;justify-content:space-between;font:600 22px 'Barlow Condensed'"><span class="dim">Points Matchup Score vs league · all 12 scored players</span><span><span class="miss">◀ tougher</span> <span class="dim">·</span> <span class="hit">softer ▶</span></span></div>
+</div>`;
+// capped: per team the two softest and the two toughest at |score| >= 2%, then "+N more"
+const cap = (ps) => {
+  const up = ps.filter((x) => x[1] >= 2).slice(0, 2), down = ps.filter((x) => x[1] <= -2).slice(-2);
+  return { rows: [...up, ...down], more: ps.length - up.length - down.length };
+};
+const capSide = (tri, name, ps) => { const c = cap(ps); return `<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;align-items:baseline;gap:12px"><div class="tri" style="font-size:88px">${tri}</div><div class="dim" style="font:600 28px 'Barlow Condensed'">${name}</div></div>
+  ${c.rows.map(([p, n]) => `<div style="display:flex;align-items:center;gap:10px;font:700 34px 'Barlow Condensed'">
+    <div style="width:236px;white-space:nowrap">${p}</div>${dbar(n, 16, 28)}<div style="width:58px;text-align:right;color:${col(n)}">${fmt(n)}</div></div>`).join('')}
+  ${c.more ? `<div class="dim" style="font:600 26px 'Barlow Condensed'">+${c.more} more players</div>` : ''}
+</div>`; };
+const matchupCapped = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · Matchup')}
+  <div style="display:flex;gap:40px;margin-top:18px;flex:1">
+    ${capSide('BKN', 'Nets · away', FULL.away)}
+    <div style="width:2px;background:var(--line)"></div>
+    ${capSide('CLE', 'Cavaliers · home', FULL.home)}
+  </div>
+  <div style="display:flex;justify-content:space-between;font:600 24px 'Barlow Condensed'"><span class="dim">Points Matchup Score vs league · up to 2 each way per team</span><span><span class="miss">◀ tougher</span> <span class="dim">·</span> <span class="hit">softer ▶</span></span></div>
+</div>`;
+
+// Slate B with both directions: per game, the softest and toughest points score at |score| >= 2%.
+const BOARD = [
+  ['MIA', 'CHA', '6:00', ['Naz Reid', 'CHA', 4], ['Bam Adebayo', 'MIA', -3], 0],
+  ['BKN', 'CLE', '7:30', ['Jarrett Allen', 'CLE', 6], ['James Harden', 'CLE', -6], 4],
+  ['MIL', 'PHI', '7:30', null, ['Tyler Herro', 'MIL', -3], 3],
+  ['WAS', 'CHI', '8:00', ['Jalen Smith', 'CHI', 9], null, 0],
+  ['SAS', 'DAL', '8:00', 'none', 'none', 0],
+  ['HOU', 'ATL', '8:30', ['Alperen Şengün', 'HOU', 3], ['Onyeka Okongwu', 'ATL', -6], 0],
+  ['NOP', 'DEN', '9:00', ['Christian Braun', 'DEN', 7], null, 3],
+  ['GSW', 'PHX', '10:00', null, null, 1],
+];
+const edgeLine = (e, dir) => e === 'none' ? '' : e
+  ? `<div style="display:flex;align-items:baseline;gap:8px"><div style="flex:1;font:700 26px 'Barlow Condensed';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e[0]} <span class="dim" style="font-weight:600;font-size:20px">${e[1]}</span></div><div style="font:800 32px 'Barlow Condensed';color:${col(e[2])}">${sign(e[2])}</div></div>`
+  : `<div class="dim" style="font:600 22px/32px 'Barlow Condensed'">${dir > 0 ? 'nothing above +2%' : 'nothing below −2%'}</div>`;
+const slateBpm = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · 8 games · ET')}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px;flex:1">
+  ${BOARD.map(([a, h, tip, up, down, out]) => `<div class="tile" style="padding:16px 18px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px"><div style="font:800 40px/1 'Barlow Condensed'">${a}<span class="dim" style="font-weight:500;font-size:28px"> @ </span>${h}</div><div class="dim" style="font:600 22px 'Barlow Condensed'">${tip}</div></div>
+      ${up === 'none' ? `<div class="dim" style="font:600 22px 'Barlow Condensed'">No scores yet</div>` : edgeLine(up, 1) + edgeLine(down, -1)}
+      <div style="margin-top:auto;font:600 20px 'Barlow Condensed'" class="${out ? 'miss' : 'dim'}">${out ? out + ' listed Out' : 'No one Out'}</div>
+    </div>`).join('')}
+  </div>
+  <div class="dim" style="font:600 22px 'Barlow Condensed';margin-top:12px">Softest and toughest points Matchup Score per game, vs league</div>
+</div>`;
+
 const SURFACES = [
   { key: 'matchup', name: 'Matchup · /matchups/:gameId', note: 'Round 2: A with both directions. Example: BKN @ CLE, the one game tonight with clear edges both ways.',
     title: 'BKN @ CLE · Matchup | CourtAI', desc: 'Allen +6% in points vs league; Harden −6%, Mitchell −5%.', url: 'courtai.app/matchups/BKN-CLE',
     post: 'BKN @ CLE tonight: Jarrett Allen gets a Brooklyn defense that ranks 23rd vs cuts. Harden and Mitchell run into the league\'s best pull-up and PnR ball-handler D.',
-    v: [['A1', 'Face-off, diverging bars', 'Every scored player on one axis per team: green right, red left. Most information, reads in one glance.', matchupA1],
-        ['A2', 'Face-off, best and worst', 'Two softest and the toughest per team, each with the defense row behind it. More words, more to quote in a post.', matchupA2],
-        ['A', 'Round 1 (favourable only)', 'For comparison. WAS @ CHI.', matchupA]] },
+    v: [['A1·all', 'Everyone (12 players)', 'Every player the backend scores in this game. 12 is a real game tonight; a game shows only players with a points score, so the busiest nights land around 12–16.', matchupFull],
+        ['A1·cap', 'Capped: 2 each way per team', 'At most two softest and two toughest per team, only beyond ±2%, then “+N more players”. Same size every night.', matchupCapped],
+        ['A2', 'Best and worst, with reasons', 'Round 2, for comparison.', matchupA2]] },
   { key: 'slate', name: 'Slate · /matchups', note: 'Round 2: A with both directions. Doubles as the daily X post image.',
     title: 'Saturday\'s Slate · 8 games | CourtAI', desc: 'Softest and toughest scoring matchups across 8 games.', url: 'courtai.app/matchups',
     post: 'Saturday, 8 games. Softest scoring spots: WAS @ CHI has 7 of the top 10. Toughest: Atlanta\'s shooters vs Houston (2nd vs catch-and-shoot, 3rd vs spot-ups).',
-    v: [['A1', 'Ladder, softest to toughest', 'One ranked list on a diverging axis: top four, a gap, bottom four.', slateA1],
-        ['A2', 'Two columns', 'Softest five beside toughest five, each with the defense row behind it.', slateA2],
-        ['A', 'Round 1 (favourable only)', 'For comparison.', slateA]] },
+    v: [['B±', 'Board grid, both directions', 'Every game with tip time, its softest and toughest points score (beyond ±2%) and how many are Out. 8 games fill the grid; a 15-game night needs a 5×3 grid or two cards.', slateBpm],
+        ['B', 'Round 1 board grid', 'Favourable only, for comparison.', slateB],
+        ['A2', 'Two columns', 'Round 2, for comparison.', slateA2]] },
   { key: 'home', name: 'Home · courtai.app', note: 'The most-shared link. Today: logo-only summary card.',
     title: 'CourtAI | NBA Game Log Analytics', desc: 'Every NBA prop, read against tonight\'s defense.', url: 'courtai.app',
     v: [['A', 'Pitch + tonight', 'Evergreen pitch on the left, three live matchups on the right. Changes daily.', homeA],

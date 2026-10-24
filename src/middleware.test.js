@@ -199,6 +199,15 @@ describe('Slate and Matchup links', () => {
     );
   });
 
+  test("names the contract's example day as Saturday, Oct 24", async () => {
+    expect(tags(await describedPath('/matchups?date=2026-10-24'))).toEqual(
+      slateTags(
+        'NBA Slate · Saturday, Oct 24 | CourtAI',
+        'https://courtai.app/api/games/slate/preview.png?date=2026-10-24&v=2026-10-24',
+      ),
+    );
+  });
+
   test('describes a Matchup by its game id', async () => {
     const title = 'NBA Matchup | CourtAI';
     const image =

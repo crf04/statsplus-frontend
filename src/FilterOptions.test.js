@@ -210,6 +210,9 @@ test('Team Filter categories scope metrics and switching drops a stale selection
   expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' })).toBeEnabled();
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
   expect(screen.getByRole('option', { name: 'Spot-Up Points' })).toBeVisible();
+  // Points per possession left the dropdown (crf04/statsplus#318).
+  expect(screen.queryByRole('option', { name: 'Spot-Up' })).toBeNull();
+  expect(screen.queryByRole('option', { name: 'Isolation' })).toBeNull();
   expect(screen.queryByRole('option', { name: 'Points Allowed' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pick a metric to add' })).toBeDisabled();
   fireEvent.change(screen.getByLabelText('Defensive metric'), {

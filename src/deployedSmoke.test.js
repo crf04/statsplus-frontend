@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import YAML from 'yaml';
 import {
   bootstrapVercelBypassCookie,
   isAllowedDeploymentUrl,
+  isAllowedReleaseCheckTarget,
 } from '../e2e/fixtures/deployedSmokeConfig';
 
 const deploymentUrl = 'https://statsplus-frontend-pj8o7a8n2-chris-fus-projects.vercel.app/';
@@ -174,6 +176,87 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource).not.toContain('github.event.deployment_status.environment_url');
   });
 
+  test('names a Release Check dispatch after its mode and release_id so the Nightly Release finds its own run', () => {
+    const workflow = YAML.parse(
+      fs.readFileSync(path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'), 'utf8'),
+    );
+
+    expect(workflow['run-name']).toBe(
+      "${{ inputs.release_id && format('Release Check {0} {1}', inputs.mode, inputs.release_id) || github.workflow }}",
+    );
+    expect(workflow.on.workflow_dispatch.inputs.release_id).toMatchObject({
+      required: false,
+      type: 'string',
+    });
+    // The named run must still be the one that runs the Release Check for a dispatch:
+    // the whole active condition, so appending `&& false` (a skipped job) is noticed.
+    expect(workflow.jobs['production-smoke'].if.replace(/\s+/g, ' ').trim()).toBe(
+      "github.repository == 'crf04/statsplus-frontend' && ((github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production') || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'production' || inputs.mode == 'staging' || inputs.mode == 'compatibility')))",
+    );
+  });
+
+  test('the deployed-page fixture applies compatibility routing and the job tells it the mode', () => {
+    const fixture = fs.readFileSync(
+      path.resolve(process.cwd(), 'e2e/fixtures/deployedSmoke.js'),
+      'utf8',
+    );
+    const workflow = YAML.parse(
+      fs.readFileSync(path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'), 'utf8'),
+    );
+
+    expect(fixture).toMatch(
+      /const blockedWrites = await blockWrites\(context\);\s+await routeApiToCandidate\(context\);/,
+    );
+    expect(workflow.jobs['production-smoke'].env.RELEASE_CHECK_MODE).toContain('inputs.mode');
+    expect(workflow.jobs['production-smoke'].env.E2E_API_BASE_URL).toContain('inputs.api_base_url');
+  });
+
+  test('the smoke command selects the smoke tests and cannot pass by selecting none', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'));
+    const config = fs.readFileSync(path.resolve(process.cwd(), 'playwright.config.mjs'), 'utf8');
+
+    expect(pkg.scripts['test:e2e:smoke']).toBe('playwright test --grep @smoke');
+    expect(pkg.scripts['test:e2e:smoke']).not.toMatch(/pass-with-no-tests/);
+    expect(config).not.toMatch(/passWithNoTests/);
+
+    // Playwright refuses to start inside a Jest worker, so hand it a clean environment.
+    const { JEST_WORKER_ID: _worker, ...cleanEnv } = process.env;
+    const listed = spawnSync('npm', ['run', '--silent', 'test:e2e:smoke', '--', '--list'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: cleanEnv,
+    });
+    expect(`${listed.status} ${listed.stderr}`.trim()).toBe('0');
+    const total = /Total: (\d+) tests?/.exec(listed.stdout)?.[1];
+    expect(Number(total)).toBeGreaterThan(0);
+    expect(listed.stdout).toContain('@smoke');
+  }, 60000);
+
+  test('the compatibility Release Check pairs the production frontend with the staging API and MCP only', () => {
+    const staging = {
+      api: 'https://statsplus-backend-staging.up.railway.app',
+      mcp: 'https://mcp-staging.courtai.app',
+    };
+    const check = (target) => isAllowedReleaseCheckTarget('compatibility', target);
+
+    expect(check({ frontend: 'https://statsplus-frontend.vercel.app', ...staging })).toBe(true);
+    expect(check({ frontend: 'https://staging.courtai.app', ...staging })).toBe(false);
+    expect(
+      check({
+        frontend: 'https://statsplus-frontend.vercel.app',
+        api: 'https://statsplus-backend-production.up.railway.app',
+        mcp: staging.mcp,
+      }),
+    ).toBe(false);
+    expect(
+      check({
+        frontend: 'https://statsplus-frontend.vercel.app',
+        api: staging.api,
+        mcp: 'https://mcp.courtai.app',
+      }),
+    ).toBe(false);
+  });
+
   test('dispatches the Release Check against staging with explicit API and MCP URLs', () => {
     const workflowSource = fs.readFileSync(
       path.resolve(process.cwd(), '.github/workflows/deployed-smoke.yml'),
@@ -183,7 +266,9 @@ describe('deployed smoke URL and fixture wiring', () => {
     expect(workflowSource).toContain('- staging');
     expect(workflowSource).toContain('api_base_url:');
     expect(workflowSource).toContain('mcp_base_url:');
-    expect(workflowSource).toContain("(inputs.mode == 'production' || inputs.mode == 'staging')");
+    expect(workflowSource).toContain(
+      "(inputs.mode == 'production' || inputs.mode == 'staging' || inputs.mode == 'compatibility')",
+    );
     expect(workflowSource).toMatch(
       /E2E_API_BASE_URL: .*inputs\.mode == 'production' && 'https:\/\/statsplus-backend-production\.up\.railway\.app' \|\| ''/,
     );

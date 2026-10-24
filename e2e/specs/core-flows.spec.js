@@ -142,6 +142,18 @@ const openPublicHome = async (page, request) => {
   expect(effectsByGame(replayedEdges), 'the configured API serves the page its edges').toEqual(
     effectsByGame(edges),
   );
+  // What the page rendered its games from names the same teams the configured API names
+  // (in the compatibility Release Check the page reads from that API, so a team change
+  // the production frontend cannot render is seen here).
+  const teamsByGame = (body) =>
+    Object.fromEntries(
+      body.games
+        .map((game) => [game.game_id, [game.away_team.tricode, game.home_team.tricode]])
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
+  expect(teamsByGame(replayedSlate), 'the configured API names the page its teams').toEqual(
+    teamsByGame(slate),
+  );
   expect(slate.games.length, 'the page was served at least one game').toBeGreaterThan(0);
   const slateGame = (id) => slate.games.find((game) => game.game_id === id);
   const edgeGames = edges.games.filter(

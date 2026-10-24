@@ -26,6 +26,19 @@ afterEach(() => {
   delete global.fetch;
 });
 
+test('serves the rewritten head unencoded when the document came compressed', async () => {
+  fetch.mockResolvedValueOnce(
+    new Response(indexHtml, {
+      status: 200,
+      headers: { 'content-type': 'text/html', 'content-encoding': 'br' },
+    }),
+  );
+  const response = await middleware(request('?player_name=LeBron+James'));
+
+  expect(response.headers.get('content-encoding')).toBeNull();
+  expect(await response.text()).toContain('<title>LeBron James Game Logs | CourtAI</title>');
+});
+
 test('runs only for the Workspace, Slate and Matchup routes', () => {
   expect(config).toEqual({ matcher: ['/', '/matchups', '/matchups/:gameId'] });
 });

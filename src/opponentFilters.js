@@ -122,24 +122,60 @@ export const OPPONENT_FILTERS = [
   {
     category: 'Play type defense',
     items: [
-      { token: 'Transition', label: 'Transition', means: 'Fast-break defense' },
-      { token: 'Isolation', label: 'Isolation', means: 'Iso defense' },
-      { token: 'Spotup', label: 'Spot-Up', means: 'Spot-up defense' },
-      { token: 'Handoff', label: 'Handoff', means: 'Handoff defense' },
-      { token: 'OffScreen', label: 'Off-Screen', means: 'Off-screen defense' },
-      { token: 'Postup', label: 'Post-Up', means: 'Post-up defense' },
       {
-        token: 'PRBallHandler',
-        label: 'P&R Ball-Handler',
-        means: 'Pick-and-roll ball-handler defense',
+        token: 'sheet:play_types:Transition:PTS',
+        label: 'Transition Points',
+        means: 'Points allowed in transition',
       },
-      { token: 'PRRollMan', label: 'P&R Roll-Man', means: 'Pick-and-roll roll-man defense' },
-      { token: 'Cut', label: 'Cuts', means: 'Cutting defense' },
-      { token: 'OffRebound', label: 'Putbacks', means: 'Putback defense' },
       {
-        token: 'Misc',
-        label: 'Miscellaneous',
-        means: 'Everything the other play types do not cover',
+        token: 'sheet:play_types:Isolation:PTS',
+        label: 'Isolation Points',
+        means: 'Points allowed on isolations',
+      },
+      {
+        token: 'sheet:play_types:Spotup:PTS',
+        label: 'Spot-Up Points',
+        means: 'Points allowed on spot-ups',
+      },
+      {
+        token: 'sheet:play_types:Handoff:PTS',
+        label: 'Handoff Points',
+        means: 'Points allowed on handoffs',
+      },
+      {
+        token: 'sheet:play_types:OffScreen:PTS',
+        label: 'Off-Screen Points',
+        means: 'Points allowed coming off screens',
+      },
+      {
+        token: 'sheet:play_types:Postup:PTS',
+        label: 'Post-Up Points',
+        means: 'Points allowed on post-ups',
+      },
+      {
+        token: 'sheet:play_types:PRBallHandler:PTS',
+        label: 'P&R Ball-Handler Points',
+        means: 'Points allowed to pick-and-roll ball-handlers',
+      },
+      {
+        token: 'sheet:play_types:PRRollMan:PTS',
+        label: 'P&R Roll-Man Points',
+        means: 'Points allowed to pick-and-roll roll-men',
+      },
+      {
+        token: 'sheet:play_types:Cut:PTS',
+        label: 'Cut Points',
+        means: 'Points allowed on cuts',
+      },
+      {
+        token: 'sheet:play_types:OffRebound:PTS',
+        label: 'Putback Points',
+        means: 'Points allowed on putbacks',
+      },
+      {
+        token: 'sheet:play_types:Misc:PTS',
+        label: 'Miscellaneous Points',
+        means: 'Points allowed on every other play',
       },
     ],
   },
@@ -171,10 +207,22 @@ export const OPPONENT_FILTERS = [
 
 /*
  * Tokens the dropdown no longer offers (Play type volume, removed by the founder on
- * 2026-10-23, crf04/statsplus#311). The backend still accepts them, so a shared URL or
- * Saved Filter Set that carries one keeps its readable label.
+ * 2026-10-23, crf04/statsplus#311; play type points per possession, replaced by points
+ * on 2026-10-24). The backend still accepts them, so a shared URL or Saved Filter Set
+ * that carries one keeps its readable label.
  */
 export const RETIRED_OPPONENT_FILTER_LABELS = {
+  Transition: 'Transition',
+  Isolation: 'Isolation',
+  Spotup: 'Spot-Up',
+  Handoff: 'Handoff',
+  OffScreen: 'Off-Screen',
+  Postup: 'Post-Up',
+  PRBallHandler: 'P&R Ball-Handler',
+  PRRollMan: 'P&R Roll-Man',
+  Cut: 'Cuts',
+  OffRebound: 'Putbacks',
+  Misc: 'Miscellaneous',
   'sheet:play_types:Transition:POSS': 'Transition Possessions',
   'sheet:play_types:Isolation:POSS': 'Isolation Possessions',
   'sheet:play_types:PRBallHandler:POSS': 'P&R Ball-Handler Possessions',

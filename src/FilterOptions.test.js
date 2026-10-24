@@ -209,15 +209,20 @@ test('Team Filter categories scope metrics and switching drops a stale selection
   fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'OPP_PTS' } });
   expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' })).toBeEnabled();
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
-  expect(screen.getByRole('option', { name: 'Spot-Up' })).toBeVisible();
+  expect(screen.getByRole('option', { name: 'Spot-Up Points' })).toBeVisible();
+  // Points per possession left the dropdown (crf04/statsplus#318).
+  expect(screen.queryByRole('option', { name: 'Spot-Up' })).toBeNull();
+  expect(screen.queryByRole('option', { name: 'Isolation' })).toBeNull();
   expect(screen.queryByRole('option', { name: 'Points Allowed' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pick a metric to add' })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Transition' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 21–30' }));
+  fireEvent.change(screen.getByLabelText('Defensive metric'), {
+    target: { value: 'sheet:play_types:Transition:PTS' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition Points, ranks 21–30' }));
   apply();
   expect(patch()).toEqual({
     player_name: 'LeBron James',
-    'teams_against[]': ['Transition'],
+    'teams_against[]': ['sheet:play_types:Transition:PTS'],
     'rank_filter[]': [10],
   });
 });
@@ -242,11 +247,13 @@ test('positions 1,8 display as ranks 23–30 and choosing 23–30 requests 1,8',
   expect(screen.getByText('Points Allowed (ranks 23–30)')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
-  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Isolation' } });
+  fireEvent.change(screen.getByLabelText('Defensive metric'), {
+    target: { value: 'sheet:play_types:Isolation:PTS' },
+  });
   const from = screen.getByRole('slider', { name: 'From rank' });
   fireEvent.focus(from);
   for (let i = 0; i < 2; i += 1) fireEvent.keyDown(from, { key: 'ArrowRight' });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Isolation, ranks 23–30' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Isolation Points, ranks 23–30' }));
   apply();
   expect(patch()['rank_filter[]']).toEqual(['1,8', 8]);
 });

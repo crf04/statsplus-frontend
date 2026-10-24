@@ -26,6 +26,9 @@ export const describeLink = async (request, now) => {
     image: preview.image && new URL(preview.image, url.origin).href,
   });
   const headers = new Headers(response.headers);
+  // The body is the decoded text, so the fetched encoding and length no longer
+  // describe it; a browser told `br` fails to decode it (staging serves `br`).
+  headers.delete('content-encoding');
   headers.delete('content-length');
   headers.set('content-type', 'text/html; charset=utf-8');
   return new Response(html, { status: 200, headers });

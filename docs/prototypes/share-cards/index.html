@@ -281,22 +281,110 @@ const connectC = () => `<div class="card c">
   <div class="dim" style="font:600 26px 'Barlow Condensed';margin-top:22px">Works in Claude and ChatGPT · courtai.app/connect</div>
 </div>`;
 
+
+// ---------- ROUND 2: favourable AND unfavourable (user picked A for Matchup and Slate) ----------
+// BKN @ CLE, points (PTS) Season Matchup Scores, from prod get_slate + get_matchup 2026-10-24.
+const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+const GAME = { away: 'BKN', home: 'CLE', awayName: 'Nets', homeName: 'Cavaliers',
+  awayP: [['Egor Dëmin', 3, 'Catch & shoot', 26], ['Michael Porter Jr.', 2, 'Catch & shoot', 26], ["Day'Ron Sharpe", -4, 'Shots < 10 ft', 6]],
+  homeP: [['Jarrett Allen', 6, 'Cuts', 23], ['Evan Mobley', 3, 'Shots < 10 ft', 27], ['Donovan Mitchell', -5, 'PnR ball handler', 1], ['James Harden', -6, 'Pull-ups', 1]] };
+const BOTTOM = [
+  { p: 'Onyeka Okongwu', t: 'ATL', o: 'HOU', s: -6, slice: 'Spot up', rank: 3 },
+  { p: 'Aaron Wiggins', t: 'ATL', o: 'HOU', s: -6, slice: 'Spot up', rank: 3 },
+  { p: 'James Harden', t: 'CLE', o: 'BKN', s: -6, slice: 'Pull-ups', rank: 1 },
+  { p: 'Donovan Mitchell', t: 'CLE', o: 'BKN', s: -5, slice: 'PnR ball handler', rank: 1 },
+  { p: 'Nickeil Alexander-Walker', t: 'ATL', o: 'HOU', s: -5, slice: 'Catch & shoot', rank: 2 },
+];
+const col = (n) => (n > 0 ? 'var(--hit)' : 'var(--miss)');
+
+// one diverging bar: centre axis, green grows right, red grows left
+const dbar = (n, unit, h = 22) => `<div style="flex:1;display:flex;height:${h}px;position:relative">
+  <div style="flex:1;display:flex;justify-content:flex-end">${n < 0 ? `<div style="width:${-n * unit}%;background:var(--miss);border-radius:${h / 2}px 0 0 ${h / 2}px"></div>` : ''}</div>
+  <div style="width:3px;background:var(--line)"></div>
+  <div style="flex:1">${n > 0 ? `<div style="width:${n * unit}%;height:100%;background:var(--hit);border-radius:0 ${h / 2}px ${h / 2}px 0"></div>` : ''}</div></div>`;
+
+const sideDiv = (tri, name, ps) => `<div style="flex:1;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:baseline;gap:14px"><div class="tri" style="font-size:96px">${tri}</div><div class="dim" style="font:600 28px 'Barlow Condensed'">${name}</div></div>
+  ${ps.map(([p, n]) => `<div style="display:flex;align-items:center;gap:10px;font:700 33px 'Barlow Condensed'">
+    <div style="width:236px;white-space:nowrap">${p}</div>${dbar(n, 16, 28)}<div style="width:62px;text-align:right;color:${col(n)}">${sign(n)}</div></div>`).join('')}
+</div>`;
+const matchupA1 = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · Matchup')}
+  <div style="display:flex;gap:40px;margin-top:22px;flex:1">
+    ${sideDiv(GAME.away, GAME.awayName + ' · away', GAME.awayP)}
+    <div style="width:2px;background:var(--line)"></div>
+    ${sideDiv(GAME.home, GAME.homeName + ' · home', GAME.homeP)}
+  </div>
+  <div style="display:flex;justify-content:space-between;font:600 24px 'Barlow Condensed'"><span class="dim">Points Matchup Score vs league</span><span><span class="miss">◀ tougher</span> <span class="dim">·</span> <span class="hit">softer ▶</span></span></div>
+</div>`;
+
+const pick = ([p, n, slice, rank], opp) => `<div style="display:flex;align-items:center;gap:16px;padding:10px 0">
+  <div style="flex:1"><div style="font:700 36px/1.05 'Barlow Condensed'">${p}</div><div class="dim" style="font:600 24px 'Barlow Condensed'">${slice} · ${opp} ${ord(rank)}</div></div>
+  <div style="font:800 50px 'Barlow Condensed';color:${col(n)}">${sign(n)}</div></div>`;
+const sideSplit = (tri, name, ps, opp) => {
+  const up = ps.filter((x) => x[1] > 0), down = ps.filter((x) => x[1] < 0);
+  return `<div style="flex:1;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px"><div class="tri" style="font-size:84px">${tri}</div><div class="dim" style="font:600 28px 'Barlow Condensed'">${name}</div></div>
+    ${up.slice(0, 2).map((x) => pick(x, opp)).join('')}
+    ${down.length ? `<div style="height:2px;background:var(--line);margin:4px 0"></div>${down.slice(-1).map((x) => pick(x, opp)).join('')}` : ''}
+  </div>`;
+};
+const matchupA2 = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · Matchup')}
+  <div style="display:flex;gap:64px;margin-top:14px;flex:1">
+    ${sideSplit(GAME.away, GAME.awayName + ' · away', GAME.awayP, GAME.home)}
+    <div style="width:2px;background:var(--line)"></div>
+    ${sideSplit(GAME.home, GAME.homeName + ' · home', GAME.homeP, GAME.away)}
+  </div>
+  <div class="dim" style="font:600 24px 'Barlow Condensed'">Points Matchup Score vs league · the defense's rank in his biggest slice (30th = allows the most)</div>
+</div>`;
+
+const slateRow = (r) => `<div style="display:flex;align-items:center;gap:18px;font:700 32px 'Barlow Condensed'">
+  <div style="width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.p}</div><div class="dim" style="width:130px;font-weight:600">${r.t} v ${r.o}</div>
+  ${dbar(r.s, 10.5, 24)}<div style="width:64px;text-align:right;color:${col(r.s)}">${sign(r.s)}</div></div>`;
+const slateA1 = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · 8 games')}
+  <div style="font:800 50px/1 'Barlow Condensed';margin:14px 0 12px">Tonight's scoring matchups, <span class="hit">softest</span> to <span class="miss">toughest</span></div>
+  <div style="display:flex;flex-direction:column;gap:7px">
+    ${TOP.slice(0, 4).map(slateRow).join('')}
+    <div style="height:2px;background:var(--line);margin:4px 0"></div>
+    ${BOTTOM.slice(0, 4).reverse().map(slateRow).join('')}
+  </div></div>`;
+
+const listCol = (title, cls, rows) => `<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+  <div class="kicker ${cls}" style="margin-bottom:6px">${title}</div>
+  ${rows.map((r) => `<div style="display:flex;align-items:center;gap:14px;border-top:2px solid var(--line);padding-top:5px">
+    <div style="flex:1;min-width:0"><div style="font:700 34px/1.05 'Barlow Condensed';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.p}</div>
+    <div class="dim" style="font:600 22px 'Barlow Condensed'">${r.t} v ${r.o} · ${r.slice}, ${r.o} ${ord(r.rank)}</div></div>
+    <div style="font:800 46px 'Barlow Condensed';color:${col(r.s)}">${sign(r.s)}</div></div>`).join('')}
+</div>`;
+const slateA2 = () => `<div class="card c">
+  ${brand(DATE_LONG + ' · 8 games')}
+  <div style="display:flex;gap:60px;margin-top:22px;flex:1">
+    ${listCol('Softest scoring matchups', 'hit', TOP.slice(0, 5))}
+    ${listCol('Toughest scoring matchups', 'miss', BOTTOM.slice(0, 5))}
+  </div>
+  <div class="dim" style="font:600 22px 'Barlow Condensed';margin-top:10px">Points Matchup Score vs league · the defense's rank in his biggest slice (30th = allows the most)</div>
+</div>`;
+
 const SURFACES = [
+  { key: 'matchup', name: 'Matchup · /matchups/:gameId', note: 'Round 2: A with both directions. Example: BKN @ CLE, the one game tonight with clear edges both ways.',
+    title: 'BKN @ CLE · Matchup | CourtAI', desc: 'Allen +6% in points vs league; Harden −6%, Mitchell −5%.', url: 'courtai.app/matchups/BKN-CLE',
+    post: 'BKN @ CLE tonight: Jarrett Allen gets a Brooklyn defense that ranks 23rd vs cuts. Harden and Mitchell run into the league\'s best pull-up and PnR ball-handler D.',
+    v: [['A1', 'Face-off, diverging bars', 'Every scored player on one axis per team: green right, red left. Most information, reads in one glance.', matchupA1],
+        ['A2', 'Face-off, best and worst', 'Two softest and the toughest per team, each with the defense row behind it. More words, more to quote in a post.', matchupA2],
+        ['A', 'Round 1 (favourable only)', 'For comparison. WAS @ CHI.', matchupA]] },
+  { key: 'slate', name: 'Slate · /matchups', note: 'Round 2: A with both directions. Doubles as the daily X post image.',
+    title: 'Saturday\'s Slate · 8 games | CourtAI', desc: 'Softest and toughest scoring matchups across 8 games.', url: 'courtai.app/matchups',
+    post: 'Saturday, 8 games. Softest scoring spots: WAS @ CHI has 7 of the top 10. Toughest: Atlanta\'s shooters vs Houston (2nd vs catch-and-shoot, 3rd vs spot-ups).',
+    v: [['A1', 'Ladder, softest to toughest', 'One ranked list on a diverging axis: top four, a gap, bottom four.', slateA1],
+        ['A2', 'Two columns', 'Softest five beside toughest five, each with the defense row behind it.', slateA2],
+        ['A', 'Round 1 (favourable only)', 'For comparison.', slateA]] },
   { key: 'home', name: 'Home · courtai.app', note: 'The most-shared link. Today: logo-only summary card.',
     title: 'CourtAI | NBA Game Log Analytics', desc: 'Every NBA prop, read against tonight\'s defense.', url: 'courtai.app',
     v: [['A', 'Pitch + tonight', 'Evergreen pitch on the left, three live matchups on the right. Changes daily.', homeA],
         ['B', 'Brand poster', 'Big wordmark, tonight\'s games as a strip. Least data, most recognisable.', homeB],
         ['C', 'One striking fact', 'The night\'s single loudest defensive weakness on a court diagram. A hook, not a summary.', homeC]] },
-  { key: 'matchup', name: 'Matchup · /matchups/:gameId', note: 'The thing people share before tip. Example: WAS @ CHI.',
-    title: 'WAS @ CHI · Matchup | CourtAI', desc: 'Jalen Smith +9%, Davis and Sarr +8% in points vs league.', url: 'courtai.app/matchups/WAS-CHI',
-    v: [['A', 'Face-off', 'Both rosters\' top scoring edges side by side.', matchupA],
-        ['B', 'Hero player', 'The game\'s biggest edge, with the Diet slices that drive it.', matchupB],
-        ['C', 'Soft spots', 'Each defense\'s weakest rows and ranks. No players, all defense.', matchupC]] },
-  { key: 'slate', name: 'Slate · /matchups', note: 'Tonight\'s board. Doubles as the daily X post image.',
-    title: 'Saturday\'s Slate · 8 games | CourtAI', desc: 'Tonight\'s best scoring matchups across 8 games.', url: 'courtai.app/matchups',
-    v: [['A', 'Ladder', 'Top six players ranked with bars. Reads like a leaderboard.', slateA],
-        ['B', 'Board grid', 'Every game as a tile: its best edge and how many are Out.', slateB],
-        ['C', 'Headline number', 'One computed story about the night, big.', slateC]] },
   { key: 'connect', name: 'Connect · /connect', note: 'The MCP funnel; static card, no endpoint needed.',
     title: 'Connect CourtAI to Claude or ChatGPT', desc: 'Ask about tonight\'s slate, matchups, injuries and lines.', url: 'courtai.app/connect',
     v: [['A', 'Chat demo', 'A real question and answer, so the card shows the product working.', connectA],
@@ -311,7 +399,7 @@ let only = params.get('s') || 'all';
 const wrap = (s, card) => {
   const frame = `<div class="frame">${card}</div>`;
   if (chrome === 'imessage') return `<div class="imsg"><div class="bubble">${frame}<div class="meta"><div class="t">${s.title}</div><div class="d">${s.url.split('/')[0]}</div></div></div></div>`;
-  if (chrome === 'x') return `<div class="xpost"><div class="who"><b>CourtAI</b> <span>@courtai · 2m</span></div><div class="img">${frame}<div class="pill">${s.url.split('/')[0]}</div></div><div class="from">From ${s.url.split('/')[0]}</div></div>`;
+  if (chrome === 'x') return `<div class="xpost"><div class="who"><b>CourtAI</b> <span>@courtai · 2m</span></div>${s.post ? `<div style="font-size:15px;line-height:1.35;margin:-2px 0 10px">${s.post}</div>` : ''}<div class="img">${frame}<div class="pill">${s.url.split('/')[0]}</div></div><div class="from">From ${s.url.split('/')[0]}</div></div>`;
   if (chrome === 'discord') return `<div class="disc"><div class="link">https://${s.url}</div><div class="embed"><div class="site">CourtAI</div><div class="t">${s.title}</div><div class="d">${s.desc}</div>${frame}</div></div>`;
   return `<div class="chrome-raw">${frame}</div>`;
 };

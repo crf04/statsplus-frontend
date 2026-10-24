@@ -1,15 +1,19 @@
 import { getTodaySlateDate } from './src/calendarDate';
 import { applyLinkPreview, linkPreviewFor } from './src/linkPreview';
+import { matchupPreviewFor } from './src/matchupPreview';
 
 // Vercel serves the same static index.html for every route, and link
 // unfurlers (iMessage, Slack, Discord, X) read only that HTML — they never run
-// the app. So a shared Workspace link is described here, at the edge, before
+// the app. So a shared Workspace, Slate or Matchup link is described here, at the edge, before
 // the document reaches whoever is previewing it.
-export const config = { matcher: '/' };
+export const config = { matcher: ['/', '/matchups', '/matchups/:gameId'] };
 
 export const describeLink = async (request, now) => {
   const url = new URL(request.url);
-  const preview = linkPreviewFor(url.searchParams, { lineDate: getTodaySlateDate(now) });
+  const today = getTodaySlateDate(now);
+  const preview = url.pathname.startsWith('/matchups')
+    ? matchupPreviewFor(url.pathname, url.searchParams, { today })
+    : linkPreviewFor(url.searchParams, { lineDate: today });
   if (preview === null) return undefined;
 
   const response = await fetch(new URL('/index.html', url.origin), {

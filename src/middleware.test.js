@@ -181,10 +181,10 @@ describe('Slate and Matchup links', () => {
     card: 'summary_large_image',
   });
 
-  test("describes /matchups with today's ET Slate Date", async () => {
+  test('describes /matchups without naming a day, which may fall forward', async () => {
     expect(tags(await describedPath('/matchups'))).toEqual(
       slateTags(
-        'NBA Slate · Saturday, Oct 24 | CourtAI',
+        'NBA Slate | CourtAI',
         'https://courtai.app/api/games/slate/preview.png?v=2026-10-24',
       ),
     );

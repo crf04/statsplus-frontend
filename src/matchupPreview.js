@@ -19,13 +19,15 @@ const describeDay = (date) => dayFormatter.format(new Date(`${date}T12:00:00Z`))
  */
 export const matchupPreviewFor = (pathname, searchParams, { today }) => {
   if (pathname === '/matchups') {
-    const date = searchParams.has('date') ? parseCalendarDate(searchParams.get('date')) : today;
+    // Without a date the page, and the image, show today or the next game
+    // day, which only the backend knows; the title names no day then.
+    const date = searchParams.has('date') ? parseCalendarDate(searchParams.get('date')) : undefined;
     if (date === null) return null;
     const params = new URLSearchParams();
-    if (searchParams.has('date')) params.set('date', date);
+    if (date) params.set('date', date);
     params.set('v', today);
     return {
-      title: `NBA Slate · ${describeDay(date)} | ${SITE_NAME}`,
+      title: date ? `NBA Slate · ${describeDay(date)} | ${SITE_NAME}` : `NBA Slate | ${SITE_NAME}`,
       description: 'Softest and toughest points matchups in every game.',
       image: `/api/games/slate/preview.png?${params}`,
     };

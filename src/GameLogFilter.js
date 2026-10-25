@@ -152,8 +152,9 @@ const GameLogFilter = ({ notice = null }) => {
   const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [gameLogsError, setGameLogsError] = useState(null);
-  // The season a 503 season_unavailable refused (crf04/statsplus#330).
-  const [unavailableSeason, setUnavailableSeason] = useState(null);
+  // What a 503 season_unavailable refused, and the season it reads instead
+  // (crf04/statsplus#330).
+  const [seasonRefusal, setSeasonRefusal] = useState(null);
   // The /seasons read; its choices decide which linked seasons stand.
   const [seasonChoices, setSeasonChoices] = useState(null);
   // A linked season the choices do not offer, replaced by the default.
@@ -370,6 +371,9 @@ const GameLogFilter = ({ notice = null }) => {
       (current) => {
         const next = new URLSearchParams(current);
         next.delete('season_filter');
+        // A season-only link would otherwise close the Workspace, and the
+        // notice with it.
+        if (!filterQueryString(next)) next.set(BROWSE_PARAM, '1');
         return next;
       },
       { replace: true },
@@ -393,7 +397,7 @@ const GameLogFilter = ({ notice = null }) => {
       setIsGameLogsLoading(true);
       setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
-      setUnavailableSeason(null);
+      setSeasonRefusal(null);
       setDefaultTeamFor(teamPlayerRef.current === params.player_name ? null : params.player_name);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
@@ -437,7 +441,10 @@ const GameLogFilter = ({ notice = null }) => {
           setDefaultTeamFor(null);
 
           if (error instanceof SeasonUnavailableError) {
-            setUnavailableSeason(error.selectedSeason ?? params.season_filter ?? '');
+            setSeasonRefusal({
+              selectedSeason: error.selectedSeason ?? params.season_filter ?? '',
+              publishedSeason: error.publishedSeason,
+            });
           }
           setGameLogsError(
             getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
@@ -491,7 +498,7 @@ const GameLogFilter = ({ notice = null }) => {
     setSampleSize(null);
     clearSelectedTeam();
     setGameLogsError(null);
-    setUnavailableSeason(null);
+    setSeasonRefusal(null);
   }, [abortGameLogsRequest, clearSeasonGameLogs, clearSelectedTeam]);
 
   // The URL is the whole view, so sharing it hands over exactly these game
@@ -645,6 +652,7 @@ const GameLogFilter = ({ notice = null }) => {
     setSearchParams(nextSearch, { replace: false });
   };
 
+  const refusalDefault = seasonRefusal?.publishedSeason ?? seasonChoices?.defaultSeason;
   const showDefaultSeason = () => {
     setFallbackFrom(null);
     setSearchParams(
@@ -784,7 +792,7 @@ const GameLogFilter = ({ notice = null }) => {
           Unable to load player and team lists. <ErrorMessage message={listsError} />
         </Alert>
       )}
-      {gameLogsError && unavailableSeason === null && (
+      {gameLogsError && !seasonRefusal && (
         <Alert variant="danger" className="mx-3" role="alert">
           <ErrorMessage message={gameLogsError} />
         </Alert>
@@ -859,20 +867,19 @@ const GameLogFilter = ({ notice = null }) => {
           </div>
           <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
-              {unavailableSeason !== null ? (
+              {seasonRefusal ? (
                 <div role="alert" className="season-unavailable">
                   <p>
-                    {seasonUnavailableText(unavailableSeason)}
-                    {seasonChoices?.defaultSeason &&
-                      ` CourtAI still reads ${seasonChoices.defaultSeason} by default.`}
+                    {seasonUnavailableText(seasonRefusal.selectedSeason)}
+                    {refusalDefault && ` CourtAI still reads ${refusalDefault} by default.`}
                   </p>
-                  {seasonChoices?.defaultSeason && (
+                  {refusalDefault && (
                     <button
                       type="button"
                       className="btn btn-back-to-search"
                       onClick={showDefaultSeason}
                     >
-                      Show {seasonChoices.defaultSeason}
+                      Show {refusalDefault}
                     </button>
                   )}
                 </div>
@@ -974,7 +981,7 @@ const GameLogFilter = ({ notice = null }) => {
           </Row>
 
           {/* A refused season has no game list, not an empty one. */}
-          {unavailableSeason === null && (
+          {!seasonRefusal && (
             <div className="stats-layout-container">
               <div className="per36-sidebar">
                 <PerformanceAverages

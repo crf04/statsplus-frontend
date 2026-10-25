@@ -194,3 +194,29 @@ test('a linked season outside the choices falls back to the default and says so'
   );
   expect(await screen.findByText('Game list of 1')).toBeInTheDocument();
 });
+
+test('a season-only link outside the choices keeps the Workspace open with its notice', async () => {
+  renderAt('/?season_filter=2027-28');
+
+  expect(
+    await screen.findByText('2027-28 isn’t offered, so these are 2025-26 game logs.'),
+  ).toBeInTheDocument();
+  expect(url()).toBe('/?browse=1');
+  expect(screen.getByRole('button', { name: 'Back to search' })).toBeInTheDocument();
+});
+
+test('a refusal names its published season and offers it when the seasons read fails', async () => {
+  fetchSeasons.mockRejectedValue(new Error('seasons down'));
+  fetchGameLogsData.mockRejectedValue(refusal());
+  renderAt('/?player_name=LeBron+James&season_filter=2026-27');
+
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent(
+    "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.",
+  );
+
+  fetchGameLogsData.mockResolvedValue(logs);
+  fireEvent.click(within(alert).getByRole('button', { name: 'Show 2025-26' }));
+  await waitFor(() => expect(url()).toBe('/?player_name=LeBron+James'));
+  expect(await screen.findByText('Game list of 1')).toBeInTheDocument();
+});

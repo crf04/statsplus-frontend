@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchSeasons } from '../seasonsApi';
+import { seasonChoiceLabel } from '../servingSeason';
 import {
   OPPONENT_FILTERS,
   encodeRankRange,
@@ -592,14 +593,24 @@ const useFilterPanel = ({
     (summary.defense?.length || 0) +
     (summary.self?.length || 0);
 
-  const season = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
-  // A link may name a season the list does not (yet) hold; keep it selectable
-  // so the control never shows a season the results are not.
+  const linkedSeason = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
+  const choices = seasonChoices?.choices;
+  // With choices (crf04/statsplus#330) a season outside them falls back to the
+  // default, as the Workspace's request does. An older backend lists bare
+  // seasons, and a link may name one the list does not (yet) hold; keep it
+  // selectable so the control never shows a season the results are not.
+  const season =
+    choices && !choices.some((choice) => choice.season === linkedSeason)
+      ? (seasonChoices.defaultSeason ?? '')
+      : linkedSeason;
+  const listed = choices
+    ? choices.map((choice) => ({ season: choice.season, label: seasonChoiceLabel(choice) }))
+    : seasonChoices?.seasons.map((value) => ({ season: value, label: value }));
   const seasonOptions =
-    seasonChoices && seasonChoices.seasons.length >= 2
-      ? seasonChoices.seasons.includes(season) || !season
-        ? seasonChoices.seasons
-        : [season, ...seasonChoices.seasons]
+    listed && listed.length >= 2
+      ? listed.some((option) => option.season === season) || !season
+        ? listed
+        : [{ season, label: season }, ...listed]
       : null;
 
   return {

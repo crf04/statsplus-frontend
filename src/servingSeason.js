@@ -136,3 +136,16 @@ export const trailingSeason = (servedSeason, publishedSeason, trailing) =>
   trailing?.some((entry) => entry.servingSeason === servedSeason)
     ? servedSeason
     : null;
+
+const gamesPerTeam = ({ min, max }) =>
+  `${min === max ? min : `${min}–${max}`} ${max === 1 ? 'game' : 'games'} per team`;
+
+// An Unpublished Season choice (crf04/statsplus#330) names its sample so a
+// reader can see how little it rests on: "2026-27 · early, 2–4 games per team".
+export const seasonChoiceLabel = ({ season, mode, teamGames }) => {
+  if (mode !== 'unpublished') return season;
+  return teamGames ? `${season} · early, ${gamesPerTeam(teamGames)}` : `${season} · early`;
+};
+
+export const seasonUnavailableText = (season) =>
+  season ? `${season} isn't available yet.` : "This season isn't available yet.";

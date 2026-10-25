@@ -15,6 +15,8 @@ import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { fetchNextOpponent } from './nextOpponentApi';
+import { fetchSeasons } from './seasonsApi';
+import { SeasonUnavailableError, seasonChoiceLabel, seasonUnavailableText } from './servingSeason';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
@@ -150,6 +152,12 @@ const GameLogFilter = ({ notice = null }) => {
   const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
   const [gameLogsError, setGameLogsError] = useState(null);
+  // The season a 503 season_unavailable refused (crf04/statsplus#330).
+  const [unavailableSeason, setUnavailableSeason] = useState(null);
+  // The /seasons read; its choices decide which linked seasons stand.
+  const [seasonChoices, setSeasonChoices] = useState(null);
+  // A linked season the choices do not offer, replaced by the default.
+  const [fallbackFrom, setFallbackFrom] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
@@ -339,6 +347,38 @@ const GameLogFilter = ({ notice = null }) => {
     [seasonGameLogs, selectedPlayer, urlFilters.season_filter],
   );
 
+  useEffect(() => {
+    if (!canSearch) return undefined;
+    let current = true;
+    fetchSeasons()
+      .then((seasons) => current && setSeasonChoices(seasons))
+      .catch(() => current && setSeasonChoices(null));
+    return () => {
+      current = false;
+    };
+  }, [canSearch]);
+
+  const choices = seasonChoices?.choices;
+  const linkedSeason = urlFilters.season_filter;
+  // A link naming a season the backend does not offer reads the default
+  // instead, and says so, rather than asking for a season that cannot answer.
+  useEffect(() => {
+    if (!choices || !linkedSeason || isRefusedLink) return;
+    if (choices.some((choice) => choice.season === linkedSeason)) return;
+    setFallbackFrom(linkedSeason);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('season_filter');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
+  const unpublishedChoice = choices?.find(
+    (choice) => choice.season === linkedSeason && choice.mode === 'unpublished',
+  );
+
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
   // cancelled and ignored when their promises settle.
@@ -353,6 +393,7 @@ const GameLogFilter = ({ notice = null }) => {
       setIsGameLogsLoading(true);
       setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
+      setUnavailableSeason(null);
       setDefaultTeamFor(teamPlayerRef.current === params.player_name ? null : params.player_name);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
@@ -395,6 +436,9 @@ const GameLogFilter = ({ notice = null }) => {
 
           setDefaultTeamFor(null);
 
+          if (error instanceof SeasonUnavailableError) {
+            setUnavailableSeason(error.selectedSeason ?? params.season_filter ?? '');
+          }
           setGameLogsError(
             getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
           );
@@ -447,6 +491,7 @@ const GameLogFilter = ({ notice = null }) => {
     setSampleSize(null);
     clearSelectedTeam();
     setGameLogsError(null);
+    setUnavailableSeason(null);
   }, [abortGameLogsRequest, clearSeasonGameLogs, clearSelectedTeam]);
 
   // The URL is the whole view, so sharing it hands over exactly these game
@@ -592,11 +637,22 @@ const GameLogFilter = ({ notice = null }) => {
    */
   const handleSeasonChange = (season) => {
     if (isRefusedLink) return;
+    setFallbackFrom(null);
     const nextSearch = withCurrentView(
       filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: season })),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
     setSearchParams(nextSearch, { replace: false });
+  };
+
+  const showDefaultSeason = () => {
+    setFallbackFrom(null);
+    setSearchParams(
+      withCurrentView(
+        filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: undefined })),
+      ),
+      { replace: false },
+    );
   };
 
   /*
@@ -728,7 +784,12 @@ const GameLogFilter = ({ notice = null }) => {
           Unable to load player and team lists. <ErrorMessage message={listsError} />
         </Alert>
       )}
-      {gameLogsError && (
+      {fallbackFrom && !linkedSeason && seasonChoices?.defaultSeason && (
+        <Alert variant="info" className="mx-3" role="status">
+          {fallbackFrom} isn&rsquo;t offered, so these are {seasonChoices.defaultSeason} game logs.
+        </Alert>
+      )}
+      {gameLogsError && unavailableSeason === null && (
         <Alert variant="danger" className="mx-3" role="alert">
           <ErrorMessage message={gameLogsError} />
         </Alert>
@@ -767,6 +828,11 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
+            {unpublishedChoice && (
+              <span className="evidence-season-chip" data-testid="evidence-season-chip">
+                Evidence season {seasonChoiceLabel(unpublishedChoice)}
+              </span>
+            )}
             {/* Saving and the saved list live in the filter panel's Saved
                 tab. Share hands on the applied link, so it waits for a URL
                 that carries a Filter Set we would open; a refused link has no
@@ -792,11 +858,30 @@ const GameLogFilter = ({ notice = null }) => {
           </div>
           <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
-              <PlayerStatsCards
-                averages={averages}
-                selectedPlayer={selectedPlayer}
-                playerId={playerId}
-              />
+              {unavailableSeason !== null ? (
+                <div role="alert" className="season-unavailable">
+                  <p>
+                    {seasonUnavailableText(unavailableSeason)}
+                    {seasonChoices?.defaultSeason &&
+                      ` CourtAI still reads ${seasonChoices.defaultSeason} by default.`}
+                  </p>
+                  {seasonChoices?.defaultSeason && (
+                    <button
+                      type="button"
+                      className="btn btn-back-to-search"
+                      onClick={showDefaultSeason}
+                    >
+                      Show {seasonChoices.defaultSeason}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <PlayerStatsCards
+                  averages={averages}
+                  selectedPlayer={selectedPlayer}
+                  playerId={playerId}
+                />
+              )}
             </Card.Body>
           </Card>
         </Container>
@@ -887,23 +972,26 @@ const GameLogFilter = ({ notice = null }) => {
             </Col>
           </Row>
 
-          <div className="stats-layout-container">
-            <div className="per36-sidebar">
-              <PerformanceAverages
-                averages={averages}
-                appliedFilters={appliedFilters}
-                sampleSize={isGameLogsLoading ? null : sampleSize}
-              />
-            </div>
+          {/* A refused season has no game list, not an empty one. */}
+          {unavailableSeason === null && (
+            <div className="stats-layout-container">
+              <div className="per36-sidebar">
+                <PerformanceAverages
+                  averages={averages}
+                  appliedFilters={appliedFilters}
+                  sampleSize={isGameLogsLoading ? null : sampleSize}
+                />
+              </div>
 
-            <div className="game-logs-main">
-              <GameLogsTable
-                gameLogs={gameLogs}
-                appliedFilters={appliedFilters}
-                isLoading={isGameLogsLoading}
-              />
+              <div className="game-logs-main">
+                <GameLogsTable
+                  gameLogs={gameLogs}
+                  appliedFilters={appliedFilters}
+                  isLoading={isGameLogsLoading}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </Container>
       )}
 

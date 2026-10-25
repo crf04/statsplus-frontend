@@ -330,9 +330,9 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
                 value={panel.season}
                 onChange={(e) => panel.changeSeason(e.target.value)}
               >
-                {panel.seasons.map((season) => (
+                {panel.seasons.map(({ season, label }) => (
                   <option key={season} value={season}>
-                    {season}
+                    {label}
                   </option>
                 ))}
               </select>

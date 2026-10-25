@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ConnectGuide from './ConnectGuide';
@@ -25,7 +26,11 @@ jest.mock('./tutorialList', () => ({
 }));
 
 test('with no clip configured, Ask one question shows no clip and no X link', () => {
-  render(<ConnectGuide setup={null} />);
+  render(
+    <MemoryRouter>
+      <ConnectGuide setup={null} />
+    </MemoryRouter>,
+  );
 
   const ask = screen.getByRole('region', { name: 'Ask one question' });
   expect(within(ask).queryByRole('complementary')).not.toBeInTheDocument();
@@ -35,7 +40,11 @@ test('with no clip configured, Ask one question shows no clip and no X link', ()
 });
 
 test('Watch the tutorials lists every tutorial in order, each with its X post', () => {
-  render(<ConnectGuide setup={null} />);
+  render(
+    <MemoryRouter>
+      <ConnectGuide setup={null} />
+    </MemoryRouter>,
+  );
 
   const tutorials = screen.getByRole('region', { name: 'Watch the tutorials' });
   expect(
@@ -53,7 +62,11 @@ test('Watch the tutorials lists every tutorial in order, each with its X post', 
 });
 
 test('a tutorial poster plays its own video in the dialog', async () => {
-  const { container } = render(<ConnectGuide setup={null} />);
+  const { container } = render(
+    <MemoryRouter>
+      <ConnectGuide setup={null} />
+    </MemoryRouter>,
+  );
 
   expect(container.querySelector('video')).toBeNull();
   await userEvent.click(screen.getByRole('button', { name: 'Play: First tutorial' }));

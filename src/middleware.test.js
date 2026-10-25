@@ -39,8 +39,19 @@ test('serves the rewritten head unencoded when the document came compressed', as
   expect(await response.text()).toContain('<title>LeBron James Game Logs | CourtAI</title>');
 });
 
-test('runs only for the Workspace, Slate and Matchup routes', () => {
-  expect(config).toEqual({ matcher: ['/', '/matchups', '/matchups/:gameId'] });
+test('runs only for the Workspace, Slate, Matchup and injury brief skill routes', () => {
+  expect(config).toEqual({
+    matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief'],
+  });
+});
+
+test('describes the injury brief skill page for link unfurlers', async () => {
+  const html = await (await middleware(request('skills/injury-brief'))).text();
+
+  expect(html).toContain('<title>Injury brief skill | CourtAI</title>');
+  expect(html).toContain(
+    "Have Claude or ChatGPT read tonight's NBA injury report with CourtAI: who gains, checked against tonight's lines, in a short graded brief.",
+  );
 });
 
 test('describes a player link in the served document head', async () => {

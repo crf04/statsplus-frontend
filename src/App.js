@@ -22,6 +22,7 @@ const TargetsPage = lazy(() => import('./targets/TargetsPage'));
 const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
+const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 
@@ -133,6 +134,7 @@ function SignedInShell() {
           <Route path="/" element={<GameLogFilter />} />
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
+          <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Capabilities from './Capabilities';
 import { CONNECT_CLIP } from './connectClip';
 import CopyPrompt from './CopyPrompt';
@@ -211,6 +212,11 @@ const ConnectGuide = ({ setup }) => (
             </li>
           </ul>
         </Replay>
+        <p className="guide-p">
+          To run one research brief every night, use a skill. The{' '}
+          <Link to="/skills/injury-brief">injury brief skill</Link> reads tonight&apos;s injury
+          report this way, in Claude or ChatGPT.
+        </p>
       </Lesson>
 
       <Lesson id="guide-tools">

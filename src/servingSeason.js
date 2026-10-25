@@ -83,16 +83,16 @@ export const servingSeasonDecoders = (fail) => {
 export class SeasonUnavailableError extends Error {
   constructor(error) {
     const failure = error.response.data.error;
-    const details = isRecord(failure) && isRecord(failure.details) ? failure.details : {};
+    const details = isRecord(failure.details) ? failure.details : {};
     const season = (value) => (typeof value === 'string' && SEASON.test(value) ? value : null);
     super(
-      (isRecord(failure) && typeof failure.message === 'string' && failure.message) ||
+      (typeof failure.message === 'string' && failure.message) ||
         'The requested season is unavailable.',
       { cause: error },
     );
     this.name = 'SeasonUnavailableError';
     this.response = error.response;
-    this.selectedSeason = season(details.season);
+    this.selectedSeason = season(details.selected_season);
     this.publishedSeason = season(details.published_season);
   }
 }
@@ -101,8 +101,8 @@ export class SeasonUnavailableError extends Error {
 export const seasonUnavailableOr = (error) => {
   const failure = error?.response?.data?.error;
   return error?.response?.status === 503 &&
-    (failure === 'season_unavailable' ||
-      (isRecord(failure) && failure.code === 'season_unavailable'))
+    isRecord(failure) &&
+    failure.code === 'season_unavailable'
     ? new SeasonUnavailableError(error)
     : error;
 };

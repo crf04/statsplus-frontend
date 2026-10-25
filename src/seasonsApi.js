@@ -3,18 +3,27 @@ import { isRecord } from './decoding';
 
 const SEASON_PATTERN = /^\d{4}-\d{2}$/;
 const CHOICE_MODES = ['published', 'retained', 'unpublished'];
+const FAMILY_STATES = ['serving', 'trailing', 'unavailable'];
+const FAMILY_REASONS = [
+  'window_not_ready',
+  'season_not_composed',
+  'readiness_not_met',
+  'upstream_missing',
+];
 
 const invalidSeasons = () => new Error('The seasons endpoint returned an invalid response.');
 const isSeason = (value) => typeof value === 'string' && SEASON_PATTERN.test(value);
 const isGameCount = (value) => Number.isInteger(value) && value >= 0;
 
+// A family serves no season exactly when it is unavailable.
 const decodeFamily = (family) => {
   if (
     !isRecord(family) ||
-    !isSeason(family.served_season) ||
-    typeof family.state !== 'string' ||
-    !family.state ||
-    (family.reason !== undefined && (typeof family.reason !== 'string' || !family.reason))
+    !FAMILY_STATES.includes(family.state) ||
+    (family.state === 'unavailable'
+      ? family.served_season !== null
+      : !isSeason(family.served_season)) ||
+    (family.reason !== undefined && !FAMILY_REASONS.includes(family.reason))
   ) {
     throw invalidSeasons();
   }

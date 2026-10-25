@@ -164,7 +164,7 @@ const listWords = (words) =>
 // rule named together: "Scores use 2025-26 team defense and Diets until every
 // team has played 10 games." Under an explicit Evidence season each season
 // also names its sample, or says it is not reported.
-export const trailingNote = (trailing, seasonContext) => {
+export const trailingNote = (trailing, seasonContext, subject = 'Scores') => {
   if (!trailing?.length) return null;
   const groups = [];
   trailing.forEach(({ family, servingSeason, rule, teamGames }) => {
@@ -176,7 +176,7 @@ export const trailingNote = (trailing, seasonContext) => {
     const sample = seasonContext ? ` (${trailingSample(teamGames)})` : '';
     return `${servingSeason} ${listWords(families)}${sample} until ${rule}`;
   });
-  return `Scores use ${clauses.join(', and ')}.`;
+  return `${subject} use ${clauses.join(', and ')}.`;
 };
 
 // The season a section served, while a trailing family serves it. A past
@@ -199,6 +199,10 @@ export const seasonChoiceLabel = ({ season, mode, teamGames }) => {
 
 export const seasonUnavailableText = (season) =>
   season ? `${season} isn't available yet.` : "This season isn't available yet.";
+
+// A linked season no longer offered, read as the default instead.
+export const seasonFallbackText = (season, defaultSeason) =>
+  `${season} isn’t offered, so this is ${defaultSeason} evidence.`;
 
 export const seasonAfterGameText = (season, gameSeason) =>
   season && gameSeason

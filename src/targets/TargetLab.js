@@ -16,6 +16,7 @@ import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
 import ErrorMessage from '../feedback/ErrorMessage';
 import { SeasonRefusal, useEvidenceSeason } from '../EvidenceSeason';
+import { seasonFallbackText } from '../servingSeason';
 
 /*
  * One line that always says where the Lab stands, so a reader who cannot see
@@ -23,6 +24,9 @@ import { SeasonRefusal, useEvidenceSeason } from '../EvidenceSeason';
  * A half-typed draft is not a Target to evaluate, so it is not sent, and the
  * line says what would make it one.
  */
+// The Lab's own seasons, default first, for a backend that lists none.
+const OWN_PAIR = ['2025-26', '2026-27'];
+
 const describeLab = ({ valid, status, pending, misread }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
   if (status === 'loading') return 'Reading the season…';
@@ -36,14 +40,13 @@ const describeLab = ({ valid, status, pending, misread }) => {
 };
 
 /*
- * The Evidence seasons /seasons offers (crf04/statsplus#330), whatever the
- * Backtest has answered, so a refused read can always be read again for
- * another one.
+ * The seasons a Backtest can read, offered whatever the Backtest has answered,
+ * so a refused read can always be read again for another one.
  */
-function SeasonToggle({ seasons, shown, onChange }) {
+function SeasonToggle({ label, seasons, shown, onChange }) {
   return (
-    <div className="target-season-toggle" role="group" aria-label="Evidence season">
-      {seasons.map(({ season }) => (
+    <div className="target-season-toggle" role="group" aria-label={label}>
+      {seasons.map((season) => (
         <button
           key={season}
           type="button"
@@ -75,7 +78,12 @@ export default function TargetLab({
   const [localPreferences, setLocalPreferences] = useState(null);
   // The page's Evidence season; null is the backend's default, never named.
   const evidenceSeason = useEvidenceSeason();
-  const { season } = evidenceSeason;
+  // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
+  // in place and named when picked, as before crf04/statsplus#330.
+  const ownPair = evidenceSeason.listsChoices === false;
+  const [pairSeason, setPairSeason] = useState(null);
+  const season = ownPair ? pairSeason : evidenceSeason.season;
+  const defaultSeason = ownPair ? OWN_PAIR[0] : evidenceSeason.defaultSeason;
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
   const { status, preview, error, unavailable, pending, retry } = useTargetPreview(
@@ -95,7 +103,7 @@ export default function TargetLab({
   }, [unavailable]);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow. Before any answer, the default.
-  const shownSeason = season ?? preview?.season ?? evidenceSeason.defaultSeason;
+  const shownSeason = season ?? preview?.season ?? defaultSeason;
   // What was read for another season is not the picked season's Backtest, so
   // it leaves the screen beside a refusal or an incomplete draft; only while
   // the pick is about to be read, or is being read, does it stay, dimmed.
@@ -104,7 +112,8 @@ export default function TargetLab({
   // A backend that ignores the picked season answers with another one: that
   // is not the picked season's Backtest, nor a season nobody fit.
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
-  const notYetPublished = Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
+  const notYetPublished =
+    !ownPair && Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
   const seasonNote = describeSeasonNote(evidence);
   const otherSeason = isOtherSeason(shownSeason, published);
   const labSeason = useMemo(
@@ -136,9 +145,18 @@ export default function TargetLab({
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending, misread })}
         </p>
-        {evidenceSeason.choices && (
+        {ownPair && (
           <SeasonToggle
-            seasons={evidenceSeason.choices}
+            label="Backtest season"
+            seasons={OWN_PAIR}
+            shown={shownSeason}
+            onChange={setPairSeason}
+          />
+        )}
+        {!ownPair && evidenceSeason.choices && (
+          <SeasonToggle
+            label="Evidence season"
+            seasons={evidenceSeason.choices.map((choice) => choice.season)}
             shown={shownSeason}
             onChange={evidenceSeason.choose}
           />
@@ -147,6 +165,11 @@ export default function TargetLab({
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
+      {evidenceSeason.fallbackFrom && evidenceSeason.defaultSeason && (
+        <p className="target-lab-season-note">
+          {seasonFallbackText(evidenceSeason.fallbackFrom, evidenceSeason.defaultSeason)}
+        </p>
+      )}
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
       {misread && (
         <p className="target-error" role="alert">

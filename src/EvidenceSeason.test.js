@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { EvidenceSeasonBar, useEvidenceSeason } from './EvidenceSeason';
+import { EvidenceSeasonBar, SeasonRefusal, useEvidenceSeason } from './EvidenceSeason';
 import { fetchSeasons } from './seasonsApi';
 import { unpublishedSeasons } from './seasonChoicesFixture';
 
@@ -56,4 +56,15 @@ test('signed out, there is no control and a linked season is never named', async
   expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
   expect(screen.queryByText(/isn’t offered/)).not.toBeInTheDocument();
   expect(screen.getByLabelText('Current URL')).toHaveTextContent('?season=2026-27');
+});
+
+// The way back keeps Game Logs' Back to search button, hover lift included.
+test('a refusal offers the default as the Back to search button', () => {
+  render(
+    <SeasonRefusal selectedSeason="2026-27" defaultSeason="2025-26" onShowDefault={() => {}} />,
+  );
+  expect(screen.getByRole('button', { name: 'Show 2025-26' })).toHaveClass(
+    'btn',
+    'btn-back-to-search',
+  );
 });

@@ -517,6 +517,43 @@ test('the Lab offers the listed seasons, reads the default, and a saved card nam
   expect(await batch('?season=2024-25')).toEqual([400, 'invalid_input']);
 });
 
+// A backend that lists no Evidence seasons (production until
+// crf04/statsplus#330 B1 is released) keeps the Lab's own pair.
+test('without listed choices the Lab keeps its 2025-26 then 2026-27 toggle', async ({
+  authenticatedPage: page,
+}) => {
+  await installApiContract(page);
+  const previews = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/user/targets/preview')) previews.push(request.postDataJSON());
+  });
+  await page.goto('/targets');
+  await composeTarget(page, {
+    opponent: 'ATL',
+    base: 'assist_locations',
+    slice: 'AtRimAssists',
+    percent: 30,
+  });
+  const lab = page.getByRole('region', { name: /Lab · Backtest/ });
+  const season = page.getByRole('group', { name: 'Backtest season' });
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect(season.getByRole('button')).toHaveText(['2025-26', '2026-27']);
+  await expect(season.getByRole('button', { name: '2025-26' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(previews.at(-1)).not.toHaveProperty('season');
+
+  await season.getByRole('button', { name: '2026-27' }).click();
+  await expect(lab.getByRole('alert')).toContainText('That season’s data is unavailable.');
+  await expect(page).toHaveURL('/targets');
+  expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2026-27' });
+
+  await season.getByRole('button', { name: '2025-26' }).click();
+  await expect.poll(() => previews.at(-1)?.season).toBe('2025-26');
+  await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+});
+
 test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable', async ({
   authenticatedPage: page,
 }) => {

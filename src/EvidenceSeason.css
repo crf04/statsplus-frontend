@@ -53,9 +53,14 @@
   font-size: 0.85em;
   padding: 6px 12px;
   border-radius: 8px;
+  transition: all 0.3s ease;
 }
 .season-unavailable button:hover {
   background-color: rgba(232, 163, 61, 0.2);
+  border-color: #e8a33d;
+  color: #e8a33d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.2);
 }
 
 .evidence-season-bar {

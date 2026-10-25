@@ -8,21 +8,55 @@ import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { fetchPlayerProfile } from './playerProfileApi';
-import { SeasonUnavailableError, seasonUnavailableText } from './servingSeason';
+import {
+  SeasonUnavailableError,
+  seasonChoiceLabel,
+  seasonUnavailableText,
+  trailingNote,
+  trailingSample,
+} from './servingSeason';
 import ShotTypeTable from './profileShooting/ShotTypeTable';
 import ShotZoneCourt from './profileShooting/ShotZoneCourt';
-import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
+import {
+  ShotZoneSeasonUnreadError,
+  fetchShotZoneMatchup,
+  shotZoneUnavailable,
+} from './profileShooting/shotZoneMatchupApi';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import { fetchDietBaselines } from './targets/targetsApi';
 import ErrorMessage from './feedback/ErrorMessage';
 
-const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled }) => {
+/*
+ * Under a selection a Diet baseline base names the season it serves, never the
+ * response's latest one, with that season's sample: its trailing entry's, or
+ * the chosen season's own.
+ */
+const leagueSeasonLabel = (baselines, base, choice) => {
+  const served = baselines?.seasonContext && baselines.bases?.[base];
+  if (!served?.season) return null;
+  const trailing = baselines.trailing?.find(
+    (entry) => entry.family === served.family && entry.servingSeason === served.season,
+  );
+  const teamGames = trailing
+    ? trailing.teamGames
+    : served.season === choice?.season
+      ? choice.teamGames
+      : null;
+  return `League averages from ${served.season} (${trailingSample(teamGames)})`;
+};
+
+// `seasonChoice` is the /seasons choice of an Evidence season other than the
+// default (crf04/statsplus#330), or null for the default.
+const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSettled }) => {
+  const season = seasonChoice?.season ?? null;
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
   const [playerLoading, setPlayerLoading] = useState(false);
   const [teamLoading, setTeamLoading] = useState(false);
   const [playerError, setPlayerError] = useState(null);
+  // What the profile on screen trails on under a selection.
+  const [profileTrailing, setProfileTrailing] = useState(null);
   const [teamError, setTeamError] = useState(null);
   // The read each half last finished for, so "settled" is judged against the
   // current inputs rather than a loading flag an effect has yet to raise.
@@ -61,6 +95,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
     const controller = new AbortController();
     setPlayerData(null);
     setPlayerError(null);
+    setProfileTrailing(null);
     setPlayerLoading(hasPlayer);
     setPlayerSettledFor(null);
     const readProfile = () =>
@@ -72,11 +107,19 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
           ...(season ? { season } : {}),
         },
         { signal: controller.signal },
-      ).then(({ data }) => (data && Object.keys(data).length > 0 ? data : null));
+      ).then(({ data, seasonContext, trailing }) => {
+        if (!controller.signal.aborted && seasonContext) {
+          setProfileTrailing(trailingNote(trailing, seasonContext, 'Profile numbers'));
+        }
+        return data && Object.keys(data).length > 0 ? data : null;
+      });
     const read = () => {
       if (selectedProfile === 'Zone Shooting') {
         return zoneOpponent
-          ? fetchShotZoneMatchup(selectedPlayer, zoneOpponent, { signal: controller.signal })
+          ? fetchShotZoneMatchup(selectedPlayer, zoneOpponent, {
+              signal: controller.signal,
+              season,
+            })
           : Promise.resolve({ noOpponent: true });
       }
       if (selectedProfile === 'Shooting Type') {
@@ -85,7 +128,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
           readProfile(),
           fetchDietBaselines({ signal: controller.signal, season }).catch(() => null),
         ]).then(([rows, baselines]) =>
-          rows ? { rows, leagueShares: baselines?.shares?.shot_types ?? null } : null,
+          rows
+            ? {
+                rows,
+                leagueShares: baselines?.shares?.shot_types ?? null,
+                leagueSeason: leagueSeasonLabel(baselines, 'shot_types', seasonChoice),
+              }
+            : null,
         );
       }
       return readProfile();
@@ -103,9 +152,11 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
           setPlayerError(
             selectedProfile === 'Zone Shooting' && shotZoneUnavailable(error)
               ? `No shot zone matchup for ${selectedPlayer} this season.`
-              : error instanceof SeasonUnavailableError
-                ? seasonUnavailableText(error.selectedSeason ?? season)
-                : withRequestReference('Failed to fetch data. Please try again.', error),
+              : error instanceof ShotZoneSeasonUnreadError
+                ? error.message
+                : error instanceof SeasonUnavailableError
+                  ? seasonUnavailableText(error.selectedSeason ?? season)
+                  : withRequestReference('Failed to fetch data. Please try again.', error),
           );
         })
         .finally(() => {
@@ -121,6 +172,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
     profileOpponent,
     zoneOpponent,
     season,
+    seasonChoice,
     hasPlayer,
     playerReadKey,
   ]);
@@ -193,7 +245,20 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
     if (!playerData) {
       return <p>No zone shooting data available</p>;
     }
-    return <ShotZoneCourt matchup={playerData} />;
+    const { seasonContext, trailing } = playerData;
+    const note = seasonContext && trailingNote(trailing, seasonContext, 'Zones');
+    return (
+      <>
+        {seasonContext && (
+          <p className="ps-evidence-season">
+            Evidence season{' '}
+            {seasonChoiceLabel(seasonChoice ?? { season: seasonContext.selectedSeason })}
+          </p>
+        )}
+        {note && <p className="ps-evidence-season">{note}</p>}
+        <ShotZoneCourt matchup={playerData} />
+      </>
+    );
   };
 
   const renderShootingTypeProfile = () => {
@@ -201,7 +266,12 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
     if (!Array.isArray(rows) || rows.length === 0) {
       return <p>No shooting type data available</p>;
     }
-    return <ShotTypeTable rows={rows} leagueShares={playerData.leagueShares} />;
+    return (
+      <>
+        {playerData.leagueSeason && <p className="ps-evidence-season">{playerData.leagueSeason}</p>}
+        <ShotTypeTable rows={rows} leagueShares={playerData.leagueShares} />
+      </>
+    );
   };
 
   const renderContent = () => {
@@ -217,6 +287,15 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled 
       );
     }
 
+    return (
+      <>
+        {profileTrailing && <p className="ps-evidence-season">{profileTrailing}</p>}
+        {renderProfile()}
+      </>
+    );
+  };
+
+  const renderProfile = () => {
     switch (selectedProfile) {
       case 'Playtypes':
         return playerData ? (

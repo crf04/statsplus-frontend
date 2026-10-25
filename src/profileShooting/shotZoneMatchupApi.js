@@ -1,8 +1,13 @@
 import { apiClient, getApiUrl } from '../config';
 import { isRecord, strictDecoders } from '../decoding';
+import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const invalid = () => new Error('The shot zone matchup API returned an invalid response.');
 const { requireNumber, requireNumberOrNull, requireString } = strictDecoders(invalid);
+const { decodeSeasonContext, decodeTrailing } = servingSeasonDecoders(invalid);
+
+// The families the court reads: the player's Diet and the opponent's defense.
+const COURT_FAMILIES = ['player_diets', 'team_defense'];
 
 /* The five Shot zones of a Diet, in the order the court labels them. */
 export const SHOT_ZONES = [
@@ -84,6 +89,10 @@ export const decodeShotZoneMatchup = (data, opponent) => {
 
   return {
     opponent,
+    seasonContext: decodeSeasonContext(data.season_context),
+    trailing: (decodeTrailing(data.trailing) ?? []).filter((entry) =>
+      COURT_FAMILIES.includes(entry.family),
+    ),
     zones: Object.fromEntries(
       SHOT_ZONES.map((zone) => {
         const shares = diet.get(zone);
@@ -102,12 +111,49 @@ export const decodeShotZoneMatchup = (data, opponent) => {
   };
 };
 
-export const fetchShotZoneMatchup = async (playerName, opponent, { signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('MATCHUP_UNSCHEDULED'), {
-    params: { player_name: playerName, opponent },
-    signal,
-  });
-  return decodeShotZoneMatchup(response.data, opponent);
+/*
+ * The court cannot be read for the Evidence season asked: a backend that does
+ * not take `season` here, or one that answered for another season. Showing
+ * the default's court under the chosen season would mislabel it.
+ */
+export class ShotZoneSeasonUnreadError extends Error {
+  constructor(season) {
+    super(`Zone Shooting can't read ${season} evidence yet.`);
+    this.name = 'ShotZoneSeasonUnreadError';
+    this.season = season;
+  }
+}
+
+const refusesSeasonParameter = (error) => {
+  const failure = error?.response?.data?.error;
+  return (
+    error?.response?.status === 400 &&
+    failure?.code === 'invalid_input' &&
+    Array.isArray(failure.details?.parameters) &&
+    failure.details.parameters.includes('season')
+  );
+};
+
+export const fetchShotZoneMatchup = async (
+  playerName,
+  opponent,
+  { signal, season = null } = {},
+) => {
+  let response;
+  try {
+    response = await apiClient.get(getApiUrl('MATCHUP_UNSCHEDULED'), {
+      params: { player_name: playerName, opponent, ...(season && { season }) },
+      signal,
+    });
+  } catch (error) {
+    if (season && refusesSeasonParameter(error)) throw new ShotZoneSeasonUnreadError(season);
+    throw seasonRefusalOr(error);
+  }
+  const matchup = decodeShotZoneMatchup(response.data, opponent);
+  if (season && matchup.seasonContext?.selectedSeason !== season) {
+    throw new ShotZoneSeasonUnreadError(season);
+  }
+  return matchup;
 };
 
 /* The backend refuses a player it cannot score (no stored season Diet, or no

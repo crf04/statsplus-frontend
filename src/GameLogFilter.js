@@ -382,11 +382,9 @@ const GameLogFilter = ({ notice = null }) => {
   }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
   // The Player Profile reads the Workspace's season as its Evidence season,
   // named only when it is not the default.
-  const profileSeason =
-    choices?.some((choice) => choice.season === linkedSeason) &&
-    linkedSeason !== seasonChoices.defaultSeason
-      ? linkedSeason
-      : null;
+  const linkedChoice = choices?.find((choice) => choice.season === linkedSeason);
+  const profileChoice =
+    linkedChoice && linkedSeason !== seasonChoices.defaultSeason ? linkedChoice : null;
   const unpublishedChoice = choices?.find(
     (choice) => choice.season === linkedSeason && choice.mode === 'unpublished',
   );
@@ -962,7 +960,7 @@ const GameLogFilter = ({ notice = null }) => {
                 <PlayerProfile
                   selectedPlayer={selectedPlayer}
                   selectedTeam={selectedTeam}
-                  season={profileSeason}
+                  seasonChoice={profileChoice}
                   onSettled={handleProfileSettled}
                 />
               </Suspense>

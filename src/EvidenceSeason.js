@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { fetchSeasons } from './seasonsApi';
-import { seasonAfterGameText, seasonChoiceLabel, seasonUnavailableText } from './servingSeason';
+import {
+  seasonAfterGameText,
+  seasonChoiceLabel,
+  seasonFallbackText,
+  seasonUnavailableText,
+} from './servingSeason';
 import './EvidenceSeason.css';
 
 /*
@@ -77,6 +82,9 @@ export function useEvidenceSeason() {
     signedIn && Boolean(choices?.some((choice) => choice.mode === 'unpublished') || season);
   return {
     ready: !signedIn || !linked || (settled && offered),
+    // Whether /seasons lists choices: null until it answers, false for a
+    // backend that predates them, a failed read, or a reader signed out.
+    listsChoices: !signedIn ? false : settled ? Boolean(choices) : null,
     season,
     defaultSeason,
     choices: showControl ? choices : null,
@@ -117,7 +125,7 @@ function EvidenceSeasonChip({ evidence }) {
   if (evidence.fallbackFrom && evidence.defaultSeason) {
     return (
       <span className="evidence-season-chip" role="status">
-        {evidence.fallbackFrom} isn&rsquo;t offered, so this is {evidence.defaultSeason} evidence.
+        {seasonFallbackText(evidence.fallbackFrom, evidence.defaultSeason)}
       </span>
     );
   }
@@ -156,7 +164,7 @@ export function SeasonRefusal({ selectedSeason, gameSeason, defaultSeason, onSho
         {defaultSeason && ` CourtAI still reads ${defaultSeason} by default.`}
       </p>
       {defaultSeason && (
-        <button type="button" onClick={onShowDefault}>
+        <button type="button" className="btn btn-back-to-search" onClick={onShowDefault}>
           Show {defaultSeason}
         </button>
       )}

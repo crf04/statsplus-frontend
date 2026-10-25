@@ -27,7 +27,9 @@ jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => nu
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerProfile', () => ({
   __esModule: true,
-  default: ({ season }) => <output aria-label="Profile season">{season ?? 'default'}</output>,
+  default: ({ seasonChoice }) => (
+    <output aria-label="Profile season">{seasonChoice?.season ?? 'default'}</output>
+  ),
 }));
 jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));

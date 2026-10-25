@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import PlayerProfile from './PlayerProfile';
 import { apiClient } from './config';
+import { publishedOnlySeasons, unpublishedSeasons } from './seasonChoicesFixture';
 
 jest.mock('./config', () => ({ apiClient: { get: jest.fn() }, getApiUrl: (key) => key }));
 jest.mock('./PlaystyleComparisonChart', () => () => <p>Playtype chart</p>);
@@ -333,7 +334,13 @@ test('an Evidence season is named on the profile and baselines reads, the defaul
   ]);
 
   apiClient.get.mockClear();
-  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" season="2026-27" />);
+  rerender(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="BOS"
+      seasonChoice={unpublishedSeasons.choices[0]}
+    />,
+  );
   await act(async () => {});
   expect(reads()).toEqual([
     [
@@ -361,7 +368,252 @@ test('a refused Evidence season says it is not available yet', async () => {
   apiClient.get.mockImplementation((url) =>
     url === 'PLAYER_PROFILE' ? Promise.reject(refusal) : Promise.resolve({ data: [{}] }),
   );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" season="2026-27" />);
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="BOS"
+      seasonChoice={unpublishedSeasons.choices[0]}
+    />,
+  );
   await act(async () => {});
   expect(screen.getByText("2026-27 isn't available yet.")).toBeVisible();
+});
+
+// Zone Shooting reads the Unscheduled Matchup for the Evidence season and
+// labels the court with that season and its sample.
+const early = unpublishedSeasons.choices[0];
+const selectedZones = (opponent) => {
+  const body = zoneMatchup(opponent);
+  body.players[0].diet_shares.shot_zones[0].season.share = 0.12;
+  return {
+    ...body,
+    season_context: { selected_season: '2026-27', published_season: '2025-26' },
+    trailing: [
+      {
+        family: 'team_defense',
+        serving_season: '2025-26',
+        rule: 'every team has played 10 games',
+        team_games: { min: 82, max: 82 },
+      },
+    ],
+  };
+};
+
+test('Zone Shooting reads the Evidence season and names its season and sample', async () => {
+  apiClient.get.mockImplementation((url, { params }) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? Promise.resolve({
+          data: params.season ? selectedZones(params.opponent) : zoneMatchup(params.opponent),
+        })
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="Boston Celtics"
+      seasonChoice={early}
+    />,
+  );
+  await act(async () => {});
+  apiClient.get.mockClear();
+  fireEvent.click(screen.getByLabelText('Zone Shooting'));
+  await act(async () => {});
+  expect(apiClient.get.mock.calls.map(([url, { params }]) => [url, params])).toEqual([
+    ['MATCHUP_UNSCHEDULED', { player_name: 'LeBron James', opponent: 'BOS', season: '2026-27' }],
+  ]);
+  expect(screen.getAllByText('12%')[0]).toBeVisible();
+  expect(screen.queryByText('31%')).not.toBeInTheDocument();
+  expect(screen.getByText('Evidence season 2026-27 · early, 2–4 games per team')).toBeVisible();
+  expect(
+    screen.getByText(
+      'Zones use 2025-26 team defense (82 games per team) until every team has played 10 games.',
+    ),
+  ).toBeVisible();
+});
+
+test('Zone Shooting on the default season names no season and adds no label', async () => {
+  apiClient.get.mockImplementation((url, { params }) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? Promise.resolve({ data: zoneMatchup(params.opponent) })
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="Boston Celtics"
+      seasonChoice={null}
+    />,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByLabelText('Zone Shooting'));
+  await act(async () => {});
+  expect(apiClient.get).toHaveBeenLastCalledWith('MATCHUP_UNSCHEDULED', {
+    params: { player_name: 'LeBron James', opponent: 'BOS' },
+    signal: expect.anything(),
+  });
+  expect(screen.getAllByText('31%')[0]).toBeVisible();
+  expect(screen.queryByText(/Evidence season|Zones use/)).not.toBeInTheDocument();
+});
+
+const refused = (status, error) =>
+  Object.assign(new Error(`Request failed with status code ${status}`), {
+    response: { status, headers: {}, data: { error } },
+  });
+
+test.each([
+  [
+    'a backend that does not take season there',
+    () =>
+      Promise.reject(
+        refused(400, {
+          code: 'invalid_input',
+          message: 'Unknown parameter: season.',
+          details: { parameters: ['season'] },
+        }),
+      ),
+    "Zone Shooting can't read 2026-27 evidence yet.",
+  ],
+  [
+    'a backend that ignores it',
+    () => Promise.resolve({ data: zoneMatchup('BOS') }),
+    "Zone Shooting can't read 2026-27 evidence yet.",
+  ],
+  [
+    'a season not offered',
+    () =>
+      Promise.reject(
+        refused(503, {
+          code: 'season_unavailable',
+          message: 'Refused.',
+          details: { selected_season: '2026-27', published_season: '2025-26' },
+        }),
+      ),
+    "2026-27 isn't available yet.",
+  ],
+])(
+  'Zone Shooting under 2026-27 from %s refuses, never the default numbers',
+  async (_, answer, text) => {
+    apiClient.get.mockImplementation((url) =>
+      url === 'MATCHUP_UNSCHEDULED' ? answer() : Promise.resolve({ data: [{ value: 1 }] }),
+    );
+    render(
+      <PlayerProfile
+        selectedPlayer="LeBron James"
+        selectedTeam="Boston Celtics"
+        seasonChoice={early}
+      />,
+    );
+    await act(async () => {});
+    fireEvent.click(screen.getByLabelText('Zone Shooting'));
+    await act(async () => {});
+    expect(screen.getByText(text)).toBeVisible();
+    expect(screen.queryByText('31%')).not.toBeInTheDocument();
+  },
+);
+
+test('a retained Evidence season is named on the Zone Shooting read', async () => {
+  apiClient.get.mockImplementation((url, { params }) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? Promise.resolve({
+          data: {
+            ...zoneMatchup(params.opponent),
+            season_context: { selected_season: '2024-25', published_season: '2025-26' },
+            trailing: [],
+          },
+        })
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="Boston Celtics"
+      seasonChoice={publishedOnlySeasons.choices[1]}
+    />,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByLabelText('Zone Shooting'));
+  await act(async () => {});
+  expect(apiClient.get).toHaveBeenLastCalledWith('MATCHUP_UNSCHEDULED', {
+    params: { player_name: 'LeBron James', opponent: 'BOS', season: '2024-25' },
+    signal: expect.anything(),
+  });
+  expect(screen.getByText('Evidence season 2024-25')).toBeVisible();
+});
+
+// Under a selection the league tick names the season its own base serves, and
+// the profile names each family it trails on.
+const synergyTrailing = {
+  family: 'synergy',
+  serving_season: '2025-26',
+  rule: 'NBA has published the season and every team has played 10 games',
+  team_games: { min: 82, max: 82 },
+};
+const dietsTrailing = {
+  family: 'player_diets',
+  serving_season: '2025-26',
+  rule: 'every team has played 10 games',
+  team_games: { min: 80, max: 82 },
+};
+const selectedBaselines = (shotTypesSeason, trailing) => ({
+  season_context: { selected_season: '2026-27', published_season: '2025-26' },
+  season: '2026-27',
+  bases: {
+    shot_types: { family: 'player_diets', season: shotTypesSeason },
+    play_types: { family: 'synergy', season: '2026-27' },
+  },
+  trailing,
+  shares: { shot_types: { 'Catch and Shoot': 0.32 } },
+});
+
+test.each([
+  ['trails', '2025-26', [dietsTrailing], 'League averages from 2025-26 (80–82 games per team)'],
+  ['serves the selection', '2026-27', [], 'League averages from 2026-27 (2–4 games per team)'],
+])(
+  'the Shooting Type league tick names the season its base %s',
+  async (_, shotTypesSeason, trailing, label) => {
+    apiClient.get.mockImplementation((url) =>
+      url === 'DIET_BASELINES'
+        ? Promise.resolve({ data: selectedBaselines(shotTypesSeason, trailing) })
+        : Promise.resolve({
+            data: {
+              data: [{ SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.2 }],
+              season_context: { selected_season: '2026-27', published_season: '2025-26' },
+              trailing: [],
+            },
+          }),
+    );
+    render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" seasonChoice={early} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByLabelText('Shooting Type'));
+    await act(async () => {});
+    expect(screen.getByText(label)).toBeVisible();
+    expect(screen.queryAllByText(/League averages from/)).toHaveLength(1);
+  },
+);
+
+test('the profile names each family it trails on with its season and sample', async () => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'PLAYER_PROFILE'
+      ? Promise.resolve({
+          data: {
+            data: [{ PLAY_TYPE: 'Isolation', FREQ: 0.2 }],
+            season_context: { selected_season: '2026-27', published_season: '2025-26' },
+            trailing: [synergyTrailing],
+          },
+        })
+      : Promise.resolve({ data: [{ value: 1 }] }),
+  );
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" seasonChoice={early} />);
+  await act(async () => {});
+  expect(
+    screen.getByText(
+      'Profile numbers use 2025-26 play types (82 games per team) until NBA has published the season and every team has played 10 games.',
+    ),
+  ).toBeVisible();
+});
+
+test('the default profile names no trailing family', async () => {
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  expect(screen.queryByText(/Profile numbers use|League averages from/)).not.toBeInTheDocument();
 });

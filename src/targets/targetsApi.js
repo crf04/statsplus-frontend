@@ -10,7 +10,9 @@ import { describeSeasonUnavailable, isSeason } from './backtestSample';
 import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
-const { decodeSeasonContext } = servingSeasonDecoders(createInvalidResponseError);
+const { decodeSeason, decodeSeasonContext, decodeTrailing } = servingSeasonDecoders(
+  createInvalidResponseError,
+);
 
 const comparators = new Set(TARGET_COMPARATORS.map((entry) => entry.key));
 
@@ -722,6 +724,24 @@ export const deleteTarget = async ({ id }) => {
   invalidateTargetResolutions();
 };
 
+/*
+ * Under an explicit Evidence season (crf04/statsplus#330) each Diet base names
+ * its family and the season it serves, null when it serves none. The
+ * top-level `season` is only the latest of them, so a base is labelled with
+ * its own.
+ */
+const decodeBaselineBases = (bases) => {
+  if (bases === undefined) return undefined;
+  if (!isRecord(bases)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    Object.entries(bases).map(([base, served]) => {
+      if (!isRecord(served) || typeof served.family !== 'string' || served.season === undefined)
+        throw createInvalidResponseError();
+      return [base, { family: served.family, season: decodeSeason(served.season) }];
+    }),
+  );
+};
+
 export const decodeDietBaselines = (payload) => {
   if (!isRecord(payload) || !isRecord(payload.shares)) throw createInvalidResponseError();
   const shares = {};
@@ -737,7 +757,14 @@ export const decodeDietBaselines = (payload) => {
       shares[base][slice] = share;
     }
   }
-  return { shares, seasonContext: decodeSeasonContext(payload.season_context) };
+  return {
+    shares,
+    seasonContext: decodeSeasonContext(payload.season_context),
+    // The latest season any base serves; label a base with its own instead.
+    season: decodeSeason(payload.season),
+    bases: decodeBaselineBases(payload.bases),
+    trailing: decodeTrailing(payload.trailing),
+  };
 };
 
 export const fetchDietBaselines = async ({ signal, season } = {}) => {

@@ -309,6 +309,34 @@ describe('/api/players/profile', () => {
     });
   });
 
+  test('keeps the families its facts trail on, each with its season and sample', async () => {
+    await expect(
+      read({
+        data: rows,
+        season_context: seasonContext,
+        trailing: [
+          {
+            family: 'synergy',
+            serving_season: '2025-26',
+            rule: 'NBA has published the season and every team has played 10 games',
+            team_games: { min: 82, max: 82 },
+          },
+        ],
+      }),
+    ).resolves.toEqual({
+      data: rows,
+      seasonContext: decodedContext,
+      trailing: [
+        {
+          family: 'synergy',
+          servingSeason: '2025-26',
+          rule: 'NBA has published the season and every team has played 10 games',
+          teamGames: { min: 82, max: 82 },
+        },
+      ],
+    });
+  });
+
   test.each([
     ['an envelope without data', { season_context: seasonContext }],
     ['a malformed season_context', { data: rows, season_context: { selected_season: '2026' } }],
@@ -418,4 +446,52 @@ describe('trailing team_games', () => {
       ).toThrow('The matchup endpoint returned an invalid response.');
     },
   );
+});
+
+// Under a selection each Diet base names the season it serves; the top-level
+// season is only the latest of them.
+describe('/api/diet/baselines bases', () => {
+  const selected = {
+    ...baselines,
+    season_context: seasonContext,
+    season: '2026-27',
+    bases: {
+      shot_types: { family: 'player_diets', season: '2026-27' },
+      play_types: { family: 'synergy', season: '2025-26' },
+      assist_locations: { family: 'player_diets', season: null },
+    },
+    trailing: [
+      {
+        family: 'synergy',
+        serving_season: '2025-26',
+        rule: 'NBA has published the season and every team has played 10 games',
+        team_games: { min: 82, max: 82 },
+      },
+    ],
+  };
+
+  test('keeps each base with its own season, and the trailing families', () => {
+    const decoded = decodeDietBaselines(selected);
+    expect(decoded.bases).toEqual({
+      shot_types: { family: 'player_diets', season: '2026-27' },
+      play_types: { family: 'synergy', season: '2025-26' },
+      assist_locations: { family: 'player_diets', season: null },
+    });
+    expect(decoded.trailing).toEqual([
+      {
+        family: 'synergy',
+        servingSeason: '2025-26',
+        rule: 'NBA has published the season and every team has played 10 games',
+        teamGames: { min: 82, max: 82 },
+      },
+    ]);
+  });
+
+  test.each([
+    ['a list', []],
+    ['a base without a family', { shot_types: { season: '2026-27' } }],
+    ['a malformed season', { shot_types: { family: 'player_diets', season: '2026' } }],
+  ])('refuses bases as %s', (_name, bases) => {
+    expect(() => decodeDietBaselines({ ...selected, bases })).toThrow();
+  });
 });

@@ -29,6 +29,7 @@ const payload = (overrides = {}) => ({
 test('reads his Diet share and the opponent made-shot row for every zone', () => {
   expect(decodeShotZoneMatchup(payload(), 'CHA')).toEqual({
     opponent: 'CHA',
+    trailing: [],
     zones: {
       'Restricted Area': { share: 0.313, leagueShare: 0.276, rank: 18, percentVsLeague: -0.3 },
       'In The Paint (Non-RA)': {

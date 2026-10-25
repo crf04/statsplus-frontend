@@ -206,9 +206,9 @@ const LocationProbe = () => {
   return <span data-testid="location">{pathname + search}</span>;
 };
 
-const renderPage = (compose = true) => {
+const renderPage = (compose = true, path = '/targets') => {
   const result = render(
-    <MemoryRouter initialEntries={['/targets']}>
+    <MemoryRouter initialEntries={[path]}>
       <TargetsPage />
       <LocationProbe />
     </MemoryRouter>,
@@ -1061,20 +1061,94 @@ test('a refused or failed read still offers every listed season, and 2026-27 is 
   expect(screen.getByRole('alert')).toHaveTextContent('Failed to backtest the target.');
 });
 
-test('the Lab offers no season without one not yet published, nor without choices', async () => {
+test('the Lab offers no season when the listed ones are all published', async () => {
   jest.useFakeTimers();
   fetchTargetPreview.mockResolvedValue(defaultRead);
-  for (const seasons of [publishedOnlySeasons, legacySeasons]) {
+  fetchSeasons.mockResolvedValue(publishedOnlySeasons);
+  renderPage();
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+  expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Evidence season' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Backtest season' })).not.toBeInTheDocument();
+});
+
+/*
+ * A backend that lists no choices (production until crf04/statsplus#330 B1 is
+ * released), or a /seasons read that failed, keeps today's Lab: the
+ * 2025-26 / 2026-27 toggle, picked in place, a picked season named, and
+ * 2026-27 refused with the Backtest's own message.
+ */
+test.each([
+  ['lists no choices', () => fetchSeasons.mockResolvedValue(legacySeasons)],
+  ['cannot be read', () => fetchSeasons.mockRejectedValue(new Error('Network Error'))],
+])('when /seasons %s the Lab keeps the 2025-26 / 2026-27 toggle', async (_, answerSeasons) => {
+  jest.useFakeTimers();
+  answerSeasons();
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (season === '2026-27') throw refusalNaming('2026-27', '2025-26');
+    return season ? { ...defaultRead, season, seasonReason: 'requested' } : defaultRead;
+  });
+  renderPage();
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+  const legacyToggle = () =>
+    within(screen.getByRole('group', { name: 'Backtest season' }))
+      .getAllByRole('button')
+      .map((button) => [button.textContent, button.getAttribute('aria-pressed')]);
+  expect(legacyToggle()).toEqual([
+    ['2025-26', 'true'],
+    ['2026-27', 'false'],
+  ]);
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.not.objectContaining({ season: expect.anything() }),
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2026-27' }),
+  );
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'That season’s data is unavailable. The 2026-27 season is unavailable. Retry backtest',
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
+  expect(legacyToggle()).toEqual([
+    ['2025-26', 'false'],
+    ['2026-27', 'true'],
+  ]);
+
+  fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
+  await settle();
+  expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+    expect.objectContaining({ season: '2025-26' }),
+  );
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
+});
+
+test.each([
+  ['2027-28', unpublishedSeasons],
+  ['2026-27', legacySeasons],
+])(
+  'a linked season %s the Lab is not offered says so and reads the default',
+  async (linked, seasons) => {
+    jest.useFakeTimers();
     fetchSeasons.mockResolvedValue(seasons);
-    const { unmount } = renderPage();
+    fetchTargetPreview.mockResolvedValue(defaultRead);
+    renderPage(true, `/targets?season=${linked}`);
     await screen.findAllByRole('article');
     composeQualifier();
     await settle();
-    expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'Evidence season' })).not.toBeInTheDocument();
-    unmount();
-  }
-});
+    expect(screen.getByText(`${linked} isn’t offered, so this is 2025-26 evidence.`)).toBeVisible();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
+    expect(fetchTargetPreview).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ season: expect.anything() }),
+    );
+  },
+);
 
 test('a picked season answered for another season is unavailable, never up to date', async () => {
   jest.useFakeTimers();

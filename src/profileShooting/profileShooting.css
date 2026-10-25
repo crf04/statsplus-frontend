@@ -216,3 +216,9 @@
     rgba(76, 175, 125, 0.75)
   );
 }
+
+.ps-evidence-season {
+  margin: 0 0 6px;
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+}

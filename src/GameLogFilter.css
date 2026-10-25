@@ -2161,29 +2161,6 @@ body {
   box-shadow: 0 2px 8px rgba(232, 163, 61, 0.15);
 }
 
-.evidence-season-chip {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.85em;
-  font-weight: 600;
-  color: #e8a33d;
-  border: 1px solid rgba(232, 163, 61, 0.45);
-  border-radius: 999px;
-  padding: 4px 12px;
-}
-
-.season-unavailable {
-  display: grid;
-  justify-items: start;
-  gap: 12px;
-  padding: 8px 4px;
-}
-.season-unavailable p {
-  margin: 0;
-  color: #f1e9d6;
-  font-size: 1.05em;
-}
-
 .query-label {
   color: #9b937f;
   font-weight: 600;

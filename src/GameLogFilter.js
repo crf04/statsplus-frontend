@@ -16,7 +16,8 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { fetchNextOpponent } from './nextOpponentApi';
 import { fetchSeasons } from './seasonsApi';
-import { SeasonUnavailableError, seasonChoiceLabel, seasonUnavailableText } from './servingSeason';
+import { SeasonUnavailableError, seasonChoiceLabel } from './servingSeason';
+import { SeasonRefusal } from './EvidenceSeason';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
@@ -379,6 +380,11 @@ const GameLogFilter = ({ notice = null }) => {
       { replace: true },
     );
   }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
+  // The Player Profile reads the Workspace's season as its Evidence season,
+  // named only when it is not the default.
+  const linkedChoice = choices?.find((choice) => choice.season === linkedSeason);
+  const profileChoice =
+    linkedChoice && linkedSeason !== seasonChoices.defaultSeason ? linkedChoice : null;
   const unpublishedChoice = choices?.find(
     (choice) => choice.season === linkedSeason && choice.mode === 'unpublished',
   );
@@ -868,21 +874,11 @@ const GameLogFilter = ({ notice = null }) => {
           <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
               {seasonRefusal ? (
-                <div role="alert" className="season-unavailable">
-                  <p>
-                    {seasonUnavailableText(seasonRefusal.selectedSeason)}
-                    {refusalDefault && ` CourtAI still reads ${refusalDefault} by default.`}
-                  </p>
-                  {refusalDefault && (
-                    <button
-                      type="button"
-                      className="btn btn-back-to-search"
-                      onClick={showDefaultSeason}
-                    >
-                      Show {refusalDefault}
-                    </button>
-                  )}
-                </div>
+                <SeasonRefusal
+                  selectedSeason={seasonRefusal.selectedSeason}
+                  defaultSeason={refusalDefault}
+                  onShowDefault={showDefaultSeason}
+                />
               ) : (
                 <PlayerStatsCards
                   averages={averages}
@@ -964,6 +960,7 @@ const GameLogFilter = ({ notice = null }) => {
                 <PlayerProfile
                   selectedPlayer={selectedPlayer}
                   selectedTeam={selectedTeam}
+                  seasonChoice={profileChoice}
                   onSettled={handleProfileSettled}
                 />
               </Suspense>

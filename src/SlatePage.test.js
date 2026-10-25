@@ -7,8 +7,12 @@ import { fetchSlate } from './slateApi';
 import { closingPoolSlatePayload } from './slateClosingPoolFixture';
 import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 import { fetchResolvedTargets } from './targets/targetsApi';
+import { fetchSeasons } from './seasonsApi';
+import { legacySeasons, unpublishedSeasons } from './seasonChoicesFixture';
+import { seasonRefusalOr } from './servingSeason';
 
 jest.mock('./slateApi', () => ({ fetchSlate: jest.fn() }));
+jest.mock('./seasonsApi', () => ({ fetchSeasons: jest.fn() }));
 jest.mock('./targets/targetsApi', () => ({ fetchResolvedTargets: jest.fn() }));
 jest.mock('./contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false }),
@@ -60,6 +64,7 @@ beforeEach(() => {
   jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00Z'));
   fetchSlate.mockResolvedValue(slate);
   fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-01-15', entries: [] });
+  fetchSeasons.mockResolvedValue(legacySeasons);
 });
 
 afterEach(() => {
@@ -1063,4 +1068,118 @@ test('notes under the board which inputs trail and until when, and says nothing 
   await screen.findByRole('link', { name: /^LAL @ BOS/ });
   expect(screen.queryByRole('note')).not.toBeInTheDocument();
   expect(screen.queryByText(/Scores use/)).not.toBeInTheDocument();
+});
+
+/*
+ * The Evidence season (crf04/statsplus#330) on the Slate: read from ?season=,
+ * named on the Slate read only when it is not the default, and carried to each
+ * Matchup and to the next day.
+ */
+describe('Evidence season', () => {
+  const renderSlate = (entry) =>
+    render(
+      <MemoryRouter initialEntries={[entry]}>
+        <SlatePage />
+        <Url />
+      </MemoryRouter>,
+    );
+  const gameLink = () => screen.getByRole('link', { name: /^LAL @ BOS/ });
+
+  beforeEach(() => fetchSeasons.mockResolvedValue(unpublishedSeasons));
+
+  test('a linked 2026-27 is read and carried to the Matchup and the next day', async () => {
+    fetchSlate.mockResolvedValue({
+      ...slate,
+      trailing: [
+        {
+          family: 'team_defense',
+          servingSeason: '2025-26',
+          rule: 'every team has played 10 games',
+          teamGames: { min: 80, max: 82 },
+        },
+        {
+          family: 'player_diets',
+          servingSeason: '2025-26',
+          rule: 'every team has played 10 games',
+          teamGames: { min: 80, max: 82 },
+        },
+      ],
+      seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+    });
+    renderSlate('/matchups?date=2026-01-15&season=2026-27');
+    await screen.findByRole('link', { name: /^LAL @ BOS/ });
+
+    expect(fetchSlate.mock.calls).toEqual([
+      ['2026-01-15', { signal: expect.any(AbortSignal), season: '2026-27' }],
+    ]);
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2026-27');
+    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(gameLink()).toHaveAttribute('href', '/matchups/0022500584?season=2026-27');
+    // A mixed score names each input's own sample, never one game count.
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Scores use 2025-26 team defense and Diets (80–82 games per team) until every team has played 10 games.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next date' }));
+    expect(screen.getByLabelText('Current URL')).toHaveTextContent(
+      '/matchups?date=2026-01-16&season=2026-27',
+    );
+  });
+
+  test('the default is never named on the read or the links', async () => {
+    renderSlate('/matchups?date=2026-01-15');
+    await screen.findByRole('link', { name: /^LAL @ BOS/ });
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2025-26');
+    expect(fetchSlate.mock.calls).toEqual([['2026-01-15', { signal: expect.any(AbortSignal) }]]);
+    expect(gameLink()).toHaveAttribute('href', '/matchups/0022500584');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Evidence season' }), {
+      target: { value: '2026-27' },
+    });
+    expect(screen.getByLabelText('Current URL')).toHaveTextContent(
+      '/matchups?date=2026-01-15&season=2026-27',
+    );
+    await waitFor(() =>
+      expect(fetchSlate).toHaveBeenLastCalledWith('2026-01-15', {
+        signal: expect.any(AbortSignal),
+        season: '2026-27',
+      }),
+    );
+  });
+
+  test('2026-27 evidence for a 2025-26 date is refused with a way back', async () => {
+    fetchSlate.mockImplementation(async (date, { season }) => {
+      if (season)
+        throw seasonRefusalOr(
+          Object.assign(new Error('Request failed with status code 400'), {
+            response: {
+              status: 400,
+              headers: {},
+              data: {
+                error: {
+                  code: 'season_after_game',
+                  message: 'Refused.',
+                  details: { selected_season: '2026-27', game_season: '2025-26' },
+                },
+              },
+            },
+          }),
+        );
+      return slate;
+    });
+    renderSlate('/matchups?date=2026-01-15&season=2026-27');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This is a 2025-26 game, so it has no 2026-27 evidence. CourtAI still reads 2025-26 by default.Show 2025-26',
+    );
+    expect(screen.queryByRole('link', { name: /^LAL @ BOS/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
+    expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-01-15');
+    expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toHaveAttribute(
+      'href',
+      '/matchups/0022500584',
+    );
+  });
 });

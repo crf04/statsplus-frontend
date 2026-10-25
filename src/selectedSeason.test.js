@@ -1,10 +1,15 @@
 import { apiClient } from './config';
 import { decodeGameLogsResponse, fetchGameLogsData, getRequestErrorMessage } from './gameLogsApi';
-import { decodeMatchup, decodeMatchupSelection, fetchMatchup } from './matchups/matchupApi';
+import {
+  decodeMatchup,
+  decodeMatchupSelection,
+  fetchMatchup,
+  fetchMatchupSelection,
+} from './matchups/matchupApi';
 import { payload as matchupPayload } from './matchups/matchupPayloadFixture';
 import { fetchPlayerProfile } from './playerProfileApi';
 import { decodeSeasons } from './seasonsApi';
-import { SeasonUnavailableError } from './servingSeason';
+import { SeasonAfterGameError, SeasonUnavailableError } from './servingSeason';
 import { decodeSlate, fetchSlate } from './slateApi';
 import { closingPoolSlatePayload } from './slateClosingPoolFixture';
 import { decodeSlateEdges, fetchSlateEdges } from './slateEdgesApi';
@@ -304,6 +309,34 @@ describe('/api/players/profile', () => {
     });
   });
 
+  test('keeps the families its facts trail on, each with its season and sample', async () => {
+    await expect(
+      read({
+        data: rows,
+        season_context: seasonContext,
+        trailing: [
+          {
+            family: 'synergy',
+            serving_season: '2025-26',
+            rule: 'NBA has published the season and every team has played 10 games',
+            team_games: { min: 82, max: 82 },
+          },
+        ],
+      }),
+    ).resolves.toEqual({
+      data: rows,
+      seasonContext: decodedContext,
+      trailing: [
+        {
+          family: 'synergy',
+          servingSeason: '2025-26',
+          rule: 'NBA has published the season and every team has played 10 games',
+          teamGames: { min: 82, max: 82 },
+        },
+      ],
+    });
+  });
+
   test.each([
     ['an envelope without data', { season_context: seasonContext }],
     ['a malformed season_context', { data: rows, season_context: { selected_season: '2026' } }],
@@ -311,5 +344,154 @@ describe('/api/players/profile', () => {
     await expect(read(body)).rejects.toThrow(
       'The player profile endpoint returned an invalid response.',
     );
+  });
+});
+
+describe('400 season_after_game', () => {
+  const afterGame = Object.assign(new Error('Request failed with status code 400'), {
+    response: {
+      status: 400,
+      headers: {},
+      data: {
+        error: {
+          code: 'season_after_game',
+          message: 'The 2026-27 season cannot be selected for a 2025-26 game.',
+          details: { selected_season: '2026-27', game_season: '2025-26' },
+        },
+      },
+    },
+  });
+
+  test.each([
+    ['Matchup', () => fetchMatchup('0022500011', { season: '2026-27' })],
+    [
+      'Matchup selection',
+      () => fetchMatchupSelection('0022500011', 2544, ['PTS'], { season: '2026-27' }),
+    ],
+    ['Slate', () => fetchSlate('2026-04-10', { season: '2026-27' })],
+  ])('%s refuses with the typed error naming both seasons', async (_name, read) => {
+    apiClient.get.mockRejectedValue(afterGame);
+    const error = await read().catch((failure) => failure);
+    expect(error).toBeInstanceOf(SeasonAfterGameError);
+    expect([error.selectedSeason, error.gameSeason]).toEqual(['2026-27', '2025-26']);
+  });
+
+  test('another 400 is the failure it was', async () => {
+    const invalid = {
+      ...afterGame,
+      response: {
+        ...afterGame.response,
+        data: { error: { code: 'invalid_input', message: 'No.' } },
+      },
+    };
+    apiClient.get.mockRejectedValue(invalid);
+    await expect(fetchSlate('2026-04-10')).rejects.toBe(invalid);
+  });
+});
+
+describe('season on the request', () => {
+  beforeEach(() => apiClient.get.mockRejectedValue(new Error('stop')));
+  const params = () => apiClient.get.mock.calls[0][1].params;
+
+  test.each([
+    ['Matchup', (season) => fetchMatchup('0022600011', { season }), { game_id: '0022600011' }],
+    [
+      'Matchup selection',
+      (season) => fetchMatchupSelection('0022600011', 2544, ['PTS'], { season }),
+      { game_id: '0022600011', player_id: 2544 },
+    ],
+    ['Slate', (season) => fetchSlate('2026-10-24', { season }), { date: '2026-10-24' }],
+  ])('%s names an explicit season and nothing else', async (_name, read, base) => {
+    await read('2026-27').catch(() => {});
+    expect(params()).toEqual({ ...base, season: '2026-27' });
+    apiClient.get.mockClear();
+    await read(null).catch(() => {});
+    expect(params()).toEqual(base);
+  });
+});
+
+describe('trailing team_games', () => {
+  const trailing = [
+    {
+      family: 'team_defense',
+      serving_season: '2025-26',
+      rule: 'every team has played 10 games',
+      team_games: { min: 80, max: 82 },
+    },
+  ];
+
+  test.each([
+    ['Matchup', (data) => decodeMatchup(data), matchupPayload],
+    ['Slate', (data) => decodeSlate(data), closingPoolSlatePayload],
+  ])('%s reads each trailing sample, and none when absent', (_name, decode, data) => {
+    expect(decode({ ...data, trailing }).trailing).toEqual([
+      {
+        family: 'team_defense',
+        servingSeason: '2025-26',
+        rule: 'every team has played 10 games',
+        teamGames: { min: 80, max: 82 },
+      },
+    ]);
+    const { team_games: _omitted, ...unsampled } = trailing[0];
+    expect(decode({ ...data, trailing: [unsampled] }).trailing).toEqual([
+      { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+    ]);
+  });
+
+  test.each([null, { min: 3 }, { min: 4, max: 3 }, { min: 1.5, max: 3 }, { min: -1, max: 3 }])(
+    'refuses a malformed sample %p',
+    (teamGames) => {
+      expect(() =>
+        decodeMatchup({ ...matchupPayload, trailing: [{ ...trailing[0], team_games: teamGames }] }),
+      ).toThrow('The matchup endpoint returned an invalid response.');
+    },
+  );
+});
+
+// Under a selection each Diet base names the season it serves; the top-level
+// season is only the latest of them.
+describe('/api/diet/baselines bases', () => {
+  const selected = {
+    ...baselines,
+    season_context: seasonContext,
+    season: '2026-27',
+    bases: {
+      shot_types: { family: 'player_diets', season: '2026-27' },
+      play_types: { family: 'synergy', season: '2025-26' },
+      assist_locations: { family: 'player_diets', season: null },
+    },
+    trailing: [
+      {
+        family: 'synergy',
+        serving_season: '2025-26',
+        rule: 'NBA has published the season and every team has played 10 games',
+        team_games: { min: 82, max: 82 },
+      },
+    ],
+  };
+
+  test('keeps each base with its own season, and the trailing families', () => {
+    const decoded = decodeDietBaselines(selected);
+    expect(decoded.bases).toEqual({
+      shot_types: { family: 'player_diets', season: '2026-27' },
+      play_types: { family: 'synergy', season: '2025-26' },
+      assist_locations: { family: 'player_diets', season: null },
+    });
+    expect(decoded.trailing).toEqual([
+      {
+        family: 'synergy',
+        servingSeason: '2025-26',
+        rule: 'NBA has published the season and every team has played 10 games',
+        teamGames: { min: 82, max: 82 },
+      },
+    ]);
+  });
+
+  test.each([
+    ['a list', []],
+    ['a base without a family', { shot_types: { season: '2026-27' } }],
+    ['a malformed season', { shot_types: { family: 'player_diets', season: '2026' } }],
+  ])('refuses bases as %s', (_name, bases) => {
+    expect(() => decodeDietBaselines({ ...selected, bases })).toThrow();
   });
 });

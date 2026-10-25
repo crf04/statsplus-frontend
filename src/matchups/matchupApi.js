@@ -5,7 +5,7 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from '../slateStatus';
-import { seasonUnavailableOr, servingSeasonDecoders } from '../servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const invalid = () => new Error('The matchup endpoint returned an invalid response.');
 const selectionInvalid = () =>
@@ -1237,11 +1237,16 @@ export const decodeMatchup = (data) => {
   };
 };
 
-export const fetchMatchup = async (gameId, { signal } = {}) => {
+// `season` is an explicit Evidence season (crf04/statsplus#330); the default
+// is never named, so an omitted-season request is exactly today's.
+export const fetchMatchup = async (gameId, { signal, season } = {}) => {
   const response = await apiClient
-    .get(getApiUrl('MATCHUP'), { params: { game_id: gameId }, signal })
+    .get(getApiUrl('MATCHUP'), {
+      params: { game_id: gameId, ...(season ? { season } : {}) },
+      signal,
+    })
     .catch((error) => {
-      throw seasonUnavailableOr(error);
+      throw seasonRefusalOr(error);
     });
   return decodeMatchup(response.data);
 };
@@ -1416,7 +1421,7 @@ export const fetchMatchupSelection = async (
   gameId,
   playerId,
   statCategories,
-  { signal, mode, focalGameLine } = {},
+  { signal, mode, focalGameLine, season } = {},
 ) => {
   if (
     typeof gameId !== 'string' ||
@@ -1428,11 +1433,11 @@ export const fetchMatchupSelection = async (
     throw selectionInvalid();
   const response = await apiClient
     .get(getApiUrl('MATCHUP_SELECTION'), {
-      params: { game_id: gameId, player_id: playerId },
+      params: { game_id: gameId, player_id: playerId, ...(season ? { season } : {}) },
       signal,
     })
     .catch((error) => {
-      throw seasonUnavailableOr(error);
+      throw seasonRefusalOr(error);
     });
   return decodeMatchupSelection(response.data, statCategories, playerId, {
     gameId,

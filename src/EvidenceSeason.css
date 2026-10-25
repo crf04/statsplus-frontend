@@ -1,0 +1,72 @@
+.evidence-season-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #e8a33d;
+  border: 1px solid rgba(232, 163, 61, 0.45);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.evidence-season-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+}
+
+.evidence-season-field select {
+  min-height: 34px;
+  max-width: 100%;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  font-size: 0.86rem;
+  padding: 0 8px;
+}
+
+.evidence-season-field select:focus {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  outline: none;
+}
+
+.season-unavailable {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 8px 4px;
+}
+.season-unavailable p {
+  margin: 0;
+  color: #f1e9d6;
+  font-size: 1.05em;
+}
+.season-unavailable button {
+  background-color: rgba(232, 163, 61, 0.1);
+  border: 1px solid #e8a33d;
+  color: #e8a33d;
+  font-weight: 500;
+  font-size: 0.85em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+.season-unavailable button:hover {
+  background-color: rgba(232, 163, 61, 0.2);
+  border-color: #e8a33d;
+  color: #e8a33d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.2);
+}
+
+.evidence-season-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 14px 0 0;
+}

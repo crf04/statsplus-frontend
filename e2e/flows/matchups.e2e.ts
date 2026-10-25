@@ -1,7 +1,12 @@
 import { expect } from 'e2e';
 import {
+  HISTORICAL_GAME_ID,
+  historicalMatchupPayload,
   postCutoverHistoricalMatchupPayload,
   servingSeasonMatchupPayload,
+  slateGame,
+  slatePayload,
+  SYNERGY_TRAILING,
 } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
 
@@ -224,5 +229,144 @@ signedInTest(
     await expect(screen.getByText('2025-26 season')).toHaveCount(0);
     expect(await overflowsHorizontally(browser)).toBe(false);
     await app.screenshot('matchup-post-cutover-historical');
+  },
+);
+
+// A backend serving 2026-27 before its cutover (crf04/statsplus#330) offers it
+// as an Evidence season. QA cannot seed a 2026-27 candidate, so these states
+// are fixtures.
+const evidenceSeasons = {
+  seasons: ['2025-26', '2024-25'],
+  default_season: '2025-26',
+  choices: [
+    {
+      season: '2026-27',
+      mode: 'unpublished',
+      families: { game_logs: { served_season: '2026-27', state: 'serving' } },
+      team_games: { min: 2, max: 4 },
+    },
+    {
+      season: '2025-26',
+      mode: 'published',
+      families: { game_logs: { served_season: '2025-26', state: 'serving' } },
+    },
+    {
+      season: '2024-25',
+      mode: 'retained',
+      families: { game_logs: { served_season: '2024-25', state: 'serving' } },
+    },
+  ],
+};
+const seasonContext = { selected_season: '2026-27', published_season: '2025-26' };
+const trailingSample = { team_games: { min: 80, max: 82 } };
+const selectedMatchup = {
+  ...servingSeasonMatchupPayload,
+  as_of: { ...servingSeasonMatchupPayload.as_of, season: '2025-26' },
+  season_context: seasonContext,
+  trailing: [{ ...SYNERGY_TRAILING, ...trailingSample }],
+};
+const selectedSlate = {
+  ...slatePayload('2026-01-15', [slateGame]),
+  season_context: seasonContext,
+  trailing: [
+    {
+      family: 'team_defense',
+      serving_season: '2025-26',
+      rule: 'every team has played 10 games',
+      ...trailingSample,
+    },
+  ],
+};
+const seasonOf = (request: { url(): string }) => new URL(request.url()).searchParams.get('season');
+
+signedInTest(
+  'a 2026-27 Evidence season rides from the Slate to the Matchup and names every sample',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/seasons': { body: evidenceSeasons },
+      '/api/games/slate': { body: selectedSlate },
+      '/api/games/matchup': { body: selectedMatchup },
+    });
+    await app.open('/matchups?date=2026-01-15&season=2026-27');
+    await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    await expect(
+      screen.getByText(
+        'Scores use 2025-26 team defense (80–82 games per team) until every team has played 10 games.',
+      ),
+    ).toBeVisible();
+    expect(api.sent('/api/games/slate').map((request) => request.search.get('season'))).toEqual([
+      '2026-27',
+    ]);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('slate-evidence-2026-27');
+
+    await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
+    await expect(browser).toHaveURL('/matchups/0022500584?season=2026-27');
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    await screen.getByRole('group', 'Market').getByRole('button', 'All').tap();
+    await expect(
+      screen.getByRole('region', 'Play types').getByText('2025-26 season · 80–82 games per team'),
+    ).toBeVisible();
+    await expect(screen.getByRole('link', 'LeBron James game logs')).toHaveAttribute(
+      'href',
+      '/?player_name=LeBron+James&season_filter=2026-27',
+    );
+    await expect(screen.getByRole('link', '← Back to slate')).toHaveAttribute(
+      'href',
+      '/matchups?season=2026-27',
+    );
+    expect(api.sent('/api/games/matchup').map((request) => request.search.get('season'))).toEqual([
+      '2026-27',
+    ]);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('matchup-evidence-2026-27');
+  },
+);
+
+signedInTest(
+  '2026-27 evidence for a 2025-26 game is refused with a way back, and an unoffered season falls back',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/seasons': { body: evidenceSeasons },
+      '/api/games/matchup': (request) =>
+        seasonOf(request)
+          ? {
+              status: 400,
+              body: {
+                error: {
+                  code: 'season_after_game',
+                  message: 'The 2026-27 season cannot be selected for a 2025-26 game.',
+                  details: { selected_season: '2026-27', game_season: '2025-26' },
+                },
+              },
+            }
+          : historicalMatchupPayload,
+    });
+    await app.open(`/matchups/${HISTORICAL_GAME_ID}?season=2026-27`);
+    await expect(screen.getByRole('alert')).toHaveText(
+      'This is a 2025-26 game, so it has no 2026-27 evidence. CourtAI still reads 2025-26 by default. Show 2025-26',
+    );
+    await expect(screen.getByRole('heading', 'What MIL allows')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('matchup-season-after-game');
+
+    await screen.getByRole('button', 'Show 2025-26').tap();
+    await expect(browser).toHaveURL(`/matchups/${HISTORICAL_GAME_ID}`);
+    await expect(screen.getByRole('heading', 'What MIL allows')).toBeVisible();
+
+    await app.open(`/matchups/${HISTORICAL_GAME_ID}?season=2027-28`);
+    await expect(browser).toHaveURL(`/matchups/${HISTORICAL_GAME_ID}`);
+    await expect(
+      screen.getByText('2027-28 isn’t offered, so this is 2025-26 evidence.'),
+    ).toBeVisible();
+    await expect(screen.getByRole('heading', 'What MIL allows')).toBeVisible();
+    expect(api.sent('/api/games/matchup').at(-1)?.search.get('season')).toBeNull();
+    await app.screenshot('matchup-season-fallback');
   },
 );

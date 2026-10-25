@@ -784,11 +784,6 @@ const GameLogFilter = ({ notice = null }) => {
           Unable to load player and team lists. <ErrorMessage message={listsError} />
         </Alert>
       )}
-      {fallbackFrom && !linkedSeason && seasonChoices?.defaultSeason && (
-        <Alert variant="info" className="mx-3" role="status">
-          {fallbackFrom} isn&rsquo;t offered, so these are {seasonChoices.defaultSeason} game logs.
-        </Alert>
-      )}
       {gameLogsError && unavailableSeason === null && (
         <Alert variant="danger" className="mx-3" role="alert">
           <ErrorMessage message={gameLogsError} />
@@ -827,6 +822,12 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-label">Query:</span>
                 <span className="query-text">"{currentQuery}"</span>
               </div>
+            )}
+            {fallbackFrom && !linkedSeason && seasonChoices?.defaultSeason && (
+              <span className="evidence-season-chip" role="status">
+                {fallbackFrom} isn&rsquo;t offered, so these are {seasonChoices.defaultSeason} game
+                logs.
+              </span>
             )}
             {unpublishedChoice && (
               <span className="evidence-season-chip" data-testid="evidence-season-chip">

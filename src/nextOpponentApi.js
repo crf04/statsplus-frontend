@@ -31,7 +31,17 @@ export const decodeNextOpponent = (payload) => {
       throw new Error('The next opponent API returned an invalid rank.');
     }
   }
-  return payload;
+  // family and markets only narrow the list, so a malformed one is dropped
+  // rather than costing the whole Next opponent block.
+  return {
+    ...payload,
+    opponent_ranks: payload.opponent_ranks.map(({ family, markets, ...stat }) => ({
+      ...stat,
+      ...(typeof family === 'string' && { family }),
+      ...(Array.isArray(markets) &&
+        markets.every((code) => typeof code === 'string') && { markets }),
+    })),
+  };
 };
 
 export const fetchNextOpponent = async (playerName, { signal } = {}) => {

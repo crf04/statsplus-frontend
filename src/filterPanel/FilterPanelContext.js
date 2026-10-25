@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toFiniteNumber } from '../numberUtils';
 import { opponentFilterLabel } from '../opponentFilters';
 import { useAuth } from '../contexts/AuthContext';
+import { opponentExtremes } from './opponentExtremes';
 
 const useHeight = () => {
   const ref = useRef(null);
@@ -208,19 +209,7 @@ const FilterPanelContext = ({ panel, extra, saved }) => {
     onContextSettled?.(settled ? panel.selectedPlayer : null);
   }, [onContextSettled, settled, panel.selectedPlayer]);
   useEffect(() => () => onContextSettled?.(null), [onContextSettled]);
-  const extremes = (opponent?.opponent_ranks || [])
-    .filter((stat) => stat.most_rank <= 8 || stat.most_rank > stat.ranked_teams - 8)
-    .map((stat) => {
-      const fewest = stat.ranked_teams - stat.most_rank + 1 < stat.most_rank;
-      return {
-        ...stat,
-        token: stat.team_filter,
-        fewest,
-        place: fewest ? stat.ranked_teams - stat.most_rank + 1 : stat.most_rank,
-        tier: fewest ? [Math.max(1, stat.ranked_teams - 7), stat.ranked_teams] : [1, 8],
-      };
-    })
-    .sort((a, b) => a.place - b.place || a.label.localeCompare(b.label));
+  const extremes = opponentExtremes(opponent?.opponent_ranks || [], extra.lineType);
   const [oppOpen, setOppOpen] = useState(false);
   const { ensureSeason } = panel;
   useEffect(() => {

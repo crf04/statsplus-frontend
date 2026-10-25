@@ -1,6 +1,6 @@
 import { apiClient, getApiUrl } from './config';
 import { GAME_LOGS_TIMEOUT } from './apiSettings';
-import { seasonUnavailableOr, servingSeasonDecoders } from './servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 
 const parseJsonValue = (value, fallback, fieldName) => {
   if (value === null || value === undefined || value === '') return fallback;
@@ -169,7 +169,7 @@ export const fetchGameLogsData = async (params = {}, { signal } = {}) => {
       timeout: GAME_LOGS_TIMEOUT,
     })
     .catch((error) => {
-      throw seasonUnavailableOr(error);
+      throw seasonRefusalOr(error);
     });
 
   return decodeGameLogsResponse(response.data);

@@ -1,6 +1,6 @@
 import { apiClient, getApiUrl } from './config';
 import { isRecord } from './decoding';
-import { seasonUnavailableOr, servingSeasonDecoders } from './servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 
 const invalidProfile = () => new Error('The player profile endpoint returned an invalid response.');
 const { decodeSeasonContext } = servingSeasonDecoders(invalidProfile);
@@ -23,5 +23,5 @@ export const fetchPlayerProfile = (params, { signal } = {}) =>
     .get(getApiUrl('PLAYER_PROFILE'), { params, signal })
     .then(({ data }) => decodePlayerProfile(data))
     .catch((error) => {
-      throw seasonUnavailableOr(error);
+      throw seasonRefusalOr(error);
     });

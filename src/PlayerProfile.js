@@ -8,6 +8,7 @@ import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { fetchPlayerProfile } from './playerProfileApi';
+import { SeasonUnavailableError, seasonUnavailableText } from './servingSeason';
 import ShotTypeTable from './profileShooting/ShotTypeTable';
 import ShotZoneCourt from './profileShooting/ShotZoneCourt';
 import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
@@ -15,7 +16,7 @@ import { TEAM_CODES } from './targets/opponentContextApi';
 import { fetchDietBaselines } from './targets/targetsApi';
 import ErrorMessage from './feedback/ErrorMessage';
 
-const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
+const PlayerProfile = ({ selectedPlayer, selectedTeam, season = null, onSettled }) => {
   const [selectedProfile, setSelectedProfile] = useState('Playtypes');
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
@@ -40,7 +41,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
         : null;
   const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
   const playerReadKey = hasPlayer
-    ? `${selectedPlayer}|${selectedProfile}|${profileOpponent}|${zoneOpponent}`
+    ? `${selectedPlayer}|${selectedProfile}|${profileOpponent}|${zoneOpponent}|${season}`
     : null;
   const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}` : null;
   const settled =
@@ -64,7 +65,12 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
     setPlayerSettledFor(null);
     const readProfile = () =>
       fetchPlayerProfile(
-        { player_name: selectedPlayer, category: selectedProfile, opp_team: profileOpponent },
+        {
+          player_name: selectedPlayer,
+          category: selectedProfile,
+          opp_team: profileOpponent,
+          ...(season ? { season } : {}),
+        },
         { signal: controller.signal },
       ).then(({ data }) => (data && Object.keys(data).length > 0 ? data : null));
     const read = () => {
@@ -77,7 +83,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
         // The league tick is supplementary: without baselines the table still reads.
         return Promise.all([
           readProfile(),
-          fetchDietBaselines({ signal: controller.signal }).catch(() => null),
+          fetchDietBaselines({ signal: controller.signal, season }).catch(() => null),
         ]).then(([rows, baselines]) =>
           rows ? { rows, leagueShares: baselines?.shares?.shot_types ?? null } : null,
         );
@@ -97,7 +103,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
           setPlayerError(
             selectedProfile === 'Zone Shooting' && shotZoneUnavailable(error)
               ? `No shot zone matchup for ${selectedPlayer} this season.`
-              : withRequestReference('Failed to fetch data. Please try again.', error),
+              : error instanceof SeasonUnavailableError
+                ? seasonUnavailableText(error.selectedSeason ?? season)
+                : withRequestReference('Failed to fetch data. Please try again.', error),
           );
         })
         .finally(() => {
@@ -107,7 +115,15 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
         });
     }
     return () => controller.abort();
-  }, [selectedPlayer, selectedProfile, profileOpponent, zoneOpponent, hasPlayer, playerReadKey]);
+  }, [
+    selectedPlayer,
+    selectedProfile,
+    profileOpponent,
+    zoneOpponent,
+    season,
+    hasPlayer,
+    playerReadKey,
+  ]);
 
   useEffect(() => {
     const controller = new AbortController();

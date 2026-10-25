@@ -1,5 +1,4 @@
 import {
-  BACKTEST_SEASONS,
   describeBacktestSeason,
   publishedSeasonOf,
   seasonUnavailableDetails,
@@ -12,16 +11,12 @@ const refusal = (details, code = 'season_unavailable') => ({
   },
 });
 
-test('a Backtest reads 2025-26 or 2026-27, in that order, and never 2024-25', () => {
-  expect(BACKTEST_SEASONS).toEqual(['2025-26', '2026-27']);
-});
-
 /*
- * A refusal names either Backtest season, whatever the published season
- * actually is: 2026-27 refused before it is published, or 2025-26 refused
- * after it.
+ * A refusal names the season it read, whatever the published season actually
+ * is: 2026-27 refused before it is published, 2025-26 refused after it, or a
+ * retained 2024-25 whose data is gone.
  */
-test('refusal details name either Backtest season against the actual published one', () => {
+test('refusal details name the season read against the actual published one', () => {
   expect(
     seasonUnavailableDetails(
       refusal({ season: '2026-27', published_season: '2025-26', stream: 'player_game_logs' }),
@@ -37,10 +32,14 @@ test('refusal details name either Backtest season against the actual published o
       refusal({ season: '2025-26', published_season: '2025-26', stream: 'player_game_logs' }),
     ),
   ).toEqual({ season: '2025-26', publishedSeason: '2025-26', stream: 'player_game_logs' });
+  expect(
+    seasonUnavailableDetails(
+      refusal({ season: '2024-25', published_season: '2025-26', stream: 'player_game_logs' }),
+    ),
+  ).toEqual({ season: '2024-25', publishedSeason: '2025-26', stream: 'player_game_logs' });
 });
 
 test.each([
-  ['a season no Backtest reads', { season: '2024-25', published_season: '2025-26', stream: 's' }],
   ['a malformed season', { season: '2026-99', published_season: '2026-27', stream: 's' }],
   ['a malformed published season', { season: '2026-27', published_season: '2026', stream: 's' }],
   ['a missing stream', { season: '2025-26', published_season: '2026-27' }],

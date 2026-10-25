@@ -25,7 +25,10 @@ jest.mock('./savedFilterSetsApi', () => ({
 }));
 jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
-jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PlayerProfile', () => ({
+  __esModule: true,
+  default: ({ season }) => <output aria-label="Profile season">{season ?? 'default'}</output>,
+}));
 jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
@@ -219,4 +222,24 @@ test('a refusal names its published season and offers it when the seasons read f
   fireEvent.click(within(alert).getByRole('button', { name: 'Show 2025-26' }));
   await waitFor(() => expect(url()).toBe('/?player_name=LeBron+James'));
   expect(await screen.findByText('Game list of 1')).toBeInTheDocument();
+});
+
+// The Player Profile reads the Workspace's season as its Evidence season
+// (crf04/statsplus#330), named only when it is not the default.
+test.each([
+  ['no season', '', 'default'],
+  ['the default season', '&season_filter=2025-26', 'default'],
+  ['2026-27', '&season_filter=2026-27', '2026-27'],
+  ['a retained season', '&season_filter=2024-25', '2024-25'],
+])('with %s the Player Profile reads %s', async (_name, query, expected) => {
+  renderAt(`/?player_name=LeBron+James${query}`);
+  await screen.findByText('Game list of 1');
+  await waitFor(() => expect(screen.getByLabelText('Profile season')).toHaveTextContent(expected));
+});
+
+test('without choices the Player Profile names no season', async () => {
+  fetchSeasons.mockResolvedValue({ seasons: ['2025-26', '2024-25'], defaultSeason: '2025-26' });
+  renderAt('/?player_name=LeBron+James&season_filter=2024-25');
+  await screen.findByText('Game list of 1');
+  expect(screen.getByLabelText('Profile season')).toHaveTextContent('default');
 });

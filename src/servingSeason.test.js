@@ -25,6 +25,28 @@ test('gives a family with its own rule its own clause', () => {
   );
 });
 
+// Under an explicit Evidence season (crf04/statsplus#330) a mixed score names
+// each trailing season's own sample, never one game count for the score.
+test('under an Evidence season each trailing season names its sample, or says it is not reported', () => {
+  const context = { selectedSeason: '2026-27', publishedSeason: '2025-26' };
+  expect(
+    trailingNote(
+      [
+        {
+          family: 'team_defense',
+          servingSeason: '2025-26',
+          rule: 'every team has played 10 games',
+          teamGames: { min: 80, max: 82 },
+        },
+        { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+      ],
+      context,
+    ),
+  ).toBe(
+    'Scores use 2025-26 team defense (80–82 games per team) until every team has played 10 games, and 2025-26 play types (sample not reported) until NBA publishes 2026-27 play types.',
+  );
+});
+
 test('says nothing when no family trails or the backend predates the list', () => {
   expect(trailingNote([])).toBeNull();
   expect(trailingNote(undefined)).toBeNull();

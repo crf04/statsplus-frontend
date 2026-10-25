@@ -7,9 +7,13 @@ import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { payload as rawMatchupPayload } from './matchupPayloadFixture';
 import { bookName } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
+import { fetchSeasons } from '../seasonsApi';
+import { legacySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
+import { seasonRefusalOr } from '../servingSeason';
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
+jest.mock('../seasonsApi', () => ({ fetchSeasons: jest.fn() }));
 jest.mock('../targets/targetsApi', () => ({
   createTarget: jest.fn(),
   fetchDietBaselines: jest.fn(),
@@ -266,6 +270,7 @@ const matchup = {
 beforeEach(() => {
   jest.clearAllMocks();
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
+  fetchSeasons.mockResolvedValue(legacySeasons);
   fetchMatchup.mockResolvedValue(matchup);
   fetchTargetPreview.mockResolvedValue(capturePreview);
   fetchDietBaselines.mockResolvedValue({ shares: {} });
@@ -1510,7 +1515,10 @@ const railNames = () =>
 // Locale time strings may separate "9:30" from "AM" with a narrow space.
 const normalized = (element) => element.textContent.replace(/\s+/g, ' ');
 
-const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+const LocationProbe = () => {
+  const { pathname, search } = useLocation();
+  return <output data-testid="location">{pathname + search}</output>;
+};
 
 const renderMatchup = (path = '/matchups/game-1') =>
   render(
@@ -1987,8 +1995,9 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
   renderMatchup();
 
   const { dialog } = await openCapture('Transition');
+  // The Lab names the default once /seasons says which it is.
   expect(
-    within(dialog).getByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
+    await within(dialog).findByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
   ).toBeVisible();
   // The prefill is a complete draft, so it is read without a keystroke.
   const strip = await within(dialog).findByRole(
@@ -3600,4 +3609,207 @@ test('an unavailable Last 15 section names its reason, not a game count', async 
     within(boxScore).getByText('Box score unavailable for Last 6: provider_unsupported.'),
   ).toBeVisible();
   expect(within(boxScore).queryByText(/^Last \d+$/)).not.toBeInTheDocument();
+});
+
+/*
+ * The Evidence season (crf04/statsplus#330): offered from /seasons choices,
+ * kept in ?season=, named on the Matchup and selection reads only when it is
+ * not the default, and carried to the Slate and Game Logs links.
+ */
+describe('Evidence season', () => {
+  const location = () => screen.getByTestId('location').textContent;
+  const seasonSelect = () => screen.getByRole('combobox', { name: 'Evidence season' });
+  const refusal = (status, code, details) =>
+    seasonRefusalOr(
+      Object.assign(new Error(`Request failed with status code ${status}`), {
+        response: { status, headers: {}, data: { error: { code, message: 'Refused.', details } } },
+      }),
+    );
+
+  beforeEach(() => fetchSeasons.mockResolvedValue(unpublishedSeasons));
+
+  test('a linked 2026-27 is read, named with its sample, and carried by every link', async () => {
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    expect(fetchMatchup.mock.calls).toEqual([
+      ['game-1', { signal: expect.any(AbortSignal), season: '2026-27' }],
+    ]);
+    expect(seasonSelect()).toHaveValue('2026-27');
+    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups?season=2026-27',
+    );
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2026-27',
+    );
+
+    await userEvent.click(
+      within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByRole('button', {
+        name: 'Open selection card',
+      }),
+    );
+    await waitFor(() => expect(location()).toBe('/matchups/game-1?season=2026-27&player=1630559'));
+    await waitFor(() =>
+      expect(fetchMatchupSelection).toHaveBeenLastCalledWith(
+        'game-1',
+        1630559,
+        ['PTS', 'FG3A'],
+        expect.objectContaining({ season: '2026-27' }),
+      ),
+    );
+  });
+
+  test('the default is never named, and choosing it takes the season out of the URL', async () => {
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(seasonSelect()).toHaveValue('2025-26');
+    expect(screen.queryByTestId('evidence-season-chip')).not.toBeInTheDocument();
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves',
+    );
+
+    fireEvent.change(seasonSelect(), { target: { value: '2026-27' } });
+    expect(location()).toBe('/matchups/game-1?season=2026-27');
+    await waitFor(() =>
+      expect(fetchMatchup).toHaveBeenLastCalledWith('game-1', {
+        signal: expect.any(AbortSignal),
+        season: '2026-27',
+      }),
+    );
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Evidence season' }), {
+      target: { value: '2025-26' },
+    });
+    expect(location()).toBe('/matchups/game-1');
+    await waitFor(() => expect(fetchMatchup).toHaveBeenCalledTimes(3));
+    expect(fetchMatchup).toHaveBeenLastCalledWith('game-1', { signal: expect.any(AbortSignal) });
+  });
+
+  test('choices without a season not yet published show nothing new', async () => {
+    fetchSeasons.mockResolvedValue(legacySeasons);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+  });
+
+  test('2026-27 evidence for a 2025-26 game is refused, never shown as an empty Matchup', async () => {
+    fetchMatchup.mockImplementation(async (_id, { season }) => {
+      if (season)
+        throw refusal(400, 'season_after_game', {
+          selected_season: '2026-27',
+          game_season: '2025-26',
+        });
+      return matchup;
+    });
+    renderMatchup('/matchups/game-1?season=2026-27');
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This is a 2025-26 game, so it has no 2026-27 evidence. CourtAI still reads 2025-26 by default.Show 2025-26',
+    );
+    expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No Defense Sheet rows/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
+    await waitFor(() => expect(location()).toBe('/matchups/game-1'));
+    expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  });
+
+  test('a 503 season_unavailable is the plain refusal, with the way back', async () => {
+    fetchMatchup.mockRejectedValue(
+      refusal(503, 'season_unavailable', {
+        selected_season: '2026-27',
+        published_season: '2025-26',
+      }),
+    );
+    renderMatchup('/matchups/game-1?season=2026-27');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
+    );
+    expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
+  });
+
+  test('a linked season the choices do not offer falls back to the default and says so', async () => {
+    renderMatchup('/matchups/game-1?season=2027-28&player=2544');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.getByText('2027-28 isn’t offered, so this is 2025-26 evidence.')).toHaveAttribute(
+      'role',
+      'status',
+    );
+    expect(location()).toBe('/matchups/game-1?player=2544');
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+  });
+
+  test('under 2026-27 a trailing section names its own season and sample', async () => {
+    const selected = JSON.parse(JSON.stringify(matchup));
+    selected.asOfSeason = '2025-26';
+    selected.seasonContext = { selectedSeason: '2026-27', publishedSeason: '2025-26' };
+    Object.values(selected.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = '2026-27';
+      windows.last15.season = '2026-27';
+    });
+    selected.league.surfaceAvailability.playTypes.season.season = '2025-26';
+    selected.league.surfaceAvailability.shotZones.season.season = '2025-26';
+    selected.trailing = [
+      {
+        family: 'synergy',
+        servingSeason: '2025-26',
+        rule: 'NBA publishes 2026-27 play types',
+        teamGames: { min: 80, max: 82 },
+      },
+      {
+        family: 'team_defense',
+        servingSeason: '2025-26',
+        rule: 'every team has played 10 games',
+        teamGames: { min: 80, max: 82 },
+      },
+    ];
+    fetchMatchup.mockResolvedValue(selected);
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+    expect(
+      within(screen.getByRole('region', { name: 'Play types' })).getByText(
+        '2025-26 season · 80–82 games per team',
+      ),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole('region', { name: 'Shot zones' })).getByText(
+        '2025-26 season · 80–82 games per team',
+      ),
+    ).toBeVisible();
+    expect(screen.getAllByText(/^2025-26 season/)).toHaveLength(2);
+  });
+
+  test('a trailing sample the backend does not report says so', async () => {
+    const selected = JSON.parse(JSON.stringify(matchup));
+    selected.seasonContext = { selectedSeason: '2026-27', publishedSeason: '2025-26' };
+    Object.values(selected.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = '2026-27';
+    });
+    selected.league.surfaceAvailability.playTypes.season.season = '2025-26';
+    selected.trailing = [
+      { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+    ];
+    fetchMatchup.mockResolvedValue(selected);
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+    expect(
+      within(screen.getByRole('region', { name: 'Play types' })).getByText(
+        '2025-26 season · sample not reported',
+      ),
+    ).toBeVisible();
+  });
 });

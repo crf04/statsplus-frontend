@@ -7,7 +7,7 @@ import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
 import { TARGET_COMPARATORS } from './targetCatalog';
 import { describeSeasonUnavailable, isSeason } from './backtestSample';
-import { seasonUnavailableOr, servingSeasonDecoders } from '../servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
 const { decodeSeasonContext } = servingSeasonDecoders(createInvalidResponseError);
@@ -740,10 +740,12 @@ export const decodeDietBaselines = (payload) => {
   return { shares, seasonContext: decodeSeasonContext(payload.season_context) };
 };
 
-export const fetchDietBaselines = async ({ signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('DIET_BASELINES'), { signal }).catch((error) => {
-    throw seasonUnavailableOr(error);
-  });
+export const fetchDietBaselines = async ({ signal, season } = {}) => {
+  const response = await apiClient
+    .get(getApiUrl('DIET_BASELINES'), { ...(season ? { params: { season } } : {}), signal })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeDietBaselines(response.data);
 };
 

@@ -1,7 +1,7 @@
 import { apiClient, getApiUrl } from './config';
 import { isCalendarDate } from './calendarDate';
 import { isRecord, strictDecoders } from './decoding';
-import { seasonUnavailableOr, servingSeasonDecoders } from './servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 
 /*
  * Slate Edges (crf04/statsplus#204): one read for the home page in place of a
@@ -138,6 +138,6 @@ export const fetchSlateEdges = async ({ date, signal, fallback } = {}) => {
     return decodeSlateEdges(response.data);
   } catch (error) {
     if (error?.response?.status === 404) return null;
-    throw seasonUnavailableOr(error);
+    throw seasonRefusalOr(error);
   }
 };

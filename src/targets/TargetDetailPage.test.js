@@ -3,6 +3,8 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
 import TargetLab from './TargetLab';
+import { fetchSeasons } from '../seasonsApi';
+import { unpublishedSeasons } from '../seasonChoicesFixture';
 import { targetToDraft } from './TargetForm';
 import {
   deleteTarget,
@@ -23,6 +25,7 @@ jest.mock('./targetsApi', () => ({
 }));
 
 const auth = { isAuthenticated: true, loading: false };
+jest.mock('../seasonsApi', () => ({ fetchSeasons: jest.fn() }));
 jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => auth,
 }));
@@ -97,6 +100,7 @@ const renderDetail = (path = '/targets/7', wrapper = Fragment) =>
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargets.mockResolvedValue([target]);
@@ -116,7 +120,11 @@ const open = async () => {
   await act(async () => jest.advanceTimersByTime(600));
 };
 test('a newly composed valid Target retains its initial typing debounce', async () => {
-  render(<TargetLab draft={targetToDraft(target)} />);
+  render(
+    <MemoryRouter>
+      <TargetLab draft={targetToDraft(target)} />
+    </MemoryRouter>,
+  );
   await act(async () => jest.advanceTimersByTime(599));
   expect(fetchTargetPreview).not.toHaveBeenCalled();
   await act(async () => jest.advanceTimersByTime(1));
@@ -547,14 +555,16 @@ test.each([
     { season: '2025-26', seasonReason: 'fallback_no_games', publishedSeason: '2026-27' },
     '2026-27',
     'Lab · Backtest · 2026-27 season to date · vs OKC',
+    'That season’s data is unavailable. The 2026-27 season is unavailable. Retry backtest',
   ],
   [
     'the default season',
     { season: '2025-26', seasonReason: 'default', publishedSeason: '2025-26' },
     '2026-27',
     'Lab · Backtest · 2026-27 season to date · vs OKC',
+    "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
   ],
-])('a refused season never shows %s read before it', async (_, read, refused, heading) => {
+])('a refused season never shows %s read before it', async (_, read, refused, heading, alert) => {
   fetchTargetPreview.mockImplementation(async ({ season }) => {
     if (season === refused)
       throw Object.assign(new Error('Request failed with status code 503'), {
@@ -581,9 +591,7 @@ test.each([
   fireEvent.click(screen.getByRole('button', { name: refused }));
   await act(async () => jest.advanceTimersByTime(600));
 
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    `That season’s data is unavailable. The ${refused} season is unavailable. Retry backtest`,
-  );
+  expect(screen.getByRole('alert').textContent).toBe(alert);
   expect(screen.getByRole('heading', { name: heading, hidden: true })).toBeInTheDocument();
   expect(screen.queryByText(/has no games yet|default season/)).not.toBeInTheDocument();
   expect(screen.queryByRole('list', { name: 'Backtest summary' })).not.toBeInTheDocument();

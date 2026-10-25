@@ -7,7 +7,7 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from './slateStatus';
-import { seasonUnavailableOr, servingSeasonDecoders } from './servingSeason';
+import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 
 const createInvalidSlateError = () => new Error('The slate endpoint returned an invalid response.');
 const MISSING_TEAM_NAME_SENTINEL = 'None';
@@ -163,14 +163,18 @@ export const decodeSlate = (data) => {
   };
 };
 
-export const fetchSlate = async (date, { signal, fallback } = {}) => {
+export const fetchSlate = async (date, { signal, fallback, season } = {}) => {
   const response = await apiClient
     .get(getApiUrl('SLATE'), {
-      params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
+      params: {
+        ...(date ? { date } : {}),
+        ...(fallback ? { fallback } : {}),
+        ...(season ? { season } : {}),
+      },
       signal,
     })
     .catch((error) => {
-      throw seasonUnavailableOr(error);
+      throw seasonRefusalOr(error);
     });
   return decodeSlate(response.data);
 };

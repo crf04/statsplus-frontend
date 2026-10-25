@@ -309,3 +309,59 @@ test('a player the backend cannot score reads as missing data, not a failure', a
   await act(async () => {});
   expect(screen.getByText('No shot zone matchup for Cooper Flagg this season.')).toBeVisible();
 });
+
+// An explicit Evidence season (crf04/statsplus#330) is named on the profile
+// and its league baselines; the default never is.
+test('an Evidence season is named on the profile and baselines reads, the default never', async () => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'DIET_BASELINES'
+      ? Promise.resolve({ data: { shares: { shot_types: {} } } })
+      : Promise.resolve({ data: [{ SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.2 }] }),
+  );
+  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  fireEvent.click(screen.getByLabelText('Shooting Type'));
+  await act(async () => {});
+  const reads = () =>
+    apiClient.get.mock.calls
+      .filter(([url]) => url !== 'TEAM_STATS')
+      .map(([url, { params }]) => [url, params]);
+  expect(reads()).toEqual([
+    ['PLAYER_PROFILE', { player_name: 'LeBron James', category: 'Playtypes' }],
+    ['PLAYER_PROFILE', { player_name: 'LeBron James', category: 'Shooting Type' }],
+    ['DIET_BASELINES', undefined],
+  ]);
+
+  apiClient.get.mockClear();
+  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" season="2026-27" />);
+  await act(async () => {});
+  expect(reads()).toEqual([
+    [
+      'PLAYER_PROFILE',
+      { player_name: 'LeBron James', category: 'Shooting Type', season: '2026-27' },
+    ],
+    ['DIET_BASELINES', { season: '2026-27' }],
+  ]);
+});
+
+test('a refused Evidence season says it is not available yet', async () => {
+  const refusal = Object.assign(new Error('Request failed with status code 503'), {
+    response: {
+      status: 503,
+      headers: {},
+      data: {
+        error: {
+          code: 'season_unavailable',
+          message: 'Refused.',
+          details: { selected_season: '2026-27', published_season: '2025-26' },
+        },
+      },
+    },
+  });
+  apiClient.get.mockImplementation((url) =>
+    url === 'PLAYER_PROFILE' ? Promise.reject(refusal) : Promise.resolve({ data: [{}] }),
+  );
+  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" season="2026-27" />);
+  await act(async () => {});
+  expect(screen.getByText("2026-27 isn't available yet.")).toBeVisible();
+});

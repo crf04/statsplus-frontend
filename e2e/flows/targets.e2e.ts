@@ -365,3 +365,54 @@ signedInTest(
     await expect(screen.getByRole('heading', 'ORL vs P&R ball handler ≥ 25%')).toBeVisible();
   },
 );
+
+// A backend serving 2026-27 before its cutover (crf04/statsplus#330) offers it
+// in the Lab, but Backtests never read a season before its cutover.
+signedInTest(
+  'the Lab offers the listed Evidence seasons and refuses a 2026-27 Backtest plainly',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/seasons': {
+        body: {
+          seasons: ['2025-26'],
+          default_season: '2025-26',
+          choices: [
+            {
+              season: '2026-27',
+              mode: 'unpublished',
+              families: { game_logs: { served_season: '2026-27', state: 'serving' } },
+              team_games: { min: 2, max: 4 },
+            },
+            {
+              season: '2025-26',
+              mode: 'published',
+              families: { game_logs: { served_season: '2025-26', state: 'serving' } },
+            },
+          ],
+        },
+      },
+    });
+    await app.open('/targets');
+    await composeAssists(screen);
+    await expect(sampleCount(screen)).toHaveText(/^4 player-games$/);
+    const seasons = screen.getByRole('group', 'Evidence season');
+    await expect(seasons.getByRole('button', '2025-26')).toHaveAttribute('aria-pressed', 'true');
+
+    await seasons.getByRole('button', '2026-27').tap();
+    await expect(browser).toHaveURL('/targets?season=2026-27');
+    const lab = screen.getByRole('region', { name: /Lab · Backtest/ });
+    await expect(lab.getByRole('alert')).toHaveText(
+      "2026-27 isn't available yet. CourtAI still reads 2025-26 by default. Show 2025-26",
+    );
+    await expect(lab.getByRole('list', 'Backtest summary')).toHaveCount(0);
+    expect(api.sent('/api/user/targets/preview', 'POST').at(-1)?.body).toMatchObject({
+      season: '2026-27',
+    });
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('target-lab-2026-27-refused');
+
+    await lab.getByRole('button', 'Show 2025-26').tap();
+    await expect(browser).toHaveURL('/targets');
+    await expect(sampleCount(screen)).toHaveText(/^4 player-games$/);
+  },
+);

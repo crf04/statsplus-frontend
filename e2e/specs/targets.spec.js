@@ -8,6 +8,30 @@ import {
 import { setTargetThreshold } from '../fixtures/targetControls';
 
 const card = (page, title) => page.getByRole('article', { name: title });
+
+// A backend serving 2026-27 before its cutover offers it (crf04/statsplus#330).
+const offerUnpublishedSeason = (page) =>
+  page.route('**/api/games/seasons', (route) =>
+    route.fulfill({
+      json: {
+        seasons: ['2025-26'],
+        default_season: '2025-26',
+        choices: [
+          {
+            season: '2026-27',
+            mode: 'unpublished',
+            families: { game_logs: { served_season: '2026-27', state: 'serving' } },
+            team_games: { min: 2, max: 4 },
+          },
+          {
+            season: '2025-26',
+            mode: 'published',
+            families: { game_logs: { served_season: '2025-26', state: 'serving' } },
+          },
+        ],
+      },
+    }),
+  );
 const composeTarget = async (page, { opponent, base = 'shot_zones', slice, percent, note }) => {
   if (!(await page.getByRole('combobox', { name: 'Opponent', exact: true }).isVisible()))
     await page.getByRole('button', { name: '+ New Target' }).click();
@@ -406,10 +430,11 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
 });
 
-test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card names it', async ({
+test('the Lab offers the listed seasons, reads the default, and a saved card names it', async ({
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
+  await offerUnpublishedSeason(page);
   const previews = [];
   page.on('request', (request) => {
     if (request.url().endsWith('/api/user/targets/preview')) previews.push(request.postDataJSON());
@@ -422,9 +447,9 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card n
     percent: 30,
   });
   const lab = page.getByRole('region', { name: /Lab · Backtest/ });
-  const season = page.getByRole('group', { name: 'Backtest season' });
+  const season = page.getByRole('group', { name: 'Evidence season' });
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
-  await expect(season.getByRole('button')).toHaveText(['2025-26', '2026-27']);
+  await expect(season.getByRole('button')).toHaveText(['2026-27', '2025-26']);
   await expect(season.getByRole('button', { name: '2025-26' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -436,19 +461,22 @@ test('the Lab offers 2025-26 then 2026-27, reads the default, and a saved card n
   await expect(page.getByText(/has no games yet/)).toHaveCount(0);
   expect(previews.at(-1)).not.toHaveProperty('season');
 
-  // Nothing is published for 2026-27: it is unavailable, never an empty Backtest.
+  // Backtests never read 2026-27 before its cutover: refused, never an empty Backtest.
   await season.getByRole('button', { name: '2026-27' }).click();
-  await expect(lab.getByRole('alert')).toContainText('That season’s data is unavailable.');
-  // The failed response carries X-Request-ID, so the message ends with its reference.
-  await expect(lab.getByRole('alert')).toContainText(
-    'unavailable: no retained player_game_logs Publication can be read. (ref 77070cec)',
+  await expect(page).toHaveURL('/targets?season=2026-27');
+  await expect(lab.getByRole('alert')).toHaveText(
+    "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
   );
   await expect(lab.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
   expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2026-27' });
 
-  await season.getByRole('button', { name: '2025-26' }).click();
-  await expect.poll(() => previews.at(-1)?.season).toBe('2025-26');
+  // Back to the default, which is never named: its Backtest is already read.
+  await lab.getByRole('button', { name: 'Show 2025-26' }).click();
+  await expect(page).toHaveURL('/targets');
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+  expect(previews.filter((body) => body.season !== undefined).map((body) => body.season)).toEqual([
+    '2026-27',
+  ]);
 
   // Only an omitted season is the default; 2024-25 and an explicit null are refused.
   const preview = (body) =>
@@ -493,6 +521,7 @@ test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable'
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
+  await offerUnpublishedSeason(page);
   await page.goto('/targets');
   await composeTarget(page, {
     opponent: 'ATL',
@@ -522,7 +551,7 @@ test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable'
       response.request().postDataJSON()?.season === '2026-27',
   );
   await page
-    .getByRole('group', { name: 'Backtest season' })
+    .getByRole('group', { name: 'Evidence season' })
     .getByRole('button', { name: '2026-27' })
     .click();
   const response = await refused;
@@ -530,7 +559,7 @@ test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable'
   expect(response.request().postDataJSON().conditions.defender).toMatchObject({
     player_id: 203991,
   });
-  await expect(page.getByRole('button', { name: 'Retry backtest' })).toBeVisible();
+  await expect(lab.getByRole('button', { name: 'Show 2025-26' })).toBeVisible();
   // The 2025-26 numbers are not that refused season's Backtest.
   await expect(lab.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
   // The roster is read for 2026-27 too, and refused: 2025-26 minutes are not
@@ -542,7 +571,7 @@ test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable'
   ]);
 
   await page
-    .getByRole('group', { name: 'Backtest season' })
+    .getByRole('group', { name: 'Evidence season' })
     .getByRole('button', { name: '2025-26' })
     .click();
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^1 player-games$/);

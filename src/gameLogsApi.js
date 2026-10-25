@@ -1,5 +1,6 @@
 import { apiClient, getApiUrl } from './config';
 import { GAME_LOGS_TIMEOUT } from './apiSettings';
+import { seasonUnavailableOr, servingSeasonDecoders } from './servingSeason';
 
 const parseJsonValue = (value, fallback, fieldName) => {
   if (value === null || value === undefined || value === '') return fallback;
@@ -128,6 +129,10 @@ export const postedLineFor = (posted, lineType, sourceId) => {
   return source ? { ...source, gameDate: posted.gameDate, matchup: posted.matchup } : null;
 };
 
+const { decodeSeasonContext } = servingSeasonDecoders(
+  () => new Error('The game logs API returned an invalid season context.'),
+);
+
 /** Decode the backend's JSON-string-or-object response once at the API seam. */
 export const decodeGameLogsResponse = (payload = {}) => {
   if (!payload || typeof payload !== 'object') {
@@ -149,18 +154,23 @@ export const decodeGameLogsResponse = (payload = {}) => {
     nextGame: payload.next_game || null,
     playerId: playerId(payload.player_id),
     postedLine: postedLine(payload.posted_line),
+    seasonContext: decodeSeasonContext(payload.season_context),
   };
 };
 
 /** Fetch and decode game logs. The caller owns state; this module only returns data. */
 export const fetchGameLogsData = async (params = {}, { signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('GAME_LOGS'), {
-    params,
-    signal,
-    // Game-log queries can legitimately be slower than ordinary API calls, but
-    // not slower than the backend's own query limit.
-    timeout: GAME_LOGS_TIMEOUT,
-  });
+  const response = await apiClient
+    .get(getApiUrl('GAME_LOGS'), {
+      params,
+      signal,
+      // Game-log queries can legitimately be slower than ordinary API calls, but
+      // not slower than the backend's own query limit.
+      timeout: GAME_LOGS_TIMEOUT,
+    })
+    .catch((error) => {
+      throw seasonUnavailableOr(error);
+    });
 
   return decodeGameLogsResponse(response.data);
 };

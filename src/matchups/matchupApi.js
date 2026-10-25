@@ -5,7 +5,7 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from '../slateStatus';
-import { servingSeasonDecoders } from '../servingSeason';
+import { seasonUnavailableOr, servingSeasonDecoders } from '../servingSeason';
 
 const invalid = () => new Error('The matchup endpoint returned an invalid response.');
 const selectionInvalid = () =>
@@ -27,7 +27,9 @@ const requireNumber = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
 };
-const { decodeSeason, decodeWindowGames, decodeTrailing } = servingSeasonDecoders(invalid);
+const { decodeSeason, decodeWindowGames, decodeTrailing, decodeSeasonContext } =
+  servingSeasonDecoders(invalid);
+const { decodeSeasonContext: selectionSeasonContext } = servingSeasonDecoders(selectionInvalid);
 const decodeRelativePercentage = (value) => (value === null ? null : requireNumber(value));
 const requireNumberOrNull = (value) => (value === null ? null : requireNumber(value));
 const requireInteger = (value) => {
@@ -1217,6 +1219,10 @@ export const decodeMatchup = (data) => {
   );
   if (focalDates.size > 1) throw invalid();
   if (data.as_of !== undefined && !isRecord(data.as_of)) throw invalid();
+  const asOfSeason = decodeSeason(data.as_of?.season);
+  const seasonContext = decodeSeasonContext(data.season_context);
+  // `as_of.season` is the Published Season, so the two cannot disagree.
+  if (seasonContext && asOfSeason && seasonContext.publishedSeason !== asOfSeason) throw invalid();
   return {
     game,
     experience,
@@ -1225,16 +1231,18 @@ export const decodeMatchup = (data) => {
     players,
     injuries,
     freshness,
-    asOfSeason: decodeSeason(data.as_of?.season),
+    asOfSeason,
+    seasonContext,
     trailing: decodeTrailing(data.trailing),
   };
 };
 
 export const fetchMatchup = async (gameId, { signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('MATCHUP'), {
-    params: { game_id: gameId },
-    signal,
-  });
+  const response = await apiClient
+    .get(getApiUrl('MATCHUP'), { params: { game_id: gameId }, signal })
+    .catch((error) => {
+      throw seasonUnavailableOr(error);
+    });
   return decodeMatchup(response.data);
 };
 
@@ -1400,6 +1408,7 @@ export const decodeMatchupSelection = (data, statCategories, expectedPlayerId, e
     experience,
     h2h: decodeLogTable(data.h2h, statCategories, focalGame),
     archetype: decodeLogTable(data.archetype, statCategories, focalGame),
+    seasonContext: selectionSeasonContext(data.season_context),
   };
 };
 
@@ -1417,10 +1426,14 @@ export const fetchMatchupSelection = async (
     statCategories.length === 0
   )
     throw selectionInvalid();
-  const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
-    params: { game_id: gameId, player_id: playerId },
-    signal,
-  });
+  const response = await apiClient
+    .get(getApiUrl('MATCHUP_SELECTION'), {
+      params: { game_id: gameId, player_id: playerId },
+      signal,
+    })
+    .catch((error) => {
+      throw seasonUnavailableOr(error);
+    });
   return decodeMatchupSelection(response.data, statCategories, playerId, {
     gameId,
     mode,

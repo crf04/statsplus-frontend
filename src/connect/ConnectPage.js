@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ConnectGuide from './ConnectGuide';
 import MatchupCardFrame from './MatchupCardFrame';
+import SetupTabs from './SetupTabs';
 import './ConnectPage.css';
 
 // The page always describes the production connector, so this is not an
@@ -89,63 +90,7 @@ const CLIENTS = [
   },
 ];
 
-const ClientTabs = () => {
-  const [active, setActive] = useState(0);
-  const tabRefs = useRef([]);
-
-  // Arrow keys move between tabs and select, as in the WAI-ARIA tabs pattern.
-  const onKeyDown = (event) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-    if (!step) return;
-    event.preventDefault();
-    const next = (active + step + CLIENTS.length) % CLIENTS.length;
-    setActive(next);
-    tabRefs.current[next]?.focus();
-  };
-
-  return (
-    <>
-      <div className="connect-tablist" role="tablist" aria-label="Chat app">
-        {CLIENTS.map((c, index) => (
-          <button
-            key={c.id}
-            ref={(node) => {
-              tabRefs.current[index] = node;
-            }}
-            type="button"
-            role="tab"
-            id={`connect-tab-${c.id}`}
-            aria-selected={index === active}
-            aria-controls={`connect-panel-${c.id}`}
-            tabIndex={index === active ? 0 : -1}
-            className="connect-tab"
-            onClick={() => setActive(index)}
-            onKeyDown={onKeyDown}
-          >
-            {c.name}
-          </button>
-        ))}
-      </div>
-      {CLIENTS.map((c, index) => (
-        <div
-          key={c.id}
-          className="connect-tabpanel"
-          role="tabpanel"
-          id={`connect-panel-${c.id}`}
-          aria-labelledby={`connect-tab-${c.id}`}
-          hidden={index !== active}
-        >
-          <p className="connect-note">{c.note}</p>
-          <ol className="connect-steps">
-            {c.steps.map((step, stepIndex) => (
-              <li key={stepIndex}>{step}</li>
-            ))}
-          </ol>
-        </div>
-      ))}
-    </>
-  );
-};
+const ClientTabs = () => <SetupTabs clients={CLIENTS} label="Chat app" idPrefix="connect" />;
 
 // A link from another page to a lesson (/connect#guide-tutorials) arrives before this
 // lazy page renders, so the browser never scrolls to it. Scroll once rendered, and

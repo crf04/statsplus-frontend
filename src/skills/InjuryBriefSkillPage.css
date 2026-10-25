@@ -1,0 +1,82 @@
+.skill-page {
+  max-width: 880px;
+}
+
+.skill-hero {
+  margin-bottom: 36px;
+}
+
+/* Route entry focuses the heading for screen readers; it is not a control. */
+.skill-hero .connect-title:focus {
+  outline: none;
+}
+
+.skill-section {
+  margin: 0 0 40px;
+}
+
+.skill-section h2 {
+  margin: 0 0 14px;
+  font-family: var(--ct-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.skill-points {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-points li {
+  padding: 12px 0;
+  border-top: 1px solid var(--ct-line);
+  color: var(--ct-dim);
+  line-height: 1.55;
+}
+
+.skill-points strong {
+  color: var(--ct-text);
+}
+
+.skill-fine {
+  color: var(--ct-dim);
+  font-size: 14px;
+}
+
+.skill-fine a {
+  color: var(--ct-gold);
+}
+
+.skill-download {
+  display: inline-block;
+  padding: 7px 14px;
+  border: 1px solid var(--ct-gold);
+  border-radius: 6px;
+  color: var(--ct-gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skill-download:hover {
+  background: var(--ct-gold);
+  color: var(--ct-ink);
+}
+
+.skill-download:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.skill-instructions {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--ct-line-strong);
+  color: var(--ct-dim);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.skill-page code {
+  overflow-wrap: anywhere;
+}

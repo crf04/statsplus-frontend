@@ -1,0 +1,1151 @@
+{
+  "report": {
+    "id": "k3x9q2mtzr",
+    "created_at": "2026-10-25T22:30:00Z",
+    "author": {
+      "label": "@bighatprops"
+    },
+    "is_author": false,
+    "document": {
+      "title": "Injury brief · Sunday, October 25",
+      "date": "2026-10-25",
+      "opening": [
+        "Late changes for the 7:00 and 7:30 tips: Ausar Thompson and Jose Alvarado are now Out, VJ Edgecombe is newly Questionable, Kawhi Leonard is out for Toronto, and Anthony Black is cleared. DraftKings cut Bane to 18.5 and Bona to 5.5 points, which makes those the two overs worth a look.",
+        "7 games, 46 players listed. CourtAI's splits are from last season, so every case is checked against this season's games; where they disagree, this season wins. LAL @ UTA and IND @ BKN have tipped.",
+        "New since 4:30 (report checked at 6:30 PM ET): Ausar Thompson (DET) Out, Jose Alvarado (NYK) Out, VJ Edgecombe (PHI) Questionable with an abdominal contusion, Kawhi Leonard (TOR) Out with knee swelling, and Anthony Black (ORL) Available. Murray is still Doubtful and Coward still Questionable."
+      ],
+      "skill": {
+        "name": "Injury brief",
+        "url": "https://courtai.app/skills/injury-brief"
+      },
+      "footnote": "Report checked at 6:30 PM ET. Lines as of about 6:30 PM ET. CourtAI's game logs and splits read the 2025-26 season; this season's facts are from the web research, with sources.",
+      "tabs": [
+        {
+          "title": "Games",
+          "layout": "tiles",
+          "items": [
+            {
+              "title": "ORL @ NYK · NYK −6.5, total 224.5",
+              "subtitle": "ORL Out: Paolo Banchero (high ankle sprain), Noah Penda, Jonathan Isaac, Izaiyah Nelson · Anthony Black Available (debut) · NYK Out: Jose Alvarado (ankle, new)",
+              "bullets": [
+                [
+                  "Desmond Bane",
+                  "Usage 21.2% → 26.4%, 19.5 → 25.5 PTS/36 with Banchero off (986 min)"
+                ],
+                [
+                  "Franz Wagner",
+                  "Usage 22.2% → 28.7%, 21.6 → 26.2 PTS/36 with Banchero off (570 min)"
+                ],
+                [
+                  "Tristan da Silva",
+                  "Starts in his place (10/10 last season), but scoring flat: 11.0 PTS in 26.7 MIN"
+                ]
+              ],
+              "body": [
+                "Banchero started both games and averaged 41 and 26 minutes. He leaves 16 FGA and a 28% usage rate. Last season, with him on the bench, Bane's usage rose from 21.2% to 26.4% and Franz Wagner's from 22.2% to 28.7%. Franz played all 10 games Banchero missed, so that split already includes the two of them together. Tristan da Silva is projected to start in Banchero's place, as he did last season.",
+                "Black has missed every game, so Orlando has played without him from the start. If he returns, he takes some of the guard creation back. Penda and Isaac are long absences. Alvarado is a backup who played 16 and 11 minutes, and nothing moves for New York if he sits.",
+                "New since 4:30: Anthony Black is cleared to make his season debut, off the bench (Orlando's confirmed five is Suggs, Richardson, Bane, Wagner and Carter). Jose Alvarado is out for New York; McBride, Shamet and Clarkson take his backup minutes, and none had a split worth a spot (Alvarado missed 3 games last season). DraftKings cut Bane to 18.5 and Franz to 21.5, and the spread fell to NYK −6.5."
+              ],
+              "cards": ["orl-onoff"],
+              "sources": [
+                [
+                  "Banchero to miss multiple weeks",
+                  "https://www.espn.com/nba/story/_/id/50266620/sources-magic-banchero-multiple-weeks-ankle-sprain"
+                ],
+                [
+                  "da Silva projected to start; NYK −7.5",
+                  "https://www.rotowire.com/basketball/nba-lineups.php"
+                ],
+                [
+                  "Black has missed both games, upgraded to questionable",
+                  "https://www.hoopshype.com/story/sports/nba/rumors/2026/10/24/the-magic-have-upgraded-anthony-black-right-ankle/92417691007/"
+                ],
+                [
+                  "Orlando's first two box scores",
+                  "https://www.espn.com/nba/boxscore/_/gameId/401909845"
+                ],
+                [
+                  "Official report, 6:30 PM ET",
+                  "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-10-25_06_30PM.pdf"
+                ],
+                [
+                  "Black cleared, season debut; ORL and NYK fives confirmed",
+                  "https://www.rotowire.com/basketball/nba-lineups.php"
+                ],
+                [
+                  "Alvarado out, left ankle sprain",
+                  "https://www.rotowire.com/basketball/news.php?team=NYK"
+                ]
+              ]
+            },
+            {
+              "title": "LAL @ UTA · tipped 5:00 PM ET",
+              "subtitle": "UTA Out: Jusuf Nurkic, Trey Alexander, Harrison Ingram, Kobe Bufkin · LAL Out: Adou Thiero, Cameron Carr",
+              "body": ["Tipped before this brief. No change since the earlier run."]
+            }
+          ]
+        },
+        {
+          "title": "Spots",
+          "layout": "rows",
+          "items": [
+            {
+              "title": "Desmond Bane o18.5 PTS",
+              "tag": "lean",
+              "key": "DraftKings cut him from 19.5 to 18.5; 23.1 PTS without Banchero, over 18.5 in 6/10; 25.5 PTS/36 with Banchero off",
+              "subtitle": "DraftKings −125 / −102 · ORL @ NYK (NYK −6.5) · with Paolo Banchero out",
+              "body": [
+                "New since 4:30: DraftKings cut the line a point, to 18.5 at −125, so the over now needs a game below his season average (20.1, over 18.5 in 44 of 82). Without Banchero last season he averaged 23.1 in 35.5 minutes and went over 18.5 in 6 of 10, though only 2 of the last 5.",
+                "Thesis: every book has Bane at 19.5, which is his scoring average with Banchero playing (20.1 over 82 games last season). Banchero's 16 FGA a night are gone for weeks, and last season Bane was the one who took them.",
+                "Usage: with Banchero on the bench last season (986 minutes), Bane's usage rose from 21.2% to 26.4%, his FGA from 14.4 to 18.2 per 36, and his scoring from 19.5 to 25.5 per 36. In the 10 full games Banchero missed he played 35.5 minutes and averaged 23.1 PTS on 17 FGA. Franz Wagner played all 10 of those games, so the split already counts the two of them sharing the ball.",
+                "Record: over 19.5 in 5 of 10 without Banchero. The median was 21, and two 37-point nights pull the average up. At 25.5 per 36 he needs about 28 minutes, and he played 29 or more in all 10. This season he has 18 in 33 minutes and 5 in 27 minutes of a blowout loss.",
+                "Matchup works against him: New York grades −5% vs league on points against his diet."
+              ],
+              "watch": "Anthony Black returning (questionable) takes some of the guard creation back. New York is a 7.5-point favorite, so a blowout would cut his minutes. The record is a coin flip at this number; the case rests on the usage.",
+              "cards": ["bane-pts", "orl-onoff"],
+              "sources": [
+                [
+                  "Banchero out multiple weeks",
+                  "https://www.espn.com/nba/story/_/id/50266620/sources-magic-banchero-multiple-weeks-ankle-sprain"
+                ],
+                [
+                  "Bane 18 and 5 PTS in the first two games",
+                  "https://www.espn.com/nba/boxscore/_/gameId/401909845"
+                ]
+              ]
+            },
+            {
+              "title": "Ace Bailey o11.5 PTS",
+              "tag": "tipped",
+              "key": "Over 11.5 in 28/34 without Nurkic last season, but on a tanking team; 12 and 6 PTS in 24 and 22 MIN this season",
+              "subtitle": "DraftKings −108 / −118 · LAL @ UTA · with Jusuf Nurkic out",
+              "body": [
+                "The split looks huge: 17.0 PTS in 30.7 minutes without Nurkic last season, over in 28 of 34. But those were mostly end-of-season games on a tanking team, with Markkanen and George often sitting. This season Utah added rookie Darryn Peterson, moved Jaren Jackson Jr. to center, and has Markkanen and George healthy. Bailey has played 24 and 22 minutes for 12 and 6 points. Nurkic hasn't played all season, so tonight changes nothing. The 11.5 reflects this season's role, not last season's."
+              ],
+              "watch": "Nothing to watch; read last season's tank minutes as noise.",
+              "cards": ["bailey-pts", "bailey-season"],
+              "sources": [
+                [
+                  "Bailey's 2026-27 minutes and points",
+                  "https://www.basketball-reference.com/boxscores/202610230UTA.html"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Set aside",
+          "layout": "list",
+          "items": [
+            {
+              "title": "Ausar Thompson (DET)",
+              "key": "Now out. Detroit's expected five has Isaiah Joe in his spot; the one case it opens is Daniss Jenkins (above). Holland's 7.5 PTS: over in 5 of 9 without him, 14.0 per 36 against 14.9 on the season, so no rate change."
+            },
+            {
+              "title": "Ugonna Onyenso (DET)",
+              "key": "No games with Detroit to read; a deep reserve."
+            }
+          ]
+        }
+      ]
+    },
+    "calls": [
+      {
+        "id": "orl-onoff",
+        "tool": "get_on_off",
+        "card": "on-off",
+        "structured": {
+          "team": "ORL",
+          "team_name": "Orlando Magic",
+          "season": "2025-26",
+          "on": [],
+          "off": ["Paolo Banchero"],
+          "status": "ok",
+          "source": "pbpstats",
+          "cached_at": "2026-10-25T04:50:37.038780+00:00",
+          "stale": false,
+          "compare": {
+            "on": ["Paolo Banchero"],
+            "off": [],
+            "status": "ok",
+            "cached_at": "2026-10-25T04:50:31.154736+00:00",
+            "stale": false
+          },
+          "players": [
+            {
+              "name": "Desmond Bane",
+              "minutes": 986,
+              "possessions": 2050,
+              "usage": 26.39,
+              "per36": {
+                "PTS": 25.45,
+                "REB": 4.78,
+                "AST": 5.11,
+                "3PM": 2.19,
+                "FGA": 18.18,
+                "3PA": 5.51,
+                "TOV": 2.26,
+                "FTA": 6.06
+              },
+              "compare": {
+                "minutes": 1735,
+                "usage": 21.22,
+                "per36": {
+                  "PTS": 19.5,
+                  "REB": 4.23,
+                  "AST": 4.0,
+                  "3PM": 2.2,
+                  "FGA": 14.42,
+                  "3PA": 5.69,
+                  "TOV": 2.1,
+                  "FTA": 3.69
+                }
+              }
+            },
+            {
+              "name": "Tristan da Silva",
+              "minutes": 681,
+              "possessions": 1410,
+              "usage": 16.9,
+              "per36": {
+                "PTS": 14.8,
+                "REB": 5.92,
+                "AST": 2.38,
+                "3PM": 2.43,
+                "FGA": 12.48,
+                "3PA": 6.5,
+                "TOV": 1.22,
+                "FTA": 1.85
+              },
+              "compare": {
+                "minutes": 1173,
+                "usage": 16.26,
+                "per36": {
+                  "PTS": 14.49,
+                  "REB": 5.0,
+                  "AST": 2.18,
+                  "3PM": 2.27,
+                  "FGA": 11.48,
+                  "3PA": 5.92,
+                  "TOV": 1.35,
+                  "FTA": 1.78
+                }
+              }
+            },
+            {
+              "name": "Franz Wagner",
+              "minutes": 570,
+              "possessions": 1199,
+              "usage": 28.74,
+              "per36": {
+                "PTS": 26.15,
+                "REB": 6.95,
+                "AST": 4.04,
+                "3PM": 1.64,
+                "FGA": 19.39,
+                "3PA": 4.99,
+                "TOV": 1.96,
+                "FTA": 8.21
+              },
+              "compare": {
+                "minutes": 400,
+                "usage": 22.18,
+                "per36": {
+                  "PTS": 21.6,
+                  "REB": 5.49,
+                  "AST": 3.96,
+                  "3PM": 1.53,
+                  "FGA": 15.21,
+                  "3PA": 4.32,
+                  "TOV": 2.07,
+                  "FTA": 4.95
+                }
+              }
+            },
+            {
+              "name": "Jalen Suggs",
+              "minutes": 535,
+              "possessions": 1140,
+              "usage": 23.8,
+              "per36": {
+                "PTS": 17.5,
+                "REB": 5.11,
+                "AST": 7.33,
+                "3PM": 2.15,
+                "FGA": 15.81,
+                "3PA": 8.21,
+                "TOV": 3.5,
+                "FTA": 3.7
+              },
+              "compare": {
+                "minutes": 980,
+                "usage": 21.69,
+                "per36": {
+                  "PTS": 18.04,
+                  "REB": 5.03,
+                  "AST": 7.2,
+                  "3PM": 2.9,
+                  "FGA": 14.18,
+                  "3PA": 7.86,
+                  "TOV": 3.45,
+                  "FTA": 2.28
+                }
+              }
+            },
+            {
+              "name": "Wendell Carter Jr.",
+              "minutes": 527,
+              "possessions": 1084,
+              "usage": 16.35,
+              "per36": {
+                "PTS": 14.07,
+                "REB": 9.15,
+                "AST": 2.87,
+                "3PM": 1.02,
+                "FGA": 10.18,
+                "3PA": 3.55,
+                "TOV": 1.71,
+                "FTA": 4.44
+              },
+              "compare": {
+                "minutes": 1705,
+                "usage": 15.81,
+                "per36": {
+                  "PTS": 14.82,
+                  "REB": 9.06,
+                  "AST": 2.32,
+                  "3PM": 1.2,
+                  "FGA": 10.05,
+                  "3PA": 3.61,
+                  "TOV": 1.54,
+                  "FTA": 3.74
+                }
+              }
+            },
+            {
+              "name": "Anthony Black",
+              "minutes": 508,
+              "possessions": 1056,
+              "usage": 23.16,
+              "per36": {
+                "PTS": 17.93,
+                "REB": 5.31,
+                "AST": 4.39,
+                "3PM": 1.2,
+                "FGA": 15.38,
+                "3PA": 4.82,
+                "TOV": 2.48,
+                "FTA": 5.31
+              },
+              "compare": {
+                "minutes": 1364,
+                "usage": 22.12,
+                "per36": {
+                  "PTS": 18.08,
+                  "REB": 4.3,
+                  "AST": 4.51,
+                  "3PM": 2.11,
+                  "FGA": 14.12,
+                  "3PA": 5.86,
+                  "TOV": 2.51,
+                  "FTA": 4.04
+                }
+              }
+            },
+            {
+              "name": "Noah Penda",
+              "minutes": 500,
+              "possessions": 1030,
+              "usage": 14.69,
+              "per36": {
+                "PTS": 12.1,
+                "REB": 9.86,
+                "AST": 3.53,
+                "3PM": 1.58,
+                "FGA": 9.58,
+                "3PA": 4.25,
+                "TOV": 2.3,
+                "FTA": 2.66
+              },
+              "compare": {
+                "minutes": 250,
+                "usage": 14.38,
+                "per36": {
+                  "PTS": 8.5,
+                  "REB": 7.2,
+                  "AST": 2.74,
+                  "3PM": 1.15,
+                  "FGA": 9.79,
+                  "3PA": 4.61,
+                  "TOV": 1.44,
+                  "FTA": 1.58
+                }
+              }
+            },
+            {
+              "name": "Goga Bitadze",
+              "minutes": 488,
+              "possessions": 1020,
+              "usage": 14.15,
+              "per36": {
+                "PTS": 14.9,
+                "REB": 11.88,
+                "AST": 3.91,
+                "3PM": 0.07,
+                "FGA": 9.07,
+                "3PA": 0.37,
+                "TOV": 1.99,
+                "FTA": 3.39
+              },
+              "compare": {
+                "minutes": 451,
+                "usage": 12.04,
+                "per36": {
+                  "PTS": 12.21,
+                  "REB": 11.25,
+                  "AST": 2.39,
+                  "3PM": 0.08,
+                  "FGA": 7.42,
+                  "3PA": 0.48,
+                  "TOV": 1.2,
+                  "FTA": 3.67
+                }
+              }
+            },
+            {
+              "name": "Jonathan Isaac",
+              "minutes": 406,
+              "possessions": 836,
+              "usage": 12.74,
+              "per36": {
+                "PTS": 10.02,
+                "REB": 9.67,
+                "AST": 1.6,
+                "3PM": 0.62,
+                "FGA": 7.8,
+                "3PA": 2.75,
+                "TOV": 1.42,
+                "FTA": 4.08
+              },
+              "compare": {
+                "minutes": 115,
+                "usage": 10.98,
+                "per36": {
+                  "PTS": 6.57,
+                  "REB": 7.2,
+                  "AST": 1.25,
+                  "3PM": 0.0,
+                  "FGA": 6.57,
+                  "3PA": 2.19,
+                  "TOV": 0.63,
+                  "FTA": 3.76
+                }
+              }
+            },
+            {
+              "name": "Jett Howard",
+              "minutes": 402,
+              "possessions": 817,
+              "usage": 20.66,
+              "per36": {
+                "PTS": 18.18,
+                "REB": 4.57,
+                "AST": 2.33,
+                "3PM": 3.31,
+                "FGA": 16.03,
+                "3PA": 8.78,
+                "TOV": 0.99,
+                "FTA": 2.24
+              },
+              "compare": {
+                "minutes": 293,
+                "usage": 11.94,
+                "per36": {
+                  "PTS": 12.04,
+                  "REB": 4.42,
+                  "AST": 2.33,
+                  "3PM": 2.09,
+                  "FGA": 8.85,
+                  "3PA": 5.77,
+                  "TOV": 0.49,
+                  "FTA": 1.72
+                }
+              }
+            },
+            {
+              "name": "Tyus Jones",
+              "minutes": 393,
+              "possessions": 809,
+              "usage": 10.37,
+              "per36": {
+                "PTS": 6.32,
+                "REB": 2.11,
+                "AST": 5.68,
+                "3PM": 1.19,
+                "FGA": 8.43,
+                "3PA": 5.5,
+                "TOV": 0.55,
+                "FTA": 0.18
+              },
+              "compare": {
+                "minutes": 362,
+                "usage": 9.16,
+                "per36": {
+                  "PTS": 7.46,
+                  "REB": 2.98,
+                  "AST": 5.37,
+                  "3PM": 1.69,
+                  "FGA": 6.66,
+                  "3PA": 4.18,
+                  "TOV": 0.7,
+                  "FTA": 0.4
+                }
+              }
+            },
+            {
+              "name": "Jase Richardson",
+              "minutes": 341,
+              "possessions": 702,
+              "usage": 16.79,
+              "per36": {
+                "PTS": 14.67,
+                "REB": 4.54,
+                "AST": 3.8,
+                "3PM": 1.37,
+                "FGA": 11.51,
+                "3PA": 4.22,
+                "TOV": 1.48,
+                "FTA": 3.8
+              },
+              "compare": {
+                "minutes": 239,
+                "usage": 15.73,
+                "per36": {
+                  "PTS": 13.86,
+                  "REB": 3.01,
+                  "AST": 3.31,
+                  "3PM": 2.26,
+                  "FGA": 11.15,
+                  "3PA": 5.87,
+                  "TOV": 1.66,
+                  "FTA": 1.51
+                }
+              }
+            },
+            {
+              "name": "Moritz Wagner",
+              "minutes": 273,
+              "possessions": 571,
+              "usage": 26.53,
+              "per36": {
+                "PTS": 22.95,
+                "REB": 10.68,
+                "AST": 2.51,
+                "3PM": 1.71,
+                "FGA": 17.93,
+                "3PA": 5.93,
+                "TOV": 1.58,
+                "FTA": 7.78
+              },
+              "compare": {
+                "minutes": 153,
+                "usage": 20.17,
+                "per36": {
+                  "PTS": 17.18,
+                  "REB": 8.0,
+                  "AST": 1.88,
+                  "3PM": 2.12,
+                  "FGA": 13.88,
+                  "3PA": 5.88,
+                  "TOV": 1.65,
+                  "FTA": 3.06
+                }
+              }
+            },
+            {
+              "name": "Jevon Carter",
+              "minutes": 253,
+              "possessions": 511,
+              "usage": 18.44,
+              "per36": {
+                "PTS": 15.51,
+                "REB": 3.13,
+                "AST": 4.98,
+                "3PM": 2.99,
+                "FGA": 13.38,
+                "3PA": 7.83,
+                "TOV": 2.13,
+                "FTA": 0.57
+              },
+              "compare": {
+                "minutes": 324,
+                "usage": 14.8,
+                "per36": {
+                  "PTS": 10.67,
+                  "REB": 4.22,
+                  "AST": 3.44,
+                  "3PM": 2.56,
+                  "FGA": 11.33,
+                  "3PA": 8.67,
+                  "TOV": 0.89,
+                  "FTA": 0.56
+                }
+              }
+            },
+            {
+              "name": "Jamal Cain",
+              "minutes": 242,
+              "possessions": 493,
+              "usage": 17.7,
+              "per36": {
+                "PTS": 16.51,
+                "REB": 5.06,
+                "AST": 2.08,
+                "3PM": 2.68,
+                "FGA": 12.2,
+                "3PA": 6.25,
+                "TOV": 1.93,
+                "FTA": 2.53
+              },
+              "compare": {
+                "minutes": 204,
+                "usage": 15.26,
+                "per36": {
+                  "PTS": 14.47,
+                  "REB": 6.0,
+                  "AST": 2.29,
+                  "3PM": 1.41,
+                  "FGA": 10.24,
+                  "3PA": 4.59,
+                  "TOV": 0.71,
+                  "FTA": 4.59
+                }
+              }
+            },
+            {
+              "name": "Orlando Robinson",
+              "minutes": 25,
+              "possessions": 47,
+              "usage": 8.47,
+              "per36": {
+                "PTS": 10.08,
+                "REB": 5.76,
+                "AST": 4.32,
+                "3PM": 1.44,
+                "FGA": 7.2,
+                "3PA": 2.88,
+                "TOV": 0.0,
+                "FTA": 0.0
+              },
+              "compare": null
+            },
+            {
+              "name": "Alex Morales",
+              "minutes": 18,
+              "possessions": 36,
+              "usage": 22.73,
+              "per36": {
+                "PTS": 16.0,
+                "REB": 6.0,
+                "AST": 8.0,
+                "3PM": 0.0,
+                "FGA": 12.0,
+                "3PA": 0.0,
+                "TOV": 6.0,
+                "FTA": 4.0
+              },
+              "compare": null
+            },
+            {
+              "name": "Colin Castleton",
+              "minutes": 15,
+              "possessions": 29,
+              "usage": 14.71,
+              "per36": {
+                "PTS": 4.8,
+                "REB": 14.4,
+                "AST": 2.4,
+                "3PM": 0.0,
+                "FGA": 7.2,
+                "3PA": 0.0,
+                "TOV": 4.8,
+                "FTA": 0.0
+              },
+              "compare": null
+            }
+          ],
+          "limits": [
+            "Per-36 rates are the backend's totals * 36 / minutes from PBPStats' whole-number minutes; no minimum-minutes threshold is applied, so state each rate with its minutes."
+          ]
+        },
+        "meta": null
+      },
+      {
+        "id": "bane-pts",
+        "tool": "query_game_logs",
+        "card": "game-logs",
+        "structured": {
+          "player": {
+            "name": "Desmond Bane",
+            "team": "ORL",
+            "name_confirmed": true
+          },
+          "applied": {
+            "summary": "without Paolo Banchero",
+            "filters": [],
+            "teams_matched": [],
+            "season": "2025-26",
+            "through": null,
+            "through_words": "no cutoff",
+            "last_n": null,
+            "without": [
+              {
+                "name": "Paolo Banchero",
+                "name_confirmed": true,
+                "words": "without Paolo Banchero"
+              }
+            ],
+            "teammate_basis": "A teammate counts when he appeared in the game for his team (game-level, not on-court lineups).",
+            "rankings_as_of": null
+          },
+          "rank_scale": "1-30, 30 = allows the most of the metric (1 = allows the fewest)",
+          "markets": ["PTS", "REB", "AST"],
+          "chart_stat": "PTS",
+          "averages": {
+            "games": 10,
+            "MIN": 35.5,
+            "PTS": 23.1,
+            "REB": 4.8,
+            "AST": 4.5
+          },
+          "season_averages": {
+            "games": 82,
+            "MIN": 33.61,
+            "PTS": 20.09,
+            "REB": 4.12,
+            "AST": 4.12
+          },
+          "games": [
+            {
+              "date": "2025-11-14",
+              "opp": "BKN",
+              "home": true,
+              "MIN": 40,
+              "PTS": 19,
+              "REB": 5,
+              "AST": 2
+            },
+            {
+              "date": "2025-11-16",
+              "opp": "HOU",
+              "home": false,
+              "MIN": 44,
+              "PTS": 26,
+              "REB": 4,
+              "AST": 4
+            },
+            {
+              "date": "2025-11-18",
+              "opp": "GSW",
+              "home": true,
+              "MIN": 39,
+              "PTS": 23,
+              "REB": 6,
+              "AST": 5
+            },
+            {
+              "date": "2025-11-20",
+              "opp": "LAC",
+              "home": true,
+              "MIN": 31,
+              "PTS": 15,
+              "REB": 7,
+              "AST": 5
+            },
+            {
+              "date": "2025-11-22",
+              "opp": "NYK",
+              "home": true,
+              "MIN": 32,
+              "PTS": 27,
+              "REB": 3,
+              "AST": 5
+            },
+            {
+              "date": "2025-11-23",
+              "opp": "BOS",
+              "home": false,
+              "MIN": 29,
+              "PTS": 18,
+              "REB": 4,
+              "AST": 5
+            },
+            {
+              "date": "2025-11-25",
+              "opp": "PHI",
+              "home": false,
+              "MIN": 29,
+              "PTS": 15,
+              "REB": 2,
+              "AST": 6
+            },
+            {
+              "date": "2025-11-28",
+              "opp": "DET",
+              "home": false,
+              "MIN": 39,
+              "PTS": 37,
+              "REB": 8,
+              "AST": 2
+            },
+            {
+              "date": "2025-12-01",
+              "opp": "CHI",
+              "home": true,
+              "MIN": 34,
+              "PTS": 37,
+              "REB": 6,
+              "AST": 5
+            },
+            {
+              "date": "2025-12-03",
+              "opp": "SAS",
+              "home": true,
+              "MIN": 38,
+              "PTS": 14,
+              "REB": 3,
+              "AST": 6
+            }
+          ],
+          "line": {
+            "source": "user",
+            "value": 18.5,
+            "note": "The chart line is the line you asked for, 18.5; games are counted over it.",
+            "prices": {
+              "matchup": "ORL @ NYK",
+              "game_date": "2026-10-25",
+              "providers": [
+                {
+                  "provider": "Underdog",
+                  "line": 19.5,
+                  "over": -106,
+                  "under": -117
+                },
+                {
+                  "provider": "Dabble",
+                  "line": 19.5,
+                  "over": -122,
+                  "under": -122
+                },
+                {
+                  "provider": "Polymarket",
+                  "line": 14.5,
+                  "over": null,
+                  "under": null
+                },
+                {
+                  "provider": "Novig",
+                  "line": 18.5,
+                  "over": -108,
+                  "under": -102
+                }
+              ],
+              "books": [
+                {
+                  "book": "DraftKings",
+                  "line": 18.5,
+                  "over": -125,
+                  "under": -102,
+                  "best_over": false,
+                  "best_under": false
+                },
+                {
+                  "book": "BetMGM",
+                  "line": 19.5,
+                  "over": -115,
+                  "under": -115,
+                  "best_over": false,
+                  "best_under": true
+                },
+                {
+                  "book": "BetRivers",
+                  "line": 19.5,
+                  "over": -109,
+                  "under": -125,
+                  "best_over": true,
+                  "best_under": false
+                },
+                {
+                  "book": "FanDuel",
+                  "line": 19.5,
+                  "over": -111,
+                  "under": -115,
+                  "best_over": false,
+                  "best_under": true
+                },
+                {
+                  "book": "Caesars",
+                  "line": 19.5,
+                  "over": -110,
+                  "under": -121,
+                  "best_over": false,
+                  "best_under": false
+                }
+              ],
+              "books_as_of": "2026-10-25T22:15:38Z",
+              "books_closing": false
+            }
+          },
+          "display": {
+            "per36": {
+              "PTS": 23.4,
+              "REB": 4.9,
+              "AST": 4.6
+            },
+            "season_per36": {
+              "PTS": 21.5,
+              "REB": 4.4,
+              "AST": 4.4
+            },
+            "line": 18.5,
+            "over_line": "6/10",
+            "over_line_last5": "2/5",
+            "over_line_last10": "6/10",
+            "raw_change_pct": 15.0,
+            "per36_change_pct": 8.9,
+            "over_line_pct": 60.0,
+            "others": {
+              "REB": {
+                "current": 4.9,
+                "season": 4.4,
+                "direction": "up"
+              },
+              "AST": {
+                "current": 4.6,
+                "season": 4.4,
+                "direction": "flat"
+              },
+              "MIN": {
+                "current": 35.5,
+                "season": 33.61,
+                "direction": null
+              }
+            }
+          },
+          "limits": [
+            "No cutoff: games on and after 2026-10-25 are included, because the CourtAI date cutoff (date_to) is not enabled yet.",
+            "The teammate filter does not change the season averages."
+          ],
+          "provenance": {
+            "generation": [
+              {
+                "age_seconds": 5504074,
+                "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+                "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+                "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+                "fence": 1,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+                "payload_checksum": "fef6362f06a245e19a5abac310f5bf55f0b835fcc1e7420019ef4242e0b8b5f5",
+                "publication_id": "ce6454d8-523d-4d3c-b8e7-b4b48b9015d1",
+                "retrieved_at": "2026-08-23T05:42:31.915540+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "assist_locations_season",
+                "unavailable_reason": null,
+                "version": 4
+              },
+              {
+                "age_seconds": 4019476,
+                "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+                "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+                "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+                "fence": 4,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+                "payload_checksum": "249c98f5af777a04db9d2f651825b6a9e96c77d465689e39be2bea64f2847f88",
+                "publication_id": "b38d49db-8685-426c-966f-a8c737722cbb",
+                "retrieved_at": "2026-09-09T10:05:49.503289+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "exact_shot_zones",
+                "unavailable_reason": null,
+                "version": 4
+              },
+              {
+                "age_seconds": 4233018,
+                "coverage_cutoff": "2026-09-06T07:57:51+00:00",
+                "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+                "event_catalog_publication_id": "511bdf04-023a-400d-8e55-db7af078d1e5",
+                "fence": 2,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "e104123c-8f4a-4c5a-af48-d3cfbaddd458",
+                "payload_checksum": "9bc98d632a763474929a8bf3774153f72409e70a84738686708599a437f5088d",
+                "publication_id": "96ade3d4-ffff-4a50-afb8-b03af236cf18",
+                "retrieved_at": "2026-09-06T22:46:47.468226+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "exact_shot_zones_opponent_season",
+                "unavailable_reason": null,
+                "version": 2
+              },
+              {
+                "age_seconds": 4019792,
+                "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+                "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+                "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+                "fence": 6,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+                "payload_checksum": "f86f52dd5e67a09ea158318023c81501b241407a81000d4051a8397a7bcc7f52",
+                "publication_id": "1c4bfb21-0038-433f-b3e9-eae7a7300965",
+                "retrieved_at": "2026-09-09T10:00:33.801679+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "grouped_shot_types",
+                "unavailable_reason": null,
+                "version": 6
+              },
+              {
+                "age_seconds": 5347617,
+                "coverage_cutoff": "2026-08-24T19:37:25+00:00",
+                "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+                "event_catalog_publication_id": "62cd53e0-96df-4aa9-88a4-c23e2413cf10",
+                "fence": 3,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "240e366d-e00f-485d-82bf-9608ff15b5ec",
+                "payload_checksum": "1feaa3dfe674157592f3bd85b962707a6e9e989ddb76c7958947baffc2d9b31e",
+                "publication_id": "7344bb54-fbcd-4c19-a2e5-0ce967149dff",
+                "retrieved_at": "2026-08-25T01:10:08.980399+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "grouped_shot_types_opponent_season",
+                "unavailable_reason": null,
+                "version": 3
+              },
+              {
+                "age_seconds": 3799929,
+                "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+                "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+                "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+                "fence": 1,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+                "payload_checksum": "570fa216199b1a156b67a63d4935e824dbfe12bab7e547a051214bef1ef49585",
+                "publication_id": "dc534717-30b9-4426-bc4d-8f66b4064625",
+                "retrieved_at": "2026-09-11T23:04:56.597624+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "player_assist_locations",
+                "unavailable_reason": null,
+                "version": 1
+              },
+              {
+                "age_seconds": 710942,
+                "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+                "event_catalog_checksum": null,
+                "event_catalog_publication_id": null,
+                "fence": 4,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": null,
+                "payload_checksum": "0ee1a904d24e811262c513d746add120848802d145e8095238a23b07d19398af",
+                "publication_id": "b0aadb25-1dcf-489c-bbf8-68938fec65e0",
+                "retrieved_at": "2026-10-17T17:08:03.734728+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "player_game_logs",
+                "unavailable_reason": null,
+                "version": 4
+              },
+              {
+                "age_seconds": 4019792,
+                "coverage_cutoff": "2026-09-09T08:45:00+00:00",
+                "event_catalog_checksum": "11f4667db3d8e3e56327b316ece29b5f2405417124dac5df4c2aa2d0467d0c13",
+                "event_catalog_publication_id": "1a5e3fc7-beb4-4208-889f-d04501b41f94",
+                "fence": 5,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "3d699aee-1592-469f-bdcf-4594c83c47b5",
+                "payload_checksum": "61b700877bcb5cf5845bee9cf23194110a61e8a8703878acb6bc48cfab1a7b89",
+                "publication_id": "f66ec097-0d08-4f00-8c3f-9e9fa05bffd3",
+                "retrieved_at": "2026-09-09T10:00:33.679229+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "synergy_play_types",
+                "unavailable_reason": null,
+                "version": 5
+              },
+              {
+                "age_seconds": 5369492,
+                "coverage_cutoff": "2026-08-24T10:52:39+00:00",
+                "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+                "event_catalog_publication_id": "642b443d-9195-4d9d-ad59-a384b1d3d882",
+                "fence": 3,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "0beb0af1-9969-4321-b088-04b6ff7f66f3",
+                "payload_checksum": "5d2a9f96ed1f336b610989b661f19eb3642b57b3fe47559186dc65d9cc733e41",
+                "publication_id": "6a7a95e6-dc8a-43a3-bea7-f3328436e921",
+                "retrieved_at": "2026-08-24T19:05:33.172525+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "synergy_play_types_opponent_season",
+                "unavailable_reason": null,
+                "version": 3
+              },
+              {
+                "age_seconds": 4410273,
+                "coverage_cutoff": "2026-08-21T16:26:09+00:00",
+                "event_catalog_checksum": "2d80b44c0c897afc1b7b5d50eabbd6711aa0520d3bcbced464cf01b7e98f79ac",
+                "event_catalog_publication_id": "d4714e91-d5a1-41e6-854e-40c2de951553",
+                "fence": 2,
+                "freshness": "stale",
+                "legacy_fallback_allowed": false,
+                "manifest_id": "82cbff0a-ee05-4896-9b92-8edf2a8219bf",
+                "payload_checksum": "389e64e8d5122a28a928f8037fe12a966769c4c0844b9527855735b86e12e795",
+                "publication_id": "2bbaba13-ff2f-402b-9b8a-ef21f6390aef",
+                "retrieved_at": "2026-09-04T21:32:32.848954+00:00",
+                "season": "2025-26",
+                "source": "database",
+                "status": "active",
+                "stream_key": "traditional_opponent_season",
+                "unavailable_reason": null,
+                "version": 8
+              }
+            ],
+            "sources": {}
+          },
+          "data_as_of": [
+            "Data as of the 2025-26 season's 2026-09-09 play-type Diets, shot-zone Diets and shot-type Diets, the 2025-26 season's 2026-09-06 shot-zone defense, the 2025-26 season's 2026-08-24 play-type defense and shot-type defense, and the 2025-26 season's 2026-08-21 game logs, assist-location Diets, team defense and assist-location defense.",
+            "Stale: game logs (8 days old), play-type Diets, shot-zone Diets and shot-type Diets (46 days old), assist-location Diets (43 days old), team defense (51 days old), play-type defense (62 days old), shot-zone defense (48 days old), shot-type defense (61 days old), assist-location defense (63 days old). State this once, in a closing line of any answer that uses them."
+          ],
+          "data_age": {
+            "as_of": "2026-08-21",
+            "state": "stale"
+          }
+        },
+        "meta": null
+      }
+    ],
+    "cards": {
+      "game-logs": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"color-scheme\" content=\"light dark\">\n<title>CourtAI Game-log card</title>\n<style>\n/* Shared by every StatsPlus card. Inlined into each card at serve time.\n   Host theme variables (MCP Apps hostContext) come first; the fallbacks only\n   apply outside a host. StatsPlus voice carried from the web app's theme.css:\n   monospace numerals, green/red only for vs-average and W/L, one amber accent. */\n:root {\n  --fg: var(--color-text-primary, #1f1e1d);\n  --muted: var(--color-text-secondary, #5e5d59);\n  --faint: var(--color-text-tertiary, #8a887f);\n  --line: var(--color-border-tertiary, rgba(127, 127, 127, 0.2));\n  --line-strong: var(--color-border-secondary, rgba(127, 127, 127, 0.38));\n  --tint: var(--color-background-secondary, rgba(127, 127, 127, 0.07));\n  --mono: var(--font-mono, ui-monospace, \"SF Mono\", Menlo, Consolas, monospace);\n  --up-rgb: 46, 150, 98;\n  --down-rgb: 194, 70, 70;\n  --up: rgb(var(--up-rgb));\n  --down: rgb(var(--down-rgb));\n  --amber: #c98a28;\n}\n:root[data-theme=\"dark\"] { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme=\"light\"]) { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }\n}\nhtml, body { margin: 0; background: transparent; }\nbody {\n  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);\n  font-size: var(--font-text-sm-size, 14px);\n  line-height: var(--font-text-sm-line-height, 1.45);\n  color: var(--fg);\n  -webkit-font-smoothing: antialiased;\n}\n.card { padding: 14px 16px 12px; }\n.empty { color: var(--muted); padding: 14px 16px; }\n\n/* Header: title left, brand + context right. */\n.head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }\n.title { font-size: var(--font-heading-sm-size, 16px); font-weight: var(--font-weight-semibold, 600); }\n.sub { color: var(--muted); font-size: var(--font-text-xs-size, 12px); }\n.brand { font-size: 11px; font-weight: var(--font-weight-semibold, 600); letter-spacing: 0.02em; color: var(--faint); white-space: nowrap; }\n.brand::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 5px; vertical-align: 1px; }\n.fixture { color: var(--amber); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; margin-left: 6px; }\n\n.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }\n.up { color: var(--up); }\n.down { color: var(--down); }\n.pill { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-semibold, 600); text-align: center; border-radius: var(--border-radius-sm, 6px); padding: 1px 6px; }\n.flag { display: inline-block; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; line-height: 15px; }\n.rule { border-top: 1px solid var(--line); }\n.as-of { margin-top: 10px; padding-top: 8px; color: var(--muted); font-size: var(--font-text-xs-size, 12px); }\n.as-of p { margin: 4px 0 0; }\n.as-of summary { cursor: pointer; list-style: none; }\n.as-of summary::-webkit-details-marker { display: none; }\n.as-of summary::after { content: \" ▸\"; color: var(--faint); }\n.as-of[open] summary::after { content: \" ▾\"; }\n.as-of summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 3px; }\n.as-of .stale { color: var(--amber); font-weight: var(--font-weight-medium, 500); }\n.as-of p.warn { color: var(--fg); font-weight: var(--font-weight-medium, 500); }\n.as-of p.warn::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }\n\n  /* The web app's game-log view (ChartComponent + MetricsDashboardRow +\n     PerformanceAverages): metrics for the charted stat, the applied filter,\n     one bar per game against a dashed amber line, then the other stats. */\n  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; border: 1px solid var(--line); border-radius: var(--border-radius-md, 8px); overflow: hidden; }\n  .metric { padding: 9px 12px; position: relative; }\n  .metric + .metric { border-left: 1px solid var(--line); }\n  .metric .k { font-size: 10.5px; font-weight: var(--font-weight-semibold, 600); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }\n  .metric .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 21px; font-weight: 700; color: var(--amber); line-height: 1.25; }\n  .metric .from { font-size: 11.5px; color: var(--muted); }\n  .metric .from b { font-family: var(--mono); font-weight: 500; }\n  .metric .chg { position: absolute; top: 8px; right: 9px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; border-radius: 999px; padding: 0 6px; line-height: 17px; }\n  .chg.up { background: rgba(var(--up-rgb), 0.16); }\n  .chg.down { background: rgba(var(--down-rgb), 0.16); }\n  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n  .chip { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }\n  .chip.main { border-color: var(--amber); color: var(--fg); }\n  .chip b { font-weight: var(--font-weight-semibold, 600); }\n  .chart { margin-top: 4px; }\n  .chart svg { display: block; width: 100%; overflow: visible; }\n  .chart text { font-family: var(--mono); font-size: 9.5px; fill: var(--faint); }\n  .chart .grid { stroke: var(--line); stroke-width: 1; }\n  .chart .over { fill: rgba(var(--up-rgb), 0.8); }\n  .chart .under { fill: rgba(var(--down-rgb), 0.72); }\n  .chart .line { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 6 4; }\n  /* Today's (or the named day's) posted line is one solid line, unlike a line the user named. */\n  .chart.solid .line { stroke-dasharray: none; }\n  .legend .dash.solid { border-top-style: solid; }\n  /* Games counted against their own closing line: a tick across each bar (dashed where the game fell back to the season average). */\n  .chart .tick { stroke: var(--amber); stroke-width: 2.5; }\n  .chart .tick.avg { stroke-width: 1.5; stroke-dasharray: 4 3; }\n  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 12px; font-size: 11px; color: var(--muted); }\n  .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }\n  .legend .dash { width: 18px; border-top: 2px dashed var(--amber); }\n  .legend .tick { width: 18px; border-top: 2.5px solid var(--amber); }\n  .legend .sw { width: 10px; height: 10px; border-radius: 2px; }\n  .legend b { font-family: var(--mono); color: var(--amber); font-weight: 600; }\n  .others { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }\n  .other { background: var(--tint); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }\n  .other .k { font-size: 11px; font-weight: var(--font-weight-semibold, 600); color: var(--muted); letter-spacing: 0.04em; }\n  .other .vs { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }\n  .other .vs b { font-weight: 700; }\n  .other .vs span { color: var(--faint); font-size: 11px; }\n  .others-note { margin-top: 4px; font-size: 10.5px; color: var(--faint); }\n  @media (max-width: 460px) {\n    .metric { padding: 8px 8px; }\n    .metric .v { font-size: 17px; }\n    .metric .chg { position: static; display: inline-block; margin-top: 3px; }\n    .other { flex-direction: column; align-items: flex-start; gap: 0; padding: 5px 8px; }\n    .others { gap: 4px; }\n    .other .vs { font-size: 11px; }\n    .other .vs .arrow { display: none; }\n  }\n  /* The posted line's sources (crf04/statsplus#274): one chip per provider and book, the chosen one drawn and counted. */\n  .sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n  .src { font: inherit; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line-strong); background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }\n  .src b { font-family: var(--mono); font-weight: 600; color: var(--fg); }\n  .src .px { font-size: 11px; font-variant-numeric: tabular-nums; }\n  .src.on { border-color: var(--amber); color: var(--fg); background: var(--tint); box-shadow: inset 0 0 0 1px var(--amber); }\n  /* At phone width the chips stay one row that scrolls sideways, not a column of eight. */\n  @media (max-width: 460px) {\n    .sources { flex-wrap: nowrap; overflow-x: auto; }\n    .src { flex-shrink: 0; }\n  }\n  /* An identity warning (a namesake, or a closest match) stays beside the title: the stats may not be the requested player's. */\n  .identity, .season-choice { margin: 4px 0 0; color: var(--fg); font-size: var(--font-text-xs-size, 12px); }\n  .identity::before, .season-choice::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }\n</style>\n</head>\n<body>\n<div id=\"root\" class=\"empty\">Loading game logs…</div>\n<script>\n  const fmt = (v) => (v === null || v === undefined ? \"n/a\" : (typeof v === \"number\" ? v.toFixed(1) : String(v)));\n  const fmtChg = (c) => c === null || c === undefined ? \"\" : `<span class=\"chg ${c >= 0 ? \"up\" : \"down\"}\"><span class=\"${c >= 0 ? \"up\" : \"down\"}\">${c >= 0 ? \"↑\" : \"↓\"} ${Math.abs(c).toFixed(1)}%</span></span>`;\n\n  // `line` is the one line every game is counted against; a game with a closing_line is counted against that.\n  function chart(games, stat, line, el) {\n    const { day, esc } = window.sp;\n    const lineOf = (g) => (g.closing_line ? g.closing_line.value : line);\n    const perGame = games.some((g) => g.closing_line);\n    const W = Math.max(280, el.clientWidth || 600), H = 150, L = 26, B = 22, T = 8;\n    const vals = games.map((g) => g[stat]).filter((v) => v != null);\n    const top = Math.max(...games.map((g) => lineOf(g) || 0), ...vals, 1);\n    let step = top > 20 ? 10 : 5;\n    while (top * 1.08 / step > 40) step *= 2; // a bad line can never mean thousands of ticks\n    const ymax = Math.ceil((top * 1.08) / step) * step;\n    const y = (v) => T + (H - T - B) * (1 - v / ymax);\n    const slot = (W - L) / games.length, bw = Math.min(28, slot * 0.66);\n    const every = slot < 30 ? 2 : 1;\n    let s = \"\";\n    for (let t = 0; t <= ymax && t <= 100000; t += step) s += `<line class=\"grid\" x1=\"${L}\" x2=\"${W}\" y1=\"${y(t)}\" y2=\"${y(t)}\"/><text x=\"${L - 5}\" y=\"${y(t) + 3}\" text-anchor=\"end\">${t}</text>`;\n    games.forEach((g, i) => {\n      const x = L + slot * i + (slot - bw) / 2, v = g[stat] ?? 0;\n      const rank = g.opp_rank != null ? `rank ${g.opp_rank}` : \"rank not reported\";\n      const own = g.closing_line ? `, ${esc(g.closing_line.book)} closing line ${g.closing_line.value}` : \"\";\n      s += `<rect class=\"${v > (lineOf(g) || 0) ? \"over\" : \"under\"}\" x=\"${x.toFixed(1)}\" y=\"${y(v).toFixed(1)}\" width=\"${bw.toFixed(1)}\" height=\"${(y(0) - y(v)).toFixed(1)}\" rx=\"3\"><title>${day(g.date)} ${g.home ? \"vs\" : \"@\"} ${g.opp} (${rank}): ${fmt(g[stat])} ${stat}, ${fmt(g.MIN)} MIN${own}</title></rect>`;\n      if (i % every === (games.length - 1) % every) {\n        const [, mo, dd] = g.date.split(\"-\").map(Number);\n        s += `<text x=\"${(x + bw / 2).toFixed(1)}\" y=\"${H - 8}\" text-anchor=\"middle\">${mo}/${dd}</text>`;\n      }\n    });\n    if (perGame) {\n      games.forEach((g, i) => {\n        const lv = lineOf(g);\n        if (lv == null) return;\n        const x = L + slot * i + (slot - bw) / 2;\n        s += `<line class=\"tick${g.closing_line ? \"\" : \" avg\"}\" x1=\"${(x - 3).toFixed(1)}\" x2=\"${(x + bw + 3).toFixed(1)}\" y1=\"${y(lv)}\" y2=\"${y(lv)}\"/>`;\n      });\n    } else if (line != null) s += `<line class=\"line\" x1=\"${L}\" x2=\"${W}\" y1=\"${y(line)}\" y2=\"${y(line)}\"/>`;\n    el.innerHTML = `<svg viewBox=\"0 0 ${W} ${H}\" height=\"${H}\" role=\"img\" aria-label=\"${stat} by game against the chart line\">${s}</svg>`;\n  }\n\n  // 2026-03-07 → 3/7/26\n  const thru = (iso) => { const [y, m, d] = iso.split(\"-\").map(Number); return `${m}/${d}/${String(y).slice(2)}`; };\n\n  const LINE_SOURCE_LABEL = { season_average: \"Season avg\", posted_line: \"Line\", user: \"Your line\", closing: \"Closing line\" };\n  const lineSourceLabel = (source) => LINE_SOURCE_LABEL[source] || source.replace(/_/g, \" \");\n\n  // The legend's line entries. Games counted against closing lines get a tick per book list and, for any that fell back, the season average they used.\n  function legendLine(d, line, provider) {\n    const { esc } = window.sp;\n    const label = esc(lineSourceLabel(d.line.source));\n    if (d.line.source === \"posted_line\") {\n      const game = [d.line.matchup, d.line.game_date].find(Boolean);\n      const parts = [`${esc(d.line.label || \"Today's line\")} <b>${fmt(line)}</b>`, provider, game].filter(Boolean).map((x, i) => (i === 0 ? x : esc(x)));\n      return `<span><i class=\"dash solid\"></i>${parts.join(\" · \")}</span>`;\n    }\n    if (d.line.source !== \"closing\") {\n      return `<span><i class=\"dash\"></i>${label} <b>${d.line.source === \"user\" ? String(line) : fmt(line)}</b></span>`;\n    }\n    const n = d.line.season_average_games;\n    const avg = n ? `<span><i class=\"dash\"></i>${esc(lineSourceLabel(\"season_average\"))} <b>${fmt(line)}</b> · ${n} ${n === 1 ? \"game\" : \"games\"}</span>` : \"\";\n    return `<span><i class=\"tick\"></i>${label} <b>${d.line.books.map(esc).join(\", \")}</b></span>${avg}`;\n  }\n\n  function filterLabel(f) {\n    if (f.filter) return f.filter.split(/:\\s*/)[1] || f.filter;\n    return f.metric;\n  }\n\n  // The one line the chart counts games against: the season average the games without a closing line use, when games are counted against closing lines.\n  const chartLine = (d) => d.line.source === \"closing\" ? d.line.season_average_value\n    : d.display ? d.display.line : (d.season_averages ? d.season_averages[d.chart_stat] : null);\n\n  // Every provider and book posting the charted stat for the posted line's game, providers first.\n  const lineSources = (prices) => prices ? [\n    ...prices.providers.map((p) => ({ kind: \"provider\", key: p.provider, line: p.line, over: p.over, under: p.under })),\n    ...prices.books.map((b) => ({ kind: \"book\", key: b.book, line: b.line, over: b.over, under: b.under })),\n  ] : [];\n\n  // Python's round(q, 1): the exact binary value of q, a tie to the even tenth. toFixed(1) breaks a tie\n  // upward (1/16 is 6.25: Python 6.2, toFixed 6.3); toFixed(60) is q's exact decimal expansion below 1000.\n  function round1(q) {\n    const [whole, frac] = q.toFixed(60).split(\".\");\n    if (/^\\d50*$/.test(frac) && Number(frac[0]) % 2 === 0) return Number(`${whole}.${frac[0]}`);\n    return Number(q.toFixed(1));\n  }\n\n  // The server's count over one line: strictly greater, a missing stat counts as 0, oldest game first.\n  function overCounts(games, stat, line) {\n    const hits = (sample) => sample.filter((g) => (g[stat] ?? 0) > line).length;\n    const over = (sample) => `${hits(sample)}/${sample.length}`;\n    const recent = games.slice().reverse();\n    return {\n      over_line: over(games),\n      over_line_last5: over(recent.slice(0, 5)),\n      over_line_last10: over(recent.slice(0, 10)),\n      over_line_pct: games.length ? round1((hits(games) / games.length) * 100) : null,\n    };\n  }\n\n  // What the card draws for the posted line: its sources, the chosen one (by default the source the\n  // server names at its line), that line and the counts over it. With no choice the server's own counts stand.\n  function lineView(d, chosen) {\n    const sources = d.line.source === \"posted_line\" ? lineSources(d.line.prices) : [];\n    const fallback = { sources, selected: -1, line: chartLine(d), provider: d.line.provider, display: d.display };\n    if (!sources.length) return fallback;\n    const named = sources.findIndex((s) => s.key === d.line.provider && s.line === d.line.value);\n    if (chosen == null || !sources[chosen]) return { ...fallback, selected: named };\n    const s = sources[chosen];\n    return { sources, selected: chosen, line: s.line, provider: s.key, display: { ...d.display, line: s.line, ...overCounts(d.games || [], d.chart_stat, s.line) } };\n  }\n\n  function sourceChips(view) {\n    const { esc } = window.sp;\n    if (!view.sources.length) return \"\";\n    const price = (s) => s.over == null && s.under == null ? \"\"\n      : ` <span class=\"px\">${[s.over != null ? `O ${s.over > 0 ? \"+\" : \"\"}${s.over}` : \"\", s.under != null ? `U ${s.under > 0 ? \"+\" : \"\"}${s.under}` : \"\"].filter(Boolean).join(\" / \")}</span>`;\n    const chips = view.sources.map((s, i) =>\n      `<button type=\"button\" class=\"src${i === view.selected ? \" on\" : \"\"}\" data-source=\"${i}\" aria-pressed=\"${i === view.selected}\">${esc(s.key)} <b>${s.line}</b>${price(s)}</button>`\n    ).join(\"\");\n    return `<div class=\"sources\" role=\"group\" aria-label=\"Posted lines, American odds as posted\">${chips}</div>`;\n  }\n\n  let last = null, chosen = null;\n  window.chooseLineSource = (i) => { chosen = i; window.renderCard(last); };\n  window.renderCard = function (d) {\n    const { esc, day } = window.sp;\n    const root = document.getElementById(\"root\");\n    if (!d || !d.applied) { root.className = \"empty\"; root.innerHTML = `No game-log data.${window.sp.asOf(d)}`; return; }\n    if (d !== last) chosen = null;\n    last = d;\n    root.onclick = (e) => {\n      const chip = e.target.closest && e.target.closest(\"[data-source]\");\n      if (!chip) return;\n      // Redrawing rebuilds the chip row; keep it scrolled where it was so the chosen chip stays in view at phone width.\n      const x = chip.parentNode.scrollLeft;\n      window.chooseLineSource(Number(chip.dataset.source));\n      root.querySelector(\".sources\").scrollLeft = x;\n    };\n    root.className = \"card\";\n    const a = d.applied, stat = d.chart_stat;\n    const avg = d.averages, season = d.season_averages, disp = d.display;\n    const games = d.games || [], n = games.length;\n    const name = d.player.name || `closest match to \"${esc(d.player.closest_match_to)}\"`;\n\n    const filterChips = (a.filters.length ? a.filters : [null]).map((f) => f\n      ? `<span class=\"chip main\"><b>${esc(filterLabel(f))}</b> · ranked ${f.ranks[0]}–${f.ranks[1]}</span>`\n      : '<span class=\"chip main\">All games</span>'\n    ).join(\"\");\n    const otherWords = [a.minutes, a.location, a.opponent, ...(a.with || []), ...(a.without || [])]\n      .filter(Boolean).map((f) => f.words);\n    const otherChips = otherWords.map((w) => `<span class=\"chip main\">${esc(w)}</span>`).join(\"\");\n    const chips = `<div class=\"chips\">\n        ${a.filters.length || !otherWords.length ? filterChips : \"\"}${otherChips}\n        <span class=\"chip\">${esc(a.season)}${a.through ? ` · thru ${thru(a.through)}` : \"\"}</span>\n      </div>`;\n    const header = `\n      <div class=\"head\">\n        <div class=\"title\">${esc(name)} <span class=\"sub\">${esc(stat)} game logs</span></div>\n        <div class=\"brand\">CourtAI</div>\n      </div>${d.player.identity_warning ? `<p class=\"identity\">${esc(d.player.identity_warning)}</p>` : \"\"}${\n        (d.season_choice ? d.season_choice.words : []).map((w) => `<p class=\"season-choice\">${esc(w)}</p>`).join(\"\")}`;\n    if (!n) {\n      const seasonLine = season\n        ? `His season: ${[stat, ...d.markets.filter((k) => k !== stat), \"MIN\"].map((k) => `${k} ${fmt(season[k])}`).join(\" · \")}.`\n        : \"\";\n      root.innerHTML = `${header}${chips}\n        <p class=\"sub\" style=\"margin:12px 0 0\">No games match. ${seasonLine}</p>\n        ${window.sp.asOf(d)}`;\n      return;\n    }\n    const view = lineView(d, chosen);\n    const raw = avg ? avg[stat] : null;\n    const sraw = season ? season[stat] : null;\n    const p36 = disp ? disp.per36[stat] : null;\n    const sp36 = disp ? disp.season_per36[stat] : null;\n    const line = view.line, counts = view.display;\n    const over = counts ? counts.over_line : null;\n    const overL5 = counts ? counts.over_line_last5 : null;\n    const overL10 = counts ? counts.over_line_last10 : null;\n    const overPct = counts ? counts.over_line_pct : null;\n    const others = disp\n      ? [...d.markets.filter((k) => k !== stat), \"MIN\"].map((k) => {\n          const isMin = k === \"MIN\";\n          const o = disp.others[k];\n          const cls = o.direction === \"up\" ? \"up\" : o.direction === \"down\" ? \"down\" : \"\";\n          const arrow = o.direction === \"up\" ? \"↗\" : o.direction === \"down\" ? \"↘\" : \"→\";\n          return `<div class=\"other\"><span class=\"k\">${k}${isMin ? \"\" : \" /36\"}</span><span class=\"vs\"><b class=\"${cls}\">${fmt(o.current)}</b> <span>vs</span> ${fmt(o.season)} <span class=\"arrow ${cls}\">${arrow}</span></span></div>`;\n        }).join(\"\")\n      : \"\";\n    root.innerHTML = `${header}\n      <div class=\"metrics\">\n        <div class=\"metric\"><div class=\"k\">Raw</div><div class=\"v\">${fmt(raw)}</div><div class=\"from\">from <b>${fmt(sraw)}</b></div>${fmtChg(disp ? disp.raw_change_pct : null)}</div>\n        <div class=\"metric\"><div class=\"k\">Per 36</div><div class=\"v\">${fmt(p36)}</div><div class=\"from\">from <b>${fmt(sp36)}</b></div>${fmtChg(disp ? disp.per36_change_pct : null)}</div>\n        <div class=\"metric\"><div class=\"k\">${d.line.source === \"season_average\" ? \"Over avg\" : \"Over line\"}</div><div class=\"v\">${over || \"n/a\"}</div><div class=\"from\">${overPct != null ? fmt(overPct) + \"%\" : \"n/a\"} · ${overL5 ? `L<b>${overL5}</b>` : \"L5 n/a\"}${overL10 === overL5 && overL5 ? \"\" : ` · ${overL10 ? `L<b>${overL10}</b>` : \"L10 n/a\"}`}</div></div>\n      </div>\n      ${chips}\n      ${sourceChips(view)}\n      <div class=\"legend\">${legendLine(d, line, view.provider)}<span><i class=\"sw\" style=\"background:rgba(var(--up-rgb),.8)\"></i>over</span><span><i class=\"sw\" style=\"background:rgba(var(--down-rgb),.72)\"></i>under</span></div>\n      <div class=\"chart${d.line.source === \"posted_line\" ? \" solid\" : \"\"}\" id=\"chart\"></div>\n      ${d.line.split_note ? `<div class=\"others-note split-note\">${esc(d.line.split_note)}</div>` : \"\"}\n      ${others ? `<div class=\"others\">${others}</div>` : \"\"}\n      <div class=\"others-note\">Filtered vs season, per 36 minutes (MIN per game). Teams: ${a.teams_matched.length ? a.teams_matched.map(esc).join(\", \") : \"none reported\"}.</div>\n      ${window.sp.asOf(d)}`;\n    chart(games, stat, line, document.getElementById(\"chart\"));\n  };\n  // Redraw the chart when the host resizes the card's width.\n  let lastW = 0;\n  new ResizeObserver(() => {\n    const el = document.getElementById(\"chart\");\n    if (last && el && last.games && last.games.length && el.clientWidth !== lastW) {\n      lastW = el.clientWidth;\n      chart(last.games, last.chart_stat, lineView(last, chosen).line, el);\n    }\n  }).observe(document.body);\n</script>\n<script>\n// Shared by every StatsPlus card. Inlined into each card at serve time.\n// Minimal MCP Apps View bridge (spec 2026-01-26): JSON-RPC 2.0 over\n// postMessage. Only what a display-only card needs (#83): the ui/initialize\n// handshake, host theming, tool results and size reports. Each card defines\n// window.renderCard(structuredContent, meta) before this script runs; `meta` is the result's\n// `_meta`, which carries card-only data (the Targets and Backtest cards' per-game record).\n(function () {\n  const PROTOCOL = \"2026-01-26\";\n  let nextId = 1;\n  const pending = new Map();\n  const send = (msg) => window.parent.postMessage({ jsonrpc: \"2.0\", ...msg }, \"*\");\n  const request = (method, params) => new Promise((resolve, reject) => {\n    const id = nextId++;\n    pending.set(id, { resolve, reject });\n    send({ id, method, params });\n  });\n  const notify = (method, params) => send({ method, params });\n\n  function applyHost(ctx) {\n    if (!ctx) return;\n    const root = document.documentElement;\n    const vars = ctx.styles && ctx.styles.variables;\n    if (vars) for (const [k, v] of Object.entries(vars)) if (v) root.style.setProperty(k, v);\n    if (ctx.theme) { root.dataset.theme = ctx.theme; root.style.colorScheme = ctx.theme; }\n  }\n\n  window.addEventListener(\"message\", (event) => {\n    if (event.source !== window.parent) return;\n    const msg = event.data;\n    if (!msg || msg.jsonrpc !== \"2.0\") return;\n    if (msg.id !== undefined && !msg.method && pending.has(msg.id)) {\n      const { resolve, reject } = pending.get(msg.id);\n      pending.delete(msg.id);\n      msg.error ? reject(msg.error) : resolve(msg.result);\n    } else if (msg.method === \"ui/notifications/tool-result\") {\n      window.renderCard(msg.params && msg.params.structuredContent, msg.params && msg.params._meta);\n    } else if (msg.method === \"ui/notifications/host-context-changed\") {\n      applyHost(msg.params);\n    } else if (msg.method === \"ui/resource-teardown\" && msg.id !== undefined) {\n      send({ id: msg.id, result: {} });\n    } else if (msg.id !== undefined && msg.method) {\n      send({ id: msg.id, error: { code: -32601, message: \"Method not found\" } });\n    }\n  });\n\n  // -1, so an empty card (height 0) still reports its size once instead of leaving the host's default.\n  let lastHeight = -1;\n  new ResizeObserver(() => {\n    const height = Math.ceil(document.documentElement.getBoundingClientRect().height);\n    if (height !== lastHeight) { lastHeight = height; notify(\"ui/notifications/size-changed\", { height }); }\n  }).observe(document.documentElement);\n\n  request(\"ui/initialize\", {\n    appInfo: { name: document.title || \"CourtAI card\", version: \"0.1.0\" },\n    appCapabilities: {},\n    protocolVersion: PROTOCOL,\n  }).then((result) => {\n    applyHost(result && result.hostContext);\n    notify(\"ui/notifications/initialized\", {});\n  });\n})();\n\n// Formatting helpers shared by the cards.\nwindow.sp = {\n  esc: (s) => String(s).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" }[c])),\n  minus: (s) => String(s).replace(/^-/, \"−\"),\n  // Same as the tool text (vocabulary._percent): one decimal below 1% so a small score never reads as \"−0%\".\n  pct: (v) => {\n    const p = v * 100;\n    if (window.sp.fixed(Math.abs(p), 1) === \"0.0\") return \"0%\";\n    return `${p > 0 ? \"+\" : \"−\"}${window.sp.fixed(Math.abs(p), Math.abs(p) < 0.95 ? 1 : 0)}%`;\n  },\n  // Python's format(a, f\".{d}f\") for 0 <= a < 1e21 and d <= 1 (card percents): round the exact binary value\n  // half to even, where toFixed rounds ties up. Below 0.01 it is zero at d <= 1, and toPrecision would go exponential.\n  fixed: (a, d) => {\n    if (a < 0.01) return (0).toFixed(d);\n    const [whole, frac = \"\"] = a.toPrecision(60).split(\".\");\n    const rest = frac.slice(d);\n    let n = BigInt(whole + frac.slice(0, d));\n    const tail = rest.slice(1).replace(/0+$/, \"\");\n    if (rest[0] > \"5\" || (rest[0] === \"5\" && (tail !== \"\" || n % 2n === 1n))) n += 1n;\n    const s = n.toString().padStart(d + 1, \"0\");\n    return d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;\n  },\n  ordinal: (n) => { const s = [\"th\", \"st\", \"nd\", \"rd\"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); },\n  // The web app's Selection-card wash: greener up, redder down, capped alpha.\n  wash: (v) => {\n    if (Math.round(v * 100) === 0) return \"\";\n    const a = Math.min(0.5, 0.12 + Math.abs(v) * 2.5).toFixed(2);\n    return `background: rgba(var(${v > 0 ? \"--up-rgb\" : \"--down-rgb\"}), ${a})`;\n  },\n  day: (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: \"short\", day: \"numeric\" }),\n  // The sentence the footer addresses to Claude (provenance.STALE_ADVICE): a card never shows it.\n  STALE_ADVICE: \"State this once, in a closing line of any answer that uses them.\",\n  // The as-of footer as one line (crf04/statsplus#155): \"Data as of Aug 21 · stale\" from the server's\n  // structured `data_age` (its oldest date and the backend's fresh/stale verdict, never read from the\n  // prose). Tapping it opens the tool text's own footer lines (`data_as_of`), verbatim but for the\n  // sentence addressed to Claude. Nothing from an older backend that sends no provenance.\n  asOf: (d) => {\n    const { esc, STALE_ADVICE } = window.sp;\n    const lines = d && Array.isArray(d.data_as_of) ? d.data_as_of : [];\n    if (!lines.length) return \"\";\n    const age = d.data_age || {};\n    const date = age.as_of\n      ? new Date(`${age.as_of}T12:00:00Z`).toLocaleDateString(\"en-US\", { month: \"short\", day: \"numeric\", timeZone: \"UTC\" })\n      : null;\n    const state = age.state === \"stale\" ? ' <span class=\"stale\">· stale</span>' : age.state === \"fresh\" ? ' <span class=\"fresh\">· fresh</span>' : \"\";\n    const shown = lines.map((l) => l.replace(` ${STALE_ADVICE}`, \"\").replace(STALE_ADVICE, \"\").trim()).filter(Boolean);\n    const p = (l) => `<p${/^(Stale|Unavailable):/.test(l) ? ' class=\"warn\"' : \"\"}>${esc(l)}</p>`;\n    return `<details class=\"as-of rule\"><summary>${date ? `Data as of ${esc(date)}` : \"Data age\"}${state}</summary>${shown.map(p).join(\"\")}</details>`;\n  },\n  // Short Base labels for narrow cards (Slate and Matchup both show these).\n  SHORT: { \"Shot types\": \"Shot\", \"Shot zones\": \"Zone\", \"Play types\": \"Play\", \"Assist locations\": \"Assist\", \"Traditional\": \"Trad\" },\n};\n\n</script>\n</body>\n</html>\n",
+      "on-off": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"color-scheme\" content=\"light dark\">\n<title>CourtAI On/off card</title>\n<style>\n/* Shared by every StatsPlus card. Inlined into each card at serve time.\n   Host theme variables (MCP Apps hostContext) come first; the fallbacks only\n   apply outside a host. StatsPlus voice carried from the web app's theme.css:\n   monospace numerals, green/red only for vs-average and W/L, one amber accent. */\n:root {\n  --fg: var(--color-text-primary, #1f1e1d);\n  --muted: var(--color-text-secondary, #5e5d59);\n  --faint: var(--color-text-tertiary, #8a887f);\n  --line: var(--color-border-tertiary, rgba(127, 127, 127, 0.2));\n  --line-strong: var(--color-border-secondary, rgba(127, 127, 127, 0.38));\n  --tint: var(--color-background-secondary, rgba(127, 127, 127, 0.07));\n  --mono: var(--font-mono, ui-monospace, \"SF Mono\", Menlo, Consolas, monospace);\n  --up-rgb: 46, 150, 98;\n  --down-rgb: 194, 70, 70;\n  --up: rgb(var(--up-rgb));\n  --down: rgb(var(--down-rgb));\n  --amber: #c98a28;\n}\n:root[data-theme=\"dark\"] { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme=\"light\"]) { --up-rgb: 92, 190, 138; --down-rgb: 226, 110, 110; --amber: #e8a33d; }\n}\nhtml, body { margin: 0; background: transparent; }\nbody {\n  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);\n  font-size: var(--font-text-sm-size, 14px);\n  line-height: var(--font-text-sm-line-height, 1.45);\n  color: var(--fg);\n  -webkit-font-smoothing: antialiased;\n}\n.card { padding: 14px 16px 12px; }\n.empty { color: var(--muted); padding: 14px 16px; }\n\n/* Header: title left, brand + context right. */\n.head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }\n.title { font-size: var(--font-heading-sm-size, 16px); font-weight: var(--font-weight-semibold, 600); }\n.sub { color: var(--muted); font-size: var(--font-text-xs-size, 12px); }\n.brand { font-size: 11px; font-weight: var(--font-weight-semibold, 600); letter-spacing: 0.02em; color: var(--faint); white-space: nowrap; }\n.brand::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 5px; vertical-align: 1px; }\n.fixture { color: var(--amber); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; margin-left: 6px; }\n\n.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }\n.up { color: var(--up); }\n.down { color: var(--down); }\n.pill { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-semibold, 600); text-align: center; border-radius: var(--border-radius-sm, 6px); padding: 1px 6px; }\n.flag { display: inline-block; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; line-height: 15px; }\n.rule { border-top: 1px solid var(--line); }\n.as-of { margin-top: 10px; padding-top: 8px; color: var(--muted); font-size: var(--font-text-xs-size, 12px); }\n.as-of p { margin: 4px 0 0; }\n.as-of summary { cursor: pointer; list-style: none; }\n.as-of summary::-webkit-details-marker { display: none; }\n.as-of summary::after { content: \" ▸\"; color: var(--faint); }\n.as-of[open] summary::after { content: \" ▾\"; }\n.as-of summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 3px; }\n.as-of .stale { color: var(--amber); font-weight: var(--font-weight-medium, 500); }\n.as-of p.warn { color: var(--fg); font-weight: var(--font-weight-medium, 500); }\n.as-of p.warn::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }\n\n  /* get_on_off as a sortable heat table (crf04/statsplus#229, prototype B): each stat cell is the asked\n     lineup state's per-36 rate, with its change against the comparison state underneath, shaded by the\n     size of that change. The change is display arithmetic; the tool text states both rates. */\n  .sortbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 10px; font-size: 11.5px; color: var(--muted); }\n  .sortbar .by { color: var(--faint); }\n  .toggle { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; }\n  .toggle button { font: 600 11.5px var(--mono); color: var(--muted); background: none; border: 0; border-radius: 6px; padding: 3px 9px; cursor: pointer; }\n  .toggle button.sel { background: var(--tint); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-strong); }\n  .toggle button:focus-visible, th button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }\n  .tbl { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }\n  .tbl th { font-size: 10.5px; font-weight: var(--font-weight-semibold, 600); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: right; padding: 0 6px 6px; white-space: nowrap; }\n  .tbl th:first-child { text-align: left; padding-left: 0; }\n  .tbl th button { all: unset; cursor: pointer; display: inline-flex; gap: 2px; align-items: baseline; border-radius: 3px; }\n  .tbl th.sorted { color: var(--fg); }\n  .tbl th .arr { color: var(--amber); display: inline-block; min-width: 0.6em; }\n  .tbl td { padding: 5px 6px; text-align: right; border-top: 1px solid var(--line); vertical-align: middle; }\n  .tbl td:first-child { text-align: left; padding-left: 0; }\n  .tbl td.c { font-family: var(--mono); font-variant-numeric: tabular-nums; }\n  .tbl td.c b { display: block; font-size: 13.5px; font-weight: 600; }\n  .tbl td.c i { display: block; font-style: normal; font-size: 10.5px; color: var(--faint); }\n  .tbl td.c i.up { color: var(--up); }\n  .tbl td.c i.down { color: var(--down); }\n  .tbl td.c i.thin { opacity: 0.5; }\n  .tbl .mins { font-family: var(--mono); color: var(--muted); font-size: 12px; }\n  .tbl .nm { font-weight: var(--font-weight-semibold, 600); white-space: nowrap; }\n  .tbl .nm .short, .tbl .mins .short, .tbl th .tight { display: none; }\n  .tbl tbody.low { opacity: 0.6; }\n  .more { margin-top: 2px; }\n  .more summary { cursor: pointer; font-size: 12px; color: var(--muted); list-style: none; padding: 6px 0; border-top: 1px solid var(--line); }\n  .more summary::-webkit-details-marker { display: none; }\n  .more summary::after { content: \" ▸\"; color: var(--faint); }\n  .more[open] summary::after { content: \" ▾\"; }\n  .key { margin-top: 8px; font-size: 11px; color: var(--muted); }\n  .notes { margin-top: 10px; padding-top: 8px; color: var(--muted); font-size: var(--font-text-xs-size, 12px); }\n  .notes p { margin: 3px 0 0; }\n  .notes p.warn { color: var(--fg); font-weight: var(--font-weight-medium, 500); }\n  .notes p.warn::before { content: \"\"; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }\n  @media (max-width: 460px) {\n    .card { padding: 12px 10px 10px; }\n    /* Fixed layout: the name column takes what the six number columns leave, and a long name truncates\n       instead of pushing FTA out of the frame. */\n    .tbl { font-size: 12px; table-layout: fixed; }\n    .tbl th, .tbl td { padding-left: 2px; padding-right: 2px; }\n    .tbl th { letter-spacing: 0.02em; font-size: 10px; }\n    .tbl th:nth-child(2), .tbl td:nth-child(2) { width: 10%; }\n    .tbl th:nth-child(n+3), .tbl td:nth-child(n+3) { width: 9.5%; }\n    .tbl .nm { overflow: hidden; text-overflow: ellipsis; }\n    .tbl .nm .full, .tbl .mins .full { display: none; }\n    .tbl .nm .short, .tbl .mins .short { display: inline; }\n    .tbl td.c b { font-size: 12px; }\n    .tbl td.c i { font-size: 10px; }\n    .tbl .mins { font-size: 11px; }\n  }\n  @media (max-width: 400px) {\n    .tbl th .state { display: none; }\n    .tbl th .tight { display: inline; }\n    .tbl th, .tbl td { padding-left: 1px; padding-right: 1px; }\n    /* A header never spills into its neighbour, so a tap on its arrow sorts that column. */\n    .tbl th { overflow: hidden; }\n    .tbl th button { max-width: 100%; }\n    .tbl th:nth-child(2), .tbl td:nth-child(2) { width: 9%; }\n    .tbl th:nth-child(n+3), .tbl td:nth-child(n+3) { width: 9%; }\n    .tbl th { font-size: 9.5px; letter-spacing: 0; }\n    .tbl td.c b { font-size: 11px; }\n    .tbl td.c i { font-size: 9.5px; }\n    .tbl .nm { font-size: 11.5px; }\n  }\n</style>\n</head>\n<body>\n<div id=\"root\" class=\"empty\">Loading on/off splits…</div>\n<script>\n  // Under this many minutes a state is too thin to lean on: the floor Injury Scenarios use (#220).\n  const MIN_MINUTES = 150;\n  const COLS = [[\"usage\", \"USG%\"], [\"PTS\", \"PTS\"], [\"REB\", \"REB\"], [\"AST\", \"AST\"], [\"3PA\", \"3PA\"], [\"TOV\", \"TOV\"], [\"FTA\", \"FTA\"]];\n  const LABEL = Object.fromEntries(COLS);\n  const view = { col: \"minutes\", by: \"change\", dir: -1, data: null };\n\n  const rate = (p, k) => (k === \"usage\" ? p.usage : p.per36 && p.per36[k]);\n  // The comparison's value for the same column, or null when he had no minutes there.\n  const base = (p, k) => (p.compare ? (k === \"usage\" ? p.compare.usage : p.compare.per36[k]) : null);\n  const change = (p, k) => {\n    const a = rate(p, k), b = base(p, k);\n    return a == null || b == null ? null : a - b;\n  };\n  const one = (v) => (v == null ? \"—\" : window.sp.fixed(Math.abs(v), 1) === \"0.0\" ? \"0.0\" : `${v < 0 ? \"−\" : \"\"}${window.sp.fixed(Math.abs(v), 1)}`);\n  const signed = (d) => {\n    if (d == null) return \"—\";\n    const t = window.sp.fixed(Math.abs(d), 1);\n    return t === \"0.0\" ? \"±0.0\" : `${d > 0 ? \"+\" : \"−\"}${t}`;\n  };\n  const lineup = (on, off) => [on.length ? `${on.join(\" and \")} on the floor` : \"\", off.length ? `${off.join(\" and \")} off the floor` : \"\"].filter(Boolean).join(\" and \");\n  // On a phone a teammate is his surname (\"Jenkins\"), or \"D. Jenkins\" when two share it; the full name is\n  // the cell's title.\n  const surname = (n) => String(n).split(\" \").slice(1).join(\" \").replace(/ (II|III|IV|Jr\\.|Sr\\.)$/, \"\") || String(n);\n  const shortNames = (players) => {\n    const count = {};\n    players.forEach((p) => { const s = surname(p.name); count[s] = (count[s] || 0) + 1; });\n    return (n) => (count[surname(n)] > 1 ? `${String(n)[0]}. ${surname(n)}` : surname(n));\n  };\n  const minsLabel = (d) => (d.off.length && !d.on.length ? \"Min off\" : d.on.length && !d.off.length ? \"Min on\" : \"Min\");\n\n  function sortValue(p) {\n    if (view.col === \"minutes\") return p.minutes;\n    if (view.col === \"name\") return p.name;\n    return view.by === \"change\" ? change(p, view.col) : rate(p, view.col);\n  }\n  function sorted(players) {\n    return players.slice().sort((a, b) => {\n      const x = sortValue(a), y = sortValue(b);\n      if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1; // nothing to sort by: last\n      return (typeof x === \"string\" ? x.localeCompare(y) : x - y) * view.dir;\n    });\n  }\n\n  function cell(p, k, compared) {\n    const { esc } = window.sp;\n    const d = change(p, k), b = base(p, k);\n    // Shade by the change relative to the comparison value, with a floor so a near-zero rate cannot blow up.\n    const rel = d == null ? 0 : d / Math.max(Math.abs(b), k === \"TOV\" ? 1 : 2);\n    const alpha = (Math.min(Math.abs(rel), 0.6) / 0.6) * 0.28;\n    const bg = d == null || Math.abs(rel) < 0.05 ? \"\" : ` style=\"background:rgba(var(--${d > 0 ? \"up\" : \"down\"}-rgb), ${alpha.toFixed(3)})\"`;\n    const tone = d == null || window.sp.fixed(Math.abs(d), 1) === \"0.0\" ? \"\" : d > 0 ? \"up\" : \"down\";\n    const thin = p.compare && p.compare.minutes < MIN_MINUTES ? \" thin\" : \"\";\n    const v = rate(p, k);\n    const under = compared ? `<i class=\"${tone}${thin}\">${esc(signed(d))}</i>` : \"\";\n    return `<td class=\"c\"${bg}><b>${esc(one(v))}</b>${under}</td>`;\n  }\n  const row = (p, compared, short) => {\n    const { esc } = window.sp;\n    return `<tr><td class=\"nm\" title=\"${esc(p.name)}\"><span class=\"full\">${esc(p.name)}</span><span class=\"short\">${esc(short(p.name))}</span></td><td class=\"mins\"><span class=\"full\">${esc(p.minutes.toLocaleString(\"en-US\"))}</span><span class=\"short\">${esc(String(p.minutes))}</span></td>${COLS.map(([k]) => cell(p, k, compared)).join(\"\")}</tr>`;\n  };\n\n  function draw() {\n    const d = view.data;\n    const { esc } = window.sp;\n    const root = document.getElementById(\"root\");\n    const title = `With ${lineup(d.on, d.off)}`;\n    const cmp = d.compare;\n    const cmpOk = cmp && cmp.status === \"ok\";\n    const sub = [d.team_name || d.team, d.season, \"per 36 minutes\", \"PBPStats on/off\"].map(esc).join(\" · \");\n    // The comparison's state is said whatever the asked state holds (#229 AC3).\n    const notes = [];\n    if (!cmp) notes.push(`<p class=\"warn\">No comparison: putting every named player on the floor together would be more than 5 players.</p>`);\n    else if (!cmpOk) notes.push(`<p class=\"warn\">The comparison with ${esc(lineup(cmp.on, cmp.off))} is unavailable, so no change is shown.</p>`);\n    else if (cmp.stale) notes.push(`<p class=\"warn\">The comparison is a stale copy cached at ${esc(cmp.cached_at)}.</p>`);\n    if (d.status === \"unavailable\") {\n      root.className = \"card\";\n      root.innerHTML = `<div class=\"head\"><div class=\"title\">${esc(title)}</div><div class=\"brand\">CourtAI</div></div>\n        <div class=\"sub\">${sub}</div><div class=\"notes rule\"><p class=\"warn\">On/off splits are unavailable right now: PBPStats could not be reached and no copy is cached.</p>${notes.join(\"\")}</div>${window.sp.asOf(d)}`;\n      return;\n    }\n    const all = sorted(d.players);\n    const short = shortNames(d.players);\n    const big = all.filter((p) => p.minutes >= MIN_MINUTES), small = all.filter((p) => p.minutes < MIN_MINUTES);\n    // \"Min off\" reads \"Min\" on a phone: the state word is the part that can go without losing the column.\n    const label = (text) => esc(text).replace(/^Min (off|on)$/, 'Min<span class=\"state\"> $1</span>').replace(/^Teammate$/, '<span class=\"state\">Teammate</span><span class=\"tight\">Player</span>')\n      .replace(/^USG%$/, 'USG<span class=\"state\">%</span>');\n    const th = (col, text) => `<th class=\"${col === view.col ? \"sorted\" : \"\"}\"><button data-sort=\"${col}\" aria-label=\"Sort by ${esc(text)}\">${label(text)}<span class=\"arr\">${col === view.col ? (view.dir < 0 ? \"↓\" : \"↑\") : \"\"}</span></button></th>`;\n    const by = view.col === \"minutes\" ? `${minsLabel(d).replace(\"Min\", \"minutes\")}` : view.col === \"name\" ? \"name\" : `${view.by === \"change\" ? \"change in\" : \"per 36\"} ${LABEL[view.col]}`;\n    const order = view.col === \"name\" ? (view.dir > 0 ? \"A to Z\" : \"Z to A\") : view.dir < 0 ? \"high to low\" : \"low to high\";\n    const head = `<thead><tr>${th(\"name\", \"Teammate\")}${th(\"minutes\", minsLabel(d))}${COLS.map(([k, l]) => th(k, l)).join(\"\")}</tr></thead>`;\n    if (d.stale) notes.push(`<p class=\"warn\">Stale: PBPStats could not be refreshed, so this is the copy cached at ${esc(d.cached_at)}.</p>`);\n    notes.push(`<p>Per 36 from PBPStats' whole-number minutes. Under ${MIN_MINUTES} minutes is too few to lean on: those rows are folded, and a change resting on under ${MIN_MINUTES} comparison minutes is faded.</p>`);\n    notes.push(`<p>Off-floor minutes are not games he missed; bench units often face the other team's bench.</p>`);\n    root.className = \"card\";\n    root.innerHTML = `\n      <div class=\"head\"><div class=\"title\">${esc(title)}</div><div class=\"brand\">CourtAI</div></div>\n      <div class=\"sub\">${sub}${cmpOk ? ` · change vs ${esc(lineup(cmp.on, cmp.off))}` : \"\"}</div>\n      ${d.players.length ? `\n      <div class=\"sortbar\"><span>Sort stat columns by</span><span class=\"toggle\"><button data-by=\"change\" class=\"${view.by === \"change\" ? \"sel\" : \"\"}\">Change</button><button data-by=\"rate\" class=\"${view.by === \"rate\" ? \"sel\" : \"\"}\">Per 36</button></span><span class=\"by\">${esc(by)}, ${order}</span></div>\n      <table class=\"tbl\">${head}<tbody>${big.map((p) => row(p, cmpOk, short)).join(\"\")}</tbody></table>\n      ${small.length ? `<details class=\"more\"><summary>${small.length} more with under ${MIN_MINUTES} min</summary><table class=\"tbl\">${head}<tbody class=\"low\">${small.map((p) => row(p, cmpOk, short)).join(\"\")}</tbody></table></details>` : \"\"}\n      <div class=\"key\">Tap a column to sort; tap again to flip. Big number = per 36 in this lineup${cmpOk ? \"; small = change vs the comparison. Shading scales with the change\" : \"\"}.</div>`\n      : `<p class=\"sub\">No teammate has minutes in this lineup state.</p>`}\n      <div class=\"notes rule\">${notes.join(\"\")}</div>\n      ${window.sp.asOf(d)}`;\n  }\n\n  // One delegated listener: the sort headers and the Change / Per 36 toggle re-draw the last result.\n  function sortBy(col) {\n    if (col === view.col) view.dir = -view.dir;\n    else { view.col = col; view.dir = col === \"name\" ? 1 : -1; }\n    draw();\n  }\n  function rankBy(by) { view.by = by; draw(); }\n  document.addEventListener(\"click\", (e) => {\n    const b = e.target.closest && e.target.closest(\"button[data-sort], button[data-by]\");\n    if (!b || !view.data) return;\n    if (b.dataset.sort) sortBy(b.dataset.sort); else rankBy(b.dataset.by);\n  });\n  window.onOff = { sortBy, rankBy };\n\n  window.renderCard = function (d) {\n    const root = document.getElementById(\"root\");\n    if (!d || !Array.isArray(d.players)) { root.className = \"empty\"; root.innerHTML = \"No on/off splits.\"; return; }\n    view.data = d;\n    draw();\n  };\n</script>\n<script>\n// Shared by every StatsPlus card. Inlined into each card at serve time.\n// Minimal MCP Apps View bridge (spec 2026-01-26): JSON-RPC 2.0 over\n// postMessage. Only what a display-only card needs (#83): the ui/initialize\n// handshake, host theming, tool results and size reports. Each card defines\n// window.renderCard(structuredContent, meta) before this script runs; `meta` is the result's\n// `_meta`, which carries card-only data (the Targets and Backtest cards' per-game record).\n(function () {\n  const PROTOCOL = \"2026-01-26\";\n  let nextId = 1;\n  const pending = new Map();\n  const send = (msg) => window.parent.postMessage({ jsonrpc: \"2.0\", ...msg }, \"*\");\n  const request = (method, params) => new Promise((resolve, reject) => {\n    const id = nextId++;\n    pending.set(id, { resolve, reject });\n    send({ id, method, params });\n  });\n  const notify = (method, params) => send({ method, params });\n\n  function applyHost(ctx) {\n    if (!ctx) return;\n    const root = document.documentElement;\n    const vars = ctx.styles && ctx.styles.variables;\n    if (vars) for (const [k, v] of Object.entries(vars)) if (v) root.style.setProperty(k, v);\n    if (ctx.theme) { root.dataset.theme = ctx.theme; root.style.colorScheme = ctx.theme; }\n  }\n\n  window.addEventListener(\"message\", (event) => {\n    if (event.source !== window.parent) return;\n    const msg = event.data;\n    if (!msg || msg.jsonrpc !== \"2.0\") return;\n    if (msg.id !== undefined && !msg.method && pending.has(msg.id)) {\n      const { resolve, reject } = pending.get(msg.id);\n      pending.delete(msg.id);\n      msg.error ? reject(msg.error) : resolve(msg.result);\n    } else if (msg.method === \"ui/notifications/tool-result\") {\n      window.renderCard(msg.params && msg.params.structuredContent, msg.params && msg.params._meta);\n    } else if (msg.method === \"ui/notifications/host-context-changed\") {\n      applyHost(msg.params);\n    } else if (msg.method === \"ui/resource-teardown\" && msg.id !== undefined) {\n      send({ id: msg.id, result: {} });\n    } else if (msg.id !== undefined && msg.method) {\n      send({ id: msg.id, error: { code: -32601, message: \"Method not found\" } });\n    }\n  });\n\n  // -1, so an empty card (height 0) still reports its size once instead of leaving the host's default.\n  let lastHeight = -1;\n  new ResizeObserver(() => {\n    const height = Math.ceil(document.documentElement.getBoundingClientRect().height);\n    if (height !== lastHeight) { lastHeight = height; notify(\"ui/notifications/size-changed\", { height }); }\n  }).observe(document.documentElement);\n\n  request(\"ui/initialize\", {\n    appInfo: { name: document.title || \"CourtAI card\", version: \"0.1.0\" },\n    appCapabilities: {},\n    protocolVersion: PROTOCOL,\n  }).then((result) => {\n    applyHost(result && result.hostContext);\n    notify(\"ui/notifications/initialized\", {});\n  });\n})();\n\n// Formatting helpers shared by the cards.\nwindow.sp = {\n  esc: (s) => String(s).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" }[c])),\n  minus: (s) => String(s).replace(/^-/, \"−\"),\n  // Same as the tool text (vocabulary._percent): one decimal below 1% so a small score never reads as \"−0%\".\n  pct: (v) => {\n    const p = v * 100;\n    if (window.sp.fixed(Math.abs(p), 1) === \"0.0\") return \"0%\";\n    return `${p > 0 ? \"+\" : \"−\"}${window.sp.fixed(Math.abs(p), Math.abs(p) < 0.95 ? 1 : 0)}%`;\n  },\n  // Python's format(a, f\".{d}f\") for 0 <= a < 1e21 and d <= 1 (card percents): round the exact binary value\n  // half to even, where toFixed rounds ties up. Below 0.01 it is zero at d <= 1, and toPrecision would go exponential.\n  fixed: (a, d) => {\n    if (a < 0.01) return (0).toFixed(d);\n    const [whole, frac = \"\"] = a.toPrecision(60).split(\".\");\n    const rest = frac.slice(d);\n    let n = BigInt(whole + frac.slice(0, d));\n    const tail = rest.slice(1).replace(/0+$/, \"\");\n    if (rest[0] > \"5\" || (rest[0] === \"5\" && (tail !== \"\" || n % 2n === 1n))) n += 1n;\n    const s = n.toString().padStart(d + 1, \"0\");\n    return d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;\n  },\n  ordinal: (n) => { const s = [\"th\", \"st\", \"nd\", \"rd\"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); },\n  // The web app's Selection-card wash: greener up, redder down, capped alpha.\n  wash: (v) => {\n    if (Math.round(v * 100) === 0) return \"\";\n    const a = Math.min(0.5, 0.12 + Math.abs(v) * 2.5).toFixed(2);\n    return `background: rgba(var(${v > 0 ? \"--up-rgb\" : \"--down-rgb\"}), ${a})`;\n  },\n  day: (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: \"short\", day: \"numeric\" }),\n  // The sentence the footer addresses to Claude (provenance.STALE_ADVICE): a card never shows it.\n  STALE_ADVICE: \"State this once, in a closing line of any answer that uses them.\",\n  // The as-of footer as one line (crf04/statsplus#155): \"Data as of Aug 21 · stale\" from the server's\n  // structured `data_age` (its oldest date and the backend's fresh/stale verdict, never read from the\n  // prose). Tapping it opens the tool text's own footer lines (`data_as_of`), verbatim but for the\n  // sentence addressed to Claude. Nothing from an older backend that sends no provenance.\n  asOf: (d) => {\n    const { esc, STALE_ADVICE } = window.sp;\n    const lines = d && Array.isArray(d.data_as_of) ? d.data_as_of : [];\n    if (!lines.length) return \"\";\n    const age = d.data_age || {};\n    const date = age.as_of\n      ? new Date(`${age.as_of}T12:00:00Z`).toLocaleDateString(\"en-US\", { month: \"short\", day: \"numeric\", timeZone: \"UTC\" })\n      : null;\n    const state = age.state === \"stale\" ? ' <span class=\"stale\">· stale</span>' : age.state === \"fresh\" ? ' <span class=\"fresh\">· fresh</span>' : \"\";\n    const shown = lines.map((l) => l.replace(` ${STALE_ADVICE}`, \"\").replace(STALE_ADVICE, \"\").trim()).filter(Boolean);\n    const p = (l) => `<p${/^(Stale|Unavailable):/.test(l) ? ' class=\"warn\"' : \"\"}>${esc(l)}</p>`;\n    return `<details class=\"as-of rule\"><summary>${date ? `Data as of ${esc(date)}` : \"Data age\"}${state}</summary>${shown.map(p).join(\"\")}</details>`;\n  },\n  // Short Base labels for narrow cards (Slate and Matchup both show these).\n  SHORT: { \"Shot types\": \"Shot\", \"Shot zones\": \"Zone\", \"Play types\": \"Play\", \"Assist locations\": \"Assist\", \"Traditional\": \"Trad\" },\n};\n\n</script>\n</body>\n</html>\n"
+    }
+  }
+}

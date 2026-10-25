@@ -23,6 +23,7 @@ const TargetDetailPage = lazy(() => import('./targets/TargetDetailPage'));
 const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
+const ReportPage = lazy(() => import('./reports/ReportPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 
@@ -98,7 +99,7 @@ function AppNav() {
 }
 
 // A waitlisted account has nothing signed-in to show but the public home page
-// and the legal pages: a banner explains why, and every other path returns home
+// the legal pages and public reports: a banner explains why, and every other path returns home
 // until it signs out.
 function WaitlistedShell() {
   const { pathname, search } = useLocation();
@@ -113,6 +114,7 @@ function WaitlistedShell() {
           <Route path="/" element={<GameLogFilter notice={<WaitlistBanner />} />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/reports/:id" element={<ReportPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
@@ -135,6 +137,7 @@ function SignedInShell() {
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
+          <Route path="/reports/:id" element={<ReportPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />

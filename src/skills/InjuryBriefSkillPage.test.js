@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import zlib from 'node:zlib';
 import App from '../App';
 
 jest.mock('../contexts/AuthContext', () => ({
@@ -18,6 +19,37 @@ jest.mock('../contexts/AuthContext', () => ({
   }),
 }));
 
+// The Project instructions as CHATGPT.md in the downloadable zip states them, so the
+// page's copy cannot drift from the skill it ships.
+const LOCAL_HEADER = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+const zipEntry = (zip, name) => {
+  for (let at = zip.indexOf(LOCAL_HEADER); at !== -1;) {
+    const method = zip.readUInt16LE(at + 8);
+    const size = zip.readUInt32LE(at + 18);
+    const nameLength = zip.readUInt16LE(at + 26);
+    const start = at + 30 + nameLength + zip.readUInt16LE(at + 28);
+    if (zip.toString('utf8', at + 30, at + 30 + nameLength) === name) {
+      const body = zip.subarray(start, start + size);
+      return (method === 8 ? zlib.inflateRawSync(body) : body).toString('utf8');
+    }
+    at = zip.indexOf(LOCAL_HEADER, start + size);
+  }
+  throw new Error(`${name} is not in the zip`);
+};
+
+const shippedChatgptInstructions = () => {
+  const zip = fs.readFileSync(
+    path.resolve(process.cwd(), 'public/skills/courtai-injury-brief.zip'),
+  );
+  const block = zipEntry(zip, 'courtai-injury-brief/CHATGPT.md').match(
+    /```text\n([\s\S]*?)\n\s*```/,
+  )[1];
+  return block
+    .split('\n')
+    .map((line) => line.trim())
+    .join(' ');
+};
+
 const openSkillPage = async () => {
   window.history.pushState({}, '', '/skills/injury-brief');
   render(<App />);
@@ -30,6 +62,10 @@ test('a signed-out visitor can open the page and download the skill zip that shi
 
   const download = screen.getByRole('link', { name: 'Download the skill (.zip)' });
   expect(download).toHaveAttribute('href', '/skills/courtai-injury-brief.zip');
+  expect(within(screen.getByRole('main')).getByRole('link', { name: 'Connect' })).toHaveAttribute(
+    'href',
+    '/connect#guide-setup',
+  );
   expect(fs.existsSync(path.resolve(process.cwd(), 'public/skills/courtai-injury-brief.zip'))).toBe(
     true,
   );
@@ -55,11 +91,7 @@ test('the ChatGPT tab copies the Project instructions', async () => {
   await userEvent.click(screen.getByRole('tab', { name: 'ChatGPT' }));
   fireEvent.click(screen.getByRole('button', { name: 'Copy instructions' }));
 
-  expect(writeText).toHaveBeenCalledWith(
-    expect.stringMatching(
-      /^When I ask for the injury brief .* follow SKILL\.md in this project's files step by step/,
-    ),
-  );
+  expect(writeText).toHaveBeenCalledWith(shippedChatgptInstructions());
   expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
 });
 

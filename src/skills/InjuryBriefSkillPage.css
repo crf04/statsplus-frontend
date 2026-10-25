@@ -6,6 +6,11 @@
   margin-bottom: 36px;
 }
 
+/* Route entry focuses the heading for screen readers; it is not a control. */
+.skill-hero .connect-title:focus {
+  outline: none;
+}
+
 .skill-section {
   margin: 0 0 40px;
 }

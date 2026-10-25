@@ -60,7 +60,7 @@ const CLIENTS = [
       </>,
       <>
         Add CourtAI with{' '}
-        <code>claude mcp add --transport http courtai https://mcp.courtai.app/mcp</code> , run{' '}
+        <code>claude mcp add --transport http courtai https://mcp.courtai.app/mcp</code>, run{' '}
         <code>/mcp</code> in Claude Code to sign in, then <Ask />
       </>,
     ],
@@ -145,8 +145,8 @@ const InjuryBriefSkillPage = () => {
       <section className="skill-section" aria-labelledby="skill-setup">
         <h2 id="skill-setup">Set it up</h2>
         <p className="connect-note">
-          First add CourtAI to your chat app: <Link to="/connect#connect-setup">Connect</Link> has
-          the steps.
+          First add CourtAI to your chat app: <Link to="/connect#guide-setup">Connect</Link> has the
+          steps.
         </p>
         <SetupTabs clients={CLIENTS} label="Where you run it" idPrefix="skill" />
       </section>

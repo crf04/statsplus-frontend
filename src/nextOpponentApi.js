@@ -26,7 +26,10 @@ export const decodeNextOpponent = (payload) => {
       typeof stat.label !== 'string' ||
       !['count', 'percent', 'league_ratio'].includes(stat.unit) ||
       (stat.team_filter !== null && typeof stat.team_filter !== 'string') ||
-      (stat.vs_league_pct !== null && !Number.isFinite(stat.vs_league_pct))
+      (stat.vs_league_pct !== null && !Number.isFinite(stat.vs_league_pct)) ||
+      (stat.family != null && typeof stat.family !== 'string') ||
+      (stat.markets != null &&
+        (!Array.isArray(stat.markets) || stat.markets.some((code) => typeof code !== 'string')))
     ) {
       throw new Error('The next opponent API returned an invalid rank.');
     }

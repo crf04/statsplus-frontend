@@ -84,6 +84,45 @@ describe('the next-opponent read passed down by the Workspace', () => {
     expect(onContextSettled).toHaveBeenLastCalledWith('Jalen Johnson');
   });
 
+  test('the header and more counts follow the rows that bear on the selected stat', () => {
+    window.matchMedia = () => ({ matches: true });
+    const rank = (label, family, markets, mostRank) => ({
+      ...nextOpponent.opponent_ranks[0],
+      label,
+      family,
+      markets,
+      most_rank: mostRank,
+    });
+    const opponent = {
+      ...nextOpponent,
+      opponent_ranks: [
+        rank('Points allowed', 'points', ['PTS'], 6),
+        rank('Inside 10 ft 2PA', 'inside', ['PTS'], 1),
+        rank('Inside 10 ft attempts', 'inside', ['PTS'], 1),
+        rank('Rebounds', 'rebounds', ['REB'], 2),
+        rank('Off. rebounds', 'rebounds', ['REB'], 4),
+        rank('Assists', 'assists', ['AST'], 28),
+        rank('Blocks', 'steals-blocks', ['BLK'], 30),
+        rank('Transition', 'play-type:transition', ['PTS'], 4),
+      ],
+    };
+    const { rerender } = renderContext({ lineType: 'None', nextOpponent: opponent });
+
+    expect(screen.getByText('4 most · 2 fewest')).toBeVisible();
+    expect(screen.getByRole('button', { name: '+ 1 more' })).toBeVisible();
+
+    rerender(
+      <MemoryRouter>
+        <FilterPanelContext panel={panel} extra={{ lineType: 'REB', nextOpponent: opponent }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('1 most · 0 fewest')).toBeVisible();
+    expect(screen.getByText('Rebounds')).toBeVisible();
+    expect(screen.queryByText('Off. rebounds')).toBeNull();
+    expect(screen.queryByRole('button', { name: /more$/ })).toBeNull();
+  });
+
   test.each([
     ['has not finished', null],
     ['finished for the previous player', 'Trae Young'],

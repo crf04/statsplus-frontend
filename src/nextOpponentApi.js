@@ -26,15 +26,22 @@ export const decodeNextOpponent = (payload) => {
       typeof stat.label !== 'string' ||
       !['count', 'percent', 'league_ratio'].includes(stat.unit) ||
       (stat.team_filter !== null && typeof stat.team_filter !== 'string') ||
-      (stat.vs_league_pct !== null && !Number.isFinite(stat.vs_league_pct)) ||
-      (stat.family != null && typeof stat.family !== 'string') ||
-      (stat.markets != null &&
-        (!Array.isArray(stat.markets) || stat.markets.some((code) => typeof code !== 'string')))
+      (stat.vs_league_pct !== null && !Number.isFinite(stat.vs_league_pct))
     ) {
       throw new Error('The next opponent API returned an invalid rank.');
     }
   }
-  return payload;
+  // family and markets only narrow the list, so a malformed one is dropped
+  // rather than costing the whole Next opponent block.
+  return {
+    ...payload,
+    opponent_ranks: payload.opponent_ranks.map(({ family, markets, ...stat }) => ({
+      ...stat,
+      ...(typeof family === 'string' && { family }),
+      ...(Array.isArray(markets) &&
+        markets.every((code) => typeof code === 'string') && { markets }),
+    })),
+  };
 };
 
 export const fetchNextOpponent = async (playerName, { signal } = {}) => {

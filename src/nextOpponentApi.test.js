@@ -69,6 +69,25 @@ test('passes each rank family and markets through', () => {
 });
 
 test.each([
+  { family: 7, markets: 'PTS' },
+  { family: null, markets: [1] },
+])('drops malformed family and markets but keeps the rank', (extra) => {
+  const rank = { ...response.opponent_ranks[0], ...extra };
+  expect(decodeNextOpponent({ ...response, opponent_ranks: [rank] }).opponent_ranks).toEqual([
+    {
+      group: 'Play type',
+      label: 'Transition',
+      value: 1.17,
+      vs_league_pct: 17,
+      most_rank: 19,
+      ranked_teams: 20,
+      team_filter: 'Transition',
+      unit: 'league_ratio',
+    },
+  ]);
+});
+
+test.each([
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 0 }] },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 1.5 }] },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], team_filter: 42 }] },
@@ -77,9 +96,6 @@ test.each([
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 21 }] },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], value: '1.17' }] },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], unit: 'points' }] },
-  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], family: 7 }] },
-  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], markets: 'PTS' }] },
-  { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], markets: [1] }] },
 ])('rejects unusable contract values', (payload) => {
   expect(() => decodeNextOpponent(payload)).toThrow(/invalid/);
 });

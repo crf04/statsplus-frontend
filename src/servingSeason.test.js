@@ -1,4 +1,4 @@
-import { trailingNote } from './servingSeason';
+import { seasonChoiceLabel, trailingNote } from './servingSeason';
 
 const TEN_GAMES = 'every team has played 10 games';
 
@@ -28,4 +28,26 @@ test('gives a family with its own rule its own clause', () => {
 test('says nothing when no family trails or the backend predates the list', () => {
   expect(trailingNote([])).toBeNull();
   expect(trailingNote(undefined)).toBeNull();
+});
+
+describe('seasonChoiceLabel', () => {
+  test.each([
+    [
+      { season: '2026-27', mode: 'unpublished', teamGames: { min: 2, max: 4 } },
+      '2026-27 · early, 2–4 games per team',
+    ],
+    [
+      { season: '2026-27', mode: 'unpublished', teamGames: { min: 3, max: 3 } },
+      '2026-27 · early, 3 games per team',
+    ],
+    [
+      { season: '2026-27', mode: 'unpublished', teamGames: { min: 1, max: 1 } },
+      '2026-27 · early, 1 game per team',
+    ],
+    [{ season: '2026-27', mode: 'unpublished', teamGames: null }, '2026-27 · early'],
+    [{ season: '2025-26', mode: 'published', teamGames: null }, '2025-26'],
+    [{ season: '2024-25', mode: 'retained', teamGames: { min: 82, max: 82 } }, '2024-25'],
+  ])('%p reads %p', (choice, label) => {
+    expect(seasonChoiceLabel(choice)).toBe(label);
+  });
 });

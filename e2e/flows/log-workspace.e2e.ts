@@ -241,3 +241,69 @@ signedInTest(
     await expect(screen.getByRole('combobox', 'Season')).toHaveCount(0);
   },
 );
+
+// A backend that serves 2026-27 before its cutover (crf04/statsplus#330)
+// offers it as an Unpublished Season beside the Published one.
+const serving = (season: string) => ({ served_season: season, state: 'serving' });
+const seasonChoices = {
+  seasons: ['2025-26', '2024-25'],
+  default_season: '2025-26',
+  choices: [
+    {
+      season: '2026-27',
+      mode: 'unpublished',
+      families: { game_logs: serving('2026-27') },
+      team_games: { min: 2, max: 4 },
+    },
+    { season: '2025-26', mode: 'published', families: { game_logs: serving('2025-26') } },
+    { season: '2024-25', mode: 'retained', families: { game_logs: serving('2024-25') } },
+  ],
+};
+
+signedInTest(
+  'an Unpublished 2026-27 is offered with its sample, chipped when chosen, and refused plainly',
+  async ({ app, screen, browser, api }) => {
+    let refuse = false;
+    await api.override({
+      '/api/games/seasons': { body: seasonChoices },
+      '/api/games/game_logs': (request) =>
+        refuse
+          ? {
+              status: 503,
+              body: {
+                error: {
+                  code: 'season_unavailable',
+                  message: 'The requested season is unavailable.',
+                  details: { selected_season: '2026-27', published_season: '2025-26' },
+                },
+              },
+            }
+          : lastOneGame(request),
+    });
+    await app.open('/?player_name=LeBron+James');
+    const season = screen.getByRole('combobox', 'Season');
+    await expect(season).toHaveValue('2025-26');
+    await expect(screen.getByRole('option', '2026-27 · early, 2–4 games per team')).toHaveCount(1);
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
+    await app.screenshot('season-default');
+
+    await season.selectOption({ value: '2026-27' });
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2026-27');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('season-2026-27-chip');
+
+    refuse = true;
+    await browser.reload();
+    await expect(screen.getByRole('alert')).toContainText(
+      "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.",
+    );
+    await expect(screen.getByRole('heading', 'No game logs to display')).toHaveCount(0);
+    await expect(screen.getByRole('cell', '31')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('season-2026-27-unavailable');
+  },
+);

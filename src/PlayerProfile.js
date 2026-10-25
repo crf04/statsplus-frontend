@@ -7,6 +7,7 @@ import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
 import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
+import { fetchPlayerProfile } from './playerProfileApi';
 import ShotTypeTable from './profileShooting/ShotTypeTable';
 import ShotZoneCourt from './profileShooting/ShotZoneCourt';
 import { fetchShotZoneMatchup, shotZoneUnavailable } from './profileShooting/shotZoneMatchupApi';
@@ -62,16 +63,10 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, onSettled }) => {
     setPlayerLoading(hasPlayer);
     setPlayerSettledFor(null);
     const readProfile = () =>
-      apiClient
-        .get(getApiUrl('PLAYER_PROFILE'), {
-          params: {
-            player_name: selectedPlayer,
-            category: selectedProfile,
-            opp_team: profileOpponent,
-          },
-          signal: controller.signal,
-        })
-        .then(({ data }) => (data && Object.keys(data).length > 0 ? data : null));
+      fetchPlayerProfile(
+        { player_name: selectedPlayer, category: selectedProfile, opp_team: profileOpponent },
+        { signal: controller.signal },
+      ).then(({ data }) => (data && Object.keys(data).length > 0 ? data : null));
     const read = () => {
       if (selectedProfile === 'Zone Shooting') {
         return zoneOpponent

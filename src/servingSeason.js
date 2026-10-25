@@ -53,7 +53,58 @@ export const servingSeasonDecoders = (fail) => {
         })
         .filter((entry) => Object.hasOwn(FAMILY_WORDS, entry.family));
     },
+    // An explicit Evidence season choice (crf04/statsplus#330) names the
+    // season it read and the Published Season beside it. A response to an
+    // omitted season carries neither.
+    decodeSeasonContext: (value) => {
+      if (value === undefined) return undefined;
+      if (
+        !isRecord(value) ||
+        typeof value.selected_season !== 'string' ||
+        typeof value.published_season !== 'string'
+      ) {
+        throw fail();
+      }
+      return {
+        selectedSeason: decodeSeason(value.selected_season),
+        publishedSeason: decodeSeason(value.published_season),
+      };
+    },
   };
+};
+
+/*
+ * A season the backend does not offer yet (503 season_unavailable,
+ * crf04/statsplus#330) is refused rather than answered from another season.
+ * The refusal names the season asked for and the Published Season when the
+ * backend says them. It keeps the response so the existing messages and
+ * request references read it unchanged.
+ */
+export class SeasonUnavailableError extends Error {
+  constructor(error) {
+    const failure = error.response.data.error;
+    const details = isRecord(failure.details) ? failure.details : {};
+    const season = (value) => (typeof value === 'string' && SEASON.test(value) ? value : null);
+    super(
+      (typeof failure.message === 'string' && failure.message) ||
+        'The requested season is unavailable.',
+      { cause: error },
+    );
+    this.name = 'SeasonUnavailableError';
+    this.response = error.response;
+    this.selectedSeason = season(details.selected_season);
+    this.publishedSeason = season(details.published_season);
+  }
+}
+
+/** The typed refusal for a 503 season_unavailable, any other failure as it is. */
+export const seasonUnavailableOr = (error) => {
+  const failure = error?.response?.data?.error;
+  return error?.response?.status === 503 &&
+    isRecord(failure) &&
+    failure.code === 'season_unavailable'
+    ? new SeasonUnavailableError(error)
+    : error;
 };
 
 const listWords = (words) =>

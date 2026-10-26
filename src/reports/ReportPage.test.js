@@ -215,6 +215,28 @@ test('a message from any window but its own card is ignored', async () => {
   expect(posted).not.toHaveBeenCalled();
 });
 
+test('a tile whose only detail is what to watch still shows it', async () => {
+  const data = payload();
+  data.report.document.tabs[0].items.push({
+    title: 'LAL @ UTA',
+    watch: 'Wait for the minutes restriction to clear.',
+  });
+  await open(data);
+  fireEvent.click(screen.getAllByText('The read')[0]);
+  expect(screen.getByText('Wait for the minutes restriction to clear.')).toBeInTheDocument();
+});
+
+test('text written as HTML shows as text and never becomes markup', async () => {
+  const data = payload();
+  data.report.document.title = '<img src=x onerror=alert(1)> Injury brief';
+  mockGet.mockResolvedValue({ data });
+  window.history.pushState({}, '', '/reports/k3x9q2mtzr');
+  render(<App />);
+  const heading = await screen.findByRole('heading', { level: 1 });
+  expect(heading).toHaveTextContent('<img src=x onerror=alert(1)> Injury brief');
+  expect(document.querySelector('main img')).toBeNull();
+});
+
 test('the footer links the skill, and only the author can delete', async () => {
   await open();
   expect(screen.getByRole('link', { name: 'Make your own →' })).toHaveAttribute(

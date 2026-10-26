@@ -128,7 +128,7 @@ const ItemText = ({ item, withBody = true, withBullets = false }) => (
 
 const Tile = ({ item, report }) => {
   const [open, setOpen] = useState(false);
-  const hasMore = item.body.length || item.cards.length || item.sources.length;
+  const hasMore = item.body.length || item.watch || item.cards.length || item.sources.length;
   return (
     <section className={`report-tile${open ? ' open' : ''}`}>
       <div className="report-tile-text">

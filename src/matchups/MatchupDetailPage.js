@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, Bookmark } from 'lucide-react';
+import { ArrowUpRight, Bookmark, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
@@ -219,9 +219,6 @@ const linesFor = (player, stat) => {
   };
 };
 
-// A book's gap from the headline: "+0.5", "−1". Trailing zeros are trimmed.
-const signedGap = (gap) => `${gap < 0 ? '−' : '+'}${Math.abs(Math.round(gap * 100) / 100)}`;
-
 // "Best Over −106 at Novig, best Under −102 at Novig, line 26.5"; a side no
 // source prices says so.
 const priceLabel = (best) => {
@@ -257,9 +254,6 @@ function RailPrices({ best }) {
   );
 }
 
-const averageOf = (values) =>
-  values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
-
 function RailRow({
   player,
   stat,
@@ -278,9 +272,7 @@ function RailRow({
   let value;
   let caption;
   let meta;
-  let marks = null;
   let prices = null;
-  let flagged = false;
   if (historical) {
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
@@ -301,8 +293,7 @@ function RailRow({
       </>
     );
   } else {
-    const { books, headline, headlineProvider, fromMarket, ...rest } = linesFor(player, stat);
-    flagged = rest.flagged;
+    const { headline } = linesFor(player, stat);
     const score = headline === null ? scoreFor(player, stat, windowKey) : null;
     value =
       headline !== null ? (
@@ -315,43 +306,16 @@ function RailRow({
     caption =
       headline !== null
         ? seasonAverage !== null
-          ? `${fromMarket ? 'market line' : 'line'} · ${seasonAverage.toFixed(1)} avg`
-          : fromMarket
-            ? 'market line'
-            : 'line'
+          ? `${seasonAverage.toFixed(1)} avg`
+          : null
         : 'Matchup Score';
-    const minutes = averageOf(player.last10Minutes);
-    meta = minutes === null ? null : `${Math.round(minutes)} min last 10`;
-    const differs = (line) => line !== null && line !== headline;
-    const against = fromMarket ? 'the market' : headlineProvider && bookName(headlineProvider);
-    marks = books.length ? (
-      <span
-        className="rail-books"
-        aria-label={`${stat} posted by ${listWords(
-          books.map(({ provider, line }) => {
-            if (!differs(line)) return bookName(provider);
-            const gap = line - headline;
-            return `${bookName(provider)} at ${formatStat(line)}, ${Math.abs(
-              Math.round(gap * 100) / 100,
-            )} ${gap < 0 ? 'lower' : 'higher'} than ${against}`;
-          }),
-        )}`}
-      >
-        {books.map(({ provider, line }) => (
-          <i key={provider} aria-hidden="true" className={differs(line) ? 'differs' : undefined}>
-            {bookMark(provider)}
-            {differs(line) ? ` ${signedGap(line - headline)}` : ''}
-          </i>
-        ))}
-      </span>
-    ) : null;
     const best = bestPrices(player, stat, headline);
     if (best && (best.over || best.under)) prices = <RailPrices best={best} />;
   }
   return (
     <article
       aria-label={`${player.name} player`}
-      className={`rail-row${selected ? ' selected' : ''}${flagged ? ' lines-disagree' : ''}`}
+      className={`rail-row${selected ? ' selected' : ''}`}
     >
       <div className="rail-row-name">
         <h3>
@@ -364,17 +328,17 @@ function RailRow({
             <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
           </Link>
         </h3>
-        <p>
-          {meta}
-          {injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
-        </p>
+        {(meta || injury) && (
+          <p>
+            {meta}
+            {injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
+          </p>
+        )}
       </div>
       <div className="rail-row-value">
         {value}
-        <small>{caption}</small>
-        {marks}
+        {caption && <small>{caption}</small>}
         {prices}
-        {flagged && <span className="selection-visually-hidden">Lines disagree</span>}
       </div>
       {/* The whole row opens the selection card; the name above stays its own link. */}
       <button
@@ -858,55 +822,70 @@ function DefenseSheet({
   );
 }
 
+const INJURY_STATUS_ORDER = ['Out', 'Doubtful', 'Questionable', 'Probable'];
+const injuryStatus = (entry) => entry.status || entry.rawStatus || 'Unknown status';
+const byInjuryStatus = (statuses) =>
+  [...new Set(statuses)].sort((a, b) => {
+    const rank = (status) =>
+      INJURY_STATUS_ORDER.includes(status) ? INJURY_STATUS_ORDER.indexOf(status) : 99;
+    return rank(a) - rank(b);
+  });
+
+/*
+ * One line above the team tabs, so the report is seen before the rail. It
+ * names who is out only on request; the full PDF stays one link away.
+ */
 function InjuryReport({ injuries, now }) {
-  if (injuries.status === 'unavailable') {
-    return (
-      <section className="injury-report" aria-labelledby="injury-heading">
-        <h2 id="injury-heading">Injury Report</h2>
-        <p className="honest-empty">
-          Injury report unavailable: {injuries.unavailableReason || 'unknown reason'}.
-        </p>
-        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
-          Data source: {injuries.source}
-        </a>
-      </section>
-    );
-  }
+  const [open, setOpen] = useState(false);
   const entries = injuries.teams.flatMap((team) => team.entries);
+  if (entries.length === 0) {
+    return <p className="injury-line">Injuries · none reported</p>;
+  }
+  const statuses = entries.map(injuryStatus);
+  const summary = byInjuryStatus(statuses)
+    .map((status) => `${statuses.filter((item) => item === status).length} ${status}`)
+    .join(' · ');
   return (
-    <section className="injury-report" aria-labelledby="injury-heading">
-      <div className="section-heading">
-        <p className="matchup-eyebrow">
-          {injuries.status} · as of {formatAge(injuries.retrievedAt, now)}
-        </p>
-        <h2 id="injury-heading">Injury Report</h2>
-        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
-          Data source: {injuries.source}
-        </a>
-      </div>
-      {entries.length === 0 ? (
-        <p className="honest-empty">No non-Available injury entries were reported.</p>
-      ) : (
-        <div className="injury-list">
-          {injuries.teams.flatMap((team) =>
-            team.entries.map((entry) => (
-              <article key={entry.id}>
-                <div>
-                  <strong>{entry.playerName}</strong> <span>{entry.tricode}</span>
-                </div>
-                <span className="injury-badge">
-                  {entry.status || entry.rawStatus || 'Unknown status'}
-                </span>
-                <p>{entry.reason}</p>
-                <a href={entry.sourceUrl} target="_blank" rel="noreferrer">
-                  Source
-                </a>
-                <small>
-                  {team.tricode} submission: {team.submissionState || 'unknown'}
-                </small>
-              </article>
-            )),
-          )}
+    <section className="injury-line" aria-label="Injury report">
+      <button
+        type="button"
+        className="injury-line-toggle"
+        aria-expanded={open}
+        aria-controls="injury-line-names"
+        onClick={() => setOpen(!open)}
+      >
+        <span>Injuries · {summary}</span>
+        <span className="injury-line-action">
+          {open ? 'Hide' : 'Show'}
+          <ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" />
+        </span>
+      </button>
+      {open && (
+        <div id="injury-line-names">
+          {injuries.teams
+            .filter((team) => team.entries.length)
+            .map((team) => (
+              <p key={team.tricode}>
+                <b>{team.tricode}</b>
+                {byInjuryStatus(team.entries.map(injuryStatus)).map((status) => (
+                  <span key={status}>
+                    <em className={`injury-status-${status.toLowerCase().replace(/\W+/g, '-')}`}>
+                      {status}
+                    </em>{' '}
+                    {team.entries
+                      .filter((entry) => injuryStatus(entry) === status)
+                      .map((entry) => entry.playerName)
+                      .join(', ')}
+                  </span>
+                ))}
+              </p>
+            ))}
+          <small>
+            {injuries.status} · as of {formatAge(injuries.retrievedAt, now)} ·{' '}
+            <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
+              {injuries.source}
+            </a>
+          </small>
         </div>
       )}
     </section>
@@ -1067,7 +1046,10 @@ function Detail({ matchup, gameId, evidence }) {
       <header className="matchup-heading">
         <div>
           <Link to={withSeason('/matchups', evidence.linked)}>← Back to slate</Link>
-          <p className="matchup-eyebrow">Matchup</p>
+          <p className="matchup-eyebrow">
+            Matchup
+            <HelpTip tip="matchupPage" />
+          </p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
@@ -1086,6 +1068,8 @@ function Detail({ matchup, gameId, evidence }) {
       )}
       <div className="detail-grid">
         <div className="matchup-sidebar">
+          {/* An injury report nobody has is named in the summary sentence. */}
+          {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
           <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
           <PlayerRail
             players={opposingPlayers}
@@ -1108,8 +1092,6 @@ function Detail({ matchup, gameId, evidence }) {
             headingRef={railHeading}
             season={season ?? matchup.asOfSeason ?? evidence.defaultSeason}
           />
-          {/* An injury report nobody has is named in the summary sentence. */}
-          {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">

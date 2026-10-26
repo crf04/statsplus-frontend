@@ -3,6 +3,12 @@
  * copy can be read and corrected without hunting through the pages.
  */
 export const HELP_TIPS = {
+  matchupPage: {
+    title: 'Matchups',
+    body: [
+      'Use the matchups page to identify players to target, click the stat category that you want to see to look at the opponent stats and their matchup relative to league average',
+    ],
+  },
   matchupRail: {
     title: 'Targetable players',
     body: [

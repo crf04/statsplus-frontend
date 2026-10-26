@@ -855,9 +855,9 @@ test('sorts a player with no season scoring last and explains zero-component off
   await screen.findByRole('article', { name: 'LeBron James player' });
   expect(railNames()).toEqual(['Austin Reaves', 'LeBron James']);
   // No season average to stand his line beside.
-  expect(screen.getByRole('article', { name: 'LeBron James player' })).toHaveTextContent(
-    /27\.5linePP/,
-  );
+  const row = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(row.querySelector('.rail-row-value b')).toHaveTextContent('27.5');
+  expect(row).not.toHaveTextContent('avg');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(screen.getByText('No score components were computable for FGA in Last 15.')).toBeVisible();
 });
@@ -947,7 +947,9 @@ test('the team switch heads the sidebar and the stat strip sits last on the shee
   await screen.findByRole('heading', { name: 'What BOS allows' });
   const teamTabs = screen.getByRole('group', { name: 'Defense team' });
   const sidebar = document.querySelector('.matchup-sidebar');
-  expect(sidebar.firstElementChild).toBe(teamTabs);
+  // The injury line heads the sidebar, then the team switch.
+  expect(sidebar.firstElementChild).toBe(screen.getByRole('region', { name: 'Injury report' }));
+  expect(sidebar.children[1]).toBe(teamTabs);
   const tabs = within(teamTabs).getAllByRole('button');
   expect(tabs.map((tab) => tab.textContent)).toEqual([
     'LAL defensevs BOS players',
@@ -1007,8 +1009,25 @@ test('renders raw injury statuses and keeps the signed-out shell honest', async 
       </Routes>
     </MemoryRouter>,
   );
-  expect((await screen.findAllByText('Game-time decision')).length).toBeGreaterThan(0);
-  expect(screen.getByText('Left calf soreness')).toBeVisible();
+  const toggle = await screen.findByRole('button', {
+    name: 'Injuries · 1 Game-time decision Show',
+  });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(document.getElementById('injury-line-names')).toBeNull();
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect(toggle).toHaveTextContent('Hide');
+  const names = document.getElementById('injury-line-names');
+  expect(names).toHaveTextContent(
+    /^LALGame-time decision Austin Reavesfresh · as of .* · rotowire$/,
+  );
+  expect(within(names).getByRole('link', { name: 'rotowire' })).toHaveAttribute(
+    'href',
+    'https://example.com/injuries',
+  );
+  expect(screen.queryByText('Left calf soreness')).not.toBeInTheDocument();
+  await userEvent.click(toggle);
+  expect(document.getElementById('injury-line-names')).toBeNull();
 
   unmount();
   useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
@@ -2420,7 +2439,7 @@ test('AC4: after the game each row shows minutes and what he did, against his av
   expect(fga).not.toHaveTextContent('season average');
 });
 
-test('AC5: before the game the row leads with his line, PrizePicks first, other books beside their marks', async () => {
+test('AC5: before the game the row shows his line and season average; the books stay in his card', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   // Whatever order the books arrive in, PrizePicks' line leads.
   const lebronFixture = candidate.players.find((player) => player.id === 2544);
@@ -2431,117 +2450,72 @@ test('AC5: before the game the row leads with his line, PrizePicks first, other 
 
   const lebron = await screen.findByRole('article', { name: 'LeBron James player' });
   expect(within(lebron).getByText('27.5')).toBeVisible();
-  expect(within(lebron).getByText('line · 25.4 avg')).toBeVisible();
-  // Minutes before the game are his last-10 average: (35 + 36 + 38) / 3.
-  expect(within(lebron).getByText('36 min last 10')).toBeVisible();
-  const lebronBooks = within(lebron).getByLabelText(
-    'PTS posted by PrizePicks and Underdog at 26.5, 1 lower than PrizePicks',
-  );
-  expect(lebronBooks).toHaveTextContent('PPUD −1');
+  expect(within(lebron).getByText('25.4 avg')).toBeVisible();
+  // No minutes, no per-book marks and no disagreement flag in the row.
+  expect(lebron).not.toHaveTextContent('min last 10');
+  expect(lebron).not.toHaveTextContent(/PP|UD/);
+  expect(within(lebron).queryByText('Lines disagree')).not.toBeInTheDocument();
 
   // PrizePicks posts Austin without a number, so Underdog's line leads.
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
   expect(within(austin).getByText('21.5')).toBeVisible();
-  expect(within(austin).getByText('line · 20.1 avg')).toBeVisible();
-  expect(within(austin).getByLabelText('PTS posted by PrizePicks and Underdog')).toHaveTextContent(
-    'PPUD',
-  );
+  expect(within(austin).getByText('20.1 avg')).toBeVisible();
   // The live rail keeps its injury badges.
   expect(within(austin).getByText('Game-time decision')).toHaveClass('injury-badge');
 });
 
-describe('#212: the rail leads with the market line and flags books that disagree', () => {
-  const railFor = async (provenance, lines) => {
+describe('#212: the rail leads with the market line', () => {
+  const headlineFor = async (provenance, lines) => {
     const candidate = JSON.parse(JSON.stringify(matchup));
     const lebron = candidate.players.find((player) => player.id === 2544);
     lebron.provenance = provenance;
     lebron.lines = lines;
     fetchMatchup.mockResolvedValueOnce(candidate);
     renderMatchup();
-    return screen.findByRole('article', { name: 'LeBron James player' });
+    const row = await screen.findByRole('article', { name: 'LeBron James player' });
+    return row.querySelector('.rail-row-value b').textContent;
   };
-  const books = (row) => row.querySelector('.rail-books');
 
-  test('a market and a DFS book that agree: market headline, bare marks, no flag', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], polymarket: ['PTS'] },
-      { dabble: { PTS: 7.5 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DBPM');
-    expect(books(row)).toHaveAttribute('aria-label', 'PTS posted by Dabble and Polymarket');
-    expect(row).not.toHaveClass('lines-disagree');
-    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
+  test('a market line outranks a DFS book that disagrees', async () => {
+    expect(
+      await headlineFor(
+        { dabble: ['PTS'], polymarket: ['PTS'] },
+        { dabble: { PTS: 6.5 }, polymarket: { PTS: 7.5 } },
+      ),
+    ).toBe('7.5');
   });
 
-  test('Dabble 1 lower than the market: market headline, DB −1, flagged', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], polymarket: ['PTS'] },
-      { dabble: { PTS: 6.5 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DB −1PM');
-    expect(books(row)).toHaveAttribute(
-      'aria-label',
-      'PTS posted by Dabble at 6.5, 1 lower than the market and Polymarket',
-    );
-    expect(row).toHaveClass('lines-disagree');
-    expect(within(row).getByText('Lines disagree')).toBeInTheDocument();
+  test('only DFS books: PrizePicks leads', async () => {
+    expect(
+      await headlineFor(
+        { dabble: ['PTS'], prizepicks: ['PTS'] },
+        { dabble: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } },
+      ),
+    ).toBe('27.5');
   });
 
-  test('only DFS books: PrizePicks leads under the old rule and the caption says line', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], prizepicks: ['PTS'] },
-      { dabble: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } },
-    );
-    expect(within(row).getByText('27.5')).toBeVisible();
-    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
-    expect(within(row).queryByText(/market line/)).not.toBeInTheDocument();
-    expect(books(row)).toHaveTextContent('PPDB −1');
-  });
-
-  test('two markets that disagree: Polymarket leads, Kalshi and Novig show their gaps', async () => {
-    const row = await railFor(
-      { kalshi: ['PTS'], novig: ['PTS'], polymarket: ['PTS'] },
-      { kalshi: { PTS: 8 }, novig: { PTS: 7 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(books(row)).toHaveTextContent('KX +0.5NV −0.5PM');
-    expect(books(row)).toHaveAttribute(
-      'aria-label',
-      'PTS posted by Kalshi at 8, 0.5 higher than the market, Novig at 7, 0.5 lower than the market and Polymarket',
-    );
-    // 8 against 7 spans a full point.
-    expect(row).toHaveClass('lines-disagree');
+  test('two markets that disagree: Polymarket leads', async () => {
+    expect(
+      await headlineFor(
+        { kalshi: ['PTS'], novig: ['PTS'], polymarket: ['PTS'] },
+        { kalshi: { PTS: 8 }, novig: { PTS: 7 }, polymarket: { PTS: 7.5 } },
+      ),
+    ).toBe('7.5');
   });
 
   test('a market line outranks PrizePicks and Novig outranks Kalshi', async () => {
-    const row = await railFor(
-      { prizepicks: ['PTS'], kalshi: ['PTS'], novig: ['PTS'] },
-      { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
-    );
-    expect(within(row).getByText('8')).toBeVisible();
-    expect(books(row)).toHaveTextContent('PP +1.5KX +0.5NV');
-  });
-
-  test('a 0.5 gap is shown but not flagged', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], novig: ['PTS'] },
-      { dabble: { PTS: 7 }, novig: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DB −0.5NV');
-    expect(row).not.toHaveClass('lines-disagree');
-    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
+    expect(
+      await headlineFor(
+        { prizepicks: ['PTS'], kalshi: ['PTS'], novig: ['PTS'] },
+        { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
+      ),
+    ).toBe('8');
   });
 
   test('a market that posts without a number does not lead', async () => {
-    const row = await railFor({ polymarket: ['PTS'], dabble: ['PTS'] }, { dabble: { PTS: 6.5 } });
-    expect(within(row).getByText('6.5')).toBeVisible();
-    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
-    expect(row).not.toHaveClass('lines-disagree');
+    expect(
+      await headlineFor({ polymarket: ['PTS'], dabble: ['PTS'] }, { dabble: { PTS: 6.5 } }),
+    ).toBe('6.5');
   });
 });
 

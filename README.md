@@ -30,11 +30,13 @@ redirected.
 | `/connect`                         | Connect CourtAI to Claude and other MCP clients                                                   |
 | `/matchups`, `/matchups/:gameId`   | Slate for a date; one game's Matchup sheet                                                        |
 | `/targets`, `/targets/:targetId`   | Saved Targets and a Target's detail, Lab and Backtest                                             |
+| `/skills/injury-brief`             | The injury-brief skill page                                                                       |
+| `/reports/:id`                     | A published report, also open to waitlisted visitors                                              |
 | `/privacy`, `/terms`               | Legal pages, also open to signed-out and waitlisted visitors                                      |
 | `/operations`, `/admin/operations` | Admin operations console (the second path is an alias)                                            |
 
-A waitlisted account sees only the public home page and the legal pages, under a banner; every other
-path returns home.
+A waitlisted account sees only the public home page, the legal pages and published reports, under a
+banner; every other path returns home.
 
 ## Architecture
 
@@ -48,7 +50,7 @@ A few decisions worth calling out:
 
 - **Same-origin API in production.** Vercel rewrites `/api/*` to the backend origin, so the frontend never deals with CORS. Production builds deliberately ignore `REACT_APP_API_BASE_URL`; in development it selects a direct backend origin.
 - **Auth on the frontend, authorization on the backend.** Firebase issues an ID token; an Axios interceptor (`src/utils/axiosConfig.js`) attaches it to every API request. The backend verifies the token before returning data.
-- **Two charting libraries on purpose.** Chart.js handles dense per-game charts (assists, shot zones) where its plugin ecosystem and label control matter; Recharts handles the simpler React-native dashboards where its declarative API is faster to write.
+- **One charting library.** Chart.js (via react-chartjs-2, with the annotation plugin) draws every chart.
 - **Natural language is a backend concern.** The frontend renders the prompt, posts to `/api/nl-query`, and displays the resolved filters + results. Anything LLM- or parser-related lives outside this repo.
 
 ## Features
@@ -68,7 +70,7 @@ A few decisions worth calling out:
 - **Framework:** React 18 and Vite
 - **HTTP:** Axios with a Firebase-auth interceptor
 - **Auth:** Firebase Web SDK
-- **Charts:** Chart.js, react-chartjs-2, Recharts, plus annotation and datalabels plugins
+- **Charts:** Chart.js, react-chartjs-2 and chartjs-plugin-annotation
 - **Styling:** Tailwind CSS, Bootstrap, react-bootstrap, component-scoped CSS
 - **Testing:** Jest + React Testing Library + Playwright, plus the e2e flow runner (`npm run test:flows`)
 

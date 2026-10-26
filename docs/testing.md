@@ -101,7 +101,7 @@ Treat one user-visible journey as one vertical slice:
 2. Decide whether Jest or the browser is the narrowest stable seam that proves it.
 3. Add only the API responses that journey needs to `e2e/fixtures/courtai.js`.
 4. Write the failing test through accessible roles, labels, and visible text.
-5. Implement the feature, make the test pass, and run `npm run test:e2e` once before opening a PR.
+5. Implement the feature, make the test pass, and run `npm run check:changed`; CI runs the full suite.
 
 Browser tests should observe UI behavior and HTTP contracts. Do not select CSS classes, wait for
 arbitrary timeouts, call React internals, or mock implementation modules. Prefer `getByRole`,

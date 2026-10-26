@@ -31,8 +31,8 @@ decoder and `e2e/fixtures/courtai.js` aligned with that contract.
    `origin/master`, and browser specs and flows only for changed files, plus the
    `@critical` subset when `src/`, fixtures, the bridge or config changed.
 6. Completion gate: push and let CI run the full suite. All three jobs
-   (validate, E2E, e2e flows) must be green before a pull request is marked
-   ready or merged. Do not run the full suite locally first; CI runs it in
+   (validate, E2E, e2e flows), plus the `qa-evidence` and `parent-links`
+   checks, must be green before a pull request is marked ready or merged. Do not run the full suite locally first; CI runs it in
    parallel and faster. Run `npm run check` locally only to reproduce a CI
    failure. It runs lint, format:check, test:ci, build, test:e2e, typecheck:e2e
    and test:flows in order. CI runs the same commands as parallel jobs, so a

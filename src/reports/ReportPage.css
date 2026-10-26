@@ -216,8 +216,8 @@
   display: none;
 }
 
-.report-row > summary:hover {
-  background: var(--ct-slate);
+.report-page .report-row > summary:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .report-row-title {

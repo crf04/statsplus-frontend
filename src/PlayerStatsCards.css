@@ -38,7 +38,8 @@
   color: var(--ct-gold);
 }
 
-.player-stats-cards .player-name {
+/* Outranks the Log Workspace's underlined `.dark-card h4` section title. */
+.dark-card .player-stats-cards .player-name {
   color: var(--ct-text);
   font-family: var(--ct-display);
   font-size: 17px;
@@ -47,6 +48,8 @@
   text-transform: uppercase;
   white-space: nowrap;
   margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .player-stat-tiles {

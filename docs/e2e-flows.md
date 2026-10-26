@@ -173,7 +173,7 @@ fixture origin, as the persona instructs, and do not connect external accounts.
 `npm run test:flows` also runs the HTTP bridge regression tests. The Connect
 flow checks selectable URL text, clipboard payload and feedback, feedback
 reset, numbered setup lists, the connector card's frame sizing and layout, the
-guide's five lessons, a folded replay opening and "Show all" revealing all 21
+guide's six lessons, a folded replay opening and "Show all" revealing all 21
 capabilities, the home link, and absence of API or connector requests. e2e exposes no
 clipboard-permission grant, so it uses a local clipboard sink; no automated
 test reads the real browser clipboard since the Playwright Connect spec was

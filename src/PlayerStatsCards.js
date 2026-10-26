@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { Row, Col } from 'react-bootstrap';
-import { Activity, Target, Clock, TrendingUp, BarChart3, Zap, Shield, Users } from 'lucide-react';
 import './PlayerStatsCards.css';
 
 // NBA's public headshot for a person id; the initials stand in without one.
@@ -30,6 +28,36 @@ const Headshot = ({ playerId, selectedPlayer }) => {
   );
 };
 
+const statCards = [
+  { key: 'PTS', label: 'PTS' },
+  { key: 'REB', label: 'REB' },
+  { key: 'AST', label: 'AST' },
+  { key: 'STKS', label: 'STK' },
+  { key: 'MIN', label: 'MIN' },
+  { key: 'FG_PCT', label: 'FG%', isPercentage: true },
+  { key: 'FD_PTS', label: 'FPTS' },
+  // Fewer turnovers than the season average is the better side.
+  { key: 'TOV', label: 'TOV', lowerIsBetter: true },
+];
+
+const formatStat = (value, isPercentage = false) => {
+  if (typeof value !== 'number') return '--';
+  if (isPercentage) return `${(value * 100).toFixed(1)}%`;
+  return value.toFixed(1);
+};
+
+// The filtered average against the season average, and which side of it the
+// player sits on.
+const seasonComparison = (filtered, season, stat) => {
+  if (typeof filtered !== 'number' || typeof season !== 'number') return null;
+  const diff = Number(((filtered - season) * (stat.isPercentage ? 100 : 1)).toFixed(1));
+  const sign = diff > 0 ? '+' : '';
+  const text = `${sign}${diff.toFixed(1)}${stat.isPercentage ? '%' : ''}`;
+  if (diff === 0) return { text, tone: '' };
+  const better = stat.lowerIsBetter ? diff < 0 : diff > 0;
+  return { text, tone: better ? 'is-better' : 'is-worse' };
+};
+
 const PlayerStatsCards = ({ averages, selectedPlayer, playerId = null }) => {
   if (!Array.isArray(averages) || averages.length !== 2) {
     return null;
@@ -41,131 +69,36 @@ const PlayerStatsCards = ({ averages, selectedPlayer, playerId = null }) => {
     return null;
   }
 
-  // Define key stats to display with their icons and labels
-  const statCards = [
-    {
-      key: 'PTS',
-      label: 'POINTS',
-      icon: <Target size={20} />,
-    },
-    {
-      key: 'REB',
-      label: 'REBOUNDS',
-      icon: <Activity size={20} />,
-    },
-    {
-      key: 'AST',
-      label: 'ASSISTS',
-      icon: <Users size={20} />,
-    },
-    {
-      key: 'STKS',
-      label: 'STOCKS',
-      icon: <Shield size={20} />,
-    },
-    {
-      key: 'MIN',
-      label: 'MINUTES',
-      icon: <Clock size={20} />,
-    },
-    {
-      key: 'FG_PCT',
-      label: 'FG%',
-      icon: <BarChart3 size={20} />,
-      isPercentage: true,
-    },
-    {
-      key: 'FD_PTS',
-      label: 'FANTASY POINTS',
-      icon: <TrendingUp size={20} />,
-    },
-    {
-      key: 'TOV',
-      label: 'TOV',
-      icon: <Zap size={20} />,
-    },
-  ];
-
-  const formatStat = (value, isPercentage = false) => {
-    if (typeof value !== 'number') return '--';
-    if (isPercentage) return `${(value * 100).toFixed(1)}%`;
-    return value.toFixed(1);
-  };
-
-  const formatSeasonComparison = (filtered, season, isPercentage = false) => {
-    if (typeof filtered !== 'number' || typeof season !== 'number') return '';
-    const diff = filtered - season;
-    const sign = diff > 0 ? '+' : '';
-
-    if (isPercentage) {
-      // For percentages, multiply by 100 and show one decimal place
-      return `${sign}${(diff * 100).toFixed(1)}% vs Season`;
-    }
-
-    return `${sign}${diff.toFixed(1)} vs Season`;
-  };
-
   return (
     <div className="player-stats-cards">
-      <Row className="mb-2">
-        {/* Player Headshot Area - Left side */}
-        <Col md={3} className="d-flex align-items-center justify-content-center">
-          <div className="player-headshot-placeholder">
-            <div className="headshot-circle">
-              <Headshot key={playerId} playerId={playerId} selectedPlayer={selectedPlayer} />
-            </div>
-            <h4 className="player-name">{selectedPlayer || 'Select Player'}</h4>
-          </div>
-        </Col>
+      <div className="player-identity">
+        <div className="headshot-circle">
+          <Headshot key={playerId} playerId={playerId} selectedPlayer={selectedPlayer} />
+        </div>
+        <h4 className="player-name">{selectedPlayer || 'Select Player'}</h4>
+      </div>
 
-        {/* Stats Cards - Right side */}
-        <Col md={9}>
-          <Row>
-            {statCards.slice(0, 4).map((stat) => (
-              <Col md={3} key={stat.key} className="mb-3">
-                <div className={`stat-card ${stat.primary ? 'primary-card' : ''}`}>
-                  <div className="stat-header">
-                    <div className="stat-icon">{stat.icon}</div>
-                    <span className="stat-label">{stat.label}</span>
-                  </div>
-                  <div className="stat-value">
-                    {formatStat(filteredAvg[stat.key], stat.isPercentage)}
-                  </div>
-                  <div className="stat-comparison">
-                    {formatSeasonComparison(
-                      filteredAvg[stat.key],
-                      seasonAvg[stat.key],
-                      stat.isPercentage,
-                    )}
-                  </div>
-                </div>
-              </Col>
-            ))}
-          </Row>
-          <Row>
-            {statCards.slice(4, 8).map((stat) => (
-              <Col md={3} key={stat.key} className="mb-3">
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <div className="stat-icon">{stat.icon}</div>
-                    <span className="stat-label">{stat.label}</span>
-                  </div>
-                  <div className="stat-value">
-                    {formatStat(filteredAvg[stat.key], stat.isPercentage)}
-                  </div>
-                  <div className="stat-comparison">
-                    {formatSeasonComparison(
-                      filteredAvg[stat.key],
-                      seasonAvg[stat.key],
-                      stat.isPercentage,
-                    )}
-                  </div>
-                </div>
-              </Col>
-            ))}
-          </Row>
-        </Col>
-      </Row>
+      <div className="player-stat-tiles">
+        {statCards.map((stat) => {
+          const comparison = seasonComparison(filteredAvg[stat.key], seasonAvg[stat.key], stat);
+          return (
+            <div key={stat.key} className="player-stat-tile">
+              <span className="stat-label">{stat.label}</span>
+              <span className="stat-value">
+                {formatStat(filteredAvg[stat.key], stat.isPercentage)}
+              </span>
+              <span className={`stat-comparison ${comparison?.tone || ''}`}>
+                {comparison && (
+                  <>
+                    {comparison.text}
+                    <span className="visually-hidden"> vs Season</span>
+                  </>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

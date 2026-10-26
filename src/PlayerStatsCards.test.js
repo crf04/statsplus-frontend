@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import PlayerStatsCards from './PlayerStatsCards';
 
 const averages = [
@@ -46,5 +46,49 @@ describe('PlayerStatsCards headshot', () => {
     );
 
     expect(screen.getByRole('img', { name: 'LeBron James' })).toBeVisible();
+  });
+});
+
+// The comparison reads "+2.0 vs Season" to a screen reader; " vs Season" is
+// visually hidden, so match the whole text across both nodes.
+const comparison = (text) =>
+  screen.getByText(
+    (_, element) => element.matches('.stat-comparison') && element.textContent === text,
+  );
+
+describe('PlayerStatsCards season comparison', () => {
+  test('shows each filtered average with its difference from the season', () => {
+    render(
+      <PlayerStatsCards
+        averages={[
+          { PTS: 29, FG_PCT: 0.52, TOV: 3.1 },
+          { PTS: 27, FG_PCT: 0.5, TOV: 3.1 },
+        ]}
+        selectedPlayer="LeBron James"
+      />,
+    );
+
+    expect(within(screen.getByRole('group', { name: 'Points' })).getByText('29.0')).toBeVisible();
+    expect(comparison('+2.0 vs Season')).toBeVisible();
+    expect(screen.getByText('52.0%')).toBeVisible();
+    expect(comparison('+2.0% vs Season')).toBeVisible();
+    expect(comparison('0.0 vs Season')).toBeVisible();
+    expect(comparison('0.0 vs Season')).not.toHaveClass('is-better');
+    expect(comparison('0.0 vs Season')).not.toHaveClass('is-worse');
+  });
+
+  test('marks fewer turnovers as better and fewer points as worse', () => {
+    render(
+      <PlayerStatsCards
+        averages={[
+          { PTS: 20, TOV: 2 },
+          { PTS: 25, TOV: 3 },
+        ]}
+        selectedPlayer="LeBron James"
+      />,
+    );
+
+    expect(comparison('-1.0 vs Season')).toHaveClass('is-better');
+    expect(comparison('-5.0 vs Season')).toHaveClass('is-worse');
   });
 });

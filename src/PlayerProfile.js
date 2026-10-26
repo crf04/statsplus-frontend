@@ -5,7 +5,6 @@ import { apiClient, getApiUrl } from './config';
 import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
-import ArchetypeGameLogs from './ArchetypeGameLogs';
 import { withRequestReference } from './gameLogsApi';
 import { fetchPlayerProfile } from './playerProfileApi';
 import {
@@ -62,7 +61,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   // current inputs rather than a loading flag an effect has yet to raise.
   const [playerSettledFor, setPlayerSettledFor] = useState(null);
   const [teamSettledFor, setTeamSettledFor] = useState(null);
-  const profileOpponent = selectedProfile === 'Archetype' ? selectedTeam : undefined;
   // Zone Shooting is the Matchup court against the page's opponent, by tricode.
   const zoneOpponent =
     selectedProfile === 'Zone Shooting' ? (TEAM_CODES[selectedTeam] ?? null) : undefined;
@@ -75,7 +73,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
         : null;
   const comparisonTeam = hasPlayer && teamCategory ? selectedTeam : null;
   const playerReadKey = hasPlayer
-    ? `${selectedPlayer}|${selectedProfile}|${profileOpponent}|${zoneOpponent}|${season}`
+    ? `${selectedPlayer}|${selectedProfile}|${zoneOpponent}|${season}`
     : null;
   const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}` : null;
   const settled =
@@ -103,7 +101,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
         {
           player_name: selectedPlayer,
           category: selectedProfile,
-          opp_team: profileOpponent,
           ...(season ? { season } : {}),
         },
         { signal: controller.signal },
@@ -169,7 +166,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   }, [
     selectedPlayer,
     selectedProfile,
-    profileOpponent,
     zoneOpponent,
     season,
     seasonChoice,
@@ -310,12 +306,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
         );
       case 'assists':
         return renderAssistProfile();
-      case 'Archetype':
-        return playerData ? (
-          <ArchetypeGameLogs gameLogs={playerData} />
-        ) : (
-          <p>No archetype data available</p>
-        );
       case 'Shooting Type':
         return renderShootingTypeProfile();
       case 'Zone Shooting':
@@ -355,14 +345,6 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
               className="per36-toggle-btn"
             >
               Assists
-            </ToggleButton>
-            <ToggleButton
-              id="profile-archetype"
-              value="Archetype"
-              variant="outline-primary"
-              className="per36-toggle-btn"
-            >
-              Archetype
             </ToggleButton>
             <ToggleButton
               id="profile-shooting-type"

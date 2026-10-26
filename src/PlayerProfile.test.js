@@ -7,7 +7,6 @@ jest.mock('./config', () => ({ apiClient: { get: jest.fn() }, getApiUrl: (key) =
 jest.mock('./PlaystyleComparisonChart', () => () => <p>Playtype chart</p>);
 jest.mock('./AssistProfileChart', () => () => <p>Assist chart</p>);
 jest.mock('./TwoThreeAssistChart', () => () => null);
-jest.mock('./ArchetypeGameLogs', () => () => <p>Archetype logs</p>);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -35,28 +34,6 @@ test.each(['Playtypes', 'Assists', 'Shooting Type'])(
     }
   },
 );
-
-test('Archetype reads the new opponent and player changes still reload the profile', async () => {
-  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Archetype'));
-  await act(async () => {});
-  apiClient.get.mockClear();
-  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
-  await act(async () => {});
-  expect(apiClient.get).toHaveBeenCalledWith(
-    'PLAYER_PROFILE',
-    expect.objectContaining({
-      params: { player_name: 'LeBron James', category: 'Archetype', opp_team: 'NYK' },
-    }),
-  );
-  rerender(<PlayerProfile selectedPlayer="Stephen Curry" selectedTeam="NYK" />);
-  await act(async () => {});
-  expect(apiClient.get).toHaveBeenCalledWith(
-    'PLAYER_PROFILE',
-    expect.objectContaining({ params: expect.objectContaining({ player_name: 'Stephen Curry' }) }),
-  );
-});
 
 test('late comparison results are ignored while the pending player read stays usable', async () => {
   let resolvePlayer;
@@ -113,10 +90,7 @@ test.each([
   expect(screen.getByText(message, { exact: true })).toBeVisible();
 });
 
-test.each([
-  ['Archetype', 'Archetype logs'],
-  ['Shooting Type', 'Jump Shot'],
-])('%s renders without unused comparison requests or failures', async (category, content) => {
+test('Shooting Type renders without unused comparison requests or failures', async () => {
   apiClient.get.mockImplementation((url) =>
     url === 'TEAM_STATS'
       ? Promise.reject(new Error('Comparison unavailable'))
@@ -125,10 +99,10 @@ test.each([
   render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
   await act(async () => {});
   apiClient.get.mockClear();
-  fireEvent.click(screen.getByLabelText(category));
+  fireEvent.click(screen.getByLabelText('Shooting Type'));
   await act(async () => {});
   expect(apiClient.get.mock.calls.filter(([url]) => url === 'TEAM_STATS')).toHaveLength(0);
-  expect(screen.getByText(content)).toBeVisible();
+  expect(screen.getByText('Jump Shot')).toBeVisible();
   expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
 });
 

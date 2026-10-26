@@ -1,11 +1,14 @@
 // CourtAI reports (crf04/statsplus#342): a published report is a public page.
 import { expect } from 'e2e';
+import type { Browser } from '@e2e-dev/web';
 import { signedOutTest, waitlistedTest } from './support/courtai.ts';
 
 const REPORT = '/reports/k3x9q2mtzr';
 const TITLE = 'Injury brief · Sunday, October 25';
 
-const cardFrames = (browser) =>
+type CardFrame = { title: string | null; sandbox: string | null; html: number };
+
+const cardFrames = (browser: Browser): Promise<CardFrame[]> =>
   browser.evaluate(() =>
     [...document.querySelectorAll('iframe.report-card')].map((frame) => ({
       title: frame.getAttribute('title'),
@@ -32,7 +35,7 @@ signedOutTest(
     // game logs and matchup in the spot below.
     for (const chip of ['Rotation', 'Report']) {
       await screen.getByRole('button', chip).tap();
-      expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual([chip]);
+      expect((await cardFrames(browser)).map((frame: CardFrame) => frame.title)).toEqual([chip]);
     }
 
     // Spots: a graded row opens into its story beside its cards.
@@ -40,13 +43,15 @@ signedOutTest(
     await screen.getByText('Desmond Bane o18.5 PTS', { exact: false }).tap();
     await expect(screen.getByRole('button', 'Bane PTS w/o Banchero')).toBeVisible();
     await screen.getByRole('button', 'Bane matchup').tap();
-    expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual(['Bane matchup']);
+    expect((await cardFrames(browser)).map((frame: CardFrame) => frame.title)).toEqual([
+      'Bane matchup',
+    ]);
 
     await screen.getByRole('tab', /Set aside/).tap();
     // A list item that carries more than a line opens like a row, card included.
     await screen.getByText('Ausar Thompson (DET)', { exact: true }).tap();
     await expect(screen.getByText('Set aside: his absence moves nobody.')).toBeVisible();
-    expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual(['Report']);
+    expect((await cardFrames(browser)).map((frame: CardFrame) => frame.title)).toEqual(['Report']);
     await expect(screen.getByRole('link', 'Make your own →')).toBeVisible();
     await app.screenshot('report');
   },

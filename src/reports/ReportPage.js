@@ -95,8 +95,31 @@ const Deck = ({ ids, report }) => {
   );
 };
 
-const ItemText = ({ item, withBody = true }) => (
+const Bullets = ({ bullets }) =>
+  bullets.length ? (
+    <ul className="report-bullets">
+      {bullets.map(([label, text], index) => (
+        <li key={index}>
+          <strong>{label}</strong> · {text}
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
+// Every layout shows all of an item: a list item with more than a line opens like a row.
+const hasDetail = (item) =>
+  Boolean(
+    item.subtitle ||
+    item.body.length ||
+    item.bullets.length ||
+    item.watch ||
+    item.cards.length ||
+    item.sources.length,
+  );
+
+const ItemText = ({ item, withBody = true, withBullets = false }) => (
   <>
+    {withBullets && <Bullets bullets={item.bullets} />}
     {withBody && <Paragraphs items={item.body} />}
     {item.watch && <p className="report-watch">{item.watch}</p>}
     <Sources sources={item.sources} />
@@ -109,18 +132,12 @@ const Tile = ({ item, report }) => {
   return (
     <section className={`report-tile${open ? ' open' : ''}`}>
       <div className="report-tile-text">
-        <h3>{item.title}</h3>
+        <h3>
+          <Tag tag={item.tag} /> {item.title}
+        </h3>
         {item.subtitle && <p className="report-subtitle">{item.subtitle}</p>}
         {item.key && <p className="report-key">{item.key}</p>}
-        {item.bullets.length > 0 && (
-          <ul className="report-bullets">
-            {item.bullets.map(([label, text], index) => (
-              <li key={index}>
-                <strong>{label}</strong> · {text}
-              </li>
-            ))}
-          </ul>
-        )}
+        <Bullets bullets={item.bullets} />
         {hasMore ? (
           <details onToggle={(event) => setOpen(event.currentTarget.open)}>
             <summary>{item.cards.length ? 'The read and cards' : 'The read'}</summary>
@@ -158,7 +175,7 @@ const Row = ({ item, report, id }) => {
       {open && (
         <div className="report-row-body">
           <div>
-            <ItemText item={item} />
+            <ItemText item={item} withBullets />
           </div>
           <div>
             <Deck ids={item.cards} report={report} />
@@ -185,14 +202,18 @@ const Tab = ({ tab, report, index }) => {
     ));
   }
   return (
-    <ul className="report-list">
-      {tab.items.map((item, i) => (
-        <li key={i}>
-          <Tag tag={item.tag} /> <strong>{item.title}</strong>
-          {item.key ? ` · ${item.key}` : ''}
-        </li>
-      ))}
-    </ul>
+    <div className="report-list">
+      {tab.items.map((item, i) =>
+        hasDetail(item) ? (
+          <Row key={i} item={item} report={report} id={`item-${index}-${i}`} />
+        ) : (
+          <p key={i} className="report-list-item">
+            <Tag tag={item.tag} /> <strong>{item.title}</strong>
+            {item.key ? ` · ${item.key}` : ''}
+          </p>
+        ),
+      )}
+    </div>
   );
 };
 

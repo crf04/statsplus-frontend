@@ -28,15 +28,25 @@ signedOutTest(
       { title: 'ORL on/off', sandbox: 'allow-scripts', html: expect.any(Number) },
     ]);
     expect((await cardFrames(browser))[0].html).toBeGreaterThan(1000);
+    // Every card kind draws from its stored HTML: on/off, rotation, injury report here,
+    // game logs and matchup in the spot below.
+    for (const chip of ['Rotation', 'Report']) {
+      await screen.getByRole('button', chip).tap();
+      expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual([chip]);
+    }
 
     // Spots: a graded row opens into its story beside its cards.
     await screen.getByRole('tab', /Spots/).tap();
     await screen.getByText('Desmond Bane o18.5 PTS', { exact: false }).tap();
     await expect(screen.getByRole('button', 'Bane PTS w/o Banchero')).toBeVisible();
-    await screen.getByRole('button', 'ORL on/off').tap();
-    expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual(['ORL on/off']);
+    await screen.getByRole('button', 'Bane matchup').tap();
+    expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual(['Bane matchup']);
 
     await screen.getByRole('tab', /Set aside/).tap();
+    // A list item that carries more than a line opens like a row, card included.
+    await screen.getByText('Ausar Thompson (DET)', { exact: true }).tap();
+    await expect(screen.getByText('Set aside: his absence moves nobody.')).toBeVisible();
+    expect((await cardFrames(browser)).map((frame) => frame.title)).toEqual(['Report']);
     await expect(screen.getByRole('link', 'Make your own →')).toBeVisible();
     await app.screenshot('report');
   },

@@ -77,6 +77,7 @@ const payload = (overrides = {}) => ({
             {
               title: 'Desmond Bane o18.5 PTS',
               tag: 'lean',
+              bullets: [['Usage', '21.2% → 26.4%']],
               key: '23.1 PTS without Banchero',
               body: ['The usage case.'],
               watch: 'Black returning.',
@@ -91,7 +92,16 @@ const payload = (overrides = {}) => ({
         {
           title: 'Set aside',
           layout: 'list',
-          items: [{ title: 'Noah Penda (ORL)', key: 'Bench.' }],
+          items: [
+            { title: 'Noah Penda (ORL)', key: 'Bench.' },
+            {
+              title: 'Jonathan Isaac (ORL)',
+              key: 'Long absence.',
+              body: ['Out since the preseason.'],
+              cards: ['orl-onoff'],
+              sources: [['Isaac out', 'https://www.espn.com/isaac']],
+            },
+          ],
         },
       ],
     },
@@ -138,6 +148,7 @@ test('a spot row opens into its story, its watch, its web sources and its cards 
   fireEvent.click(screen.getByText('Desmond Bane o18.5 PTS'));
   expect(await screen.findByText('The usage case.')).toBeInTheDocument();
   expect(screen.getByText('Black returning.')).toBeInTheDocument();
+  expect(screen.getByText('· 21.2% → 26.4%', { exact: false })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Banchero out' })).toHaveAttribute(
     'href',
     'https://www.espn.com/x',
@@ -174,6 +185,34 @@ test('a card gets the stored tool result over the host messages', async () => {
     },
     '*',
   );
+});
+
+test('a list item with more than a line opens like a row, its card and sources included', async () => {
+  await open();
+  fireEvent.click(screen.getByRole('tab', { name: /^Set aside/ }));
+  expect(screen.getByText('Noah Penda (ORL)')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Jonathan Isaac (ORL)'));
+  expect(await screen.findByText('Out since the preseason.')).toBeInTheDocument();
+  expect(screen.getByTitle('ORL on/off')).toHaveAttribute('srcdoc', '<p>on/off card</p>');
+  expect(screen.getByRole('link', { name: 'Isaac out' })).toHaveAttribute(
+    'href',
+    'https://www.espn.com/isaac',
+  );
+});
+
+test('a message from any window but its own card is ignored', async () => {
+  await open();
+  fireEvent.click(screen.getByRole('tab', { name: /^Spots/ }));
+  fireEvent.click(screen.getByText('Desmond Bane o18.5 PTS'));
+  const frame = await screen.findByTitle('Bane PTS w/o Banchero');
+  const posted = jest.spyOn(frame.contentWindow, 'postMessage');
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      source: window,
+      data: { jsonrpc: '2.0', method: 'ui/notifications/initialized' },
+    }),
+  );
+  expect(posted).not.toHaveBeenCalled();
 });
 
 test('the footer links the skill, and only the author can delete', async () => {

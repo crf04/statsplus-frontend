@@ -162,7 +162,7 @@
 }
 
 .report-bullets li,
-.report-list li {
+.report-list-item {
   padding: 7px 0;
   border-top: 1px solid var(--ct-line);
 }
@@ -238,10 +238,8 @@
   padding: 4px 4px 22px;
 }
 
-.report-list {
+.report-list-item {
   margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 /* Cards: chips pick one; it scales to fit the window on wide screens. */

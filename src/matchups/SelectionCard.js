@@ -131,26 +131,34 @@ function BookLines({ market, quote }) {
   );
 }
 
-// The DFS apps that price a pick, in the order their rows are listed. Dabble's
-// price is the owner's −122 for an even line (statsplus#263).
-const DFS_PRICED = ['underdog', 'dabble'];
+// Every app and market that numbers the stat, priced or not: the rail shows
+// one line, so this is where the others are read.
+const APP_ORDER = ['prizepicks', 'underdog', 'dabble', 'novig', 'kalshi', 'polymarket'];
 
-// The decoder admits a price only beside that provider's line for the market.
-const dfsQuotes = (player, market) =>
-  DFS_PRICED.flatMap((provider) => {
-    const quote = player.linePrices?.[provider]?.[market];
-    return quote ? [{ provider, line: player.lines[provider][market], ...quote }] : [];
-  });
+const appQuotes = (player, market) =>
+  Object.keys(player.lines ?? {})
+    .filter((provider) => typeof player.lines[provider]?.[market] === 'number')
+    .sort((a, b) => {
+      const rank = (provider) =>
+        APP_ORDER.includes(provider) ? APP_ORDER.indexOf(provider) : APP_ORDER.length;
+      return rank(a) - rank(b) || a.localeCompare(b);
+    })
+    .map((provider) => ({
+      provider,
+      line: player.lines[provider][market],
+      over: player.linePrices?.[provider]?.[market]?.over ?? null,
+      under: player.linePrices?.[provider]?.[market]?.under ?? null,
+    }));
 
-// Renders nothing when neither app prices the stat, whatever the books quote.
+// Renders nothing when no app numbers the stat, whatever the books quote.
 function DfsLines({ player, market }) {
-  const quotes = dfsQuotes(player, market);
+  const quotes = appQuotes(player, market);
   if (quotes.length === 0) return null;
   return (
-    <section className="selection-panel selection-panel-books" aria-label="DFS">
-      <h3>DFS · {market}</h3>
+    <section className="selection-panel selection-panel-books" aria-label="Apps">
+      <h3>Apps · {market}</h3>
       <div className="selection-table-wrap">
-        <table aria-label={`${market} DFS lines`} className="selection-books">
+        <table aria-label={`${market} app lines`} className="selection-books">
           <thead>
             <tr>
               <th scope="col">App</th>

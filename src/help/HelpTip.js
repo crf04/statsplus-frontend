@@ -10,6 +10,7 @@ export default function HelpTip({ tip }) {
   const { title, body } = HELP_TIPS[tip];
   const [open, setOpen] = useState(false);
   const [shift, setShift] = useState(0);
+  const [above, setAbove] = useState(false);
   const root = useRef(null);
   const bubble = useRef(null);
   const button = useRef(null);
@@ -17,9 +18,14 @@ export default function HelpTip({ tip }) {
 
   useLayoutEffect(() => {
     if (!open) return;
-    const { left, right } = bubble.current.getBoundingClientRect();
+    const { left, right, height } = bubble.current.getBoundingClientRect();
     const overflow = right - (document.documentElement.clientWidth - VIEWPORT_MARGIN);
     setShift(overflow > 0 ? -Math.min(overflow, left - VIEWPORT_MARGIN) : 0);
+    // Open upwards when the note would run past the bottom of the window and fits above.
+    const anchor = button.current.getBoundingClientRect();
+    const roomBelow = window.innerHeight - anchor.bottom - VIEWPORT_MARGIN;
+    const roomAbove = anchor.top - VIEWPORT_MARGIN;
+    setAbove(height > roomBelow && height <= roomAbove);
   }, [open]);
 
   useEffect(() => {
@@ -40,7 +46,10 @@ export default function HelpTip({ tip }) {
         if (event.key !== 'Escape' || !open) return;
         event.stopPropagation();
         setOpen(false);
-        button.current.focus();
+      }}
+      onBlur={(event) => {
+        // A note left open behind the focus would let Escape reach the card instead.
+        if (!root.current.contains(event.relatedTarget)) setOpen(false);
       }}
     >
       <button
@@ -52,6 +61,7 @@ export default function HelpTip({ tip }) {
         aria-controls={open ? bubbleId : undefined}
         onClick={() => {
           setShift(0);
+          setAbove(false);
           setOpen(!open);
         }}
       >
@@ -63,7 +73,7 @@ export default function HelpTip({ tip }) {
           id={bubbleId}
           role="note"
           aria-label={title}
-          className="help-tip-bubble"
+          className={`help-tip-bubble${above ? ' is-above' : ''}`}
           style={{ '--help-tip-shift': `${shift}px` }}
         >
           <b>{title}</b>

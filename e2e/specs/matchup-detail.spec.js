@@ -873,11 +873,11 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await expect(table.getByRole('row', { name: /^BetRivers/ })).toContainText('27.5-115-105 ★');
   await expect(table.getByRole('img', { name: 'best price' })).toHaveCount(3);
   await expect(table.getByRole('row', { name: /^FanDuel/ }).getByRole('img')).toHaveCount(0);
-  // Underdog and Dabble price his points at their own lines.
+  // Every app and market that numbers his points is listed; Underdog and
+  // Dabble price theirs at their own lines.
   const dfs = page
-    .getByRole('region', { name: 'DFS' })
-    .getByRole('table', { name: 'PTS DFS lines' });
-  await expect(dfs.getByRole('row')).toHaveCount(3);
+    .getByRole('region', { name: 'Apps' })
+    .getByRole('table', { name: 'PTS app lines' });
   await expect(dfs.getByRole('row', { name: /^Underdog/ })).toContainText('26.5-112-112');
   await expect(dfs.getByRole('row', { name: /^Dabble/ })).toContainText('27.5-122-122');
   await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png'), fullPage: true });
@@ -901,7 +901,7 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Sportsbooks' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'DFS' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Apps' })).toHaveCount(0);
 });
 
 test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({

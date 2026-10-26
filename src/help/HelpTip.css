@@ -70,3 +70,8 @@
 .help-tip-heading .help-tip {
   margin-left: 0;
 }
+
+.help-tip-bubble.is-above {
+  top: auto;
+  bottom: calc(100% + 6px);
+}

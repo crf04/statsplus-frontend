@@ -3084,9 +3084,14 @@ describe('Selection card DFS prices', () => {
       .slice(1)
       .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
 
-  test('lists Underdog and Dabble with their own line, Over and Under, with no sportsbook quoting him', async () => {
+  test('lists every app and market that numbers him, priced or not, with no sportsbook quoting him', async () => {
     await openWithDfs({
-      lines: { underdog: { PTS: 26.5 }, dabble: { PTS: 27.5 }, novig: { PTS: 27.5 } },
+      lines: {
+        underdog: { PTS: 26.5 },
+        dabble: { PTS: 27.5 },
+        novig: { PTS: 27.5 },
+        prizepicks: { PTS: 25.5 },
+      },
       linePrices: {
         dabble: { PTS: { over: -122, under: -122 } },
         underdog: { PTS: { over: -112, under: null } },
@@ -3094,12 +3099,14 @@ describe('Selection card DFS prices', () => {
       },
     });
 
-    const panel = screen.getByRole('region', { name: 'DFS' });
-    expect(within(panel).getByRole('heading', { name: 'DFS · PTS' })).toBeVisible();
-    // Novig is a prediction market, not a DFS app, so it has no row here.
-    expect(rows(within(panel).getByRole('table', { name: 'PTS DFS lines' }))).toEqual([
+    const panel = screen.getByRole('region', { name: 'Apps' });
+    expect(within(panel).getByRole('heading', { name: 'Apps · PTS' })).toBeVisible();
+    // The rail shows one line, so every other number is read here, in a fixed order.
+    expect(rows(within(panel).getByRole('table', { name: 'PTS app lines' }))).toEqual([
+      'PrizePicks25.5——',
       'Underdog26.5-112—',
       'Dabble27.5-122-122',
+      'Novig27.5-106-102',
     ]);
     expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
   });
@@ -3112,8 +3119,8 @@ describe('Selection card DFS prices', () => {
     });
 
     expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
-    // Dabble posts PTS but prices only FGA, so PTS has no DFS panel.
-    expect(screen.queryByRole('region', { name: 'DFS' })).not.toBeInTheDocument();
+    // Dabble prices only FGA, but its PTS line is still listed, unpriced.
+    expect(rows(screen.getByRole('table', { name: 'PTS app lines' }))).toEqual(['Dabble27.5——']);
 
     await userEvent.click(
       within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -3121,7 +3128,7 @@ describe('Selection card DFS prices', () => {
       }),
     );
 
-    expect(rows(screen.getByRole('table', { name: 'FGA DFS lines' }))).toEqual([
+    expect(rows(screen.getByRole('table', { name: 'FGA app lines' }))).toEqual([
       'Dabble8.5-122-122',
     ]);
   });

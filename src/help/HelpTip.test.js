@@ -49,6 +49,27 @@ test('Escape closes the note, returns focus to its button and leaves the card ar
   expect(closeCard).toHaveBeenCalledTimes(1);
 });
 
+test('moving focus out of the tip closes its note, so Escape then belongs to the card', async () => {
+  const closeCard = jest.fn();
+  render(
+    <section
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') closeCard();
+      }}
+    >
+      <HelpTip tip="scoreMatrix" />
+      <button type="button">PTS</button>
+    </section>,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'About Score Matrix' }));
+  expect(screen.getByRole('note', { name: 'Score Matrix' })).toBeInTheDocument();
+  await userEvent.tab();
+  expect(screen.getByRole('button', { name: 'PTS' })).toHaveFocus();
+  expect(screen.queryByRole('note')).toBeNull();
+  await userEvent.keyboard('{Escape}');
+  expect(closeCard).toHaveBeenCalledTimes(1);
+});
+
 test('a press outside the tip closes the note; a press inside it does not', async () => {
   renderTip();
   await userEvent.click(screen.getByRole('button', { name: 'About Defense Sheet' }));

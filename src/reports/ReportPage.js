@@ -288,8 +288,7 @@ const Report = ({ report, onDeleted }) => {
             onClick={() => setActive(index)}
             onKeyDown={onKeyDown}
           >
-            {tab.title}
-            <span className="report-tab-count">{tab.items.length}</span>
+            {tab.title} <span className="report-tab-count">{tab.items.length}</span>
           </button>
         ))}
       </div>

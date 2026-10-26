@@ -90,7 +90,7 @@
 }
 
 .report-tab-count {
-  margin-left: 5px;
+  margin-left: 2px;
   color: var(--ct-dim);
   font-weight: 400;
 }
@@ -318,11 +318,11 @@
     grid-template-columns: 1fr;
   }
 
-  .report-row > summary {
+  .report-page .report-row > summary {
     grid-template-columns: 60px minmax(0, 1fr);
   }
 
-  .report-row > summary .report-key {
+  .report-page .report-row > summary .report-key {
     grid-column: 2;
   }
 }

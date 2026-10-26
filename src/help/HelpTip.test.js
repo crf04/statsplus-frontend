@@ -70,6 +70,15 @@ test('moving focus out of the tip closes its note, so Escape then belongs to the
   expect(closeCard).toHaveBeenCalledTimes(1);
 });
 
+test('clicking the note itself leaves it open', async () => {
+  renderTip();
+  const button = screen.getByRole('button', { name: 'About Defense Sheet' });
+  await userEvent.click(button);
+  await userEvent.click(screen.getByRole('note', { name: 'Defense Sheet' }));
+  expect(screen.getByRole('note', { name: 'Defense Sheet' })).toBeInTheDocument();
+  expect(button).toHaveFocus();
+});
+
 test('a press outside the tip closes the note; a press inside it does not', async () => {
   renderTip();
   await userEvent.click(screen.getByRole('button', { name: 'About Defense Sheet' }));

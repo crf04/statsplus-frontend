@@ -74,6 +74,8 @@ export default function HelpTip({ tip }) {
           role="note"
           aria-label={title}
           className={`help-tip-bubble${above ? ' is-above' : ''}`}
+          // A press on the note keeps focus on its button, so the note stays open.
+          onMouseDown={(event) => event.preventDefault()}
           style={{ '--help-tip-shift': `${shift}px` }}
         >
           <b>{title}</b>

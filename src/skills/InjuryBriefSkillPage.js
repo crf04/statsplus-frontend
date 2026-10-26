@@ -9,7 +9,7 @@ import './InjuryBriefSkillPage.css';
 export const SKILL_ZIP = '/skills/courtai-injury-brief.zip';
 export const ASK = 'Run the injury brief for tonight.';
 // The same text as CHATGPT.md in the skill (crf04/statsplus share/courtai-injury-brief).
-export const CHATGPT_INSTRUCTIONS = `When I ask for the injury brief (or which spots to target given who is out tonight), follow SKILL.md in this project's files step by step, using the CourtAI plugin for every NBA number and web search for this season's news. Read DRILL.md for the tool arguments, ANALYSIS.md for how to build each case, and EXAMPLES.md for real examples. Write the brief in the chat, games first, then the graded spots. CourtAI reports facts; the grades are your reading of them, and I make the final call.`;
+export const CHATGPT_INSTRUCTIONS = `When I ask for the injury brief (or which spots to target given who is out tonight), follow SKILL.md in this project's files step by step, using the CourtAI plugin for every NBA number and web search for this season's news. Read DRILL.md for the tool arguments, ANALYSIS.md for how to build each case, and EXAMPLES.md for real examples. Write the brief in the chat, games first, then the graded spots, then publish it as a CourtAI report and give me the link. CourtAI reports facts; the grades are your reading of them, and I make the final call.`;
 
 const Download = () => (
   <a className="skill-download" href={SKILL_ZIP} download>

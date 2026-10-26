@@ -1,12 +1,15 @@
 import { getTodaySlateDate } from './src/calendarDate';
 import { applyLinkPreview, linkPreviewFor } from './src/linkPreview';
 import { matchupPreviewFor } from './src/matchupPreview';
+import { reportPreviewFor } from './src/reportPreview';
 
 // Vercel serves the same static index.html for every route, and link
 // unfurlers (iMessage, Slack, Discord, X) read only that HTML — they never run
 // the app. So a shared Workspace, Slate or Matchup link is described here, at the edge, before
 // the document reaches whoever is previewing it.
-export const config = { matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief'] };
+export const config = {
+  matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief', '/reports/:id'],
+};
 
 export const SKILL_PREVIEW = {
   title: 'Injury brief skill | CourtAI',
@@ -17,8 +20,9 @@ export const SKILL_PREVIEW = {
 export const describeLink = async (request, now) => {
   const url = new URL(request.url);
   const today = getTodaySlateDate(now);
-  const preview =
-    url.pathname === '/skills/injury-brief'
+  const preview = url.pathname.startsWith('/reports/')
+    ? await reportPreviewFor(url.pathname, url.origin)
+    : url.pathname === '/skills/injury-brief'
       ? SKILL_PREVIEW
       : url.pathname.startsWith('/matchups')
         ? matchupPreviewFor(url.pathname, url.searchParams, { today })

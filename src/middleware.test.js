@@ -41,7 +41,7 @@ test('serves the rewritten head unencoded when the document came compressed', as
 
 test('runs only for the Workspace, Slate, Matchup and injury brief skill routes', () => {
   expect(config).toEqual({
-    matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief'],
+    matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief', '/reports/:id'],
   });
 });
 
@@ -260,4 +260,34 @@ describe('Slate and Matchup links', () => {
       '<title>LeBron James Game Logs | CourtAI</title>',
     );
   });
+});
+
+test('describes a shared report from its meta, with its graded spots and drawn image', async () => {
+  fetch.mockImplementation(async (url) =>
+    String(url).endsWith('/api/reports/k3x9q2mtzr/meta')
+      ? new Response(
+          JSON.stringify({
+            id: 'k3x9q2mtzr',
+            title: 'Injury brief · Sunday, October 25',
+            date: '2026-10-25',
+            description: 'Banchero is out for weeks, which moves shots to Desmond Bane.',
+            tags: { lean: 2, thin: 6, pass: 4 },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        )
+      : new Response(indexHtml, { status: 200, headers: { 'content-type': 'text/html' } }),
+  );
+  const html = await (await middleware(request('reports/k3x9q2mtzr'))).text();
+
+  expect(html).toContain('<title>Injury brief · Sunday, October 25 | CourtAI</title>');
+  expect(html).toContain(
+    'content="2 lean · 6 thin · 4 pass. Banchero is out for weeks, which moves shots to Desmond Bane."',
+  );
+  expect(html).toContain('https://courtai.app/api/reports/k3x9q2mtzr/preview.png');
+});
+
+test('leaves a missing report, or a path that is not a report id, to the static document', async () => {
+  fetch.mockResolvedValue(new Response('{}', { status: 404 }));
+  expect(await middleware(request('reports/k3x9q2mtzr'))).toBeUndefined();
+  expect(await middleware(request('reports/not-an-id!'))).toBeUndefined();
 });

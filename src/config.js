@@ -33,6 +33,8 @@ const config = {
     TARGET_PREVIEW: '/api/user/targets/preview',
     TARGET_BACKTESTS: '/api/user/targets/backtests',
     FEEDBACK: '/api/user/feedback',
+    REPORTS: '/api/reports',
+    USER_REPORTS: '/api/user/reports',
   },
 
   // Application settings

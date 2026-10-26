@@ -1,4 +1,5 @@
 import statCatalogue from '../../src/targets/targetStatCatalogue.json' with { type: 'json' };
+import reportFixture from './report.json' with { type: 'json' };
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -2589,6 +2590,11 @@ const refuseFallback = (route) =>
 
 const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/api/games/ladder']);
 
+// One published report (crf04/statsplus#342), trimmed from the 2026-10-25 injury brief:
+// two games, two spots, two set-aside players and two real cards (game logs, on/off).
+export const REPORT_ID = 'k3x9q2mtzr';
+export const reportPayload = () => structuredClone(reportFixture);
+
 // The ladder's three Filter Sets, as the backend owns them, each answered from
 // the same game-log composition `/api/games/game_logs` serves for them.
 const LADDER_FILTER_SETS = [
@@ -2794,6 +2800,49 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           : {
               status: 400,
               json: { error: { code: 'invalid_feedback', message: 'Invalid feedback body.' } },
+            },
+      );
+      return;
+    }
+
+    // A published report is an anonymous read (crf04/statsplus#342): the stored
+    // document, its card calls' results and the card HTML, or 404 for any other id.
+    const reportPath = url.pathname.startsWith('/api/reports/') && url.pathname.split('/');
+    if (reportPath && reportPath.length === 4 && request.method() === 'GET') {
+      if (override) {
+        await fulfillOverride(
+          route,
+          typeof override === 'function' ? await override(request) : override,
+        );
+      } else if (reportPath[3] === REPORT_ID) {
+        await route.fulfill({ json: reportPayload() });
+      } else {
+        await route.fulfill({
+          status: 404,
+          json: { error: { code: 'resource_not_found', message: 'Report not found.' } },
+        });
+      }
+      return;
+    }
+
+    // The author deletes their own report; any other id is not theirs (404, as the backend answers).
+    if (url.pathname.startsWith('/api/user/reports/') && request.method() === 'DELETE') {
+      const id = url.pathname.split('/')[4];
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'unauthorized', message: 'Missing E2E bearer token.' } },
+        });
+        return;
+      }
+      await route.fulfill(
+        id === REPORT_ID
+          ? { json: { success: true, message: 'Report deleted.' } }
+          : {
+              status: 404,
+              json: {
+                error: { code: 'resource_not_found', message: "This report isn't available." },
+              },
             },
       );
       return;

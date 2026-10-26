@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { Activity, Target, Clock, TrendingUp, BarChart3, Zap, Shield, Users } from 'lucide-react';
 import './PlayerStatsCards.css';
+// PROTOTYPE (throwaway, branch prototype/compact-stat-header): header variants.
+import { isPrototypeActive, useVariant } from './statHeaderPrototype/mode';
+import { PROTO_VARIANTS } from './statHeaderPrototype/variants';
+import StatHeaderSwitcher from './statHeaderPrototype/Switcher';
 
 // NBA's public headshot for a person id; the initials stand in without one.
 const Headshot = ({ playerId, selectedPlayer }) => {
@@ -30,7 +34,31 @@ const Headshot = ({ playerId, selectedPlayer }) => {
   );
 };
 
-const PlayerStatsCards = ({ averages, selectedPlayer, playerId = null }) => {
+const PlayerStatsCards = (props) => {
+  // PROTOTYPE (throwaway)
+  const variantState = useVariant();
+  if (!isPrototypeActive()) return <PlayerStatsCardsToday {...props} />;
+  const { averages, selectedPlayer, playerId = null } = props;
+  const Variant = PROTO_VARIANTS[variantState.variant];
+  const ready = Array.isArray(averages) && averages[0] && averages[1];
+  return (
+    <>
+      {Variant && ready ? (
+        <Variant
+          filtered={averages[0]}
+          season={averages[1]}
+          name={selectedPlayer}
+          playerId={playerId}
+        />
+      ) : (
+        <PlayerStatsCardsToday {...props} />
+      )}
+      <StatHeaderSwitcher {...variantState} />
+    </>
+  );
+};
+
+const PlayerStatsCardsToday = ({ averages, selectedPlayer, playerId = null }) => {
   if (!Array.isArray(averages) || averages.length !== 2) {
     return null;
   }

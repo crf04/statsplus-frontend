@@ -73,6 +73,8 @@ describe('PlayerStatsCards season comparison', () => {
     expect(screen.getByText('52.0%')).toBeVisible();
     expect(comparison('+2.0% vs Season')).toBeVisible();
     expect(comparison('0.0 vs Season')).toBeVisible();
+    expect(comparison('0.0 vs Season')).not.toHaveClass('is-better');
+    expect(comparison('0.0 vs Season')).not.toHaveClass('is-worse');
   });
 
   test('marks fewer turnovers as better and fewer points as worse', () => {

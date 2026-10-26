@@ -96,7 +96,8 @@
 }
 
 .player-stat-tile .stat-comparison.is-worse {
-  color: var(--ct-miss);
+  /* --ct-miss is 3.97:1 on the tile; small text needs 4.5:1. */
+  color: #e06666;
 }
 
 @media (max-width: 768px) {

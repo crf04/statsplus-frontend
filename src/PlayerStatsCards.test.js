@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import PlayerStatsCards from './PlayerStatsCards';
 
 const averages = [
@@ -68,7 +68,7 @@ describe('PlayerStatsCards season comparison', () => {
       />,
     );
 
-    expect(screen.getByText('29.0')).toBeVisible();
+    expect(within(screen.getByRole('group', { name: 'Points' })).getByText('29.0')).toBeVisible();
     expect(comparison('+2.0 vs Season')).toBeVisible();
     expect(screen.getByText('52.0%')).toBeVisible();
     expect(comparison('+2.0% vs Season')).toBeVisible();

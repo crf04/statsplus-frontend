@@ -28,16 +28,17 @@ const Headshot = ({ playerId, selectedPlayer }) => {
   );
 };
 
+// The short label is what shows; the name is what a screen reader announces.
 const statCards = [
-  { key: 'PTS', label: 'PTS' },
-  { key: 'REB', label: 'REB' },
-  { key: 'AST', label: 'AST' },
-  { key: 'STKS', label: 'STK' },
-  { key: 'MIN', label: 'MIN' },
-  { key: 'FG_PCT', label: 'FG%', isPercentage: true },
-  { key: 'FD_PTS', label: 'FPTS' },
+  { key: 'PTS', label: 'PTS', name: 'Points' },
+  { key: 'REB', label: 'REB', name: 'Rebounds' },
+  { key: 'AST', label: 'AST', name: 'Assists' },
+  { key: 'STKS', label: 'STK', name: 'Stocks' },
+  { key: 'MIN', label: 'MIN', name: 'Minutes' },
+  { key: 'FG_PCT', label: 'FG%', name: 'FG%', isPercentage: true },
+  { key: 'FD_PTS', label: 'FPTS', name: 'Fantasy points' },
   // Fewer turnovers than the season average is the better side.
-  { key: 'TOV', label: 'TOV', lowerIsBetter: true },
+  { key: 'TOV', label: 'TOV', name: 'Turnovers', lowerIsBetter: true },
 ];
 
 const formatStat = (value, isPercentage = false) => {
@@ -82,7 +83,7 @@ const PlayerStatsCards = ({ averages, selectedPlayer, playerId = null }) => {
         {statCards.map((stat) => {
           const comparison = seasonComparison(filteredAvg[stat.key], seasonAvg[stat.key], stat);
           return (
-            <div key={stat.key} className="player-stat-tile">
+            <div key={stat.key} className="player-stat-tile" role="group" aria-label={stat.name}>
               <span className="stat-label">{stat.label}</span>
               <span className="stat-value">
                 {formatStat(filteredAvg[stat.key], stat.isPercentage)}

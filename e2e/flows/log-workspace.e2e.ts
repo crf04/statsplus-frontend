@@ -150,7 +150,7 @@ signedInTest(
 signedInTest('the workspace shows stats cards and per-36 averages', async ({ app, screen }) => {
   await app.open('/?player_name=LeBron+James&game_filter=10');
   await expect(screen.getByRole('cell', '31')).toBeVisible();
-  await expect(screen.getByText('PTS', { exact: true })).toBeVisible();
+  await expect(screen.getByRole('group', 'Points')).toBeVisible();
   await expect(screen.getByText('29.0', { exact: true })).toBeVisible();
   await expect(screen.getByText('+2.0 vs Season', { exact: true })).toBeVisible();
   await expect(screen.getByRole('heading', 'Per 36 Minutes Comparison')).toBeVisible();

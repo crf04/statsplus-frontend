@@ -1,4 +1,6 @@
-/* Avatar and name beside one row of eight stat tiles. */
+/* Avatar and name beside one row of eight stat tiles. Whole-pixel line
+   heights keep the panels below on whole pixels, where the filter panel's
+   screenshot baselines were taken. */
 .player-stats-cards {
   display: flex;
   align-items: center;
@@ -46,6 +48,7 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  line-height: 20px;
   white-space: nowrap;
   margin: 0;
   padding: 0;
@@ -74,6 +77,7 @@
   color: var(--ct-dim);
   font-size: 10px;
   font-weight: 600;
+  line-height: 12px;
   text-transform: uppercase;
 }
 
@@ -81,13 +85,14 @@
   color: var(--ct-text);
   font-size: 17px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 20px;
 }
 
 .player-stat-tile .stat-comparison {
-  min-height: 1.2em;
+  min-height: 12px;
   color: var(--ct-dim);
   font-size: 10px;
+  line-height: 12px;
   letter-spacing: 0;
 }
 

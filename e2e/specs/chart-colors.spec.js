@@ -52,12 +52,13 @@ const gameLogRoles = (canvas) =>
         tooltipBody: ops[body].style,
       });
     }
-    const axisTitle = lastText(/^PTS$/);
-    if (axisTitle !== -1) {
+    // A frame strokes its grid lines first, then each axis's border and labels.
+    const lastTick = lastText(/^\d+$/);
+    if (lastTick !== -1) {
+      const frame = ops.slice(0, lastTick).findLastIndex(({ op }) => op === 'clearRect');
       Object.assign(roles, {
-        grid: lastBefore(axisTitle, ['stroke'])?.style,
-        axisTitle: ops[axisTitle].style,
-        tick: ops[lastText(/^\d+$/)]?.style,
+        grid: ops.slice(frame + 1).find(({ op }) => op === 'stroke')?.style,
+        tick: ops[lastTick].style,
       });
     }
     return roles;
@@ -100,7 +101,6 @@ test('charts paint the dark theme colours, part by part, and repaint when the th
       tooltipTitle: '#efe9dc',
       tooltipBody: '#9b937f',
       grid: 'rgba(255, 255, 255, 0.06)',
-      axisTitle: '#9b937f',
       tick: '#9b937f',
     });
 
@@ -162,7 +162,6 @@ test('charts paint the dark theme colours, part by part, and repaint when the th
       tooltipTitle: '#efe9dc',
       tooltipBody: '#9b937f',
       grid: 'rgba(255, 255, 255, 0.12)',
-      axisTitle: '#9b937f',
       tick: '#9b937f',
     });
   // Bars are data marks: their alpha holds in every theme. Off the chart, no

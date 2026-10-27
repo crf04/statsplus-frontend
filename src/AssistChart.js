@@ -1,4 +1,5 @@
 import MatchupComboChart from './MatchupComboChart';
+import { formatMatchupRating, matchupRatingColor, matchupRatingPercent } from './matchupRating';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 
 const AssistChart = ({
@@ -31,7 +32,6 @@ const AssistChart = ({
         frequency,
         frequencyPlus,
         teamDefense,
-        matchupRating: frequency * teamDefense,
         teamDefenseRank,
       };
     })
@@ -42,9 +42,7 @@ const AssistChart = ({
     return <p>No valid assist data available for chart</p>;
   }
 
-  const totalMatchupRating = teamData
-    ? chartData.reduce((sum, item) => sum + item.matchupRating, 0)
-    : null;
+  const matchupRating = teamData ? matchupRatingPercent(chartData) : null;
 
   const renderTooltip = (data) => (
     <div
@@ -82,7 +80,7 @@ const AssistChart = ({
         rotateLabels={assistTypes.length > 2}
         renderTooltip={renderTooltip}
       />
-      {teamData && totalMatchupRating !== null && (
+      {matchupRating !== null && (
         <div
           style={{
             position: 'absolute',
@@ -96,8 +94,8 @@ const AssistChart = ({
           }}
         >
           <strong>Total Matchup Rating: </strong>
-          <span style={{ color: getColor((200 - totalMatchupRating) / 100, false) }}>
-            {formatNumber(totalMatchupRating, 2)}
+          <span style={{ color: matchupRatingColor(matchupRating) }}>
+            {formatMatchupRating(matchupRating)}
           </span>
         </div>
       )}

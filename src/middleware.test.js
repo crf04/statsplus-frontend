@@ -50,7 +50,7 @@ test('describes the injury brief skill page for link unfurlers', async () => {
 
   expect(html).toContain('<title>Injury brief skill | CourtAI</title>');
   expect(html).toContain(
-    "Have Claude or ChatGPT read tonight's NBA injury report with CourtAI: who gains, checked against tonight's lines, in a short graded brief.",
+    "Have Claude read tonight's NBA injury report with CourtAI: who gains, checked against tonight's lines, in a short graded brief.",
   );
 });
 

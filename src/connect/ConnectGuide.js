@@ -215,7 +215,7 @@ const ConnectGuide = ({ setup }) => (
         <p className="guide-p">
           To run one research brief every night, use a skill. The{' '}
           <Link to="/skills/injury-brief">injury brief skill</Link> reads tonight&apos;s injury
-          report this way, in Claude or ChatGPT.
+          report this way, in Claude or Claude Code.
         </p>
       </Lesson>
 

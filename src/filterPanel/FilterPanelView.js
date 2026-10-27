@@ -20,6 +20,8 @@ export const formatDate = (iso) => {
   });
 };
 
+// PROTOTYPE (throwaway, branch prototype/log-workspace-shrink): D drops the panel heading.
+import { useVariant } from '../logShrinkPrototype/mode';
 const TILES = [
   { key: 'teammate', title: 'Teammate', sub: 'on / off court' },
   { key: 'games', title: 'Last N', sub: 'most recent games' },
@@ -181,6 +183,7 @@ export const Editor = ({ which, panel, onDone }) => {
  * beside Apply. All are absent for a reader with no account to save to.
  */
 const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, savedName, save }) => {
+  const { variant: protoVariant } = useVariant(); // PROTOTYPE (throwaway)
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -308,6 +311,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
     ),
   );
 
+  const protoNoHead = protoVariant === 'D'; // PROTOTYPE (throwaway)
   return (
     <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
@@ -317,11 +321,15 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
             reports when the Workspace has settled, and an Apply sent from the
             Saved tab would otherwise wait for it forever. */}
         <div className="fpt-filters" hidden={Boolean(body)}>
-          <div className="fpb-head">
-            <span className="fpb-eyebrow">Showing</span>
-            <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-            {savedName && <p className="fpt-current">Saved as {savedName}</p>}
-          </div>
+          {protoNoHead ? (
+            savedName && <p className="fpt-current">Saved as {savedName}</p>
+          ) : (
+            <div className="fpb-head">
+              <span className="fpb-eyebrow">Showing</span>
+              <h2>{panel.selectedPlayer}&rsquo;s games</h2>
+              {savedName && <p className="fpt-current">Saved as {savedName}</p>}
+            </div>
+          )}
           {panel.seasons && (
             <label className="fpb-season">
               <span>Season</span>
@@ -341,7 +349,9 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
           {rules.length > 0 ? (
             <ul className="fpb-rules">{rules}</ul>
           ) : (
-            <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
+            !protoNoHead && (
+              <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
+            )
           )}
 
           {editing ? (

@@ -82,7 +82,11 @@ const ReportCard = ({ html, call, label }) => {
 
   const scale = fitScale(height, view);
   return (
-    <div className="report-card-fit" style={{ height: Math.ceil(height * scale) }}>
+    <div
+      className="report-card-fit"
+      data-theme="dark"
+      style={{ height: Math.ceil(height * scale) }}
+    >
       <iframe
         ref={frameRef}
         className="report-card"

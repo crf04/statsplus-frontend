@@ -597,7 +597,7 @@
   border: 2px solid var(--ct-ink, var(--ct-x-0d0c0a));
   border-radius: 999px;
   background: hsl(calc((var(--rank) - 1) * 4.1) 62% 46%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
   font-family: var(--ct-mono);
   font-size: 0.66rem;
   font-style: normal;
@@ -989,6 +989,11 @@ button.selection-strip-tile:focus-visible {
 
 .score-none {
   color: var(--ct-overlay-fg-14);
+}
+
+/* Dark's near-invisible dash would be faint on white; light gives it the dim text colour. */
+[data-theme='light'] .score-none {
+  color: var(--ct-dim);
 }
 
 .selection-table-wrap .thin-flag {

@@ -9,6 +9,7 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { FeedbackProvider } from './feedback/FeedbackContext';
 import FeedbackButton from './feedback/FeedbackButton';
+import ThemeMenu from './theme/ThemeMenu';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
@@ -84,6 +85,7 @@ function AppNav() {
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
+          <ThemeMenu />
           {isAuthenticated ? (
             <>
               <FeedbackButton />

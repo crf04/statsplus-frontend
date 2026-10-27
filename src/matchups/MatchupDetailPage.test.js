@@ -2464,12 +2464,13 @@ test('AC5: before the game the row shows his line and season average; the books 
   expect(within(austin).getByText('Game-time decision')).toHaveClass('injury-badge');
 });
 
-describe('#212: the rail leads with the market line', () => {
-  const headlineFor = async (provenance, lines) => {
+describe('#212, statsplus#338: the rail leads with the line most sources post', () => {
+  const headlineFor = async (provenance, lines, bookLines = {}) => {
     const candidate = JSON.parse(JSON.stringify(matchup));
     const lebron = candidate.players.find((player) => player.id === 2544);
     lebron.provenance = provenance;
     lebron.lines = lines;
+    lebron.bookLines = bookLines;
     fetchMatchup.mockResolvedValueOnce(candidate);
     renderMatchup();
     const row = await screen.findByRole('article', { name: 'LeBron James player' });
@@ -2510,6 +2511,45 @@ describe('#212: the rail leads with the market line', () => {
         { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
       ),
     ).toBe('8');
+  });
+
+  // statsplus#338: Duncan Robinson PTS, DET @ NYK, 2026-10-27.
+  test('a Polymarket rung most sources do not post never leads', async () => {
+    expect(
+      await headlineFor(
+        { underdog: ['PTS'], dabble: ['PTS'], polymarket: ['PTS'], novig: ['PTS'] },
+        {
+          underdog: { PTS: 12.5 },
+          dabble: { PTS: 11.5 },
+          polymarket: { PTS: 9.5 },
+          novig: { PTS: 12.5 },
+        },
+        {
+          PTS: quote([
+            bookRow('betmgm', 11.5, -115, -115),
+            bookRow('betrivers', 11.5, -134, -103),
+            bookRow('draftkings', 12.5, 101, -128),
+            bookRow('fanduel', 12.5, -108, -122),
+          ]),
+        },
+      ),
+    ).toBe('12.5');
+  });
+
+  test('the sportsbooks count toward the consensus', async () => {
+    expect(
+      await headlineFor(
+        { polymarket: ['PTS'], underdog: ['PTS'] },
+        { polymarket: { PTS: 29.5 }, underdog: { PTS: 21.5 } },
+        { PTS: quote([bookRow('draftkings', 21.5, -110, -110)]) },
+      ),
+    ).toBe('21.5');
+  });
+
+  test('a line only the sportsbooks post leads', async () => {
+    expect(await headlineFor({}, {}, { PTS: quote([bookRow('fanduel', 18.5, -110, -110)]) })).toBe(
+      '18.5',
+    );
   });
 
   test('a market that posts without a number does not lead', async () => {
@@ -3182,18 +3222,25 @@ test('names every allowlisted sportsbook', async () => {
 });
 
 describe('rail price line', () => {
-  const openRail = async ({ bookLines = {}, linePrices = {}, lines = {} }) => {
+  const openRail = async ({ bookLines = {}, linePrices = {}, lines = {}, provenance = {} }) => {
     const candidate = JSON.parse(JSON.stringify(matchup));
     const lebron = candidate.players.find((player) => player.id === 2544);
     lebron.bookLines = bookLines;
     lebron.linePrices = linePrices;
     lebron.lines = { ...lebron.lines, ...lines };
+    lebron.provenance = { ...lebron.provenance, ...provenance };
     fetchMatchup.mockResolvedValueOnce(candidate);
     renderMatchup();
     return screen.findByRole('article', { name: 'LeBron James player' });
   };
   const priceLine = (row) => within(row).queryByRole('group', { name: /^Best / });
   const text = (element) => normalized(element).trim();
+  // Unpriced markets that join PrizePicks at 27.5, so the headline is a line no
+  // source prices and outvotes the books.
+  const unpricedHeadline = {
+    provenance: { polymarket: ['PTS'], novig: ['PTS'], kalshi: ['PTS'] },
+    lines: { polymarket: { PTS: 27.5 }, novig: { PTS: 27.5 }, kalshi: { PTS: 27.5 } },
+  };
 
   test('shows the best Over and Under across books and priced providers with their marks', async () => {
     const row = await openRail({
@@ -3254,7 +3301,8 @@ describe('rail price line', () => {
           bookRow('betmgm', 28.5, 120, -150),
         ]),
       },
-      lines: { underdog: { PTS: 26.5 } },
+      provenance: unpricedHeadline.provenance,
+      lines: { ...unpricedHeadline.lines, underdog: { PTS: 26.5 } },
       linePrices: { underdog: { PTS: { over: -112, under: -112 } } },
     });
 
@@ -3270,6 +3318,7 @@ describe('rail price line', () => {
       bookLines: {
         PTS: quote([bookRow('draftkings', 26.5, -110, -110), bookRow('fanduel', 25.5, -105, -125)]),
       },
+      ...unpricedHeadline,
     });
 
     expect(text(priceLine(row))).toBe('books 25.5 o −105 FD u −125 FD');
@@ -3339,7 +3388,8 @@ describe('rail price line', () => {
           bookRow('betmgm', 25.5, -110, -110),
         ]),
       },
-      lines: { underdog: { PTS: 26.5 } },
+      provenance: unpricedHeadline.provenance,
+      lines: { ...unpricedHeadline.lines, underdog: { PTS: 26.5 } },
       linePrices: { underdog: { PTS: { over: -105, under: -105 } } },
     };
     const row = await openRail(setup);

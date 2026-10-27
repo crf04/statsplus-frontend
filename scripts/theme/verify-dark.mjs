@@ -61,10 +61,32 @@ export const normalize = (value, registry) => {
     .trim();
 };
 
+// A selector pinned to dark (`[data-theme='dark']`) paints in dark exactly
+// what the root does, so a rule that adds one to its list keeps its scope. A
+// rule that applies only under another theme, or while a theme switches,
+// paints nothing in dark.
+const DARK_PIN = /^\[data-theme=['"]?dark['"]?\]$/;
+const OFF_DARK = /\[data-theme=['"]?(?!dark['"]?\])[\w-]+['"]?\]|\[data-theme-switching\]/;
+const selectorsOf = (rule) =>
+  rule.selector.split(',').map((part) => part.trim().replace(/\s+/g, ' '));
+const paintsDark = (decl) => {
+  for (let node = decl.parent; node && node.type !== 'root'; node = node.parent) {
+    if (node.type === 'rule' && selectorsOf(node).every((part) => OFF_DARK.test(part)))
+      return false;
+  }
+  return true;
+};
+
 const scopeOf = (decl) => {
   const scope = [];
   for (let node = decl.parent; node && node.type !== 'root'; node = node.parent) {
-    scope.unshift(node.type === 'rule' ? node.selector : `@${node.name} ${node.params}`);
+    scope.unshift(
+      node.type === 'rule'
+        ? selectorsOf(node)
+            .filter((part) => !DARK_PIN.test(part) && !OFF_DARK.test(part))
+            .join(', ')
+        : `@${node.name} ${node.params}`,
+    );
   }
   return scope.join(' > ').replace(/\s+/g, ' ');
 };
@@ -75,6 +97,7 @@ const declarations = (css) => {
   const list = [];
   const seen = new Map();
   postcss.parse(css).walkDecls((decl) => {
+    if (!paintsDark(decl)) return;
     const base = `${scopeOf(decl)} { ${decl.prop}`;
     const index = seen.get(base) ?? 0;
     seen.set(base, index + 1);

@@ -12,7 +12,7 @@
   justify-content: center;
   border-radius: 4px;
   background: hsl(calc((var(--rank) - 1) * 4.1) 78% 43%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
   font-family: var(--ct-mono);
   font-size: 0.68rem;
   font-weight: 800;

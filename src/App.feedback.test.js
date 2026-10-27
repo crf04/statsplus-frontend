@@ -71,19 +71,25 @@ afterEach(() => {
 });
 
 describe('the header button', () => {
-  test('a signed-out visitor has none', async () => {
+  test('a signed-out visitor has none, only Appearance before Sign in', async () => {
     render(<App />);
     expect(await screen.findByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Feedback' })).not.toBeInTheDocument();
+    const appearance = screen.getByRole('button', { name: /^Appearance: / });
+    const auth = appearance.closest('.app-auth');
+    expect(auth.firstElementChild).toContainElement(appearance);
+    expect(auth.lastElementChild).toHaveTextContent(/Sign in/);
   });
 
-  test('a signed-in account has it before the avatar', async () => {
+  test('a signed-in account has it after Appearance and before the avatar', async () => {
     signIn();
     render(<App />);
     const button = await screen.findByRole('button', { name: 'Feedback' });
     expect(button).toHaveTextContent('Feedback');
-    const auth = button.closest('.app-auth');
-    expect(auth.firstElementChild).toBe(button);
+    const [appearance, feedback, profile] = button.closest('.app-auth').children;
+    expect(appearance).toContainElement(screen.getByRole('button', { name: /^Appearance: / }));
+    expect(feedback).toBe(button);
+    expect(profile).toHaveTextContent('Sam Rivera');
   });
 
   test('a waitlisted account has it too', async () => {

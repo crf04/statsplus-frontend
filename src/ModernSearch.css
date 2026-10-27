@@ -342,7 +342,7 @@
 }
 
 /* Align dropdown menu below the profile */
-.dropdown-menu {
+.user-profile .dropdown-menu {
   top: 100% !important;
   left: 0 !important;
   right: auto !important;

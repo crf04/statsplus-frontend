@@ -65,8 +65,8 @@
 }
 
 .query-ladder-button:hover:not(:disabled) {
-  background: rgba(232, 163, 61, 0.05);
-  border-color: rgba(232, 163, 61, 0.28);
+  background: var(--ct-gold-bg-5);
+  border-color: var(--ct-gold-fg-28);
 }
 
 .query-ladder-button:disabled {
@@ -80,7 +80,7 @@
   font-weight: 800;
   line-height: 0.8;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(232, 163, 61, 0.7);
+  -webkit-text-stroke: 1px var(--ct-gold-fg-70);
 }
 
 .query-ladder-body {
@@ -102,11 +102,11 @@
   font-family: var(--ct-mono);
   font-size: 13.5px;
   line-height: 1.5;
-  color: #c9c2b2;
+  color: var(--ct-text-2);
 }
 
 .query-ladder-query mark {
-  background: rgba(232, 163, 61, 0.16);
+  background: var(--ct-gold-bg-16);
   color: var(--ct-gold-hover);
   border-radius: 3px;
   padding: 1px 3px;
@@ -218,9 +218,9 @@
   flex: 1;
   min-width: 2px;
   border-radius: 1px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--ct-overlay-bg-14);
 }
 
 .query-ladder-bars i.is-over {
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }

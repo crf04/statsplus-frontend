@@ -139,6 +139,52 @@ signedOutTest(
   },
 );
 
+signedOutTest(
+  'the guide links its six lessons, folds its replays and opens all 21 capabilities',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect');
+
+    const contents = screen.getByRole('navigation', 'In this guide');
+    const lessons = [
+      ['Connect CourtAI', '#guide-setup'],
+      ['Ask one question', '#guide-ask'],
+      ['Watch the tutorials', '#guide-tutorials'],
+      ['Hand it an outcome', '#guide-outcome'],
+      ['Let it run the research', '#guide-research'],
+      ['Everything it can do', '#guide-tools'],
+    ];
+    await expect(contents.getByRole('link')).toHaveCount(lessons.length);
+    await expect(screen.getByRole('heading', { level: 2 })).toHaveCount(lessons.length);
+    for (const [index, [title, href]] of lessons.entries()) {
+      await expect(contents.getByRole('link').nth(index)).toHaveAccessibleName(title);
+      await expect(contents.getByRole('link').nth(index)).toHaveAttribute('href', href);
+      await expect(screen.getByRole('heading', { level: 2 }).nth(index)).toHaveAccessibleName(
+        title,
+      );
+    }
+
+    const tutorials = screen.getByRole('region', 'Watch the tutorials');
+    await expect(tutorials.getByRole('button', 'Play: Who cooks the Kings?')).toBeVisible();
+    await expect(tutorials.getByRole('link', 'Watch on X')).toHaveAttribute(
+      'href',
+      'https://x.com/CourtAI_App/status/2113463424667496619',
+    );
+
+    const outcome = screen.getByRole('region', 'Hand it an outcome');
+    await expect(outcome.getByRole('tab', 'Scan the injury report')).toBeHidden();
+    await outcome.getByText('Step through four runs').tap();
+    await expect(outcome.getByRole('tab', 'Scan the injury report')).toBeVisible();
+
+    await contents.getByRole('link', 'Everything it can do').tap();
+    await expect(browser).toHaveURL(/#guide-tools$/);
+    const tools = screen.getByRole('region', 'Everything it can do');
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(6);
+    await tools.getByRole('button', 'Show all 21 (15 more)').tap();
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(21);
+    await expect(tools.getByRole('button', 'Show all 21 (15 more)')).toHaveCount(0);
+  },
+);
+
 signedOutTest('the home page points to the Connect page', async ({ app, screen, browser }) => {
   await app.open('/');
 
@@ -148,3 +194,104 @@ signedOutTest('the home page points to the Connect page', async ({ app, screen, 
     screen.getByRole('heading', 'Ask CourtAI from your chat', { level: 1 }),
   ).toBeVisible();
 });
+
+signedOutTest(
+  'the home page plays the newest tutorial and links the rest on Connect',
+  async ({ app, screen, browser }) => {
+    await app.open('/');
+
+    const strip = screen.getByRole('region', 'Who cooks the Kings?');
+    await expect(strip.getByText('New tutorial · Part 1')).toBeVisible();
+    // Desktop: the 260 px thumbnail sits left of the text. Phone (<=760 px): stacked, full width.
+    const layout = await browser.evaluate(() => {
+      const box = (selector: string) => {
+        const rect = document.querySelector(selector)!.getBoundingClientRect();
+        return { left: rect.left, top: rect.top, width: rect.width, bottom: rect.bottom };
+      };
+      return {
+        phone: window.innerWidth <= 760,
+        strip: box('.home-tutorial'),
+        thumb: box('.home-tutorial-thumb'),
+        text: box('.home-tutorial-text'),
+      };
+    });
+    if (layout.phone) {
+      expect(layout.text.top).toBeGreaterThanOrEqual(layout.thumb.bottom);
+      expect(layout.thumb.width).toBeGreaterThan(layout.strip.width * 0.8);
+    } else {
+      expect(Math.round(layout.thumb.width)).toBe(260);
+      expect(layout.text.left).toBeGreaterThanOrEqual(layout.thumb.left + layout.thumb.width);
+    }
+
+    await strip.getByRole('button', 'Play: Who cooks the Kings?').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeVisible();
+    await screen.getByRole('button', 'Close').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeHidden();
+
+    await strip.getByRole('button', 'Watch · 1:16').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeVisible();
+    await screen.getByRole('button', 'Close').tap();
+    await expect(screen.getByRole('dialog', 'Who cooks the Kings?')).toBeHidden();
+
+    await strip.getByRole('link', 'All tutorials').tap();
+    await expect(browser).toHaveURL(/\/connect#guide-tutorials$/);
+    await expect(screen.getByRole('region', 'Watch the tutorials')).toBeVisible();
+    // Scrolled to the top of the window below the sticky header, and still there
+    // once the card above has settled its height.
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    );
+    const top = await browser.evaluate(
+      () => document.getElementById('guide-tutorials')?.getBoundingClientRect().top ?? null,
+    );
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top).toBeLessThan(200);
+  },
+);
+
+// Grows the page above the lesson, as the Matchup card does when it settles, then reports
+// where the lesson sits once the observer has had time to react.
+const growAboveLesson = (id: string) =>
+  `(() => {
+    // Browser scroll anchoring would hide the shift this simulates.
+    document.documentElement.style.overflowAnchor = 'none';
+    const lesson = document.getElementById(${JSON.stringify(id)});
+    const spacer = document.createElement('div');
+    spacer.style.height = '600px';
+    document.body.prepend(spacer);
+    return new Promise((resolve) =>
+      setTimeout(() => resolve(lesson.getBoundingClientRect().top), 500),
+    );
+  })()`;
+
+signedOutTest(
+  'a fresh load of a lesson link holds the lesson until the visitor presses a key',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect#guide-tools');
+    await expect(screen.getByRole('region', 'Everything it can do')).toBeVisible();
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)),
+    );
+    // Layout settling before any input: the lesson is kept at the top.
+    const held = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(held).toBeGreaterThanOrEqual(0);
+    expect(held).toBeLessThan(200);
+    // After a key press the page no longer re-aligns.
+    await browser.keyboard.press('Shift');
+    const free = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(free).toBeGreaterThanOrEqual(600);
+  },
+);
+
+signedOutTest(
+  'a lesson link stops re-aligning after five seconds without input',
+  async ({ app, screen, browser }) => {
+    await app.open('/connect#guide-tools');
+    await expect(screen.getByRole('region', 'Everything it can do')).toBeVisible();
+    await browser.evaluate(
+      () => new Promise<null>((resolve) => setTimeout(() => resolve(null), 5500)),
+    );
+    const free = (await browser.evaluate(growAboveLesson('guide-tools'))) as number;
+    expect(free).toBeGreaterThanOrEqual(600);
+  },
+);

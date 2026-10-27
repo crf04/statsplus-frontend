@@ -1,0 +1,98 @@
+.metrics-row {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--ct-overlay-fg-x14);
+  border-radius: 8px;
+  background: var(--ct-surface);
+}
+
+.metric-card {
+  position: relative;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  min-width: 0;
+}
+
+.metric-card + .metric-card {
+  border-left: 1px solid var(--ct-overlay-fg-x14);
+}
+
+.metric-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+}
+
+.metric-value {
+  font-family: var(--ct-mono);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-gold);
+  white-space: nowrap;
+}
+
+.metric-aside {
+  font-family: var(--ct-sans);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ct-dim);
+}
+
+.metric-corner {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+}
+
+.metric-recent {
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+
+.metric-change {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--ct-dim);
+  background: var(--ct-overlay-bg-5);
+}
+
+.metric-change.is-up {
+  color: var(--ct-x-9cc983);
+  background: var(--ct-x-22301c);
+}
+
+.metric-change.is-down {
+  color: var(--ct-x-e08585);
+  background: var(--ct-x-3a2020);
+}
+
+/* By the strip's own width: on a tablet the chart column is two thirds wide. */
+@container (max-width: 620px) {
+  .metric-card {
+    padding: 12px 10px;
+  }
+
+  .metric-value {
+    font-size: 19px;
+  }
+
+  .metric-aside {
+    display: block;
+    font-size: 11px;
+  }
+
+  .metric-corner {
+    position: static;
+  }
+}

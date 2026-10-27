@@ -5,6 +5,7 @@ import {
   formatScorePercent as formatPercent,
   orderCategories,
 } from './displayConfig';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const BASE_ORDER = [
   'shotTypes',
@@ -36,8 +37,10 @@ const signClass = (value) => {
 const washStyle = (component) => {
   if (!component || Math.round(component.value * 100) === 0) return undefined;
   const alpha = Math.min(0.55, Math.abs(component.value) * 3);
-  const rgb = component.value > 0 ? '76, 175, 125' : '194, 78, 78';
-  return { background: `rgba(${rgb}, ${alpha.toFixed(2)})` };
+  const family = component.value > 0 ? 'hit' : 'miss';
+  return {
+    background: `rgb(var(--ct-${family}-bg-rgb) / calc(${alpha.toFixed(2)} * var(--ct-k-accent-bg)))`,
+  };
 };
 
 // The tip time is the schedule's own time in the reader's zone.
@@ -123,6 +126,50 @@ function BookLines({ market, quote }) {
           {expanded ? 'Show fewer' : `+${hidden} more`}
         </button>
       )}
+    </section>
+  );
+}
+
+// The DFS apps that price a pick, in the order their rows are listed. Dabble's
+// price is the owner's −122 for an even line (statsplus#263).
+const DFS_PRICED = ['underdog', 'dabble'];
+
+// The decoder admits a price only beside that provider's line for the market.
+const dfsQuotes = (player, market) =>
+  DFS_PRICED.flatMap((provider) => {
+    const quote = player.linePrices?.[provider]?.[market];
+    return quote ? [{ provider, line: player.lines[provider][market], ...quote }] : [];
+  });
+
+// Renders nothing when neither app prices the stat, whatever the books quote.
+function DfsLines({ player, market }) {
+  const quotes = dfsQuotes(player, market);
+  if (quotes.length === 0) return null;
+  return (
+    <section className="selection-panel selection-panel-books" aria-label="DFS">
+      <h3>DFS · {market}</h3>
+      <div className="selection-table-wrap">
+        <table aria-label={`${market} DFS lines`} className="selection-books">
+          <thead>
+            <tr>
+              <th scope="col">App</th>
+              <th scope="col">Line</th>
+              <th scope="col">Over</th>
+              <th scope="col">Under</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quotes.map((entry) => (
+              <tr key={entry.provider}>
+                <th scope="row">{bookName(entry.provider)}</th>
+                <td>{entry.line}</td>
+                <td>{formatPrice(entry.over)}</td>
+                <td>{formatPrice(entry.under)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
@@ -290,6 +337,7 @@ export default function SelectionCard({
   status,
   error,
   windowKey,
+  windowName = WINDOW_LABELS[windowKey],
   sheetMarket,
   whyRelevant,
   historical,
@@ -434,7 +482,11 @@ export default function SelectionCard({
         >
           <h3>Games vs this opponent</h3>
           {status === 'loading' && <p role="status">Loading selection logs…</p>}
-          {status === 'error' && <p role="alert">{error}</p>}
+          {status === 'error' && (
+            <p role="alert">
+              <ErrorMessage message={error} />
+            </p>
+          )}
           {status === 'ready' && !categories.includes(activeStat) && (
             <p className="honest-empty">No games vs this opponent log is kept for {activeStat}.</p>
           )}
@@ -455,11 +507,12 @@ export default function SelectionCard({
           quote={player.bookLines[activeStat]}
         />
       )}
+      <DfsLines player={player} market={activeStat} />
       {rows
         .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
         .map(({ market }) => (
           <p className="honest-empty" key={`degraded-${market}`}>
-            No score components were computable for {market} in {WINDOW_LABELS[windowKey]}.
+            No score components were computable for {market} in {windowName}.
           </p>
         ))}
       {/* Component evidence can survive a score the contract could not
@@ -468,7 +521,7 @@ export default function SelectionCard({
         .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
         .map(({ market, score }) => (
           <p className="honest-empty" key={`withheld-${market}`}>
-            {market} Matchup Score unavailable in {WINDOW_LABELS[windowKey]}: missing{' '}
+            {market} Matchup Score unavailable in {windowName}: missing{' '}
             {score.missingInputs.join(', ')}.
           </p>
         ))}

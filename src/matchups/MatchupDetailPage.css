@@ -133,7 +133,7 @@
   scrollbar-width: none;
   /* Fade the right edge so a cut-off tab reads as "more to the right". The
      trailing spacer keeps the last tab clear of the fade at full scroll. */
-  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, var(--ct-mask) calc(100% - 28px), transparent);
 }
 
 .market-tabs::after {
@@ -421,7 +421,7 @@
 }
 
 .rail-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ct-overlay-bg-3);
 }
 
 .rail-row.selected {
@@ -582,6 +582,24 @@
   text-align: center;
 }
 
+.sheet-base-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.sheet-base-head .sheet-season {
+  padding: 1px 7px;
+  border: 1px solid var(--ct-gold-fg-12);
+  border-radius: 999px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-text);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
 .sheet-base > .honest-empty {
   margin-top: 8px;
 }
@@ -594,7 +612,7 @@
 }
 
 .sheet-row:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ct-overlay-bg-2p5);
 }
 
 .sheet-row.selection-why {
@@ -634,9 +652,9 @@
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    rgba(239, 122, 108, 0.45),
-    rgba(255, 255, 255, 0.12) 50%,
-    rgba(95, 208, 138, 0.45)
+    var(--ct-x-ef7a6c-45-fill),
+    var(--ct-overlay-bg-12) 50%,
+    var(--ct-x-5fd08a-45-fill)
   );
 }
 
@@ -649,10 +667,10 @@
   align-items: center;
   justify-content: center;
   transform: translate(-50%, -50%);
-  border: 2px solid var(--ct-ink, #0d0c0a);
+  border: 2px solid var(--ct-ink, var(--ct-x-0d0c0a));
   border-radius: 999px;
   background: hsl(calc((var(--rank) - 1) * 4.1) 62% 46%);
-  color: #fff;
+  color: var(--ct-text-max);
   font-family: var(--ct-mono);
   font-size: 0.66rem;
   font-style: normal;
@@ -720,10 +738,10 @@
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  border: 1px solid rgba(232, 163, 61, 0.22);
+  border: 1px solid var(--ct-gold-fg-22);
   border-radius: 999px;
   padding: 4px 11px;
-  background: rgba(232, 163, 61, 0.06);
+  background: var(--ct-gold-bg-6);
   font-size: 0.86rem;
 }
 
@@ -748,10 +766,10 @@
 .selection-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(232, 163, 61, 0.55);
+  border: 1px solid var(--ct-gold-fg-55);
   border-radius: var(--ct-radius-card);
   padding: 16px 18px 14px;
-  background: linear-gradient(180deg, #1a160e 0%, var(--ct-surface) 140px);
+  background: linear-gradient(180deg, var(--ct-x-1a160e) 0%, var(--ct-surface) 140px);
 }
 
 .selection-card-heading {
@@ -839,7 +857,7 @@ button.selection-strip-tile {
 }
 
 button.selection-strip-tile:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ct-overlay-bg-4);
 }
 
 button.selection-strip-tile:focus-visible {
@@ -926,7 +944,7 @@ button.selection-strip-tile:focus-visible {
 }
 
 .selection-panel-log {
-  border-color: rgba(232, 163, 61, 0.35);
+  border-color: var(--ct-gold-fg-35);
 }
 
 .selection-panel-books {
@@ -1011,7 +1029,7 @@ button.selection-strip-tile:focus-visible {
 }
 
 .selection-matrix tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ct-overlay-bg-3);
 }
 
 .selection-matrix-pick {
@@ -1043,7 +1061,7 @@ button.selection-strip-tile:focus-visible {
 }
 
 .score-none {
-  color: rgba(255, 255, 255, 0.14);
+  color: var(--ct-overlay-fg-14);
 }
 
 .selection-table-wrap .thin-flag {

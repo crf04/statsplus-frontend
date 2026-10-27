@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import FilterOptions from './FilterOptions';
 import { fetchSeasons } from './seasonsApi';
@@ -25,6 +25,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
     const [result, setResult] = useState(null);
     const [seasonChoice, setSeasonChoice] = useState(null);
     const [line, setLine] = useState(20);
+    const [applied, setApplied] = useState(appliedFilters);
     return (
       <MemoryRouter>
         <FilterOptions
@@ -38,9 +39,12 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
           lineValue={line}
           averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
-          appliedFilters={appliedFilters}
+          appliedFilters={applied}
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
+        <button onClick={() => setApplied({ date_filter: '2026-03-01' })}>
+          Open a link without an end date
+        </button>
         <output data-testid="patch">{JSON.stringify(result)}</output>
         <output data-testid="season-choice">{seasonChoice}</output>
       </MemoryRouter>
@@ -127,6 +131,7 @@ test('a linked Team Filter remains encoded and Clear all clears every applied fi
     'players_on[]': [],
     'players_off[]': [],
     date_filter: null,
+    date_to: null,
     'teams_against[]': [],
     'rank_filter[]': [],
     opponent_tricode: null,
@@ -159,21 +164,65 @@ test('single playtype bounds prefill defaults, and clearing Since emits a blank 
   });
 });
 
+test('the end date prefills, emits on change, and Clear all blanks it', () => {
+  renderPanel({ date_filter: '2026-01-01', date_to: '2026-01-31' });
+  fireEvent.click(screen.getByRole('button', { name: /^until/i }));
+  expect(screen.getByLabelText('Since date')).toHaveValue('2026-01-01');
+  expect(screen.getByLabelText('Until date')).toHaveValue('2026-01-31');
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    date_filter: '2026-01-01',
+    date_to: '2026-01-31',
+  });
+  fireEvent.change(screen.getByLabelText('Until date'), { target: { value: '2026-02-15' } });
+  apply();
+  expect(patch().date_to).toBe('2026-02-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+  expect(patch().date_to).toBeNull();
+  expect(patch().date_filter).toBeNull();
+});
+
+test('an end date typed into a blank panel is emitted', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Since/ }));
+  fireEvent.change(screen.getByLabelText('Until date'), { target: { value: '2026-01-31' } });
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', date_to: '2026-01-31' });
+});
+
+test('opening a different Filter Set clears an end date the old one left behind', () => {
+  renderPanel({ date_filter: '2026-01-01', date_to: '2026-01-31' });
+  expect(screen.getByRole('button', { name: /^until/i })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Open a link without an end date' }));
+  expect(screen.queryByRole('button', { name: /^until/i })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /^since/i }));
+  expect(screen.getByLabelText('Since date')).toHaveValue('2026-03-01');
+  expect(screen.getByLabelText('Until date')).toHaveValue('');
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', date_filter: '2026-03-01' });
+});
+
 test('Team Filter categories scope metrics and switching drops a stale selection', () => {
   renderPanel();
   fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
   fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'OPP_PTS' } });
   expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' })).toBeEnabled();
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
-  expect(screen.getByRole('option', { name: 'Spot-Up' })).toBeVisible();
+  expect(screen.getByRole('option', { name: 'Spot-Up Points' })).toBeVisible();
+  // Points per possession left the dropdown (crf04/statsplus#318).
+  expect(screen.queryByRole('option', { name: 'Spot-Up' })).toBeNull();
+  expect(screen.queryByRole('option', { name: 'Isolation' })).toBeNull();
   expect(screen.queryByRole('option', { name: 'Points Allowed' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pick a metric to add' })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Transition' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition, ranks 21–30' }));
+  fireEvent.change(screen.getByLabelText('Defensive metric'), {
+    target: { value: 'sheet:play_types:Transition:PTS' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Transition Points, ranks 21–30' }));
   apply();
   expect(patch()).toEqual({
     player_name: 'LeBron James',
-    'teams_against[]': ['Transition'],
+    'teams_against[]': ['sheet:play_types:Transition:PTS'],
     'rank_filter[]': [10],
   });
 });
@@ -198,11 +247,13 @@ test('positions 1,8 display as ranks 23–30 and choosing 23–30 requests 1,8',
   expect(screen.getByText('Points Allowed (ranks 23–30)')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
-  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'Isolation' } });
+  fireEvent.change(screen.getByLabelText('Defensive metric'), {
+    target: { value: 'sheet:play_types:Isolation:PTS' },
+  });
   const from = screen.getByRole('slider', { name: 'From rank' });
   fireEvent.focus(from);
   for (let i = 0; i < 2; i += 1) fireEvent.keyDown(from, { key: 'ArrowRight' });
-  fireEvent.click(screen.getByRole('button', { name: 'Add: Isolation, ranks 23–30' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Isolation Points, ranks 23–30' }));
   apply();
   expect(patch()['rank_filter[]']).toEqual(['1,8', 8]);
 });
@@ -369,4 +420,83 @@ test('USG% keyboard steps land on the 0.1 grid when season values have two decim
   expect(screen.getByText('USG% 25.0–40.0')).toBeVisible();
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[USG_PCT]': '25,40' });
+});
+
+test('Own stat line offers Potential assists in integer steps and the chip reads the range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, POTENTIAL_AST: null },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 20 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
+  expect(screen.getByText('8–20')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Potential assists 8–20')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '8,20' });
+});
+
+test('Own stat line offers Rebound chances and emits its range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CHANCES: 6 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CHANCES: 15 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CHANCES' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Rebound chances 6–15')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
+});
+
+describe.each([
+  // [column, label, low, high, keyboard-moved chip range, serialized range]
+  ['REB_CHANCES', 'Rebound chances', 6, 12, '7–11', '7,11'],
+  ['POTENTIAL_AST', 'Potential assists', 8, 14, '9–13', '9,13'],
+  ['REB_CONV_PCT', 'REB conversion %', 0.4, 0.75, '0.41–0.74', '0.41,0.74'],
+  ['AST_CONV_PCT', 'AST conversion %', 0.3, 0.6, '0.31–0.59', '0.31,0.59'],
+])('Own stat line %s', (column, label, low, high, chip, serialized) => {
+  test('keyboard steps land on the stat grid, and the chip and request read the moved range', () => {
+    renderPanel({}, [
+      { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, [column]: low },
+      { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, [column]: null },
+      { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, [column]: high },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+    fireEvent.change(screen.getByLabelText('Stat'), { target: { value: column } });
+    const min = screen.getByRole('slider', { name: `Minimum ${column}` });
+    const max = screen.getByRole('slider', { name: `Maximum ${column}` });
+    fireEvent.focus(min);
+    fireEvent.keyDown(min, { key: 'ArrowRight' });
+    fireEvent.focus(max);
+    fireEvent.keyDown(max, { key: 'ArrowLeft' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+    expect(screen.getByText(`${label} ${chip}`)).toBeVisible();
+    apply();
+    expect(patch()).toEqual({
+      player_name: 'LeBron James',
+      [`self_filters[${column}]`]: serialized,
+    });
+  });
+});
+
+test('each tracking stat sits with its parent stat in the Own stat line', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  const labels = within(screen.getByLabelText('Stat'))
+    .getAllByRole('option')
+    .map((o) => o.textContent.replace(/ \(\w+\)$/, ''));
+  const at = (label) => labels.indexOf(label);
+  expect(at('Rebounds')).toBeGreaterThan(-1);
+  expect(labels.slice(at('Rebounds'), at('Rebounds') + 3)).toEqual([
+    'Rebounds',
+    'Rebound chances',
+    'REB conversion %',
+  ]);
+  expect(labels.slice(at('Assists'), at('Assists') + 3)).toEqual([
+    'Assists',
+    'Potential assists',
+    'AST conversion %',
+  ]);
 });

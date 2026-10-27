@@ -375,6 +375,9 @@ test('@critical leaving is one action however many filters were applied', async 
     await page.getByLabel('Last N games', { exact: true }).fill(games);
     await page.getByRole('button', { name: /^Apply/ }).click();
     await expect(page).toHaveURL(new RegExp(`game_filter=${games}`));
+    // The Workspace hides whole until the applied Filter Set's game logs
+    // arrive; read the panel again only once it is back.
+    await expect(page.getByText(`GAMES <= ${games}`).first()).toBeVisible();
   }
 
   await page.getByRole('button', { name: 'Back to search' }).click();
@@ -473,7 +476,7 @@ test('the landing help and reference stay usable at a narrow viewport', async ({
   expect(await overflowsHorizontally()).toBe(false);
 
   await page.getByRole('link', { name: 'All filters' }).click();
-  await expect(page.getByRole('rowheader', { name: 'PRRollMan' })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: 'P&R Roll-Man Points' })).toBeVisible();
   expect(await overflowsHorizontally()).toBe(false);
 });
 
@@ -496,7 +499,7 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
   // left of the page. (Programmatic scrolling would also scroll the clipping
   // containers, which a finger cannot.)
   const readings = [
-    page.getByText('Hit Rate', { exact: true }),
+    page.getByText('Hit rate', { exact: true }),
     ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
       page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
     ),
@@ -511,17 +514,18 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
 
   // The floating search toggle does not cover the toolbar.
   await page.evaluate(() => window.scrollTo(0, 0));
-  const save = page.getByRole('button', { name: 'Save Filter Set' });
-  const saveBox = await save.boundingBox();
+  const back = page.getByRole('button', { name: 'Back to search' });
+  const backBox = await back.boundingBox();
   const searchBox = await page.getByRole('button', { name: 'Open search' }).boundingBox();
   expect(
-    saveBox.y + saveBox.height <= searchBox.y ||
-      searchBox.y + searchBox.height <= saveBox.y ||
-      saveBox.x + saveBox.width <= searchBox.x ||
-      searchBox.x + searchBox.width <= saveBox.x,
+    backBox.y + backBox.height <= searchBox.y ||
+      searchBox.y + searchBox.height <= backBox.y ||
+      backBox.x + backBox.width <= searchBox.x ||
+      searchBox.x + searchBox.width <= backBox.x,
   ).toBe(true);
-  await save.click();
-  await expect(page.getByRole('heading', { name: 'Save this Filter Set' })).toBeVisible();
+  // Save sits beside Apply in the filter panel and names the set in place.
+  await page.getByTestId('filter-panel').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByLabel('Name this Filter Set')).toBeVisible();
 });
 
 test('@critical a rejected natural-language query stays retryable', async ({ page }) => {
@@ -596,7 +600,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await expect(
     defensiveFilter.getByRole('button', { name: /Pick a metric to add|Add:/ }),
   ).toBeDisabled();
-  await page.getByLabel('Defensive metric').selectOption('Isolation');
+  await page.getByLabel('Defensive metric').selectOption('Isolation Points');
   // The default range is ranks 21-30 (the 10 that allow the most); five steps up the lower
   // thumb is 26-30, which the backend knows as positions 1-5.
   for (let step = 0; step < 5; step += 1) await fromRank.press('ArrowRight');
@@ -606,13 +610,15 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await expect(
     page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
   ).toBeVisible();
-  await expect(page.getByText('Isolation (ranks 26–30)').first()).toBeVisible();
+  await expect(page.getByText('Isolation Points (ranks 26–30)').first()).toBeVisible();
 
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
   const latestRequest = new URL(gameLogRequests.at(-1));
-  expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation']);
+  expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:play_types:Isolation:PTS',
+  ]);
   // A range ending at rank 30 is positions 1-5, sent as the plain count every earlier link used.
   expect(latestRequest.searchParams.getAll('rank_filter[]')).toEqual(['5']);
 
@@ -622,7 +628,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   const rankedRequestCount = gameLogRequests.length;
   await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
   await page.getByRole('tab', { name: 'Play type' }).click();
-  await page.getByLabel('Defensive metric').selectOption('Transition');
+  await page.getByLabel('Defensive metric').selectOption('Transition Points');
   for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowLeft');
   for (let step = 0; step < 10; step += 1) await toRank.press('ArrowLeft');
   await expect(fromRank).toHaveAttribute('aria-valuenow', '11');
@@ -634,14 +640,93 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
       .getByRole('button', { name: /^Remove versus/ })
       .last(),
   ).toBeVisible();
-  await expect(page.getByText('Transition (ranks 11–20)').first()).toBeVisible();
+  await expect(page.getByText('Transition Points (ranks 11–20)').first()).toBeVisible();
 
   await page.getByRole('button', { name: /^Apply/ }).click();
 
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(rankedRequestCount);
   const pairedRequest = new URL(gameLogRequests.at(-1));
-  expect(pairedRequest.searchParams.getAll('teams_against[]')).toEqual(['Isolation', 'Transition']);
+  expect(pairedRequest.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:play_types:Isolation:PTS',
+    'sheet:play_types:Transition:PTS',
+  ]);
   expect(pairedRequest.searchParams.getAll('rank_filter[]')).toEqual(['5', '11,20']);
+});
+
+test('a shared link with a retired Play type volume filter still loads and sends it', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto(
+    '/?player_name=LeBron+James&teams_against[]=sheet:play_types:Isolation:POSS&rank_filter[]=10',
+  );
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page.getByText('Isolation Possessions (ranks 21–30)').first()).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(0);
+  const request = new URL(gameLogRequests.at(-1));
+  expect(request.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:play_types:Isolation:POSS',
+  ]);
+  expect(request.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect(page.getByText(/sheet:/)).toHaveCount(0);
+
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await expect(page.getByRole('tab', { name: 'Play volume' })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Shot zone' })).toBeVisible();
+});
+
+test('a Defense Sheet row filter sends its exact token and survives a reload', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(request.url());
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James last 10 games');
+  await page.getByRole('textbox').press('Enter');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByRole('tab', { name: 'Shot zone' }).click();
+  await page.getByLabel('Defensive metric').selectOption({ label: 'Restricted Area Makes' });
+  await page
+    .getByTestId('filter-panel')
+    .getByRole('button', { name: 'Add: Restricted Area Makes, ranks 21–30' })
+    .click();
+  const appliedCount = gameLogRequests.length;
+  await page.getByRole('button', { name: /^Apply/ }).click();
+
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
+  const request = new URL(gameLogRequests.at(-1));
+  expect(request.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:shot_zones:Restricted Area:FGM',
+  ]);
+  expect(request.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll('teams_against[]'))
+    .toEqual(['sheet:shot_zones:Restricted Area:FGM']);
+  await expect(page.getByText('Restricted Area Makes (ranks 21–30)').first()).toBeVisible();
+
+  const reloadCount = gameLogRequests.length;
+  await page.reload();
+
+  await expect(page.getByText('Restricted Area Makes (ranks 21–30)').first()).toBeVisible();
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(reloadCount);
+  const restored = new URL(gameLogRequests.at(-1));
+  expect(restored.searchParams.getAll('teams_against[]')).toEqual([
+    'sheet:shot_zones:Restricted Area:FGM',
+  ]);
+  expect(restored.searchParams.getAll('rank_filter[]')).toEqual(['10']);
+  await expect(page.getByText(/sheet:/)).toHaveCount(0);
 });
 
 test('@critical applying an untouched panel emits only the controls the user moved', async ({
@@ -1093,6 +1178,10 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   ).toBeVisible();
 });
 
+// An unfiltered player's own game-log read asks exactly what the season read
+// does, so a player change can show up twice in a row.
+const distinctRuns = (players) => players.filter((player, i) => player !== players[i - 1]);
+
 test('an open Self Filters control follows a player change to that season', async ({
   authenticatedPage: page,
 }) => {
@@ -1121,7 +1210,7 @@ test('an open Self Filters control follows a player change to that season', asyn
   // player-switch-stat.spec.js (#159) owns the immediate-selection stat-reset regression.
   await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
 
-  await expect.poll(() => seasonRequests).toEqual(['LeBron James', 'Stephen Curry']);
+  await expect.poll(() => distinctRuns(seasonRequests)).toEqual(['LeBron James', 'Stephen Curry']);
   // The ranges on offer are this player's, not the one we arrived on.
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('18–42', { exact: true })).toBeVisible();
@@ -1241,7 +1330,7 @@ test('a player left and returned to gets a fresh season request', async ({
   // player-switch-stat.spec.js (#159) owns the immediate-selection stat-reset regression.
   await expect(page.getByText('Player: LeBron James', { exact: true }).first()).toBeVisible();
   await expect
-    .poll(() => seasonRequests)
+    .poll(() => distinctRuns(seasonRequests))
     .toEqual(['LeBron James', 'Stephen Curry', 'LeBron James']);
   await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
   await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
@@ -1495,7 +1584,7 @@ test('the sentinel is dropped without destroying a link we must refuse', async (
   await expect(page).not.toHaveURL(/browse/);
 });
 
-test('@critical changing player keeps the Filter Set', async ({ authenticatedPage: page }) => {
+test('@critical changing player clears the Filter Set', async ({ authenticatedPage: page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
     if (isWorkspaceGameLogs(request.url())) {
@@ -1520,28 +1609,43 @@ test('@critical changing player keeps the Filter Set', async ({ authenticatedPag
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
-  // Comparing two players under identical conditions is one action, so the
-  // filter the user applied is still on the wire for the new player.
+  // Filters chosen for one player rarely suit another, so the new player
+  // starts from a clean Filter Set.
   await expect.poll(() => gameLogRequests.length).toBeGreaterThan(appliedCount);
   await expect
     .poll(() =>
-      gameLogRequests.some(
-        (url) =>
-          url.searchParams.get('player_name') === 'Stephen Curry' &&
-          url.searchParams.get('game_filter') === '5',
-      ),
+      gameLogRequests.some((url) => url.searchParams.get('player_name') === 'Stephen Curry'),
     )
     .toBe(true);
   const afterChange = gameLogRequests.findLast(
-    (url) =>
-      url.searchParams.get('player_name') === 'Stephen Curry' &&
-      url.searchParams.has('game_filter'),
+    (url) => url.searchParams.get('player_name') === 'Stephen Curry',
   );
-  expect(afterChange.searchParams.get('player_name')).toBe('Stephen Curry');
-  expect(afterChange.searchParams.get('game_filter')).toBe('5');
+  expect(afterChange.searchParams.has('game_filter')).toBe(false);
 
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
-  await expect(page).toHaveURL(/game_filter=5/);
+  await expect(page).not.toHaveURL(/game_filter/);
+});
+
+test('changing player discards an unapplied filter draft', async ({ authenticatedPage: page }) => {
+  await page.goto('/?player_name=LeBron+James&game_filter=5');
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  if (await page.getByRole('button', { name: 'Done', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Done', exact: true }).click();
+  if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
+    await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
+  // Typed but never applied, so it lives only in the panel.
+  await page.getByLabel('Last N games', { exact: true }).fill('7');
+
+  await page.getByLabel('Player:').fill('Stephen');
+  await page.getByRole('option', { name: 'Stephen Curry' }).click();
+  await expect(page.getByText('Player: Stephen Curry', { exact: true }).first()).toBeVisible();
+  const switched = page.url();
+  expect(new URL(switched).search).toBe('?player_name=Stephen+Curry');
+  await expect(page.getByLabel('Last N games', { exact: true })).toHaveValue('');
+
+  // Applying straight away has no draft left to bring back.
+  await page.getByRole('button', { name: /^Apply/ }).click();
+  await expect(page).toHaveURL(switched);
 });
 
 test('the applied-filter badges describe the data after a player change', async ({
@@ -1574,12 +1678,12 @@ test('the applied-filter badges describe the data after a player change', async 
   await page.getByLabel('Player:').fill('Stephen');
   await page.getByRole('option', { name: 'Stephen Curry' }).click();
 
-  // The new player's rows are what is on screen, and every place the badges
-  // render is still describing the Filter Set that fetched them.
+  // The new player's rows are what is on screen, fetched with no filters, so
+  // no place the badges render still names the previous player's filter.
   await expect(page.getByRole('cell', { name: '77', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
-  await expect(page.getByText('GAMES <= 5')).toHaveCount(badgePlaces);
+  await expect(page.getByText('GAMES <= 5')).toHaveCount(0);
 });
 
 test('the Log Workspace appears in one piece once every section has answered', async ({
@@ -2042,4 +2146,42 @@ test('the line defaults to his next game posted line, else the season average', 
   // No posted REB line: the season average, as before.
   await page.getByLabel('Line Type:').selectOption('REB');
   await expect(lineValue).toHaveValue('7.5');
+});
+
+test('choosing a posted line source redraws the line and its over counts', async ({
+  authenticatedPage: page,
+}) => {
+  await page.goto('/?player_name=Stephen+Curry');
+  const lineValue = page.getByLabel('Line Value:');
+  const sources = page.getByRole('group', { name: 'Posted Lines:' });
+  await expect(lineValue).toHaveValue('26.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(
+    'Dabble 26.5, Over −122, Under −122',
+  );
+  await expect(sources.getByRole('button')).toHaveText([
+    /^Dabble/,
+    /^Underdog/,
+    /^DraftKings/,
+    /^FanDuel/,
+    /^BetRivers/,
+  ]);
+
+  await page.getByLabel('Line Type:').selectOption('FG3M');
+  await expect(lineValue).toHaveValue('4.5');
+  await expect(page.getByText('0/2', { exact: true })).toBeVisible();
+
+  await sources.getByRole('button', { name: /^Hardrockbet 3\.5/ }).click();
+  await expect(lineValue).toHaveValue('3.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(
+    'Hardrockbet 3.5, Over −160, no Under price',
+  );
+  await expect(page.getByText('1/2', { exact: true })).toBeVisible();
+
+  await lineValue.fill('5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveCount(0);
+  await expect(page.getByText('0/2', { exact: true })).toBeVisible();
+
+  await page.getByLabel('Line Type:').selectOption('PTS');
+  await expect(lineValue).toHaveValue('26.5');
+  await expect(sources.getByRole('button', { pressed: true })).toHaveAccessibleName(/^Dabble/);
 });

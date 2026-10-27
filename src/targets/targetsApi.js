@@ -5,10 +5,21 @@ import { isRecord, strictDecoders } from '../decoding';
 import { TARGET_READ_TIMEOUT } from '../apiSettings';
 import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
-import { TARGET_COMPARATORS } from './targetCatalog';
+import {
+  AVERAGE_BASE,
+  AVERAGE_THRESHOLD_MAX,
+  POSITION_BASE,
+  POSITION_GROUPS,
+  TARGET_COMPARATORS,
+  isDietQualifier,
+} from './targetCatalog';
 import { describeSeasonUnavailable, isSeason } from './backtestSample';
+import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const createInvalidResponseError = () => new Error('The Targets API returned an invalid response.');
+const { decodeSeason, decodeSeasonContext, decodeTrailing } = servingSeasonDecoders(
+  createInvalidResponseError,
+);
 
 const comparators = new Set(TARGET_COMPARATORS.map((entry) => entry.key));
 
@@ -78,12 +89,48 @@ const decodeGamesConsidered = (games) => {
 };
 
 /*
- * A Qualifier is one criterion: a diet slice, a comparator, and a share
- * threshold in the 0–1 range. A player fits a Target only by meeting every one
- * of them, so a Target with no Qualifier cannot exist.
+ * A Qualifier is one rule a player must meet, and a player fits a Target only
+ * by meeting every one of them, so a Target with no Qualifier cannot exist.
+ * The kind is named by `base` (crf04/statsplus docs/adr/0005):
+ *
+ *   - a diet slice with a comparator and a share threshold in the 0–1 range;
+ *   - `position`, one or more of Guard, Wing and Big;
+ *   - `season_average`, a Target stat column with a comparator and a
+ *     non-negative threshold in that stat's own units.
  */
+const decodePositionQualifier = (item) => {
+  const { groups } = item;
+  if (
+    !Array.isArray(groups) ||
+    groups.length === 0 ||
+    new Set(groups).size !== groups.length ||
+    groups.some((group) => !POSITION_GROUPS.includes(group))
+  ) {
+    throw createInvalidResponseError();
+  }
+  // Canonical order, so the same set always reads and compares the same way.
+  return { base: POSITION_BASE, groups: POSITION_GROUPS.filter((group) => groups.includes(group)) };
+};
+
+const decodeAverageQualifier = (item) => {
+  const { stat, comparator, threshold } = item;
+  if (
+    !catalogue.includes(stat) ||
+    !comparators.has(comparator) ||
+    typeof threshold !== 'number' ||
+    !Number.isFinite(threshold) ||
+    threshold < 0 ||
+    threshold > AVERAGE_THRESHOLD_MAX
+  ) {
+    throw createInvalidResponseError();
+  }
+  return { base: AVERAGE_BASE, stat, comparator, threshold };
+};
+
 const decodeQualifier = (item) => {
   if (!item || typeof item !== 'object') throw createInvalidResponseError();
+  if (item.base === POSITION_BASE) return decodePositionQualifier(item);
+  if (item.base === AVERAGE_BASE) return decodeAverageQualifier(item);
   const { base, slice_key: sliceKey, comparator, threshold } = item;
   if (
     typeof base !== 'string' ||
@@ -97,6 +144,38 @@ const decodeQualifier = (item) => {
     throw createInvalidResponseError();
   }
   return { base, sliceKey, comparator, threshold };
+};
+
+/*
+ * Shares and Defense Sheet readings are one entry per Qualifier of every kind,
+ * in the Target's Qualifier order. A Position or Average Qualifier reads no
+ * Diet slice, so its entry is all nulls and is set aside here: decoded shares
+ * and context are one per Diet Qualifier. An entry of any other length or
+ * shape would misattribute a reading to the wrong Qualifier.
+ */
+const nullShare = (entry, qualifier) =>
+  isRecord(entry) &&
+  entry.base === qualifier.base &&
+  entry.slice_key === null &&
+  entry.share === null &&
+  entry.league_average_share === null;
+
+const nullContext = (entry, qualifier) =>
+  isRecord(entry) &&
+  entry.base === qualifier.base &&
+  entry.slice_key === null &&
+  entry.label === null &&
+  entry.availability === null &&
+  Array.isArray(entry.metrics) &&
+  entry.metrics.length === 0;
+
+const alignToDiet = (entries, qualifiers, isRuleEntry) => {
+  if (entries.length !== qualifiers.length) throw createInvalidResponseError();
+  return entries.filter((entry, index) => {
+    if (isDietQualifier(qualifiers[index])) return true;
+    if (!isRuleEntry(entry, qualifiers[index])) throw createInvalidResponseError();
+    return false;
+  });
 };
 
 /*
@@ -281,6 +360,17 @@ const decodeContext = (item) => {
   };
 };
 
+/*
+ * A player's Position is NBA.com's listed position mapped to a group, and is
+ * null for a player with none. A backend deployed before it sends no field,
+ * which stays absent here rather than becoming a null the backend never said.
+ */
+const decodePosition = (position) => {
+  if (position === null) return null;
+  if (!POSITION_GROUPS.includes(position)) throw createInvalidResponseError();
+  return position;
+};
+
 const decodeShare = (share) => {
   if (!isRecord(share)) throw createInvalidResponseError();
   return {
@@ -294,22 +384,18 @@ const decodeShare = (share) => {
  * the table put one column per Qualifier. A list of another length would
  * silently misattribute a share to the wrong Qualifier.
  */
-const decodeFit = (player, qualifierCount) => {
-  if (
-    !isRecord(player) ||
-    typeof player.thin !== 'boolean' ||
-    !Array.isArray(player.shares) ||
-    player.shares.length !== qualifierCount
-  ) {
+const decodeFit = (player, qualifiers) => {
+  if (!isRecord(player) || typeof player.thin !== 'boolean' || !Array.isArray(player.shares)) {
     throw createInvalidResponseError();
   }
   return {
     canonicalId: requireNumber(player.canonical_id),
     name: requireString(player.name),
     tricode: requireString(player.tricode),
+    ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
     seasonScoring: requireNumberOrNull(player.season_scoring),
     thin: player.thin,
-    shares: player.shares.map(decodeShare),
+    shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
   };
 };
 
@@ -322,9 +408,8 @@ const decodeResolvedTarget = (item) => {
   const availability = decodePoolAvailability(item.availability);
   // An idle Target has no game-scoped window to read, so it carries no
   // context; a live one carries one per Qualifier, in Qualifier order.
-  if (item.context.length !== (game ? target.qualifiers.length : 0)) {
-    throw createInvalidResponseError();
-  }
+  if (!game && item.context.length !== 0) throw createInvalidResponseError();
+  const context = game ? alignToDiet(item.context, target.qualifiers, nullContext) : [];
   if (availability.status !== 'available' && item.players.length > 0) {
     throw createInvalidResponseError();
   }
@@ -332,8 +417,8 @@ const decodeResolvedTarget = (item) => {
     target,
     game,
     availability,
-    context: item.context.map(decodeContext),
-    players: item.players.map((player) => decodeFit(player, target.qualifiers.length)),
+    context: context.map(decodeContext),
+    players: item.players.map((player) => decodeFit(player, target.qualifiers)),
   };
 };
 
@@ -392,7 +477,7 @@ const decodeBacktestGame = (game, statColumns) => {
  * with no game is a response whose table would quietly drop a row. The shares
  * are index-parallel with the Qualifiers, as a fit's are.
  */
-const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
+const decodeBacktestPlayer = (player, statColumns, qualifiers) => {
   if (
     player?.season_games !== undefined &&
     (!Number.isInteger(player.season_games) || player.season_games < 0)
@@ -402,8 +487,7 @@ const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
     !isRecord(player) ||
     !Array.isArray(player.games) ||
     player.games.length === 0 ||
-    !Array.isArray(player.shares) ||
-    player.shares.length !== qualifierCount
+    !Array.isArray(player.shares)
   ) {
     throw createInvalidResponseError();
   }
@@ -411,7 +495,8 @@ const decodeBacktestPlayer = (player, statColumns, qualifierCount) => {
     canonicalId: requireNumber(player.canonical_id),
     name: requireString(player.name),
     tricode: requireString(player.tricode),
-    shares: player.shares.map(decodeShare),
+    ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
+    shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
     seasonAverages: decodeStats(player.season_averages, statColumns),
     ...(player.season_totals !== undefined
       ? { seasonTotals: decodeBoxLine(player.season_totals) }
@@ -440,9 +525,13 @@ const decodeSummaryColumn = (column) => {
 
 const decodeSummary = (summary, statColumns) => {
   if (!isRecord(summary) || !isRecord(summary.columns)) throw createInvalidResponseError();
+  const withoutPosition = summary.players_without_position;
+  if (withoutPosition !== undefined && (!Number.isInteger(withoutPosition) || withoutPosition < 0))
+    throw createInvalidResponseError();
   return {
     players: requireNumber(summary.players),
     games: requireNumber(summary.games),
+    ...(withoutPosition !== undefined ? { playersWithoutPosition: withoutPosition } : {}),
     columns: Object.fromEntries(
       statColumns.map((column) => [column, decodeSummaryColumn(summary.columns[column])]),
     ),
@@ -501,7 +590,7 @@ const decodeBacktestBody = (payload, target) => {
     statColumns,
     summary: decodeSummary(payload.summary, statColumns),
     players: payload.players.map((player) =>
-      decodeBacktestPlayer(player, statColumns, target.qualifiers.length),
+      decodeBacktestPlayer(player, statColumns, target.qualifiers),
     ),
   };
 };
@@ -541,12 +630,22 @@ export const decodePreview = (payload = {}) => {
   };
 };
 
-const encodeQualifier = (qualifier) => ({
-  base: qualifier.base,
-  slice_key: qualifier.sliceKey,
-  comparator: qualifier.comparator,
-  threshold: qualifier.threshold,
-});
+const encodeQualifier = (qualifier) => {
+  if (qualifier.base === POSITION_BASE) return { base: POSITION_BASE, groups: qualifier.groups };
+  if (qualifier.base === AVERAGE_BASE)
+    return {
+      base: AVERAGE_BASE,
+      stat: qualifier.stat,
+      comparator: qualifier.comparator,
+      threshold: qualifier.threshold,
+    };
+  return {
+    base: qualifier.base,
+    slice_key: qualifier.sliceKey,
+    comparator: qualifier.comparator,
+    threshold: qualifier.threshold,
+  };
+};
 
 const targetsUrl = (path = '') => `${getApiUrl('TARGETS')}${path}`;
 
@@ -720,6 +819,24 @@ export const deleteTarget = async ({ id }) => {
   invalidateTargetResolutions();
 };
 
+/*
+ * Under an explicit Evidence season (crf04/statsplus#330) each Diet base names
+ * its family and the season it serves, null when it serves none. The
+ * top-level `season` is only the latest of them, so a base is labelled with
+ * its own.
+ */
+const decodeBaselineBases = (bases) => {
+  if (bases === undefined) return undefined;
+  if (!isRecord(bases)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    Object.entries(bases).map(([base, served]) => {
+      if (!isRecord(served) || typeof served.family !== 'string' || served.season === undefined)
+        throw createInvalidResponseError();
+      return [base, { family: served.family, season: decodeSeason(served.season) }];
+    }),
+  );
+};
+
 export const decodeDietBaselines = (payload) => {
   if (!isRecord(payload) || !isRecord(payload.shares)) throw createInvalidResponseError();
   const shares = {};
@@ -735,11 +852,22 @@ export const decodeDietBaselines = (payload) => {
       shares[base][slice] = share;
     }
   }
-  return { shares };
+  return {
+    shares,
+    seasonContext: decodeSeasonContext(payload.season_context),
+    // The latest season any base serves; label a base with its own instead.
+    season: decodeSeason(payload.season),
+    bases: decodeBaselineBases(payload.bases),
+    trailing: decodeTrailing(payload.trailing),
+  };
 };
 
-export const fetchDietBaselines = async ({ signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('DIET_BASELINES'), { signal });
+export const fetchDietBaselines = async ({ signal, season } = {}) => {
+  const response = await apiClient
+    .get(getApiUrl('DIET_BASELINES'), { ...(season ? { params: { season } } : {}), signal })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeDietBaselines(response.data);
 };
 

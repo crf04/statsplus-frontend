@@ -1,5 +1,29 @@
 import { parseCalendarDate } from './calendarDate';
 import { parseRank } from './opponentFilters';
+
+export const lineTypeOptions = [
+  'None',
+  'PTS',
+  'FD_PTS',
+  'PRA',
+  'PA',
+  'RA',
+  'PR',
+  'AST',
+  'REB',
+  'FTM',
+  'FTA',
+  'STL',
+  'BLK',
+  'STKS',
+  'FG3M',
+  'FG3A',
+  'FG2M',
+  'FG2A',
+  'FGM',
+  'FGA',
+  'TOV',
+];
 /**
  * Shared filter translation and cleaning.
  *
@@ -161,6 +185,39 @@ export const convertNLToFilters = (nlResult = {}) => {
 };
 
 /**
+ * Ambiguous player references. The parser leaves a reference it could not
+ * resolve out of the Filter Set and lists its candidates in `player_choices`
+ * (crf04/statsplus#264). A response without the field has none.
+ */
+export const getPlayerChoices = (nlResult) => {
+  const choices = nlResult?.player_choices;
+  if (!Array.isArray(choices)) return [];
+  return choices.filter(
+    (choice) =>
+      choice &&
+      ['main', 'with', 'without'].includes(choice.role) &&
+      Array.isArray(choice.candidates) &&
+      choice.candidates.length > 0,
+  );
+};
+
+/** The parsed query with each chosen name inserted into the slot its role names. */
+export const applyPlayerChoices = (nlResult, choices, chosenNames) => {
+  const resolved = { ...nlResult };
+  choices.forEach((choice, index) => {
+    const name = chosenNames[index];
+    if (choice.role === 'main') {
+      resolved.player_name = name;
+      return;
+    }
+    const slot = choice.role === 'with' ? 'players_on' : 'players_off';
+    const names = Array.isArray(resolved[slot]) ? resolved[slot] : [];
+    resolved[slot] = names.includes(name) ? names : [...names, name];
+  });
+  return resolved;
+};
+
+/**
  * URL decoding.
  *
  * A shared link carries the game-log API's own parameter names, so a link is
@@ -261,6 +318,16 @@ export const filterSetFromSearchParams = (searchParams) => {
   readText('season_filter', isCanonicalSeason);
   readDecoded('minutes_filter', (value) => numericRange(value, { whole: true }));
   readDecoded('date_filter', parseCalendarDate);
+  readDecoded('date_to', parseCalendarDate);
+  // ISO calendar dates order as strings. An end before the start matches no
+  // game, so the range is refused rather than shown as an empty table.
+  if (
+    hasValue(filters.date_filter) &&
+    hasValue(filters.date_to) &&
+    filters.date_to < filters.date_filter
+  ) {
+    reject('date_to');
+  }
   readDecoded('location_filter', (value) => (LOCATION_VALUES.has(value) ? value : null));
   readDecoded('game_filter', (value) => {
     const parsed = wholeNumber(value);
@@ -349,6 +416,7 @@ const SCALAR_FILTER_NAMES = [
   'season_filter',
   'minutes_filter',
   'date_filter',
+  'date_to',
   'location_filter',
   'game_filter',
   'opponent_tricode',
@@ -406,7 +474,7 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
   );
 
 /**
- * The only non-filter search parameter.
+ * A non-filter search parameter.
  *
  * Manual entry lands with an empty Filter Set, which is indistinguishable from
  * a fresh visit, so the escape hatch navigates to this sentinel to declare
@@ -415,3 +483,65 @@ export const mergeFilterSet = (filters = {}, patch = {}) =>
  * exist — any URL carrying filters stays a pure API query string.
  */
 export const BROWSE_PARAM = 'browse';
+
+/**
+ * The other non-filter search parameter: which stat the chart and the line are
+ * drawn for.
+ *
+ * It is a view of the results rather than a filter, and the game-log API never
+ * reads it, so like the sentinel it is never part of a Filter Set and never
+ * reaches a request or a Saved Filter Set. It exists so a shared link opens on
+ * the same stat. The default is omitted, and a value outside the Line Type
+ * options falls back to the default instead of refusing the link.
+ */
+export const LINE_TYPE_PARAM = 'line_type';
+const DEFAULT_LINE_TYPE = 'PTS';
+
+/**
+ * The third non-filter search parameter: the Line Value the sender chose, when
+ * it differs from the default line, so a shared link shows the same number.
+ * Like the Line Type it is a view of the results, never part of a Filter Set.
+ */
+export const LINE_PARAM = 'line';
+const LINE_PATTERN = /^\d{1,3}(\.\d{1,2})?$/;
+
+/** A line the URL can carry, as it is shown (`24.50` is `24.5`); null otherwise. */
+export const parseLine = (value) =>
+  LINE_PATTERN.test(value) && Number(value) > 0 ? String(Number(value)) : null;
+
+/**
+ * The query string with only its Filter Set left: what is requested, saved,
+ * and compared against Saved Filter Sets. A change to anything else is a change
+ * of view, not of Filter Set.
+ */
+export const filterQueryString = (search) => {
+  const params = new URLSearchParams(search);
+  params.delete(BROWSE_PARAM);
+  params.delete(LINE_TYPE_PARAM);
+  params.delete(LINE_PARAM);
+  return params.toString();
+};
+
+export const lineTypeFromSearch = (search) => {
+  const values = new URLSearchParams(search).getAll(LINE_TYPE_PARAM);
+  return values.length === 1 && lineTypeOptions.includes(values[0]) ? values[0] : DEFAULT_LINE_TYPE;
+};
+
+export const withLineType = (search, lineType) => {
+  const params = new URLSearchParams(search);
+  params.delete(LINE_TYPE_PARAM);
+  if (lineType !== DEFAULT_LINE_TYPE) params.set(LINE_TYPE_PARAM, lineType);
+  return params;
+};
+
+export const lineFromSearch = (search) => {
+  const values = new URLSearchParams(search).getAll(LINE_PARAM);
+  return values.length === 1 ? parseLine(values[0]) : null;
+};
+
+export const withLine = (search, line) => {
+  const params = new URLSearchParams(search);
+  params.delete(LINE_PARAM);
+  if (line !== null) params.set(LINE_PARAM, line);
+  return params;
+};

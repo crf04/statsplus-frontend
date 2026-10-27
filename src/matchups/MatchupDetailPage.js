@@ -6,7 +6,7 @@ import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams } from '../filterUtils';
-import { getSurfaceFreshnessPresentation } from '../slateStatus';
+import { getStatusPresentation, getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import {
   MARKET_PROVIDERS,
@@ -21,12 +21,16 @@ import {
   orderCategories,
   sliceName,
 } from './displayConfig';
-import { WINDOW_REASONS } from '../windowReasons';
+import { SEASON_WINDOW_REASONS, WINDOW_REASONS } from '../windowReasons';
+import { isSeasonRefusal, trailingSample, trailingSeason } from '../servingSeason';
+import { EvidenceSeasonBar, SeasonRefusal, useEvidenceSeason, withSeason } from '../EvidenceSeason';
+import { seasonOfGameId } from '../gameSeason';
 import { bestPrices, formatPrice } from './linePrices';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
+import ErrorMessage from '../feedback/ErrorMessage';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -44,12 +48,24 @@ const SECTION_REASONS = {
   no_game_log_rows: 'No canonical game-log rows exist for this game.',
   player_pool_unavailable: 'No Player Pool snapshot is available for this game.',
 };
-const surfaceReason = (unavailableReason) =>
-  WINDOW_REASONS[unavailableReason] ||
+const surfaceReason = (unavailableReason, windowKey = 'last15') =>
+  (windowKey === 'season' ? SEASON_WINDOW_REASONS : WINDOW_REASONS)[unavailableReason] ||
   SECTION_REASONS[unavailableReason] ||
   `${unavailableReason}.`;
 const sectionReason = (section) => surfaceReason(section.unavailableReason);
-const windowLabel = (windowKey) => WINDOWS.find((window) => window.key === windowKey)?.label;
+const WINDOW_SECTIONS = { season: 'seasonDefense', last15: 'last15Defense' };
+
+// Before a team has played 15 games, Last 15 covers the games so far and is
+// named by their count. A section's own count wins over its window's, and a
+// null count is a full window.
+const last15Games = (state, section) =>
+  (state?.windowGames === undefined ? section?.windowGames : state.windowGames) ?? 15;
+const shortestLast15 = (matchup) =>
+  Math.min(
+    ...Object.values(matchup.league.surfaceAvailability).map((windows) =>
+      last15Games(windows.last15, matchup.experience.sections?.last15Defense),
+    ),
+  );
 
 // "a", "a and b", "a, b and c".
 const listWords = (words, conjunction = 'and') =>
@@ -143,6 +159,9 @@ function MatchupSummary({ matchup, now }) {
         <span>
           {books.length ? `Lines from ${listWords(books.map(bookName))}.` : 'No lines posted yet.'}
         </span>
+        {matchup.freshness.pool.status === 'closing' && (
+          <> {getStatusPresentation('closing').currentPoolMessage}</>
+        )}
         {warning && (
           <>
             {' '}
@@ -240,9 +259,20 @@ function RailPrices({ best }) {
 const averageOf = (values) =>
   values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 
-function RailRow({ player, stat, historical, windowKey, injury, selected, onSelect, register }) {
+function RailRow({
+  player,
+  stat,
+  historical,
+  windowKey,
+  injury,
+  selected,
+  onSelect,
+  register,
+  season,
+}) {
   const serializedPlayerId = String(player.id);
-  const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name })}`;
+  // Game Logs name the season the Matchup read, since their own default may differ.
+  const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined })}`;
   const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
   let value;
   let caption;
@@ -377,6 +407,7 @@ function PlayerRail({
   onSelect,
   registerTrigger,
   headingRef,
+  season,
 }) {
   const stat = market === 'All' ? 'PTS' : market;
   const injuryById = new Map(
@@ -426,6 +457,7 @@ function PlayerRail({
               selected={selectedId === String(player.id)}
               onSelect={onSelect}
               register={registerTrigger}
+              season={season}
             />
           ))}
         </div>
@@ -593,6 +625,11 @@ function DefenseSheet({
   deviation,
   selectedPlayer,
   surfaceAvailability,
+  windowName,
+  windowSection,
+  readSeason,
+  trailing,
+  seasonContext,
   onCapture,
 }) {
   const inMarket = (row) => market === 'All' || row.markets.includes(market);
@@ -671,15 +708,40 @@ function DefenseSheet({
       <div className="sheet-sections">
         {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
           const label = BASE_LABELS[base];
+          const season = trailingSeason(
+            availability.season ?? windowSection?.season,
+            readSeason,
+            trailing,
+          );
+          // The toggle names the shortest Last 15; a section covering more says so.
+          const games =
+            windowKey === 'last15' && availability.status === 'available'
+              ? last15Games(availability, windowSection)
+              : null;
+          const title = (
+            <div className="sheet-base-title">
+              <h3 id={`base-${base}`}>{label}</h3>
+              {season && (
+                <span className="sheet-season">
+                  {season} season
+                  {/* Under an Evidence season a trailing section names its
+                      own sample: no score borrows another input's count. */}
+                  {seasonContext &&
+                    ` · ${trailingSample(trailing.find((entry) => entry.servingSeason === season).teamGames)}`}
+                </span>
+              )}
+              {games !== null && `Last ${games}` !== windowName && (
+                <span className="sheet-season">Last {games}</span>
+              )}
+            </div>
+          );
           if (availability.status !== 'available') {
             return relevant ? (
               <section className="sheet-base" key={base} aria-labelledby={`base-${base}`}>
-                <div className="sheet-base-head">
-                  <h3 id={`base-${base}`}>{label}</h3>
-                </div>
+                <div className="sheet-base-head">{title}</div>
                 <p className="honest-empty">
-                  {label} unavailable for {windowLabel(windowKey)}:{' '}
-                  {surfaceReason(availability.unavailableReason)}
+                  {label} unavailable for {windowName}:{' '}
+                  {surfaceReason(availability.unavailableReason, windowKey)}
                 </p>
               </section>
             ) : null;
@@ -694,7 +756,7 @@ function DefenseSheet({
               style={{ '--cols': columns.length }}
             >
               <div className="sheet-base-head">
-                <h3 id={`base-${base}`}>{label}</h3>
+                {title}
                 {columns.map((column) => (
                   <span key={column}>{column}</span>
                 ))}
@@ -779,9 +841,7 @@ function DefenseSheet({
                 </div>
               )}
               {legacyUnavailableRow && (
-                <p className="honest-empty">
-                  Opponent rebounds unavailable for {windowLabel(windowKey)}.
-                </p>
+                <p className="honest-empty">Opponent rebounds unavailable for {windowName}.</p>
               )}
             </section>
           );
@@ -875,7 +935,8 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
 
 const openingMarket = (markets) => (markets.includes('PTS') ? 'PTS' : 'All');
 
-function Detail({ matchup, gameId }) {
+function Detail({ matchup, gameId, evidence }) {
+  const { season } = evidence;
   const [searchParams, setSearchParams] = useSearchParams();
   const now = useMinuteNow(true);
   const homeTricode = matchup.game.home.tricode;
@@ -932,6 +993,11 @@ function Detail({ matchup, gameId }) {
   // A chosen stat the other side does not have falls back the same way.
   const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
+  const shortest = shortestLast15(matchup);
+  const windows = WINDOWS.map((item) =>
+    item.key === 'last15' && shortest < 15 ? { ...item, label: `Last ${shortest}` } : item,
+  );
+  const windowName = windows.find((item) => item.key === windowKey).label;
   const last15Section = historical ? sections.last15Defense : null;
   const last15Blocked = Boolean(last15Section) && last15Section.status !== 'available';
   const injuriesAvailable = historical
@@ -949,6 +1015,7 @@ function Detail({ matchup, gameId }) {
       signal: controller.signal,
       mode: experienceMode,
       focalGameLine: selectedPlayer.focalGameLine,
+      ...(season ? { season } : {}),
     })
       .then((data) => {
         if (current)
@@ -967,7 +1034,7 @@ function Detail({ matchup, gameId }) {
       current = false;
       controller.abort();
     };
-  }, [experienceMode, gameId, selectedPlayer]);
+  }, [experienceMode, gameId, selectedPlayer, season]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
       // The stat in view can hide the row that opened the card (a deep link
@@ -992,7 +1059,7 @@ function Detail({ matchup, gameId }) {
     <>
       <header className="matchup-heading">
         <div>
-          <Link to="/matchups">← Back to slate</Link>
+          <Link to={withSeason('/matchups', evidence.linked)}>← Back to slate</Link>
           <p className="matchup-eyebrow">Matchup</p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
@@ -1000,6 +1067,7 @@ function Detail({ matchup, gameId }) {
         </div>
         <MatchupSummary matchup={matchup} now={now} />
       </header>
+      <EvidenceSeasonBar evidence={evidence} />
       {matchup.game.preseason && (
         <p
           role="note"
@@ -1031,6 +1099,7 @@ function Detail({ matchup, gameId }) {
             onSelect={(player) => updateSelectedPlayer(player.id)}
             registerTrigger={registerTrigger}
             headingRef={railHeading}
+            season={season ?? matchup.asOfSeason ?? evidence.defaultSeason}
           />
           {/* An injury report nobody has is named in the summary sentence. */}
           {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
@@ -1043,7 +1112,7 @@ function Detail({ matchup, gameId }) {
                   Window
                 </span>
                 <div className="segmented" role="group" aria-label="Stat window">
-                  {WINDOWS.map((item) => (
+                  {windows.map((item) => (
                     <button
                       type="button"
                       aria-pressed={windowKey === item.key}
@@ -1111,6 +1180,7 @@ function Detail({ matchup, gameId }) {
               }
               error={selectionState.error}
               windowKey={windowKey}
+              windowName={windowName}
               sheetMarket={market}
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
               historical={historical}
@@ -1134,6 +1204,14 @@ function Detail({ matchup, gameId }) {
               deviation={deviation}
               selectedPlayer={selectedPlayer?.teamId !== defenseTeam.teamId ? selectedPlayer : null}
               surfaceAvailability={matchup.league.surfaceAvailability}
+              windowName={windowName}
+              windowSection={sections?.[WINDOW_SECTIONS[windowKey]]}
+              // The season the Matchup reads as its own: an explicit Evidence
+              // season, else the Published Season. A section serving another
+              // while its family trails is badged.
+              readSeason={matchup.seasonContext?.selectedSeason ?? matchup.asOfSeason}
+              trailing={matchup.trailing}
+              seasonContext={matchup.seasonContext}
               onCapture={setCapture}
             />
           )}
@@ -1148,14 +1226,17 @@ export default function MatchupDetailPage() {
   const { gameId } = useParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [state, setState] = useState({ status: 'idle', matchup: null, error: null });
+  const evidence = useEvidenceSeason({ newestUpTo: seasonOfGameId(gameId) });
+  const { ready: evidenceReady, season } = evidence;
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
       setState({ status: 'idle', matchup: null, error: null });
       return undefined;
     }
+    if (!evidenceReady) return undefined;
     const controller = new AbortController();
     setState({ status: 'loading', matchup: null, error: null });
-    fetchMatchup(gameId, { signal: controller.signal })
+    fetchMatchup(gameId, { signal: controller.signal, ...(season ? { season } : {}) })
       .then((matchup) => setState({ status: 'ready', matchup, error: null }))
       .catch((error) => {
         if (!isRequestCancelled(error))
@@ -1163,10 +1244,11 @@ export default function MatchupDetailPage() {
             status: 'error',
             matchup: null,
             error: getRequestErrorMessage(error, 'Unable to load this matchup. Please try again.'),
+            refusal: isSeasonRefusal(error) ? error : null,
           });
       });
     return () => controller.abort();
-  }, [authLoading, gameId, isAuthenticated]);
+  }, [authLoading, gameId, isAuthenticated, evidenceReady, season]);
 
   if (!authLoading && !isAuthenticated) {
     return (
@@ -1182,8 +1264,26 @@ export default function MatchupDetailPage() {
   return (
     <main className="matchup-page">
       {state.status === 'loading' && <p role="status">Loading matchup…</p>}
-      {state.status === 'error' && <p role="alert">{state.error}</p>}
-      {state.status === 'ready' && <Detail matchup={state.matchup} gameId={gameId} />}
+      {state.status === 'error' &&
+        (state.refusal ? (
+          <>
+            <EvidenceSeasonBar evidence={evidence} />
+            {/* A refused season has no Matchup to show, not an empty one. */}
+            <SeasonRefusal
+              selectedSeason={state.refusal.selectedSeason ?? season}
+              gameSeason={state.refusal.gameSeason}
+              defaultSeason={evidence.defaultSeason}
+              onShowDefault={() => evidence.choose(evidence.defaultSeason)}
+            />
+          </>
+        ) : (
+          <p role="alert">
+            <ErrorMessage message={state.error} />
+          </p>
+        ))}
+      {state.status === 'ready' && (
+        <Detail matchup={state.matchup} gameId={gameId} evidence={evidence} />
+      )}
     </main>
   );
 }

@@ -33,11 +33,12 @@ export const ordinal = (rank) => {
   return `${rank}${teen ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[rank % 10] || 'th'}`;
 };
 
-/* The MCP card's fill: intensity grows with how far the opponent sits from league average. */
+/* The MCP card's fill: intensity grows with how far the opponent sits from league average.
+   The zones are data marks, so the whole ramp keeps its alpha in every theme. */
 export const zoneFill = (percent) =>
   percent === null
     ? 'var(--ps-untinted)'
-    : `rgba(${percent >= 0 ? '76, 175, 125' : '194, 78, 78'}, ${Math.min(0.8, 0.12 + Math.abs(percent) / 28).toFixed(2)})`;
+    : `rgb(var(--ct-${percent >= 0 ? 'hit' : 'miss'}-fill-rgb) / ${Math.min(0.8, 0.12 + Math.abs(percent) / 28).toFixed(2)})`;
 
 const HOOP_Y = 75;
 const THREE_RADIUS = 237.5;

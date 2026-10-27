@@ -24,11 +24,14 @@ See [the e2e flow map](e2e-flows.md) for setup, subscription login, replay, rout
 
 ## Commands
 
-Install the browser once after `npm install`:
+Install the browser once after `npm ci`:
 
 ```bash
 npx playwright install chromium
 ```
+
+The e2e flows also need `npx e2e-web install chromium` and Node 22.22.3+ (or 24.8+); see
+[e2e-flows.md](e2e-flows.md#run).
 
 Run the full hermetic E2E suite:
 
@@ -98,7 +101,7 @@ Treat one user-visible journey as one vertical slice:
 2. Decide whether Jest or the browser is the narrowest stable seam that proves it.
 3. Add only the API responses that journey needs to `e2e/fixtures/courtai.js`.
 4. Write the failing test through accessible roles, labels, and visible text.
-5. Implement the feature, make the test pass, and run `npm run test:e2e` once before opening a PR.
+5. Implement the feature, make the test pass, and run `npm run check:changed`; CI runs the full suite.
 
 Browser tests should observe UI behavior and HTTP contracts. Do not select CSS classes, wait for
 arbitrary timeouts, call React internals, or mock implementation modules. Prefer `getByRole`,
@@ -138,9 +141,15 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests. On the live
 game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on his points, and only
-PrizePicks numbers his rebounds), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
+PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices plus an unknown Fliff price the decoder skips, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
 Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
 carries `lines: {}`.
+
+Both Matchups carry `as_of.season` and no Serving Season fields, as today's backend sends them.
+`servingSeasonMatchupPayload` is the live game after a Season Cutover to 2026-27
+(crf04/statsplus#304): play types still serve 2025-26 under a `trailing` Synergy entry, and each
+open Last 15 window carries `window_games: 6`. `slatePayload` takes a `trailing` option for the
+Slate note. A flow overrides the route with them; the defaults stay single-season.
 
 Target resolution is composed from those same two Matchups rather than canned, so the shares and
 Defense Sheet readings a Target shows are the ones the Matchup page shows for the same game.
@@ -194,7 +203,7 @@ that drifted from it has to be able to fail a journey.
 
 ## CI and failure evidence
 
-The `CI` workflow runs Jest/build validation first and then the hermetic Chromium suite. Critical
+The `CI` workflow runs Jest/build validation (`validate`), the hermetic Chromium suite (`E2E`) and the e2e flows (`e2e flows`) as parallel jobs. Critical
 journeys run at a desktop viewport, and the public smoke test also runs at a Pixel 7 viewport. Failed
 hermetic runs without a bypass secret retain an HTML report, trace, screenshot, and video for 14 days.
 Credential-bearing deployed smoke runs retain the HTML report and screenshots, but force trace and video off so the raw
@@ -216,15 +225,17 @@ or an older default-branch harness. Protected Preview smoke validates its URL an
 the encrypted repository secret is missing. Playwright trace and video are disabled whenever the
 secret is present; screenshots remain available for failure evidence.
 
-For branch protection, require both `validate` and `E2E` before merging. `E2E` and `e2e flows` are
-aggregate jobs over matrix legs (Playwright shards `1/2` and `2/2`; one e2e flows leg per target):
-each passes only when every leg passed, so the required names are unchanged. `playwright-evidence`
-is the merged HTML report; `e2e-flow-evidence-<target>` and `playwright-test-results-<shard>` hold
-per-leg evidence.
+Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evidence` and `parent-links` before merging. `E2E` and `e2e flows` are
+aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; two e2e flows slices per
+target, `1/2` and `2/2`): each passes only when every leg passed, so the required names are
+unchanged. `playwright-evidence` is the merged HTML report; `e2e-flow-evidence-<target>-<slice>` and
+`playwright-test-results-<shard>` hold per-leg evidence.
 
 The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
 tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA
-`evidence.md` table from verify-statsplus, `boundary` also a passed production table, and
+`evidence.md` table from verify-statsplus, `boundary` also a passed production table (or a staging
+one when the change needs a merged backend change that is not released yet, named on an
+`Unreleased backend: crf04/statsplus-backend#N` line), and
 `gates only` a cited test file (`*.test.js(x)`, `__tests__/` or `e2e/`). A table counts only when no
 runtime file differs between its Frontend revision and the head, so commit before QA and rerun it
 after a later runtime commit, including one merged in from master.

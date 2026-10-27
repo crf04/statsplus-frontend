@@ -5,6 +5,7 @@ import {
   isStatusAllowed,
   statusAllowsNullRetrievedAt,
 } from '../slateStatus';
+import { seasonRefusalOr, servingSeasonDecoders } from '../servingSeason';
 
 const invalid = () => new Error('The matchup endpoint returned an invalid response.');
 const selectionInvalid = () =>
@@ -26,6 +27,9 @@ const requireNumber = (value) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw invalid();
   return value;
 };
+const { decodeSeason, decodeWindowGames, decodeTrailing, decodeSeasonContext } =
+  servingSeasonDecoders(invalid);
+const { decodeSeasonContext: selectionSeasonContext } = servingSeasonDecoders(selectionInvalid);
 const decodeRelativePercentage = (value) => (value === null ? null : requireNumber(value));
 const requireNumberOrNull = (value) => (value === null ? null : requireNumber(value));
 const requireInteger = (value) => {
@@ -164,6 +168,7 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   }
   if (base === 'shot_types') {
     return {
+      PTS: ['PTS', 'PA', 'PR', 'PRA'],
       FG2M: ['PTS', 'PA', 'PR', 'PRA'],
       FG2A: ['FGA', 'FG2A'],
       FG3M: ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
@@ -212,12 +217,18 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey) && ['FGA', 'FGM'].includes(statKey)) ||
     (base === 'shot_types' &&
       SHOT_TYPE_SLICES.has(sliceKey) &&
-      ['FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
+      ['PTS', 'FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
     (base === 'rebound_types' && REBOUND_TYPE_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
   if (!valid) throw invalid();
-  return { sliceKey, acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey) };
+  return {
+    sliceKey,
+    acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey),
+    // The `<slice>:PTS` shot-type row (crf04/statsplus#315) is validated but
+    // never shown: the Matchup sheet renders makes and attempts only.
+    hidden: base === 'shot_types' && statKey === 'PTS',
+  };
 };
 
 const decodeRetrievedAt = (value) => {
@@ -228,6 +239,9 @@ const decodeRetrievedAt = (value) => {
 };
 
 const SECTION_STATE_KEYS = ['status', 'source', 'context', 'unavailable_reason'];
+// Additive Serving Season fields (crf04/statsplus#304). A trailing section's
+// season differs from `as_of.season` and keeps its section's provenance.
+const OPTIONAL_SECTION_STATE_KEYS = ['season', 'window_games'];
 // The mode owns its evidence vocabulary. A completed season cannot be described
 // as pregame, and a live slate cannot be described as hindsight, so a response
 // that mixes them is incoherent rather than merely unusual.
@@ -255,8 +269,11 @@ const SECTION_PROVENANCE = {
 // Only the schedule section carries collection provenance. It is immutable
 // evidence of a completed season, never an age-based staleness signal.
 const decodeExperienceSection = (section, name, mode) => {
-  const allowedKeys =
-    name === 'schedule' ? [...SECTION_STATE_KEYS, 'collected_at'] : SECTION_STATE_KEYS;
+  const allowedKeys = [
+    ...SECTION_STATE_KEYS,
+    ...OPTIONAL_SECTION_STATE_KEYS,
+    ...(name === 'schedule' ? ['collected_at'] : []),
+  ];
   if (
     !isRecord(section) ||
     SECTION_STATE_KEYS.some((key) => !Object.hasOwn(section, key)) ||
@@ -278,6 +295,8 @@ const decodeExperienceSection = (section, name, mode) => {
     context: section.context,
     unavailableReason: section.unavailable_reason,
     collectedAt: decodeRetrievedAt(section.collected_at ?? null),
+    season: decodeSeason(section.season),
+    windowGames: decodeWindowGames(section.window_games),
   };
 };
 
@@ -322,6 +341,8 @@ const decodeAvailabilityState = (value) => {
   return {
     status: value.status,
     unavailableReason: value.unavailable_reason,
+    season: decodeSeason(value.season),
+    windowGames: decodeWindowGames(value.window_games),
   };
 };
 
@@ -389,7 +410,7 @@ const decodeSheetRow = (row, availability, base) => {
     )
   )
     throw invalid();
-  return {
+  const decoded = {
     key,
     sliceKey: identity.sliceKey,
     label: requireString(row.label),
@@ -397,6 +418,7 @@ const decodeSheetRow = (row, availability, base) => {
     season: decodeSheetWindow(row.season, availability.season, decodeWindowValue, base, key),
     last15: decodeSheetWindow(row.last_15, availability.last15, decodeWindowValue, base, key),
   };
+  return identity.hidden ? null : decoded;
 };
 
 const decodeDefenseSheet = (sheet, surfaceAvailability) => {
@@ -729,30 +751,33 @@ function decodeBookLines(bookLines) {
  * Per-pick Over and Under prices from the providers whose price sits on one
  * pick, beside the line they price. A price exists only where that provider's
  * line does, and a side nobody prices is null, never both. The field is
- * additive, so an absent one reads as no prices.
+ * additive, so an absent one reads as no prices, and a provider this build
+ * does not know is skipped: the backend can add one before this build ships.
  */
-const LINE_PRICE_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi'];
+const LINE_PRICE_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi', 'dabble'];
 
 function decodeLinePrices(linePrices, lines) {
   if (linePrices === undefined) return {};
   if (!isRecord(linePrices)) throw invalid();
   return Object.fromEntries(
-    Object.entries(linePrices).map(([provider, markets]) => {
-      if (!LINE_PRICE_PROVIDERS.includes(provider) || !isRecord(markets)) throw invalid();
-      const posted = Object.hasOwn(lines, provider) ? lines[provider] : {};
-      return [
-        provider,
-        Object.fromEntries(
-          Object.entries(markets).map(([market, sides]) => {
-            if (!Object.hasOwn(posted, market) || !isRecord(sides)) throw invalid();
-            const over = requirePrice(sides.over);
-            const under = requirePrice(sides.under);
-            if (over === null && under === null) throw invalid();
-            return [market, { over, under }];
-          }),
-        ),
-      ];
-    }),
+    Object.entries(linePrices)
+      .filter(([provider]) => LINE_PRICE_PROVIDERS.includes(provider))
+      .map(([provider, markets]) => {
+        if (!isRecord(markets)) throw invalid();
+        const posted = Object.hasOwn(lines, provider) ? lines[provider] : {};
+        return [
+          provider,
+          Object.fromEntries(
+            Object.entries(markets).map(([market, sides]) => {
+              if (!Object.hasOwn(posted, market) || !isRecord(sides)) throw invalid();
+              const over = requirePrice(sides.over);
+              const under = requirePrice(sides.under);
+              if (over === null && under === null) throw invalid();
+              return [market, { over, under }];
+            }),
+          ),
+        ];
+      }),
   );
 }
 
@@ -784,7 +809,7 @@ const decodeLeague = (league) => {
           const key = requireString(row.key);
           const identity = decodeSheetIdentity(base, key);
           if (identity === null) return null;
-          return {
+          const decoded = {
             key,
             sliceKey: identity.sliceKey,
             season: decodeSheetWindow(
@@ -802,6 +827,7 @@ const decodeLeague = (league) => {
               key,
             ),
           };
+          return identity.hidden ? null : decoded;
         })
         .filter(Boolean);
       if (new Set(decodedRows.map((row) => row.key)).size !== decodedRows.length) throw invalid();
@@ -1192,14 +1218,36 @@ export const decodeMatchup = (data) => {
     players.map((player) => player.focalGameLine?.gameDate).filter(Boolean),
   );
   if (focalDates.size > 1) throw invalid();
-  return { game, experience, league, teams, players, injuries, freshness };
+  if (data.as_of !== undefined && !isRecord(data.as_of)) throw invalid();
+  const asOfSeason = decodeSeason(data.as_of?.season);
+  const seasonContext = decodeSeasonContext(data.season_context);
+  // `as_of.season` is the Published Season, so the two cannot disagree.
+  if (seasonContext && asOfSeason && seasonContext.publishedSeason !== asOfSeason) throw invalid();
+  return {
+    game,
+    experience,
+    league,
+    teams,
+    players,
+    injuries,
+    freshness,
+    asOfSeason,
+    seasonContext,
+    trailing: decodeTrailing(data.trailing),
+  };
 };
 
-export const fetchMatchup = async (gameId, { signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('MATCHUP'), {
-    params: { game_id: gameId },
-    signal,
-  });
+// `season` is an explicit Evidence season (crf04/statsplus#330); the default
+// is never named, so an omitted-season request is exactly today's.
+export const fetchMatchup = async (gameId, { signal, season } = {}) => {
+  const response = await apiClient
+    .get(getApiUrl('MATCHUP'), {
+      params: { game_id: gameId, ...(season ? { season } : {}) },
+      signal,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeMatchup(response.data);
 };
 
@@ -1365,6 +1413,7 @@ export const decodeMatchupSelection = (data, statCategories, expectedPlayerId, e
     experience,
     h2h: decodeLogTable(data.h2h, statCategories, focalGame),
     archetype: decodeLogTable(data.archetype, statCategories, focalGame),
+    seasonContext: selectionSeasonContext(data.season_context),
   };
 };
 
@@ -1372,7 +1421,7 @@ export const fetchMatchupSelection = async (
   gameId,
   playerId,
   statCategories,
-  { signal, mode, focalGameLine } = {},
+  { signal, mode, focalGameLine, season } = {},
 ) => {
   if (
     typeof gameId !== 'string' ||
@@ -1382,10 +1431,14 @@ export const fetchMatchupSelection = async (
     statCategories.length === 0
   )
     throw selectionInvalid();
-  const response = await apiClient.get(getApiUrl('MATCHUP_SELECTION'), {
-    params: { game_id: gameId, player_id: playerId },
-    signal,
-  });
+  const response = await apiClient
+    .get(getApiUrl('MATCHUP_SELECTION'), {
+      params: { game_id: gameId, player_id: playerId, ...(season ? { season } : {}) },
+      signal,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeMatchupSelection(response.data, statCategories, playerId, {
     gameId,
     mode,

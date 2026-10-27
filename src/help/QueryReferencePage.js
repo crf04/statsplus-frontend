@@ -58,7 +58,10 @@ const QueryReferencePage = () => {
                 <tbody>
                   {group.items.map((item) => (
                     <tr key={item.token}>
-                      <th scope="row">{item.token}</th>
+                      <th scope="row">
+                        {/* A Defense Sheet row reference reads as noise, so its label stands in. */}
+                        {item.token.startsWith('sheet:') ? item.label : item.token}
+                      </th>
                       <td>{item.means}</td>
                     </tr>
                   ))}

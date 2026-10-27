@@ -3,8 +3,6 @@ import {
   BacktestSampleProvider,
   LabSeasonValueProvider,
   countAppearances,
-  BACKTEST_SEASONS,
-  DEFAULT_BACKTEST_SEASON,
   describeBacktestSeason,
   describeSeasonNote,
   isOtherSeason,
@@ -16,6 +14,9 @@ import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
+import ErrorMessage from '../feedback/ErrorMessage';
+import { SeasonRefusal, useEvidenceSeason } from '../EvidenceSeason';
+import { seasonFallbackText } from '../servingSeason';
 
 /*
  * One line that always says where the Lab stands, so a reader who cannot see
@@ -23,6 +24,9 @@ import './TargetFits.css';
  * A half-typed draft is not a Target to evaluate, so it is not sent, and the
  * line says what would make it one.
  */
+// The Lab's own seasons, default first, for a backend that lists none.
+const OWN_PAIR = ['2025-26', '2026-27'];
+
 const describeLab = ({ valid, status, pending, misread }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
   if (status === 'loading') return 'Reading the season…';
@@ -36,13 +40,13 @@ const describeLab = ({ valid, status, pending, misread }) => {
 };
 
 /*
- * The two seasons a Backtest can read, offered whatever the backend has
- * answered, so a refused read can always be read again for the other one.
+ * The seasons a Backtest can read, offered whatever the Backtest has answered,
+ * so a refused read can always be read again for another one.
  */
-function SeasonToggle({ shown, onChange }) {
+function SeasonToggle({ label, seasons, shown, onChange }) {
   return (
-    <div className="target-season-toggle" role="group" aria-label="Backtest season">
-      {BACKTEST_SEASONS.map((season) => (
+    <div className="target-season-toggle" role="group" aria-label={label}>
+      {seasons.map((season) => (
         <button
           key={season}
           type="button"
@@ -72,12 +76,18 @@ export default function TargetLab({
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
-  // Null until the reader picks one: the backend's default.
-  const [season, setSeason] = useState(null);
+  // The page's Evidence season; null is the backend's default, never named.
+  const evidenceSeason = useEvidenceSeason();
+  // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
+  // in place and named when picked, as before crf04/statsplus#330.
+  const ownPair = evidenceSeason.listsChoices === false;
+  const [pairSeason, setPairSeason] = useState(null);
+  const season = ownPair ? pairSeason : evidenceSeason.season;
+  const defaultSeason = ownPair ? OWN_PAIR[0] : evidenceSeason.defaultSeason;
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
   const { status, preview, error, unavailable, pending, retry } = useTargetPreview(
-    valid ? (season ? { ...request, season } : request) : null,
+    valid && evidenceSeason.ready ? (season ? { ...request, season } : request) : null,
     { immediateInitial: immediateInitialPreview },
   );
   // The published season comes from the latest answer as it lands: a
@@ -93,7 +103,7 @@ export default function TargetLab({
   }, [unavailable]);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow. Before any answer, the default.
-  const shownSeason = season ?? preview?.season ?? DEFAULT_BACKTEST_SEASON;
+  const shownSeason = season ?? preview?.season ?? defaultSeason;
   // What was read for another season is not the picked season's Backtest, so
   // it leaves the screen beside a refusal or an incomplete draft; only while
   // the pick is about to be read, or is being read, does it stay, dimmed.
@@ -102,6 +112,8 @@ export default function TargetLab({
   // A backend that ignores the picked season answers with another one: that
   // is not the picked season's Backtest, nor a season nobody fit.
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
+  const notYetPublished =
+    !ownPair && Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
   const seasonNote = describeSeasonNote(evidence);
   const otherSeason = isOtherSeason(shownSeason, published);
   const labSeason = useMemo(
@@ -133,11 +145,31 @@ export default function TargetLab({
         <p role="status" className="target-lab-status">
           {describeLab({ valid, status, pending, misread })}
         </p>
-        <SeasonToggle shown={shownSeason} onChange={setSeason} />
+        {ownPair && (
+          <SeasonToggle
+            label="Backtest season"
+            seasons={OWN_PAIR}
+            shown={shownSeason}
+            onChange={setPairSeason}
+          />
+        )}
+        {!ownPair && evidenceSeason.choices && (
+          <SeasonToggle
+            label="Evidence season"
+            seasons={evidenceSeason.choices.map((choice) => choice.season)}
+            shown={shownSeason}
+            onChange={evidenceSeason.choose}
+          />
+        )}
         {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
+      {evidenceSeason.fallbackFrom && evidenceSeason.defaultSeason && (
+        <p className="target-lab-season-note">
+          {seasonFallbackText(evidenceSeason.fallbackFrom, evidenceSeason.defaultSeason)}
+        </p>
+      )}
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
       {misread && (
         <p className="target-error" role="alert">
@@ -145,9 +177,18 @@ export default function TargetLab({
           {preview.season ?? 'another season'}.
         </p>
       )}
-      {status === 'error' && (
+      {/* Backtests never read a season before its cutover, so one not yet
+          published is refused as every page refuses it. */}
+      {status === 'error' && notYetPublished && (
+        <SeasonRefusal
+          selectedSeason={unavailable.season}
+          defaultSeason={evidenceSeason.defaultSeason ?? unavailable.publishedSeason}
+          onShowDefault={() => evidenceSeason.choose(null)}
+        />
+      )}
+      {status === 'error' && !notYetPublished && (
         <p className="target-error" role="alert">
-          {error}{' '}
+          <ErrorMessage message={error} />{' '}
           <button type="button" onClick={retry}>
             Retry backtest
           </button>

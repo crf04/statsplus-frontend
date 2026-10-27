@@ -32,11 +32,16 @@ const config = {
     TARGETS: '/api/user/targets',
     TARGET_PREVIEW: '/api/user/targets/preview',
     TARGET_BACKTESTS: '/api/user/targets/backtests',
+    FEEDBACK: '/api/user/feedback',
+    REPORTS: '/api/reports',
+    USER_REPORTS: '/api/user/reports',
   },
 
   // Application settings
   APP_NAME: process.env.REACT_APP_NAME || 'NBA Game Logs',
   APP_VERSION: process.env.REACT_APP_VERSION || '1.0.0',
+  // The deployed commit (first seven characters), when the build knows it.
+  APP_COMMIT: process.env.APP_COMMIT_SHA || '',
   ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT || 'development',
 
   // Feature flags

@@ -82,13 +82,24 @@ export const Editor = ({ which, panel, onDone }) => {
     );
   if (which === 'date')
     body = (
-      <input
-        className="fp-input"
-        type="date"
-        aria-label="Since date"
-        value={panel.dateFilter}
-        onChange={(e) => panel.changeDate(e.target.value)}
-      />
+      <>
+        <input
+          className="fp-input"
+          type="date"
+          aria-label="Since date"
+          max={panel.dateTo || undefined}
+          value={panel.dateFilter}
+          onChange={(e) => panel.changeDate(e.target.value)}
+        />
+        <input
+          className="fp-input"
+          type="date"
+          aria-label="Until date"
+          min={panel.dateFilter || undefined}
+          value={panel.dateTo}
+          onChange={(e) => panel.changeDateTo(e.target.value)}
+        />
+      </>
     );
   if (which === 'location')
     body = (
@@ -164,7 +175,12 @@ export const Editor = ({ which, panel, onDone }) => {
   );
 };
 
-const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
+/*
+ * `tabs` is the Filters | Saved switch; `body` replaces the filters with the
+ * Saved tab; `savedName` names the saved set the filters are; `save` sits
+ * beside Apply. All are absent for a reader with no account to save to.
+ */
+const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, savedName, save }) => {
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -201,6 +217,17 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
         onRemove={() => panel.changeDate('')}
       >
         {formatDate(s.date)}
+      </Rule>,
+    );
+  if (s.dateTo)
+    rules.push(
+      <Rule
+        key="dt"
+        kind="until"
+        onEdit={() => setEditing('date')}
+        onRemove={() => panel.changeDateTo('')}
+      >
+        {formatDate(s.dateTo)}
       </Rule>,
     );
   if (s.location)
@@ -284,56 +311,56 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
   return (
     <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
-        <div className="fpb-head">
-          <span className="fpb-eyebrow">Showing</span>
-          <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-        </div>
-        {panel.seasons && (
-          <label className="fpb-season">
-            <span>Season</span>
-            <select
-              className="fp-select"
-              value={panel.season}
-              onChange={(e) => panel.changeSeason(e.target.value)}
-            >
-              {panel.seasons.map((season) => (
-                <option key={season} value={season}>
-                  {season}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {rules.length > 0 ? (
-          <ul className="fpb-rules">{rules}</ul>
-        ) : (
-          <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
-        )}
+        {tabs}
+        {body}
+        {/* The filters stay mounted under the Saved tab: the panel's context
+            reports when the Workspace has settled, and an Apply sent from the
+            Saved tab would otherwise wait for it forever. */}
+        <div className="fpt-filters" hidden={Boolean(body)}>
+          {savedName && <p className="fpt-current">Saved as {savedName}</p>}
+          {panel.seasons && (
+            <label className="fpb-season">
+              <span>Season</span>
+              <select
+                className="fp-select"
+                value={panel.season}
+                onChange={(e) => panel.changeSeason(e.target.value)}
+              >
+                {panel.seasons.map(({ season, label }) => (
+                  <option key={season} value={season}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {rules.length > 0 && <ul className="fpb-rules">{rules}</ul>}
 
-        {editing ? (
-          <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
-        ) : (
-          <>
-            <div className="fpb-addlabel">Add a filter</div>
-            <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
-              {TILES.filter((tile) => !tile.hidden).map((tile) => (
-                <button
-                  key={tile.key}
-                  type="button"
-                  className="fpb-tile"
-                  onClick={() => {
-                    if (tile.key === 'self') panel.ensureSeason();
-                    setEditing(tile.key);
-                  }}
-                >
-                  <b>+ {tile.title}</b>
-                  <span>{tile.sub}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        {filler}
+          {editing ? (
+            <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
+          ) : (
+            <>
+              <div className="fpb-addlabel">Add a filter</div>
+              <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
+                {TILES.filter((tile) => !tile.hidden).map((tile) => (
+                  <button
+                    key={tile.key}
+                    type="button"
+                    className="fpb-tile"
+                    onClick={() => {
+                      if (tile.key === 'self') panel.ensureSeason();
+                      setEditing(tile.key);
+                    }}
+                  >
+                    <b>+ {tile.title}</b>
+                    <span>{tile.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {filler}
+        </div>
       </div>
 
       <div className="fpb-foot">
@@ -342,6 +369,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles }) => {
             Clear all
           </button>
         )}
+        {save}
         <button type="button" className="fp-btn-primary" onClick={panel.apply}>
           {panel.dirtyCount > 0
             ? `Apply ${panel.dirtyCount} change${panel.dirtyCount === 1 ? '' : 's'}`

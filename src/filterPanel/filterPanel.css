@@ -44,7 +44,7 @@
 .fp-input:focus,
 .fp-select:focus {
   border-color: var(--ct-gold);
-  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
 }
 .fp-select {
   appearance: none;
@@ -68,10 +68,10 @@
   top: 9px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ct-overlay-bg-8);
 }
 .fp-range-track-1 {
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 .fp-range-thumb {
   top: 2px;
@@ -80,13 +80,13 @@
   border-radius: 50%;
   background: var(--ct-text);
   border: 4px solid var(--ct-gold);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 4px var(--ct-shadow-50);
   cursor: grab;
   outline: none;
 }
 .fp-range-thumb:focus-visible,
 .fp-range-thumb.active {
-  box-shadow: 0 0 0 5px var(--ct-gold-soft);
+  box-shadow: 0 0 0 5px var(--ct-gold-fg-12);
 }
 
 .fp-seg {
@@ -114,9 +114,9 @@
   color: var(--ct-text);
 }
 .fp-seg button.is-on {
-  background: #2c2517;
+  background: var(--ct-x-2c2517);
   color: var(--ct-gold-hover);
-  box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.45);
+  box-shadow: inset 0 0 0 1px var(--ct-gold-fg-45);
 }
 .fp-seg-sm button {
   height: 26px;
@@ -125,13 +125,13 @@
 }
 .fp-teammate .fp-seg button:first-child.is-on {
   background: var(--ct-hit-soft);
-  color: #8fd6b1;
-  box-shadow: inset 0 0 0 1px rgba(76, 175, 125, 0.5);
+  color: var(--ct-x-8fd6b1);
+  box-shadow: inset 0 0 0 1px var(--ct-hit-fg-50);
 }
 .fp-teammate .fp-seg button:last-child.is-on {
   background: var(--ct-miss-soft);
-  color: #ee9d9d;
-  box-shadow: inset 0 0 0 1px rgba(194, 78, 78, 0.55);
+  color: var(--ct-x-ee9d9d);
+  box-shadow: inset 0 0 0 1px var(--ct-miss-fg-55);
 }
 
 .fp-chips {
@@ -182,18 +182,18 @@
 }
 .fp-chip-gold {
   background: var(--ct-gold-soft);
-  border-color: rgba(232, 163, 61, 0.35);
-  color: #f1cf96;
+  border-color: var(--ct-gold-fg-35);
+  color: var(--ct-x-f1cf96);
 }
 .fp-chip-hit {
   background: var(--ct-hit-soft);
-  border-color: rgba(76, 175, 125, 0.4);
-  color: #9fdcbc;
+  border-color: var(--ct-hit-fg-40);
+  color: var(--ct-x-9fdcbc);
 }
 .fp-chip-miss {
   background: var(--ct-miss-soft);
-  border-color: rgba(194, 78, 78, 0.45);
-  color: #f0a8a8;
+  border-color: var(--ct-miss-fg-45);
+  color: var(--ct-x-f0a8a8);
 }
 
 .fp-btn-primary {
@@ -201,20 +201,20 @@
   height: 44px;
   border: 0;
   border-radius: 8px;
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
   font: inherit;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.02em;
 }
 .fp-btn-primary:hover {
-  background: var(--ct-gold-hover);
+  background: var(--ct-gold-fill-hover);
 }
 .fp-btn-ghost {
   height: 38px;
   padding: 0 14px;
-  border: 1px solid rgba(232, 163, 61, 0.5);
+  border: 1px solid var(--ct-gold-fg-50);
   border-radius: var(--ct-radius-ctl);
   background: transparent;
   color: var(--ct-gold);
@@ -322,10 +322,10 @@
   margin: 0;
   padding: 4px;
   list-style: none;
-  background: #221d14;
+  background: var(--ct-x-221d14);
   border: 1px solid var(--ct-line-strong);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 28px var(--ct-shadow-50);
 }
 .fp-suggest button {
   display: flex;
@@ -346,7 +346,7 @@
 }
 .fp-suggest button.is-active,
 .fp-suggest button:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ct-overlay-bg-6);
 }
 
 .fp-defense {
@@ -355,7 +355,7 @@
   padding: 12px;
   border: 1px solid var(--ct-line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ct-overlay-bg-1p5);
 }
 .fp-tabs {
   display: flex;
@@ -391,13 +391,6 @@
 
 /* ---- B: sentence + add menu ------------------------------------------- */
 
-.fpb-eyebrow {
-  font-family: var(--ct-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ct-dim);
-}
 .fpb-season {
   display: grid;
   gap: 6px;
@@ -464,10 +457,6 @@
 .fpb-rule .fp-chip-x {
   color: var(--ct-dim);
 }
-.fpb-empty {
-  margin: 0 0 18px;
-  color: var(--ct-dim);
-}
 .fpb-addlabel {
   margin: 0 0 8px;
   font-size: 11px;
@@ -493,7 +482,7 @@
   text-align: left;
 }
 .fpb-tile:hover {
-  border-color: rgba(232, 163, 61, 0.5);
+  border-color: var(--ct-gold-fg-50);
 }
 .fpb-tile b {
   font-size: 14px;
@@ -507,9 +496,9 @@
   display: grid;
   gap: 10px;
   padding: 14px;
-  border: 1px solid rgba(232, 163, 61, 0.35);
+  border: 1px solid var(--ct-gold-fg-35);
   border-radius: 10px;
-  background: rgba(232, 163, 61, 0.035);
+  background: var(--ct-gold-bg-3p5);
 }
 .fpb-editor-head {
   display: flex;
@@ -541,9 +530,9 @@
 }
 .fpb-quick button.is-on,
 .fpc-quick button.is-on {
-  background: #2c2517;
+  background: var(--ct-x-2c2517);
   color: var(--ct-gold-hover);
-  border-color: rgba(232, 163, 61, 0.55);
+  border-color: var(--ct-gold-fg-55);
 }
 .fpb-quick .fp-input {
   flex: 1;
@@ -583,7 +572,7 @@
     margin: 0 -18px;
     padding: 0 18px;
     scrollbar-width: thin;
-    scrollbar-color: var(--ct-line-strong) transparent;
+    scrollbar-color: var(--ct-overlay-bg-16) transparent;
   }
   .fp-pinned .fpb-foot,
   .fp-pinned .fpc-apply {
@@ -612,10 +601,11 @@
     display: flex;
     flex-direction: column;
   }
-  .fp-pinned .fp-scroll > * {
+  .fp-pinned .fp-scroll > *,
+  .fp-pinned .fpt-filters > * {
     flex-shrink: 0;
   }
-  .fp-pinned .fp-scroll > .fp-filler {
+  .fp-pinned .fp-scroll .fp-filler {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -641,13 +631,13 @@
   height: 3px;
   margin-top: 7px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ct-overlay-bg-7);
   overflow: hidden;
 }
 .fpx-count-bar i {
   display: block;
   height: 100%;
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 .fpx-strip-grid {
   display: grid;
@@ -669,13 +659,13 @@
   vertical-align: 0;
 }
 .fpx-strip .is-over {
-  background: var(--ct-hit);
+  background: var(--ct-hit-fill);
 }
 .fpx-strip .is-under {
-  background: var(--ct-miss);
+  background: var(--ct-miss-fill);
 }
 .fpx-strip .is-out {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ct-overlay-bg-6);
 }
 .fpx-strip-legend {
   display: flex;
@@ -700,39 +690,6 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ct-dim);
-}
-.fpx-saved {
-  display: grid;
-  gap: 1px;
-  height: 42px;
-  padding: 4px 8px;
-  margin: 0 -8px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--ct-text);
-  font: inherit;
-  text-align: left;
-  align-content: center;
-}
-.fpx-saved:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-.fpx-saved b {
-  font-size: 13.5px;
-  font-weight: 600;
-}
-.fpx-saved span {
-  font-size: 12px;
-  color: var(--ct-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fpx-saved.is-current b::after {
-  content: ' · open';
-  font-weight: 400;
-  color: var(--ct-gold);
 }
 .fpx-opp {
   display: flex;
@@ -763,7 +720,7 @@
 /* ---- I: next opponent's extreme ranks --------------------------------- */
 
 @media (min-width: 768px) {
-  .fp-pinned .fp-scroll > .fp-filler.is-expanded {
+  .fp-pinned .fp-scroll .fp-filler.is-expanded {
     flex: none;
     overflow: visible;
   }
@@ -808,8 +765,8 @@
   color: var(--ct-gold-hover);
 }
 .fpx-ext-rank.is-fewest {
-  background: rgba(122, 134, 153, 0.16);
-  color: #aab4c4;
+  background: var(--ct-slate-bg-16);
+  color: var(--ct-x-aab4c4);
 }
 .fpx-ext-label {
   font-size: 13px;
@@ -827,7 +784,7 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  border: 1px solid rgba(232, 163, 61, 0.45);
+  border: 1px solid var(--ct-gold-fg-45);
   border-radius: 6px;
   background: none;
   color: var(--ct-gold);
@@ -877,14 +834,14 @@
   color: var(--ct-gold-hover);
 }
 .fpx-ext-summary .is-fewest {
-  background: rgba(122, 134, 153, 0.16);
-  color: #aab4c4;
+  background: var(--ct-slate-bg-16);
+  color: var(--ct-x-aab4c4);
 }
 
 /* ---- J: count folded into the strip, compact tiles ------------------- */
 
 @media (min-width: 768px) {
-  .fp-pinned .fp-scroll > .fp-filler.is-j {
+  .fp-pinned .fp-scroll .fp-filler.is-j {
     gap: 12px;
     overflow: visible;
     padding-top: 6px;
@@ -933,7 +890,136 @@
 .fp-filler.is-j > * {
   flex-shrink: 0;
 }
-.fpx-saved {
-  height: 46px;
-  line-height: 1.3;
+
+/* ---- Filters | Saved tabs ---------------------------------------------- */
+
+/* The filters' wrapper lays its children out as the scroll area's own, and
+   stays mounted (hidden) under the Saved tab. */
+.fpt-filters {
+  display: contents;
+}
+.fpt-filters[hidden] {
+  display: none;
+}
+
+.fpt-tabs {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0 16px;
+  padding: 3px;
+  background: var(--ct-ink);
+  border: 1px solid var(--ct-line);
+  border-radius: 8px;
+}
+.fpt-tabs button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ct-dim);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.fpt-tabs button:hover {
+  color: var(--ct-text);
+}
+.fpt-tabs button.is-on {
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  box-shadow: inset 0 -2px 0 var(--ct-gold);
+}
+.fpt-count {
+  min-width: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--ct-line);
+  border-radius: 999px;
+  background: var(--ct-surface-2);
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  line-height: 16px;
+}
+.fpt-current {
+  margin: 0 0 12px;
+  color: var(--ct-gold);
+  font-size: 13px;
+  font-weight: 600;
+}
+.fpt-saved {
+  display: flex;
+  flex-direction: column;
+}
+.fp .fpt-group {
+  margin: 14px 0 6px;
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+}
+.fp .fpt-group:first-of-type {
+  margin-top: 0;
+}
+.fpt-saved .saved-filter-set-row {
+  padding: 0.55rem 0.5rem;
+}
+.fpt-error {
+  margin: 0 0 8px;
+  color: var(--ct-miss);
+  font-size: 13px;
+}
+.fpt-save {
+  height: 44px;
+}
+.fpt-saved-as {
+  max-width: 45%;
+  overflow: hidden;
+  color: var(--ct-dim);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.fpt-saved-as b {
+  color: var(--ct-gold);
+  font-weight: 600;
+}
+.fpt-save-form {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.fpt-save-form .fpt-error {
+  flex-basis: 100%;
+}
+.fpt-save-form .fp-input {
+  flex: 1;
+  min-width: 120px;
+  height: 44px;
+}
+.fpt-save-form .fp-btn-primary {
+  width: auto;
+  flex: none;
+  padding: 0 18px;
+}
+/* While a set is being named, the form takes its own row above Apply, which
+   stays reachable: editing a filter mid-name needs Apply before Save. */
+.fpb-foot:has(.fpt-save-form) {
+  flex-wrap: wrap;
+}
+.fpb-foot .fpt-save-form {
+  flex-basis: 100%;
+}
+/* A long description wraps inside the panel instead of running past it. */
+.fpt-saved .saved-filter-set-parameter {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

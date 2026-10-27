@@ -3,6 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginButton from './components/Auth/LoginButton';
 import { fetchSlate } from './slateApi';
+import { isSeasonRefusal, trailingNote } from './servingSeason';
+import {
+  EvidenceSeasonBar,
+  SEASON_PARAM,
+  SeasonRefusal,
+  useEvidenceSeason,
+  withSeason,
+} from './EvidenceSeason';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import {
   formatCalendarDate,
@@ -11,11 +19,13 @@ import {
   parseCalendarDate,
   shiftCalendarDate,
 } from './calendarDate';
+import { seasonOfDate } from './gameSeason';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
 import { useResolvedTargets } from './targets/useTargets';
 import './SlatePage.css';
+import ErrorMessage from './feedback/ErrorMessage';
 
 const surfaceStatusText = (name, surface, presentation, now) => {
   const age = surface.retrievedAt ? ` — as of ${formatAge(surface.retrievedAt, now)}` : '';
@@ -102,7 +112,7 @@ const groupByTip = (games) =>
       return groups;
     }, []);
 
-function GameRow({ game, extra }) {
+function GameRow({ game, extra, season }) {
   const away = game.away.targetablePlayerCount;
   const home = game.home.targetablePlayerCount;
   const total = away + home;
@@ -127,7 +137,7 @@ function GameRow({ game, extra }) {
     <li>
       <Link
         className={`slate-row${game.status === 'postponed' ? ' is-blocked' : ''}`}
-        to={`/matchups/${game.gameId}`}
+        to={withSeason(`/matchups/${game.gameId}`, season)}
         aria-label={label}
       >
         <span className="slate-row-teams">
@@ -181,7 +191,7 @@ function GameRow({ game, extra }) {
   );
 }
 
-function SlateBoard({ games, renderExtra }) {
+function SlateBoard({ games, renderExtra, season }) {
   return (
     <ol className="slate-board">
       {groupByTip(games).map((group) => (
@@ -189,7 +199,7 @@ function SlateBoard({ games, renderExtra }) {
           <h2 className="slate-window-tip">{group.tip}</h2>
           <ul className="slate-rows">
             {group.games.map((game) => (
-              <GameRow key={game.gameId} game={game} extra={renderExtra?.(game)} />
+              <GameRow key={game.gameId} game={game} extra={renderExtra?.(game)} season={season} />
             ))}
           </ul>
         </li>
@@ -211,6 +221,10 @@ export default function SlatePage() {
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
+  const evidence = useEvidenceSeason({
+    newestUpTo: seasonOfDate(parsedRequestedDate || todaySlateDate),
+  });
+  const { ready: evidenceReady, season, linked } = evidence;
   /*
    * The day's Targets are read for the date being viewed, so a block always
    * belongs to the game row above it. The read is separate from the slate's:
@@ -247,24 +261,31 @@ export default function SlatePage() {
       setState({ status: 'idle', slate: null, error: null });
       return undefined;
     }
+    if (!evidenceReady) return undefined;
     const controller = new AbortController();
     const resolved = resolvedFallback.current;
     resolvedFallback.current = null;
-    if (explicitDate !== null && resolved?.slateDate === explicitDate) {
-      setState({ status: 'ready', slate: resolved, error: null });
+    // A day in another season reads that season's default, so it is read again.
+    if (
+      explicitDate !== null &&
+      resolved?.slate.slateDate === explicitDate &&
+      resolved.season === season
+    ) {
+      setState({ status: 'ready', slate: resolved.slate, error: null });
       return undefined;
     }
     setState({ status: 'loading', slate: null, error: null });
     fetchSlate(explicitDate ?? undefined, {
       signal: controller.signal,
+      ...(season ? { season } : {}),
       ...(explicitDate === null ? { fallback: 'next_game_day' } : {}),
     })
       .then((slate) => {
         if (explicitDate === null && slate.fallback) {
           // Show the resolved day in the URL; the rerun that follows reuses
           // this Slate rather than loading it a second time.
-          resolvedFallback.current = slate;
-          replaceTo(`/matchups?date=${slate.slateDate}`, { replace: true });
+          resolvedFallback.current = { slate, season };
+          replaceTo(withSeason(`/matchups?date=${slate.slateDate}`, linked), { replace: true });
           return;
         }
         setState({ status: 'ready', slate, error: null });
@@ -275,13 +296,28 @@ export default function SlatePage() {
             status: 'error',
             slate: null,
             error: getRequestErrorMessage(error, 'Unable to load this slate. Please try again.'),
+            refusal: isSeasonRefusal(error) ? error : null,
           });
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, explicitDate, requestedDate, replaceTo]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    explicitDate,
+    requestedDate,
+    replaceTo,
+    evidenceReady,
+    season,
+    linked,
+  ]);
 
-  const navigate = (nextDate) => setSearchParams(nextDate ? { date: nextDate } : {});
+  // Another day keeps a chosen Evidence season; otherwise it reads its own default.
+  const navigate = (nextDate) =>
+    setSearchParams({
+      ...(nextDate ? { date: nextDate } : {}),
+      ...(linked ? { [SEASON_PARAM]: linked } : {}),
+    });
 
   if (!authLoading && !isAuthenticated) {
     return (
@@ -293,6 +329,8 @@ export default function SlatePage() {
     );
   }
 
+  const note =
+    state.status === 'ready' ? trailingNote(state.slate.trailing, state.slate.seasonContext) : null;
   return (
     <main className="slate-page">
       <section className="slate-heading">
@@ -341,10 +379,24 @@ export default function SlatePage() {
         </div>
       </section>
 
+      <EvidenceSeasonBar evidence={evidence} />
+
       {!slateDate && <p>Requested date “{requestedDate}” is invalid.</p>}
 
       {state.status === 'loading' && <p role="status">Loading slate…</p>}
-      {state.status === 'error' && <p role="alert">{state.error}</p>}
+      {state.status === 'error' &&
+        (state.refusal ? (
+          <SeasonRefusal
+            selectedSeason={state.refusal.selectedSeason ?? season}
+            gameSeason={state.refusal.gameSeason}
+            defaultSeason={evidence.defaultSeason}
+            onShowDefault={() => evidence.choose(evidence.defaultSeason)}
+          />
+        ) : (
+          <p role="alert">
+            <ErrorMessage message={state.error} />
+          </p>
+        ))}
       {state.status === 'ready' && (
         <>
           <div className="slate-status">
@@ -389,14 +441,22 @@ export default function SlatePage() {
               </div>
             </div>
           ) : (
-            <SlateBoard
-              games={state.slate.games}
-              renderExtra={(game) => (
-                <SlateGameTargets
-                  entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
-                />
+            <>
+              <SlateBoard
+                games={state.slate.games}
+                season={linked}
+                renderExtra={(game) => (
+                  <SlateGameTargets
+                    entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
+                  />
+                )}
+              />
+              {note && (
+                <p className="slate-trailing-note" role="note">
+                  {note}
+                </p>
               )}
-            />
+            </>
           )}
         </>
       )}

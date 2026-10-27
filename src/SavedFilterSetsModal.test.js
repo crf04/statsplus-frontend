@@ -28,9 +28,9 @@ const LocationProbe = () => {
   );
 };
 
-const renderModal = (onHide = jest.fn()) => {
+const renderModal = (onHide = jest.fn(), from = '/matchups') => {
   render(
-    <MemoryRouter initialEntries={['/matchups']}>
+    <MemoryRouter initialEntries={[from]}>
       <SavedFilterSetsModal show onHide={onHide} />
       <LocationProbe />
     </MemoryRouter>,
@@ -95,6 +95,47 @@ test('describes a Saved Filter Set by every parameter its URL carries', async ()
   );
 });
 
+test('describes a defensive rank range by the ranks it covers', async () => {
+  fetchSavedFilterSets.mockResolvedValue([
+    {
+      id: 10,
+      name: 'mid defenses',
+      queryString:
+        'player_name=Jalen+Johnson&teams_against%5B%5D=OPP_PTS&rank_filter%5B%5D=3,8' +
+        '&teams_against%5B%5D=Isolation&rank_filter%5B%5D=4,4',
+    },
+  ]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: /Open saved Filter Set/ });
+  expect(row).toHaveTextContent(
+    [
+      'mid defenses',
+      'Jalen Johnson',
+      'vs ranks 23–28 Points Allowed D',
+      'vs rank 27 Isolation D',
+    ].join(''),
+  );
+});
+
+test('a saved Defense Sheet row filter reads as its label and reopens the same filter', async () => {
+  const queryString =
+    'player_name=Jarace+Walker&teams_against%5B%5D=sheet%3Ashot_zones%3ACorner+3%3AFGA' +
+    '&rank_filter%5B%5D=10';
+  fetchSavedFilterSets.mockResolvedValue([{ id: 11, name: 'corner threes', queryString }]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: 'Open saved Filter Set corner threes' });
+  expect(row).toHaveTextContent(
+    ['corner threes', 'Jarace Walker', 'vs top 10 Corner 3 Attempts D'].join(''),
+  );
+  expect(row).not.toHaveTextContent('sheet:');
+
+  fireEvent.click(row);
+
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`/?${queryString}`));
+});
+
 test('says a Filter Set with no parameters covers every logged game', async () => {
   fetchSavedFilterSets.mockResolvedValue([
     { id: 3, name: 'all of it', queryString: 'player_name=Stephen+Curry' },
@@ -133,6 +174,34 @@ test('opening a saved Filter Set navigates to its query string and closes the li
     ),
   );
   expect(onHide).toHaveBeenCalled();
+});
+
+test('opening a saved Filter Set keeps the Line Type the chart is on', async () => {
+  renderModal(jest.fn(), '/?player_name=LeBron+James&line_type=REB');
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open saved Filter Set Curry at home' }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/?player_name=Stephen+Curry&home_away=home&line_type=REB',
+    ),
+  );
+});
+
+test('opening a saved Filter Set drops the line', async () => {
+  renderModal(jest.fn(), '/?player_name=LeBron+James&line_type=REB&line=8.5');
+
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open saved Filter Set Curry at home' }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByTestId('location').textContent).toMatch(
+      /\?player_name=Stephen\+Curry&home_away=home&line_type=REB$/,
+    ),
+  );
 });
 
 test('renames an item and reloads the list', async () => {
@@ -258,4 +327,22 @@ test('reports a failed load and says when nothing is saved yet', async () => {
   );
 
   expect(await screen.findByText(/have not saved any Filter Sets yet/i)).toBeVisible();
+});
+
+test('a saved retired Play type volume filter reads as its label and reopens unchanged', async () => {
+  const queryString =
+    'player_name=Jarace+Walker&teams_against%5B%5D=sheet%3Aplay_types%3AIsolation%3APOSS' +
+    '&rank_filter%5B%5D=10';
+  fetchSavedFilterSets.mockResolvedValue([{ id: 12, name: 'iso volume', queryString }]);
+  renderModal();
+
+  const row = await screen.findByRole('button', { name: 'Open saved Filter Set iso volume' });
+  expect(row).toHaveTextContent(
+    ['iso volume', 'Jarace Walker', 'vs top 10 Isolation Possessions D'].join(''),
+  );
+  expect(row).not.toHaveTextContent('sheet:');
+
+  fireEvent.click(row);
+
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`/?${queryString}`));
 });

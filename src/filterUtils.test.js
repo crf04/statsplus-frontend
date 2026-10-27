@@ -1,6 +1,8 @@
 import {
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  filterQueryString,
+  lineFromSearch,
   mergeFilterSet,
   cleanFilterParams,
   convertNLToFilters,
@@ -110,6 +112,38 @@ describe('filterSetFromSearchParams', () => {
     expect(filters).toEqual({ player_name: 'LeBron James' });
   });
 
+  test('line_type is a view of the results, not part of a Filter Set', () => {
+    expect(decode('player_name=A+B&line_type=REB')).toEqual({
+      filters: { player_name: 'A B' },
+      invalid: [],
+    });
+    expect(decode('line_type=XYZ&line_type=REB')).toEqual({ filters: {}, invalid: [] });
+    expect(filterSetToSearchParams({ player_name: 'A B', line_type: 'REB' }).toString()).toBe(
+      'player_name=A+B',
+    );
+  });
+
+  test('line is a view of the results, left out of the Filter Set query string', () => {
+    expect(filterQueryString('player_name=A+B&line_type=REB&line=24.5&browse=1')).toBe(
+      'player_name=A+B',
+    );
+    expect(lineFromSearch('player_name=A+B&line=24.5&line=25')).toBeNull();
+  });
+
+  test('decodes date_to beside date_filter and refuses an end before the start', () => {
+    expect(decode('player_name=A+B&date_filter=2026-01-01&date_to=2026-01-31')).toEqual({
+      filters: { player_name: 'A B', date_filter: '2026-01-01', date_to: '2026-01-31' },
+      invalid: [],
+    });
+    expect(decode('date_to=2026-01-31').filters).toEqual({ date_to: '2026-01-31' });
+    expect(decode('date_filter=2026-01-01&date_to=2026-01-01').invalid).toEqual([]);
+    expect(decode('date_filter=2026-02-01&date_to=2026-01-31')).toEqual({
+      filters: {},
+      invalid: ['date_to'],
+    });
+    expect(decode('date_to=2026-02-30').invalid).toEqual(['date_to']);
+  });
+
   test('empty search parameters decode to an empty Filter Set', () => {
     expect(decode('')).toEqual({ filters: {}, invalid: [] });
   });
@@ -171,6 +205,29 @@ describe('filterSetFromSearchParams', () => {
 
     expect(invalid).toEqual([]);
     expect(filters['teams_against[]']).toEqual(['Arc3Assists']);
+  });
+
+  test('a retired Play type volume token still survives the URL round trip', () => {
+    const { filters, invalid } = decode(
+      'teams_against%5B%5D=sheet%3Aplay_types%3AIsolation%3APOSS&rank_filter%5B%5D=10',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters['teams_against[]']).toEqual(['sheet:play_types:Isolation:POSS']);
+    expect(decode(filterSetToSearchParams(filters).toString()).filters).toEqual(filters);
+  });
+
+  test('a Defense Sheet row filter survives the URL round trip', () => {
+    const { filters, invalid } = decode(
+      'teams_against%5B%5D=sheet%3Ashot_zones%3ARestricted+Area%3AFGM&rank_filter%5B%5D=10',
+    );
+
+    expect(invalid).toEqual([]);
+    expect(filters['teams_against[]']).toEqual(['sheet:shot_zones:Restricted Area:FGM']);
+    expect(filterSetToSearchParams(filters).getAll('teams_against[]')).toEqual([
+      'sheet:shot_zones:Restricted Area:FGM',
+    ]);
+    expect(decode(filterSetToSearchParams(filters).toString()).filters).toEqual(filters);
   });
 
   test('canonicalises a specific opponent to the tricode the API reads', () => {
@@ -251,12 +308,26 @@ describe('filterSetToSearchParams', () => {
   const roundTrip = (filters) =>
     filterSetFromSearchParams(filterSetToSearchParams(filters)).filters;
 
+  test('encodes date_to immediately after date_filter', () => {
+    expect(
+      filterSetToSearchParams({
+        location_filter: 'Home',
+        date_to: '2026-01-31',
+        date_filter: '2026-01-01',
+        player_name: 'LeBron James',
+      }).toString(),
+    ).toBe(
+      'player_name=LeBron+James&date_filter=2026-01-01&date_to=2026-01-31&location_filter=Home',
+    );
+  });
+
   test('round-trips every recognised parameter through the decode direction', () => {
     const filters = {
       player_name: 'LeBron James',
       season_filter: '2023-24',
       minutes_filter: '20,40',
       date_filter: '2026-01-09',
+      date_to: '2026-02-09',
       location_filter: 'Home',
       game_filter: 10,
       opponent_tricode: 'OKC',

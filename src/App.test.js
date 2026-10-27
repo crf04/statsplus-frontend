@@ -117,6 +117,13 @@ test.each([
   // A client-side route change moves no focus on its own; the page takes it.
   expect(heading).toHaveFocus();
   expect(screen.getByText('Effective October 19, 2026')).toBeInTheDocument();
+  if (path === '/privacy') {
+    expect(
+      screen.getByText(
+        /lets AI apps such as Claude and ChatGPT read your CourtAI data and, when you ask, save Targets and Saved Filter Sets to your account\./,
+      ),
+    ).toBeVisible();
+  }
   await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
   expect(window.location.pathname).toBe(path);
   expect(apiClient.get).not.toHaveBeenCalled();

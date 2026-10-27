@@ -4,11 +4,16 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import { payload as rawMatchupPayload } from './matchupPayloadFixture';
 import { bookName } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
+import { fetchSeasons } from '../seasonsApi';
+import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
+import { seasonRefusalOr } from '../servingSeason';
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
+jest.mock('../seasonsApi', () => ({ fetchSeasons: jest.fn() }));
 jest.mock('../targets/targetsApi', () => ({
   createTarget: jest.fn(),
   fetchDietBaselines: jest.fn(),
@@ -265,6 +270,7 @@ const matchup = {
 beforeEach(() => {
   jest.clearAllMocks();
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
+  fetchSeasons.mockResolvedValue(legacySeasons);
   fetchMatchup.mockResolvedValue(matchup);
   fetchTargetPreview.mockResolvedValue(capturePreview);
   fetchDietBaselines.mockResolvedValue({ shares: {} });
@@ -308,8 +314,8 @@ test('links every displayed player name to that player’s game logs', async () 
   const reavesCard = screen.getByRole('article', { name: 'Austin Reaves player' });
   const lebronLink = within(lebronCard).getByRole('link', { name: 'LeBron James game logs' });
   const reavesLink = within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' });
-  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James');
-  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves');
+  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26');
+  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves&season_filter=2025-26');
   // The name is the link: no second "Game logs" label on the card.
   expect(lebronLink).toHaveTextContent('LeBron James');
   expect(within(lebronCard).getByRole('heading', { level: 3 })).toContainElement(lebronLink);
@@ -1043,6 +1049,27 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
+test('the Score Matrix washes each cell green up and red down, as a tint behind the number', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const matrix = await screen.findByRole('table', { name: 'LeBron James Score Matrix' });
+  const washes = [...matrix.querySelectorAll('tbody td')].map((cell) => [
+    cell.textContent,
+    cell.style.background,
+  ]);
+  expect(washes).toEqual([
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+  ]);
+});
+
 test('filtered to a combo market, the Defense Sheet lists the shot make rows that feed its points', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
@@ -1118,6 +1145,68 @@ test('the Defense Sheet leaves out catch-and-shoot 2s and under-10-ft 3s', async
       .getAllByRole('article')
       .map((row) => row.getAttribute('aria-label')),
   ).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s', 'Under 10 ft 2s']);
+});
+
+test('decoded shot-type Points rows leave the rendered Shot types section unchanged', async () => {
+  const rawWindow = {
+    allowed_per_48: 9,
+    percent_vs_league_average: 5,
+    sigma_deviation: 1,
+    rank: 20,
+  };
+  const rawRow = (key, markets) => ({
+    key,
+    label: key,
+    markets,
+    season: rawWindow,
+    last_15: rawWindow,
+  });
+  const decodeBostonShotTypes = (withPoints) => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.teams[1].defense_sheet.shot_types = [
+      rawRow('Catch and Shoot:FG3A', ['FGA', 'FG3A']),
+      rawRow('Catch and Shoot:FG3M', ['3PM', 'PTS', 'PA', 'PR', 'PRA']),
+      rawRow('Pullups:FG3A', ['FGA', 'FG3A']),
+      rawRow('Pullups:FG3M', ['3PM', 'PTS', 'PA', 'PR', 'PRA']),
+      rawRow('Pullups:FG2M', ['PTS', 'PA', 'PR', 'PRA']),
+      ...(withPoints
+        ? ['Catch and Shoot', 'Pullups', 'Less Than 10 ft'].map((slice) =>
+            rawRow(`${slice}:PTS`, ['PTS', 'PA', 'PR', 'PRA']),
+          )
+        : []),
+    ];
+    raw.league.defense_sheet.shot_types = raw.teams[1].defense_sheet.shot_types.map(({ key }) => ({
+      key,
+      season: { average_allowed_per_48: 9, sigma: 1 },
+      last_15: { average_allowed_per_48: 9, sigma: 1 },
+    }));
+    return jest.requireActual('./matchupApi').decodeMatchup(raw).teams[1].defenseSheet.shotTypes;
+  };
+  const renderedRows = async (withPoints) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes =
+      decodeBostonShotTypes(withPoints);
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    const { unmount } = renderMatchup();
+    const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
+      'section',
+    );
+    const shotTypes = within(sheet)
+      .getByRole('heading', { name: 'Shot types', level: 3 })
+      .closest('section');
+    const rows = within(shotTypes)
+      .getAllByRole('article')
+      .map((row) => row.getAttribute('aria-label'));
+    const text = shotTypes.textContent;
+    unmount();
+    return { rows, text };
+  };
+
+  const without = await renderedRows(false);
+  const withPoints = await renderedRows(true);
+  expect(without.rows).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s']);
+  expect(withPoints.rows).toEqual(['Catch-and-shoot 3s', 'Pull-up 3s', 'Pull-up 2s']);
+  expect(withPoints.text).toBe(without.text);
 });
 
 test('the Selection card highlights the shot make rows behind a combo market for his Diet', async () => {
@@ -1447,7 +1536,10 @@ const railNames = () =>
 // Locale time strings may separate "9:30" from "AM" with a narrow space.
 const normalized = (element) => element.textContent.replace(/\s+/g, ' ');
 
-const LocationProbe = () => <output data-testid="location">{useLocation().pathname}</output>;
+const LocationProbe = () => {
+  const { pathname, search } = useLocation();
+  return <output data-testid="location">{pathname + search}</output>;
+};
 
 const renderMatchup = (path = '/matchups/game-1') =>
   render(
@@ -1924,8 +2016,9 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
   renderMatchup();
 
   const { dialog } = await openCapture('Transition');
+  // The Lab names the default once /seasons says which it is.
   expect(
-    within(dialog).getByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
+    await within(dialog).findByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
   ).toBeVisible();
   // The prefill is a complete draft, so it is read without a keystroke.
   const strip = await within(dialog).findByRole(
@@ -2234,6 +2327,28 @@ test('AC1: the live header calls a pool that only prizepicks has read stale once
   expect(within(summary).getByText('Lines last read 2h ago.')).toHaveClass('matchup-warning');
 });
 
+test('a closing pool shows its closing lines with a neutral note, however old', async () => {
+  atInstant('2026-01-16T02:00:00Z');
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.freshness.pool = {
+    status: 'closing',
+    retrievedAt: '2026-01-15T11:50:00Z',
+    providers: [
+      { name: 'underdog', status: 'closing', retrievedAt: '2026-01-15T11:50:00Z' },
+      { name: 'prizepicks', status: 'missing', retrievedAt: null },
+    ],
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const summary = await screen.findByRole('region', { name: 'Matchup summary' });
+  expect(normalized(summary)).toBe(
+    'Fri, Jan 16, 2026 · Tip-off 9:30 AM. Lines from Underdog.' +
+      ' Lines closed at tip; showing closing lines.',
+  );
+  expect(summary.querySelector('.matchup-warning')).toBeNull();
+});
+
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
   fetchMatchup.mockResolvedValueOnce(historicalMatchup());
   renderMatchup();
@@ -2467,7 +2582,7 @@ test('AC7: rows sort by season scoring, open the selection card and hand focus b
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
   expect(within(austin).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
     'href',
-    '/?player_name=Austin+Reaves',
+    '/?player_name=Austin+Reaves&season_filter=2025-26',
   );
   const open = within(austin).getByRole('button', { name: 'Open selection card' });
   await userEvent.click(open);
@@ -2978,6 +3093,66 @@ test.each([
   expect(screen.queryByText('Show fewer')).not.toBeInTheDocument();
 });
 
+describe('Selection card DFS prices', () => {
+  const openWithDfs = async ({ lines, linePrices, bookLines = {} }) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    lebron.lines = lines;
+    lebron.linePrices = linePrices;
+    lebron.bookLines = bookLines;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup('/matchups/game-1?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+  const rows = (table) =>
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
+
+  test('lists Underdog and Dabble with their own line, Over and Under, with no sportsbook quoting him', async () => {
+    await openWithDfs({
+      lines: { underdog: { PTS: 26.5 }, dabble: { PTS: 27.5 }, novig: { PTS: 27.5 } },
+      linePrices: {
+        dabble: { PTS: { over: -122, under: -122 } },
+        underdog: { PTS: { over: -112, under: null } },
+        novig: { PTS: { over: -106, under: -102 } },
+      },
+    });
+
+    const panel = screen.getByRole('region', { name: 'DFS' });
+    expect(within(panel).getByRole('heading', { name: 'DFS · PTS' })).toBeVisible();
+    // Novig is a prediction market, not a DFS app, so it has no row here.
+    expect(rows(within(panel).getByRole('table', { name: 'PTS DFS lines' }))).toEqual([
+      'Underdog26.5-112—',
+      'Dabble27.5-122-122',
+    ]);
+    expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
+  });
+
+  test('sits beside the sportsbook panel and follows the selected stat', async () => {
+    await openWithDfs({
+      lines: { dabble: { PTS: 27.5, FGA: 8.5 } },
+      linePrices: { dabble: { FGA: { over: -122, under: -122 } } },
+      bookLines: { PTS: quote([bookRow('fanduel', 26.5, -135, 110)]) },
+    });
+
+    expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
+    // Dabble posts PTS but prices only FGA, so PTS has no DFS panel.
+    expect(screen.queryByRole('region', { name: 'DFS' })).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'FGA',
+      }),
+    );
+
+    expect(rows(screen.getByRole('table', { name: 'FGA DFS lines' }))).toEqual([
+      'Dabble8.5-122-122',
+    ]);
+  });
+});
+
 test('a category only sportsbooks quote is reachable from the strip without becoming a DFS market', async () => {
   await openWithBooks({
     AST: quote([
@@ -3139,6 +3314,18 @@ describe('rail price line', () => {
     expect(row).not.toHaveTextContent('books');
   });
 
+  test('a Dabble even line competes at its own price', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('draftkings', 27.5, -130, -115)]) },
+      lines: { dabble: { PTS: 27.5 } },
+      linePrices: { dabble: { PTS: { over: -122, under: -122 } } },
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −122 at Dabble, best Under −115 at DraftKings, line 27.5',
+    );
+  });
+
   test('DFS entry providers never contribute a price', async () => {
     const row = await openRail({
       lines: { prizepicks: { PTS: 27.5 } },
@@ -3208,6 +3395,7 @@ describe('rail price line', () => {
     ['underdog', 'novig'],
     ['novig', 'polymarket'],
     ['polymarket', 'kalshi'],
+    ['kalshi', 'dabble'],
   ])('an equal price goes to %s before %s', async (first, second) => {
     const price = { PTS: { over: -110, under: -110 } };
     const row = await openRail({
@@ -3229,5 +3417,512 @@ describe('rail price line', () => {
     });
 
     expect(text(priceLine(row))).toBe('o −110 FD u −110 FD');
+  });
+});
+
+// After a Season Cutover to 2026-27: play types still serve 2025-26 and every
+// Last 15 window covers the 6 games each team has played.
+const mixedSeasonMatchup = () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.asOfSeason = '2026-27';
+  Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
+    windows.season.season = '2026-27';
+    windows.last15.season = '2026-27';
+    windows.last15.windowGames = 6;
+  });
+  candidate.league.surfaceAvailability.playTypes.season.season = '2025-26';
+  candidate.trailing = [
+    { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ];
+  return candidate;
+};
+
+const openFullSheet = async () => {
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+};
+
+test('badges only the trailing section with its season and names a short Last 15 by its games', async () => {
+  fetchMatchup.mockResolvedValueOnce(mixedSeasonMatchup());
+  await openFullSheet();
+
+  expect(screen.getAllByText('2025-26 season')).toHaveLength(1);
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).getByText('2025-26 season'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).queryByText(/season$/),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Last 15' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(screen.getByRole('button', { name: 'Last 6' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
+});
+
+// A past game's sections read that game's own season. Only a trailing family
+// serving that same season badges a section.
+test.each([
+  ['a 2025-26 game with nothing trailing', '2025-26', []],
+  [
+    'a 2024-25 game while play types trail 2025-26',
+    '2024-25',
+    [{ family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' }],
+  ],
+])(
+  'a past game served after the Season Cutover carries no season badge: %s',
+  async (_name, gameSeason, trailing) => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    candidate.asOfSeason = '2026-27';
+    candidate.trailing = trailing;
+    Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = gameSeason;
+    });
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    await openFullSheet();
+
+    expect(screen.queryAllByText(/\d{4}-\d{2} season/)).toHaveLength(0);
+  },
+);
+
+test('reads a section season from its experience section when the Surface does not name one', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.asOfSeason = '2026-27';
+  const section = (season) => ({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'pregame',
+    unavailableReason: null,
+    season,
+  });
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: section('2025-26'),
+    last15Defense: section('2026-27'),
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  candidate.trailing = [
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+  ];
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.getAllByText('2025-26 season')).toHaveLength(3);
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(screen.queryByText('2025-26 season')).not.toBeInTheDocument();
+});
+
+test('explains a withheld Season window in its own words, not the Last 15 sentence', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.season = {
+    status: 'missing',
+    unavailableReason: 'window_not_ready',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(
+    screen.getByText('Box score unavailable for Season: Season numbers have not opened yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/window_not_ready/)).not.toBeInTheDocument();
+});
+
+test('a Matchup without serving seasons reads Last 15 and carries no season badge', async () => {
+  fetchMatchup.mockResolvedValueOnce(matchup);
+  await openFullSheet();
+
+  expect(screen.queryByText(/\d{4}-\d{2} season/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Last 15' })).toBeEnabled();
+});
+
+test('names the shortest Last 15 on the toggle and badges a section that covers more games', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});
+
+test('reads the Last 15 game count from its experience section when the Surfaces carry none', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 4 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(screen.getByRole('button', { name: 'Last 4' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Last 15' })).not.toBeInTheDocument();
+});
+
+test('explains a Season window short of governed games in its own words', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.season = {
+    status: 'unavailable',
+    unavailableReason: 'insufficient_governed_games',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  expect(
+    screen.getByText('Box score unavailable for Season: Season numbers have not opened yet.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Last 15 has not opened yet/)).not.toBeInTheDocument();
+});
+
+test('a section’s own Last 15 count, null included, wins over its experience section’s', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.experience.sections = {
+    schedule: { status: 'available', unavailableReason: null },
+    participants: { status: 'available', unavailableReason: null },
+    seasonDefense: { status: 'available', unavailableReason: null },
+    last15Defense: { status: 'available', unavailableReason: null, windowGames: 6 },
+    injuries: { status: 'available', unavailableReason: null },
+  };
+  candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
+  candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  expect(
+    within(screen.getByRole('region', { name: 'Shot zones' })).getByText('Last 10'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Box score' })).getByText('Last 15'),
+  ).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Play types' })).queryByText(/^Last \d+$/),
+  ).not.toBeInTheDocument();
+});
+
+test('an unavailable Last 15 section names its reason, not a game count', async () => {
+  const candidate = mixedSeasonMatchup();
+  candidate.league.surfaceAvailability.traditional.last15 = {
+    status: 'unavailable',
+    unavailableReason: 'provider_unsupported',
+  };
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  await openFullSheet();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
+  const boxScore = screen.getByRole('region', { name: 'Box score' });
+  expect(
+    within(boxScore).getByText('Box score unavailable for Last 6: provider_unsupported.'),
+  ).toBeVisible();
+  expect(within(boxScore).queryByText(/^Last \d+$/)).not.toBeInTheDocument();
+});
+
+/*
+ * The Evidence season (crf04/statsplus#330): offered from /seasons choices,
+ * kept in ?season=, named on the Matchup and selection reads only when it is
+ * not the default, and carried to the Slate and Game Logs links.
+ */
+describe('Evidence season', () => {
+  const location = () => screen.getByTestId('location').textContent;
+  const seasonSelect = () => screen.getByRole('combobox', { name: 'Evidence season' });
+  const refusal = (status, code, details) =>
+    seasonRefusalOr(
+      Object.assign(new Error(`Request failed with status code ${status}`), {
+        response: { status, headers: {}, data: { error: { code, message: 'Refused.', details } } },
+      }),
+    );
+
+  beforeEach(() => fetchSeasons.mockResolvedValue(unpublishedSeasons));
+
+  test('a linked 2026-27 is read, named with its sample, and carried by every link', async () => {
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    expect(fetchMatchup.mock.calls).toEqual([
+      ['game-1', { signal: expect.any(AbortSignal), season: '2026-27' }],
+    ]);
+    expect(seasonSelect()).toHaveValue('2026-27');
+    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups?season=2026-27',
+    );
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2026-27',
+    );
+
+    await userEvent.click(
+      within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByRole('button', {
+        name: 'Open selection card',
+      }),
+    );
+    await waitFor(() => expect(location()).toBe('/matchups/game-1?season=2026-27&player=1630559'));
+    await waitFor(() =>
+      expect(fetchMatchupSelection).toHaveBeenLastCalledWith(
+        'game-1',
+        1630559,
+        ['PTS', 'FG3A'],
+        expect.objectContaining({ season: '2026-27' }),
+      ),
+    );
+  });
+
+  test('the default is never named, and choosing it takes the season out of the URL', async () => {
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(seasonSelect()).toHaveValue('2025-26');
+    expect(screen.queryByTestId('evidence-season-chip')).not.toBeInTheDocument();
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+
+    fireEvent.change(seasonSelect(), { target: { value: '2026-27' } });
+    expect(location()).toBe('/matchups/game-1?season=2026-27');
+    await waitFor(() =>
+      expect(fetchMatchup).toHaveBeenLastCalledWith('game-1', {
+        signal: expect.any(AbortSignal),
+        season: '2026-27',
+      }),
+    );
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Evidence season' }), {
+      target: { value: '2025-26' },
+    });
+    expect(location()).toBe('/matchups/game-1');
+    await waitFor(() => expect(fetchMatchup).toHaveBeenCalledTimes(3));
+    expect(fetchMatchup).toHaveBeenLastCalledWith('game-1', { signal: expect.any(AbortSignal) });
+  });
+
+  // crf04/statsplus#348: a 2026-27 game reads 2026-27 once it is offered.
+  test('a 2026-27 game reads 2026-27 with no season chosen', async () => {
+    renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([
+      ['0022600003', { signal: expect.any(AbortSignal), season: '2026-27' }],
+    ]);
+    expect(seasonSelect()).toHaveValue('2026-27');
+    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups',
+    );
+  });
+
+  test('a 2025-26 game reads 2025-26 with no season chosen', async () => {
+    renderMatchup('/matchups/0022500584');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022500584', { signal: expect.any(AbortSignal) }]]);
+    expect(seasonSelect()).toHaveValue('2025-26');
+  });
+
+  test('a chosen 2025-26 on a 2026-27 game stays in the URL and survives a reload', async () => {
+    const { unmount } = renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    fireEvent.change(seasonSelect(), { target: { value: '2025-26' } });
+    expect(location()).toBe('/matchups/0022600003?season=2025-26');
+    await waitFor(() => expect(fetchMatchup).toHaveBeenCalledTimes(2));
+    expect(fetchMatchup).toHaveBeenLastCalledWith('0022600003', {
+      signal: expect.any(AbortSignal),
+    });
+    expect(await screen.findByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups?season=2025-26',
+    );
+    unmount();
+
+    fetchMatchup.mockClear();
+    renderMatchup('/matchups/0022600003?season=2025-26');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022600003', { signal: expect.any(AbortSignal) }]]);
+    expect(seasonSelect()).toHaveValue('2025-26');
+  });
+
+  test('a refused 2026-27 on a 2026-27 game goes back to 2025-26', async () => {
+    fetchMatchup.mockImplementation(async (_id, { season }) => {
+      if (season)
+        throw refusal(503, 'season_unavailable', {
+          selected_season: '2026-27',
+          published_season: '2025-26',
+        });
+      return matchup;
+    });
+    renderMatchup('/matchups/0022600003');
+    await userEvent.click(await screen.findByRole('button', { name: 'Show 2025-26' }));
+    await waitFor(() => expect(location()).toBe('/matchups/0022600003?season=2025-26'));
+    expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  });
+
+  test('until 2026-27 is offered, a 2026-27 game reads as before', async () => {
+    fetchSeasons.mockResolvedValue(publishedOnlySeasons);
+    renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022600003', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
+  });
+
+  test('choices without a season not yet published show nothing new', async () => {
+    fetchSeasons.mockResolvedValue(legacySeasons);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+  });
+
+  test('2026-27 evidence for a 2025-26 game is refused, never shown as an empty Matchup', async () => {
+    fetchMatchup.mockImplementation(async (_id, { season }) => {
+      if (season)
+        throw refusal(400, 'season_after_game', {
+          selected_season: '2026-27',
+          game_season: '2025-26',
+        });
+      return matchup;
+    });
+    renderMatchup('/matchups/game-1?season=2026-27');
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This is a 2025-26 game, so it has no 2026-27 evidence. CourtAI still reads 2025-26 by default.Show 2025-26',
+    );
+    expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No Defense Sheet rows/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
+    await waitFor(() => expect(location()).toBe('/matchups/game-1'));
+    expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  });
+
+  test('a 503 season_unavailable is the plain refusal, with the way back', async () => {
+    fetchMatchup.mockRejectedValue(
+      refusal(503, 'season_unavailable', {
+        selected_season: '2026-27',
+        published_season: '2025-26',
+      }),
+    );
+    renderMatchup('/matchups/game-1?season=2026-27');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
+    );
+    expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
+  });
+
+  // The Log Workspace defaults to the newest offered season, so a Game Logs
+  // link names the season this Matchup read, the Published Season included.
+  test('a 2026-27 game read on 2025-26 links its game logs to 2025-26', async () => {
+    renderMatchup('/matchups/0022600003?season=2025-26');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+  });
+
+  test('without season choices, a Matchup links its game logs to the season it answered for', async () => {
+    fetchSeasons.mockRejectedValue(new Error('seasons down'));
+    fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2025-26' });
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+  });
+
+  test('a linked season the choices do not offer falls back to the default and says so', async () => {
+    renderMatchup('/matchups/game-1?season=2027-28&player=2544');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.getByText('2027-28 isn’t offered, so this is 2025-26 evidence.')).toHaveAttribute(
+      'role',
+      'status',
+    );
+    expect(location()).toBe('/matchups/game-1?player=2544');
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+  });
+
+  test('under 2026-27 a trailing section names its own season and sample', async () => {
+    const selected = JSON.parse(JSON.stringify(matchup));
+    selected.asOfSeason = '2025-26';
+    selected.seasonContext = { selectedSeason: '2026-27', publishedSeason: '2025-26' };
+    Object.values(selected.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = '2026-27';
+      windows.last15.season = '2026-27';
+    });
+    selected.league.surfaceAvailability.playTypes.season.season = '2025-26';
+    selected.league.surfaceAvailability.shotZones.season.season = '2025-26';
+    selected.trailing = [
+      {
+        family: 'synergy',
+        servingSeason: '2025-26',
+        rule: 'NBA publishes 2026-27 play types',
+        teamGames: { min: 80, max: 82 },
+      },
+      {
+        family: 'team_defense',
+        servingSeason: '2025-26',
+        rule: 'every team has played 10 games',
+        teamGames: { min: 80, max: 82 },
+      },
+    ];
+    fetchMatchup.mockResolvedValue(selected);
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+    expect(
+      within(screen.getByRole('region', { name: 'Play types' })).getByText(
+        '2025-26 season · 80–82 games per team',
+      ),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole('region', { name: 'Shot zones' })).getByText(
+        '2025-26 season · 80–82 games per team',
+      ),
+    ).toBeVisible();
+    expect(screen.getAllByText(/^2025-26 season/)).toHaveLength(2);
+  });
+
+  test('a trailing sample the backend does not report says so', async () => {
+    const selected = JSON.parse(JSON.stringify(matchup));
+    selected.seasonContext = { selectedSeason: '2026-27', publishedSeason: '2025-26' };
+    Object.values(selected.league.surfaceAvailability).forEach((windows) => {
+      windows.season.season = '2026-27';
+    });
+    selected.league.surfaceAvailability.playTypes.season.season = '2025-26';
+    selected.trailing = [
+      { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+    ];
+    fetchMatchup.mockResolvedValue(selected);
+    renderMatchup('/matchups/game-1?season=2026-27');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+    expect(
+      within(screen.getByRole('region', { name: 'Play types' })).getByText(
+        '2025-26 season · sample not reported',
+      ),
+    ).toBeVisible();
   });
 });

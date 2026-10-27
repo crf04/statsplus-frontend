@@ -27,8 +27,8 @@ const installClipboard = (writeText) => {
   });
 };
 
-const renderConnectRoute = async () => {
-  window.history.pushState({}, '', '/connect');
+const renderConnectRoute = async (hash = '') => {
+  window.history.pushState({}, '', `/connect${hash}`);
   render(<App />);
   const heading = await screen.findByRole('heading', {
     level: 1,
@@ -108,7 +108,7 @@ test('a blocked clipboard leaves the URL on the page and the button ready to ret
 test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys switch them', async () => {
   await renderConnectRoute();
 
-  const setup = screen.getByRole('region', { name: 'Set it up' });
+  const setup = screen.getByRole('region', { name: 'Connect CourtAI' });
   const tabs = within(setup).getAllByRole('tab');
   expect(tabs.map((tab) => tab.textContent)).toEqual(['Claude', 'ChatGPT']);
 
@@ -116,6 +116,14 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(panel).getByRole('list').tagName).toBe('OL');
   expect(within(panel).getByText(/Team or Enterprise.*Owner/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom connector/)).toBeInTheDocument();
+  expect(within(panel).getByRole('link', { name: 'Add CourtAI to Claude' })).toHaveAttribute(
+    'href',
+    'https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=CourtAI&connectorUrl=https%3A%2F%2Fmcp.courtai.app%2Fmcp',
+  );
+  expect(within(panel).getByRole('link', { name: 'organization install link' })).toHaveAttribute(
+    'href',
+    'https://claude.ai/admin-settings/connectors?modal=add-custom-connector&connectorName=CourtAI&connectorUrl=https%3A%2F%2Fmcp.courtai.app%2Fmcp',
+  );
 
   tabs[0].focus();
   fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
@@ -127,6 +135,7 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   );
   panel = within(setup).getByRole('tabpanel', { name: 'ChatGPT' });
   expect(within(panel).getByText(/Plus, Pro, Business, Enterprise/)).toBeInTheDocument();
+  expect(within(panel).getByText(/only add MCP servers on desktop/)).toBeInTheDocument();
   expect(within(panel).getByText(/Add custom MCP server/)).toBeInTheDocument();
   expect(within(panel).getByText(/sign in with google/i)).toBeInTheDocument();
   expect(within(setup).getByText(/Add custom connector/)).not.toBeVisible();
@@ -153,44 +162,182 @@ test('Claude and ChatGPT steps sit behind tabs, Claude first, and arrow keys swi
   expect(within(setup).getByRole('tabpanel', { name: 'ChatGPT' })).toBeInTheDocument();
 });
 
-test('the page shows the real card and one working question for each connector tool', async () => {
+test('the page shows the real card and a guide of six lessons, each linked from its contents', async () => {
   await renderConnectRoute();
 
   expect(
     screen.getByTitle('CourtAI Matchup card: Cade Cunningham against Charlotte'),
   ).toHaveAttribute('src', '/mcp-cards/matchup.html');
 
-  const tools = within(screen.getByRole('region', { name: 'What you can ask' })).getAllByRole(
-    'listitem',
-  );
-  // Every tool the connector registers, each with a prompt it answers.
-  expect(
-    tools.map((item) => [
-      item.querySelector('.connect-prompt-tool').textContent,
-      item.querySelector('.connect-tool-prompt').textContent,
-    ]),
-  ).toEqual([
-    ['Slate', "What's on the slate for April 10, 2026?"],
-    ['Matchup', "Show Cade Cunningham's matchup against Charlotte."],
-    [
-      'Game logs',
-      'How has Cade Cunningham done against the 10 teams that allow the most pick-and-roll points?',
-    ],
-    ['Rotation', "How have Ausar Thompson's minutes looked lately?"],
-    ['Injury report', "Who's on the injury report today?"],
-    ['Injury Scenarios', "Which teammates move when tonight's injured players sit?"],
-    ['On/off splits', 'How did Detroit play with Cade Cunningham off the floor in 2025-26?'],
-    ['Targets', 'Which players fit my Targets today?'],
-    [
-      'Backtest',
-      'Backtest players who run at least 30% of their plays as the pick-and-roll ball handler against Charlotte.',
-    ],
-  ]);
-  expect(within(tools[4]).getByText(/stored from 11:00 ET on game days/)).toBeInTheDocument();
+  const contents = within(screen.getByRole('navigation', { name: 'In this guide' }));
+  const links = contents.getAllByRole('link');
+  const headings = within(screen.getByRole('main')).getAllByRole('heading', { level: 2 });
+  const lessons = [
+    ['Connect CourtAI', '#guide-setup'],
+    ['Ask one question', '#guide-ask'],
+    ['Watch the tutorials', '#guide-tutorials'],
+    ['Hand it an outcome', '#guide-outcome'],
+    ['Let it run the research', '#guide-research'],
+    ['Everything it can do', '#guide-tools'],
+  ];
+  expect(links).toHaveLength(lessons.length);
+  expect(headings).toHaveLength(lessons.length);
+  lessons.forEach(([title, href], index) => {
+    expect(links[index]).toHaveAccessibleName(title);
+    expect(links[index]).toHaveAttribute('href', href);
+    expect(headings[index]).toHaveAccessibleName(title);
+    // The contents link lands on the lesson it names.
+    expect(document.getElementById(href.slice(1))).toBe(
+      screen.getByRole('region', { name: title }),
+    );
+  });
 
-  const notes = screen.getByRole('region', { name: 'Good to know' });
-  expect(within(notes).getByText(/It doesn.t make picks/)).toBeInTheDocument();
-  expect(within(notes).getByText(/30 means the defense allows the most/)).toBeInTheDocument();
-  expect(within(notes).getByText(/US Eastern time and default to today/)).toBeInTheDocument();
-  expect(within(notes).getByText(/your own CourtAI sign-in/)).toBeInTheDocument();
+  // The lessons replace the old tool list and notes.
+  expect(screen.queryByRole('region', { name: 'What you can ask' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Good to know' })).not.toBeInTheDocument();
+});
+
+test('a Copy button puts exactly its prompt on the clipboard', async () => {
+  let clipboardText = '';
+  installClipboard((text) => {
+    clipboardText = text;
+    return Promise.resolve();
+  });
+  await renderConnectRoute();
+
+  const ask = within(screen.getByRole('region', { name: 'Ask one question' }));
+  const habit = ask.getByText('Say the stat').closest('li');
+  userEvent.click(within(habit).getByRole('button', { name: 'Copy' }));
+
+  expect(await within(habit).findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  expect(clipboardText).toBe("Show Cade Cunningham's assists matchup against Charlotte.");
+  expect(ask.getAllByRole('button', { name: 'Copy' })).toHaveLength(3);
+});
+
+test('All opens on the first two jobs, and Show all reveals all 21 capabilities', async () => {
+  await renderConnectRoute();
+
+  const tools = within(screen.getByRole('region', { name: 'Everything it can do' }));
+  const cardTitles = () =>
+    tools.getAllByRole('heading', { level: 4 }).map((heading) => heading.textContent);
+
+  expect(tools.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(cardTitles()).toHaveLength(6);
+  expect(cardTitles()[0]).toBe('Scan a whole night');
+
+  fireEvent.click(tools.getByRole('button', { name: 'Show all 21 (15 more)' }));
+
+  expect(cardTitles()).toHaveLength(21);
+  expect(tools.queryByRole('button', { name: /^Show all/ })).not.toBeInTheDocument();
+
+  fireEvent.click(tools.getByRole('button', { name: /^Check the history/ }));
+
+  expect(tools.getByRole('button', { name: /^Check the history/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(cardTitles()).toHaveLength(5);
+  expect(cardTitles()).toContain('Against defenses like tonight’s');
+});
+
+test('the recorded runs stay folded until opened', async () => {
+  await renderConnectRoute();
+
+  const outcome = within(screen.getByRole('region', { name: 'Hand it an outcome' }));
+  // The anatomy shows before any fold.
+  expect(outcome.getByText('What you want to know')).toBeVisible();
+  const runs = outcome.getByText('Step through four runs');
+  expect(outcome.getByRole('tab', { name: 'Scan the injury report' })).not.toBeVisible();
+
+  fireEvent.click(runs);
+
+  expect(outcome.getByRole('tab', { name: 'Scan the injury report' })).toBeVisible();
+
+  const research = within(screen.getByRole('region', { name: 'Let it run the research' }));
+  expect(research.getByRole('button', { name: 'Copy brief' })).not.toBeVisible();
+
+  fireEvent.click(research.getByText('Step through the whole run'));
+
+  expect(research.getByRole('button', { name: 'Copy brief' })).toBeVisible();
+  expect(research.getByText(/over his 18\.5 line in 16 of 21\./)).toBeVisible();
+});
+
+test('arrow keys move between the outcome runs and show the chosen run', async () => {
+  await renderConnectRoute();
+
+  const outcome = within(screen.getByRole('region', { name: 'Hand it an outcome' }));
+  fireEvent.click(outcome.getByText('Step through four runs'));
+  const first = outcome.getByRole('tab', { name: 'Scan the injury report' });
+  first.focus();
+
+  fireEvent.keyDown(first, { key: 'ArrowRight' });
+
+  const second = outcome.getByRole('tab', { name: 'Scout a game' });
+  expect(second).toHaveAttribute('aria-selected', 'true');
+  expect(second).toHaveFocus();
+  expect(first).toHaveAttribute('tabindex', '-1');
+  const panel = outcome.getByRole('tabpanel', { name: 'Scout a game' });
+  expect(
+    within(panel).getByText(
+      /^Scout DET @ CHA on April 10, 2026\. Tell me where Detroit has an edge/,
+    ),
+  ).toBeVisible();
+
+  fireEvent.keyDown(second, { key: 'ArrowLeft' });
+  expect(first).toHaveAttribute('aria-selected', 'true');
+  expect(first).toHaveAttribute('aria-controls', panel.id);
+
+  fireEvent.keyDown(first, { key: 'ArrowLeft' });
+  expect(outcome.getByRole('tab', { name: 'Find a type of player' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+});
+
+test('Ask one question shows the clip poster and its tweet, and plays the video only when asked', async () => {
+  await renderConnectRoute();
+
+  const ask = screen.getByRole('region', { name: 'Ask one question' });
+  const clip = within(ask).getByRole('complementary', { name: 'CourtAI in a chat' });
+  expect(within(clip).getByRole('link', { name: /Watch on X/ })).toHaveAttribute(
+    'href',
+    'https://x.com/bighatprops/status/2110903548514852970',
+  );
+  expect(clip.querySelector('.clip-caption')).toHaveTextContent('CourtAI in a chat · 1:00');
+  expect(document.querySelector('video')).toBeNull();
+
+  await userEvent.click(within(clip).getByRole('button', { name: 'Play: CourtAI in a chat' }));
+
+  const video = document.querySelector('dialog[open] video');
+  expect(video).toHaveAttribute('src', '/clips/courtai-in-a-chat.mp4');
+  expect(video).toHaveAttribute('poster', '/clips/courtai-in-a-chat.jpg');
+
+  await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(document.querySelector('video')).toBeNull();
+
+  // Escape closes a native dialog without the Close button; the video goes with it.
+  await userEvent.click(within(clip).getByRole('button', { name: 'Play: CourtAI in a chat' }));
+  expect(document.querySelector('dialog[open] video')).not.toBeNull();
+  fireEvent(document.querySelector('dialog'), new Event('close'));
+  expect(document.querySelector('video')).toBeNull();
+});
+
+test('Ask Claude opens a new Claude chat with exactly that prompt filled in', async () => {
+  await renderConnectRoute();
+
+  const ask = within(screen.getByRole('region', { name: 'Ask one question' }));
+  const habit = ask.getByText('Say the stat').closest('li');
+  const link = within(habit).getByRole('link', { name: 'Ask Claude' });
+
+  expect(link).toHaveAttribute(
+    'href',
+    "https://claude.ai/new?q=Show%20Cade%20Cunningham's%20assists%20matchup%20against%20Charlotte.",
+  );
+  expect(link).toHaveAttribute('target', '_blank');
+  expect(ask.getAllByRole('link', { name: 'Ask Claude' })).toHaveLength(4);
+});
+
+it('opens at the page for a malformed fragment instead of failing the route', async () => {
+  await renderConnectRoute('#%E0%A4%A');
+  expect(screen.queryByText('Could not load this page')).not.toBeInTheDocument();
 });

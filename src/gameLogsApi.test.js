@@ -3,6 +3,7 @@ import {
   decodeGameLogsResponse,
   fetchGameLogsData,
   getRequestErrorMessage,
+  lineSourcesFor,
   postedLineFor,
 } from './gameLogsApi';
 
@@ -98,37 +99,123 @@ describe('gameLogsApi', () => {
     expect(decodeGameLogsResponse({ game_logs: [], player_id: 2544 }).playerId).toBe(2544);
   });
 
-  test('reads his next game posted lines, dropping a market without a number', () => {
+  const curryPosted = {
+    game_id: '0022600012',
+    game_date: '2026-10-21',
+    matchup: 'GSW vs LAL',
+    lines: {
+      PTS: { value: 26.5, provider: 'dabble' },
+      '3PM': { value: 4.5, provider: 'underdog' },
+      REB: { value: '7.5', provider: 'prizepicks' },
+      AST: { value: 8.5 },
+    },
+    provider_lines: {
+      underdog: { PTS: 26.5, '3PM': 4.5 },
+      dabble: { PTS: 26.5 },
+      kalshi: { PTS: 27.5 },
+      prizepicks: { PTS: 25.5 },
+      novig: { PTS: '26.5' },
+    },
+    line_prices: {
+      dabble: { PTS: { over: -122, under: -122 } },
+      underdog: { PTS: { over: -112, under: null }, '3PM': { over: 105, under: -135 } },
+    },
+    book_lines: {
+      PTS: {
+        as_of: '2026-10-21T15:00:00Z',
+        closing: false,
+        books: [
+          { book: 'draftkings', line: 26.5, over: -110, under: -115 },
+          { book: 'hardrockbet', line: 27.5, over: null, under: null },
+          { book: 'fanduel', line: null, over: -110, under: -110 },
+        ],
+      },
+    },
+  };
+
+  test('reads every source posting a market, providers then books, keeping unknown keys', () => {
+    const { postedLine } = decodeGameLogsResponse({ game_logs: [], posted_line: curryPosted });
+    expect(lineSourcesFor(postedLine, 'PTS')).toEqual([
+      { kind: 'provider', key: 'prizepicks', line: 25.5, over: null, under: null },
+      { kind: 'provider', key: 'dabble', line: 26.5, over: -122, under: -122 },
+      { kind: 'provider', key: 'kalshi', line: 27.5, over: null, under: null },
+      { kind: 'provider', key: 'underdog', line: 26.5, over: -112, under: null },
+      { kind: 'book', key: 'draftkings', line: 26.5, over: -110, under: -115 },
+      { kind: 'book', key: 'hardrockbet', line: 27.5, over: null, under: null },
+    ]);
+    expect(lineSourcesFor(postedLine, 'FG3M')).toEqual([
+      { kind: 'provider', key: 'underdog', line: 4.5, over: 105, under: -135 },
+    ]);
+    expect(lineSourcesFor(postedLine, 'REB')).toEqual([]);
+  });
+
+  test('the line defaults to the source `lines` names, and any other can be chosen', () => {
+    const { postedLine } = decodeGameLogsResponse({ game_logs: [], posted_line: curryPosted });
+    expect(postedLineFor(postedLine, 'PTS')).toEqual({
+      kind: 'provider',
+      key: 'dabble',
+      line: 26.5,
+      over: -122,
+      under: -122,
+      gameDate: '2026-10-21',
+      matchup: 'GSW vs LAL',
+    });
+    expect(postedLineFor(postedLine, 'PTS', 'book:hardrockbet')).toEqual({
+      kind: 'book',
+      key: 'hardrockbet',
+      line: 27.5,
+      over: null,
+      under: null,
+      gameDate: '2026-10-21',
+      matchup: 'GSW vs LAL',
+    });
+    expect(postedLineFor(postedLine, 'FG3M')).toMatchObject({ key: 'underdog', line: 4.5 });
+    expect(postedLineFor(postedLine, 'PTS', 'book:fanduel')).toBeNull();
+    expect(postedLineFor(postedLine, 'REB')).toBeNull();
+    expect(postedLineFor(null, 'PTS')).toBeNull();
+  });
+
+  test('a default no source lists is still offered, first', () => {
     const { postedLine } = decodeGameLogsResponse({
       game_logs: [],
       posted_line: {
-        game_id: '0022600012',
+        ...curryPosted,
+        lines: { PTS: { value: 27, provider: 'draftkings' } },
+      },
+    });
+    expect(postedLineFor(postedLine, 'PTS')).toMatchObject({ key: 'draftkings', line: 27 });
+    expect(lineSourcesFor(postedLine, 'PTS').map(({ key, line }) => `${key} ${line}`)).toEqual([
+      'draftkings 27',
+      'prizepicks 25.5',
+      'dabble 26.5',
+      'kalshi 27.5',
+      'underdog 26.5',
+      'draftkings 26.5',
+      'hardrockbet 27.5',
+    ]);
+  });
+
+  test('a response without sources keeps its posted line and offers no choice', () => {
+    const { postedLine } = decodeGameLogsResponse({
+      game_logs: [],
+      posted_line: {
         game_date: '2026-10-21',
         matchup: 'LAL vs GSW',
-        lines: {
-          PTS: { value: 27.5, provider: 'prizepicks' },
-          '3PM': { value: 2.5, provider: 'underdog' },
-          REB: { value: '7.5', provider: 'prizepicks' },
-          AST: { value: 8.5 },
-        },
+        lines: { PTS: { value: 27.5, provider: 'prizepicks' } },
+        provider_lines: 'x',
+        book_lines: { PTS: { books: 'x' } },
       },
     });
-    expect(postedLine).toEqual({
-      gameDate: '2026-10-21',
-      matchup: 'LAL vs GSW',
-      lines: {
-        PTS: { value: 27.5, provider: 'prizepicks' },
-        '3PM': { value: 2.5, provider: 'underdog' },
-      },
-    });
-    expect(postedLineFor(postedLine, 'FG3M')).toEqual({
-      value: 2.5,
-      provider: 'underdog',
+    expect(postedLineFor(postedLine, 'PTS')).toEqual({
+      kind: 'provider',
+      key: 'prizepicks',
+      line: 27.5,
+      over: null,
+      under: null,
       gameDate: '2026-10-21',
       matchup: 'LAL vs GSW',
     });
-    expect(postedLineFor(postedLine, 'REB')).toBeNull();
-    expect(postedLineFor(null, 'PTS')).toBeNull();
+    expect(lineSourcesFor(postedLine, 'PTS')).toEqual([]);
   });
 
   test.each([undefined, null, 'x', {}, { lines: {} }, { lines: { PTS: { value: null } } }])(

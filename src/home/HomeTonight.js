@@ -6,6 +6,7 @@ import { TargetConditionSummary } from '../targets/TargetConditions';
 import { SeasonMinutesProvider } from '../targets/useTargets';
 import LoginButton from '../components/Auth/LoginButton';
 import { dayName, matchupsPath, rankPhrase, signedPercent } from './homeFormat';
+import { trailingNote } from '../servingSeason';
 
 /*
  * The home page's Tonight | Your Targets row (crf04/statsplus#204). Tonight is
@@ -75,9 +76,12 @@ const TargetCard = ({ entry, scores }) => {
             <li key={player.canonicalId}>
               <span>
                 {player.name} <small>{player.tricode}</small>
+                {player.position && (
+                  <small className="target-player-position">{player.position}</small>
+                )}
               </span>
               <span className="home-target-share">
-                {formatObservedShare(player.shares[0].share)}
+                {player.shares[0] ? formatObservedShare(player.shares[0].share) : '–'}
               </span>
               <span
                 className={`home-target-score${score === undefined ? '' : score >= 0 ? ' is-up' : ' is-down'}`}
@@ -106,8 +110,10 @@ const HomeTonight = ({
   onUseQuery,
   slateDate = null,
   fallback = null,
+  trailing,
 }) => {
   const gameOf = (gameId) => games.find((game) => game.gameId === gameId);
+  const note = trailingNote(trailing);
   return (
     <div className="home-tonight">
       <section className="home-col" aria-labelledby="home-tonight-heading">
@@ -130,6 +136,11 @@ const HomeTonight = ({
             game={spotlight.toughest && gameOf(spotlight.toughest.gameId)}
             onUseQuery={onUseQuery}
           />
+          {note && (
+            <p className="home-trailing-note" role="note">
+              {note}
+            </p>
+          )}
         </div>
       </section>
       {signUp && (

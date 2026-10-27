@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
-import { isOtherSeason, publishedSeasonOf } from './backtestSample';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
@@ -175,6 +174,13 @@ export default function TargetRecord({
         )}
       </ul>
       {children}
+      {backtest.summary?.playersWithoutPosition > 0 && (
+        <p className="target-limit">
+          {backtest.summary?.playersWithoutPosition === 1
+            ? '1 player left out: no listed position.'
+            : `${backtest.summary?.playersWithoutPosition} players left out: no listed position.`}
+        </p>
+      )}
       {games.length === 0 ? (
         <p className="target-empty">
           {backtest.target.conditions?.playerMinutes !== null &&
@@ -256,22 +262,17 @@ export function TargetGameRows({
                 to={`/?${filterSetToSearchParams({
                   player_name: row.player.name,
                   opponent_tricode: backtest.target.opponent,
-                  // A season other than the published one, which the log opens
-                  // on, is named, so the log opens on the games this row was
-                  // read from. A requested season is named whenever the
-                  // published one is unknown.
-                  ...((
-                    publishedSeasonOf(backtest)
-                      ? isOtherSeason(backtest.season, publishedSeasonOf(backtest))
-                      : backtest.season && backtest.seasonReason === 'requested'
-                  )
-                    ? { season_filter: backtest.season }
-                    : {}),
+                  // The Backtest's season is always named: the log's own
+                  // default is the newest offered season, not this one.
+                  ...(backtest.season ? { season_filter: backtest.season } : {}),
                 })}`}
               >
                 {row.player.name}
               </Link>{' '}
               <small>{row.player.tricode}</small>
+              {row.player.position && (
+                <small className="target-player-position">{row.player.position}</small>
+              )}
             </span>
             <span className="target-game-line">
               <b>{gameNumber(gameStat(row.game, gradedBy))}</b> {gradedBy}

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchSeasons } from '../seasonsApi';
+import { seasonChoiceLabel } from '../servingSeason';
 import {
   OPPONENT_FILTERS,
   encodeRankRange,
@@ -16,6 +17,7 @@ const hasFilterValue = (value) => value !== null && value !== undefined && value
 
 export const DEFENSIVE_CATEGORY_PILL_LABELS = {
   'General defense': 'General',
+  'Shot zone defense': 'Shot zone',
   'Shot type defense': 'Shot type',
   'Play type defense': 'Play type',
   'Assists allowed': 'Assists',
@@ -32,7 +34,11 @@ const DEFAULT_RANK_RANGE = [21, 30];
 export const STAT_COLUMNS = [
   'PTS',
   'REB',
+  'REB_CHANCES',
+  'REB_CONV_PCT',
   'AST',
+  'POTENTIAL_AST',
+  'AST_CONV_PCT',
   'FG3M',
   'STL',
   'BLK',
@@ -61,7 +67,11 @@ export const STAT_COLUMNS = [
 export const STAT_LABELS = {
   PTS: 'Points',
   REB: 'Rebounds',
+  REB_CHANCES: 'Rebound chances',
+  REB_CONV_PCT: 'REB conversion %',
   AST: 'Assists',
+  POTENTIAL_AST: 'Potential assists',
+  AST_CONV_PCT: 'AST conversion %',
   FG3M: '3s made',
   STL: 'Steals',
   BLK: 'Blocks',
@@ -92,6 +102,10 @@ export const STAT_LABELS = {
 export const STAT_PRECISION = {
   FG_PCT: { digits: 2, step: 0.01 },
   USG_PCT: { digits: 1, step: 0.1 },
+  REB_CHANCES: { digits: 0, step: 1 },
+  POTENTIAL_AST: { digits: 0, step: 1 },
+  REB_CONV_PCT: { digits: 2, step: 0.01 },
+  AST_CONV_PCT: { digits: 2, step: 0.01 },
 };
 
 const FLOAT_SLACK = 1e-9;
@@ -107,6 +121,7 @@ const useFilterPanel = ({
   playerList,
   onApplyFilters,
   onSeasonChange,
+  pageSeason,
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
@@ -133,6 +148,7 @@ const useFilterPanel = ({
   const [locationFilter, setLocationFilter] = useState('Both');
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
   const [dateFilter, setDateFilter] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [gameFilter, setGameFilter] = useState(0);
   const [playstyleMatchupRating, setPlaystyleMatchupRating] = useState([0, 200]);
   const [selectedSelfFilter, setSelectedSelfFilter] = useState('');
@@ -215,6 +231,7 @@ const useFilterPanel = ({
     setLocationFilter('Both');
     setMinutesFilter([0, 48]);
     setDateFilter('');
+    setDateTo('');
     setGameFilter(0);
     setPlaystyleMatchupRating([0, 200]);
     setSelectedSelfFilter('');
@@ -240,6 +257,10 @@ const useFilterPanel = ({
       if (appliedFilters.date_filter) {
         setDateFilter(appliedFilters.date_filter);
         prepopulatedControls.add('date_filter');
+      }
+      if (appliedFilters.date_to) {
+        setDateTo(appliedFilters.date_to);
+        prepopulatedControls.add('date_to');
       }
       if (appliedFilters.minutes_filter && typeof appliedFilters.minutes_filter === 'string') {
         const parts = appliedFilters.minutes_filter.split(',');
@@ -432,6 +453,10 @@ const useFilterPanel = ({
     setDateFilter(value);
     markControlTouched('date_filter');
   };
+  const changeDateTo = (value) => {
+    setDateTo(value);
+    markControlTouched('date_to');
+  };
   const changeGames = (value) => {
     setGameFilter(value);
     markControlTouched('game_filter');
@@ -493,6 +518,7 @@ const useFilterPanel = ({
         .map((p) => p.name);
     }
     if (touchedControls.has('date_filter')) filterParams.date_filter = dateFilter || null;
+    if (touchedControls.has('date_to')) filterParams.date_to = dateTo || null;
     if (touchedControls.has('teams_against')) {
       filterParams['teams_against[]'] = activeFilters.map((filter) => filter.filter);
       filterParams['rank_filter[]'] = activeFilters.map((filter) => filter.number);
@@ -536,6 +562,7 @@ const useFilterPanel = ({
       'players_on[]': [],
       'players_off[]': [],
       date_filter: null,
+      date_to: null,
       'teams_against[]': [],
       'rank_filter[]': [],
       opponent_tricode: null,
@@ -555,6 +582,7 @@ const useFilterPanel = ({
   const summary = {
     players: activePlayers.length > 0 ? activePlayers : null,
     date: dateFilter || null,
+    dateTo: dateTo || null,
     games: Number(gameFilter) > 0 ? Number(gameFilter) : null,
     location: locationFilter !== 'Both' ? locationFilter : null,
     minutes: minutesFilter[0] !== 0 || minutesFilter[1] !== 48 ? minutesFilter : null,
@@ -569,6 +597,7 @@ const useFilterPanel = ({
   const activeCount =
     (summary.players?.length || 0) +
     (summary.date ? 1 : 0) +
+    (summary.dateTo ? 1 : 0) +
     (summary.games ? 1 : 0) +
     (summary.location ? 1 : 0) +
     (summary.minutes ? 1 : 0) +
@@ -577,14 +606,25 @@ const useFilterPanel = ({
     (summary.defense?.length || 0) +
     (summary.self?.length || 0);
 
-  const season = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
-  // A link may name a season the list does not (yet) hold; keep it selectable
-  // so the control never shows a season the results are not.
+  const defaultSeason = pageSeason ?? seasonChoices?.defaultSeason ?? '';
+  const linkedSeason = appliedFilters?.season_filter ?? defaultSeason;
+  const choices = seasonChoices?.choices;
+  // With choices (crf04/statsplus#330) a season outside them falls back to the
+  // default, as the Workspace's request does. An older backend lists bare
+  // seasons, and a link may name one the list does not (yet) hold; keep it
+  // selectable so the control never shows a season the results are not.
+  const season =
+    choices && !choices.some((choice) => choice.season === linkedSeason)
+      ? defaultSeason
+      : linkedSeason;
+  const listed = choices
+    ? choices.map((choice) => ({ season: choice.season, label: seasonChoiceLabel(choice) }))
+    : seasonChoices?.seasons.map((value) => ({ season: value, label: value }));
   const seasonOptions =
-    seasonChoices && seasonChoices.seasons.length >= 2
-      ? seasonChoices.seasons.includes(season) || !season
-        ? seasonChoices.seasons
-        : [season, ...seasonChoices.seasons]
+    listed && listed.length >= 2
+      ? listed.some((option) => option.season === season) || !season
+        ? listed
+        : [{ season, label: season }, ...listed]
       : null;
 
   return {
@@ -604,6 +644,8 @@ const useFilterPanel = ({
     // games
     dateFilter,
     changeDate,
+    dateTo,
+    changeDateTo,
     gameFilter,
     changeGames,
     locationFilter,

@@ -20,7 +20,7 @@ signedInTest(
     await expect(clauses.getByRole('cell', 'Only the most recent N games.')).toBeVisible();
     await expect(clauses.getByRole('rowheader', '10+ FGA')).toBeVisible();
     await expect(screen.getByRole('rowheader', 'Less Than 10 ft')).toBeVisible();
-    await expect(screen.getByRole('rowheader', 'PRRollMan')).toBeVisible();
+    await expect(screen.getByRole('rowheader', 'P&R Roll-Man Points')).toBeVisible();
     expect(await overflowsHorizontally(browser)).toBe(false);
 
     await browser.reload();

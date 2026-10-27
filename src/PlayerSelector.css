@@ -1,46 +1,59 @@
 /* Player selector styling integrated into parent card */
 .player-selector-row {
-  margin-bottom: 24px;
+  --bs-gutter-x: 12px;
+  row-gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Player takes the rest of the row; Line Type and Line Value stay narrow. */
+.player-selector-narrow {
+  width: 96px;
 }
 
 .player-selector-label {
-  color: #c9c2b2;
+  color: var(--ct-dim);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
   display: block;
   text-align: left;
 }
 
 .player-selector-input,
 .player-selector-select {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid #3a3428;
-  color: #ffffff;
-  border-radius: 8px;
-  padding: 12px 16px;
+  background-color: var(--ct-overlay-bg-10);
+  border: 1px solid var(--ct-rule);
+  color: var(--ct-text-max);
+  border-radius: 6px;
+  height: 40px;
+  padding: 8px 12px;
   font-size: 14px;
   transition: all 0.3s ease;
   width: 100%;
 }
 
+.player-selector-select {
+  padding-right: 24px;
+  background-position: right 6px center;
+}
+
 .player-selector-input:focus,
 .player-selector-select:focus {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: #e8a33d;
-  box-shadow: 0 0 0 0.2rem rgba(232, 163, 61, 0.25);
-  color: #ffffff;
+  background-color: var(--ct-overlay-bg-15);
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 0.2rem var(--ct-gold-fg-25);
+  color: var(--ct-text-max);
 }
 
 .player-selector-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ct-overlay-fg-50);
 }
 
 .player-selector-select option {
-  background-color: #16130d;
-  color: #ffffff;
+  background-color: var(--ct-surface);
+  color: var(--ct-text-max);
 }
 
 .suggestions-list {
@@ -49,11 +62,11 @@
   width: 100%;
   max-height: 150px;
   overflow-y: auto;
-  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
-  border: 1px solid #3a3428;
+  background: linear-gradient(135deg, var(--ct-surface) 0%, var(--ct-surface-2) 100%);
+  border: 1px solid var(--ct-rule);
   border-radius: 8px;
   margin-top: 2px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px var(--ct-shadow-30);
   backdrop-filter: blur(10px);
   left: 0;
   right: 0;
@@ -62,8 +75,8 @@
 .suggestions-list .list-group-item {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #241f15;
-  color: #c9c2b2;
+  border-bottom: 1px solid var(--ct-surface-3);
+  color: var(--ct-text-2);
   padding: 12px 16px;
   font-size: 14px;
   cursor: pointer;
@@ -73,22 +86,118 @@
 }
 
 .suggestions-list .list-group-item:hover {
-  background-color: rgba(232, 163, 61, 0.1);
-  color: #ffffff;
-  border-left: 3px solid #e8a33d;
+  background-color: var(--ct-gold-bg-10);
+  color: var(--ct-text-max);
+  border-left: 3px solid var(--ct-gold);
 }
 
 .suggestions-list .list-group-item:focus,
 .suggestions-list .list-group-item[aria-selected='true'] {
-  background-color: rgba(232, 163, 61, 0.14);
-  color: #ffffff;
-  border-left: 3px solid #e8a33d;
-  outline: 2px solid #e8a33d;
+  background-color: var(--ct-gold-bg-14);
+  color: var(--ct-text-max);
+  border-left: 3px solid var(--ct-gold);
+  outline: 2px solid var(--ct-gold);
   outline-offset: -2px;
 }
 
 .suggestions-list .list-group-item:last-child {
   border-bottom: none;
+}
+
+/* Every provider and book posting the Line Type, one chip each. */
+.line-sources {
+  margin-top: 16px;
+}
+
+.line-sources-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.line-sources-head .player-selector-label {
+  margin-bottom: 0;
+}
+
+.line-sources-game {
+  color: var(--ct-dim);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+.line-sources-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.line-source {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  border: 1px solid var(--ct-rule);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background-color: var(--ct-overlay-bg-5);
+  color: var(--ct-text-2);
+  font: inherit;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.line-source:hover {
+  border-color: var(--ct-gold-fg-60);
+  background-color: var(--ct-overlay-bg-8);
+}
+
+.line-source:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.line-source[aria-pressed='true'] {
+  border-color: var(--ct-gold);
+  background-color: var(--ct-gold-soft);
+}
+
+.line-source-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ct-dim);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.line-source-line {
+  color: var(--ct-text-max);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.line-source[aria-pressed='true'] .line-source-line {
+  color: var(--ct-gold);
+}
+
+.line-source-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  color: var(--ct-dim);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  white-space: nowrap;
 }
 
 /* Responsive design */
@@ -99,10 +208,15 @@
 
   .player-selector-input,
   .player-selector-select {
-    padding: 10px 14px;
     font-size: 13px;
   }
-  .player-selector-label {
-    font-size: 0.8rem;
+
+  .line-sources-list {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px;
+  }
+
+  .line-source {
+    padding: 6px 8px;
   }
 }

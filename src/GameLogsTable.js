@@ -48,8 +48,8 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
   const getPerformanceColor = (value, columnId) => {
     const numericValue = toFiniteNumber(value);
     const average = toFiniteNumber(playerAverages[columnId]);
-    if (numericValue === null || average === null) return '#9b937f';
-    if (average === 0) return numericValue === 0 ? '#c9c2b2' : '#4caf7d';
+    if (numericValue === null || average === null) return 'var(--ct-dim)';
+    if (average === 0) return numericValue === 0 ? 'var(--ct-text-2)' : 'var(--ct-hit)';
 
     let ratio = numericValue / average;
 
@@ -59,11 +59,11 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     }
 
     // Quiet 5-step ramp: neutral near average, color only at the extremes
-    if (ratio >= 1.35) return '#5fce93'; // well above average (bright hit green)
-    if (ratio >= 1.12) return '#4caf7d'; // above average
-    if (ratio >= 0.88) return '#c9c2b2'; // around average (neutral warm)
-    if (ratio >= 0.65) return '#b3766f'; // below average
-    return '#d95f5f'; // well below average (bright miss red)
+    if (ratio >= 1.35) return 'var(--ct-x-5fce93)'; // well above average (bright hit green)
+    if (ratio >= 1.12) return 'var(--ct-hit)'; // above average
+    if (ratio >= 0.88) return 'var(--ct-text-2)'; // around average (neutral warm)
+    if (ratio >= 0.65) return 'var(--ct-x-b3766f)'; // below average
+    return 'var(--ct-x-d95f5f)'; // well below average (bright miss red)
   };
 
   const sortedGames = React.useMemo(() => {
@@ -152,7 +152,9 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     { key: 'FTM', label: 'FTM', width: '40px' },
     { key: 'FTA', label: 'FTA', width: '40px' },
     { key: 'REB', label: 'REB', width: '40px' },
+    { key: 'REB_CHANCES', label: 'REB CH', width: '54px' },
     { key: 'AST', label: 'AST', width: '40px' },
+    { key: 'POTENTIAL_AST', label: 'POT AST', width: '60px' },
     { key: 'STL', label: 'STL', width: '40px' },
     { key: 'BLK', label: 'BLK', width: '40px' },
     { key: 'TOV', label: 'TOV', width: '35px' },
@@ -253,7 +255,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                             'AR',
                           ].includes(col.key)
                             ? getPerformanceColor(colorValue, col.key)
-                            : '#cccccc',
+                            : 'var(--ct-x-cccccc)',
                         }}
                       >
                         {col.key === 'GAME_DATE'
@@ -275,7 +277,9 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                                   : ['PRA', 'PR', 'PA', 'AR'].includes(col.key)
                                     ? displayValue
                                     : numericValue === null
-                                      ? 'N/A'
+                                      ? col.key === 'REB_CHANCES' || col.key === 'POTENTIAL_AST'
+                                        ? '–'
+                                        : 'N/A'
                                       : numericValue}
                       </td>
                     );

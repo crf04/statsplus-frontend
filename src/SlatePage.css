@@ -211,6 +211,12 @@
   list-style: none;
 }
 
+.slate-trailing-note {
+  margin: 16px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.86rem;
+}
+
 .slate-window {
   display: grid;
   grid-template-columns: 92px minmax(0, 1fr);
@@ -305,7 +311,7 @@
 .slate-badge.is-blocked {
   border-color: var(--ct-miss);
   background: var(--ct-miss-soft);
-  color: #f0a4a4;
+  color: var(--ct-x-f0a4a4);
 }
 
 .slate-badge.is-event {
@@ -343,15 +349,15 @@
 }
 
 .slate-pip.is-away {
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 
 .slate-pip.is-home {
-  background: rgba(232, 163, 61, 0.5);
+  background: var(--ct-gold-fill-50);
 }
 
 .slate-row.is-blocked .slate-pip {
-  background: var(--ct-line-strong);
+  background: var(--ct-overlay-bg-16);
 }
 
 .slate-depth-figure {

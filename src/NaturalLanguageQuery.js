@@ -5,18 +5,25 @@ import { Search, CheckCircle, AlertCircle, Brain, ArrowRight } from 'lucide-reac
 import { apiClient, getApiUrl } from './config';
 import { useAuth } from './contexts/AuthContext';
 import { useSignUpThen } from './components/Auth/useSignUpThen';
-import { BROWSE_PARAM, convertNLToFilters } from './filterUtils';
+import {
+  BROWSE_PARAM,
+  applyPlayerChoices,
+  convertNLToFilters,
+  getPlayerChoices,
+} from './filterUtils';
 import { getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { NL_QUERY_TIMEOUT } from './apiSettings';
 import QueryLadder from './help/QueryLadder';
 import LandingCourt from './LandingCourt';
 import HomeTicker from './home/HomeTicker';
 import HomeTonight from './home/HomeTonight';
+import HomeTutorial from './home/HomeTutorial';
 import { useHomeTonight } from './home/useHomeTonight';
 import { useLadderAnswers } from './help/useLadderAnswers';
 import SiteFooter from './legal/SiteFooter';
 import './home/home.css';
 import './ModernSearch.css';
+import ErrorMessage from './feedback/ErrorMessage';
 
 const sampleQueries = [
   'LeBron James this year',
@@ -25,6 +32,37 @@ const sampleQueries = [
   'Kevin Durant without Devin Booker playing 30+ minutes',
   'Luka last 10 games against top 10 paint defenses',
 ];
+
+// Asks which player a name meant. Each reference gets its own group of buttons;
+// the Filter Set is applied by the parent once every group has an answer.
+const PlayerChoices = ({ choices, chosen, onChoose, variant }) => (
+  <div
+    className={`player-choices player-choices-${variant}`}
+    role="group"
+    aria-label="Which player did you mean?"
+  >
+    <p className="player-choices-title">Which player did you mean?</p>
+    {choices.map((choice, index) => (
+      <div className="player-choices-reference" role="group" aria-label={choice.text} key={index}>
+        <span className="player-choices-text">{choice.text}</span>
+        <div className="player-choices-options">
+          {choice.candidates.map((candidate, candidateIndex) => (
+            <button
+              type="button"
+              key={candidateIndex}
+              className="player-choice-button"
+              aria-pressed={chosen[index] === candidateIndex}
+              onClick={() => onChoose(index, candidateIndex)}
+            >
+              {candidate.name}
+              {candidate.team && <span className="player-choice-team">{candidate.team}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const NaturalLanguageQuery = ({
   onFiltersApplied,
@@ -51,6 +89,9 @@ const NaturalLanguageQuery = ({
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [error, setError] = useState('');
+  // A response with ambiguous player references waits here, unapplied, until
+  // the reader has picked a player for every one.
+  const [pending, setPending] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -91,10 +132,17 @@ const NaturalLanguageQuery = ({
       setQuery('');
       setError('');
       setLastResult(null);
+      setPending(null);
       setIsExpanded(false);
     }
     wasInWorkspace.current = inWorkspace;
   }, [inWorkspace]);
+
+  // A question belongs to the page it was asked on. Any navigation — Browse,
+  // Back, a link — abandons it; the picker's own apply clears it first.
+  useEffect(() => {
+    setPending(null);
+  }, [location.key]);
 
   // Close expanded search bar when transitioning to results page
   useEffect(() => {
@@ -120,6 +168,48 @@ const NaturalLanguageQuery = ({
     return () => clearInterval(id);
   }, [inWorkspace, waitlisted]);
 
+  // Convert a parsed query to the frontend filter format and hand it to the
+  // parent, which includes the player selection.
+  const applyParsedQuery = (result, submitted, finishLoading) => {
+    const filters = convertNLToFilters(result);
+
+    const application = onFiltersApplied
+      ? onFiltersApplied(filters)
+      : Object.keys(filters).length === 0
+        ? { ok: false, reason: 'empty' }
+        : { ok: true };
+
+    if (application?.reason === 'empty') {
+      setError(
+        'I could not find usable filters in that query. Please try a player or stat filter.',
+      );
+    }
+
+    finishLoading();
+
+    if (application?.reason === 'empty') return;
+
+    // Update parent with the successful query
+    if (onQueryUpdate) {
+      onQueryUpdate(submitted);
+    }
+  };
+
+  // `chosen` holds each reference's candidate index, so two candidates with one
+  // name stay distinct; only the name goes into the Filter Set.
+  const choosePlayer = (index, candidateIndex) => {
+    const chosen = [...pending.chosen];
+    chosen[index] = candidateIndex;
+    if (pending.choices.every((_, i) => chosen[i] !== undefined)) {
+      const { result, choices, submitted } = pending;
+      const names = choices.map((choice, i) => choice.candidates[chosen[i]].name);
+      setPending(null);
+      applyParsedQuery(applyPlayerChoices(result, choices, names), submitted, () => {});
+      return;
+    }
+    setPending({ ...pending, chosen });
+  };
+
   const runQuery = async (submitted) => {
     if (!submitted.trim()) return;
 
@@ -128,6 +218,7 @@ const NaturalLanguageQuery = ({
     setLoading(true);
     setError('');
     setLastResult(null);
+    setPending(null);
 
     queryRequestRef.current.controller?.abort();
     const requestId = queryRequestRef.current.id + 1;
@@ -153,30 +244,15 @@ const NaturalLanguageQuery = ({
       const result = response.data;
       setLastResult(result);
 
-      // Convert NL result to frontend filter format
-      const filters = convertNLToFilters(result);
-
-      // Apply filters to the parent component (includes player selection)
-      const application = onFiltersApplied
-        ? onFiltersApplied(filters)
-        : Object.keys(filters).length === 0
-          ? { ok: false, reason: 'empty' }
-          : { ok: true };
-
-      if (application?.reason === 'empty') {
-        setError(
-          'I could not find usable filters in that query. Please try a player or stat filter.',
-        );
+      const choices = getPlayerChoices(result);
+      if (choices.length > 0) {
+        // Apply nothing yet: the reader picks first.
+        setPending({ result, choices, chosen: [], submitted: submitted.trim() });
+        finishLoading();
+        return;
       }
 
-      finishLoading();
-
-      if (application?.reason === 'empty') return;
-
-      // Update parent with the successful query
-      if (onQueryUpdate) {
-        onQueryUpdate(submitted.trim());
-      }
+      applyParsedQuery(result, submitted.trim(), finishLoading);
     } catch (err) {
       if (isRequestCancelled(err) || queryRequestRef.current.id !== requestId) return;
       console.error('NL Query Error:', err.response?.status || err.message);
@@ -273,6 +349,14 @@ const NaturalLanguageQuery = ({
                     </Button>
                   </div>
                 </Form>
+                {pending && (
+                  <PlayerChoices
+                    choices={pending.choices}
+                    chosen={pending.chosen}
+                    onChoose={choosePlayer}
+                    variant="landing"
+                  />
+                )}
                 {!isAuthenticated && (
                   <p className="landing-signup-note">
                     Free account. Sign up with Google to run it.
@@ -306,6 +390,7 @@ const NaturalLanguageQuery = ({
           </div>
 
           <div className="home-wide">
+            <HomeTutorial />
             <QueryLadder
               onUseQuery={setQuery}
               disabled={isLoading || waitlisted}
@@ -322,13 +407,14 @@ const NaturalLanguageQuery = ({
                 onUseQuery={setQuery}
                 slateDate={tonight.slateDate}
                 fallback={tonight.fallback}
+                trailing={tonight.trailing}
               />
             )}
 
             {error && (
               <div className="landing-error">
                 <AlertCircle className="landing-error-icon" size={20} />
-                {error}
+                <ErrorMessage message={error} />
               </div>
             )}
           </div>
@@ -395,7 +481,7 @@ const NaturalLanguageQuery = ({
           {error && (
             <div className="compact-error">
               <AlertCircle className="compact-error-icon" size={16} />
-              {error}
+              <ErrorMessage message={error} />
             </div>
           )}
 
@@ -414,6 +500,16 @@ const NaturalLanguageQuery = ({
           )}
         </div>
       ) : null}
+      {/* The search closes when a response arrives, but a question still
+          waiting for its answer must stay on screen. */}
+      {pending && (
+        <PlayerChoices
+          choices={pending.choices}
+          chosen={pending.chosen}
+          onChoose={choosePlayer}
+          variant="compact"
+        />
+      )}
     </div>
   );
 };

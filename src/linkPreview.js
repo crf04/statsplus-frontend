@@ -1,4 +1,11 @@
-import { filterSetFromSearchParams } from './filterUtils';
+import {
+  filterSetFromSearchParams,
+  filterSetToSearchParams,
+  lineFromSearch,
+  lineTypeFromSearch,
+  withLine,
+  withLineType,
+} from './filterUtils';
 import { describeDefensiveFilter } from './savedFilterSetDescription';
 
 export const SITE_NAME = 'CourtAI';
@@ -26,10 +33,21 @@ const describeFilters = (filters) => {
     parts.push(`${low}-${high} minutes`);
   }
   if (filters.date_filter) parts.push(`since ${filters.date_filter}`);
+  if (filters.date_to) parts.push(`through ${filters.date_to}`);
   if (filters['players_on[]']?.length) parts.push(`with ${listNames(filters['players_on[]'])}`);
   if (filters['players_off[]']?.length)
     parts.push(`without ${listNames(filters['players_off[]'])}`);
   return parts;
+};
+
+// The backend draws the link's results as a picture (crf04/statsplus#285).
+// `line` is the sender's own line, drawn instead of the posted one. `line_date`
+// is the day whose posted line the picture uses, and a new day is a new URL, so
+// a chat app that keeps the first image it fetched shows that day's.
+const previewImagePath = (filters, lineType, line, lineDate) => {
+  const params = withLine(withLineType(filterSetToSearchParams(filters), lineType), line);
+  params.set('line_date', lineDate);
+  return `/api/games/game_logs/preview.png?${params}`;
 };
 
 /**
@@ -37,16 +55,23 @@ const describeFilters = (filters) => {
  *
  * Returns null when the URL names no player, including when it is a link we
  * refuse: a refused link shows a refusal, so its preview must not promise the
- * logs it will not show.
+ * logs it will not show. Given the ET `lineDate`, it also names the path of the
+ * link's results image, unless the link charts no stat.
  */
-export const linkPreviewFor = (searchParams) => {
+export const linkPreviewFor = (searchParams, { lineDate } = {}) => {
   const { filters } = filterSetFromSearchParams(searchParams);
   if (!filters.player_name) return null;
   const details = describeFilters(filters);
   const title = `${filters.player_name} Game Logs | ${SITE_NAME}`;
   const summary = details.length > 0 ? details.join(', ') : 'every logged game';
   const description = `${summary[0].toUpperCase()}${summary.slice(1)}. Explore on ${SITE_NAME}.`;
-  return { title, description };
+  const lineType = lineTypeFromSearch(searchParams);
+  if (!lineDate || lineType === 'None') return { title, description };
+  return {
+    title,
+    description,
+    image: previewImagePath(filters, lineType, lineFromSearch(searchParams), lineDate),
+  };
 };
 
 const escapeHtml = (value) =>
@@ -62,7 +87,21 @@ const replaceContent = (html, attribute, name, value) =>
     `$1${escapeHtml(value)}$2`,
   );
 
-/** Rewrite the static document head so a fetch of the link describes its logs. */
+const metaTags = (attribute, entries) =>
+  entries
+    .map(([name, value]) => `<meta ${attribute}="${name}" content="${escapeHtml(value)}" />`)
+    .join('\n    ');
+
+const replaceTag = (html, attribute, name, replacement) =>
+  html.replace(
+    new RegExp(`<meta\\s+${attribute}="${name}"\\s+content="[^"]*"\\s*/>`),
+    () => replacement,
+  );
+
+/**
+ * Rewrite the static document head so a fetch of the link describes its logs.
+ * `preview.image`, an absolute URL, replaces the logo and the small card.
+ */
 export const applyLinkPreview = (html, preview) => {
   let next = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(preview.title)}</title>`);
   next = replaceContent(next, 'name', 'description', preview.description);
@@ -70,5 +109,25 @@ export const applyLinkPreview = (html, preview) => {
   next = replaceContent(next, 'property', 'og:description', preview.description);
   next = replaceContent(next, 'name', 'twitter:title', preview.title);
   next = replaceContent(next, 'name', 'twitter:description', preview.description);
-  return next;
+  if (!preview.image) return next;
+  next = replaceTag(
+    next,
+    'property',
+    'og:image',
+    metaTags('property', [
+      ['og:image', preview.image],
+      ['og:image:width', '1200'],
+      ['og:image:height', '630'],
+      ['og:image:alt', preview.title],
+    ]),
+  );
+  return replaceTag(
+    next,
+    'name',
+    'twitter:card',
+    metaTags('name', [
+      ['twitter:card', 'summary_large_image'],
+      ['twitter:image', preview.image],
+    ]),
+  );
 };

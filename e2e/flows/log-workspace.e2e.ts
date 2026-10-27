@@ -4,7 +4,7 @@
 import type { Screen } from 'e2e';
 import { expect } from 'e2e';
 import { averages, gameLogs } from '../fixtures/courtai.js';
-import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
+import { freezeClock, overflowsHorizontally, signedInTest } from './support/courtai.ts';
 
 // The first logged game scored 31, the second 27; `game_filter=1` keeps only
 // the first, so the two Filter Sets are told apart by the cells they show.
@@ -150,7 +150,7 @@ signedInTest(
 signedInTest('the workspace shows stats cards and per-36 averages', async ({ app, screen }) => {
   await app.open('/?player_name=LeBron+James&game_filter=10');
   await expect(screen.getByRole('cell', '31')).toBeVisible();
-  await expect(screen.getByText('POINTS', { exact: true })).toBeVisible();
+  await expect(screen.getByRole('group', 'Points')).toBeVisible();
   await expect(screen.getByText('29.0', { exact: true })).toBeVisible();
   await expect(screen.getByText('+2.0 vs Season', { exact: true })).toBeVisible();
   await expect(screen.getByRole('heading', 'Per 36 Minutes Comparison')).toBeVisible();
@@ -239,5 +239,86 @@ signedInTest(
     await expect(screen.getByTestId('filter-panel')).toBeVisible();
     expect(api.sent('/api/games/seasons')).toHaveLength(1);
     await expect(screen.getByRole('combobox', 'Season')).toHaveCount(0);
+  },
+);
+
+// A backend that serves 2026-27 before its cutover (crf04/statsplus#330)
+// offers it as an Unpublished Season beside the Published one.
+const serving = (season: string) => ({ served_season: season, state: 'serving' });
+const seasonChoices = {
+  seasons: ['2025-26', '2024-25'],
+  default_season: '2025-26',
+  choices: [
+    {
+      season: '2026-27',
+      mode: 'unpublished',
+      families: { game_logs: serving('2026-27') },
+      team_games: { min: 2, max: 4 },
+    },
+    { season: '2025-26', mode: 'published', families: { game_logs: serving('2025-26') } },
+    { season: '2024-25', mode: 'retained', families: { game_logs: serving('2024-25') } },
+  ],
+};
+
+// crf04/statsplus#348: on a 2026-27 day the Workspace reads 2026-27 with no
+// season chosen, and a chosen 2025-26 is kept in the URL.
+signedInTest(
+  'an offered 2026-27 is read by default and chipped, a chosen 2025-26 survives a reload, and a refusal is plain',
+  async ({ app, screen, browser, api }) => {
+    await freezeClock(browser, '2026-10-27T16:00:00Z');
+    let refuse = false;
+    await api.override({
+      '/api/games/seasons': { body: seasonChoices },
+      '/api/games/game_logs': (request) =>
+        refuse
+          ? {
+              status: 503,
+              body: {
+                error: {
+                  code: 'season_unavailable',
+                  message: 'The requested season is unavailable.',
+                  details: { selected_season: '2026-27', published_season: '2025-26' },
+                },
+              },
+            }
+          : lastOneGame(request),
+    });
+    const sentSeasons = () =>
+      api.sent('/api/games/game_logs').map((request) => request.search.get('season_filter'));
+    await app.open('/?player_name=LeBron+James');
+    const season = screen.getByRole('combobox', 'Season');
+    await expect(season).toHaveValue('2026-27');
+    await expect(screen.getByRole('option', '2026-27 · early, 2–4 games per team')).toHaveCount(1);
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    expect(new Set(sentSeasons())).toEqual(new Set(['2026-27']));
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('season-2026-27-default');
+
+    await season.selectOption({ value: '2025-26' });
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
+    await browser.reload();
+    await expect(season).toHaveValue('2025-26');
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
+    expect(sentSeasons().at(-1)).toBe('2025-26');
+    await app.screenshot('season-2025-26-chosen');
+
+    await season.selectOption({ value: '2026-27' });
+    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(1);
+
+    refuse = true;
+    await browser.reload();
+    await expect(screen.getByRole('alert')).toContainText(
+      "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.",
+    );
+    await expect(screen.getByRole('heading', 'No game logs to display')).toHaveCount(0);
+    await expect(screen.getByRole('cell', '31')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('season-2026-27-unavailable');
   },
 );

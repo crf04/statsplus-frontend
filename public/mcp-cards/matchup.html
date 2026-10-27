@@ -51,11 +51,15 @@ body {
 .down { color: var(--down); }
 .pill { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: var(--font-weight-semibold, 600); text-align: center; border-radius: var(--border-radius-sm, 6px); padding: 1px 6px; }
 .flag { display: inline-block; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 4px; line-height: 15px; }
-.foot { margin-top: 10px; color: var(--faint); font-size: var(--font-text-xs-size, 12px); }
-.foot p { margin: 0; }
 .rule { border-top: 1px solid var(--line); }
 .as-of { margin-top: 10px; padding-top: 8px; color: var(--muted); font-size: var(--font-text-xs-size, 12px); }
-.as-of p { margin: 0; }
+.as-of p { margin: 4px 0 0; }
+.as-of summary { cursor: pointer; list-style: none; }
+.as-of summary::-webkit-details-marker { display: none; }
+.as-of summary::after { content: " ▸"; color: var(--faint); }
+.as-of[open] summary::after { content: " ▾"; }
+.as-of summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 3px; }
+.as-of .stale { color: var(--amber); font-weight: var(--font-weight-medium, 500); }
 .as-of p.warn { color: var(--fg); font-weight: var(--font-weight-medium, 500); }
 .as-of p.warn::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-right: 6px; vertical-align: 1px; }
 
@@ -104,24 +108,29 @@ body {
   .sec .rk { font-family: var(--mono); letter-spacing: 0; text-transform: none; font-size: 11.5px; }
 
   /* The court sizes by its container; labels are HTML over it so their type stays readable at any width. */
-  .courtbox { position: relative; }
+  .courtbox { position: relative; container-type: inline-size; }
   .court { display: block; width: 100%; height: auto; color: var(--fg); }
   .court [data-region] { stroke: none; }
   .rl { position: absolute; transform: translate(-50%, -50%); text-align: center; line-height: 1.15; white-space: nowrap; pointer-events: auto; }
-  .rl b { display: block; font-family: var(--mono); font-size: 15px; font-weight: 700; }
-  .rl small { display: block; font-family: var(--mono); font-size: 10px; color: var(--fg); opacity: 0.8; }
+  .rl b { display: block; font-family: var(--mono); font-size: clamp(12px, 4.4cqw, 15px); font-weight: 700; }
+  .rl small { display: block; font-family: var(--mono); font-size: clamp(8px, 3cqw, 10px); color: var(--fg); opacity: 0.8; }
   .rl.rot { transform: translate(-50%, -50%) rotate(-90deg); }
-  .rl.rot b { font-size: 11px; }
+  .rl.rot b { font-size: clamp(9px, 3.2cqw, 11px); }
   .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; font-size: 11px; color: var(--faint); }
   .legend .grad { width: 90px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(var(--down-rgb), 0.7), var(--tint), rgba(var(--up-rgb), 0.75)); }
-  .legend + .sub { margin-top: 2px; font-size: 11px; color: var(--faint); }
+  .legend b, .bfkey b { font-weight: 600; color: var(--fg); opacity: 0.75; }
+  .zkey { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; margin-top: 8px; font-size: 11px; color: var(--faint); }
+  .zkey .rl { position: static; transform: none; padding: 3px 8px; border-radius: 4px; background: var(--tint); color: var(--fg); }
+  .zkey .rl b { font-size: 13px; }
+  .zkey .lines { display: grid; gap: 3px; line-height: 1.25; }
+  .zkey .none { justify-self: center; width: 22px; height: 12px; border-radius: 3px; background: var(--tint); outline: 1px solid var(--line-strong); outline-offset: -1px; }
 
   /* Butterfly: his share (tick = league average) left of the label, the opponent's % vs league right of it. */
   .bf { display: grid; grid-template-columns: 32px minmax(0, 1fr) minmax(64px, 104px) minmax(0, 1fr) 78px; gap: 4px 8px; align-items: center; font-size: 11.5px; }
   .bf .hd { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bf .hd.l { grid-column: 1 / 3; text-align: right; }
   .bf .hd.r { grid-column: 4 / 6; }
-  .bf .lab { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: var(--font-weight-medium, 500); }
+  .bf .lab { text-align: center; line-height: 1.2; overflow-wrap: anywhere; font-weight: var(--font-weight-medium, 500); }
   .bf .lb, .bf .rb { position: relative; height: 14px; }
   .bf .lb > i { position: absolute; right: 0; top: 2px; bottom: 2px; background: var(--amber); border-radius: 2px 0 0 2px; opacity: 0.85; }
   .bf .lb > s { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--fg); opacity: 0.55; text-decoration: none; }
@@ -142,9 +151,6 @@ body {
   @media (max-width: 520px) {
     .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .mh .nm { font-size: 17px; }
-    .rl b { font-size: 13px; }
-    .rl small { font-size: 9px; }
-    .rl.rot b { font-size: 10px; }
     .bf { grid-template-columns: 30px minmax(0, 1fr) minmax(70px, 96px) minmax(0, 1fr) 74px; gap: 4px 6px; }
   }
 </style>
@@ -195,8 +201,8 @@ body {
     const by = Object.fromEntries(joined(m, base).map((s) => [s.slice, s]));
     const at = (region) => by[map[region]];
     const fill = (region) => { const s = at(region); return soft(s ? num(s.vs_league) : null); };
-    const hy = 52.5, R3 = 237.5;
-    const arc = `M30 0 L30 140 A${R3} ${R3} 0 0 0 470 140 L470 0`, ra = `M210 0 L210 ${hy} A40 40 0 0 0 290 ${hy} L290 0`;
+    const hy = 75, R3 = 237.5, hoop = 40.5;
+    const arc = `M30 0 L30 140 A${R3} ${R3} 0 0 0 470 140 L470 0`, ra = `M190 0 L190 ${hy} A60 60 0 0 0 310 ${hy} L310 0`;
     const shape = (region, el) => el.replace("/>", ` data-region="${region}" style="fill:${fill(region)}"/>`);
     const ground = (el) => el.replace("/>", ' style="fill:var(--ground)"/>');
     const svg = `<svg class="court" viewBox="0 0 500 400" role="img" aria-label="${esc(base.base)} half court">
@@ -207,8 +213,8 @@ body {
       ${ground(`<path d="${ra} Z"/>`)}${shape("rim", `<path d="${ra} Z"/>`)}
       <g fill="none" stroke="var(--ground)" stroke-width="3"><path d="${arc}"/><rect x="170" width="160" height="190"/><path d="${ra}"/></g>
       <rect width="500" height="400" fill="none" stroke="var(--line-strong)" stroke-width="2"/>
-      <circle cx="250" cy="${hy - 12}" r="7.5" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/>
-      <line x1="220" x2="280" y1="${hy - 22}" y2="${hy - 22}" stroke="currentColor" stroke-opacity=".5" stroke-width="3"/>
+      <circle cx="250" cy="${hoop}" r="7.5" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2"/>
+      <line x1="220" x2="280" y1="${hoop - 10}" y2="${hoop - 10}" stroke="currentColor" stroke-opacity=".5" stroke-width="3"/>
     </svg>`;
     const label = (region, x, y, rot) => {
       const s = at(region);
@@ -217,29 +223,48 @@ body {
       const second = rot ? "" : `<small>${s.opponent_rank == null ? "–" : ordinal(s.opponent_rank)} · ${s.vs_league == null ? "–" : esc(minus(s.vs_league))}</small>`;
       return `<div class="rl${rot ? " rot" : ""}" data-region="${region}" style="left:${(x / 5).toFixed(1)}%;top:${(y / 4).toFixed(1)}%" title="${esc(s.slice)}: ${esc(s.share)} of his ${esc(base.base)} Diet · ${rank}"><b>${esc(s.share)}</b>${second}</div>`;
     };
-    const labels = label("rim", 250, 72) + label("paint", 250, 152) + label("mid", 250, 242) + label("arc", 250, 337)
+    const labels = label("rim", 250, 86) + label("paint", 250, 162) + label("mid", 250, 242) + label("arc", 250, 337)
       + label("corner", 18, 70, true) + label("corner", 483, 70, true);
     return `<div class="courtbox">${svg}${labels}</div>`;
+  }
+
+  // Reads a court cell: a real cell (his largest slice) beside what its two lines mean.
+  function courtKey(m, base, opp) {
+    const { esc, minus, ordinal } = window.sp;
+    const slices = joined(m, base);
+    const s = slices.reduce((a, b) => (num(b.share) > num(a.share) ? b : a), slices[0]);
+    if (!s) return "";
+    const noun = base.base === "Assist locations" ? "assists" : "shots";
+    const gap = Object.values(REGIONS[base.base]).some((label) => !slices.some((x) => x.slice === label && x.vs_league != null));
+    return `<div class="zkey">
+      <div class="rl" style="background:${soft(num(s.vs_league))}"><b>${esc(s.share)}</b><small>${s.opponent_rank == null ? "–" : ordinal(s.opponent_rank)} · ${s.vs_league == null ? "–" : esc(minus(s.vs_league))}</small></div>
+      <div class="lines"><span>Share of his ${noun} from this zone</span><span>${esc(opp)}'s rank (30th = most) · vs league</span></div>
+      ${gap ? '<i class="none"></i><span>No data for this zone</span>' : ""}
+    </div>`;
   }
 
   function butterfly(m, base, opp) {
     const { esc, minus, ordinal, SHORT, pct } = window.sp;
     const slices = joined(m, base);
-    const mx = Math.max(0.4, ...slices.map((s) => Math.max(num(s.share) / 100, num(s.league_share) / 100 || 0)));
+    const mx = Math.max(0.4, ...slices.map((s) => Math.max(num(s.share) / 100 || 0, num(s.league_share) / 100 || 0)));
     const comp = m.components[base.base];
+    // The tool's own disclosure when the Base cannot be read in full (his Diet or the opponent's rows are missing).
+    const note = base.unavailable ? `Unavailable: ${base.unavailable}.` : base.diet_unavailable ? `${base.diet_unavailable}.` : "";
     const rows = slices.map((s) => {
-      const share = num(s.share) / 100, league = s.league_share == null ? null : num(s.league_share) / 100;
+      // A row with no Diet share (his Diet is unavailable) is the opponent's alone: no share, bar or tick.
+      const noShare = s.share == null;
+      const share = noShare ? 0 : num(s.share) / 100, league = s.league_share == null ? null : num(s.league_share) / 100;
       const v = num(s.vs_league), w = v == null ? 0 : Math.min(50, (Math.abs(v) / 30) * 50);
-      const tip = `${s.slice}: ${s.share} of his Diet${s.league_share == null ? "" : ` (league ${s.league_share})`} · ${s.opponent_rank == null ? "no opponent row" : `${opp} ${ordinal(s.opponent_rank)} (${s.vs_league} vs league)`}`;
-      return `<span class="t l">${esc(s.share)}</span>
-        <div class="lb"><i style="width:${((share / mx) * 100).toFixed(1)}%"></i>${league == null ? "" : `<s style="right:${((league / mx) * 100).toFixed(1)}%"></s>`}</div>
+      const tip = `${s.slice}: ${noShare ? "no Diet share" : `${s.share} of his Diet`}${s.league_share == null ? "" : ` (league ${s.league_share})`} · ${s.opponent_rank == null ? "no opponent row" : `${opp} ${ordinal(s.opponent_rank)} (${s.vs_league} vs league)`}`;
+      return `<span class="t l">${noShare ? "–" : esc(s.share)}</span>
+        <div class="lb">${noShare ? "" : `<i style="width:${((share / mx) * 100).toFixed(1)}%"></i>`}${league == null ? "" : `<s style="right:${((league / mx) * 100).toFixed(1)}%"></s>`}</div>
         <span class="lab" title="${esc(tip)}">${esc(s.slice)}</span>
         <div class="rb">${v == null ? "" : `<i style="${v >= 0 ? "left:50%" : "right:50%"};width:${w.toFixed(1)}%;background:${soft(v)}"></i>`}</div>
         <span class="t r"><span>${s.vs_league == null ? "–" : esc(minus(s.vs_league))}</span><span>${s.opponent_rank == null ? "" : ordinal(s.opponent_rank)}</span></span>`;
     }).join("");
     return `<div class="sec"><span>${esc(base.base)} · ${esc(m.market)}</span><span class="rk ${comp && comp.value >= 0 ? "up" : "down"}">${comp ? pct(comp.value) : ""}</span></div>
       <div class="bf" aria-label="${esc(base.base)}: his Diet against what ${esc(opp)} allows">
-        <span class="hd l">His Diet</span><span class="hd r">${esc(opp)} allows</span>${rows}</div>`;
+        <span class="hd l">His Diet</span><span class="hd r">${esc(opp)} allows</span>${rows}</div>${note ? `<p class="sub">${esc(note)}</p>` : ""}`;
   }
 
   function tradRow(m, opp) {
@@ -293,11 +318,11 @@ body {
     }).join("");
     const chips = d.bases.filter((b) => m.components[b]).map((b) => {
       const c = m.components[b];
-      return `<span class="cchip${c.thin ? " thin" : ""}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b>${c.thin ? "<em>thin</em>" : ""}</span>`;
+      return `<span class="cchip${c.thin ? " thin" : ""}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b>${c.thin ? "<em>low conf.</em>" : ""}</span>`;
     }).join("");
     // A defensive market has no Blend: its score is its one Traditional component, already a chip.
     const blend = season && !season.no_blend_component
-      ? `<span class="cchip blend${season.thin ? " thin" : ""}" style="${wash(season.value)}">Blend <b>${pct(season.value)}</b>${season.thin ? "<em>thin</em>" : ""}${m.last15 ? `<span class="l15">Last 15 <b>${pct(m.last15.value)}</b>${m.last15.thin ? "<em>thin</em>" : ""}</span>` : ""}</span>`
+      ? `<span class="cchip blend${season.thin ? " thin" : ""}" style="${wash(season.value)}">Blend <b>${pct(season.value)}</b>${season.thin ? "<em>low conf.</em>" : ""}${m.last15 ? `<span class="l15">Last 15 <b>${pct(m.last15.value)}</b>${m.last15.thin ? "<em>low conf.</em>" : ""}</span>` : ""}</span>`
       : "";
 
     const bases = (m.bases || []).filter((b) => b.base !== "Traditional");
@@ -307,11 +332,11 @@ body {
     const left = spatial
       ? `<div><div class="sec"><span>${esc(spatial.base)} · ${esc(m.market)}</span><span class="rk ${m.components[spatial.base] && m.components[spatial.base].value >= 0 ? "up" : "down"}">${m.components[spatial.base] ? pct(m.components[spatial.base].value) : ""}</span></div>
           ${court(m, spatial, opp)}
-          <div class="legend"><span>${esc(opp)} allows</span><span>less</span><span class="grad"></span><span>more than league</span></div>
-          <div class="sub">Number = his share of ${esc(spatial.base)}; under it, ${esc(opp)}'s rank (30th = allows the most) and % vs league. Grey = no slice.</div></div>`
+          <div class="legend"><b>${esc(opp)} allows vs league</b><span>Less</span><span class="grad"></span><span>More</span></div>
+          ${courtKey(m, spatial, opp)}</div>`
       : "";
     const key = others.length
-      ? `<div class="sub bfkey">Left: his share of the Base, │ = the league-average share. Right: what ${esc(opp)} allows vs league, then its rank (30th = allows the most).</div>`
+      ? `<div class="sub bfkey"><b>His Diet:</b> share of his volume; the tick marks the league average.<br><b>${esc(opp)} allows:</b> % vs league, then rank (30th = most).</div>`
       : "";
     const right = others.map((b) => butterfly(m, b, opp)).join("") + key + trad;
     const body = left || right
@@ -329,7 +354,7 @@ body {
           ${closest}
           <div class="meta">${meta}</div>
         </div>
-        <div class="sc"><div class="brand">CourtAI</div>${pill}<div class="meta">${esc(m.market)} Matchup Score${season && season.thin ? " · thin" : ""}${season && season.no_blend_component ? ` · ${esc(season.no_blend_component)} only` : ""}</div></div>
+        <div class="sc"><div class="brand">CourtAI</div>${pill}<div class="meta">${esc(m.market)} Matchup Score${season && season.thin ? " · low confidence" : ""}${season && season.no_blend_component ? ` · ${esc(season.no_blend_component)} only` : ""}</div></div>
       </div>
       <div class="sstrip" role="group" aria-label="Market">
         <div class="tile minutes"><span class="k">MIN, last 10</span><span class="v">${average == null ? "—" : average}${spark(minutes)}</span></div>
@@ -337,7 +362,7 @@ body {
       </div>
       <div class="comps" aria-label="Season Matchup Score by Base">${chips}${blend}</div>
       ${body}
-      ${anyThin ? '<div class="key"><i></i>thin sample</div>' : ""}
+      ${anyThin ? '<div class="key"><i></i>low confidence</div>' : ""}
       ${window.sp.asOf(d)}`;
     if (restore && root.querySelector) {
       const strip = root.querySelector(".sstrip");
@@ -367,7 +392,8 @@ body {
 // Minimal MCP Apps View bridge (spec 2026-01-26): JSON-RPC 2.0 over
 // postMessage. Only what a display-only card needs (#83): the ui/initialize
 // handshake, host theming, tool results and size reports. Each card defines
-// window.renderCard(structuredContent) before this script runs.
+// window.renderCard(structuredContent, meta) before this script runs; `meta` is the result's
+// `_meta`, which carries card-only data (the Targets and Backtest cards' per-game record).
 (function () {
   const PROTOCOL = "2026-01-26";
   let nextId = 1;
@@ -397,7 +423,7 @@ body {
       pending.delete(msg.id);
       msg.error ? reject(msg.error) : resolve(msg.result);
     } else if (msg.method === "ui/notifications/tool-result") {
-      window.renderCard(msg.params && msg.params.structuredContent);
+      window.renderCard(msg.params && msg.params.structuredContent, msg.params && msg.params._meta);
     } else if (msg.method === "ui/notifications/host-context-changed") {
       applyHost(msg.params);
     } else if (msg.method === "ui/resource-teardown" && msg.id !== undefined) {
@@ -407,7 +433,8 @@ body {
     }
   });
 
-  let lastHeight = 0;
+  // -1, so an empty card (height 0) still reports its size once instead of leaving the host's default.
+  let lastHeight = -1;
   new ResizeObserver(() => {
     const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
     if (height !== lastHeight) { lastHeight = height; notify("ui/notifications/size-changed", { height }); }
@@ -453,13 +480,24 @@ window.sp = {
     return `background: rgba(var(${v > 0 ? "--up-rgb" : "--down-rgb"}), ${a})`;
   },
   day: (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-  // The as-of footer: the tool text's own footer lines (`data_as_of`), verbatim; nothing from an
-  // older backend that sends no provenance. Stale and unavailable lines are marked for emphasis.
+  // The sentence the footer addresses to Claude (provenance.STALE_ADVICE): a card never shows it.
+  STALE_ADVICE: "State this once, in a closing line of any answer that uses them.",
+  // The as-of footer as one line (crf04/statsplus#155): "Data as of Aug 21 · stale" from the server's
+  // structured `data_age` (its oldest date and the backend's fresh/stale verdict, never read from the
+  // prose). Tapping it opens the tool text's own footer lines (`data_as_of`), verbatim but for the
+  // sentence addressed to Claude. Nothing from an older backend that sends no provenance.
   asOf: (d) => {
+    const { esc, STALE_ADVICE } = window.sp;
     const lines = d && Array.isArray(d.data_as_of) ? d.data_as_of : [];
     if (!lines.length) return "";
-    const p = (l) => `<p${/^(Stale|Unavailable):/.test(l) ? ' class="warn"' : ""}>${window.sp.esc(l)}</p>`;
-    return `<div class="as-of rule">${lines.map(p).join("")}</div>`;
+    const age = d.data_age || {};
+    const date = age.as_of
+      ? new Date(`${age.as_of}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+      : null;
+    const state = age.state === "stale" ? ' <span class="stale">· stale</span>' : age.state === "fresh" ? ' <span class="fresh">· fresh</span>' : "";
+    const shown = lines.map((l) => l.replace(` ${STALE_ADVICE}`, "").replace(STALE_ADVICE, "").trim()).filter(Boolean);
+    const p = (l) => `<p${/^(Stale|Unavailable):/.test(l) ? ' class="warn"' : ""}>${esc(l)}</p>`;
+    return `<details class="as-of rule"><summary>${date ? `Data as of ${esc(date)}` : "Data age"}${state}</summary>${shown.map(p).join("")}</details>`;
   },
   // Short Base labels for narrow cards (Slate and Matchup both show these).
   SHORT: { "Shot types": "Shot", "Shot zones": "Zone", "Play types": "Play", "Assist locations": "Assist", "Traditional": "Trad" },

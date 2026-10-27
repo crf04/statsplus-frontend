@@ -1,6 +1,7 @@
 import { apiClient, getApiUrl } from './config';
 import { isCalendarDate } from './calendarDate';
 import { isRecord, strictDecoders } from './decoding';
+import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 
 /*
  * Slate Edges (crf04/statsplus#204): one read for the home page in place of a
@@ -14,6 +15,7 @@ const createInvalidEdgesError = () =>
   new Error('The slate edges endpoint returned an invalid response.');
 
 const { requireString, requireNumber } = strictDecoders(createInvalidEdgesError);
+const { decodeSeasonContext } = servingSeasonDecoders(createInvalidEdgesError);
 
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw createInvalidEdgesError();
@@ -118,6 +120,7 @@ export const decodeSlateEdges = (payload) => {
     slateDate: payload.slate_date,
     games: payload.games.map(decodeGame),
     spotlight: { best, toughest },
+    seasonContext: decodeSeasonContext(payload.season_context),
   };
 };
 
@@ -135,6 +138,6 @@ export const fetchSlateEdges = async ({ date, signal, fallback } = {}) => {
     return decodeSlateEdges(response.data);
   } catch (error) {
     if (error?.response?.status === 404) return null;
-    throw error;
+    throw seasonRefusalOr(error);
   }
 };

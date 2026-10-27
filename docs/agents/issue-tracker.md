@@ -32,6 +32,7 @@ Closes #<child issue number>
 Part of crf04/statsplus#<parent issue number>
 ```
 
+The required `parent-links` check (`.github/workflows/parent-links.yml`) enforces this convention.
 Leave the parent open for integrated verification. Never point `Closes`,
 `Fixes`, or `Resolves` at the parent in a pull request or commit message.
 

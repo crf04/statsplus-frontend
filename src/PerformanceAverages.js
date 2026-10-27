@@ -57,22 +57,22 @@ const PerformanceAverages = ({ averages, appliedFilters, sampleSize = null }) =>
     const getStatColor = (filtered, season, statName) => {
       const filteredNumber = toFiniteNumber(filtered);
       const seasonNumber = toFiniteNumber(season);
-      if (filteredNumber === null || seasonNumber === null) return '#e8a33d';
+      if (filteredNumber === null || seasonNumber === null) return 'var(--ct-gold)';
 
       // For plus/minus, higher (more positive) is better, lower (more negative) is worse
       if (statName === 'PLUS_MINUS') {
         const diff = filteredNumber - seasonNumber;
-        if (diff > 1) return '#4caf7d'; // Green for better (more positive)
-        if (diff < -1) return '#c24e4e'; // Red for worse (more negative)
-        return '#9b937f'; // Gray for similar
+        if (diff > 1) return 'var(--ct-hit)'; // Green for better (more positive)
+        if (diff < -1) return 'var(--ct-miss)'; // Red for worse (more negative)
+        return 'var(--ct-dim)'; // Gray for similar
       }
 
       // For other stats, use ratio comparison
-      if (seasonNumber === 0) return filteredNumber === 0 ? '#9b937f' : '#4caf7d';
+      if (seasonNumber === 0) return filteredNumber === 0 ? 'var(--ct-dim)' : 'var(--ct-hit)';
       const ratio = filteredNumber / seasonNumber;
-      if (ratio > 1.05) return '#4caf7d'; // Green for better
-      if (ratio < 0.95) return '#c24e4e'; // Red for worse
-      return '#9b937f'; // Gray for similar
+      if (ratio > 1.05) return 'var(--ct-hit)'; // Green for better
+      if (ratio < 0.95) return 'var(--ct-miss)'; // Red for worse
+      return 'var(--ct-dim)'; // Gray for similar
     };
 
     const getComparisonIcon = (filtered, season, statName) => {

@@ -10,6 +10,7 @@ jest.mock('./config', () => ({
   getApiUrl: (name) => `/api/${name.toLowerCase()}`,
 }));
 jest.mock('./gameLogsApi', () => ({
+  ...jest.requireActual('./gameLogsApi'),
   fetchGameLogsData: jest.fn(),
   getRequestErrorMessage: jest.fn(() => 'request failed'),
   isRequestCancelled: jest.fn(() => false),

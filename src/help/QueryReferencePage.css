@@ -105,7 +105,7 @@
 }
 
 .query-reference-table tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ct-overlay-fg-5);
 }
 
 .query-reference-examples {
@@ -125,14 +125,14 @@
   border: 1px solid var(--ct-line);
   border-radius: var(--ct-radius-ctl);
   padding: 11px 14px;
-  color: #c9c2b2;
+  color: var(--ct-text-2);
   font-family: var(--ct-mono);
   font-size: 13px;
   text-decoration: none;
 }
 
 .query-reference-examples a:hover {
-  border-color: rgba(232, 163, 61, 0.6);
+  border-color: var(--ct-gold-fg-60);
   color: var(--ct-gold-hover);
 }
 

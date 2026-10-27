@@ -11,6 +11,7 @@ const legacyEnvironmentKeys = [
   'REACT_APP_ENABLE_ERROR_REPORTING',
   'REACT_APP_DEBUG',
   'REACT_APP_SENTRY_DSN',
+  'REACT_APP_SENTRY_TRACES_SAMPLE_RATE',
   'REACT_APP_API_TIMEOUT',
   'REACT_APP_NL_QUERY_TIMEOUT',
   'REACT_APP_E2E_MODE',
@@ -31,6 +32,7 @@ const viteEnvironmentAliases = {
   REACT_APP_ENABLE_ERROR_REPORTING: 'VITE_ENABLE_ERROR_REPORTING',
   REACT_APP_DEBUG: 'VITE_DEBUG',
   REACT_APP_SENTRY_DSN: 'VITE_SENTRY_DSN',
+  REACT_APP_SENTRY_TRACES_SAMPLE_RATE: 'VITE_SENTRY_TRACES_SAMPLE_RATE',
   REACT_APP_API_TIMEOUT: 'VITE_API_TIMEOUT',
   REACT_APP_NL_QUERY_TIMEOUT: 'VITE_NL_QUERY_TIMEOUT',
   REACT_APP_E2E_MODE: 'VITE_E2E_MODE',
@@ -91,6 +93,8 @@ export default defineConfig(async ({ mode }) => {
     // are exposed to client code.
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+      // Vercel exposes the deployed commit at build time.
+      'process.env.APP_COMMIT_SHA': JSON.stringify((env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7)),
       ...Object.fromEntries(
         Object.entries(environmentValues).map(([key, value]) => [
           `process.env.${key}`,

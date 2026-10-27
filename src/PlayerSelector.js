@@ -1,9 +1,67 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
-import { lineTypeOptions } from './utils';
+import { lineTypeOptions } from './filterUtils';
 import './PlayerSelector.css'; // Import the CSS file
-import { formatNumber, toFiniteNumber } from './numberUtils';
-import { postedLineFor } from './gameLogsApi';
+import { formatNumber } from './numberUtils';
+import { lineSourceId, lineSourcesFor } from './gameLogsApi';
+import { bookName } from './matchups/displayConfig';
+import { formatPrice } from './matchups/linePrices';
+import { shortSlateDay } from './home/homeFormat';
+
+const hasPrice = (source) => source.over !== null || source.under !== null;
+
+// "DraftKings 26.5, Over −110, Under −115"; a provider with no per-pick price
+// is named with its line alone.
+const sourceLabel = (source) =>
+  [
+    `${bookName(source.key)} ${formatNumber(source.line, 1)}`,
+    ...(hasPrice(source)
+      ? [
+          source.over === null ? 'no Over price' : `Over ${formatPrice(source.over)}`,
+          source.under === null ? 'no Under price' : `Under ${formatPrice(source.under)}`,
+        ]
+      : []),
+  ].join(', ');
+
+function LineSourcePicker({ posted, sources, lineSource, onChoose }) {
+  const game = [posted.matchup, posted.gameDate && shortSlateDay(posted.gameDate)]
+    .filter(Boolean)
+    .join(' · ');
+  return (
+    <div className="line-sources" role="group" aria-labelledby="line-sources-label">
+      <div className="line-sources-head">
+        <span id="line-sources-label" className="player-selector-label">
+          Posted Lines:
+        </span>
+        {game && <span className="line-sources-game">{game}</span>}
+      </div>
+      <div className="line-sources-list">
+        {sources.map((source) => {
+          const id = lineSourceId(source);
+          return (
+            <button
+              key={id}
+              type="button"
+              className="line-source"
+              aria-pressed={lineSource === id}
+              aria-label={sourceLabel(source)}
+              onClick={() => onChoose(source)}
+            >
+              <span className="line-source-name">{bookName(source.key)}</span>
+              <span className="line-source-line">{formatNumber(source.line, 1)}</span>
+              {hasPrice(source) && (
+                <span className="line-source-prices">
+                  <span>o {source.over === null ? '—' : formatPrice(source.over)}</span>
+                  <span>u {source.under === null ? '—' : formatPrice(source.under)}</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const PlayerSelector = ({
   selectedPlayer,
@@ -11,10 +69,10 @@ const PlayerSelector = ({
   lineType,
   setLineType,
   lineValue,
-  setLineValue,
-  setLineIsPosted,
+  onTypeLineValue,
+  lineSource,
+  onChooseSource,
   playerList,
-  averages,
   postedLine,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,23 +88,7 @@ const PlayerSelector = ({
     }
   }, [selectedPlayer]);
 
-  // A value typed for this player and Line Type is kept while the logs
-  // refetch; changing either one defaults the line again.
-  const lineEditedForRef = useRef(null);
-  const lineKey = `${selectedPlayer}|${lineType}`;
-
-  // The line defaults to his next game's posted line, else the season average.
-  useEffect(() => {
-    if (lineEditedForRef.current === lineKey) return;
-    // Another player or Line Type: an earlier edit no longer applies.
-    lineEditedForRef.current = null;
-    const posted = postedLineFor(postedLine, lineType);
-    const value = posted?.value ?? toFiniteNumber(averages?.[1]?.[lineType]);
-    if (value !== null) {
-      setLineValue(formatNumber(value, 1));
-      setLineIsPosted(Boolean(posted));
-    }
-  }, [lineKey, lineType, averages, postedLine, setLineValue, setLineIsPosted]);
+  const sources = lineSourcesFor(postedLine, lineType);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -95,15 +137,13 @@ const PlayerSelector = ({
   const handleLineValueChange = (e) => {
     const value = e.target.value;
     if (value === '' || (!isNaN(parseFloat(value)) && isFinite(value))) {
-      lineEditedForRef.current = lineKey;
-      setLineValue(value);
-      setLineIsPosted(false);
+      onTypeLineValue(value);
     }
   };
 
   return (
-    <Row className="mb-4 player-selector-row">
-      <Col md={4} className="position-relative">
+    <Row className="player-selector-row">
+      <Col className="position-relative">
         <Form.Group>
           <Form.Label htmlFor="player-selector-input" className="player-selector-label">
             Player:
@@ -144,7 +184,7 @@ const PlayerSelector = ({
           )}
         </Form.Group>
       </Col>
-      <Col md={4}>
+      <Col xs="auto" className="player-selector-narrow">
         <Form.Group>
           <Form.Label htmlFor="player-selector-line-type" className="player-selector-label">
             Line Type:
@@ -163,7 +203,7 @@ const PlayerSelector = ({
           </Form.Select>
         </Form.Group>
       </Col>
-      <Col md={4}>
+      <Col xs="auto" className="player-selector-narrow">
         <Form.Group>
           <Form.Label htmlFor="player-selector-line-value" className="player-selector-label">
             Line Value:
@@ -179,6 +219,16 @@ const PlayerSelector = ({
           />
         </Form.Group>
       </Col>
+      {sources.length > 0 && (
+        <Col xs={12}>
+          <LineSourcePicker
+            posted={postedLine}
+            sources={sources}
+            lineSource={lineSource}
+            onChoose={(source) => onChooseSource(lineSourceId(source))}
+          />
+        </Col>
+      )}
     </Row>
   );
 };

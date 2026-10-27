@@ -1,5 +1,7 @@
 import { decodeSlate, fetchSlate } from './slateApi';
 import { apiClient, getApiUrl } from './config';
+import { closingPoolSlatePayload } from './slateClosingPoolFixture';
+import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
@@ -104,16 +106,6 @@ test.each([
       },
     },
   ],
-  [
-    'frontend-derived pool freshness status',
-    {
-      ...payload,
-      freshness: {
-        ...payload.freshness,
-        pool: { status: 'partial', retrieved_at: null, providers: {} },
-      },
-    },
-  ],
   ...['text', 7, null].map((schedule) => [
     `primitive schedule surface ${String(schedule)}`,
     { ...payload, freshness: { ...payload.freshness, schedule } },
@@ -127,6 +119,98 @@ test.each([
   expect(() => decodeSlate(malformedPayload)).toThrow(
     'The slate endpoint returned an invalid response.',
   );
+});
+
+test('decodes the closing slate once every game has tipped, with each game and its counts', () => {
+  const slate = decodeSlate(closingPoolSlatePayload);
+
+  expect(slate.freshness.pool).toEqual({
+    status: 'closing',
+    retrievedAt: '2026-10-16T04:05:12.213Z',
+    providers: [
+      { name: 'dabble', status: 'closing', retrievedAt: '2026-10-16T04:05:12.213Z' },
+      { name: 'kalshi', status: 'missing', retrievedAt: null },
+      { name: 'novig', status: 'closing', retrievedAt: '2026-10-19T10:22:27.107Z' },
+      { name: 'polymarket', status: 'closing', retrievedAt: '2026-10-20T18:54:24.833Z' },
+      { name: 'prizepicks', status: 'missing', retrievedAt: null },
+      { name: 'underdog', status: 'closing', retrievedAt: '2026-10-20T18:54:26.472Z' },
+    ],
+  });
+  expect(
+    slate.games.map((game) => [
+      `${game.away.tricode} @ ${game.home.tricode}`,
+      game.away.targetablePlayerCount,
+      game.home.targetablePlayerCount,
+    ]),
+  ).toEqual([
+    ['BOS @ DET', 9, 10],
+    ['PHI @ NYK', 7, 8],
+    ['OKC @ SAS', 9, 9],
+  ]);
+});
+
+test('decodes a pool whose providers are closing, live and missing as partial', () => {
+  const slate = decodeSlate({
+    ...closingPoolSlatePayload,
+    freshness: {
+      ...closingPoolSlatePayload.freshness,
+      pool: {
+        state: 'live',
+        retrieved_at: '2026-10-20T22:40:00Z',
+        providers: {
+          dabble: { status: 'closing', retrieved_at: '2026-10-20T18:50:00Z' },
+          underdog: { status: 'fresh', retrieved_at: '2026-10-20T22:40:00Z' },
+          kalshi: { status: 'missing', retrieved_at: null },
+        },
+      },
+    },
+  });
+
+  expect(slate.freshness.pool).toEqual(
+    expect.objectContaining({ status: 'partial', retrievedAt: '2026-10-20T22:40:00.000Z' }),
+  );
+});
+
+// Every pool and provider status crf04/statsplus-backend can emit (app/services/projection_archive.py,
+// app/services/player_pool.py).
+test.each([
+  ['pool', 'fresh', '2026-10-20T18:00:00Z'],
+  ['pool', 'stale-served', '2026-10-20T18:00:00Z'],
+  ['pool', 'partial', null],
+  ['pool', 'unavailable', null],
+  ['provider', 'fresh', '2026-10-20T18:00:00Z'],
+  ['provider', 'stale-served', '2026-10-20T18:00:00Z'],
+  ['provider', 'missing', null],
+  ['provider', 'closing', '2026-10-20T18:00:00Z'],
+])('decodes a backend %s status of %s', (level, status, retrievedAt) => {
+  const surface = { status, retrieved_at: retrievedAt };
+  const pool =
+    level === 'pool'
+      ? { ...surface, providers: {} }
+      : { retrieved_at: retrievedAt, providers: { underdog: surface } };
+
+  expect(
+    decodeSlate({ ...payload, freshness: { ...payload.freshness, pool } }).freshness.pool.status,
+  ).toBe(status);
+});
+
+test('decodes a partial pool beside a game whose pool is missing', () => {
+  const slate = decodeSlate(partialPoolSlatePayload);
+
+  expect(slate.freshness.pool).toEqual(
+    expect.objectContaining({ status: 'partial', retrievedAt: '2026-10-20T20:43:59.528Z' }),
+  );
+  expect(
+    slate.games.map((game) => [
+      `${game.away.tricode} @ ${game.home.tricode}`,
+      game.away.targetablePlayerCount,
+      game.home.targetablePlayerCount,
+    ]),
+  ).toEqual([
+    ['BOS @ DET', 0, 0],
+    ['PHI @ NYK', 7, 8],
+    ['OKC @ SAS', 9, 9],
+  ]);
 });
 
 test('accepts schedule staleness and an unavailable aggregate pool from the backend contract', () => {
@@ -391,4 +475,23 @@ test('sends the fallback option as the fallback parameter and nothing otherwise'
     params: {},
     signal: undefined,
   });
+});
+
+test('reads the families a Slate scores from an earlier season', () => {
+  const trailing = [
+    { family: 'team_defense', serving_season: '2025-26', rule: 'every team has played 10 games' },
+    { family: 'synergy', serving_season: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ];
+
+  expect(decodeSlate({ ...payload, trailing }).trailing).toEqual([
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+    { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
+  ]);
+  expect(decodeSlate({ ...payload, trailing: [] }).trailing).toEqual([]);
+  expect(() =>
+    decodeSlate({
+      ...payload,
+      trailing: [{ family: 'synergy', serving_season: '25-26', rule: 'x' }],
+    }),
+  ).toThrow('The slate endpoint returned an invalid response.');
 });

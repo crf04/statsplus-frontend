@@ -50,6 +50,43 @@ test('decodes a scheduled opponent and preserves the direct reduced-population r
   });
 });
 
+test('passes each rank family and markets through', () => {
+  const rank = { ...response.opponent_ranks[0], family: 'play-type:transition', markets: ['PTS'] };
+  expect(decodeNextOpponent({ ...response, opponent_ranks: [rank] }).opponent_ranks).toEqual([
+    {
+      group: 'Play type',
+      label: 'Transition',
+      value: 1.17,
+      vs_league_pct: 17,
+      most_rank: 19,
+      ranked_teams: 20,
+      team_filter: 'Transition',
+      unit: 'league_ratio',
+      family: 'play-type:transition',
+      markets: ['PTS'],
+    },
+  ]);
+});
+
+test.each([
+  { family: 7, markets: 'PTS' },
+  { family: null, markets: [1] },
+])('drops malformed family and markets but keeps the rank', (extra) => {
+  const rank = { ...response.opponent_ranks[0], ...extra };
+  expect(decodeNextOpponent({ ...response, opponent_ranks: [rank] }).opponent_ranks).toEqual([
+    {
+      group: 'Play type',
+      label: 'Transition',
+      value: 1.17,
+      vs_league_pct: 17,
+      most_rank: 19,
+      ranked_teams: 20,
+      team_filter: 'Transition',
+      unit: 'league_ratio',
+    },
+  ]);
+});
+
 test.each([
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 0 }] },
   { ...response, opponent_ranks: [{ ...response.opponent_ranks[0], most_rank: 1.5 }] },

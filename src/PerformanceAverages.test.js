@@ -17,7 +17,7 @@ describe('PerformanceAverages', () => {
     expect(within(fgPctCard).getByText('50.0%')).toBeVisible();
     expect(within(fgPctCard).getByText('60.0%')).toBeVisible();
     expect(within(fgPctCard).getByText('↘')).toBeVisible();
-    expect(within(fgPctCard).getByText('50.0%')).toHaveStyle({ color: '#c24e4e' });
+    expect(within(fgPctCard).getByText('50.0%')).toHaveStyle({ color: 'var(--ct-miss)' });
 
     const pointsCard = screen.getByText('PTS').closest('.compact-stat-card');
     expect(within(pointsCard).getAllByText('18.0')).toHaveLength(2);

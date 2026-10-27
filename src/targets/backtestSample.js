@@ -44,14 +44,6 @@ export function LabSeasonProvider({ children }) {
 export const countAppearances = (backtest) =>
   backtest ? backtest.players.reduce((total, player) => total + player.games.length, 0) : null;
 
-/*
- * The two seasons a Backtest can read, in the order the Lab offers them. With
- * no season named, the backend reads the default one and says so; there is no
- * other.
- */
-export const BACKTEST_SEASONS = ['2025-26', '2026-27'];
-export const DEFAULT_BACKTEST_SEASON = '2025-26';
-
 // A season names two consecutive years, as "2025-26".
 export const isSeason = (value) =>
   typeof value === 'string' &&
@@ -132,9 +124,9 @@ export const describeSeasonUnavailable = (message) =>
 
 /*
  * What a season_unavailable refusal says about the seasons: the one it
- * resolved, which is either Backtest season whatever is published, the
- * published one as it actually is, and the stream that is missing. Anything
- * that does not hold together is ignored rather than trusted.
+ * resolved, whatever is published, the published one as it actually is, and
+ * the stream that is missing. Anything that does not hold together is ignored
+ * rather than trusted.
  */
 export const seasonUnavailableDetails = (error) => {
   const failure = error?.response?.data?.error;
@@ -142,7 +134,7 @@ export const seasonUnavailableDetails = (error) => {
   if (
     failure?.code !== 'season_unavailable' ||
     !details ||
-    !BACKTEST_SEASONS.includes(details.season) ||
+    !isSeason(details.season) ||
     !isSeason(details.published_season) ||
     typeof details.stream !== 'string'
   )

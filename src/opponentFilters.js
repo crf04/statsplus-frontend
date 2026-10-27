@@ -2,7 +2,9 @@
  * The app-wide opponent (defensive) filter vocabulary, grouped by category.
  *
  * The vocabulary is the backend's `SUPPORTED_TEAM_FILTERS`
- * (statsplus-backend app/models/catalogs.py); the defensive filter dropdown,
+ * (statsplus-backend app/models/catalogs.py) plus Defense Sheet row references,
+ * `sheet:<base>:<row key>` (app/domain/team_matchup_taxonomy.py
+ * `defense_sheet_filter`); the defensive filter dropdown,
  * the applied-filter badges, the Saved Filter Set descriptions, and the query
  * reference page all render from this one structure so they cannot drift.
  *
@@ -24,6 +26,61 @@ export const OPPONENT_FILTERS = [
     ],
   },
   {
+    category: 'Shot zone defense',
+    items: [
+      {
+        token: 'sheet:shot_zones:Restricted Area:FGM',
+        label: 'Restricted Area Makes',
+        means: 'Restricted Area makes allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Restricted Area:FGA',
+        label: 'Restricted Area Attempts',
+        means: 'Restricted Area attempts allowed',
+      },
+      {
+        token: 'sheet:shot_zones:In The Paint (Non-RA):FGM',
+        label: 'Paint (Non-RA) Makes',
+        means: 'Paint (Non-RA) makes allowed',
+      },
+      {
+        token: 'sheet:shot_zones:In The Paint (Non-RA):FGA',
+        label: 'Paint (Non-RA) Attempts',
+        means: 'Paint (Non-RA) attempts allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Mid-Range:FGM',
+        label: 'Mid-Range Makes',
+        means: 'Mid-Range makes allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Mid-Range:FGA',
+        label: 'Mid-Range Attempts',
+        means: 'Mid-Range attempts allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Corner 3:FGM',
+        label: 'Corner 3 Makes',
+        means: 'Corner 3 makes allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Corner 3:FGA',
+        label: 'Corner 3 Attempts',
+        means: 'Corner 3 attempts allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Above the Break 3:FGM',
+        label: 'Above the Break 3 Makes',
+        means: 'Above the Break 3 makes allowed',
+      },
+      {
+        token: 'sheet:shot_zones:Above the Break 3:FGA',
+        label: 'Above the Break 3 Attempts',
+        means: 'Above the Break 3 attempts allowed',
+      },
+    ],
+  },
+  {
     category: 'Shot type defense',
     items: [
       { token: 'C&S PTS', label: 'Catch & Shoot Points', means: 'Catch-and-shoot defense' },
@@ -35,29 +92,90 @@ export const OPPONENT_FILTERS = [
       { token: 'Less Than 10 ft', label: 'Inside 10 ft', means: 'Paint protection' },
       { token: 'OPP_FG3M', label: '3s Allowed', means: 'Threes allowed' },
       { token: 'OPP_FG3A', label: '3PT Attempts Allowed', means: 'Three-point attempts allowed' },
+      {
+        token: 'sheet:shot_types:Catch and Shoot:FG2M',
+        label: 'Catch & Shoot 2s',
+        means: 'Catch-and-shoot twos allowed',
+      },
+      {
+        token: 'sheet:shot_types:Catch and Shoot:FG2A',
+        label: 'Catch & Shoot 2PA',
+        means: 'Catch-and-shoot 2PT attempts',
+      },
+      {
+        token: 'sheet:shot_types:Pullups:FG2A',
+        label: 'Pull-Up 2PA',
+        means: 'Pull-up 2PT attempts',
+      },
+      {
+        token: 'sheet:shot_types:Pullups:FG3A',
+        label: 'Pull-Up 3PA',
+        means: 'Pull-up 3PT attempts',
+      },
+      {
+        token: 'sheet:shot_types:Less Than 10 ft:FG2A',
+        label: 'Inside 10 ft 2PA',
+        means: '2PT attempts inside 10 feet',
+      },
     ],
   },
   {
     category: 'Play type defense',
     items: [
-      { token: 'Transition', label: 'Transition', means: 'Fast-break defense' },
-      { token: 'Isolation', label: 'Isolation', means: 'Iso defense' },
-      { token: 'Spotup', label: 'Spot-Up', means: 'Spot-up defense' },
-      { token: 'Handoff', label: 'Handoff', means: 'Handoff defense' },
-      { token: 'OffScreen', label: 'Off-Screen', means: 'Off-screen defense' },
-      { token: 'Postup', label: 'Post-Up', means: 'Post-up defense' },
       {
-        token: 'PRBallHandler',
-        label: 'P&R Ball-Handler',
-        means: 'Pick-and-roll ball-handler defense',
+        token: 'sheet:play_types:Transition:PTS',
+        label: 'Transition Points',
+        means: 'Points allowed in transition',
       },
-      { token: 'PRRollMan', label: 'P&R Roll-Man', means: 'Pick-and-roll roll-man defense' },
-      { token: 'Cut', label: 'Cuts', means: 'Cutting defense' },
-      { token: 'OffRebound', label: 'Putbacks', means: 'Putback defense' },
       {
-        token: 'Misc',
-        label: 'Miscellaneous',
-        means: 'Everything the other play types do not cover',
+        token: 'sheet:play_types:Isolation:PTS',
+        label: 'Isolation Points',
+        means: 'Points allowed on isolations',
+      },
+      {
+        token: 'sheet:play_types:Spotup:PTS',
+        label: 'Spot-Up Points',
+        means: 'Points allowed on spot-ups',
+      },
+      {
+        token: 'sheet:play_types:Handoff:PTS',
+        label: 'Handoff Points',
+        means: 'Points allowed on handoffs',
+      },
+      {
+        token: 'sheet:play_types:OffScreen:PTS',
+        label: 'Off-Screen Points',
+        means: 'Points allowed coming off screens',
+      },
+      {
+        token: 'sheet:play_types:Postup:PTS',
+        label: 'Post-Up Points',
+        means: 'Points allowed on post-ups',
+      },
+      {
+        token: 'sheet:play_types:PRBallHandler:PTS',
+        label: 'P&R Ball-Handler Points',
+        means: 'Points allowed to pick-and-roll ball-handlers',
+      },
+      {
+        token: 'sheet:play_types:PRRollMan:PTS',
+        label: 'P&R Roll-Man Points',
+        means: 'Points allowed to pick-and-roll roll-men',
+      },
+      {
+        token: 'sheet:play_types:Cut:PTS',
+        label: 'Cut Points',
+        means: 'Points allowed on cuts',
+      },
+      {
+        token: 'sheet:play_types:OffRebound:PTS',
+        label: 'Putback Points',
+        means: 'Points allowed on putbacks',
+      },
+      {
+        token: 'sheet:play_types:Misc:PTS',
+        label: 'Miscellaneous Points',
+        means: 'Points allowed on every other play',
       },
     ],
   },
@@ -87,9 +205,41 @@ export const OPPONENT_FILTERS = [
   },
 ];
 
-const labelByToken = new Map(
-  OPPONENT_FILTERS.flatMap((group) => group.items).map((item) => [item.token, item.label]),
-);
+/*
+ * Tokens the dropdown no longer offers (Play type volume, removed by the founder on
+ * 2026-10-23, crf04/statsplus#311; play type points per possession, replaced by points
+ * on 2026-10-24). The backend still accepts them, so a shared URL or Saved Filter Set
+ * that carries one keeps its readable label.
+ */
+export const RETIRED_OPPONENT_FILTER_LABELS = {
+  Transition: 'Transition',
+  Isolation: 'Isolation',
+  Spotup: 'Spot-Up',
+  Handoff: 'Handoff',
+  OffScreen: 'Off-Screen',
+  Postup: 'Post-Up',
+  PRBallHandler: 'P&R Ball-Handler',
+  PRRollMan: 'P&R Roll-Man',
+  Cut: 'Cuts',
+  OffRebound: 'Putbacks',
+  Misc: 'Miscellaneous',
+  'sheet:play_types:Transition:POSS': 'Transition Possessions',
+  'sheet:play_types:Isolation:POSS': 'Isolation Possessions',
+  'sheet:play_types:PRBallHandler:POSS': 'P&R Ball-Handler Possessions',
+  'sheet:play_types:PRRollMan:POSS': 'P&R Roll-Man Possessions',
+  'sheet:play_types:OffRebound:POSS': 'Putback Possessions',
+  'sheet:play_types:Spotup:POSS': 'Spot-Up Possessions',
+  'sheet:play_types:Cut:POSS': 'Cut Possessions',
+  'sheet:play_types:Handoff:POSS': 'Handoff Possessions',
+  'sheet:play_types:OffScreen:POSS': 'Off-Screen Possessions',
+  'sheet:play_types:Misc:POSS': 'Miscellaneous Possessions',
+  'sheet:play_types:Postup:POSS': 'Post-Up Possessions',
+};
+
+const labelByToken = new Map([
+  ...OPPONENT_FILTERS.flatMap((group) => group.items).map((item) => [item.token, item.label]),
+  ...Object.entries(RETIRED_OPPONENT_FILTER_LABELS),
+]);
 
 /** The short display name for an opponent filter token; unknown tokens pass through. */
 export const opponentFilterLabel = (token) => labelByToken.get(token) ?? token;

@@ -1,4 +1,5 @@
 import MatchupComboChart from './MatchupComboChart';
+import { formatMatchupRating, matchupRatingColor, matchupRatingPercent } from './matchupRating';
 
 const PlaystyleComparisonChart = ({ playerData, teamData }) => {
   if (!playerData) {
@@ -19,14 +20,12 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
         const playstyle = key.replace('%', '');
         const playerFrequency = parseFloat(playerData[key]) || 0;
         const teamDefense = teamData ? parseFloat(teamData[playstyle]) || 1 : 1;
-        const matchupRating = playerFrequency * teamDefense;
         const teamDefenseRank = teamData ? parseInt(teamData[`${playstyle}_RANK`]) || 0 : null;
 
         return {
           playstyle,
           playerFrequency,
           teamDefense,
-          matchupRating,
           teamDefenseRank,
         };
       })
@@ -40,23 +39,27 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
     return <p>No valid data available for chart</p>;
   }
 
-  const totalMatchupRating = teamData
-    ? chartData.reduce((sum, item) => sum + (item.matchupRating || 0), 0)
+  const matchupRating = teamData
+    ? matchupRatingPercent(
+        chartData.map((row) => ({ frequency: row.playerFrequency, teamDefense: row.teamDefense })),
+      )
     : null;
 
   const renderTooltip = (data) => (
     <div
       className="custom-tooltip"
       style={{
-        backgroundColor: '#1e1a12',
+        backgroundColor: 'var(--ct-surface-2)',
         padding: '10px 12px',
-        border: '1px solid rgba(255,255,255,0.16)',
+        border: '1px solid var(--ct-line-strong)',
         borderRadius: '6px',
-        color: '#efe9dc',
+        color: 'var(--ct-text)',
       }}
     >
       <p className="label">{`${data.playstyle}`}</p>
-      <p style={{ color: '#e8a33d' }}>{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
+      <p
+        style={{ color: 'var(--ct-gold)' }}
+      >{`Player Frequency: ${data.playerFrequency.toFixed(2)}%`}</p>
       {teamData && (
         <>
           <p style={{ color: getColor(data.teamDefense) }}>
@@ -85,22 +88,22 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
         rotateLabels
         renderTooltip={renderTooltip}
       />
-      {teamData && totalMatchupRating && (
+      {matchupRating !== null && (
         <div
           style={{
             position: 'absolute',
             top: 10,
             right: 10,
-            background: '#1e1a12',
-            color: '#efe9dc',
+            background: 'var(--ct-surface-2)',
+            color: 'var(--ct-text)',
             padding: '5px',
-            border: '1px solid rgba(255,255,255,0.16)',
+            border: '1px solid var(--ct-line-strong)',
             borderRadius: '5px',
           }}
         >
           <strong>Total Matchup Rating: </strong>
-          <span style={{ color: getColor((200 - totalMatchupRating) / 100, false) }}>
-            {totalMatchupRating.toFixed(2)}
+          <span style={{ color: matchupRatingColor(matchupRating) }}>
+            {formatMatchupRating(matchupRating)}
           </span>
         </div>
       )}

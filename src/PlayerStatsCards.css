@@ -1,187 +1,118 @@
+/* Avatar and name beside one row of eight stat tiles. Whole-pixel line
+   heights keep the panels below on whole pixels, where the filter panel's
+   screenshot baselines were taken. */
 .player-stats-cards {
-  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-/* Player Headshot Area */
-.player-headshot-placeholder {
-  text-align: center;
-  color: #ffffff;
+.player-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
 }
 
-.headshot-circle {
-  width: 120px;
-  height: 120px;
+.player-stats-cards .headshot-circle {
+  flex: none;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e1a12 0%, #16130d 100%);
-  border: 3px solid #e8a33d;
+  background: var(--ct-surface-2);
+  border: 2px solid var(--ct-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px auto;
-  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.2);
   overflow: hidden;
 }
 
-.player-headshot {
+.player-stats-cards .player-headshot {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center top;
 }
 
-.player-initials {
-  font-size: 32px;
-  font-weight: bold;
-  color: #e8a33d;
-  letter-spacing: 2px;
-}
-
-.player-name {
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* Stat Cards */
-.stat-card {
-  background: linear-gradient(135deg, #16130d 0%, #1e1a12 100%);
-  border: 1px solid #241f15;
-  border-radius: 12px;
-  padding: 16px;
-  height: 100%;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(232, 163, 61, 0.1) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-}
-
-.stat-card:hover::before {
-  opacity: 1;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: #e8a33d;
-  box-shadow: 0 8px 25px rgba(232, 163, 61, 0.15);
-}
-
-.primary-card {
-  border-color: #e8a33d;
-  box-shadow: 0 4px 15px rgba(232, 163, 61, 0.2);
-}
-
-.primary-card::before {
-  opacity: 0.3;
-}
-
-/* Stat Card Content */
-.stat-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 2;
-}
-
-.stat-icon {
-  color: #e8a33d;
-  margin-right: 8px;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.stat-label {
-  color: #c9c2b2;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-value {
-  color: #ffffff;
-  font-size: 28px;
+.player-stats-cards .player-initials {
+  font-size: 16px;
   font-weight: 700;
-  line-height: 1;
-  margin-bottom: 4px;
-  position: relative;
-  z-index: 2;
+  color: var(--ct-gold);
 }
 
-.stat-comparison {
-  color: #9b937f;
-  font-size: 10px;
-  font-weight: 500;
+/* Outranks the Log Workspace's underlined `.dark-card h4` section title. */
+.dark-card .player-stats-cards .player-name {
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  position: relative;
-  z-index: 2;
+  line-height: 20px;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-/* Responsive Design */
+.player-stat-tiles {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.player-stat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 4px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface);
+}
+
+.player-stat-tile .stat-label {
+  color: var(--ct-dim);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  text-transform: uppercase;
+}
+
+.player-stat-tile .stat-value {
+  color: var(--ct-text);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.player-stat-tile .stat-comparison {
+  min-height: 12px;
+  color: var(--ct-dim);
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: 0;
+}
+
+.player-stat-tile .stat-comparison.is-better {
+  color: var(--ct-hit);
+}
+
+.player-stat-tile .stat-comparison.is-worse {
+  /* --ct-miss is 3.97:1 on the tile; small text needs 4.5:1. */
+  color: var(--ct-x-e06666);
+}
+
 @media (max-width: 768px) {
   .player-stats-cards {
-    padding: 15px 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
 
-  .headshot-circle {
-    width: 100px;
-    height: 100px;
-    margin-bottom: 12px;
-  }
-
-  .player-initials {
-    font-size: 24px;
-  }
-
-  .player-name {
-    font-size: 16px;
-  }
-
-  .stat-card {
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-  }
-
-  .stat-header {
-    margin-bottom: 8px;
-  }
-}
-
-@media (max-width: 576px) {
-  .stat-value {
-    font-size: 20px;
-  }
-
-  .stat-icon {
-    margin-right: 6px;
-  }
-
-  .stat-label {
-    font-size: 10px;
-  }
-
-  .stat-comparison {
-    font-size: 9px;
+  .player-stat-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

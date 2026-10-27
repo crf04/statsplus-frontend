@@ -1,194 +1,12 @@
 import { apiClient } from '../config';
+import { closingPoolSlatePayload } from '../slateClosingPoolFixture';
+import { payload } from './matchupPayloadFixture';
 import { decodeMatchup, decodeMatchupSelection, fetchMatchupSelection } from './matchupApi';
 
 jest.mock('../config', () => ({
   apiClient: { get: jest.fn() },
   getApiUrl: jest.fn(() => '/api/games/matchup/selection'),
 }));
-
-const payload = {
-  game: {
-    game_id: '0022500584',
-    away_team: { team_id: 1, tricode: 'LAL', name: 'Los Angeles Lakers' },
-    home_team: { team_id: 2, tricode: 'BOS', name: 'Boston Celtics' },
-    scheduled_at: '2026-01-16T00:30:00Z',
-    status: { state: 'scheduled', label: 'Scheduled' },
-    preseason: false,
-  },
-  league: {
-    surface_availability: Object.fromEntries(
-      ['play_types', 'shot_zones', 'shot_types', 'assist_locations', 'traditional'].map((base) => [
-        base,
-        {
-          season: { status: 'available', unavailable_reason: null },
-          last_15: { status: 'available', unavailable_reason: null },
-        },
-      ]),
-    ),
-    defense_sheet: {
-      play_types: [
-        {
-          key: 'Transition:PTS',
-          season: { average_allowed_per_48: 16.4, sigma: 1.4 },
-          last_15: { average_allowed_per_48: 16.2, sigma: 1.2 },
-        },
-      ],
-      shot_zones: [],
-      shot_types: [],
-      assist_locations: [],
-      traditional: [],
-    },
-    defensive_columns: Object.fromEntries(
-      ['OPP_TOV', 'OPP_STL', 'OPP_BLK'].map((key) => [
-        key,
-        {
-          season: { average_per_48: 10, sigma: 1 },
-          last_15: { average_per_48: 11, sigma: 1.1 },
-        },
-      ]),
-    ),
-  },
-  teams: [
-    {
-      team_id: 1,
-      tricode: 'LAL',
-      name: 'Los Angeles Lakers',
-      defense_sheet: {
-        play_types: [
-          {
-            key: 'Transition:PTS',
-            label: 'Transition PTS',
-            markets: ['PTS', 'PA', 'PR', 'PRA'],
-            season: {
-              allowed_per_48: 18.4,
-              percent_vs_league_average: 12,
-              sigma_deviation: 1.4,
-              rank: 27,
-            },
-            last_15: {
-              allowed_per_48: 15.2,
-              percent_vs_league_average: -8,
-              sigma_deviation: -1.1,
-              rank: 5,
-            },
-          },
-        ],
-        shot_zones: [],
-        shot_types: [],
-        assist_locations: [],
-        traditional: [],
-      },
-      defensive_columns: {
-        OPP_TOV: {
-          season: { per_48: 14.2, percent_vs_league_average: 8 },
-          last_15: { per_48: 12.9, percent_vs_league_average: -3 },
-        },
-        OPP_STL: {
-          season: { per_48: 7.1, percent_vs_league_average: -5 },
-          last_15: { per_48: 7.8, percent_vs_league_average: 4 },
-        },
-        OPP_BLK: {
-          season: { per_48: 5.4, percent_vs_league_average: 11 },
-          last_15: { per_48: 4.7, percent_vs_league_average: -2 },
-        },
-      },
-    },
-    {
-      team_id: 2,
-      tricode: 'BOS',
-      name: 'Boston Celtics',
-      defense_sheet: {
-        play_types: [],
-        shot_zones: [],
-        shot_types: [],
-        assist_locations: [],
-        traditional: [],
-      },
-      defensive_columns: {
-        OPP_TOV: {
-          season: { per_48: 12, percent_vs_league_average: -4 },
-          last_15: { per_48: 13, percent_vs_league_average: 2 },
-        },
-        OPP_STL: {
-          season: { per_48: 8, percent_vs_league_average: 5 },
-          last_15: { per_48: 8.2, percent_vs_league_average: 7 },
-        },
-        OPP_BLK: {
-          season: { per_48: 4.8, percent_vs_league_average: -2 },
-          last_15: { per_48: 5, percent_vs_league_average: 1 },
-        },
-      },
-    },
-  ],
-  players: [
-    {
-      canonical_id: 2544,
-      name: 'LeBron James',
-      team_id: 1,
-      tricode: 'LAL',
-      posted_markets: ['PTS', 'FGA'],
-      provenance: { prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] },
-      book_lines: {},
-      season_scoring: 25.4,
-      last_10_minutes: [35, 36],
-      diet_shares: {
-        play_types: [
-          {
-            key: 'Transition',
-            season: {
-              share: 0.19,
-              volume: 102,
-              games_played: 20,
-              volume_unit: 'possessions',
-              league_average_share: 0.09,
-              sigma_deviation: 1.3,
-            },
-          },
-        ],
-        shot_zones: [],
-        shot_types: [],
-        assist_locations: [],
-      },
-      injury_badge_ref: null,
-      scores: {
-        PTS: {
-          season: {
-            components: { play_types: { value: 0.08, thin: false } },
-            blend: { value: 0.12, thin: false },
-          },
-          last_15: {
-            components: { play_types: { value: -0.03, thin: false } },
-            blend: { value: -0.01, thin: false },
-          },
-        },
-        FGA: {
-          season: {
-            components: { play_types: { value: 0.04, thin: false } },
-            blend: { value: 0.04, thin: false },
-          },
-          last_15: {
-            components: { play_types: { value: 0.02, thin: false } },
-            blend: { value: 0.02, thin: false },
-          },
-        },
-      },
-    },
-  ],
-  injuries: {
-    status: 'unavailable',
-    unavailable_reason: 'permission_required',
-    retrieved_at: null,
-    source: 'rotowire',
-    source_url: 'https://example.com/injuries',
-    teams: [],
-  },
-  freshness: {
-    schedule: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
-    pool: { status: 'fresh', retrieved_at: '2026-01-15T11:50:00Z', providers: {} },
-    stats: { status: 'fresh', retrieved_at: '2026-01-15T10:00:00Z' },
-    injuries: { status: 'unavailable', retrieved_at: null },
-  },
-};
 
 test('decodes both delivered windows and preserves relative values', () => {
   const matchup = decodeMatchup(payload);
@@ -262,6 +80,77 @@ test('accepts clarified freshness with derived schedule and provider-only pool t
       schedule: expect.objectContaining({ status: expect.stringMatching(/fresh|stale/) }),
       pool: expect.objectContaining({ status: 'partial', retrievedAt: '2026-01-15T11:50:00.000Z' }),
     }),
+  );
+});
+
+test('decodes a partial pool the backend reports for the slate', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        status: 'partial',
+        retrieved_at: '2026-10-20T20:43:59Z',
+        providers: {
+          underdog: { status: 'fresh', retrieved_at: '2026-10-20T20:44:01Z' },
+          dabble: { status: 'fresh', retrieved_at: '2026-10-20T20:43:59Z' },
+        },
+      },
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual({
+    status: 'partial',
+    retrievedAt: '2026-10-20T20:43:59.000Z',
+    providers: [
+      { name: 'underdog', status: 'fresh', retrievedAt: '2026-10-20T20:44:01.000Z' },
+      { name: 'dabble', status: 'fresh', retrievedAt: '2026-10-20T20:43:59.000Z' },
+    ],
+  });
+});
+
+test('decodes the closing pool the backend reports once every game has tipped', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: closingPoolSlatePayload.freshness.pool,
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual({
+    status: 'closing',
+    retrievedAt: '2026-10-16T04:05:12.213Z',
+    providers: [
+      { name: 'dabble', status: 'closing', retrievedAt: '2026-10-16T04:05:12.213Z' },
+      { name: 'kalshi', status: 'missing', retrievedAt: null },
+      { name: 'novig', status: 'closing', retrievedAt: '2026-10-19T10:22:27.107Z' },
+      { name: 'polymarket', status: 'closing', retrievedAt: '2026-10-20T18:54:24.833Z' },
+      { name: 'prizepicks', status: 'missing', retrievedAt: null },
+      { name: 'underdog', status: 'closing', retrievedAt: '2026-10-20T18:54:26.472Z' },
+    ],
+  });
+});
+
+test('decodes a pool whose providers are closing, live and missing as partial', () => {
+  const candidate = {
+    ...payload,
+    freshness: {
+      ...payload.freshness,
+      pool: {
+        state: 'live',
+        retrieved_at: '2026-10-20T22:40:00Z',
+        providers: {
+          dabble: { status: 'closing', retrieved_at: '2026-10-20T18:50:00Z' },
+          underdog: { status: 'fresh', retrieved_at: '2026-10-20T22:40:00Z' },
+          kalshi: { status: 'missing', retrieved_at: null },
+        },
+      },
+    },
+  };
+
+  expect(decodeMatchup(candidate).freshness.pool).toEqual(
+    expect.objectContaining({ status: 'partial', retrievedAt: '2026-10-20T22:40:00.000Z' }),
   );
 });
 
@@ -2908,6 +2797,14 @@ describe('line_prices', () => {
     });
   });
 
+  test('decodes Dabble at the line it posts', () => {
+    const candidate = withLinePrices({ dabble: { PTS: { over: -122, under: -122 } } });
+
+    expect(decodeMatchup(candidate).players[0].linePrices).toEqual({
+      dabble: { PTS: { over: -122, under: -122 } },
+    });
+  });
+
   test.each([
     ['an absent line_prices', undefined],
     ['an empty line_prices', {}],
@@ -2917,7 +2814,20 @@ describe('line_prices', () => {
 
   test.each([
     ['PrizePicks, which posts the market', { prizepicks: { PTS: { over: -110, under: -110 } } }],
-    ['Dabble, which posts the market', { dabble: { PTS: { over: -110, under: -110 } } }],
+    ['a provider this build does not know', { fliff: { PTS: { over: -115, under: -105 } } }],
+    ['a provider this build does not know, in any shape', { fliff: 'unpriced' }],
+  ])('ignores %s and keeps the known prices', (_name, unknown) => {
+    const candidate = withLinePrices({
+      ...unknown,
+      underdog: { PTS: { over: -112, under: -112 } },
+    });
+
+    expect(decodeMatchup(candidate).players[0].linePrices).toEqual({
+      underdog: { PTS: { over: -112, under: -112 } },
+    });
+  });
+
+  test.each([
     [
       'a market missing from that provider lines',
       { underdog: { REB: { over: -110, under: -110 } } },
@@ -2932,4 +2842,149 @@ describe('line_prices', () => {
   ])('rejects %s at the response boundary', (_name, linePrices) => {
     expect(() => decodeMatchup(withLinePrices(linePrices))).toThrow('invalid response');
   });
+});
+
+// A current Matchup after a Season Cutover to 2026-27, with play types and
+// team defense still on 2025-26 and a Last 15 of 6 games.
+const servingSeasonPayload = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.as_of = { season: '2026-27', season_defense: '2026-10-28' };
+  Object.values(candidate.league.surface_availability).forEach((windows) => {
+    windows.season.season = '2026-27';
+    windows.last_15.season = '2026-27';
+    windows.last_15.window_games = 6;
+  });
+  candidate.league.surface_availability.play_types.season.season = '2025-26';
+  candidate.experience = {
+    mode: 'current',
+    player_source: 'player_pool',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'current_season_catalog'),
+      participants: experienceSection('available', 'player_pool', 'posted_markets'),
+      season_defense: {
+        ...experienceSection('available', 'team_matchup_publication', 'pregame'),
+        season: '2025-26',
+        window_games: null,
+      },
+      last_15_defense: {
+        ...experienceSection('available', 'team_matchup_publication', 'pregame'),
+        season: '2026-27',
+        window_games: 6,
+      },
+      injuries: experienceSection('available', 'rotowire', 'current'),
+    },
+  };
+  candidate.trailing = [
+    { family: 'team_defense', serving_season: '2025-26', rule: 'every team has played 10 games' },
+  ];
+  return candidate;
+};
+
+test('reads each section window’s Serving Season, Last 15 game count, and the trailing families', () => {
+  const decoded = decodeMatchup(servingSeasonPayload());
+
+  expect(decoded.asOfSeason).toBe('2026-27');
+  expect(decoded.league.surfaceAvailability.playTypes).toEqual({
+    season: { status: 'available', unavailableReason: null, season: '2025-26' },
+    last15: { status: 'available', unavailableReason: null, season: '2026-27', windowGames: 6 },
+  });
+  expect(decoded.league.surfaceAvailability.shotZones.season.season).toBe('2026-27');
+  expect(decoded.experience.sections.seasonDefense).toEqual({
+    status: 'available',
+    source: 'team_matchup_publication',
+    context: 'pregame',
+    unavailableReason: null,
+    collectedAt: null,
+    season: '2025-26',
+    windowGames: null,
+  });
+  expect(decoded.experience.sections.last15Defense.windowGames).toBe(6);
+  expect(decoded.trailing).toEqual([
+    { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
+  ]);
+});
+
+test('reads a Matchup without Serving Season fields as one season with nothing trailing', () => {
+  const decoded = decodeMatchup(payload);
+
+  expect(decoded.asOfSeason).toBeUndefined();
+  expect(decoded.trailing).toBeUndefined();
+  expect(decoded.league.surfaceAvailability.playTypes.season.season).toBeUndefined();
+  expect(decoded.league.surfaceAvailability.playTypes.last15.windowGames).toBeUndefined();
+});
+
+test('leaves a trailing family this build cannot name out of the list', () => {
+  const candidate = servingSeasonPayload();
+  candidate.trailing.push({ family: 'officials', serving_season: '2025-26', rule: 'later' });
+
+  expect(decodeMatchup(candidate).trailing.map((entry) => entry.family)).toEqual(['team_defense']);
+});
+
+test.each([
+  [
+    'a season not written YYYY-YY',
+    (c) => (c.league.surface_availability.play_types.season.season = '2025'),
+  ],
+  [
+    'a fractional window game count',
+    (c) => (c.league.surface_availability.traditional.last_15.window_games = 6.5),
+  ],
+  [
+    'a negative window game count',
+    (c) => (c.experience.sections.last_15_defense.window_games = -1),
+  ],
+  [
+    'a section season that is not a string',
+    (c) => (c.experience.sections.season_defense.season = 2025),
+  ],
+  ['a trailing block that is not a list', (c) => (c.trailing = {})],
+  ['a trailing family without a rule', (c) => (c.trailing[0].rule = '')],
+  ['a trailing family without a serving season', (c) => delete c.trailing[0].serving_season],
+  ['an as_of that is not a record', (c) => (c.as_of = '2026-27')],
+])('refuses %s', (_name, mutate) => {
+  const candidate = servingSeasonPayload();
+  mutate(candidate);
+
+  expect(() => decodeMatchup(candidate)).toThrow(
+    'The matchup endpoint returned an invalid response.',
+  );
+});
+
+const PTS_ROW_MARKETS = ['PTS', 'PA', 'PR', 'PRA'];
+const shotTypePointsRow = (markets) => ({
+  key: 'Catch and Shoot:PTS',
+  label: 'Catch and Shoot PTS',
+  markets,
+  season: { allowed_per_48: 9, percent_vs_league_average: 0.6, sigma_deviation: 0.1, rank: 16 },
+  last_15: { allowed_per_48: 9, percent_vs_league_average: 1, sigma_deviation: 0.1, rank: 15 },
+});
+const withShotTypePointsRow = (markets) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.shot_types = [
+    {
+      key: 'Catch and Shoot:PTS',
+      season: { average_allowed_per_48: 9, sigma: 1 },
+      last_15: { average_allowed_per_48: 9, sigma: 1 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.shot_types = [shotTypePointsRow(markets)];
+  return candidate;
+};
+
+test('decodes a shot-type Points row and keeps it out of the decoded sheet', () => {
+  const decoded = decodeMatchup(withShotTypePointsRow(PTS_ROW_MARKETS));
+  expect(decoded.teams[0].defenseSheet.shotTypes).toEqual([]);
+  expect(decoded.league.defenseSheet.shotTypes).toEqual([]);
+});
+
+test('rejects a shot-type Points row with the wrong markets', () => {
+  for (const markets of [
+    ['PTS'],
+    ['PTS', 'PA', 'PR'],
+    ['PRA', 'PR', 'PA', 'PTS'],
+    ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
+    [],
+  ]) {
+    expect(() => decodeMatchup(withShotTypePointsRow(markets))).toThrow('invalid response');
+  }
 });

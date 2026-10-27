@@ -1,27 +1,40 @@
 import { readRevisit } from './revisitCache';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
 import { apiClient, getApiUrl } from './config';
 import './GameLogFilter.css';
 import PlayerSelector from './PlayerSelector';
+import { useLineSelection } from './lineSelection';
 import FilterOptions from './FilterOptions';
 import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
-import SaveFilterSetModal from './SaveFilterSetModal';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
+import { fetchNextOpponent } from './nextOpponentApi';
+import { fetchSeasons } from './seasonsApi';
+import { SeasonUnavailableError, seasonChoiceLabel } from './servingSeason';
+import { SeasonRefusal, pageDefaultSeason } from './EvidenceSeason';
+import { seasonOfDate } from './gameSeason';
+import { getTodaySlateDate } from './calendarDate';
+import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
+  filterQueryString,
   filterSetFromSearchParams,
   filterSetToSearchParams,
+  lineFromSearch,
+  lineTypeFromSearch,
   mergeFilterSet,
+  withLine,
+  withLineType,
 } from './filterUtils';
 import { linkPreviewFor } from './linkPreview';
 import useDocumentTitle from './useDocumentTitle';
+import ErrorMessage from './feedback/ErrorMessage';
 
 // The chart-bearing sections render only in the workspace, so their chart
 // libraries load on demand instead of delaying the landing prompt.
@@ -49,11 +62,15 @@ const GameLogFilter = ({ notice = null }) => {
   // a waitlisted one is refused them all, so it is treated as not searching.
   const canSearch = isAuthenticated && !waitlist;
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
   // The URL is the game-log API's own query string, so a link is readable
   // against the API documentation and needs no alias vocabulary.
+  // Decoded from the Filter Set's parameters alone, so a change of view such as
+  // the Line Type leaves the Filter Set, and everything that follows it, as is.
+  const filterQuery = filterQueryString(searchParams);
   const { filters: urlFilters, invalid: urlInvalid } = useMemo(
-    () => filterSetFromSearchParams(searchParams),
-    [searchParams],
+    () => filterSetFromSearchParams(new URLSearchParams(filterQuery)),
+    [filterQuery],
   );
   const hasUrlFilterSet = Object.keys(urlFilters).length > 0 || urlInvalid.length > 0;
   const hasBrowseSentinel = searchParams.has(BROWSE_PARAM);
@@ -68,15 +85,62 @@ const GameLogFilter = ({ notice = null }) => {
   // The tab and any link preview say the same thing about the same URL.
   useDocumentTitle(linkPreviewFor(searchParams)?.title);
   const [selectedTeam, setSelectedTeam] = useState('');
-  const [lineType, setLineType] = useState('PTS');
-  const [lineValue, setLineValue] = useState('');
-  // Whether the line shown is the posted line rather than a typed or average one.
-  const [lineIsPosted, setLineIsPosted] = useState(false);
+  // The player the current team was chosen for, by default or by hand. A load
+  // for anyone else picks a new default; a filter change for the same player
+  // keeps the team. A ref because requestGameLogs reads it without re-running.
+  const teamPlayerRef = useRef(null);
+  // The player whose game logs are loading and still need a default opponent,
+  // chosen once the logs, the team list and the next-opponent read are all in.
+  const [defaultTeamFor, setDefaultTeamFor] = useState(null);
+  // The next-opponent read, which the filter panel renders and the default
+  // opponent comes from. `player` is whom it last finished for, answered or not.
+  const [nextOpponentRead, setNextOpponentRead] = useState({ player: null, data: null });
+  // Which stat the chart shows is a view of the results, kept in the URL so a
+  // shared link opens on it. It is not a filter, so an unusable value quietly
+  // means the default rather than refusing the link.
+  const lineType = lineTypeFromSearch(searchParams);
+  // A line belongs to one player and stat, so a new Line Type drops it.
+  const setLineType = (next) =>
+    setSearchParams((current) => withLine(withLineType(current, next), null), { replace: true });
+  // The Line Value the URL carries when it is not the default line.
+  const linkLine = lineFromSearch(searchParams);
+  // A Parsed Query answers after the reader may have moved on, so a write reads
+  // the address bar as it is then, not as it was when the write began.
+  const currentSearchRef = useRef(searchParams);
+  useEffect(() => {
+    currentSearchRef.current = searchParams;
+  }, [searchParams]);
+  // Writing the Filter Set rebuilds the query string from filters alone, which
+  // would silently reset the chart's stat and line, so the current ones are
+  // carried over. The line is only carried for the same player.
+  const withCurrentView = (nextSearch) => {
+    const current = currentSearchRef.current;
+    const samePlayer = nextSearch.get('player_name') === current.get('player_name');
+    return withLine(
+      withLineType(nextSearch, lineTypeFromSearch(current)),
+      samePlayer ? lineFromSearch(current) : null,
+    );
+  };
   const [gameLogs, setGameLogs] = useState([]);
   const [averages, setAverages] = useState([]);
   const [playerId, setPlayerId] = useState(null);
   // The player's posted lines for his next game, which the line defaults to.
   const [postedLine, setPostedLine] = useState(null);
+  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
+  const line = useLineSelection({
+    player: selectedPlayer,
+    lineType,
+    postedLine,
+    averages,
+    link: linkLine,
+    pending: isGameLogsLoading,
+  });
+  // The URL follows the Line Value, replacing the history entry so Back undoes
+  // filters rather than lines.
+  useEffect(() => {
+    if (line.link === undefined || line.link === linkLine) return;
+    setSearchParams((current) => withLine(current, line.link), { replace: true });
+  }, [line.link, linkLine, setSearchParams]);
   // How many games the shown averages cover, against the whole season; null
   // until a game-log response arrives for the current Filter Set.
   const [sampleSize, setSampleSize] = useState(null);
@@ -90,12 +154,19 @@ const GameLogFilter = ({ notice = null }) => {
   const [seasonGameLogsLoading, setSeasonGameLogsLoading] = useState(false);
   const [seasonGameLogsFailed, setSeasonGameLogsFailed] = useState(false);
   const [currentQuery, setCurrentQuery] = useState(''); // Track the current search query
-  const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const [gameLogsError, setGameLogsError] = useState(null);
+  // What a 503 season_unavailable refused, and the season it reads instead
+  // (crf04/statsplus#330).
+  const [seasonRefusal, setSeasonRefusal] = useState(null);
+  // The /seasons read; its choices decide which linked seasons stand.
+  // Undefined until it answers, null if it fails.
+  const [seasonChoices, setSeasonChoices] = useState(undefined);
+  // A linked season the choices do not offer, replaced by the default.
+  const [fallbackFrom, setFallbackFrom] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
   const [listsError, setListsError] = useState(null);
-  const [showSaveFilterSet, setShowSaveFilterSet] = useState(false);
   const [showSavedFilterSets, setShowSavedFilterSets] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   // The Workspace is revealed in one piece. Each section that reads on its own
   // reports what it last finished reading for, and the Workspace stays behind
   // one loading state until every section has finished for what is on screen.
@@ -114,12 +185,7 @@ const GameLogFilter = ({ notice = null }) => {
   const [revealedLoad, setRevealedLoad] = useState(null);
   const listRequestRef = useRef({ id: 0, controller: null });
   const gameLogsRequestRef = useRef({ id: 0, controller: null });
-  const teamsRef = useRef([]);
   const wasInWorkspace = useRef(false);
-
-  useEffect(() => {
-    teamsRef.current = teams;
-  }, [teams]);
 
   // Player/team lists are protected data. Fetch them only after auth has
   // settled, and refetch on every auth transition (login/logout).
@@ -201,12 +267,49 @@ const GameLogFilter = ({ notice = null }) => {
     };
   }, [authLoading, canSearch]);
 
+  const clearSelectedTeam = useCallback(() => {
+    teamPlayerRef.current = null;
+    setSelectedTeam('');
+  }, []);
+
+  // A hand-picked team belongs to the player on screen, so a retry of a failed
+  // load keeps it instead of choosing the default again.
+  const chooseTeam = useCallback(
+    (team) => {
+      teamPlayerRef.current = selectedPlayer;
+      setSelectedTeam(team);
+    },
+    [selectedPlayer],
+  );
+
   const abortGameLogsRequest = useCallback(() => {
     const currentRequest = gameLogsRequestRef.current;
     currentRequest.controller?.abort();
     gameLogsRequestRef.current = { id: currentRequest.id + 1, controller: null };
     setIsGameLogsLoading(false);
+    setDefaultTeamFor(null);
   }, []);
+
+  const choices = seasonChoices?.choices;
+  const linkedSeason = urlFilters.season_filter;
+  // With no season_filter the Workspace reads the newest offered season not
+  // after today's (crf04/statsplus#348), and only a season other than the
+  // Published Season is sent, so until one is offered every request is as before.
+  const pageSeason = pageDefaultSeason({
+    choices,
+    publishedSeason: seasonChoices?.defaultSeason ?? null,
+    ceiling: seasonOfDate(getTodaySlateDate()),
+  });
+  const workspaceSeason = linkedSeason ?? pageSeason;
+  const sentDefault = pageSeason !== seasonChoices?.defaultSeason ? pageSeason : null;
+  const withPageSeason = useCallback(
+    (filters) =>
+      filters.season_filter || !sentDefault ? filters : { ...filters, season_filter: sentDefault },
+    [sentDefault],
+  );
+  const requestFilters = useMemo(() => withPageSeason(urlFilters), [withPageSeason, urlFilters]);
+  // A reader who cannot search never reads /seasons, so has nothing to wait for.
+  const awaitingPageSeason = canSearch && !linkedSeason && seasonChoices === undefined;
 
   const seasonRequestRef = useRef({ player: null, controller: null });
 
@@ -223,9 +326,9 @@ const GameLogFilter = ({ notice = null }) => {
 
   // The strip and Own stat line share one unfiltered-season read per player.
   const loadSeasonGameLogs = useCallback(() => {
-    const player = urlFilters.player_name;
-    const season = urlFilters.season_filter;
-    if (!player || authLoading || !canSearch) return;
+    const player = requestFilters.player_name;
+    const season = requestFilters.season_filter;
+    if (!player || authLoading || !canSearch || awaitingPageSeason) return;
     if (seasonRequestRef.current.player === player && seasonRequestRef.current.season === season)
       return;
 
@@ -259,22 +362,65 @@ const GameLogFilter = ({ notice = null }) => {
         setSeasonGameLogsLoading(false);
         setSeasonGameLogsFailed(!isRequestCancelled(error));
       });
-  }, [authLoading, canSearch, urlFilters.player_name, urlFilters.season_filter]);
+  }, [
+    authLoading,
+    awaitingPageSeason,
+    canSearch,
+    requestFilters.player_name,
+    requestFilters.season_filter,
+  ]);
 
   // One player's season must never bound another player's sliders.
   const playerSeasonGameLogs = useMemo(
     () =>
-      seasonGameLogs.player === selectedPlayer && seasonGameLogs.season === urlFilters.season_filter
+      seasonGameLogs.player === selectedPlayer &&
+      seasonGameLogs.season === requestFilters.season_filter
         ? seasonGameLogs.gameLogs
         : [],
-    [seasonGameLogs, selectedPlayer, urlFilters.season_filter],
+    [seasonGameLogs, selectedPlayer, requestFilters.season_filter],
   );
+
+  useEffect(() => {
+    if (!canSearch) return undefined;
+    let current = true;
+    fetchSeasons()
+      .then((seasons) => current && setSeasonChoices(seasons))
+      .catch(() => current && setSeasonChoices(null));
+    return () => {
+      current = false;
+    };
+  }, [canSearch]);
+
+  // A link naming a season the backend does not offer reads the default
+  // instead, and says so, rather than asking for a season that cannot answer.
+  useEffect(() => {
+    if (!choices || !linkedSeason || isRefusedLink) return;
+    if (choices.some((choice) => choice.season === linkedSeason)) return;
+    setFallbackFrom(linkedSeason);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('season_filter');
+        // A season-only link would otherwise close the Workspace, and the
+        // notice with it.
+        if (!filterQueryString(next)) next.set(BROWSE_PARAM, '1');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
+  // The Player Profile reads the Workspace's season as its Evidence season,
+  // named only when it is not the default.
+  const workspaceChoice = choices?.find((choice) => choice.season === workspaceSeason);
+  const profileChoice =
+    workspaceChoice && workspaceSeason !== seasonChoices.defaultSeason ? workspaceChoice : null;
+  const unpublishedChoice = workspaceChoice?.mode === 'unpublished' ? workspaceChoice : null;
 
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
   // cancelled and ignored when their promises settle.
   const requestGameLogs = useCallback(
-    (params, { updateSelectedTeam = true, bypass = false } = {}) => {
+    (params, { bypass = false } = {}) => {
       const previousRequest = gameLogsRequestRef.current;
       previousRequest.controller?.abort();
 
@@ -284,6 +430,8 @@ const GameLogFilter = ({ notice = null }) => {
       setIsGameLogsLoading(true);
       setWorkspaceLoad((load) => load + 1);
       setGameLogsError(null);
+      setSeasonRefusal(null);
+      setDefaultTeamFor(teamPlayerRef.current === params.player_name ? null : params.player_name);
       // The badges above the table already describe the Filter Set just
       // requested, so whatever is still on screen belongs to nobody. Clearing
       // at the start is what keeps that true while the request is in flight and
@@ -314,17 +462,23 @@ const GameLogFilter = ({ notice = null }) => {
             filtered: data.gameLogs.length,
             season: data.seasonGameCount ?? null,
           });
-          if (updateSelectedTeam) {
-            setSelectedTeam(data.nextGame || teamsRef.current[0] || 'Atlanta Hawks');
-          }
           return { ok: true, data };
         })
         .catch((error) => {
           const stale = gameLogsRequestRef.current.id !== requestId;
           if (stale || isRequestCancelled(error)) {
+            if (!stale) setDefaultTeamFor(null);
             return { stale, cancelled: true };
           }
 
+          setDefaultTeamFor(null);
+
+          if (error instanceof SeasonUnavailableError) {
+            setSeasonRefusal({
+              selectedSeason: error.selectedSeason ?? params.season_filter ?? '',
+              publishedSeason: error.publishedSeason,
+            });
+          }
           setGameLogsError(
             getRequestErrorMessage(error, 'Unable to load game logs. Please try again.'),
           );
@@ -339,6 +493,32 @@ const GameLogFilter = ({ notice = null }) => {
     [currentUser?.uid],
   );
 
+  useEffect(() => {
+    setNextOpponentRead({ player: null, data: null });
+    if (!isAuthenticated || !inWorkspace || isRefusedLink) return undefined;
+    const controller = new AbortController();
+    fetchNextOpponent(selectedPlayer, { signal: controller.signal })
+      .catch(() => null)
+      .then((data) => {
+        if (!controller.signal.aborted) setNextOpponentRead({ player: selectedPlayer, data });
+      });
+    return () => controller.abort();
+  }, [isAuthenticated, inWorkspace, isRefusedLink, selectedPlayer]);
+
+  // A team already chosen for this player is never here: only a load for a
+  // different player sets defaultTeamFor.
+  useEffect(() => {
+    if (defaultTeamFor === null || defaultTeamFor !== selectedPlayer) return;
+    if (isGameLogsLoading || listsLoading || nextOpponentRead.player !== selectedPlayer) return;
+    // Matched by tricode: the schedule's opponent_name is the short team name
+    // ("Cavaliers"), not the full name the team list uses.
+    const opponent = nextOpponentRead.data?.next_game?.opponent;
+    const nextOpponent = teams.find((team) => TEAM_CODES[team] === opponent);
+    setSelectedTeam(nextOpponent || teams[0] || 'Atlanta Hawks');
+    teamPlayerRef.current = selectedPlayer;
+    setDefaultTeamFor(null);
+  }, [defaultTeamFor, selectedPlayer, isGameLogsLoading, listsLoading, nextOpponentRead, teams]);
+
   const returnToQueryPrompt = useCallback(() => {
     abortGameLogsRequest();
     setCurrentQuery('');
@@ -349,9 +529,38 @@ const GameLogFilter = ({ notice = null }) => {
     setPlayerId(null);
     setPostedLine(null);
     setSampleSize(null);
-    setSelectedTeam('');
+    clearSelectedTeam();
     setGameLogsError(null);
-  }, [abortGameLogsRequest, clearSeasonGameLogs]);
+    setSeasonRefusal(null);
+  }, [abortGameLogsRequest, clearSeasonGameLogs, clearSelectedTeam]);
+
+  // The URL is the whole view, so sharing it hands over exactly these game
+  // logs. Phones get their own share sheet; elsewhere the link is copied.
+  const shareLink = async () => {
+    const url = `${window.location.origin}${pathname}?${searchParams.toString()}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url });
+        return;
+      } catch (error) {
+        // Dismissing the share sheet is a choice; any other failure falls
+        // back to copying.
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+    } catch {
+      // A blocked clipboard leaves the link in the address bar to copy by hand.
+    }
+  };
+
+  useEffect(() => {
+    if (!linkCopied) return undefined;
+    const timer = setTimeout(() => setLinkCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [linkCopied]);
 
   // The sentinel only ever says "Workspace, no filters yet". Alongside filters
   // it is already untrue, so it is dropped rather than carried into a link
@@ -433,7 +642,7 @@ const GameLogFilter = ({ notice = null }) => {
       setPlayerId(null);
       setPostedLine(null);
       setSampleSize(null);
-      setSelectedTeam('');
+      clearSelectedTeam();
       return undefined;
     }
 
@@ -444,17 +653,21 @@ const GameLogFilter = ({ notice = null }) => {
     // request only to abort it.
     if (hasBrowseSentinel) return undefined;
 
-    requestGameLogs(urlFilters, { updateSelectedTeam: true });
+    if (awaitingPageSeason) return undefined;
+    requestGameLogs(requestFilters);
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,
+    awaitingPageSeason,
     clearSeasonGameLogs,
     hasBrowseSentinel,
     inWorkspace,
     canSearch,
+    clearSelectedTeam,
     requestGameLogs,
     returnToQueryPrompt,
+    requestFilters,
     urlFilters,
     urlInvalid,
   ]);
@@ -467,12 +680,18 @@ const GameLogFilter = ({ notice = null }) => {
    */
   const handleSeasonChange = (season) => {
     if (isRefusedLink) return;
-    const nextSearch = filterSetToSearchParams(
-      mergeFilterSet(urlFilters, { season_filter: season }),
+    setFallbackFrom(null);
+    const nextSearch = withCurrentView(
+      filterSetToSearchParams(
+        mergeFilterSet(urlFilters, { season_filter: season === pageSeason ? undefined : season }),
+      ),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
     setSearchParams(nextSearch, { replace: false });
   };
+
+  const refusalDefault = seasonRefusal?.publishedSeason ?? seasonChoices?.defaultSeason;
+  const showDefaultSeason = () => handleSeasonChange(pageSeason ? refusalDefault : undefined);
 
   /*
    * Applying a changed Filter Set writes it to the URL for the effect above
@@ -518,11 +737,12 @@ const GameLogFilter = ({ notice = null }) => {
       return { ok: false, reason: 'needsPlayer' };
     }
 
-    const nextSearch = filterSetToSearchParams(nextFilters);
+    const nextSearch = withCurrentView(filterSetToSearchParams(nextFilters));
     // An apply that changes nothing is not a place to come back to.
-    if (nextSearch.toString() === searchParams.toString()) {
+    if (nextSearch.toString() === currentSearchRef.current.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
-      requestGameLogs(nextFilters, { bypass: true, updateSelectedTeam: !selectedTeam });
+      // The read the season discovery is holding back is this one.
+      if (!awaitingPageSeason) requestGameLogs(withPageSeason(nextFilters), { bypass: true });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.
@@ -538,6 +758,7 @@ const GameLogFilter = ({ notice = null }) => {
     authLoading ||
     listsLoading ||
     isGameLogsLoading ||
+    defaultTeamFor !== null ||
     !chartReady ||
     panelSettledFor !== selectedPlayer ||
     profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
@@ -554,13 +775,24 @@ const GameLogFilter = ({ notice = null }) => {
     inWorkspace && !isRefusedLink && sectionsLoading && revealedLoad !== workspaceLoad;
 
   /*
-   * Choosing a player patches the player into the Filter Set rather than
-   * replacing it, so comparing two players under identical conditions is one
-   * action, and a link that carries filters but no player is answered by
-   * naming one. It travels the same apply path as the panel, so the request
-   * still comes from the address bar.
+   * Choosing a different player starts that player from a clean Filter Set:
+   * filters chosen for one player rarely suit another. Only the season stays,
+   * since Clear all leaves it alone too. A link that carries filters but no
+   * player is answered by naming one, so there the player is patched in. It
+   * travels the same apply path as the panel, so the request still comes from
+   * the address bar.
    */
-  const handleSelectPlayer = (player) => handleApplyFilters({ player_name: player });
+  const handleSelectPlayer = (player) => {
+    if (!urlFilters.player_name || urlFilters.player_name === player) {
+      return handleApplyFilters({ player_name: player });
+    }
+    const cleared = Object.fromEntries(Object.keys(urlFilters).map((name) => [name, null]));
+    return handleApplyFilters({
+      ...cleared,
+      player_name: player,
+      season_filter: urlFilters.season_filter,
+    });
+  };
 
   // Handler for natural language query results
   const handleNLQueryResults = (filters) => handleApplyFilters(filters, true);
@@ -588,12 +820,12 @@ const GameLogFilter = ({ notice = null }) => {
       )}
       {listsError && (
         <Alert variant="warning" className="mx-3" role="alert">
-          Unable to load player and team lists. {listsError}
+          Unable to load player and team lists. <ErrorMessage message={listsError} />
         </Alert>
       )}
-      {gameLogsError && (
+      {gameLogsError && !seasonRefusal && (
         <Alert variant="danger" className="mx-3" role="alert">
-          {gameLogsError}
+          <ErrorMessage message={gameLogsError} />
         </Alert>
       )}
       {inWorkspace && !authLoading && !canSearch && (
@@ -630,37 +862,54 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {canSearch && (
+            {fallbackFrom && !linkedSeason && pageSeason && (
+              <span className="evidence-season-chip" role="status">
+                {fallbackFrom} isn&rsquo;t offered, so these are {pageSeason} game logs.
+              </span>
+            )}
+            {unpublishedChoice && (
+              <span className="evidence-season-chip" data-testid="evidence-season-chip">
+                Evidence season {seasonChoiceLabel(unpublishedChoice)}
+              </span>
+            )}
+            {/* Saving and the saved list live in the filter panel's Saved
+                tab. Share hands on the applied link, so it waits for a URL
+                that carries a Filter Set we would open; a refused link has no
+                panel, so its way back out to the saved list stays here. */}
+            {canSearch && (hasUrlFilterSet || isRefusedLink) && (
               <div className="d-flex align-items-center gap-2 ms-auto">
-                {/* There is nothing to save until the URL carries a Filter
-                    Set, and a refused link is one we would not open again —
-                    but the saved list is still the way back out of either. */}
                 {hasUrlFilterSet && !isRefusedLink && (
+                  <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
+                    <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
+                  </button>
+                )}
+                {isRefusedLink && (
                   <button
                     type="button"
                     className="btn btn-back-to-search"
-                    onClick={() => setShowSaveFilterSet(true)}
+                    onClick={() => setShowSavedFilterSets(true)}
                   >
-                    Save Filter Set
+                    Saved Filter Sets
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-back-to-search"
-                  onClick={() => setShowSavedFilterSets(true)}
-                >
-                  Saved Filter Sets
-                </button>
               </div>
             )}
           </div>
           <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
-              <PlayerStatsCards
-                averages={averages}
-                selectedPlayer={selectedPlayer}
-                playerId={playerId}
-              />
+              {seasonRefusal ? (
+                <SeasonRefusal
+                  selectedSeason={seasonRefusal.selectedSeason}
+                  defaultSeason={refusalDefault}
+                  onShowDefault={showDefaultSeason}
+                />
+              ) : (
+                <PlayerStatsCards
+                  averages={averages}
+                  selectedPlayer={selectedPlayer}
+                  playerId={playerId}
+                />
+              )}
             </Card.Body>
           </Card>
         </Container>
@@ -674,27 +923,27 @@ const GameLogFilter = ({ notice = null }) => {
           <Row className="mb-5">
             <Col md={8}>
               <Card className="dark-card">
-                <Card.Body>
+                <Card.Body className="chart-card-body">
                   <PlayerSelector
                     selectedPlayer={selectedPlayer}
                     setSelectedPlayer={handleSelectPlayer}
                     lineType={lineType}
                     setLineType={setLineType}
-                    lineValue={lineValue}
-                    setLineValue={setLineValue}
-                    setLineIsPosted={setLineIsPosted}
+                    lineValue={line.lineValue}
+                    onTypeLineValue={line.typeLineValue}
+                    lineSource={line.lineSource}
+                    onChooseSource={line.chooseSource}
                     playerList={playerList}
-                    averages={averages}
                     postedLine={postedLine}
                   />
                   <Suspense fallback={null}>
                     <ChartComponent
                       gameLogs={gameLogs}
                       lineType={lineType}
-                      lineValue={lineValue}
+                      lineValue={line.lineValue}
                       averages={averages}
                       postedLine={postedLine}
-                      lineIsPosted={lineIsPosted}
+                      lineSource={line.lineSource}
                       appliedFilters={appliedFilters}
                     />
                     <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />
@@ -707,6 +956,7 @@ const GameLogFilter = ({ notice = null }) => {
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
                 onSeasonChange={handleSeasonChange}
+                pageSeason={pageSeason}
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}
                 seasonGameLogsLoading={seasonGameLogsLoading}
@@ -718,71 +968,73 @@ const GameLogFilter = ({ notice = null }) => {
                 gameLogsError={gameLogsError}
                 averages={averages}
                 lineType={lineType}
-                lineValue={lineValue}
+                lineValue={line.lineValue}
                 onContextSettled={setPanelSettledFor}
+                nextOpponent={
+                  nextOpponentRead.player === selectedPlayer ? nextOpponentRead.data : null
+                }
+                nextOpponentFor={nextOpponentRead.player}
+                defaultSaveName={currentQuery || ''}
               />
             </Col>
           </Row>
 
           <Row className="mb-5">
             <Col md={6}>
-              <Suspense fallback={null}>
-                <PlayerProfile
-                  selectedPlayer={selectedPlayer}
-                  selectedTeam={selectedTeam}
-                  onSettled={handleProfileSettled}
-                />
-              </Suspense>
+              {/* Its season is the Workspace's, unknown until /seasons answers. */}
+              {!awaitingPageSeason && (
+                <Suspense fallback={null}>
+                  <PlayerProfile
+                    selectedPlayer={selectedPlayer}
+                    selectedTeam={selectedTeam}
+                    seasonChoice={profileChoice}
+                    onSettled={handleProfileSettled}
+                  />
+                </Suspense>
+              )}
             </Col>
             <Col md={6}>
               <Suspense fallback={null}>
                 <OpposingTeamProfile
                   teams={teams}
                   selectedTeam={selectedTeam}
-                  setSelectedTeam={setSelectedTeam}
+                  setSelectedTeam={chooseTeam}
                   onSettled={setOpponentSettledFor}
                 />
               </Suspense>
             </Col>
           </Row>
 
-          <div className="stats-layout-container">
-            <div className="per36-sidebar">
-              <PerformanceAverages
-                averages={averages}
-                appliedFilters={appliedFilters}
-                sampleSize={isGameLogsLoading ? null : sampleSize}
-              />
-            </div>
+          {/* A refused season has no game list, not an empty one. */}
+          {!seasonRefusal && (
+            <div className="stats-layout-container">
+              <div className="per36-sidebar">
+                <PerformanceAverages
+                  averages={averages}
+                  appliedFilters={appliedFilters}
+                  sampleSize={isGameLogsLoading ? null : sampleSize}
+                />
+              </div>
 
-            <div className="game-logs-main">
-              <GameLogsTable
-                gameLogs={gameLogs}
-                appliedFilters={appliedFilters}
-                isLoading={isGameLogsLoading}
-              />
+              <div className="game-logs-main">
+                <GameLogsTable
+                  gameLogs={gameLogs}
+                  appliedFilters={appliedFilters}
+                  isLoading={isGameLogsLoading}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </Container>
       )}
 
-      {/* Saving and the saved list belong to an account, so neither exists for
-          a signed-out reader. */}
+      {/* The saved list belongs to an account, so it does not exist for a
+          signed-out reader. */}
       {canSearch && (
-        <>
-          <SaveFilterSetModal
-            show={showSaveFilterSet}
-            onHide={() => setShowSaveFilterSet(false)}
-            // The URL as it stands is what gets saved, so what opens later is
-            // the link the user was looking at.
-            queryString={searchParams.toString()}
-            defaultName={currentQuery || ''}
-          />
-          <SavedFilterSetsModal
-            show={showSavedFilterSets}
-            onHide={() => setShowSavedFilterSets(false)}
-          />
-        </>
+        <SavedFilterSetsModal
+          show={showSavedFilterSets}
+          onHide={() => setShowSavedFilterSets(false)}
+        />
       )}
     </>
   );

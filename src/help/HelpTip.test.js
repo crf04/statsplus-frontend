@@ -1,0 +1,89 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import HelpTip from './HelpTip';
+
+const renderTip = () =>
+  render(
+    <div>
+      <h2>What OKC allows</h2>
+      <HelpTip tip="defenseSheet" />
+      <p>Outside</p>
+    </div>,
+  );
+
+test('opens a note explaining the section and closes it again from the button', async () => {
+  renderTip();
+  const button = screen.getByRole('button', { name: 'About Defense Sheet' });
+  expect(screen.queryByRole('note')).toBeNull();
+
+  await userEvent.click(button);
+  const note = screen.getByRole('note', { name: 'Defense Sheet' });
+  expect(note).toHaveTextContent('The track is its rank from 1 to 30, where 30 allows the most.');
+  expect(button).toHaveAttribute('aria-expanded', 'true');
+  expect(button).toHaveAttribute('aria-controls', note.id);
+
+  await userEvent.click(button);
+  expect(screen.queryByRole('note')).toBeNull();
+  expect(button).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('Escape closes the note, returns focus to its button and leaves the card around it open', async () => {
+  const closeCard = jest.fn();
+  render(
+    <section
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') closeCard();
+      }}
+    >
+      <HelpTip tip="scoreMatrix" />
+    </section>,
+  );
+  const button = screen.getByRole('button', { name: 'About Score Matrix' });
+  await userEvent.click(button);
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('note')).toBeNull();
+  expect(button).toHaveFocus();
+  expect(closeCard).not.toHaveBeenCalled();
+
+  await userEvent.keyboard('{Escape}');
+  expect(closeCard).toHaveBeenCalledTimes(1);
+});
+
+test('moving focus out of the tip closes its note, so Escape then belongs to the card', async () => {
+  const closeCard = jest.fn();
+  render(
+    <section
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') closeCard();
+      }}
+    >
+      <HelpTip tip="scoreMatrix" />
+      <button type="button">PTS</button>
+    </section>,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'About Score Matrix' }));
+  expect(screen.getByRole('note', { name: 'Score Matrix' })).toBeInTheDocument();
+  await userEvent.tab();
+  expect(screen.getByRole('button', { name: 'PTS' })).toHaveFocus();
+  expect(screen.queryByRole('note')).toBeNull();
+  await userEvent.keyboard('{Escape}');
+  expect(closeCard).toHaveBeenCalledTimes(1);
+});
+
+test('clicking the note itself leaves it open', async () => {
+  renderTip();
+  const button = screen.getByRole('button', { name: 'About Defense Sheet' });
+  await userEvent.click(button);
+  await userEvent.click(screen.getByRole('note', { name: 'Defense Sheet' }));
+  expect(screen.getByRole('note', { name: 'Defense Sheet' })).toBeInTheDocument();
+  expect(button).toHaveFocus();
+});
+
+test('a press outside the tip closes the note; a press inside it does not', async () => {
+  renderTip();
+  await userEvent.click(screen.getByRole('button', { name: 'About Defense Sheet' }));
+  fireEvent.pointerDown(screen.getByRole('note'));
+  expect(screen.getByRole('note')).toBeInTheDocument();
+  fireEvent.pointerDown(screen.getByText('Outside'));
+  expect(screen.queryByRole('note')).toBeNull();
+});

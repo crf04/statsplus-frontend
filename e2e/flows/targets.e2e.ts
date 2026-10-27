@@ -120,6 +120,62 @@ signedInTest(
 );
 
 signedInTest(
+  'a Position and a season average narrow the Backtest and read in the Target title',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/targets');
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('button', 'Remove Qualifier 1').tap();
+    await expect(screen.getByText('Add at least one Qualifier before saving.')).toBeVisible();
+
+    // None selected is any position; Big alone is a Backtest of the two Bigs.
+    await screen.getByRole('group', 'Position').getByRole('button', 'Big').tap();
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+    const limit = screen.getByRole('region', { name: /Lab · Backtest/ });
+    await expect(limit).toContainText('1 player left out: no listed position.');
+
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a Qualifier').tap();
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'season_average' });
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: '3PA' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('8');
+    await expect(sampleCount(screen)).toHaveText('0 player-games');
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.3');
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(browser).toHaveURL('/targets/1');
+    expect(api.sent('/api/user/targets', 'POST').at(-1)?.body).toMatchObject({
+      opponent: 'ATL',
+      qualifiers: [
+        { base: 'position', groups: ['Big'] },
+        { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 0.3 },
+      ],
+    });
+    await expect(screen.getByRole('heading', 'ATL vs Big, 3PA avg ≥ 0.3')).toBeVisible();
+    const games = screen.getByRole('region', 'Backtest games');
+    await expect(games.getByRole('listitem')).toHaveCount(2);
+    await expect(
+      games.getByRole('listitem').filter({ hasText: 'Giannis Antetokounmpo' }),
+    ).toContainText('Big');
+    await expect(games.getByRole('listitem').filter({ hasText: 'Ivica Zubac' })).toContainText(
+      'Big',
+    );
+    await expect(games).not.toContainText('LeBron James');
+    await expect(games).not.toContainText('Kawhi Leonard');
+
+    // Two groups read as Wing/Big, and the Position still leads.
+    await screen.getByRole('group', 'Position').getByRole('button', 'Wing').tap();
+    await screen.getByRole('button', 'Save changes').tap();
+    await expect(screen.getByRole('heading', 'ATL vs Wing/Big, 3PA avg ≥ 0.3')).toBeVisible();
+    await expect(games.getByRole('listitem').filter({ hasText: 'LeBron James' })).toContainText(
+      'Wing',
+    );
+    expect(await overflowsHorizontally(browser)).toBe(false);
+  },
+);
+
+signedInTest(
   'defender and date Conditions narrow actual games and survive saving',
   { tags: ['critical'] },
   async ({ app, screen, browser }) => {
@@ -222,7 +278,7 @@ signedInTest(
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('lg 14%');
     await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toHaveText(
-      'Austin Reaves LAL THIN 35% lg 14% 20.1',
+      'Austin Reaves LAL Guard THIN 35% lg 14% 20.1',
     );
     const otherGame = screen
       .getByRole('listitem')

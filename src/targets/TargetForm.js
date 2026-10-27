@@ -2,12 +2,18 @@ import {
   NBA_TEAM_TRICODES,
   TARGET_BASES,
   TARGET_SLICES,
+  AVERAGE_BASE,
+  POSITION_BASE,
+  POSITION_GROUPS,
   deriveTargetTitle,
   nudgeThresholdPercent,
+  parseAverageThreshold,
   parseThresholdPercent,
   shareToThresholdPercent,
   findTargetBase,
+  isDietQualifier,
 } from './targetCatalog';
+import { STAT_GROUPS } from './statValues';
 import { useDietBaselines } from './useTargets';
 import { useLabSeason } from './backtestSample';
 import './TargetWorkbench.css';
@@ -34,32 +40,81 @@ export const blankQualifier = () => ({
   thresholdPercent: '',
 });
 
+/*
+ * A season-average row's threshold is a plain number typed in the stat's own
+ * units, so it carries its text apart from a diet row's percentage.
+ */
+const blankAverage = () => ({
+  base: AVERAGE_BASE,
+  stat: STAT_GROUPS['Box score'][0],
+  comparator: 'at_or_above',
+  thresholdText: '',
+});
+
 export const blankTargetDraft = () => ({
   opponent: NBA_TEAM_TRICODES[0],
+  positions: [],
   qualifiers: [blankQualifier()],
   note: '',
 });
 
+const requestQualifier = (qualifier) =>
+  qualifier.base === AVERAGE_BASE
+    ? {
+        base: AVERAGE_BASE,
+        stat: qualifier.stat,
+        comparator: qualifier.comparator,
+        threshold: parseAverageThreshold(qualifier.thresholdText),
+      }
+    : {
+        base: qualifier.base,
+        sliceKey: qualifier.sliceKey,
+        comparator: qualifier.comparator,
+        threshold: parseThresholdPercent(qualifier.thresholdPercent),
+      };
+
+/*
+ * The Position is not a row: it is the toggle above the rows. None selected
+ * means any position, and nothing is sent. One selected is sent first, as
+ * the title reads it.
+ */
 export const targetDraftToRequest = (draft) => ({
   opponent: draft.opponent,
-  qualifiers: draft.qualifiers.map((qualifier) => ({
-    base: qualifier.base,
-    sliceKey: qualifier.sliceKey,
-    comparator: qualifier.comparator,
-    threshold: parseThresholdPercent(qualifier.thresholdPercent),
-  })),
+  qualifiers: [
+    ...(draft.positions?.length
+      ? [
+          {
+            base: POSITION_BASE,
+            groups: POSITION_GROUPS.filter((group) => draft.positions.includes(group)),
+          },
+        ]
+      : []),
+    ...draft.qualifiers.map(requestQualifier),
+  ],
   note: draft.note.trim(),
   ...(draft.conditions !== undefined ? { conditions: normalizeConditions(draft.conditions) } : {}),
 });
 
 export const targetToDraft = (target) => ({
   opponent: target.opponent,
-  qualifiers: target.qualifiers.map((qualifier) => ({
-    base: qualifier.base,
-    sliceKey: qualifier.sliceKey,
-    comparator: qualifier.comparator,
-    thresholdPercent: shareToThresholdPercent(qualifier.threshold),
-  })),
+  positions: target.qualifiers.find(({ base }) => base === POSITION_BASE)?.groups ?? [],
+  qualifiers: target.qualifiers
+    .filter(({ base }) => base !== POSITION_BASE)
+    .map((qualifier) =>
+      qualifier.base === AVERAGE_BASE
+        ? {
+            base: AVERAGE_BASE,
+            stat: qualifier.stat,
+            comparator: qualifier.comparator,
+            thresholdText: String(qualifier.threshold),
+          }
+        : {
+            base: qualifier.base,
+            sliceKey: qualifier.sliceKey,
+            comparator: qualifier.comparator,
+            thresholdPercent: shareToThresholdPercent(qualifier.threshold),
+          },
+    ),
   note: target.note,
   ...(target.conditions !== undefined ? { conditions: target.conditions } : {}),
 });
@@ -70,7 +125,7 @@ export const targetToDraft = (target) => ({
  * two failures are worth different sentences, so the form says which one it is.
  */
 export const describeDraft = (draft) => {
-  if (draft.qualifiers.length === 0) {
+  if (draft.qualifiers.length === 0 && !draft.positions?.length) {
     return { valid: false, problem: 'Add at least one Qualifier before saving.' };
   }
   if (!validConditions(draft.conditions)) {
@@ -91,8 +146,15 @@ export const describeDraft = (draft) => {
     };
   }
   const request = targetDraftToRequest(draft);
-  if (request.qualifiers.some((qualifier) => qualifier.threshold === null)) {
-    return { valid: false, problem: 'Every threshold must be a share between 0% and 100%.' };
+  const unset = request.qualifiers.find((qualifier) => qualifier.threshold === null);
+  if (unset) {
+    return {
+      valid: false,
+      problem:
+        unset.base === AVERAGE_BASE
+          ? 'Every season average threshold must be a number of 0 or more.'
+          : 'Every threshold must be a share between 0% and 100%.',
+    };
   }
   return { valid: true, problem: null, request };
 };
@@ -121,6 +183,14 @@ export default function TargetForm({
         position === index ? { ...qualifier, ...patch } : qualifier,
       ),
     });
+
+  const replaceQualifier = (index, next) =>
+    onChange({
+      qualifiers: draft.qualifiers.map((qualifier, position) =>
+        position === index ? next : qualifier,
+      ),
+    });
+  const positions = draft.positions ?? [];
 
   const noteField = (
     <label className="target-note">
@@ -193,16 +263,45 @@ export default function TargetForm({
             </div>
           </div>
 
+          <div className="target-position" role="group" aria-label="Position">
+            <span className="target-label">Position</span>
+            {POSITION_GROUPS.map((group) => (
+              <button
+                key={group}
+                type="button"
+                aria-pressed={positions.includes(group)}
+                onClick={() =>
+                  onChange({
+                    positions: positions.includes(group)
+                      ? positions.filter((chosen) => chosen !== group)
+                      : [...positions, group],
+                  })
+                }
+              >
+                {group}
+              </button>
+            ))}
+            <small>{positions.length ? '' : 'Any position'}</small>
+          </div>
+
           {draft.qualifiers.map((qualifier, index) => (
             <div className="target-qualifier" key={index}>
               <select
                 aria-label={`Qualifier ${index + 1} diet base`}
                 value={qualifier.base}
                 onChange={(event) =>
-                  patchQualifier(index, {
-                    base: event.target.value,
-                    sliceKey: TARGET_SLICES[event.target.value][0][0],
-                  })
+                  event.target.value === AVERAGE_BASE
+                    ? replaceQualifier(index, {
+                        ...blankAverage(),
+                        comparator: qualifier.comparator,
+                      })
+                    : replaceQualifier(index, {
+                        ...(isDietQualifier(qualifier)
+                          ? qualifier
+                          : { ...blankQualifier(), comparator: qualifier.comparator }),
+                        base: event.target.value,
+                        sliceKey: TARGET_SLICES[event.target.value][0][0],
+                      })
                 }
               >
                 {TARGET_BASES.map((base) => (
@@ -210,47 +309,77 @@ export default function TargetForm({
                     {base.label}
                   </option>
                 ))}
+                <option value={AVERAGE_BASE}>Season average</option>
               </select>
-              {/* A stored Target can name a slice this page has no label for. A
-                picker would silently swap it for its first option, so an unknown
-                slice is shown as it was stored and left alone. */}
-              {TARGET_SLICES[qualifier.base].some(([key]) => key === qualifier.sliceKey) ? (
-                <select
-                  aria-label={`Qualifier ${index + 1} slice`}
-                  value={qualifier.sliceKey}
-                  onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
-                >
-                  {TARGET_SLICES[qualifier.base].map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+              {qualifier.base === AVERAGE_BASE ? (
+                <>
+                  <select
+                    aria-label={`Qualifier ${index + 1} stat`}
+                    value={qualifier.stat}
+                    onChange={(event) => patchQualifier(index, { stat: event.target.value })}
+                  >
+                    {Object.entries(STAT_GROUPS).map(([group, keys]) => (
+                      <optgroup key={group} label={group}>
+                        {keys.map((key) => (
+                          <option key={key} value={key}>
+                            {key}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <AverageThreshold
+                    qualifier={qualifier}
+                    index={index}
+                    onChange={(patch) => patchQualifier(index, patch)}
+                  />
+                </>
               ) : (
-                <select
-                  aria-label={`Qualifier ${index + 1} slice`}
-                  className="target-unknown-slice"
-                  value={qualifier.sliceKey}
-                  disabled
-                >
-                  <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
-                </select>
-              )}
-              <QualifierSlider
-                qualifier={qualifier}
-                index={index}
-                leagueShare={
-                  otherSeason ? undefined : baselines.shares[qualifier.base]?.[qualifier.sliceKey]
-                }
-                onChange={(patch) => patchQualifier(index, patch)}
-              />
-              {!otherSeason && (
-                <OpponentContext
-                  opponent={draft.opponent}
-                  qualifier={qualifier}
-                  {...opponentContext.forQualifier(qualifier)}
-                  onRetry={opponentContext.retry}
-                />
+                <>
+                  {/* A stored Target can name a slice this page has no label for. A
+                  picker would silently swap it for its first option, so an unknown
+                  slice is shown as it was stored and left alone. */}
+                  {TARGET_SLICES[qualifier.base].some(([key]) => key === qualifier.sliceKey) ? (
+                    <select
+                      aria-label={`Qualifier ${index + 1} slice`}
+                      value={qualifier.sliceKey}
+                      onChange={(event) => patchQualifier(index, { sliceKey: event.target.value })}
+                    >
+                      {TARGET_SLICES[qualifier.base].map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      aria-label={`Qualifier ${index + 1} slice`}
+                      className="target-unknown-slice"
+                      value={qualifier.sliceKey}
+                      disabled
+                    >
+                      <option value={qualifier.sliceKey}>{qualifier.sliceKey}</option>
+                    </select>
+                  )}
+                  <QualifierSlider
+                    qualifier={qualifier}
+                    index={index}
+                    leagueShare={
+                      otherSeason
+                        ? undefined
+                        : baselines.shares[qualifier.base]?.[qualifier.sliceKey]
+                    }
+                    onChange={(patch) => patchQualifier(index, patch)}
+                  />
+                  {!otherSeason && (
+                    <OpponentContext
+                      opponent={draft.opponent}
+                      qualifier={qualifier}
+                      {...opponentContext.forQualifier(qualifier)}
+                      onRetry={opponentContext.retry}
+                    />
+                  )}
+                </>
               )}
               <button
                 type="button"
@@ -368,6 +497,45 @@ function QualifierSlider({ qualifier, index, leagueShare, onChange }) {
         )}
       </div>
       <small className="target-slider-unit">{findTargetBase(qualifier.base)?.unit}</small>
+    </div>
+  );
+}
+
+/*
+ * An Average Qualifier is a bound on a plain number, in the stat's own units,
+ * so it is typed rather than slid: a percentage track would claim a 0–100
+ * range and a unit it does not have.
+ */
+function AverageThreshold({ qualifier, index, onChange }) {
+  const above = qualifier.comparator === 'at_or_above';
+  return (
+    <div
+      className={`target-slider-row target-average-row ${above ? 'is-at-or-above' : 'is-at-or-below'}`}
+    >
+      <button
+        type="button"
+        className="target-comparator-toggle"
+        aria-label={
+          above ? 'At or above; switch to at or below' : 'At or below; switch to at or above'
+        }
+        onClick={() => onChange({ comparator: above ? 'at_or_below' : 'at_or_above' })}
+      >
+        {above ? '≥' : '≤'}
+      </button>
+      <input
+        className="target-average-input"
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="any"
+        placeholder="Choose"
+        aria-label={`Qualifier ${index + 1} threshold`}
+        value={qualifier.thresholdText}
+        onChange={(event) => onChange({ thresholdText: event.target.value })}
+      />
+      <small className="target-slider-unit">
+        {qualifier.stat.endsWith('/36') ? 'per 36 min' : 'per game'} average
+      </small>
     </div>
   );
 }

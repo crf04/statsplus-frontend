@@ -213,3 +213,17 @@ export const nudgeThresholdPercent = (percentText, delta) => {
   const current = Number(String(percentText).trim()) || 0;
   return String(Math.min(100, Math.max(0, Math.round((current + delta) * 10) / 10)));
 };
+
+/*
+ * An Average Qualifier's threshold is a plain number in the stat's own units,
+ * so it is typed as one and kept to the two decimals the backend compares
+ * duplicates at. A blank, negative or non-numeric entry has no value, which is
+ * what keeps the draft unsaveable.
+ */
+export const parseAverageThreshold = (text) => {
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value) || value < 0) return null;
+  return Math.round(value * 100) / 100;
+};

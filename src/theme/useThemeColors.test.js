@@ -12,7 +12,7 @@ const computedColor = (element) => {
   return { color: PALETTES[theme][element.style.color.match(/var\((--[\w-]+)\)/)[1]] };
 };
 
-const REQUEST = { label: '--ct-gold', ground: '--ct-surface-2' };
+const REQUEST = { label: ['fg', '--ct-gold'], ground: ['fill', '--ct-surface-2'] };
 
 const renderHook = () => {
   const seen = [];

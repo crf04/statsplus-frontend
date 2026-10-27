@@ -12,6 +12,7 @@ import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { COLOR_FUNCTION_RE, CSS_COLOR_NAMES, HEX_RE, parseChannels } from './colors.mjs';
 import {
+  ALLOWED_KINDS,
   RUNTIME_FAMILY,
   TAIL_NAME_RE,
   buildRegistry,
@@ -170,7 +171,7 @@ const aliasValues = (setters, file, rule) => (name) => {
 const issue = (where, rule, message) => ({ ...where, rule, message });
 
 // Problems with one painted value after its aliases are followed: a token in
-// the wrong role and a channel alpha without its multiplier.
+// the wrong role and a channel alpha that does not fit its side.
 const paintIssues = (value, role, registry, context, valuesOf) => {
   const messages = new Set();
   for (const expanded of expandAliases(value, valuesOf)) {
@@ -316,18 +317,32 @@ const PASS_THROUGH = new Set([
   'TSSatisfiesExpression',
   'ParenthesizedExpression',
   'BinaryExpression',
+  'ArrayExpression',
 ]);
 
 const keyName = (key) => key?.name ?? (typeof key?.value === 'string' ? key.value : null);
 
+// A canvas colour request, `[role, '--ct-token']` (see useThemeColors).
+const requestRole = (array, child) => {
+  const [role, token] = array.elements;
+  return array.elements.length === 2 &&
+    token === child &&
+    role?.type === 'StringLiteral' &&
+    Object.hasOwn(ALLOWED_KINDS, role.value)
+    ? role.value
+    : null;
+};
+
 // The property a string ends up painting: a style key, an SVG paint attribute,
-// a Chart.js option or a canvas style, through conditionals, fallbacks and
-// template literals, with the object that holds a style key. Null when the
-// string is not a value of one.
+// a Chart.js option, a canvas style or the role a colour request names,
+// through conditionals, fallbacks, template literals and arrays, with the
+// object that holds a style key. Null when the string is not a value of one.
 const paintedProperty = (node, ancestors) => {
   let child = node;
   for (let i = ancestors.length - 1; i >= 0; i -= 1) {
     const parent = ancestors[i];
+    const request = parent.type === 'ArrayExpression' && requestRole(parent, child);
+    if (request) return { request };
     if (parent.type === 'ObjectProperty') {
       if (parent.value !== child || parent.computed) return null;
       return { name: keyName(parent.key), style: ancestors[i - 1] };
@@ -393,7 +408,7 @@ export const checkJs = (source, file, registry, scope = {}) => {
     const text = joinTemplate(pieces);
     const property = paintedProperty(node, ancestors);
     if (NOT_PAINT.has(property?.name)) return;
-    const role = property?.name ? jsRoleOf(property.name) : null;
+    const role = property?.request ?? (property?.name ? jsRoleOf(property.name) : null);
     const context = role ? styleContext(property.style, registry) : null;
     const where = { file, line: node.loc?.start.line, text: text.trim().slice(0, 120) };
     const raws = role ? rawColorsInValue(text, role) : rawColorsInText(text);
@@ -412,7 +427,8 @@ export const checkJs = (source, file, registry, scope = {}) => {
         issues.push(issue(where, 'unknown-token', `${name} is not defined in ${THEME_FILE}`));
       }
     }
-    for (const [rule, message] of paintIssues(text, role, registry, context, () => undefined)) {
+    const painted = property?.request && text.startsWith('--') ? `var(${text})` : text;
+    for (const [rule, message] of paintIssues(painted, role, registry, context, () => undefined)) {
       issues.push(issue(where, rule, message));
     }
     for (const { role: utilityRole, token } of tailwindColors(text)) {

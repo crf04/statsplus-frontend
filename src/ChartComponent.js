@@ -9,24 +9,24 @@ import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
 import { useThemeColors } from './theme/useThemeColors';
 
-// Canvas paint, resolved from the theme tokens.
+// Canvas paint, resolved from the theme tokens, each with the role it plays.
 const CHART_COLORS = {
-  over: '--ct-hit-fill-78',
-  under: '--ct-miss-fill-72',
-  bar: '--ct-gold-fill-72',
-  ghost: '--ct-gold-bg-16',
-  empty: '--ct-scrim-10',
-  line: '--ct-gold',
-  labelGround: '--ct-surface-2',
-  label: '--ct-gold',
-  labelEdge: '--ct-gold-fg-40',
-  tooltipGround: '--ct-surface-2',
-  tooltipTitle: '--ct-text',
-  tooltipBody: '--ct-dim',
-  tooltipEdge: '--ct-line-strong',
-  tick: '--ct-dim',
-  legend: '--ct-dim',
-  grid: '--ct-overlay-fg-6',
+  over: ['fill', '--ct-hit-fill-78'],
+  under: ['fill', '--ct-miss-fill-72'],
+  bar: ['fill', '--ct-gold-fill-72'],
+  ghost: ['fill', '--ct-gold-bg-16'],
+  empty: ['fill', '--ct-scrim-10'],
+  line: ['line', '--ct-gold'],
+  labelGround: ['fill', '--ct-surface-2'],
+  label: ['fg', '--ct-gold'],
+  labelEdge: ['line', '--ct-gold-fg-40'],
+  tooltipGround: ['fill', '--ct-surface-2'],
+  tooltipTitle: ['fg', '--ct-text'],
+  tooltipBody: ['fg', '--ct-dim'],
+  tooltipEdge: ['line', '--ct-line-strong'],
+  tick: ['fg', '--ct-dim'],
+  legend: ['fg', '--ct-dim'],
+  grid: ['line', '--ct-overlay-fg-6'],
 };
 
 const getPer36Value = (average, stat) => {

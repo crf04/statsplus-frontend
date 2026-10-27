@@ -13,13 +13,15 @@ const subscribe = (onChange) => {
   return () => observer.disconnect();
 };
 
-// { key: '--ct-token' } → { key: 'rgb(…)' } for the theme painted now.
+// { key: [role, '--ct-token'] } → { key: 'rgb(…)' } for the theme painted
+// now. The role (fg, line, fill) is for the colour lint, which checks the
+// token plays it.
 export const resolveThemeColors = (request) => {
   const probe = document.createElement('span');
   probe.style.display = 'none';
   document.body.appendChild(probe);
   const colors = {};
-  for (const [key, token] of Object.entries(request)) {
+  for (const [key, [, token]] of Object.entries(request)) {
     probe.style.color = `var(${token})`;
     colors[key] = getComputedStyle(probe).color;
   }

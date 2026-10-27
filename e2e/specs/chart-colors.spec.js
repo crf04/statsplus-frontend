@@ -2,10 +2,10 @@ import { E2E_AUTH_STORAGE_KEY, expect, installApiContract, test } from '../fixtu
 
 // Chart.js paints with whatever colours its options carry. Record each draw
 // call with the style the canvas normalised for it, so the test reads which
-// colour reached which part of the chart.
+// colour reached which part of the chart. A clearRect starts a frame.
 const recordCanvasPaint = () => {
   const proto = CanvasRenderingContext2D.prototype;
-  for (const op of ['fill', 'fillRect', 'stroke', 'strokeRect', 'fillText']) {
+  for (const op of ['clearRect', 'fill', 'fillRect', 'stroke', 'strokeRect', 'fillText']) {
     const original = proto[op];
     proto[op] = function record(...args) {
       const style = String(op.startsWith('stroke') ? this.strokeStyle : this.fillStyle);
@@ -16,10 +16,13 @@ const recordCanvasPaint = () => {
   }
 };
 
-const paintOf = (canvas) =>
-  canvas.evaluate((element) =>
-    [...new Set((element.ctOps ?? []).map(({ style }) => style))].sort(),
-  );
+const paintOf = (canvas, { latestFrame = false } = {}) =>
+  canvas.evaluate((element, latest) => {
+    const ops = element.ctOps ?? [];
+    const frame = latest ? ops.slice(ops.findLastIndex(({ op }) => op === 'clearRect')) : ops;
+    const painted = frame.filter(({ op }) => op !== 'clearRect');
+    return [...new Set(painted.map(({ style }) => style))].sort();
+  }, latestFrame);
 
 // The colours of the Game Logs chart's parts in its latest frame. A label or a
 // tooltip draws its ground (fill), then its edge (stroke), then its text.
@@ -127,12 +130,53 @@ test('charts paint the dark theme colours, part by part, and repaint when the th
     );
 
   // A theme is a set of token values under html[data-theme]. This one exists
-  // only for the test; the chart must take its colours without a reload.
+  // only for the test, and moves every token pair that is equal in dark but
+  // plays different roles apart (the text accent from its fill, a line's
+  // alpha from a wash's, page white from lettering on an accent), so a chart
+  // part on the wrong one shows. It must repaint without a reload.
   await page.addStyleTag({
-    content: ":root[data-theme='e2e-probe'] { --ct-gold: #123456; --ct-surface-2: #234567; }",
+    content: `:root[data-theme='e2e-probe'] {
+      --ct-gold: #123456;
+      --ct-surface-2: #234567;
+      --ct-text-max: #345678;
+      --ct-slate: #456789;
+      --ct-k-accent-fg: 2;
+      --ct-k-accent-bg: 0.5;
+      --ct-k-overlay-fg: 2;
+      --ct-k-overlay-bg: 0.5;
+    }`,
   });
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'e2e-probe'));
   await expect
-    .poll(() => gameLogRoles(gameLogChart))
-    .toMatchObject({ line: '#123456', labelGround: '#234567', labelText: '#123456' });
+    .poll(async () => {
+      await gameLogChart.hover({ position: { x: width * 0.65, y: height * 0.7 } });
+      return gameLogRoles(gameLogChart);
+    })
+    .toEqual({
+      line: '#123456',
+      labelGround: '#234567',
+      labelEdge: 'rgba(232, 163, 61, 0.8)',
+      labelText: '#123456',
+      tooltipGround: '#234567',
+      tooltipEdge: 'rgba(255, 255, 255, 0.16)',
+      tooltipTitle: '#efe9dc',
+      tooltipBody: '#9b937f',
+      grid: 'rgba(255, 255, 255, 0.12)',
+      axisTitle: '#9b937f',
+      tick: '#9b937f',
+    });
+  // Bars are data marks: their alpha holds in every theme. Off the chart, no
+  // bar wears its hover colour.
+  await page.mouse.move(0, 0);
+  await expect
+    .poll(() => paintOf(gameLogChart, { latestFrame: true }))
+    .toEqual(expect.arrayContaining(['rgba(194, 78, 78, 0.72)', 'rgba(76, 175, 125, 0.78)']));
+  // The Team Defense line takes the new slate; its point centres stay white,
+  // lettering on the bars rather than page white.
+  await expect
+    .poll(async () => {
+      await playtypes.hover({ position: { x: 90, y: 150 } });
+      return paintOf(playtypesCanvas, { latestFrame: true });
+    })
+    .toEqual(expect.arrayContaining(['#456789', '#ffffff']));
 });

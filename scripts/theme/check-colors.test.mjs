@@ -284,3 +284,29 @@ export const tint = (up, a) => \`rgb(var(--ct-\${up ? 'hit' : 'miss'}-bg-rgb) / 
     ],
   );
 });
+
+test('a canvas colour request is checked for the role it names, and arrays carry their key role', () => {
+  assert.deepEqual(
+    project({
+      'src/Chart.js': `const CHART_COLORS = {
+  over: ['fill', '--ct-hit-fill-78'],
+  labelEdge: ['line', '--ct-gold-fg-40'],
+  tooltipEdge: ['line', '--ct-line'],
+  point: ['fg', '--ct-on-gold'],
+  wash: ['line', '--ct-gold-bg-20'],
+  edge: ['line', '--ct-overlay-bg-16'],
+  bar: ['fill', '--ct-hit-bg-78'],
+  text: ['fg', '--ct-gold-fill'],
+};
+export const options = { backgroundColor: ['red', 'var(--ct-gold)'], borderColor: ['var(--ct-hit)'] };`,
+    }),
+    [
+      'src/Chart.js role-misuse: ladder-bg token --ct-gold-bg-20 in a line role',
+      'src/Chart.js role-misuse: ladder-bg token --ct-overlay-bg-16 in a line role',
+      'src/Chart.js role-misuse: --ct-hit-bg-78 paints a mark (alpha 0.5 and up); use --ct-hit-fill-*',
+      'src/Chart.js role-misuse: fill token --ct-gold-fill in a fg role',
+      'src/Chart.js raw-colour: raw colour red',
+      'src/Chart.js role-misuse: accent-fg token --ct-gold in a fill role',
+    ],
+  );
+});

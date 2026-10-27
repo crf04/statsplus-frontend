@@ -8,16 +8,17 @@ import { useThemeColors } from './theme/useThemeColors';
 // and tooltip are HTML so they keep the page's typography; the parent supplies
 // the tooltip's contents and owns the sized, relatively positioned container.
 
-// Canvas paint, resolved from the theme tokens.
+// Canvas paint, resolved from the theme tokens, each with the role it plays.
+// The white point centres sit on the bars like lettering on an accent.
 const CHART_COLORS = {
-  bar: '--ct-gold-fill',
-  line: '--ct-slate',
-  point: '--ct-on-ffffff',
-  axis: '--ct-x-666666',
-  cursor: '--ct-x-cccccc',
-  tick: '--ct-dim',
-  grid: '--ct-line',
-  title: '--ct-x-808080',
+  bar: ['fill', '--ct-gold-fill'],
+  line: ['line', '--ct-slate'],
+  point: ['fg', '--ct-on-ffffff'],
+  axis: ['line', '--ct-x-666666'],
+  cursor: ['line', '--ct-x-cccccc'],
+  tick: ['fg', '--ct-dim'],
+  grid: ['line', '--ct-line'],
+  title: ['fg', '--ct-x-808080'],
 };
 const FONT_FAMILY =
   "'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";

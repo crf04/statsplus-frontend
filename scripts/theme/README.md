@@ -36,7 +36,9 @@ is held to the accent families' multipliers and roles. The alpha is a percentage
 shade exact; the lint stops their count from growing.
 
 In JS, DOM styles take `var(--ct-*)` strings. Canvas (Chart.js) cannot read CSS variables, so it
-takes concrete colours from `useThemeColors` in `src/theme/useThemeColors.js`.
+takes concrete colours from `useThemeColors` in `src/theme/useThemeColors.js`, requested as
+`[role, '--ct-token']` pairs (`over: ['fill', '--ct-hit-fill-78']`) so the lint checks each token
+against the role it plays.
 
 ## Tools
 

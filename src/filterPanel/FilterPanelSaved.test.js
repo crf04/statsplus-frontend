@@ -139,7 +139,7 @@ test('the applied Filter Set that is saved is named, in any parameter order', as
     screen.getByText(
       (_, el) => el.matches(selector) && el.textContent === 'Saved as LeBron last 10',
     );
-  expect(named('.fpb-head p')).toBeVisible();
+  expect(named('.fpt-current')).toBeVisible();
   expect(named('.fpb-foot span')).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
 

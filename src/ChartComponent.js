@@ -29,6 +29,15 @@ const CHART_COLORS = {
   grid: ['line', '--ct-overlay-fg-6'],
 };
 
+// A game date as M/D ("3/10"), from an ISO date or an epoch-millisecond label.
+const shortGameDate = (label) => {
+  const iso = /^\d{4}-(\d{2})-(\d{2})/.exec(String(label));
+  if (iso) return `${Number(iso[1])}/${Number(iso[2])}`;
+  return typeof label === 'number' || /^\d{12,}$/.test(String(label))
+    ? new Date(Number(label)).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+    : label;
+};
+
 const getPer36Value = (average, stat) => {
   const value = toFiniteNumber(average?.[stat]);
   const minutes = toFiniteNumber(average?.MIN);
@@ -174,6 +183,8 @@ const ChartComponent = ({
   const chartOptions = useMemo(
     () => ({
       responsive: true,
+      // The container sets the height, so phones get as tall a chart as desktops.
+      maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
@@ -260,15 +271,11 @@ const ChartComponent = ({
           ticks: {
             color: colors.tick,
             font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 },
-            maxRotation: 60,
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 8,
             callback(value) {
-              const label = this.getLabelForValue(value);
-              return typeof label === 'number' || /^\d{12,}$/.test(String(label))
-                ? new Date(Number(label)).toLocaleDateString('en-US', {
-                    month: 'numeric',
-                    day: 'numeric',
-                  })
-                : label;
+              return shortGameDate(this.getLabelForValue(value));
             },
           },
         },
@@ -279,16 +286,13 @@ const ChartComponent = ({
             color: colors.tick,
             font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 },
           },
-          title: {
-            display: true,
-            text: lineType,
-            color: colors.tick,
-          },
         },
       },
     }),
     [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors],
   );
+
+  const { player_name: _player, ...withoutPlayer } = appliedFilters || {};
 
   const overLineCount = (logs) =>
     logs.filter((log) => numericOrZero(log[lineType]) > numericLineValue).length;
@@ -298,6 +302,7 @@ const ChartComponent = ({
       {Array.isArray(gameLogs) && gameLogs.length > 0 && lineType !== 'None' && (
         <>
           <MetricsDashboardRow
+            lineType={lineType}
             rawValue={numericOrZero(averages?.[0]?.[lineType])}
             per36Value={getPer36Value(averages?.[0], lineType)}
             seasonRawValue={numericOrZero(averages?.[1]?.[lineType])}
@@ -307,8 +312,9 @@ const ChartComponent = ({
             last10ratio={`${overLineCount(gameLogs.slice(-10))}/${Math.min(10, gameLogs.length)}`}
           />
           {tracking && <TrackingAverages tracking={tracking} averages={averages} />}
-          <div className="mt-3 mb-3">
-            <AppliedFilters filters={appliedFilters} />
+          {/* The Player box above already names the player. */}
+          <div className="chart-filters">
+            <AppliedFilters filters={withoutPlayer} />
           </div>
           <div className="chart-container">
             <Bar data={chartData} options={chartOptions} />

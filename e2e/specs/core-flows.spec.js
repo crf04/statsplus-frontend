@@ -487,7 +487,7 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
   // left of the page. (Programmatic scrolling would also scroll the clipping
   // containers, which a finger cannot.)
   const readings = [
-    page.getByText('Hit Rate', { exact: true }),
+    page.getByText('Hit rate', { exact: true }),
     ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
       page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
     ),

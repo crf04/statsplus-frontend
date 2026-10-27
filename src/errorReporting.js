@@ -90,7 +90,7 @@ export const initErrorReporting = ({
     maxBreadcrumbs: 0,
     beforeSend: scrubEvent,
   });
-  addTracingAfterLoad();
+  if (tracesSampleRate > 0) addTracingAfterLoad();
   enabled = true;
   return true;
 };

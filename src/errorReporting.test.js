@@ -184,6 +184,13 @@ describe('tracing options', () => {
     );
   });
 
+  test('a rate of 0 never fetches the tracing chunk', async () => {
+    initWith({ tracesSampleRate: 0 });
+    window.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(Sentry.getClient().getIntegrationByName('BrowserTracing')).toBeUndefined();
+  });
+
   test('the rate passed to init is used', () => {
     expect(initWith({ tracesSampleRate: 0.2 }).tracesSampleRate).toBe(0.2);
   });

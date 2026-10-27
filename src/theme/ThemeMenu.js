@@ -10,6 +10,8 @@ const CHOICES = [
   { preference: 'dark', label: 'Dark', Icon: Moon },
 ];
 const THEME_NAMES = { light: 'Light', dark: 'Dark' };
+// Popper anchors the menu 8px under its button and keeps it in the viewport.
+const MENU_OFFSET = { modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] };
 
 // A radio menu item: react-bootstrap marks every item aria-selected, which a
 // menuitemradio does not take; aria-checked says which is chosen.
@@ -32,7 +34,7 @@ export default function ThemeMenu() {
       >
         <Icon size={16} aria-hidden="true" />
       </Dropdown.Toggle>
-      <Dropdown.Menu role="menu">
+      <Dropdown.Menu role="menu" popperConfig={MENU_OFFSET}>
         {CHOICES.map((choice) => (
           <Dropdown.Item
             key={choice.preference}

@@ -99,4 +99,23 @@ test.describe('on a phone', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await header.boundingBox()).toEqual(before);
   });
+
+  test('on a scrolled page the menu opens just under its button', async ({ page }) => {
+    await page.goto('/privacy');
+    await page.evaluate(() => window.scrollTo(0, 30));
+    const toggle = page.getByRole('button', { name: 'Appearance: System (Dark)' });
+    await toggle.tap();
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+    // Popper places the menu after it renders.
+    const gap = async () => {
+      const [button, opened] = [await toggle.boundingBox(), await menu.boundingBox()];
+      return Math.round(opened.y - (button.y + button.height));
+    };
+    await expect.poll(gap).toBe(8);
+    const [button, opened] = [await toggle.boundingBox(), await menu.boundingBox()];
+    expect(opened.x).toBeLessThanOrEqual(button.x);
+    expect(opened.x + opened.width).toBeGreaterThanOrEqual(button.x + button.width);
+    expect(opened.x + opened.width).toBeLessThanOrEqual(390);
+  });
 });

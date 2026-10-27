@@ -1,11 +1,4 @@
-/* The header's Appearance menu. The account group lays the menu out beside
-   Feedback and the profile, or Sign in. */
-.app-auth {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+/* The header's Appearance menu, beside Feedback and the profile, or Sign in. */
 .theme-menu-toggle {
   position: relative;
   display: inline-flex;
@@ -32,13 +25,7 @@
   outline-offset: 2px;
 }
 
-/* Overrides the profile menu's global placement (ModernSearch.css). */
 .theme-menu .dropdown-menu {
-  top: 100% !important;
-  right: 0 !important;
-  left: auto !important;
-  transform: none !important;
-  margin-top: 8px !important;
   min-width: 190px;
   padding: 6px;
   background: var(--ct-surface);
@@ -78,14 +65,6 @@
 }
 
 @media (max-width: 620px) {
-  /* The button sits mid-row; the menu opens under the header's right edge. */
-  .theme-menu .dropdown-menu {
-    position: fixed !important;
-    top: 52px !important;
-    right: 10px !important;
-    margin-top: 0 !important;
-  }
-
   /* A 44px touch target around the 32px button, inside the header row
      (the inset counts from inside the 1px border). */
   .theme-menu-toggle::after {

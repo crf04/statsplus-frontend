@@ -33,6 +33,50 @@
   /* data-viz secondary series (comparisons) */
   --ct-slate: #7a8699;
 
+  /* more grounds and text, each the exact shade it replaces */
+  --ct-surface-3: #241f15;
+  --ct-rule: #3a3428;
+  --ct-text-2: #c9c2b2;
+  --ct-text-max: #ffffff;
+  --ct-glow: #17130b;
+
+  /* --ct-gold, --ct-hit and --ct-miss paint text and lines; these paint
+     solid surfaces (buttons, chips, bars), with --ct-on-gold lettering */
+  --ct-gold-fill: #e8a33d;
+  --ct-gold-fill-hover: #f6b950;
+  --ct-gold-fill-press: #c98a28;
+  --ct-hit-fill: #4caf7d;
+  --ct-miss-fill: #c24e4e;
+  --ct-on-gold: #1a1408;
+  --ct-mask: #000;
+
+  /* translucent paint: a channel times its role's alpha multiplier
+     (the generated --ct-<family>-<fg|bg>-<alpha> steps below) */
+  --ct-overlay-fg-rgb: 255 255 255;
+  --ct-overlay-bg-rgb: 255 255 255;
+  --ct-gold-fg-rgb: 232 163 61;
+  --ct-gold-bg-rgb: 232 163 61;
+  --ct-hit-fg-rgb: 76 175 125;
+  --ct-hit-bg-rgb: 76 175 125;
+  --ct-miss-fg-rgb: 194 78 78;
+  --ct-miss-bg-rgb: 194 78 78;
+  --ct-slate-fg-rgb: 122 134 153;
+  --ct-slate-bg-rgb: 122 134 153;
+  --ct-ink-fg-rgb: 13 11 7;
+  --ct-ink-bg-rgb: 13 11 7;
+  --ct-surface-fg-rgb: 22 19 13;
+  --ct-surface-bg-rgb: 22 19 13;
+  --ct-text-fg-rgb: 239 233 220;
+  --ct-text-bg-rgb: 239 233 220;
+  --ct-shadow-rgb: 0 0 0;
+  --ct-scrim-rgb: 0 0 0;
+  --ct-k-overlay-fg: 1;
+  --ct-k-overlay-bg: 1;
+  --ct-k-accent-fg: 1;
+  --ct-k-accent-bg: 1;
+  --ct-k-ground: 1;
+  --ct-k-shadow: 1;
+
   /* chrome */
   --ct-radius-card: 10px;
   --ct-radius-ctl: 6px;

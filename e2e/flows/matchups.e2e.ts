@@ -401,6 +401,7 @@ signedInTest(
     expect(api.sent('/api/games/matchup').map((request) => request.search.get('season'))).toEqual([
       '2026-27',
     ]);
+    await app.screenshot('matchup-evidence-default-2026-27');
 
     await screen.getByRole('combobox', 'Evidence season').selectOption({ value: '2025-26' });
     await expect(browser).toHaveURL('/matchups/0022600003?season=2025-26');

@@ -450,39 +450,34 @@ test('Own stat line offers Rebound chances and emits its range', () => {
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
 });
 
-test('Own stat line keyboard steps on tracking stats are whole numbers even for a narrow range', () => {
-  renderPanel({}, [
-    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
-    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 14 },
-  ]);
-  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
-  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
-  const min = screen.getByRole('slider', { name: 'Minimum POTENTIAL_AST' });
-  const max = screen.getByRole('slider', { name: 'Maximum POTENTIAL_AST' });
-  fireEvent.focus(min);
-  fireEvent.keyDown(min, { key: 'ArrowRight' });
-  fireEvent.focus(max);
-  fireEvent.keyDown(max, { key: 'ArrowLeft' });
-  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
-  expect(screen.getByText('Potential assists 9–13')).toBeVisible();
-  apply();
-  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '9,13' });
-});
-
-test('conversion stats use the 0-1 scale of FG%', () => {
-  renderPanel({}, [
-    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CONV_PCT: 0.4 },
-    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, REB_CONV_PCT: null },
-    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CONV_PCT: 0.75 },
-  ]);
-  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
-  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CONV_PCT' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
-  expect(screen.getByText('REB conversion % 0.40–0.75')).toBeVisible();
-  apply();
-  expect(patch()).toEqual({
-    player_name: 'LeBron James',
-    'self_filters[REB_CONV_PCT]': '0.4,0.75',
+describe.each([
+  // [column, label, low, high, keyboard-moved chip range, serialized range]
+  ['REB_CHANCES', 'Rebound chances', 6, 12, '7–11', '7,11'],
+  ['POTENTIAL_AST', 'Potential assists', 8, 14, '9–13', '9,13'],
+  ['REB_CONV_PCT', 'REB conversion %', 0.4, 0.75, '0.41–0.74', '0.41,0.74'],
+  ['AST_CONV_PCT', 'AST conversion %', 0.3, 0.6, '0.31–0.59', '0.31,0.59'],
+])('Own stat line %s', (column, label, low, high, chip, serialized) => {
+  test('keyboard steps land on the stat grid, and the chip and request read the moved range', () => {
+    renderPanel({}, [
+      { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, [column]: low },
+      { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, [column]: null },
+      { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, [column]: high },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+    fireEvent.change(screen.getByLabelText('Stat'), { target: { value: column } });
+    const min = screen.getByRole('slider', { name: `Minimum ${column}` });
+    const max = screen.getByRole('slider', { name: `Maximum ${column}` });
+    fireEvent.focus(min);
+    fireEvent.keyDown(min, { key: 'ArrowRight' });
+    fireEvent.focus(max);
+    fireEvent.keyDown(max, { key: 'ArrowLeft' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+    expect(screen.getByText(`${label} ${chip}`)).toBeVisible();
+    apply();
+    expect(patch()).toEqual({
+      player_name: 'LeBron James',
+      [`self_filters[${column}]`]: serialized,
+    });
   });
 });
 

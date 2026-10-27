@@ -140,7 +140,7 @@ describe('tracking ghost bars', () => {
     expect(filter({ datasetIndex: 1 })).toBe(false);
   });
 
-  test('the averages row shows filtered and season values, and hides when null', () => {
+  test('the averages row shows the average and the season value, and hides when null', () => {
     const avg = [
       {
         REB: 8,
@@ -165,11 +165,26 @@ describe('tracking ghost bars', () => {
       <ChartComponent gameLogs={logs} lineType="REB" lineValue="" averages={avg} />,
     );
     expect(document.querySelector('.tracking-averages').textContent).toBe(
-      'Chances 15.8 · 59% from 14.2 · 57%',
+      'Chances 15.8 · season 14.2',
     );
     unmount();
-    render(<ChartComponent gameLogs={logs} lineType="AST" lineValue="" averages={avg} />);
-    expect(document.querySelector('.tracking-averages').textContent).toBe('Potential 12.1 · 58%');
+    const ast = render(
+      <ChartComponent gameLogs={logs} lineType="AST" lineValue="" averages={avg} />,
+    );
+    // season value null: the season part is dropped
+    expect(document.querySelector('.tracking-averages').textContent).toBe('Potential 12.1');
+    ast.unmount();
+    render(
+      <ChartComponent
+        gameLogs={logs}
+        lineType="AST"
+        lineValue=""
+        averages={[avg[0], { ...avg[1], POTENTIAL_AST: 11.4 }]}
+      />,
+    );
+    expect(document.querySelector('.tracking-averages').textContent).toBe(
+      'Potential 12.1 · season 11.4',
+    );
   });
 
   test('no averages row without tracking averages, or for PTS', () => {

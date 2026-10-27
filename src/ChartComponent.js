@@ -54,14 +54,10 @@ const TRACKING = {
 
 const percentText = (ratio) => `${Math.round(ratio * 100)}%`;
 
-// "15.8 · 59%"; null when the chances average is missing.
+// The average chances, one decimal; null when the backend sends none.
 const trackingAverageText = (average, tracking) => {
   const chances = toFiniteNumber(average?.[tracking.chances]);
-  if (chances === null) return null;
-  const conversion = toFiniteNumber(average?.[tracking.conversion]);
-  return conversion === null
-    ? formatNumber(chances, 1)
-    : `${formatNumber(chances, 1)} · ${percentText(conversion)}`;
+  return chances === null ? null : formatNumber(chances, 1);
 };
 
 const TrackingAverages = ({ tracking, averages }) => {
@@ -72,7 +68,7 @@ const TrackingAverages = ({ tracking, averages }) => {
     <div className="tracking-averages mt-2 flex items-baseline gap-2 font-mono text-sm">
       <span className="text-[#9b937f] uppercase text-xs tracking-wider">{tracking.rowLabel}</span>{' '}
       <span className="text-[#e8a33d] font-bold">{filtered}</span>
-      {season !== null && <span className="text-[#9b937f]"> from {season}</span>}
+      {season !== null && <span className="text-[#9b937f]"> · season {season}</span>}
     </div>
   );
 };

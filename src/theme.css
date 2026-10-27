@@ -51,7 +51,8 @@
   --ct-mask: #000;
 
   /* translucent paint: a channel times its role's alpha multiplier
-     (the generated --ct-<family>-<fg|bg>-<alpha> steps below) */
+     (the generated --ct-<family>-<fg|bg|fill>-<alpha> steps below);
+     fill channels paint data marks and keep their alpha in every theme */
   --ct-overlay-fg-rgb: 255 255 255;
   --ct-overlay-bg-rgb: 255 255 255;
   --ct-gold-fg-rgb: 232 163 61;
@@ -60,6 +61,9 @@
   --ct-hit-bg-rgb: 76 175 125;
   --ct-miss-fg-rgb: 194 78 78;
   --ct-miss-bg-rgb: 194 78 78;
+  --ct-gold-fill-rgb: 232 163 61;
+  --ct-hit-fill-rgb: 76 175 125;
+  --ct-miss-fill-rgb: 194 78 78;
   --ct-slate-fg-rgb: 122 134 153;
   --ct-slate-bg-rgb: 122 134 153;
   --ct-ink-fg-rgb: 13 11 7;
@@ -70,10 +74,14 @@
   --ct-text-bg-rgb: 239 233 220;
   --ct-shadow-rgb: 0 0 0;
   /* Connect run-flow series (OutcomeRuns, ResearchRun) */
-  --ct-series-kept-rgb: 104 186 166;
-  --ct-series-lead-rgb: 128 160 230;
-  --ct-series-dropped-rgb: 150 140 125;
-  --ct-series-pink-rgb: 214 128 160;
+  --ct-series-kept-fg-rgb: 104 186 166;
+  --ct-series-kept-bg-rgb: 104 186 166;
+  --ct-series-lead-fg-rgb: 128 160 230;
+  --ct-series-lead-bg-rgb: 128 160 230;
+  --ct-series-dropped-fg-rgb: 150 140 125;
+  --ct-series-dropped-bg-rgb: 150 140 125;
+  --ct-series-pink-fg-rgb: 214 128 160;
+  --ct-series-pink-bg-rgb: 214 128 160;
   --ct-scrim-rgb: 0 0 0;
   --ct-k-overlay-fg: 1;
   --ct-k-overlay-bg: 1;

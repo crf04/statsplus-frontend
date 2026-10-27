@@ -37,23 +37,27 @@
 
 .oc-part-0 {
   --oc: var(--ct-gold-fg-rgb);
+  --oc-bg: var(--ct-gold-bg-rgb);
 }
 
 .oc-part-1 {
-  --oc: var(--ct-series-kept-rgb);
+  --oc: var(--ct-series-kept-fg-rgb);
+  --oc-bg: var(--ct-series-kept-bg-rgb);
 }
 
 .oc-part-2 {
-  --oc: var(--ct-series-lead-rgb);
+  --oc: var(--ct-series-lead-fg-rgb);
+  --oc-bg: var(--ct-series-lead-bg-rgb);
 }
 
 .oc-part-3 {
-  --oc: var(--ct-series-pink-rgb);
+  --oc: var(--ct-series-pink-fg-rgb);
+  --oc-bg: var(--ct-series-pink-bg-rgb);
 }
 
 mark.oc-part {
-  background: rgb(var(--oc) / 0.16);
-  box-shadow: inset 0 -2px 0 rgb(var(--oc) / 0.9);
+  background: rgb(var(--oc-bg) / calc(0.16 * var(--ct-k-accent-bg)));
+  box-shadow: inset 0 -2px 0 rgb(var(--oc) / calc(0.9 * var(--ct-k-accent-fg)));
 }
 
 .oc-part .oc-part-tag,

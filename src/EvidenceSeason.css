@@ -3,8 +3,8 @@
   align-items: center;
   font-size: 0.85em;
   font-weight: 600;
-  color: #e8a33d;
-  border: 1px solid rgba(232, 163, 61, 0.45);
+  color: var(--ct-gold);
+  border: 1px solid var(--ct-gold-fg-45);
   border-radius: 999px;
   padding: 4px 12px;
 }
@@ -42,13 +42,13 @@
 }
 .season-unavailable p {
   margin: 0;
-  color: #f1e9d6;
+  color: var(--ct-x-f1e9d6);
   font-size: 1.05em;
 }
 .season-unavailable button {
-  background-color: rgba(232, 163, 61, 0.1);
-  border: 1px solid #e8a33d;
-  color: #e8a33d;
+  background-color: var(--ct-gold-bg-10);
+  border: 1px solid var(--ct-gold);
+  color: var(--ct-gold);
   font-weight: 500;
   font-size: 0.85em;
   padding: 6px 12px;
@@ -56,11 +56,11 @@
   transition: all 0.3s ease;
 }
 .season-unavailable button:hover {
-  background-color: rgba(232, 163, 61, 0.2);
-  border-color: #e8a33d;
-  color: #e8a33d;
+  background-color: var(--ct-gold-bg-20);
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.2);
+  box-shadow: 0 4px 12px var(--ct-gold-bg-20);
 }
 
 .evidence-season-bar {

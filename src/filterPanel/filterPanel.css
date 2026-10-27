@@ -68,10 +68,10 @@
   top: 9px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ct-overlay-bg-8);
 }
 .fp-range-track-1 {
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 .fp-range-thumb {
   top: 2px;
@@ -80,7 +80,7 @@
   border-radius: 50%;
   background: var(--ct-text);
   border: 4px solid var(--ct-gold);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 4px var(--ct-shadow-50);
   cursor: grab;
   outline: none;
 }
@@ -114,9 +114,9 @@
   color: var(--ct-text);
 }
 .fp-seg button.is-on {
-  background: #2c2517;
+  background: var(--ct-x-2c2517);
   color: var(--ct-gold-hover);
-  box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.45);
+  box-shadow: inset 0 0 0 1px var(--ct-gold-fg-45);
 }
 .fp-seg-sm button {
   height: 26px;
@@ -125,13 +125,13 @@
 }
 .fp-teammate .fp-seg button:first-child.is-on {
   background: var(--ct-hit-soft);
-  color: #8fd6b1;
-  box-shadow: inset 0 0 0 1px rgba(76, 175, 125, 0.5);
+  color: var(--ct-x-8fd6b1);
+  box-shadow: inset 0 0 0 1px var(--ct-hit-fg-50);
 }
 .fp-teammate .fp-seg button:last-child.is-on {
   background: var(--ct-miss-soft);
-  color: #ee9d9d;
-  box-shadow: inset 0 0 0 1px rgba(194, 78, 78, 0.55);
+  color: var(--ct-x-ee9d9d);
+  box-shadow: inset 0 0 0 1px var(--ct-miss-fg-55);
 }
 
 .fp-chips {
@@ -182,18 +182,18 @@
 }
 .fp-chip-gold {
   background: var(--ct-gold-soft);
-  border-color: rgba(232, 163, 61, 0.35);
-  color: #f1cf96;
+  border-color: var(--ct-gold-fg-35);
+  color: var(--ct-x-f1cf96);
 }
 .fp-chip-hit {
   background: var(--ct-hit-soft);
-  border-color: rgba(76, 175, 125, 0.4);
-  color: #9fdcbc;
+  border-color: var(--ct-hit-fg-40);
+  color: var(--ct-x-9fdcbc);
 }
 .fp-chip-miss {
   background: var(--ct-miss-soft);
-  border-color: rgba(194, 78, 78, 0.45);
-  color: #f0a8a8;
+  border-color: var(--ct-miss-fg-45);
+  color: var(--ct-x-f0a8a8);
 }
 
 .fp-btn-primary {
@@ -201,20 +201,20 @@
   height: 44px;
   border: 0;
   border-radius: 8px;
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
   font: inherit;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.02em;
 }
 .fp-btn-primary:hover {
-  background: var(--ct-gold-hover);
+  background: var(--ct-gold-fill-hover);
 }
 .fp-btn-ghost {
   height: 38px;
   padding: 0 14px;
-  border: 1px solid rgba(232, 163, 61, 0.5);
+  border: 1px solid var(--ct-gold-fg-50);
   border-radius: var(--ct-radius-ctl);
   background: transparent;
   color: var(--ct-gold);
@@ -322,10 +322,10 @@
   margin: 0;
   padding: 4px;
   list-style: none;
-  background: #221d14;
+  background: var(--ct-x-221d14);
   border: 1px solid var(--ct-line-strong);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 28px var(--ct-shadow-50);
 }
 .fp-suggest button {
   display: flex;
@@ -346,7 +346,7 @@
 }
 .fp-suggest button.is-active,
 .fp-suggest button:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ct-overlay-bg-6);
 }
 
 .fp-defense {
@@ -355,7 +355,7 @@
   padding: 12px;
   border: 1px solid var(--ct-line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ct-overlay-bg-1p5);
 }
 .fp-tabs {
   display: flex;
@@ -493,7 +493,7 @@
   text-align: left;
 }
 .fpb-tile:hover {
-  border-color: rgba(232, 163, 61, 0.5);
+  border-color: var(--ct-gold-fg-50);
 }
 .fpb-tile b {
   font-size: 14px;
@@ -507,9 +507,9 @@
   display: grid;
   gap: 10px;
   padding: 14px;
-  border: 1px solid rgba(232, 163, 61, 0.35);
+  border: 1px solid var(--ct-gold-fg-35);
   border-radius: 10px;
-  background: rgba(232, 163, 61, 0.035);
+  background: var(--ct-gold-bg-3p5);
 }
 .fpb-editor-head {
   display: flex;
@@ -541,9 +541,9 @@
 }
 .fpb-quick button.is-on,
 .fpc-quick button.is-on {
-  background: #2c2517;
+  background: var(--ct-x-2c2517);
   color: var(--ct-gold-hover);
-  border-color: rgba(232, 163, 61, 0.55);
+  border-color: var(--ct-gold-fg-55);
 }
 .fpb-quick .fp-input {
   flex: 1;
@@ -642,13 +642,13 @@
   height: 3px;
   margin-top: 7px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ct-overlay-bg-7);
   overflow: hidden;
 }
 .fpx-count-bar i {
   display: block;
   height: 100%;
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 .fpx-strip-grid {
   display: grid;
@@ -670,13 +670,13 @@
   vertical-align: 0;
 }
 .fpx-strip .is-over {
-  background: var(--ct-hit);
+  background: var(--ct-hit-fill);
 }
 .fpx-strip .is-under {
-  background: var(--ct-miss);
+  background: var(--ct-miss-fill);
 }
 .fpx-strip .is-out {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ct-overlay-bg-6);
 }
 .fpx-strip-legend {
   display: flex;
@@ -776,8 +776,8 @@
   color: var(--ct-gold-hover);
 }
 .fpx-ext-rank.is-fewest {
-  background: rgba(122, 134, 153, 0.16);
-  color: #aab4c4;
+  background: var(--ct-slate-bg-16);
+  color: var(--ct-x-aab4c4);
 }
 .fpx-ext-label {
   font-size: 13px;
@@ -795,7 +795,7 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  border: 1px solid rgba(232, 163, 61, 0.45);
+  border: 1px solid var(--ct-gold-fg-45);
   border-radius: 6px;
   background: none;
   color: var(--ct-gold);
@@ -845,8 +845,8 @@
   color: var(--ct-gold-hover);
 }
 .fpx-ext-summary .is-fewest {
-  background: rgba(122, 134, 153, 0.16);
-  color: #aab4c4;
+  background: var(--ct-slate-bg-16);
+  color: var(--ct-x-aab4c4);
 }
 
 /* ---- J: count folded into the strip, compact tiles ------------------- */

@@ -21,28 +21,28 @@
   outline-offset: 2px;
 }
 .grade-hit-1 {
-  background: rgba(76, 175, 125, 0.3);
+  background: var(--ct-hit-bg-30);
 }
 .grade-hit-2 {
-  background: rgba(76, 175, 125, 0.52);
+  background: var(--ct-hit-bg-52);
 }
 .grade-hit-3 {
-  background: rgba(76, 175, 125, 0.76);
+  background: var(--ct-hit-bg-76);
 }
 .grade-hit-4 {
-  background: #4caf7d;
+  background: var(--ct-hit-fill);
 }
 .grade-miss-1 {
-  background: rgba(194, 78, 78, 0.3);
+  background: var(--ct-miss-bg-30);
 }
 .grade-miss-2 {
-  background: rgba(194, 78, 78, 0.52);
+  background: var(--ct-miss-bg-52);
 }
 .grade-miss-3 {
-  background: rgba(194, 78, 78, 0.76);
+  background: var(--ct-miss-bg-76);
 }
 .grade-miss-4 {
-  background: #c24e4e;
+  background: var(--ct-miss-fill);
 }
 .grade-neutral {
   background: var(--ct-line-strong);
@@ -250,7 +250,7 @@
   border: 1px solid var(--ct-line-strong);
   border-radius: 8px;
   padding: 14px;
-  box-shadow: 0 8px 24px #0002;
+  box-shadow: 0 8px 24px var(--ct-shadow-x22);
 }
 .target-stat-options fieldset {
   display: flex;

@@ -2,7 +2,7 @@
    card (container queries), never to the viewport, so neither scrolls sideways. */
 
 .ps {
-  --ps-untinted: rgba(255, 255, 255, 0.05);
+  --ps-untinted: var(--ct-overlay-bg-5);
   container-type: inline-size;
   width: 100%;
   min-width: 0;
@@ -44,7 +44,7 @@
   overflow: hidden;
 }
 .ps-table tbody tr:hover {
-  background: rgba(232, 163, 61, 0.05);
+  background: var(--ct-gold-bg-5);
 }
 .ps-table .ps-left {
   text-align: left;
@@ -83,7 +83,7 @@
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
 }
 .ps-bar-tick {
   position: absolute;
@@ -211,9 +211,9 @@
   width: 54px;
   background: linear-gradient(
     90deg,
-    rgba(194, 78, 78, 0.7),
-    rgba(255, 255, 255, 0.06),
-    rgba(76, 175, 125, 0.75)
+    var(--ct-miss-bg-70),
+    var(--ct-overlay-bg-6),
+    var(--ct-hit-bg-75)
   );
 }
 

@@ -8,10 +8,10 @@ const MetricCard = ({ title, currentValue, previousValue, change, isFirst, isLas
 
   return (
     <div
-      className={`bg-[#16130d] p-4 flex-1 border-t border-b border-[#ffffff14] ${isFirst ? 'border-l rounded-l-lg' : 'border-l'} ${isLast ? 'border-r rounded-r-lg' : ''} ${!isLast ? 'border-r' : ''} relative hover:border-[#e8a33d] transition-all duration-300`}
+      className={`bg-[color:var(--ct-surface)] p-4 flex-1 border-t border-b border-[color:var(--ct-overlay-fg-x14)] ${isFirst ? 'border-l rounded-l-lg' : 'border-l'} ${isLast ? 'border-r rounded-r-lg' : ''} ${!isLast ? 'border-r' : ''} relative hover:border-[color:var(--ct-gold)] transition-all duration-300`}
     >
       <div
-        className={`absolute top-2 right-2 flex items-center ${isPositive ? 'text-[#4caf7d]' : 'text-[#c24e4e]'}`}
+        className={`absolute top-2 right-2 flex items-center ${isPositive ? 'text-[color:var(--ct-hit)]' : 'text-[color:var(--ct-miss)]'}`}
       >
         {isPositive ? (
           <ArrowUpIcon className="w-4 h-4 mr-1" />
@@ -19,19 +19,19 @@ const MetricCard = ({ title, currentValue, previousValue, change, isFirst, isLas
           <ArrowDownIcon className="w-4 h-4 mr-1" />
         )}
         <span
-          className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositive ? 'bg-[#22301c] text-[#9cc983]' : 'bg-[#3a2020] text-[#e08585]'}`}
+          className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositive ? 'bg-[color:var(--ct-x-22301c)] text-[color:var(--ct-x-9cc983)]' : 'bg-[color:var(--ct-x-3a2020)] text-[color:var(--ct-x-e08585)]'}`}
         >
           {formattedChange}%
         </span>
       </div>
-      <h3 className="text-[#9b937f] font-medium mb-2 text-left uppercase text-xs tracking-wider">
+      <h3 className="text-[color:var(--ct-dim)] font-medium mb-2 text-left uppercase text-xs tracking-wider">
         {title}
       </h3>
       <div className="flex items-baseline">
-        <span className="text-2xl font-bold text-[#e8a33d] font-mono tabular-nums mr-2">
+        <span className="text-2xl font-bold text-[color:var(--ct-gold)] font-mono tabular-nums mr-2">
           {currentValue}
         </span>
-        <span className="text-sm text-[#9b937f]">from {previousValue}</span>
+        <span className="text-sm text-[color:var(--ct-dim)]">from {previousValue}</span>
       </div>
     </div>
   );
@@ -49,16 +49,20 @@ const RatioCard = ({ title, ratio, last5ratio, last10ratio, isLast }) => {
 
   return (
     <div
-      className={`bg-[#16130d] p-4 flex-1 border-t border-b border-l border-[#ffffff14] ${isLast ? 'border-r rounded-r-lg' : 'border-r'} relative hover:border-[#e8a33d] transition-all duration-300`}
+      className={`bg-[color:var(--ct-surface)] p-4 flex-1 border-t border-b border-l border-[color:var(--ct-overlay-fg-x14)] ${isLast ? 'border-r rounded-r-lg' : 'border-r'} relative hover:border-[color:var(--ct-gold)] transition-all duration-300`}
     >
-      <div className="absolute top-2 right-2 text-sm text-[#9b937f]">({percentage}%)</div>
-      <h3 className="text-[#9b937f] font-medium mb-2 text-left uppercase text-xs tracking-wider">
+      <div className="absolute top-2 right-2 text-sm text-[color:var(--ct-dim)]">
+        ({percentage}%)
+      </div>
+      <h3 className="text-[color:var(--ct-dim)] font-medium mb-2 text-left uppercase text-xs tracking-wider">
         {title}
       </h3>
       <div className="flex items-baseline">
-        <div className="text-2xl font-bold text-[#e8a33d] font-mono tabular-nums">{ratio}</div>
-        <span className="text-sm text-[#9b937f]"> &nbsp;L{last5ratio || '—'} </span>
-        <span className="text-sm text-[#9b937f]"> &nbsp;L{last10ratio || '—'} </span>
+        <div className="text-2xl font-bold text-[color:var(--ct-gold)] font-mono tabular-nums">
+          {ratio}
+        </div>
+        <span className="text-sm text-[color:var(--ct-dim)]"> &nbsp;L{last5ratio || '—'} </span>
+        <span className="text-sm text-[color:var(--ct-dim)]"> &nbsp;L{last10ratio || '—'} </span>
       </div>
     </div>
   );
@@ -89,7 +93,7 @@ const MetricsDashboardRow = ({
       // Wrap rather than clip: the row hides overflow, so on a phone the Hit Rate
       // card would otherwise be cut off past the right edge.
       style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
-      className="rounded-lg overflow-hidden bg-[#16130d]"
+      className="rounded-lg overflow-hidden bg-[color:var(--ct-surface)]"
     >
       <MetricCard
         title="Raw"

@@ -6,13 +6,13 @@
 
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
   overflow: hidden;
 }
 
 .rr-brief {
   padding: 22px 24px;
-  background: radial-gradient(520px 220px at 0% 0%, rgba(232, 163, 61, 0.07), transparent 70%);
+  background: radial-gradient(520px 220px at 0% 0%, var(--ct-gold-bg-7), transparent 70%);
 }
 
 .rr-brief-parts {
@@ -21,7 +21,7 @@
   margin: 0 0 16px;
   padding: 14px 16px;
   border-radius: 14px 14px 4px 14px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ct-overlay-bg-7);
 }
 
 .rr-brief-parts > div {
@@ -147,7 +147,7 @@
 .rr-report {
   padding: 20px 24px 22px;
   border-top: 1px solid var(--ct-line-strong);
-  background: rgba(232, 163, 61, 0.05);
+  background: var(--ct-gold-bg-5);
 }
 
 .rr-report ul {
@@ -164,7 +164,7 @@
   border: 1px solid var(--ct-line);
   border-left: 3px solid rgb(var(--rr-v));
   border-radius: 10px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
 }
 
 .rr-item-kept {
@@ -200,7 +200,7 @@
 
 .rr-item-body {
   margin: 0;
-  color: #d7cfbd;
+  color: var(--ct-x-d7cfbd);
   font-size: 13.5px;
   line-height: 1.55;
 }

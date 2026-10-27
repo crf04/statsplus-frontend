@@ -185,7 +185,9 @@ test('a fit shows his Position beside his name, and a Target with no Diet share 
   renderTonight({ targets: { total: 2, firing: [positioned, ruleOnly] } });
 
   const cards = screen.getAllByRole('link', { name: /fit$/ });
-  expect(within(cards[0]).getAllByRole('listitem')[0].textContent).toBe('Tyler Herro MIAGuard39%+4%');
+  expect(within(cards[0]).getAllByRole('listitem')[0].textContent).toBe(
+    'Tyler Herro MIAGuard39%+4%',
+  );
   expect(cards[1]).toHaveTextContent('Guard');
   expect(within(cards[1]).getAllByRole('listitem')[0].textContent).toBe('Jordan Poole MIAGuard––');
 });

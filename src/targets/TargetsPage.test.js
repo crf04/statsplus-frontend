@@ -1614,6 +1614,27 @@ test('no active Targets says so without calling an unresolved read zero', async 
   expect(await screen.findByText('No Targets active today')).toBeVisible();
 });
 
+test('a fit pill shows the player’s Position beside his name, and none when he has none', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        players: [
+          { ...resolution.entries[0].players[0], position: 'Wing' },
+          { ...resolution.entries[0].players[0], canonicalId: 9, name: 'Unlisted', position: null },
+        ],
+      },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  const pills = within(card).getAllByRole('listitem');
+  expect(pills[0]).toHaveTextContent(/^LeBron JamesWing · Corner 3 44%/);
+  expect(pills[1]).toHaveTextContent(/^Unlisted · Corner 3 44%/);
+});
+
 test('thin evidence stays visible as a dashed fit pill', async () => {
   fetchResolvedTargets.mockResolvedValue({
     ...resolution,

@@ -559,3 +559,44 @@ test('a season other than the published one opens the log on that season', () =>
   );
   expect(handoff({ season: '2025-26' })).toBe('/?player_name=Player+One&opponent_tricode=OKC');
 });
+
+test('the Backtest says how many players the Position left out, and shows each Position beside the name', () => {
+  const withPositions = {
+    ...backtest,
+    summary: { players: 1, games: 3, playersWithoutPosition: 2 },
+    players: [{ ...backtest.players[0], position: 'Big' }],
+  };
+  const { rerender } = render(
+    <MemoryRouter>
+      <TargetRecord backtest={withPositions} />
+      <TargetGameRows backtest={withPositions} />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('2 players left out: no listed position.')).toBeVisible();
+  expect(
+    within(screen.getByRole('region', { name: 'Backtest games' })).getAllByText('Big'),
+  ).toHaveLength(3);
+
+  const one = {
+    ...withPositions,
+    summary: { ...withPositions.summary, playersWithoutPosition: 1 },
+  };
+  rerender(
+    <MemoryRouter>
+      <TargetRecord backtest={one} />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('1 player left out: no listed position.')).toBeVisible();
+
+  // Nothing was left out, or no Position Qualifier was asked: no line at all.
+  const none = {
+    ...withPositions,
+    summary: { ...withPositions.summary, playersWithoutPosition: 0 },
+  };
+  rerender(
+    <MemoryRouter>
+      <TargetRecord backtest={none} />
+    </MemoryRouter>,
+  );
+  expect(screen.queryByText(/left out/)).not.toBeInTheDocument();
+});

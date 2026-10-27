@@ -19,10 +19,24 @@ import './EvidenceSeason.css';
  * `ready` holds a page's read until a linked season is known to be offered, so
  * a link never shows the default's answer first. A linked season the choices
  * do not offer leaves the URL and is named in `fallbackFrom`.
+ *
+ * With no link, the page reads its default: the Published Season, or, given
+ * `newestUpTo` (crf04/statsplus#348), the newest offered season not after it,
+ * so the page waits for the choices before reading.
  */
 export const SEASON_PARAM = 'season';
 
-export function useEvidenceSeason() {
+/** The newest offered season not after `ceiling`, when it is newer than the Published Season. */
+export const pageDefaultSeason = ({ choices, publishedSeason, ceiling }) => {
+  const newest = (choices ?? [])
+    .map((choice) => choice.season)
+    .filter((season) => ceiling && season <= ceiling)
+    .sort()
+    .at(-1);
+  return newest && (!publishedSeason || newest > publishedSeason) ? newest : publishedSeason;
+};
+
+export function useEvidenceSeason({ newestUpTo = null } = {}) {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const signedIn = !authLoading && isAuthenticated;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,6 +57,11 @@ export function useEvidenceSeason() {
 
   const choices = read.seasons?.choices;
   const defaultSeason = read.seasons?.defaultSeason ?? null;
+  const pageDefault = pageDefaultSeason({
+    choices,
+    publishedSeason: defaultSeason,
+    ceiling: newestUpTo,
+  });
   const settled = read.status !== 'loading';
   const offered = Boolean(linked && choices?.some((choice) => choice.season === linked));
 
@@ -59,21 +78,23 @@ export function useEvidenceSeason() {
     );
   }, [signedIn, settled, linked, offered, setSearchParams]);
 
-  const season = signedIn && offered && linked !== defaultSeason ? linked : null;
+  const explicit = signedIn && offered ? linked : null;
+  const reads = signedIn ? (explicit ?? pageDefault) : null;
+  const season = reads !== defaultSeason ? reads : null;
   const choose = useCallback(
     (next) => {
       setFallbackFrom(null);
       setSearchParams(
         (current) => {
           const params = new URLSearchParams(current);
-          if (next && next !== defaultSeason) params.set(SEASON_PARAM, next);
+          if (next && next !== pageDefault) params.set(SEASON_PARAM, next);
           else params.delete(SEASON_PARAM);
           return params;
         },
         { replace: false },
       );
     },
-    [defaultSeason, setSearchParams],
+    [pageDefault, setSearchParams],
   );
 
   // Nothing new is shown until a season not yet published is offered, unless
@@ -81,11 +102,14 @@ export function useEvidenceSeason() {
   const showControl =
     signedIn && Boolean(choices?.some((choice) => choice.mode === 'unpublished') || season);
   return {
-    ready: !signedIn || !linked || (settled && offered),
+    ready: !signedIn || (linked ? settled && offered : !newestUpTo || settled),
     // Whether /seasons lists choices: null until it answers, false for a
     // backend that predates them, a failed read, or a reader signed out.
     listsChoices: !signedIn ? false : settled ? Boolean(choices) : null,
     season,
+    // The season the URL chose, which links keep in place of the page's own default.
+    linked: explicit,
+    reads,
     defaultSeason,
     choices: showControl ? choices : null,
     choice: season ? choices.find((choice) => choice.season === season) : null,
@@ -104,7 +128,7 @@ function EvidenceSeasonSelect({ evidence }) {
     <label className="evidence-season-field">
       <span>Evidence season</span>
       <select
-        value={evidence.season ?? evidence.defaultSeason ?? ''}
+        value={evidence.reads ?? ''}
         onChange={(event) => evidence.choose(event.target.value)}
       >
         {evidence.choices.map((choice) => (

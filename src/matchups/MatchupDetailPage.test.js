@@ -8,7 +8,7 @@ import { payload as rawMatchupPayload } from './matchupPayloadFixture';
 import { bookName } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
 import { fetchSeasons } from '../seasonsApi';
-import { legacySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
+import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
 import { seasonRefusalOr } from '../servingSeason';
 
 jest.mock('../contexts/AuthContext');
@@ -3690,6 +3690,75 @@ describe('Evidence season', () => {
     expect(location()).toBe('/matchups/game-1');
     await waitFor(() => expect(fetchMatchup).toHaveBeenCalledTimes(3));
     expect(fetchMatchup).toHaveBeenLastCalledWith('game-1', { signal: expect.any(AbortSignal) });
+  });
+
+  // crf04/statsplus#348: a 2026-27 game reads 2026-27 once it is offered.
+  test('a 2026-27 game reads 2026-27 with no season chosen', async () => {
+    renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([
+      ['0022600003', { signal: expect.any(AbortSignal), season: '2026-27' }],
+    ]);
+    expect(seasonSelect()).toHaveValue('2026-27');
+    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups',
+    );
+  });
+
+  test('a 2025-26 game reads 2025-26 with no season chosen', async () => {
+    renderMatchup('/matchups/0022500584');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022500584', { signal: expect.any(AbortSignal) }]]);
+    expect(seasonSelect()).toHaveValue('2025-26');
+  });
+
+  test('a chosen 2025-26 on a 2026-27 game stays in the URL and survives a reload', async () => {
+    const { unmount } = renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    fireEvent.change(seasonSelect(), { target: { value: '2025-26' } });
+    expect(location()).toBe('/matchups/0022600003?season=2025-26');
+    await waitFor(() => expect(fetchMatchup).toHaveBeenCalledTimes(2));
+    expect(fetchMatchup).toHaveBeenLastCalledWith('0022600003', {
+      signal: expect.any(AbortSignal),
+    });
+    expect(await screen.findByRole('link', { name: '← Back to slate' })).toHaveAttribute(
+      'href',
+      '/matchups?season=2025-26',
+    );
+    unmount();
+
+    fetchMatchup.mockClear();
+    renderMatchup('/matchups/0022600003?season=2025-26');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022600003', { signal: expect.any(AbortSignal) }]]);
+    expect(seasonSelect()).toHaveValue('2025-26');
+  });
+
+  test('a refused 2026-27 on a 2026-27 game goes back to 2025-26', async () => {
+    fetchMatchup.mockImplementation(async (_id, { season }) => {
+      if (season)
+        throw refusal(503, 'season_unavailable', {
+          selected_season: '2026-27',
+          published_season: '2025-26',
+        });
+      return matchup;
+    });
+    renderMatchup('/matchups/0022600003');
+    await userEvent.click(await screen.findByRole('button', { name: 'Show 2025-26' }));
+    await waitFor(() => expect(location()).toBe('/matchups/0022600003?season=2025-26'));
+    expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  });
+
+  test('until 2026-27 is offered, a 2026-27 game reads as before', async () => {
+    fetchSeasons.mockResolvedValue(publishedOnlySeasons);
+    renderMatchup('/matchups/0022600003');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['0022600003', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
   });
 
   test('choices without a season not yet published show nothing new', async () => {

@@ -19,6 +19,7 @@ import {
   parseCalendarDate,
   shiftCalendarDate,
 } from './calendarDate';
+import { seasonOfDate } from './gameSeason';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
@@ -220,8 +221,10 @@ export default function SlatePage() {
   const parsedRequestedDate = parseCalendarDate(requestedDate);
   const invalidRequestedDate = requestedDate !== null && !parsedRequestedDate;
   const [state, setState] = useState({ status: 'idle', slate: null, error: null });
-  const evidence = useEvidenceSeason();
-  const { ready: evidenceReady, season } = evidence;
+  const evidence = useEvidenceSeason({
+    newestUpTo: seasonOfDate(parsedRequestedDate || todaySlateDate),
+  });
+  const { ready: evidenceReady, season, linked } = evidence;
   /*
    * The day's Targets are read for the date being viewed, so a block always
    * belongs to the game row above it. The read is separate from the slate's:
@@ -277,7 +280,7 @@ export default function SlatePage() {
           // Show the resolved day in the URL; the rerun that follows reuses
           // this Slate rather than loading it a second time.
           resolvedFallback.current = slate;
-          replaceTo(withSeason(`/matchups?date=${slate.slateDate}`, season), { replace: true });
+          replaceTo(withSeason(`/matchups?date=${slate.slateDate}`, linked), { replace: true });
           return;
         }
         setState({ status: 'ready', slate, error: null });
@@ -293,13 +296,22 @@ export default function SlatePage() {
         }
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, explicitDate, requestedDate, replaceTo, evidenceReady, season]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    explicitDate,
+    requestedDate,
+    replaceTo,
+    evidenceReady,
+    season,
+    linked,
+  ]);
 
-  // Another day keeps the Evidence season it was read with.
+  // Another day keeps a chosen Evidence season; otherwise it reads its own default.
   const navigate = (nextDate) =>
     setSearchParams({
       ...(nextDate ? { date: nextDate } : {}),
-      ...(season ? { [SEASON_PARAM]: season } : {}),
+      ...(linked ? { [SEASON_PARAM]: linked } : {}),
     });
 
   if (!authLoading && !isAuthenticated) {
@@ -373,7 +385,7 @@ export default function SlatePage() {
             selectedSeason={state.refusal.selectedSeason ?? season}
             gameSeason={state.refusal.gameSeason}
             defaultSeason={evidence.defaultSeason}
-            onShowDefault={() => evidence.choose(null)}
+            onShowDefault={() => evidence.choose(evidence.defaultSeason)}
           />
         ) : (
           <p role="alert">
@@ -427,7 +439,7 @@ export default function SlatePage() {
             <>
               <SlateBoard
                 games={state.slate.games}
-                season={season}
+                season={linked}
                 renderExtra={(game) => (
                   <SlateGameTargets
                     entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}

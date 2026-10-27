@@ -370,3 +370,45 @@ signedInTest(
     await app.screenshot('matchup-season-fallback');
   },
 );
+
+// crf04/statsplus#348: once 2026-27 is offered, a 2026-27 date and game read it
+// with no season chosen, and a chosen 2025-26 is kept in the URL.
+signedInTest(
+  'a 2026-27 date and game read 2026-27 by default, and a chosen 2025-26 survives a reload',
+  async ({ app, screen, browser, api }) => {
+    const autumnGame = { ...slateGame, game_id: '0022600003' };
+    await api.override({
+      '/api/games/seasons': { body: evidenceSeasons },
+      '/api/games/slate': (request) => ({
+        ...slatePayload('2026-10-27', [autumnGame]),
+        ...(seasonOf(request) ? { season_context: seasonContext } : {}),
+      }),
+      '/api/games/matchup': (request) =>
+        seasonOf(request) ? selectedMatchup : servingSeasonMatchupPayload,
+    });
+    await app.open('/matchups?date=2026-10-27');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
+      'Evidence season 2026-27 · early, 2–4 games per team',
+    );
+    expect(api.sent('/api/games/slate').map((request) => request.search.get('season'))).toEqual([
+      '2026-27',
+    ]);
+
+    await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
+    await expect(browser).toHaveURL('/matchups/0022600003');
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
+    expect(api.sent('/api/games/matchup').map((request) => request.search.get('season'))).toEqual([
+      '2026-27',
+    ]);
+
+    await screen.getByRole('combobox', 'Evidence season').selectOption({ value: '2025-26' });
+    await expect(browser).toHaveURL('/matchups/0022600003?season=2025-26');
+    await browser.reload();
+    await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
+    await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2025-26');
+    expect(api.sent('/api/games/matchup').at(-1)?.search.get('season')).toBeNull();
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('matchup-evidence-chosen-2025-26');
+  },
+);

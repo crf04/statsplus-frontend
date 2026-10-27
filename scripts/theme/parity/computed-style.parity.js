@@ -156,7 +156,8 @@ const capture = async (page) => {
       previous = next;
     }
     // The header's Appearance menu is new beside the base, so it is left out
-    // and its siblings keep the places they had; head elements paint nothing.
+    // and its siblings keep the places they had. <html> paints the canvas;
+    // <head> paints nothing.
     const isNew = (element) => element.classList.contains('theme-menu');
     const pathOf = (element) => {
       const parts = [];
@@ -169,7 +170,7 @@ const capture = async (page) => {
       return parts.join('/');
     };
     const styles = {};
-    for (const element of document.querySelectorAll('body, body *')) {
+    for (const element of document.querySelectorAll('html, body, body *')) {
       if (element.closest('.theme-menu')) continue;
       const key = pathOf(element);
       for (const pseudo of ['', '::before', '::after']) {

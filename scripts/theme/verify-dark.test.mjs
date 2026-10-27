@@ -11,12 +11,16 @@ test('a rewrite onto tokens that paint the same dark colour passes', () => {
   const result = compare(
     `.a { color: #e8a33d; background: rgba(232, 163, 61, 0.2); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important; }
 .b { --oc: 232, 163, 61; }
-mark { background: rgba(var(--oc), 0.16); }`,
+mark { background: rgba(var(--oc), 0.16); }
+.q { --tint: 76, 175, 125; }
+.q i { background: rgba(var(--tint), 0.2); }`,
     `.a { color: var(--ct-gold); background: var(--ct-gold-bg-20); box-shadow: 0 1px 2px var(--ct-shadow-30) !important; }
 .b { --oc: var(--ct-gold-fg-rgb); --oc-bg: var(--ct-gold-bg-rgb); }
-mark { background: rgb(var(--oc-bg) / calc(0.16 * var(--ct-k-accent-bg))); }`,
+mark { background: rgb(var(--oc-bg) / calc(0.16 * var(--ct-k-accent-bg))); }
+.q { --tint-bg: var(--ct-hit-bg-rgb); }
+.q i { background: rgb(var(--tint-bg) / calc(0.2 * var(--ct-k-accent-bg))); }`,
   );
-  assert.deepEqual(result, { compared: 5, rewritten: 5, mismatches: [] });
+  assert.deepEqual(result, { compared: 6, rewritten: 6, mismatches: [] });
 });
 
 test('a changed alpha, a dropped !important, a removed or reordered declaration and a wrong alias split fail', () => {

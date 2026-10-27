@@ -7,6 +7,10 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData } from './gameLogsApi';
 import { createSavedFilterSet, fetchSavedFilterSets } from './savedFilterSetsApi';
 
+// The Workspace waits for /seasons before reading; only the Published Season is offered.
+jest.mock('./seasonsApi', () => ({
+  fetchSeasons: () => Promise.resolve({ seasons: ['2025-26'], defaultSeason: '2025-26' }),
+}));
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn() },
   getApiUrl: (name) => `/api/${name.toLowerCase()}`,

@@ -87,6 +87,8 @@ test('player profile charts render and explain the hovered category', async ({ p
   });
   await expect(playtypes).toBeVisible();
   await expect(playtypes.getByText('Total Matchup Rating:')).toBeVisible();
+  // Frequency-weighted gap from league: 83.468 / 82.1 of league = +1.7%.
+  await expect(playtypes.getByText('+1.7%', { exact: true })).toBeVisible();
   await expect(playtypes.getByText('Player Frequency (%)')).toBeVisible();
   await expect(playtypes.getByText('Team Defense', { exact: true })).toBeVisible();
   await expect(playtypes.getByText('PRBallHandler', { exact: true })).toBeHidden();
@@ -107,6 +109,8 @@ test('player profile charts render and explain the hovered category', async ({ p
     name: 'Assist frequency and team defense chart',
   });
   await expect(assistCharts).toHaveCount(2);
+  await expect(assistCharts.first().getByText('+4.0%', { exact: true })).toBeVisible();
+  await expect(assistCharts.last().getByText('−1.6%', { exact: true })).toBeVisible();
 
   const locations = assistCharts.first();
   await locations.hover({ position: firstCategory });

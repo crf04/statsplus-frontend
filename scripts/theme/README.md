@@ -28,7 +28,8 @@ Families are `overlay` (white on dark), `gold`, `hit`, `miss`, `slate`, the Conn
 Only `gold`, `hit` and `miss` have `fill` steps. A component that picks its colour per class holds
 a channel in a custom property (`--oc: var(--ct-gold-fg-rgb)`); its alpha must carry the side's
 multiplier, `rgb(var(--oc) / calc(0.9 * var(--ct-k-accent-fg)))`, and the lint follows the
-property to check it. The alpha is a percentage with `p` for a decimal point (`1p5` is 0.015) or `x<hex>` for an
+property to the value the reading rule sets, else one set on an ancestor or the root, else one set
+in the same stylesheet. The alpha is a percentage with `p` for a decimal point (`1p5` is 0.015) or `x<hex>` for an
 8-digit hex alpha. The step does not need to exist yet: write the name, run
 `node scripts/theme/tokenize.mjs --write`, and it is defined. `--ct-x-<hex>` tokens keep a legacy
 shade exact; the lint stops their count from growing.
@@ -44,4 +45,6 @@ takes concrete colours from `useThemeColors` in `src/theme/useThemeColors.js`.
   the codemod would move, or a stale generated block, fails CI.
 - `verify-dark.mjs --base <ref>` compares every rewritten declaration with the base revision, tokens
   replaced by their dark values and component custom properties by the value each rule gives them,
-  and exits 1 on any difference or any declaration that moved earlier in the cascade.
+  and exits 1 on any difference or any declaration that moved earlier in the cascade. A component
+  custom property whose setters change has every consumer re-checked, and one that moved, gained
+  a setter or was removed while still read fails.

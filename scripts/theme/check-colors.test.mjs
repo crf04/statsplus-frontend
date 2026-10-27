@@ -215,3 +215,37 @@ test('theme.css rule bodies are checked, and its token definitions may only refe
     'src/theme.css token-cycle: var() cycle --ct-a → --ct-b → --ct-a',
   ]);
 });
+
+test('an alias takes the setter on its own rule, then one that reaches it, then one in its own file', () => {
+  assert.deepEqual(
+    project({
+      'src/tone.css': `.label { --tone: var(--ct-gold); color: var(--tone); }
+.bar { --tone: var(--ct-gold-fill); background: var(--tone); }`,
+      'src/a.css': `.a { --accent: var(--ct-gold-fill); }
+.a .chip { background: var(--accent); }`,
+      'src/b.css': `.b { --accent: var(--ct-gold); }
+.b p { color: var(--accent); }
+.list { --mark: var(--ct-gold-fill); }
+.list .label { --mark: var(--ct-gold); color: var(--mark); }`,
+    }),
+    [],
+  );
+  assert.deepEqual(
+    project({
+      'src/a.css': `.a { --accent: var(--ct-gold-fill); }
+.a .chip { color: var(--accent); }`,
+      'src/run.css': `.rr { --v: var(--ct-gold); }
+.rr-verdict { background: var(--v); }`,
+      'src/root.css': `:root { --page-accent: var(--ct-gold); }
+.panel { --panel-edge: var(--ct-gold-fill); }`,
+      'src/use.css': `.chip { background: var(--page-accent); }
+.panel .row { color: var(--panel-edge); }`,
+    }),
+    [
+      'src/a.css role-misuse: fill token --ct-gold-fill in a fg role',
+      'src/run.css role-misuse: accent-fg token --ct-gold in a fill role',
+      'src/use.css role-misuse: accent-fg token --ct-gold in a fill role',
+      'src/use.css role-misuse: fill token --ct-gold-fill in a fg role',
+    ],
+  );
+});

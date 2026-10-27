@@ -102,48 +102,77 @@ const unscaledChannels = (value) => {
 };
 
 // A value with each component custom property (`--oc`, `--rr-v`) replaced by
-// every value src/ declares for it, so a token reached through one is checked
+// every value `valuesOf` gives it, so a token reached through one is checked
 // where it paints.
 const MAX_EXPANSIONS = 64;
-const expandAliases = (value, aliases, depth = 0) => {
+const expandAliases = (value, valuesOf, depth = 0) => {
   if (depth > 8) return [value];
   const parsed = valueParser(value);
   let target = null;
+  let values;
   parsed.walk((node) => {
     if (target || node.type !== 'function' || node.value !== 'var') return undefined;
-    if (aliases.has(node.nodes[0]?.value)) target = node;
+    values = valuesOf(node.nodes[0]?.value);
+    if (values) target = node;
     return undefined;
   });
   if (!target) return [value];
-  const name = target.nodes[0].value;
-  return [...aliases.get(name)]
+  return values
     .flatMap((candidate) => {
       Object.assign(target, { type: 'word', value: candidate });
-      return expandAliases(valueParser.stringify(parsed), aliases, depth + 1);
+      return expandAliases(valueParser.stringify(parsed), valuesOf, depth + 1);
     })
     .slice(0, MAX_EXPANSIONS);
 };
 
-// Custom properties declared outside theme.css, with every value given each.
+// Every rule outside theme.css that sets a custom property.
 export const aliasesOf = (stylesheets, registry) => {
-  const aliases = new Map();
-  for (const css of stylesheets) {
+  const setters = [];
+  for (const { file, css } of stylesheets) {
     postcss.parse(css).walkDecls(/^--/, (decl) => {
       if (registry.has(decl.prop)) return;
-      if (!aliases.has(decl.prop)) aliases.set(decl.prop, new Set());
-      aliases.get(decl.prop).add(decl.value.trim());
+      const selectors = decl.parent.selectors ?? [];
+      setters.push({ name: decl.prop, file, selectors, value: decl.value.trim() });
     });
   }
-  return aliases;
+  return setters;
+};
+
+const ROOT_SELECTOR = /^(:root|html|\*)?(\[data-theme[^\]]*\])?$/;
+const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The setter's element is the consumer's, an ancestor of it, or the root.
+const reaches = (setter, consumer) =>
+  ROOT_SELECTOR.test(setter) ||
+  new RegExp(`(^|[\\s>])${escapeRe(setter)}(?![\\w-])`).test(consumer);
+
+// The values an alias can have where `rule` reads it: its own setter, else
+// the setters that reach it, else the ones in its own stylesheet. A setter
+// elsewhere that cannot reach the rule never counts.
+const aliasValues = (setters, file, rule) => (name) => {
+  const named = setters.filter((setter) => setter.name === name);
+  if (!named.length) return undefined;
+  const consumers = rule?.selectors ?? [];
+  const values = new Set();
+  for (const consumer of consumers.length ? consumers : [null]) {
+    const tiers = [
+      named.filter(({ selectors }) => consumer !== null && selectors.includes(consumer)),
+      named.filter(
+        ({ selectors }) => consumer !== null && selectors.some((s) => reaches(s, consumer)),
+      ),
+      named.filter((setter) => setter.file === file),
+    ];
+    for (const setter of tiers.find((tier) => tier.length) ?? []) values.add(setter.value);
+  }
+  return values.size ? [...values] : undefined;
 };
 
 const issue = (where, rule, message) => ({ ...where, rule, message });
 
 // Problems with one painted value after its aliases are followed: a token in
 // the wrong role and a channel alpha without its multiplier.
-const paintIssues = (value, role, registry, context, aliases) => {
+const paintIssues = (value, role, registry, context, valuesOf) => {
   const messages = new Set();
-  for (const expanded of expandAliases(value, aliases)) {
+  for (const expanded of expandAliases(value, valuesOf)) {
     for (const message of unscaledChannels(expanded)) messages.add(['multiplier', message]);
     if (!role) continue;
     for (const ref of paintedRefs(expanded, role)) {
@@ -177,7 +206,7 @@ const tokenCycles = (root) => {
 };
 
 export const checkCss = (css, file, registry, scope = {}) => {
-  const { defined = registry.declared, aliases = aliasesOf([css], registry) } = scope;
+  const { defined = registry.declared, aliases = aliasesOf([{ file, css }], registry) } = scope;
   const issues = [];
   const isTheme = file === THEME_FILE;
   const root = postcss.parse(css, { from: file });
@@ -198,8 +227,10 @@ export const checkCss = (css, file, registry, scope = {}) => {
     if (decl.prop.startsWith('--') && parseChannels(decl.value)) {
       issues.push(issue(where, 'raw-colour', `raw colour channels ${decl.value}`));
     }
-    const context = decl.parent?.type === 'rule' ? ruleContext(decl.parent, registry) : null;
-    for (const [rule, message] of paintIssues(decl.value, role, registry, context, aliases)) {
+    const rule = decl.parent?.type === 'rule' ? decl.parent : null;
+    const context = rule ? ruleContext(rule, registry) : null;
+    const valuesOf = aliasValues(aliases, file, rule);
+    for (const [rule, message] of paintIssues(decl.value, role, registry, context, valuesOf)) {
       issues.push(issue(where, rule, message));
     }
   });
@@ -333,7 +364,7 @@ export const checkJs = (source, file, registry, scope = {}) => {
         issues.push(issue(where, 'unknown-token', `${name} is not defined in ${THEME_FILE}`));
       }
     }
-    for (const [rule, message] of paintIssues(text, role, registry, context, new Map())) {
+    for (const [rule, message] of paintIssues(text, role, registry, context, () => undefined)) {
       issues.push(issue(where, rule, message));
     }
     for (const { role: utilityRole, token } of tailwindColors(text)) {
@@ -367,7 +398,13 @@ export const check = (rootDir) => {
     postcss.parse(read(file)).walkDecls(/^--ct-/, (decl) => defined.add(decl.prop));
   }
   const stylesheets = files.filter((file) => isStylesheet(file) && file !== THEME_FILE);
-  const scope = { defined, aliases: aliasesOf(stylesheets.map(read), registry) };
+  const scope = {
+    defined,
+    aliases: aliasesOf(
+      stylesheets.map((file) => ({ file, css: read(file) })),
+      registry,
+    ),
+  };
   const issues = [];
   for (const file of files) {
     if (isStylesheet(file)) issues.push(...checkCss(read(file), file, registry, scope));

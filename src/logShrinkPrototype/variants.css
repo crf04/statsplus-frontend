@@ -413,3 +413,50 @@
     position: static;
   }
 }
+
+/* D, round 3: a little more air between and inside every piece. */
+.ls-D .card-body {
+  padding: 20px 22px;
+}
+.ls-D .player-selector-row {
+  margin-bottom: 18px !important;
+  --bs-gutter-x: 12px;
+}
+.ls-D .player-selector-label {
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.ls-D .player-selector-input,
+.ls-D .player-selector-select {
+  height: 40px;
+  padding: 8px 12px;
+}
+.ls-D .ls-d-card {
+  padding: 16px 20px;
+  gap: 6px;
+}
+.ls-D .ls-d-value {
+  font-size: 26px;
+}
+.ls-D .ls-d-corner {
+  top: 14px;
+  right: 16px;
+}
+.ls-D .ls-filters {
+  margin: 18px 0 4px;
+  gap: 6px;
+}
+.ls-D .ls-chart {
+  margin-top: 16px;
+}
+@media (max-width: 575px) {
+  .ls-D .card-body {
+    padding: 16px 14px;
+  }
+  .ls-D .ls-d-card {
+    padding: 12px 10px;
+  }
+  .ls-D .ls-d-value {
+    font-size: 19px;
+  }
+}

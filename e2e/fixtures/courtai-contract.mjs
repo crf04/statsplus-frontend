@@ -2073,6 +2073,15 @@ const IDLE_AVAILABILITY = {
 const namesSlice = (rowKey, sliceKey) => rowKey === sliceKey || rowKey.startsWith(`${sliceKey}:`);
 
 const resolvedContext = (qualifier, sheet, sheetLeague) => {
+  // A Position or Average Qualifier reads no Defense Sheet row.
+  if (!isDietQualifier(qualifier))
+    return {
+      base: qualifier.base,
+      slice_key: null,
+      label: null,
+      availability: null,
+      metrics: [],
+    };
   const leagueRows = Object.fromEntries(
     (sheetLeague.defense_sheet[qualifier.base] || []).map((row) => [row.key, row]),
   );
@@ -2098,6 +2107,114 @@ const resolvedContext = (qualifier, sheet, sheetLeague) => {
   };
 };
 
+const isDietQualifier = (qualifier) =>
+  qualifier.base !== 'position' && qualifier.base !== 'season_average';
+
+/*
+ * The season-eligibility rule for an Average Qualifier: a player below the
+ * Diet thin rule's games floor (THIN_MIN_GAMES) is thin. The fits flag him and
+ * the Backtest leaves him out. The rule applies only to a Target with an
+ * Average Qualifier. Every player has played 20 games, as his Diet facts say,
+ * except Damian Lillard, who has played 3.
+ */
+const SEASON_GAMES_PLAYED = { 'Damian Lillard': 3 };
+const seasonGamesPlayed = (player) => SEASON_GAMES_PLAYED[player.name] ?? 20;
+
+/*
+ * Every Target stat column an Average Qualifier can name, with its own
+ * evaluator over a season's game logs (this fixture's copy of the catalogue).
+ * Counting stats average per game, /36 stats per 36 minutes played, and the
+ * shooting rates are percentages of the season's totals (PTS/FGA is points
+ * per attempt).
+ */
+const TARGET_COLUMNS = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'FG2A',
+  '3PA',
+  'FGM',
+  'FGA',
+  'FTM',
+  'FTA',
+  'STL',
+  'BLK',
+  'TOV',
+  'OREB',
+  'DREB',
+  'PF',
+  'MIN',
+  'PA',
+  'PR',
+  'RA',
+  'PRA',
+  'SB',
+  'PTS/36',
+  'REB/36',
+  'AST/36',
+  '3PM/36',
+  'FG2A/36',
+  '3PA/36',
+  'FGA/36',
+  'FTA/36',
+  'STL/36',
+  'BLK/36',
+  'TOV/36',
+  'PRA/36',
+  'PR/36',
+  'PA/36',
+  'FG%',
+  '3P%',
+  'TS%',
+  'PTS/FGA',
+];
+const COUNTING_STATS = {
+  PTS: (log) => log.PTS,
+  REB: (log) => log.REB,
+  AST: (log) => log.AST,
+  '3PM': (log) => log.FG3M,
+  FG2A: (log) => log.FGA - log.FG3A,
+  '3PA': (log) => log.FG3A,
+  FGM: (log) => log.FGM,
+  FGA: (log) => log.FGA,
+  FTM: (log) => log.FTM,
+  FTA: (log) => log.FTA,
+  STL: (log) => log.STL,
+  BLK: (log) => log.BLK,
+  TOV: (log) => log.TOV,
+  OREB: (log) => log.OREB,
+  DREB: (log) => log.DREB,
+  PF: (log) => log.PF,
+  MIN: (log) => log.MIN,
+  PA: (log) => log.PTS + log.AST,
+  PR: (log) => log.PTS + log.REB,
+  RA: (log) => log.REB + log.AST,
+  PRA: (log) => log.PTS + log.REB + log.AST,
+  SB: (log) => log.STL + log.BLK,
+};
+const seasonTotal = (season, column) =>
+  season.reduce((total, log) => total + COUNTING_STATS[column](log), 0);
+const ratioOrNull = (numerator, denominator) =>
+  Number.isFinite(numerator / denominator) ? numerator / denominator : null;
+const RATE_STATS = {
+  'FG%': (season) => ratioOrNull(seasonTotal(season, 'FGM') * 100, seasonTotal(season, 'FGA')),
+  '3P%': (season) => ratioOrNull(seasonTotal(season, '3PM') * 100, seasonTotal(season, '3PA')),
+  'TS%': (season) =>
+    ratioOrNull(
+      seasonTotal(season, 'PTS') * 100,
+      2 * (seasonTotal(season, 'FGA') + 0.44 * seasonTotal(season, 'FTA')),
+    ),
+  'PTS/FGA': (season) => ratioOrNull(seasonTotal(season, 'PTS'), seasonTotal(season, 'FGA')),
+};
+const targetStatAverage = (season, column) => {
+  if (season.length === 0) return null;
+  if (RATE_STATS[column]) return RATE_STATS[column](season);
+  if (column.endsWith('/36'))
+    return ratioOrNull(seasonTotal(season, column.slice(0, -3)) * 36, seasonTotal(season, 'MIN'));
+  return seasonTotal(season, column) / season.length;
+};
+
 // The Matchup Score's own thin floors: every fact in the Base needs the games,
 // and the Base's volume per game has to clear its floor.
 const THIN_MIN_GAMES = 5;
@@ -2113,8 +2230,12 @@ const thinBase = (base, facts) =>
   facts.reduce((total, fact) => total + fact.season.volume / fact.season.games_played, 0) <
     THIN_MIN_VOLUME_PER_GAME[base];
 
-const isDietQualifier = (qualifier) =>
-  qualifier.base !== 'position' && qualifier.base !== 'season_average';
+const ruleShare = (qualifier) => ({
+  base: qualifier.base,
+  slice_key: null,
+  share: null,
+  league_average_share: null,
+});
 
 const resolvedFit = (qualifiers, player) => {
   const shares = [];
@@ -2123,16 +2244,19 @@ const resolvedFit = (qualifiers, player) => {
     if (qualifier.base === 'position') {
       // A player with no listed Position never fits a Position Qualifier.
       if (!qualifier.groups.includes(playerPosition(player))) return null;
+      shares.push(ruleShare(qualifier));
       continue;
     }
     if (qualifier.base === 'season_average') {
-      const average = seasonAverage(seasonsByPlayer[player.name] || [], qualifier.stat);
+      const average = targetStatAverage(seasonsByPlayer[player.name] || [], qualifier.stat);
       if (!Number.isFinite(average)) return null;
       const meets =
         qualifier.comparator === 'at_or_below'
           ? average <= qualifier.threshold
           : average >= qualifier.threshold;
       if (!meets) return null;
+      thin = thin || seasonGamesPlayed(player) < THIN_MIN_GAMES;
+      shares.push(ruleShare(qualifier));
       continue;
     }
     const facts = player.diet_shares[qualifier.base] || [];
@@ -2301,9 +2425,9 @@ const resolveTargets = (date, targets) => {
         opponent: teamReference(opponent),
         opposing_team: teamReference(opposing),
       },
-      context: target.qualifiers
-        .filter(isDietQualifier)
-        .map((qualifier) => resolvedContext(qualifier, sheet, slate.matchup.league)),
+      context: target.qualifiers.map((qualifier) =>
+        resolvedContext(qualifier, sheet, slate.matchup.league),
+      ),
       availability: slate.availability,
       // The Matchup orders its players by season scoring descending, so
       // keeping its order is that ordering.
@@ -2607,7 +2731,7 @@ const invalidQualifier = (qualifier) => {
     );
   if (qualifier.base === 'season_average')
     return (
-      !Object.hasOwn(MARKET_STATS, qualifier.stat.replace(/\/36$/, '')) ||
+      !TARGET_COLUMNS.includes(qualifier.stat) ||
       !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
       typeof qualifier.threshold !== 'number' ||
       !Number.isFinite(qualifier.threshold) ||

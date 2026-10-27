@@ -216,14 +216,18 @@ export const nudgeThresholdPercent = (percentText, delta) => {
 
 /*
  * An Average Qualifier's threshold is a plain number in the stat's own units,
- * so it is typed as one and kept to the two decimals the backend compares
- * duplicates at. A blank, negative or non-numeric entry has no value, which is
- * what keeps the draft unsaveable.
+ * sent exactly as typed: rounding 0.004 to two decimals would send 0 and admit
+ * players with no attempts. The backend rounds only to compare duplicates. A
+ * blank, negative or non-numeric entry has no value, which is what keeps the
+ * draft unsaveable.
  */
 export const parseAverageThreshold = (text) => {
   const trimmed = String(text).trim();
   if (!trimmed) return null;
   const value = Number(trimmed);
   if (!Number.isFinite(value) || value < 0) return null;
-  return Math.round(value * 100) / 100;
+  return value;
 };
+
+/* A Target holds one to ten Qualifiers of every kind, Position included. */
+export const QUALIFIER_LIMIT = 10;

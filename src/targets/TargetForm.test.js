@@ -159,6 +159,100 @@ test('toggling a Position, then a Season average row, edits the draft the way a 
   expect(screen.getByText('per 36 min average')).toBeVisible();
 });
 
+test('an Average threshold keeps its own precision through the save and edit roundtrip', () => {
+  const stored = {
+    ...target,
+    qualifiers: [
+      { base: 'season_average', stat: '3PA/36', comparator: 'at_or_below', threshold: 0.004 },
+    ],
+  };
+  const draft = targetToDraft(stored);
+  expect(draft.qualifiers[0].thresholdText).toBe('0.004');
+  expect(targetDraftToRequest(draft).qualifiers).toEqual(stored.qualifiers);
+  // Typed with surrounding space and a trailing zero, it is still the number typed.
+  draft.qualifiers[0].thresholdText = ' 0.0040 ';
+  expect(targetDraftToRequest(draft).qualifiers[0].threshold).toBe(0.004);
+});
+
+test('a Qualifier of a base this page does not know opens read-only and is saved as stored', () => {
+  const stored = {
+    ...target,
+    qualifiers: [
+      { base: 'rebound_types', sliceKey: 'Contested', comparator: 'at_or_below', threshold: 0.123 },
+      ...target.qualifiers,
+    ],
+  };
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
+  function Stored() {
+    const [draft, setDraft] = useState(targetToDraft(stored));
+    return (
+      <TargetForm
+        draft={draft}
+        onChange={(patch) => setDraft({ ...draft, ...patch })}
+        onSubmit={() => {}}
+      />
+    );
+  }
+  render(<Stored />);
+  expect(screen.getByLabelText('Qualifier 1, read-only')).toHaveTextContent('Contested ≤ 12.3%');
+  expect(screen.queryByLabelText('Qualifier 1 slice')).not.toBeInTheDocument();
+  // The known row beside it is still editable.
+  expect(screen.getByLabelText('Qualifier 2 slice')).toBeEnabled();
+  const { valid, request } = describeDraft(targetToDraft(stored));
+  expect(valid).toBe(true);
+  expect(request.qualifiers).toEqual(stored.qualifiers);
+});
+
+const manyRows = (count) =>
+  Array.from({ length: count }, () => ({
+    base: 'shot_zones',
+    sliceKey: 'Corner 3',
+    comparator: 'at_or_above',
+    thresholdPercent: '40',
+  }));
+
+test('the ten Qualifier limit counts the Position, in the draft and in the controls', () => {
+  expect(
+    describeDraft({ ...targetToDraft(target), positions: ['Big'], qualifiers: manyRows(10) }),
+  ).toEqual({
+    valid: false,
+    problem: 'A Target holds at most 10 Qualifiers, counting its Position.',
+  });
+  expect(
+    describeDraft({ ...targetToDraft(target), positions: ['Big'], qualifiers: manyRows(9) }).valid,
+  ).toBe(true);
+
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
+  function Draft({ positions, rows }) {
+    const [draft, setDraft] = useState({
+      ...targetToDraft(target),
+      positions,
+      qualifiers: manyRows(rows),
+    });
+    return (
+      <TargetForm
+        draft={draft}
+        onChange={(patch) => setDraft({ ...draft, ...patch })}
+        onSubmit={() => {}}
+      />
+    );
+  }
+  // Nine rows and a Position is ten: no more rows.
+  const { unmount } = render(<Draft positions={['Big']} rows={9} />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  expect(screen.getByRole('button', { name: 'a Qualifier' })).toBeDisabled();
+  unmount();
+  // Ten rows and no Position: the Position cannot be added, but can be left alone.
+  const second = render(<Draft positions={[]} rows={10} />);
+  for (const group of ['Guard', 'Wing', 'Big'])
+    expect(screen.getByRole('button', { name: group })).toBeDisabled();
+  second.unmount();
+  // Eight rows and a Position leaves room for one more.
+  render(<Draft positions={['Big']} rows={8} />);
+  fireEvent.click(screen.getByRole('button', { name: '+ and' }));
+  expect(screen.getByRole('button', { name: 'a Qualifier' })).toBeEnabled();
+});
+
 // Opponent transport is exercised in its own API/hook tests.
 jest.mock('./opponentContextApi', () => ({
   ...jest.requireActual('./opponentContextApi'),

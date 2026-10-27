@@ -176,6 +176,20 @@ test('Targets show the two with most fits, each fit with its points Matchup scor
   expect(screen.getByRole('link', { name: 'All 3 firing' })).toHaveAttribute('href', '/targets');
 });
 
+test('a fit shows his Position beside his name, and a Target with no Diet share shows a dash', () => {
+  const positioned = entry(7, 'WAS', [[10, 'Tyler Herro']]);
+  positioned.players[0].position = 'Guard';
+  const ruleOnly = entry(8, 'MIA', [[13, 'Jordan Poole']]);
+  ruleOnly.target.qualifiers = [{ base: 'position', groups: ['Guard'] }];
+  ruleOnly.players[0] = { ...ruleOnly.players[0], position: 'Guard', shares: [] };
+  renderTonight({ targets: { total: 2, firing: [positioned, ruleOnly] } });
+
+  const cards = screen.getAllByRole('link', { name: /fit$/ });
+  expect(within(cards[0]).getAllByRole('listitem')[0].textContent).toBe('Tyler Herro MIAGuard39%+4%');
+  expect(cards[1]).toHaveTextContent('Guard');
+  expect(within(cards[1]).getAllByRole('listitem')[0].textContent).toBe('Jordan Poole MIAGuard––');
+});
+
 test('no firing Target and no Targets at all read differently', () => {
   const { unmount } = renderTonight({ targets: { total: 2, firing: [] } });
   expect(screen.getByText('None of your Targets fire today')).toBeInTheDocument();

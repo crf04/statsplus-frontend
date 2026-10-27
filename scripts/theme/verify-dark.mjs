@@ -131,7 +131,8 @@ const main = () => {
   const args = process.argv.slice(2);
   const base = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'origin/master';
   const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-  const git = (...gitArgs) => execFileSync('git', gitArgs, { cwd: rootDir }).toString();
+  const git = (...gitArgs) =>
+    execFileSync('git', gitArgs, { cwd: rootDir, stdio: ['ignore', 'pipe', 'ignore'] }).toString();
   const changed = git('diff', '--name-only', base, '--', 'src')
     .split('\n')
     .filter((file) => /\.(css|scss|jsx?)$/.test(file) && !/\.test\.jsx?$/.test(file));

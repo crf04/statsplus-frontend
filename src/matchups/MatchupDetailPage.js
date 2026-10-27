@@ -193,30 +193,30 @@ const postedLine = (player, provider, stat) => {
 };
 
 /*
- * The books that post him in this stat, PrizePicks first, each with its line,
- * and the one line the row leads with. A prediction market's line leads when
- * one posts it (Polymarket, then Novig, then Kalshi); otherwise the first book
- * that has one. No line anywhere is a null headline, never a guess. The row is
- * flagged when the posted lines span a full point or more.
+ * The line the row leads with: the one most sources post, counting every DFS
+ * and prediction-market provider and every sportsbook that posts him in this
+ * stat. A tie goes to the first source in order: Polymarket, Novig, Kalshi,
+ * PrizePicks, the other providers, then the sportsbooks. A lone far rung on a
+ * prediction market's ladder therefore never outvotes the books
+ * (statsplus#338). No line anywhere is a null headline, never a guess.
  */
-const DISAGREEMENT_SPAN = 1;
-const linesFor = (player, stat) => {
-  const books = Object.keys(player.provenance)
+const providerRank = (provider) => {
+  const market = MARKET_PROVIDERS.indexOf(provider);
+  if (market !== -1) return market;
+  return provider === 'prizepicks' ? MARKET_PROVIDERS.length : MARKET_PROVIDERS.length + 1;
+};
+const headlineFor = (player, stat) => {
+  const providers = Object.keys(player.provenance)
     .filter((provider) => player.provenance[provider].includes(stat))
-    .sort((a, b) => Number(b === 'prizepicks') - Number(a === 'prizepicks'))
-    .map((provider) => ({ provider, line: postedLine(player, provider, stat) }));
-  const posted = (provider) =>
-    books.find((book) => book.provider === provider && book.line !== null);
-  const market = MARKET_PROVIDERS.map(posted).find(Boolean);
-  const lead = market ?? books.find((book) => book.line !== null);
-  const lines = books.map((book) => book.line).filter((line) => line !== null);
-  return {
-    books,
-    headline: lead?.line ?? null,
-    headlineProvider: lead?.provider ?? null,
-    fromMarket: Boolean(market),
-    flagged: lines.length > 1 && Math.max(...lines) - Math.min(...lines) >= DISAGREEMENT_SPAN,
-  };
+    .sort((a, b) => providerRank(a) - providerRank(b))
+    .map((provider) => postedLine(player, provider, stat));
+  const books = (player.bookLines?.[stat]?.books ?? []).map((entry) => entry.line);
+  const lines = [...providers, ...books].filter((line) => line !== null);
+  const count = (line) => lines.filter((other) => other === line).length;
+  return lines.reduce(
+    (lead, line) => (lead === null || count(line) > count(lead) ? line : lead),
+    null,
+  );
 };
 
 // "Best Over −106 at Novig, best Under −102 at Novig, line 26.5"; a side no
@@ -293,7 +293,7 @@ function RailRow({
       </>
     );
   } else {
-    const { headline } = linesFor(player, stat);
+    const headline = headlineFor(player, stat);
     const score = headline === null ? scoreFor(player, stat, windowKey) : null;
     value =
       headline !== null ? (

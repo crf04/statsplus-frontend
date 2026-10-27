@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { THEME_COLOR, THEME_STORAGE_KEY, createThemeStore, resolveTheme } from './themeStore';
+import { THEME_COLOR, THEME_STORAGE_KEY, createThemeStore } from './themeStore';
 
 const html = document.documentElement;
 
@@ -126,6 +126,23 @@ test("another tab's choice applies here without being written back", () => {
   expect(writes).toHaveBeenCalledWith(THEME_STORAGE_KEY, 'dark');
 });
 
+test('another tab clearing storage returns this one to System without writing back', () => {
+  installSystem(false);
+  localStorage.setItem(THEME_STORAGE_KEY, 'light');
+  const store = createThemeStore();
+  expect(painted()).toEqual({ theme: 'light', chrome: '#f3f4f6' });
+  const setItem = jest.spyOn(Storage.prototype, 'setItem');
+  const removeItem = jest.spyOn(Storage.prototype, 'removeItem');
+
+  localStorage.clear();
+  window.dispatchEvent(new StorageEvent('storage', { key: null }));
+  expect(store.getSnapshot()).toEqual({ preference: 'system', resolved: 'dark' });
+  expect(painted()).toEqual({ theme: 'dark', chrome: '#0d0b07' });
+  expect(setItem).not.toHaveBeenCalled();
+  expect(removeItem).not.toHaveBeenCalled();
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+});
+
 test('choosing the current preference again changes and notifies nothing', () => {
   installSystem(false);
   const store = createThemeStore();
@@ -167,6 +184,11 @@ test.each([
   ['light', false, 'light'],
   ['dark', true, 'dark'],
   ['dark', false, 'dark'],
+  // Values no current build writes read as System in both.
+  ['system', true, 'light'],
+  ['system', false, 'dark'],
+  ['sepia', true, 'light'],
+  ['sepia', false, 'dark'],
 ])(
   'first paint with %p stored and a light device %p is %p, as the store resolves it',
   (stored, light, expected) => {
@@ -174,7 +196,6 @@ test.each([
     if (stored) localStorage.setItem('courtai:theme', stored);
     runBootScript();
     expect(painted()).toEqual({ theme: expected, chrome: THEME_COLOR[expected] });
-    expect(resolveTheme(stored ?? 'system', light)).toBe(expected);
     expect(createThemeStore().getSnapshot().resolved).toBe(expected);
   },
 );

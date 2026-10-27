@@ -61,6 +61,18 @@ test('choosing Dark paints dark, stores it, and checks Dark', async () => {
   expect(choice('System')).toHaveAttribute('aria-checked', 'false');
 });
 
+test('the radio items carry aria-checked only; menuitemradio does not take aria-selected', async () => {
+  render(<ThemeMenu />);
+  await open('Appearance: System (Light)');
+  const items = screen.getAllByRole('menuitemradio');
+  expect(items.map((item) => item.getAttribute('aria-checked'))).toEqual([
+    'true',
+    'false',
+    'false',
+  ]);
+  for (const item of items) expect(item).not.toHaveAttribute('aria-selected');
+});
+
 test('choosing System again forgets the choice and follows the device', async () => {
   render(<ThemeMenu />);
   await open('Appearance: System (Light)');

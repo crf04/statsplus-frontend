@@ -242,6 +242,8 @@ signedInTest(
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', { name: 'Connect', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');
+    await expect(screen.getByRole('button', 'Appearance: Dark')).toBeFocused();
+    await browser.keyboard.press('Tab');
     await expect(screen.getByRole('button', { name: 'Feedback', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('button', /CourtAI Test User/i)).toBeFocused();

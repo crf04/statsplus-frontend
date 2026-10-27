@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chalk, CHALK } from './chalk.mjs';
+import { chalk } from './chalk.mjs';
 import { luminance, parseColor } from './colors.mjs';
 import { contrast } from './contrast.mjs';
 import { LIGHT_END, LIGHT_START, withLightTails } from './light-tails.mjs';
@@ -8,8 +8,23 @@ import { THEME } from './theme-fixture.mjs';
 
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
+// Palette B's anchors as the founder approved them: prototype/light-mode
+// (b6e6dcd), src/lightModePrototype/mode.js, VARIANTS.B.neutrals.
+const PALETTE_B = [
+  ['#000000', '#eceef0'],
+  ['#0d0b07', '#f3f4f6'],
+  ['#16130d', '#ffffff'],
+  ['#1e1a12', '#f7f8fa'],
+  ['#241f15', '#eef0f3'],
+  ['#3a3428', '#d5d9df'],
+  ['#9b937f', '#5f6670'],
+  ['#c9c2b2', '#3b414a'],
+  ['#efe9dc', '#15181d'],
+  ['#ffffff', '#0b0d10'],
+];
+
 test('Chalk maps each of palette B anchors to its light shade', () => {
-  for (const [dark, light] of CHALK.neutrals) {
+  for (const [dark, light] of PALETTE_B) {
     assert.deepEqual(chalk([...rgb(dark), 1], 'fill'), [...rgb(light), 1], dark);
   }
 });

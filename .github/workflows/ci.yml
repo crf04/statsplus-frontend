@@ -34,9 +34,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.22.3
-          cache: npm
+
+      # node_modules keyed on every npm ci input: a hit skips npm ci's extract
+      # and link, which took 20 to 30 s in every job. package.json is in the key
+      # so a manifest that no longer matches the lock file misses and npm ci
+      # rejects it, as it would without the cache.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-runner-${{ runner.os }}-node22.22.3-${{ hashFiles('package-lock.json', 'package.json', '.npmrc') }}
 
       - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Lint
@@ -69,9 +80,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.22.3
-          cache: npm
+
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-playwright-container-${{ runner.os }}-node22.22.3-${{ hashFiles('package-lock.json', 'package.json', '.npmrc') }}
 
       - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Install Chromium
@@ -167,11 +185,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Two slices per target: one leg's 98 flows take longer than the Playwright
+  # Three slices per target: one leg's flows take longer than the Playwright
   # shards, and more workers only share the four cores the Vite dev server and
   # the browsers already saturate.
   flows-target:
-    name: e2e flows (${{ matrix.target }} ${{ matrix.shard }}/2)
+    name: e2e flows (${{ matrix.target }} ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -180,20 +198,29 @@ jobs:
       fail-fast: false
       matrix:
         target: [desktop, phone, desktop-west]
-        shard: [1, 2]
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22.22.3
-          cache: npm
-      - run: npm ci
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: node_modules
+          key: node-modules-runner-${{ runner.os }}-node22.22.3-${{ hashFiles('package-lock.json', 'package.json', '.npmrc') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
       - name: Typecheck e2e config and flows
         run: npm run typecheck:e2e
+      # No --with-deps: the runner image already has Chromium's libraries, and
+      # the extra fonts and xvfb it fetched sometimes took minutes from the apt
+      # mirror.
       - name: Install e2e engine Chromium
-        run: npx e2e-web install chromium --with-deps
+        run: npx e2e-web install chromium
       - name: Run ${{ matrix.target }} flows without model credentials
-        run: npm run test:flows -- --target ${{ matrix.target }} --shard ${{ matrix.shard }}/2
+        run: npm run test:flows -- --target ${{ matrix.target }} --shard ${{ matrix.shard }}/3
       - name: Upload e2e report and failure evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

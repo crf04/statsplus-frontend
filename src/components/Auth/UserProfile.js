@@ -64,13 +64,14 @@ const UserProfile = () => {
             style={{
               width: 36,
               height: 36,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
+              background:
+                'linear-gradient(135deg, var(--ct-x-667eea-fill) 0%, var(--ct-x-764ba2-fill) 100%)',
+              color: 'var(--ct-on-ffffff)',
               fontSize: '14px',
               fontWeight: '600',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              border: '2px solid var(--ct-overlay-fg-40)',
               flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+              boxShadow: '0 2px 8px var(--ct-x-667eea-30)',
             }}
           >
             {initials}
@@ -78,7 +79,7 @@ const UserProfile = () => {
 
           <span
             style={{
-              color: 'white',
+              color: 'var(--ct-text-max)',
               fontSize: '14px',
               fontWeight: '500',
               whiteSpace: 'nowrap',
@@ -87,7 +88,7 @@ const UserProfile = () => {
             {displayName}
           </span>
 
-          <ChevronDown size={12} color="white" style={{ opacity: 0.7 }} />
+          <ChevronDown size={12} color="var(--ct-text-max)" style={{ opacity: 0.7 }} />
         </Dropdown.Toggle>
 
         <Dropdown.Menu className="mt-2">

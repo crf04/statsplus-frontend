@@ -1,30 +1,33 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Chart } from 'react-chartjs-2';
 import './chartSetup';
+import { useThemeColors } from './theme/useThemeColors';
 
 // A frequency bar per category on a left axis, optionally with the opponent's
 // Team Defense multiplier as a line on a fixed 0.5-1.5 right axis. The legend
 // and tooltip are HTML so they keep the page's typography; the parent supplies
 // the tooltip's contents and owns the sized, relatively positioned container.
 
-const BAR_COLOR = '#e8a33d';
-const LINE_COLOR = '#7a8699';
-const AXIS_COLOR = '#666';
-const CURSOR_COLOR = '#ccc';
+// Canvas paint, resolved from the theme tokens.
+const CHART_COLORS = {
+  bar: '--ct-gold-fill',
+  line: '--ct-slate',
+  point: '--ct-text-max',
+  axis: '--ct-x-666666',
+  cursor: '--ct-x-cccccc',
+  tick: '--ct-dim',
+  grid: '--ct-line',
+  title: '--ct-x-808080',
+};
 const FONT_FAMILY =
   "'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
-const TICKS = { color: '#9b937f', font: { family: FONT_FAMILY, size: 11 }, padding: 2 };
+const TICK_FONT = { family: FONT_FAMILY, size: 11 };
 // Plain numbers ("0.75", "1") rather than Chart.js's rounded, localized labels.
-const VALUE_TICKS = { ...TICKS, callback: (value) => String(value) };
-const TICK_MARKS = { tickColor: AXIS_COLOR, tickLength: 6 };
-const GRID = { color: 'rgba(255,255,255,0.08)', ...TICK_MARKS };
-// Chart.js v4 draws grid lines with `border.dash`; the axis line stays solid.
-const AXIS_BORDER = { color: AXIS_COLOR, dash: [3, 3] };
+const valueLabel = (value) => String(value);
 // Chart.js centres an axis title `lineHeight / 2 + padding.top` inside the
 // axis edge; this puts it 5px in, where the old chart's titles sat.
-const TITLE = {
+const TITLE_LAYOUT = {
   display: true,
-  color: '#808080',
   font: { family: FONT_FAMILY, size: 16, lineHeight: 1.2 },
   padding: { top: 5 - (16 * 1.2) / 2, bottom: 0 },
 };
@@ -51,12 +54,12 @@ const fixSize = (dimension, size) => (scale) => {
 };
 
 const legendIcons = {
-  bar: <path stroke="none" fill={BAR_COLOR} d="M0,4h32v24h-32z" />,
+  bar: <path stroke="none" fill="var(--ct-gold-fill)" d="M0,4h32v24h-32z" />,
   line: (
     <path
       strokeWidth="4"
       fill="none"
-      stroke={LINE_COLOR}
+      stroke="var(--ct-slate)"
       d="M0,16h10.67A5.33,5.33,0,1,1,21.33,16H32M21.33,16A5.33,5.33,0,1,1,10.67,16"
     />
   ),
@@ -76,6 +79,7 @@ const MatchupComboChart = ({
   const legendRef = useRef(null);
   const [hover, setHover] = useState(null);
   const [legendHeight, setLegendHeight] = useState(null);
+  const colors = useThemeColors(CHART_COLORS);
 
   const data = useMemo(
     () => ({
@@ -85,8 +89,8 @@ const MatchupComboChart = ({
           type: 'bar',
           label: barLabel,
           data: rows.map((row) => row.frequency),
-          backgroundColor: BAR_COLOR,
-          hoverBackgroundColor: BAR_COLOR,
+          backgroundColor: colors.bar,
+          hoverBackgroundColor: colors.bar,
           borderWidth: 0,
           borderRadius: 3,
           borderSkipped: 'bottom',
@@ -102,17 +106,17 @@ const MatchupComboChart = ({
                 type: 'line',
                 label: 'Team Defense',
                 data: rows.map((row) => row.teamDefense),
-                borderColor: LINE_COLOR,
+                borderColor: colors.line,
                 borderWidth: 2,
                 cubicInterpolationMode: 'monotone',
                 pointRadius: 3,
                 pointBorderWidth: 2,
-                pointBorderColor: LINE_COLOR,
-                pointBackgroundColor: '#fff',
+                pointBorderColor: colors.line,
+                pointBackgroundColor: colors.point,
                 pointHoverRadius: 4,
                 pointHoverBorderWidth: 2,
-                pointHoverBorderColor: '#fff',
-                pointHoverBackgroundColor: LINE_COLOR,
+                pointHoverBorderColor: colors.point,
+                pointHoverBackgroundColor: colors.line,
                 yAxisID: 'y1',
                 order: 0,
               },
@@ -120,12 +124,19 @@ const MatchupComboChart = ({
           : []),
       ],
     }),
-    [rows, barLabel, withDefense],
+    [rows, barLabel, withDefense, colors],
   );
 
   const options = useMemo(() => {
     const maxFrequency = Math.max(...rows.map((row) => row.frequency));
     const step = frequencyAxisStep(maxFrequency);
+    const ticks = { color: colors.tick, font: TICK_FONT, padding: 2 };
+    const valueTicks = { ...ticks, callback: valueLabel };
+    const tickMarks = { tickColor: colors.axis, tickLength: 6 };
+    const grid = { color: colors.grid, ...tickMarks };
+    // Chart.js v4 draws grid lines with `border.dash`; the axis line stays solid.
+    const axisBorder = { color: colors.axis, dash: [3, 3] };
+    const title = { ...TITLE_LAYOUT, color: colors.title };
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -137,12 +148,13 @@ const MatchupComboChart = ({
       plugins: {
         legend: { display: false },
         tooltip: { enabled: false },
+        matchupHover: { cursorColor: colors.cursor },
       },
       scales: {
         x: {
           afterFit: fixSize('height', rotateLabels ? 80 : 30),
           ticks: {
-            ...TICKS,
+            ...ticks,
             autoSkip: false,
             maxRotation: rotateLabels ? 45 : 0,
             minRotation: rotateLabels ? 45 : 0,
@@ -150,18 +162,18 @@ const MatchupComboChart = ({
             // of where the old SVG labels ended; nudge it back under the tick.
             ...(rotateLabels ? { labelOffset: 4, padding: 4 } : {}),
           },
-          grid: { ...GRID, offset: false },
-          border: AXIS_BORDER,
+          grid: { ...grid, offset: false },
+          border: axisBorder,
         },
         y: {
           position: 'left',
           min: 0,
           max: step * (TICK_COUNT - 1),
           afterFit: fixSize('width', Y_AXIS_WIDTH),
-          ticks: { ...VALUE_TICKS, stepSize: step },
-          grid: GRID,
-          border: AXIS_BORDER,
-          title: { ...TITLE, text: yTitle },
+          ticks: { ...valueTicks, stepSize: step },
+          grid,
+          border: axisBorder,
+          title: { ...title, text: yTitle },
         },
         ...(withDefense
           ? {
@@ -170,16 +182,16 @@ const MatchupComboChart = ({
                 min: 0.5,
                 max: 1.5,
                 afterFit: fixSize('width', Y_AXIS_WIDTH),
-                ticks: { ...VALUE_TICKS, stepSize: 0.25 },
-                grid: { ...TICK_MARKS, drawOnChartArea: false },
-                border: { color: AXIS_COLOR },
-                title: { ...TITLE, text: 'Team Defense Multiplier' },
+                ticks: { ...valueTicks, stepSize: 0.25 },
+                grid: { ...tickMarks, drawOnChartArea: false },
+                border: { color: colors.axis },
+                title: { ...title, text: 'Team Defense Multiplier' },
               },
             }
           : {}),
       },
     };
-  }, [rows, yTitle, withDefense, rotateLabels, legendHeight]);
+  }, [rows, yTitle, withDefense, rotateLabels, legendHeight, colors]);
 
   // Track the hovered category inside the plot area: it drives the HTML
   // tooltip and the vertical cursor drawn behind the series.
@@ -209,13 +221,15 @@ const MatchupComboChart = ({
           hoverRef.current = next;
           setHover(next);
         },
-        beforeDatasetsDraw(chart) {
+        // The cursor colour rides in the options, so a theme change reaches
+        // this plugin without reinstalling it.
+        beforeDatasetsDraw(chart, _args, pluginOptions) {
           const current = hoverRef.current;
           if (!current || current.index >= chart.data.labels.length) return;
           const { ctx, chartArea } = chart;
           const x = chart.scales.x.getPixelForValue(current.index);
           ctx.save();
-          ctx.strokeStyle = CURSOR_COLOR;
+          ctx.strokeStyle = pluginOptions.cursorColor;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(x, chartArea.top);
@@ -269,8 +283,8 @@ const MatchupComboChart = ({
 
   const hoveredRow = hover && rows[hover.index];
   const legend = [
-    { key: 'bar', label: barLabel, color: BAR_COLOR },
-    ...(withDefense ? [{ key: 'line', label: 'Team Defense', color: LINE_COLOR }] : []),
+    { key: 'bar', label: barLabel, color: 'var(--ct-gold)' },
+    ...(withDefense ? [{ key: 'line', label: 'Team Defense', color: 'var(--ct-slate)' }] : []),
   ];
 
   return (

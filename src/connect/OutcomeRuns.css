@@ -36,24 +36,24 @@
 }
 
 .oc-part-0 {
-  --oc: 232, 163, 61;
+  --oc: var(--ct-gold-fg-rgb);
 }
 
 .oc-part-1 {
-  --oc: 104, 186, 166;
+  --oc: var(--ct-series-kept-rgb);
 }
 
 .oc-part-2 {
-  --oc: 128, 160, 230;
+  --oc: var(--ct-series-lead-rgb);
 }
 
 .oc-part-3 {
-  --oc: 214, 128, 160;
+  --oc: var(--ct-series-pink-rgb);
 }
 
 mark.oc-part {
-  background: rgba(var(--oc), 0.16);
-  box-shadow: inset 0 -2px 0 rgba(var(--oc), 0.9);
+  background: rgb(var(--oc) / 0.16);
+  box-shadow: inset 0 -2px 0 rgb(var(--oc) / 0.9);
 }
 
 .oc-part .oc-part-tag,

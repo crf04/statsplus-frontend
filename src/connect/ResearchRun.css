@@ -1,8 +1,8 @@
 .rr {
-  --rr-kept: 104, 186, 166;
-  --rr-mixed: 232, 163, 61;
-  --rr-dropped: 150, 140, 125;
-  --rr-lead: 128, 160, 230;
+  --rr-kept: var(--ct-series-kept-rgb);
+  --rr-mixed: var(--ct-gold-fg-rgb);
+  --rr-dropped: var(--ct-series-dropped-rgb);
+  --rr-lead: var(--ct-series-lead-rgb);
 
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
@@ -118,7 +118,7 @@
 .rr-verdict {
   margin-left: auto;
   padding: 1px 8px;
-  border: 1px solid rgba(var(--rr-v), 0.6);
+  border: 1px solid rgb(var(--rr-v) / 0.6);
   border-radius: 999px;
   color: rgb(var(--rr-v));
   font-size: 11px;
@@ -195,7 +195,7 @@
 .rr-item-dropped .rr-item-head strong {
   color: var(--ct-dim);
   text-decoration: line-through;
-  text-decoration-color: rgba(var(--rr-dropped), 0.7);
+  text-decoration-color: rgb(var(--rr-dropped) / 0.7);
 }
 
 .rr-item-body {

@@ -37,7 +37,7 @@ export const ordinal = (rank) => {
 export const zoneFill = (percent) =>
   percent === null
     ? 'var(--ps-untinted)'
-    : `rgba(${percent >= 0 ? '76, 175, 125' : '194, 78, 78'}, ${Math.min(0.8, 0.12 + Math.abs(percent) / 28).toFixed(2)})`;
+    : `rgb(var(--ct-${percent >= 0 ? 'hit' : 'miss'}-bg-rgb) / calc(${Math.min(0.8, 0.12 + Math.abs(percent) / 28).toFixed(2)} * var(--ct-k-accent-bg)))`;
 
 const HOOP_Y = 75;
 const THREE_RADIUS = 237.5;

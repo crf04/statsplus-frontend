@@ -69,6 +69,11 @@
   --ct-text-fg-rgb: 239 233 220;
   --ct-text-bg-rgb: 239 233 220;
   --ct-shadow-rgb: 0 0 0;
+  /* Connect run-flow series (OutcomeRuns, ResearchRun) */
+  --ct-series-kept-rgb: 104 186 166;
+  --ct-series-lead-rgb: 128 160 230;
+  --ct-series-dropped-rgb: 150 140 125;
+  --ct-series-pink-rgb: 214 128 160;
   --ct-scrim-rgb: 0 0 0;
   --ct-k-overlay-fg: 1;
   --ct-k-overlay-bg: 1;
@@ -298,6 +303,7 @@
   --ct-x-000000-20: rgba(0, 0, 0, 0.2);
   --ct-x-059669-fill: #059669;
   --ct-x-0a0a0a: #0a0a0a;
+  --ct-x-0b0805: #0b0805;
   --ct-x-0d0c0a: #0d0c0a;
   --ct-x-0d0d0d: #0d0d0d;
   --ct-x-10b981-30: rgba(16, 185, 129, 0.3);
@@ -307,6 +313,7 @@
   --ct-x-120f0a: #120f0a;
   --ct-x-131314: #131314;
   --ct-x-16213e: #16213e;
+  --ct-x-18120b: #18120b;
   --ct-x-191510: #191510;
   --ct-x-1a160e: #1a160e;
   --ct-x-1a1a2e: #1a1a2e;
@@ -328,19 +335,27 @@
   --ct-x-4f8ef7-40: rgba(79, 142, 247, 0.4);
   --ct-x-4f8ef7-fill: #4f8ef7;
   --ct-x-5855e0-fill: #5855e0;
+  --ct-x-5fce93: #5fce93;
   --ct-x-5fd08a-45-fill: rgba(95, 208, 138, 0.45);
   --ct-x-6366f1-fill: #6366f1;
   --ct-x-666666: #666666;
+  --ct-x-667eea-30: rgba(102, 126, 234, 0.3);
+  --ct-x-667eea-fill: #667eea;
   --ct-x-6f6858: #6f6858;
+  --ct-x-764ba2-fill: #764ba2;
+  --ct-x-808080: #808080;
   --ct-x-8fd6b1: #8fd6b1;
   --ct-x-9cc983: #9cc983;
   --ct-x-9fdcbc: #9fdcbc;
   --ct-x-aab4c4: #aab4c4;
+  --ct-x-b3766f: #b3766f;
   --ct-x-b45309-fill: #b45309;
   --ct-x-c98a28-15-fill: rgba(201, 138, 40, 0.15);
+  --ct-x-cccccc: #cccccc;
   --ct-x-d680a0: #d680a0;
   --ct-x-d680a0-60: rgba(214, 128, 160, 0.6);
   --ct-x-d7cfbd: #d7cfbd;
+  --ct-x-d95f5f: #d95f5f;
   --ct-x-d97706-fill: #d97706;
   --ct-x-dc2626-fill: #dc2626;
   --ct-x-ddd5c4: #ddd5c4;
@@ -394,6 +409,7 @@
   --ct-gold-bg-40: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-accent-bg)));
   --ct-gold-bg-45: rgb(var(--ct-gold-bg-rgb) / calc(0.45 * var(--ct-k-accent-bg)));
   --ct-gold-bg-50: rgb(var(--ct-gold-bg-rgb) / calc(0.5 * var(--ct-k-accent-bg)));
+  --ct-gold-bg-72: rgb(var(--ct-gold-bg-rgb) / calc(0.72 * var(--ct-k-accent-bg)));
   --ct-gold-fg-6: rgb(var(--ct-gold-fg-rgb) / calc(0.06 * var(--ct-k-accent-fg)));
   --ct-gold-fg-10: rgb(var(--ct-gold-fg-rgb) / calc(0.1 * var(--ct-k-accent-fg)));
   --ct-gold-fg-12: rgb(var(--ct-gold-fg-rgb) / calc(0.12 * var(--ct-k-accent-fg)));
@@ -417,6 +433,7 @@
   --ct-hit-bg-55: rgb(var(--ct-hit-bg-rgb) / calc(0.55 * var(--ct-k-accent-bg)));
   --ct-hit-bg-75: rgb(var(--ct-hit-bg-rgb) / calc(0.75 * var(--ct-k-accent-bg)));
   --ct-hit-bg-76: rgb(var(--ct-hit-bg-rgb) / calc(0.76 * var(--ct-k-accent-bg)));
+  --ct-hit-bg-78: rgb(var(--ct-hit-bg-rgb) / calc(0.78 * var(--ct-k-accent-bg)));
   --ct-hit-fg-14: rgb(var(--ct-hit-fg-rgb) / calc(0.14 * var(--ct-k-accent-fg)));
   --ct-hit-fg-40: rgb(var(--ct-hit-fg-rgb) / calc(0.4 * var(--ct-k-accent-fg)));
   --ct-hit-fg-50: rgb(var(--ct-hit-fg-rgb) / calc(0.5 * var(--ct-k-accent-fg)));
@@ -431,6 +448,7 @@
   --ct-miss-bg-52: rgb(var(--ct-miss-bg-rgb) / calc(0.52 * var(--ct-k-accent-bg)));
   --ct-miss-bg-55: rgb(var(--ct-miss-bg-rgb) / calc(0.55 * var(--ct-k-accent-bg)));
   --ct-miss-bg-70: rgb(var(--ct-miss-bg-rgb) / calc(0.7 * var(--ct-k-accent-bg)));
+  --ct-miss-bg-72: rgb(var(--ct-miss-bg-rgb) / calc(0.72 * var(--ct-k-accent-bg)));
   --ct-miss-bg-76: rgb(var(--ct-miss-bg-rgb) / calc(0.76 * var(--ct-k-accent-bg)));
   --ct-miss-fg-45: rgb(var(--ct-miss-fg-rgb) / calc(0.45 * var(--ct-k-accent-fg)));
   --ct-miss-fg-50: rgb(var(--ct-miss-fg-rgb) / calc(0.5 * var(--ct-k-accent-fg)));
@@ -451,10 +469,12 @@
   --ct-overlay-bg-15: rgb(var(--ct-overlay-bg-rgb) / calc(0.15 * var(--ct-k-overlay-bg)));
   --ct-overlay-bg-40: rgb(var(--ct-overlay-bg-rgb) / calc(0.4 * var(--ct-k-overlay-bg)));
   --ct-overlay-fg-5: rgb(var(--ct-overlay-fg-rgb) / calc(0.05 * var(--ct-k-overlay-fg)));
+  --ct-overlay-fg-6: rgb(var(--ct-overlay-fg-rgb) / calc(0.06 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-10: rgb(var(--ct-overlay-fg-rgb) / calc(0.1 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-14: rgb(var(--ct-overlay-fg-rgb) / calc(0.14 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-20: rgb(var(--ct-overlay-fg-rgb) / calc(0.2 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-30: rgb(var(--ct-overlay-fg-rgb) / calc(0.3 * var(--ct-k-overlay-fg)));
+  --ct-overlay-fg-40: rgb(var(--ct-overlay-fg-rgb) / calc(0.4 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-50: rgb(var(--ct-overlay-fg-rgb) / calc(0.5 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-60: rgb(var(--ct-overlay-fg-rgb) / calc(0.6 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-70: rgb(var(--ct-overlay-fg-rgb) / calc(0.7 * var(--ct-k-overlay-fg)));
@@ -462,6 +482,7 @@
   --ct-overlay-fg-90: rgb(var(--ct-overlay-fg-rgb) / calc(0.9 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-x14: rgb(var(--ct-overlay-fg-rgb) / calc(20 / 255 * var(--ct-k-overlay-fg)));
   --ct-scrim-5: rgb(var(--ct-scrim-rgb) / 0.05);
+  --ct-scrim-10: rgb(var(--ct-scrim-rgb) / 0.1);
   --ct-scrim-20: rgb(var(--ct-scrim-rgb) / 0.2);
   --ct-scrim-75: rgb(var(--ct-scrim-rgb) / 0.75);
   --ct-scrim-76: rgb(var(--ct-scrim-rgb) / 0.76);

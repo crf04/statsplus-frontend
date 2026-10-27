@@ -48,16 +48,18 @@ const AssistChart = ({
     <div
       className="custom-tooltip"
       style={{
-        backgroundColor: '#1e1a12',
+        backgroundColor: 'var(--ct-surface-2)',
         padding: '10px 12px',
-        border: '1px solid rgba(255,255,255,0.16)',
+        border: '1px solid var(--ct-line-strong)',
         borderRadius: '6px',
-        color: '#efe9dc',
+        color: 'var(--ct-text)',
       }}
     >
       <p className="label">{`${data.type} Assists`}</p>
-      <p style={{ color: '#e8a33d' }}>{`Frequency: ${formatNumber(data.frequency, 2)}%`}</p>
-      <p style={{ color: '#7a8699' }}>{`Frequency+: ${formatNumber(data.frequencyPlus, 2)}%`}</p>
+      <p style={{ color: 'var(--ct-gold)' }}>{`Frequency: ${formatNumber(data.frequency, 2)}%`}</p>
+      <p
+        style={{ color: 'var(--ct-slate)' }}
+      >{`Frequency+: ${formatNumber(data.frequencyPlus, 2)}%`}</p>
       {teamData && (
         <p style={{ color: getColor(data.teamDefense) }}>
           {`Team Defense: ${formatNumber(data.teamDefense * 100 - 100, 2)}% (Rank: ${data.teamDefenseRank ?? 'N/A'})`}
@@ -86,10 +88,10 @@ const AssistChart = ({
             position: 'absolute',
             top: 10,
             right: 10,
-            background: '#1e1a12',
-            color: '#efe9dc',
+            background: 'var(--ct-surface-2)',
+            color: 'var(--ct-text)',
             padding: '5px',
-            border: '1px solid rgba(255,255,255,0.16)',
+            border: '1px solid var(--ct-line-strong)',
             borderRadius: '5px',
           }}
         >

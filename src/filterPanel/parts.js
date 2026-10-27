@@ -168,7 +168,11 @@ export const selfChipLabel = (filter) => {
     : filter.range.every((v) => Number.isInteger(v))
       ? 0
       : 1;
-  const name = filter.column === 'USG_PCT' ? STAT_LABELS.USG_PCT : filter.column;
+  const name = ['USG_PCT', 'REB_CHANCES', 'POTENTIAL_AST', 'REB_CONV_PCT', 'AST_CONV_PCT'].includes(
+    filter.column,
+  )
+    ? STAT_LABELS[filter.column]
+    : filter.column;
   return `${name} ${fmt(filter.range[0], digits)}–${fmt(filter.range[1], digits)}`;
 };
 

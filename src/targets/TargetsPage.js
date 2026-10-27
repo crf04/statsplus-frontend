@@ -11,7 +11,7 @@ import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
-import { formatQualifierParts, formatObservedShare } from './targetCatalog';
+import { dietQualifiers, formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
@@ -86,7 +86,7 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
                     {player.shares
                       .map(
                         (share, index) =>
-                          `${formatQualifierParts(entry.target.qualifiers[index]).label} ${formatObservedShare(share.share)}`,
+                          `${formatQualifierParts(dietQualifiers(entry.target.qualifiers)[index]).label} ${formatObservedShare(share.share)}`,
                       )
                       .join(' · ')}{' '}
                     · {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)} ppg

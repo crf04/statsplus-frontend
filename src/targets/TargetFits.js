@@ -1,5 +1,5 @@
 import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
-import { formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
+import { dietQualifiers, formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
 import { WINDOW_REASONS } from '../windowReasons';
 import '../readings.css';
 import './TargetFits.css';
@@ -136,7 +136,7 @@ export function TargetFitTable({ entry, dense = false }) {
         <thead>
           <tr>
             <th>Player</th>
-            {target.qualifiers.map((qualifier, index) => (
+            {dietQualifiers(target.qualifiers).map((qualifier, index) => (
               <th className="num" key={index}>
                 {formatQualifierParts(qualifier).label}
               </th>

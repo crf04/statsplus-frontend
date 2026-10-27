@@ -24,6 +24,7 @@ import {
 import { SEASON_WINDOW_REASONS, WINDOW_REASONS } from '../windowReasons';
 import { isSeasonRefusal, trailingSample, trailingSeason } from '../servingSeason';
 import { EvidenceSeasonBar, SeasonRefusal, useEvidenceSeason, withSeason } from '../EvidenceSeason';
+import { seasonOfGameId } from '../gameSeason';
 import { bestPrices, formatPrice } from './linePrices';
 import SelectionCard from './SelectionCard';
 import TargetCaptureModal from '../targets/TargetCaptureModal';
@@ -1058,7 +1059,7 @@ function Detail({ matchup, gameId, evidence }) {
     <>
       <header className="matchup-heading">
         <div>
-          <Link to={withSeason('/matchups', season)}>← Back to slate</Link>
+          <Link to={withSeason('/matchups', evidence.linked)}>← Back to slate</Link>
           <p className="matchup-eyebrow">Matchup</p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
@@ -1225,7 +1226,7 @@ export default function MatchupDetailPage() {
   const { gameId } = useParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [state, setState] = useState({ status: 'idle', matchup: null, error: null });
-  const evidence = useEvidenceSeason();
+  const evidence = useEvidenceSeason({ newestUpTo: seasonOfGameId(gameId) });
   const { ready: evidenceReady, season } = evidence;
   useEffect(() => {
     if (authLoading || !isAuthenticated) {
@@ -1272,7 +1273,7 @@ export default function MatchupDetailPage() {
               selectedSeason={state.refusal.selectedSeason ?? season}
               gameSeason={state.refusal.gameSeason}
               defaultSeason={evidence.defaultSeason}
-              onShowDefault={() => evidence.choose(null)}
+              onShowDefault={() => evidence.choose(evidence.defaultSeason)}
             />
           </>
         ) : (

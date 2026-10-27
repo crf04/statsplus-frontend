@@ -145,17 +145,35 @@ const decodeQualifier = (item) => {
 };
 
 /*
- * Shares and Defense Sheet readings exist only for diet slices, so they are
- * index-parallel with a Target's diet Qualifiers. A response that lists one
- * entry per Qualifier of every kind is accepted too, and the entries of the
- * Position and Average Qualifiers are set aside.
+ * Shares and Defense Sheet readings are one entry per Qualifier of every kind,
+ * in the Target's Qualifier order. A Position or Average Qualifier reads no
+ * Diet slice, so its entry is all nulls and is set aside here: decoded shares
+ * and context are one per Diet Qualifier. An entry of any other length or
+ * shape would misattribute a reading to the wrong Qualifier.
  */
-const alignToDiet = (entries, qualifiers) => {
-  const diet = qualifiers.filter(isDietQualifier);
-  if (entries.length === diet.length) return entries;
-  if (entries.length === qualifiers.length)
-    return entries.filter((_, index) => isDietQualifier(qualifiers[index]));
-  throw createInvalidResponseError();
+const nullShare = (entry, qualifier) =>
+  isRecord(entry) &&
+  entry.base === qualifier.base &&
+  entry.slice_key === null &&
+  entry.share === null &&
+  entry.league_average_share === null;
+
+const nullContext = (entry, qualifier) =>
+  isRecord(entry) &&
+  entry.base === qualifier.base &&
+  entry.slice_key === null &&
+  entry.label === null &&
+  entry.availability === null &&
+  Array.isArray(entry.metrics) &&
+  entry.metrics.length === 0;
+
+const alignToDiet = (entries, qualifiers, isRuleEntry) => {
+  if (entries.length !== qualifiers.length) throw createInvalidResponseError();
+  return entries.filter((entry, index) => {
+    if (isDietQualifier(qualifiers[index])) return true;
+    if (!isRuleEntry(entry, qualifiers[index])) throw createInvalidResponseError();
+    return false;
+  });
 };
 
 /*
@@ -375,7 +393,7 @@ const decodeFit = (player, qualifiers) => {
     ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
     seasonScoring: requireNumberOrNull(player.season_scoring),
     thin: player.thin,
-    shares: alignToDiet(player.shares, qualifiers).map(decodeShare),
+    shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
   };
 };
 
@@ -388,10 +406,8 @@ const decodeResolvedTarget = (item) => {
   const availability = decodePoolAvailability(item.availability);
   // An idle Target has no game-scoped window to read, so it carries no
   // context; a live one carries one per Qualifier, in Qualifier order.
-  const context = game ? alignToDiet(item.context, target.qualifiers) : item.context;
-  if (context.length !== (game ? target.qualifiers.filter(isDietQualifier).length : 0)) {
-    throw createInvalidResponseError();
-  }
+  if (!game && item.context.length !== 0) throw createInvalidResponseError();
+  const context = game ? alignToDiet(item.context, target.qualifiers, nullContext) : [];
   if (availability.status !== 'available' && item.players.length > 0) {
     throw createInvalidResponseError();
   }
@@ -478,7 +494,7 @@ const decodeBacktestPlayer = (player, statColumns, qualifiers) => {
     name: requireString(player.name),
     tricode: requireString(player.tricode),
     ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
-    shares: alignToDiet(player.shares, qualifiers).map(decodeShare),
+    shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
     seasonAverages: decodeStats(player.season_averages, statColumns),
     ...(player.season_totals !== undefined
       ? { seasonTotals: decodeBoxLine(player.season_totals) }

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 
 import { Card, ToggleButtonGroup, ToggleButton, Row, Col } from 'react-bootstrap';
-import { apiClient, getApiUrl } from './config';
 import PlaystyleComparisonChart from './PlaystyleComparisonChart';
 import AssistProfileChart from './AssistProfileChart';
 import TwoThreeAssistChart from './TwoThreeAssistChart';
 import { withRequestReference } from './gameLogsApi';
 import { fetchPlayerProfile } from './playerProfileApi';
+import { fetchTeamStats } from './teamStatsApi';
 import {
   SeasonUnavailableError,
   seasonChoiceLabel,
@@ -75,7 +75,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   const playerReadKey = hasPlayer
     ? `${selectedPlayer}|${selectedProfile}|${zoneOpponent}|${season}`
     : null;
-  const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}` : null;
+  const teamReadKey = comparisonTeam ? `${teamCategory}|${comparisonTeam}|${season}` : null;
   const settled =
     (!playerReadKey || playerSettledFor === playerReadKey) &&
     (!teamReadKey || teamSettledFor === teamReadKey);
@@ -180,22 +180,26 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
     setTeamLoading(Boolean(comparisonTeam));
     setTeamSettledFor(null);
     if (comparisonTeam) {
-      apiClient
-        .get(getApiUrl('TEAM_STATS'), {
-          params: {
-            category: teamCategory,
-            team: comparisonTeam,
-          },
-          signal: controller.signal,
-        })
+      fetchTeamStats(
+        {
+          category: teamCategory,
+          team: comparisonTeam,
+          ...(season ? { season } : {}),
+        },
+        { signal: controller.signal },
+      )
         .then(({ data }) => {
           if (controller.signal.aborted) return;
           if (data && Object.keys(data).length > 0) setTeamData(data);
           else setTeamError('No data available for this team');
         })
         .catch((error) => {
-          if (!controller.signal.aborted)
-            setTeamError(withRequestReference('Failed to fetch data. Please try again.', error));
+          if (controller.signal.aborted) return;
+          setTeamError(
+            error instanceof SeasonUnavailableError
+              ? seasonUnavailableText(error.selectedSeason ?? season)
+              : withRequestReference('Failed to fetch data. Please try again.', error),
+          );
         })
         .finally(() => {
           if (controller.signal.aborted) return;
@@ -204,7 +208,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
         });
     }
     return () => controller.abort();
-  }, [teamCategory, comparisonTeam, teamReadKey]);
+  }, [teamCategory, comparisonTeam, season, teamReadKey]);
 
   // Until the read for the current view has finished, the data in state belongs
   // to the previous view (a tab switch renders once before the read clears it).

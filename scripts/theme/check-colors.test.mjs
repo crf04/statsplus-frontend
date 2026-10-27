@@ -249,3 +249,21 @@ test('an alias takes the setter on its own rule, then one that reaches it, then 
     ],
   );
 });
+
+test('a var() cycle is found within each theme after its overrides, never across themes', () => {
+  const theme = (extra) => `${THEME}\n${extra}`;
+  assert.deepEqual(
+    project({
+      'src/theme.css': theme(`:root { --ct-a: var(--ct-b); --ct-b: #fff; }
+:root[data-theme="light"] { --ct-a: #000; --ct-b: var(--ct-a); }`),
+    }),
+    [],
+  );
+  assert.deepEqual(
+    project({
+      'src/theme.css': theme(`:root { --ct-a: var(--ct-b); --ct-b: #fff; }
+[data-theme='light'] { --ct-b: var(--ct-a); }`),
+    }),
+    ['src/theme.css token-cycle: var() cycle --ct-a → --ct-b → --ct-a in light'],
+  );
+});

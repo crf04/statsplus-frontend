@@ -183,18 +183,43 @@ const paintIssues = (value, role, registry, context, valuesOf) => {
   return [...new Map([...messages].map((entry) => [entry.join(' '), entry])).values()];
 };
 
-// Every var() cycle among the tokens a stylesheet declares.
-const tokenCycles = (root) => {
-  const edges = new Map();
-  root.walkDecls(/^--ct-/, (decl) => {
-    edges.set(decl.prop, [...(edges.get(decl.prop) ?? []), ...tokenRefs(decl.value)]);
-  });
+// The theme a selector sets tokens for: '' for the root, the data-theme value
+// for one theme, '*' for every theme.
+const themeOf = (selector) => {
+  const match = selector.match(/\[data-theme(?:=['"]?([\w-]+)['"]?)?\]/);
+  return match ? (match[1] ?? '*') : '';
+};
+
+// The token references in force in each theme: the root's, overridden by
+// the rules for every theme and for that theme, in source order.
+const themeGraphs = (root) => {
+  const rules = [];
+  root.walkRules((rule) => rules.push({ rule, themes: new Set(rule.selectors.map(themeOf)) }));
+  const named = new Set(rules.flatMap(({ themes }) => [...themes]).filter((t) => t && t !== '*'));
+  const graphs = new Map();
+  for (const theme of ['', ...named]) {
+    const edges = new Map();
+    for (const { rule, themes } of rules) {
+      if (!themes.has('') && !(theme && (themes.has('*') || themes.has(theme)))) continue;
+      rule.each((decl) => {
+        if (decl.type === 'decl' && decl.prop.startsWith('--ct-')) {
+          edges.set(decl.prop, tokenRefs(decl.value));
+        }
+      });
+    }
+    graphs.set(theme, edges);
+  }
+  return graphs;
+};
+
+// Every var() cycle among the tokens one theme's graph holds.
+const cyclesIn = (edges) => {
   const cycles = [];
   const state = new Map();
   const visit = (name, trail) => {
     if (state.get(name) === 'done') return;
     if (state.get(name) === 'open') {
-      cycles.push(trail.slice(trail.indexOf(name)).concat(name));
+      cycles.push(trail.slice(trail.indexOf(name)).concat(name).join(' → '));
       return;
     }
     state.set(name, 'open');
@@ -202,6 +227,20 @@ const tokenCycles = (root) => {
     state.set(name, 'done');
   };
   for (const name of edges.keys()) visit(name, []);
+  return cycles;
+};
+
+// Each cycle once: in the root, or in the first theme that makes it.
+const tokenCycles = (root) => {
+  const seen = new Set();
+  const cycles = [];
+  for (const [theme, edges] of themeGraphs(root)) {
+    for (const cycle of cyclesIn(edges)) {
+      if (seen.has(cycle)) continue;
+      seen.add(cycle);
+      cycles.push(theme ? `${cycle} in ${theme}` : cycle);
+    }
+  }
   return cycles;
 };
 
@@ -236,7 +275,7 @@ export const checkCss = (css, file, registry, scope = {}) => {
   });
   if (isTheme) {
     for (const cycle of tokenCycles(root)) {
-      issues.push({ file, rule: 'token-cycle', message: `var() cycle ${cycle.join(' → ')}` });
+      issues.push({ file, rule: 'token-cycle', message: `var() cycle ${cycle}` });
     }
   }
   return issues;

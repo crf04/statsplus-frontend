@@ -7,6 +7,7 @@ import catalogue from './targetStatCatalogue.json';
 import { BOX_FIELDS } from './statValues';
 import {
   AVERAGE_BASE,
+  AVERAGE_THRESHOLD_MAX,
   POSITION_BASE,
   POSITION_GROUPS,
   TARGET_COMPARATORS,
@@ -118,7 +119,8 @@ const decodeAverageQualifier = (item) => {
     !comparators.has(comparator) ||
     typeof threshold !== 'number' ||
     !Number.isFinite(threshold) ||
-    threshold < 0
+    threshold < 0 ||
+    threshold > AVERAGE_THRESHOLD_MAX
   ) {
     throw createInvalidResponseError();
   }

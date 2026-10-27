@@ -1618,3 +1618,13 @@ test('a preview echoes Position and Average Qualifiers with the Position of each
   expect(preview.players[0].position).toBe('Guard');
   expect(preview.summary.playersWithoutPosition).toBe(0);
 });
+
+test('an Average threshold of 1000 is accepted and one above it is refused', () => {
+  const withThreshold = (threshold) => ({
+    targets: [{ ...wireTarget, qualifiers: [{ ...wireAverageQualifier, threshold }] }],
+  });
+  expect(decodeTargets(withThreshold(1000))[0].qualifiers).toEqual([
+    { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 1000 },
+  ]);
+  expect(() => decodeTargets(withThreshold(1000.01))).toThrow(/invalid response/i);
+});

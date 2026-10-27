@@ -54,6 +54,15 @@ export const POSITION_GROUPS = ['Guard', 'Wing', 'Big'];
 export const POSITION_BASE = 'position';
 export const AVERAGE_BASE = 'season_average';
 
+/* The backend refuses an Average threshold above this. */
+export const AVERAGE_THRESHOLD_MAX = 1000;
+
+/* The Position leads whatever order the Qualifiers are stored in. */
+export const positionFirst = (qualifiers) => [
+  ...qualifiers.filter(({ base }) => base === POSITION_BASE),
+  ...qualifiers.filter(({ base }) => base !== POSITION_BASE),
+];
+
 export const isDietQualifier = (qualifier) =>
   qualifier.base !== POSITION_BASE && qualifier.base !== AVERAGE_BASE;
 
@@ -167,12 +176,7 @@ export const formatQualifier = (qualifier) => {
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
 export const deriveTargetTitle = ({ opponent, qualifiers }) =>
-  `${opponent} vs ${[
-    ...qualifiers.filter(({ base }) => base === POSITION_BASE),
-    ...qualifiers.filter(({ base }) => base !== POSITION_BASE),
-  ]
-    .map(formatQualifier)
-    .join(', ')}`;
+  `${opponent} vs ${positionFirst(qualifiers).map(formatQualifier).join(', ')}`;
 
 /*
  * A threshold is typed as a percentage and stored as a 0–1 share, rounded to

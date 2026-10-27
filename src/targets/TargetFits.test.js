@@ -62,5 +62,5 @@ test('a Target stored as [Diet, Position] reads with the Position first', () => 
       }}
     />,
   );
-  expect(container.textContent).toBe('MEMvsBig  & Corner 3 ≥ 40% & 3PA avg ≥ 0.3');
+  expect(container.textContent).toBe('MEMvsBig & Corner 3 ≥ 40% & 3PA avg ≥ 0.3');
 });

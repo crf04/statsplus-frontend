@@ -34,7 +34,13 @@ export function TargetTitle({ target }) {
           return (
             <span key={index}>
               {index > 0 && <em> &amp; </em>}
-              {label} <b>{value}</b>
+              {label}
+              {value && (
+                <>
+                  {' '}
+                  <b>{value}</b>
+                </>
+              )}
             </span>
           );
         })}

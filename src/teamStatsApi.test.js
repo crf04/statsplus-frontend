@@ -51,3 +51,17 @@ test('a wrapped body without data or with a malformed season context is refused'
     'The team stats endpoint returned an invalid response.',
   );
 });
+
+test('a wrapped body with malformed trailing families is refused', () => {
+  const context = { selected_season: '2026-27', published_season: '2025-26' };
+  expect(() => decodeTeamStats({ data: {}, season_context: context, trailing: {} })).toThrow(
+    'The team stats endpoint returned an invalid response.',
+  );
+  expect(() =>
+    decodeTeamStats({
+      data: {},
+      season_context: context,
+      trailing: [{ family: 'team_defense', serving_season: '2025-26' }],
+    }),
+  ).toThrow('The team stats endpoint returned an invalid response.');
+});

@@ -136,6 +136,42 @@ test('an empty wrapped body says there is no data', async () => {
   expect(screen.getByText('No data available for Shooting Type stats.')).toBeInTheDocument();
 });
 
+test('an empty wrapped Traditional body says there is no data, with no bars', async () => {
+  await show('Traditional', wrapped({}), early);
+  expect(screen.getByText('No data available for Traditional stats.')).toBeInTheDocument();
+  expect(screen.queryAllByTestId('opponent-bars-column')).toEqual([]);
+});
+
+const published = { season: '2025-26', mode: 'published', teamGames: null };
+
+test('any Evidence season choice is sent as its own season', async () => {
+  await show('Traditional', wrapped(traditional), published);
+  expect(sentParams()).toEqual([
+    { category: 'Traditional', team: 'Charlotte Hornets', date: null, season: '2025-26' },
+  ]);
+});
+
+test('a new Evidence season choice reads again with that season', async () => {
+  apiClient.get.mockResolvedValue({ data: wrapped(traditional) });
+  const { rerender } = render(
+    <OpposingTeamProfile
+      teams={['Charlotte Hornets']}
+      selectedTeam="Charlotte Hornets"
+      seasonChoice={early}
+    />,
+  );
+  await act(async () => {});
+  rerender(
+    <OpposingTeamProfile
+      teams={['Charlotte Hornets']}
+      selectedTeam="Charlotte Hornets"
+      seasonChoice={published}
+    />,
+  );
+  await act(async () => {});
+  expect(sentParams().map((params) => params.season)).toEqual(['2026-27', '2025-26']);
+});
+
 test('a season that is not offered shows the unavailable text', async () => {
   apiClient.get.mockRejectedValue({
     response: {

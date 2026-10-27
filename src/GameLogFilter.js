@@ -309,7 +309,8 @@ const GameLogFilter = ({ notice = null }) => {
   );
   const requestFilters = useMemo(() => withPageSeason(urlFilters), [withPageSeason, urlFilters]);
   // A reader who cannot search never reads /seasons, so has nothing to wait for.
-  const awaitingPageSeason = canSearch && !linkedSeason && seasonChoices === undefined;
+  const awaitingSeasonChoices = canSearch && seasonChoices === undefined;
+  const awaitingPageSeason = awaitingSeasonChoices && !linkedSeason;
 
   const seasonRequestRef = useRef({ player: null, controller: null });
 
@@ -381,7 +382,12 @@ const GameLogFilter = ({ notice = null }) => {
   );
 
   useEffect(() => {
-    if (!canSearch) return undefined;
+    // Signed out, the signed-in choices no longer stand: an anonymous read of a
+    // season after the Published Season is refused.
+    if (!canSearch) {
+      setSeasonChoices(undefined);
+      return undefined;
+    }
     let current = true;
     fetchSeasons()
       .then((seasons) => current && setSeasonChoices(seasons))
@@ -975,8 +981,9 @@ const GameLogFilter = ({ notice = null }) => {
 
           <Row className="mb-5">
             <Col md={6}>
-              {/* Its season is the Workspace's, unknown until /seasons answers. */}
-              {!awaitingPageSeason && (
+              {/* Its Evidence season choice is unknown until /seasons answers,
+                  even for a linked season. */}
+              {!awaitingSeasonChoices && (
                 <Suspense fallback={null}>
                   <PlayerProfile
                     selectedPlayer={selectedPlayer}
@@ -988,8 +995,9 @@ const GameLogFilter = ({ notice = null }) => {
               )}
             </Col>
             <Col md={6}>
-              {/* Its season is the Workspace's, unknown until /seasons answers. */}
-              {!awaitingPageSeason && (
+              {/* Its Evidence season choice is unknown until /seasons answers,
+                  even for a linked season. */}
+              {!awaitingSeasonChoices && (
                 <Suspense fallback={null}>
                   <OpposingTeamProfile
                     teams={teams}

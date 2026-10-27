@@ -124,7 +124,7 @@ const OpposingTeamProfile = ({
     if (unavailable) return <p className="text-danger">{unavailable}</p>;
     if (!teamStats) return <p>Select a team and category to view stats.</p>;
     const { data, seasonContext, trailing } = teamStats;
-    const groups = opponentReadings(selectedCategory, data);
+    const groups = Object.keys(data).length ? opponentReadings(selectedCategory, data) : [];
     if (groups.length === 0) return <p>No data available for {selectedCategory} stats.</p>;
     const note = seasonContext && trailingNote(trailing, seasonContext, 'Profile numbers');
     return (

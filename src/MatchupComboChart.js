@@ -12,7 +12,7 @@ import { useThemeColors } from './theme/useThemeColors';
 const CHART_COLORS = {
   bar: '--ct-gold-fill',
   line: '--ct-slate',
-  point: '--ct-text-max',
+  point: '--ct-on-ffffff',
   axis: '--ct-x-666666',
   cursor: '--ct-x-cccccc',
   tick: '--ct-dim',

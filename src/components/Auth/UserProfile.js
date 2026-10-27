@@ -69,7 +69,7 @@ const UserProfile = () => {
               color: 'var(--ct-on-ffffff)',
               fontSize: '14px',
               fontWeight: '600',
-              border: '2px solid var(--ct-overlay-fg-40)',
+              border: '2px solid var(--ct-on-ffffff-40)',
               flexShrink: 0,
               boxShadow: '0 2px 8px var(--ct-x-667eea-30)',
             }}

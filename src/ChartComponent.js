@@ -11,9 +11,9 @@ import { useThemeColors } from './theme/useThemeColors';
 
 // Canvas paint, resolved from the theme tokens.
 const CHART_COLORS = {
-  over: '--ct-hit-bg-78',
-  under: '--ct-miss-bg-72',
-  bar: '--ct-gold-bg-72',
+  over: '--ct-hit-fill-78',
+  under: '--ct-miss-fill-72',
+  bar: '--ct-gold-fill-72',
   empty: '--ct-scrim-10',
   line: '--ct-gold',
   labelGround: '--ct-surface-2',

@@ -183,6 +183,23 @@ signedInTest(
       'Wing',
     );
     expect(await overflowsHorizontally(browser)).toBe(false);
+
+    // The same Position and an average equal to two decimals is the same Target.
+    await screen.getByRole('link', '← All Targets').tap();
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('button', 'Remove Qualifier 1').tap();
+    await screen.getByRole('group', 'Position').getByRole('button', 'Big').tap();
+    await screen.getByRole('group', 'Position').getByRole('button', 'Wing').tap();
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a Qualifier').tap();
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'season_average' });
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: '3PA' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.301');
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('alert')).toContainText('You already have that Target for ATL.');
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.31');
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('heading', 'ATL vs Wing/Big, 3PA avg ≥ 0.31')).toBeVisible();
   },
 );
 

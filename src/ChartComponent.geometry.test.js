@@ -60,7 +60,9 @@ const realChart = (lineType) => {
   return chart;
 };
 
-const alpha = (color) => Number(/rgba\(.*,\s*([\d.]+)\)/.exec(color)[1]);
+// jsdom does not resolve CSS variables, so the colour hook hands back the
+// token; a ladder step names its alpha (--ct-gold-bg-16 paints at 0.16).
+const alpha = (color) => Number(/^var\(--ct-[a-z-]+-(\d+)\)$/.exec(color)[1]) / 100;
 
 describe.each([
   ['REB', 'REB_CHANCES'],

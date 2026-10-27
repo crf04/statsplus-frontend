@@ -4,7 +4,7 @@
   padding: 22px 24px;
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
 }
 
 .oc-anatomy-sentence {
@@ -36,24 +36,28 @@
 }
 
 .oc-part-0 {
-  --oc: 232, 163, 61;
+  --oc: var(--ct-gold-fg-rgb);
+  --oc-bg: var(--ct-gold-bg-rgb);
 }
 
 .oc-part-1 {
-  --oc: 104, 186, 166;
+  --oc: var(--ct-series-kept-fg-rgb);
+  --oc-bg: var(--ct-series-kept-bg-rgb);
 }
 
 .oc-part-2 {
-  --oc: 128, 160, 230;
+  --oc: var(--ct-series-lead-fg-rgb);
+  --oc-bg: var(--ct-series-lead-bg-rgb);
 }
 
 .oc-part-3 {
-  --oc: 214, 128, 160;
+  --oc: var(--ct-series-pink-fg-rgb);
+  --oc-bg: var(--ct-series-pink-bg-rgb);
 }
 
 mark.oc-part {
-  background: rgba(var(--oc), 0.16);
-  box-shadow: inset 0 -2px 0 rgba(var(--oc), 0.9);
+  background: rgb(var(--oc-bg) / calc(0.16 * var(--ct-k-accent-bg)));
+  box-shadow: inset 0 -2px 0 rgb(var(--oc) / calc(0.9 * var(--ct-k-accent-fg)));
 }
 
 .oc-part .oc-part-tag,
@@ -110,7 +114,7 @@ mark.oc-part {
 .oc-tab[aria-selected='true'] {
   background: var(--ct-gold-soft);
   color: var(--ct-gold);
-  box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.45);
+  box-shadow: inset 0 0 0 1px var(--ct-gold-fg-45);
 }
 
 .oc-run {
@@ -118,7 +122,7 @@ mark.oc-part {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
   overflow: hidden;
 }
 
@@ -142,14 +146,14 @@ mark.oc-part {
 .oc-prompt {
   padding: 22px;
   border-right: 1px solid var(--ct-line-strong);
-  background: radial-gradient(420px 220px at 0% 0%, rgba(232, 163, 61, 0.07), transparent 70%);
+  background: radial-gradient(420px 220px at 0% 0%, var(--ct-gold-bg-7), transparent 70%);
 }
 
 .oc-prompt-text {
   margin: 0 0 16px;
   padding: 12px 14px;
   border-radius: 14px 14px 4px 14px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ct-overlay-bg-8);
   font-size: 15px;
   line-height: 1.55;
 }
@@ -186,8 +190,8 @@ mark.oc-part {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--ct-gold);
-  color: #1a1206;
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-1a1206);
   font-family: var(--ct-mono);
   font-size: 11px;
   font-weight: 700;
@@ -233,7 +237,7 @@ mark.oc-part {
 
 .oc-got {
   margin: 0;
-  color: #e6dcc6;
+  color: var(--ct-x-e6dcc6);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -242,7 +246,7 @@ mark.oc-part {
   grid-column: 1 / -1;
   padding: 20px 24px 22px;
   border-top: 1px solid var(--ct-line-strong);
-  background: rgba(232, 163, 61, 0.05);
+  background: var(--ct-gold-bg-5);
 }
 
 .oc-answer-text {

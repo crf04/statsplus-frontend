@@ -78,28 +78,28 @@
   display: block;
   width: 100%;
   margin: 0;
-  accent-color: var(--ct-gold);
+  accent-color: var(--ct-gold-fill);
   height: 4px;
   appearance: none;
   border-radius: 4px;
   background: linear-gradient(
     to right,
-    var(--ct-line-strong) var(--threshold-position),
-    rgba(232, 163, 61, 0.45) var(--threshold-position)
+    var(--ct-overlay-bg-16) var(--threshold-position),
+    var(--ct-gold-bg-45) var(--threshold-position)
   );
 }
 .is-at-or-below .target-slider-track input {
   background: linear-gradient(
     to right,
-    rgba(232, 163, 61, 0.45) var(--threshold-position),
-    var(--ct-line-strong) var(--threshold-position)
+    var(--ct-gold-bg-45) var(--threshold-position),
+    var(--ct-overlay-bg-16) var(--threshold-position)
   );
 }
 .target-slider-track input::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
   border: 2px solid var(--ct-ink);
   border-radius: 50%;
   cursor: ew-resize;
@@ -107,7 +107,7 @@
 .target-slider-track input::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  background: var(--ct-gold);
+  background: var(--ct-gold-fill);
   border: 2px solid var(--ct-ink);
   border-radius: 50%;
   cursor: ew-resize;
@@ -134,7 +134,7 @@
   top: -12px;
   left: 50%;
   height: 9px;
-  border-left: 1px solid #fff;
+  border-left: 1px solid var(--ct-text-max);
   pointer-events: none;
 }
 .target-slider-unit {

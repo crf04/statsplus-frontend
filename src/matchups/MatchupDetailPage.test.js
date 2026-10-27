@@ -1049,6 +1049,27 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
+test('the Score Matrix washes each cell green up and red down, as a tint behind the number', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const matrix = await screen.findByRole('table', { name: 'LeBron James Score Matrix' });
+  const washes = [...matrix.querySelectorAll('tbody td')].map((cell) => [
+    cell.textContent,
+    cell.style.background,
+  ]);
+  expect(washes).toEqual([
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+  ]);
+});
+
 test('filtered to a combo market, the Defense Sheet lists the shot make rows that feed its points', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');

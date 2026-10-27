@@ -11,13 +11,13 @@ const LandingCourt = () => (
       <defs>
         {/* maple boards run baseline to half court */}
         <pattern id="landing-court-planks" width="9" height="470" patternUnits="userSpaceOnUse">
-          <rect width="9" height="470" fill="#18120b" />
-          <rect x="8.4" width="0.6" height="470" fill="#0b0805" />
-          <rect y="163" width="9" height="0.6" fill="#0b0805" />
+          <rect width="9" height="470" fill="var(--ct-x-18120b)" />
+          <rect x="8.4" width="0.6" height="470" fill="var(--ct-x-0b0805)" />
+          <rect y="163" width="9" height="0.6" fill="var(--ct-x-0b0805)" />
         </pattern>
         <radialGradient id="landing-court-spot" cx="50%" cy="30%" r="60%">
-          <stop offset="0" stopColor="#e8a33d" stopOpacity="0.16" />
-          <stop offset="1" stopColor="#e8a33d" stopOpacity="0" />
+          <stop offset="0" stopColor="var(--ct-gold-fill)" stopOpacity="0.16" />
+          <stop offset="1" stopColor="var(--ct-gold-fill)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <rect className="court-wood" x="-12" y="-12" width="524" height="494" />

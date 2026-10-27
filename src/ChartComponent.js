@@ -7,6 +7,27 @@ import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 import { postedLineFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
+import { useThemeColors } from './theme/useThemeColors';
+
+// Canvas paint, resolved from the theme tokens, each with the role it plays.
+const CHART_COLORS = {
+  over: ['fill', '--ct-hit-fill-78'],
+  under: ['fill', '--ct-miss-fill-72'],
+  bar: ['fill', '--ct-gold-fill-72'],
+  ghost: ['fill', '--ct-gold-bg-16'],
+  empty: ['fill', '--ct-scrim-10'],
+  line: ['line', '--ct-gold'],
+  labelGround: ['fill', '--ct-surface-2'],
+  label: ['fg', '--ct-gold'],
+  labelEdge: ['line', '--ct-gold-fg-40'],
+  tooltipGround: ['fill', '--ct-surface-2'],
+  tooltipTitle: ['fg', '--ct-text'],
+  tooltipBody: ['fg', '--ct-dim'],
+  tooltipEdge: ['line', '--ct-line-strong'],
+  tick: ['fg', '--ct-dim'],
+  legend: ['fg', '--ct-dim'],
+  grid: ['line', '--ct-overlay-fg-6'],
+};
 
 const getPer36Value = (average, stat) => {
   const value = toFiniteNumber(average?.[stat]);
@@ -66,9 +87,11 @@ const TrackingAverages = ({ tracking, averages }) => {
   const season = trackingAverageText(averages?.[1], tracking);
   return (
     <div className="tracking-averages mt-2 flex items-baseline gap-2 font-mono text-sm">
-      <span className="text-[#9b937f] uppercase text-xs tracking-wider">{tracking.rowLabel}</span>{' '}
-      <span className="text-[#e8a33d] font-bold">{filtered}</span>
-      {season !== null && <span className="text-[#9b937f]"> · season {season}</span>}
+      <span className="text-[color:var(--ct-dim)] uppercase text-xs tracking-wider">
+        {tracking.rowLabel}
+      </span>{' '}
+      <span className="text-[color:var(--ct-gold)] font-bold">{filtered}</span>
+      {season !== null && <span className="text-[color:var(--ct-dim)]"> · season {season}</span>}
     </div>
   );
 };
@@ -87,6 +110,7 @@ const ChartComponent = ({
     explicitLineValue !== null ? explicitLineValue : toFiniteNumber(averages?.[1]?.[lineType], 0);
   const tracking = TRACKING[lineType] ?? null;
   const posted = lineSource ? postedLineFor(postedLine, lineType, lineSource) : null;
+  const colors = useThemeColors(CHART_COLORS);
   const lineLabel = posted
     ? postedLineLabel(posted)
     : explicitLineValue !== null
@@ -103,7 +127,7 @@ const ChartComponent = ({
           {
             label: 'No data',
             data: [],
-            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            backgroundColor: colors.empty,
           },
         ],
       };
@@ -114,10 +138,8 @@ const ChartComponent = ({
 
     const backgroundColors =
       !isNaN(numericLineValue) && numericLineValue > 0
-        ? data.map((value) =>
-            value > numericLineValue ? 'rgba(76, 175, 125, 0.78)' : 'rgba(194, 78, 78, 0.72)',
-          )
-        : 'rgba(232, 163, 61, 0.72)';
+        ? data.map((value) => (value > numericLineValue ? colors.over : colors.under))
+        : colors.bar;
 
     const bars = {
       label: lineType,
@@ -138,7 +160,7 @@ const ChartComponent = ({
         {
           label: tracking.ghostLabel,
           data: gameLogs.map((log) => toFiniteNumber(log?.[tracking.chances])),
-          backgroundColor: 'rgba(232, 163, 61, 0.16)',
+          backgroundColor: colors.ghost,
           borderWidth: 0,
           borderRadius: barCornerRadius,
           borderSkipped: 'bottom',
@@ -147,7 +169,7 @@ const ChartComponent = ({
         },
       ],
     };
-  }, [gameLogs, lineType, numericLineValue, tracking]);
+  }, [gameLogs, lineType, numericLineValue, tracking, colors]);
 
   const chartOptions = useMemo(
     () => ({
@@ -159,7 +181,7 @@ const ChartComponent = ({
           // Both bars are named; hiding one would only misread the other.
           onClick: null,
           labels: {
-            color: '#9b937f',
+            color: colors.legend,
             boxWidth: 12,
             font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
           },
@@ -170,7 +192,7 @@ const ChartComponent = ({
               type: 'line',
               yMin: numericLineValue || 0,
               yMax: numericLineValue || 0,
-              borderColor: '#e8a33d',
+              borderColor: colors.line,
               borderWidth: 1.5,
               borderDash: [6, 4],
               label: {
@@ -178,9 +200,9 @@ const ChartComponent = ({
                 // chartjs-plugin-annotation 3 draws a label only with `display`.
                 display: true,
                 position: 'start',
-                backgroundColor: '#1e1a12',
-                color: '#e8a33d',
-                borderColor: 'rgba(232, 163, 61, 0.4)',
+                backgroundColor: colors.labelGround,
+                color: colors.label,
+                borderColor: colors.labelEdge,
                 borderWidth: 1,
                 font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
               },
@@ -189,10 +211,10 @@ const ChartComponent = ({
         },
         tooltip: {
           displayColors: false, // This removes the colored box
-          backgroundColor: '#1e1a12',
-          titleColor: '#efe9dc',
-          bodyColor: '#9b937f',
-          borderColor: 'rgba(255, 255, 255, 0.16)',
+          backgroundColor: colors.tooltipGround,
+          titleColor: colors.tooltipTitle,
+          bodyColor: colors.tooltipBody,
+          borderColor: colors.tooltipEdge,
           borderWidth: 1,
           cornerRadius: 6,
           titleFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
@@ -236,7 +258,7 @@ const ChartComponent = ({
         x: {
           grid: { display: false },
           ticks: {
-            color: '#9b937f',
+            color: colors.tick,
             font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 },
             maxRotation: 60,
             callback(value) {
@@ -252,20 +274,20 @@ const ChartComponent = ({
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(255, 255, 255, 0.06)' },
+          grid: { color: colors.grid },
           ticks: {
-            color: '#9b937f',
+            color: colors.tick,
             font: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 10 },
           },
           title: {
             display: true,
             text: lineType,
-            color: '#9b937f',
+            color: colors.tick,
           },
         },
       },
     }),
-    [gameLogs, lineType, lineLabel, numericLineValue, tracking],
+    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors],
   );
 
   const overLineCount = (logs) =>

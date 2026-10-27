@@ -48,8 +48,8 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
   const getPerformanceColor = (value, columnId) => {
     const numericValue = toFiniteNumber(value);
     const average = toFiniteNumber(playerAverages[columnId]);
-    if (numericValue === null || average === null) return '#9b937f';
-    if (average === 0) return numericValue === 0 ? '#c9c2b2' : '#4caf7d';
+    if (numericValue === null || average === null) return 'var(--ct-dim)';
+    if (average === 0) return numericValue === 0 ? 'var(--ct-text-2)' : 'var(--ct-hit)';
 
     let ratio = numericValue / average;
 
@@ -59,11 +59,11 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     }
 
     // Quiet 5-step ramp: neutral near average, color only at the extremes
-    if (ratio >= 1.35) return '#5fce93'; // well above average (bright hit green)
-    if (ratio >= 1.12) return '#4caf7d'; // above average
-    if (ratio >= 0.88) return '#c9c2b2'; // around average (neutral warm)
-    if (ratio >= 0.65) return '#b3766f'; // below average
-    return '#d95f5f'; // well below average (bright miss red)
+    if (ratio >= 1.35) return 'var(--ct-x-5fce93)'; // well above average (bright hit green)
+    if (ratio >= 1.12) return 'var(--ct-hit)'; // above average
+    if (ratio >= 0.88) return 'var(--ct-text-2)'; // around average (neutral warm)
+    if (ratio >= 0.65) return 'var(--ct-x-b3766f)'; // below average
+    return 'var(--ct-x-d95f5f)'; // well below average (bright miss red)
   };
 
   const sortedGames = React.useMemo(() => {
@@ -255,7 +255,7 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                             'AR',
                           ].includes(col.key)
                             ? getPerformanceColor(colorValue, col.key)
-                            : '#cccccc',
+                            : 'var(--ct-x-cccccc)',
                         }}
                       >
                         {col.key === 'GAME_DATE'

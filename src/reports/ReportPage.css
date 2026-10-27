@@ -107,8 +107,8 @@
 }
 
 .report-tag.strong {
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
 }
 
 .report-tag.lean {
@@ -217,7 +217,7 @@
 }
 
 .report-page .report-row > summary:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ct-overlay-bg-4);
 }
 
 .report-row-title {
@@ -267,7 +267,7 @@
 
 .report-chips button[aria-pressed='true'] {
   border-color: var(--ct-gold);
-  background: var(--ct-gold-soft, rgba(201, 138, 40, 0.15));
+  background: var(--ct-gold-soft, var(--ct-x-c98a28-15-fill));
   color: var(--ct-gold);
 }
 

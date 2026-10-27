@@ -10,13 +10,13 @@ export const RankCube = ({ rank }) => {
     width: '30px',
     height: '30px',
     backgroundColor: getColorForRank(rank),
-    color: rank > 15 ? 'black' : 'white',
+    color: rank > 15 ? 'var(--ct-on-000000)' : 'var(--ct-on-ffffff)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     fontWeight: 'bold',
     borderRadius: '4px',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+    boxShadow: '0 2px 5px var(--ct-shadow-20)',
     marginLeft: '10px',
   };
 

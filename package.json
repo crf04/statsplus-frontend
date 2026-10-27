@@ -48,13 +48,14 @@
     "preview": "vite preview",
     "test": "TZ=Asia/Tokyo jest --runInBand",
     "test:watch": "TZ=Asia/Tokyo jest --watch",
-    "test:ci": "TZ=Asia/Tokyo jest --ci --runInBand",
+    "test:ci": "TZ=Asia/Tokyo jest --ci --runInBand && npm run test:theme",
+    "test:theme": "node --test 'scripts/theme/*.test.mjs'",
     "test:e2e": "playwright test",
     "test:e2e:critical": "playwright test --grep @critical",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/theme/check-colors.mjs && node scripts/theme/tokenize.mjs --check",
     "format:check": "prettier --check package.json vercel.ts README.md index.html middleware.js src e2e docs e2e.config.ts e2e.bugbash.config.ts tsconfig.e2e.json playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
     "format": "prettier --write package.json vercel.ts README.md index.html middleware.js src e2e docs e2e.config.ts e2e.bugbash.config.ts tsconfig.e2e.json playwright.config.mjs vite.config.mjs babel.config.cjs eslint.config.mjs postcss.config.js tailwind.config.js .github/workflows .prettierrc.json",
     "test:flows": "node --test e2e/bridge/server.test.mjs && e2e run --exclude-tag agent",
@@ -72,7 +73,8 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "<rootDir>/e2e/"
+      "<rootDir>/e2e/",
+      "<rootDir>/scripts/theme/"
     ],
     "moduleNameMapper": {
       "\\.(css|scss)$": "identity-obj-proxy"
@@ -84,6 +86,7 @@
   "devDependencies": {
     "@ai-sdk/openai": "^4.0.83",
     "@babel/core": "^7.29.7",
+    "@babel/parser": "^7.29.8",
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-react": "^7.29.7",
     "@e2e-dev/web": "^0.14.0",
@@ -107,6 +110,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "postcss": "^8.4.39",
+    "postcss-value-parser": "^4.2.0",
     "prettier": "^3.9.6",
     "sass": "1.78.0",
     "tailwindcss": "^3.4.5",

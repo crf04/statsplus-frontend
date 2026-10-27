@@ -57,11 +57,11 @@ describe('GameLogsTable', () => {
 
     expect(rowCells(bodyRows()[0])[2]).toHaveTextContent('W');
     expect(rowCells(bodyRows()[0])[19]).toHaveTextContent('1');
-    expect(rowCells(bodyRows()[0])[19]).toHaveStyle({ color: '#5fce93' });
+    expect(rowCells(bodyRows()[0])[19]).toHaveStyle({ color: 'var(--ct-x-5fce93)' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Sort by TOV (ascending)' }));
     expect(rowCells(bodyRows()[0])[19]).toHaveTextContent('4');
-    expect(rowCells(bodyRows()[0])[19]).toHaveStyle({ color: '#d95f5f' });
+    expect(rowCells(bodyRows()[0])[19]).toHaveStyle({ color: 'var(--ct-x-d95f5f)' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Sort by TOV (ascending)' }));
     expect(rowCells(bodyRows()[0])[19]).toHaveTextContent('1');

@@ -21,7 +21,7 @@
   width: 100vw;
   margin: -19px -16px 40px;
   border-bottom: 1px solid var(--ct-line);
-  background: rgba(13, 11, 7, 0.9);
+  background: var(--ct-ink-bg-90);
   text-align: left;
 }
 
@@ -97,7 +97,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #c9c2b2;
+  color: var(--ct-text-2);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -191,7 +191,7 @@
   gap: 4px;
   padding: 16px 18px;
   border-left: 2px solid var(--ct-line-strong);
-  background: linear-gradient(90deg, rgba(13, 11, 7, 0.85), rgba(13, 11, 7, 0.4));
+  background: linear-gradient(90deg, var(--ct-ink-bg-85), var(--ct-ink-bg-40));
 }
 
 .home-pick.is-up {
@@ -238,7 +238,7 @@
 
 .home-pick-why {
   margin: 8px 0 4px;
-  color: #c9c2b2;
+  color: var(--ct-text-2);
   font-size: 13.5px;
   line-height: 1.45;
 }
@@ -268,7 +268,7 @@
 }
 
 .home-target:hover {
-  border-color: rgba(232, 163, 61, 0.45);
+  border-color: var(--ct-gold-fg-45);
   background: var(--ct-surface-2);
 }
 
@@ -385,9 +385,9 @@
   align-items: center;
   margin: 0 0 40px;
   padding: 16px;
-  border: 1px solid rgba(232, 163, 61, 0.28);
+  border: 1px solid var(--ct-gold-fg-28);
   border-radius: 14px;
-  background: linear-gradient(90deg, rgba(232, 163, 61, 0.08), rgba(13, 11, 7, 0.6) 60%);
+  background: linear-gradient(90deg, var(--ct-gold-bg-8), var(--ct-ink-bg-60) 60%);
 }
 
 .home-tutorial-text {
@@ -440,8 +440,8 @@
   padding: 7px 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--ct-gold);
-  color: #1a1206;
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-1a1206);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

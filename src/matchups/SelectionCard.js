@@ -37,8 +37,10 @@ const signClass = (value) => {
 const washStyle = (component) => {
   if (!component || Math.round(component.value * 100) === 0) return undefined;
   const alpha = Math.min(0.55, Math.abs(component.value) * 3);
-  const rgb = component.value > 0 ? '76, 175, 125' : '194, 78, 78';
-  return { background: `rgba(${rgb}, ${alpha.toFixed(2)})` };
+  const family = component.value > 0 ? 'hit' : 'miss';
+  return {
+    background: `rgb(var(--ct-${family}-bg-rgb) / calc(${alpha.toFixed(2)} * var(--ct-k-accent-bg)))`,
+  };
 };
 
 // The tip time is the schedule's own time in the reader's zone.

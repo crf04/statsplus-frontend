@@ -1,5 +1,5 @@
 import { expect } from 'e2e';
-import type { Screen } from 'e2e';
+import type { Locator, Screen } from 'e2e';
 import { historicalMatchupPayload, slateGame, slatePayload } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest, signedOutTest } from './support/courtai.ts';
 
@@ -16,6 +16,9 @@ const composeAssists = async (screen: Screen) => {
   await screen.getByLabel('Qualifier 1 slice').selectOption({ value: 'AtRimAssists' });
   await threshold(screen, 30);
 };
+
+const playerNames = async (games: Locator) =>
+  (await games.getByRole('link').allTextContents()).sort();
 
 const sampleCount = (screen: Screen) =>
   screen
@@ -116,6 +119,127 @@ signedInTest(
     await expect(browser).toHaveURL('/?player_name=LeBron+James&opponent_tricode=ATL');
     await expect(screen.getByRole('cell', 'ATL')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'a Position and a season average narrow the Backtest and read in the Target title',
+  { tags: ['critical'] },
+  async ({ app, screen, browser, api }) => {
+    await app.open('/targets');
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('button', 'Remove Qualifier 1').tap();
+    await expect(screen.getByText('Add at least one Qualifier before saving.')).toBeVisible();
+
+    // None selected is any position; Big alone is a Backtest of the two Bigs.
+    await screen.getByRole('group', 'Position').getByRole('button', 'Big').tap();
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+    const limit = screen.getByRole('region', { name: /Lab · Backtest/ });
+    await expect(limit).toContainText('1 player left out: no listed position.');
+
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a Qualifier').tap();
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'season_average' });
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: '3PA' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('8');
+    await expect(sampleCount(screen)).toHaveText('0 player-games');
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.3');
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(browser).toHaveURL('/targets/1');
+    expect(api.sent('/api/user/targets', 'POST').at(-1)?.body).toMatchObject({
+      opponent: 'ATL',
+      qualifiers: [
+        { base: 'position', groups: ['Big'] },
+        { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 0.3 },
+      ],
+    });
+    await expect(screen.getByRole('heading', 'ATL vs Big, 3PA avg ≥ 0.3')).toBeVisible();
+    const games = screen.getByRole('region', 'Backtest games');
+    await expect(games.getByRole('listitem')).toHaveCount(2);
+    await expect(
+      games.getByRole('listitem').filter({ hasText: 'Giannis Antetokounmpo' }),
+    ).toContainText('Big');
+    await expect(games.getByRole('listitem').filter({ hasText: 'Ivica Zubac' })).toContainText(
+      'Big',
+    );
+    await expect(games).not.toContainText('LeBron James');
+    await expect(games).not.toContainText('Kawhi Leonard');
+
+    // Two groups read as Wing/Big, and the Position still leads. Everyone
+    // listed as a Wing or a Big who faced ATL is in, and nobody else.
+    await screen.getByRole('group', 'Position').getByRole('button', 'Wing').tap();
+    await screen.getByRole('button', 'Save changes').tap();
+    await expect(screen.getByRole('heading', 'ATL vs Wing/Big, 3PA avg ≥ 0.3')).toBeVisible();
+    await expect(games.getByRole('listitem')).toHaveCount(4);
+    expect(await playerNames(games)).toEqual([
+      'Giannis Antetokounmpo',
+      'Ivica Zubac',
+      'Jayson Tatum',
+      'LeBron James',
+    ]);
+    await expect(games.getByRole('listitem').filter({ hasText: 'LeBron James' })).toContainText(
+      'Wing',
+    );
+    expect(await overflowsHorizontally(browser)).toBe(false);
+
+    // The same Position and an average equal to two decimals is the same Target.
+    await screen.getByRole('link', '← All Targets').tap();
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('button', 'Remove Qualifier 1').tap();
+    await screen.getByRole('group', 'Position').getByRole('button', 'Big').tap();
+    await screen.getByRole('group', 'Position').getByRole('button', 'Wing').tap();
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a Qualifier').tap();
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'season_average' });
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: '3PA' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.301');
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('alert')).toContainText('You already have that Target for ATL.');
+    await screen.getByLabel('Qualifier 1 threshold').fill('0.31');
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(screen.getByRole('heading', 'ATL vs Wing/Big, 3PA avg ≥ 0.31')).toBeVisible();
+  },
+);
+
+signedInTest(
+  'a season average reads at-or-below, per 36 and any Target stat, and leaves out an undersized season',
+  { tags: ['critical'] },
+  async ({ app, screen, browser }) => {
+    await app.open('/targets');
+    await screen.getByRole('button', '+ New Target').tap();
+    await screen.getByRole('button', 'Remove Qualifier 1').tap();
+    await screen.getByRole('group', 'Position').getByRole('button', 'Guard').tap();
+    // Reaves, Harden and Lillard each faced ATL once.
+    await expect(sampleCount(screen)).toHaveText('3 player-games');
+
+    await screen.getByRole('button', '+ and').tap();
+    await screen.getByRole('button', 'a Qualifier').tap();
+    await screen.getByLabel('Qualifier 1 diet base').selectOption({ value: 'season_average' });
+    // REB is a Target column the fixture's old stat list lacked: both games' 8 and 7 average 7.5.
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: 'REB' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('7');
+    // Lillard has played 3 games, under the Diet thin rule, so an Average leaves him out.
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+    await screen.getByRole('button', 'At or above; switch to at or below').tap();
+    await expect(sampleCount(screen)).toHaveText('0 player-games');
+    await screen.getByRole('button', 'At or below; switch to at or above').tap();
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+
+    // Per 36 minutes is 15 attempts in 70 minutes: 7.71, where per game is 7.5.
+    await screen.getByLabel('Qualifier 1 stat').selectOption({ value: '3PA/36' });
+    await screen.getByLabel('Qualifier 1 threshold').fill('7.8');
+    await expect(sampleCount(screen)).toHaveText('0 player-games');
+    await screen.getByLabel('Qualifier 1 threshold').fill('7.7');
+    await expect(sampleCount(screen)).toHaveText('2 player-games');
+
+    await screen.getByRole('button', 'Save Target').tap();
+    await expect(browser).toHaveURL('/targets/1');
+    await expect(screen.getByRole('heading', 'ATL vs Guard, 3PA/36 avg ≥ 7.7')).toBeVisible();
+    const games = screen.getByRole('region', 'Backtest games');
+    expect(await playerNames(games)).toEqual(['Austin Reaves', 'James Harden']);
+    await expect(games).not.toContainText('Damian Lillard');
   },
 );
 
@@ -222,7 +346,7 @@ signedInTest(
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('lg 14%');
     await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toHaveText(
-      'Austin Reaves LAL THIN 35% lg 14% 20.1',
+      'Austin Reaves LAL Guard THIN 35% lg 14% 20.1',
     );
     const otherGame = screen
       .getByRole('listitem')

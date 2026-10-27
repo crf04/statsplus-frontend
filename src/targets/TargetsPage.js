@@ -82,7 +82,11 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
               <ul className="target-fit-pills">
                 {entry.players.map((player) => (
                   <li key={player.canonicalId} className={player.thin ? 'is-thin' : undefined}>
-                    <b>{player.name}</b> ·{' '}
+                    <b>{player.name}</b>
+                    {player.position && (
+                      <small className="target-player-position">{player.position}</small>
+                    )}{' '}
+                    ·{' '}
                     {player.shares
                       .map(
                         (share, index) =>

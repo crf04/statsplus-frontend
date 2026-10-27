@@ -310,3 +310,20 @@ export const options = { backgroundColor: ['red', 'var(--ct-gold)'], borderColor
     ],
   );
 });
+
+test("a channel alpha must carry its own family's and side's multiplier, and alpha 0.5 is already a mark", () => {
+  assert.deepEqual(
+    project({
+      'src/card.css': `.ok { background: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-accent-bg))); }
+.side { background: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-accent-fg))); }
+.family { background: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-overlay-bg))); }
+.edge { background: var(--ct-hit-bg-50); }
+.under { background: var(--ct-hit-bg-49); }`,
+    }),
+    [
+      'src/card.css multiplier: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-accent-fg))) leaves out --ct-k-accent-bg; use a ladder token',
+      'src/card.css multiplier: rgb(var(--ct-gold-bg-rgb) / calc(0.4 * var(--ct-k-overlay-bg))) leaves out --ct-k-accent-bg; use a ladder token',
+      'src/card.css role-misuse: --ct-hit-bg-50 paints a mark (alpha 0.5 and up); use --ct-hit-fill-*',
+    ],
+  );
+});

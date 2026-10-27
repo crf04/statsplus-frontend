@@ -56,15 +56,25 @@ test.describe('P1 game-log analytics', () => {
     await expect(januaryTenth).toHaveCount(1);
     await expect(januaryTenth.getByRole('cell').nth(2)).toHaveText('W');
     await expect(januaryTenth.getByRole('cell').nth(19)).toHaveText('3');
-    await expect(januaryTenth.getByRole('cell').nth(15)).toHaveText('14');
+    await expect(januaryTenth.getByRole('cell').nth(14)).toHaveText('14');
     await expect(januaryTenth.getByRole('cell').nth(16)).toHaveText('17');
-    await expect(
-      page.getByRole('row').filter({ hasText: '1/8' }).getByRole('cell').nth(15),
-    ).toHaveText('–');
+    const januaryEighth = page.getByRole('row').filter({ hasText: '1/8' }).getByRole('cell');
+    await expect(januaryEighth.nth(14)).toHaveText('–');
+    await expect(januaryEighth.nth(16)).toHaveText('–');
     const per36Card = page
       .getByRole('heading', { name: 'Per 36 Minutes Comparison' })
       .locator('..');
     await expect(per36Card.getByText('53.8%', { exact: true })).toHaveCount(2);
+  });
+
+  test('a range on a tracking stat leaves out a game that has no value for it', async ({
+    authenticatedPage: page,
+  }) => {
+    await page.goto('/?player_name=LeBron+James&self_filters%5BPOTENTIAL_AST%5D=0%2C20');
+
+    await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: '1/10' })).toHaveCount(1);
+    await expect(page.getByRole('row').filter({ hasText: '1/8' })).toHaveCount(0);
   });
 
   for (const timezoneId of ['UTC', 'America/Chicago', 'Asia/Tokyo']) {

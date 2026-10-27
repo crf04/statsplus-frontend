@@ -76,7 +76,8 @@ describe('GameLogsTable', () => {
       <GameLogsTable
         gameLogs={[
           { ...gameLog, GAME_DATE: '2025-01-10', REB_CHANCES: 14, POTENTIAL_AST: 17 },
-          { ...gameLog, GAME_DATE: '2025-01-08', REB_CHANCES: null, POTENTIAL_AST: 0 },
+          { ...gameLog, GAME_DATE: '2025-01-08', REB_CHANCES: null, POTENTIAL_AST: null },
+          { ...gameLog, GAME_DATE: '2025-01-06', REB_CHANCES: 0, POTENTIAL_AST: 0 },
         ]}
         appliedFilters={{}}
       />,
@@ -88,6 +89,7 @@ describe('GameLogsTable', () => {
       .map((h) => h.textContent);
     const rc = headers.findIndex((h) => h.startsWith('REB CH'));
     const pa = headers.findIndex((h) => h.startsWith('POT AST'));
+    expect(headers.slice(rc - 1, pa + 1)).toEqual(['REB↕', 'REB CH↕', 'AST↕', 'POT AST↕']);
     expect(rc).toBeGreaterThan(-1);
     expect(pa).toBeGreaterThan(-1);
     const rows = within(table).getAllByRole('row').slice(1);
@@ -96,6 +98,7 @@ describe('GameLogsTable', () => {
         .getAllByRole('cell')
         .map((c) => c.textContent);
     expect([cells(rows[0])[rc], cells(rows[0])[pa]]).toEqual(['14', '17']);
-    expect([cells(rows[1])[rc], cells(rows[1])[pa]]).toEqual(['–', '0']);
+    expect([cells(rows[1])[rc], cells(rows[1])[pa]]).toEqual(['–', '–']);
+    expect([cells(rows[2])[rc], cells(rows[2])[pa]]).toEqual(['0', '0']);
   });
 });

@@ -18,6 +18,8 @@ export const gameLogs = [
     OREB_CHANCES: 5,
     DREB_CHANCES: 9,
     POTENTIAL_AST: 17,
+    REB_CONV_PCT: 0.571,
+    AST_CONV_PCT: 0.529,
     PF: 2,
     AST: 9,
     STL: 1,
@@ -46,6 +48,8 @@ export const gameLogs = [
     OREB_CHANCES: null,
     DREB_CHANCES: null,
     POTENTIAL_AST: null,
+    REB_CONV_PCT: null,
+    AST_CONV_PCT: null,
     PF: 3,
     AST: 8,
     STL: 2,
@@ -72,6 +76,10 @@ export const averages = {
   FG_PCT: 0.538,
   FD_PTS: 51,
   TOV: 2.5,
+  REB_CHANCES: 15.8,
+  REB_CONV_PCT: 0.59,
+  POTENTIAL_AST: 12.1,
+  AST_CONV_PCT: 0.58,
 };
 
 export const slateGame = {
@@ -1863,7 +1871,8 @@ const applySelfFilters = (logs, url) =>
     const stat = key.match(/^self_filters\[(.+)\]$/)?.[1];
     if (!stat) return remaining;
     const [min, max] = value.split(',').map(Number);
-    return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
+    // A game without the stat fails any range, as the real endpoint does.
+    return remaining.filter((log) => log[stat] != null && log[stat] >= min && log[stat] <= max);
   }, logs);
 
 // The real endpoint reads date_filter and date_to as an inclusive calendar range

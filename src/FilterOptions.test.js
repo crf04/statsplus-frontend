@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import FilterOptions from './FilterOptions';
 import { fetchSeasons } from './seasonsApi';
@@ -448,4 +448,60 @@ test('Own stat line offers Rebound chances and emits its range', () => {
   expect(screen.getByText('Rebound chances 6–15')).toBeVisible();
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
+});
+
+test('Own stat line keyboard steps on tracking stats are whole numbers even for a narrow range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 14 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
+  const min = screen.getByRole('slider', { name: 'Minimum POTENTIAL_AST' });
+  const max = screen.getByRole('slider', { name: 'Maximum POTENTIAL_AST' });
+  fireEvent.focus(min);
+  fireEvent.keyDown(min, { key: 'ArrowRight' });
+  fireEvent.focus(max);
+  fireEvent.keyDown(max, { key: 'ArrowLeft' });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Potential assists 9–13')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '9,13' });
+});
+
+test('conversion stats use the 0-1 scale of FG%', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CONV_PCT: 0.4 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, REB_CONV_PCT: null },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CONV_PCT: 0.75 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CONV_PCT' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('REB conversion % 0.40–0.75')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'self_filters[REB_CONV_PCT]': '0.4,0.75',
+  });
+});
+
+test('each tracking stat sits with its parent stat in the Own stat line', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  const labels = within(screen.getByLabelText('Stat'))
+    .getAllByRole('option')
+    .map((o) => o.textContent.replace(/ \(\w+\)$/, ''));
+  const at = (label) => labels.indexOf(label);
+  expect(at('Rebounds')).toBeGreaterThan(-1);
+  expect(labels.slice(at('Rebounds'), at('Rebounds') + 3)).toEqual([
+    'Rebounds',
+    'Rebound chances',
+    'REB conversion %',
+  ]);
+  expect(labels.slice(at('Assists'), at('Assists') + 3)).toEqual([
+    'Assists',
+    'Potential assists',
+    'AST conversion %',
+  ]);
 });

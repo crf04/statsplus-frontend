@@ -34,7 +34,11 @@ const DEFAULT_RANK_RANGE = [21, 30];
 export const STAT_COLUMNS = [
   'PTS',
   'REB',
+  'REB_CHANCES',
+  'REB_CONV_PCT',
   'AST',
+  'POTENTIAL_AST',
+  'AST_CONV_PCT',
   'FG3M',
   'STL',
   'BLK',
@@ -48,8 +52,6 @@ export const STAT_COLUMNS = [
   'FGM',
   'FG_PCT',
   'USG_PCT',
-  'REB_CHANCES',
-  'POTENTIAL_AST',
   'FG2A',
   'FG2M',
   'FG3A',
@@ -65,7 +67,11 @@ export const STAT_COLUMNS = [
 export const STAT_LABELS = {
   PTS: 'Points',
   REB: 'Rebounds',
+  REB_CHANCES: 'Rebound chances',
+  REB_CONV_PCT: 'REB conversion %',
   AST: 'Assists',
+  POTENTIAL_AST: 'Potential assists',
+  AST_CONV_PCT: 'AST conversion %',
   FG3M: '3s made',
   STL: 'Steals',
   BLK: 'Blocks',
@@ -79,8 +85,6 @@ export const STAT_LABELS = {
   FGM: 'FG made',
   FG_PCT: 'FG%',
   USG_PCT: 'USG%',
-  REB_CHANCES: 'Rebound chances',
-  POTENTIAL_AST: 'Potential assists',
   FG2A: '2PT attempts',
   FG2M: '2PT made',
   FG3A: '3PT attempts',
@@ -98,6 +102,10 @@ export const STAT_LABELS = {
 export const STAT_PRECISION = {
   FG_PCT: { digits: 2, step: 0.01 },
   USG_PCT: { digits: 1, step: 0.1 },
+  REB_CHANCES: { digits: 0, step: 1 },
+  POTENTIAL_AST: { digits: 0, step: 1 },
+  REB_CONV_PCT: { digits: 2, step: 0.01 },
+  AST_CONV_PCT: { digits: 2, step: 0.01 },
 };
 
 const FLOAT_SLACK = 1e-9;

@@ -66,3 +66,60 @@ mark { background: rgb(var(--oc-bg) / calc(0.16 * var(--ct-k-accent-bg))); }`,
     },
   ]);
 });
+
+test('an alias added, removed, moved or given a second setter fails even when its consumer is unchanged', () => {
+  const consumer = 'mark { background: rgb(var(--oc) / 0.16); }';
+  const cases = [
+    compare('.x { color: var(--tone, #fff); }', '.x { --tone: #000; color: var(--tone, #fff); }'),
+    compare(`.p { --oc: 232 163 61; }\n${consumer}`, consumer),
+    compare(`.p { --oc: 232 163 61; }\n${consumer}`, `.q { --oc: 232 163 61; }\n${consumer}`),
+    compare(
+      `.p { --oc: 232 163 61; }\n${consumer}`,
+      `.p { --oc: 232 163 61; }\n.q { --oc: 76 175 125; }\n${consumer}`,
+    ),
+  ];
+  assert.deepEqual(
+    cases.map(({ mismatches }) => mismatches),
+    [
+      [
+        {
+          file: 'src/a.css',
+          key: '.x { color #0 [.x]',
+          base: 'var(--tone, rgba(255, 255, 255, 1))',
+          head: 'rgba(0, 0, 0, 1)',
+        },
+      ],
+      [
+        { file: 'src/a.css', key: '--oc', base: 'set in .p', head: '(removed, still read)' },
+        {
+          file: 'src/a.css',
+          key: 'mark { background #0 [.p]',
+          base: 'rgba(232, 163, 61, 0.16)',
+          head: 'rgb(var(--oc) / 0.16)',
+        },
+      ],
+      [{ file: 'src/a.css', key: '--oc', base: 'set in .p', head: 'set in .q' }],
+      [
+        { file: 'src/a.css', key: '--oc', base: 'set in .p', head: 'set in .p, .q' },
+        {
+          file: 'src/a.css',
+          key: 'mark { background #0 [.q]',
+          base: 'rgba(232, 163, 61, 0.16)',
+          head: 'rgba(76, 175, 125, 0.16)',
+        },
+      ],
+    ],
+  );
+});
+
+test('an alias set in several rules is resolved in each, so a rewrite that keeps every rule passes', () => {
+  const result = compare(
+    `.p { --oc: 232, 163, 61; }
+.q { --oc: 76, 175, 125; }
+mark { background: rgba(var(--oc), 0.16); }`,
+    `.p { --oc: var(--ct-gold-fg-rgb); }
+.q { --oc: var(--ct-hit-fg-rgb); }
+mark { background: rgb(var(--oc) / calc(0.16 * var(--ct-k-accent-fg))); }`,
+  );
+  assert.deepEqual(result, { compared: 3, rewritten: 3, mismatches: [] });
+});

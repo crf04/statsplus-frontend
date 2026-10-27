@@ -113,12 +113,51 @@ const resolveAliases = (text, aliases, scope) =>
     { fallbacks: false },
   );
 
+const aliasReads = (text) => [...text.matchAll(/var\(\s*(--[\w-]+)/g)].map((match) => match[1]);
+
 const aliasScopes = (text, aliases) => {
   const scopes = new Set();
-  for (const name of text.match(/--[\w-]+/g) ?? []) {
+  for (const name of aliasReads(text)) {
     for (const scope of aliases.get(name)?.keys() ?? []) scopes.add(scope);
   }
   return scopes;
+};
+
+const setters = (values) => [...values.keys()].sort().join(', ');
+
+// The aliases whose setters differ between base and head. A setter that
+// moved, appeared beside another or went away changes which elements see the
+// value, and one removed while head still reads it paints nothing.
+const changedAliases = (aliases, headList, file, mismatches) => {
+  const read = new Set(headList.flatMap(({ decl }) => aliasReads(decl.value)));
+  const changed = new Set();
+  for (const name of new Set([...aliases.base.keys(), ...aliases.head.keys()])) {
+    const before = aliases.base.get(name);
+    const after = aliases.head.get(name);
+    const same =
+      before &&
+      after &&
+      before.size === after.size &&
+      [...before].every(([scope, text]) => after.get(scope) === text);
+    if (same) continue;
+    changed.add(name);
+    if (before && after && setters(before) !== setters(after)) {
+      mismatches.push({
+        file,
+        key: name,
+        base: `set in ${setters(before)}`,
+        head: `set in ${setters(after)}`,
+      });
+    } else if (before && !after && read.has(name)) {
+      mismatches.push({
+        file,
+        key: name,
+        base: `set in ${setters(before)}`,
+        head: '(removed, still read)',
+      });
+    }
+  }
+  return changed;
 };
 
 export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) => {
@@ -126,6 +165,7 @@ export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) =
   const headList = declarations(headCss);
   const head = new Map(headList.map((entry, position) => [entry.key, { ...entry, position }]));
   const aliases = { base: aliasesOf(baseCss), head: aliasesOf(headCss) };
+  const changed = changedAliases(aliases, headList, file, mismatches);
   let compared = 0;
   let rewritten = 0;
   let lastPosition = -1;
@@ -133,7 +173,8 @@ export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) =
     const other = head.get(key);
     head.delete(key);
     if (!other) {
-      // An alias may be renamed or split; its consumers prove the paint.
+      // An alias may be renamed or split; its consumers and changedAliases
+      // prove the paint.
       if (!isAlias(decl.prop)) mismatches.push({ file, key, base: value(decl), head: '(removed)' });
       continue;
     }
@@ -143,10 +184,12 @@ export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) =
       mismatches.push({ file, key, base: 'in source order', head: '(moved earlier)' });
     }
     lastPosition = Math.max(lastPosition, other.position);
-    if (value(decl) === value(other.decl)) continue;
-    rewritten += 1;
     const before = value(decl);
     const after = value(other.decl);
+    // An unchanged declaration still paints differently when an alias it
+    // reads has new setters.
+    if (before === after && !aliasReads(after).some((name) => changed.has(name))) continue;
+    if (before !== after) rewritten += 1;
     const scopes = new Set([
       ...aliasScopes(before, aliases.base),
       ...aliasScopes(after, aliases.head),

@@ -13,7 +13,7 @@ string); ← / → or the floating bar switch variants. Dev builds only.
 - **A** — compact: small labelled controls, one strip of three tiles, 260px chart, M/D dates.
 - **B** — sentence: "Player PTS over 21.5", hit rate as the headline, 220px chart.
 - **C** — chart-first: one pill toolbar, one line of numbers, 200px chart, month ticks only, no y axis.
-- **D** — A's controls + today's three cards trimmed (padding, 24px values), filter chips centred, roomier spacing, 360px chart, no "Showing … games" heading or empty-state line in the filter panel. Asked for 2026-10-26 over three rounds.
+- **D** — A's controls + today's three cards trimmed (padding, 24px values), filter chips centred, roomier spacing, 420px chart, no "Showing … games" heading or empty-state line in the filter panel. Asked for 2026-10-26 over three rounds.
 
 A–C drop the "Player: X" chip (the Player box already says it) and keep other filter chips.
 C hides the Posted Lines picker; the captured data has none, so no variant shows it.

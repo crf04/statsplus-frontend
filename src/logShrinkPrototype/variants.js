@@ -153,7 +153,7 @@ const shortDate = (label) => {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export const CHART_HEIGHT = { A: 260, B: 220, C: 200, D: 360 };
+export const CHART_HEIGHT = { A: 260, B: 220, C: 200, D: 420 };
 
 /** The variant's chart options, built on top of today's. */
 export const chartOptionsFor = (variant, options, labels) => {

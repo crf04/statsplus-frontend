@@ -1,13 +1,29 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Form, Row, Col } from 'react-bootstrap';
-import { apiClient } from './config';
-import { getApiUrl } from './config';
 import OpponentBars from './opponentProfile/OpponentBars';
 import { opponentReadings } from './opponentProfile/opponentReadings';
+import {
+  SeasonUnavailableError,
+  seasonChoiceLabel,
+  seasonUnavailableText,
+  trailingNote,
+} from './servingSeason';
+import { fetchTeamStats as readTeamStats } from './teamStatsApi';
 
-const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }) => {
+// `seasonChoice` is the Workspace's Evidence season choice, as the Player
+// Profile's, or null for the default (crf04/statsplus#369).
+const OpposingTeamProfile = ({
+  teams,
+  selectedTeam,
+  setSelectedTeam,
+  seasonChoice = null,
+  onSettled,
+}) => {
+  const season = seasonChoice?.season ?? null;
   const [selectedCategory, setSelectedCategory] = useState('Traditional');
+  // The decoded read: `{data, seasonContext, trailing}`, or null.
   const [teamStats, setTeamStats] = useState(null);
+  const [unavailable, setUnavailable] = useState(null);
   const [dateFilter, setDateFilter] = useState('');
   const [debouncedDateFilter, setDebouncedDateFilter] = useState('');
   const dateTimeoutRef = useRef(null);
@@ -16,7 +32,7 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
   // inputs rather than whatever was on screen before them.
   const [settledFor, setSettledFor] = useState(null);
   const readKey = selectedTeam
-    ? `${selectedTeam}|${selectedCategory}|${debouncedDateFilter}`
+    ? `${selectedTeam}|${selectedCategory}|${debouncedDateFilter}|${season}`
     : null;
   const settled = !readKey || settledFor === readKey;
 
@@ -32,22 +48,22 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
     (signal) => {
       const requestId = ++requestIdRef.current;
       setSettledFor(null);
+      setUnavailable(null);
 
       if (selectedTeam && selectedCategory) {
-        const endpoint = getApiUrl('TEAM_STATS');
-        apiClient
-          .get(endpoint, {
-            params: {
-              category: selectedCategory,
-              team: selectedTeam,
-              date: debouncedDateFilter || null,
-            },
-            signal,
-          })
-          .then((response) => {
+        readTeamStats(
+          {
+            category: selectedCategory,
+            team: selectedTeam,
+            date: debouncedDateFilter || null,
+            ...(season ? { season } : {}),
+          },
+          { signal },
+        )
+          .then((stats) => {
             if (requestId !== requestIdRef.current) return;
-            if (response.data) {
-              setTeamStats(response.data);
+            if (stats.data) {
+              setTeamStats(stats);
             } else {
               console.error('Received invalid data format for team stats');
               setTeamStats(null);
@@ -61,13 +77,16 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
               error.response?.status || error.message,
             );
             setTeamStats(null);
+            if (error instanceof SeasonUnavailableError) {
+              setUnavailable(seasonUnavailableText(error.selectedSeason ?? season));
+            }
             setSettledFor(readKey);
           });
       } else {
         setTeamStats(null);
       }
     },
-    [selectedTeam, selectedCategory, debouncedDateFilter, readKey],
+    [selectedTeam, selectedCategory, debouncedDateFilter, season, readKey],
   );
 
   useEffect(() => {
@@ -102,10 +121,24 @@ const OpposingTeamProfile = ({ teams, selectedTeam, setSelectedTeam, onSettled }
   };
 
   const renderTeamStats = () => {
+    if (unavailable) return <p className="text-danger">{unavailable}</p>;
     if (!teamStats) return <p>Select a team and category to view stats.</p>;
-    const groups = opponentReadings(selectedCategory, teamStats);
+    const { data, seasonContext, trailing } = teamStats;
+    const groups = opponentReadings(selectedCategory, data);
     if (groups.length === 0) return <p>No data available for {selectedCategory} stats.</p>;
-    return <OpponentBars groups={groups} />;
+    const note = seasonContext && trailingNote(trailing, seasonContext, 'Profile numbers');
+    return (
+      <>
+        {seasonContext && (
+          <p className="ps-evidence-season">
+            Evidence season{' '}
+            {seasonChoiceLabel(seasonChoice ?? { season: seasonContext.selectedSeason })}
+          </p>
+        )}
+        {note && <p className="ps-evidence-season">{note}</p>}
+        <OpponentBars groups={groups} />
+      </>
+    );
   };
 
   return (

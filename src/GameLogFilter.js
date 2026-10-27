@@ -409,7 +409,7 @@ const GameLogFilter = ({ notice = null }) => {
       { replace: true },
     );
   }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
-  // The Player Profile reads the Workspace's season as its Evidence season,
+  // Both profiles read the Workspace's season as their Evidence season,
   // named only when it is not the default.
   const workspaceChoice = choices?.find((choice) => choice.season === workspaceSeason);
   const profileChoice =
@@ -988,14 +988,18 @@ const GameLogFilter = ({ notice = null }) => {
               )}
             </Col>
             <Col md={6}>
-              <Suspense fallback={null}>
-                <OpposingTeamProfile
-                  teams={teams}
-                  selectedTeam={selectedTeam}
-                  setSelectedTeam={chooseTeam}
-                  onSettled={setOpponentSettledFor}
-                />
-              </Suspense>
+              {/* Its season is the Workspace's, unknown until /seasons answers. */}
+              {!awaitingPageSeason && (
+                <Suspense fallback={null}>
+                  <OpposingTeamProfile
+                    teams={teams}
+                    selectedTeam={selectedTeam}
+                    setSelectedTeam={chooseTeam}
+                    seasonChoice={profileChoice}
+                    onSettled={setOpponentSettledFor}
+                  />
+                </Suspense>
+              )}
             </Col>
           </Row>
 

@@ -6,13 +6,14 @@ Throwaway, on branch `prototype/log-workspace-shrink`; nothing here reaches `mas
 PER-36 · HIT RATE cards, "Player: X" chip, bar chart) is ~750px tall. How
 small and plain can it get?
 
-Open the Log Workspace with `#proto=shrink&v=O|A|B|C` (hash, never query
+Open the Log Workspace with `#proto=shrink&v=O|A|B|C|D` (hash, never query
 string); ← / → or the floating bar switch variants. Dev builds only.
 
 - **O** — today.
 - **A** — compact: small labelled controls, one strip of three tiles, 260px chart, M/D dates.
 - **B** — sentence: "Player PTS over 21.5", hit rate as the headline, 220px chart.
 - **C** — chart-first: one pill toolbar, one line of numbers, 200px chart, month ticks only, no y axis.
+- **D** — A's controls + today's three cards trimmed (padding, 24px values), filter chips centred, 340px chart. Asked for 2026-10-26 after round 1.
 
 A–C drop the "Player: X" chip (the Player box already says it) and keep other filter chips.
 C hides the Posted Lines picker; the captured data has none, so no variant shows it.

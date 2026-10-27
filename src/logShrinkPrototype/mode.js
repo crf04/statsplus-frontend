@@ -11,6 +11,7 @@ export const VARIANTS = {
   A: 'Compact: small controls, one stat strip, shorter chart',
   B: 'Sentence: "Player PTS over 28.7", hit rate headline',
   C: 'Chart-first: one toolbar, numbers on the chart',
+  D: "A top + today's cards, a bit smaller; filters centred",
 };
 export const VARIANT_KEYS = Object.keys(VARIANTS);
 

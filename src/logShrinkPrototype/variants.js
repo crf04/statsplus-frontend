@@ -102,7 +102,48 @@ const SummaryC = ({ m, lineType }) => (
   </div>
 );
 
-export const SUMMARIES = { A: SummaryA, B: SummaryB, C: SummaryC };
+// D: today's three cards, trimmed: same pieces, less padding, smaller type.
+const Card = ({ title, value, from, change }) => (
+  <div className="ls-d-card">
+    <span className="ls-d-title">{title}</span>
+    <span className="ls-d-value">
+      {value} <small>from {from}</small>
+    </span>
+    {change !== undefined && (
+      <span className="ls-d-corner">
+        <Delta value={change} />
+      </span>
+    )}
+  </div>
+);
+
+const SummaryD = ({ m, lineType }) => (
+  <div className="ls-d-row">
+    <Card
+      title={`${lineType} avg`}
+      value={formatNumber(m.rawValue, 2)}
+      from={formatNumber(m.seasonRawValue, 2)}
+      change={diff(m.rawValue, m.seasonRawValue)}
+    />
+    <Card
+      title="Per-36"
+      value={formatNumber(m.per36Value, 2)}
+      from={formatNumber(m.seasonPer36Value, 2)}
+      change={diff(m.per36Value, m.seasonPer36Value)}
+    />
+    <div className="ls-d-card">
+      <span className="ls-d-title">Hit rate</span>
+      <span className="ls-d-value">
+        {m.ratio} <small>{pct(m.ratio)}%</small>
+      </span>
+      <span className="ls-d-corner ls-d-recent">
+        L5 {m.last5ratio} · L10 {m.last10ratio}
+      </span>
+    </div>
+  </div>
+);
+
+export const SUMMARIES = { A: SummaryA, B: SummaryB, C: SummaryC, D: SummaryD };
 
 // The game date as M/D, the way the rest of the page writes short dates.
 const shortDate = (label) => {
@@ -112,7 +153,7 @@ const shortDate = (label) => {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export const CHART_HEIGHT = { A: 260, B: 220, C: 200 };
+export const CHART_HEIGHT = { A: 260, B: 220, C: 200, D: 340 };
 
 /** The variant's chart options, built on top of today's. */
 export const chartOptionsFor = (variant, options, labels) => {
@@ -125,7 +166,7 @@ export const chartOptionsFor = (variant, options, labels) => {
       font: tickFont,
       maxRotation: 0,
       autoSkip: true,
-      maxTicksLimit: variant === 'A' ? 8 : 6,
+      maxTicksLimit: variant === 'A' || variant === 'D' ? 8 : 6,
       callback(value) {
         return shortDate(this.getLabelForValue(value));
       },
@@ -148,7 +189,11 @@ export const chartOptionsFor = (variant, options, labels) => {
   const y = {
     ...options.scales.y,
     title: { display: false },
-    ticks: { ...options.scales.y.ticks, color: '#7d7666', maxTicksLimit: variant === 'A' ? 5 : 4 },
+    ticks: {
+      ...options.scales.y.ticks,
+      color: '#7d7666',
+      maxTicksLimit: variant === 'A' ? 5 : variant === 'D' ? 6 : 4,
+    },
     grid: { color: variant === 'C' ? 'transparent' : 'rgba(255, 255, 255, 0.05)' },
     border: { display: false },
   };
@@ -165,7 +210,7 @@ export const chartOptionsFor = (variant, options, labels) => {
             ...line,
             label: {
               ...line.label,
-              position: variant === 'A' ? 'start' : 'end',
+              position: variant === 'A' || variant === 'D' ? 'start' : 'end',
               padding: 4,
               font: { ...line.label.font, size: 10 },
             },

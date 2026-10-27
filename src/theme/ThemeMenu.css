@@ -1,0 +1,96 @@
+/* The header's Appearance menu. The account group lays the menu out beside
+   Feedback and the profile, or Sign in. */
+.app-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-menu-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ct-dim);
+  cursor: pointer;
+}
+
+.theme-menu-toggle:hover,
+.theme-menu.show .theme-menu-toggle {
+  border-color: var(--ct-gold-fg-50);
+  color: var(--ct-gold);
+}
+
+.theme-menu-toggle:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+/* Overrides the profile menu's global placement (ModernSearch.css). */
+.theme-menu .dropdown-menu {
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  margin-top: 8px !important;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  box-shadow: 0 18px 50px var(--ct-shadow-60);
+  font-family: var(--ct-sans);
+}
+
+.theme-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--ct-radius-ctl);
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.theme-menu .dropdown-item:hover,
+.theme-menu .dropdown-item:focus {
+  background: var(--ct-overlay-bg-6);
+  color: var(--ct-text);
+}
+
+.theme-menu-hint {
+  color: var(--ct-dim);
+  font-size: 0.8rem;
+}
+
+.theme-menu-check {
+  margin-left: auto;
+  color: var(--ct-gold);
+}
+
+@media (max-width: 620px) {
+  /* The button sits mid-row; the menu opens under the header's right edge. */
+  .theme-menu .dropdown-menu {
+    position: fixed !important;
+    top: 52px !important;
+    right: 10px !important;
+    margin-top: 0 !important;
+  }
+
+  /* A 44px touch target around the 32px button, inside the header row
+     (the inset counts from inside the 1px border). */
+  .theme-menu-toggle::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+  }
+}

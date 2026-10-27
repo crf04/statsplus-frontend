@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../App';
 
 jest.mock('../contexts/AuthContext', () => ({
@@ -44,9 +44,27 @@ test('the Claude tab is first and says where to upload the skill', async () => {
   const tabs = within(screen.getByRole('tablist', { name: 'Where you run it' })).getAllByRole(
     'tab',
   );
-  expect(tabs.map((t) => t.textContent)).toEqual(['Claude', 'Claude Code']);
+  expect(tabs.map((t) => t.textContent)).toEqual(['Claude', 'Claude Code', 'ChatGPT']);
   expect(screen.getByRole('tabpanel')).toHaveTextContent(
     'Open Customize → Skills, select +, then Create skill → Upload a skill, and choose the zip.',
+  );
+});
+
+test('the ChatGPT tab says which plans can upload skills and where to upload the zip', async () => {
+  await openSkillPage();
+
+  fireEvent.click(screen.getByRole('tab', { name: 'ChatGPT' }));
+
+  const panel = screen.getByRole('tabpanel', { name: 'ChatGPT' });
+  expect(panel).toHaveTextContent(
+    'Skill uploads are on ChatGPT Business, Enterprise, Edu and Healthcare workspaces, when your admin allows them; Plus and Pro do not include them.',
+  );
+  expect(panel).toHaveTextContent(
+    'In the sidebar, open Plugins → Skills, select Create, then Upload from your computer, and choose the zip without unzipping it.',
+  );
+  expect(within(panel).getByRole('link', { name: 'Download the skill (.zip)' })).toHaveAttribute(
+    'href',
+    '/skills/courtai-injury-brief.zip',
   );
 });
 

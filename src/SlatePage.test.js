@@ -8,7 +8,7 @@ import { closingPoolSlatePayload } from './slateClosingPoolFixture';
 import { partialPoolSlatePayload } from './slatePartialPoolFixture';
 import { fetchResolvedTargets } from './targets/targetsApi';
 import { fetchSeasons } from './seasonsApi';
-import { legacySeasons, unpublishedSeasons } from './seasonChoicesFixture';
+import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from './seasonChoicesFixture';
 import { seasonRefusalOr } from './servingSeason';
 
 jest.mock('./slateApi', () => ({ fetchSlate: jest.fn() }));
@@ -85,6 +85,7 @@ test('opens on today in New York by default and can return to it', async () => {
 
   expect(screen.getByLabelText('Slate date')).toHaveValue('2026-09-11');
   await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
+  await screen.findByRole('link', { name: /^LAL @ BOS/ });
   // No date is named, so the backend decides the day; today having games, the
   // URL stays as it was.
   expect(fetchSlate).toHaveBeenCalledWith(undefined, {
@@ -169,6 +170,7 @@ test('an undated page left open past midnight in New York reads the new day', as
     </MemoryRouter>,
   );
   await screen.findByRole('heading', { name: 'Friday, September 11, 2026' });
+  await screen.findByRole('link', { name: /^LAL @ BOS/ });
   expect(fetchSlate).toHaveBeenCalledTimes(1);
 
   // The minute clock ticks across 00:00 in New York.
@@ -190,6 +192,7 @@ test('an explicit date is read as named, with no fallback', async () => {
   );
 
   await screen.findByRole('heading', { name: 'Thursday, January 15, 2026' });
+  await screen.findByRole('link', { name: /^LAL @ BOS/ });
   expect(fetchSlate).toHaveBeenCalledTimes(1);
   expect(fetchSlate).toHaveBeenCalledWith('2026-01-15', { signal: expect.any(AbortSignal) });
   expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-01-15');
@@ -1147,6 +1150,130 @@ describe('Evidence season', () => {
         season: '2026-27',
       }),
     );
+  });
+
+  // crf04/statsplus#348: a 2026-27 date reads 2026-27 once it is offered.
+  describe('on a 2026-27 date', () => {
+    const autumnGame = { ...game, gameId: '0022600003' };
+    beforeEach(() =>
+      fetchSlate.mockImplementation(async (date) => ({
+        ...slate,
+        slateDate: date,
+        games: [autumnGame],
+      })),
+    );
+    const seasonSelect = () => screen.getByRole('combobox', { name: 'Evidence season' });
+
+    test('reads 2026-27 with no season chosen, and a 2025-26 day after it reads 2025-26', async () => {
+      renderSlate('/matchups?date=2026-10-27');
+      await screen.findByRole('link', { name: /^LAL @ BOS/ });
+      expect(fetchSlate.mock.calls).toEqual([
+        ['2026-10-27', { signal: expect.any(AbortSignal), season: '2026-27' }],
+      ]);
+      expect(seasonSelect()).toHaveValue('2026-27');
+      expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
+        'Evidence season 2026-27 · early, 2–4 games per team',
+      );
+      expect(gameLink()).toHaveAttribute('href', '/matchups/0022600003');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Next date' }));
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-10-28');
+
+      fireEvent.change(screen.getByLabelText('Slate date'), { target: { value: '2026-04-12' } });
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-04-12');
+      await waitFor(() =>
+        expect(fetchSlate).toHaveBeenLastCalledWith('2026-04-12', {
+          signal: expect.any(AbortSignal),
+        }),
+      );
+      expect(seasonSelect()).toHaveValue('2025-26');
+    });
+
+    test('a chosen 2025-26 stays in the URL, across days and a reload', async () => {
+      const { unmount } = renderSlate('/matchups?date=2026-10-27');
+      await screen.findByRole('link', { name: /^LAL @ BOS/ });
+      fireEvent.change(seasonSelect(), { target: { value: '2025-26' } });
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent(
+        '/matchups?date=2026-10-27&season=2025-26',
+      );
+      await waitFor(() =>
+        expect(fetchSlate).toHaveBeenLastCalledWith('2026-10-27', {
+          signal: expect.any(AbortSignal),
+        }),
+      );
+      expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toHaveAttribute(
+        'href',
+        '/matchups/0022600003?season=2025-26',
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Next date' }));
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent(
+        '/matchups?date=2026-10-28&season=2025-26',
+      );
+      unmount();
+
+      fetchSlate.mockClear();
+      renderSlate('/matchups?date=2026-10-28&season=2025-26');
+      await screen.findByRole('link', { name: /^LAL @ BOS/ });
+      expect(fetchSlate.mock.calls).toEqual([['2026-10-28', { signal: expect.any(AbortSignal) }]]);
+      expect(seasonSelect()).toHaveValue('2025-26');
+    });
+
+    test('a refused 2026-27 goes back to 2025-26', async () => {
+      fetchSlate.mockImplementation(async (date, { season }) => {
+        if (season)
+          throw seasonRefusalOr(
+            Object.assign(new Error('Request failed with status code 503'), {
+              response: {
+                status: 503,
+                headers: {},
+                data: {
+                  error: {
+                    code: 'season_unavailable',
+                    message: 'Refused.',
+                    details: { selected_season: '2026-27', published_season: '2025-26' },
+                  },
+                },
+              },
+            }),
+          );
+        return { ...slate, slateDate: date, games: [autumnGame] };
+      });
+      renderSlate('/matchups?date=2026-10-27');
+      fireEvent.click(await screen.findByRole('button', { name: 'Show 2025-26' }));
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent(
+        '/matchups?date=2026-10-27&season=2025-26',
+      );
+      expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toBeVisible();
+    });
+
+    test('an undated offseason Slate that falls forward to a 2026-27 day reads 2026-27', async () => {
+      jest.setSystemTime(new Date('2026-09-12T12:00:00Z'));
+      fetchSlate.mockImplementation(async (date, { season }) => ({
+        ...slate,
+        slateDate: date ?? '2026-10-20',
+        fallback: date ? null : 'next_game_day',
+        games: [season ? autumnGame : game],
+      }));
+      renderSlate('/matchups');
+      expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toHaveAttribute(
+        'href',
+        '/matchups/0022600003',
+      );
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-10-20');
+      expect(fetchSlate).toHaveBeenLastCalledWith('2026-10-20', {
+        signal: expect.any(AbortSignal),
+        season: '2026-27',
+      });
+    });
+
+    test('until 2026-27 is offered, the read is as before', async () => {
+      fetchSeasons.mockResolvedValue(publishedOnlySeasons);
+      renderSlate('/matchups?date=2026-10-27');
+      await screen.findByRole('link', { name: /^LAL @ BOS/ });
+      expect(fetchSlate.mock.calls).toEqual([['2026-10-27', { signal: expect.any(AbortSignal) }]]);
+      expect(fetchSeasons).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('combobox', { name: 'Evidence season' })).not.toBeInTheDocument();
+    });
   });
 
   test('2026-27 evidence for a 2025-26 date is refused with a way back', async () => {

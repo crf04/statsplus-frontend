@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
 import { apiClient } from './config';
@@ -20,6 +20,10 @@ let mockSignedIn = true;
 jest.mock('./contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: mockSignedIn, loading: false }),
 }));
+const teamStatsRequests = () =>
+  apiClient.get.mock.calls
+    .filter(([path]) => path === '/api/team_stats')
+    .map(([, options]) => options.params);
 jest.mock('./savedFilterSetsApi', () => ({
   fetchSavedFilterSets: jest.fn(() => Promise.resolve([])),
   subscribeSavedFilterSets: jest.fn(() => () => {}),
@@ -59,6 +63,15 @@ const withChoices = {
     },
   ],
 };
+// The Opposing Team Profile's read; the Player Profile's comparison read is Playtypes.
+const opponentRequests = () =>
+  apiClient.get.mock.calls
+    .filter(
+      ([path, options]) => path === '/api/team_stats' && options.params.category === 'Traditional',
+    )
+    .map(([, options]) => options.params);
+const teamStatsPaths = () =>
+  apiClient.get.mock.calls.filter(([path]) => path === '/api/team_stats');
 const profileRequests = () =>
   apiClient.get.mock.calls
     .filter(([path]) => path === '/api/player_profile')
@@ -122,4 +135,96 @@ test('a signed-out reader, who never reads /seasons, still sees the Player Profi
   );
   expect(await screen.findByText('Player Profile')).toBeInTheDocument();
   expect(fetchSeasons).not.toHaveBeenCalled();
+});
+
+test('while /seasons is pending the Opposing Team Profile neither reads nor shows, then reads 2026-27 once', async () => {
+  let answerSeasons;
+  fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
+  render(
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James']}>
+      <GameLogFilter />
+    </MemoryRouter>,
+  );
+  await waitFor(() =>
+    expect(apiClient.get.mock.calls.map(([path]) => path)).toContain('/api/players'),
+  );
+  await act(async () => {});
+  expect(teamStatsPaths()).toEqual([]);
+  expect(screen.queryByText('Opposing Team Profile')).toBeNull();
+
+  await act(async () => answerSeasons(withChoices));
+  await screen.findByText('Opposing Team Profile');
+  await waitFor(() => expect(opponentRequests()).not.toEqual([]));
+  await act(async () => {});
+  expect(opponentRequests()).toEqual([
+    { category: 'Traditional', team: 'Atlanta Hawks', date: null, season: '2026-27' },
+  ]);
+});
+
+// Signed out there is no team list, so the card shows but reads nothing; with
+// no choice it would send no season (OpposingTeamProfile.test.js).
+test('a signed-out reader, who never reads /seasons, still sees the Opposing Team Profile', async () => {
+  mockSignedIn = false;
+  render(
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James']}>
+      <GameLogFilter />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText('Opposing Team Profile')).toBeInTheDocument();
+  await act(async () => {});
+  expect(fetchSeasons).not.toHaveBeenCalled();
+  expect(teamStatsPaths()).toEqual([]);
+});
+
+test('a link that names its season still waits for /seasons, then each profile reads that season once', async () => {
+  let answerSeasons;
+  fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
+  render(
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James&season_filter=2026-27']}>
+      <GameLogFilter />
+    </MemoryRouter>,
+  );
+  await waitFor(() =>
+    expect(apiClient.get.mock.calls.map(([path]) => path)).toContain('/api/players'),
+  );
+  await act(async () => {});
+  expect(profileRequests()).toEqual([]);
+  expect(teamStatsPaths()).toEqual([]);
+
+  await act(async () => answerSeasons(withChoices));
+  await screen.findByText('Opposing Team Profile');
+  await waitFor(() => expect(opponentRequests()).not.toEqual([]));
+  await act(async () => {});
+  expect(profileRequests()).toEqual([
+    { player_name: 'LeBron James', category: 'Playtypes', season: '2026-27' },
+  ]);
+  expect(opponentRequests()).toEqual([
+    { category: 'Traditional', team: 'Atlanta Hawks', date: null, season: '2026-27' },
+  ]);
+});
+
+test('after signing out no profile read carries the signed-in Evidence season', async () => {
+  fetchSeasons.mockResolvedValue(withChoices);
+  const page = () => (
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James']}>
+      <GameLogFilter />
+    </MemoryRouter>
+  );
+  const { rerender } = render(page());
+  await screen.findByText('Opposing Team Profile');
+  await waitFor(() => expect(opponentRequests()).not.toEqual([]));
+  await act(async () => {});
+  const signedInReads = apiClient.get.mock.calls.length;
+
+  mockSignedIn = false;
+  rerender(page());
+  await act(async () => {});
+  fireEvent.change(screen.getByDisplayValue('Traditional'), { target: { value: 'Assists' } });
+  await act(async () => {});
+  const signedOutReads = apiClient.get.mock.calls
+    .slice(signedInReads)
+    .filter(([path]) => path === '/api/team_stats' || path === '/api/player_profile')
+    .map(([, options]) => options.params);
+  expect(signedOutReads).toContainEqual(expect.objectContaining({ category: 'Assists' }));
+  expect(signedOutReads.filter((params) => 'season' in params)).toEqual([]);
 });

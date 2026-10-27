@@ -58,6 +58,16 @@
       "path": "src/readings.css",
       "match": "hsl(calc",
       "reason": "Rank hue computed from --rank, not a palette colour."
+    },
+    {
+      "path": "src/theme/themeStore.js",
+      "match": "#0d0b07",
+      "reason": "The browser chrome colour (meta theme-color) of each theme, written before CSS can be read; it is --ct-ink, which themeStore.test.js checks against src/theme.css."
+    },
+    {
+      "path": "src/theme/themeStore.js",
+      "match": "#f3f4f6",
+      "reason": "The browser chrome colour (meta theme-color) of each theme, written before CSS can be read; it is --ct-ink, which themeStore.test.js checks against src/theme.css."
     }
   ]
 }

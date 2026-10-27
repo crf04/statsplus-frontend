@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import FilterOptions from './FilterOptions';
 import { fetchSeasons } from './seasonsApi';
@@ -420,4 +420,83 @@ test('USG% keyboard steps land on the 0.1 grid when season values have two decim
   expect(screen.getByText('USG% 25.0–40.0')).toBeVisible();
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[USG_PCT]': '25,40' });
+});
+
+test('Own stat line offers Potential assists in integer steps and the chip reads the range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, POTENTIAL_AST: null },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 20 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
+  expect(screen.getByText('8–20')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Potential assists 8–20')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '8,20' });
+});
+
+test('Own stat line offers Rebound chances and emits its range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CHANCES: 6 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CHANCES: 15 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CHANCES' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Rebound chances 6–15')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
+});
+
+describe.each([
+  // [column, label, low, high, keyboard-moved chip range, serialized range]
+  ['REB_CHANCES', 'Rebound chances', 6, 12, '7–11', '7,11'],
+  ['POTENTIAL_AST', 'Potential assists', 8, 14, '9–13', '9,13'],
+  ['REB_CONV_PCT', 'REB conversion %', 0.4, 0.75, '0.41–0.74', '0.41,0.74'],
+  ['AST_CONV_PCT', 'AST conversion %', 0.3, 0.6, '0.31–0.59', '0.31,0.59'],
+])('Own stat line %s', (column, label, low, high, chip, serialized) => {
+  test('keyboard steps land on the stat grid, and the chip and request read the moved range', () => {
+    renderPanel({}, [
+      { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, [column]: low },
+      { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, [column]: null },
+      { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, [column]: high },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+    fireEvent.change(screen.getByLabelText('Stat'), { target: { value: column } });
+    const min = screen.getByRole('slider', { name: `Minimum ${column}` });
+    const max = screen.getByRole('slider', { name: `Maximum ${column}` });
+    fireEvent.focus(min);
+    fireEvent.keyDown(min, { key: 'ArrowRight' });
+    fireEvent.focus(max);
+    fireEvent.keyDown(max, { key: 'ArrowLeft' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+    expect(screen.getByText(`${label} ${chip}`)).toBeVisible();
+    apply();
+    expect(patch()).toEqual({
+      player_name: 'LeBron James',
+      [`self_filters[${column}]`]: serialized,
+    });
+  });
+});
+
+test('each tracking stat sits with its parent stat in the Own stat line', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  const labels = within(screen.getByLabelText('Stat'))
+    .getAllByRole('option')
+    .map((o) => o.textContent.replace(/ \(\w+\)$/, ''));
+  const at = (label) => labels.indexOf(label);
+  expect(at('Rebounds')).toBeGreaterThan(-1);
+  expect(labels.slice(at('Rebounds'), at('Rebounds') + 3)).toEqual([
+    'Rebounds',
+    'Rebound chances',
+    'REB conversion %',
+  ]);
+  expect(labels.slice(at('Assists'), at('Assists') + 3)).toEqual([
+    'Assists',
+    'Potential assists',
+    'AST conversion %',
+  ]);
 });

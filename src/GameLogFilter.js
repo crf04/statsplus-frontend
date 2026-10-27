@@ -16,7 +16,7 @@ import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { fetchNextOpponent } from './nextOpponentApi';
 import { fetchSeasons } from './seasonsApi';
-import { SeasonUnavailableError, seasonChoiceLabel } from './servingSeason';
+import { SeasonUnavailableError } from './servingSeason';
 import { SeasonRefusal, pageDefaultSeason } from './EvidenceSeason';
 import { seasonOfDate } from './gameSeason';
 import { getTodaySlateDate } from './calendarDate';
@@ -414,7 +414,6 @@ const GameLogFilter = ({ notice = null }) => {
   const workspaceChoice = choices?.find((choice) => choice.season === workspaceSeason);
   const profileChoice =
     workspaceChoice && workspaceSeason !== seasonChoices.defaultSeason ? workspaceChoice : null;
-  const unpublishedChoice = workspaceChoice?.mode === 'unpublished' ? workspaceChoice : null;
 
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
@@ -865,11 +864,6 @@ const GameLogFilter = ({ notice = null }) => {
             {fallbackFrom && !linkedSeason && pageSeason && (
               <span className="evidence-season-chip" role="status">
                 {fallbackFrom} isn&rsquo;t offered, so these are {pageSeason} game logs.
-              </span>
-            )}
-            {unpublishedChoice && (
-              <span className="evidence-season-chip" data-testid="evidence-season-chip">
-                Evidence season {seasonChoiceLabel(unpublishedChoice)}
               </span>
             )}
             {/* Saving and the saved list live in the filter panel's Saved

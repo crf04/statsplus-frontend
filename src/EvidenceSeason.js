@@ -140,22 +140,12 @@ function EvidenceSeasonSelect({ evidence }) {
   );
 }
 
-/*
- * What the page reads, when it is not simply the default: a season not yet
- * published, named with its sample, or a linked season that fell back.
- */
-function EvidenceSeasonChip({ evidence }) {
-  if (evidence.fallbackFrom && evidence.defaultSeason) {
-    return (
-      <span className="evidence-season-chip" role="status">
-        {seasonFallbackText(evidence.fallbackFrom, evidence.season ?? evidence.defaultSeason)}
-      </span>
-    );
-  }
-  if (evidence.choice?.mode !== 'unpublished') return null;
+/* A linked season that fell back, named with the season read instead. */
+function EvidenceSeasonFallback({ evidence }) {
+  if (!evidence.fallbackFrom || !evidence.defaultSeason) return null;
   return (
-    <span className="evidence-season-chip" data-testid="evidence-season-chip">
-      Evidence season {seasonChoiceLabel(evidence.choice)}
+    <span className="evidence-season-chip" role="status">
+      {seasonFallbackText(evidence.fallbackFrom, evidence.season ?? evidence.defaultSeason)}
     </span>
   );
 }
@@ -166,7 +156,7 @@ export function EvidenceSeasonBar({ evidence }) {
   return (
     <div className="evidence-season-bar">
       <EvidenceSeasonSelect evidence={evidence} />
-      <EvidenceSeasonChip evidence={evidence} />
+      <EvidenceSeasonFallback evidence={evidence} />
     </div>
   );
 }

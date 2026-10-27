@@ -289,9 +289,7 @@ signedInTest(
     const season = screen.getByRole('combobox', 'Season');
     await expect(season).toHaveValue('2026-27');
     await expect(screen.getByRole('option', '2026-27 · early, 2–4 games per team')).toHaveCount(1);
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     await expect(screen.getByRole('cell', '31')).toBeVisible();
     await expect(browser).toHaveURL('/?player_name=LeBron+James');
     expect(new Set(sentSeasons())).toEqual(new Set(['2026-27']));
@@ -309,7 +307,7 @@ signedInTest(
 
     await season.selectOption({ value: '2026-27' });
     await expect(browser).toHaveURL('/?player_name=LeBron+James');
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(1);
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
 
     refuse = true;
     await browser.reload();

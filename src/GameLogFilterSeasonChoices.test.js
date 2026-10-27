@@ -147,8 +147,9 @@ test('with 2026-27 offered and no season_filter, the first read and the Season c
     { player_name: 'LeBron James', season_filter: '2026-27' },
   ]);
   expect(url()).toBe('/?player_name=LeBron+James');
-  expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-    'Evidence season 2026-27 · early, 2–4 games per team',
+  expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+  expect(screen.getByRole('combobox', { name: 'Season' })).toHaveDisplayValue(
+    '2026-27 · early, 2–4 games per team',
   );
 });
 

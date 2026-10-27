@@ -1116,8 +1116,9 @@ describe('Evidence season', () => {
       ['2026-01-15', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(gameLink()).toHaveAttribute('href', '/matchups/0022500584?season=2026-27');
     // A mixed score names each input's own sample, never one game count.
@@ -1171,8 +1172,9 @@ describe('Evidence season', () => {
         ['2026-10-27', { signal: expect.any(AbortSignal), season: '2026-27' }],
       ]);
       expect(seasonSelect()).toHaveValue('2026-27');
-      expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-        'Evidence season 2026-27 · early, 2–4 games per team',
+      expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+      expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+        '2026-27 · early, 2–4 games per team',
       );
       expect(gameLink()).toHaveAttribute('href', '/matchups/0022600003');
 

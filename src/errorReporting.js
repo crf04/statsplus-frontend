@@ -42,12 +42,25 @@ const scrubEvent = (event) => {
   return event;
 };
 
+const DEFAULT_TRACES_SAMPLE_RATE = 0.05;
+
+export const parseTracesSampleRate = (raw) => {
+  if (typeof raw !== 'string' || raw.trim() === '') return DEFAULT_TRACES_SAMPLE_RATE;
+  const rate = Number(raw);
+  return rate >= 0 && rate <= 1 ? rate : DEFAULT_TRACES_SAMPLE_RATE;
+};
+
 /**
  * Starts Sentry only when a DSN is configured; without one nothing is
- * initialized and nothing is sent. Tracing and session replay are never on.
+ * initialized and nothing is sent. Page loads and web vitals are traced at
+ * REACT_APP_SENTRY_TRACES_SAMPLE_RATE (default 5%); session replay is never on.
  * `transport` lets tests capture events instead of sending them.
  */
-export const initErrorReporting = ({ dsn = process.env.REACT_APP_SENTRY_DSN, transport } = {}) => {
+export const initErrorReporting = ({
+  dsn = process.env.REACT_APP_SENTRY_DSN,
+  tracesSampleRate = parseTracesSampleRate(process.env.REACT_APP_SENTRY_TRACES_SAMPLE_RATE),
+  transport,
+} = {}) => {
   if (!dsn) {
     enabled = false;
     return false;
@@ -57,9 +70,10 @@ export const initErrorReporting = ({ dsn = process.env.REACT_APP_SENTRY_DSN, tra
     transport,
     environment: process.env.REACT_APP_ENVIRONMENT || undefined,
     sendDefaultPii: false,
-    // Default integrations are error handlers only; browser tracing and
-    // replay are separate integrations that are not added here.
-    tracesSampleRate: 0,
+    // No tracePropagationTargets: the API is cross-origin, and the default
+    // keeps trace headers off its calls so CORS preflights are unchanged.
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     maxBreadcrumbs: 0,

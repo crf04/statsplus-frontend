@@ -36,8 +36,11 @@ import ErrorMessage from './feedback/ErrorMessage';
 
 // The chart-bearing sections render only in the workspace, so their chart
 // libraries load on demand instead of delaying the landing prompt.
+import { isPrototypeActive as isProfilesPrototypeActive } from './profilesPrototype/mode';
 const PlayerProfile = lazy(() => import('./PlayerProfile'));
 const OpposingTeamProfile = lazy(() => import('./OpposingTeamProfile'));
+// PROTOTYPE (throwaway, branch prototype/profiles-simplify)
+const ProfilesPrototype = lazy(() => import('./profilesPrototype/ProfilesPrototype'));
 const ChartComponent = lazy(() => import('./ChartComponent'));
 
 // Renders nothing; mounted beside a lazy section inside the same Suspense
@@ -736,8 +739,10 @@ const GameLogFilter = ({ notice = null }) => {
     defaultTeamFor !== null ||
     !chartReady ||
     panelSettledFor !== selectedPlayer ||
-    profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
-    opponentSettledFor !== selectedTeam;
+    // PROTOTYPE: the variants replace the panels that report settling.
+    (!isProfilesPrototypeActive() &&
+      (profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
+        opponentSettledFor !== selectedTeam));
   // The season range is left out on purpose: it is only the panel's strip,
   // which says it is loading in place, and the page stays usable meanwhile.
   // Once a load has been revealed, a section re-reading because the user
@@ -954,28 +959,64 @@ const GameLogFilter = ({ notice = null }) => {
             </Col>
           </Row>
 
-          <Row className="mb-5">
-            <Col md={6}>
-              <Suspense fallback={null}>
-                <PlayerProfile
-                  selectedPlayer={selectedPlayer}
-                  selectedTeam={selectedTeam}
-                  seasonChoice={profileChoice}
-                  onSettled={handleProfileSettled}
-                />
-              </Suspense>
-            </Col>
-            <Col md={6}>
-              <Suspense fallback={null}>
-                <OpposingTeamProfile
-                  teams={teams}
-                  selectedTeam={selectedTeam}
-                  setSelectedTeam={chooseTeam}
-                  onSettled={setOpponentSettledFor}
-                />
-              </Suspense>
-            </Col>
-          </Row>
+          {/* PROTOTYPE (throwaway): simpler profile pair, #proto=profiles&v=A */}
+          {isProfilesPrototypeActive() ? (
+            <Suspense fallback={null}>
+              <ProfilesPrototype
+                selectedPlayer={selectedPlayer}
+                selectedTeam={selectedTeam}
+                teams={teams}
+                chooseTeam={chooseTeam}
+                current={
+                  <Row className="">
+                    <Col md={6}>
+                      <Suspense fallback={null}>
+                        <PlayerProfile
+                          selectedPlayer={selectedPlayer}
+                          selectedTeam={selectedTeam}
+                          seasonChoice={profileChoice}
+                          onSettled={handleProfileSettled}
+                        />
+                      </Suspense>
+                    </Col>
+                    <Col md={6}>
+                      <Suspense fallback={null}>
+                        <OpposingTeamProfile
+                          teams={teams}
+                          selectedTeam={selectedTeam}
+                          setSelectedTeam={chooseTeam}
+                          onSettled={setOpponentSettledFor}
+                        />
+                      </Suspense>
+                    </Col>
+                  </Row>
+                }
+              />
+            </Suspense>
+          ) : (
+            <Row className="mb-5">
+              <Col md={6}>
+                <Suspense fallback={null}>
+                  <PlayerProfile
+                    selectedPlayer={selectedPlayer}
+                    selectedTeam={selectedTeam}
+                    seasonChoice={profileChoice}
+                    onSettled={handleProfileSettled}
+                  />
+                </Suspense>
+              </Col>
+              <Col md={6}>
+                <Suspense fallback={null}>
+                  <OpposingTeamProfile
+                    teams={teams}
+                    selectedTeam={selectedTeam}
+                    setSelectedTeam={chooseTeam}
+                    onSettled={setOpponentSettledFor}
+                  />
+                </Suspense>
+              </Col>
+            </Row>
+          )}
 
           {/* A refused season has no game list, not an empty one. */}
           {!seasonRefusal && (

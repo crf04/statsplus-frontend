@@ -1,0 +1,308 @@
+/* PROTOTYPE — throwaway styles, scoped under .pp-root. */
+.pp-root {
+  --pp-more: #4fbf7f;
+  --pp-less: #e0655c;
+  --pp-gold: #e8a33d;
+}
+.pp-root .pp-muted {
+  color: rgba(239, 233, 220, 0.5);
+}
+.pp-root .pp-tone-more {
+  color: var(--pp-more);
+}
+.pp-root .pp-tone-less {
+  color: var(--pp-less);
+}
+.pp-root .pp-tone-flat {
+  color: rgba(239, 233, 220, 0.7);
+}
+.pp-root .pp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.pp-root .pp-team-picker {
+  background: transparent;
+  color: var(--pp-gold);
+  border: 0;
+  border-bottom: 1px dashed rgba(232, 163, 61, 0.6);
+  font-size: 1.35rem;
+  font-weight: 600;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.pp-root .pp-team-picker option {
+  background: #1e1a12;
+  color: #efe9dc;
+}
+.pp-root .pp-verdict {
+  margin: 8px 0 14px;
+  font-size: 1rem;
+  color: #efe9dc;
+}
+.pp-root .pp-verdict span {
+  font-weight: 700;
+}
+.pp-root .pp-foot {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  color: rgba(239, 233, 220, 0.5);
+}
+.pp-root .pp-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.pp-root .pp-tabs button {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: rgba(239, 233, 220, 0.6);
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+.pp-root .pp-tabs button.on {
+  color: var(--pp-gold);
+  border-bottom-color: var(--pp-gold);
+}
+.pp-root .pp-table {
+  width: 100%;
+  font-size: 0.9rem;
+  border-collapse: collapse;
+}
+.pp-root .pp-table th {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: rgba(239, 233, 220, 0.5);
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pp-root .pp-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #efe9dc;
+}
+.pp-root .pp-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pp-root .pp-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+.pp-root .pp-share-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--pp-gold);
+}
+.pp-root .pp-share-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  color: rgba(239, 233, 220, 0.8);
+}
+
+.pp-root .pp-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 767px) {
+  .pp-root .pp-two {
+    grid-template-columns: 1fr;
+  }
+}
+.pp-root .pp-bars {
+  display: grid;
+  gap: 8px;
+}
+.pp-root .pp-bar-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 38px 12px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #efe9dc;
+}
+.pp-root .pp-bar-track {
+  display: block;
+}
+.pp-root .pp-bar-track .pp-share-bar {
+  height: 12px;
+}
+.pp-root .pp-bar-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: rgba(239, 233, 220, 0.8);
+}
+.pp-root .pp-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.pp-root .pp-dot-more {
+  background: var(--pp-more);
+}
+.pp-root .pp-dot-less {
+  background: var(--pp-less);
+}
+.pp-root .pp-dot-flat {
+  background: rgba(239, 233, 220, 0.3);
+}
+.pp-root .pp-movers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 14px;
+}
+@media (max-width: 480px) {
+  .pp-root .pp-movers-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pp-root .pp-movers-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.pp-root .pp-mover {
+  display: grid;
+  grid-template-columns: 1fr auto 24px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 0.88rem;
+  color: #efe9dc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.pp-root .pp-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 12px;
+  color: var(--pp-gold);
+  font-size: 0.82rem;
+}
+
+.pp-root .pp-section-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: rgba(239, 233, 220, 0.55);
+  margin: 16px 0 8px;
+}
+.pp-root .pp-strip {
+  display: flex;
+  gap: 3px;
+  height: 74px;
+}
+.pp-root .pp-strip-seg {
+  min-width: 0;
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+.pp-root .pp-seg-more {
+  background: rgba(79, 191, 127, 0.75);
+}
+.pp-root .pp-seg-less {
+  background: rgba(224, 101, 92, 0.75);
+}
+.pp-root .pp-seg-flat {
+  background: rgba(239, 233, 220, 0.18);
+}
+.pp-root .pp-strip-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-root .pp-strip-share {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.pp-root .pp-strip-vs {
+  opacity: 0.85;
+}
+.pp-root .pp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.pp-root .pp-tile {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.pp-root .pp-tile-label {
+  font-size: 0.78rem;
+  color: rgba(239, 233, 220, 0.7);
+}
+.pp-root .pp-tile-vs {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pp-root .pp-tile-sub {
+  font-size: 0.72rem;
+  color: rgba(239, 233, 220, 0.5);
+}
+
+.pp-switcher {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  font:
+    600 13px/1.2 system-ui,
+    sans-serif;
+}
+.pp-switcher button {
+  border: 0;
+  background: #111;
+  color: #fff;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+}
+.pp-root .card-body {
+  text-align: left;
+}
+.pp-root .pp-head h4,
+.pp-root h4 {
+  border: 0;
+  padding-bottom: 0;
+}
+.pp-root .pp-table th:first-child,
+.pp-root .pp-table td:first-child {
+  text-align: left;
+}
+@media (max-width: 600px) {
+  .pp-root .pp-strip { flex-wrap: wrap; height: auto; }
+  .pp-root .pp-strip-seg { flex-basis: 30%; min-height: 64px; }
+}

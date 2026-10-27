@@ -327,3 +327,26 @@ test("a channel alpha must carry its own family's and side's multiplier, and alp
     ],
   );
 });
+
+test('an overlay line on an accent fill, a tint from a fill channel, a scrim or shadow channel out of role, and a line ground on a box that is not 1px fail', () => {
+  assert.deepEqual(
+    project({
+      'src/card.css': `.chip { background: var(--ct-gold-fill); border: 1px solid var(--ct-overlay-fg-40); color: var(--ct-on-gold); }
+.ring { background: var(--ct-gold-fill); box-shadow: 0 0 0 2px var(--ct-line); color: var(--ct-on-gold); }
+.mark { background: rgb(var(--ct-hit-fill-rgb) / 0.5); }
+.tint { background: rgb(var(--ct-hit-fill-rgb) / 0.1); }
+.modal { box-shadow: 0 18px 50px rgb(var(--ct-scrim-rgb) / 0.6); }
+.veil { background: rgb(var(--ct-shadow-rgb) / calc(0.3 * var(--ct-k-shadow))); }
+.box { min-width: 1px; width: 300px; height: 300px; background: var(--ct-line); }
+.rule { block-size: 1px; background: var(--ct-line); }`,
+    }),
+    [
+      'src/card.css role-misuse: overlay line --ct-overlay-fg-40 on an accent fill; a line on a fill uses an on-accent token',
+      'src/card.css role-misuse: overlay line --ct-line on an accent fill; a line on a fill uses an on-accent token',
+      'src/card.css role-misuse: rgb(var(--ct-hit-fill-rgb) / 0.1) paints a tint (alpha under 0.5); use --ct-hit-bg-*',
+      'src/card.css role-misuse: scrim token --ct-scrim-rgb in a shadow role',
+      'src/card.css role-misuse: shadow token --ct-shadow-rgb in a fill role',
+      'src/card.css role-misuse: line token --ct-line as a background; only a hairline box (1px wide, tall or gapped) paints one',
+    ],
+  );
+});

@@ -297,8 +297,8 @@ export const buildRegistry = (themeCss) => {
     }
     const ladder = name.match(LADDER_RE) ?? name.match(CHANNEL_RE);
     if (ladder) return SIDE_KINDS[ladder[2]];
-    if (SHADOW_RE.test(name)) return 'shadow';
-    if (SCRIM_RE.test(name)) return 'scrim';
+    if (SHADOW_RE.test(name) || name === '--ct-shadow-rgb') return 'shadow';
+    if (SCRIM_RE.test(name) || name === '--ct-scrim-rgb') return 'scrim';
     const named = NAMED_KINDS.find(([pattern]) => pattern.test(name));
     if (named) return named[1];
     return dark(name) ? 'neutral' : 'other';
@@ -387,6 +387,12 @@ export const tokenFor = (rgba, role, registry, { context = null } = {}) => {
     return { token: `--ct-x-${hex}-${alpha}` };
   }
 
+  // A translucent white edge on an accent fill keeps its value on any page
+  // ground, like the lettering.
+  if ((role === 'line' || role === 'ring') && context?.fills && !chromatic) {
+    return { token: `--ct-on-${hex}-${alpha}` };
+  }
+
   const family = registry.families.find(({ rgb }) => sameRgb(rgba, rgb));
   const mark = role === 'fill' && family?.marks && rgba[3] >= MARK_ALPHA;
   if (mark) return { token: `--ct-${family.family}-fill-${alpha}` };
@@ -412,7 +418,12 @@ export const misuseOf = (name, role, registry, context = null) => {
     return kind === 'fill' ? null : `${name} edges the fill it matches; use the fill token`;
   }
   // A white ring on a coloured avatar keeps its value on any page ground.
-  if ((role === 'line' || role === 'ring') && kind === 'on-accent' && context?.fills) return null;
+  if ((role === 'line' || role === 'ring') && context?.fills) {
+    if (kind === 'on-accent') return null;
+    if (kind === 'line' || alphaOfName(name)?.family === 'overlay') {
+      return `overlay line ${name} on an accent fill; a line on a fill uses an on-accent token`;
+    }
+  }
   if (!allowed.has(kind)) return `${kind} token ${name} in a ${role} role`;
   if (role === 'fill') {
     const ladder = alphaOfName(name);
@@ -469,7 +480,8 @@ const paintsOf = (value, registry) => {
   return colors.length ? colors : null;
 };
 
-const HAIRLINE_PROPS = /^(width|height|min-width|min-height|gap|row-gap|column-gap)$/;
+// The box's own size, or the gap a grid's background shows through.
+const HAIRLINE_PROPS = /^(width|height|block-size|inline-size|gap|row-gap|column-gap)$/;
 
 // What a rule paints behind its content, from its last background that names
 // a colour. `fills`: the opaque accent colours of a single accent or of a

@@ -10,7 +10,7 @@ Pick the token by what the colour does:
 | -------------------------------------------------- | ----------------------------------------------------------- |
 | amber, green or red text, icons, borders, outlines | `--ct-gold` (`-hover`, `-press`), `--ct-hit`, `--ct-miss`   |
 | a solid amber, green or red surface (button, chip) | `--ct-gold-fill` (`-hover`, `-press`), `--ct-hit-fill`, ... |
-| lettering on that surface                          | `--ct-on-gold`                                              |
+| lettering or a translucent white edge on it        | `--ct-on-gold`, `--ct-on-ffffff-<alpha>`                    |
 | a translucent tint behind content                  | `--ct-<family>-bg-<alpha>`, e.g. `--ct-gold-bg-20`          |
 | a translucent bar, swatch or ramp end (alpha ≥ .5) | `--ct-<family>-fill-<alpha>`, e.g. `--ct-hit-fill-78`       |
 | a translucent line or text on top, or a ring       | `--ct-<family>-fg-<alpha>`, e.g. `--ct-overlay-fg-10`       |

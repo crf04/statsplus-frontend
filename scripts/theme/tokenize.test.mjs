@@ -78,6 +78,20 @@ test('white lettering on an opaque accent gradient is on-accent; a translucent g
   );
 });
 
+test('a translucent white line on an accent fill is on-accent; on a ground it is an overlay line', () => {
+  const input = `.av { background: linear-gradient(#667eea, #764ba2); border: 2px solid rgba(255, 255, 255, 0.4); }
+.chip { background: var(--ct-gold-fill); border: 1px solid var(--ct-overlay-fg-40); }
+.card { background: #1e1a12; border: 1px solid rgba(255, 255, 255, 0.4); }
+`;
+  assert.equal(
+    tokenize(input),
+    `.av { background: linear-gradient(var(--ct-x-667eea-fill), var(--ct-x-764ba2-fill)); border: 2px solid var(--ct-on-ffffff-40); }
+.chip { background: var(--ct-gold-fill); border: 1px solid var(--ct-on-ffffff-40); }
+.card { background: var(--ct-surface-2); border: 1px solid var(--ct-overlay-fg-40); }
+`,
+  );
+});
+
 test('accent paint from alpha 0.5 up is a mark on the fill ladder; a ring is a line; a line colour fills only a hairline', () => {
   const input = `.over { background: rgba(76, 175, 125, 0.78); }
 .edge { background: rgba(76, 175, 125, 0.5); }

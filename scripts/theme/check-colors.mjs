@@ -13,6 +13,7 @@ import valueParser from 'postcss-value-parser';
 import { COLOR_FUNCTION_RE, CSS_COLOR_NAMES, HEX_RE, parseChannels } from './colors.mjs';
 import {
   ALLOWED_KINDS,
+  MARK_ALPHA,
   RUNTIME_FAMILY,
   TAIL_NAME_RE,
   buildRegistry,
@@ -83,8 +84,9 @@ const paintedRefs = (value, role) => {
 };
 
 // rgb(var(--ct-gold-bg-rgb) / 0.4) skips the alpha multiplier that makes the
-// tint right on light; the alpha must carry it, as the ladder tokens do.
-const unscaledChannels = (value) => {
+// tint right on light; the alpha must carry it, as the ladder tokens do. A
+// fill channel keeps its alpha, so it paints only marks.
+const channelIssues = (value) => {
   const found = [];
   valueParser(value).walk((node) => {
     if (node.type !== 'function' || !/^rgba?$/i.test(node.value)) return undefined;
@@ -93,10 +95,18 @@ const unscaledChannels = (value) => {
       first?.type === 'function' && first.value === 'var' ? first.nodes[0]?.value : '';
     const multiplier = channel ? multiplierOf(channel) : null;
     const slash = node.nodes.findIndex((child) => child.type === 'div');
-    if (!multiplier || slash === -1) return false;
-    const alpha = valueParser.stringify(node.nodes.slice(slash + 1));
-    if (!alpha.includes(`var(${multiplier})`)) {
-      found.push(`${valueParser.stringify(node)} leaves out ${multiplier}; use a ladder token`);
+    if (!channel || slash === -1) return false;
+    const alpha = valueParser.stringify(node.nodes.slice(slash + 1)).trim();
+    const color = valueParser.stringify(node);
+    if (multiplier && !alpha.includes(`var(${multiplier})`)) {
+      found.push(['multiplier', `${color} leaves out ${multiplier}; use a ladder token`]);
+    }
+    const fill = channel.match(/^--ct-(.+)-fill-rgb$/);
+    if (fill && /^\d*\.?\d+$/.test(alpha) && Number(alpha) < MARK_ALPHA) {
+      found.push([
+        'role-misuse',
+        `${color} paints a tint (alpha under ${MARK_ALPHA}); use --ct-${fill[1]}-bg-*`,
+      ]);
     }
     return false;
   });
@@ -175,7 +185,7 @@ const issue = (where, rule, message) => ({ ...where, rule, message });
 const paintIssues = (value, role, registry, context, valuesOf) => {
   const messages = new Set();
   for (const expanded of expandAliases(value, valuesOf)) {
-    for (const message of unscaledChannels(expanded)) messages.add(['multiplier', message]);
+    for (const found of channelIssues(expanded)) messages.add(found);
     if (!role) continue;
     for (const ref of paintedRefs(expanded, role)) {
       const known = registry.has(ref.name) || ref.name.startsWith(`--ct-${RUNTIME_FAMILY}-`);

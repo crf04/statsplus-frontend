@@ -58,11 +58,6 @@
       "path": "src/readings.css",
       "match": "hsl(calc",
       "reason": "Rank hue computed from --rank, not a palette colour."
-    },
-    {
-      "path": "src/filterPanel/filterPanel.css",
-      "match": "%239b937f",
-      "reason": "Select chevron drawn by an SVG data URI, which cannot read a CSS variable. It is --ct-dim; drawing it with a mask instead changes the rule's computed style, so it waits for the light-mode PR."
     }
   ]
 }

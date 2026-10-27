@@ -255,7 +255,9 @@ export const isGenerated = (name) => definitionOf(name) !== null;
 // expressions (ladder, re-declared wherever a theme is set).
 export const isTail = (name) => TAIL_RE.test(name);
 
-const ROOT_SELECTOR = /^:root(\s*,\s*\[data-theme\])?$/;
+// The dark tokens sit on the root and on any subtree pinned dark
+// (`data-theme="dark"`); the ladder on every element that sets a theme.
+const ROOT_SELECTOR = /^:root(\s*,\s*\[data-theme(=['"]?dark['"]?)?\])?$/;
 
 // Every --ct-* token src/theme.css declares at the root, with its dark value
 // and kind.

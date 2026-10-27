@@ -198,7 +198,7 @@ export const renderGenerated = (names) => {
     list.length
       ? `${selector} {\n${list.map((name) => `  ${name}: ${definitionOf(name)};`).join('\n')}\n}\n`
       : '';
-  const tails = block(':root', sorted.filter(isTail));
+  const tails = block(":root,\n[data-theme='dark']", sorted.filter(isTail));
   const ladder = block(
     ':root,\n[data-theme]',
     sorted.filter((name) => !isTail(name)),

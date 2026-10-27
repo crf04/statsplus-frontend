@@ -308,7 +308,8 @@ const GameLogFilter = ({ notice = null }) => {
     [sentDefault],
   );
   const requestFilters = useMemo(() => withPageSeason(urlFilters), [withPageSeason, urlFilters]);
-  const awaitingPageSeason = !linkedSeason && seasonChoices === undefined;
+  // A reader who cannot search never reads /seasons, so has nothing to wait for.
+  const awaitingPageSeason = canSearch && !linkedSeason && seasonChoices === undefined;
 
   const seasonRequestRef = useRef({ player: null, controller: null });
 
@@ -740,7 +741,8 @@ const GameLogFilter = ({ notice = null }) => {
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === currentSearchRef.current.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
-      requestGameLogs(withPageSeason(nextFilters), { bypass: true });
+      // The read the season discovery is holding back is this one.
+      if (!awaitingPageSeason) requestGameLogs(withPageSeason(nextFilters), { bypass: true });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.
@@ -979,14 +981,17 @@ const GameLogFilter = ({ notice = null }) => {
 
           <Row className="mb-5">
             <Col md={6}>
-              <Suspense fallback={null}>
-                <PlayerProfile
-                  selectedPlayer={selectedPlayer}
-                  selectedTeam={selectedTeam}
-                  seasonChoice={profileChoice}
-                  onSettled={handleProfileSettled}
-                />
-              </Suspense>
+              {/* Its season is the Workspace's, unknown until /seasons answers. */}
+              {!awaitingPageSeason && (
+                <Suspense fallback={null}>
+                  <PlayerProfile
+                    selectedPlayer={selectedPlayer}
+                    selectedTeam={selectedTeam}
+                    seasonChoice={profileChoice}
+                    onSettled={handleProfileSettled}
+                  />
+                </Suspense>
+              )}
             </Col>
             <Col md={6}>
               <Suspense fallback={null}>

@@ -25,7 +25,15 @@ jest.mock('./savedFilterSetsApi', () => ({
   fetchSavedFilterSets: jest.fn(() => Promise.resolve([])),
   subscribeSavedFilterSets: jest.fn(() => () => {}),
 }));
-jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
+// A Parsed Query naming only the player, which on a player_name-only URL is an unchanged apply.
+jest.mock('./NaturalLanguageQuery', () => ({
+  __esModule: true,
+  default: ({ onFiltersApplied }) => (
+    <button type="button" onClick={() => onFiltersApplied({ player_name: 'LeBron James' })}>
+      Ask again
+    </button>
+  ),
+}));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerProfile', () => ({
   __esModule: true,
@@ -142,6 +150,31 @@ test('with 2026-27 offered and no season_filter, the first read and the Season c
   expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
     'Evidence season 2026-27 · early, 2–4 games per team',
   );
+});
+
+test('an unchanged apply re-reads the page season', async () => {
+  renderAt('/?player_name=LeBron+James');
+  await screen.findByText('Game list of 1');
+  fetchGameLogsData.mockClear();
+  fireEvent.click(screen.getByRole('button', { name: 'Ask again' }));
+  await waitFor(() => expect(requests()).toHaveLength(1));
+  expect(requests()).toEqual([{ player_name: 'LeBron James', season_filter: '2026-27' }]);
+});
+
+test('an unchanged apply while /seasons is pending waits for the season', async () => {
+  let answerSeasons;
+  fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
+  renderAt('/?player_name=LeBron+James');
+  fireEvent.click(await screen.findByRole('button', { name: 'Ask again' }));
+  await act(async () => {});
+  expect(requests()).toEqual([]);
+
+  await act(async () => answerSeasons(withChoices));
+  await screen.findByText('Game list of 1');
+  expect(requests()).toEqual([
+    { player_name: 'LeBron James', season_filter: '2026-27' },
+    { player_name: 'LeBron James', season_filter: '2026-27' },
+  ]);
 });
 
 test('on a 2025-26 Slate date, 2026-27 offered is not the default', async () => {

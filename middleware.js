@@ -14,7 +14,7 @@ export const config = {
 export const SKILL_PREVIEW = {
   title: 'Injury brief skill | CourtAI',
   description:
-    "Have Claude or ChatGPT read tonight's NBA injury report with CourtAI: who gains, checked against tonight's lines, in a short graded brief.",
+    "Have Claude read tonight's NBA injury report with CourtAI: who gains, checked against tonight's lines, in a short graded brief.",
 };
 
 export const describeLink = async (request, now) => {

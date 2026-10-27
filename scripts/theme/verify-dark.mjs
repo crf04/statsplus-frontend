@@ -12,12 +12,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
-import { HEX_RE, foldCalc, formatRgba, parseColor, substituteVars } from './colors.mjs';
-import { buildRegistry } from './roles.mjs';
-import { THEME_FILE } from './tokenize.mjs';
-
-const CHANNELS =
-  /^\s*(\d+(?:\.\d+)?)\s*,?\s+(\d+(?:\.\d+)?)\s*,?\s+(\d+(?:\.\d+)?)\s*$|^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$/;
+import {
+  HEX_RE,
+  foldCalc,
+  formatRgba,
+  parseChannels,
+  parseColor,
+  substituteVars,
+} from './colors.mjs';
+import { buildRegistry, tailwindColors } from './roles.mjs';
+import { THEME_FILE, isStylesheet, isTestFile } from './sources.mjs';
 
 // The value as the browser would paint it in dark, in one canonical spelling.
 export const normalize = (value, registry) => {
@@ -27,8 +31,8 @@ export const normalize = (value, registry) => {
     { fallbacks: false },
   );
   const folded = foldCalc(substituted);
-  const channels = folded.match(CHANNELS);
-  if (channels) return channels.filter(Boolean).slice(1).map(Number).join(' ');
+  const channels = parseChannels(folded);
+  if (channels) return channels.join(' ');
   const parsed = valueParser(folded);
   parsed.walk((node) => {
     if (node.type === 'word' && (HEX_RE.test(node.value) || /^(white|black)$/i.test(node.value))) {
@@ -102,13 +106,10 @@ export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) =
   return { compared, rewritten, mismatches };
 };
 
-const TAILWIND_COLOR =
-  /(?<![\w-])((?:[a-z-]+:)*[a-z]+(?:-[a-z]+)*)-\[(?:color:)?(#[0-9a-fA-F]{3,8}|rgba?\([^\]]*\)|var\(--ct-[a-z0-9-]+\))\]/g;
-
 export const compareTailwind = (baseJs, headJs, file, baseRegistry, headRegistry) => {
   const classes = (source, registry) =>
-    [...source.matchAll(TAILWIND_COLOR)].map(
-      ([, utility, color]) => `${utility} ${normalize(color, registry)}`,
+    tailwindColors(source).map(
+      ({ variants, utility, value }) => `${variants}${utility} ${normalize(value, registry)}`,
     );
   const before = classes(baseJs, baseRegistry);
   const after = classes(headJs, headRegistry);
@@ -135,7 +136,7 @@ const main = () => {
     execFileSync('git', gitArgs, { cwd: rootDir, stdio: ['ignore', 'pipe', 'ignore'] }).toString();
   const changed = git('diff', '--name-only', base, '--', 'src')
     .split('\n')
-    .filter((file) => /\.(css|scss|jsx?)$/.test(file) && !/\.test\.jsx?$/.test(file));
+    .filter((file) => /\.(css|scss|jsx?)$/.test(file) && !isTestFile(file));
   const baseRegistry = buildRegistry(git('show', `${base}:${THEME_FILE}`));
   const headRegistry = buildRegistry(fs.readFileSync(path.join(rootDir, THEME_FILE), 'utf8'));
 
@@ -147,11 +148,11 @@ const main = () => {
     try {
       baseText = git('show', `${base}:${file}`);
     } catch {
-      if (/\.(css|scss)$/.test(file))
+      if (isStylesheet(file))
         totals.mismatches.push({ file, key: '(new stylesheet)', base: '', head: '' });
       continue;
     }
-    const compare = /\.(css|scss)$/.test(file) ? compareCss : compareTailwind;
+    const compare = isStylesheet(file) ? compareCss : compareTailwind;
     const result = compare(baseText, headText, file, baseRegistry, headRegistry);
     if (!result.compared) continue;
     totals.files += 1;

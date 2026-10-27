@@ -10,25 +10,18 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseJs } from '@babel/parser';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
-import { CSS_COLOR_NAMES, HEX_RE } from './colors.mjs';
+import { COLOR_FUNCTION_RE, CSS_COLOR_NAMES, HEX_RE, parseChannels } from './colors.mjs';
 import {
-  TAILWIND_ROLES,
   TAIL_NAME_RE,
   buildRegistry,
   misuseOf,
   onAccentContext,
   roleOf,
+  tailwindColors,
 } from './roles.mjs';
-import { THEME_FILE, TOKEN_REFERENCE_RE, sourceFiles } from './tokenize.mjs';
+import { THEME_FILE, TOKEN_REFERENCE_RE, isStylesheet, sourceFiles } from './sources.mjs';
 
 export const ALLOWLIST_FILE = 'scripts/theme/color-allowlist.json';
-const SKIPPED = new Set(['src/bootstrap-subset.scss']);
-const isTestFile = (file) =>
-  /\.test\.jsx?$/.test(file) || file.includes('/__tests__/') || file.endsWith('setupTests.js');
-
-const CHANNEL_TRIPLE =
-  /^\s*\d+(\.\d+)?\s*,?\s+\d+(\.\d+)?\s*,?\s+\d+(\.\d+)?\s*$|^\s*\d+\s*,\s*\d+\s*,\s*\d+\s*$/;
-const COLOR_FUNCTION = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)$/i;
 
 const rawColorsInValue = (value, role) => {
   const found = [];
@@ -38,7 +31,7 @@ const rawColorsInValue = (value, role) => {
       if (match) found.push(match[0]);
       return false;
     }
-    if (node.type === 'function' && COLOR_FUNCTION.test(node.value)) {
+    if (node.type === 'function' && COLOR_FUNCTION_RE.test(node.value)) {
       const channels = node.nodes.filter((child) => child.type === 'word');
       // rgb(var(--ct-hit-bg-rgb) / 0.4) builds a colour from a token channel.
       const literal = channels.some(
@@ -85,7 +78,7 @@ export const checkCss = (css, file, registry, defined = registry.declared) => {
       for (const raw of rawColorsInValue(decl.value, role)) {
         issues.push({ ...where, rule: 'raw-colour', message: `raw colour ${raw}` });
       }
-      if (decl.prop.startsWith('--') && CHANNEL_TRIPLE.test(decl.value)) {
+      if (decl.prop.startsWith('--') && parseChannels(decl.value)) {
         issues.push({ ...where, rule: 'raw-colour', message: `raw colour channels ${decl.value}` });
       }
     }
@@ -108,12 +101,6 @@ export const checkCss = (css, file, registry, defined = registry.declared) => {
 
 const JS_HEX = /(^|[\s'"`([,:{=])(#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4}))(?![\w-])/gi;
 const JS_FUNCTION = /\b(rgba?|hsla?)\(\s*(?!var\()/gi;
-const TAILWIND_TOKEN = new RegExp(
-  `(?<![\\w-])(?:[a-z-]+:)*(${Object.keys(TAILWIND_ROLES)
-    .sort((a, b) => b.length - a.length)
-    .join('|')})-\\[color:var\\((--ct-[a-z0-9-]+)\\)\\]`,
-  'g',
-);
 
 // A bare word such as 'white' is a colour only where it paints (a style value
 // or a paint attribute); elsewhere it is a prop value like closeVariant="white".
@@ -175,8 +162,9 @@ export const checkJs = (source, file, registry, defined = registry.declared) => 
         if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
       }
     }
-    for (const [, utility, name] of text.matchAll(TAILWIND_TOKEN)) {
-      const misuse = registry.has(name) && misuseOf(name, TAILWIND_ROLES[utility], registry);
+    for (const { role: utilityRole, token } of tailwindColors(text)) {
+      const misuse =
+        utilityRole && token && registry.has(token) && misuseOf(token, utilityRole, registry);
       if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
     }
   });
@@ -197,7 +185,7 @@ export const check = (rootDir) => {
   const read = (file) => fs.readFileSync(path.join(rootDir, file), 'utf8');
   const registry = buildRegistry(read(THEME_FILE));
   const allowlist = JSON.parse(read(ALLOWLIST_FILE));
-  const files = sourceFiles(rootDir).filter((file) => !SKIPPED.has(file) && !isTestFile(file));
+  const files = sourceFiles(rootDir);
   // Colour tokens live in theme.css; a few layout tokens (--ct-header-height)
   // are declared beside the component that sets them.
   const defined = new Set(registry.declared.keys());
@@ -206,8 +194,8 @@ export const check = (rootDir) => {
   }
   const issues = [];
   for (const file of files) {
-    if (/\.(css|scss)$/.test(file)) issues.push(...checkCss(read(file), file, registry, defined));
-    else if (/\.jsx?$/.test(file)) issues.push(...checkJs(read(file), file, registry, defined));
+    if (isStylesheet(file)) issues.push(...checkCss(read(file), file, registry, defined));
+    else issues.push(...checkJs(read(file), file, registry, defined));
   }
 
   const used = new Set();

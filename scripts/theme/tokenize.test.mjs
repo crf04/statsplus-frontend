@@ -74,7 +74,7 @@ test('a second run changes nothing', () => {
 
 test('colours it cannot name exactly are reported, not guessed', () => {
   const { css, leftovers } = tokenizeCss(
-    `.dot { --oc: 232, 163, 61; background: hsl(calc(var(--rank) * 4) 62% 46%); }
+    `.dot { --oc: 232, 163, 61; --z: 100; background: hsl(calc(var(--rank) * 4) 62% 46%); }
 .chevron { background-image: url("data:image/svg+xml,%3Csvg stroke='%239b937f'/%3E"); }
 `,
     registry,

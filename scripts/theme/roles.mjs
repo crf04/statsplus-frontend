@@ -10,6 +10,7 @@ import {
   evaluateColor,
   isChromatic,
   isDarkLettering,
+  parseChannels,
   parseColor,
   sameColor,
   toHex,
@@ -31,17 +32,13 @@ export const PROPERTY_ROLES = [
   [/^(-webkit-)?mask(-[a-z-]+)?$/, 'mask'],
 ];
 
-// Component-local custom properties that hold a colour, and how their
-// consumers paint it.
-export const CUSTOM_PROPERTY_ROLES = {
-  '--ps-untinted': 'fill',
-};
-
 const kebab = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
+// A custom property has no role of its own; the checker follows it to the
+// declarations that paint it.
 export const roleOf = (property) => {
-  const prop = property.startsWith('--') ? property : kebab(property).toLowerCase();
-  if (prop.startsWith('--')) return CUSTOM_PROPERTY_ROLES[prop] ?? null;
+  if (property.startsWith('--')) return null;
+  const prop = kebab(property).toLowerCase();
   return PROPERTY_ROLES.find(([pattern]) => pattern.test(prop))?.[1] ?? null;
 };
 
@@ -70,6 +67,42 @@ export const TAILWIND_ROLES = {
   'ring-offset': 'line',
   stroke: 'line',
   shadow: 'shadow',
+};
+
+// Tailwind arbitrary colour classes: `hover:border-[#e8a33d]`,
+// `bg-[color:var(--ct-gold-fill)]`, `text-[var(--ct-dim)]`. `role` is null for
+// a utility that does not paint.
+const TAILWIND_RE =
+  /(?<![\w-])((?:[a-z-]+:)*)([a-z]+(?:-[a-z]+)*)-\[(color:)?(#[0-9a-fA-F]{3,8}|rgba?\([^\]]*\)|var\((--ct-[a-z0-9-]+)\))\]/g;
+export const tailwindColors = (source) =>
+  [...source.matchAll(TAILWIND_RE)].map((found) => {
+    const [match, variants, utility, hint, value, token] = found;
+    return {
+      match,
+      offset: found.index,
+      variants,
+      utility,
+      hinted: Boolean(hint),
+      value,
+      token: token ?? null,
+      role: TAILWIND_ROLES[utility] ?? null,
+    };
+  });
+
+// A shadow's layers, each with its blur radius (the third length, 0 if absent).
+export const shadowLayers = (nodes) => {
+  const layers = [[]];
+  for (const node of nodes) {
+    if (node.type === 'div' && node.value === ',') layers.push([]);
+    else layers.at(-1).push(node);
+  }
+  return layers.map((layer) => {
+    const lengths = layer.filter(
+      (node) => node.type === 'word' && /^-?(\d*\.)?\d+([a-z]+)?$/i.test(node.value),
+    );
+    const blur = lengths[2] ? parseFloat(lengths[2].value) : 0;
+    return { nodes: layer, blur };
+  });
 };
 
 // Translucent paint is a channel times a per-role alpha multiplier. Each
@@ -224,7 +257,7 @@ export const buildRegistry = (themeCss) => {
 
   const channelOf = (family) => {
     const raw = rawOf(`--ct-${family}-bg-rgb`);
-    return raw ? raw.split(/[\s,]+/).map(Number) : null;
+    return raw ? parseChannels(raw) : null;
   };
 
   return {
@@ -237,9 +270,7 @@ export const buildRegistry = (themeCss) => {
     families: Object.keys(FAMILIES)
       .map((family) => ({ family, rgb: channelOf(family) }))
       .filter(({ rgb }) => rgb),
-    shadowRgb: rawOf('--ct-shadow-rgb')
-      ?.split(/[\s,]+/)
-      .map(Number),
+    shadowRgb: parseChannels(rawOf('--ct-shadow-rgb') ?? ''),
   };
 };
 

@@ -35,6 +35,15 @@ export const CSS_COLOR_NAMES = new Set(
 
 export const HEX_RE = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
+// Functions that build a colour from channels.
+export const COLOR_FUNCTION_RE = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)$/i;
+
+// A colour as bare channels, '232 163 61' or '232, 163, 61', as a channel
+// token or a component custom property holds it for rgb(var(--x) / a).
+const CHANNEL_TRIPLE_RE =
+  /^\s*(\d+(?:\.\d+)?)(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)\s*$/;
+export const parseChannels = (text) => text.match(CHANNEL_TRIPLE_RE)?.slice(1).map(Number) ?? null;
+
 const EPSILON = 1e-9;
 
 export const sameColor = (a, b) =>

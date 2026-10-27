@@ -282,6 +282,11 @@ export const checkCss = (css, file, registry, scope = {}) => {
     const rule = decl.parent?.type === 'rule' ? decl.parent : null;
     const context = rule ? ruleContext(rule, registry) : null;
     const valuesOf = aliasValues(aliases, file, rule);
+    if (scope.onPaint && role) {
+      for (const value of expandAliases(decl.value, valuesOf)) {
+        scope.onPaint({ file, line, prop: decl.prop, role, value, rule });
+      }
+    }
     for (const [rule, message] of paintIssues(decl.value, role, registry, context, valuesOf)) {
       issues.push(issue(where, rule, message));
     }
@@ -381,15 +386,21 @@ const literalText = (value) => {
   return null;
 };
 
-// What an inline style object paints behind its content, read like a rule.
-const styleContext = (style, registry) => {
+// An inline style object's literal declarations, read as a rule.
+const styleRule = (style) => {
   if (style?.type !== 'ObjectExpression') return null;
   const decls = style.properties.flatMap((property) => {
     const name = property.type === 'ObjectProperty' && !property.computed && keyName(property.key);
     const text = name && literalText(property.value);
     return text === null || !name ? [] : [`${kebab(name)}: ${text};`];
   });
-  return ruleContext(postcss.parse(`x { ${decls.join(' ')} }`).first, registry);
+  return postcss.parse(`x { ${decls.join(' ')} }`).first;
+};
+
+// What an inline style object paints behind its content.
+const styleContext = (style, registry) => {
+  const rule = styleRule(style);
+  return rule ? ruleContext(rule, registry) : null;
 };
 
 // Attributes whose '#abc' is a fragment or an id, never a colour.
@@ -438,6 +449,16 @@ export const checkJs = (source, file, registry, scope = {}) => {
       }
     }
     const painted = property?.request && text.startsWith('--') ? `var(${text})` : text;
+    if (scope.onPaint && role) {
+      scope.onPaint({
+        file,
+        line: where.line,
+        prop: property.name ?? null,
+        role,
+        value: painted,
+        rule: styleRule(property.style),
+      });
+    }
     for (const [rule, message] of paintIssues(painted, role, registry, context, () => undefined)) {
       issues.push(issue(where, rule, message));
     }
@@ -460,7 +481,9 @@ const allowed = (issue, entries, used) => {
   return true;
 };
 
-export const check = (rootDir) => {
+// `onPaint` sees every painted value in src/ with its role, and the rule or
+// inline style object that paints it.
+export const check = (rootDir, { onPaint } = {}) => {
   const read = (file) => fs.readFileSync(path.join(rootDir, file), 'utf8');
   const registry = buildRegistry(read(THEME_FILE));
   const allowlist = JSON.parse(read(ALLOWLIST_FILE));
@@ -473,6 +496,7 @@ export const check = (rootDir) => {
   }
   const stylesheets = files.filter((file) => isStylesheet(file) && file !== THEME_FILE);
   const scope = {
+    onPaint,
     defined,
     aliases: aliasesOf(
       stylesheets.map((file) => ({ file, css: read(file) })),

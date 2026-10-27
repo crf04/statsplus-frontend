@@ -7,7 +7,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildRegistry } from './roles.mjs';
 import { THEME } from './theme-fixture.mjs';
-import { tokenizeCss, tokenizeTailwind } from './tokenize.mjs';
+import { LIGHT_END, LIGHT_START } from './light-tails.mjs';
+import { plan, renderGenerated, tokenizeCss, tokenizeTailwind } from './tokenize.mjs';
 
 const registry = buildRegistry(THEME);
 const tokenize = (css) => tokenizeCss(css, registry).css;
@@ -176,7 +177,7 @@ test('the CLI defines the tokens it writes in theme.css, and a second --write is
   );
   const theme = fs.readFileSync(path.join(root, 'src/theme.css'), 'utf8');
   assert.ok(theme.startsWith(THEME));
-  assert.match(theme, /:root \{\n {2}--ct-x-c24e4e: #c24e4e;\n\}/);
+  assert.match(theme, /:root,\n\[data-theme='dark'\] \{\n {2}--ct-x-c24e4e: #c24e4e;\n\}/);
   assert.match(
     theme,
     /:root,\n\[data-theme\] \{\n {2}--ct-gold-bg-5: rgb\(var\(--ct-gold-bg-rgb\) \/ calc\(0\.05 \* var\(--ct-k-accent-bg\)\)\);\n {2}--ct-hit-fill-78: rgb\(var\(--ct-hit-fill-rgb\) \/ 0\.78\);\n {2}--ct-shadow-30: rgb\(var\(--ct-shadow-rgb\) \/ calc\(0\.3 \* var\(--ct-k-shadow\)\)\);\n\}/,
@@ -188,4 +189,26 @@ test('the CLI defines the tokens it writes in theme.css, and a second --write is
   assert.match(run('--check'), /0 file\(s\) change/);
   run('--write');
   assert.deepEqual(snapshot(), before);
+});
+
+test('a shade only the light block names is dropped, so its light value goes with it', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tokenize-'));
+  fs.mkdirSync(path.join(root, 'src'));
+  fs.copyFileSync(
+    new URL('../../.prettierrc.json', import.meta.url),
+    path.join(root, '.prettierrc.json'),
+  );
+  fs.writeFileSync(
+    path.join(root, 'src/theme.css'),
+    `${THEME}\n${renderGenerated(new Set(['--ct-x-123456', '--ct-x-c24e4e']))}
+[data-theme='light'] {
+  ${LIGHT_START}
+  --ct-x-123456: #eeeeee;
+  --ct-x-c24e4e: #b73a3e;
+  ${LIGHT_END}
+}
+`,
+  );
+  fs.writeFileSync(path.join(root, 'src/card.css'), '.card {\n  color: var(--ct-x-c24e4e);\n}\n');
+  assert.deepEqual((await plan(root)).generated, ['--ct-x-c24e4e']);
 });

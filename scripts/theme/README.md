@@ -35,6 +35,10 @@ is held to the accent families' multipliers and roles. The alpha is a percentage
 `node scripts/theme/tokenize.mjs --write`, and it is defined. `--ct-x-<hex>` tokens keep a legacy
 shade exact; the lint stops their count from growing.
 
+Light mode is one `[data-theme='light']` block at the end of `src/theme.css`: the light value of
+every named token, channel and multiplier that differs from dark. A subtree that must stay dark in a
+light page (the Claude-host card emulations) sets `data-theme="dark"`.
+
 In JS, DOM styles take `var(--ct-*)` strings. Canvas (Chart.js) cannot read CSS variables, so it
 takes concrete colours from `useThemeColors` in `src/theme/useThemeColors.js`, requested as
 `[role, '--ct-token']` pairs (`over: ['fill', '--ct-hit-fill-78']`) so the lint checks each token
@@ -46,6 +50,10 @@ against the role it plays.
   `src/theme.css` in step with what `src/` references. A second `--write` changes nothing.
 - `check-colors.mjs` is the lint. `npm run lint` also runs `tokenize.mjs --check`, so a literal
   the codemod would move, or a stale generated block, fails CI.
+- `light-tails.mjs` writes the Chalk (light) value of every `--ct-x-*` shade into the
+  `[data-theme='light']` block, mapped from its dark value by `chalk.mjs`, the prototype's mapping.
+  Run it after `tokenize.mjs --write` adds a shade; `npm run lint` fails until you do. Tune a shade
+  in its `OVERRIDES`, not in `theme.css`.
 - `verify-dark.mjs --base <ref>` compares every rewritten declaration with the base revision, tokens
   replaced by their dark values and component custom properties by the value each rule gives them,
   and exits 1 on any difference or any declaration that moved earlier in the cascade. A component

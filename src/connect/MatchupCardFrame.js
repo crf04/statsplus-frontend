@@ -65,6 +65,7 @@ const MatchupCardFrame = () => {
     <iframe
       ref={frameRef}
       className="connect-card-frame"
+      data-theme="dark"
       src={CARD_SRC}
       title="CourtAI Matchup card: Cade Cunningham against Charlotte"
       style={{ height }}

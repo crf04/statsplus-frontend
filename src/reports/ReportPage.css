@@ -276,6 +276,14 @@
   border-radius: 12px;
 }
 
+/* The card emulates Claude's dark host and declares color-scheme: dark. On a
+   light page the island matches that scheme, so the card's transparent canvas
+   shows this host ground instead of a browser backdrop. Dark is left as it was. */
+[data-theme='light'] .report-card-fit {
+  background: var(--ct-x-1f1e1b);
+  color-scheme: dark;
+}
+
 .report-card {
   display: block;
   border: 0;

@@ -123,3 +123,31 @@ mark { background: rgb(var(--oc) / calc(0.16 * var(--ct-k-accent-fg))); }`,
   );
   assert.deepEqual(result, { compared: 3, rewritten: 3, mismatches: [] });
 });
+
+test('a rule pinned to dark as well keeps its scope, and light-only rules paint nothing in dark', () => {
+  const result = compare(
+    `:root { --ct-ink: #0d0b07; }
+.a { color: #e8a33d; }`,
+    `:root,
+[data-theme='dark'] { --ct-ink: #0d0b07; }
+.a { color: var(--ct-gold); }
+[data-theme='light'] { --ct-ink: #f3f4f6; color-scheme: light; }
+[data-theme='light'] .a, [data-theme-switching] * { color: #9a5b06; transition: none; }`,
+  );
+  assert.deepEqual(result, { compared: 2, rewritten: 1, mismatches: [] });
+});
+
+test('a rule that also paints dark is still compared, even beside a light selector', () => {
+  const { mismatches } = compare(
+    `.a { color: #e8a33d; }`,
+    `.a, [data-theme='light'] .b { color: var(--ct-hit); }`,
+  );
+  assert.deepEqual(mismatches, [
+    {
+      file: 'src/a.css',
+      key: '.a { color #0',
+      base: 'rgba(232, 163, 61, 1)',
+      head: 'rgba(76, 175, 125, 1)',
+    },
+  ]);
+});

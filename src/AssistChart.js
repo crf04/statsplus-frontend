@@ -16,7 +16,7 @@ const AssistChart = ({
     const hue = inverse
       ? ((value - 0.8) / (1.2 - 0.8)) * 120
       : (1 - (value - 0.8) / (1.2 - 0.8)) * 120;
-    return `hsl(${hue}, 100%, 40%)`;
+    return `hsl(${hue}, 100%, var(--ct-scale-lightness))`;
   };
 
   const chartData = assistTypes

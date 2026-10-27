@@ -69,7 +69,10 @@
 }
 
 .app-auth {
+  display: flex;
+  align-items: center;
   justify-self: end;
+  gap: 12px;
 }
 
 @media (max-width: 620px) {

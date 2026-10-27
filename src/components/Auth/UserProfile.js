@@ -51,7 +51,7 @@ const UserProfile = () => {
 
   return (
     <>
-      <Dropdown align="end">
+      <Dropdown align="end" className="user-profile">
         <Dropdown.Toggle
           variant="outline-light"
           id="user-dropdown"

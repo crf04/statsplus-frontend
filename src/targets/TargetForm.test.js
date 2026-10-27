@@ -108,14 +108,17 @@ test('no Position selected sends none, and a Position alone is a complete draft'
   });
 });
 
-test.each(['', '-1', 'abc'])('an average threshold of %p keeps the draft unsaveable', (text) => {
-  const draft = targetToDraft(withPosition);
-  draft.qualifiers[1].thresholdText = text;
-  expect(describeDraft(draft)).toEqual({
-    valid: false,
-    problem: 'Every season average threshold must be a number of 0 or more.',
-  });
-});
+test.each(['', '-1', 'abc', '1000.01', '1e9'])(
+  'an average threshold of %p keeps the draft unsaveable',
+  (text) => {
+    const draft = targetToDraft(withPosition);
+    draft.qualifiers[1].thresholdText = text;
+    expect(describeDraft(draft)).toEqual({
+      valid: false,
+      problem: 'Every season average threshold must be a number from 0 to 1000.',
+    });
+  },
+);
 
 test('toggling a Position, then a Season average row, edits the draft the way a user does', () => {
   fetchDietBaselines.mockResolvedValue({ shares: {} });
@@ -172,6 +175,26 @@ test('an Average threshold keeps its own precision through the save and edit rou
   // Typed with surrounding space and a trailing zero, it is still the number typed.
   draft.qualifiers[0].thresholdText = ' 0.0040 ';
   expect(targetDraftToRequest(draft).qualifiers[0].threshold).toBe(0.004);
+});
+
+test('an Average threshold of 1000 keeps the draft saveable and the field says its ceiling', () => {
+  const draft = targetToDraft(withPosition);
+  draft.qualifiers[1].thresholdText = '1000';
+  expect(describeDraft(draft).valid).toBe(true);
+  expect(targetDraftToRequest(draft).qualifiers[2].threshold).toBe(1000);
+  fetchDietBaselines.mockResolvedValue({ shares: {} });
+  function Stored() {
+    const [current, setCurrent] = useState(draft);
+    return (
+      <TargetForm
+        draft={current}
+        onChange={(patch) => setCurrent({ ...current, ...patch })}
+        onSubmit={() => {}}
+      />
+    );
+  }
+  render(<Stored />);
+  expect(screen.getByLabelText('Qualifier 2 threshold')).toHaveAttribute('max', '1000');
 });
 
 test('a Qualifier of a base this page does not know opens read-only and is saved as stored', () => {

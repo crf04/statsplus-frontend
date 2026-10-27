@@ -2735,7 +2735,8 @@ const invalidQualifier = (qualifier) => {
       !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
       typeof qualifier.threshold !== 'number' ||
       !Number.isFinite(qualifier.threshold) ||
-      qualifier.threshold < 0
+      qualifier.threshold < 0 ||
+      qualifier.threshold > 1000
     );
   return (
     !knownSlice(qualifier.base, qualifier.slice_key) ||

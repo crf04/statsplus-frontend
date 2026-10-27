@@ -225,7 +225,7 @@ export const parseAverageThreshold = (text) => {
   const trimmed = String(text).trim();
   if (!trimmed) return null;
   const value = Number(trimmed);
-  if (!Number.isFinite(value) || value < 0) return null;
+  if (!Number.isFinite(value) || value < 0 || value > AVERAGE_THRESHOLD_MAX) return null;
   return value;
 };
 

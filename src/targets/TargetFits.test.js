@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { TargetFitTable } from './TargetFits';
+import { TargetFitTable, TargetTitle } from './TargetFits';
 
 const entry = {
   target: {
@@ -47,4 +47,20 @@ test('a fit shows his Position beside his name, with one column per diet Qualifi
     'Big FitMEMBig44%lg 20%12.5',
     'No LabelMEM41%lg 20%9.0',
   ]);
+});
+
+test('a Target stored as [Diet, Position] reads with the Position first', () => {
+  const { container } = render(
+    <TargetTitle
+      target={{
+        opponent: 'MEM',
+        qualifiers: [
+          { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+          { base: 'position', groups: ['Big'] },
+          { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 0.3 },
+        ],
+      }}
+    />,
+  );
+  expect(container.textContent).toBe('MEMvsBig  & Corner 3 ≥ 40% & 3PA avg ≥ 0.3');
 });

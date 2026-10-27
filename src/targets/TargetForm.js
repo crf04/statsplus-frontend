@@ -176,7 +176,7 @@ export const describeDraft = (draft) => {
       valid: false,
       problem:
         unset.base === AVERAGE_BASE
-          ? 'Every season average threshold must be a number of 0 or more.'
+          ? 'Every season average threshold must be a number from 0 to 1000.'
           : 'Every threshold must be a share between 0% and 100%.',
     };
   }
@@ -581,6 +581,7 @@ function AverageThreshold({ qualifier, index, onChange }) {
         type="number"
         inputMode="decimal"
         min="0"
+        max="1000"
         step="any"
         placeholder="Choose"
         aria-label={`Qualifier ${index + 1} threshold`}

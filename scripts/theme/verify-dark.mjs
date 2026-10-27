@@ -61,15 +61,21 @@ export const normalize = (value, registry) => {
     .trim();
 };
 
+const scopeOf = (decl) => {
+  const scope = [];
+  for (let node = decl.parent; node && node.type !== 'root'; node = node.parent) {
+    scope.unshift(node.type === 'rule' ? node.selector : `@${node.name} ${node.params}`);
+  }
+  return scope.join(' > ').replace(/\s+/g, ' ');
+};
+
+// Every declaration in source order, keyed by its rule and its place among
+// that rule's declarations of the same property.
 const declarations = (css) => {
   const list = [];
   const seen = new Map();
   postcss.parse(css).walkDecls((decl) => {
-    const scope = [];
-    for (let node = decl.parent; node && node.type !== 'root'; node = node.parent) {
-      scope.unshift(node.type === 'rule' ? node.selector : `@${node.name} ${node.params}`);
-    }
-    const base = `${scope.join(' > ').replace(/\s+/g, ' ')} { ${decl.prop}`;
+    const base = `${scopeOf(decl)} { ${decl.prop}`;
     const index = seen.get(base) ?? 0;
     seen.set(base, index + 1);
     list.push({ key: `${base} #${index}`, decl });
@@ -79,28 +85,88 @@ const declarations = (css) => {
 
 const value = (decl) => `${decl.value}${decl.important ? ' !important' : ''}`;
 
+// A component custom property (`--oc`, `--rr-v`) is a name for a colour some
+// other rule paints. Each rule that sets it gives its consumers one value.
+const isAlias = (prop) => prop.startsWith('--') && !prop.startsWith('--ct-');
+const aliasesOf = (css) => {
+  const aliases = new Map();
+  postcss.parse(css).walkDecls((decl) => {
+    if (!isAlias(decl.prop)) return;
+    if (!aliases.has(decl.prop)) aliases.set(decl.prop, new Map());
+    aliases.get(decl.prop).set(scopeOf(decl), decl.value.trim());
+  });
+  return aliases;
+};
+
+// The value as it paints under the rule `scope` sets aliases in: an alias
+// that rule sets takes its value there, one set in a single rule takes that
+// value everywhere, any other stays as written.
+const resolveAliases = (text, aliases, scope) =>
+  substituteVars(
+    text,
+    (name) => {
+      const values = aliases.get(name);
+      if (!values) return undefined;
+      if (values.has(scope)) return values.get(scope);
+      return values.size === 1 ? [...values.values()][0] : undefined;
+    },
+    { fallbacks: false },
+  );
+
+const aliasScopes = (text, aliases) => {
+  const scopes = new Set();
+  for (const name of text.match(/--[\w-]+/g) ?? []) {
+    for (const scope of aliases.get(name)?.keys() ?? []) scopes.add(scope);
+  }
+  return scopes;
+};
+
 export const compareCss = (baseCss, headCss, file, baseRegistry, headRegistry) => {
   const mismatches = [];
-  const head = new Map(declarations(headCss).map((entry) => [entry.key, entry.decl]));
+  const headList = declarations(headCss);
+  const head = new Map(headList.map((entry, position) => [entry.key, { ...entry, position }]));
+  const aliases = { base: aliasesOf(baseCss), head: aliasesOf(headCss) };
   let compared = 0;
   let rewritten = 0;
+  let lastPosition = -1;
   for (const { key, decl } of declarations(baseCss)) {
     const other = head.get(key);
     head.delete(key);
     if (!other) {
-      mismatches.push({ file, key, base: value(decl), head: '(removed)' });
+      // An alias may be renamed or split; its consumers prove the paint.
+      if (!isAlias(decl.prop)) mismatches.push({ file, key, base: value(decl), head: '(removed)' });
       continue;
     }
     compared += 1;
-    if (value(decl) === value(other)) continue;
+    // The cascade takes the later of two declarations, so order is paint.
+    if (other.position < lastPosition) {
+      mismatches.push({ file, key, base: 'in source order', head: '(moved earlier)' });
+    }
+    lastPosition = Math.max(lastPosition, other.position);
+    if (value(decl) === value(other.decl)) continue;
     rewritten += 1;
-    const before = normalize(value(decl), baseRegistry);
-    const after = normalize(value(other), headRegistry);
-    if (before !== after) mismatches.push({ file, key, base: before, head: after });
+    const before = value(decl);
+    const after = value(other.decl);
+    const scopes = new Set([
+      ...aliasScopes(before, aliases.base),
+      ...aliasScopes(after, aliases.head),
+    ]);
+    for (const scope of scopes.size ? scopes : [null]) {
+      const painted = [
+        normalize(resolveAliases(before, aliases.base, scope), baseRegistry),
+        normalize(resolveAliases(after, aliases.head, scope), headRegistry),
+      ];
+      if (painted[0] !== painted[1]) {
+        const where = scope === null ? key : `${key} [${scope}]`;
+        mismatches.push({ file, key: where, base: painted[0], head: painted[1] });
+      }
+    }
   }
-  for (const [key, decl] of head) {
-    // New tokens may only be declared in theme.css; nothing else may appear.
+  for (const [key, { decl }] of head) {
+    // New tokens may only be declared in theme.css, and new aliases only as
+    // names their consumers resolve; nothing else may appear.
     if (file === THEME_FILE && decl.prop.startsWith('--ct-')) continue;
+    if (isAlias(decl.prop)) continue;
     mismatches.push({ file, key, base: '(absent)', head: value(decl) });
   }
   return { compared, rewritten, mismatches };

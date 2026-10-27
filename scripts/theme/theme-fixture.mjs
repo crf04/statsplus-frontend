@@ -19,6 +19,12 @@ export const THEME = `:root {
   --ct-overlay-bg-rgb: 255 255 255;
   --ct-gold-fg-rgb: 232 163 61;
   --ct-gold-bg-rgb: 232 163 61;
+  --ct-gold-fill-rgb: 232 163 61;
+  --ct-hit-fg-rgb: 76 175 125;
+  --ct-hit-bg-rgb: 76 175 125;
+  --ct-hit-fill-rgb: 76 175 125;
+  --ct-series-kept-fg-rgb: 104 186 166;
+  --ct-series-kept-bg-rgb: 104 186 166;
   --ct-shadow-rgb: 0 0 0;
   --ct-scrim-rgb: 0 0 0;
   --ct-k-overlay-fg: 1;

@@ -1,0 +1,320 @@
+/* PROTOTYPE — throwaway. Chart card variants; every rule is scoped under .ls-proto. */
+@import './proto.css';
+
+.ls-proto .card-body {
+  padding: 14px 16px;
+}
+.ls-proto.dark-card:hover {
+  transform: none;
+}
+.ls-proto .ls-delta {
+  font-size: 11px;
+  color: #9b937f;
+}
+.ls-proto .ls-delta.is-up {
+  color: #7fc49b;
+}
+.ls-proto .ls-delta.is-down {
+  color: #e08585;
+}
+.ls-proto .ls-filters {
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ls-proto .ls-filters .badge {
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(232, 163, 61, 0.1) !important;
+  color: #e8a33d;
+  border: 1px solid rgba(232, 163, 61, 0.3);
+}
+.ls-proto .ls-chart {
+  margin-top: 10px;
+  position: relative;
+}
+
+/* ── A: compact ─────────────────────────────────────────────── */
+.ls-A .player-selector-row {
+  margin-bottom: 10px !important;
+  --bs-gutter-x: 8px;
+  row-gap: 8px;
+}
+.ls-A .player-selector-row > .col-md-4:nth-child(1) {
+  flex: 1 1 0;
+  width: auto;
+}
+.ls-A .player-selector-row > .col-md-4:nth-child(2),
+.ls-A .player-selector-row > .col-md-4:nth-child(3) {
+  flex: 0 0 96px;
+  width: 96px;
+}
+.ls-A .player-selector-label {
+  font-size: 10px;
+  margin-bottom: 3px;
+  color: #7d7666;
+  letter-spacing: 0.8px;
+}
+.ls-A .player-selector-label::after {
+  content: '';
+}
+.ls-A .player-selector-input,
+.ls-A .player-selector-select {
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  height: 34px;
+}
+.ls-A .player-selector-select {
+  padding-right: 24px;
+  background-position: right 6px center;
+}
+.ls-a-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #241f15;
+  border-radius: 8px;
+  background: #16130d;
+}
+.ls-a-tile {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  min-width: 0;
+}
+.ls-a-tile + .ls-a-tile {
+  border-left: 1px solid #241f15;
+}
+.ls-k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #7d7666;
+}
+.ls-v {
+  font:
+    700 20px/1.2 ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  color: #e8a33d;
+  font-variant-numeric: tabular-nums;
+}
+.ls-v small {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9b937f;
+}
+.ls-s {
+  font-size: 11px;
+  color: #9b937f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── B: sentence ────────────────────────────────────────────── */
+.ls-B .player-selector-row {
+  margin-bottom: 6px !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  --bs-gutter-x: 0;
+  gap: 4px 8px;
+}
+.ls-B .player-selector-row > .col-md-4 {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0;
+  display: flex;
+  align-items: baseline;
+}
+.ls-B .player-selector-row > .col-md-4:nth-child(3)::before {
+  content: 'over';
+  color: #9b937f;
+  font-size: 15px;
+  margin-right: 8px;
+}
+.ls-B .player-selector-row .form-group,
+.ls-B .player-selector-row .mb-3 {
+  margin: 0;
+}
+.ls-B .player-selector-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.ls-B .player-selector-input,
+.ls-B .player-selector-select {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px dashed #5a5140;
+  border-radius: 0;
+  padding: 2px 2px;
+  font-family: var(--ct-display, inherit);
+  font-size: 20px;
+  font-weight: 600;
+  color: #efe9dc;
+  box-shadow: none;
+}
+.ls-B .player-selector-row > .col-md-4:nth-child(1) .player-selector-input {
+  width: 220px;
+}
+.ls-B .player-selector-select {
+  width: auto;
+  padding-right: 22px;
+  background-position: right 2px center;
+  color: #e8a33d;
+}
+.ls-B .player-selector-row > .col-md-4:nth-child(3) .player-selector-input {
+  width: 64px;
+  color: #e8a33d;
+}
+.ls-B .player-selector-input:focus,
+.ls-B .player-selector-select:focus {
+  background-color: transparent;
+  border-bottom: 1px solid #e8a33d;
+  box-shadow: none;
+}
+.ls-b-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  text-align: left;
+}
+.ls-b-hit {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.ls-b-big {
+  font:
+    700 34px/1 ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  color: #e8a33d;
+}
+.ls-b-of {
+  font-size: 14px;
+  color: #c9c2b2;
+  display: flex;
+  flex-direction: column;
+}
+.ls-b-recent,
+.ls-b-szn {
+  font-size: 12px;
+  color: #7d7666;
+}
+.ls-b-avgs {
+  font:
+    13px ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  color: #c9c2b2;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+/* ── C: chart-first toolbar ─────────────────────────────────── */
+.ls-C .player-selector-row {
+  margin: 0 0 8px !important;
+  display: flex;
+  flex-wrap: nowrap;
+  --bs-gutter-x: 0;
+  border: 1px solid #3a3428;
+  border-radius: 999px;
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ls-C .player-selector-row > .col-md-4 {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0;
+}
+.ls-C .player-selector-row > .col-md-4 + .col-md-4 {
+  border-left: 1px solid #3a3428;
+}
+.ls-C .player-selector-row > .col-12 {
+  display: none;
+}
+.ls-C .player-selector-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.ls-C .player-selector-input,
+.ls-C .player-selector-select {
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  height: 32px;
+  padding: 4px 12px;
+  font-size: 13px;
+  box-shadow: none;
+}
+.ls-C .player-selector-row > .col-md-4:nth-child(1) .player-selector-input {
+  width: 170px;
+}
+.ls-C .player-selector-select {
+  width: 84px;
+  padding-right: 22px;
+  background-position: right 6px center;
+}
+.ls-C .player-selector-row > .col-md-4:nth-child(3) .player-selector-input {
+  width: 64px;
+  color: #e8a33d;
+  font-family:
+    ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+}
+.ls-c-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  font:
+    12px ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  color: #9b937f;
+  text-align: left;
+}
+.ls-c-line b {
+  color: #e8a33d;
+  font-weight: 700;
+}
+.ls-C .ls-chart {
+  margin-top: 6px;
+}
+
+/* Phone: A keeps three tiles but tighter; C's toolbar scrolls sideways. */
+@media (max-width: 575px) {
+  .ls-a-tile {
+    padding: 6px 8px;
+  }
+  .ls-v {
+    font-size: 17px;
+  }
+  .ls-B .player-selector-row > .col-md-4:nth-child(1) .player-selector-input {
+    width: 170px;
+  }
+  .ls-C .player-selector-row > .col-md-4:nth-child(1) .player-selector-input {
+    width: 130px;
+  }
+}

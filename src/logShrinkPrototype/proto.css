@@ -1,0 +1,45 @@
+/* PROTOTYPE — throwaway. */
+.ls-proto-switcher {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #1e1a12;
+  border: 1px solid rgba(232, 163, 61, 0.4);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font:
+    11px ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  color: #9b937f;
+  max-width: calc(100vw - 24px);
+}
+.ls-proto-switcher button {
+  all: unset;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  text-align: center;
+  line-height: 26px;
+  color: #efe9dc;
+  background: rgba(255, 255, 255, 0.06);
+}
+.ls-proto-switcher button.is-on {
+  background: #e8a33d;
+  color: #1e1a12;
+  font-weight: 700;
+}
+.ls-proto-switcher span {
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

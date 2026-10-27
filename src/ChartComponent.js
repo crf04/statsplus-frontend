@@ -7,6 +7,8 @@ import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 import { postedLineFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
+// PROTOTYPE (throwaway, branch prototype/log-workspace-shrink): chart card variants.
+import { CHART_HEIGHT, SUMMARIES, chartOptionsFor } from './logShrinkPrototype/variants';
 
 const getPer36Value = (average, stat) => {
   const value = toFiniteNumber(average?.[stat]);
@@ -41,6 +43,7 @@ const ChartComponent = ({
   postedLine,
   lineSource,
   appliedFilters,
+  protoVariant = 'O', // PROTOTYPE (throwaway)
 }) => {
   const explicitLineValue = toFiniteNumber(lineValue);
   const numericLineValue =
@@ -191,6 +194,19 @@ const ChartComponent = ({
     [gameLogs, lineType, lineLabel, numericLineValue],
   );
 
+  // PROTOTYPE (throwaway)
+  const variantOptions = useMemo(
+    () =>
+      chartOptionsFor(
+        protoVariant,
+        chartOptions,
+        (gameLogs || []).map((log) => log?.GAME_DATE || ''),
+      ),
+    [protoVariant, chartOptions, gameLogs],
+  );
+  const Summary = SUMMARIES[protoVariant];
+  const { player_name: _player, ...otherFilters } = appliedFilters || {};
+
   const overLineCount = (logs) =>
     logs.filter((log) => numericOrZero(log[lineType]) > numericLineValue).length;
 
@@ -198,20 +214,36 @@ const ChartComponent = ({
     <>
       {Array.isArray(gameLogs) && gameLogs.length > 0 && lineType !== 'None' && (
         <>
-          <MetricsDashboardRow
-            rawValue={numericOrZero(averages?.[0]?.[lineType])}
-            per36Value={getPer36Value(averages?.[0], lineType)}
-            seasonRawValue={numericOrZero(averages?.[1]?.[lineType])}
-            seasonPer36Value={getPer36Value(averages?.[1], lineType)}
-            ratio={`${overLineCount(gameLogs)}/${gameLogs.length}`}
-            last5ratio={`${overLineCount(gameLogs.slice(-5))}/${Math.min(5, gameLogs.length)}`}
-            last10ratio={`${overLineCount(gameLogs.slice(-10))}/${Math.min(10, gameLogs.length)}`}
-          />
-          <div className="mt-3 mb-3">
-            <AppliedFilters filters={appliedFilters} />
-          </div>
-          <div className="chart-container">
-            <Bar data={chartData} options={chartOptions} />
+          {(() => {
+            const metrics = {
+              rawValue: numericOrZero(averages?.[0]?.[lineType]),
+              per36Value: getPer36Value(averages?.[0], lineType),
+              seasonRawValue: numericOrZero(averages?.[1]?.[lineType]),
+              seasonPer36Value: getPer36Value(averages?.[1], lineType),
+              ratio: `${overLineCount(gameLogs)}/${gameLogs.length}`,
+              last5ratio: `${overLineCount(gameLogs.slice(-5))}/${Math.min(5, gameLogs.length)}`,
+              last10ratio: `${overLineCount(gameLogs.slice(-10))}/${Math.min(10, gameLogs.length)}`,
+            };
+            if (!Summary) return <MetricsDashboardRow {...metrics} />;
+            return <Summary m={metrics} lineType={lineType} />;
+          })()}
+          {Summary ? (
+            // PROTOTYPE (throwaway): the player is already in the Player box.
+            Object.keys(otherFilters).length > 0 && (
+              <div className="ls-filters">
+                <AppliedFilters filters={otherFilters} />
+              </div>
+            )
+          ) : (
+            <div className="mt-3 mb-3">
+              <AppliedFilters filters={appliedFilters} />
+            </div>
+          )}
+          <div
+            className={`chart-container${Summary ? ' ls-chart' : ''}`}
+            style={Summary ? { height: CHART_HEIGHT[protoVariant] } : undefined}
+          >
+            <Bar data={chartData} options={variantOptions} />
           </div>
         </>
       )}

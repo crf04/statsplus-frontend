@@ -11,6 +11,10 @@ import PerformanceAverages from './PerformanceAverages';
 import GameLogsTable from './GameLogsTable';
 import NaturalLanguageQuery from './NaturalLanguageQuery';
 import PlayerStatsCards from './PlayerStatsCards';
+// PROTOTYPE (throwaway, branch prototype/log-workspace-shrink): chart card variants.
+import { isPrototypeActive, useVariant } from './logShrinkPrototype/mode';
+import LogShrinkSwitcher from './logShrinkPrototype/Switcher';
+import './logShrinkPrototype/variants.css';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
@@ -56,6 +60,8 @@ const listNames = (names) =>
 // `notice` is shown at the top of the Query Prompt, under the scoreboard ticker.
 const GameLogFilter = ({ notice = null }) => {
   const { isAuthenticated, waitlist, loading: authLoading, currentUser } = useAuth();
+  const protoState = useVariant(); // PROTOTYPE (throwaway)
+  const protoVariant = protoState.variant;
   // Every authenticated read and write on this page needs an admitted account:
   // a waitlisted one is refused them all, so it is treated as not searching.
   const canSearch = isAuthenticated && !waitlist;
@@ -898,7 +904,9 @@ const GameLogFilter = ({ notice = null }) => {
         <Container fluid className={`game-log-filter py-2${showWorkspaceLoading ? ' d-none' : ''}`}>
           <Row className="mb-5">
             <Col md={8}>
-              <Card className="dark-card">
+              <Card
+                className={`dark-card${protoVariant !== 'O' ? ` ls-proto ls-${protoVariant}` : ''}`}
+              >
                 <Card.Body>
                   <PlayerSelector
                     selectedPlayer={selectedPlayer}
@@ -921,6 +929,7 @@ const GameLogFilter = ({ notice = null }) => {
                       postedLine={postedLine}
                       lineSource={line.lineSource}
                       appliedFilters={appliedFilters}
+                      protoVariant={protoVariant}
                     />
                     <OnMount onMount={handleChartReady} onUnmount={handleChartGone} />
                   </Suspense>
@@ -976,6 +985,8 @@ const GameLogFilter = ({ notice = null }) => {
               </Suspense>
             </Col>
           </Row>
+
+          {isPrototypeActive() && <LogShrinkSwitcher {...protoState} />}
 
           {/* A refused season has no game list, not an empty one. */}
           {!seasonRefusal && (

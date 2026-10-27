@@ -50,6 +50,18 @@ export const parseTracesSampleRate = (raw) => {
   return rate >= 0 && rate <= 1 ? rate : DEFAULT_TRACES_SAMPLE_RATE;
 };
 
+// Browser tracing is a separate chunk fetched after the window load event so
+// it stays off the first-load path. The pageload span still starts at
+// navigation start, and web vitals are read from buffered performance entries.
+const addTracingAfterLoad = () => {
+  const addTracing = () =>
+    import('./sentryTracing')
+      .then(({ browserTracingIntegration }) => Sentry.addIntegration(browserTracingIntegration()))
+      .catch(() => {});
+  if (document.readyState === 'complete') addTracing();
+  else window.addEventListener('load', addTracing, { once: true });
+};
+
 /**
  * Starts Sentry only when a DSN is configured; without one nothing is
  * initialized and nothing is sent. Page loads and web vitals are traced at
@@ -72,13 +84,13 @@ export const initErrorReporting = ({
     sendDefaultPii: false,
     // No tracePropagationTargets: the API is cross-origin, and the default
     // keeps trace headers off its calls so CORS preflights are unchanged.
-    integrations: [Sentry.browserTracingIntegration()],
     tracesSampleRate,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     maxBreadcrumbs: 0,
     beforeSend: scrubEvent,
   });
+  addTracingAfterLoad();
   enabled = true;
   return true;
 };

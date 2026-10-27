@@ -1,4 +1,5 @@
 jest.unmock('axios');
+import { waitFor } from '@testing-library/react';
 import * as Sentry from '@sentry/react';
 import apiClient from './utils/axiosConfig';
 import { initErrorReporting, parseTracesSampleRate, reportRenderError } from './errorReporting';
@@ -170,13 +171,17 @@ describe('tracing options', () => {
     return Sentry.getClient().getOptions();
   };
 
-  test('page loads are traced at 5% by default, with replays and header propagation off', () => {
+  test('page loads are traced at 5% by default, with replays and header propagation off', async () => {
     const options = initWith();
     expect(options.tracesSampleRate).toBe(0.05);
     expect(options.replaysSessionSampleRate).toBe(0);
     expect(options.replaysOnErrorSampleRate).toBe(0);
     expect(options.tracePropagationTargets).toBeUndefined();
-    expect(Sentry.getClient().getIntegrationByName('BrowserTracing')).toBeDefined();
+    // Tracing is a separate chunk added after the window load event.
+    window.dispatchEvent(new Event('load'));
+    await waitFor(() =>
+      expect(Sentry.getClient().getIntegrationByName('BrowserTracing')).toBeDefined(),
+    );
   });
 
   test('the rate passed to init is used', () => {

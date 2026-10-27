@@ -1,0 +1,125 @@
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import GameLogFilter from './GameLogFilter';
+import { apiClient } from './config';
+import { fetchGameLogsData } from './gameLogsApi';
+import { fetchSeasons } from './seasonsApi';
+
+// The real Player Profile, so its own read is observed while /seasons is pending.
+jest.mock('./config', () => ({
+  apiClient: { get: jest.fn() },
+  getApiUrl: (name) => `/api/${name.toLowerCase()}`,
+}));
+jest.mock('./gameLogsApi', () => ({
+  ...jest.requireActual('./gameLogsApi'),
+  fetchGameLogsData: jest.fn(),
+  isRequestCancelled: jest.fn(() => false),
+}));
+jest.mock('./seasonsApi', () => ({ fetchSeasons: jest.fn() }));
+let mockSignedIn = true;
+jest.mock('./contexts/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: mockSignedIn, loading: false }),
+}));
+jest.mock('./savedFilterSetsApi', () => ({
+  fetchSavedFilterSets: jest.fn(() => Promise.resolve([])),
+  subscribeSavedFilterSets: jest.fn(() => () => {}),
+}));
+jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PlaystyleComparisonChart', () => () => null);
+jest.mock('./AssistProfileChart', () => () => null);
+jest.mock('./TwoThreeAssistChart', () => () => null);
+jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
+jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
+jest.mock('./PlayerStatsCards', () => ({ __esModule: true, default: () => null }));
+
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+window.matchMedia = () => ({ matches: false });
+
+const withChoices = {
+  seasons: ['2025-26', '2024-25'],
+  defaultSeason: '2025-26',
+  choices: [
+    {
+      season: '2026-27',
+      mode: 'unpublished',
+      families: { game_logs: { servedSeason: '2026-27', state: 'serving', reason: null } },
+      teamGames: { min: 2, max: 4 },
+    },
+    {
+      season: '2025-26',
+      mode: 'published',
+      families: { game_logs: { servedSeason: '2025-26', state: 'serving', reason: null } },
+      teamGames: null,
+    },
+  ],
+};
+const profileRequests = () =>
+  apiClient.get.mock.calls
+    .filter(([path]) => path === '/api/player_profile')
+    .map(([, options]) => options.params);
+
+beforeEach(() => {
+  jest.useFakeTimers({ now: new Date('2026-10-27T16:00:00Z'), advanceTimers: true });
+  apiClient.get.mockImplementation((path) =>
+    Promise.resolve({
+      data:
+        path === '/api/players'
+          ? ['LeBron James']
+          : path === '/api/next_opponent'
+            ? { next_game: null, opponent_ranks: [] }
+            : path === '/api/player_profile'
+              ? [{ PLAY_TYPE: 'Isolation' }]
+              : [],
+    }),
+  );
+  fetchGameLogsData.mockResolvedValue({
+    gameLogs: [{ GAME_DATE: '2026-10-22' }],
+    averages: [],
+    playerId: 2544,
+  });
+});
+afterEach(() => {
+  mockSignedIn = true;
+  jest.useRealTimers();
+  jest.clearAllMocks();
+});
+
+test('while /seasons is pending the Player Profile neither reads nor shows, then reads 2026-27 once', async () => {
+  let answerSeasons;
+  fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
+  render(
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James']}>
+      <GameLogFilter />
+    </MemoryRouter>,
+  );
+  await waitFor(() =>
+    expect(apiClient.get.mock.calls.map(([path]) => path)).toContain('/api/players'),
+  );
+  await act(async () => {});
+  expect(profileRequests()).toEqual([]);
+  expect(screen.queryByText('Player Profile')).toBeNull();
+
+  await act(async () => answerSeasons(withChoices));
+  await screen.findByText('Player Profile');
+  await act(async () => {});
+  expect(profileRequests()).toEqual([
+    { player_name: 'LeBron James', category: 'Playtypes', season: '2026-27' },
+  ]);
+});
+
+test('a signed-out reader, who never reads /seasons, still sees the Player Profile', async () => {
+  mockSignedIn = false;
+  render(
+    <MemoryRouter initialEntries={['/?player_name=LeBron+James']}>
+      <GameLogFilter />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText('Player Profile')).toBeInTheDocument();
+  expect(fetchSeasons).not.toHaveBeenCalled();
+});

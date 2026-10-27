@@ -314,8 +314,8 @@ test('links every displayed player name to that player’s game logs', async () 
   const reavesCard = screen.getByRole('article', { name: 'Austin Reaves player' });
   const lebronLink = within(lebronCard).getByRole('link', { name: 'LeBron James game logs' });
   const reavesLink = within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' });
-  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James');
-  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves');
+  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26');
+  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves&season_filter=2025-26');
   // The name is the link: no second "Game logs" label on the card.
   expect(lebronLink).toHaveTextContent('LeBron James');
   expect(within(lebronCard).getByRole('heading', { level: 3 })).toContainElement(lebronLink);
@@ -2582,7 +2582,7 @@ test('AC7: rows sort by season scoring, open the selection card and hand focus b
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
   expect(within(austin).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
     'href',
-    '/?player_name=Austin+Reaves',
+    '/?player_name=Austin+Reaves&season_filter=2025-26',
   );
   const open = within(austin).getByRole('button', { name: 'Open selection card' });
   await userEvent.click(open);
@@ -3693,7 +3693,7 @@ describe('Evidence season', () => {
     expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
     expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
       'href',
-      '/?player_name=Austin+Reaves',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
     );
 
     fireEvent.change(seasonSelect(), { target: { value: '2026-27' } });
@@ -3825,6 +3825,29 @@ describe('Evidence season', () => {
       "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
     );
     expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
+  });
+
+  // The Log Workspace defaults to the newest offered season, so a Game Logs
+  // link names the season this Matchup read, the Published Season included.
+  test('a 2026-27 game read on 2025-26 links its game logs to 2025-26', async () => {
+    renderMatchup('/matchups/0022600003?season=2025-26');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+  });
+
+  test('without season choices, a Matchup links its game logs to the season it answered for', async () => {
+    fetchSeasons.mockRejectedValue(new Error('seasons down'));
+    fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2025-26' });
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
   });
 
   test('a linked season the choices do not offer falls back to the default and says so', async () => {

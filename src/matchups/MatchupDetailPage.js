@@ -271,7 +271,7 @@ function RailRow({
   season,
 }) {
   const serializedPlayerId = String(player.id);
-  // Game Logs name the Evidence season as their own season filter.
+  // Game Logs name the season the Matchup read, since their own default may differ.
   const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined })}`;
   const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
   let value;
@@ -1099,7 +1099,7 @@ function Detail({ matchup, gameId, evidence }) {
             onSelect={(player) => updateSelectedPlayer(player.id)}
             registerTrigger={registerTrigger}
             headingRef={railHeading}
-            season={season}
+            season={season ?? matchup.asOfSeason ?? evidence.defaultSeason}
           />
           {/* An injury report nobody has is named in the summary sentence. */}
           {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}

@@ -4,7 +4,7 @@
 import type { Screen } from 'e2e';
 import { expect } from 'e2e';
 import { averages, gameLogs } from '../fixtures/courtai.js';
-import { overflowsHorizontally, signedInTest } from './support/courtai.ts';
+import { freezeClock, overflowsHorizontally, signedInTest } from './support/courtai.ts';
 
 // The first logged game scored 31, the second 27; `game_filter=1` keeps only
 // the first, so the two Filter Sets are told apart by the cells they show.
@@ -260,9 +260,12 @@ const seasonChoices = {
   ],
 };
 
+// crf04/statsplus#348: on a 2026-27 day the Workspace reads 2026-27 with no
+// season chosen, and a chosen 2025-26 is kept in the URL.
 signedInTest(
-  'an Unpublished 2026-27 is offered with its sample, chipped when chosen, and refused plainly',
+  'an offered 2026-27 is read by default and chipped, a chosen 2025-26 survives a reload, and a refusal is plain',
   async ({ app, screen, browser, api }) => {
+    await freezeClock(browser, '2026-10-27T16:00:00Z');
     let refuse = false;
     await api.override({
       '/api/games/seasons': { body: seasonChoices },
@@ -280,21 +283,33 @@ signedInTest(
             }
           : lastOneGame(request),
     });
+    const sentSeasons = () =>
+      api.sent('/api/games/game_logs').map((request) => request.search.get('season_filter'));
     await app.open('/?player_name=LeBron+James');
     const season = screen.getByRole('combobox', 'Season');
-    await expect(season).toHaveValue('2025-26');
+    await expect(season).toHaveValue('2026-27');
     await expect(screen.getByRole('option', '2026-27 · early, 2–4 games per team')).toHaveCount(1);
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
-    await app.screenshot('season-default');
-
-    await season.selectOption({ value: '2026-27' });
-    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2026-27');
     await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
       'Evidence season 2026-27 · early, 2–4 games per team',
     );
     await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    expect(new Set(sentSeasons())).toEqual(new Set(['2026-27']));
     expect(await overflowsHorizontally(browser)).toBe(false);
-    await app.screenshot('season-2026-27-chip');
+    await app.screenshot('season-2026-27-default');
+
+    await season.selectOption({ value: '2025-26' });
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
+    await browser.reload();
+    await expect(season).toHaveValue('2025-26');
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
+    expect(sentSeasons().at(-1)).toBe('2025-26');
+    await app.screenshot('season-2025-26-chosen');
+
+    await season.selectOption({ value: '2026-27' });
+    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(1);
 
     refuse = true;
     await browser.reload();

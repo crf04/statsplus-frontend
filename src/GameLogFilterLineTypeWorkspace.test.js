@@ -6,6 +6,10 @@ import { fetchGameLogsData } from './gameLogsApi';
 
 // The real panel and Query Prompt, so the Line Type is exercised beside the
 // draft edits and Parsed Queries it must not disturb.
+// The Workspace waits for /seasons before reading; only the Published Season is offered.
+jest.mock('./seasonsApi', () => ({
+  fetchSeasons: () => Promise.resolve({ seasons: ['2025-26'], defaultSeason: '2025-26' }),
+}));
 jest.mock('./config', () => ({
   apiClient: { get: jest.fn(), post: jest.fn() },
   getApiUrl: (name) => `/api/${name.toLowerCase()}`,

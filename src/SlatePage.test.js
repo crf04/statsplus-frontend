@@ -1246,6 +1246,26 @@ describe('Evidence season', () => {
       expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toBeVisible();
     });
 
+    test('an undated offseason Slate that falls forward to a 2026-27 day reads 2026-27', async () => {
+      jest.setSystemTime(new Date('2026-09-12T12:00:00Z'));
+      fetchSlate.mockImplementation(async (date, { season }) => ({
+        ...slate,
+        slateDate: date ?? '2026-10-20',
+        fallback: date ? null : 'next_game_day',
+        games: [season ? autumnGame : game],
+      }));
+      renderSlate('/matchups');
+      expect(await screen.findByRole('link', { name: /^LAL @ BOS/ })).toHaveAttribute(
+        'href',
+        '/matchups/0022600003',
+      );
+      expect(screen.getByLabelText('Current URL')).toHaveTextContent('/matchups?date=2026-10-20');
+      expect(fetchSlate).toHaveBeenLastCalledWith('2026-10-20', {
+        signal: expect.any(AbortSignal),
+        season: '2026-27',
+      });
+    });
+
     test('until 2026-27 is offered, the read is as before', async () => {
       fetchSeasons.mockResolvedValue(publishedOnlySeasons);
       renderSlate('/matchups?date=2026-10-27');

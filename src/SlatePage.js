@@ -265,8 +265,13 @@ export default function SlatePage() {
     const controller = new AbortController();
     const resolved = resolvedFallback.current;
     resolvedFallback.current = null;
-    if (explicitDate !== null && resolved?.slateDate === explicitDate) {
-      setState({ status: 'ready', slate: resolved, error: null });
+    // A day in another season reads that season's default, so it is read again.
+    if (
+      explicitDate !== null &&
+      resolved?.slate.slateDate === explicitDate &&
+      resolved.season === season
+    ) {
+      setState({ status: 'ready', slate: resolved.slate, error: null });
       return undefined;
     }
     setState({ status: 'loading', slate: null, error: null });
@@ -279,7 +284,7 @@ export default function SlatePage() {
         if (explicitDate === null && slate.fallback) {
           // Show the resolved day in the URL; the rerun that follows reuses
           // this Slate rather than loading it a second time.
-          resolvedFallback.current = slate;
+          resolvedFallback.current = { slate, season };
           replaceTo(withSeason(`/matchups?date=${slate.slateDate}`, linked), { replace: true });
           return;
         }

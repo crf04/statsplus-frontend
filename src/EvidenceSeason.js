@@ -109,7 +109,6 @@ export function useEvidenceSeason({ newestUpTo = null } = {}) {
     season,
     // The season the URL chose, which links keep in place of the page's own default.
     linked: explicit,
-    reads,
     defaultSeason,
     choices: showControl ? choices : null,
     choice: season ? choices.find((choice) => choice.season === season) : null,
@@ -128,7 +127,7 @@ function EvidenceSeasonSelect({ evidence }) {
     <label className="evidence-season-field">
       <span>Evidence season</span>
       <select
-        value={evidence.reads ?? ''}
+        value={evidence.season ?? evidence.defaultSeason ?? ''}
         onChange={(event) => evidence.choose(event.target.value)}
       >
         {evidence.choices.map((choice) => (

@@ -19,9 +19,10 @@ import {
   definitionOf,
   isGenerated,
   isTail,
+  layerRole,
   misuseOf,
-  onAccentContext,
   roleOf,
+  ruleContext,
   shadowLayers,
   tailwindColors,
   tokenFor,
@@ -59,7 +60,7 @@ const rewriteValue = (value, role, registry, context) => {
   const edits = [];
   const leftovers = [];
 
-  const visit = (nodes, blur) => {
+  const visit = (nodes, paint) => {
     for (const node of nodes) {
       if (node.type === 'function' && node.value === 'url') {
         if (/%23[0-9a-f]{3,8}/i.test(valueParser.stringify(node))) leftovers.push('data-uri');
@@ -74,34 +75,34 @@ const rewriteValue = (value, role, registry, context) => {
         if (
           name.startsWith('--ct-') &&
           registry.dark(name) &&
-          misuseOf(name, role, registry, context)
+          misuseOf(name, paint, registry, context)
         ) {
-          const { token } = tokenFor(registry.dark(name), role, registry, { context, blur });
+          const { token } = tokenFor(registry.dark(name), paint, registry, { context });
           if (token && token !== name) {
             edits.push({ from: name, to: token });
             node.nodes[0].value = token;
           }
         }
-        visit(node.nodes.slice(1), blur);
+        visit(node.nodes.slice(1), paint);
         continue;
       }
       const rgba = literalOf(node, role);
       if (rgba) {
         const from = valueParser.stringify(node);
-        const { token, reason } = tokenFor(rgba, role, registry, { context, blur });
+        const { token, reason } = tokenFor(rgba, paint, registry, { context });
         if (token) {
           edits.push({ from, to: token });
           toVar(node, token);
         } else leftovers.push(reason);
         continue;
       }
-      if (node.type === 'function') visit(node.nodes, blur);
+      if (node.type === 'function') visit(node.nodes, paint);
     }
   };
 
   if (role === 'shadow') {
-    for (const layer of shadowLayers(parsed.nodes)) visit(layer.nodes, layer.blur);
-  } else visit(parsed.nodes, 0);
+    for (const layer of shadowLayers(parsed.nodes)) visit(layer.nodes, layerRole(layer.blur));
+  } else visit(parsed.nodes, role);
 
   return { value: edits.length ? valueParser.stringify(parsed) : value, edits, leftovers };
 };
@@ -129,7 +130,7 @@ export const tokenizeCss = (css, registry) => {
       }
       return;
     }
-    const context = decl.parent?.type === 'rule' ? onAccentContext(decl.parent, registry) : null;
+    const context = decl.parent?.type === 'rule' ? ruleContext(decl.parent, registry) : null;
     const result = rewriteValue(decl.value, role, registry, context);
     for (const edit of result.edits) rewrites.push({ line, prop: decl.prop, role, ...edit });
     for (const reason of result.leftovers) {

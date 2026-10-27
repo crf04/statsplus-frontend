@@ -64,6 +64,44 @@ test('black shadows, scrims, rings, masks and legacy shades keep their exact val
   );
 });
 
+test('white lettering on an opaque accent gradient is on-accent; a translucent gradient is a wash', () => {
+  const input = `.win { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: 1px solid #059669; }
+.tokens { background: linear-gradient(90deg, var(--ct-gold-fill), var(--ct-hit-fill)); color: var(--ct-text-max); }
+.wash { background: linear-gradient(rgba(232, 163, 61, 0.2), #e8a33d); color: #fff; }
+`;
+  assert.equal(
+    tokenize(input),
+    `.win { background: linear-gradient(135deg, var(--ct-x-10b981-fill) 0%, var(--ct-x-059669-fill) 100%); color: var(--ct-on-ffffff); border: 1px solid var(--ct-x-059669-fill); }
+.tokens { background: linear-gradient(90deg, var(--ct-gold-fill), var(--ct-hit-fill)); color: var(--ct-on-ffffff); }
+.wash { background: linear-gradient(var(--ct-gold-bg-20), var(--ct-gold-fill)); color: var(--ct-text-max); }
+`,
+  );
+});
+
+test('accent paint from alpha 0.5 up is a mark on the fill ladder; a ring is a line; a line colour fills only a hairline', () => {
+  const input = `.over { background: rgba(76, 175, 125, 0.78); }
+.edge { background: rgba(76, 175, 125, 0.5); }
+.tint { background: rgba(76, 175, 125, 0.49); }
+.grade { background: var(--ct-hit-bg-76); }
+.weak { background: var(--ct-hit-fill-30); }
+.focus { box-shadow: 0 0 0 3px var(--ct-gold-soft); }
+.track { height: 3px; background: var(--ct-line); }
+.rule { width: 1px; background: var(--ct-line); }
+`;
+  assert.equal(
+    tokenize(input),
+    `.over { background: var(--ct-hit-fill-78); }
+.edge { background: var(--ct-hit-fill-50); }
+.tint { background: var(--ct-hit-bg-49); }
+.grade { background: var(--ct-hit-fill-76); }
+.weak { background: var(--ct-hit-bg-30); }
+.focus { box-shadow: 0 0 0 3px var(--ct-gold-fg-12); }
+.track { height: 3px; background: var(--ct-overlay-bg-8); }
+.rule { width: 1px; background: var(--ct-line); }
+`,
+  );
+});
+
 test('a second run changes nothing', () => {
   const once = tokenize(`.a { color: #e8a33d; background: rgba(232, 163, 61, 0.05); }
 .b { background: var(--ct-gold); border: 1px solid var(--ct-gold); color: #000000; }
@@ -111,7 +149,7 @@ test('the CLI defines the tokens it writes in theme.css, and a second --write is
   fs.writeFileSync(path.join(root, 'src/theme.css'), THEME);
   fs.writeFileSync(
     path.join(root, 'src/card.css'),
-    '.card {\n  background: rgba(232, 163, 61, 0.05);\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n  color: #c24e4e;\n}\n',
+    '.card {\n  background: rgba(232, 163, 61, 0.05);\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n  color: #c24e4e;\n}\n.bar {\n  background: rgba(76, 175, 125, 0.78);\n}\n',
   );
   const cli = fileURLToPath(new URL('./tokenize.mjs', import.meta.url));
   const run = (...args) =>
@@ -120,14 +158,14 @@ test('the CLI defines the tokens it writes in theme.css, and a second --write is
   run('--write');
   assert.equal(
     fs.readFileSync(path.join(root, 'src/card.css'), 'utf8'),
-    '.card {\n  background: var(--ct-gold-bg-5);\n  box-shadow: 0 4px 12px var(--ct-shadow-30);\n  color: var(--ct-x-c24e4e);\n}\n',
+    '.card {\n  background: var(--ct-gold-bg-5);\n  box-shadow: 0 4px 12px var(--ct-shadow-30);\n  color: var(--ct-x-c24e4e);\n}\n.bar {\n  background: var(--ct-hit-fill-78);\n}\n',
   );
   const theme = fs.readFileSync(path.join(root, 'src/theme.css'), 'utf8');
   assert.ok(theme.startsWith(THEME));
   assert.match(theme, /:root \{\n {2}--ct-x-c24e4e: #c24e4e;\n\}/);
   assert.match(
     theme,
-    /:root,\n\[data-theme\] \{\n {2}--ct-gold-bg-5: rgb\(var\(--ct-gold-bg-rgb\) \/ calc\(0\.05 \* var\(--ct-k-accent-bg\)\)\);\n {2}--ct-shadow-30: rgb\(var\(--ct-shadow-rgb\) \/ calc\(0\.3 \* var\(--ct-k-shadow\)\)\);\n\}/,
+    /:root,\n\[data-theme\] \{\n {2}--ct-gold-bg-5: rgb\(var\(--ct-gold-bg-rgb\) \/ calc\(0\.05 \* var\(--ct-k-accent-bg\)\)\);\n {2}--ct-hit-fill-78: rgb\(var\(--ct-hit-fill-rgb\) \/ 0\.78\);\n {2}--ct-shadow-30: rgb\(var\(--ct-shadow-rgb\) \/ calc\(0\.3 \* var\(--ct-k-shadow\)\)\);\n\}/,
   );
 
   const snapshot = () =>

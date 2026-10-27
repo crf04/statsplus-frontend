@@ -14,9 +14,13 @@ import { COLOR_FUNCTION_RE, CSS_COLOR_NAMES, HEX_RE, parseChannels } from './col
 import {
   TAIL_NAME_RE,
   buildRegistry,
+  jsRoleOf,
+  layerRole,
   misuseOf,
-  onAccentContext,
+  multiplierOf,
   roleOf,
+  ruleContext,
+  shadowLayers,
   tailwindColors,
 } from './roles.mjs';
 import { THEME_FILE, TOKEN_REFERENCE_RE, isStylesheet, sourceFiles } from './sources.mjs';
@@ -52,120 +56,267 @@ const rawColorsInValue = (value, role) => {
   return found;
 };
 
-const tokenRefs = (value) => {
+const refsIn = (nodes) => {
   const refs = [];
-  valueParser(value).walk((node) => {
-    if (
-      node.type === 'function' &&
-      node.value === 'var' &&
-      node.nodes[0]?.value.startsWith('--ct-')
-    ) {
+  valueParser.walk(nodes, (node) => {
+    if (node.type === 'function' && node.value === 'var' && node.nodes[0]?.value.startsWith('--')) {
       refs.push(node.nodes[0].value);
     }
   });
   return refs;
 };
+const tokenRefs = (value) =>
+  refsIn(valueParser(value).nodes).filter((name) => name.startsWith('--ct-'));
 
-export const checkCss = (css, file, registry, defined = registry.declared) => {
+// Each token reference with the role it paints in: a shadow's layers are
+// rings or soft shadows by their blur.
+const paintedRefs = (value, role) => {
+  const nodes = valueParser(value).nodes;
+  const layers = role === 'shadow' ? shadowLayers(nodes) : [{ nodes, blur: null }];
+  return layers.flatMap((layer) =>
+    refsIn(layer.nodes)
+      .filter((name) => name.startsWith('--ct-'))
+      .map((name) => ({ name, role: layer.blur === null ? role : layerRole(layer.blur) })),
+  );
+};
+
+// rgb(var(--ct-gold-bg-rgb) / 0.4) skips the alpha multiplier that makes the
+// tint right on light; the alpha must carry it, as the ladder tokens do.
+const unscaledChannels = (value) => {
+  const found = [];
+  valueParser(value).walk((node) => {
+    if (node.type !== 'function' || !/^rgba?$/i.test(node.value)) return undefined;
+    const [first] = node.nodes.filter((child) => child.type !== 'space');
+    const channel =
+      first?.type === 'function' && first.value === 'var' ? first.nodes[0]?.value : '';
+    const multiplier = channel ? multiplierOf(channel) : null;
+    const slash = node.nodes.findIndex((child) => child.type === 'div');
+    if (!multiplier || slash === -1) return false;
+    const alpha = valueParser.stringify(node.nodes.slice(slash + 1));
+    if (!alpha.includes(`var(${multiplier})`)) {
+      found.push(`${valueParser.stringify(node)} leaves out ${multiplier}; use a ladder token`);
+    }
+    return false;
+  });
+  return found;
+};
+
+// A value with each component custom property (`--oc`, `--rr-v`) replaced by
+// every value src/ declares for it, so a token reached through one is checked
+// where it paints.
+const MAX_EXPANSIONS = 64;
+const expandAliases = (value, aliases, depth = 0) => {
+  if (depth > 8) return [value];
+  const parsed = valueParser(value);
+  let target = null;
+  parsed.walk((node) => {
+    if (target || node.type !== 'function' || node.value !== 'var') return undefined;
+    if (aliases.has(node.nodes[0]?.value)) target = node;
+    return undefined;
+  });
+  if (!target) return [value];
+  const name = target.nodes[0].value;
+  return [...aliases.get(name)]
+    .flatMap((candidate) => {
+      Object.assign(target, { type: 'word', value: candidate });
+      return expandAliases(valueParser.stringify(parsed), aliases, depth + 1);
+    })
+    .slice(0, MAX_EXPANSIONS);
+};
+
+// Custom properties declared outside theme.css, with every value given each.
+export const aliasesOf = (stylesheets, registry) => {
+  const aliases = new Map();
+  for (const css of stylesheets) {
+    postcss.parse(css).walkDecls(/^--/, (decl) => {
+      if (registry.has(decl.prop)) return;
+      if (!aliases.has(decl.prop)) aliases.set(decl.prop, new Set());
+      aliases.get(decl.prop).add(decl.value.trim());
+    });
+  }
+  return aliases;
+};
+
+const issue = (where, rule, message) => ({ ...where, rule, message });
+
+// Problems with one painted value after its aliases are followed: a token in
+// the wrong role and a channel alpha without its multiplier.
+const paintIssues = (value, role, registry, context, aliases) => {
+  const messages = new Set();
+  for (const expanded of expandAliases(value, aliases)) {
+    for (const message of unscaledChannels(expanded)) messages.add(['multiplier', message]);
+    if (!role) continue;
+    for (const ref of paintedRefs(expanded, role)) {
+      const misuse = registry.has(ref.name) && misuseOf(ref.name, ref.role, registry, context);
+      if (misuse) messages.add(['role-misuse', misuse]);
+    }
+  }
+  return [...new Map([...messages].map((entry) => [entry.join(' '), entry])).values()];
+};
+
+// Every var() cycle among the tokens a stylesheet declares.
+const tokenCycles = (root) => {
+  const edges = new Map();
+  root.walkDecls(/^--ct-/, (decl) => {
+    edges.set(decl.prop, [...(edges.get(decl.prop) ?? []), ...tokenRefs(decl.value)]);
+  });
+  const cycles = [];
+  const state = new Map();
+  const visit = (name, trail) => {
+    if (state.get(name) === 'done') return;
+    if (state.get(name) === 'open') {
+      cycles.push(trail.slice(trail.indexOf(name)).concat(name));
+      return;
+    }
+    state.set(name, 'open');
+    for (const next of edges.get(name) ?? []) visit(next, [...trail, name]);
+    state.set(name, 'done');
+  };
+  for (const name of edges.keys()) visit(name, []);
+  return cycles;
+};
+
+export const checkCss = (css, file, registry, scope = {}) => {
+  const { defined = registry.declared, aliases = aliasesOf([css], registry) } = scope;
   const issues = [];
   const isTheme = file === THEME_FILE;
-  postcss.parse(css, { from: file }).walkDecls((decl) => {
+  const root = postcss.parse(css, { from: file });
+  root.walkDecls((decl) => {
     const line = decl.source?.start?.line;
     const where = { file, line, text: `${decl.prop}: ${decl.value}` };
-    if (isTheme && decl.prop.startsWith('--ct-')) return;
-    const role = roleOf(decl.prop);
-    if (!isTheme) {
-      for (const raw of rawColorsInValue(decl.value, role)) {
-        issues.push({ ...where, rule: 'raw-colour', message: `raw colour ${raw}` });
-      }
-      if (decl.prop.startsWith('--') && parseChannels(decl.value)) {
-        issues.push({ ...where, rule: 'raw-colour', message: `raw colour channels ${decl.value}` });
-      }
-    }
-    const context = decl.parent?.type === 'rule' ? onAccentContext(decl.parent, registry) : null;
     for (const name of tokenRefs(decl.value)) {
       if (!defined.has(name)) {
-        issues.push({
-          ...where,
-          rule: 'unknown-token',
-          message: `${name} is not defined in ${THEME_FILE}`,
-        });
-      } else if (role && registry.has(name)) {
-        const misuse = misuseOf(name, role, registry, context);
-        if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
+        issues.push(issue(where, 'unknown-token', `${name} is not defined in ${THEME_FILE}`));
       }
     }
+    // theme.css defines the palette: its token values are the raw colours.
+    if (isTheme && decl.prop.startsWith('--')) return;
+    const role = roleOf(decl.prop);
+    for (const raw of rawColorsInValue(decl.value, role)) {
+      issues.push(issue(where, 'raw-colour', `raw colour ${raw}`));
+    }
+    if (decl.prop.startsWith('--') && parseChannels(decl.value)) {
+      issues.push(issue(where, 'raw-colour', `raw colour channels ${decl.value}`));
+    }
+    const context = decl.parent?.type === 'rule' ? ruleContext(decl.parent, registry) : null;
+    for (const [rule, message] of paintIssues(decl.value, role, registry, context, aliases)) {
+      issues.push(issue(where, rule, message));
+    }
   });
+  if (isTheme) {
+    for (const cycle of tokenCycles(root)) {
+      issues.push({ file, rule: 'token-cycle', message: `var() cycle ${cycle.join(' → ')}` });
+    }
+  }
   return issues;
 };
 
 const JS_HEX = /(^|[\s'"`([,:{=])(#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4}))(?![\w-])/gi;
-const JS_FUNCTION = /\b(rgba?|hsla?)\(\s*(?!var\()/gi;
+const JS_FUNCTION = /\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(\s*(?!var\()/gi;
 
-// A bare word such as 'white' is a colour only where it paints (a style value
-// or a paint attribute); elsewhere it is a prop value like closeVariant="white".
-const rawColorsInString = (text, painted) => {
-  const found = [...text.matchAll(JS_HEX)].map((match) => match[2]);
-  found.push(...[...text.matchAll(JS_FUNCTION)].map((match) => `${match[1]}(`));
-  if (painted && CSS_COLOR_NAMES.has(text.trim().toLowerCase())) found.push(text.trim());
-  return found;
-};
+// A string that does not paint (a class name, a label) holds a colour only
+// as a hex or a colour function; a bare word there is a prop value such as
+// closeVariant="white".
+const rawColorsInText = (text) => [
+  ...[...text.matchAll(JS_HEX)].map((match) => match[2]),
+  ...[...text.matchAll(JS_FUNCTION)].map((match) => `${match[1]}(`),
+];
 
-const visit = (node, enter, parent = null) => {
+const visit = (node, enter, ancestors = []) => {
   if (!node || typeof node.type !== 'string') return;
-  enter(node, parent);
+  enter(node, ancestors);
+  const inner = [...ancestors, node];
   for (const key of Object.keys(node)) {
     if (key === 'loc' || key === 'start' || key === 'end' || key === 'extra') continue;
     const child = node[key];
-    if (Array.isArray(child)) child.forEach((item) => visit(item, enter, node));
-    else if (child && typeof child.type === 'string') visit(child, enter, node);
+    if (Array.isArray(child)) child.forEach((item) => visit(item, enter, inner));
+    else if (child && typeof child.type === 'string') visit(child, enter, inner);
   }
 };
 
-// The CSS property a string paints when it is a style value or an SVG paint
-// attribute: { background: 'var(--ct-gold)' } or fill="var(--ct-gold)".
-const propertyOf = (parent) => {
-  let name = null;
-  if (parent?.type === 'ObjectProperty' && !parent.computed)
-    name = parent.key.name ?? parent.key.value;
-  if (parent?.type === 'JSXAttribute') name = parent.name.name;
-  return typeof name === 'string' ? name : null;
+// Expressions a painted string passes through on its way to the property.
+const PASS_THROUGH = new Set([
+  'ConditionalExpression',
+  'LogicalExpression',
+  'JSXExpressionContainer',
+  'TemplateLiteral',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'ParenthesizedExpression',
+  'BinaryExpression',
+]);
+
+const keyName = (key) => key?.name ?? (typeof key?.value === 'string' ? key.value : null);
+
+// The property a string ends up painting: a style key, an SVG paint attribute,
+// a Chart.js option or a canvas style, through conditionals, fallbacks and
+// template literals. Null when the string is not a value of one.
+const paintedProperty = (node, ancestors) => {
+  let child = node;
+  for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+    const parent = ancestors[i];
+    if (parent.type === 'ObjectProperty') {
+      return parent.value === child && !parent.computed ? keyName(parent.key) : null;
+    }
+    if (parent.type === 'JSXAttribute') return parent.name.name;
+    if (parent.type === 'AssignmentExpression') {
+      const target = parent.left;
+      return parent.right === child && target.type === 'MemberExpression' && !target.computed
+        ? keyName(target.property)
+        : null;
+    }
+    if (!PASS_THROUGH.has(parent.type)) return null;
+    if (parent.type === 'ConditionalExpression' && parent.test === child) return null;
+    if (parent.type === 'BinaryExpression' && parent.operator !== '+') return null;
+    child = parent;
+  }
+  return null;
 };
 
-export const checkJs = (source, file, registry, defined = registry.declared) => {
+// Attributes whose '#abc' is a fragment or an id, never a colour.
+const NOT_PAINT = new Set(['href', 'id', 'to', 'htmlFor']);
+
+// A template literal reads as one value, each ${} standing in as a number.
+const TEMPLATE_HOLE = '1';
+
+export const checkJs = (source, file, registry, scope = {}) => {
+  const { defined = registry.declared } = scope;
   const issues = [];
   const ast = parseJs(source, { sourceType: 'module', plugins: ['jsx'], errorRecovery: true });
-  visit(ast.program, (node, parent) => {
-    let text = null;
-    if (node.type === 'StringLiteral') text = node.value;
-    else if (node.type === 'TemplateElement') text = node.value.cooked ?? node.value.raw;
-    else if (node.type === 'JSXText') return;
-    if (text === null) return;
+  visit(ast.program, (node, ancestors) => {
+    let pieces;
+    if (node.type === 'StringLiteral') pieces = [node.value];
+    else if (node.type === 'TemplateLiteral') {
+      pieces = node.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw);
+    } else return;
+    const text = pieces.join(TEMPLATE_HOLE);
+    const property = paintedProperty(node, ancestors);
+    if (NOT_PAINT.has(property)) return;
+    const role = property && jsRoleOf(property);
     const where = { file, line: node.loc?.start.line, text: text.trim().slice(0, 120) };
-    const property = propertyOf(parent);
-    const role = property && roleOf(property);
-    for (const raw of rawColorsInString(text, Boolean(role))) {
-      issues.push({ ...where, rule: 'raw-colour', message: `raw colour ${raw}` });
-    }
-    for (const name of text.match(TOKEN_REFERENCE_RE) ?? []) {
+    const raws = role ? rawColorsInValue(text, role) : rawColorsInText(text);
+    for (const raw of raws) issues.push(issue(where, 'raw-colour', `raw colour ${raw}`));
+    // A name cut by a ${} (`--ct-${family}-bg-rgb`) is built at runtime.
+    const names = pieces.flatMap((piece, i) =>
+      [...piece.matchAll(TOKEN_REFERENCE_RE)]
+        .filter(
+          (match) =>
+            i === pieces.length - 1 || !/^-?$/.test(piece.slice(match.index + match[0].length)),
+        )
+        .map((match) => match[0]),
+    );
+    for (const name of names) {
       if (!defined.has(name)) {
-        issues.push({
-          ...where,
-          rule: 'unknown-token',
-          message: `${name} is not defined in ${THEME_FILE}`,
-        });
+        issues.push(issue(where, 'unknown-token', `${name} is not defined in ${THEME_FILE}`));
       }
     }
-    if (role) {
-      for (const name of tokenRefs(text)) {
-        const misuse = registry.has(name) && misuseOf(name, role, registry);
-        if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
-      }
+    for (const [rule, message] of paintIssues(text, role, registry, null, new Map())) {
+      issues.push(issue(where, rule, message));
     }
     for (const { role: utilityRole, token } of tailwindColors(text)) {
       const misuse =
         utilityRole && token && registry.has(token) && misuseOf(token, utilityRole, registry);
-      if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
+      if (misuse) issues.push(issue(where, 'role-misuse', misuse));
     }
   });
   return issues;
@@ -192,10 +343,12 @@ export const check = (rootDir) => {
   for (const file of files.filter((name) => name.endsWith('.css'))) {
     postcss.parse(read(file)).walkDecls(/^--ct-/, (decl) => defined.add(decl.prop));
   }
+  const stylesheets = files.filter((file) => isStylesheet(file) && file !== THEME_FILE);
+  const scope = { defined, aliases: aliasesOf(stylesheets.map(read), registry) };
   const issues = [];
   for (const file of files) {
-    if (isStylesheet(file)) issues.push(...checkCss(read(file), file, registry, defined));
-    else issues.push(...checkJs(read(file), file, registry, defined));
+    if (isStylesheet(file)) issues.push(...checkCss(read(file), file, registry, scope));
+    else issues.push(...checkJs(read(file), file, registry, scope));
   }
 
   const used = new Set();

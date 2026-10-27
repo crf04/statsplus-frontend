@@ -21,10 +21,14 @@ export const LIGHT_END = '/* light-tails: end */';
 
 // Shades tuned away from the mapping, by name.
 export const OVERRIDES = {
-  // Fills under white lettering (the search button, the avatar initial)
-  // darken until the lettering reads at 4.5:1.
+  // Fills under white lettering (the search button and its hover, the avatar
+  // initial) darken until the lettering reads at 4.5:1.
+  '--ct-x-3d7ae6-fill': '#3070d4',
   '--ct-x-4f8ef7-fill': '#3573da',
   '--ct-x-667eea-fill': '#586ed9',
+  // The amber search button's hover end, under black lettering: lighter than
+  // the mapping so the lettering reads at 4.5:1, still darker than its start.
+  '--ct-x-b45309-fill': '#c25a06',
   // A hover gradient's end: the mapping lands on the rule grey, too dark to
   // hover a header or carry amber text.
   '--ct-x-3a3a3a': '#e2e5e9',

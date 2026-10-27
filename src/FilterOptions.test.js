@@ -421,3 +421,31 @@ test('USG% keyboard steps land on the 0.1 grid when season values have two decim
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[USG_PCT]': '25,40' });
 });
+
+test('Own stat line offers Potential assists in integer steps and the chip reads the range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, POTENTIAL_AST: null },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 20 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
+  expect(screen.getByText('8–20')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Potential assists 8–20')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '8,20' });
+});
+
+test('Own stat line offers Rebound chances and emits its range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CHANCES: 6 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CHANCES: 15 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CHANCES' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Rebound chances 6–15')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
+});

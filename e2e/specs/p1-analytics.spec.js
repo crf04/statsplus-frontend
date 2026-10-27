@@ -55,7 +55,12 @@ test.describe('P1 game-log analytics', () => {
 
     await expect(januaryTenth).toHaveCount(1);
     await expect(januaryTenth.getByRole('cell').nth(2)).toHaveText('W');
-    await expect(januaryTenth.getByRole('cell').nth(17)).toHaveText('3');
+    await expect(januaryTenth.getByRole('cell').nth(19)).toHaveText('3');
+    await expect(januaryTenth.getByRole('cell').nth(15)).toHaveText('14');
+    await expect(januaryTenth.getByRole('cell').nth(16)).toHaveText('17');
+    await expect(
+      page.getByRole('row').filter({ hasText: '1/8' }).getByRole('cell').nth(15),
+    ).toHaveText('–');
     const per36Card = page
       .getByRole('heading', { name: 'Per 36 Minutes Comparison' })
       .locator('..');

@@ -57,14 +57,14 @@ const skip = (name, why) => summary.push(`skipped ${name}: ${why}`);
 
 console.log(`merge base ${base.slice(0, 7)}, ${changed.length} changed file(s)`);
 
-for (const [name, args] of [
-  ['eslint --cache', ['eslint', '--cache', '.']],
-  ['format:check', null],
-  ['typecheck:e2e', null],
-  ['build', null],
+for (const [name, command, args] of [
+  ['eslint --cache', 'npx', ['eslint', '--cache', '.']],
+  ['check-colors', 'node', ['scripts/theme/check-colors.mjs']],
+  ['format:check', 'npm', ['run', '--silent', 'format:check']],
+  ['typecheck:e2e', 'npm', ['run', '--silent', 'typecheck:e2e']],
+  ['build', 'npm', ['run', '--silent', 'build']],
 ]) {
-  if (args) await step(name, 'npx', args);
-  else await step(name, 'npm', ['run', '--silent', name]);
+  await step(name, command, args);
   if (failed) break;
 }
 
@@ -98,6 +98,9 @@ if (!failed) {
   if (critical)
     await step('playwright @critical', 'npx', ['playwright', 'test', '--grep', '@critical']);
   else skip('playwright @critical', 'only docs, CI or individual test files changed');
+  if (changed.some((f) => f.startsWith('scripts/theme/')))
+    await step('theme tooling tests', 'npm', ['run', '--silent', 'test:theme']);
+  else skip('theme tooling tests', 'no scripts/theme changes');
   if (bridge) await step('fixture bridge tests', 'node', ['--test', 'e2e/bridge/server.test.mjs']);
   else skip('fixture bridge tests', 'no e2e/bridge changes');
   if (flows.length)

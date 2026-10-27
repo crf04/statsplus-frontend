@@ -116,7 +116,9 @@ signedInTest(
     await expect(screen.getByRole('list', { name: /graded by AST\/36 margin/ })).toBeVisible();
     expect(await overflowsHorizontally(browser)).toBe(false);
     await games.getByRole('link', 'LeBron James games vs ATL').tap();
-    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26&opponent_tricode=ATL');
+    await expect(browser).toHaveURL(
+      '/?player_name=LeBron+James&season_filter=2025-26&opponent_tricode=ATL',
+    );
     await expect(screen.getByRole('cell', 'ATL')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
   },

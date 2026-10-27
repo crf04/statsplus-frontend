@@ -55,6 +55,8 @@
 
   /* native controls (a select's popup), and the select chevron, --ct-dim */
   --ct-scheme: dark;
+  /* lightness of the computed red-to-green rating scale */
+  --ct-scale-lightness: 40%;
   --ct-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%239b937f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
 
   /* translucent paint: a channel times its role's alpha multiplier
@@ -553,6 +555,7 @@
   --ct-slate: #6f757f;
 
   --ct-scheme: light;
+  --ct-scale-lightness: 22%;
   --ct-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%235f6670' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
 
   --ct-overlay-fg-rgb: 21 24 29;
@@ -668,6 +671,37 @@
   --ct-x-ffa500-15-fill: rgba(255, 165, 0, 0.203);
   --ct-x-fff6e4: #0f1115;
   /* light-tails: end */
+}
+
+/* Light-only bridges where Bootstrap owns the colour: its white page, light
+   text and outline utilities, and white close icons were made for dark. */
+[data-theme='light'] body {
+  background-color: var(--ct-ink);
+}
+
+[data-theme='light'] .text-light {
+  color: var(--ct-text-2) !important;
+}
+
+[data-theme='light'] .btn-outline-light {
+  color: var(--ct-text);
+  border-color: var(--ct-line-strong);
+}
+
+[data-theme='light'] .btn-outline-light:hover {
+  background: var(--ct-overlay-bg-6);
+  color: var(--ct-text);
+}
+
+[data-theme='light'] .btn-close-white {
+  filter: none;
+}
+
+/* Filter badges in Bootstrap's solid danger and success: white lettering
+   rather than the card's amber. */
+[data-theme='light'] .badge.bg-danger,
+[data-theme='light'] .badge.bg-success {
+  color: var(--ct-on-ffffff);
 }
 
 /* A user's switch repaints at once rather than through each 200ms colour

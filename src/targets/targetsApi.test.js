@@ -1387,3 +1387,244 @@ test('resolves with the fallback parameter when the caller asks for the previous
     signal: undefined,
   });
 });
+
+/*
+ * crf04/statsplus#351: a Qualifier is a union keyed by `base`. These tests
+ * decode wire bodies and assert the literal values the UI reads.
+ */
+const wirePositionQualifier = { base: 'position', groups: ['Big', 'Wing'] };
+const wireAverageQualifier = {
+  base: 'season_average',
+  stat: '3PA',
+  comparator: 'at_or_above',
+  threshold: 0.3,
+};
+const wireDietQualifier = wireTarget.qualifiers[0];
+const wireMixedTarget = {
+  ...wireTarget,
+  title: 'OKC vs Wing/Big, Corner 3 ≥ 40%, 3PA avg ≥ 0.3',
+  qualifiers: [wirePositionQualifier, wireDietQualifier, wireAverageQualifier],
+};
+
+test('decodes Position, Diet and Average Qualifiers, keeping their order', () => {
+  const [target] = decodeTargets({ targets: [wireMixedTarget] });
+
+  expect(target.qualifiers).toEqual([
+    // The groups come back in Guard, Wing, Big order whatever the wire sent.
+    { base: 'position', groups: ['Wing', 'Big'] },
+    { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+    { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 0.3 },
+  ]);
+});
+
+test('an Average threshold is a plain number, not a share', () => {
+  const [target] = decodeTargets({
+    targets: [
+      {
+        ...wireTarget,
+        qualifiers: [{ ...wireAverageQualifier, stat: 'PTS/36', threshold: 17.5 }],
+      },
+    ],
+  });
+  expect(target.qualifiers).toEqual([
+    { base: 'season_average', stat: 'PTS/36', comparator: 'at_or_above', threshold: 17.5 },
+  ]);
+  // The 0–1 limit still holds for a Diet share.
+  expect(() =>
+    decodeTargets({
+      targets: [{ ...wireTarget, qualifiers: [{ ...wireDietQualifier, threshold: 17.5 }] }],
+    }),
+  ).toThrow(/invalid response/i);
+});
+
+test.each([
+  ['an infinite threshold', { ...wireAverageQualifier, threshold: Infinity }],
+  ['a threshold that is not a number', { ...wireAverageQualifier, threshold: NaN }],
+])('refuses an Average Qualifier with %s', (_, qualifier) => {
+  expect(() => decodeTargets({ targets: [{ ...wireTarget, qualifiers: [qualifier] }] })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test.each([
+  ['no groups', { base: 'position', groups: [] }],
+  ['an unknown group', { base: 'position', groups: ['Center'] }],
+  ['a repeated group', { base: 'position', groups: ['Big', 'Big'] }],
+  ['groups that are not a list', { base: 'position', groups: 'Big' }],
+  ['an unknown stat', { ...wireAverageQualifier, stat: 'XYZ' }],
+  ['a negative threshold', { ...wireAverageQualifier, threshold: -1 }],
+  ['a threshold that is not a number', { ...wireAverageQualifier, threshold: '0.3' }],
+  ['an unknown comparator', { ...wireAverageQualifier, comparator: 'equal' }],
+])('refuses a Qualifier with %s', (_, qualifier) => {
+  expect(() => decodeTargets({ targets: [{ ...wireTarget, qualifiers: [qualifier] }] })).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('encodes each Qualifier kind to its wire shape when creating a Target', async () => {
+  apiClient.post.mockResolvedValue({ data: { success: true, target: wireMixedTarget } });
+
+  await createTarget({
+    opponent: 'OKC',
+    note: '',
+    qualifiers: [
+      { base: 'position', groups: ['Wing', 'Big'] },
+      { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      { base: 'season_average', stat: '3PA/36', comparator: 'at_or_below', threshold: 0.004 },
+    ],
+  });
+
+  expect(apiClient.post).toHaveBeenCalledWith('/api/user/targets', {
+    opponent: 'OKC',
+    note: '',
+    qualifiers: [
+      { base: 'position', groups: ['Wing', 'Big'] },
+      { base: 'shot_zones', slice_key: 'Corner 3', comparator: 'at_or_above', threshold: 0.4 },
+      { base: 'season_average', stat: '3PA/36', comparator: 'at_or_below', threshold: 0.004 },
+    ],
+  });
+});
+
+// One entry per Qualifier of every kind: all nulls for Position and Average.
+const ruleShare = (base) => ({
+  base,
+  slice_key: null,
+  share: null,
+  league_average_share: null,
+});
+const mixedShares = (dietShares) => [
+  ruleShare('position'),
+  ...dietShares,
+  ruleShare('season_average'),
+];
+const positionedBacktest = (players, summary = {}) => ({
+  ...wireBacktest,
+  target: wireMixedTarget,
+  summary: { ...wireBacktest.summary, ...summary },
+  players: players.map((player) => ({ ...player, shares: mixedShares(player.shares) })),
+});
+const [wireLeBron, wireTatum] = wireBacktest.players;
+// Shares exist only for diet slices: one entry here for three Qualifiers.
+const withPosition = (player, position) => ({ ...player, position });
+
+test('decodes each backtest player Position, null, and none sent, and the count left out', () => {
+  const backtest = decodeBacktest(
+    positionedBacktest(
+      [
+        withPosition(wireLeBron, 'Wing'),
+        withPosition(wireTatum, null),
+        { ...wireTatum, name: 'No Field' },
+      ],
+      { players_without_position: 4 },
+    ),
+  );
+
+  expect(backtest.players.map(({ name, position }) => [name, position])).toEqual([
+    ['LeBron James', 'Wing'],
+    ['Jayson Tatum', null],
+    // A backend that predates Position sends no field, and none is invented.
+    ['No Field', undefined],
+  ]);
+  expect(backtest.summary.playersWithoutPosition).toBe(4);
+  expect(backtest.players[0].shares).toEqual([{ share: 0.44, leagueAverageShare: 0.2 }]);
+});
+
+test('a summary without the count carries none, and a bad count is refused', () => {
+  expect(decodeBacktest(positionedBacktest([wireLeBron])).summary).toEqual({
+    players: 2,
+    games: 2,
+    columns: {
+      PTS: { meanDifference: 1.2, overAverageShare: 0.5 },
+      '3PM': { meanDifference: 0.5, overAverageShare: 0.5 },
+    },
+  });
+  for (const count of [-1, 1.5, '4'])
+    expect(() =>
+      decodeBacktest(positionedBacktest([wireLeBron], { players_without_position: count })),
+    ).toThrow(/invalid response/i);
+  expect(() => decodeBacktest(positionedBacktest([withPosition(wireLeBron, 'Center')]))).toThrow(
+    /invalid response/i,
+  );
+});
+
+test('shares are one entry per Qualifier of every kind, and the Diet ones are what decode', () => {
+  const entries = (shares) => ({
+    ...wireBacktest,
+    target: wireMixedTarget,
+    players: [{ ...wireLeBron, shares }],
+  });
+  expect(decodeBacktest(entries(mixedShares(wireLeBron.shares))).players[0].shares).toEqual([
+    { share: 0.44, leagueAverageShare: 0.2 },
+  ]);
+  // Diet shares alone, or any other length, would misattribute a share.
+  for (const shares of [
+    wireLeBron.shares,
+    [...mixedShares(wireLeBron.shares), ...wireLeBron.shares],
+    // The entries of the other kinds must be the all-null ones, in place.
+    [ruleShare('season_average'), ...wireLeBron.shares, ruleShare('position')],
+    [{ ...ruleShare('position'), share: 0.3 }, ...wireLeBron.shares, ruleShare('season_average')],
+  ])
+    expect(() => decodeBacktest(entries(shares))).toThrow(/invalid response/i);
+});
+
+test('a resolved Target with a Position and an Average decodes Position on each fit', () => {
+  const live = {
+    ...wireResolvedLive,
+    target: wireMixedTarget,
+    players: [
+      {
+        ...wireResolvedLive.players[0],
+        shares: mixedShares(wireResolvedLive.players[0].shares),
+        position: 'Big',
+      },
+      {
+        ...wireResolvedLive.players[0],
+        shares: mixedShares(wireResolvedLive.players[0].shares),
+        canonical_id: 9,
+        name: 'Unlisted',
+        position: null,
+      },
+    ],
+    context: [
+      { base: 'position', slice_key: null, label: null, availability: null, metrics: [] },
+      ...wireResolvedLive.context,
+      { base: 'season_average', slice_key: null, label: null, availability: null, metrics: [] },
+    ],
+  };
+  const { entries } = decodeResolvedTargets(resolvePayload([live]));
+  expect(entries[0].players.map(({ name, position, shares }) => [name, position, shares])).toEqual([
+    ['LeBron James', 'Big', [{ share: 0.44, leagueAverageShare: 0.2 }]],
+    ['Unlisted', null, [{ share: 0.44, leagueAverageShare: 0.2 }]],
+  ]);
+  expect(entries[0].context.map(({ label }) => label)).toEqual(['Corner 3']);
+});
+
+test('a preview echoes Position and Average Qualifiers with the Position of each player', () => {
+  const preview = decodePreview({
+    ...positionedBacktest([withPosition(wireLeBron, 'Guard')], { players_without_position: 0 }),
+    target: {
+      opponent: 'OKC',
+      title: wireMixedTarget.title,
+      note: null,
+      qualifiers: wireMixedTarget.qualifiers,
+    },
+    today: null,
+  });
+  expect(preview.target.qualifiers.map(({ base }) => base)).toEqual([
+    'position',
+    'shot_zones',
+    'season_average',
+  ]);
+  expect(preview.players[0].position).toBe('Guard');
+  expect(preview.summary.playersWithoutPosition).toBe(0);
+});
+
+test('an Average threshold of 1000 is accepted and one above it is refused', () => {
+  const withThreshold = (threshold) => ({
+    targets: [{ ...wireTarget, qualifiers: [{ ...wireAverageQualifier, threshold }] }],
+  });
+  expect(decodeTargets(withThreshold(1000))[0].qualifiers).toEqual([
+    { base: 'season_average', stat: '3PA', comparator: 'at_or_above', threshold: 1000 },
+  ]);
+  expect(() => decodeTargets(withThreshold(1000.01))).toThrow(/invalid response/i);
+});

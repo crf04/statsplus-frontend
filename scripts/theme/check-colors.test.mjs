@@ -56,7 +56,8 @@ test('a raw colour fails in CSS, Tailwind, inline styles and template literals',
   assert.deepEqual(
     project({
       'src/unused.css': '.never-rendered { border-color: rgba(255, 255, 255, 0.1); }',
-      'src/channels.css': '.run { --oc: 232, 163, 61; }',
+      'src/channels.css':
+        '.run { --oc: 232, 163, 61; }\n.mix { background: rgba(232, 163, 61, var(--ct-k-accent-bg)); }',
       'src/Card.js': `export const Card = ({ a }) => (
   <div className="hover:border-[#e8a33d]" style={{ color: 'white', background: \`rgba(76, 175, 125, \${a})\` }} />
 );`,
@@ -66,6 +67,7 @@ test('a raw colour fails in CSS, Tailwind, inline styles and template literals',
       'src/Card.js raw-colour: raw colour white',
       'src/Card.js raw-colour: raw colour rgba(76, 175, 125, 1)',
       'src/channels.css raw-colour: raw colour channels 232, 163, 61',
+      'src/channels.css raw-colour: raw colour rgba(232, 163, 61, var(--ct-k-accent-bg))',
       'src/unused.css raw-colour: raw colour rgba(255, 255, 255, 0.1)',
     ],
   );

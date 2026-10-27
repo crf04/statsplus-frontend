@@ -268,7 +268,6 @@ const paintedProperty = (node, ancestors) => {
         : null;
     }
     if (!PASS_THROUGH.has(parent.type)) return null;
-    if (parent.type === 'ConditionalExpression' && parent.test === child) return null;
     if (parent.type === 'BinaryExpression' && parent.operator !== '+') return null;
     child = parent;
   }

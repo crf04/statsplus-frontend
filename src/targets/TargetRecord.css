@@ -24,10 +24,10 @@
   background: var(--ct-hit-bg-30);
 }
 .grade-hit-2 {
-  background: var(--ct-hit-bg-52);
+  background: var(--ct-hit-fill-52);
 }
 .grade-hit-3 {
-  background: var(--ct-hit-bg-76);
+  background: var(--ct-hit-fill-76);
 }
 .grade-hit-4 {
   background: var(--ct-hit-fill);
@@ -36,16 +36,16 @@
   background: var(--ct-miss-bg-30);
 }
 .grade-miss-2 {
-  background: var(--ct-miss-bg-52);
+  background: var(--ct-miss-fill-52);
 }
 .grade-miss-3 {
-  background: var(--ct-miss-bg-76);
+  background: var(--ct-miss-fill-76);
 }
 .grade-miss-4 {
   background: var(--ct-miss-fill);
 }
 .grade-neutral {
-  background: var(--ct-line-strong);
+  background: var(--ct-overlay-bg-16);
 }
 .grade-unavailable {
   background: transparent;

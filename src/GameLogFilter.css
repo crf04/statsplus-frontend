@@ -885,13 +885,13 @@ body {
 
 .result-badge.win {
   background: linear-gradient(135deg, var(--ct-x-10b981-fill) 0%, var(--ct-x-059669-fill) 100%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
   box-shadow: 0 2px 8px var(--ct-x-10b981-30);
 }
 
 .result-badge.loss {
   background: linear-gradient(135deg, var(--ct-x-ef4444-fill) 0%, var(--ct-x-dc2626-fill) 100%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
   box-shadow: 0 2px 8px var(--ct-x-ef4444-30);
 }
 
@@ -1578,12 +1578,12 @@ body {
 
 .game-result.win {
   background: linear-gradient(135deg, var(--ct-x-10b981-fill) 0%, var(--ct-x-059669-fill) 100%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
 }
 
 .game-result.loss {
   background: linear-gradient(135deg, var(--ct-x-ef4444-fill) 0%, var(--ct-x-dc2626-fill) 100%);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
 }
 
 /* Game Card Body */

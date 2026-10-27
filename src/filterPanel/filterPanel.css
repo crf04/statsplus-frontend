@@ -44,7 +44,7 @@
 .fp-input:focus,
 .fp-select:focus {
   border-color: var(--ct-gold);
-  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
 }
 .fp-select {
   appearance: none;
@@ -86,7 +86,7 @@
 }
 .fp-range-thumb:focus-visible,
 .fp-range-thumb.active {
-  box-shadow: 0 0 0 5px var(--ct-gold-soft);
+  box-shadow: 0 0 0 5px var(--ct-gold-fg-12);
 }
 
 .fp-seg {
@@ -583,7 +583,7 @@
     margin: 0 -18px;
     padding: 0 18px;
     scrollbar-width: thin;
-    scrollbar-color: var(--ct-line-strong) transparent;
+    scrollbar-color: var(--ct-overlay-bg-16) transparent;
   }
   .fp-pinned .fpb-foot,
   .fp-pinned .fpc-apply {

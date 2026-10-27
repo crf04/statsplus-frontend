@@ -127,7 +127,7 @@
 .feedback-popover textarea:focus {
   outline: none;
   border-color: var(--ct-gold);
-  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
 }
 
 .feedback-popover textarea::placeholder {
@@ -167,7 +167,7 @@
 
 .feedback-x-field:focus-within {
   border-color: var(--ct-gold);
-  box-shadow: 0 0 0 3px var(--ct-gold-soft);
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
 }
 
 .feedback-x-field.is-bad {

@@ -353,11 +353,11 @@
 }
 
 .slate-pip.is-home {
-  background: var(--ct-gold-bg-50);
+  background: var(--ct-gold-fill-50);
 }
 
 .slate-row.is-blocked .slate-pip {
-  background: var(--ct-line-strong);
+  background: var(--ct-overlay-bg-16);
 }
 
 .slate-depth-figure {

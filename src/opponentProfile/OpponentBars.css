@@ -68,11 +68,11 @@
   min-width: 2px;
 }
 .opp-bars-fill-more {
-  background: linear-gradient(90deg, var(--ct-hit-bg-55), var(--ct-hit-fill));
+  background: linear-gradient(90deg, var(--ct-hit-fill-55), var(--ct-hit-fill));
   border-radius: 0 3px 3px 0;
 }
 .opp-bars-fill-less {
-  background: linear-gradient(270deg, var(--ct-miss-bg-55), var(--ct-miss-fill));
+  background: linear-gradient(270deg, var(--ct-miss-fill-55), var(--ct-miss-fill));
   border-radius: 3px 0 0 3px;
 }
 

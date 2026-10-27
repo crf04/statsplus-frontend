@@ -84,7 +84,7 @@
   border-radius: 4px;
   background: linear-gradient(
     to right,
-    var(--ct-line-strong) var(--threshold-position),
+    var(--ct-overlay-bg-16) var(--threshold-position),
     var(--ct-gold-bg-45) var(--threshold-position)
   );
 }
@@ -92,7 +92,7 @@
   background: linear-gradient(
     to right,
     var(--ct-gold-bg-45) var(--threshold-position),
-    var(--ct-line-strong) var(--threshold-position)
+    var(--ct-overlay-bg-16) var(--threshold-position)
   );
 }
 .target-slider-track input::-webkit-slider-thumb {

@@ -1,5 +1,11 @@
 import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
-import { formatObservedShare, formatQualifierParts, signed } from './targetCatalog';
+import {
+  dietQualifiers,
+  positionFirst,
+  formatObservedShare,
+  formatQualifierParts,
+  signed,
+} from './targetCatalog';
 import { WINDOW_REASONS } from '../windowReasons';
 import '../readings.css';
 import './TargetFits.css';
@@ -23,12 +29,18 @@ export function TargetTitle({ target }) {
       <span className="target-live-team">{target.opponent}</span>
       <span className="target-live-vs">vs</span>
       <span className="target-live-qualifiers">
-        {target.qualifiers.map((qualifier, index) => {
+        {positionFirst(target.qualifiers).map((qualifier, index) => {
           const { label, value } = formatQualifierParts(qualifier);
           return (
             <span key={index}>
               {index > 0 && <em> &amp; </em>}
-              {label} <b>{value}</b>
+              {label}
+              {value && (
+                <>
+                  {' '}
+                  <b>{value}</b>
+                </>
+              )}
             </span>
           );
         })}
@@ -136,7 +148,7 @@ export function TargetFitTable({ entry, dense = false }) {
         <thead>
           <tr>
             <th>Player</th>
-            {target.qualifiers.map((qualifier, index) => (
+            {dietQualifiers(target.qualifiers).map((qualifier, index) => (
               <th className="num" key={index}>
                 {formatQualifierParts(qualifier).label}
               </th>
@@ -150,6 +162,9 @@ export function TargetFitTable({ entry, dense = false }) {
               <td>
                 <b>{player.name}</b>
                 <small>{player.tricode}</small>
+                {player.position && (
+                  <small className="target-player-position">{player.position}</small>
+                )}
                 {/* A thin diet is flagged rather than dropped, so this list
                     never disagrees with the Matchup about who is in the game. */}
                 {player.thin && (

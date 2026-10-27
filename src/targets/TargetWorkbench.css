@@ -326,3 +326,67 @@
 .target-section-label {
   margin-bottom: 2px;
 }
+
+/* Position: three toggles above the Qualifier rows. None pressed is any position. */
+.target-position {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.target-position button {
+  min-height: 36px;
+  min-width: 64px;
+  padding: 4px 14px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  font: 600 0.9rem var(--ct-sans);
+}
+.target-position button[aria-pressed='true'] {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+.target-position small {
+  color: var(--ct-dim);
+}
+@media (max-width: 600px) {
+  .target-position button {
+    flex: 1;
+    min-height: 44px;
+  }
+}
+/* A season average is typed in the stat's own units. */
+.target-average-input {
+  width: 6.5rem;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+  font: 600 0.95rem var(--ct-mono);
+}
+@media (max-width: 600px) {
+  .target-average-input,
+  .target-average-row .target-comparator-toggle {
+    min-height: 44px;
+  }
+}
+/* Position beside a player's name and a count of players the Position left out. */
+.target-player-position {
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 4px;
+  color: var(--ct-dim);
+  font: 0.68rem var(--ct-mono);
+}
+.target-limit {
+  margin: 8px 0 0;
+  color: var(--ct-dim);
+  font-size: 0.8rem;
+}

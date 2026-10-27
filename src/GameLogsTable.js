@@ -152,7 +152,9 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
     { key: 'FTM', label: 'FTM', width: '40px' },
     { key: 'FTA', label: 'FTA', width: '40px' },
     { key: 'REB', label: 'REB', width: '40px' },
+    { key: 'REB_CHANCES', label: 'REB CH', width: '54px' },
     { key: 'AST', label: 'AST', width: '40px' },
+    { key: 'POTENTIAL_AST', label: 'POT AST', width: '60px' },
     { key: 'STL', label: 'STL', width: '40px' },
     { key: 'BLK', label: 'BLK', width: '40px' },
     { key: 'TOV', label: 'TOV', width: '35px' },
@@ -275,7 +277,9 @@ const GameLogsTable = ({ gameLogs, appliedFilters, isLoading }) => {
                                   : ['PRA', 'PR', 'PA', 'AR'].includes(col.key)
                                     ? displayValue
                                     : numericValue === null
-                                      ? 'N/A'
+                                      ? col.key === 'REB_CHANCES' || col.key === 'POTENTIAL_AST'
+                                        ? '–'
+                                        : 'N/A'
                                       : numericValue}
                       </td>
                     );

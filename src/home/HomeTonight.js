@@ -76,9 +76,12 @@ const TargetCard = ({ entry, scores }) => {
             <li key={player.canonicalId}>
               <span>
                 {player.name} <small>{player.tricode}</small>
+                {player.position && (
+                  <small className="target-player-position">{player.position}</small>
+                )}
               </span>
               <span className="home-target-share">
-                {formatObservedShare(player.shares[0].share)}
+                {player.shares[0] ? formatObservedShare(player.shares[0].share) : '–'}
               </span>
               <span
                 className={`home-target-score${score === undefined ? '' : score >= 0 ? ' is-up' : ' is-down'}`}

@@ -53,6 +53,7 @@ test('dates under the bars read M/D, unrotated, and the y axis has no title', ()
   const tick = (label) => x.ticks.callback.call({ getLabelForValue: () => label }, 0);
   expect(tick('2026-03-10')).toBe('3/10');
   expect(tick('2025-11-01')).toBe('11/1');
+  expect(tick(new Date(2026, 2, 10, 12).getTime())).toBe('3/10');
   expect(x.ticks.maxRotation).toBe(0);
   expect(x.ticks.maxTicksLimit).toBe(8);
   expect(y.title).toBeUndefined();
@@ -104,4 +105,28 @@ test('a higher filtered value is a green plus, a lower one a red minus', () => {
   expect(container.querySelectorAll('.metric-card')[2].textContent).toBe(
     'Hit rate0/0 —L5 — · L10 —',
   );
+});
+
+const pillFor = (rawValue, seasonRawValue) => {
+  const { container } = render(
+    <MetricsDashboardRow
+      lineType="PTS"
+      rawValue={rawValue}
+      seasonRawValue={seasonRawValue}
+      per36Value={1}
+      seasonPer36Value={1}
+      ratio="1/1"
+    />,
+  );
+  return container.querySelector('.metric-change').textContent;
+};
+
+test('a change rounds by its size, the same either side of the season value', () => {
+  expect(pillFor(15, 16)).toBe('−6.3%');
+  expect(pillFor(17, 16)).toBe('+6.3%');
+});
+
+test('a change too small to show reads ±0%, not a signed zero', () => {
+  expect(pillFor(100.04, 100)).toBe('±0%');
+  expect(pillFor(99.96, 100)).toBe('±0%');
 });

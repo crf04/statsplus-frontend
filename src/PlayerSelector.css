@@ -208,11 +208,7 @@
 
   .player-selector-input,
   .player-selector-select {
-    padding: 10px 14px;
     font-size: 13px;
-  }
-  .player-selector-label {
-    font-size: 0.8rem;
   }
 
   .line-sources-list {

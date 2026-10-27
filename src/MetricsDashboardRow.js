@@ -10,12 +10,13 @@ const changeFrom = (current, previous) => {
 
 const ChangePill = ({ change }) => {
   if (change === null) return <span className="metric-change">—</span>;
-  const rounded = Math.round(change * 10) / 10;
-  if (rounded === 0) return <span className="metric-change">±0%</span>;
+  // Rounded by size, so −6.25% reads −6.3% just as +6.25% reads +6.3%.
+  const size = Math.round(Math.abs(change) * 10) / 10;
+  if (size === 0) return <span className="metric-change">±0%</span>;
   return (
-    <span className={`metric-change ${rounded > 0 ? 'is-up' : 'is-down'}`}>
-      {rounded > 0 ? '+' : '−'}
-      {formatNumber(Math.abs(rounded), 1)}%
+    <span className={`metric-change ${change > 0 ? 'is-up' : 'is-down'}`}>
+      {change > 0 ? '+' : '−'}
+      {formatNumber(size, 1)}%
     </span>
   );
 };

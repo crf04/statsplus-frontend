@@ -15,7 +15,10 @@ const ground = (page) =>
   page.evaluate(() => getComputedStyle(document.querySelector('.app-header')).backgroundColor);
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript((key) => window.localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
+  // Init scripts run in every frame; a report card's sandboxed frame has no storage.
+  await page.addInitScript((key) => {
+    if (window === window.top) window.localStorage.setItem(key, 'true');
+  }, E2E_AUTH_STORAGE_KEY);
   await installApiContract(page);
 });
 
@@ -61,6 +64,44 @@ test.describe('on a light device', () => {
     await reloaded;
     await expect(page.getByRole('button', { name: 'Appearance: Dark' })).toBeVisible();
     expect(await themesSeen(page)).toEqual(['dark']);
+  });
+
+  test('a report card keeps the dark host ground of the Claude page it imitates', async ({
+    page,
+  }) => {
+    await page.goto('/reports/k3x9q2mtzr');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.getByText('The read and cards').first().click();
+    const island = page.locator('.report-card-fit');
+    await expect(island).toBeVisible();
+    expect(
+      await island.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return [style.backgroundColor, style.colorScheme];
+      }),
+    ).toEqual(['rgb(31, 30, 27)', 'dark']);
+  });
+});
+
+test.describe('on a desktop', () => {
+  test.use({ colorScheme: 'dark', viewport: { width: 1440, height: 900 } });
+
+  test('the menu opens under its button, right edges aligned', async ({ page }) => {
+    // Home loads the search's stylesheet, whose profile-menu placement must not reach this menu.
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
+    const toggle = page.getByRole('button', { name: 'Appearance: System (Dark)' });
+    await toggle.click();
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+    const placement = async () => {
+      const [button, opened] = [await toggle.boundingBox(), await menu.boundingBox()];
+      return {
+        gap: Math.round(opened.y - (button.y + button.height)),
+        right: Math.round(opened.x + opened.width - (button.x + button.width)),
+      };
+    };
+    await expect.poll(placement).toEqual({ gap: 8, right: 0 });
   });
 });
 

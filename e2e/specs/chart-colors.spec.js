@@ -191,10 +191,10 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
       return gameLogRoles(gameLogChart);
     })
     .toEqual({
-      line: '#9a5b06',
+      line: '#8f5404',
       labelGround: '#f7f8fa',
-      labelEdge: 'rgba(154, 91, 6, 0.54)',
-      labelText: '#9a5b06',
+      labelEdge: 'rgba(143, 84, 4, 0.54)',
+      labelText: '#8f5404',
       tooltipGround: '#f7f8fa',
       tooltipEdge: 'rgba(21, 24, 29, 0.216)',
       tooltipTitle: '#15181d',
@@ -214,9 +214,9 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
     })
     .toEqual(
       expect.arrayContaining([
-        '#9399a1', // axis and tick marks
-        '#6f757f', // Team Defense line
-        '#747b84', // axis titles
+        '#686e75', // axis and tick marks
+        '#686d77', // Team Defense line
+        '#676e77', // axis titles
         '#5f6670', // tick labels
         '#31363e', // hover cursor
         '#e8a33d', // frequency bars

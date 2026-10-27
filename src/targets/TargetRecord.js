@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
-import { isOtherSeason, publishedSeasonOf } from './backtestSample';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { signed } from './targetCatalog';
 import './TargetRecord.css';
+import HelpTip from '../help/HelpTip';
 
 const gameDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -245,7 +245,10 @@ export function TargetGameRows({
   return (
     <section className="target-game-rows" aria-label="Backtest games">
       <h2 className="target-games-heading">
-        <span>Games</span>
+        <span>
+          Games
+          <HelpTip tip="targetGames" />
+        </span>
         <small>
           {games.length} · newest first · graded on {gradedBy}
         </small>
@@ -263,17 +266,9 @@ export function TargetGameRows({
                 to={`/?${filterSetToSearchParams({
                   player_name: row.player.name,
                   opponent_tricode: backtest.target.opponent,
-                  // A season other than the published one, which the log opens
-                  // on, is named, so the log opens on the games this row was
-                  // read from. A requested season is named whenever the
-                  // published one is unknown.
-                  ...((
-                    publishedSeasonOf(backtest)
-                      ? isOtherSeason(backtest.season, publishedSeasonOf(backtest))
-                      : backtest.season && backtest.seasonReason === 'requested'
-                  )
-                    ? { season_filter: backtest.season }
-                    : {}),
+                  // The Backtest's season is always named: the log's own
+                  // default is the newest offered season, not this one.
+                  ...(backtest.season ? { season_filter: backtest.season } : {}),
                 })}`}
               >
                 {row.player.name}

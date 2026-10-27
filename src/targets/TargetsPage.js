@@ -20,6 +20,7 @@ import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTarg
 import '../SlatePage.css';
 import './TargetsPage.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 // A card only depends on its own Target, its own Backtest read and its own
 // resolved entry; memoizing it keeps N-1 cards from re-rendering (and
@@ -322,7 +323,10 @@ function TargetsPageContent() {
     <main className="slate-page targets-page">
       <section className="slate-heading">
         <div className="slate-title">
-          <p className="eyebrow">Targets</p>
+          <p className="eyebrow">
+            Targets
+            <HelpTip tip="targets" />
+          </p>
           <p className="targets-active">
             {resolved.status === 'ready'
               ? (() => {

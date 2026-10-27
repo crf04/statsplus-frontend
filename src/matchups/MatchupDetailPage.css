@@ -256,14 +256,6 @@
   font-size: 0.79rem;
 }
 
-.injury-report {
-  margin: 0;
-  border: 1px solid var(--ct-line);
-  border-radius: var(--ct-radius-card);
-  padding: 12px;
-  background: var(--ct-surface);
-}
-
 .injury-badge {
   border: 1px solid var(--ct-line-strong);
   border-radius: 999px;
@@ -271,12 +263,6 @@
   color: var(--ct-dim);
   font-family: var(--ct-mono);
   font-size: 0.67rem;
-}
-
-.injury-list small {
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.69rem;
 }
 
 .selection-close,
@@ -294,20 +280,10 @@
   color: var(--ct-gold);
 }
 
-.player-list,
-.injury-list {
+.player-list {
   display: grid;
   gap: 0;
   margin-top: 8px;
-}
-
-.injury-list article {
-  border-top: 1px solid var(--ct-line);
-  padding: 7px 5px;
-}
-
-.injury-list p {
-  margin: 0;
 }
 
 .player-game-logs {
@@ -329,31 +305,6 @@
 .player-game-logs:focus-visible {
   color: var(--ct-gold);
   border-bottom-color: var(--ct-gold);
-}
-
-.injury-report .section-heading h2 {
-  color: var(--ct-dim);
-  font-size: 0.76rem;
-}
-
-.injury-list {
-  grid-template-columns: 1fr;
-}
-
-.injury-list article {
-  position: relative;
-  font-size: 0.79rem;
-}
-
-.injury-list a {
-  display: inline-block;
-  color: var(--ct-gold);
-  font-size: 0.72rem;
-}
-
-.injury-list small {
-  display: block;
-  margin-top: 3px;
 }
 
 /* The header's one sentence: when, what the sheet is built on, what is missing. */
@@ -493,30 +444,6 @@
 .rail-row-value small {
   color: var(--ct-dim);
   font-size: 0.74rem;
-}
-
-.rail-books {
-  display: inline-flex;
-  gap: 3px;
-}
-
-.rail-books i {
-  border: 1px solid var(--ct-line-strong);
-  border-radius: 3px;
-  padding: 0 4px;
-  color: var(--ct-dim);
-  font-family: var(--ct-sans);
-  font-size: 0.68rem;
-  font-style: normal;
-  font-weight: 600;
-}
-
-/* A flagged row lights the marks of the books off the headline in the gold
-   accent. */
-.rail-row.lines-disagree .rail-books i.differs {
-  border-color: var(--ct-gold);
-  background: var(--ct-gold-soft);
-  color: var(--ct-gold);
 }
 
 /* Defense Sheet: no box around a category, one header row naming its
@@ -1247,4 +1174,98 @@ button.selection-strip-tile:focus-visible {
   font-size: 0.64rem;
   font-style: normal;
   letter-spacing: 0.02em;
+}
+
+/* The page's own label, larger than the section eyebrows, carries its help tip. */
+.matchup-heading .matchup-eyebrow {
+  font-size: 1.05rem;
+}
+
+/* The injury report: one quiet line above the team tabs that opens the names. */
+.injury-line {
+  margin: 0 0 10px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid var(--ct-line);
+  color: var(--ct-dim);
+  font-size: 0.8rem;
+}
+
+.injury-line-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ct-dim);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.injury-line-toggle:hover {
+  color: var(--ct-text);
+}
+
+.injury-line-toggle:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 4px;
+}
+
+.injury-line-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  color: var(--ct-gold);
+}
+
+.injury-line-action svg {
+  transition: transform 0.15s;
+}
+
+.injury-line-toggle[aria-expanded='true'] .injury-line-action svg {
+  transform: rotate(180deg);
+}
+
+.injury-line p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 6px 0 0;
+  color: var(--ct-text);
+}
+
+.injury-line p b {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+}
+
+.injury-line em {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.injury-line em.injury-status-out {
+  color: var(--ct-miss);
+}
+
+.injury-line em.injury-status-doubtful,
+.injury-line em.injury-status-questionable {
+  color: var(--ct-gold);
+}
+
+.injury-line small {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--ct-mono);
+  font-size: 0.69rem;
+}
+
+.injury-line a {
+  color: var(--ct-gold);
 }

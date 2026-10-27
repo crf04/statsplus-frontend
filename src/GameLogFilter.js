@@ -17,7 +17,9 @@ import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from '.
 import { fetchNextOpponent } from './nextOpponentApi';
 import { fetchSeasons } from './seasonsApi';
 import { SeasonUnavailableError, seasonChoiceLabel } from './servingSeason';
-import { SeasonRefusal } from './EvidenceSeason';
+import { SeasonRefusal, pageDefaultSeason } from './EvidenceSeason';
+import { seasonOfDate } from './gameSeason';
+import { getTodaySlateDate } from './calendarDate';
 import { TEAM_CODES } from './targets/opponentContextApi';
 import {
   BROWSE_PARAM,
@@ -157,7 +159,8 @@ const GameLogFilter = ({ notice = null }) => {
   // (crf04/statsplus#330).
   const [seasonRefusal, setSeasonRefusal] = useState(null);
   // The /seasons read; its choices decide which linked seasons stand.
-  const [seasonChoices, setSeasonChoices] = useState(null);
+  // Undefined until it answers, null if it fails.
+  const [seasonChoices, setSeasonChoices] = useState(undefined);
   // A linked season the choices do not offer, replaced by the default.
   const [fallbackFrom, setFallbackFrom] = useState(null);
   const [listsLoading, setListsLoading] = useState(false);
@@ -287,6 +290,27 @@ const GameLogFilter = ({ notice = null }) => {
     setDefaultTeamFor(null);
   }, []);
 
+  const choices = seasonChoices?.choices;
+  const linkedSeason = urlFilters.season_filter;
+  // With no season_filter the Workspace reads the newest offered season not
+  // after today's (crf04/statsplus#348), and only a season other than the
+  // Published Season is sent, so until one is offered every request is as before.
+  const pageSeason = pageDefaultSeason({
+    choices,
+    publishedSeason: seasonChoices?.defaultSeason ?? null,
+    ceiling: seasonOfDate(getTodaySlateDate()),
+  });
+  const workspaceSeason = linkedSeason ?? pageSeason;
+  const sentDefault = pageSeason !== seasonChoices?.defaultSeason ? pageSeason : null;
+  const withPageSeason = useCallback(
+    (filters) =>
+      filters.season_filter || !sentDefault ? filters : { ...filters, season_filter: sentDefault },
+    [sentDefault],
+  );
+  const requestFilters = useMemo(() => withPageSeason(urlFilters), [withPageSeason, urlFilters]);
+  // A reader who cannot search never reads /seasons, so has nothing to wait for.
+  const awaitingPageSeason = canSearch && !linkedSeason && seasonChoices === undefined;
+
   const seasonRequestRef = useRef({ player: null, controller: null });
 
   const clearSeasonGameLogs = useCallback(() => {
@@ -302,9 +326,9 @@ const GameLogFilter = ({ notice = null }) => {
 
   // The strip and Own stat line share one unfiltered-season read per player.
   const loadSeasonGameLogs = useCallback(() => {
-    const player = urlFilters.player_name;
-    const season = urlFilters.season_filter;
-    if (!player || authLoading || !canSearch) return;
+    const player = requestFilters.player_name;
+    const season = requestFilters.season_filter;
+    if (!player || authLoading || !canSearch || awaitingPageSeason) return;
     if (seasonRequestRef.current.player === player && seasonRequestRef.current.season === season)
       return;
 
@@ -338,15 +362,22 @@ const GameLogFilter = ({ notice = null }) => {
         setSeasonGameLogsLoading(false);
         setSeasonGameLogsFailed(!isRequestCancelled(error));
       });
-  }, [authLoading, canSearch, urlFilters.player_name, urlFilters.season_filter]);
+  }, [
+    authLoading,
+    awaitingPageSeason,
+    canSearch,
+    requestFilters.player_name,
+    requestFilters.season_filter,
+  ]);
 
   // One player's season must never bound another player's sliders.
   const playerSeasonGameLogs = useMemo(
     () =>
-      seasonGameLogs.player === selectedPlayer && seasonGameLogs.season === urlFilters.season_filter
+      seasonGameLogs.player === selectedPlayer &&
+      seasonGameLogs.season === requestFilters.season_filter
         ? seasonGameLogs.gameLogs
         : [],
-    [seasonGameLogs, selectedPlayer, urlFilters.season_filter],
+    [seasonGameLogs, selectedPlayer, requestFilters.season_filter],
   );
 
   useEffect(() => {
@@ -360,8 +391,6 @@ const GameLogFilter = ({ notice = null }) => {
     };
   }, [canSearch]);
 
-  const choices = seasonChoices?.choices;
-  const linkedSeason = urlFilters.season_filter;
   // A link naming a season the backend does not offer reads the default
   // instead, and says so, rather than asking for a season that cannot answer.
   useEffect(() => {
@@ -382,12 +411,10 @@ const GameLogFilter = ({ notice = null }) => {
   }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
   // The Player Profile reads the Workspace's season as its Evidence season,
   // named only when it is not the default.
-  const linkedChoice = choices?.find((choice) => choice.season === linkedSeason);
+  const workspaceChoice = choices?.find((choice) => choice.season === workspaceSeason);
   const profileChoice =
-    linkedChoice && linkedSeason !== seasonChoices.defaultSeason ? linkedChoice : null;
-  const unpublishedChoice = choices?.find(
-    (choice) => choice.season === linkedSeason && choice.mode === 'unpublished',
-  );
+    workspaceChoice && workspaceSeason !== seasonChoices.defaultSeason ? workspaceChoice : null;
+  const unpublishedChoice = workspaceChoice?.mode === 'unpublished' ? workspaceChoice : null;
 
   // One request seam owns game-log state transitions. A request may only
   // publish data if it is still the latest request; older requests are
@@ -626,11 +653,13 @@ const GameLogFilter = ({ notice = null }) => {
     // request only to abort it.
     if (hasBrowseSentinel) return undefined;
 
-    requestGameLogs(urlFilters);
+    if (awaitingPageSeason) return undefined;
+    requestGameLogs(requestFilters);
     return abortGameLogsRequest;
   }, [
     abortGameLogsRequest,
     authLoading,
+    awaitingPageSeason,
     clearSeasonGameLogs,
     hasBrowseSentinel,
     inWorkspace,
@@ -638,6 +667,7 @@ const GameLogFilter = ({ notice = null }) => {
     clearSelectedTeam,
     requestGameLogs,
     returnToQueryPrompt,
+    requestFilters,
     urlFilters,
     urlInvalid,
   ]);
@@ -652,22 +682,16 @@ const GameLogFilter = ({ notice = null }) => {
     if (isRefusedLink) return;
     setFallbackFrom(null);
     const nextSearch = withCurrentView(
-      filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: season })),
+      filterSetToSearchParams(
+        mergeFilterSet(urlFilters, { season_filter: season === pageSeason ? undefined : season }),
+      ),
     );
     if (nextSearch.toString() === searchParams.toString()) return;
     setSearchParams(nextSearch, { replace: false });
   };
 
   const refusalDefault = seasonRefusal?.publishedSeason ?? seasonChoices?.defaultSeason;
-  const showDefaultSeason = () => {
-    setFallbackFrom(null);
-    setSearchParams(
-      withCurrentView(
-        filterSetToSearchParams(mergeFilterSet(urlFilters, { season_filter: undefined })),
-      ),
-      { replace: false },
-    );
-  };
+  const showDefaultSeason = () => handleSeasonChange(pageSeason ? refusalDefault : undefined);
 
   /*
    * Applying a changed Filter Set writes it to the URL for the effect above
@@ -717,7 +741,8 @@ const GameLogFilter = ({ notice = null }) => {
     // An apply that changes nothing is not a place to come back to.
     if (nextSearch.toString() === currentSearchRef.current.toString()) {
       if (authLoading || !canSearch) return { ok: false, reason: 'authentication' };
-      requestGameLogs(nextFilters, { bypass: true });
+      // The read the season discovery is holding back is this one.
+      if (!awaitingPageSeason) requestGameLogs(withPageSeason(nextFilters), { bypass: true });
       return { ok: true };
     }
     // Pushed, not replaced, so Back undoes the last filter change.
@@ -837,10 +862,9 @@ const GameLogFilter = ({ notice = null }) => {
                 <span className="query-text">"{currentQuery}"</span>
               </div>
             )}
-            {fallbackFrom && !linkedSeason && seasonChoices?.defaultSeason && (
+            {fallbackFrom && !linkedSeason && pageSeason && (
               <span className="evidence-season-chip" role="status">
-                {fallbackFrom} isn&rsquo;t offered, so these are {seasonChoices.defaultSeason} game
-                logs.
+                {fallbackFrom} isn&rsquo;t offered, so these are {pageSeason} game logs.
               </span>
             )}
             {unpublishedChoice && (
@@ -932,6 +956,7 @@ const GameLogFilter = ({ notice = null }) => {
                 playerList={playerList}
                 onApplyFilters={handleApplyFilters}
                 onSeasonChange={handleSeasonChange}
+                pageSeason={pageSeason}
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}
                 seasonGameLogsLoading={seasonGameLogsLoading}
@@ -956,14 +981,17 @@ const GameLogFilter = ({ notice = null }) => {
 
           <Row className="mb-5">
             <Col md={6}>
-              <Suspense fallback={null}>
-                <PlayerProfile
-                  selectedPlayer={selectedPlayer}
-                  selectedTeam={selectedTeam}
-                  seasonChoice={profileChoice}
-                  onSettled={handleProfileSettled}
-                />
-              </Suspense>
+              {/* Its season is the Workspace's, unknown until /seasons answers. */}
+              {!awaitingPageSeason && (
+                <Suspense fallback={null}>
+                  <PlayerProfile
+                    selectedPlayer={selectedPlayer}
+                    selectedTeam={selectedTeam}
+                    seasonChoice={profileChoice}
+                    onSettled={handleProfileSettled}
+                  />
+                </Suspense>
+              )}
             </Col>
             <Col md={6}>
               <Suspense fallback={null}>

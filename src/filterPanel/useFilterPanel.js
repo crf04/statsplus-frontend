@@ -121,6 +121,7 @@ const useFilterPanel = ({
   playerList,
   onApplyFilters,
   onSeasonChange,
+  pageSeason,
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
@@ -605,7 +606,8 @@ const useFilterPanel = ({
     (summary.defense?.length || 0) +
     (summary.self?.length || 0);
 
-  const linkedSeason = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
+  const defaultSeason = pageSeason ?? seasonChoices?.defaultSeason ?? '';
+  const linkedSeason = appliedFilters?.season_filter ?? defaultSeason;
   const choices = seasonChoices?.choices;
   // With choices (crf04/statsplus#330) a season outside them falls back to the
   // default, as the Workspace's request does. An older backend lists bare
@@ -613,7 +615,7 @@ const useFilterPanel = ({
   // selectable so the control never shows a season the results are not.
   const season =
     choices && !choices.some((choice) => choice.season === linkedSeason)
-      ? (seasonChoices.defaultSeason ?? '')
+      ? defaultSeason
       : linkedSeason;
   const listed = choices
     ? choices.map((choice) => ({ season: choice.season, label: seasonChoiceLabel(choice) }))

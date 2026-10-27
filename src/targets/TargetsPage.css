@@ -784,3 +784,8 @@
     top: 0;
   }
 }
+
+/* The page's own label, larger than the section eyebrows, carries its help tip. */
+.targets-page .slate-title .eyebrow {
+  font-size: 1.05rem;
+}

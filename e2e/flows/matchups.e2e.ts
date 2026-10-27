@@ -170,7 +170,7 @@ signedInTest(
   async ({ app, screen, browser, api }) => {
     await app.open('/matchups/0022500584');
     await screen.getByRole('link', 'LeBron James game logs').tap();
-    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();

@@ -515,8 +515,8 @@ test('an empty record has no aggregate evidence', () => {
 
 /*
  * A row hands off to the Log Workspace on that player's games against the
- * opponent. A season the backend did not default to is named in the link, or
- * the log would open on the published season's games instead.
+ * opponent, in the Backtest's season: the log's own default is the newest
+ * offered season, which may not be the one this row was read from.
  */
 const handoff = (season) => {
   const { unmount } = render(
@@ -531,33 +531,21 @@ const handoff = (season) => {
   return href;
 };
 
-test('a season other than the published one opens the log on that season', () => {
-  expect(
-    handoff({ season: '2026-27', seasonReason: 'requested', publishedSeason: '2025-26' }),
-  ).toBe('/?player_name=Player+One&season_filter=2026-27&opponent_tricode=OKC');
-  // The default is named once it is no longer the published season, not before.
-  expect(handoff({ season: '2025-26', seasonReason: 'default', publishedSeason: '2026-27' })).toBe(
-    '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',
+test.each([
+  [{ season: '2026-27', seasonReason: 'requested', publishedSeason: '2025-26' }, '2026-27'],
+  [{ season: '2025-26', seasonReason: 'default', publishedSeason: '2026-27' }, '2025-26'],
+  [{ season: '2025-26', seasonReason: 'default', publishedSeason: '2025-26' }, '2025-26'],
+  [{ season: '2025-26', seasonReason: 'published' }, '2025-26'],
+  [{ season: '2025-26', seasonReason: 'fallback_no_games' }, '2025-26'],
+  [{ season: '2024-25' }, '2024-25'],
+])('a Backtest read of %o opens the log on %s', (season, expected) => {
+  expect(handoff(season)).toBe(
+    `/?player_name=Player+One&season_filter=${expected}&opponent_tricode=OKC`,
   );
-  expect(handoff({ season: '2025-26', seasonReason: 'default', publishedSeason: '2025-26' })).toBe(
-    '/?player_name=Player+One&opponent_tricode=OKC',
-  );
-  // A backend that does not name the published season: a requested season is named.
-  expect(handoff({ season: '2025-26', seasonReason: 'requested' })).toBe(
-    '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',
-  );
-  expect(handoff({ season: '2025-26', seasonReason: 'fallback_no_games' })).toBe(
-    '/?player_name=Player+One&season_filter=2025-26&opponent_tricode=OKC',
-  );
-  expect(handoff({ season: '2025-26', seasonReason: 'published' })).toBe(
-    '/?player_name=Player+One&opponent_tricode=OKC',
-  );
+});
+
+test('a Backtest that names no season opens the log on its default', () => {
   expect(handoff({})).toBe('/?player_name=Player+One&opponent_tricode=OKC');
-  // Without a published season, only a requested one is named.
-  expect(handoff({ season: '2025-26', seasonReason: 'default' })).toBe(
-    '/?player_name=Player+One&opponent_tricode=OKC',
-  );
-  expect(handoff({ season: '2025-26' })).toBe('/?player_name=Player+One&opponent_tricode=OKC');
 });
 
 test('the Backtest says how many players the Position left out, and shows each Position beside the name', () => {

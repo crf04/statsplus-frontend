@@ -36,8 +36,6 @@ const COLOR_WORDS = new Set(['white', 'black']);
 const isTestFile = (file) =>
   /\.test\.jsx?$/.test(file) || file.includes('/__tests__/') || file.endsWith('setupTests.js');
 
-// ------------------------------------------------------------- shadows ----
-
 // A shadow's layers, each with its blur radius (the third length, 0 if absent).
 const shadowLayers = (nodes) => {
   const layers = [[]];
@@ -53,8 +51,6 @@ const shadowLayers = (nodes) => {
     return { nodes: layer, blur };
   });
 };
-
-// ------------------------------------------------------------- values ----
 
 const literalOf = (node, role) => {
   if (node.type === 'word') {
@@ -136,8 +132,6 @@ const hasColorLiteral = (value) => {
   return found || /^\s*\d+\s*,?\s*\d+\s*,?\s*\d+\s*$/.test(value);
 };
 
-// ---------------------------------------------------------------- css ----
-
 // Tokenize one stylesheet. Pure: returns the new text and what changed.
 export const tokenizeCss = (css, registry) => {
   const root = postcss.parse(css);
@@ -163,8 +157,6 @@ export const tokenizeCss = (css, registry) => {
   });
   return { css: rewrites.length ? root.toString() : css, rewrites, leftovers };
 };
-
-// ----------------------------------------------------------- tailwind ----
 
 const UTILITIES = Object.keys(TAILWIND_ROLES)
   .sort((a, b) => b.length - a.length)
@@ -196,8 +188,6 @@ export const tokenizeTailwind = (source, registry) => {
   });
   return { source: text, rewrites };
 };
-
-// ------------------------------------------------- the generated block ----
 
 export const TOKEN_REFERENCE_RE = /--ct-[a-z0-9]+(?:-[a-z0-9]+)*/g;
 
@@ -247,8 +237,6 @@ export const withGenerated = (themeCss, names) => {
   const tail = themeCss.slice(end).replace(/^\n/, '');
   return themeCss.slice(0, start) + rendered + tail;
 };
-
-// ---------------------------------------------------------------- run ----
 
 const walk = (dir) =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

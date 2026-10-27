@@ -15,8 +15,6 @@ import {
   toHex,
 } from './colors.mjs';
 
-// ---------------------------------------------------------------- roles ----
-
 // Property → the role its colour plays. First match wins.
 export const PROPERTY_ROLES = [
   [
@@ -74,8 +72,6 @@ export const TAILWIND_ROLES = {
   shadow: 'shadow',
 };
 
-// ---------------------------------------------------------------- kinds ----
-
 // Translucent paint is a channel times a per-role alpha multiplier. Each
 // family names its channel tokens (`--ct-<family>-<fg|bg>-rgb`) and the
 // multiplier each side uses. Every multiplier is 1 in dark.
@@ -130,8 +126,6 @@ export const ALLOWED_KINDS = {
   fill: new Set(['neutral', 'fill', 'line', 'ladder-bg', 'scrim', 'other']),
 };
 
-// ------------------------------------------------------- alpha in names ----
-
 const EPSILON = 1e-9;
 
 // 0.2 → '20', 0.015 → '1p5', 20/255 → 'x14'. Null when neither spelling is exact.
@@ -183,12 +177,10 @@ export const isGenerated = (name) => definitionOf(name) !== null;
 // expressions (ladder, re-declared wherever a theme is set).
 export const isTail = (name) => TAIL_RE.test(name);
 
-// ------------------------------------------------------------- registry ----
-
 const ROOT_SELECTOR = /^:root(\s*,\s*\[data-theme\])?$/;
 
 // Every --ct-* token src/theme.css declares at the root, with its dark value
-// and kind. `generatedStart` and `generatedEnd` bound the codemod's own block.
+// and kind.
 export const buildRegistry = (themeCss) => {
   const declared = new Map();
   postcss.parse(themeCss).walkRules((rule) => {
@@ -239,22 +231,17 @@ export const buildRegistry = (themeCss) => {
     declared,
     raw: rawOf,
     has: (name) => declared.has(name),
-    defines: (name) => declared.has(name) || isGenerated(name),
     dark,
     kindOf,
     named,
     families: Object.keys(FAMILIES)
       .map((family) => ({ family, rgb: channelOf(family) }))
       .filter(({ rgb }) => rgb),
-    shadowRgb:
-      channelOf('shadow') ??
-      rawOf('--ct-shadow-rgb')
-        ?.split(/[\s,]+/)
-        .map(Number),
+    shadowRgb: rawOf('--ct-shadow-rgb')
+      ?.split(/[\s,]+/)
+      .map(Number),
   };
 };
-
-// ------------------------------------------------------- token choice ----
 
 const findNamed = (registry, rgba, kinds) =>
   kinds

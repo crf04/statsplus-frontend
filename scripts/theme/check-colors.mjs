@@ -30,8 +30,6 @@ const CHANNEL_TRIPLE =
   /^\s*\d+(\.\d+)?\s*,?\s+\d+(\.\d+)?\s*,?\s+\d+(\.\d+)?\s*$|^\s*\d+\s*,\s*\d+\s*,\s*\d+\s*$/;
 const COLOR_FUNCTION = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)$/i;
 
-// ----------------------------------------------------------------- css ----
-
 const rawColorsInValue = (value, role) => {
   const found = [];
   valueParser(value).walk((node) => {
@@ -107,8 +105,6 @@ export const checkCss = (css, file, registry, defined = registry.declared) => {
   });
   return issues;
 };
-
-// ------------------------------------------------------------------ js ----
 
 const JS_HEX = /(^|[\s'"`([,:{=])(#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4}))(?![\w-])/gi;
 const JS_FUNCTION = /\b(rgba?|hsla?)\(\s*(?!var\()/gi;
@@ -186,8 +182,6 @@ export const checkJs = (source, file, registry, defined = registry.declared) => 
   });
   return issues;
 };
-
-// ----------------------------------------------------------------- run ----
 
 const allowed = (issue, entries, used) => {
   if (issue.rule !== 'raw-colour') return false;

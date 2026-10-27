@@ -1,8 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import zlib from 'node:zlib';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import App from '../App';
 
 jest.mock('../contexts/AuthContext', () => ({
@@ -18,37 +16,6 @@ jest.mock('../contexts/AuthContext', () => ({
     isAdmin: false,
   }),
 }));
-
-// The Project instructions as CHATGPT.md in the downloadable zip states them, so the
-// page's copy cannot drift from the skill it ships.
-const LOCAL_HEADER = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
-const zipEntry = (zip, name) => {
-  for (let at = zip.indexOf(LOCAL_HEADER); at !== -1;) {
-    const method = zip.readUInt16LE(at + 8);
-    const size = zip.readUInt32LE(at + 18);
-    const nameLength = zip.readUInt16LE(at + 26);
-    const start = at + 30 + nameLength + zip.readUInt16LE(at + 28);
-    if (zip.toString('utf8', at + 30, at + 30 + nameLength) === name) {
-      const body = zip.subarray(start, start + size);
-      return (method === 8 ? zlib.inflateRawSync(body) : body).toString('utf8');
-    }
-    at = zip.indexOf(LOCAL_HEADER, start + size);
-  }
-  throw new Error(`${name} is not in the zip`);
-};
-
-const shippedChatgptInstructions = () => {
-  const zip = fs.readFileSync(
-    path.resolve(process.cwd(), 'public/skills/courtai-injury-brief.zip'),
-  );
-  const block = zipEntry(zip, 'courtai-injury-brief/CHATGPT.md').match(
-    /```text\n([\s\S]*?)\n\s*```/,
-  )[1];
-  return block
-    .split('\n')
-    .map((line) => line.trim())
-    .join(' ');
-};
 
 const openSkillPage = async () => {
   window.history.pushState({}, '', '/skills/injury-brief');
@@ -77,22 +44,10 @@ test('the Claude tab is first and says where to upload the skill', async () => {
   const tabs = within(screen.getByRole('tablist', { name: 'Where you run it' })).getAllByRole(
     'tab',
   );
-  expect(tabs.map((t) => t.textContent)).toEqual(['Claude', 'Claude Code', 'ChatGPT']);
+  expect(tabs.map((t) => t.textContent)).toEqual(['Claude', 'Claude Code']);
   expect(screen.getByRole('tabpanel')).toHaveTextContent(
     'Open Customize → Skills, select +, then Create skill → Upload a skill, and choose the zip.',
   );
-});
-
-test('the ChatGPT tab copies the Project instructions', async () => {
-  const writeText = jest.fn().mockResolvedValue();
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-  await openSkillPage();
-
-  await userEvent.click(screen.getByRole('tab', { name: 'ChatGPT' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Copy instructions' }));
-
-  expect(writeText).toHaveBeenCalledWith(shippedChatgptInstructions());
-  expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
 });
 
 test('the Connect guide links to the skill page', async () => {

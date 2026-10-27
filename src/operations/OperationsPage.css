@@ -68,6 +68,19 @@
   background: var(--ct-surface);
 }
 
+/* On light the line ground would show in the empty trailing cells as a grey
+   slab. The grid takes the card ground and each metric draws the line in the
+   gap to its right and below; the clip keeps it off the border. Dark is left
+   as it was. */
+[data-theme='light'] .operations-overview {
+  overflow: hidden;
+  background: var(--ct-surface);
+}
+
+[data-theme='light'] .operations-metric {
+  box-shadow: 1px 1px 0 var(--ct-line);
+}
+
 .operations-metric strong {
   color: var(--ct-text);
   font-family: var(--ct-mono);

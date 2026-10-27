@@ -43,7 +43,7 @@
   border: 1px solid var(--ct-line-strong);
   border-radius: var(--ct-radius-card);
   background: var(--ct-surface-2);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 28px var(--ct-shadow-45);
   color: var(--ct-text);
   font-family: var(--ct-sans);
   font-size: 0.8125rem;

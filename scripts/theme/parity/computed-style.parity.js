@@ -86,11 +86,12 @@ const ROUTES = {
       await installApiContract(page, PROFILE);
       await open(page, `${origin}/?player_name=LeBron+James`);
       await expect(page.locator('.chart-container canvas')).toBeVisible();
-      await expect(
-        page
-          .getByRole('img', { name: 'Playtype frequency and team defense chart' })
-          .locator('canvas'),
-      ).toBeVisible();
+      const playtypes = page.getByRole('img', {
+        name: 'Playtype frequency and team defense chart',
+      });
+      // WebKit sizes this canvas only once it has been on screen.
+      await playtypes.scrollIntoViewIfNeeded();
+      await expect(playtypes.locator('canvas')).toBeVisible({ timeout: 20_000 });
     },
   },
   Slate: {
@@ -185,9 +186,13 @@ for (const [route, { signedIn = true, visit }] of Object.entries(ROUTES)) {
     test(`${route} at ${viewportName} width computes the same colours as the base`, async ({
       browser,
     }, testInfo) => {
+      // The project's device (an iPhone on WebKit) brings its touch and
+      // pixel ratio; the route's viewport sets the width.
+      const { userAgent, deviceScaleFactor, isMobile, hasTouch } = testInfo.project.use;
+      const device = { userAgent, deviceScaleFactor, isMobile, hasTouch };
       const results = {};
       for (const [side, origin] of Object.entries(ORIGINS)) {
-        const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+        const context = await browser.newContext({ ...device, viewport, reducedMotion: 'reduce' });
         const page = await context.newPage();
         if (signedIn) {
           await page.addInitScript(
@@ -204,7 +209,7 @@ for (const [route, { signedIn = true, visit }] of Object.entries(ROUTES)) {
             document.head.appendChild(style);
           });
         });
-        await visit(page, origin);
+        await test.step(`${side} checkout`, () => visit(page, origin));
         results[side] = await capture(page);
         await context.close();
       }

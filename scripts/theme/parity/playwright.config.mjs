@@ -4,6 +4,10 @@
 //   git worktree add --detach /tmp/courtai-base origin/master
 //   (cd /tmp/courtai-base && npm ci)
 //   PARITY_BASE_DIR=/tmp/courtai-base npx playwright test -c scripts/theme/parity/playwright.config.mjs
+//
+// Each engine compares base and head on itself: --project=chromium (Desktop
+// Chrome), webkit (iPhone 13) or firefox. Install the last two with
+// `npx playwright install webkit firefox`.
 import { defineConfig, devices } from '@playwright/test';
 
 const baseDir = process.env.PARITY_BASE_DIR;
@@ -28,9 +32,11 @@ export default defineConfig({
   workers: 4,
   reporter: [['list']],
   timeout: 120_000,
-  use: {
-    ...devices['Desktop Chrome'],
-    trace: 'off',
-  },
+  use: { trace: 'off' },
+  projects: [
+    { name: 'chromium', use: devices['Desktop Chrome'] },
+    { name: 'webkit', use: devices['iPhone 13'] },
+    { name: 'firefox', use: devices['Desktop Firefox'] },
+  ],
   webServer: [server(baseDir, basePort), server(process.cwd(), headPort)],
 });

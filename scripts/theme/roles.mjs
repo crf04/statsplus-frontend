@@ -180,7 +180,7 @@ export const multiplierOf = (channel) => {
 // Which token kinds may paint each role. A ring is a zero-blur shadow (a
 // line drawn outside the box); a shadow has blur. `line` paints a background
 // only on a hairline box, `fill` edges only the fill its own rule paints, and
-// `on-accent` letters only an accent fill (see misuseOf).
+// `on-accent` letters or edges only an accent fill (see misuseOf).
 export const ALLOWED_KINDS = {
   fg: new Set(['neutral', 'accent-fg', 'line', 'ladder-fg', 'on-accent', 'other']),
   line: new Set(['neutral', 'accent-fg', 'line', 'ladder-fg', 'other']),
@@ -405,6 +405,8 @@ export const misuseOf = (name, role, registry, context = null) => {
   if ((role === 'line' || role === 'ring') && context?.fills?.some((f) => sameColor(f, dark))) {
     return kind === 'fill' ? null : `${name} edges the fill it matches; use the fill token`;
   }
+  // A white ring on a coloured avatar keeps its value on any page ground.
+  if ((role === 'line' || role === 'ring') && kind === 'on-accent' && context?.fills) return null;
   if (!allowed.has(kind)) return `${kind} token ${name} in a ${role} role`;
   if (role === 'fill') {
     const ladder = alphaOfName(name);

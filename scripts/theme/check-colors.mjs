@@ -250,19 +250,21 @@ const keyName = (key) => key?.name ?? (typeof key?.value === 'string' ? key.valu
 
 // The property a string ends up painting: a style key, an SVG paint attribute,
 // a Chart.js option or a canvas style, through conditionals, fallbacks and
-// template literals. Null when the string is not a value of one.
+// template literals, with the object that holds a style key. Null when the
+// string is not a value of one.
 const paintedProperty = (node, ancestors) => {
   let child = node;
   for (let i = ancestors.length - 1; i >= 0; i -= 1) {
     const parent = ancestors[i];
     if (parent.type === 'ObjectProperty') {
-      return parent.value === child && !parent.computed ? keyName(parent.key) : null;
+      if (parent.value !== child || parent.computed) return null;
+      return { name: keyName(parent.key), style: ancestors[i - 1] };
     }
-    if (parent.type === 'JSXAttribute') return parent.name.name;
+    if (parent.type === 'JSXAttribute') return { name: parent.name.name };
     if (parent.type === 'AssignmentExpression') {
       const target = parent.left;
       return parent.right === child && target.type === 'MemberExpression' && !target.computed
-        ? keyName(target.property)
+        ? { name: keyName(target.property) }
         : null;
     }
     if (!PASS_THROUGH.has(parent.type)) return null;
@@ -271,6 +273,27 @@ const paintedProperty = (node, ancestors) => {
     child = parent;
   }
   return null;
+};
+
+const kebab = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+
+const literalText = (value) => {
+  if (value?.type === 'StringLiteral') return value.value;
+  if (value?.type === 'TemplateLiteral') {
+    return value.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw).join(TEMPLATE_HOLE);
+  }
+  return null;
+};
+
+// What an inline style object paints behind its content, read like a rule.
+const styleContext = (style, registry) => {
+  if (style?.type !== 'ObjectExpression') return null;
+  const decls = style.properties.flatMap((property) => {
+    const name = property.type === 'ObjectProperty' && !property.computed && keyName(property.key);
+    const text = name && literalText(property.value);
+    return text === null || !name ? [] : [`${kebab(name)}: ${text};`];
+  });
+  return ruleContext(postcss.parse(`x { ${decls.join(' ')} }`).first, registry);
 };
 
 // Attributes whose '#abc' is a fragment or an id, never a colour.
@@ -291,8 +314,9 @@ export const checkJs = (source, file, registry, scope = {}) => {
     } else return;
     const text = pieces.join(TEMPLATE_HOLE);
     const property = paintedProperty(node, ancestors);
-    if (NOT_PAINT.has(property)) return;
-    const role = property && jsRoleOf(property);
+    if (NOT_PAINT.has(property?.name)) return;
+    const role = property?.name ? jsRoleOf(property.name) : null;
+    const context = role ? styleContext(property.style, registry) : null;
     const where = { file, line: node.loc?.start.line, text: text.trim().slice(0, 120) };
     const raws = role ? rawColorsInValue(text, role) : rawColorsInText(text);
     for (const raw of raws) issues.push(issue(where, 'raw-colour', `raw colour ${raw}`));
@@ -310,7 +334,7 @@ export const checkJs = (source, file, registry, scope = {}) => {
         issues.push(issue(where, 'unknown-token', `${name} is not defined in ${THEME_FILE}`));
       }
     }
-    for (const [rule, message] of paintIssues(text, role, registry, null, new Map())) {
+    for (const [rule, message] of paintIssues(text, role, registry, context, new Map())) {
       issues.push(issue(where, rule, message));
     }
     for (const { role: utilityRole, token } of tailwindColors(text)) {

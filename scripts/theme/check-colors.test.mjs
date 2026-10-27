@@ -128,8 +128,9 @@ test('an allowlisted literal passes, a stale entry fails, and tails may not grow
 
 test('a raw colour or a misused token fails through JS expressions, Chart.js options and canvas', () => {
   assert.deepEqual(
-    project({
-      'src/Rank.js': `export const RankCube = ({ rank, x }) => (
+    project(
+      {
+        'src/Rank.js': `export const RankCube = ({ rank, x }) => (
   <div style={{ color: rank > 15 ? 'black' : 'white', background: x ? 'var(--ct-gold)' : 'var(--ct-hit)' }}>
     <svg><rect fill={'var(--ct-gold)'} /></svg>
   </div>
@@ -138,8 +139,13 @@ export const options = { pointBackgroundColor: 'white', hoverBorderColor: x || '
 export const style = { color: \`white\`, border: \`1px solid \${x ? 'red' : 'var(--ct-line)'}\` };
 export const paint = (ctx) => {
   ctx.fillStyle = 'red';
-};`,
-    }),
+};
+export const avatar = { background: 'linear-gradient(var(--ct-gold-fill), var(--ct-hit-fill))', border: '2px solid var(--ct-on-ffffff-40)', color: 'var(--ct-on-ffffff)' };
+export const chip = { background: 'var(--ct-gold-fill)', color: 'var(--ct-text)' };
+export const loose = { border: '2px solid var(--ct-on-ffffff-40)' };`,
+      },
+      { tailBaseline: 2, entries: [] },
+    ),
     [
       'src/Rank.js raw-colour: raw colour black',
       'src/Rank.js raw-colour: raw colour white',
@@ -151,6 +157,8 @@ export const paint = (ctx) => {
       'src/Rank.js raw-colour: raw colour white',
       'src/Rank.js raw-colour: raw colour red',
       'src/Rank.js raw-colour: raw colour red',
+      'src/Rank.js role-misuse: page text --ct-text on an accent fill; lettering on a fill uses an on-accent token',
+      'src/Rank.js role-misuse: on-accent token --ct-on-ffffff-40 in a line role',
     ],
   );
 });

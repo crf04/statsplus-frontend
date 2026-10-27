@@ -1064,6 +1064,11 @@ button.selection-strip-tile:focus-visible {
   color: var(--ct-overlay-fg-14);
 }
 
+/* Dark's near-invisible dash would be faint on white; light gives it the dim text colour. */
+[data-theme='light'] .score-none {
+  color: var(--ct-dim);
+}
+
 .selection-table-wrap .thin-flag {
   margin-left: 4px;
   color: var(--ct-dim);

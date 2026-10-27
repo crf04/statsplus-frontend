@@ -517,7 +517,7 @@
   --ct-shadow-x22: rgb(var(--ct-shadow-rgb) / calc(34 / 255 * var(--ct-k-shadow)));
   --ct-slate-bg-16: rgb(var(--ct-slate-bg-rgb) / calc(0.16 * var(--ct-k-accent-bg)));
   --ct-surface-bg-90: rgb(var(--ct-surface-bg-rgb) / calc(0.9 * var(--ct-k-ground)));
-  --ct-text-fg-45: rgb(var(--ct-text-fg-rgb) / calc(0.45 * var(--ct-k-ground)));
+  --ct-text-fg-45: rgb(var(--ct-text-fg-rgb) / calc(0.45 * var(--ct-k-overlay-fg)));
 }
 /* tokenize: end */
 
@@ -544,15 +544,15 @@
   --ct-dim: #5f6670;
 
   /* accents darken to read on white; hover and press darken further */
-  --ct-gold: #9a5b06;
+  --ct-gold: #8f5404;
   --ct-gold-hover: #7e5203;
   --ct-gold-press: #6a4402;
   --ct-gold-soft: rgba(232, 163, 61, 0.162);
-  --ct-hit: #1f7a4c;
+  --ct-hit: #117144;
   --ct-hit-soft: rgba(76, 175, 125, 0.189);
-  --ct-miss: #b4373a;
+  --ct-miss: #ac2f34;
   --ct-miss-soft: rgba(194, 78, 78, 0.189);
-  --ct-slate: #6f757f;
+  --ct-slate: #686d77;
 
   --ct-scheme: light;
   --ct-scale-lightness: 22%;
@@ -560,10 +560,10 @@
 
   --ct-overlay-fg-rgb: 21 24 29;
   --ct-overlay-bg-rgb: 21 24 29;
-  --ct-gold-fg-rgb: 154 91 6;
-  --ct-hit-fg-rgb: 31 122 76;
-  --ct-miss-fg-rgb: 180 55 58;
-  --ct-slate-fg-rgb: 111 117 127;
+  --ct-gold-fg-rgb: 143 84 4;
+  --ct-hit-fg-rgb: 17 113 68;
+  --ct-miss-fg-rgb: 172 47 52;
+  --ct-slate-fg-rgb: 104 109 119;
   --ct-ink-fg-rgb: 243 244 246;
   --ct-ink-bg-rgb: 243 244 246;
   --ct-surface-fg-rgb: 255 255 255;

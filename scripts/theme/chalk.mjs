@@ -141,3 +141,14 @@ export const chalk = ([r, g, b, alpha], role) => {
   const scale = chroma(target) / (chroma(lab) || 1);
   return [...labToRgb([L, lab[1] * Math.min(scale, 1.2), lab[2] * Math.min(scale, 1.2)]), 1];
 };
+
+// The colour darkened along OKLab lightness, hue and chroma kept, until
+// `reads(rgba)` holds: text the Chalk mapping left too light for its ground.
+export const darkenUntil = ([r, g, b, alpha], reads) => {
+  const [L, A, B] = rgbToLab([r, g, b]);
+  for (let step = 0; L - step > 0; step += 0.002) {
+    const candidate = [...labToRgb([L - step, A, B]), alpha];
+    if (reads(candidate)) return candidate;
+  }
+  return [r, g, b, alpha];
+};

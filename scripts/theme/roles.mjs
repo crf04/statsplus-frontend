@@ -125,6 +125,8 @@ export const shadowLayers = (nodes) => {
 const ACCENT = { fg: '--ct-k-accent-fg', bg: '--ct-k-accent-bg', fill: null };
 const SERIES = { fg: '--ct-k-accent-fg', bg: '--ct-k-accent-bg' };
 const GROUND = { fg: '--ct-k-ground', bg: '--ct-k-ground' };
+// Translucent text reads like a translucent white line: ink, strengthened on light.
+const TEXT = { fg: '--ct-k-overlay-fg', bg: '--ct-k-ground' };
 export const FAMILIES = {
   overlay: { fg: '--ct-k-overlay-fg', bg: '--ct-k-overlay-bg' },
   gold: ACCENT,
@@ -137,7 +139,7 @@ export const FAMILIES = {
   'series-pink': SERIES,
   ink: GROUND,
   surface: GROUND,
-  text: GROUND,
+  text: TEXT,
 };
 
 // Translucent accent paint at or above this alpha is a data mark (a bar, a
@@ -485,10 +487,13 @@ const paintsOf = (value, registry) => {
 // The box's own size, or the gap a grid's background shows through.
 const HAIRLINE_PROPS = /^(width|height|block-size|inline-size|gap|row-gap|column-gap)$/;
 
+// A translucent black backdrop, dark in every theme like an accent fill.
+const isScrim = ([r, g, b, a]) => r + g + b === 0 && a < 1;
+
 // What a rule paints behind its content, from its last background that names
 // a colour. `fills`: the opaque accent colours of a single accent or of a
 // gradient whose stops are all opaque accents; `ground`: true when that
-// background has a neutral in it (a page or card ground); `hairline`: the rule draws a box at most 1px
+// background has a page or card neutral in it, not a scrim; `hairline`: the rule draws a box at most 1px
 // across (or a 1px grid gap), so a line colour may paint its background.
 export const ruleContext = (rule, registry) => {
   let paints = null;
@@ -505,7 +510,7 @@ export const ruleContext = (rule, registry) => {
   });
   return {
     fills: paints?.every((rgba) => rgba[3] === 1 && isChromatic(rgba)) ? paints : null,
-    ground: Boolean(paints?.some((rgba) => !isChromatic(rgba))),
+    ground: Boolean(paints?.some((rgba) => !isChromatic(rgba) && !isScrim(rgba))),
     hairline,
   };
 };

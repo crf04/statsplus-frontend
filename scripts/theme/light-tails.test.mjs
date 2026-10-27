@@ -83,3 +83,27 @@ test('a legacy amber fill stays a bright fill while the same amber as text darke
   assert.ok(luminance(lightOf('--ct-x-f0a030-fill')) > 0.4);
   assert.ok(contrast(lightOf('--ct-x-f0a030'), [255, 255, 255, 1]) >= 4.5);
 });
+
+test('a shade painted as text darkens, hue kept, until it reads at 4.5:1 on its ground', () => {
+  const before = theme('  --ct-x-f0a8a8: #f0a8a8;\n  --ct-surface-3: #241f15;', '');
+  const withLight = before.replace(
+    '--ct-ink: #f3f4f6;',
+    '--ct-ink: #f3f4f6;\n  --ct-surface-3: #eef0f3;',
+  );
+  const lightOf = (css) =>
+    parseColor(css.slice(css.indexOf(LIGHT_START)).match(/--ct-x-f0a8a8: (#[0-9a-f]{6})/)[1]);
+  const mapped = lightOf(withLightTails(withLight));
+  const onSurface = withLightTails(withLight, [
+    { fg: 'var(--ct-x-f0a8a8)', grounds: ['var(--ct-surface-3)'], minimum: 4.5 },
+  ]);
+  const read = lightOf(onSurface);
+  assert.ok(contrast(mapped, rgb('#eef0f3')) < 4.5);
+  assert.ok(contrast(read, rgb('#eef0f3')) >= 4.5);
+  assert.ok(read[0] > read[1] + 40 && read[0] > read[2] + 40, `still red: ${read}`);
+  assert.equal(
+    withLightTails(onSurface, [
+      { fg: 'var(--ct-x-f0a8a8)', grounds: ['var(--ct-surface-3)'], minimum: 4.5 },
+    ]),
+    onSurface,
+  );
+});

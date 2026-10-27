@@ -62,7 +62,7 @@
   padding: 2px 7px;
   border-radius: 6px;
   background: var(--ct-scrim-75);
-  color: var(--ct-text-max);
+  color: var(--ct-on-ffffff);
   font-family: var(--ct-mono);
   font-size: 11.5px;
 }

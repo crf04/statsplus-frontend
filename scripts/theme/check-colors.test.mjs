@@ -179,6 +179,7 @@ test('shadows, masks, channel alphas, aliases, hairlines, marks and lettering ar
 .bar { background: var(--ct-hit-bg-78); }
 .weak { background: var(--ct-hit-fill-30); }
 .card { background: var(--ct-surface-2); color: var(--ct-on-gold); }
+.duration { background: var(--ct-scrim-75); color: var(--ct-on-gold); }
 .badge { background: linear-gradient(135deg, var(--ct-gold-fill), var(--ct-hit-fill)); color: var(--ct-text-max); }`,
     }),
     [

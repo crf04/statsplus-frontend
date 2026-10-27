@@ -899,7 +899,7 @@ const GameLogFilter = ({ notice = null }) => {
           <Row className="mb-5">
             <Col md={8}>
               <Card className="dark-card">
-                <Card.Body>
+                <Card.Body className="chart-card-body">
                   <PlayerSelector
                     selectedPlayer={selectedPlayer}
                     setSelectedPlayer={handleSelectPlayer}

@@ -391,13 +391,6 @@
 
 /* ---- B: sentence + add menu ------------------------------------------- */
 
-.fpb-eyebrow {
-  font-family: var(--ct-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ct-dim);
-}
 .fpb-season {
   display: grid;
   gap: 6px;
@@ -462,10 +455,6 @@
   color: var(--ct-dim);
 }
 .fpb-rule .fp-chip-x {
-  color: var(--ct-dim);
-}
-.fpb-empty {
-  margin: 0 0 18px;
   color: var(--ct-dim);
 }
 .fpb-addlabel {
@@ -957,7 +946,7 @@
   line-height: 16px;
 }
 .fpt-current {
-  margin: -6px 0 12px;
+  margin: 0 0 12px;
   color: var(--ct-gold);
   font-size: 13px;
   font-weight: 600;

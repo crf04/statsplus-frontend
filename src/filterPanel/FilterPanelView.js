@@ -317,11 +317,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
             reports when the Workspace has settled, and an Apply sent from the
             Saved tab would otherwise wait for it forever. */}
         <div className="fpt-filters" hidden={Boolean(body)}>
-          <div className="fpb-head">
-            <span className="fpb-eyebrow">Showing</span>
-            <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-            {savedName && <p className="fpt-current">Saved as {savedName}</p>}
-          </div>
+          {savedName && <p className="fpt-current">Saved as {savedName}</p>}
           {panel.seasons && (
             <label className="fpb-season">
               <span>Season</span>
@@ -338,11 +334,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
               </select>
             </label>
           )}
-          {rules.length > 0 ? (
-            <ul className="fpb-rules">{rules}</ul>
-          ) : (
-            <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
-          )}
+          {rules.length > 0 && <ul className="fpb-rules">{rules}</ul>}
 
           {editing ? (
             <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />

@@ -1,74 +1,58 @@
-import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 import { formatNumber, toFiniteNumber } from './numberUtils';
+import './MetricsDashboardRow.css';
 
-const MetricCard = ({ title, currentValue, previousValue, change, isFirst, isLast }) => {
-  const changeNumber = toFiniteNumber(change);
-  const isPositive = changeNumber !== null && changeNumber >= 0;
-  const formattedChange = changeNumber === null ? '—' : formatNumber(Math.abs(changeNumber), 2);
+// The filtered value against the season value, in percent; null when the
+// season value is zero and the filtered one is not.
+const changeFrom = (current, previous) => {
+  if (previous === 0) return current === 0 ? 0 : null;
+  return ((current - previous) / previous) * 100;
+};
 
+const ChangePill = ({ change }) => {
+  if (change === null) return <span className="metric-change">—</span>;
+  const rounded = Math.round(change * 10) / 10;
+  if (rounded === 0) return <span className="metric-change">±0%</span>;
   return (
-    <div
-      className={`bg-[color:var(--ct-surface)] p-4 flex-1 border-t border-b border-[color:var(--ct-overlay-fg-x14)] ${isFirst ? 'border-l rounded-l-lg' : 'border-l'} ${isLast ? 'border-r rounded-r-lg' : ''} ${!isLast ? 'border-r' : ''} relative hover:border-[color:var(--ct-gold)] transition-all duration-300`}
-    >
-      <div
-        className={`absolute top-2 right-2 flex items-center ${isPositive ? 'text-[color:var(--ct-hit)]' : 'text-[color:var(--ct-miss)]'}`}
-      >
-        {isPositive ? (
-          <ArrowUpIcon className="w-4 h-4 mr-1" />
-        ) : (
-          <ArrowDownIcon className="w-4 h-4 mr-1" />
-        )}
-        <span
-          className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositive ? 'bg-[color:var(--ct-x-22301c)] text-[color:var(--ct-x-9cc983)]' : 'bg-[color:var(--ct-x-3a2020)] text-[color:var(--ct-x-e08585)]'}`}
-        >
-          {formattedChange}%
-        </span>
-      </div>
-      <h3 className="text-[color:var(--ct-dim)] font-medium mb-2 text-left uppercase text-xs tracking-wider">
-        {title}
-      </h3>
-      <div className="flex items-baseline">
-        <span className="text-2xl font-bold text-[color:var(--ct-gold)] font-mono tabular-nums mr-2">
-          {currentValue}
-        </span>
-        <span className="text-sm text-[color:var(--ct-dim)]">from {previousValue}</span>
-      </div>
-    </div>
+    <span className={`metric-change ${rounded > 0 ? 'is-up' : 'is-down'}`}>
+      {rounded > 0 ? '+' : '−'}
+      {formatNumber(Math.abs(rounded), 1)}%
+    </span>
   );
 };
 
-const RatioCard = ({ title, ratio, last5ratio, last10ratio, isLast }) => {
-  if (!ratio) return null;
-  const [numerator, denominator] = String(ratio).split('/');
-  const numeratorValue = toFiniteNumber(numerator);
-  const denominatorValue = toFiniteNumber(denominator);
-  const percentage =
-    denominatorValue && numeratorValue !== null
-      ? formatNumber((numeratorValue / denominatorValue) * 100, 2)
-      : '—';
+const MetricCard = ({ title, current, previous }) => (
+  <div className="metric-card">
+    <h3 className="metric-title">{title}</h3>
+    <div className="metric-value">
+      {formatNumber(current, 2)}{' '}
+      <span className="metric-aside">from {formatNumber(previous, 2)}</span>
+    </div>
+    <div className="metric-corner">
+      <ChangePill change={changeFrom(current, previous)} />
+    </div>
+  </div>
+);
 
+const HitRateCard = ({ ratio, last5ratio, last10ratio }) => {
+  const [hits, games] = String(ratio)
+    .split('/')
+    .map((part) => toFiniteNumber(part));
+  const percent = games ? `${Math.round((hits / games) * 100)}%` : '—';
   return (
-    <div
-      className={`bg-[color:var(--ct-surface)] p-4 flex-1 border-t border-b border-l border-[color:var(--ct-overlay-fg-x14)] ${isLast ? 'border-r rounded-r-lg' : 'border-r'} relative hover:border-[color:var(--ct-gold)] transition-all duration-300`}
-    >
-      <div className="absolute top-2 right-2 text-sm text-[color:var(--ct-dim)]">
-        ({percentage}%)
+    <div className="metric-card">
+      <h3 className="metric-title">Hit rate</h3>
+      <div className="metric-value">
+        <span>{ratio}</span> <span className="metric-aside">{percent}</span>
       </div>
-      <h3 className="text-[color:var(--ct-dim)] font-medium mb-2 text-left uppercase text-xs tracking-wider">
-        {title}
-      </h3>
-      <div className="flex items-baseline">
-        <div className="text-2xl font-bold text-[color:var(--ct-gold)] font-mono tabular-nums">
-          {ratio}
-        </div>
-        <span className="text-sm text-[color:var(--ct-dim)]"> &nbsp;L{last5ratio || '—'} </span>
-        <span className="text-sm text-[color:var(--ct-dim)]"> &nbsp;L{last10ratio || '—'} </span>
+      <div className="metric-corner metric-recent">
+        L5 {last5ratio || '—'} · L10 {last10ratio || '—'}
       </div>
     </div>
   );
 };
 
 const MetricsDashboardRow = ({
+  lineType,
   rawValue,
   per36Value,
   seasonRawValue,
@@ -76,48 +60,20 @@ const MetricsDashboardRow = ({
   ratio,
   last5ratio,
   last10ratio,
-}) => {
-  const currentRaw = toFiniteNumber(rawValue, 0);
-  const previousRaw = toFiniteNumber(seasonRawValue, 0);
-  const currentPer36 = toFiniteNumber(per36Value, 0);
-  const previousPer36 = toFiniteNumber(seasonPer36Value, 0);
-  const getChange = (current, previous) => {
-    if (previous === 0) return current === 0 ? 0 : null;
-    return ((current - previous) / previous) * 100;
-  };
-  const rawChange = getChange(currentRaw, previousRaw);
-  const per36Change = getChange(currentPer36, previousPer36);
-
-  return (
-    <div
-      // Wrap rather than clip: the row hides overflow, so on a phone the Hit Rate
-      // card would otherwise be cut off past the right edge.
-      style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
-      className="rounded-lg overflow-hidden bg-[color:var(--ct-surface)]"
-    >
-      <MetricCard
-        title="Raw"
-        currentValue={formatNumber(currentRaw, 2)}
-        previousValue={formatNumber(previousRaw, 2)}
-        change={rawChange}
-        isFirst={true}
-      />
-      <MetricCard
-        title="Per-36"
-        currentValue={formatNumber(currentPer36, 2)}
-        previousValue={formatNumber(previousPer36, 2)}
-        change={per36Change}
-        isFirst={false}
-      />
-      <RatioCard
-        title="Hit Rate"
-        ratio={ratio}
-        last5ratio={last5ratio}
-        last10ratio={last10ratio}
-        isLast={true}
-      />
-    </div>
-  );
-};
+}) => (
+  <div className="metrics-row">
+    <MetricCard
+      title={`${lineType} avg`}
+      current={toFiniteNumber(rawValue, 0)}
+      previous={toFiniteNumber(seasonRawValue, 0)}
+    />
+    <MetricCard
+      title="Per-36"
+      current={toFiniteNumber(per36Value, 0)}
+      previous={toFiniteNumber(seasonPer36Value, 0)}
+    />
+    {ratio && <HitRateCard ratio={ratio} last5ratio={last5ratio} last10ratio={last10ratio} />}
+  </div>
+);
 
 export default MetricsDashboardRow;

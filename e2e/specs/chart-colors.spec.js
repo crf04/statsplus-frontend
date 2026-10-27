@@ -72,7 +72,7 @@ const profileOverrides = {
   }),
 };
 
-test('charts paint the dark theme colours, part by part, and repaint when the theme changes', async ({
+test('charts paint the dark theme colours, part by part, and repaint in Chalk when the theme changes', async ({
   page,
 }) => {
   await page.addInitScript((key) => window.localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
@@ -178,4 +178,50 @@ test('charts paint the dark theme colours, part by part, and repaint when the th
       return paintOf(playtypesCanvas, { latestFrame: true });
     })
     .toEqual(expect.arrayContaining(['#456789', '#ffffff']));
+
+  // Chalk, chosen in the Appearance menu: text and lines take the light
+  // tokens, line alphas grow by 1.35, and the bars keep their colours.
+  await page.getByRole('button', { name: 'Appearance: System (Dark)' }).click();
+  await page.getByRole('menuitemradio', { name: 'Light' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await page.evaluate(() => window.localStorage.getItem('courtai:theme'))).toBe('light');
+  await expect
+    .poll(async () => {
+      await gameLogChart.hover({ position: { x: width * 0.65, y: height * 0.7 } });
+      return gameLogRoles(gameLogChart);
+    })
+    .toEqual({
+      line: '#9a5b06',
+      labelGround: '#f7f8fa',
+      labelEdge: 'rgba(154, 91, 6, 0.54)',
+      labelText: '#9a5b06',
+      tooltipGround: '#f7f8fa',
+      tooltipEdge: 'rgba(21, 24, 29, 0.216)',
+      tooltipTitle: '#15181d',
+      tooltipBody: '#5f6670',
+      // 0.06 x 1.35 = 0.081, which the canvas keeps as 21/255.
+      grid: 'rgba(21, 24, 29, 0.082)',
+      tick: '#5f6670',
+    });
+  await page.mouse.move(0, 0);
+  await expect
+    .poll(() => paintOf(gameLogChart, { latestFrame: true }))
+    .toEqual(expect.arrayContaining(['rgba(194, 78, 78, 0.72)', 'rgba(76, 175, 125, 0.78)']));
+  await expect
+    .poll(async () => {
+      await playtypes.hover({ position: { x: 90, y: 150 } });
+      return paintOf(playtypesCanvas, { latestFrame: true });
+    })
+    .toEqual(
+      expect.arrayContaining([
+        '#9399a1', // axis and tick marks
+        '#6f757f', // Team Defense line
+        '#747b84', // axis titles
+        '#5f6670', // tick labels
+        '#31363e', // hover cursor
+        '#e8a33d', // frequency bars
+        '#ffffff', // line points
+        'rgba(21, 24, 29, 0.11)', // grid
+      ]),
+    );
 });

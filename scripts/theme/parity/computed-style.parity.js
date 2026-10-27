@@ -155,16 +155,22 @@ const capture = async (page) => {
       if (JSON.stringify(next) === JSON.stringify(previous)) break;
       previous = next;
     }
+    // The header's Appearance menu is new beside the base, so it is left out
+    // and its siblings keep the places they had; head elements paint nothing.
+    const isNew = (element) => element.classList.contains('theme-menu');
     const pathOf = (element) => {
       const parts = [];
       for (let node = element; node && node.nodeType === 1; node = node.parentElement) {
-        const index = node.parentElement ? [...node.parentElement.children].indexOf(node) : 0;
-        parts.unshift(`${node.localName}[${index}]`);
+        const siblings = node.parentElement
+          ? [...node.parentElement.children].filter((sibling) => !isNew(sibling))
+          : [node];
+        parts.unshift(`${node.localName}[${siblings.indexOf(node)}]`);
       }
       return parts.join('/');
     };
     const styles = {};
-    for (const element of document.querySelectorAll('*')) {
+    for (const element of document.querySelectorAll('body, body *')) {
+      if (element.closest('.theme-menu')) continue;
       const key = pathOf(element);
       for (const pseudo of ['', '::before', '::after']) {
         const style = getComputedStyle(element, pseudo || null);
@@ -192,7 +198,13 @@ for (const [route, { signedIn = true, visit }] of Object.entries(ROUTES)) {
       const device = { userAgent, deviceScaleFactor, isMobile, hasTouch };
       const results = {};
       for (const [side, origin] of Object.entries(ORIGINS)) {
-        const context = await browser.newContext({ ...device, viewport, reducedMotion: 'reduce' });
+        // Dark is the theme compared; the app follows the device's scheme.
+        const context = await browser.newContext({
+          ...device,
+          viewport,
+          reducedMotion: 'reduce',
+          colorScheme: 'dark',
+        });
         const page = await context.newPage();
         if (signedIn) {
           await page.addInitScript(

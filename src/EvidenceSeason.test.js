@@ -124,6 +124,16 @@ describe('a page that reads the newest offered season up to its own', () => {
     expect(screen.getByLabelText('Request season')).toHaveTextContent('2026-27');
   });
 
+  test('a linked season not offered falls back to 2026-27 and says so', async () => {
+    renderPage('/?season=2027-28', '2026-27');
+    await waitFor(() =>
+      expect(screen.getByLabelText('Request season')).toHaveTextContent('2026-27'),
+    );
+    expect(
+      screen.getByText('2027-28 isn’t offered, so this is 2026-27 evidence.'),
+    ).toBeInTheDocument();
+  });
+
   test('a failed read of the choices reads the default', async () => {
     fetchSeasons.mockRejectedValue(new Error('Network Error'));
     renderPage('/', '2026-27');

@@ -148,7 +148,7 @@ function EvidenceSeasonChip({ evidence }) {
   if (evidence.fallbackFrom && evidence.defaultSeason) {
     return (
       <span className="evidence-season-chip" role="status">
-        {seasonFallbackText(evidence.fallbackFrom, evidence.defaultSeason)}
+        {seasonFallbackText(evidence.fallbackFrom, evidence.season ?? evidence.defaultSeason)}
       </span>
     );
   }

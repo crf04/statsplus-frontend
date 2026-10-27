@@ -75,7 +75,7 @@ const tokenRefs = (value) => {
   return refs;
 };
 
-export const checkCss = (css, file, registry) => {
+export const checkCss = (css, file, registry, defined = registry.declared) => {
   const issues = [];
   const isTheme = file === THEME_FILE;
   postcss.parse(css, { from: file }).walkDecls((decl) => {
@@ -93,13 +93,13 @@ export const checkCss = (css, file, registry) => {
     }
     const context = decl.parent?.type === 'rule' ? onAccentContext(decl.parent, registry) : null;
     for (const name of tokenRefs(decl.value)) {
-      if (!registry.has(name)) {
+      if (!defined.has(name)) {
         issues.push({
           ...where,
           rule: 'unknown-token',
           message: `${name} is not defined in ${THEME_FILE}`,
         });
-      } else if (role) {
+      } else if (role && registry.has(name)) {
         const misuse = misuseOf(name, role, registry, context);
         if (misuse) issues.push({ ...where, rule: 'role-misuse', message: misuse });
       }
@@ -119,10 +119,12 @@ const TAILWIND_TOKEN = new RegExp(
   'g',
 );
 
-const rawColorsInString = (text) => {
+// A bare word such as 'white' is a colour only where it paints (a style value
+// or a paint attribute); elsewhere it is a prop value like closeVariant="white".
+const rawColorsInString = (text, painted) => {
   const found = [...text.matchAll(JS_HEX)].map((match) => match[2]);
   found.push(...[...text.matchAll(JS_FUNCTION)].map((match) => `${match[1]}(`));
-  if (CSS_COLOR_NAMES.has(text.trim().toLowerCase())) found.push(text.trim());
+  if (painted && CSS_COLOR_NAMES.has(text.trim().toLowerCase())) found.push(text.trim());
   return found;
 };
 
@@ -140,14 +142,14 @@ const visit = (node, enter, parent = null) => {
 // The CSS property a string paints when it is a style value or an SVG paint
 // attribute: { background: 'var(--ct-gold)' } or fill="var(--ct-gold)".
 const propertyOf = (parent) => {
-  if (parent?.type === 'ObjectProperty' && !parent.computed) {
-    return parent.key.type === 'Identifier' ? parent.key.name : parent.key.value;
-  }
-  if (parent?.type === 'JSXAttribute') return parent.name.name;
-  return null;
+  let name = null;
+  if (parent?.type === 'ObjectProperty' && !parent.computed)
+    name = parent.key.name ?? parent.key.value;
+  if (parent?.type === 'JSXAttribute') name = parent.name.name;
+  return typeof name === 'string' ? name : null;
 };
 
-export const checkJs = (source, file, registry) => {
+export const checkJs = (source, file, registry, defined = registry.declared) => {
   const issues = [];
   const ast = parseJs(source, { sourceType: 'module', plugins: ['jsx'], errorRecovery: true });
   visit(ast.program, (node, parent) => {
@@ -157,11 +159,13 @@ export const checkJs = (source, file, registry) => {
     else if (node.type === 'JSXText') return;
     if (text === null) return;
     const where = { file, line: node.loc?.start.line, text: text.trim().slice(0, 120) };
-    for (const raw of rawColorsInString(text)) {
+    const property = propertyOf(parent);
+    const role = property && roleOf(property);
+    for (const raw of rawColorsInString(text, Boolean(role))) {
       issues.push({ ...where, rule: 'raw-colour', message: `raw colour ${raw}` });
     }
     for (const name of text.match(TOKEN_REFERENCE_RE) ?? []) {
-      if (!registry.has(name)) {
+      if (!defined.has(name)) {
         issues.push({
           ...where,
           rule: 'unknown-token',
@@ -169,8 +173,6 @@ export const checkJs = (source, file, registry) => {
         });
       }
     }
-    const property = propertyOf(parent);
-    const role = property && roleOf(property);
     if (role) {
       for (const name of tokenRefs(text)) {
         const misuse = registry.has(name) && misuseOf(name, role, registry);
@@ -201,11 +203,17 @@ export const check = (rootDir) => {
   const read = (file) => fs.readFileSync(path.join(rootDir, file), 'utf8');
   const registry = buildRegistry(read(THEME_FILE));
   const allowlist = JSON.parse(read(ALLOWLIST_FILE));
+  const files = sourceFiles(rootDir).filter((file) => !SKIPPED.has(file) && !isTestFile(file));
+  // Colour tokens live in theme.css; a few layout tokens (--ct-header-height)
+  // are declared beside the component that sets them.
+  const defined = new Set(registry.declared.keys());
+  for (const file of files.filter((name) => name.endsWith('.css'))) {
+    postcss.parse(read(file)).walkDecls(/^--ct-/, (decl) => defined.add(decl.prop));
+  }
   const issues = [];
-  for (const file of sourceFiles(rootDir)) {
-    if (SKIPPED.has(file) || isTestFile(file)) continue;
-    if (/\.(css|scss)$/.test(file)) issues.push(...checkCss(read(file), file, registry));
-    else if (/\.jsx?$/.test(file)) issues.push(...checkJs(read(file), file, registry));
+  for (const file of files) {
+    if (/\.(css|scss)$/.test(file)) issues.push(...checkCss(read(file), file, registry, defined));
+    else if (/\.jsx?$/.test(file)) issues.push(...checkJs(read(file), file, registry, defined));
   }
 
   const used = new Set();

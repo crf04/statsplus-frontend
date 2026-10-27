@@ -6,14 +6,14 @@ raw hex, `rgb()`, `hsl()` or named colour anywhere else, unless
 
 Pick the token by what the colour does:
 
-| You are painting                                    | Use                                                         |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| amber, green or red text, icons, borders, outlines  | `--ct-gold` (`-hover`, `-press`), `--ct-hit`, `--ct-miss`   |
-| a solid amber, green or red surface (button, chip)  | `--ct-gold-fill` (`-hover`, `-press`), `--ct-hit-fill`, ... |
-| lettering on that surface                           | `--ct-on-gold`                                              |
-| a translucent tint behind content                   | `--ct-<family>-bg-<alpha>`, e.g. `--ct-gold-bg-20`          |
-| a translucent line or text on top                   | `--ct-<family>-fg-<alpha>`, e.g. `--ct-overlay-fg-10`       |
-| a drop shadow / a modal backdrop                    | `--ct-shadow-<alpha>` / `--ct-scrim-<alpha>`                |
+| You are painting                                   | Use                                                         |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| amber, green or red text, icons, borders, outlines | `--ct-gold` (`-hover`, `-press`), `--ct-hit`, `--ct-miss`   |
+| a solid amber, green or red surface (button, chip) | `--ct-gold-fill` (`-hover`, `-press`), `--ct-hit-fill`, ... |
+| lettering on that surface                          | `--ct-on-gold`                                              |
+| a translucent tint behind content                  | `--ct-<family>-bg-<alpha>`, e.g. `--ct-gold-bg-20`          |
+| a translucent line or text on top                  | `--ct-<family>-fg-<alpha>`, e.g. `--ct-overlay-fg-10`       |
+| a drop shadow / a modal backdrop                   | `--ct-shadow-<alpha>` / `--ct-scrim-<alpha>`                |
 
 Families are `overlay` (white on dark), `gold`, `hit`, `miss`, `slate`, `ink`, `surface` and
 `text`. The alpha is a percentage with `p` for a decimal point (`1p5` is 0.015) or `x<hex>` for an

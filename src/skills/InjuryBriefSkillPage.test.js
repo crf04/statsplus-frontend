@@ -68,6 +68,28 @@ test('the ChatGPT tab says which plans can upload skills and where to upload the
   );
 });
 
+test("the ChatGPT tab's Copy button puts exactly the prompt on the clipboard", async () => {
+  let clipboardText = '';
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: {
+      writeText: (text) => {
+        clipboardText = text;
+        return Promise.resolve();
+      },
+    },
+  });
+  await openSkillPage();
+
+  fireEvent.click(screen.getByRole('tab', { name: 'ChatGPT' }));
+  const panel = screen.getByRole('tabpanel', { name: 'ChatGPT' });
+  fireEvent.click(within(panel).getByRole('button', { name: 'Copy' }));
+
+  expect(await within(panel).findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  expect(clipboardText).toBe('Run the injury brief for tonight.');
+  delete navigator.clipboard;
+});
+
 test('the Connect guide links to the skill page', async () => {
   window.history.pushState({}, '', '/connect');
   render(<App />);

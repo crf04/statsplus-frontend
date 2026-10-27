@@ -267,3 +267,20 @@ test('a var() cycle is found within each theme after its overrides, never across
     ['src/theme.css token-cycle: var() cycle --ct-a → --ct-b → --ct-a in light'],
   );
 });
+
+test('a channel whose family is chosen at runtime keeps the accent multiplier and its role', () => {
+  assert.deepEqual(
+    project({
+      'src/Wash.js': `export const wash = (family, a) => ({ background: \`rgb(var(--ct-\${family}-bg-rgb) / calc(\${a} * var(--ct-k-accent-bg)))\` });
+export const zone = (up, a) => \`rgb(var(--ct-\${up ? 'hit' : 'miss'}-fill-rgb) / \${a})\`;
+export const bare = (family, a) => ({ background: \`rgb(var(--ct-\${family}-bg-rgb) / \${a})\` });
+export const text = (family, a) => ({ background: \`rgb(var(--ct-\${family}-fg-rgb) / calc(\${a} * var(--ct-k-accent-fg)))\` });
+export const tint = (up, a) => \`rgb(var(--ct-\${up ? 'hit' : 'miss'}-bg-rgb) / \${a})\`;`,
+    }),
+    [
+      'src/Wash.js multiplier: rgb(var(--ct-*-bg-rgb) / 1) leaves out --ct-k-accent-bg; use a ladder token',
+      'src/Wash.js role-misuse: ladder-fg token --ct-*-fg-rgb in a fill role',
+      'src/Wash.js multiplier: rgb(var(--ct-*-bg-rgb) / 1) leaves out --ct-k-accent-bg; use a ladder token',
+    ],
+  );
+});

@@ -146,8 +146,13 @@ export const FAMILIES = {
 // takes the `bg` multiplier.
 export const MARK_ALPHA = 0.5;
 
+// A family chosen at runtime (`--ct-${family}-bg-rgb` in JS) reads as `*`,
+// and is one of the accent families, which share their multipliers.
+export const RUNTIME_FAMILY = '*';
+const sidesOf = (family) => (family === RUNTIME_FAMILY ? ACCENT : FAMILIES[family]);
+
 const ALPHA = '(\\d+(?:p\\d+)?|x[0-9a-f]{2})';
-const FAMILY = `(${Object.keys(FAMILIES).join('|')})`;
+const FAMILY = `(${Object.keys(FAMILIES).join('|')}|\\${RUNTIME_FAMILY})`;
 const LADDER_RE = new RegExp(`^--ct-${FAMILY}-(fg|bg|fill)-${ALPHA}$`);
 const CHANNEL_RE = new RegExp(`^--ct-${FAMILY}-(fg|bg|fill)-rgb$`);
 const SHADOW_RE = new RegExp(`^--ct-shadow-${ALPHA}$`);
@@ -173,7 +178,7 @@ const NAMED_KINDS = [
 // channel keeps its alpha in every theme (marks, scrims).
 export const multiplierOf = (channel) => {
   const match = channel.match(CHANNEL_RE);
-  if (match) return FAMILIES[match[1]][match[2]] ?? null;
+  if (match) return sidesOf(match[1])[match[2]] ?? null;
   return channel === '--ct-shadow-rgb' ? '--ct-k-shadow' : null;
 };
 
@@ -218,6 +223,7 @@ const alphaValue = (name) =>
 // when the name is not a generated shape.
 export const definitionOf = (name) => {
   let match = name.match(LADDER_RE);
+  if (match?.[1] === RUNTIME_FAMILY) return null;
   if (match) {
     const [, family, side, alpha] = match;
     const multiplier = FAMILIES[family][side];
@@ -414,7 +420,7 @@ export const misuseOf = (name, role, registry, context = null) => {
       ladder &&
       ladder.side === 'bg' &&
       ladder.alpha >= MARK_ALPHA &&
-      FAMILIES[ladder.family].fill === null
+      sidesOf(ladder.family).fill === null
     ) {
       return `${name} paints a mark (alpha ${MARK_ALPHA} and up); use --ct-${ladder.family}-fill-*`;
     }

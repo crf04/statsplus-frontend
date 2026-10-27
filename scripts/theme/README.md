@@ -29,7 +29,8 @@ Only `gold`, `hit` and `miss` have `fill` steps. A component that picks its colo
 a channel in a custom property (`--oc: var(--ct-gold-fg-rgb)`); its alpha must carry the side's
 multiplier, `rgb(var(--oc) / calc(0.9 * var(--ct-k-accent-fg)))`, and the lint follows the
 property to the value the reading rule sets, else one set on an ancestor or the root, else one set
-in the same stylesheet. The alpha is a percentage with `p` for a decimal point (`1p5` is 0.015) or `x<hex>` for an
+in the same stylesheet. A JS name whose family is chosen at runtime, `` `--ct-${family}-bg-rgb` ``,
+is held to the accent families' multipliers and roles. The alpha is a percentage with `p` for a decimal point (`1p5` is 0.015) or `x<hex>` for an
 8-digit hex alpha. The step does not need to exist yet: write the name, run
 `node scripts/theme/tokenize.mjs --write`, and it is defined. `--ct-x-<hex>` tokens keep a legacy
 shade exact; the lint stops their count from growing.

@@ -12,6 +12,7 @@ import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { COLOR_FUNCTION_RE, CSS_COLOR_NAMES, HEX_RE, parseChannels } from './colors.mjs';
 import {
+  RUNTIME_FAMILY,
   TAIL_NAME_RE,
   buildRegistry,
   jsRoleOf,
@@ -176,7 +177,8 @@ const paintIssues = (value, role, registry, context, valuesOf) => {
     for (const message of unscaledChannels(expanded)) messages.add(['multiplier', message]);
     if (!role) continue;
     for (const ref of paintedRefs(expanded, role)) {
-      const misuse = registry.has(ref.name) && misuseOf(ref.name, ref.role, registry, context);
+      const known = registry.has(ref.name) || ref.name.startsWith(`--ct-${RUNTIME_FAMILY}-`);
+      const misuse = known && misuseOf(ref.name, ref.role, registry, context);
       if (misuse) messages.add(['role-misuse', misuse]);
     }
   }
@@ -349,7 +351,7 @@ const kebab = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCas
 const literalText = (value) => {
   if (value?.type === 'StringLiteral') return value.value;
   if (value?.type === 'TemplateLiteral') {
-    return value.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw).join(TEMPLATE_HOLE);
+    return joinTemplate(value.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw));
   }
   return null;
 };
@@ -368,8 +370,15 @@ const styleContext = (style, registry) => {
 // Attributes whose '#abc' is a fragment or an id, never a colour.
 const NOT_PAINT = new Set(['href', 'id', 'to', 'htmlFor']);
 
-// A template literal reads as one value, each ${} standing in as a number.
+// A template literal reads as one value, each ${} standing in as a number,
+// or as the runtime family where it cuts a token's family.
 const TEMPLATE_HOLE = '1';
+const joinTemplate = (pieces) =>
+  pieces.reduce((text, piece, i) => {
+    if (i === 0) return piece;
+    const hole = /--ct-$/.test(text) && piece.startsWith('-') ? RUNTIME_FAMILY : TEMPLATE_HOLE;
+    return `${text}${hole}${piece}`;
+  });
 
 export const checkJs = (source, file, registry, scope = {}) => {
   const { defined = registry.declared } = scope;
@@ -381,7 +390,7 @@ export const checkJs = (source, file, registry, scope = {}) => {
     else if (node.type === 'TemplateLiteral') {
       pieces = node.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw);
     } else return;
-    const text = pieces.join(TEMPLATE_HOLE);
+    const text = joinTemplate(pieces);
     const property = paintedProperty(node, ancestors);
     if (NOT_PAINT.has(property?.name)) return;
     const role = property?.name ? jsRoleOf(property.name) : null;

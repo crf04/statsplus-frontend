@@ -34,7 +34,13 @@ export function TargetTitle({ target }) {
           return (
             <span key={index}>
               {index > 0 && <em> &amp; </em>}
-              {label} <b>{value}</b>
+              {label}
+              {value && (
+                <>
+                  {' '}
+                  <b>{value}</b>
+                </>
+              )}
             </span>
           );
         })}
@@ -156,6 +162,9 @@ export function TargetFitTable({ entry, dense = false }) {
               <td>
                 <b>{player.name}</b>
                 <small>{player.tricode}</small>
+                {player.position && (
+                  <small className="target-player-position">{player.position}</small>
+                )}
                 {/* A thin diet is flagged rather than dropped, so this list
                     never disagrees with the Matchup about who is in the game. */}
                 {player.thin && (

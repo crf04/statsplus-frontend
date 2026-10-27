@@ -51,7 +51,12 @@ export const validConditions = (conditions) => {
   );
 };
 
-export function TargetAddMenu({ conditions, onQualifier, onChange }) {
+export function TargetAddMenu({
+  conditions,
+  onQualifier,
+  onChange,
+  qualifierLimitReached = false,
+}) {
   const [open, setOpen] = useState(false);
   const hasWindow = conditions && (conditions.from !== null || conditions.to !== null);
   const choose = (callback) => {
@@ -70,7 +75,12 @@ export function TargetAddMenu({ conditions, onQualifier, onChange }) {
       </button>
       {open && (
         <div className="target-add-options">
-          <button type="button" onClick={() => choose(onQualifier)}>
+          <button
+            type="button"
+            disabled={qualifierLimitReached}
+            title={qualifierLimitReached ? 'A Target holds at most 10 Qualifiers.' : undefined}
+            onClick={() => choose(onQualifier)}
+          >
             a Qualifier
           </button>
           {!conditions?.defender && (

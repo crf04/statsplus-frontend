@@ -175,6 +175,13 @@ export default function TargetRecord({
         )}
       </ul>
       {children}
+      {backtest.summary?.playersWithoutPosition > 0 && (
+        <p className="target-limit">
+          {backtest.summary?.playersWithoutPosition === 1
+            ? '1 player left out: no listed position.'
+            : `${backtest.summary?.playersWithoutPosition} players left out: no listed position.`}
+        </p>
+      )}
       {games.length === 0 ? (
         <p className="target-empty">
           {backtest.target.conditions?.playerMinutes !== null &&
@@ -272,6 +279,9 @@ export function TargetGameRows({
                 {row.player.name}
               </Link>{' '}
               <small>{row.player.tricode}</small>
+              {row.player.position && (
+                <small className="target-player-position">{row.player.position}</small>
+              )}
             </span>
             <span className="target-game-line">
               <b>{gameNumber(gameStat(row.game, gradedBy))}</b> {gradedBy}

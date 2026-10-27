@@ -143,12 +143,8 @@ jobs:
             scripts/playwright-only-lock.mjs
           sparse-checkout-cone-mode: false
 
-      - name: Set up Node.js
-        if: always()
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.22.3
-
+      # The runner's preinstalled Node runs the merge; setup-node cost about
+      # 5 s on the critical path.
       - name: Install Playwright from the lock file
         if: always()
         run: |

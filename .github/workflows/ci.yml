@@ -190,8 +190,11 @@ jobs:
       - run: npm ci
       - name: Typecheck e2e config and flows
         run: npm run typecheck:e2e
+      # No --with-deps: the runner image already has Chromium's libraries, and
+      # the extra fonts and xvfb it fetched sometimes took minutes from the apt
+      # mirror.
       - name: Install e2e engine Chromium
-        run: npx e2e-web install chromium --with-deps
+        run: npx e2e-web install chromium
       - name: Run ${{ matrix.target }} flows without model credentials
         run: npm run test:flows -- --target ${{ matrix.target }} --shard ${{ matrix.shard }}/2
       - name: Upload e2e report and failure evidence

@@ -289,9 +289,7 @@ signedInTest(
     });
     await app.open('/matchups?date=2026-01-15&season=2026-27');
     await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     await expect(
       screen.getByText(
         'Scores use 2025-26 team defense (80–82 games per team) until every team has played 10 games.',
@@ -306,9 +304,7 @@ signedInTest(
     await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
     await expect(browser).toHaveURL('/matchups/0022500584?season=2026-27');
     await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     await screen.getByRole('group', 'Market').getByRole('button', 'All').tap();
     await expect(
       screen.getByRole('region', 'Play types').getByText('2025-26 season · 80–82 games per team'),
@@ -387,9 +383,8 @@ signedInTest(
         seasonOf(request) ? selectedMatchup : servingSeasonMatchupPayload,
     });
     await app.open('/matchups?date=2026-10-27');
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     expect(api.sent('/api/games/slate').map((request) => request.search.get('season'))).toEqual([
       '2026-27',
     ]);

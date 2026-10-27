@@ -3638,8 +3638,9 @@ describe('Evidence season', () => {
       ['game-1', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
     expect(seasonSelect()).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
@@ -3702,8 +3703,9 @@ describe('Evidence season', () => {
       ['0022600003', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
     expect(seasonSelect()).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',

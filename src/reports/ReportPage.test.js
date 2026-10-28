@@ -5,18 +5,19 @@ import { themeStore } from '../theme/useTheme';
 import { fitScale } from './ReportCard';
 import { cardLabel } from './ReportPage';
 
+const mockAuth = {
+  currentUser: null,
+  loading: false,
+  error: null,
+  signInWithGoogle: jest.fn(),
+  logout: jest.fn(),
+  getToken: jest.fn(),
+  isAuthenticated: false,
+  isAdmin: false,
+};
 jest.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
-  useAuth: () => ({
-    currentUser: null,
-    loading: false,
-    error: null,
-    signInWithGoogle: jest.fn(),
-    logout: jest.fn(),
-    getToken: jest.fn(),
-    isAuthenticated: false,
-    isAdmin: false,
-  }),
+  useAuth: () => mockAuth,
 }));
 
 const mockGet = jest.fn();
@@ -125,6 +126,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  Object.assign(mockAuth, { currentUser: null, isAuthenticated: false });
   jest.restoreAllMocks();
   act(() => themeStore.setPreference('system'));
 });
@@ -258,6 +260,7 @@ test('the footer links the skill, and only the author can delete', async () => {
 });
 
 test('the author deletes the report after confirming', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
   jest.spyOn(window, 'confirm').mockReturnValue(true);
   mockDelete.mockResolvedValue({ data: { success: true } });
   await open(payload({ is_author: true }));

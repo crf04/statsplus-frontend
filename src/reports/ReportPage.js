@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { deleteReport, fetchReport } from '../reportsApi';
 import SignUpPrompt from '../research/SignUpPrompt';
 import ReportCard from './ReportCard';
@@ -230,6 +231,7 @@ const longDate = (iso) =>
   });
 
 const Report = ({ report, onDeleted, onChanged }) => {
+  const signedIn = useAuth().isAuthenticated;
   const [active, setActive] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const { document: doc } = report;
@@ -327,7 +329,7 @@ const Report = ({ report, onDeleted, onChanged }) => {
           <ReportThis reportId={report.id} />
         </p>
         <ListingToggle report={report} onChanged={onChanged} />
-        {report.isAuthor && (
+        {report.isAuthor && signedIn && (
           <button type="button" className="report-delete" onClick={remove} disabled={deleting}>
             {deleting ? 'Deleting…' : 'Delete this report'}
           </button>
@@ -364,6 +366,9 @@ const Removed = ({ by }) => (
 
 const ReportPage = () => {
   const { id } = useParams();
+  // Whether the viewer is the author changes with the account, so a sign-in
+  // or sign-out reads the report again.
+  const uid = useAuth().currentUser?.uid ?? null;
   const [state, setState] = useState({ status: 'loading' });
 
   const settle = (found) => {
@@ -382,7 +387,7 @@ const ReportPage = () => {
         if (!controller.signal.aborted) setState({ status: 'error', error });
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, uid]);
 
   // After a listing change: the report as the public now sees it.
   const reload = async () => {

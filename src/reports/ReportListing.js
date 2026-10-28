@@ -113,13 +113,13 @@ const HandleChooser = ({ busy, refusal, onSubmit, onCancel }) => {
  * the report so the page shows what is now public.
  */
 export const ListingToggle = ({ report, onChanged }) => {
-  const { waitlist } = useAuth();
+  const { isAuthenticated, waitlist } = useAuth();
   const [busy, setBusy] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [refusal, setRefusal] = useState(null);
   const [handleRefusal, setHandleRefusal] = useState(null);
   // A waitlisted account cannot list, but can always take a listed report down.
-  if (!report.isAuthor || (waitlist && !report.listed)) return null;
+  if (!report.isAuthor || !isAuthenticated || (waitlist && !report.listed)) return null;
 
   const list = async (listed) => {
     try {

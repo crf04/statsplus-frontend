@@ -56,8 +56,9 @@ const signIn = (extra = {}) =>
 
 const open = async () => {
   window.history.pushState({}, '', `/reports/${ID}`);
-  render(<App />);
+  const view = render(<App />);
   await screen.findByRole('heading', { level: 1, name: 'Injury brief · Sunday, October 25' });
+  return view;
 };
 
 beforeEach(() => {
@@ -208,4 +209,20 @@ test('signed out, Report this signs the visitor in first', async () => {
     key: 'report-this',
     args: [ID],
   });
+});
+
+test('signing out takes the author controls away', async () => {
+  signIn();
+  const view = await open();
+  expect(screen.getByRole('button', { name: 'List in Research' })).toBeInTheDocument();
+  Object.assign(mockAuth, { currentUser: null, isAuthenticated: false });
+  served = report({ is_author: false });
+  view.rerender(<App />);
+  // The report is read again for the signed-out viewer.
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Injury brief · Sunday, October 25' }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Delete this report' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Unlist' })).not.toBeInTheDocument();
 });

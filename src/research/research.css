@@ -162,6 +162,7 @@
 
 .research-entry-body {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 6px;
   padding: 12px 14px 14px;
@@ -215,6 +216,7 @@
 
 .research-entry-meta {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--ct-dim);
   font-size: 13px;
 }

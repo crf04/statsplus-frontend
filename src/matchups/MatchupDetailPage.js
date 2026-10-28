@@ -23,6 +23,7 @@ import {
 } from './displayConfig';
 import { SEASON_WINDOW_REASONS, WINDOW_REASONS } from '../windowReasons';
 import { isSeasonRefusal, trailingSample, trailingSeason } from '../servingSeason';
+import { getTodaySlateDate } from '../calendarDate';
 import { EvidenceSeasonBar, SeasonRefusal, useEvidenceSeason, withSeason } from '../EvidenceSeason';
 import { seasonOfGameId } from '../gameSeason';
 import { bestPrices, formatPrice } from './linePrices';
@@ -1045,7 +1046,14 @@ function Detail({ matchup, gameId, evidence }) {
     <>
       <header className="matchup-heading">
         <div>
-          <Link to={withSeason('/matchups', evidence.linked)}>← Back to slate</Link>
+          <Link
+            to={withSeason(
+              `/matchups?date=${getTodaySlateDate(new Date(matchup.game.scheduledAt))}`,
+              evidence.linked,
+            )}
+          >
+            ← Back to slate
+          </Link>
           <p className="matchup-eyebrow">
             Matchup
             <HelpTip tip="matchupPage" />

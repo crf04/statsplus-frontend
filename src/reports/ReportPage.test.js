@@ -3,7 +3,7 @@ import App from '../App';
 import { decodeReport } from '../reportsApi';
 import { themeStore } from '../theme/useTheme';
 import { fitScale } from './ReportCard';
-import { cardLabel } from './ReportPage';
+import { cardLabel } from './reportText';
 
 const mockAuth = {
   currentUser: null,

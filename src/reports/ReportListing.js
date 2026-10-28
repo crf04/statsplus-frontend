@@ -4,14 +4,23 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSignUpThen } from '../components/Auth/useSignUpThen';
 import { useFeedback } from '../feedback/useFeedback';
 import { errorCode, setPublicHandle, setReportListed } from '../reportsApi';
-import { authorPath, publishedLine, staleDays } from '../research/researchFormat';
+import { authorPath, editedDate, publishedLine, staleDays } from '../research/researchFormat';
 
-/* "Published …, data as of …", and a badge once the report is more than three days old. */
-export const Published = ({ createdAt }) => {
+/*
+ * "Published …, data as of …", "Edited <date>" once its author has edited it,
+ * and a badge once the report is more than three days old. An edit never
+ * changes the data, so the age still runs from publication.
+ */
+export const Published = ({ createdAt, editedAt = null }) => {
   const days = staleDays(createdAt);
   return (
     <p className="report-published">
       <time dateTime={createdAt}>{publishedLine(createdAt)}</time>
+      {editedAt && (
+        <span className="report-edited">
+          Edited <time dateTime={editedAt}>{editedDate(editedAt)}</time>
+        </span>
+      )}
       {days !== null && <span className="report-stale">{days} days old</span>}
     </p>
   );

@@ -32,10 +32,11 @@ redirected.
 | `/targets`, `/targets/:targetId`   | Saved Targets and a Target's detail, Lab and Backtest                                             |
 | `/skills/injury-brief`             | The injury-brief skill page                                                                       |
 | `/reports/:id`                     | A published report, also open to waitlisted visitors                                              |
+| `/research`, `/research/@handle`   | Listed reports, Featured first, and one author's listed reports; public                           |
 | `/privacy`, `/terms`               | Legal pages, also open to signed-out and waitlisted visitors                                      |
 | `/operations`, `/admin/operations` | Admin operations console (the second path is an alias)                                            |
 
-A waitlisted account sees only the public home page, the legal pages and published reports, under a
+A waitlisted account sees only the public home page, the legal pages, published reports and Research, under a
 banner; every other path returns home.
 
 ## Architecture

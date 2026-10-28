@@ -14,6 +14,10 @@ const { requireString } = strictDecoders(createInvalidReportError);
 const fail = () => {
   throw createInvalidReportError();
 };
+const requireTimestamp = (value) => {
+  if (Number.isNaN(Date.parse(requireString(value)))) fail();
+  return value;
+};
 
 export const TAGS = ['strong', 'lean', 'thin', 'pass', 'tipped'];
 const LAYOUTS = ['tiles', 'rows', 'list'];
@@ -104,11 +108,20 @@ export const decodeReport = (payload) => {
   const document = decodeDocument(report.document);
   // A card the page cannot draw (no stored call or no HTML for it) is left out, not shown broken.
   const drawable = (id) => calls[id] && cards[calls[id].card];
+  if (typeof report.listed !== 'boolean' || typeof report.featured !== 'boolean') fail();
+  if (report.author !== undefined && report.author !== null && !isRecord(report.author)) fail();
+  const author = report.author ?? {};
+  const handle = optionalString(author.handle);
+  // A listed report always names its author by handle (crf04/statsplus#372).
+  if (report.listed && !handle) fail();
   return {
     id: requireString(report.id),
-    createdAt: requireString(report.created_at),
-    author: isRecord(report.author) ? optionalString(report.author.label) : null,
+    createdAt: requireTimestamp(report.created_at),
+    author: optionalString(author.label),
+    authorHandle: handle,
     isAuthor: report.is_author === true,
+    listed: report.listed,
+    featured: report.featured,
     document: {
       ...document,
       tabs: document.tabs.map((tab) => ({
@@ -121,18 +134,116 @@ export const decodeReport = (payload) => {
   };
 };
 
-/* One report, or null when it does not exist, was deleted or was taken down (404). */
+// A refused request's error code: the contract's `{"error": "<code>"}`, or null.
+export const errorCode = (error) => {
+  const body = error?.response?.data;
+  if (!isRecord(body)) return null;
+  if (typeof body.error === 'string') return body.error;
+  return isRecord(body.error) && typeof body.error.code === 'string' ? body.error.code : null;
+};
+
+const REMOVED_BY = ['author', 'takedown'];
+
+/*
+ * One report: `{ report }`, `{ removedBy: 'author' | 'takedown' }` for a
+ * deleted or taken-down one (410), or null when no report has the id (404).
+ */
 export const fetchReport = async (id, { signal } = {}) => {
   try {
     const response = await apiClient.get(`${getApiUrl('REPORTS')}/${encodeURIComponent(id)}`, {
       signal,
     });
-    return decodeReport(response.data);
+    return { report: decodeReport(response.data) };
   } catch (error) {
-    if (error?.response?.status === 404) return null;
+    const status = error?.response?.status;
+    if (status === 404) return null;
+    if (status === 410) {
+      const body = error.response.data;
+      if (!isRecord(body) || body.error !== 'removed' || !REMOVED_BY.includes(body.by)) fail();
+      return { removedBy: body.by };
+    }
     throw error;
   }
 };
 
 export const deleteReport = (id) =>
   apiClient.delete(`${getApiUrl('USER_REPORTS')}/${encodeURIComponent(id)}`);
+
+/* The author lists or unlists a report; refusals carry handle_required or listed_limit. */
+export const setReportListed = (id, listed) =>
+  apiClient.patch(`${getApiUrl('USER_REPORTS')}/${encodeURIComponent(id)}`, { listed });
+
+/* Sets the account's public handle once; refusals carry invalid_handle, handle_taken or handle_already_set. */
+export const setPublicHandle = (handle) => apiClient.put(getApiUrl('PUBLIC_HANDLE'), { handle });
+
+/*
+ * Research (crf04/statsplus#372): the reports their authors listed, newest
+ * first. A page is `{ featured, reports, nextCursor }`; Featured entries come
+ * only on the first page of the feed and never on an author's page.
+ */
+const createInvalidResearchError = () =>
+  new Error('The research endpoint returned an invalid response.');
+const research = strictDecoders(createInvalidResearchError);
+const failResearch = () => {
+  throw createInvalidResearchError();
+};
+const researchTimestamp = (value) => {
+  if (Number.isNaN(Date.parse(research.requireString(value)))) failResearch();
+  return value;
+};
+const researchStrings = (value) => {
+  if (!Array.isArray(value)) failResearch();
+  return value.map(research.requireString);
+};
+
+const decodeEntry = (entry) => {
+  if (!isRecord(entry) || !isRecord(entry.author) || !isRecord(entry.covers)) failResearch();
+  if (entry.date !== null && entry.date !== undefined) research.requireString(entry.date);
+  return {
+    id: research.requireString(entry.id),
+    title: research.requireString(entry.title),
+    listedAt: researchTimestamp(entry.listed_at),
+    createdAt: researchTimestamp(entry.created_at),
+    date: entry.date ?? null,
+    handle: research.requireString(entry.author.handle),
+    games: researchStrings(entry.covers.games),
+    players: researchStrings(entry.covers.players),
+    previewUrl: research.requireString(entry.preview_url),
+  };
+};
+
+export const decodeResearchPage = (payload) => {
+  if (!isRecord(payload) || !Array.isArray(payload.featured) || !Array.isArray(payload.reports)) {
+    failResearch();
+  }
+  const next = payload.next_cursor;
+  if (next !== null && (typeof next !== 'string' || !next)) failResearch();
+  return {
+    featured: payload.featured.map(decodeEntry),
+    reports: payload.reports.map(decodeEntry),
+    nextCursor: next,
+  };
+};
+
+/* One page of the feed; `cursor` is the previous page's nextCursor. */
+export const fetchResearch = async ({ cursor = null, signal } = {}) => {
+  const response = await apiClient.get(getApiUrl('RESEARCH'), {
+    params: cursor ? { cursor } : undefined,
+    signal,
+  });
+  return decodeResearchPage(response.data);
+};
+
+/* One page of an author's listed reports, or null for a handle nobody has (404). */
+export const fetchAuthorResearch = async (handle, { cursor = null, signal } = {}) => {
+  try {
+    const response = await apiClient.get(
+      `${getApiUrl('RESEARCH_AUTHORS')}/${encodeURIComponent(handle)}`,
+      { params: cursor ? { cursor } : undefined, signal },
+    );
+    return decodeResearchPage(response.data);
+  } catch (error) {
+    if (error?.response?.status === 404) return null;
+    throw error;
+  }
+};

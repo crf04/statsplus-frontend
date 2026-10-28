@@ -10,6 +10,7 @@ import UserProfile from './components/Auth/UserProfile';
 import { FeedbackProvider } from './feedback/FeedbackContext';
 import FeedbackButton from './feedback/FeedbackButton';
 import ThemeMenu from './theme/ThemeMenu';
+import { ResearchProvider, useLatestResearch } from './research/ResearchContext';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
@@ -25,6 +26,7 @@ const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
 const ReportPage = lazy(() => import('./reports/ReportPage'));
+const ResearchPage = lazy(() => import('./research/ResearchPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 
@@ -68,6 +70,8 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
+  // Research is linked once something is listed in it (crf04/statsplus#372).
+  const hasResearch = useLatestResearch().length > 0;
 
   return (
     <header className="app-header">
@@ -81,6 +85,7 @@ function AppNav() {
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
+          {hasResearch && <NavLink to="/research">Research</NavLink>}
           <NavLink to="/connect">Connect</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
@@ -101,7 +106,7 @@ function AppNav() {
 }
 
 // A waitlisted account has nothing signed-in to show but the public home page
-// the legal pages and public reports: a banner explains why, and every other path returns home
+// the legal pages, public reports and Research: a banner explains why, and every other path returns home
 // until it signs out.
 function WaitlistedShell() {
   const { pathname, search } = useLocation();
@@ -117,6 +122,8 @@ function WaitlistedShell() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
@@ -140,6 +147,8 @@ function SignedInShell() {
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />
@@ -175,11 +184,13 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <FeedbackProvider>
-          <div className="App">
-            <ProtectedRoute>
-              <SignedInShell />
-            </ProtectedRoute>
-          </div>
+          <ResearchProvider>
+            <div className="App">
+              <ProtectedRoute>
+                <SignedInShell />
+              </ProtectedRoute>
+            </div>
+          </ResearchProvider>
         </FeedbackProvider>
       </BrowserRouter>
     </AuthProvider>

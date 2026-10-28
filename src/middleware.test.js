@@ -41,7 +41,15 @@ test('serves the rewritten head unencoded when the document came compressed', as
 
 test('runs only for the Workspace, Slate, Matchup and injury brief skill routes', () => {
   expect(config).toEqual({
-    matcher: ['/', '/matchups', '/matchups/:gameId', '/skills/injury-brief', '/reports/:id'],
+    matcher: [
+      '/',
+      '/matchups',
+      '/matchups/:gameId',
+      '/skills/injury-brief',
+      '/reports/:id',
+      '/research',
+      '/research/:author',
+    ],
   });
 });
 
@@ -290,4 +298,64 @@ test('leaves a missing report, or a path that is not a report id, to the static 
   fetch.mockResolvedValue(new Response('{}', { status: 404 }));
   expect(await middleware(request('reports/k3x9q2mtzr'))).toBeUndefined();
   expect(await middleware(request('reports/not-an-id!'))).toBeUndefined();
+});
+
+const researchPage = (entries) => ({
+  featured: entries.slice(0, 1),
+  reports: entries.slice(1),
+  next_cursor: null,
+});
+const listed = (id, listedAt) => ({
+  id,
+  title: id,
+  listed_at: listedAt,
+  created_at: listedAt,
+  date: null,
+  author: { handle: 'bighatprops' },
+  covers: { games: [], players: [] },
+  preview_url: `/api/reports/${id}/preview.png`,
+});
+const answering = (path, body, status = 200) =>
+  fetch.mockImplementation(async (url) =>
+    new URL(url).pathname === path
+      ? new Response(JSON.stringify(body), {
+          status,
+          headers: { 'content-type': 'application/json' },
+        })
+      : new Response(indexHtml, { status: 200, headers: { 'content-type': 'text/html' } }),
+  );
+
+test('describes the Research feed with the newest listed report image, Featured or not', async () => {
+  answering(
+    '/api/research',
+    researchPage([
+      listed('oldfeat01', '2026-10-20T10:00:00Z'),
+      listed('newest001', '2026-10-27T10:00:00Z'),
+    ]),
+  );
+  const html = await (await middleware(request('research'))).text();
+
+  expect(html).toContain('<title>Research | CourtAI</title>');
+  expect(html).toContain('https://courtai.app/api/reports/newest001/preview.png');
+  expect(html).not.toContain('oldfeat01');
+});
+
+test("describes an author's page from that author's newest listed report", async () => {
+  answering('/api/research/authors/bighatprops', {
+    featured: [],
+    reports: [listed('mine00001', '2026-10-27T10:00:00Z')],
+    next_cursor: null,
+  });
+  const html = await (await middleware(request('research/@BigHatProps'))).text();
+
+  expect(html).toContain('<title>@bighatprops · Research | CourtAI</title>');
+  expect(html).toContain('https://courtai.app/api/reports/mine00001/preview.png');
+});
+
+test('leaves an empty feed, an unknown author or a malformed handle to the static document', async () => {
+  answering('/api/research', researchPage([]));
+  expect(await middleware(request('research'))).toBeUndefined();
+  answering('/api/research/authors/nobody', { error: 'not_found' }, 404);
+  expect(await middleware(request('research/@nobody'))).toBeUndefined();
+  expect(await middleware(request('research/bighatprops'))).toBeUndefined();
 });

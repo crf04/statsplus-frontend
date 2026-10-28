@@ -35,6 +35,9 @@ const config = {
     FEEDBACK: '/api/user/feedback',
     REPORTS: '/api/reports',
     USER_REPORTS: '/api/user/reports',
+    PUBLIC_HANDLE: '/api/user/public-handle',
+    RESEARCH: '/api/research',
+    RESEARCH_AUTHORS: '/api/research/authors',
   },
 
   // Application settings

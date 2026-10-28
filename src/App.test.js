@@ -65,6 +65,7 @@ test('a waitlisted user sees the public home page under a waitlist banner', asyn
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 
@@ -102,6 +103,7 @@ test('a signed-out visitor sees the public home page with a sign-up card, and no
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 
@@ -126,7 +128,8 @@ test.each([
   }
   await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
   expect(window.location.pathname).toBe(path);
-  expect(apiClient.get).not.toHaveBeenCalled();
+  // The legal pages read nothing; only the nav asks whether Research has anything listed.
+  expect(apiClient.get.mock.calls.map(([url]) => new URL(url).pathname)).toEqual(['/api/research']);
   window.history.pushState({}, '', '/');
 });
 

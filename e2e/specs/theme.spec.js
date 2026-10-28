@@ -66,20 +66,25 @@ test.describe('on a light device', () => {
     expect(await themesSeen(page)).toEqual(['dark']);
   });
 
-  test('a report card keeps the dark host ground of the Claude page it imitates', async ({
-    page,
-  }) => {
+  test('a report card takes the light theme of the page around it', async ({ page }) => {
     await page.goto('/reports/k3x9q2mtzr');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await page.getByText('The read and cards').first().click();
     const island = page.locator('.report-card-fit');
     await expect(island).toBeVisible();
+    await expect(island).toHaveAttribute('data-theme', 'light');
     expect(
       await island.evaluate((node) => {
         const style = getComputedStyle(node);
         return [style.backgroundColor, style.colorScheme];
       }),
-    ).toEqual(['rgb(31, 30, 27)', 'dark']);
+    ).toEqual(['rgba(0, 0, 0, 0)', 'light']);
+    // The card itself is told the light theme over the host handshake.
+    await expect
+      .poll(() =>
+        page.frameLocator('iframe.report-card').locator('html').getAttribute('data-theme'),
+      )
+      .toBe('light');
   });
 });
 

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import App from '../App';
 import { decodeReport } from '../reportsApi';
+import { themeStore } from '../theme/useTheme';
 import { fitScale } from './ReportCard';
 import { cardLabel } from './ReportPage';
 
@@ -49,6 +50,8 @@ const payload = (overrides = {}) => ({
     created_at: '2026-10-25T22:30:00Z',
     author: { label: '@bighatprops' },
     is_author: false,
+    listed: false,
+    featured: false,
     calls: [logsCall, onOffCall],
     cards: { 'game-logs': '<p>game logs card</p>', 'on-off': '<p>on/off card</p>' },
     document: {
@@ -120,6 +123,14 @@ beforeEach(() => {
   mockGet.mockReset();
   mockDelete.mockReset();
 });
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  act(() => themeStore.setPreference('system'));
+});
+
+const PUBLISHED = Date.parse('2026-10-25T22:30:00Z');
+const DAY = 24 * 60 * 60 * 1000;
 
 test('a report opens on its first tab and names its author and day', async () => {
   await open();
@@ -289,4 +300,136 @@ test('a card taller than the window shrinks to fit on wide screens, never below 
   expect(fitScale(3000, { innerWidth: 1320, innerHeight: 900 })).toBe(0.7);
   expect(fitScale(500, { innerWidth: 1320, innerHeight: 900 })).toBe(1);
   expect(fitScale(954, { innerWidth: 390, innerHeight: 844 })).toBe(1);
+});
+
+test('a listed report says who shared it and whose view it is, linking their author page', async () => {
+  await open(payload({ listed: true, author: { label: '@bighatprops', handle: 'bighatprops' } }));
+  const shared = screen.getByText(/^Shared by/);
+  expect(shared).toHaveTextContent(
+    "Shared by @bighatprops. CourtAI reports facts; this is the author's view.",
+  );
+  expect(within(shared).getByRole('link', { name: '@bighatprops' })).toHaveAttribute(
+    'href',
+    '/research/@bighatprops',
+  );
+});
+
+test('an unlisted report has no author footer', async () => {
+  await open();
+  expect(screen.queryByText(/^Shared by/)).not.toBeInTheDocument();
+});
+
+test('a report shows when it was published and its data age, with no badge at exactly three days', async () => {
+  jest.spyOn(Date, 'now').mockReturnValue(PUBLISHED + 3 * DAY);
+  await open();
+  expect(
+    screen.getByText('Published October 25, 2026, data as of 6:30 PM EDT'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/days old$/)).not.toBeInTheDocument();
+});
+
+test('a report more than three days old carries a badge with its age', async () => {
+  jest.spyOn(Date, 'now').mockReturnValue(PUBLISHED + 3 * DAY + 60 * 1000);
+  await open();
+  expect(screen.getByText('3 days old')).toBeInTheDocument();
+});
+
+test('a report its author deleted says so and leads to more research and sign-up', async () => {
+  mockGet.mockRejectedValue({
+    response: { status: 410, data: { error: 'removed', by: 'author' } },
+  });
+  window.history.pushState({}, '', '/reports/k3x9q2mtzr');
+  render(<App />);
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'This report was removed by its author' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('Its author deleted it, so the link no longer opens it.'),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Browse more research →' })).toHaveAttribute(
+    'href',
+    '/research',
+  );
+  expect(screen.getByRole('complementary', { name: 'Sign up' })).toBeInTheDocument();
+});
+
+test('a report taken down says CourtAI removed it, not its author', async () => {
+  mockGet.mockRejectedValue({
+    response: { status: 410, data: { error: 'removed', by: 'takedown' } },
+  });
+  window.history.pushState({}, '', '/reports/k3x9q2mtzr');
+  render(<App />);
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'This report was taken down' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('CourtAI removed it, so the link no longer opens it.'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/removed by its author/)).not.toBeInTheDocument();
+});
+
+test('signed out, a report ends in a sign-up prompt to run the same research', async () => {
+  await open();
+  const prompt = screen.getByRole('complementary', { name: 'Sign up' });
+  expect(
+    within(prompt).getByRole('heading', { name: 'Run the same research on any player' }),
+  ).toBeInTheDocument();
+});
+
+const initialize = (frame) => {
+  const posted = jest.spyOn(frame.contentWindow, 'postMessage');
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      source: frame.contentWindow,
+      data: { jsonrpc: '2.0', id: 1, method: 'ui/initialize' },
+    }),
+  );
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      source: frame.contentWindow,
+      data: { jsonrpc: '2.0', method: 'ui/notifications/initialized' },
+    }),
+  );
+  return posted;
+};
+
+test("a card takes the app's theme, and repaints when the theme changes", async () => {
+  act(() => themeStore.setPreference('light'));
+  await open();
+  fireEvent.click(screen.getByText('The read and cards'));
+  const frame = await screen.findByTitle('ORL on/off');
+  expect(frame.parentElement).toHaveAttribute('data-theme', 'light');
+  const posted = initialize(frame);
+  const greeting = posted.mock.calls[0][0];
+  expect(greeting.result.hostContext.theme).toBe('light');
+  expect(greeting.result.hostContext.styles.variables['--color-text-primary']).toBe('#15181d');
+
+  act(() => themeStore.setPreference('dark'));
+  expect(frame.parentElement).toHaveAttribute('data-theme', 'dark');
+  expect(posted).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      method: 'ui/notifications/host-context-changed',
+      params: expect.objectContaining({ theme: 'dark' }),
+    }),
+    '*',
+  );
+  expect(posted.mock.calls.at(-1)[0].params.styles.variables['--color-text-primary']).toBe(
+    '#faf9f5',
+  );
+});
+
+test('the decoder refuses a report without its listing state, or listed without a handle', () => {
+  const unknown = payload();
+  delete unknown.report.listed;
+  expect(() => decodeReport(unknown)).toThrow('The report endpoint returned an invalid response.');
+  const anonymous = payload({ listed: true, author: { label: '@bighatprops' } });
+  expect(() => decodeReport(anonymous)).toThrow(
+    'The report endpoint returned an invalid response.',
+  );
+  const shared = payload({ listed: true, featured: true, author: { handle: 'bighatprops' } });
+  expect(decodeReport(shared)).toMatchObject({
+    listed: true,
+    featured: true,
+    authorHandle: 'bighatprops',
+  });
 });

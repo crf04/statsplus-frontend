@@ -1,6 +1,7 @@
 // CourtAI reports (crf04/statsplus#342): a published report is a public page.
 import { expect } from 'e2e';
 import type { Browser } from '@e2e-dev/web';
+import { reportPayload, researchEntry, researchPayload } from '../fixtures/courtai.js';
 import { signedOutTest, waitlistedTest } from './support/courtai.ts';
 
 const REPORT = '/reports/k3x9q2mtzr';
@@ -68,3 +69,32 @@ waitlistedTest('a waitlisted account can still read a report', async ({ app, scr
   await app.open(REPORT);
   await expect(screen.getByRole('heading', TITLE, { level: 1 })).toBeVisible();
 });
+
+signedOutTest(
+  'a signed-out visitor finds a listed report from the nav and its author page',
+  async ({ app, screen, api }) => {
+    const listed = researchPayload({ reports: [researchEntry()] });
+    await api.override({
+      '/api/research': { body: listed },
+      '/api/research/authors/bighatprops': { body: listed },
+      '/api/reports/k3x9q2mtzr': () => ({
+        report: {
+          ...reportPayload().report,
+          listed: true,
+          author: { label: '@bighatprops', handle: 'bighatprops' },
+        },
+      }),
+    });
+    await app.open('/privacy');
+    await screen.getByRole('link', 'Research').tap();
+    await expect(screen.getByRole('heading', 'Research', { level: 1 })).toBeVisible();
+    await screen.getByRole('link', '@bighatprops').tap();
+    await expect(screen.getByRole('heading', '@bighatprops', { level: 1 })).toBeVisible();
+    await screen.getByRole('link', TITLE).tap();
+    await expect(screen.getByRole('heading', TITLE, { level: 1 })).toBeVisible();
+    await expect(
+      screen.getByText("CourtAI reports facts; this is the author's view.", { exact: false }),
+    ).toBeVisible();
+    await app.screenshot('research-report');
+  },
+);

@@ -4053,4 +4053,51 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
     expect(within(panel).queryByRole('table')).not.toBeInTheDocument();
     expect(panel).toHaveTextContent('No Matchup Score is computed for FTA, FTM.');
   });
+
+  test('names the categories the Score Matrix leaves out', async () => {
+    await openShootingLines();
+
+    expect(screen.getByRole('region', { name: 'Score Matrix' })).toHaveTextContent(
+      'No Matchup Score is computed for FGM, FG2M, FTA, FTM.',
+    );
+  });
+
+  test('says an unscored tab has no Defense Sheet rows, whatever the controls', async () => {
+    await openShootingLines();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+    const sheet = screen.getByRole('region', { name: 'What BOS allows' });
+    expect(
+      within(sheet).getByText(
+        'Free Throws Attempted has no Matchup Score or Defense Sheet rows. Posted lines are in the rail.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(sheet).queryByText('No Defense Sheet rows match these controls.'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
+      /By season points/,
+    );
+    expect(screen.queryByText(/By season scoring/)).not.toBeInTheDocument();
+  });
+
+  test('keeps the controls message on a scored tab the controls empty', async () => {
+    await openShootingLines();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'PTS' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'At least 2 sigma' }));
+
+    const sheet = screen.getByRole('region', { name: 'What BOS allows' });
+    expect(within(sheet).getByText('No Defense Sheet rows match these controls.')).toBeVisible();
+    expect(within(sheet).queryByText(/has no Matchup Score/)).not.toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
+      /By season scoring/,
+    );
+  });
 });

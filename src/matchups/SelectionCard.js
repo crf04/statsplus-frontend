@@ -384,6 +384,7 @@ export default function SelectionCard({
   const rows = categories
     .filter((market) => Object.hasOwn(player.scores, market))
     .map((market) => ({ market, score: player.scores[market][windowKey] }));
+  const unscored = categories.filter((market) => !Object.hasOwn(player.scores, market));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
     return index === -1 ? BASE_ORDER.length : index;
@@ -438,11 +439,7 @@ export default function SelectionCard({
             <h3>Score Matrix</h3>
             <HelpTip tip="scoreMatrix" />
           </div>
-          {rows.length === 0 ? (
-            <p className="honest-empty">
-              No Matchup Score is computed for {categories.join(', ')}.
-            </p>
-          ) : (
+          {rows.length > 0 && (
             <div className="selection-table-wrap">
               <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
                 <thead>
@@ -495,6 +492,9 @@ export default function SelectionCard({
                 </tbody>
               </table>
             </div>
+          )}
+          {unscored.length > 0 && (
+            <p className="honest-empty">No Matchup Score is computed for {unscored.join(', ')}.</p>
           )}
         </section>
         <section

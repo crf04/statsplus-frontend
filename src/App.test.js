@@ -128,8 +128,7 @@ test.each([
   }
   await waitFor(() => expect(document.title).toBe(`${title} | CourtAI`));
   expect(window.location.pathname).toBe(path);
-  // The legal pages read nothing; only the nav asks whether Research has anything listed.
-  expect(apiClient.get.mock.calls.map(([url]) => new URL(url).pathname)).toEqual(['/api/research']);
+  expect(apiClient.get).not.toHaveBeenCalled();
   window.history.pushState({}, '', '/');
 });
 

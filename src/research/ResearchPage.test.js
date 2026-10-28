@@ -157,29 +157,21 @@ test('signed out, the feed ends in a sign-up prompt', async () => {
   expect(within(prompt).getByRole('button', { name: /Sign up free/ })).toBeInTheDocument();
 });
 
-test('the nav links Research only once something is listed', async () => {
-  serve({ '/api/research': researchPage({ reports: [entry('first0001')] }) });
-  open('/privacy');
-  const nav = screen.getByRole('navigation', { name: 'Primary' });
-  expect(await within(nav).findByRole('link', { name: 'Research' })).toHaveAttribute(
-    'href',
-    '/research',
-  );
-});
-
-test('the nav has no Research link while nothing is listed', async () => {
-  serve({ '/api/research': researchPage() });
+test('the nav links Research for everyone, even before anything is listed', async () => {
+  serve({});
   open('/privacy');
   await screen.findByRole('heading', { level: 1 });
-  // Let the feed request settle before checking the link stays away.
-  await screen.findByRole('navigation', { name: 'Primary' });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(mockGet).toHaveBeenCalledWith(`${API}/api/research`, expect.anything());
   expect(
-    within(screen.getByRole('navigation', { name: 'Primary' })).queryByRole('link', {
+    within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', {
       name: 'Research',
     }),
-  ).not.toBeInTheDocument();
+  ).toHaveAttribute('href', '/research');
+});
+
+test('an empty feed says nothing has been listed yet', async () => {
+  serve({ '/api/research': researchPage() });
+  open('/research');
+  expect(await screen.findByText('Nothing has been listed yet.')).toBeInTheDocument();
 });
 
 describe('the feed decoder', () => {

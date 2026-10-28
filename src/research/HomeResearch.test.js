@@ -64,3 +64,14 @@ test('the public home has no Research strip while nothing is listed', async () =
   expect(screen.queryByRole('heading', { name: 'Research' })).not.toBeInTheDocument();
   expect(screen.queryByRole('list', { name: 'Latest research' })).not.toBeInTheDocument();
 });
+
+test('the public home has no Research strip when the feed cannot be read', async () => {
+  mockGet.mockImplementation((url, options) =>
+    url.endsWith('/api/research')
+      ? Promise.reject({ response: { status: 500 } })
+      : homeGet(url, options),
+  );
+  await openHome();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(screen.queryByRole('list', { name: 'Latest research' })).not.toBeInTheDocument();
+});

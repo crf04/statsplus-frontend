@@ -92,7 +92,7 @@
 }
 
 .research-list.is-featured {
-  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .research-list.is-strip {

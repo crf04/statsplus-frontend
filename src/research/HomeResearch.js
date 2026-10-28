@@ -1,12 +1,27 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { useLatestResearch } from './ResearchContext';
+import { fetchResearch } from '../reportsApi';
 import ResearchEntry from './ResearchEntry';
 import './research.css';
 
-/* The latest three listed reports on the public home; nothing while none are listed. */
+// Newest listed first, Featured included.
+export const latestEntries = ({ featured, reports }) =>
+  [...featured, ...reports].sort((a, b) => Date.parse(b.listedAt) - Date.parse(a.listedAt));
+
+/*
+ * The latest three listed reports on the public home, read each time the home
+ * opens; nothing while none are listed or the read fails.
+ */
 const HomeResearch = () => {
-  const latest = useLatestResearch().slice(0, 3);
+  const [latest, setLatest] = useState([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchResearch({ signal: controller.signal })
+      .then((page) => setLatest(latestEntries(page).slice(0, 3)))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
   if (!latest.length) return null;
   return (
     <section className="home-research" aria-labelledby="home-research-title">

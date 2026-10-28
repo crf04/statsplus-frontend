@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-28T06:14:33.794Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tool",
+        "summary": "tool type (run-time value)",
+        "derived": "date"
+      },
+      {
+        "name": "press",
+        "summary": "press \"Enter\" on textbox \"Slate date\"",
+        "target": {
+          "role": "textbox",
+          "name": "Slate date"
+        },
+        "key": "Enter"
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/slates.e2e.ts::the%20agent%20moves%20the%20slate%20to%20another%20date",
+      "targetId": "desktop-west",
+      "instructionDigest": "9d8ae055586ce2e8f7220858ff1864dc867956492c3522c3dc0777050779f440",
+      "paramsDigest": "4871b5d519195eb5c31dcf1851dbd57eb5143a57681aa2374cfa298dea43ca14",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Set the Slate date to March 29, 2026. The page shows Sunday, March 29, 2026 with the slate listing LAC @ MIL (Final).",
+    "startPath": "/matchups?date=2026-01-15",
+    "endPath": "/matchups?date=2026-03-29",
+    "endAnchors": [
+      {
+        "text": "Player pool is unavailable"
+      },
+      {
+        "text": "Past slate — the player pool is unavailable and no current pool is displayed. Game cards retain the returned targetable counts for this slate."
+      },
+      {
+        "role": "heading",
+        "name": "LAC @ MIL"
+      },
+      {
+        "text": "Final"
+      },
+      {
+        "text": "LA Clippers at Milwaukee Bucks"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Past slate — the stale player pool snapshot is not displayed. Game cards retain the targetable counts returned for this slate."
+      },
+      {
+        "role": "heading",
+        "name": "LAL @ BOS"
+      },
+      {
+        "text": "NBA Paris Game"
+      },
+      {
+        "text": "Los Angeles Lakers at Boston Celtics"
+      }
+    ],
+    "endWaitMs": 17139,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

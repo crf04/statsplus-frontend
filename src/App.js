@@ -10,7 +10,6 @@ import UserProfile from './components/Auth/UserProfile';
 import { FeedbackProvider } from './feedback/FeedbackContext';
 import FeedbackButton from './feedback/FeedbackButton';
 import ThemeMenu from './theme/ThemeMenu';
-import { ResearchProvider, useLatestResearch } from './research/ResearchContext';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
@@ -70,9 +69,6 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
-  // Research is linked once something is listed in it (crf04/statsplus#372).
-  const hasResearch = useLatestResearch().length > 0;
-
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
@@ -85,7 +81,7 @@ function AppNav() {
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
-          {hasResearch && <NavLink to="/research">Research</NavLink>}
+          <NavLink to="/research">Research</NavLink>
           <NavLink to="/connect">Connect</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
@@ -184,13 +180,11 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <FeedbackProvider>
-          <ResearchProvider>
-            <div className="App">
-              <ProtectedRoute>
-                <SignedInShell />
-              </ProtectedRoute>
-            </div>
-          </ResearchProvider>
+          <div className="App">
+            <ProtectedRoute>
+              <SignedInShell />
+            </ProtectedRoute>
+          </div>
         </FeedbackProvider>
       </BrowserRouter>
     </AuthProvider>

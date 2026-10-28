@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitForElementToBeRemoved, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import reportFixture from '../../e2e/fixtures/report.json';
@@ -84,6 +84,21 @@ test('only the author sees the List toggle', async () => {
 test('a waitlisted author cannot list', async () => {
   signIn({ waitlist: { position: 3 } });
   await open();
+  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
+});
+
+test('a waitlisted author can still unlist a listed report', async () => {
+  signIn({ waitlist: { position: 3 } });
+  serve({ is_author: true, listed: true, author: { handle: 'bighatprops' } });
+  await open();
+  mockPatch.mockImplementation(() => {
+    serve({ is_author: true, listed: false });
+    return Promise.resolve({ data: {} });
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Unlist' }));
+  await waitForElementToBeRemoved(() => screen.queryByText(/^Shared by/));
+  expect(mockPatch).toHaveBeenCalledWith(`${API}/api/user/reports/${ID}`, { listed: false });
+  // Unlisted, a waitlisted author has nothing more to toggle.
   expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
 });
 

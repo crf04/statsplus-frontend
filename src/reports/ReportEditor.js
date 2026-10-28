@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { errorCode, saveReportEdits } from '../reportsApi';
+import { allBlocks, errorCode, saveReportEdits } from '../reportsApi';
+import { blockLabel, editableCards } from './blocks/blockEdits';
 import { cardLabel, TAG_LABEL } from './reportText';
 
 /*
  * The author's Edit mode (crf04/statsplus#377): rename the report, write
  * notes, hide or restore items, and remove, restore and reorder the cards
- * within an item. It works from the report as published, so anything taken
+ * within an item. A block document (crf04/statsplus#380) does the same per
+ * block, addressed by the block's id. It works from the report as published, so anything taken
  * out stays here, greyed, to be put back. Cards never rerun.
  */
 
@@ -21,10 +23,31 @@ const sameOrder = (a, b) => a.length === b.length && a.every((id, i) => id === b
 /* The draft the editor opens on: the report as its author last saved it. */
 const startDraft = (report) => {
   const { original, edits } = report;
+  const base = { title: report.document.title, notes: report.notes ?? '' };
+  if (original.document.blocks) {
+    const saved = new Map((edits?.blocks ?? []).map((o) => [o.id, o]));
+    return {
+      ...base,
+      blocks: Object.fromEntries(
+        allBlocks(original.document.blocks).map((block) => {
+          const published = editableCards(block);
+          const override = saved.get(block.id);
+          return [
+            block.id,
+            {
+              hidden: override?.hidden ?? false,
+              cards: override?.cards
+                ? override.cards.filter((id) => published.includes(id))
+                : published,
+            },
+          ];
+        }),
+      ),
+    };
+  }
   const saved = new Map((edits?.items ?? []).map((o) => [`${o.tab}:${o.item}`, o]));
   return {
-    title: report.document.title,
-    notes: report.notes ?? '',
+    ...base,
     items: original.document.tabs.map((tab, t) =>
       tab.items.map((item, i) => {
         const override = saved.get(`${t}:${i}`);
@@ -40,19 +63,32 @@ const startDraft = (report) => {
 };
 
 /*
- * The PUT body: the whole edit, replacing every earlier one. Only items that
- * differ from how they were published are listed.
+ * The PUT body: the whole edit, replacing every earlier one. Only items or
+ * blocks that differ from how they were published are listed; a block sends
+ * its cards only when their order or number changed.
  */
-export const editsBody = (draft, original) => ({
-  title: draft.title.trim(),
-  notes: draft.notes.trim() ? draft.notes : null,
-  items: original.document.tabs.flatMap((tab, t) =>
-    tab.items.flatMap((item, i) => {
-      const { hidden, cards } = draft.items[t][i];
-      return hidden || !sameOrder(cards, item.cards) ? [{ tab: t, item: i, hidden, cards }] : [];
-    }),
-  ),
-});
+export const editsBody = (draft, original) => {
+  const base = { title: draft.title.trim(), notes: draft.notes.trim() ? draft.notes : null };
+  if (original.document.blocks) {
+    return {
+      ...base,
+      blocks: allBlocks(original.document.blocks).flatMap((block) => {
+        const { hidden, cards } = draft.blocks[block.id];
+        const reordered = !sameOrder(cards, editableCards(block));
+        return hidden || reordered ? [{ id: block.id, hidden, ...(reordered && { cards }) }] : [];
+      }),
+    };
+  }
+  return {
+    ...base,
+    items: original.document.tabs.flatMap((tab, t) =>
+      tab.items.flatMap((item, i) => {
+        const { hidden, cards } = draft.items[t][i];
+        return hidden || !sameOrder(cards, item.cards) ? [{ tab: t, item: i, hidden, cards }] : [];
+      }),
+    ),
+  };
+};
 
 const ERRORS = {
   notes_links: {
@@ -123,7 +159,23 @@ const CardRow = ({ id, label, place, total, removed, onMove, onRemove, onRestore
   </li>
 );
 
-const ItemEditor = ({ item, itemKey, state, calls, onChange, focusLater, announce }) => {
+const hiddenNote = (noun, item) => {
+  if (noun === 'tabs') return 'Hidden from readers, with every block in it.';
+  if (noun === 'block' && !item.cards.length) return 'Hidden from readers.';
+  return 'Hidden from readers, with its cards.';
+};
+
+const ItemEditor = ({
+  item,
+  itemKey,
+  state,
+  calls,
+  onChange,
+  focusLater,
+  announce,
+  noun = 'item',
+  children,
+}) => {
   const label = (id) => cardLabel(calls[id]);
   const removed = item.cards.filter((id) => !state.cards.includes(id));
   const move = (id, step) => {
@@ -166,12 +218,12 @@ const ItemEditor = ({ item, itemKey, state, calls, onChange, focusLater, announc
             announce(`${item.title} ${state.hidden ? 'restored' : 'hidden'}.`);
           }}
         >
-          {state.hidden ? 'Restore item' : 'Hide item'}
+          {state.hidden ? `Restore ${noun}` : `Hide ${noun}`}
           <span className="visually-hidden"> {item.title}</span>
         </button>
       </div>
       {state.hidden ? (
-        <p className="report-edit-note">Hidden from readers, with its cards.</p>
+        <p className="report-edit-note">{hiddenNote(noun, item)}</p>
       ) : item.cards.length ? (
         <ol className="report-edit-cards" aria-label={`Cards in ${item.title}`}>
           {state.cards.map((id, place) => (
@@ -189,12 +241,54 @@ const ItemEditor = ({ item, itemKey, state, calls, onChange, focusLater, announc
             <CardRow key={id} id={id} label={label(id)} removed onRestore={() => restore(id)} />
           ))}
         </ol>
+      ) : // A block that never carries cards shows only what it holds, if anything.
+      children !== undefined ? (
+        children
       ) : (
         <p className="report-edit-note">No cards.</p>
       )}
     </section>
   );
 };
+
+/*
+ * A block document's blocks in document order, each hidden or restored by its
+ * id; a tab group lists its tabs' blocks under it, and hiding the group hides
+ * them all.
+ */
+const BlockEditors = ({ blocks, draft, calls, setBlock, focusLater, announce }) =>
+  blocks.map((block) => {
+    const state = draft.blocks[block.id];
+    return (
+      <ItemEditor
+        key={block.id}
+        item={{ title: blockLabel(block, calls), tag: block.tag, cards: editableCards(block) }}
+        itemKey={block.id}
+        state={state}
+        calls={calls}
+        onChange={setBlock(block.id)}
+        focusLater={(id, action) => focusLater(block.id, id, action)}
+        announce={announce}
+        noun={block.type === 'tabs' ? 'tabs' : 'block'}
+      >
+        {block.type === 'tabs'
+          ? block.tabs.map((tab, t) => (
+              <fieldset key={t} className="report-edit-tab">
+                <legend>{tab.title}</legend>
+                <BlockEditors
+                  blocks={tab.blocks}
+                  draft={draft}
+                  calls={calls}
+                  setBlock={setBlock}
+                  focusLater={focusLater}
+                  announce={announce}
+                />
+              </fieldset>
+            ))
+          : null}
+      </ItemEditor>
+    );
+  });
 
 const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
   const { original } = report;
@@ -239,6 +333,9 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
         ti === t ? items.map((old, ii) => (ii === i ? state : old)) : items,
       ),
     }));
+
+  const setBlock = (id) => (state) =>
+    setDraft((current) => ({ ...current, blocks: { ...current.blocks, [id]: state } }));
 
   const save = async (event) => {
     event.preventDefault();
@@ -318,27 +415,40 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
           )}
         </div>
 
-        {original.document.tabs.map((tab, t) => (
-          <fieldset key={t} className="report-edit-tab">
-            <legend>
-              {tab.title} <span className="report-tab-count">{tab.items.length}</span>
-            </legend>
-            {tab.items.map((item, i) => (
-              <ItemEditor
-                key={i}
-                item={item}
-                state={draft.items[t][i]}
-                calls={original.calls}
-                onChange={setItem(t, i)}
-                itemKey={`${t}:${i}`}
-                focusLater={(id, action) => {
-                  focusNext.current = { item: `${t}:${i}`, id, action };
-                }}
-                announce={setStatus}
-              />
-            ))}
-          </fieldset>
-        ))}
+        {original.document.blocks ? (
+          <BlockEditors
+            blocks={original.document.blocks}
+            draft={draft}
+            calls={original.calls}
+            setBlock={setBlock}
+            focusLater={(item, id, action) => {
+              focusNext.current = { item, id, action };
+            }}
+            announce={setStatus}
+          />
+        ) : (
+          original.document.tabs.map((tab, t) => (
+            <fieldset key={t} className="report-edit-tab">
+              <legend>
+                {tab.title} <span className="report-tab-count">{tab.items.length}</span>
+              </legend>
+              {tab.items.map((item, i) => (
+                <ItemEditor
+                  key={i}
+                  item={item}
+                  state={draft.items[t][i]}
+                  calls={original.calls}
+                  onChange={setItem(t, i)}
+                  itemKey={`${t}:${i}`}
+                  focusLater={(id, action) => {
+                    focusNext.current = { item: `${t}:${i}`, id, action };
+                  }}
+                  announce={setStatus}
+                />
+              ))}
+            </fieldset>
+          ))
+        )}
       </fieldset>
 
       <p className="visually-hidden" role="status" aria-live="polite">

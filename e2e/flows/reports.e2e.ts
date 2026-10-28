@@ -58,6 +58,37 @@ signedOutTest(
   },
 );
 
+signedOutTest(
+  'a signed-out visitor reads a block report: its lede, spot, cards inline and in a row, table and sources',
+  async ({ app, screen, browser }) => {
+    await app.open('/reports/r7b10cks28');
+    await expect(
+      screen.getByRole('heading', 'Austin Reaves assists without Dončić · LAL @ LAC', { level: 1 }),
+    ).toBeVisible();
+    await expect(screen.getByText('At 6.5 it does; 7.5 needs his full role.')).toBeVisible();
+    await expect(screen.getByRole('region', 'Austin Reaves o6.5 AST')).toBeVisible();
+    await expect(screen.getByRole('heading', 'The market', { level: 2 })).toBeVisible();
+    await expect(screen.getByRole('cell', 'DraftKings +107', { exact: false })).toBeVisible();
+    // Every card is drawn where the writer put it, from its stored HTML, without a click.
+    expect((await cardFrames(browser)).map((frame: CardFrame) => frame.title)).toEqual([
+      'LAL on/off',
+      'Reaves AST w/o Dončić',
+      'Reaves POTENTIAL_AST season',
+      'Reaves matchup',
+    ]);
+    await expect(screen.getByRole('link', 'Spread LAL -4.5')).toBeVisible();
+    // A row of cards sits side by side, and stacks into one column under 600px.
+    const row = await browser.evaluate(() => {
+      const [a, b] = [
+        ...document.querySelectorAll('.report-block-card-row .report-block-card'),
+      ].map((card) => card.getBoundingClientRect());
+      return { width: window.innerWidth, stacked: b.top >= a.bottom, sameTop: a.top === b.top };
+    });
+    expect(row.width < 600 ? row.stacked : row.sameTop).toBe(true);
+    await app.screenshot('block-report');
+  },
+);
+
 signedOutTest('a report that does not exist says so', async ({ app, screen }) => {
   await app.open('/reports/zzzzzzzzzz');
   await expect(

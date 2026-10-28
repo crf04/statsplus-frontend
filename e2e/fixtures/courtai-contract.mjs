@@ -1,5 +1,6 @@
 import statCatalogue from '../../src/targets/targetStatCatalogue.json' with { type: 'json' };
 import reportFixture from './report.json' with { type: 'json' };
+import blockReportFixture from './report-blocks.json' with { type: 'json' };
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -2819,6 +2820,11 @@ const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/a
 export const REPORT_ID = 'k3x9q2mtzr';
 export const reportPayload = () => structuredClone(reportFixture);
 
+// The same kind of report as a block document (crf04/statsplus#380): the Reaves
+// assists report, its paragraphs, spot, table and callouts around four real cards.
+export const BLOCK_REPORT_ID = 'r7b10cks28';
+export const blockReportPayload = () => structuredClone(blockReportFixture);
+
 // One page of Research (crf04/statsplus#372): Featured, then listed reports newest first.
 export const researchPayload = ({
   featured = /** @type {object[]} */ ([]),
@@ -3081,6 +3087,8 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         );
       } else if (reportPath[3] === REPORT_ID) {
         await route.fulfill({ json: reportPayload() });
+      } else if (reportPath[3] === BLOCK_REPORT_ID) {
+        await route.fulfill({ json: blockReportPayload() });
       } else {
         await route.fulfill({
           status: 404,

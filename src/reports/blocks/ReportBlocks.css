@@ -1,0 +1,160 @@
+/* Block documents (crf04/statsplus#380): an article column of blocks. */
+.report-blocks {
+  max-width: 760px;
+  margin-top: 22px;
+}
+
+/* A tab group of today's item layouts takes the page's full width. */
+.report-blocks:has(.report-block-tabs, .report-tiles) {
+  max-width: none;
+}
+
+.report-blocks > .report-lede:first-child {
+  margin-top: 0;
+}
+
+.report-block-heading {
+  margin: 30px 0 10px;
+  font-family: var(--ct-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.report-page .report-block-paragraph {
+  max-width: 78ch;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.report-block-bullets,
+.report-block-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  line-height: 1.55;
+}
+
+.report-block-bullets {
+  list-style: disc;
+}
+
+.report-block-list li,
+.report-block-bullets li {
+  margin-bottom: 4px;
+}
+
+.report-block-card {
+  margin: 18px 0 22px;
+}
+
+/* A row of cards side by side; one column on a phone. */
+.report-block-card-row {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 14px;
+  margin: 18px 0 22px;
+}
+
+.report-block-card-row .report-block-card {
+  margin: 0;
+}
+
+.report-block-callout {
+  margin: 22px 0;
+  padding: 14px 16px 6px;
+  border-left: 3px solid var(--ct-gold);
+  border-radius: 0 var(--ct-radius-card, 10px) var(--ct-radius-card, 10px) 0;
+  background: var(--ct-gold-bg-6);
+}
+
+.report-block-callout.warn {
+  border-left-color: var(--ct-miss);
+  background: var(--ct-miss-soft);
+}
+
+.report-block-callout.plain {
+  border-left-color: var(--ct-line-strong);
+  background: var(--ct-overlay-bg-4);
+  color: var(--ct-dim);
+}
+
+.report-page .report-block-callout-title {
+  margin-bottom: 6px;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.report-block-callout.warn .report-block-callout-title {
+  color: var(--ct-miss);
+}
+
+.report-block-callout.plain .report-block-callout-title {
+  color: var(--ct-dim);
+}
+
+.report-block-spot {
+  margin: 18px 0;
+}
+
+.report-block-spot-line {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 4fr) minmax(0, 5fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 12px 8px;
+  border-top: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.report-block-spot .report-deck {
+  margin-top: 14px;
+}
+
+.report-block-table {
+  margin: 6px 0 18px;
+  overflow-x: auto;
+}
+
+.report-block-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.report-block-table th,
+.report-block-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--ct-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.report-block-table thead th {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.report-block-table tbody td {
+  color: var(--ct-dim);
+}
+
+@media (max-width: 599px) {
+  .report-block-card-row {
+    grid-auto-flow: row;
+  }
+
+  .report-block-spot-line {
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+
+  .report-block-spot-line .report-key {
+    grid-column: 2;
+  }
+}

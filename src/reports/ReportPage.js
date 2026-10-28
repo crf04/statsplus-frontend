@@ -5,6 +5,7 @@ import { deleteReport, fetchReport } from '../reportsApi';
 import SignUpPrompt from '../research/SignUpPrompt';
 import ReportCard from './ReportCard';
 import ReportEditor from './ReportEditor';
+import ReportBlocks from './blocks/ReportBlocks';
 import { cardLabel, TAG_LABEL } from './reportText';
 import { AuthorTools, Published, ReportThis, SharedBy } from './ReportListing';
 import '../research/research.css';
@@ -30,7 +31,7 @@ const Notes = ({ report }) =>
     </section>
   ) : null;
 
-const Sources = ({ sources }) =>
+export const Sources = ({ sources }) =>
   sources.length ? (
     <p className="report-sources">
       Sources:{' '}
@@ -45,11 +46,11 @@ const Sources = ({ sources }) =>
     </p>
   ) : null;
 
-const Tag = ({ tag }) =>
+export const Tag = ({ tag }) =>
   tag ? <span className={`report-tag ${tag}`}>{TAG_LABEL[tag]}</span> : null;
 
 /* An item's cards, one at a time behind chips: the first is the one that carries it. */
-const Deck = ({ ids, report }) => {
+export const Deck = ({ ids, report }) => {
   const [active, setActive] = useState(0);
   if (!ids.length) return null;
   const call = report.calls[ids[Math.min(active, ids.length - 1)]];
@@ -170,7 +171,7 @@ const Row = ({ item, report, id }) => {
   );
 };
 
-const Tab = ({ tab, report, index }) => {
+export const Tab = ({ tab, report, index }) => {
   if (tab.layout === 'tiles') {
     return (
       <div className="report-tiles">
@@ -217,7 +218,7 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
   const [editing, setEditing] = useState(false);
   const { document: doc } = report;
   // A tab whose every item its author hid is left out.
-  const tabs = doc.tabs.filter((tab) => tab.items.length);
+  const tabs = doc.tabs?.filter((tab) => tab.items.length) ?? [];
   const tabRefs = useRef([]);
   const editButton = useRef(null);
   const heading = useRef(null);
@@ -306,37 +307,43 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
         <Notes report={report} />
       </header>
 
-      <div className="report-tablist" role="tablist" aria-label="Report sections">
-        {tabs.map((tab, index) => (
-          <button
-            key={index}
-            ref={(node) => {
-              tabRefs.current[index] = node;
-            }}
-            type="button"
-            role="tab"
-            id={`report-tab-${index}`}
-            aria-selected={index === active}
-            aria-controls={`report-panel-${index}`}
-            tabIndex={index === active ? 0 : -1}
-            onClick={() => setActive(index)}
-            onKeyDown={onKeyDown}
-          >
-            {tab.title} <span className="report-tab-count">{tab.items.length}</span>
-          </button>
-        ))}
-      </div>
-      {tabs.map((tab, index) => (
-        <div
-          key={index}
-          role="tabpanel"
-          id={`report-panel-${index}`}
-          aria-labelledby={`report-tab-${index}`}
-          hidden={index !== active}
-        >
-          {index === active && <Tab tab={tab} report={report} index={index} />}
-        </div>
-      ))}
+      {doc.blocks ? (
+        <ReportBlocks blocks={doc.blocks} report={report} />
+      ) : (
+        <>
+          <div className="report-tablist" role="tablist" aria-label="Report sections">
+            {tabs.map((tab, index) => (
+              <button
+                key={index}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                type="button"
+                role="tab"
+                id={`report-tab-${index}`}
+                aria-selected={index === active}
+                aria-controls={`report-panel-${index}`}
+                tabIndex={index === active ? 0 : -1}
+                onClick={() => setActive(index)}
+                onKeyDown={onKeyDown}
+              >
+                {tab.title} <span className="report-tab-count">{tab.items.length}</span>
+              </button>
+            ))}
+          </div>
+          {tabs.map((tab, index) => (
+            <div
+              key={index}
+              role="tabpanel"
+              id={`report-panel-${index}`}
+              aria-labelledby={`report-tab-${index}`}
+              hidden={index !== active}
+            >
+              {index === active && <Tab tab={tab} report={report} index={index} />}
+            </div>
+          ))}
+        </>
+      )}
 
       <footer className="report-foot">
         {report.listed && <SharedBy handle={report.authorHandle} />}

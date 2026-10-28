@@ -75,15 +75,132 @@ const decodeSkill = (skill) => {
   };
 };
 
+/*
+ * A block document (crf04/statsplus#380): an ordered list of blocks, each with
+ * an id unique across the document. A tabs block holds blocks but never
+ * another tabs block. The served document may have blocks its author hid
+ * already left out, so a tab or the document can come empty.
+ */
+const BLOCK_ID = /^[a-z0-9-]{1,40}$/;
+const TONES = ['warn', 'plain'];
+
+const required = (value) => {
+  if (!Array.isArray(value)) fail();
+  return value;
+};
+
+// A table cell may be blank; any other text field may not.
+const cell = (value) => {
+  if (typeof value !== 'string') fail();
+  return value;
+};
+
+const decodeTable = (block) => {
+  const columns = required(block.columns).map(cell);
+  const rows = required(block.rows).map((row) => {
+    if (!Array.isArray(row) || row.length !== columns.length) fail();
+    return row.map(cell);
+  });
+  return { columns, rows };
+};
+
+const decodeBlock = (block, nested = false) => {
+  if (!isRecord(block) || typeof block.id !== 'string' || !BLOCK_ID.test(block.id)) fail();
+  const { id, type } = block;
+  switch (type) {
+    case 'heading':
+      return { id, type, text: requireString(block.text) };
+    case 'paragraph':
+      return { id, type, text: requireString(block.text), lede: block.lede === true };
+    case 'list':
+      return {
+        id,
+        type,
+        items: required(block.items).map(requireString),
+        ordered: block.ordered === true,
+      };
+    case 'callout': {
+      const tone = block.tone ?? null;
+      if (tone !== null && !TONES.includes(tone)) fail();
+      return {
+        id,
+        type,
+        title: optionalString(block.title),
+        text: requireString(block.text),
+        tone,
+      };
+    }
+    case 'card':
+      return { id, type, card: requireString(block.card) };
+    case 'cards':
+      return { id, type, cards: required(block.cards).map(requireString) };
+    case 'spot': {
+      const tag = block.tag ?? null;
+      if (tag !== null && !TAGS.includes(tag)) fail();
+      return {
+        id,
+        type,
+        tag,
+        title: requireString(block.title),
+        subtitle: optionalString(block.subtitle),
+        key: optionalString(block.key),
+        cards: strings(block.cards),
+      };
+    }
+    case 'table':
+      return { id, type, ...decodeTable(block) };
+    case 'items':
+      if (!LAYOUTS.includes(block.layout)) fail();
+      return { id, type, layout: block.layout, items: required(block.items).map(decodeItem) };
+    case 'sources':
+      return { id, type, sources: sources(required(block.sources)) };
+    case 'tabs':
+      if (nested) fail();
+      return {
+        id,
+        type,
+        tabs: required(block.tabs).map((tab) => {
+          if (!isRecord(tab)) fail();
+          return {
+            title: requireString(tab.title),
+            blocks: required(tab.blocks).map((inner) => decodeBlock(inner, true)),
+          };
+        }),
+      };
+    default:
+      return fail();
+  }
+};
+
+/* Every block in document order, the blocks inside a tabs block right after it. */
+export const allBlocks = (blocks) =>
+  blocks.flatMap((block) =>
+    block.type === 'tabs' ? [block, ...block.tabs.flatMap((tab) => tab.blocks)] : [block],
+  );
+
+const decodeBlocks = (value) => {
+  const blocks = required(value).map((block) => decodeBlock(block));
+  const ids = allBlocks(blocks).map((block) => block.id);
+  if (new Set(ids).size !== ids.length) fail();
+  return blocks;
+};
+
+/* A document has exactly one of `tabs` (items in tabs) or `blocks`. */
 const decodeDocument = (document) => {
-  if (!isRecord(document) || !Array.isArray(document.tabs) || !document.tabs.length) fail();
+  if (!isRecord(document)) fail();
+  const hasTabs = document.tabs !== undefined;
+  const hasBlocks = document.blocks !== undefined;
+  if (hasTabs === hasBlocks) fail();
+  if (hasTabs && (!Array.isArray(document.tabs) || !document.tabs.length)) fail();
   return {
     title: requireString(document.title),
     date: optionalString(document.date),
     opening: strings(document.opening),
     skill: decodeSkill(document.skill),
     footnote: optionalString(document.footnote),
-    tabs: document.tabs.map(decodeTab),
+    ...(hasTabs
+      ? { tabs: document.tabs.map(decodeTab) }
+      : { blocks: decodeBlocks(document.blocks) }),
   };
 };
 
@@ -104,16 +221,33 @@ const decodeCalls = (calls) => {
 };
 
 // A card the page cannot draw (no stored call or no HTML for it) is left out, not shown broken.
-const drawableDocument = (document, calls, cards) => ({
-  ...document,
-  tabs: document.tabs.map((tab) => ({
-    ...tab,
-    items: tab.items.map((item) => ({
-      ...item,
-      cards: item.cards.filter((id) => calls[id] && cards[calls[id].card]),
-    })),
-  })),
-});
+const drawableDocument = (document, calls, cards) => {
+  const drawable = (ids) => ids.filter((id) => calls[id] && cards[calls[id].card]);
+  const drawableItem = (item) => ({ ...item, cards: drawable(item.cards) });
+  const drawableBlock = (block) => {
+    switch (block.type) {
+      case 'card':
+        return { ...block, card: drawable([block.card])[0] ?? null };
+      case 'cards':
+      case 'spot':
+        return { ...block, cards: drawable(block.cards) };
+      case 'items':
+        return { ...block, items: block.items.map(drawableItem) };
+      case 'tabs':
+        return {
+          ...block,
+          tabs: block.tabs.map((tab) => ({ ...tab, blocks: tab.blocks.map(drawableBlock) })),
+        };
+      default:
+        return block;
+    }
+  };
+  if (document.blocks) return { ...document, blocks: document.blocks.map(drawableBlock) };
+  return {
+    ...document,
+    tabs: document.tabs.map((tab) => ({ ...tab, items: tab.items.map(drawableItem) })),
+  };
+};
 
 /*
  * The author's own words (crf04/statsplus#377): plain text, kept as sent.
@@ -134,13 +268,31 @@ const position = (value) => {
   return value;
 };
 
-/* The stored edits body, as PUT /api/user/reports/<id>/edits took it. */
+/*
+ * The stored edits body, as PUT /api/user/reports/<id>/edits took it: item
+ * overrides addressed by tab and position for a tab document, block overrides
+ * addressed by id for a block document.
+ */
 const decodeEdits = (edits) => {
   if (edits === undefined || edits === null) return null;
-  if (!isRecord(edits) || !Array.isArray(edits.items)) fail();
+  if (!isRecord(edits)) fail();
+  const base = { title: requireString(edits.title), notes: decodeNotes(edits.notes) };
+  if (Array.isArray(edits.blocks)) {
+    return {
+      ...base,
+      blocks: edits.blocks.map((block) => {
+        if (!isRecord(block) || typeof block.hidden !== 'boolean') fail();
+        return {
+          id: requireString(block.id),
+          hidden: block.hidden,
+          cards: block.cards === undefined ? null : required(block.cards).map(requireString),
+        };
+      }),
+    };
+  }
+  if (!Array.isArray(edits.items)) fail();
   return {
-    title: requireString(edits.title),
-    notes: decodeNotes(edits.notes),
+    ...base,
     items: edits.items.map((item) => {
       if (!isRecord(item) || typeof item.hidden !== 'boolean' || !Array.isArray(item.cards)) fail();
       return {
@@ -226,8 +378,9 @@ export const fetchReport = async (id, { signal } = {}) => {
 };
 
 /*
- * The author's edits: the title, notes, and the items they override, each
- * with its hidden flag and its cards in display order. The body replaces every
+ * The author's edits: the title, notes, and the items (tab document) or
+ * blocks (block document) they override, each with its hidden flag and its
+ * cards in display order. The body replaces every
  * earlier edit. Resolves to the report as the author now reads it; refusals
  * carry notes_links, notes_too_long or invalid_edits.
  */

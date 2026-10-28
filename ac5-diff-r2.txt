@@ -1,0 +1,11 @@
+== ARIA diff base-run/base-matchup-pts-desktop -> qa-run-r2/d-matchup-pts-desktop: 4 lines
++      - button "Field Goals Made": FGM
++      - button "Two-Pointers Made": FG2M
++      - button "Free Throws Attempted": FTA
++      - button "Free Throws Made": FTM
+== ARIA diff base-run/base-matchup-reb-desktop -> qa-run-r2/d-matchup-reb-desktop: 4 lines
++      - button "Field Goals Made": FGM
++      - button "Two-Pointers Made": FG2M
++      - button "Free Throws Attempted": FTA
++      - button "Free Throws Made": FTM
+== ARIA diff base-run/base-matchup-lal-defense-desktop -> qa-run-r2/d-matchup-lal-defense-desktop: 0 lines

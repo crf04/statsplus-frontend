@@ -1,4 +1,4 @@
-import { render, screen, waitForElementToBeRemoved, within } from '@testing-library/react';
+import { render, screen, waitFor, waitForElementToBeRemoved, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import reportFixture from '../../e2e/fixtures/report.json';
@@ -61,6 +61,18 @@ const open = async () => {
   return view;
 };
 
+// List opens a short explanation; its List in Research button sends the listing.
+const listInResearch = async () => {
+  await userEvent.click(screen.getByRole('button', { name: 'List' }));
+  const dialog = screen.getByRole('dialog', { name: 'List in Research' });
+  // The keyboard moves into the popup.
+  expect(dialog).toHaveFocus();
+  expect(dialog).toHaveTextContent(
+    'Listing puts this report on Research, under your handle, where anyone can find it.',
+  );
+  await userEvent.click(within(dialog).getByRole('button', { name: 'List in Research' }));
+};
+
 beforeEach(() => {
   Object.assign(mockAuth, { currentUser: null, isAuthenticated: false, waitlist: null });
   mockGet.mockReset();
@@ -78,14 +90,16 @@ test('only the author sees the List toggle', async () => {
   signIn();
   serve({ is_author: false });
   await open();
-  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
-  expect(screen.queryByText(/Unlisted\./)).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'List' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Unlisted')).not.toBeInTheDocument();
 });
 
 test('a waitlisted author cannot list', async () => {
   signIn({ waitlist: { position: 3 } });
   await open();
-  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
+  expect(screen.getByText('Unlisted')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'List' })).not.toBeInTheDocument();
 });
 
 test('a waitlisted author can still unlist a listed report', async () => {
@@ -100,13 +114,17 @@ test('a waitlisted author can still unlist a listed report', async () => {
   await waitForElementToBeRemoved(() => screen.queryByText(/^Shared by/));
   expect(mockPatch).toHaveBeenCalledWith(`${API}/api/user/reports/${ID}`, { listed: false });
   // Unlisted, a waitlisted author has nothing more to toggle.
-  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
+  expect(screen.getByText('Unlisted')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'List' })).not.toBeInTheDocument();
 });
 
 test('the author lists a report, and the page then shows it listed under their handle', async () => {
   signIn();
   await open();
-  expect(screen.getByText(/Only people with the link can open it/)).toBeInTheDocument();
+  expect(screen.getByText('Unlisted')).toHaveAttribute(
+    'title',
+    'Unlisted. Only people with the link can open it.',
+  );
   mockPatch.mockImplementation(() => {
     serve({
       is_author: true,
@@ -115,11 +133,12 @@ test('the author lists a report, and the page then shows it listed under their h
     });
     return Promise.resolve({ data: {} });
   });
-  await userEvent.click(screen.getByRole('button', { name: 'List in Research' }));
+  await listInResearch();
 
   expect(await screen.findByRole('button', { name: 'Unlist' })).toBeInTheDocument();
   expect(mockPatch).toHaveBeenCalledWith(`${API}/api/user/reports/${ID}`, { listed: true });
-  expect(screen.getByText(/Anyone can find it there/)).toBeInTheDocument();
+  expect(screen.getByText('Listed in Research')).toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'List in Research' })).not.toBeInTheDocument();
   expect(screen.getByText(/^Shared by/)).toHaveTextContent('Shared by @bighatprops.');
 });
 
@@ -132,7 +151,8 @@ test('the author unlists a listed report', async () => {
     return Promise.resolve({ data: {} });
   });
   await userEvent.click(screen.getByRole('button', { name: 'Unlist' }));
-  expect(await screen.findByRole('button', { name: 'List in Research' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'List' })).toBeInTheDocument();
+  expect(screen.getByText('Unlisted')).toBeInTheDocument();
   expect(mockPatch).toHaveBeenCalledWith(`${API}/api/user/reports/${ID}`, { listed: false });
   expect(screen.queryByText(/^Shared by/)).not.toBeInTheDocument();
 });
@@ -141,9 +161,10 @@ test('a first listing without a handle asks for one, shows its refusals, then li
   signIn();
   await open();
   mockPatch.mockImplementationOnce(() => refused(409, 'handle_required'));
-  await userEvent.click(screen.getByRole('button', { name: 'List in Research' }));
+  await listInResearch();
 
   const field = await screen.findByRole('textbox', { name: 'Choose your public handle' });
+  await waitFor(() => expect(field).toHaveFocus());
   mockPut.mockImplementationOnce(() => refused(400, 'invalid_handle'));
   await userEvent.type(field, 'no');
   await userEvent.click(screen.getByRole('button', { name: 'Save and list' }));
@@ -183,11 +204,14 @@ test('listing over the daily cap says why', async () => {
   signIn();
   await open();
   mockPatch.mockImplementationOnce(() => refused(429, 'listed_limit'));
-  await userEvent.click(screen.getByRole('button', { name: 'List in Research' }));
+  await listInResearch();
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'You have listed 5 reports in the last 24 hours. Try again later.',
   );
-  expect(screen.getByRole('button', { name: 'List in Research' })).toBeEnabled();
+  expect(screen.getByText('Unlisted')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'List' })).toBeEnabled();
+  // The popup closed; the keyboard is back on List.
+  expect(screen.getByRole('button', { name: 'List' })).toHaveFocus();
 });
 
 test('Report this opens Feedback about this report', async () => {
@@ -214,7 +238,7 @@ test('signed out, Report this signs the visitor in first', async () => {
 test('signing out takes the author controls away', async () => {
   signIn();
   const view = await open();
-  expect(screen.getByRole('button', { name: 'List in Research' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'List' })).toBeInTheDocument();
   Object.assign(mockAuth, { currentUser: null, isAuthenticated: false });
   served = report({ is_author: false });
   view.rerender(<App />);
@@ -222,7 +246,7 @@ test('signing out takes the author controls away', async () => {
   expect(
     await screen.findByRole('heading', { level: 1, name: 'Injury brief · Sunday, October 25' }),
   ).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'List in Research' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Delete this report' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Unlist' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'List' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'More report actions' })).not.toBeInTheDocument();
 });

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
@@ -28,6 +28,7 @@ jest.mock('../contexts/AuthContext', () => ({
 
 const mockGet = jest.fn();
 const mockPut = jest.fn();
+const mockDelete = jest.fn();
 jest.mock('../utils/axiosConfig', () => ({
   __esModule: true,
   default: {
@@ -35,7 +36,7 @@ jest.mock('../utils/axiosConfig', () => ({
     put: (...args) => mockPut(...args),
     patch: jest.fn(),
     post: jest.fn(),
-    delete: jest.fn(),
+    delete: (...args) => mockDelete(...args),
   },
 }));
 
@@ -159,6 +160,7 @@ const refused = (error) => Promise.reject({ response: { status: 400, data: { err
 beforeEach(() => {
   mockGet.mockReset();
   mockPut.mockReset();
+  mockDelete.mockReset();
 });
 
 afterEach(() => {
@@ -216,11 +218,76 @@ describe('Edit mode', () => {
     signIn();
     await open(authorPayload({ is_author: false }));
     expect(screen.queryByRole('button', { name: 'Edit report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
+  });
+
+  test('the toolbar sits on the byline row: status, Edit, List and a ⋮ menu, above the opening and the tabs', async () => {
+    signIn();
+    await open(authorPayload());
+    const tools = screen.getByRole('group', { name: 'Manage your report' });
+    expect(tools).toHaveTextContent(/^Unlisted/);
+    expect(
+      within(tools)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label') || button.textContent),
+    ).toEqual(['Edit report', 'List', 'More report actions']);
+    // Delete waits in the ⋮ menu.
+    expect(screen.queryByRole('menuitem', { name: 'Delete this report' })).not.toBeInTheDocument();
+    expect(tools.parentElement).toHaveTextContent('Sunday, October 25, 2026 · by a CourtAI user');
+    const before = (a, b) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(before(screen.getByRole('heading', { level: 1 }), tools)).toBe(true);
+    expect(before(tools, screen.getByText(/^Published/))).toBe(true);
+    expect(before(tools, screen.getByText('Banchero is out for weeks.'))).toBe(true);
+    expect(before(tools, screen.getAllByRole('tab')[0])).toBe(true);
+  });
+
+  test('the ⋮ menu holds Delete; Escape closes it and returns to ⋮, a click outside closes it', async () => {
+    signIn();
+    await open(authorPayload());
+    const more = screen.getByRole('button', { name: 'More report actions' });
+    await userEvent.click(more);
+    expect(more).toHaveAttribute('aria-expanded', 'true');
+    const item = within(screen.getByRole('menu')).getByRole('menuitem', {
+      name: 'Delete this report',
+    });
+    expect(item).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(more).toHaveFocus();
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(more);
+    await userEvent.click(screen.getByText('Banchero is out for weeks.'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  test('Delete from the ⋮ menu asks first; declining keeps the report', async () => {
+    signIn();
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    await open(authorPayload());
+    await userEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+    expect(confirm).toHaveBeenCalledWith(
+      'Delete this report? Its link will stop working for everyone.',
+    );
+    await act(async () => {});
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More report actions' })).toHaveFocus();
+    confirm.mockRestore();
+  });
+
+  test('Cancel puts the keyboard back on Edit report', async () => {
+    await startEditing(authorPayload());
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit report' })).toHaveFocus());
   });
 
   test('a reader who is not signed in is never offered Edit mode', async () => {
     await open(authorPayload());
     expect(screen.queryByRole('button', { name: 'Edit report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
   });
 
   test('the author renames, removes, reorders and hides, saves once, and sees the saved report', async () => {

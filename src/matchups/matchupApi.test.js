@@ -1159,6 +1159,101 @@ test('decodes the complete governed backend market set and both score encodings'
   expect(Object.keys(decodeMatchup(candidate).players[0].scores)).toEqual(markets);
 });
 
+// The backend's window for a category the Matchup does not score (statsplus#370).
+const unscoredWindow = { components: {}, blend: null, missing_inputs: [] };
+const withShootingLines = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  const player = candidate.players[0];
+  const markets = ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS'];
+  player.posted_markets = markets;
+  player.stat_categories = markets;
+  player.provenance = { dabble: markets };
+  player.lines = { dabble: { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 } };
+  player.line_prices = {
+    dabble: {
+      FTA: { over: -118, under: -104 },
+      FG2M: { over: 102, under: -125 },
+      PTS: { over: -122, under: -122 },
+    },
+  };
+  player.book_lines = {
+    FTA: {
+      as_of: '2026-01-15T22:00:00Z',
+      closing: false,
+      books: [
+        {
+          book: 'fanduel',
+          line: 6.5,
+          over: -120,
+          under: -110,
+          updated_at: '2026-01-15T21:55:00Z',
+          best_over: true,
+          best_under: true,
+        },
+      ],
+    },
+  };
+  player.scores = {
+    PTS: player.scores.PTS,
+    FG2M: { season: unscoredWindow, last_15: unscoredWindow },
+    FGM: { season: unscoredWindow, last_15: unscoredWindow },
+    FTA: { season: unscoredWindow, last_15: unscoredWindow },
+    FTM: { season: unscoredWindow, last_15: unscoredWindow },
+  };
+  return candidate;
+};
+
+test('decodes Dabble free-throw and made-field-goal lines beside a scored market', () => {
+  const player = decodeMatchup(withShootingLines()).players[0];
+
+  expect(player.postedMarkets).toEqual(['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']);
+  expect(player.statCategories).toEqual(['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']);
+  expect(player.provenance).toEqual({ dabble: ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS'] });
+  expect(player.lines).toEqual({
+    dabble: { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 },
+  });
+  expect(player.linePrices).toEqual({
+    dabble: {
+      FTA: { over: -118, under: -104 },
+      FG2M: { over: 102, under: -125 },
+      PTS: { over: -122, under: -122 },
+    },
+  });
+  expect(player.bookLines.FTA.books).toEqual([
+    {
+      book: 'fanduel',
+      line: 6.5,
+      over: -120,
+      under: -110,
+      updatedAt: '2026-01-15T21:55:00Z',
+      bestOver: true,
+      bestUnder: true,
+    },
+  ]);
+  // The four have no Matchup Score, so only PTS carries one.
+  expect(player.scores).toEqual({
+    PTS: {
+      season: {
+        components: { playTypes: { value: 0.08, thin: false } },
+        blend: { value: 0.12, thin: false },
+        missingInputs: [],
+      },
+      last15: {
+        components: { playTypes: { value: -0.03, thin: false } },
+        blend: { value: -0.01, thin: false },
+        missingInputs: [],
+      },
+    },
+  });
+});
+
+test('still requires a score entry for every unscored category it posts', () => {
+  const candidate = withShootingLines();
+  delete candidate.players[0].scores.FTA;
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test.each([
   [
     'an unposted score row',

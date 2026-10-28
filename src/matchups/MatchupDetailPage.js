@@ -13,6 +13,7 @@ import {
   UNAVAILABLE_RELATIVE_LABEL,
   bookMark,
   bookName,
+  categoryLabel,
   findDietShare,
   formatScorePercent,
   dietBaseVolumePerGame,
@@ -398,7 +399,7 @@ function PlayerRail({
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>
           {teamTricode ? `${teamTricode} · ` : ''}
-          {stat}
+          {categoryLabel(stat)}
         </h2>
         <p className="rail-count">
           By season scoring
@@ -1156,6 +1157,8 @@ function Detail({ matchup, gameId, evidence }) {
                 <button
                   type="button"
                   aria-pressed={market === item}
+                  aria-label={categoryLabel(item)}
+                  title={categoryLabel(item)}
                   key={item}
                   onClick={() => setMarket(item)}
                 >

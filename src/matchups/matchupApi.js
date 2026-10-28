@@ -41,6 +41,9 @@ const requireStringList = (value) => {
   return value;
 };
 const camelKey = (key) => key.replace(/_([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
+// Posted lines the Matchup shows without a Matchup Score (statsplus#370). The
+// backend still sends each an empty score window, which the decoder drops.
+const UNSCORED_MARKETS = ['FTA', 'FTM', 'FGM', 'FG2M'];
 const MARKET_CATEGORIES = new Set([
   'PTS',
   'REB',
@@ -57,6 +60,7 @@ const MARKET_CATEGORIES = new Set([
   'STL',
   'BLK',
   'STKS',
+  ...UNSCORED_MARKETS,
 ]);
 
 const DEFENSE_BASES = [
@@ -708,7 +712,7 @@ function decodeProvenance(provenance, postedMarkets) {
 // market no DFS provider does, so nothing here is checked against the posted
 // markets. The contract (statsplus#185 section 4) makes the key required, with
 // {} for no books, so a missing key is rejected like any other malformed field.
-const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA'];
+const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA', ...UNSCORED_MARKETS];
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw invalid();
   return value;
@@ -974,15 +978,14 @@ function decodeScores(scores, statCategories, historical) {
   ) {
     throw invalid();
   }
-  return Object.fromEntries(
-    statCategories.map((category) => [
-      category,
-      {
-        season: decodeScoreWindow(scores[category].season, category, historical),
-        last15: decodeScoreWindow(scores[category].last_15, category, historical),
-      },
-    ]),
-  );
+  const windows = statCategories.map((category) => [
+    category,
+    {
+      season: decodeScoreWindow(scores[category].season, category, historical),
+      last15: decodeScoreWindow(scores[category].last_15, category, historical),
+    },
+  ]);
+  return Object.fromEntries(windows.filter(([category]) => !UNSCORED_MARKETS.includes(category)));
 }
 
 const decodeFreshnessSurface = (surface, surfaceName) => {

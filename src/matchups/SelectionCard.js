@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   bookMark,
   bookName,
+  categoryLabel,
   formatScorePercent as formatPercent,
   orderCategories,
 } from './displayConfig';
@@ -251,7 +252,7 @@ function StatStrip({ player, categories, activeStat, onPick }) {
             type="button"
             key={category}
             className="selection-strip-tile"
-            aria-label={category}
+            aria-label={categoryLabel(category)}
             aria-describedby={`selection-strip-${category}`}
             aria-pressed={activeStat === category}
             onClick={() => onPick(category)}
@@ -380,7 +381,9 @@ export default function SelectionCard({
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
   }, [player.id, stats, sheetMarket]);
-  const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
+  const rows = categories
+    .filter((market) => Object.hasOwn(player.scores, market))
+    .map((market) => ({ market, score: player.scores[market][windowKey] }));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
     return index === -1 ? BASE_ORDER.length : index;
@@ -435,58 +438,64 @@ export default function SelectionCard({
             <h3>Score Matrix</h3>
             <HelpTip tip="scoreMatrix" />
           </div>
-          <div className="selection-table-wrap">
-            <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
-              <thead>
-                <tr>
-                  <th scope="col">{historical ? 'Category' : 'Market'}</th>
-                  {bases.map((base) => (
-                    <th scope="col" key={base}>
-                      {BASE_LABELS[base] || base}
-                    </th>
-                  ))}
-                  {hasBlend && (
-                    <th scope="col" className="blend-col">
-                      Blend
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ market, score }) => (
-                  <tr
-                    key={market}
-                    className={market === activeStat ? 'active-market-row' : undefined}
-                    onClick={() => setActiveStat(market)}
-                  >
-                    <th scope="row">
-                      <button
-                        type="button"
-                        className="selection-matrix-pick"
-                        aria-pressed={market === activeStat}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setActiveStat(market);
-                        }}
-                      >
-                        {market}
-                      </button>
-                    </th>
+          {rows.length === 0 ? (
+            <p className="honest-empty">
+              No Matchup Score is computed for {categories.join(', ')}.
+            </p>
+          ) : (
+            <div className="selection-table-wrap">
+              <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
+                <thead>
+                  <tr>
+                    <th scope="col">{historical ? 'Category' : 'Market'}</th>
                     {bases.map((base) => (
-                      <td key={base} style={washStyle(score.components[base])}>
-                        <Cell component={score.components[base]} />
-                      </td>
+                      <th scope="col" key={base}>
+                        {BASE_LABELS[base] || base}
+                      </th>
                     ))}
                     {hasBlend && (
-                      <td className="blend-col" style={washStyle(score.blend)}>
-                        <Cell component={score.blend} />
-                      </td>
+                      <th scope="col" className="blend-col">
+                        Blend
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map(({ market, score }) => (
+                    <tr
+                      key={market}
+                      className={market === activeStat ? 'active-market-row' : undefined}
+                      onClick={() => setActiveStat(market)}
+                    >
+                      <th scope="row">
+                        <button
+                          type="button"
+                          className="selection-matrix-pick"
+                          aria-pressed={market === activeStat}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setActiveStat(market);
+                          }}
+                        >
+                          {market}
+                        </button>
+                      </th>
+                      {bases.map((base) => (
+                        <td key={base} style={washStyle(score.components[base])}>
+                          <Cell component={score.components[base]} />
+                        </td>
+                      ))}
+                      {hasBlend && (
+                        <td className="blend-col" style={washStyle(score.blend)}>
+                          <Cell component={score.blend} />
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
         <section
           className="selection-panel selection-panel-log"

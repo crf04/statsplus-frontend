@@ -3959,3 +3959,98 @@ describe('Evidence season', () => {
     ).toBeVisible();
   });
 });
+
+describe('categories the Matchup posts but does not score (statsplus#370)', () => {
+  const unscored = { components: {}, blend: null, missing_inputs: [] };
+  const openShootingLines = async (markets = ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']) => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    const lebron = raw.players[0];
+    lebron.posted_markets = markets;
+    lebron.provenance = { dabble: markets };
+    const lines = { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 };
+    lebron.lines = { dabble: Object.fromEntries(markets.map((market) => [market, lines[market]])) };
+    lebron.line_prices = { dabble: { FTA: { over: -118, under: -104 } } };
+    lebron.scores = Object.fromEntries(
+      markets.map((market) => [
+        market,
+        market === 'PTS' ? lebron.scores.PTS : { season: unscored, last_15: unscored },
+      ]),
+    );
+    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+  const buttonNames = (group) =>
+    within(group)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label') ?? button.textContent);
+
+  test('reads in box-score order under their full names', async () => {
+    await openShootingLines();
+
+    expect(buttonNames(screen.getByRole('group', { name: 'Market' }))).toEqual([
+      'All',
+      'PTS',
+      'Field Goals Made',
+      'Two-Pointers Made',
+      'Free Throws Attempted',
+      'Free Throws Made',
+    ]);
+    expect(
+      buttonNames(screen.getByRole('group', { name: 'Selection log stat' })).slice(0, 5),
+    ).toEqual([
+      'PTS',
+      'Field Goals Made',
+      'Two-Pointers Made',
+      'Free Throws Attempted',
+      'Free Throws Made',
+    ]);
+  });
+
+  test('shows the posted Dabble line and prices with no Matchup Score', async () => {
+    await openShootingLines();
+
+    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+    expect(
+      within(matrix)
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => within(row).getByRole('rowheader').textContent),
+    ).toEqual(['PTS']);
+    expect(screen.queryByText(/No score components were computable/)).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: /Free Throws Attempted/ })).toBeVisible();
+    const row = screen.getByRole('article', { name: 'LeBron James player' });
+    expect(row.querySelector('.rail-row-value b')).toHaveTextContent('6.5');
+    expect(
+      within(row).getByRole('group', {
+        name: 'Best Over −118 at Dabble, best Under −104 at Dabble, line 6.5',
+      }),
+    ).toBeVisible();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+    expect(
+      within(screen.getByRole('table', { name: 'FTA app lines' }))
+        .getAllByRole('row')
+        .slice(1)
+        .map((tableRow) => tableRow.textContent),
+    ).toEqual(['Dabble6.5-118-104']);
+  });
+
+  test('says a player posted only in unscored categories has no Matchup Score', async () => {
+    await openShootingLines(['FTA', 'FTM']);
+
+    const panel = screen.getByRole('region', { name: 'Score Matrix' });
+    expect(within(panel).queryByRole('table')).not.toBeInTheDocument();
+    expect(panel).toHaveTextContent('No Matchup Score is computed for FTA, FTM.');
+  });
+});

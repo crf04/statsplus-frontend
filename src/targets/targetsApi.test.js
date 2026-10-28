@@ -717,29 +717,32 @@ test('refuses a backtest whose rows would be read under the wrong heading', () =
 test('accepts unavailable derived and per36 values while keeping ordinary stats strict', () => {
   const nullable = {
     ...wireBacktest,
-    stat_columns: ['PTS', 'FG2A', 'PTS/36'],
+    stat_columns: ['PTS', 'FG2A', 'FG2M', 'PTS/36'],
     summary: {
       ...wireBacktest.summary,
       columns: {
         PTS: { mean_difference: 0, over_average_share: 0 },
         FG2A: { mean_difference: null, over_average_share: null },
+        FG2M: { mean_difference: null, over_average_share: null },
         'PTS/36': { mean_difference: null, over_average_share: null },
       },
     },
     players: wireBacktest.players.map((player) => ({
       ...player,
-      season_averages: { PTS: 25.4, FG2A: null, 'PTS/36': null },
+      season_averages: { PTS: 25.4, FG2A: null, FG2M: null, 'PTS/36': null },
       games: player.games.map((game) => ({
         ...game,
-        stats: { PTS: 31, FG2A: null, 'PTS/36': null },
+        stats: { PTS: 31, FG2A: null, FG2M: null, 'PTS/36': null },
       })),
     })),
   };
 
   expect(decodeBacktest(nullable).players[0]).toEqual(
     expect.objectContaining({
-      seasonAverages: { PTS: 25.4, FG2A: null, 'PTS/36': null },
-      games: [expect.objectContaining({ stats: { PTS: 31, FG2A: null, 'PTS/36': null } })],
+      seasonAverages: { PTS: 25.4, FG2A: null, FG2M: null, 'PTS/36': null },
+      games: [
+        expect.objectContaining({ stats: { PTS: 31, FG2A: null, FG2M: null, 'PTS/36': null } }),
+      ],
     }),
   );
   expect(() =>
@@ -747,10 +750,10 @@ test('accepts unavailable derived and per36 values while keeping ordinary stats 
       ...nullable,
       players: nullable.players.map((player) => ({
         ...player,
-        season_averages: { PTS: null, FG2A: null, 'PTS/36': null },
+        season_averages: { PTS: null, FG2A: null, FG2M: null, 'PTS/36': null },
         games: player.games.map((game) => ({
           ...game,
-          stats: { PTS: null, FG2A: null, 'PTS/36': null },
+          stats: { PTS: null, FG2A: null, FG2M: null, 'PTS/36': null },
         })),
       })),
     }),

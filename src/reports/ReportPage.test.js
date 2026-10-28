@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../App';
 import { decodeReport } from '../reportsApi';
 import { themeStore } from '../theme/useTheme';
@@ -268,6 +268,30 @@ test('the author deletes the report after confirming', async () => {
   fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
   expect(await screen.findByRole('heading', { name: 'Report deleted' })).toBeInTheDocument();
   expect(mockDelete).toHaveBeenCalledWith('http://127.0.0.1:8000/api/user/reports/k3x9q2mtzr');
+});
+
+test('a delete that fails says so, keeps the report and can be tried again', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  const alert = jest.spyOn(window, 'alert').mockImplementation(() => {});
+  mockDelete.mockRejectedValueOnce({ response: { status: 500 } });
+  await open(payload({ is_author: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  await waitFor(() =>
+    expect(alert).toHaveBeenCalledWith('The report could not be deleted. Try again.'),
+  );
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Injury brief · Sunday, October 25' }),
+  ).toBeInTheDocument();
+  const more = screen.getByRole('button', { name: 'More report actions' });
+  await waitFor(() => expect(more).toBeEnabled());
+
+  mockDelete.mockResolvedValueOnce({ data: { success: true } });
+  fireEvent.click(more);
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  expect(await screen.findByRole('heading', { name: 'Report deleted' })).toBeInTheDocument();
+  expect(mockDelete).toHaveBeenCalledTimes(2);
 });
 
 test('a missing report says it is not available', async () => {

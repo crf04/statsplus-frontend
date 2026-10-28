@@ -169,6 +169,9 @@ export const AuthorTools = ({
   const listButton = useRef(null);
   const moreButton = useRef(null);
   const deleteItem = useRef(null);
+  const dialog = useRef(null);
+  // Where focus goes once a popup closes: its opener, as soon as it is enabled again.
+  const pendingFocus = useRef(null);
   // A waitlisted account cannot list, but can always take a listed report down.
   const canList = report.listed || !waitlist;
 
@@ -176,8 +179,23 @@ export const AuthorTools = ({
     setOpen(null);
     setChoosing(false);
     setHandleRefusal(null);
-    focus?.current?.focus();
+    pendingFocus.current = focus ?? null;
   }, []);
+
+  useEffect(() => {
+    const target = pendingFocus.current?.current;
+    if (target && !target.disabled) {
+      target.focus();
+      pendingFocus.current = null;
+    }
+  });
+
+  // Keyboard users land in the List popup, and on the handle field once it asks for one.
+  useEffect(() => {
+    if (open !== 'list') return;
+    if (choosing) group.current?.querySelector('#report-handle-input')?.focus();
+    else dialog.current?.focus();
+  }, [open, choosing]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -299,6 +317,8 @@ export const AuthorTools = ({
           className="report-tools-pop report-tools-list"
           role="dialog"
           aria-label="List in Research"
+          tabIndex={-1}
+          ref={dialog}
         >
           {choosing ? (
             <HandleChooser

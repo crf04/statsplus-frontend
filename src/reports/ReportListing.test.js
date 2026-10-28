@@ -1,4 +1,4 @@
-import { render, screen, waitForElementToBeRemoved, within } from '@testing-library/react';
+import { render, screen, waitFor, waitForElementToBeRemoved, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import reportFixture from '../../e2e/fixtures/report.json';
@@ -65,6 +65,8 @@ const open = async () => {
 const listInResearch = async () => {
   await userEvent.click(screen.getByRole('button', { name: 'List' }));
   const dialog = screen.getByRole('dialog', { name: 'List in Research' });
+  // The keyboard moves into the popup.
+  expect(dialog).toHaveFocus();
   expect(dialog).toHaveTextContent(
     'Listing puts this report on Research, under your handle, where anyone can find it.',
   );
@@ -162,6 +164,7 @@ test('a first listing without a handle asks for one, shows its refusals, then li
   await listInResearch();
 
   const field = await screen.findByRole('textbox', { name: 'Choose your public handle' });
+  await waitFor(() => expect(field).toHaveFocus());
   mockPut.mockImplementationOnce(() => refused(400, 'invalid_handle'));
   await userEvent.type(field, 'no');
   await userEvent.click(screen.getByRole('button', { name: 'Save and list' }));
@@ -207,6 +210,8 @@ test('listing over the daily cap says why', async () => {
   );
   expect(screen.getByText('Unlisted')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'List' })).toBeEnabled();
+  // The popup closed; the keyboard is back on List.
+  expect(screen.getByRole('button', { name: 'List' })).toHaveFocus();
 });
 
 test('Report this opens Feedback about this report', async () => {

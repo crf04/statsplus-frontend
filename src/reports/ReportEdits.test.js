@@ -28,6 +28,7 @@ jest.mock('../contexts/AuthContext', () => ({
 
 const mockGet = jest.fn();
 const mockPut = jest.fn();
+const mockDelete = jest.fn();
 jest.mock('../utils/axiosConfig', () => ({
   __esModule: true,
   default: {
@@ -35,7 +36,7 @@ jest.mock('../utils/axiosConfig', () => ({
     put: (...args) => mockPut(...args),
     patch: jest.fn(),
     post: jest.fn(),
-    delete: jest.fn(),
+    delete: (...args) => mockDelete(...args),
   },
 }));
 
@@ -159,6 +160,7 @@ const refused = (error) => Promise.reject({ response: { status: 400, data: { err
 beforeEach(() => {
   mockGet.mockReset();
   mockPut.mockReset();
+  mockDelete.mockReset();
 });
 
 afterEach(() => {
@@ -269,6 +271,8 @@ describe('Edit mode', () => {
     expect(confirm).toHaveBeenCalledWith(
       'Delete this report? Its link will stop working for everyone.',
     );
+    await act(async () => {});
+    expect(mockDelete).not.toHaveBeenCalled();
     expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'More report actions' })).toHaveFocus();
     confirm.mockRestore();
@@ -283,6 +287,7 @@ describe('Edit mode', () => {
   test('a reader who is not signed in is never offered Edit mode', async () => {
     await open(authorPayload());
     expect(screen.queryByRole('button', { name: 'Edit report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
   });
 
   test('the author renames, removes, reorders and hides, saves once, and sees the saved report', async () => {

@@ -1,0 +1,35 @@
+diff -u /Users/chrisfu/.t3/worktrees/statsplus/t3code-a6909a0e/.agents/skills/verify-statsplus/scripts/control-statsplus.mjs /Users/chrisfu/Documents/statsplus-evidence/cats-370-2026-10-28/helper-pin/control-statsplus.mjs
+--- /Users/chrisfu/.t3/worktrees/statsplus/t3code-a6909a0e/.agents/skills/verify-statsplus/scripts/control-statsplus.mjs	2026-10-27 18:10:17
++++ /Users/chrisfu/Documents/statsplus-evidence/cats-370-2026-10-28/helper-pin/control-statsplus.mjs	2026-10-28 01:16:58
+@@ -586,6 +586,19 @@
+   const responses = createResponseTracker(origin, network);
+   page.on("request", (request) => responses.request(request));
+   page.on("response", (response) => responses.response(response));
++  // Pinned-copy change (statsplus#370 QA): keep matchup and game_logs response bodies (game data, no headers or tokens).
++  let savedBodies = 0;
++  page.on("response", async (response) => {
++    const url = new URL(response.url());
++    const kept = { "/api/games/game_logs": "game_logs", "/api/games/matchup": "matchup" }[url.pathname];
++    if (url.origin !== origin || !kept) return;
++    try {
++      const body = await response.text();
++      mkdirSync(join(out, "responses"), { recursive: true, mode: 0o700 });
++      savedBodies += 1;
++      writeFileSync(join(out, "responses", `${String(savedBodies).padStart(2, "0")}-${kept}.json`), body);
++    } catch {}
++  });
+   await page.goto(origin);
+   try {
+     await page.evaluate(async (token) => {
+diff -u /Users/chrisfu/.t3/worktrees/statsplus/t3code-a6909a0e/.agents/skills/verify-statsplus/scripts/qa-backend.py /Users/chrisfu/Documents/statsplus-evidence/cats-370-2026-10-28/helper-pin/qa-backend.py
+--- /Users/chrisfu/.t3/worktrees/statsplus/t3code-a6909a0e/.agents/skills/verify-statsplus/scripts/qa-backend.py	2026-10-27 18:10:17
++++ /Users/chrisfu/Documents/statsplus-evidence/cats-370-2026-10-28/helper-pin/qa-backend.py	2026-10-28 01:16:58
+@@ -153,6 +153,8 @@
+         'ENABLE_LLM_FALLBACK': 'false', 'DFS_BOARD_ENABLED': 'false',
+         'DFS_ENABLED_PROVIDERS': '', 'INJURY_REPORT_ENABLED': 'false',
+         'ROTOWIRE_PERMISSION_GRANTED': 'false', 'LOG_LEVEL': 'WARNING',
++        # Pinned-copy change (statsplus#370 QA): serve posted lines and line_prices from the projection archive.
++        'PROJECTION_ARCHIVE_READ_ENABLED': 'true',
+         # Feedback is composed and logged, never emailed (crf04/statsplus#258).
+         'FEEDBACK_DELIVERY': 'log',
+     })

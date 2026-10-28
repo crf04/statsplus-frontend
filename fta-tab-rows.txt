@@ -1,0 +1,2 @@
+Defense Sheet rows with a markets list (both teams, both windows): 114
+rows per market: {'AST': 12, 'PA': 62, 'RA': 14, 'PRA': 64, 'PTS': 72, 'PR': 52, 'FGA': 22, 'FG2A': 12, 'FG3A': 10, '3PM': 10, 'BLK': 2, 'STKS': 4, 'REB': 2, 'STL': 2, 'TOV': 2}

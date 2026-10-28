@@ -1,0 +1,53 @@
+top-level keys ['as_of', 'coverage', 'experience', 'freshness', 'game', 'injuries', 'league', 'players', 'provenance', 'teams', 'trailing']
+matchup response diffs after removing FTA/FTM/FGM/FG2M keys and volatile timestamps: 1
+('.experience.sections.schedule.collected_at', '2026-10-28T05:24:32.996317+00:00', '2026-10-28T05:21:54.224734+00:00')
+head player keys ['book_lines', 'canonical_id', 'diet_shares', 'diet_thin', 'focal_game_line', 'injury_badge_ref', 'last_10_minutes', 'line_prices', 'lines', 'name', 'player_source', 'posted_markets', 'provenance', 'scores', 'season_scoring', 'stat_categories', 'team_id', 'tricode']
+head scores keys ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS', 'REB']
+base scores keys ['PTS', 'REB']
+head unscored score entries: {"FG2M": {"last_15": {"blend": null, "components": {}, "missing_inputs": []}, "season": {"blend": null, "components": {}, "missing_inputs": []}}, "FGM": {"last_15": {"blend": null, "components": {}, "missing_inputs": []}, "season": {"blend": null, "components": {}, "missing_inputs": []}}, "FTA": {"last_15": {"blend": null, "components": {}, "missing_inputs": []}, "season": {"blend": null, "components": {}, "missing_inputs": []}}, "FTM": {"last_15": {"blend": null, "components": {}, "missing_inputs": []}, "season": {"blend": null, "components": {}, "missing_inputs": []}}}
+game_logs rows equal: True 60
+averages equal: True season_averages equal: True
+posted_line equal without new codes: False
+== ARIA diff base-run/base-matchup-lal-defense-desktop -> qa-run/d-matchup-lal-defense-desktop: 0 lines
+
+== ARIA diff base-run/base-matchup-pts-desktop -> qa-run/d-matchup-pts-desktop: 4 lines
++      - button "Field Goals Made": FGM
++      - button "Two-Pointers Made": FG2M
++      - button "Free Throws Attempted": FTA
++      - button "Free Throws Made": FTM
+== ARIA diff base-run/base-matchup-reb-desktop -> qa-run/d-matchup-reb-desktop: 4 lines
++      - button "Field Goals Made": FGM
++      - button "Two-Pointers Made": FG2M
++      - button "Free Throws Attempted": FTA
++      - button "Free Throws Made": FTM
+== ARIA diff base-run/base-card-pts-desktop -> qa-run/d-card-pts-desktop: 41 lines
+-    - heading "LAL · PTS" [level=2]
++    - heading "LAL · Two-Pointers Made" [level=2]
+-      - text: 21.5 20.9 avg
+-      - group "Best Over −125 at Dabble, best Under −105 at Dabble, line 21.5": o −125 DB u −105 DB
++      - text: "6.5"
++      - group "Best Over +100 at Dabble, best Under −120 at Dabble, line 6.5": o +100 DB u −120 DB
+-      - button "All deviations"
+-      - button "At least 1 sigma" [pressed]
++      - button "All deviations" [pressed]
++      - button "At least 1 sigma"
+-      - button "PTS" [pressed]
++      - button "PTS"
++      - button "Field Goals Made": FGM
++      - button "Two-Pointers Made" [pressed]: FG2M
++      - button "Free Throws Attempted": FTA
++      - button "Free Throws Made": FTM
++      - button "Field Goals Made": Posted by Dabble
++      - button "Two-Pointers Made": Posted by Dabble
++      - button "Free Throws Attempted": Posted by Dabble
++      - button "Free Throws Made": Posted by Dabble
+-    - paragraph: Compared with the league average, softest spots first. 17 close to average hidden.
+-    - region "Play types":
+-      - heading "Play types" [level=3]
+-      - text: Points
+-      - article "P&R roll man":
+-        - heading "P&R roll man" [level=4]
+-        - text: −11%
+-        - 'img "Rank 2 of 30: allows the 2nd fewest"': "2"
+-        - button "Save P&R roll man as a Target"
+-    - region "Shot zones":

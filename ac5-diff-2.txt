@@ -1,0 +1,10 @@
+posted_line.line_prices | head: {"dabble": {"FG2M": {"over": 100, "under": -120}, "FGM": {"over": -110, "under": -110}, "FTA": {"over": -150, "under": 120}, "FTM": {"over": 110, "under": -130}, "PTS": {"over": -125, "under": -105}, "REB": {"over": -115, "under": -105}}} | base: {"dabble": {"PTS": {"over": -125, "under": -105}, "REB": {"over": -115, "under": -105}}}
+posted_line.lines | head: {"FG2M": {"provider": "dabble", "value": 6.5}, "FGM": {"provider": "dabble", "value": 8.5}, "FTA": {"provider": "dabble", "value": 4.5}, "FTM": {"provider": "dabble", "value": 3.5}, "PTS": {"provider": "dabble", "value": 21.5}, "REB": {"provider": "dabble", "value": 6.5}} | base: {"PTS": {"provider": "dabble", "value": 21.5}, "REB": {"provider": "dabble", "value": 6.5}}
+posted_line.provider_lines | head: {"dabble": {"FG2M": 6.5, "FGM": 8.5, "FTA": 4.5, "FTM": 3.5, "PTS": 21.5, "REB": 6.5}} | base: {"dabble": {"PTS": 21.5, "REB": 6.5}}
+== card region ARIA diff base -> head: 4 lines
++      - button "Field Goals Made": Posted by Dabble
++      - button "Two-Pointers Made": Posted by Dabble
++      - button "Free Throws Attempted": Posted by Dabble
++      - button "Free Throws Made": Posted by Dabble
+== game logs PTS ARIA diff base -> head: 0 lines
+

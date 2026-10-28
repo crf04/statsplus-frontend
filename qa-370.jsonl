@@ -1,0 +1,232 @@
+{"action": "require-environment", "name": "qa"}
+{"action": "doctor"}
+{"_hook": "seed", "games": [1]}
+{"action": "open", "path": "/matchups/0022600001"}
+{"action": "assert", "target": {"role": "heading", "name": "What LAL allows"}}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600001"}, "status": 200}
+{"action": "assert", "target": {"role": "alert"}, "state": "hidden"}
+{"action": "proof", "name": "d-matchup-lal-defense-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Defense team"}, "role": "button", "name": "GSW defense vs LAL players"}}
+{"action": "assert", "target": {"role": "heading", "name": "What GSW allows"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "PTS"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "REB"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Field Goals Made"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Two-Pointers Made"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Attempted"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Made"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "PTS"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"role": "heading", "name": "LAL · PTS"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over −125 at Dabble, best Under −105 at Dabble, line 21.5"}}
+{"action": "proof", "name": "d-matchup-pts-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "REB"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "REB"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"role": "group", "name": "Best Over −115 at Dabble, best Under −105 at Dabble, line 6.5"}}
+{"action": "proof", "name": "d-matchup-reb-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Attempted"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Attempted"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"role": "heading", "name": "LAL · Free Throws Attempted"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over −150 at Dabble, best Under +120 at Dabble, line 4.5"}}
+{"action": "assert", "target": {"text": "No Defense Sheet rows match these controls."}}
+{"action": "proof", "name": "a-matchup-fta-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Deviation filter"}, "role": "button", "name": "All deviations"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Deviation filter"}, "role": "button", "name": "All deviations"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "No Defense Sheet rows match these controls."}}
+{"action": "proof", "name": "a-matchup-fta-all-deviations-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Made"}}
+{"action": "assert", "target": {"role": "heading", "name": "LAL · Free Throws Made"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over +110 at Dabble, best Under −130 at Dabble, line 3.5"}}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Field Goals Made"}}
+{"action": "assert", "target": {"role": "heading", "name": "LAL · Field Goals Made"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over −110 at Dabble, best Under −110 at Dabble, line 8.5"}}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Two-Pointers Made"}}
+{"action": "assert", "target": {"role": "heading", "name": "LAL · Two-Pointers Made"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over +100 at Dabble, best Under −120 at Dabble, line 6.5"}}
+{"action": "proof", "name": "a-matchup-fg2m-desktop"}
+{"action": "click", "target": {"role": "button", "name": "Open selection card"}}
+{"action": "assert", "target": {"role": "region", "name": "Score Matrix"}}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "PTS"}}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "REB"}}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "FTA"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "FTM"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "FGM"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "FG2M"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "Free Throws Attempted"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "Free Throws Made"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "Field Goals Made"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "table", "name": "LeBron James Score Matrix"}, "role": "rowheader", "name": "Two-Pointers Made"}, "state": "hidden"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Free Throws Attempted"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Free Throws Made"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Field Goals Made"}}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Two-Pointers Made"}}
+{"action": "click", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Free Throws Attempted"}}
+{"action": "assert", "target": {"role": "table", "name": "FTA app lines"}}
+{"action": "snapshot"}
+{"action": "proof", "name": "a-card-fta-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "Two-Pointers Made"}}
+{"action": "assert", "target": {"role": "table", "name": "FG2M app lines"}}
+{"action": "proof", "name": "a-card-fg2m-desktop"}
+{"action": "click", "target": {"within": {"role": "group", "name": "Selection log stat"}, "role": "button", "name": "PTS"}}
+{"action": "assert", "target": {"role": "table", "name": "PTS app lines"}}
+{"action": "proof", "name": "d-card-pts-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/matchups/0022600001"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/matchup", "query": {"game_id": "0022600001"}, "status": 200}
+{"action": "click", "target": {"within": {"role": "group", "name": "Defense team"}, "role": "button", "name": "GSW defense vs LAL players"}}
+{"action": "click", "target": {"within": {"role": "group", "name": "Market"}, "role": "button", "name": "Free Throws Attempted"}}
+{"action": "assert", "target": {"role": "group", "name": "Best Over −150 at Dabble, best Under +120 at Dabble, line 4.5"}}
+{"action": "assert", "target": {"text": "No Defense Sheet rows match these controls."}}
+{"action": "proof", "name": "a-matchup-fta-phone"}
+{"action": "assert-layout"}
+{"action": "click", "target": {"role": "button", "name": "Open selection card"}}
+{"action": "assert", "target": {"role": "table", "name": "FTA app lines"}}
+{"action": "proof", "name": "a-card-fta-phone"}
+{"action": "assert-layout"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/?player_name=LeBron+James"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "PTS"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "21.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 21.5, Over −125, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "28/60"}}
+{"action": "proof", "name": "d-gamelogs-pts-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "RA"}
+{"action": "press", "key": "r"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "REB"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "6.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 6.5, Over −115, Under −105"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "23/60"}}
+{"action": "proof", "name": "d-gamelogs-reb-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FTM"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "3.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 3.5, Over +110, Under −130"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "33/60"}}
+{"action": "proof", "name": "b-gamelogs-ftm-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FTA"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "4.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 4.5, Over −150, Under +120"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "37/60"}}
+{"action": "proof", "name": "b-gamelogs-fta-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG3M"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG3A"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG2M"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "6.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 6.5, Over +100, Under −120"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "36/60"}}
+{"action": "proof", "name": "b-gamelogs-fg2m-desktop"}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG2A"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FGM"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "8.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 8.5, Over −110, Under −110"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "22/60"}}
+{"action": "proof", "name": "b-gamelogs-fgm-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/?player_name=LeBron+James"}
+{"action": "assert-response", "method": "GET", "path": "/api/games/game_logs", "query": {"player_name": "LeBron James"}, "status": 200}
+{"action": "assert", "target": {"text": "60 of 60 games match"}}
+{"action": "click", "target": {"label": "Line Value:"}}
+{"action": "press", "key": "Shift+Tab"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FD_PTS"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FTM"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FTA"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG3M"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG3A"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Line Type:"}, "value": "FG2M"}
+{"action": "assert", "target": {"label": "Line Value:"}, "value": "6.5"}
+{"action": "assert", "target": {"within": {"role": "group", "name": "Posted Lines:"}, "role": "button", "name": "Dabble 6.5, Over +100, Under −120"}, "attribute": "aria-pressed", "value": "true"}
+{"action": "assert", "target": {"text": "36/60"}}
+{"action": "proof", "name": "b-gamelogs-fg2m-phone"}
+{"action": "viewport", "name": "desktop"}
+{"action": "open", "path": "/targets"}
+{"action": "click", "target": {"role": "button", "name": "+ New Target"}}
+{"action": "click", "target": {"role": "combobox", "name": "Opponent"}}
+{"action": "press", "key": "b"}
+{"action": "assert", "target": {"role": "combobox", "name": "Opponent"}, "value": "BOS"}
+{"action": "click", "target": {"label": "Qualifier 1 diet base"}}
+{"action": "press", "key": "s"}
+{"action": "press", "key": "s"}
+{"action": "assert", "target": {"label": "Qualifier 1 diet base"}, "value": "season_average"}
+{"action": "click", "target": {"label": "Qualifier 1 stat"}}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Qualifier 1 stat"}, "value": "FG2M"}
+{"action": "fill", "target": {"label": "Qualifier 1 threshold"}, "value": "5"}
+{"action": "assert", "target": {"role": "heading", "name": "BOS vs FG2M avg ≥ 5"}}
+{"action": "click", "target": {"role": "button", "name": "Save Target"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets", "query": {}, "status": 201}
+{"action": "assert", "url": "/targets/5"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"within": {"role": "list", "name": "Backtest summary"}, "role": "listitem", "name": "FG2M"}}
+{"action": "assert", "target": {"within": {"role": "list", "name": "Backtest summary"}, "role": "listitem", "name": "Player-games"}}
+{"action": "proof", "name": "c-target-fg2m-lab-desktop"}
+{"action": "open", "path": "/targets"}
+{"action": "click", "target": {"role": "button", "name": "+ New Target"}}
+{"action": "click", "target": {"role": "combobox", "name": "Opponent"}}
+{"action": "press", "key": "m"}
+{"action": "press", "key": "i"}
+{"action": "press", "key": "a"}
+{"action": "assert", "target": {"role": "combobox", "name": "Opponent"}, "value": "MIA"}
+{"action": "click", "target": {"label": "Qualifier 1 diet base"}}
+{"action": "press", "key": "s"}
+{"action": "press", "key": "s"}
+{"action": "assert", "target": {"label": "Qualifier 1 diet base"}, "value": "season_average"}
+{"action": "click", "target": {"label": "Qualifier 1 stat"}}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "press", "key": "f"}
+{"action": "assert", "target": {"label": "Qualifier 1 stat"}, "value": "FTA"}
+{"action": "fill", "target": {"label": "Qualifier 1 threshold"}, "value": "4"}
+{"action": "assert", "target": {"role": "heading", "name": "MIA vs FTA avg ≥ 4"}}
+{"action": "click", "target": {"role": "button", "name": "Save Target"}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets", "query": {}, "status": 201}
+{"action": "assert", "url": "/targets/6"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert", "target": {"within": {"role": "list", "name": "Backtest summary"}, "role": "listitem", "name": "FTA"}}
+{"action": "assert", "target": {"within": {"role": "list", "name": "Backtest summary"}, "role": "listitem", "name": "Player-games"}}
+{"action": "proof", "name": "c-target-fta-lab-desktop"}
+{"action": "click", "target": {"role": "link", "name": "← All Targets"}}
+{"action": "assert", "target": {"within": {"role": "article", "name": "BOS vs FG2M avg ≥ 5"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"within": {"role": "article", "name": "MIA vs FTA avg ≥ 4"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/5/backtest", "query": {}, "status": 200}
+{"action": "assert-response", "method": "GET", "path": "/api/user/targets/6/backtest", "query": {}, "status": 200}
+{"action": "proof", "name": "c-targets-list-desktop"}
+{"action": "viewport", "name": "phone"}
+{"action": "open", "path": "/targets"}
+{"action": "assert", "target": {"within": {"role": "article", "name": "BOS vs FG2M avg ≥ 5"}, "role": "list", "name": "Backtest summary"}}
+{"action": "assert", "target": {"within": {"role": "article", "name": "MIA vs FTA avg ≥ 4"}, "role": "list", "name": "Backtest summary"}}
+{"action": "proof", "name": "c-targets-list-phone"}
+{"action": "assert-layout"}
+{"action": "open", "path": "/targets/5"}
+{"action": "assert", "target": {"text": "Backtest up to date."}}
+{"action": "assert-response", "method": "POST", "path": "/api/user/targets/preview", "query": {}, "status": 200}
+{"action": "assert", "target": {"within": {"role": "list", "name": "Backtest summary"}, "role": "listitem", "name": "FG2M"}}
+{"action": "proof", "name": "c-target-fg2m-lab-phone"}
+{"action": "assert-layout"}
+{"action": "cleanup"}

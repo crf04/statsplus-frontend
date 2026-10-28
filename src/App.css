@@ -90,8 +90,13 @@
   .app-links {
     grid-column: 1 / -1;
     grid-row: 2;
-    justify-content: center;
+    justify-content: safe center;
+    gap: 20px;
     padding-bottom: 12px;
+    /* A narrow phone, or an admin's extra link, scrolls the row instead of the page. */
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
   }
 
   .app-auth {

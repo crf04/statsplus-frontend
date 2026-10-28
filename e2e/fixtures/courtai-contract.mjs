@@ -2819,6 +2819,29 @@ const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/a
 export const REPORT_ID = 'k3x9q2mtzr';
 export const reportPayload = () => structuredClone(reportFixture);
 
+// One page of Research (crf04/statsplus#372): Featured, then listed reports newest first.
+export const researchPayload = ({
+  featured = /** @type {object[]} */ ([]),
+  reports = /** @type {object[]} */ ([]),
+  nextCursor = /** @type {string | null} */ (null),
+} = {}) => ({
+  featured,
+  reports,
+  next_cursor: nextCursor,
+});
+// The fixture report as a listed Research entry.
+export const researchEntry = (overrides = {}) => ({
+  id: REPORT_ID,
+  title: 'Injury brief · Sunday, October 25',
+  listed_at: '2026-10-25T23:00:00Z',
+  created_at: '2026-10-25T22:30:00Z',
+  date: '2026-10-25',
+  author: { handle: 'bighatprops' },
+  covers: { games: ['ORL @ NYK', 'DET @ CHA'], players: ['Desmond Bane', 'Paolo Banchero'] },
+  preview_url: `/api/reports/${REPORT_ID}/preview.png`,
+  ...overrides,
+});
+
 // The ladder's three Filter Sets, as the backend owns them, each answered from
 // the same game-log composition `/api/games/game_logs` serves for them.
 const LADDER_FILTER_SETS = [
@@ -3026,6 +3049,24 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
               json: { error: { code: 'invalid_feedback', message: 'Invalid feedback body.' } },
             },
       );
+      return;
+    }
+
+    // Research is an anonymous read (crf04/statsplus#372). Nothing is listed by
+    // default, so the nav and the public home stay as they were; a test lists
+    // reports with an override for '/api/research' or '/api/research/authors/<handle>'.
+    if (
+      request.method() === 'GET' &&
+      (url.pathname === '/api/research' || url.pathname.startsWith('/api/research/authors/'))
+    ) {
+      if (override) {
+        await fulfillOverride(
+          route,
+          typeof override === 'function' ? await override(request) : override,
+        );
+      } else {
+        await route.fulfill({ json: researchPayload() });
+      }
       return;
     }
 

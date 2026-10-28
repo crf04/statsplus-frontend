@@ -65,6 +65,7 @@ test('a waitlisted user sees the public home page under a waitlist banner', asyn
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 
@@ -102,6 +103,7 @@ test('a signed-out visitor sees the public home page with a sign-up card, and no
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 

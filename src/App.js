@@ -25,6 +25,7 @@ const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
 const ReportPage = lazy(() => import('./reports/ReportPage'));
+const ResearchPage = lazy(() => import('./research/ResearchPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 
@@ -68,7 +69,6 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
-
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
@@ -81,6 +81,7 @@ function AppNav() {
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
+          <NavLink to="/research">Research</NavLink>
           <NavLink to="/connect">Connect</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
@@ -101,7 +102,7 @@ function AppNav() {
 }
 
 // A waitlisted account has nothing signed-in to show but the public home page
-// the legal pages and public reports: a banner explains why, and every other path returns home
+// the legal pages, public reports and Research: a banner explains why, and every other path returns home
 // until it signs out.
 function WaitlistedShell() {
   const { pathname, search } = useLocation();
@@ -117,6 +118,8 @@ function WaitlistedShell() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
@@ -140,6 +143,8 @@ function SignedInShell() {
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />

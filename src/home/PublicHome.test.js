@@ -68,6 +68,7 @@ test('signed out, the page shows the ticker, live answers and Tonight with a sig
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 
@@ -158,6 +159,7 @@ test('waitlisted, the public sections show, search is disabled and there is no s
     '/api/games/ladder',
     '/api/games/slate',
     '/api/games/slate/edges',
+    '/api/research',
   ]);
 });
 

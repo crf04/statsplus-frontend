@@ -1,0 +1,414 @@
+/* Research (crf04/statsplus#372): the feed, author pages and the home strip. */
+.research-page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 40px 28px 120px;
+  color: var(--ct-text);
+  text-align: left;
+}
+
+.research-head {
+  max-width: 72ch;
+  margin-bottom: 28px;
+}
+
+.research-eyebrow {
+  margin: 0 0 8px;
+  color: var(--ct-gold);
+  font-family: var(--ct-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.research-eyebrow a {
+  color: var(--ct-gold);
+  text-decoration: none;
+}
+
+.research-eyebrow a:hover {
+  text-decoration: underline;
+}
+
+.research-eyebrow span {
+  color: var(--ct-dim);
+}
+
+.research-head h1 {
+  margin: 0 0 10px;
+  font-family: var(--ct-display);
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.02;
+}
+
+.research-intro {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.research-status {
+  padding: 32px 0;
+  color: var(--ct-dim);
+}
+
+.research-status h2 {
+  margin: 0 0 8px;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.research-status a {
+  color: var(--ct-gold);
+}
+
+.research-section {
+  margin-bottom: 36px;
+}
+
+.research-section-title {
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ct-line);
+  font-family: var(--ct-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.research-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.research-list.is-featured {
+  grid-template-columns: 1fr;
+}
+
+.research-list.is-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.research-list > li {
+  display: flex;
+  min-width: 0;
+}
+
+/* One entry: the title's link covers the card, the author's sits above it. */
+.research-entry {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+  transition: border-color 0.15s ease;
+}
+
+.research-entry:hover,
+.research-entry:focus-within {
+  border-color: var(--ct-gold-fg-28);
+}
+
+.research-entry.is-featured {
+  display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+  border-color: var(--ct-gold-fg-28);
+}
+
+.research-entry-media {
+  aspect-ratio: 1200 / 630;
+  border-bottom: 1px solid var(--ct-line);
+  background: var(--ct-surface-2);
+}
+
+.research-entry.is-featured .research-entry-media {
+  border-right: 1px solid var(--ct-line);
+  border-bottom: 0;
+}
+
+.research-entry-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ct-dim);
+  font-family: var(--ct-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.research-entry-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.research-entry-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 14px;
+}
+
+.research-entry.is-featured .research-entry-body {
+  justify-content: center;
+  padding: 16px 18px;
+}
+
+.research-entry-flag {
+  margin: 0;
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.research-entry-title {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.research-entry.is-featured .research-entry-title {
+  font-size: 19px;
+}
+
+.research-entry-title a {
+  color: var(--ct-text);
+  text-decoration: none;
+}
+
+.research-entry-title a::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.research-entry-title a:focus-visible {
+  outline: none;
+}
+
+.research-entry:has(.research-entry-title a:focus-visible) {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.research-entry-meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.research-entry-author {
+  position: relative;
+  z-index: 1;
+  color: var(--ct-gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.research-entry-author:hover {
+  text-decoration: underline;
+}
+
+.research-entry-author:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.research-covers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.research-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.research-games li {
+  padding: 1px 7px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 4px;
+  color: var(--ct-text-2);
+  font-family: var(--ct-mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.research-players {
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.research-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.research-more button {
+  padding: 8px 22px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: transparent;
+  color: var(--ct-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.research-more button:hover:not(:disabled) {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.research-more button:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.research-more p {
+  margin: 0;
+  color: var(--ct-miss);
+  font-size: 13px;
+}
+
+/* The sign-up prompt under a report or the feed, for signed-out visitors. */
+.research-signup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  margin-top: 36px;
+  padding: 18px 20px;
+  border: 1px solid var(--ct-gold-fg-28);
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--ct-gold-bg-8), var(--ct-ink-bg-60) 60%);
+  text-align: left;
+}
+
+.research-signup h2 {
+  margin: 0 0 6px;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.research-signup p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--ct-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* The home strip: the latest three, between the tutorial and the ladder. */
+.home-research {
+  margin: 0 0 40px;
+  text-align: left;
+}
+
+.home-research-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.home-research-head h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.home-research-head a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ct-gold);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .research-page {
+    padding: 24px 14px 80px;
+  }
+
+  .research-list,
+  .research-list.is-featured {
+    grid-template-columns: 1fr;
+  }
+
+  .research-entry.is-featured {
+    display: flex;
+  }
+
+  .research-entry.is-featured .research-entry-media {
+    border-right: 0;
+    border-bottom: 1px solid var(--ct-line);
+  }
+
+  .research-signup {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* On a phone the strip scrolls sideways instead of stacking three images. */
+@media (max-width: 620px) {
+  .research-list.is-strip {
+    grid-auto-columns: minmax(250px, 78%);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 6px;
+  }
+
+  .research-list.is-strip > li {
+    scroll-snap-align: start;
+  }
+}

@@ -233,12 +233,14 @@ signedInTest(
     await app.open('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
 
-    const searchLink = screen.getByRole('link', { name: 'Search', exact: false });
+    const searchLink = screen.getByRole('link', 'Search');
     await searchLink.focus();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', { name: 'Matchups', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', 'Targets')).toBeFocused();
+    await browser.keyboard.press('Tab');
+    await expect(screen.getByRole('link', 'Research')).toBeFocused();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', { name: 'Connect', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');

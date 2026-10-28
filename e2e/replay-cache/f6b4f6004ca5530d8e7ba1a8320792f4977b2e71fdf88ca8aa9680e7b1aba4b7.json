@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-28T06:12:33.218Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Repair traditional_opponent\" in \"traditional_opponent\"",
+        "target": {
+          "role": "button",
+          "name": "Repair traditional_opponent",
+          "text": "Repair",
+          "within": "traditional_opponent"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"2025-26\" into textbox \"Season\" in \"Operator confirmation\"",
+        "target": {
+          "role": "textbox",
+          "name": "Season",
+          "placeholder": "2025-26",
+          "within": "Operator confirmation"
+        },
+        "value": "2025-26"
+      },
+      {
+        "name": "type",
+        "summary": "type \"2026-04-13T00:00:00Z\" into textbox \"Cutoff (ISO timestamp)\" in \"Operator confirmation\"",
+        "target": {
+          "role": "textbox",
+          "name": "Cutoff (ISO timestamp)",
+          "placeholder": "2026-04-13T00:00:00Z",
+          "within": "Operator confirmation"
+        },
+        "value": "2026-04-13T00:00:00Z"
+      },
+      {
+        "name": "type",
+        "summary": "type \"Verify bounded operator recovery\" into textbox \"Reason (required)\" in \"Operator confirmation\"",
+        "target": {
+          "role": "textbox",
+          "name": "Reason (required)",
+          "placeholder": "Describe why this audited action is needed.",
+          "within": "Operator confirmation"
+        },
+        "value": "Verify bounded operator recovery"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Confirm action\" in \"Operator confirmation\"",
+        "target": {
+          "role": "button",
+          "name": "Confirm action",
+          "within": "Operator confirmation"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/operations.e2e.ts::the%20agent%20queues%20an%20audited%20repair",
+      "targetId": "phone",
+      "instructionDigest": "38bcbcb90b5a0f5ded5c412255fa88c606d52ac717cacddac5a473e830754657",
+      "paramsDigest": "85d7d531ce41e8a1f3bfd81fcc3c51db2310be8831130325337ccef5590432f1",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Confirmed repair for traditional_opponent using season 2025-26, cutoff 2026-04-13T00:00:00Z, and reason “Verify bounded operator recovery.” The console reports the repair queued and shows durable job job-e2e-4 with status Queued.",
+    "startPath": "/operations",
+    "endPath": "/operations",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "Repair traditional_opponent queued. Durable job job-e2e-4 is visible in Operator jobs."
+      },
+      {
+        "text": "Schedule scoped repair"
+      },
+      {
+        "text": "Queued"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "0"
+      }
+    ],
+    "endWaitMs": 11853,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

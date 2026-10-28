@@ -276,14 +276,6 @@
   border-radius: 12px;
 }
 
-/* The card emulates Claude's dark host and declares color-scheme: dark. On a
-   light page the island matches that scheme, so the card's transparent canvas
-   shows this host ground instead of a browser backdrop. Dark is left as it was. */
-[data-theme='light'] .report-card-fit {
-  background: var(--ct-x-1f1e1b);
-  color-scheme: dark;
-}
-
 .report-card {
   display: block;
   border: 0;
@@ -313,6 +305,190 @@
 
 .report-status {
   padding: 60px 0;
+}
+
+.report-status .report-eyebrow {
+  margin-bottom: 8px;
+}
+
+.report-status h1 {
+  margin: 0 0 10px;
+  font-family: var(--ct-display);
+  font-size: clamp(1.7rem, 3.6vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.report-status a {
+  color: var(--ct-gold);
+}
+
+/* When it was published, and how old its numbers are. */
+.report-published {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.report-stale {
+  padding: 2px 8px;
+  border: 1px solid var(--ct-gold-fg-28);
+  border-radius: 999px;
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.report-shared {
+  padding: 10px 14px;
+  border-left: 3px solid var(--ct-gold);
+  border-radius: 0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0;
+  background: var(--ct-surface);
+  color: var(--ct-text-2);
+  font-size: 14px;
+}
+
+.report-shared a {
+  font-weight: 600;
+}
+
+.report-foot .report-flag {
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.report-foot .report-flag:hover {
+  color: var(--ct-gold);
+}
+
+/* The author's controls: List/Unlist, the handle chooser, delete. */
+.report-listing {
+  margin: 18px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+}
+
+.report-listing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+}
+
+.report-page .report-listing-state {
+  margin: 0;
+  color: var(--ct-dim);
+}
+
+.report-listing-state strong {
+  color: var(--ct-text);
+}
+
+.report-listing-button {
+  padding: 7px 16px;
+  border: 1px solid var(--ct-gold-fill);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.report-listing-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.report-listing-button:focus-visible,
+.report-handle-cancel:focus-visible,
+.report-foot .report-flag:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.report-handle {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ct-line);
+}
+
+.report-handle label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ct-text);
+  font-weight: 600;
+}
+
+.report-page .report-handle-help {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.report-handle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.report-handle-field {
+  display: flex;
+  align-items: center;
+  flex: 0 1 240px;
+  padding: 0 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+}
+
+.report-handle-field:focus-within {
+  border-color: var(--ct-gold);
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
+}
+
+.report-handle-field.is-bad {
+  border-color: var(--ct-miss);
+}
+
+.report-handle-field > span {
+  color: var(--ct-dim);
+}
+
+.report-handle-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 0 7px 2px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ct-text);
+  font: inherit;
+}
+
+.report-handle-cancel {
+  padding: 7px 10px;
+  border: 0;
+  background: none;
+  color: var(--ct-dim);
+  cursor: pointer;
+}
+
+.report-page .report-handle-error,
+.report-page .report-listing-error {
+  margin: 8px 0 0;
+  color: var(--ct-miss);
+  font-size: 13px;
 }
 
 @media (max-width: 900px) {

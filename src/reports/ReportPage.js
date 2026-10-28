@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { deleteReport, fetchReport } from '../reportsApi';
+import SignUpPrompt from '../research/SignUpPrompt';
 import ReportCard from './ReportCard';
+import { ListingToggle, Published, ReportThis, SharedBy } from './ReportListing';
+import '../research/research.css';
 import './ReportPage.css';
 
 const TAG_LABEL = { strong: 'Strong', lean: 'Lean', thin: 'Thin', pass: 'Pass', tipped: 'Tipped' };
@@ -226,7 +230,8 @@ const longDate = (iso) =>
     timeZone: 'UTC',
   });
 
-const Report = ({ report, onDeleted }) => {
+const Report = ({ report, onDeleted, onChanged }) => {
+  const signedIn = useAuth().isAuthenticated;
   const [active, setActive] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const { document: doc } = report;
@@ -260,10 +265,14 @@ const Report = ({ report, onDeleted }) => {
         <p className="report-eyebrow">CourtAI report</p>
         <h1 tabIndex={-1}>{doc.title}</h1>
         <p className="report-meta">
-          {[doc.date && longDate(doc.date), `by ${report.author || 'a CourtAI user'}`]
+          {[
+            doc.date && longDate(doc.date),
+            `by ${report.listed ? `@${report.authorHandle}` : report.author || 'a CourtAI user'}`,
+          ]
             .filter(Boolean)
             .join(' · ')}
         </p>
+        <Published createdAt={report.createdAt} />
         {lede && <p className="report-lede">{lede}</p>}
         {rest.length > 0 && (
           <div className="report-opening">
@@ -305,6 +314,7 @@ const Report = ({ report, onDeleted }) => {
       ))}
 
       <footer className="report-foot">
+        {report.listed && <SharedBy handle={report.authorHandle} />}
         {doc.footnote && <p>{doc.footnote}</p>}
         <p>
           Built by an AI from CourtAI data{doc.skill ? ` using the ${doc.skill.name} skill` : ''}. A
@@ -315,30 +325,78 @@ const Report = ({ report, onDeleted }) => {
             <Link to="/connect">Make your own →</Link>
           )}
         </p>
-        {report.isAuthor && (
+        <p>
+          <ReportThis reportId={report.id} />
+        </p>
+        <ListingToggle report={report} onChanged={onChanged} />
+        {report.isAuthor && signedIn && (
           <button type="button" className="report-delete" onClick={remove} disabled={deleting}>
             {deleting ? 'Deleting…' : 'Delete this report'}
           </button>
         )}
       </footer>
+      <SignUpPrompt />
     </>
   );
 };
 
+const REMOVED = {
+  author: {
+    title: 'This report was removed by its author',
+    body: 'Its author deleted it, so the link no longer opens it.',
+  },
+  takedown: {
+    title: 'This report was taken down',
+    body: 'CourtAI removed it, so the link no longer opens it.',
+  },
+};
+
+/* A dead link that still leads somewhere: more research, and a way in. */
+const Removed = ({ by }) => (
+  <div className="report-status">
+    <p className="report-eyebrow">CourtAI report</p>
+    <h1>{REMOVED[by].title}</h1>
+    <p>{REMOVED[by].body}</p>
+    <p>
+      <Link to="/research">Browse more research →</Link>
+    </p>
+    <SignUpPrompt />
+  </div>
+);
+
 const ReportPage = () => {
   const { id } = useParams();
+  // Whether the viewer is the author changes with the account, so a sign-in
+  // or sign-out reads the report again.
+  const uid = useAuth().currentUser?.uid ?? null;
   const [state, setState] = useState({ status: 'loading' });
+
+  const settle = (found) => {
+    if (!found) return { status: 'missing' };
+    return found.removedBy
+      ? { status: 'removed', by: found.removedBy }
+      : { status: 'ready', report: found.report };
+  };
 
   useEffect(() => {
     const controller = new AbortController();
     setState({ status: 'loading' });
     fetchReport(id, { signal: controller.signal })
-      .then((report) => setState(report ? { status: 'ready', report } : { status: 'missing' }))
+      .then((found) => setState(settle(found)))
       .catch((error) => {
         if (!controller.signal.aborted) setState({ status: 'error', error });
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, uid]);
+
+  // After a listing change: the report as the public now sees it.
+  const reload = async () => {
+    try {
+      setState(settle(await fetchReport(id)));
+    } catch (error) {
+      setState({ status: 'error', error });
+    }
+  };
 
   useEffect(() => {
     if (state.status === 'ready') document.title = `${state.report.document.title} | CourtAI`;
@@ -354,6 +412,7 @@ const ReportPage = () => {
           <Link to="/skills/injury-brief">See how →</Link>
         </div>
       )}
+      {state.status === 'removed' && <Removed by={state.by} />}
       {state.status === 'deleted' && (
         <div className="report-status">
           <h1>Report deleted</h1>
@@ -367,7 +426,11 @@ const ReportPage = () => {
         </div>
       )}
       {state.status === 'ready' && (
-        <Report report={state.report} onDeleted={() => setState({ status: 'deleted' })} />
+        <Report
+          report={state.report}
+          onDeleted={() => setState({ status: 'deleted' })}
+          onChanged={reload}
+        />
       )}
     </main>
   );

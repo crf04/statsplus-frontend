@@ -3694,7 +3694,7 @@ describe('Evidence season', () => {
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups?season=2026-27',
+      '/matchups?date=2026-01-15&season=2026-27',
     );
     expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
       'href',
@@ -3759,7 +3759,7 @@ describe('Evidence season', () => {
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups',
+      '/matchups?date=2026-01-15',
     );
   });
 
@@ -3781,7 +3781,7 @@ describe('Evidence season', () => {
     });
     expect(await screen.findByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups?season=2025-26',
+      '/matchups?date=2026-01-15&season=2025-26',
     );
     unmount();
 

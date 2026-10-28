@@ -448,7 +448,7 @@ const decodeStats = (stats, statColumns) => {
   return Object.fromEntries(
     statColumns.map((column) => [
       column,
-      column === 'FG2A' || column.endsWith('/36')
+      column === 'FG2A' || column === 'FG2M' || column.endsWith('/36')
         ? requireNumberOrNull(stats[column])
         : requireNumber(stats[column]),
     ]),

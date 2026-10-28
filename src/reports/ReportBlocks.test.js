@@ -279,6 +279,13 @@ describe('reading a block report', () => {
     await open();
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Spots', 'Notes']);
+    // Every tab controls a panel that exists; only the chosen one shows.
+    tabs.forEach((tab) => {
+      expect(document.getElementById(tab.getAttribute('aria-controls'))).toHaveAttribute(
+        'aria-labelledby',
+        tab.id,
+      );
+    });
     expect(screen.getByText('Rui Hachimura o9.5 PTS')).toBeInTheDocument();
     expect(screen.queryByText('Second tab.')).not.toBeInTheDocument();
     // Items keep today's rows: one opens into its read.
@@ -345,8 +352,53 @@ describe('decoding both shapes', () => {
     expect(doc.blocks[12].sources).toEqual([['Dončić out', 'https://www.nba.com/report']]);
   });
 
+  test('a blank table cell is valid and renders as an empty cell', async () => {
+    const list = [{ id: 't', type: 'table', columns: ['Line', ''], rows: [['Over 6.5', '']] }];
+    await open(payload({ document: published(TITLE, list) }));
+    const table = screen.getByRole('table');
+    expect(
+      within(table)
+        .getAllByRole('cell')
+        .map((td) => td.textContent),
+    ).toEqual(['']);
+    expect(within(table).getByRole('rowheader', { name: 'Over 6.5' })).toBeInTheDocument();
+  });
+
+  test('a card an items block cannot draw is left out of its item, in a tab too', () => {
+    const items = {
+      id: 'spots',
+      type: 'items',
+      layout: 'rows',
+      items: [{ title: 'A', cards: ['ghost', 'lal-onoff', 'no-html'] }],
+    };
+    const report = decodeReport(
+      payload({
+        calls: [
+          ...calls,
+          { id: 'no-html', tool: 'get_rotation', card: 'rotation', structured: {} },
+        ],
+        document: published(TITLE, [
+          items,
+          {
+            id: 'group',
+            type: 'tabs',
+            tabs: [{ title: 'One', blocks: [{ ...items, id: 'inner' }] }],
+          },
+        ]),
+      }),
+    );
+    expect(report.document.blocks[0].items[0].cards).toEqual(['lal-onoff']);
+    expect(report.document.blocks[1].tabs[0].blocks[0].items[0].cards).toEqual(['lal-onoff']);
+  });
+
   test.each([
-    ['both tabs and blocks', { ...published(), tabs: [] }],
+    [
+      'both tabs and blocks',
+      {
+        ...published(),
+        tabs: [{ title: 'A', layout: 'list', items: [{ title: 'x' }] }],
+      },
+    ],
     ['neither tabs nor blocks', { title: 'T' }],
     ['an unknown block type', published(TITLE, [{ id: 'a', type: 'video', text: 'x' }])],
     ['a block id with capitals', published(TITLE, [{ id: 'A', type: 'heading', text: 'x' }])],

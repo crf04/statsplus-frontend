@@ -147,9 +147,17 @@ const TabGroup = ({ block, report }) => {
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={panelId(shown)} aria-labelledby={tabId(shown)}>
-        <Blocks blocks={tabs[shown].blocks} report={report} />
-      </div>
+      {tabs.map((tab, index) => (
+        <div
+          key={index}
+          role="tabpanel"
+          id={panelId(index)}
+          aria-labelledby={tabId(index)}
+          hidden={index !== shown}
+        >
+          {index === shown && <Blocks blocks={tab.blocks} report={report} />}
+        </div>
+      ))}
     </div>
   );
 };

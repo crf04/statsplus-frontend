@@ -77,6 +77,14 @@ signedOutTest(
       'Reaves matchup',
     ]);
     await expect(screen.getByRole('link', 'Spread LAL -4.5')).toBeVisible();
+    // A row of cards sits side by side, and stacks into one column under 600px.
+    const row = await browser.evaluate(() => {
+      const [a, b] = [
+        ...document.querySelectorAll('.report-block-card-row .report-block-card'),
+      ].map((card) => card.getBoundingClientRect());
+      return { width: window.innerWidth, stacked: b.top >= a.bottom, sameTop: a.top === b.top };
+    });
+    expect(row.width < 600 ? row.stacked : row.sameTop).toBe(true);
     await app.screenshot('block-report');
   },
 );

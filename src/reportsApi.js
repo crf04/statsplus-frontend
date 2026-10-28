@@ -89,11 +89,17 @@ const required = (value) => {
   return value;
 };
 
+// A table cell may be blank; any other text field may not.
+const cell = (value) => {
+  if (typeof value !== 'string') fail();
+  return value;
+};
+
 const decodeTable = (block) => {
-  const columns = required(block.columns).map(requireString);
+  const columns = required(block.columns).map(cell);
   const rows = required(block.rows).map((row) => {
     if (!Array.isArray(row) || row.length !== columns.length) fail();
-    return row.map(requireString);
+    return row.map(cell);
   });
   return { columns, rows };
 };

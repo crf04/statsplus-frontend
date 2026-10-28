@@ -119,10 +119,11 @@ const authorPayload = (overrides = {}) =>
 
 const signIn = () => Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
 
+let view;
 const open = async (data, title = TITLE) => {
   mockGet.mockResolvedValue({ data });
   window.history.pushState({}, '', `/reports/${ID}`);
-  render(<App />);
+  view = render(<App />);
   return screen.findByRole('heading', { level: 1, name: title });
 };
 
@@ -309,6 +310,55 @@ describe('Edit mode', () => {
     );
   });
 
+  test('Move down moves a card down and sends that order', async () => {
+    await startEditing(authorPayload());
+    press('Move Bane PTS w/o Banchero down');
+    expect(cardOrder('Desmond Bane o18.5 PTS')).toEqual([
+      'ORL on/off',
+      'Bane PTS w/o Banchero',
+      'Bane matchup',
+    ]);
+    expect(document.activeElement).toBe(
+      within(item('Desmond Bane o18.5 PTS')).getByRole('button', {
+        name: 'Move Bane PTS w/o Banchero down',
+      }),
+    );
+    mockPut.mockResolvedValue({ data: authorPayload() });
+    await save();
+    expect(sentBody()).toEqual({
+      title: TITLE,
+      notes: null,
+      items: [{ tab: 1, item: 0, hidden: false, cards: ['orl-onoff', 'bane-pts', 'bane-matchup'] }],
+    });
+  });
+
+  test('removing a card another item also shows keeps the keyboard in this item', async () => {
+    await startEditing(authorPayload());
+    press('Remove ORL on/off');
+    expect(document.activeElement).toBe(
+      within(item('Desmond Bane o18.5 PTS')).getByRole('button', { name: 'Restore ORL on/off' }),
+    );
+    press('Restore ORL on/off');
+    expect(document.activeElement).toBe(
+      within(item('Desmond Bane o18.5 PTS')).getByRole('button', { name: 'Remove ORL on/off' }),
+    );
+  });
+
+  test('a save that finishes after the account changed does not bring back Edit mode', async () => {
+    await startEditing(authorPayload());
+    let finish;
+    mockPut.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    await save();
+    // Another account signs in; it reads the report as a reader.
+    Object.assign(mockAuth, { currentUser: { uid: 'u2' } });
+    mockGet.mockResolvedValue({ data: payload() });
+    view.rerender(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: TITLE })).toBeInTheDocument();
+    await act(async () => finish({ data: authorPayload({ document: published('Bane night') }) }));
+    expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit report' })).not.toBeInTheDocument();
+  });
+
   test('the editor opens on the saved edits, and restoring sends the whole edit again', async () => {
     await startEditing(
       authorPayload({
@@ -381,8 +431,11 @@ describe('Edit mode', () => {
 
   test('the title and notes count their characters against the limits', async () => {
     await startEditing(authorPayload());
-    expect(screen.getByLabelText('Title')).toHaveAttribute('maxLength', '120');
     expect(screen.getByText('33/120')).toBeInTheDocument();
+    // Characters as the server counts them: 130 basketballs keep 120, not 60.
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: '🏀'.repeat(130) } });
+    expect(screen.getByLabelText('Title')).toHaveValue('🏀'.repeat(120));
+    expect(screen.getByText('120/120')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'x'.repeat(2001) } });
     expect(screen.getByText('2,001/2,000')).toHaveClass('is-over');
   });
@@ -405,11 +458,18 @@ describe('Edit mode', () => {
     mockPut.mockImplementation(() => refused(code));
     await save();
     expect(screen.getByRole('alert')).toHaveTextContent(message);
+    const besideSave = within(screen.getByRole('alert').parentElement).queryByRole('button', {
+      name: 'Save edits',
+    });
     if (field) {
       expect(screen.getByLabelText(field)).toHaveAttribute('aria-invalid', 'true');
       expect(screen.getByLabelText(field)).toHaveAccessibleDescription(
         expect.stringContaining(message),
       );
+      expect(besideSave).not.toBeInTheDocument();
+    } else {
+      expect(screen.getByLabelText('Notes')).toHaveAttribute('aria-invalid', 'false');
+      expect(besideSave).toBeInTheDocument();
     }
     expect(screen.getByLabelText('Notes')).toHaveValue('See www.x.com');
     expect(screen.getByRole('button', { name: 'Save edits' })).toBeEnabled();

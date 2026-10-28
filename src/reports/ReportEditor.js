@@ -14,6 +14,7 @@ export const NOTES_LIMIT = 2000;
 
 // Characters as the server counts them (code points, not UTF-16 units).
 const length = (text) => [...text].length;
+const clip = (text, limit) => (length(text) > limit ? [...text].slice(0, limit).join('') : text);
 
 const sameOrder = (a, b) => a.length === b.length && a.every((id, i) => id === b[i]);
 
@@ -122,7 +123,7 @@ const CardRow = ({ id, label, place, total, removed, onMove, onRemove, onRestore
   </li>
 );
 
-const ItemEditor = ({ item, state, calls, onChange, focusLater, announce }) => {
+const ItemEditor = ({ item, itemKey, state, calls, onChange, focusLater, announce }) => {
   const label = (id) => cardLabel(calls[id]);
   const removed = item.cards.filter((id) => !state.cards.includes(id));
   const move = (id, step) => {
@@ -147,6 +148,7 @@ const ItemEditor = ({ item, state, calls, onChange, focusLater, announce }) => {
   };
   return (
     <section
+      data-item={itemKey}
       className={`report-edit-item${state.hidden ? ' is-hidden' : ''}`}
       aria-label={item.title}
     >
@@ -203,8 +205,13 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
   const formRef = useRef(null);
   const focusNext = useRef(null);
 
+  // A save that lands after the editor closed (the account changed, say) is dropped.
+  const open = useRef(true);
   useEffect(() => {
     formRef.current?.querySelector('#report-edit-title')?.focus();
+    return () => {
+      open.current = false;
+    };
   }, []);
 
   // A moved, removed or restored card keeps the keyboard on it.
@@ -212,8 +219,10 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
     const next = focusNext.current;
     if (!next || !formRef.current) return;
     focusNext.current = null;
-    const row = [...formRef.current.querySelectorAll('[data-card]')].find(
-      (node) => node.dataset.card === next.id,
+    // The same card can sit in several items; look only in the one that changed.
+    const row = [...formRef.current.querySelectorAll('[data-item] [data-card]')].find(
+      (node) =>
+        node.closest('[data-item]').dataset.item === next.item && node.dataset.card === next.id,
     );
     const buttons = row ? [...row.querySelectorAll('button')] : [];
     const target =
@@ -236,8 +245,9 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
     setRefusal(null);
     try {
       const saved = await saveReportEdits(report.id, editsBody(draft, original));
-      onSaved(saved);
+      if (open.current) onSaved(saved);
     } catch (failure) {
+      if (!open.current) return;
       setRefusal(ERRORS[errorCode(failure)] ?? FAILED);
       setSaving(false);
     }
@@ -251,7 +261,7 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
   return (
     <form className="report-editor" ref={formRef} onSubmit={save} aria-label="Edit report">
       <div className="report-edit-intro">
-        <p className="report-eyebrow">Editing your report</p>
+        <h1 className="report-eyebrow">Editing your report</h1>
         <p>
           Readers see only what you keep. Cards stay exactly as published, with the same data;
           anything you hide or remove can be restored here.
@@ -266,11 +276,10 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
         <input
           id="report-edit-title"
           type="text"
-          maxLength={TITLE_LIMIT}
           required
           value={draft.title}
           aria-describedby="report-edit-title-count"
-          onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+          onChange={(event) => setDraft({ ...draft, title: clip(event.target.value, TITLE_LIMIT) })}
         />
       </div>
 
@@ -316,8 +325,9 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
               state={draft.items[t][i]}
               calls={original.calls}
               onChange={setItem(t, i)}
+              itemKey={`${t}:${i}`}
               focusLater={(id, action) => {
-                focusNext.current = { id, action };
+                focusNext.current = { item: `${t}:${i}`, id, action };
               }}
               announce={setStatus}
             />

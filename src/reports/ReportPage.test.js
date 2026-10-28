@@ -264,7 +264,8 @@ test('the author deletes the report after confirming', async () => {
   jest.spyOn(window, 'confirm').mockReturnValue(true);
   mockDelete.mockResolvedValue({ data: { success: true } });
   await open(payload({ is_author: true }));
-  fireEvent.click(screen.getByRole('button', { name: 'Delete this report' }));
+  const controls = screen.getByRole('group', { name: 'Manage your report' });
+  fireEvent.click(within(controls).getByRole('button', { name: 'Delete this report' }));
   expect(await screen.findByRole('heading', { name: 'Report deleted' })).toBeInTheDocument();
   expect(mockDelete).toHaveBeenCalledWith('http://127.0.0.1:8000/api/user/reports/k3x9q2mtzr');
 });

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
@@ -216,6 +216,31 @@ describe('Edit mode', () => {
     signIn();
     await open(authorPayload({ is_author: false }));
     expect(screen.queryByRole('button', { name: 'Edit report' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
+  });
+
+  test('Edit, List and Delete sit together under the published line, above the opening and the tabs', async () => {
+    signIn();
+    await open(authorPayload());
+    const controls = screen.getByRole('group', { name: 'Manage your report' });
+    expect(
+      within(controls)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['List in Research', 'Edit report', 'Delete this report']);
+    expect(screen.getAllByRole('button', { name: 'Delete this report' })).toHaveLength(1);
+    const before = (a, b) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(before(screen.getByText(/^Published/), controls)).toBe(true);
+    expect(before(controls, screen.getByText('Banchero is out for weeks.'))).toBe(true);
+    expect(before(controls, screen.getAllByRole('tab')[0])).toBe(true);
+    expect(before(controls, screen.getByRole('link', { name: 'Make your own →' }))).toBe(true);
+  });
+
+  test('Cancel puts the keyboard back on Edit report', async () => {
+    await startEditing(authorPayload());
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit report' })).toHaveFocus());
   });
 
   test('a reader who is not signed in is never offered Edit mode', async () => {

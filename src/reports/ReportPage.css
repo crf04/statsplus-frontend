@@ -296,6 +296,7 @@
 
 .report-delete {
   padding: 6px 12px;
+  font-size: 13.5px;
   border: 1px solid var(--ct-miss);
   border-radius: var(--ct-radius-ctl, 6px);
   background: none;
@@ -368,13 +369,33 @@
   color: var(--ct-gold);
 }
 
-/* The author's controls: List/Unlist, the handle chooser, delete. */
-.report-listing {
-  margin: 18px 0 14px;
+/* The author's controls under the published line: List/Unlist, the handle chooser, Edit, Delete. */
+.report-author {
+  max-width: 720px;
+  margin: 14px 0 18px;
   padding: 14px 16px;
   border: 1px solid var(--ct-line);
   border-radius: var(--ct-radius-card);
   background: var(--ct-surface);
+  font-size: 13.5px;
+}
+
+.report-listing {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ct-line);
+}
+
+.report-author-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.report-author-actions .report-edit-open {
+  margin: 0;
 }
 
 .report-listing-row {

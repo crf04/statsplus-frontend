@@ -284,15 +284,25 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
             .join(' · ')}
         </p>
         <Published createdAt={report.createdAt} editedAt={report.editedAt} />
-        {canEdit && (
-          <button
-            type="button"
-            className="report-edit-open"
-            ref={editButton}
-            onClick={() => setEditing(true)}
-          >
-            Edit report
-          </button>
+        {report.isAuthor && signedIn && (
+          <div className="report-author" role="group" aria-label="Manage your report">
+            <ListingToggle report={report} onChanged={onChanged} />
+            <div className="report-author-actions">
+              {canEdit && (
+                <button
+                  type="button"
+                  className="report-edit-open"
+                  ref={editButton}
+                  onClick={() => setEditing(true)}
+                >
+                  Edit report
+                </button>
+              )}
+              <button type="button" className="report-delete" onClick={remove} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete this report'}
+              </button>
+            </div>
+          </div>
         )}
         {lede && <p className="report-lede">{lede}</p>}
         {rest.length > 0 && (
@@ -350,12 +360,6 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
         <p>
           <ReportThis reportId={report.id} />
         </p>
-        <ListingToggle report={report} onChanged={onChanged} />
-        {report.isAuthor && signedIn && (
-          <button type="button" className="report-delete" onClick={remove} disabled={deleting}>
-            {deleting ? 'Deleting…' : 'Delete this report'}
-          </button>
-        )}
       </footer>
       <SignUpPrompt />
     </>

@@ -185,7 +185,7 @@ signedInTest(
     await app.open('/matchups/0022500584');
     await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
     await screen.getByRole('link', '← Back to slate').tap();
-    await expect(browser).toHaveURL('/matchups');
+    await expect(browser).toHaveURL('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
     await expect(screen.getByRole('heading', 'What BOS allows')).toHaveCount(0);
@@ -315,7 +315,7 @@ signedInTest(
     );
     await expect(screen.getByRole('link', '← Back to slate')).toHaveAttribute(
       'href',
-      '/matchups?season=2026-27',
+      '/matchups?date=2026-01-15&season=2026-27',
     );
     expect(api.sent('/api/games/matchup').map((request) => request.search.get('season'))).toEqual([
       '2026-27',

@@ -208,6 +208,7 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
   // A save that lands after the editor closed (the account changed, say) is dropped.
   const open = useRef(true);
   useEffect(() => {
+    open.current = true;
     formRef.current?.querySelector('#report-edit-title')?.focus();
     return () => {
       open.current = false;

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import App from '../App';
 import { decodeReport } from '../reportsApi';
 
@@ -308,6 +309,24 @@ describe('Edit mode', () => {
     expect(document.activeElement).toBe(
       screen.getByRole('button', { name: 'Move Bane matchup down' }),
     );
+  });
+
+  test('a save shows the saved report when the app runs in StrictMode, as it does in development', async () => {
+    signIn();
+    mockGet.mockResolvedValue({ data: authorPayload() });
+    window.history.pushState({}, '', `/reports/${ID}`);
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit report' }));
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Bane night' } });
+    mockPut.mockResolvedValue({ data: authorPayload({ document: published('Bane night') }) });
+    await save();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Bane night' }),
+    ).toBeInTheDocument();
   });
 
   test('Move down moves a card down and sends that order', async () => {

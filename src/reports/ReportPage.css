@@ -621,6 +621,15 @@
   border-color: var(--ct-miss);
 }
 
+.report-edit-draft {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .report-edit-tab {
   min-width: 0;
   margin: 0;

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { StrictMode } from 'react';
+import userEvent from '@testing-library/user-event';
 import App from '../App';
 import { decodeReport } from '../reportsApi';
 
@@ -329,6 +330,21 @@ describe('Edit mode', () => {
     ).toBeInTheDocument();
   });
 
+  test('while a save is in flight the draft cannot change, so nothing typed is lost', async () => {
+    await startEditing(authorPayload());
+    let finish;
+    mockPut.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    await save();
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    expect(screen.getByLabelText('Notes')).toBeDisabled();
+    expect(screen.getByLabelText('Title')).toBeDisabled();
+    expect(
+      within(item('Desmond Bane o18.5 PTS')).getByRole('button', { name: 'Remove ORL on/off' }),
+    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Hide item ORL @ NYK' })).toBeDisabled();
+    await act(async () => finish({ data: authorPayload() }));
+  });
+
   test('Move down moves a card down and sends that order', async () => {
     await startEditing(authorPayload());
     press('Move Bane PTS w/o Banchero down');
@@ -451,10 +467,15 @@ describe('Edit mode', () => {
   test('the title and notes count their characters against the limits', async () => {
     await startEditing(authorPayload());
     expect(screen.getByText('33/120')).toBeInTheDocument();
-    // Characters as the server counts them: 130 basketballs keep 120, not 60.
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: '🏀'.repeat(130) } });
-    expect(screen.getByLabelText('Title')).toHaveValue('🏀'.repeat(120));
-    expect(screen.getByText('120/120')).toBeInTheDocument();
+    // Characters as the server counts them: 60 basketballs are 120 UTF-16 units, and
+    // typing more still works; 130 keep 120.
+    const title = screen.getByLabelText('Title');
+    fireEvent.change(title, { target: { value: '🏀'.repeat(60) } });
+    await userEvent.type(title, '🏀🏀');
+    expect(title).toHaveValue('🏀'.repeat(62));
+    expect(screen.getByText('62/120')).toBeInTheDocument();
+    fireEvent.change(title, { target: { value: '🏀'.repeat(130) } });
+    expect(title).toHaveValue('🏀'.repeat(120));
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'x'.repeat(2001) } });
     expect(screen.getByText('2,001/2,000')).toHaveClass('is-over');
   });
@@ -523,6 +544,14 @@ describe('decoding', () => {
       'bane-matchup',
     ]);
     expect(Object.keys(decoded.original.calls)).toEqual(['bane-pts', 'orl-onoff', 'bane-matchup']);
+  });
+
+  test('empty notes are valid text, in the report and in its edits', () => {
+    const decoded = decodeReport(
+      authorPayload({ notes: '', edits: { title: TITLE, notes: '', items: [] } }),
+    );
+    expect(decoded.notes).toBe('');
+    expect(decoded.edits.notes).toBe('');
   });
 
   test('a report from before edits reads as unedited with no notes', () => {

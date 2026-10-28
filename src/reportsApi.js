@@ -121,7 +121,9 @@ const drawableDocument = (document, calls, cards) => ({
  */
 const decodeNotes = (value) => {
   if (value === undefined || value === null) return null;
-  return requireString(value);
+  // Empty text is valid notes (and reads as none), unlike other strings here.
+  if (typeof value !== 'string') fail();
+  return value;
 };
 
 const decodeEditedAt = (value) =>

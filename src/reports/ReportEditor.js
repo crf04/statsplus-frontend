@@ -269,72 +269,77 @@ const ReportEditor = ({ report, notesLabel, onSaved, onCancel }) => {
         </p>
       </div>
 
-      <div className="report-edit-field">
-        <div className="report-edit-label-row">
-          <label htmlFor="report-edit-title">Title</label>
-          <Count id="report-edit-title-count" used={titleLength} limit={TITLE_LIMIT} />
+      {/* While a save is in flight the draft is frozen, so nothing typed then is lost. */}
+      <fieldset className="report-edit-draft" disabled={saving}>
+        <div className="report-edit-field">
+          <div className="report-edit-label-row">
+            <label htmlFor="report-edit-title">Title</label>
+            <Count id="report-edit-title-count" used={titleLength} limit={TITLE_LIMIT} />
+          </div>
+          <input
+            id="report-edit-title"
+            type="text"
+            required
+            value={draft.title}
+            aria-describedby="report-edit-title-count"
+            onChange={(event) =>
+              setDraft({ ...draft, title: clip(event.target.value, TITLE_LIMIT) })
+            }
+          />
         </div>
-        <input
-          id="report-edit-title"
-          type="text"
-          required
-          value={draft.title}
-          aria-describedby="report-edit-title-count"
-          onChange={(event) => setDraft({ ...draft, title: clip(event.target.value, TITLE_LIMIT) })}
-        />
-      </div>
 
-      <div className="report-edit-field">
-        <div className="report-edit-label-row">
-          <label htmlFor="report-edit-notes">Notes</label>
-          <Count id="report-edit-notes-count" used={notesLength} limit={NOTES_LIMIT} />
-        </div>
-        <p className="report-edit-help" id="report-edit-notes-help">
-          Your own words, shown under the opening as “{notesLabel}”. Plain text; leave a blank line
-          between paragraphs. Links aren’t allowed.
-        </p>
-        <textarea
-          id="report-edit-notes"
-          rows={6}
-          value={draft.notes}
-          aria-invalid={Boolean(notesRefusal) || notesLength > NOTES_LIMIT}
-          aria-describedby={[
-            'report-edit-notes-help',
-            'report-edit-notes-count',
-            notesRefusal && 'report-edit-notes-error',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
-        />
-        {notesRefusal && (
-          <p className="report-edit-error" id="report-edit-notes-error" role="alert">
-            {notesRefusal}
+        <div className="report-edit-field">
+          <div className="report-edit-label-row">
+            <label htmlFor="report-edit-notes">Notes</label>
+            <Count id="report-edit-notes-count" used={notesLength} limit={NOTES_LIMIT} />
+          </div>
+          <p className="report-edit-help" id="report-edit-notes-help">
+            Your own words, shown under the opening as “{notesLabel}”. Plain text; leave a blank
+            line between paragraphs. Links aren’t allowed.
           </p>
-        )}
-      </div>
+          <textarea
+            id="report-edit-notes"
+            rows={6}
+            value={draft.notes}
+            aria-invalid={Boolean(notesRefusal) || notesLength > NOTES_LIMIT}
+            aria-describedby={[
+              'report-edit-notes-help',
+              'report-edit-notes-count',
+              notesRefusal && 'report-edit-notes-error',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
+          />
+          {notesRefusal && (
+            <p className="report-edit-error" id="report-edit-notes-error" role="alert">
+              {notesRefusal}
+            </p>
+          )}
+        </div>
 
-      {original.document.tabs.map((tab, t) => (
-        <fieldset key={t} className="report-edit-tab">
-          <legend>
-            {tab.title} <span className="report-tab-count">{tab.items.length}</span>
-          </legend>
-          {tab.items.map((item, i) => (
-            <ItemEditor
-              key={i}
-              item={item}
-              state={draft.items[t][i]}
-              calls={original.calls}
-              onChange={setItem(t, i)}
-              itemKey={`${t}:${i}`}
-              focusLater={(id, action) => {
-                focusNext.current = { item: `${t}:${i}`, id, action };
-              }}
-              announce={setStatus}
-            />
-          ))}
-        </fieldset>
-      ))}
+        {original.document.tabs.map((tab, t) => (
+          <fieldset key={t} className="report-edit-tab">
+            <legend>
+              {tab.title} <span className="report-tab-count">{tab.items.length}</span>
+            </legend>
+            {tab.items.map((item, i) => (
+              <ItemEditor
+                key={i}
+                item={item}
+                state={draft.items[t][i]}
+                calls={original.calls}
+                onChange={setItem(t, i)}
+                itemKey={`${t}:${i}`}
+                focusLater={(id, action) => {
+                  focusNext.current = { item: `${t}:${i}`, id, action };
+                }}
+                announce={setStatus}
+              />
+            ))}
+          </fieldset>
+        ))}
+      </fieldset>
 
       <p className="visually-hidden" role="status" aria-live="polite">
         {status}

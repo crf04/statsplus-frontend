@@ -199,6 +199,8 @@ export const AuthorTools = ({
 
   useEffect(() => {
     if (!open) return undefined;
+    // A newer popup owns focus now; an older close must not pull it back.
+    pendingFocus.current = null;
     if (open === 'more') deleteItem.current?.focus();
     const opener = open === 'more' ? moreButton : listButton;
     const onPointerDown = (event) => {

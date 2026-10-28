@@ -920,7 +920,11 @@
     padding: 24px 14px 80px;
   }
 
-  /* The toolbar wraps under the byline here, so its popups open rightward from its start. */
+  /* The toolbar takes its own row under the byline, so its popups open rightward from its start. */
+  .report-tools {
+    flex-basis: 100%;
+  }
+
   .report-tools-list,
   .report-tools-menu {
     right: auto;

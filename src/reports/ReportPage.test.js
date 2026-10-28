@@ -294,6 +294,24 @@ test('a delete that fails says so, keeps the report and can be tried again', asy
   expect(mockDelete).toHaveBeenCalledTimes(2);
 });
 
+test('a delete that fails while List is open leaves the keyboard in the List popup', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  jest.spyOn(window, 'alert').mockImplementation(() => {});
+  let fail;
+  mockDelete.mockReturnValueOnce(new Promise((_, reject) => (fail = reject)));
+  await open(payload({ is_author: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  await waitFor(() => expect(mockDelete).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: 'List' }));
+  const dialog = screen.getByRole('dialog', { name: 'List in Research' });
+  expect(dialog).toHaveFocus();
+  await act(async () => fail({ response: { status: 500 } }));
+  expect(screen.getByRole('button', { name: 'More report actions' })).toBeEnabled();
+  expect(dialog).toHaveFocus();
+});
+
 test('a missing report says it is not available', async () => {
   mockGet.mockRejectedValue({ response: { status: 404 } });
   window.history.pushState({}, '', '/reports/zzzzzzzzzz');

@@ -6,7 +6,7 @@ import SignUpPrompt from '../research/SignUpPrompt';
 import ReportCard from './ReportCard';
 import ReportEditor from './ReportEditor';
 import { cardLabel, TAG_LABEL } from './reportText';
-import { ListingToggle, Published, ReportThis, SharedBy } from './ReportListing';
+import { AuthorTools, Published, ReportThis, SharedBy } from './ReportListing';
 import '../research/research.css';
 import './ReportPage.css';
 
@@ -275,35 +275,28 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
         <h1 tabIndex={-1} ref={heading}>
           {doc.title}
         </h1>
-        <p className="report-meta">
-          {[
-            doc.date && longDate(doc.date),
-            `by ${report.listed ? `@${report.authorHandle}` : report.author || 'a CourtAI user'}`,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
+        <div className="report-byline">
+          <p className="report-meta">
+            {[
+              doc.date && longDate(doc.date),
+              `by ${report.listed ? `@${report.authorHandle}` : report.author || 'a CourtAI user'}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          {report.isAuthor && signedIn && (
+            <AuthorTools
+              report={report}
+              onChanged={onChanged}
+              canEdit={canEdit}
+              editRef={editButton}
+              onEdit={() => setEditing(true)}
+              onDelete={remove}
+              deleting={deleting}
+            />
+          )}
+        </div>
         <Published createdAt={report.createdAt} editedAt={report.editedAt} />
-        {report.isAuthor && signedIn && (
-          <div className="report-author" role="group" aria-label="Manage your report">
-            <ListingToggle report={report} onChanged={onChanged} />
-            <div className="report-author-actions">
-              {canEdit && (
-                <button
-                  type="button"
-                  className="report-edit-open"
-                  ref={editButton}
-                  onClick={() => setEditing(true)}
-                >
-                  Edit report
-                </button>
-              )}
-              <button type="button" className="report-delete" onClick={remove} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete this report'}
-              </button>
-            </div>
-          </div>
-        )}
         {lede && <p className="report-lede">{lede}</p>}
         {rest.length > 0 && (
           <div className="report-opening">

@@ -219,22 +219,59 @@ describe('Edit mode', () => {
     expect(screen.queryByRole('group', { name: 'Manage your report' })).not.toBeInTheDocument();
   });
 
-  test('Edit, List and Delete sit together under the published line, above the opening and the tabs', async () => {
+  test('the toolbar sits on the byline row: status, Edit, List and a ⋮ menu, above the opening and the tabs', async () => {
     signIn();
     await open(authorPayload());
-    const controls = screen.getByRole('group', { name: 'Manage your report' });
+    const tools = screen.getByRole('group', { name: 'Manage your report' });
+    expect(tools).toHaveTextContent(/^Unlisted/);
     expect(
-      within(controls)
+      within(tools)
         .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['List in Research', 'Edit report', 'Delete this report']);
-    expect(screen.getAllByRole('button', { name: 'Delete this report' })).toHaveLength(1);
+        .map((button) => button.getAttribute('aria-label') || button.textContent),
+    ).toEqual(['Edit report', 'List', 'More report actions']);
+    // Delete waits in the ⋮ menu.
+    expect(screen.queryByRole('menuitem', { name: 'Delete this report' })).not.toBeInTheDocument();
+    expect(tools.parentElement).toHaveTextContent('Sunday, October 25, 2026 · by a CourtAI user');
     const before = (a, b) =>
       Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(before(screen.getByText(/^Published/), controls)).toBe(true);
-    expect(before(controls, screen.getByText('Banchero is out for weeks.'))).toBe(true);
-    expect(before(controls, screen.getAllByRole('tab')[0])).toBe(true);
-    expect(before(controls, screen.getByRole('link', { name: 'Make your own →' }))).toBe(true);
+    expect(before(screen.getByRole('heading', { level: 1 }), tools)).toBe(true);
+    expect(before(tools, screen.getByText(/^Published/))).toBe(true);
+    expect(before(tools, screen.getByText('Banchero is out for weeks.'))).toBe(true);
+    expect(before(tools, screen.getAllByRole('tab')[0])).toBe(true);
+  });
+
+  test('the ⋮ menu holds Delete; Escape closes it and returns to ⋮, a click outside closes it', async () => {
+    signIn();
+    await open(authorPayload());
+    const more = screen.getByRole('button', { name: 'More report actions' });
+    await userEvent.click(more);
+    expect(more).toHaveAttribute('aria-expanded', 'true');
+    const item = within(screen.getByRole('menu')).getByRole('menuitem', {
+      name: 'Delete this report',
+    });
+    expect(item).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(more).toHaveFocus();
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(more);
+    await userEvent.click(screen.getByText('Banchero is out for weeks.'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  test('Delete from the ⋮ menu asks first; declining keeps the report', async () => {
+    signIn();
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    await open(authorPayload());
+    await userEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+    expect(confirm).toHaveBeenCalledWith(
+      'Delete this report? Its link will stop working for everyone.',
+    );
+    expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More report actions' })).toHaveFocus();
+    confirm.mockRestore();
   });
 
   test('Cancel puts the keyboard back on Edit report', async () => {

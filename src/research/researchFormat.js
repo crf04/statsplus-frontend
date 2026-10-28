@@ -35,6 +35,15 @@ export const publishedLine = (createdAt) => {
   return `Published ${day}, data as of ${time}`;
 };
 
+/* "October 28, 2026": the Eastern day an author last edited a report. */
+export const editedDate = (editedAt) =>
+  new Date(editedAt).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: ET,
+  });
+
 /* Whole days since publication once past STALE_DAYS, else null. */
 export const staleDays = (createdAt, now = Date.now()) => {
   const age = now - Date.parse(createdAt);

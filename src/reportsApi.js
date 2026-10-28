@@ -98,16 +98,77 @@ const decodeCall = (call) => {
   };
 };
 
+const decodeCalls = (calls) => {
+  if (!Array.isArray(calls)) fail();
+  return Object.fromEntries(calls.map(decodeCall).map((call) => [call.id, call]));
+};
+
+// A card the page cannot draw (no stored call or no HTML for it) is left out, not shown broken.
+const drawableDocument = (document, calls, cards) => ({
+  ...document,
+  tabs: document.tabs.map((tab) => ({
+    ...tab,
+    items: tab.items.map((item) => ({
+      ...item,
+      cards: item.cards.filter((id) => calls[id] && cards[calls[id].card]),
+    })),
+  })),
+});
+
+/*
+ * The author's own words (crf04/statsplus#377): plain text, kept as sent.
+ * Absent until the backend serves it, which reads the same as no notes.
+ */
+const decodeNotes = (value) => {
+  if (value === undefined || value === null) return null;
+  // Empty text is valid notes (and reads as none), unlike other strings here.
+  if (typeof value !== 'string') fail();
+  return value;
+};
+
+const decodeEditedAt = (value) =>
+  value === undefined || value === null ? null : requireTimestamp(value);
+
+const position = (value) => {
+  if (!Number.isInteger(value) || value < 0) fail();
+  return value;
+};
+
+/* The stored edits body, as PUT /api/user/reports/<id>/edits took it. */
+const decodeEdits = (edits) => {
+  if (edits === undefined || edits === null) return null;
+  if (!isRecord(edits) || !Array.isArray(edits.items)) fail();
+  return {
+    title: requireString(edits.title),
+    notes: decodeNotes(edits.notes),
+    items: edits.items.map((item) => {
+      if (!isRecord(item) || typeof item.hidden !== 'boolean' || !Array.isArray(item.cards)) fail();
+      return {
+        tab: position(item.tab),
+        item: position(item.item),
+        hidden: item.hidden,
+        cards: item.cards.map(requireString),
+      };
+    }),
+  };
+};
+
+/* The report exactly as published, which only its author receives, to restore from. */
+const decodeOriginal = (original, cards) => {
+  if (original === undefined || original === null) return null;
+  if (!isRecord(original)) fail();
+  const calls = decodeCalls(original.calls);
+  return { document: drawableDocument(decodeDocument(original.document), calls, cards), calls };
+};
+
 export const decodeReport = (payload) => {
   const report = isRecord(payload) ? payload.report : null;
   if (!isRecord(report) || !Array.isArray(report.calls) || !isRecord(report.cards)) fail();
   const cards = Object.fromEntries(
     Object.entries(report.cards).map(([name, html]) => [name, requireString(html)]),
   );
-  const calls = Object.fromEntries(report.calls.map(decodeCall).map((call) => [call.id, call]));
+  const calls = decodeCalls(report.calls);
   const document = decodeDocument(report.document);
-  // A card the page cannot draw (no stored call or no HTML for it) is left out, not shown broken.
-  const drawable = (id) => calls[id] && cards[calls[id].card];
   if (typeof report.listed !== 'boolean' || typeof report.featured !== 'boolean') fail();
   if (report.author !== undefined && report.author !== null && !isRecord(report.author)) fail();
   const author = report.author ?? {};
@@ -122,15 +183,13 @@ export const decodeReport = (payload) => {
     isAuthor: report.is_author === true,
     listed: report.listed,
     featured: report.featured,
-    document: {
-      ...document,
-      tabs: document.tabs.map((tab) => ({
-        ...tab,
-        items: tab.items.map((item) => ({ ...item, cards: item.cards.filter(drawable) })),
-      })),
-    },
+    notes: decodeNotes(report.notes),
+    editedAt: decodeEditedAt(report.edited_at),
+    document: drawableDocument(document, calls, cards),
     calls,
     cards,
+    original: decodeOriginal(report.original, cards),
+    edits: decodeEdits(report.edits),
   };
 };
 
@@ -164,6 +223,20 @@ export const fetchReport = async (id, { signal } = {}) => {
     }
     throw error;
   }
+};
+
+/*
+ * The author's edits: the title, notes, and the items they override, each
+ * with its hidden flag and its cards in display order. The body replaces every
+ * earlier edit. Resolves to the report as the author now reads it; refusals
+ * carry notes_links, notes_too_long or invalid_edits.
+ */
+export const saveReportEdits = async (id, edits) => {
+  const response = await apiClient.put(
+    `${getApiUrl('USER_REPORTS')}/${encodeURIComponent(id)}/edits`,
+    edits,
+  );
+  return decodeReport(response.data);
 };
 
 export const deleteReport = (id) =>

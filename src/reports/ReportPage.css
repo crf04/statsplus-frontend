@@ -491,6 +491,325 @@
   font-size: 13px;
 }
 
+/* "Edited <date>": after the publication line, which still dates the data. */
+.report-edited::before {
+  content: '·';
+  margin-right: 10px;
+}
+
+/* The author's own words, under the opening (crf04/statsplus#377). */
+.report-notes {
+  max-width: 78ch;
+  margin: 20px 0 0;
+  padding: 14px 18px 4px;
+  border-left: 3px solid var(--ct-gold);
+  border-radius: 0 var(--ct-radius-card) var(--ct-radius-card) 0;
+  background: var(--ct-surface);
+}
+
+.report-notes h2 {
+  margin: 0 0 8px;
+  color: var(--ct-gold);
+  font-family: var(--ct-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.report-notes p {
+  color: var(--ct-text);
+  font-size: 15.5px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.report-edit-open {
+  margin: 2px 0 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--ct-gold);
+  border-radius: var(--ct-radius-ctl);
+  background: none;
+  color: var(--ct-gold);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.report-edit-open:hover {
+  background: var(--ct-gold-soft);
+}
+
+/* Edit mode: the report as published, every part kept or put back. */
+.report-editor {
+  display: grid;
+  gap: 22px;
+  max-width: 880px;
+}
+
+.report-page .report-edit-intro p:last-child {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--ct-dim);
+}
+
+.report-edit-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.report-edit-label-row label {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+
+.report-edit-count {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+}
+
+.report-edit-count.is-over {
+  color: var(--ct-miss);
+  font-weight: 700;
+}
+
+.report-page .report-edit-help {
+  margin: -2px 0 8px;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.report-edit-field input,
+.report-edit-field textarea {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+  color: var(--ct-text);
+  font: inherit;
+}
+
+.report-edit-field input {
+  font-family: var(--ct-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.report-edit-field textarea {
+  min-height: 140px;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.report-edit-field input:focus,
+.report-edit-field textarea:focus {
+  border-color: var(--ct-gold);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ct-gold-fg-12);
+}
+
+.report-edit-field textarea[aria-invalid='true'] {
+  border-color: var(--ct-miss);
+}
+
+.report-edit-draft {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-edit-tab {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-edit-tab legend {
+  float: none;
+  width: auto;
+  margin: 0 0 10px;
+  padding: 0;
+  color: var(--ct-text);
+  font-family: var(--ct-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.report-edit-item {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ct-line);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+}
+
+.report-edit-item.is-hidden {
+  border-style: dashed;
+  background: transparent;
+}
+
+.report-edit-item.is-hidden h3,
+.report-edit-item.is-hidden .report-edit-note {
+  opacity: 0.55;
+}
+
+.report-edit-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-edit-item h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: 15.5px;
+  overflow-wrap: anywhere;
+}
+
+.report-edit-flag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.report-page .report-edit-note {
+  margin: 8px 0 0;
+  color: var(--ct-dim);
+  font-size: 13px;
+}
+
+.report-edit-cards {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-edit-card {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--ct-line);
+}
+
+.report-edit-card-place {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+.report-edit-card-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.report-edit-card.is-removed .report-edit-card-label {
+  color: var(--ct-dim);
+  font-weight: 400;
+  text-decoration: line-through;
+}
+
+.report-edit-card.is-removed .report-edit-flag {
+  text-decoration: none;
+}
+
+.report-edit-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.report-edit-item-toggle,
+.report-edit-card-actions button {
+  min-height: 34px;
+  padding: 5px 12px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: none;
+  color: var(--ct-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.report-edit-card-actions .report-edit-move {
+  width: 34px;
+  padding: 0;
+  font-size: 15px;
+}
+
+.report-edit-item-toggle:hover,
+.report-edit-card-actions button:hover:not(:disabled) {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.report-edit-card-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.report-edit-open:focus-visible,
+.report-edit-item-toggle:focus-visible,
+.report-edit-card-actions button:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+/* Save and Cancel stay in reach however long the report is. */
+.report-edit-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 0 -4px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--ct-line);
+  background: var(--ct-ink);
+}
+
+.report-edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.report-page .report-edit-error {
+  margin: 8px 0 0;
+  color: var(--ct-miss);
+  font-size: 13px;
+}
+
+.report-edit-actions .report-edit-error {
+  margin: 0 0 10px;
+}
+
 @media (max-width: 900px) {
   .report-page {
     padding: 24px 14px 80px;
@@ -508,5 +827,14 @@
 
   .report-page .report-row > summary .report-key {
     grid-column: 2;
+  }
+
+  .report-edit-item-toggle,
+  .report-edit-card-actions button {
+    min-height: 40px;
+  }
+
+  .report-edit-card-actions .report-edit-move {
+    width: 40px;
   }
 }

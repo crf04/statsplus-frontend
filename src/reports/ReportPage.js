@@ -4,51 +4,31 @@ import { useAuth } from '../contexts/AuthContext';
 import { deleteReport, fetchReport } from '../reportsApi';
 import SignUpPrompt from '../research/SignUpPrompt';
 import ReportCard from './ReportCard';
+import ReportEditor from './ReportEditor';
+import { cardLabel, TAG_LABEL } from './reportText';
 import { ListingToggle, Published, ReportThis, SharedBy } from './ReportListing';
 import '../research/research.css';
 import './ReportPage.css';
 
-const TAG_LABEL = { strong: 'Strong', lean: 'Lean', thin: 'Thin', pass: 'Pass', tipped: 'Tipped' };
+const Paragraphs = ({ items }) => items.map((text, index) => <p key={index}>{text}</p>);
 
-const lastName = (name) =>
-  String(name || '')
-    .trim()
-    .split(/\s+/)
-    .slice(-1)[0];
-
-/* A chip's name for one card: whose card and what it shows ("Bane PTS w/o Banchero", "ORL on/off"). */
-export const cardLabel = (call) => {
-  const s = call.structured || {};
-  const player = s.player && (s.player.name || s.player);
-  const who = typeof player === 'string' ? lastName(player) : '';
-  const applied = s.applied || {};
-  if (call.tool === 'query_game_logs') {
-    const without = (applied.without || []).map((w) => lastName(w.name || w));
-    const minutes = applied.minutes;
-    const scope = without.length
-      ? `w/o ${without.join(', ')}`
-      : minutes
-        ? minutes.high >= 48
-          ? `${minutes.low}+ min`
-          : `${minutes.low}-${minutes.high} min`
-        : (applied.filters || []).length
-          ? 'vs defenses'
-          : applied.last_n
-            ? `last ${applied.last_n}`
-            : 'season';
-    return `${who} ${s.chart_stat || ''} ${scope}`.replace(/\s+/g, ' ').trim();
-  }
-  const named = {
-    get_on_off: `${s.team || ''} on/off`,
-    get_matchup: `${who} matchup`,
-    get_rotation: 'Rotation',
-    get_injuries: 'Report',
-    get_injury_scenarios: 'Scenarios',
-  }[call.tool];
-  return (named || 'Card').trim();
+/* Who the notes are from: the handle when the page shows its author. */
+const notesLabel = (report) => {
+  const shown = report.listed ? `@${report.authorHandle}` : report.author;
+  return shown ? `Notes from ${shown}` : 'Notes from the author';
 };
 
-const Paragraphs = ({ items }) => items.map((text, index) => <p key={index}>{text}</p>);
+/*
+ * The author's own words under the opening: plain text in paragraphs, never
+ * turned into links (crf04/statsplus#377).
+ */
+const Notes = ({ report }) =>
+  report.notes?.trim() ? (
+    <section className="report-notes" aria-labelledby="report-notes-label">
+      <h2 id="report-notes-label">{notesLabel(report)}</h2>
+      <Paragraphs items={report.notes.split(/\n\s*\n/).filter((text) => text.trim())} />
+    </section>
+  ) : null;
 
 const Sources = ({ sources }) =>
   sources.length ? (
@@ -230,18 +210,24 @@ const longDate = (iso) =>
     timeZone: 'UTC',
   });
 
-const Report = ({ report, onDeleted, onChanged }) => {
+const Report = ({ report, onDeleted, onChanged, onEdited }) => {
   const signedIn = useAuth().isAuthenticated;
   const [active, setActive] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const { document: doc } = report;
+  // A tab whose every item its author hid is left out.
+  const tabs = doc.tabs.filter((tab) => tab.items.length);
   const tabRefs = useRef([]);
+  const editButton = useRef(null);
+  const heading = useRef(null);
+  const canEdit = report.isAuthor && signedIn && report.original !== null;
 
   const onKeyDown = (event) => {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
     if (!step) return;
     event.preventDefault();
-    const next = (active + step + doc.tabs.length) % doc.tabs.length;
+    const next = (active + step + tabs.length) % tabs.length;
     setActive(next);
     tabRefs.current[next]?.focus();
   };
@@ -258,12 +244,37 @@ const Report = ({ report, onDeleted, onChanged }) => {
     }
   };
 
+  const finishEditing = (saved) => {
+    setEditing(false);
+    if (saved) {
+      onEdited(saved);
+      setActive(0);
+      // The saved report is what readers now see; start reading it from the top.
+      requestAnimationFrame(() => heading.current?.focus());
+    } else {
+      requestAnimationFrame(() => editButton.current?.focus());
+    }
+  };
+
+  if (editing) {
+    return (
+      <ReportEditor
+        report={report}
+        notesLabel={notesLabel(report)}
+        onSaved={finishEditing}
+        onCancel={() => finishEditing(null)}
+      />
+    );
+  }
+
   const [lede, ...rest] = doc.opening;
   return (
     <>
       <header className="report-head">
         <p className="report-eyebrow">CourtAI report</p>
-        <h1 tabIndex={-1}>{doc.title}</h1>
+        <h1 tabIndex={-1} ref={heading}>
+          {doc.title}
+        </h1>
         <p className="report-meta">
           {[
             doc.date && longDate(doc.date),
@@ -272,17 +283,28 @@ const Report = ({ report, onDeleted, onChanged }) => {
             .filter(Boolean)
             .join(' · ')}
         </p>
-        <Published createdAt={report.createdAt} />
+        <Published createdAt={report.createdAt} editedAt={report.editedAt} />
+        {canEdit && (
+          <button
+            type="button"
+            className="report-edit-open"
+            ref={editButton}
+            onClick={() => setEditing(true)}
+          >
+            Edit report
+          </button>
+        )}
         {lede && <p className="report-lede">{lede}</p>}
         {rest.length > 0 && (
           <div className="report-opening">
             <Paragraphs items={rest} />
           </div>
         )}
+        <Notes report={report} />
       </header>
 
       <div className="report-tablist" role="tablist" aria-label="Report sections">
-        {doc.tabs.map((tab, index) => (
+        {tabs.map((tab, index) => (
           <button
             key={index}
             ref={(node) => {
@@ -301,7 +323,7 @@ const Report = ({ report, onDeleted, onChanged }) => {
           </button>
         ))}
       </div>
-      {doc.tabs.map((tab, index) => (
+      {tabs.map((tab, index) => (
         <div
           key={index}
           role="tabpanel"
@@ -430,6 +452,7 @@ const ReportPage = () => {
           report={state.report}
           onDeleted={() => setState({ status: 'deleted' })}
           onChanged={reload}
+          onEdited={(report) => setState({ status: 'ready', report })}
         />
       )}
     </main>

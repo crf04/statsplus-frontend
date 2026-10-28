@@ -39,6 +39,13 @@ const derivedStats = {
       ? fieldGoalsAttempted - threesAttempted
       : null;
   },
+  FG2M: (line) => {
+    const fieldGoalsMade = lineStat(line, 'FGM');
+    const threesMade = lineStat(line, '3PM');
+    return Number.isFinite(fieldGoalsMade) && Number.isFinite(threesMade)
+      ? fieldGoalsMade - threesMade
+      : null;
+  },
 };
 const ratio = (numerator, denominator, multiplier = 1) =>
   Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0

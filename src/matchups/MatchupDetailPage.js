@@ -13,6 +13,7 @@ import {
   UNAVAILABLE_RELATIVE_LABEL,
   bookMark,
   bookName,
+  categoryLabel,
   findDietShare,
   formatScorePercent,
   dietBaseVolumePerGame,
@@ -374,6 +375,7 @@ function PlayerRail({
   registerTrigger,
   headingRef,
   season,
+  unscored,
 }) {
   const stat = market === 'All' ? 'PTS' : market;
   const injuryById = new Map(
@@ -398,10 +400,10 @@ function PlayerRail({
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>
           {teamTricode ? `${teamTricode} · ` : ''}
-          {stat}
+          {categoryLabel(stat)}
         </h2>
         <p className="rail-count">
-          By season scoring
+          {unscored ? 'By season points' : 'By season scoring'}
           {targetableCount !== null ? ` · ${targetableCount} targetable returned` : ''}
         </p>
       </div>
@@ -600,6 +602,8 @@ function DefenseSheet({
   trailing,
   seasonContext,
   onCapture,
+  unscored,
+  historical,
 }) {
   const inMarket = (row) => market === 'All' || row.markets.includes(market);
   let hidden = 0;
@@ -674,8 +678,16 @@ function DefenseSheet({
           {hidden ? ` ${hidden} close to average hidden.` : ''}
         </p>
       </header>
-      {visibleCount === 0 && !hasNamedUnavailable && (
-        <p className="honest-empty">No Defense Sheet rows match these controls.</p>
+      {unscored ? (
+        <p className="honest-empty">
+          {categoryLabel(market)} has no Matchup Score or Defense Sheet rows.
+          {historical ? '' : ' Posted lines are in the rail.'}
+        </p>
+      ) : (
+        visibleCount === 0 &&
+        !hasNamedUnavailable && (
+          <p className="honest-empty">No Defense Sheet rows match these controls.</p>
+        )
       )}
       <div className="sheet-sections">
         {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
@@ -980,6 +992,10 @@ function Detail({ matchup, gameId, evidence }) {
   // A chosen stat the other side does not have falls back the same way.
   const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
+  // The decoder drops the score of a category with no Matchup Score.
+  const unscoredMarket = opposingPlayers.some(
+    (player) => player.statCategories.includes(market) && !Object.hasOwn(player.scores, market),
+  );
   const shortest = shortestLast15(matchup);
   const windows = WINDOWS.map((item) =>
     item.key === 'last15' && shortest < 15 ? { ...item, label: `Last ${shortest}` } : item,
@@ -1099,6 +1115,7 @@ function Detail({ matchup, gameId, evidence }) {
             registerTrigger={registerTrigger}
             headingRef={railHeading}
             season={season ?? matchup.asOfSeason ?? evidence.defaultSeason}
+            unscored={unscoredMarket}
           />
         </div>
         <div className="matchup-workspace">
@@ -1156,6 +1173,8 @@ function Detail({ matchup, gameId, evidence }) {
                 <button
                   type="button"
                   aria-pressed={market === item}
+                  aria-label={categoryLabel(item)}
+                  title={categoryLabel(item)}
                   key={item}
                   onClick={() => setMarket(item)}
                 >
@@ -1212,6 +1231,8 @@ function Detail({ matchup, gameId, evidence }) {
               trailing={matchup.trailing}
               seasonContext={matchup.seasonContext}
               onCapture={setCapture}
+              unscored={unscoredMarket}
+              historical={historical}
             />
           )}
         </div>

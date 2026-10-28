@@ -1,4 +1,4 @@
-import { aggregateEvidence, gameStat, seasonStat } from './statValues';
+import { STAT_GROUPS, aggregateEvidence, gameStat, seasonStat } from './statValues';
 const line = {
   points: 24,
   rebounds: 8,
@@ -103,4 +103,46 @@ test('FG2A per36 aggregate evidence uses total minutes for the player baseline',
     weight: 12,
     multiplier: 36,
   });
+});
+
+test('two-pointers made are made field goals less made threes, per game and per season', () => {
+  expect(gameStat({ line }, 'FG2M')).toBe(6);
+  expect(gameStat({ line }, 'FGM')).toBe(9);
+  expect(gameStat({ line }, 'FTM')).toBe(3);
+  expect(gameStat({ line }, 'FTA')).toBe(4);
+  expect(gameStat({ line: { ...line, threes_made: undefined } }, 'FG2M')).toBeNull();
+  expect(
+    seasonStat(
+      { seasonTotals: { ...line, field_goals_made: 21, threes_made: 5 }, seasonGames: 2 },
+      'FG2M',
+    ),
+  ).toBe(8);
+});
+
+test('the box-score stats offer every made and attempted shooting count', () => {
+  expect(STAT_GROUPS['Box score']).toEqual([
+    'PTS',
+    'REB',
+    'AST',
+    '3PM',
+    'FG2A',
+    'FG2M',
+    '3PA',
+    'FGM',
+    'FGA',
+    'FTM',
+    'FTA',
+    'STL',
+    'BLK',
+    'TOV',
+    'OREB',
+    'DREB',
+    'PF',
+    'MIN',
+    'PA',
+    'PR',
+    'RA',
+    'PRA',
+    'SB',
+  ]);
 });

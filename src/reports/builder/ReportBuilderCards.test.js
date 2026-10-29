@@ -941,6 +941,28 @@ test.each([
   expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
 });
 
+test('editing the picker while its second try is out leaves that try’s Card out', async () => {
+  let answer;
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementationOnce(
+      (url, body) => new Promise((resolve) => (answer = () => resolve(drawn(body)))),
+    );
+  await openBuilder();
+  const picker = openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+  await within(picker).findByText(STILL_FETCHING);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+  await choose('Team (optional)', 'BOS');
+
+  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  await act(async () => answer());
+  expect(within(picker).getByRole('alert').textContent).toBe(UNAVAILABLE);
+  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+});
+
 test('a reloaded draft keeps its Cards’ calls but not their previews, and draws one again', async () => {
   serveCards();
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);

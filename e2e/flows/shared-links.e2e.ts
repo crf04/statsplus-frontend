@@ -15,6 +15,7 @@ import type { Api } from './support/courtai.ts';
 
 const BEARER = 'Bearer courtai-e2e-token';
 const SIGNED_OUT_NOTICE = "You're viewing a shared link. Sign up free to change it or save it.";
+const WAITLISTED_NOTICE = 'Changing or saving it opens once your account is off the waitlist.';
 const QUERY = 'LeBron James last 10 games';
 
 // `game_filter=1` keeps only the first logged game (31 points); without it
@@ -42,6 +43,19 @@ const postedLineLabels = async (screen: Screen) => {
   return Promise.all(buttons.map((button) => button.getAttribute('aria-label')));
 };
 
+// What each posted-line button shows: the source and line, then its prices
+// only when it has them.
+const postedLineTexts = (screen: Screen) =>
+  screen.getByRole('group', 'Posted Lines:').getByRole('button').allTextContents();
+
+const UNPRICED_TEXTS = [
+  'DABBLE 26.5',
+  'UNDERDOG 26.5',
+  'DRAFTKINGS 26.5',
+  'FANDUEL 26.5',
+  'BETRIVERS 27.5',
+];
+
 const gameLogReads = (api: Api) =>
   api.sent('/api/games/game_logs', 'GET').filter((request) => request.search.has('player_name'));
 
@@ -64,7 +78,7 @@ signedOutTest(
       'FanDuel 26.5',
       'BetRivers 27.5',
     ]);
-    await expect(screen.getByRole('group', 'Posted Lines:')).not.toContainText('−');
+    expect(await postedLineTexts(screen)).toEqual(UNPRICED_TEXTS);
     await expect(browser).toHaveURL('/?player_name=Stephen+Curry&ref=share');
     // Every read is anonymous, and the attribution tag never reaches the API.
     expect(gameLogReads(api).length).toBeGreaterThan(0);
@@ -182,11 +196,7 @@ waitlistedTest(
   async ({ app, screen, browser }) => {
     await app.open('/?player_name=Stephen+Curry');
 
-    await expect(
-      screen
-        .getByRole('status')
-        .filter({ hasText: 'Changing or saving it opens once your account is off the waitlist.' }),
-    ).toBeVisible();
+    await expect(screen.getByRole('status').filter({ hasText: WAITLISTED_NOTICE })).toBeVisible();
     await expect(browser).toHaveURL('/?player_name=Stephen+Curry');
     await expect(screen.getByRole('cell', '42')).toBeVisible();
     expect(await postedLineLabels(screen)).toEqual([
@@ -196,6 +206,7 @@ waitlistedTest(
       'FanDuel 26.5',
       'BetRivers 27.5',
     ]);
+    expect(await postedLineTexts(screen)).toEqual(UNPRICED_TEXTS);
     await expect(screen.getByRole('button', { name: /^Apply/ })).toBeDisabled();
     await expect(screen.getByLabel('Player:')).toBeDisabled();
     await expect(screen.getByTestId('filter-panel').getByRole('button', 'Save')).toHaveCount(0);

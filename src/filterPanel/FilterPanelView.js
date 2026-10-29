@@ -51,7 +51,7 @@ const Rule = ({ kind, children, onEdit, onRemove, name }) => (
   </li>
 );
 
-export const Editor = ({ which, panel, onDone }) => {
+export const Editor = ({ which, panel, onDone, statColumns }) => {
   const title = TILES.find((tile) => tile.key === which)?.title;
   let body = null;
   if (which === 'teammate') body = <TeammateSearch panel={panel} />;
@@ -180,7 +180,7 @@ export const Editor = ({ which, panel, onDone }) => {
   if (which === 'self')
     body = (
       <>
-        <StatSelect panel={panel} />
+        <StatSelect panel={panel} columns={statColumns} />
         <StatRange panel={panel} />
         <button
           type="button"
@@ -209,8 +209,19 @@ export const Editor = ({ which, panel, onDone }) => {
  * `tabs` is the Filters | Saved switch; `body` replaces the filters with the
  * Saved tab; `savedName` names the saved set the filters are; `save` sits
  * beside Apply. All are absent for a reader with no account to save to.
+ * `statColumns` narrows the Own stat line choices.
  */
-const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, savedName, save }) => {
+const FilterPanelView = ({
+  panel,
+  pinned,
+  filler,
+  compactTiles,
+  tabs,
+  body,
+  savedName,
+  save,
+  statColumns,
+}) => {
   const [editing, setEditing] = useState(null);
   const s = panel.summary;
   const rules = [];
@@ -367,7 +378,12 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
           {rules.length > 0 && <ul className="fpb-rules">{rules}</ul>}
 
           {editing ? (
-            <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
+            <Editor
+              which={editing}
+              panel={panel}
+              statColumns={statColumns}
+              onDone={() => setEditing(null)}
+            />
           ) : (
             <>
               <div className="fpb-addlabel">Add a filter</div>

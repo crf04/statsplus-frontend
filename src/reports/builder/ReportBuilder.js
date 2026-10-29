@@ -3,11 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import LoginButton from '../../components/Auth/LoginButton';
 import WaitlistBanner from '../../components/Auth/WaitlistBanner';
 import { errorCode, publishReport, setPublicHandle } from '../../reportsApi';
+import ReportCard from '../ReportCard';
 import { Count } from '../ReportEditor';
 import { FAILED, HANDLE_ERRORS, HandleChooser, LISTING_ERRORS } from '../ReportListing';
+import { cardLabel } from '../reportText';
+import { cardRefusal, previewCard, publishCardReport, waitFor } from './cardsApi';
+import CardPicker, { refusalText, Unpublishable } from './CardPicker';
 import {
   BLOCK_TYPES,
+  blockCalls,
   blockProblem,
+  cardPublishBody,
   clearDraft,
   draftReducer,
   length,
@@ -23,8 +29,8 @@ import './ReportBuilder.css';
 
 /*
  * The Report Builder (crf04/statsplus#382): an author writes a Report on the
- * web, block by block, in plain text with line breaks kept, and publishes it
- * under their own name or none.
+ * web, block by block, in plain text with line breaks kept, adds the Cards
+ * CourtAI draws, and publishes it under their own name or none.
  */
 
 const TYPE_LABEL = {
@@ -33,6 +39,103 @@ const TYPE_LABEL = {
   list: 'List',
   callout: 'Callout',
   sources: 'Sources',
+  card: 'Card',
+  cards: 'Card row',
+};
+
+const TOOL_LABEL = {
+  query_game_logs: 'Game logs',
+  get_matchup: 'Matchup',
+  get_rotation: 'Rotation',
+  get_on_off: 'On/off',
+  get_injuries: 'Injuries',
+};
+
+/*
+ * One Card in a block: its preview, or, after a reload (previews are not
+ * stored), a way to draw it again. Publishing reruns it either way.
+ */
+const CardSlot = ({ call, dispatch, remove }) => {
+  const [again, setAgain] = useState({ status: 'idle' });
+  const previewAgain = async () => {
+    setAgain({ status: 'loading' });
+    try {
+      const { preview } = await previewCard({ tool: call.tool, args: call.args });
+      dispatch({ type: 'preview', call: call.id, preview });
+      setAgain({ status: 'idle' });
+    } catch (failure) {
+      setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
+    }
+  };
+  return (
+    <div className="report-build-card">
+      {call.preview ? (
+        <>
+          <figure className="report-block-card">
+            <ReportCard
+              html={call.preview.html}
+              call={call.preview}
+              label={cardLabel({ tool: call.tool, structured: call.preview.structured })}
+            />
+          </figure>
+          {call.preview.unpublishable && (
+            <Unpublishable
+              refusal={again.status === 'refused' ? again.refusal : call.preview.unpublishable}
+              onPreview={previewAgain}
+              busy={again.status === 'loading'}
+            />
+          )}
+        </>
+      ) : (
+        <div className="report-build-card-stale">
+          <p>
+            {TOOL_LABEL[call.tool]} card. Previews aren’t kept when the page reloads; CourtAI draws
+            it again when you publish.
+          </p>
+          <button
+            type="button"
+            className="report-build-small"
+            disabled={again.status === 'loading'}
+            onClick={previewAgain}
+          >
+            {again.status === 'loading' ? 'Drawing…' : 'Preview again'}
+          </button>
+          {again.status === 'refused' && (
+            <p className="report-edit-error" role="alert">
+              {refusalText(again.refusal)}
+            </p>
+          )}
+        </div>
+      )}
+      {remove}
+    </div>
+  );
+};
+
+const CardFields = ({ block, calls, dispatch }) => {
+  const ids = blockCalls(block);
+  return (
+    <div className={ids.length > 1 ? 'report-build-card-row' : undefined}>
+      {ids.map((id, i) => (
+        <CardSlot
+          key={id}
+          call={calls.find((call) => call.id === id)}
+          dispatch={dispatch}
+          remove={
+            ids.length > 1 && (
+              <button
+                type="button"
+                className="report-build-small"
+                onClick={() => dispatch({ type: 'removeCard', id: block.id, card: id })}
+              >
+                Remove card {i + 1} from the row
+              </button>
+            )
+          }
+        />
+      ))}
+    </div>
+  );
 };
 
 /* One labelled text field with its character count; the draft refuses text past the limit. */
@@ -166,7 +269,7 @@ const SourceFields = ({ block, update }) => {
   );
 };
 
-const BlockFields = ({ block, update }) => {
+const BlockFields = ({ block, update, calls, dispatch }) => {
   switch (block.type) {
     case 'heading':
       return (
@@ -232,12 +335,15 @@ const BlockFields = ({ block, update }) => {
       );
     case 'sources':
       return <SourceFields block={block} update={update} />;
+    case 'card':
+    case 'cards':
+      return <CardFields block={block} calls={calls} dispatch={dispatch} />;
     default:
       return null;
   }
 };
 
-const BlockEditor = ({ block, place, total, dispatch, showProblem }) => {
+const BlockEditor = ({ block, place, total, calls, dispatch, showProblem }) => {
   const name = `Block ${place + 1}: ${TYPE_LABEL[block.type]}`;
   const problem = showProblem ? blockProblem(block) : null;
   return (
@@ -278,6 +384,8 @@ const BlockEditor = ({ block, place, total, dispatch, showProblem }) => {
       </div>
       <BlockFields
         block={block}
+        calls={calls}
+        dispatch={dispatch}
         update={(patch) => dispatch({ type: 'update', id: block.id, patch })}
       />
       {problem && (
@@ -295,18 +403,17 @@ const showModal = (dialog) => {
   else dialog.setAttribute('open', '');
 };
 
-const waitFor = (seconds) => {
-  if (seconds < 60) return seconds === 1 ? '1 second' : `${seconds} seconds`;
-  const minutes = Math.ceil(seconds / 60);
-  if (minutes < 60) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
-  const hours = Math.ceil(minutes / 60);
-  return hours === 1 ? '1 hour' : `${hours} hours`;
-};
-
 /* What a failed publish tells the author; the draft is kept whatever happened. */
-const publishRefusal = (failure, listed) => {
+const publishRefusal = (failure, listed, draft) => {
   const code = errorCode(failure);
   if (LISTING_ERRORS[code]) return LISTING_ERRORS[code];
+  // A rerun's refusal names the card.
+  const refusal = draft.calls.length ? cardRefusal(failure) : null;
+  if (refusal) {
+    const place = draft.blocks.findIndex((block) => blockCalls(block).includes(refusal.call));
+    const text = refusalText(refusal);
+    return place < 0 ? text : `The card in block ${place + 1}: ${text}`;
+  }
   if (failure?.response?.status === 429) {
     const seconds = Number.parseInt(failure.response.headers?.['retry-after'], 10);
     return `You’ve published as many reports as CourtAI allows for now. Try again ${
@@ -378,13 +485,17 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
     }
   };
 
+  // A Report with Cards publishes through the MCP server, which reruns them; text goes to the backend.
   const publish = async () => {
+    const choices = { date, showAuthor, listed };
     try {
-      const { id } = await publishReport(publishBody(draft, { date, showAuthor, listed }));
+      const { id } = draft.calls.length
+        ? await publishCardReport(cardPublishBody(draft, choices))
+        : await publishReport(publishBody(draft, choices));
       onPublished(id);
     } catch (failure) {
       if (listed && errorCode(failure) === 'handle_required') setChoosing(true);
-      else setRefusal(publishRefusal(failure, listed));
+      else setRefusal(publishRefusal(failure, listed, draft));
       setBusy(false);
     }
   };
@@ -521,6 +632,7 @@ const Builder = () => {
   const navigate = useNavigate();
   const [draft, dispatch] = useReducer(draftReducer, undefined, loadDraft);
   const [publishing, setPublishing] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [tried, setTried] = useState(false);
   const published = useRef(false);
   const closeDialog = useCallback(() => setPublishing(false), []);
@@ -535,10 +647,12 @@ const Builder = () => {
 
   const ready = draft.blocks.length > 0 && draft.blocks.every((block) => !blockProblem(block));
   const full = draft.blocks.length >= LIMITS.blocks;
+  const cardsFull = draft.calls.length >= LIMITS.calls;
 
   const discard = () => {
     if (!window.confirm('Discard this draft? Everything in it will be deleted.')) return;
     setTried(false);
+    setPicking(false);
     dispatch({ type: 'discard' });
   };
 
@@ -565,10 +679,15 @@ const Builder = () => {
           block={block}
           place={place}
           total={draft.blocks.length}
+          calls={draft.calls}
           dispatch={dispatch}
           showProblem={tried}
         />
       ))}
+
+      {picking && (
+        <CardPicker draft={draft} dispatch={dispatch} onClose={() => setPicking(false)} />
+      )}
 
       <div className="report-build-add" role="group" aria-label="Add a block">
         {BLOCK_TYPES.map((type) => (
@@ -582,7 +701,18 @@ const Builder = () => {
             Add {TYPE_LABEL[type].toLowerCase()}
           </button>
         ))}
+        <button
+          type="button"
+          className="report-build-small"
+          disabled={picking || cardsFull}
+          onClick={() => setPicking(true)}
+        >
+          Add card
+        </button>
         {full && <p className="report-edit-help">A report holds at most {LIMITS.blocks} blocks.</p>}
+        {cardsFull && (
+          <p className="report-edit-help">A report holds at most {LIMITS.calls} cards.</p>
+        )}
       </div>
 
       <div className="report-edit-actions">

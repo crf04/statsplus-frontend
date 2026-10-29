@@ -1,0 +1,86 @@
+/* PROTOTYPE — throwaway (branch prototype/rail-matchup-l5). */
+.l5-row .l5-over { color: var(--ct-hit); }
+.l5-row .l5-under { color: var(--ct-miss); }
+.l5-row .l5-push, .l5-row .l5-flat { color: var(--ct-dim); }
+
+.l5-row a { position: relative; z-index: 1; color: inherit; text-decoration: none; }
+
+.l5-score { font-size: 0.8rem; color: var(--ct-dim); white-space: nowrap; }
+.l5-score b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.l5-score em { font-style: normal; }
+.l5-tone-up b { color: var(--ct-hit); }
+.l5-tone-down b { color: var(--ct-miss); }
+.l5-score-none { font-style: italic; }
+
+.l5-caption { color: var(--ct-dim); font-size: 0.72rem; white-space: nowrap; }
+.l5-caption b { color: var(--ct-text); font-weight: 650; }
+
+/* A: tiles under the row, full width */
+.l5-vA .l5-tiles {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--ct-line);
+  border-radius: 8px;
+}
+.l5-vA .l5-tiles:hover { border-color: var(--ct-gold); }
+.l5-tile-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.l5-tile { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.l5-tile b { font-family: var(--ct-display); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.l5-tile small { color: var(--ct-dim); font-size: 0.6rem; letter-spacing: 0.02em; }
+.l5-go { display: inline-flex; align-items: center; gap: 2px; color: var(--ct-gold); font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+
+/* B: three columns with a mini chart in the middle */
+.l5-vB { grid-template-columns: minmax(0, 1fr) auto auto; }
+.l5-bars { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.l5-bars svg text { fill: var(--ct-dim); font-size: 8.5px; font-variant-numeric: tabular-nums; }
+.l5-bar.l5-over { fill: var(--ct-hit); }
+.l5-bar.l5-under { fill: var(--ct-miss); }
+.l5-bar.l5-push, .l5-bar.l5-flat { fill: var(--ct-dim); }
+.l5-bar { opacity: 0.85; }
+.l5-mark { stroke: var(--ct-gold); stroke-width: 1.2; stroke-dasharray: 3 2; }
+
+.l5-vB .l5-caption { display: inline-flex; align-items: center; gap: 2px; }
+.l5-bars:hover .l5-caption { color: var(--ct-gold); }
+@media (max-width: 520px) {
+  .l5-vB { grid-template-columns: minmax(0, 1fr) auto; }
+  .l5-vB .l5-bars { grid-column: 1 / -1; grid-row: 2; justify-self: start; flex-direction: row; gap: 8px; }
+}
+
+/* C: pills under the name */
+.l5-pills { gap: 6px !important; }
+.l5-vC .l5-score { padding: 1px 7px; border: 1px solid var(--ct-line); border-radius: 999px; }
+.l5-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 1px 7px; border: 1px solid var(--ct-line); border-radius: 999px;
+  font-size: 0.8rem; color: var(--ct-dim) !important;
+}
+.l5-pill b { color: var(--ct-text); }
+.l5-pill:hover { border-color: var(--ct-gold); color: var(--ct-gold) !important; }
+.l5-dots { display: inline-flex; gap: 3px; }
+.l5-dots i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* D: one footer line */
+.l5-footer {
+  grid-column: 1 / -1;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-top: 6px; border-top: 1px dashed var(--ct-line);
+}
+.l5-footer-logs { display: inline-flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; }
+.l5-footer-logs b { font-weight: 650; font-size: 0.86rem; }
+.l5-footer-logs:hover .l5-caption { color: var(--ct-gold); }
+
+.l5-proto-switcher {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 9999;
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 999px;
+  background: #111; color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  font: 600 13px/1.2 system-ui, sans-serif; max-width: calc(100vw - 20px);
+}
+.l5-proto-switcher span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.l5-proto-switcher b { color: #f5c542; margin-right: 4px; }
+.l5-proto-switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; flex: none; }

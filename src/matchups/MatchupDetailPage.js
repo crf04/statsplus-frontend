@@ -34,6 +34,9 @@ import '../readings.css';
 import './MatchupDetailPage.css';
 import ErrorMessage from '../feedback/ErrorMessage';
 import HelpTip from '../help/HelpTip';
+// PROTOTYPE (throwaway, branch prototype/rail-matchup-l5)
+import { isPrototypeActive, PrototypeSwitcher, useVariant } from './railL5Prototype/mode';
+import { ProtoRailRow } from './railL5Prototype/variants';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -266,6 +269,7 @@ function RailRow({
   onSelect,
   register,
   season,
+  protoVariant,
 }) {
   const serializedPlayerId = String(player.id);
   // Game Logs name the season the Matchup read, since their own default may differ.
@@ -275,6 +279,7 @@ function RailRow({
   let caption;
   let meta;
   let prices = null;
+  let protoHeadline = null; // PROTOTYPE
   if (historical) {
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
@@ -296,6 +301,7 @@ function RailRow({
     );
   } else {
     const headline = headlineFor(player, stat);
+    protoHeadline = headline; // PROTOTYPE
     const score = headline === null ? scoreFor(player, stat, windowKey) : null;
     value =
       headline !== null ? (
@@ -313,6 +319,47 @@ function RailRow({
         : 'Matchup Score';
     const best = bestPrices(player, stat, headline);
     if (best && (best.over || best.under)) prices = <RailPrices best={best} />;
+  }
+  // PROTOTYPE: the variants recompose the same pieces.
+  if (protoVariant && protoVariant !== 'O' && !historical) {
+    return (
+      <ProtoRailRow
+        variant={protoVariant}
+        player={player}
+        stat={stat}
+        season={season}
+        windowKey={windowKey}
+        headline={protoHeadline}
+        seasonAverage={seasonAverage}
+        gameLogsPath={gameLogsPath}
+        selected={selected}
+        nameLink={
+          <Link aria-label={`${player.name} game logs`} className="player-game-logs" to={gameLogsPath}>
+            {player.name}
+            <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+          </Link>
+        }
+        valueBlock={
+          <>
+            {value}
+            {caption && <small>{caption}</small>}
+            {prices}
+          </>
+        }
+        injury={injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
+        openButton={
+          <button
+            ref={(node) => register(serializedPlayerId, node)}
+            type="button"
+            className="rail-row-open"
+            aria-expanded={selected}
+            aria-controls="matchup-selection-card"
+            aria-label={selected ? 'Selected' : 'Open selection card'}
+            onClick={() => onSelect(player)}
+          />
+        }
+      />
+    );
   }
   return (
     <article
@@ -390,8 +437,11 @@ function PlayerRail({
       return (b.seasonScoring ?? 0) - (a.seasonScoring ?? 0) || a.name.localeCompare(b.name);
     });
   const label = historical ? 'Players in game' : 'Targetable players';
+  const { variant: protoVariant } = useVariant(); // PROTOTYPE
+  const protoOn = isPrototypeActive();
   return (
     <aside className="player-rail" aria-label={label}>
+      {protoOn && <PrototypeSwitcher />}
       <div className="rail-heading">
         <p className="matchup-eyebrow">
           {label}
@@ -429,6 +479,7 @@ function PlayerRail({
               onSelect={onSelect}
               register={registerTrigger}
               season={season}
+              protoVariant={protoOn ? protoVariant : null}
             />
           ))}
         </div>

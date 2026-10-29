@@ -15,6 +15,15 @@ import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
 import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/rail-matchup-l5): the standalone
+// build replays captured data to the Matchup page with a fake signed-in user.
+import { PROTO_STANDALONE } from './matchups/railL5Prototype/mode';
+import { DEMO_URL, installMockApi } from './matchups/railL5Prototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.pathname.startsWith('/matchups/')) window.history.replaceState(null, '', DEMO_URL);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

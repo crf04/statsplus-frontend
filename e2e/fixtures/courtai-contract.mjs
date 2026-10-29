@@ -2996,6 +2996,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       target.conditions ?? null,
     ]);
   let attributionRecorded = false;
+  let publicHandle = null;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -3075,6 +3076,47 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
               json: { error: { code: 'invalid_feedback', message: 'Invalid feedback body.' } },
             },
       );
+      return;
+    }
+
+    // The account chooses its public handle once (crf04/statsplus#372), as the backend
+    // normalizes it: one leading @ and capitals dropped, then 3-20 of a-z, 0-9 and _.
+    if (url.pathname === '/api/user/public-handle' && request.method() === 'PUT' && !override) {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'unauthorized', message: 'Missing E2E bearer token.' } },
+        });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      const raw = typeof body?.handle === 'string' ? body.handle.trim() : '';
+      const handle = (raw.startsWith('@') ? raw.slice(1) : raw).toLowerCase();
+      if (!/^[a-z0-9_]{3,20}$/.test(handle)) {
+        await route.fulfill({
+          status: 400,
+          json: {
+            error: 'invalid_handle',
+            message: 'A handle is 3-20 characters of a-z, 0-9 and _.',
+          },
+        });
+      } else if (publicHandle !== null) {
+        await route.fulfill({
+          status: 409,
+          json: {
+            error: 'handle_already_set',
+            message: 'Your handle is already set. Ask CourtAI support to change it.',
+          },
+        });
+      } else {
+        publicHandle = handle;
+        await route.fulfill({ json: { handle } });
+      }
       return;
     }
 

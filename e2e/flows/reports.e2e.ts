@@ -2,7 +2,7 @@
 import { expect } from 'e2e';
 import type { Browser } from '@e2e-dev/web';
 import { reportPayload, researchEntry, researchPayload } from '../fixtures/courtai.js';
-import { signedOutTest, waitlistedTest } from './support/courtai.ts';
+import { signedInTest, signedOutTest, waitlistedTest } from './support/courtai.ts';
 
 const REPORT = '/reports/k3x9q2mtzr';
 const TITLE = 'Injury brief · Sunday, October 25';
@@ -127,5 +127,49 @@ signedOutTest(
       screen.getByText("CourtAI reports facts; this is the author's view.", { exact: false }),
     ).toBeVisible();
     await app.screenshot('research-report');
+  },
+);
+
+signedInTest(
+  'an author with no handle chooses one, then the report lists',
+  async ({ app, screen, api }) => {
+    let listed = false;
+    await api.override({
+      '/api/reports/k3x9q2mtzr': () => ({
+        report: {
+          ...reportPayload().report,
+          is_author: true,
+          listed,
+          // A listed report names its author by handle.
+          ...(listed && { author: { label: '@qa_reader', handle: 'qa_reader' } }),
+        },
+      }),
+      // The first listing finds no handle; the one after the handle is set lists.
+      '/api/user/reports/k3x9q2mtzr': () => {
+        if (api.sent('/api/user/reports/k3x9q2mtzr', 'PATCH').length === 1) {
+          return { status: 409, body: { error: 'handle_required', message: 'Choose a handle.' } };
+        }
+        listed = true;
+        return { report: { id: 'k3x9q2mtzr', listed: true } };
+      },
+    });
+    await app.open(REPORT);
+    await screen.getByRole('button', 'List').tap();
+    await screen.getByRole('button', 'List in Research').tap();
+
+    const field = screen.getByLabel('Choose your public handle');
+    await field.fill('ab');
+    await screen.getByRole('button', 'Save and list').tap();
+    await expect(
+      screen.getByText('Use 3–20 lowercase letters, numbers or underscores.'),
+    ).toBeVisible();
+
+    await field.fill('@QA_Reader');
+    await screen.getByRole('button', 'Save and list').tap();
+    await expect(screen.getByText('Listed in Research')).toBeVisible();
+    expect(api.sent('/api/user/public-handle', 'PUT').map((request) => request.body)).toEqual([
+      { handle: 'ab' },
+      { handle: 'qa_reader' },
+    ]);
   },
 );

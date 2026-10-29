@@ -564,8 +564,8 @@ const GameLogFilter = ({ notice = null }) => {
   // The URL is the whole view, so sharing it hands over exactly these game
   // logs, tagged so a sign-up from it is attributed to sharing. The season is
   // pinned: a reader without an account would otherwise read the Published
-  // Season instead of this one, so Share waits for the page season. Phones get their own share sheet; elsewhere
-  // the link is copied.
+  // Season instead of this one, so Share waits for the page season. Phones get
+  // their own share sheet; elsewhere the link is copied.
   const shareLink = async () => {
     const shared = new URLSearchParams(searchParams);
     if (workspaceSeason) shared.set('season_filter', workspaceSeason);

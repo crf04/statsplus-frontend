@@ -239,6 +239,30 @@ const publishWith = async (title) => {
   return dialog;
 };
 
+const STILL_FETCHING = 'Still fetching part of this Card…';
+const UNAVAILABLE = 'That data isn’t available right now. Try again later.';
+
+/* Fake time moved on by `ms`, flushing what it lets run. */
+const advance = (ms) =>
+  act(async () => {
+    jest.advanceTimersByTime(ms);
+  });
+/* Fake time past the builder's wait before it previews once more. */
+const waitOutRetry = () => advance(10000);
+
+/* A Card the preview route drew with part of its data unavailable. */
+const partlyDrawn = (body) => ({
+  data: {
+    ...drawn(body).data,
+    publishable: false,
+    unpublishable: { code: 'unavailable', message: 'PBPStats did not answer get_on_off.' },
+  },
+});
+const unavailable = () =>
+  refused(422, { code: 'unavailable', message: 'PBPStats timed out.', details: {} });
+
+afterEach(() => jest.useRealTimers());
+
 test('a game-log Card previews with the posted line and goes in as its own block', async () => {
   serveCards();
   mockPost.mockImplementationOnce((url, body) =>
@@ -332,6 +356,52 @@ test('clearing the player disables Preview and sends nothing', async () => {
 
   choose('Player', 'Desmond Ba');
   expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+});
+
+/* Holds back the player list; the returned function lets it arrive. */
+const holdPlayers = () => {
+  let arrive;
+  const list = new Promise((resolve) => {
+    arrive = () => resolve({ data: ['Desmond Bane', 'Ja Morant', 'Jalen Williams'] });
+  });
+  const serve = mockGet.getMockImplementation();
+  mockGet.mockImplementation((url, config) =>
+    url === `${API}/api/players` ? list : serve(url, config),
+  );
+  return async () => arrive();
+};
+
+test('a player typed before the list loads is chosen when it arrives, if the name is exact', async () => {
+  serveCards();
+  const listArrives = holdPlayers();
+  await openBuilder();
+  openPicker();
+  expect(screen.getByText('Loading players…')).toBeInTheDocument();
+  choose('Player', 'Desmond Bane');
+  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  await act(listArrives);
+  await playersLoaded();
+
+  expect(screen.getByRole('button', { name: 'Preview card' })).toBeEnabled();
+  preview();
+  await screen.findByRole('button', { name: 'Insert card' });
+  expect(previews()).toEqual([
+    { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
+  ]);
+});
+
+test('a partial player name typed before the list loads chooses no one', async () => {
+  serveCards();
+  const listArrives = holdPlayers();
+  await openBuilder();
+  openPicker();
+  choose('Player', 'Desmond Ba');
+  await act(listArrives);
+  await playersLoaded();
+
+  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  preview();
+  expect(previews()).toEqual([]);
 });
 
 test('the game-log picker filters to one opponent, and clearing it drops the filter', async () => {
@@ -509,7 +579,7 @@ const ASSISTANT_WORDS = 'Call preview (get_injuries) draws no card with these ar
 test.each([
   [422, 'call_failed', {}, {}, 'CourtAI couldn’t draw this Card. Try again.'],
   [422, 'no_card', {}, {}, 'No card for those choices. Change one and preview again.'],
-  [422, 'unavailable', {}, {}, 'That data isn’t available right now. Try again later.'],
+  [422, 'needs_choice', {}, {}, 'More than one player has that name. Pick the one you mean.'],
   [400, 'invalid_input', {}, {}, 'CourtAI can’t use these choices. Change one and try again.'],
   [
     429,
@@ -542,12 +612,30 @@ test.each([
   );
   await openBuilder();
   openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
   preview();
 
   expect((await screen.findByRole('alert')).textContent).toBe(shown);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(1);
+  expect(screen.queryByText(STILL_FETCHING)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(blocks()).toHaveLength(0);
+});
+
+test('a preview that fails to reach the server is not tried again', async () => {
+  mockPost.mockImplementation(() => Promise.reject(new Error('Network Error')));
+  await openBuilder();
+  openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+
+  expect((await screen.findByRole('alert')).textContent).toBe(
+    'CourtAI couldn’t draw this Card. Try again.',
+  );
+  await waitOutRetry();
+  expect(previews()).toHaveLength(1);
 });
 
 test('a rotation no_card asks for a game the team played', async () => {
@@ -602,28 +690,86 @@ test.each([
 const PART_UNAVAILABLE =
   'Part of this Card’s data isn’t available right now, so it can’t go in a Report yet. Try again later.';
 
-test('a Card drawn with part of its data unavailable shows but cannot be inserted', async () => {
-  mockPost.mockImplementation((url, body) => {
-    const { data } = drawn(body);
-    return Promise.resolve({
-      data: {
-        ...data,
-        publishable: false,
-        unpublishable: { code: 'unavailable', message: 'PBPStats did not answer get_on_off.' },
-      },
-    });
-  });
+test('a Card drawn with part of its data unavailable twice shows but cannot be inserted', async () => {
+  mockPost.mockImplementation((url, body) => Promise.resolve(partlyDrawn(body)));
   await openBuilder();
   const picker = openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
   preview();
 
+  expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
+  expect(previews()).toHaveLength(1);
+  await waitOutRetry();
   expect(await within(picker).findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
   expect(within(picker).getByRole('alert').textContent).toBe(`${PART_UNAVAILABLE}Preview again`);
   expect(within(picker).getByRole('button', { name: 'Insert card' })).toBeDisabled();
   fireEvent.click(within(picker).getByRole('button', { name: 'Insert card' }));
   expect(blocks()).toEqual([]);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
   fireEvent.click(within(picker).getByRole('button', { name: 'Preview again' }));
-  await waitFor(() => expect(previews()).toHaveLength(2));
+  await waitFor(() => expect(previews()).toHaveLength(3));
+});
+
+test('a Card drawn with part of its data unavailable is drawn again once, and goes in', async () => {
+  mockPost
+    .mockImplementationOnce((url, body) => Promise.resolve(partlyDrawn(body)))
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  const picker = openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+
+  expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
+  expect(within(picker).getByRole('button', { name: 'Drawing…' })).toBeDisabled();
+  expect(within(picker).queryByTitle('Report')).not.toBeInTheDocument();
+  await advance(2900);
+  expect(previews()).toHaveLength(1);
+  await advance(200);
+  expect(previews()).toHaveLength(2);
+  await insert();
+
+  expect(previews()).toEqual([
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+  ]);
+  expect(blockNames()).toEqual(['Block 1: Card']);
+});
+
+test('an unavailable refusal is previewed again once, and a second one says why', async () => {
+  mockPost.mockImplementation(unavailable);
+  await openBuilder();
+  const picker = openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+
+  expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
+  expect(within(picker).queryByRole('alert')).not.toBeInTheDocument();
+  await waitOutRetry();
+  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+});
+
+test.each([
+  ['closes the picker', () => fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))],
+  ['picks another Card', () => choose('Card', 'get_matchup')],
+])('no second preview lands after the author %s', async (_, leave) => {
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+  await screen.findByText(STILL_FETCHING);
+  leave();
+  await waitOutRetry();
+
+  expect(previews()).toHaveLength(1);
+  expect(screen.queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
 });
 
 test('a preview without publishable, from an older server, inserts its Card', async () => {
@@ -760,6 +906,63 @@ const storedDraft = (blocks, calls) =>
   window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ title: '', date: null, blocks, calls }));
 const injuriesCall = (n) => ({ id: `c${n}`, tool: 'get_injuries', args: { date: '2026-10-27' } });
 
+test.each([
+  ['the date', 'get_injuries', async () => choose('Date', '2026-10-28')],
+  ['the team', 'get_injuries', async () => choose('Team (optional)', 'BOS')],
+  ['the player', null, async () => choose('Player', 'Ja Morant')],
+  ['the market', null, async () => choose('Market', 'REB')],
+  ['the season', null, async () => choose('Season', '2024-25')],
+  [
+    'the line',
+    null,
+    async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'My line' }), {
+        target: { value: '20.5' },
+      });
+    },
+  ],
+])('editing %s while a preview waits cancels its second try', async (_, card, edit) => {
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  const picker = openPicker(card);
+  if (!card) await pickBane();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+  await within(picker).findByText(STILL_FETCHING);
+  await edit();
+
+  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  await waitOutRetry();
+  expect(previews()).toHaveLength(1);
+  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+});
+
+test('editing the picker while its second try is out leaves that try’s Card out', async () => {
+  let answer;
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementationOnce(
+      (url, body) => new Promise((resolve) => (answer = () => resolve(drawn(body)))),
+    );
+  await openBuilder();
+  const picker = openPicker('get_injuries');
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+  await within(picker).findByText(STILL_FETCHING);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+  await choose('Team (optional)', 'BOS');
+
+  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  await act(async () => answer());
+  expect(within(picker).getByRole('alert').textContent).toBe(UNAVAILABLE);
+  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+});
+
 test('a reloaded draft keeps its Cards’ calls but not their previews, and draws one again', async () => {
   serveCards();
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
@@ -773,16 +976,115 @@ test('a reloaded draft keeps its Cards’ calls but not their previews, and draw
   expect(JSON.parse(window.localStorage.getItem(DRAFT_KEY)).calls).toEqual([injuriesCall(1)]);
 });
 
-test('a reloaded Card drawn with part of its data unavailable says so and offers Preview again', async () => {
+test('a reloaded Card drawn with part of its data unavailable twice says so and offers Preview again', async () => {
   mockPost.mockImplementation((url, body) =>
     Promise.resolve({ data: { ...drawn(body).data, publishable: false } }),
   );
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
 
+  expect(await screen.findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
+  await waitOutRetry();
   expect(await screen.findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
   expect(screen.getByRole('alert').textContent).toBe(`${PART_UNAVAILABLE}Preview again`);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+});
+
+test('a reloaded Card refused as unavailable is previewed again once and drawn', async () => {
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+
+  expect(await screen.findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
+  expect(screen.getByRole('button', { name: 'Drawing…' })).toBeDisabled();
+  await waitOutRetry();
+  expect(await screen.findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(previews()).toHaveLength(2);
+});
+
+test('a reloaded Card refused as unavailable twice says why', async () => {
+  mockPost.mockImplementation(unavailable);
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  await screen.findByText(STILL_FETCHING);
+  await waitOutRetry();
+
+  expect((await screen.findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+});
+
+test('a reloaded Card deleted while it waits leaves the Card that takes its place alone', async () => {
+  mockPost
+    .mockImplementationOnce((url, body) => Promise.resolve(partlyDrawn(body)))
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  await screen.findByText(STILL_FETCHING);
+  fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
+  openPicker('get_injuries');
+  choose('Team (optional)', 'MEM');
+  preview();
+  await insert();
+  await waitOutRetry();
+
+  expect(blockNames()).toEqual(['Block 1: Card']);
+  expect(within(blocks()[0]).getByTitle('Report')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  expect(previews()).toEqual([
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+    { tool: 'get_injuries', args: { date: '2026-10-27', team: 'MEM' } },
+  ]);
+});
+
+test('a reloaded Card deleted while it draws leaves the Card that takes its place alone', async () => {
+  let answer;
+  mockPost
+    .mockImplementationOnce(
+      (url, body) =>
+        new Promise((resolve) => {
+          answer = () => resolve(partlyDrawn(body));
+        }),
+    )
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
+  await addInjuriesCard();
+  await act(async () => answer());
+
+  expect(blockNames()).toEqual(['Block 1: Card']);
+  expect(within(blocks()[0]).getByTitle('Report')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(previews()).toHaveLength(2);
+});
+
+test('no second preview is sent for a reloaded Card deleted while it waits', async () => {
+  mockPost.mockImplementation(unavailable);
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  await screen.findByText(STILL_FETCHING);
+  fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
+  await waitOutRetry();
+
+  expect(blocks()).toEqual([]);
+  expect(previews()).toHaveLength(1);
 });
 
 test('a report holds at most 120 blocks and 48 Cards', async () => {

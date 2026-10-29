@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReportCard from '../ReportCard';
 import { cardLabel } from '../reportText';
-import { cardRefusal, previewCard } from './cardsApi';
+import { cardRefusal, previewCardRetrying } from './cardsApi';
 import GameLogPicker from './GameLogPicker';
 import { MatchupPicker, RotationPicker } from './GamePickers';
 import { canInsert, hasRoom, LIMITS } from './reportDraft';
@@ -20,6 +20,9 @@ const PICKERS = {
   get_on_off: { label: 'On/off', Picker: OnOffPicker },
   get_injuries: { label: 'Injuries', Picker: InjuriesPicker },
 };
+
+// While a preview with part of its data unavailable waits to be drawn once more.
+export const STILL_FETCHING = 'Still fetching part of this Card…';
 
 /* What a refused preview or publish tells the author. */
 export const refusalText = (refusal) =>
@@ -116,19 +119,35 @@ const Insert = ({ draft, dispatch, drawn, onDone }) => {
 
 const CardPicker = ({ draft, dispatch, onClose }) => {
   const [tool, setTool] = useState('query_game_logs');
-  // idle | loading | drawn {call, preview} | refused {refusal}, for the latest request only.
+  // idle | loading | retrying | drawn {call, preview} | refused {refusal}, for the latest request only.
   const [shown, setShown] = useState({ status: 'idle' });
   const latest = useRef(0);
+  // The latest preview's second try, cancelled by any edit to its choices.
+  const retry = useRef(new AbortController());
+  // Closing the picker abandons the latest request, and with it any retry.
+  useEffect(
+    () => () => {
+      latest.current += 1;
+      retry.current.abort();
+    },
+    [],
+  );
 
   const preview = async (request) => {
     latest.current += 1;
     const ticket = latest.current;
+    const current = () => ticket === latest.current;
+    retry.current.abort();
+    retry.current = new AbortController();
     setShown({ status: 'loading', request });
     try {
-      const drawn = await previewCard(request);
-      if (ticket === latest.current) setShown({ status: 'drawn', request, drawn });
+      const drawn = await previewCardRetrying(request, {
+        signal: retry.current.signal,
+        onRetry: () => setShown({ status: 'retrying', request }),
+      });
+      if (current()) setShown({ status: 'drawn', request, drawn });
     } catch (failure) {
-      if (ticket === latest.current) {
+      if (current()) {
         setShown({ status: 'refused', request, refusal: cardRefusal(failure, request.tool) });
       }
     }
@@ -142,8 +161,14 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
 
   const { Picker } = PICKERS[tool];
   const drawn = shown.status === 'drawn' ? shown.drawn : null;
+  const busy = shown.status === 'loading' || shown.status === 'retrying';
   return (
-    <section className="report-edit-item report-pick" aria-label="Add a card">
+    <section
+      className="report-edit-item report-pick"
+      aria-label="Add a card"
+      // Choices edited after a preview no longer match it, so it is not tried again.
+      onChangeCapture={() => retry.current.abort()}
+    >
       <div className="report-edit-item-head">
         <h3>Add a card</h3>
         <button type="button" className="report-build-small" onClick={onClose}>
@@ -160,10 +185,10 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
           ))}
         </select>
       </div>
-      <Picker key={tool} busy={shown.status === 'loading'} onPreview={preview} />
-      {shown.status === 'loading' && (
+      <Picker key={tool} busy={busy} onPreview={preview} />
+      {busy && (
         <p className="report-edit-help" role="status">
-          Drawing the card…
+          {shown.status === 'retrying' ? STILL_FETCHING : 'Drawing the card…'}
         </p>
       )}
       {shown.status === 'refused' && (

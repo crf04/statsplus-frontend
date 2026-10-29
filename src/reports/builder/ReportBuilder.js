@@ -7,8 +7,8 @@ import ReportCard from '../ReportCard';
 import { Count } from '../ReportEditor';
 import { FAILED, HANDLE_ERRORS, HandleChooser, LISTING_ERRORS } from '../ReportListing';
 import { cardLabel } from '../reportText';
-import { cardRefusal, previewCard, publishCardReport, waitFor } from './cardsApi';
-import CardPicker, { refusalText, Unpublishable } from './CardPicker';
+import { cardRefusal, previewCardRetrying, publishCardReport, waitFor } from './cardsApi';
+import CardPicker, { refusalText, STILL_FETCHING, Unpublishable } from './CardPicker';
 import {
   BLOCK_TYPES,
   blockCalls,
@@ -57,14 +57,24 @@ const TOOL_LABEL = {
  */
 const CardSlot = ({ call, dispatch, remove }) => {
   const [again, setAgain] = useState({ status: 'idle' });
+  // A Card removed while it is drawn again sends nothing more and changes nothing.
+  const pending = useRef(null);
+  useEffect(() => () => pending.current?.abort(), []);
+  const busy = again.status === 'loading' || again.status === 'retrying';
   const previewAgain = async () => {
+    const { signal } = (pending.current = new AbortController());
     setAgain({ status: 'loading' });
     try {
-      const { preview } = await previewCard({ tool: call.tool, args: call.args });
+      const { preview } = await previewCardRetrying(
+        { tool: call.tool, args: call.args },
+        { signal, onRetry: () => setAgain({ status: 'retrying' }) },
+      );
+      if (signal.aborted) return;
       dispatch({ type: 'preview', call: call.id, preview });
       setAgain({ status: 'idle' });
     } catch (failure) {
-      setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
+      if (!signal.aborted)
+        setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
     }
   };
   return (
@@ -82,7 +92,7 @@ const CardSlot = ({ call, dispatch, remove }) => {
             <Unpublishable
               refusal={again.status === 'refused' ? again.refusal : call.preview.unpublishable}
               onPreview={previewAgain}
-              busy={again.status === 'loading'}
+              busy={busy}
             />
           )}
         </>
@@ -95,10 +105,10 @@ const CardSlot = ({ call, dispatch, remove }) => {
           <button
             type="button"
             className="report-build-small"
-            disabled={again.status === 'loading'}
+            disabled={busy}
             onClick={previewAgain}
           >
-            {again.status === 'loading' ? 'Drawing…' : 'Preview again'}
+            {busy ? 'Drawing…' : 'Preview again'}
           </button>
           {again.status === 'refused' && (
             <p className="report-edit-error" role="alert">
@@ -106,6 +116,11 @@ const CardSlot = ({ call, dispatch, remove }) => {
             </p>
           )}
         </div>
+      )}
+      {again.status === 'retrying' && (
+        <p className="report-edit-help" role="status">
+          {STILL_FETCHING}
+        </p>
       )}
       {remove}
     </div>

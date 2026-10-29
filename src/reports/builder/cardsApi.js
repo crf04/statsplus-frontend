@@ -62,6 +62,42 @@ export const previewCard = async (request) => {
   return decodePreview(response.data);
 };
 
+// How long a preview with part of its data unavailable waits before it is drawn once more.
+const RETRY_DELAY = 3000;
+
+/*
+ * A preview drawn once more after RETRY_DELAY when it comes back with part of
+ * its data unavailable (`publishable: false` or the `unavailable` refusal):
+ * the server keeps fetching a slow read, so a second preview usually has it.
+ * `onRetry` runs before the wait. Aborting `signal` cancels the second try:
+ * during the wait none is sent, and once sent its answer is set aside; either
+ * way the first outcome comes back at once.
+ */
+export const previewCardRetrying = async (request, { onRetry, signal }) => {
+  const first = previewCard(request);
+  try {
+    const drawn = await first;
+    if (drawn.preview.publishable) return drawn;
+  } catch (failure) {
+    if (cardRefusal(failure)?.code !== 'unavailable') throw failure;
+  }
+  if (signal.aborted) return first;
+  onRetry();
+  const aborted = new Promise((resolve) =>
+    signal.addEventListener('abort', resolve, { once: true }),
+  );
+  let timer;
+  await Promise.race([
+    new Promise((resolve) => (timer = setTimeout(resolve, RETRY_DELAY))),
+    aborted,
+  ]);
+  clearTimeout(timer);
+  if (signal.aborted) return first;
+  const second = previewCard(request);
+  await Promise.race([second.catch(() => {}), aborted]);
+  return signal.aborted ? first : second;
+};
+
 /* Publishes a Report with Cards; resolves to its id like the backend's publish. */
 export const publishCardReport = async (body) => {
   const response = await apiClient.post(`${mcpBaseUrl()}/web/reports`, body, {

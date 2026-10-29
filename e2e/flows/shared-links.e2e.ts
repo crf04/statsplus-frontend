@@ -4,7 +4,7 @@
 // waitlisted account reads the link as it is. Share tags the link it copies.
 import type { Screen } from 'e2e';
 import { expect } from 'e2e';
-import { RATE_LIMITED, averages, gameLogs } from '../fixtures/courtai.js';
+import { RATE_LIMITED, averages, gameLogs, waitlistedResponse } from '../fixtures/courtai.js';
 import {
   overflowsHorizontally,
   signedInTest,
@@ -256,5 +256,49 @@ signedInTest(
       opened.some((request) => request.search.get('game_filter') === '10'),
       'the copied link reads the same Filter Set',
     ).toBe(true);
+  },
+);
+
+signedInTest(
+  'an account waitlisted mid-session stops showing the prices it read while admitted',
+  async ({ app, screen, api }) => {
+    await app.open('/?player_name=Stephen+Curry');
+    await expect
+      .poll(() => postedLineLabels(screen))
+      .toContain('DraftKings 26.5, Over −110, Under −115');
+
+    // From here the backend holds the account on the waitlist: game logs come
+    // without prices, and its next account write is refused.
+    await api.override({
+      '/api/games/game_logs': {
+        body: {
+          game_logs: gameLogs,
+          averages: [averages],
+          season_averages: [averages],
+          season_game_count: gameLogs.length,
+          posted_line: {
+            lines: { PTS: { value: 26.5, provider: 'dabble' } },
+            provider_lines: { dabble: { PTS: 26.5 } },
+            book_lines: {
+              PTS: {
+                as_of: '2026-10-21T15:00:00Z',
+                closing: false,
+                books: [{ book: 'draftkings', line: 26.5 }],
+              },
+            },
+          },
+        },
+      },
+      '/api/user/saved-filter-sets': {
+        status: waitlistedResponse.status,
+        body: waitlistedResponse.json,
+      },
+    });
+    await screen.getByTestId('filter-panel').getByRole('button', 'Save').tap();
+    await screen.getByLabel('Name this Filter Set').fill('Curry');
+    await screen.getByLabel('Name this Filter Set').press('Enter');
+
+    await expect(screen.getByRole('status').filter({ hasText: WAITLISTED_NOTICE })).toBeVisible();
+    await expect.poll(() => postedLineTexts(screen)).toEqual(['DABBLE 26.5', 'DRAFTKINGS 26.5']);
   },
 );

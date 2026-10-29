@@ -452,10 +452,12 @@ const GameLogFilter = ({ notice = null }) => {
       setPostedLine(null);
       setSampleSize(null);
 
+      // Only an admitted account's answer carries prices, so an answer read in
+      // one mode never serves another.
       return readRevisit(
         'logs',
         currentUser?.uid,
-        params,
+        [access.mode, params],
         () => fetchGameLogsData(params, { signal: controller.signal }),
         { signal: controller.signal, bypass },
       )
@@ -504,7 +506,7 @@ const GameLogFilter = ({ notice = null }) => {
           }
         });
     },
-    [currentUser?.uid, access.openReads, signedOut],
+    [currentUser?.uid, access.mode, access.openReads, signedOut],
   );
 
   useEffect(() => {

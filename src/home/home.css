@@ -114,6 +114,11 @@
   color: var(--ct-miss);
 }
 
+.home-tick-effects .thin {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
 .home-tick-effects li span:last-child {
   font-family: var(--ct-mono);
   font-weight: 600;

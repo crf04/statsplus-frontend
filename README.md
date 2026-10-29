@@ -31,6 +31,7 @@ redirected.
 | `/matchups`, `/matchups/:gameId`   | Slate for a date; one game's Matchup sheet                                                        |
 | `/targets`, `/targets/:targetId`   | Saved Targets and a Target's detail, Lab and Backtest                                             |
 | `/skills/injury-brief`             | The injury-brief skill page                                                                       |
+| `/reports/new`                     | The Report Builder: an active account writes and publishes a text report                          |
 | `/reports/:id`                     | A published report, also open to waitlisted visitors                                              |
 | `/research`, `/research/@handle`   | Listed reports, Featured first, and one author's listed reports; public                           |
 | `/privacy`, `/terms`               | Legal pages, also open to signed-out and waitlisted visitors                                      |

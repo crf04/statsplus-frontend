@@ -128,6 +128,7 @@ const useFilterPanel = ({
   seasonGameLogsFailed,
   onOpenSelfFilters,
   appliedFilters,
+  nextOpponent,
 }) => {
   const { account } = useReadAccess();
   // Null until the list arrives, and again if it never does: the control is
@@ -461,10 +462,11 @@ const useFilterPanel = ({
     setGameFilter(value);
     markControlTouched('game_filter');
   };
-  const clearOpponent = () => {
-    setOpponentTricode('');
+  const changeOpponent = (tricode) => {
+    setOpponentTricode(tricode);
     markControlTouched('opponent_tricode');
   };
+  const clearOpponent = () => changeOpponent('');
 
   const ensureSeason = useCallback(() => onOpenSelfFilters(), [onOpenSelfFilters]);
 
@@ -655,7 +657,9 @@ const useFilterPanel = ({
     playstyleMatchupRating,
     changePlaytype,
     opponentTricode,
+    changeOpponent,
     clearOpponent,
+    nextOpponentTricode: nextOpponent?.next_game?.opponent || null,
     // defense
     activeDefensiveCategory,
     changeDefensiveCategory,

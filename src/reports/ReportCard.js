@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../theme/useTheme';
 
 /*
@@ -42,6 +43,23 @@ const ROOM_MARGIN = 120;
 export const fitScale = (height, { innerWidth, innerHeight }) => {
   const room = innerHeight - ROOM_MARGIN;
   return innerWidth >= WIDE && height > room ? Math.max(MIN_SCALE, room / height) : 1;
+};
+
+/*
+ * The Log Workspace a game-log card was drawn from, on this site
+ * (crf04/statsplus#394). Only a link to the Log Workspace counts: the stored
+ * result is the publisher's, so nothing else it names is followed.
+ */
+export const liveLink = (call) => {
+  if (call.tool !== 'query_game_logs' || typeof call.structured?.url !== 'string') return null;
+  try {
+    const url = new URL(call.structured.url);
+    return /^https?:$/.test(url.protocol) && url.pathname === '/' && url.search
+      ? `/${url.search}`
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 /*
@@ -115,25 +133,33 @@ const ReportCard = ({ html, call, label }) => {
   }, [theme]);
 
   const scale = fitScale(height, view);
+  const live = liveLink(call);
   return (
-    <div
-      className="report-card-fit"
-      data-theme={theme}
-      style={{ height: Math.ceil(height * scale), colorScheme: theme }}
-    >
-      <iframe
-        ref={frameRef}
-        className="report-card"
-        title={label}
-        sandbox="allow-scripts"
-        srcDoc={html}
-        style={{
-          height,
-          width: `${100 / scale}%`,
-          transform: scale < 1 ? `scale(${scale})` : undefined,
-        }}
-      />
-    </div>
+    <>
+      <div
+        className="report-card-fit"
+        data-theme={theme}
+        style={{ height: Math.ceil(height * scale), colorScheme: theme }}
+      >
+        <iframe
+          ref={frameRef}
+          className="report-card"
+          title={label}
+          sandbox="allow-scripts"
+          srcDoc={html}
+          style={{
+            height,
+            width: `${100 / scale}%`,
+            transform: scale < 1 ? `scale(${scale})` : undefined,
+          }}
+        />
+      </div>
+      {live && (
+        <Link className="report-card-live" to={live}>
+          Open live game logs <span aria-hidden="true">→</span>
+        </Link>
+      )}
+    </>
   );
 };
 

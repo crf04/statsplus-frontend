@@ -20,7 +20,7 @@ beforeEach(() => {
   fetchSeasons.mockRejectedValue(new Error('offline'));
 });
 
-const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
+const renderPanel = (appliedFilters = {}, seasonGameLogs = [], extra = {}) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
     const [seasonChoice, setSeasonChoice] = useState(null);
@@ -40,6 +40,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
           averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
           appliedFilters={applied}
+          {...extra}
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <button onClick={() => setApplied({ date_filter: '2026-03-01' })}>
@@ -91,6 +92,60 @@ test('editing Last N uses quick picks and specific opponents can be removed', ()
   fireEvent.click(screen.getByRole('button', { name: /^Remove versus/ }));
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', game_filter: 5, opponent_tricode: null });
+});
+
+const teams = () =>
+  within(screen.getByRole('group', { name: 'Teams' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+
+test('the Opponent tile lists the 30 teams and a second pick replaces the first', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  expect(teams()).toHaveLength(30);
+  expect(teams().slice(0, 3)).toEqual(['ATL', 'BOS', 'BKN']);
+  fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
+  fireEvent.click(screen.getByRole('button', { name: 'OKC' }));
+  expect(screen.getByRole('button', { name: 'versus OKC' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'versus BOS' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'OKC' })).toHaveAttribute('aria-pressed', 'true');
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'OKC' });
+});
+
+test('Next: vs OPP filters to the next opponent only once tapped', () => {
+  renderPanel({}, [], { nextOpponent: { next_game: { opponent: 'CHA' } } });
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James' });
+  fireEvent.click(screen.getByRole('button', { name: 'Next: vs CHA' }));
+  expect(screen.getByRole('button', { name: 'versus CHA' })).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'CHA' });
+});
+
+test.each([
+  ['no next-opponent read', {}],
+  ['no upcoming game', { nextOpponent: { next_game: null, opponent_ranks: [] } }],
+])('with %s the Opponent editor has no Next button and the list still works', (_, extra) => {
+  renderPanel({}, [], extra);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'DEN' }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'DEN' });
+});
+
+test('a linked versus rule opens the Opponent editor on its team', () => {
+  renderPanel({ opponent_tricode: 'OKC' }, [], {
+    nextOpponent: { next_game: { opponent: 'CHA' } },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'versus OKC' }));
+  expect(screen.getByRole('button', { name: 'OKC' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Next: vs CHA' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'BOS' });
 });
 
 test('season strip uses actual rows and the selected line', () => {

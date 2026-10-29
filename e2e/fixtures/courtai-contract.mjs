@@ -2972,7 +2972,107 @@ const unscheduledShotZonePayload = (opponent) => ({
   ],
 }); // prettier-ignore
 
+// The MCP server's Report Builder routes (crf04/statsplus#382, the coordination repository's
+// docs/contracts/report-builder-cards.md). The browser calls them cross-origin with the bearer.
+const CARD_TOOLS = ['query_game_logs', 'get_matchup', 'get_rotation', 'get_on_off', 'get_injuries'];
+const CARD_OF = {
+  query_game_logs: 'game-logs',
+  get_matchup: 'matchup',
+  get_rotation: 'rotation',
+  get_on_off: 'on-off',
+  get_injuries: 'injuries',
+};
+const CALL_ID = /^[a-z0-9-]{1,40}$/;
+const isRecordValue = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/* Why a /web/reports body breaks the contract, or null when it keeps it. */
+const cardPublishProblem = (body) => {
+  if (!isRecordValue(body) || !isRecordValue(body.report) || !Array.isArray(body.report.blocks))
+    return 'report.blocks is required';
+  if (typeof body.show_author !== 'boolean' || typeof body.listed !== 'boolean')
+    return 'show_author and listed are booleans';
+  if (!Array.isArray(body.calls) || body.calls.length > 48) return 'calls holds at most 48';
+  const ids = body.calls.map((call) => call?.id);
+  if (
+    new Set(ids).size !== ids.length ||
+    body.calls.some(
+      (call) => !CALL_ID.test(call.id) || !CARD_TOOLS.includes(call.tool) || !isRecordValue(call.args),
+    )
+  )
+    return 'each call has a unique id, a card tool and args';
+  const named = body.report.blocks.flatMap((block) =>
+    block.type === 'card' ? [block.card] : block.type === 'cards' ? block.cards : [],
+  );
+  if (body.report.blocks.some((block) => block.type === 'cards' && !(block.cards.length >= 2 && block.cards.length <= 3)))
+    return 'a cards row holds 2-3 calls';
+  if (named.some((id) => !ids.includes(id))) return 'every card names a call';
+  return null;
+}; // prettier-ignore
+
+const installCardRoutes = async (page) => {
+  await page.route(/^https?:\/\/[^/]+\/web\/(cards\/preview|reports)$/, async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const cors = {
+      'access-control-allow-origin': request.headers().origin || '*',
+      'access-control-allow-headers': 'Authorization, Content-Type',
+      'access-control-expose-headers': 'Retry-After',
+    };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: cors });
+      return;
+    }
+    const refuse = (status, code, message) =>
+      route.fulfill({ status, headers: cors, json: { error: { code, message } } });
+    if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+      await refuse(401, 'unauthorized', 'Missing E2E bearer token.');
+      return;
+    }
+    const body = request.postDataJSON();
+    if (url.pathname === '/web/reports') {
+      const problem = cardPublishProblem(body);
+      if (problem) await refuse(400, 'invalid_input', problem);
+      else {
+        await route.fulfill({
+          status: 201,
+          headers: cors,
+          json: {
+            report: {
+              id: BLOCK_REPORT_ID,
+              url: `https://courtai.app/reports/${BLOCK_REPORT_ID}`,
+            },
+          },
+        });
+      }
+      return;
+    }
+    if (!CARD_TOOLS.includes(body?.tool) || !isRecordValue(body.args ?? body.filter_set)) {
+      await refuse(400, 'invalid_input', 'A card request names a card tool and its args.');
+      return;
+    }
+    // A Filter Set comes back as the args the server would convert it to; this
+    // contract converts only the player and the market.
+    const args = body.args ?? {
+      player: body.filter_set.player_name,
+      market: body.filter_set.line_type === 'FG3M' ? '3PM' : body.filter_set.line_type,
+    };
+    const card = CARD_OF[body.tool];
+    await route.fulfill({
+      headers: cors,
+      json: {
+        call: { tool: body.tool, args },
+        structured: {},
+        meta: null,
+        card,
+        html: `<!doctype html><p>CourtAI ${card} card</p>`,
+      },
+    });
+  });
+};
+
 export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
+  await installCardRoutes(page);
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
   // contract remembers what this page saved: a list that never changes cannot

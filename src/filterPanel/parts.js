@@ -100,7 +100,7 @@ export const TeammateSearch = ({ panel }) => (
   </div>
 );
 
-export const StatSelect = ({ panel, id }) => (
+export const StatSelect = ({ panel, id, columns = STAT_COLUMNS }) => (
   <select
     id={id}
     className="fp-select"
@@ -111,7 +111,7 @@ export const StatSelect = ({ panel, id }) => (
     aria-label="Stat"
   >
     <option value="">Choose a stat…</option>
-    {STAT_COLUMNS.map((column) => (
+    {columns.map((column) => (
       <option key={column} value={column}>
         {STAT_LABELS[column] || column} ({column})
       </option>

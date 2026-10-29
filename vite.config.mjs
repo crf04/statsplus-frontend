@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 
 const legacyEnvironmentKeys = [
   'REACT_APP_API_BASE_URL',
+  'REACT_APP_MCP_BASE_URL',
   'REACT_APP_NAME',
   'REACT_APP_VERSION',
   'REACT_APP_ENVIRONMENT',
@@ -25,6 +26,7 @@ const legacyEnvironmentKeys = [
 
 const viteEnvironmentAliases = {
   REACT_APP_API_BASE_URL: 'VITE_API_BASE_URL',
+  REACT_APP_MCP_BASE_URL: 'VITE_MCP_BASE_URL',
   REACT_APP_NAME: 'VITE_APP_NAME',
   REACT_APP_VERSION: 'VITE_APP_VERSION',
   REACT_APP_ENVIRONMENT: 'VITE_APP_ENVIRONMENT',

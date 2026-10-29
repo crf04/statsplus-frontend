@@ -5,6 +5,24 @@ const configuredApiBaseUrl = trimTrailingSlashes((process.env.REACT_APP_API_BASE
 const apiBaseUrl =
   process.env.NODE_ENV === 'production' ? '' : configuredApiBaseUrl || 'http://127.0.0.1:8000';
 
+/*
+ * The MCP server that previews and publishes Report Builder Cards
+ * (crf04/statsplus#382, ADR 0006). A build may name it; otherwise staging's
+ * site uses staging's server, any other production build production's, and
+ * a local build expects one on port 8001 (the backend has 8000).
+ */
+const MCP_BASE_URLS = {
+  production: 'https://mcp.courtai.app',
+  staging: 'https://mcp-staging.courtai.app',
+  local: 'http://127.0.0.1:8001',
+};
+const configuredMcpBaseUrl = trimTrailingSlashes((process.env.REACT_APP_MCP_BASE_URL || '').trim());
+export const mcpBaseUrl = (hostname = window.location.hostname) => {
+  if (configuredMcpBaseUrl) return configuredMcpBaseUrl;
+  if (hostname === 'staging.courtai.app') return MCP_BASE_URLS.staging;
+  return process.env.NODE_ENV === 'production' ? MCP_BASE_URLS.production : MCP_BASE_URLS.local;
+};
+
 const config = {
   // Production always stays same-origin so Vercel's /api rewrite owns backend routing.
   API_BASE_URL: apiBaseUrl,

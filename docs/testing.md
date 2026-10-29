@@ -202,6 +202,16 @@ Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
 so anything asserting a calendar day should use an instant near midnight UTC.
 
+The Report Builder's Cards come from the MCP server, not the backend (crf04/statsplus#382), so
+`installApiContract` also answers its two browser routes, `POST /web/cards/preview` and
+`POST /web/reports`, on whatever host the build names (`REACT_APP_MCP_BASE_URL`; a local build
+defaults to `http://127.0.0.1:8001`). Both refuse a missing bearer with `401 unauthorized` and answer
+with CORS headers, as the server does. A preview draws a placeholder Card for any of the five card
+tools and returns its args as the canonical call (a Filter Set comes back with only the player and
+market converted). A publish checks the body against the contract (unique call ids, at most 48 calls,
+rows of 2–3, every card naming a call) and answers with `BLOCK_REPORT_ID`. The authenticated
+fixtures set their storage key only in the top frame, because a sandboxed Card frame has no storage.
+
 Saved Filter Sets and Targets are account state rather than reference data, so the contract
 remembers what a page saved instead of replaying a fixed list. The Targets routes derive each
 title from the Qualifiers on every write, as the backend does, so a journey that edits a Target can

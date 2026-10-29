@@ -397,7 +397,7 @@ describe('Share', () => {
     });
 
     expect(clipboardText).toBe(
-      'http://localhost/?player_name=LeBron+James&game_filter=10&ref=share',
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
     );
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument(), {
@@ -428,7 +428,7 @@ describe('Share', () => {
     });
 
     expect(clipboardText).toBe(
-      'http://localhost/?player_name=LeBron+James&game_filter=10&ref=share',
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
     );
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
@@ -451,7 +451,9 @@ describe('Share', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Share' }));
     });
 
-    expect(shared.url).toBe('http://localhost/?player_name=LeBron+James&game_filter=10&ref=share');
+    expect(shared.url).toBe(
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
+    );
     expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled();
     expect(writeText).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

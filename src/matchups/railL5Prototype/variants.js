@@ -107,20 +107,7 @@ function Bars({ games, mark, to, label }) {
         {mark !== null && <line className="l5-mark" x1="0" x2={W} y1={y(mark)} y2={y(mark)} />}
       </svg>
       <span className="l5-bars-side">
-        <span className="l5-caption">
-          Last {games.length}
-          {mark !== null && (
-            <>
-              {' '}
-              vs {fmt(mark)}
-            </>
-          )}
-        </span>
-        {mark !== null && (
-          <b className="l5-hits">
-            {games.filter((g) => g.value > mark).length}/{games.length} over
-          </b>
-        )}
+        <span className="l5-caption">Last {games.length}</span>
         <span className="l5-go">
           Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
         </span>
@@ -228,12 +215,8 @@ export function ProtoRailRow({
         <div className="rail-row-value">{valueBlock}</div>
         {!loading && (
             <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
-              <span>
-                L{games.length}
-                {mark !== null && <> vs {fmt(mark)}</>}
-              </span>
+              <span>L{games.length}</span>
               {variant === 'C' ? <Dots games={games} mark={mark} /> : <MicroBars games={games} mark={mark} />}
-              {mark !== null && <b>{hitSummary(games, mark)} over</b>}
               <span className="l5-go">
                 Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
               </span>

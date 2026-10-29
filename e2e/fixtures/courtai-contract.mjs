@@ -2813,7 +2813,27 @@ const refuseFallback = (route) =>
     },
   });
 
-const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/api/games/ladder']);
+const PUBLIC_ROUTES = new Set([
+  '/api/games/slate',
+  '/api/games/slate/edges',
+  '/api/games/ladder',
+  '/api/games/game_logs',
+]);
+
+// A signed-out or waitlisted game-log read keeps every posted line and its
+// source but no price (crf04/statsplus#381): no `line_prices`, and each book
+// entry without `over` and `under`.
+const withoutPrices = (posted) => {
+  const unpriced = { ...posted };
+  delete unpriced.line_prices;
+  unpriced.book_lines = Object.fromEntries(
+    Object.entries(posted.book_lines ?? {}).map(([market, quote]) => [
+      market,
+      { ...quote, books: quote.books.map(({ book, line }) => ({ book, line })) },
+    ]),
+  );
+  return unpriced;
+};
 
 // One published report (crf04/statsplus#342), trimmed from the 2026-10-25 injury brief:
 // two games, two spots, two set-aside players and two real cards (game logs, on/off).
@@ -3121,9 +3141,9 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
-    // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211):
-    // answered whoever asks, a waitlisted account included, and whatever
-    // Authorization header comes with them.
+    // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211),
+    // and so are game logs (crf04/statsplus#381): answered whoever asks, a
+    // waitlisted account included, and whatever Authorization header comes with them.
     if (override && PUBLIC_ROUTES.has(url.pathname)) {
       const response = typeof override === 'function' ? await override(request) : override;
       await fulfillOverride(route, response);
@@ -3189,6 +3209,26 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         return;
       }
       await route.fulfill({ json: ladderPayload() });
+      return;
+    }
+
+    if (url.pathname === '/api/games/game_logs') {
+      const playerName = url.searchParams.get('player_name');
+      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
+      const posted = postedLinesByName[playerName] ?? null;
+      const priced = !waitlisted && request.headers().authorization === 'Bearer courtai-e2e-token';
+      await route.fulfill({
+        json: {
+          game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),
+          averages: [averages],
+          season_averages: [{ ...averages, PTS: 27, AST: 8 }],
+          // Like the real endpoint, the season total ignores every filter.
+          season_game_count: season.length,
+          next_game: 'Atlanta Hawks',
+          player_id: playerIdsByName[playerName] ?? null,
+          posted_line: posted && !priced ? withoutPrices(posted) : posted,
+        },
+      });
       return;
     }
 
@@ -3752,24 +3792,6 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     if (url.pathname === '/api/games/seasons') {
       await route.fulfill({ json: SEASONS });
-      return;
-    }
-
-    if (url.pathname === '/api/games/game_logs') {
-      const playerName = url.searchParams.get('player_name');
-      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
-      await route.fulfill({
-        json: {
-          game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),
-          averages: [averages],
-          season_averages: [{ ...averages, PTS: 27, AST: 8 }],
-          // Like the real endpoint, the season total ignores every filter.
-          season_game_count: season.length,
-          next_game: 'Atlanta Hawks',
-          player_id: playerIdsByName[playerName] ?? null,
-          posted_line: postedLinesByName[playerName] ?? null,
-        },
-      });
       return;
     }
 

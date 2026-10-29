@@ -541,6 +541,10 @@
 .fpc-quick button {
   flex: 1;
 }
+.fpb-teams {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+}
 .fpb-foot {
   display: flex;
   align-items: center;

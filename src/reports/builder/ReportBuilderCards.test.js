@@ -599,10 +599,37 @@ test.each([
   expect((await screen.findByRole('alert')).textContent).toBe(shown);
 });
 
-test('a preview with fields the browser does not know still draws its Card', async () => {
+const PART_UNAVAILABLE =
+  'Part of this Card’s data isn’t available right now, so it can’t go in a Report yet. Try again later.';
+
+test('a Card drawn with part of its data unavailable shows but cannot be inserted', async () => {
   mockPost.mockImplementation((url, body) => {
     const { data } = drawn(body);
-    return Promise.resolve({ data: { ...data, publishable: false, reason: 'partly_unavailable' } });
+    return Promise.resolve({
+      data: {
+        ...data,
+        publishable: false,
+        unpublishable: { code: 'unavailable', message: 'PBPStats did not answer get_on_off.' },
+      },
+    });
+  });
+  await openBuilder();
+  const picker = openPicker('get_injuries');
+  preview();
+
+  expect(await within(picker).findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
+  expect(within(picker).getByRole('alert').textContent).toBe(`${PART_UNAVAILABLE}Preview again`);
+  expect(within(picker).getByRole('button', { name: 'Insert card' })).toBeDisabled();
+  fireEvent.click(within(picker).getByRole('button', { name: 'Insert card' }));
+  expect(blocks()).toEqual([]);
+  fireEvent.click(within(picker).getByRole('button', { name: 'Preview again' }));
+  await waitFor(() => expect(previews()).toHaveLength(2));
+});
+
+test('a preview without publishable, from an older server, inserts its Card', async () => {
+  mockPost.mockImplementation((url, body) => {
+    const { data } = drawn(body);
+    return Promise.resolve({ data: { ...data, reason: 'a field the browser does not know' } });
   });
   await openBuilder();
   openPicker('get_injuries');
@@ -744,6 +771,18 @@ test('a reloaded draft keeps its Cards’ calls but not their previews, and draw
   expect(await screen.findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
   expect(previews()).toEqual([{ tool: 'get_injuries', args: { date: '2026-10-27' } }]);
   expect(JSON.parse(window.localStorage.getItem(DRAFT_KEY)).calls).toEqual([injuriesCall(1)]);
+});
+
+test('a reloaded Card drawn with part of its data unavailable says so and offers Preview again', async () => {
+  mockPost.mockImplementation((url, body) =>
+    Promise.resolve({ data: { ...drawn(body).data, publishable: false } }),
+  );
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+
+  expect(await screen.findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
+  expect(screen.getByRole('alert').textContent).toBe(`${PART_UNAVAILABLE}Preview again`);
 });
 
 test('a report holds at most 120 blocks and 48 Cards', async () => {

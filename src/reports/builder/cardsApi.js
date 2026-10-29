@@ -28,6 +28,10 @@ const decodePreview = (data) => {
   if (!isRecord(data) || !isRecord(data.call) || !isRecord(data.call.args)) throw invalid();
   const tool = requireString(data.call.tool);
   if (!CARD_TOOLS.includes(tool)) throw invalid();
+  // A server from before `publishable` sends none, and its Cards all publish.
+  if (data.publishable !== undefined && typeof data.publishable !== 'boolean') throw invalid();
+  const publishable = data.publishable !== false;
+  const code = isRecord(data.unpublishable) ? data.unpublishable.code : null;
   return {
     call: { tool, args: data.call.args },
     preview: {
@@ -35,6 +39,13 @@ const decodePreview = (data) => {
       html: requireString(data.html),
       structured: isRecord(data.structured) ? data.structured : {},
       meta: isRecord(data.meta) ? data.meta : null,
+      publishable,
+      unpublishable: publishable
+        ? null
+        : {
+            code: typeof code === 'string' ? code : 'unavailable',
+            text: REFUSAL_TEXT.unpublishable(),
+          },
     },
   };
 };
@@ -113,6 +124,9 @@ const REFUSAL_TEXT = {
   no_card: ({ tool }) =>
     `No card for those choices. ${NO_CARD_HINT[tool] ?? 'Change one and preview again.'}`,
   unavailable: () => 'That data isn’t available right now. Try again later.',
+  // Not a refusal code: a preview drawn with `publishable: false`.
+  unpublishable: () =>
+    'Part of this Card’s data isn’t available right now, so it can’t go in a Report yet. Try again later.',
   invalid_input: ({ details }) => {
     const field = fieldName(details.field);
     return field

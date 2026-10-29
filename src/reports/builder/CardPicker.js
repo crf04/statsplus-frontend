@@ -59,6 +59,16 @@ const Refusal = ({ refusal, onChoose }) => (
   </div>
 );
 
+/* Why a drawn Card can't go in a Report yet, with a way to draw it again. */
+export const Unpublishable = ({ refusal, onPreview, busy = false }) => (
+  <div className="report-edit-error report-pick-refusal" role="alert">
+    <p>{refusalText(refusal)}</p>
+    <button type="button" className="report-build-small" disabled={busy} onClick={onPreview}>
+      {busy ? 'Drawing…' : 'Preview again'}
+    </button>
+  </div>
+);
+
 /* Where a drawn Card goes: a block of its own, or beside a lone card or into a row with room. */
 const Insert = ({ draft, dispatch, drawn, onDone }) => {
   const [into, setInto] = useState('');
@@ -66,7 +76,7 @@ const Insert = ({ draft, dispatch, drawn, onDone }) => {
     .map((block, index) => ({ block, place: index + 1 }))
     .filter(({ block }) => hasRoom(block));
   const target = into || null;
-  const allowed = canInsert(draft, target);
+  const allowed = drawn.preview.publishable && canInsert(draft, target);
   return (
     <div className="report-pick-insert">
       <div className="report-pick-field">
@@ -82,7 +92,7 @@ const Insert = ({ draft, dispatch, drawn, onDone }) => {
           ))}
         </select>
       </div>
-      {!allowed && (
+      {drawn.preview.publishable && !allowed && (
         <p className="report-edit-help">
           {draft.calls.length >= LIMITS.calls
             ? `A report holds at most ${LIMITS.calls} cards.`
@@ -171,6 +181,12 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
               label={cardLabel({ tool: drawn.call.tool, structured: drawn.preview.structured })}
             />
           </figure>
+          {drawn.preview.unpublishable && (
+            <Unpublishable
+              refusal={drawn.preview.unpublishable}
+              onPreview={() => preview(shown.request)}
+            />
+          )}
           <Insert draft={draft} dispatch={dispatch} drawn={drawn} onDone={onClose} />
         </>
       )}

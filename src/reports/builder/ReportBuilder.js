@@ -8,7 +8,7 @@ import { Count } from '../ReportEditor';
 import { FAILED, HANDLE_ERRORS, HandleChooser, LISTING_ERRORS } from '../ReportListing';
 import { cardLabel } from '../reportText';
 import { cardRefusal, previewCard, publishCardReport, waitFor } from './cardsApi';
-import CardPicker, { refusalText } from './CardPicker';
+import CardPicker, { refusalText, Unpublishable } from './CardPicker';
 import {
   BLOCK_TYPES,
   blockCalls,
@@ -70,13 +70,22 @@ const CardSlot = ({ call, dispatch, remove }) => {
   return (
     <div className="report-build-card">
       {call.preview ? (
-        <figure className="report-block-card">
-          <ReportCard
-            html={call.preview.html}
-            call={call.preview}
-            label={cardLabel({ tool: call.tool, structured: call.preview.structured })}
-          />
-        </figure>
+        <>
+          <figure className="report-block-card">
+            <ReportCard
+              html={call.preview.html}
+              call={call.preview}
+              label={cardLabel({ tool: call.tool, structured: call.preview.structured })}
+            />
+          </figure>
+          {call.preview.unpublishable && (
+            <Unpublishable
+              refusal={again.status === 'refused' ? again.refusal : call.preview.unpublishable}
+              onPreview={previewAgain}
+              busy={again.status === 'loading'}
+            />
+          )}
+        </>
       ) : (
         <div className="report-build-card-stale">
           <p>

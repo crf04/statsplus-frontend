@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSignUpThen } from '../components/Auth/useSignUpThen';
 import { useFeedback } from '../feedback/useFeedback';
 import { errorCode, setPublicHandle, setReportListed } from '../reportsApi';
+import useAdmission from './builder/useAdmission';
 import { authorPath, editedDate, publishedLine, staleDays } from '../research/researchFormat';
 
 /*
@@ -57,17 +58,24 @@ export const ReportThis = ({ reportId }) => {
   );
 };
 
-const LISTING_ERRORS = {
+export const LISTING_ERRORS = {
   listed_limit: 'You have listed 5 reports in the last 24 hours. Try again later.',
 };
-const HANDLE_ERRORS = {
+export const HANDLE_ERRORS = {
   invalid_handle: 'Use 3–20 lowercase letters, numbers or underscores.',
   handle_taken: 'That handle is taken. Try another.',
 };
-const FAILED = 'That didn’t go through. Try again.';
+export const FAILED = 'That didn’t go through. Try again.';
 
 /* The handle chooser a first listing opens: one field, set once. */
-const HandleChooser = ({ busy, refusal, onSubmit, onCancel }) => {
+export const HandleChooser = ({
+  busy,
+  refusal,
+  onSubmit,
+  onCancel,
+  submitLabel = 'Save and list',
+  busyLabel = 'Listing…',
+}) => {
   const [value, setValue] = useState('');
   const handle = value.trim().replace(/^@+/, '').toLowerCase();
   return (
@@ -101,7 +109,7 @@ const HandleChooser = ({ busy, refusal, onSubmit, onCancel }) => {
           />
         </span>
         <button type="submit" className="report-listing-button" disabled={!handle || busy}>
-          {busy ? 'Listing…' : 'Save and list'}
+          {busy ? busyLabel : submitLabel}
         </button>
         <button type="button" className="report-handle-cancel" onClick={onCancel} disabled={busy}>
           Cancel
@@ -160,6 +168,7 @@ export const AuthorTools = ({
   deleting,
 }) => {
   const { waitlist } = useAuth();
+  const canWrite = useAdmission().status === 'active';
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(null); // null | 'list' | 'more'
   const [choosing, setChoosing] = useState(false);
@@ -357,6 +366,12 @@ export const AuthorTools = ({
       )}
       {open === 'more' && (
         <div className="report-tools-pop report-tools-menu" role="menu" aria-label="Report actions">
+          {canWrite && (
+            <Link role="menuitem" to="/reports/new" className="report-tools-write">
+              <Icon name="pencil" />
+              Write a report
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { fetchAuthorResearch, fetchResearch } from '../reportsApi';
+import useAdmission from '../reports/builder/useAdmission';
 import ResearchEntry from './ResearchEntry';
 import SignUpPrompt from './SignUpPrompt';
 import './research.css';
@@ -22,6 +23,16 @@ const List = ({ entries, label, featured = false }) => (
  * on top of the feed's first page, then 20 listed reports at a time, newest
  * first, with Load more while the API hands back a cursor.
  */
+/* An active account starts a Report here (crf04/statsplus#382); a waitlisted one cannot publish. */
+const WriteReport = () => {
+  if (useAdmission().status !== 'active') return null;
+  return (
+    <Link className="research-write" to="/reports/new">
+      Write a report
+    </Link>
+  );
+};
+
 const ResearchPage = () => {
   const { author } = useParams();
   const match = author === undefined ? null : author.match(HANDLE_PATH);
@@ -94,6 +105,7 @@ const ResearchPage = () => {
               Reports CourtAI users chose to share, newest first. CourtAI reports facts; each report
               is its author&apos;s view, frozen as it was published.
             </p>
+            <WriteReport />
           </>
         )}
       </header>

@@ -1,0 +1,177 @@
+.report-builder h1 {
+  margin: 4px 0 8px;
+  font-family: var(--ct-display);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.report-build-block {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.report-build-field input {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.report-build-field textarea {
+  min-height: 96px;
+}
+
+.report-build-rows {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-build-rows > li {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.report-build-rows .report-build-field {
+  width: 100%;
+}
+
+.report-build-row-actions,
+.report-build-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.report-build-small {
+  min-height: 34px;
+  padding: 5px 12px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: none;
+  color: var(--ct-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.report-build-small:hover:not(:disabled) {
+  border-color: var(--ct-gold);
+  color: var(--ct-gold);
+}
+
+.report-build-small:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.report-build-small:focus-visible,
+.report-build-check input:focus-visible,
+.report-build-tone select:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.report-build-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ct-text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.report-build-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ct-gold-fill);
+}
+
+.report-build-tone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.report-build-tone label,
+.report-build-date label {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+
+.report-build-tone select {
+  padding: 6px 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-ink);
+  color: var(--ct-text);
+  font: inherit;
+}
+
+.report-build-date label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.report-edit-field.report-build-date input {
+  width: auto;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.report-build-dialog {
+  width: min(520px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: var(--ct-radius-card);
+  background: var(--ct-surface);
+  color: var(--ct-text);
+  box-shadow: 0 12px 32px var(--ct-shadow-30);
+}
+
+.report-build-dialog::backdrop {
+  background: var(--ct-scrim-76);
+}
+
+.report-build-dialog h2 {
+  margin: 0 0 6px;
+  font-family: var(--ct-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.report-build-dialog form,
+.report-build-dialog .report-edit-draft {
+  display: grid;
+  gap: 14px;
+}
+
+.report-build-dialog .report-edit-field input {
+  font-size: 16px;
+}
+
+.report-build-dialog .report-edit-buttons {
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .report-build-small {
+    min-height: 40px;
+  }
+
+  .report-build-dialog {
+    width: 100%;
+    max-height: 92vh;
+    margin: auto 0 0;
+    border-radius: var(--ct-radius-card) var(--ct-radius-card) 0 0;
+  }
+}

@@ -3315,6 +3315,24 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    if (url.pathname === '/api/user/profile' && request.method() === 'GET') {
+      await route.fulfill({
+        json: {
+          success: true,
+          user: {
+            firebase_uid: 'courtai-e2e-user',
+            email: 'e2e@courtai.test',
+            display_name: 'CourtAI Test User',
+            photo_url: null,
+            created_at: '2026-10-01T00:00:00',
+            last_login: '2026-10-28T00:00:00',
+            is_active: true,
+          },
+        },
+      });
+      return;
+    }
+
     const savedFilterSetPath =
       url.pathname === '/api/user/saved-filter-sets'
         ? [url.pathname, undefined]

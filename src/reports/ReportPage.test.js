@@ -360,6 +360,70 @@ test('a listed report says who shared it and whose view it is, linking their aut
   );
 });
 
+const footerLine = () =>
+  [...document.querySelectorAll('.report-foot p')].find((p) =>
+    p.textContent.includes('CourtAI data'),
+  ).textContent;
+
+test('an assistant report, or one from before origin, says an AI built it', async () => {
+  await open(payload({ origin: 'assistant' }));
+  expect(footerLine()).toBe(
+    'Built by an AI from CourtAI data using the Injury brief skill. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(decodeReport(payload()).origin).toBe('assistant');
+  expect(decodeReport(payload({ origin: null })).origin).toBe('assistant');
+});
+
+test('a builder report says its author wrote it, then the same disclaimer', async () => {
+  await open(
+    payload({ origin: 'builder', document: { ...payload().report.document, skill: null } }),
+  );
+  expect(footerLine()).toBe(
+    'Written by its author from CourtAI data. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(screen.queryByText(/Built by an AI/)).not.toBeInTheDocument();
+});
+
+const textReport = (origin) =>
+  payload({
+    origin,
+    calls: [],
+    cards: {},
+    document: {
+      title: 'Injury brief · Sunday, October 25',
+      date: '2026-10-25',
+      blocks: [
+        { id: 'b1', type: 'paragraph', text: '**x**\n\n- y', lede: false },
+        { id: 'b2', type: 'callout', text: 'One\n\n*two*', tone: 'warn' },
+      ],
+    },
+  });
+
+test('a builder report shows its text as typed: no Markdown, blank lines kept', async () => {
+  await open(textReport('builder'));
+  const article = document.querySelector('.report-blocks');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+    '**x**\n\n- y',
+    'One\n\n*two*',
+  ]);
+  expect(article.querySelectorAll('strong, em, li')).toHaveLength(0);
+});
+
+test('an assistant report still reads its text as light Markdown', async () => {
+  await open(textReport('assistant'));
+  const article = document.querySelector('.report-blocks');
+  expect(article.querySelector('strong')).toHaveTextContent('x');
+  expect(article.querySelector('li')).toHaveTextContent('y');
+  expect(article.querySelector('em')).toHaveTextContent('two');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['x', 'One', 'two']);
+});
+
+test('a report with an origin the page does not know is refused', () => {
+  expect(() => decodeReport(payload({ origin: 'robot' }))).toThrow(
+    'The report endpoint returned an invalid response.',
+  );
+});
+
 test('an unlisted report has no author footer', async () => {
   await open();
   expect(screen.queryByText(/^Shared by/)).not.toBeInTheDocument();

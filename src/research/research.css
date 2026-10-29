@@ -50,6 +50,29 @@
   line-height: 1.55;
 }
 
+/* The same gold action as the report page's List and Publish buttons. */
+.research-write {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 7px 16px;
+  border: 1px solid var(--ct-gold-fill);
+  border-radius: var(--ct-radius-ctl);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.research-write:hover {
+  color: var(--ct-on-0d0b07);
+  filter: brightness(1.08);
+}
+
+.research-write:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
 .research-status {
   padding: 32px 0;
   color: var(--ct-dim);

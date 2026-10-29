@@ -349,8 +349,10 @@ const Report = ({ report, onDeleted, onChanged, onEdited }) => {
         {report.listed && <SharedBy handle={report.authorHandle} />}
         {doc.footnote && <p>{doc.footnote}</p>}
         <p>
-          Built by an AI from CourtAI data{doc.skill ? ` using the ${doc.skill.name} skill` : ''}. A
-          spot is a place to look, not a pick.{' '}
+          {report.origin === 'builder'
+            ? 'Written by its author from CourtAI data.'
+            : `Built by an AI from CourtAI data${doc.skill ? ` using the ${doc.skill.name} skill` : ''}.`}{' '}
+          A spot is a place to look, not a pick.{' '}
           {doc.skill?.url ? (
             <a href={doc.skill.url}>Make your own →</a>
           ) : (

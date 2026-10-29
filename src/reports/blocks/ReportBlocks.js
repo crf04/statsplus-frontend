@@ -163,16 +163,19 @@ const TabGroup = ({ block, report }) => {
 };
 
 const Block = ({ block, report }) => {
+  // The Report Builder writes plain text with its line breaks kept, so nothing in it is parsed.
+  const builder = report.origin === 'builder';
   switch (block.type) {
     case 'heading':
       return <h2 className="report-block-heading">{block.text}</h2>;
-    case 'paragraph':
-      return (
-        <RichText
-          text={block.text}
-          className={block.lede ? 'report-lede' : 'report-block-paragraph'}
-        />
+    case 'paragraph': {
+      const className = block.lede ? 'report-lede' : 'report-block-paragraph';
+      return builder ? (
+        <p className={`${className} report-block-plain`}>{block.text}</p>
+      ) : (
+        <RichText text={block.text} className={className} />
       );
+    }
     case 'list': {
       const List = block.ordered ? 'ol' : 'ul';
       return (
@@ -187,7 +190,11 @@ const Block = ({ block, report }) => {
       return (
         <aside className={`report-block-callout ${block.tone || ''}`}>
           {block.title && <p className="report-block-callout-title">{block.title}</p>}
-          <RichText text={block.text} />
+          {builder ? (
+            <p className="report-block-plain">{block.text}</p>
+          ) : (
+            <RichText text={block.text} />
+          )}
         </aside>
       );
     case 'card':

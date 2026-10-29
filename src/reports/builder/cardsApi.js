@@ -70,23 +70,85 @@ const choiceValue = (choice) => {
     : choice.name;
 };
 
+export const waitFor = (seconds) => {
+  if (seconds < 60) return seconds === 1 ? '1 second' : `${seconds} seconds`;
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  const hours = Math.ceil(minutes / 60);
+  return hours === 1 ? '1 hour' : `${hours} hours`;
+};
+
+// A Filter Set parameter the server names in `details.field`, as the author knows it.
+const FIELDS = {
+  player_name: 'player',
+  line_type: 'market',
+  line: 'line',
+  season_filter: 'season',
+  game_filter: 'last N games',
+  date_filter: 'since date',
+  date_to: 'until date',
+  minutes_filter: 'minutes range',
+  location_filter: 'home or away choice',
+  opponent_tricode: 'opponent',
+  'players_on[]': 'teammates on the floor',
+  'players_off[]': 'teammates off the floor',
+  'teams_against[]': 'opponent defense filter',
+  'rank_filter[]': 'opponent defense filter',
+  playstyle_RTG_min: 'playtype rating',
+  playstyle_RTG_max: 'playtype rating',
+};
+const fieldName = (field) =>
+  typeof field === 'string' && field.startsWith('self_filters[') ? 'stat filter' : FIELDS[field];
+
+// Why a picker's choices draw no Card, where the tool says.
+const NO_CARD_HINT = { get_rotation: 'Pick a game the team played.' };
+
+/*
+ * What each refusal tells the author. The server's own message is written
+ * for an AI assistant, so it is never shown.
+ */
+const REFUSAL_TEXT = {
+  call_failed: () => 'CourtAI couldn’t draw this Card. Try again.',
+  needs_choice: () => 'More than one player has that name. Pick the one you mean.',
+  no_card: ({ tool }) =>
+    `No card for those choices. ${NO_CARD_HINT[tool] ?? 'Change one and preview again.'}`,
+  unavailable: () => 'That data isn’t available right now. Try again later.',
+  invalid_input: ({ details }) => {
+    const field = fieldName(details.field);
+    return field
+      ? `A Card can’t use the ${field} you chose. Change it and preview again.`
+      : 'CourtAI can’t use these choices. Change one and try again.';
+  },
+  rate_limited: ({ retryAfter }) =>
+    `You’ve reached your CourtAI limit for now. Try again ${
+      retryAfter ? `in ${waitFor(retryAfter)}` : 'later'
+    }.`,
+  waitlisted: () => 'Your account is still on the CourtAI waitlist, so it can’t use Cards yet.',
+  unauthorized: () => 'Your sign-in has expired. Sign in again and try once more.',
+  payload_too_large: () => 'That’s too much to send at once. Remove a Card or shorten the text.',
+};
+const UNKNOWN_REFUSAL = 'That didn’t go through. Try again.';
+
 /*
  * What the server refused, in the contract's
- * `{"error": {"code", "message", "details"}}`: the code, its message, the
- * choices a needs_choice offers, the call a publish rerun names, and the
- * seconds a rate limit asks to wait. Null when the failure is not such a refusal.
+ * `{"error": {"code", "message", "details"}}`: the code, the author-facing
+ * text for it, the choices a needs_choice offers and the call a publish rerun
+ * names. `tool` is the previewed call's, when there is one. Null when the
+ * failure is not such a refusal.
  */
-export const cardRefusal = (failure) => {
+export const cardRefusal = (failure, tool) => {
   const response = failure?.response;
   const error = isRecord(response?.data) ? response.data.error : null;
   if (!isRecord(error) || typeof error.code !== 'string') return null;
   const details = isRecord(error.details) ? error.details : {};
   const retryAfter = Number.parseInt(response.headers?.['retry-after'], 10);
+  const text = REFUSAL_TEXT[error.code];
   return {
     code: error.code,
-    message: typeof error.message === 'string' ? error.message : '',
+    text: text
+      ? text({ tool, details, retryAfter: retryAfter > 0 ? retryAfter : null })
+      : UNKNOWN_REFUSAL,
     choices: Array.isArray(details.choices) ? details.choices.map(choiceValue).filter(Boolean) : [],
     call: typeof details.call === 'string' ? details.call : null,
-    retryAfter: retryAfter > 0 ? retryAfter : null,
   };
 };

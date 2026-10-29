@@ -10,7 +10,7 @@ import { InjuriesPicker, OnOffPicker } from './TeamPickers';
 /*
  * Add card (crf04/statsplus#382): the author picks one of the five card tools,
  * fills in its picker, and the MCP server draws the Card. Only a Card it drew
- * can be inserted; a refusal shows the server's reason and inserts nothing.
+ * can be inserted; a refusal says why and inserts nothing.
  */
 
 const PICKERS = {
@@ -21,30 +21,9 @@ const PICKERS = {
   get_injuries: { label: 'Injuries', Picker: InjuriesPicker },
 };
 
-export const waitFor = (seconds) => {
-  if (seconds < 60) return seconds === 1 ? '1 second' : `${seconds} seconds`;
-  const minutes = Math.ceil(seconds / 60);
-  if (minutes < 60) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
-  const hours = Math.ceil(minutes / 60);
-  return hours === 1 ? '1 hour' : `${hours} hours`;
-};
-
-const FALLBACK = {
-  call_failed: 'CourtAI couldn’t draw this Card.',
-  needs_choice: 'CourtAI needs you to choose one.',
-  no_card: 'These choices draw no Card.',
-  unavailable: 'This data is unavailable right now.',
-  invalid_input: 'CourtAI can’t draw a Card from these choices.',
-  rate_limited: 'You’ve reached your CourtAI limit for now.',
-};
-
-/* What a refused preview or publish tells the author, in the server's words when it sent some. */
-export const refusalText = (refusal) => {
-  if (!refusal) return 'CourtAI couldn’t draw this Card. Try again.';
-  const text = refusal.message || FALLBACK[refusal.code] || 'That didn’t go through. Try again.';
-  if (refusal.code !== 'rate_limited') return text;
-  return `${text} Try again ${refusal.retryAfter ? `in ${waitFor(refusal.retryAfter)}` : 'later'}.`;
-};
+/* What a refused preview or publish tells the author. */
+export const refusalText = (refusal) =>
+  refusal?.text ?? 'CourtAI couldn’t draw this Card. Try again.';
 
 /* The request with a needs_choice answer in place of the player it asked about. */
 const withChoice = (request, choice) => {
@@ -140,7 +119,7 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
       if (ticket === latest.current) setShown({ status: 'drawn', request, drawn });
     } catch (failure) {
       if (ticket === latest.current) {
-        setShown({ status: 'refused', request, refusal: cardRefusal(failure) });
+        setShown({ status: 'refused', request, refusal: cardRefusal(failure, request.tool) });
       }
     }
   };

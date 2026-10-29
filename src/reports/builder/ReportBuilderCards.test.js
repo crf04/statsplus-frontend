@@ -503,29 +503,113 @@ test('an injuries Card takes a date and, optionally, a team', async () => {
   expect(blockNames()).toEqual(['Block 1: Card']);
 });
 
+// The server's message is written for an AI assistant; the author never sees it.
+const ASSISTANT_WORDS = 'Call preview (get_injuries) draws no card with these args.';
+
 test.each([
-  [422, 'call_failed', 'The backend timed out.', {}, 'The backend timed out.'],
-  [422, 'no_card', 'Only the game view draws a card.', {}, 'Only the game view draws a card.'],
-  [422, 'unavailable', 'Injury report is unavailable.', {}, 'Injury report is unavailable.'],
-  [400, 'invalid_input', 'date must be YYYY-MM-DD.', {}, 'date must be YYYY-MM-DD.'],
+  [422, 'call_failed', {}, {}, 'CourtAI couldn’t draw this Card. Try again.'],
+  [422, 'no_card', {}, {}, 'No card for those choices. Change one and preview again.'],
+  [422, 'unavailable', {}, {}, 'That data isn’t available right now. Try again later.'],
+  [400, 'invalid_input', {}, {}, 'CourtAI can’t use these choices. Change one and try again.'],
   [
     429,
     'rate_limited',
-    'You have used your 300 calls today.',
+    { window: 'day', limit: 300 },
     { 'retry-after': '5400' },
-    'You have used your 300 calls today. Try again in 2 hours.',
+    'You’ve reached your CourtAI limit for now. Try again in 2 hours.',
   ],
-])('a %s %s refusal shows its reason and inserts nothing', async (...refusal) => {
-  const [status, code, message, headers, shown] = refusal;
-  mockPost.mockImplementation(() => refused(status, { code, message }, headers));
+  [429, 'rate_limited', {}, {}, 'You’ve reached your CourtAI limit for now. Try again later.'],
+  [
+    403,
+    'waitlisted',
+    {},
+    {},
+    'Your account is still on the CourtAI waitlist, so it can’t use Cards yet.',
+  ],
+  [401, 'unauthorized', {}, {}, 'Your sign-in has expired. Sign in again and try once more.'],
+  [
+    413,
+    'payload_too_large',
+    { max_bytes: 65536 },
+    {},
+    'That’s too much to send at once. Remove a Card or shorten the text.',
+  ],
+  [502, 'provider_unavailable', {}, {}, 'That didn’t go through. Try again.'],
+])('a %s %s refusal says why in the author’s words and inserts nothing', async (...refusal) => {
+  const [status, code, details, headers, shown] = refusal;
+  mockPost.mockImplementation(() =>
+    refused(status, { code, message: ASSISTANT_WORDS, details }, headers),
+  );
   await openBuilder();
   openPicker('get_injuries');
   preview();
 
-  expect(await screen.findByRole('alert')).toHaveTextContent(shown);
+  expect((await screen.findByRole('alert')).textContent).toBe(shown);
   expect(screen.queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(blocks()).toHaveLength(0);
+});
+
+test('a rotation no_card asks for a game the team played', async () => {
+  serveCards();
+  await openBuilder();
+  openPicker('get_rotation');
+  choose('Team', 'MEM');
+  choose('Date', '2026-10-25');
+  await screen.findByText('MEM @ LAL, final.');
+  mockPost.mockImplementation(() =>
+    refused(422, {
+      code: 'no_card',
+      message:
+        'Call preview (get_rotation) draws no card with these args, so it cannot be a report card.',
+    }),
+  );
+  preview();
+
+  expect((await screen.findByRole('alert')).textContent).toBe(
+    'No card for those choices. Pick a game the team played.',
+  );
+});
+
+test.each([
+  ['line', 'A Card can’t use the line you chose. Change it and preview again.'],
+  [
+    'playstyle_RTG_min',
+    'A Card can’t use the playtype rating you chose. Change it and preview again.',
+  ],
+  ['self_filters[PTS]', 'A Card can’t use the stat filter you chose. Change it and preview again.'],
+  [
+    'rank_filter[]',
+    'A Card can’t use the opponent defense filter you chose. Change it and preview again.',
+  ],
+  ['some_new_field', 'CourtAI can’t use these choices. Change one and try again.'],
+])('an invalid_input naming %s names it in plain words', async (field, shown) => {
+  await openBuilder();
+  openPicker();
+  await pickBane();
+  mockPost.mockImplementation(() =>
+    refused(400, {
+      code: 'invalid_input',
+      message: `${field} must be a number.`,
+      details: { field },
+    }),
+  );
+  preview();
+
+  expect((await screen.findByRole('alert')).textContent).toBe(shown);
+});
+
+test('a preview with fields the browser does not know still draws its Card', async () => {
+  mockPost.mockImplementation((url, body) => {
+    const { data } = drawn(body);
+    return Promise.resolve({ data: { ...data, publishable: false, reason: 'partly_unavailable' } });
+  });
+  await openBuilder();
+  openPicker('get_injuries');
+  preview();
+  await insert();
+
+  expect(blockNames()).toEqual(['Block 1: Card']);
 });
 
 test('a needs_choice refusal lists the choices, and picking one previews again', async () => {
@@ -550,7 +634,9 @@ test('a needs_choice refusal lists the choices, and picking one previews again',
   preview();
 
   const choices = await screen.findByRole('group', { name: 'Choose one' });
-  expect(screen.getByRole('alert')).toHaveTextContent('"Jalen Williams" matches 2 players.');
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    /^More than one player has that name\. Pick the one you mean\.Jalen Williams \(DEN\)/,
+  );
   expect(screen.queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
   fireEvent.click(within(choices).getByRole('button', { name: 'Jalen Williams (OKC)' }));
   await insert();
@@ -711,8 +797,8 @@ test('a refused rerun names the card’s block, and a publish limit says when to
   );
   const dialog = await publishWith('Refused');
 
-  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-    'The card in block 2: The injury report is unavailable right now.',
+  expect((await within(dialog).findByRole('alert')).textContent).toBe(
+    'The card in block 2: That data isn’t available right now. Try again later.',
   );
   mockPost.mockImplementation(() =>
     refused(
@@ -723,8 +809,17 @@ test('a refused rerun names the card’s block, and a publish limit says when to
   );
   fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
   await waitFor(() =>
-    expect(within(dialog).getByRole('alert')).toHaveTextContent(
-      'Daily limit reached. Try again in 30 seconds.',
+    expect(within(dialog).getByRole('alert').textContent).toBe(
+      'You’ve reached your CourtAI limit for now. Try again in 30 seconds.',
+    ),
+  );
+  mockPost.mockImplementation(() =>
+    refused(413, { code: 'payload_too_large', message: 'The request body is over 1048576 bytes.' }),
+  );
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
+  await waitFor(() =>
+    expect(within(dialog).getByRole('alert').textContent).toBe(
+      'That’s too much to send at once. Remove a Card or shorten the text.',
     ),
   );
   expect(blockNames()).toEqual(['Block 1: Heading', 'Block 2: Card']);

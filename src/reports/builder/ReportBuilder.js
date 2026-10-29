@@ -7,8 +7,8 @@ import ReportCard from '../ReportCard';
 import { Count } from '../ReportEditor';
 import { FAILED, HANDLE_ERRORS, HandleChooser, LISTING_ERRORS } from '../ReportListing';
 import { cardLabel } from '../reportText';
-import { cardRefusal, previewCard, publishCardReport } from './cardsApi';
-import CardPicker, { refusalText, waitFor } from './CardPicker';
+import { cardRefusal, previewCard, publishCardReport, waitFor } from './cardsApi';
+import CardPicker, { refusalText } from './CardPicker';
 import {
   BLOCK_TYPES,
   blockCalls,
@@ -64,7 +64,7 @@ const CardSlot = ({ call, dispatch, remove }) => {
       dispatch({ type: 'preview', call: call.id, preview });
       setAgain({ status: 'idle' });
     } catch (failure) {
-      setAgain({ status: 'refused', refusal: cardRefusal(failure) });
+      setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
     }
   };
   return (
@@ -398,7 +398,7 @@ const showModal = (dialog) => {
 const publishRefusal = (failure, listed, draft) => {
   const code = errorCode(failure);
   if (LISTING_ERRORS[code]) return LISTING_ERRORS[code];
-  // The MCP server's refusals carry its message, and a rerun's names the card.
+  // A rerun's refusal names the card.
   const refusal = draft.calls.length ? cardRefusal(failure) : null;
   if (refusal) {
     const place = draft.blocks.findIndex((block) => blockCalls(block).includes(refusal.call));

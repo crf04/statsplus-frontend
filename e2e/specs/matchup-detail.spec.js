@@ -282,6 +282,43 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   });
   await expect(austinFive.locator('rect.rail-l5-stub')).toHaveCount(2);
   await expect(austinFive.locator('rect.rail-l5-bar.tone-up')).toHaveCount(2);
+  // What the classes are for: grey stubs unlike the bars, a dashed gold mark,
+  // a dotted underline on a thin score, and the pill level with the prices.
+  const look = await rail.evaluate((node) => {
+    const style = (selector) => getComputedStyle(node.querySelector(selector));
+    const middle = (element) => {
+      const box = element.getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const lebronRow = [...node.querySelectorAll('article')].find((article) =>
+      article.getAttribute('aria-label').startsWith('LeBron James'),
+    );
+    return {
+      stubFill: style('.rail-l5-stub').fill,
+      barFill: style('.rail-l5-bar.tone-up').fill,
+      markDash: style('.rail-l5-mark').strokeDasharray,
+      markStroke: style('.rail-l5-mark').stroke,
+      // The fixture's scores are not thin, so read the rule off a thin one.
+      thinUnderline: (() => {
+        const score = document.createElement('span');
+        score.className = 'rail-score thin';
+        node.append(score);
+        const { textDecorationLine, textDecorationStyle } = getComputedStyle(score);
+        score.remove();
+        return `${textDecorationLine} ${textDecorationStyle}`;
+      })(),
+      offset: Math.abs(
+        middle(lebronRow.querySelector('.rail-l5')) -
+          middle(lebronRow.querySelector('.rail-price')),
+      ),
+    };
+  });
+  expect(look.stubFill).toBe('rgba(255, 255, 255, 0.16)');
+  expect(look.barFill).toBe('rgb(76, 175, 125)');
+  expect(look.markDash).toBe('3px, 2px');
+  expect(look.markStroke).toBe('rgb(232, 163, 61)');
+  expect(look.thinUnderline).toBe('underline dotted');
+  expect(look.offset).toBeLessThan(1);
   await expect(austin.getByText('Game-time decision')).toBeVisible();
   await expect(rail.getByRole('article', { name: /player$/ })).toHaveText([
     /^LeBron James/,

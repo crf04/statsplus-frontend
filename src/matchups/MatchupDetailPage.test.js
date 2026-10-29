@@ -4218,6 +4218,11 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
       Number(bar.getAttribute('height')).toFixed(2),
     );
     expect(heights).toEqual(['12.47', '9.14', '14.55', '11.22', '11.64']);
+    // Every bar stands on the chart's 16px baseline.
+    const bases = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      (Number(bar.getAttribute('y')) + Number(bar.getAttribute('height'))).toFixed(2),
+    );
+    expect(bases).toEqual(['16.00', '16.00', '16.00', '16.00', '16.00']);
     const mark = pill.querySelector('.rail-l5-mark');
     expect(Number(mark.getAttribute('y1')).toFixed(2)).toBe('4.57');
     expect(mark.getAttribute('y2')).toBe(mark.getAttribute('y1'));

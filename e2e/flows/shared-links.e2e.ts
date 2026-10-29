@@ -260,6 +260,27 @@ signedInTest(
 );
 
 signedInTest(
+  'after signing out, a season change signs up first and then applies',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/?player_name=LeBron+James');
+    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    await screen.getByRole('banner').getByRole('button', 'CT CourtAI Test User').tap();
+    await screen.getByRole('button', 'Sign out').tap();
+    await expect(screen.getByRole('status').filter({ hasText: SIGNED_OUT_NOTICE })).toBeVisible();
+
+    await screen.getByRole('combobox', 'Season').selectOption({ value: '2026-27' });
+
+    await expect(screen.getByText('CourtAI Test User').first()).toBeVisible();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2026-27');
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
+    const chosen = gameLogReads(api).filter(
+      (request) => request.search.get('season_filter') === '2026-27',
+    );
+    expect(new Set(chosen.map((request) => request.authorization))).toEqual(new Set([BEARER]));
+  },
+);
+
+signedInTest(
   'an account waitlisted mid-session stops showing the prices it read while admitted',
   async ({ app, screen, api }) => {
     await app.open('/?player_name=Stephen+Curry');

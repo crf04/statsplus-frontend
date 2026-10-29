@@ -820,6 +820,7 @@ const GameLogFilter = ({ notice = null }) => {
     handleApplyFilters(filterParams),
   );
   const selectPlayer = useSignUpThen('select-player', handleSelectPlayer);
+  const changeSeason = useSignUpThen('change-season', handleSeasonChange);
 
   return (
     <>
@@ -977,7 +978,7 @@ const GameLogFilter = ({ notice = null }) => {
               <FilterOptions
                 playerList={playerList}
                 onApplyFilters={applyPanelFilters}
-                onSeasonChange={handleSeasonChange}
+                onSeasonChange={changeSeason}
                 pageSeason={pageSeason}
                 selectedPlayer={selectedPlayer}
                 seasonGameLogs={playerSeasonGameLogs}

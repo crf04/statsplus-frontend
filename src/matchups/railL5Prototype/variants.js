@@ -122,19 +122,38 @@ function MicroBars({ games, mark }) {
   const y = (v) => H - (v / max) * H;
   return (
     <svg className="l5-micro" width={5 * 9} height={H} viewBox={`0 0 ${5 * 9} ${H}`} aria-hidden="true">
-      {games.map((g, i) => (
-        <rect
-          key={g.date}
-          className={`l5-bar l5-${sideOf(g.value, mark)}`}
-          x={i * 9}
-          y={y(g.value)}
-          width="7"
-          height={Math.max(H - y(g.value), 1.5)}
-          rx="1"
-        />
-      ))}
+      {Array.from({ length: 5 }, (_, i) => {
+        // Newest on the right; a game not yet played is an empty stub on the left.
+        const g = games[i - (5 - games.length)];
+        if (!g) return <rect key={i} className="l5-bar-empty" x={i * 9} y={H - 1.5} width="7" height="1.5" rx="0.75" />;
+        return (
+          <rect
+            key={g.date}
+            className={`l5-bar l5-${sideOf(g.value, mark)}`}
+            x={i * 9}
+            y={y(g.value)}
+            width="7"
+            height={Math.max(H - y(g.value), 1.5)}
+            rx="1"
+          />
+        );
+      })}
       {mark !== null && <line className="l5-mark" x1="0" x2={5 * 9} y1={y(mark)} y2={y(mark)} />}
     </svg>
+  );
+}
+
+function ScoreBadge({ score }) {
+  if (!score) return <span className="l5-badge l5-score-none" title="No Matchup Score">—</span>;
+  const pct = Math.round(score.value * 100);
+  const tone = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+  return (
+    <span
+      className={`l5-badge l5-tone-${tone}${score.thin ? ' l5-thin' : ''}`}
+      title={`Matchup Score ${formatScorePercent(score.value)}${score.thin ? ' · thin sample' : ''}`}
+    >
+      {formatScorePercent(score.value)}
+    </span>
   );
 }
 
@@ -202,7 +221,33 @@ export function ProtoRailRow({
       </article>
     );
   }
-  if (variant === 'C' || variant === 'E') {
+  if (variant === 'E') {
+    return (
+      <article aria-label={`${player.name} player`} className={cls}>
+        <div className="rail-row-name">
+          <h3>
+            <Link aria-label={`${player.name} game logs`} className="player-game-logs" to={gameLogsPath}>
+              {player.name}
+            </Link>{' '}
+            <ScoreBadge score={score} />
+          </h3>
+          {injury && <p>{injury}</p>}
+        </div>
+        <div className="rail-row-value">{valueBlock}</div>
+        {!loading && (
+          <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
+            <span>L5</span>
+            <MicroBars games={games} mark={mark} />
+            <span className="l5-go">
+              Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+            </span>
+          </Link>
+        )}
+        {openButton}
+      </article>
+    );
+  }
+  if (variant === 'C') {
     return (
       <article aria-label={`${player.name} player`} className={cls}>
         <div className="rail-row-name">
@@ -216,7 +261,7 @@ export function ProtoRailRow({
         {!loading && (
             <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
               <span>L{games.length}</span>
-              {variant === 'C' ? <Dots games={games} mark={mark} /> : <MicroBars games={games} mark={mark} />}
+              <Dots games={games} mark={mark} />
               <span className="l5-go">
                 Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
               </span>

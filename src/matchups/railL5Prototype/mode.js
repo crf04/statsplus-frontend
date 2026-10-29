@@ -11,7 +11,7 @@ export const VARIANT_NAMES = {
   A: 'Score under name + L5 tiles',
   B: 'Mini chart under the row',
   C: 'Score text + L5 dots pill',
-  E: 'Score text + L5 micro-bars pill',
+  E: 'Score beside name + L5 micro-bars pill',
   D: 'One footer line: score · L5 numbers · Game logs',
 };
 

@@ -86,3 +86,17 @@
 .l5-proto-switcher span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .l5-proto-switcher b { color: #f5c542; margin-right: 4px; }
 .l5-proto-switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; flex: none; }
+
+/* E: score beside the name */
+.l5-badge {
+  margin-left: 6px;
+  font-family: var(--ct-sans);
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 1px;
+}
+.l5-badge.l5-tone-up { color: var(--ct-hit); }
+.l5-badge.l5-tone-down { color: var(--ct-miss); }
+.l5-badge.l5-tone-flat, .l5-badge.l5-score-none { color: var(--ct-dim); }
+.l5-thin { text-decoration: underline dotted; text-underline-offset: 3px; }

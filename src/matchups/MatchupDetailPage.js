@@ -182,11 +182,19 @@ function MatchupSummary({ matchup, now }) {
 // A Blend withheld alongside named missing inputs is an incomplete score, so
 // no single component may stand in for it. A defensive category has no Blend
 // by contract and names nothing missing, so its component is the whole score.
+// The cell keeps its `thin` flag, which the rail shows as a dotted underline.
 const scoreFor = (player, stat, windowKey) => {
   const score = player.scores[stat]?.[windowKey];
   if (!score) return null;
   if (score.blend === null && score.missingInputs.length > 0) return null;
-  return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
+  return score.blend ?? Object.values(score.components)[0] ?? null;
+};
+
+// His season average in the stat. A backend that does not serve
+// `season_averages` still has his points, as `season_scoring`.
+const seasonAverageFor = (player, stat) => {
+  if (!player.seasonAverages) return stat === 'PTS' ? player.seasonScoring : null;
+  return Object.hasOwn(player.seasonAverages, stat) ? player.seasonAverages[stat] : null;
 };
 
 const postedLine = (player, provider, stat) => {
@@ -256,6 +264,114 @@ function RailPrices({ best }) {
   );
 }
 
+// The stat in words, for the Last 5 pill's label.
+const STAT_WORDS = {
+  PTS: 'points',
+  REB: 'rebounds',
+  AST: 'assists',
+  '3PM': 'threes made',
+  FGA: 'field goal attempts',
+  FG2A: 'two-point attempts',
+  FG3A: 'three-point attempts',
+  PRA: 'points, rebounds and assists',
+  PA: 'points and assists',
+  PR: 'points and rebounds',
+  RA: 'rebounds and assists',
+  TOV: 'turnovers',
+  STL: 'steals',
+  BLK: 'blocks',
+  STKS: 'steals and blocks',
+};
+const statWords = (stat) => STAT_WORDS[stat] ?? categoryLabel(stat);
+
+// His Matchup Score beside his name: signed, toned, and underlined when thin.
+// It sits above the row's button so its label shows on hover, so a click on it
+// opens the card the way the rest of the row does.
+function RailScore({ score, onClick }) {
+  const percent = score === null ? null : formatScorePercent(score.value);
+  const label =
+    percent === null
+      ? 'Matchup Score unavailable'
+      : `Matchup Score ${percent}${score.thin ? ' · thin sample' : ''}`;
+  const tone = score === null ? 'tone-flat' : toneClass(Math.round(score.value * 100));
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`rail-score ${tone}${score?.thin ? ' thin' : ''}`}
+      onClick={onClick}
+    >
+      {percent ?? '—'}
+    </span>
+  );
+}
+
+const L5_SLOTS = 5;
+const L5_SLOT_WIDTH = 9;
+const L5_BAR_WIDTH = 7;
+const L5_HEIGHT = 16;
+const L5_STUB = 1.5;
+
+/*
+ * His last five games as five bars against the mark (the line, or his season
+ * average without one), oldest left. Games he has not played in the Evidence
+ * season are grey stubs on the left; it is never topped up from another season.
+ */
+function LastFivePill({ games, stat, mark, name, to }) {
+  const values = games.map((game) => game.stats[stat]);
+  const missing = L5_SLOTS - values.length;
+  const slots = [...Array(missing).fill(null), ...values];
+  const words = values.map(formatStat);
+  if (missing > 0) words.push(`${missing} ${missing === 1 ? 'game' : 'games'} not played`);
+  const top = Math.max(...values, mark ?? 0, 1) * 1.1;
+  const y = (value) => L5_HEIGHT - (value / top) * L5_HEIGHT;
+  const width = L5_SLOTS * L5_SLOT_WIDTH;
+  return (
+    <Link
+      className="rail-l5"
+      to={to}
+      aria-label={`Last 5 ${statWords(stat)}: ${words.join(', ')}. Open ${name}'s game logs.`}
+    >
+      L5
+      <svg
+        width={width}
+        height={L5_HEIGHT}
+        viewBox={`0 0 ${width} ${L5_HEIGHT}`}
+        aria-hidden="true"
+      >
+        {slots.map((value, index) =>
+          value === null ? (
+            <rect
+              key={index}
+              className="rail-l5-stub"
+              x={index * L5_SLOT_WIDTH}
+              y={L5_HEIGHT - L5_STUB}
+              width={L5_BAR_WIDTH}
+              height={L5_STUB}
+              rx="0.75"
+            />
+          ) : (
+            <rect
+              key={index}
+              className={`rail-l5-bar ${mark === null ? 'tone-flat' : toneClass(value - mark)}`}
+              x={index * L5_SLOT_WIDTH}
+              y={Math.min(y(value), L5_HEIGHT - L5_STUB)}
+              width={L5_BAR_WIDTH}
+              height={Math.max(L5_HEIGHT - y(value), L5_STUB)}
+              rx="1"
+            />
+          ),
+        )}
+        {mark !== null && (
+          <line className="rail-l5-mark" x1="0" x2={width} y1={y(mark)} y2={y(mark)} />
+        )}
+      </svg>
+      <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+    </Link>
+  );
+}
+
 function RailRow({
   player,
   stat,
@@ -270,55 +386,89 @@ function RailRow({
   const serializedPlayerId = String(player.id);
   // Game Logs name the season the Matchup read, since their own default may differ.
   const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined })}`;
-  const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
-  let value;
-  let caption;
-  let meta;
-  let prices = null;
+  const injuryBadge = injury && (
+    <span className="injury-badge">{injury.status || injury.rawStatus}</span>
+  );
+  const openButton = (
+    // The whole row opens the selection card; its links sit above it.
+    <button
+      ref={(node) => register(serializedPlayerId, node)}
+      type="button"
+      className="rail-row-open"
+      aria-expanded={selected}
+      aria-controls="matchup-selection-card"
+      aria-label={selected ? 'Selected' : 'Open selection card'}
+      onClick={() => onSelect(player)}
+    />
+  );
+  const rowClass = `rail-row${selected ? ' selected' : ''}`;
+
   if (historical) {
+    const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
     const delta =
       did !== null && seasonAverage !== null ? Math.round((did - seasonAverage) * 10) / 10 : null;
-    value = <b>{did === null ? '—' : formatStat(did)}</b>;
-    caption = stat;
-    meta = (
-      <>
-        {focal ? `${Math.round(focal.minutes)} min` : 'Minutes unavailable'}
-        {delta !== null && (
-          <em className={toneClass(delta)}>
-            {' · '}
-            {delta > 0 ? '+' : delta < 0 ? '−' : '±'}
-            {Math.abs(delta).toFixed(1)} vs his season average
-          </em>
-        )}
-      </>
+    return (
+      <article aria-label={`${player.name} player`} className={rowClass}>
+        <div className="rail-row-name">
+          <h3>
+            <Link
+              aria-label={`${player.name} game logs`}
+              className="player-game-logs"
+              to={gameLogsPath}
+            >
+              {player.name}
+              <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+            </Link>
+          </h3>
+          <p>
+            {focal ? `${Math.round(focal.minutes)} min` : 'Minutes unavailable'}
+            {delta !== null && (
+              <em className={toneClass(delta)}>
+                {' · '}
+                {delta > 0 ? '+' : delta < 0 ? '−' : '±'}
+                {Math.abs(delta).toFixed(1)} vs his season average
+              </em>
+            )}
+          </p>
+        </div>
+        <div className="rail-row-value">
+          <b>{did === null ? '—' : formatStat(did)}</b>
+          <small>{stat}</small>
+        </div>
+        {openButton}
+      </article>
     );
-  } else {
-    const headline = headlineFor(player, stat);
-    const score = headline === null ? scoreFor(player, stat, windowKey) : null;
-    value =
-      headline !== null ? (
-        <b>{formatStat(headline)}</b>
-      ) : (
-        <b className={score === null ? undefined : toneClass(Math.round(score * 100))}>
-          {score === null ? '—' : formatScorePercent(score)}
-        </b>
-      );
-    caption =
-      headline !== null
-        ? seasonAverage !== null
-          ? `${seasonAverage.toFixed(1)} avg`
-          : null
-        : 'Matchup Score';
-    const best = bestPrices(player, stat, headline);
-    if (best && (best.over || best.under)) prices = <RailPrices best={best} />;
   }
+
+  // Before the game: his line beside his season average, or the average alone
+  // when no source posts a line; then his last five against that number.
+  const headline = headlineFor(player, stat);
+  const seasonAverage = seasonAverageFor(player, stat);
+  const mark = headline ?? seasonAverage;
+  const caption =
+    headline !== null
+      ? seasonAverage !== null
+        ? `${seasonAverage.toFixed(1)} avg`
+        : null
+      : seasonAverage !== null
+        ? 'season avg'
+        : null;
+  const best = bestPrices(player, stat, headline);
+  const prices = best && (best.over || best.under) ? <RailPrices best={best} /> : null;
+  const lastFive =
+    player.lastFiveGames && player.statCategories.includes(stat) ? (
+      <LastFivePill
+        games={player.lastFiveGames}
+        stat={stat}
+        mark={mark}
+        name={player.name}
+        to={gameLogsPath}
+      />
+    ) : null;
   return (
-    <article
-      aria-label={`${player.name} player`}
-      className={`rail-row${selected ? ' selected' : ''}`}
-    >
+    <article aria-label={`${player.name} player`} className={`${rowClass} rail-row-upcoming`}>
       <div className="rail-row-name">
         <h3>
           <Link
@@ -327,39 +477,30 @@ function RailRow({
             to={gameLogsPath}
           >
             {player.name}
-            <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
           </Link>
-        </h3>
-        {(meta || injury) && (
-          <p>
-            {meta}
-            {injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
-          </p>
-        )}
+        </h3>{' '}
+        <RailScore score={scoreFor(player, stat, windowKey)} onClick={() => onSelect(player)} />
+        {injuryBadge && <p>{injuryBadge}</p>}
       </div>
       <div className="rail-row-value">
-        {value}
+        <b>{mark === null ? '—' : formatStat(mark)}</b>
         {caption && <small>{caption}</small>}
-        {prices}
       </div>
-      {/* The whole row opens the selection card; the name above stays its own link. */}
-      <button
-        ref={(node) => register(serializedPlayerId, node)}
-        type="button"
-        className="rail-row-open"
-        aria-expanded={selected}
-        aria-controls="matchup-selection-card"
-        aria-label={selected ? 'Selected' : 'Open selection card'}
-        onClick={() => onSelect(player)}
-      />
+      {(lastFive || prices) && (
+        <div className="rail-row-foot">
+          {lastFive}
+          {prices}
+        </div>
+      )}
+      {openButton}
     </article>
   );
 }
 
 /*
  * One stat at a time: the selected tab's, points on All. After the game each
- * row leads with what he did; before it, with his posted line, or his Matchup
- * Score when no book has posted a number.
+ * row leads with what he did; before it, with his posted line, or his season
+ * average when no source has posted a number.
  */
 function PlayerRail({
   players,

@@ -3083,3 +3083,89 @@ test('rejects a shot-type Points row with the wrong markets', () => {
     expect(() => decodeMatchup(withShotTypePointsRow(markets))).toThrow('invalid response');
   }
 });
+
+describe('statsplus#395: last five games and season averages on a player row', () => {
+  const entry = (date, stats = { PTS: 28, FGA: 20 }) => ({
+    game_id: `game-${date}`,
+    game_date: date,
+    matchup: 'LAL vs. PHX',
+    minutes: 34.5,
+    stats,
+  });
+  const withRow = (fields) => ({ ...payload, players: [{ ...payload.players[0], ...fields }] });
+
+  test('an older backend omits both: not served, never no games', () => {
+    const [player] = decodeMatchup(payload).players;
+    expect(player.lastFiveGames).toBeNull();
+    expect(player.seasonAverages).toBeNull();
+  });
+
+  test('decodes the games oldest first in the focal line shape, and the averages per stat', () => {
+    const [player] = decodeMatchup(
+      withRow({
+        last_five_games: [entry('2026-01-10', { PTS: 31, FGA: 22 }), entry('2026-01-12')],
+        season_averages: { PTS: 25.4, FGA: 19.2 },
+      }),
+    ).players;
+    expect(player.lastFiveGames).toEqual([
+      {
+        gameId: 'game-2026-01-10',
+        gameDate: '2026-01-10',
+        matchup: 'LAL vs. PHX',
+        minutes: 34.5,
+        stats: { PTS: 31, FGA: 22 },
+      },
+      {
+        gameId: 'game-2026-01-12',
+        gameDate: '2026-01-12',
+        matchup: 'LAL vs. PHX',
+        minutes: 34.5,
+        stats: { PTS: 28, FGA: 20 },
+      },
+    ]);
+    expect(player.seasonAverages).toEqual({ PTS: 25.4, FGA: 19.2 });
+  });
+
+  test('decodes no games and no season rate as served and empty', () => {
+    const [player] = decodeMatchup(withRow({ last_five_games: [], season_averages: {} })).players;
+    expect(player.lastFiveGames).toEqual([]);
+    expect(player.seasonAverages).toEqual({});
+  });
+
+  test.each([
+    ['games that are not a list', { last_five_games: { PTS: 28 } }],
+    ['null games', { last_five_games: null }],
+    [
+      'six games',
+      {
+        last_five_games: ['01', '02', '03', '04', '05', '06'].map((day) => entry(`2026-01-${day}`)),
+      },
+    ],
+    ['a null game', { last_five_games: [null] }],
+    ['a game missing one of his stats', { last_five_games: [entry('2026-01-10', { PTS: 28 })] }],
+    ['a stat sent as text', { last_five_games: [entry('2026-01-10', { PTS: '28', FGA: 20 })] }],
+    ['a game without a date', { last_five_games: [{ ...entry('2026-01-10'), game_date: '' }] }],
+    ['a date that is not a date', { last_five_games: [entry('2026-02-30')] }],
+    ['games newest first', { last_five_games: [entry('2026-01-12'), entry('2026-01-10')] }],
+    ['averages that are not a map', { season_averages: [25.4] }],
+    ['null averages', { season_averages: null }],
+    ['an average for a stat he is not offered in', { season_averages: { REB: 7.1 } }],
+    ['an average sent as text', { season_averages: { PTS: '25.4' } }],
+    ['a negative average', { season_averages: { PTS: -1 } }],
+  ])('rejects %s', (_name, fields) => {
+    expect(() => decodeMatchup(withRow(fields))).toThrow('invalid response');
+  });
+
+  test('a historical row may carry them only empty', () => {
+    const empty = historicalPayload();
+    Object.assign(empty.players[0], { last_five_games: [], season_averages: {} });
+    expect(decodeMatchup(empty).players[0].lastFiveGames).toEqual([]);
+
+    const games = historicalPayload();
+    games.players[0].last_five_games = [entry('2026-01-10')];
+    expect(() => decodeMatchup(games)).toThrow('invalid response');
+    const averages = historicalPayload();
+    averages.players[0].season_averages = { PTS: 25.4 };
+    expect(() => decodeMatchup(averages)).toThrow('invalid response');
+  });
+});

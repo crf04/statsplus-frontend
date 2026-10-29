@@ -179,6 +179,20 @@ signedInTest(
 );
 
 signedInTest(
+  "a Matchup player's Last 5 opens his Log Workspace",
+  async ({ app, screen, browser }) => {
+    await app.open('/matchups/0022500584');
+    const player = screen.getByRole('article', 'LeBron James player');
+    await expect(player.getByRole('img', 'Matchup Score +12%')).toBeVisible();
+    await player
+      .getByRole('link', "Last 5 points: 31, 22, 29, 18, 33. Open LeBron James's game logs.")
+      .tap();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
+  },
+);
+
+signedInTest(
   'Back to slate leaves Matchup detail and shows the game list',
   { tags: ['critical'] },
   async ({ app, screen, browser }) => {

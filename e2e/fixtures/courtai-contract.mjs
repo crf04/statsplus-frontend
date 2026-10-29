@@ -466,6 +466,38 @@ const scores = (markets, seasonValue, last15Value, { zeroMarkets = [] } = {}) =>
     ]),
   );
 
+// A box line in every market a row can carry, from his points, rebounds and
+// assists. Recent games round it; a season average keeps its decimals.
+const marketBox = ({ PTS, REB, AST }, round = (value) => value) => ({
+  PTS,
+  REB,
+  AST,
+  '3PM': round(PTS / 9),
+  FGA: round(PTS * 0.75),
+  FG2A: round(PTS * 0.45),
+  FG3A: round(PTS * 0.3),
+  PRA: PTS + REB + AST,
+  PA: PTS + AST,
+  PR: PTS + REB,
+  RA: REB + AST,
+  TOV: 3,
+  STL: 1,
+  BLK: 1,
+  STKS: 2,
+});
+const marketValues = (box, markets) =>
+  Object.fromEntries(markets.map((market) => [market, box[market]]));
+// His last games in the Evidence season, oldest first, in the focal_game_line
+// shape (crf04/statsplus#395).
+const lastFiveGames = (tricode, markets, games) =>
+  games.map(([gameId, gameDate, opponent, line]) => ({
+    game_id: gameId,
+    game_date: gameDate,
+    matchup: `${tricode} vs. ${opponent}`,
+    minutes: 35,
+    stats: marketValues(marketBox(line, Math.round), markets),
+  }));
+
 export const matchupPayload = {
   game: {
     ...slateGame,
@@ -626,6 +658,15 @@ export const matchupPayload = {
         fliff: { PTS: { over: -140, under: 110 } },
       },
       season_scoring: 25.4,
+      // Five games against his 27.5 points line: over, under, over, under, over.
+      last_five_games: lastFiveGames('LAL', COMPLETE_MARKETS, [
+        ['0022500541', '2026-01-05', 'PHX', { PTS: 31, REB: 8, AST: 9 }],
+        ['0022500553', '2026-01-07', 'DEN', { PTS: 22, REB: 6, AST: 7 }],
+        ['0022500562', '2026-01-09', 'SAC', { PTS: 29, REB: 9, AST: 10 }],
+        ['0022500570', '2026-01-11', 'POR', { PTS: 18, REB: 5, AST: 6 }],
+        ['0022500577', '2026-01-13', 'UTA', { PTS: 33, REB: 7, AST: 8 }],
+      ]),
+      season_averages: marketValues(marketBox({ PTS: 25.4, REB: 7.2, AST: 8.1 }), COMPLETE_MARKETS),
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
         play_types: [
@@ -665,11 +706,28 @@ export const matchupPayload = {
       tricode: 'LAL',
       posted_markets: ['PTS', 'FG3A', 'STL', 'REB'],
       provenance: { prizepicks: ['PTS', 'FG3A', 'REB'], underdog: ['STL'] },
-      // No book has numbered him yet, so the rail falls back to his Matchup Score.
+      // No book has numbered him yet, so the rail leads with his season average.
       lines: {},
       book_lines: {},
       line_prices: {},
       season_scoring: 20.1,
+      // Three games this season, so two stubs; no line, so they read against
+      // his 20.1 points average.
+      last_five_games: lastFiveGames(
+        'LAL',
+        ['PTS', 'FG3A', 'STL', 'REB'],
+        [
+          ['0022500562', '2026-01-09', 'SAC', { PTS: 24, REB: 4, AST: 5 }],
+          ['0022500570', '2026-01-11', 'POR', { PTS: 17, REB: 5, AST: 4 }],
+          ['0022500577', '2026-01-13', 'UTA', { PTS: 21, REB: 3, AST: 6 }],
+        ],
+      ),
+      season_averages: marketValues(marketBox({ PTS: 20.1, REB: 4.3, AST: 5.2 }), [
+        'PTS',
+        'FG3A',
+        'STL',
+        'REB',
+      ]),
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,

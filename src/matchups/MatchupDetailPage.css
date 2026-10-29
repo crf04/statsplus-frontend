@@ -433,17 +433,86 @@
   line-height: 1;
 }
 
-.rail-row-value b.tone-up {
-  color: var(--ct-hit);
-}
-
-.rail-row-value b.tone-down {
-  color: var(--ct-miss);
-}
-
 .rail-row-value small {
   color: var(--ct-dim);
   font-size: 0.74rem;
+}
+
+/* Before the game, two lines: name and score beside the line and average,
+   then the Last 5 pill beside the best prices. */
+.rail-row-upcoming {
+  row-gap: 6px;
+}
+
+.rail-score {
+  position: relative;
+  z-index: 1;
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rail-score.thin {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.rail-row-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rail-row-foot .rail-price {
+  margin: 0 0 0 auto;
+}
+
+.rail-l5 {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--ct-line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--ct-dim);
+  font-size: 0.78rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rail-l5:hover,
+.rail-l5:focus-visible {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+}
+
+.rail-l5 svg {
+  overflow: visible;
+}
+
+.rail-l5 > svg:last-child {
+  color: var(--ct-gold);
+}
+
+.rail-l5-bar {
+  fill: currentColor;
+  opacity: 0.85;
+}
+
+.rail-l5-stub {
+  fill: var(--ct-overlay-bg-16);
+}
+
+.rail-l5-mark {
+  stroke: var(--ct-gold);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2;
 }
 
 /* Defense Sheet: no box around a category, one header row naming its
@@ -1162,7 +1231,7 @@ button.selection-strip-tile:focus-visible {
   font-style: normal;
 }
 
-.rail-row-value .rail-price b {
+.rail-price b {
   color: var(--ct-text);
   font-family: var(--ct-sans);
   font-size: 0.8rem;

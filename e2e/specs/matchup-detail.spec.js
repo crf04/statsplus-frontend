@@ -236,7 +236,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   );
 
   // The page opens on PTS: the rail leads with each player's posted line, or
-  // his Matchup Score where no book has numbered him.
+  // his season average where no book has numbered him.
   const market = page.getByRole('group', { name: 'Market' });
   await expect(market.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
   const rail = page.getByRole('complementary', { name: 'Targetable players' });
@@ -256,8 +256,32 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     'Best Over −110 at BetMGM, best Under −102 at Polymarket, line 27.5',
   );
   await expect(lebron.getByText(/^books /)).toHaveCount(0);
+  // His Matchup Score sits beside his name, and his Last 5 against the line
+  // leads to the same Game Logs as the name, which carries no arrow.
+  await expect(lebron.getByRole('img', { name: 'Matchup Score +12%' })).toHaveText('+12%');
+  const lebronLogs = '/?player_name=LeBron+James&season_filter=2025-26';
+  await expect(lebron.getByRole('link', { name: 'LeBron James game logs' })).toHaveAttribute(
+    'href',
+    lebronLogs,
+  );
+  await expect(
+    lebron.getByRole('link', { name: 'LeBron James game logs' }).locator('svg'),
+  ).toHaveCount(0);
+  const lebronFive = lebron.getByRole('link', {
+    name: "Last 5 points: 31, 22, 29, 18, 33. Open LeBron James's game logs.",
+  });
+  await expect(lebronFive).toHaveAttribute('href', lebronLogs);
+  await expect(lebronFive.locator('rect.rail-l5-bar.tone-up')).toHaveCount(3);
+  await expect(lebronFive.locator('rect.rail-l5-bar.tone-down')).toHaveCount(2);
   const austin = rail.getByRole('article', { name: 'Austin Reaves player' });
-  await expect(austin).toContainText('+24%Matchup Score');
+  // No line: his season average leads, and his three games read against it.
+  await expect(austin.locator('.rail-row-value')).toHaveText('20.1season avg');
+  await expect(austin.getByRole('img', { name: 'Matchup Score +24%' })).toBeVisible();
+  const austinFive = austin.getByRole('link', {
+    name: "Last 5 points: 24, 17, 21, 2 games not played. Open Austin Reaves's game logs.",
+  });
+  await expect(austinFive.locator('rect.rail-l5-stub')).toHaveCount(2);
+  await expect(austinFive.locator('rect.rail-l5-bar.tone-up')).toHaveCount(2);
   await expect(austin.getByText('Game-time decision')).toBeVisible();
   await expect(rail.getByRole('article', { name: /player$/ })).toHaveText([
     /^LeBron James/,

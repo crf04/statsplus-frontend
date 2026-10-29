@@ -74,36 +74,80 @@ function Tiles({ games, mark, to, label }) {
 }
 
 function Bars({ games, mark, to, label }) {
-  const W = 104;
-  const H = 34;
-  const max = Math.max(...games.map((g) => g.value), mark ?? 0, 1) * 1.08;
-  const slot = W / 5;
+  const SLOT = 30;
+  const BAR = 20;
+  const H = 36;
+  const W = SLOT * 5;
+  const max = Math.max(...games.map((g) => g.value), mark ?? 0, 1) * 1.1;
   const y = (v) => H - (v / max) * H;
   return (
     <Link className="l5-bars" to={to} aria-label={`${label} game logs`}>
-      <svg width={W} height={H + 12} viewBox={`0 0 ${W} ${H + 12}`} aria-hidden="true">
-        {games.map((g, i) => (
-          <g key={g.date}>
-            <rect
-              className={`l5-bar l5-${sideOf(g.value, mark)}`}
-              x={i * slot + 3}
-              y={y(g.value)}
-              width={slot - 6}
-              height={H - y(g.value)}
-              rx="2"
-            />
-            <text x={i * slot + slot / 2} y={H + 10} textAnchor="middle">
-              {fmt(g.value)}
-            </text>
-          </g>
-        ))}
+      <svg width={W} height={H + 13} viewBox={`0 0 ${W} ${H + 13}`} aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => {
+          const g = games[i];
+          const x = i * SLOT + (SLOT - BAR) / 2;
+          if (!g)
+            return <rect key={i} className="l5-bar-empty" x={x} y={H - 2} width={BAR} height={2} rx="1" />;
+          return (
+            <g key={g.date}>
+              <rect
+                className={`l5-bar l5-${sideOf(g.value, mark)}`}
+                x={x}
+                y={y(g.value)}
+                width={BAR}
+                height={Math.max(H - y(g.value), 2)}
+                rx="2"
+              />
+              <text x={x + BAR / 2} y={H + 11} textAnchor="middle">
+                {fmt(g.value)}
+              </text>
+            </g>
+          );
+        })}
         {mark !== null && <line className="l5-mark" x1="0" x2={W} y1={y(mark)} y2={y(mark)} />}
       </svg>
-      <span className="l5-caption">
-        L{games.length}
-        {mark !== null && <> · {hitSummary(games, mark)} over</>} <ArrowUpRight size={11} strokeWidth={2.4} aria-hidden="true" />
+      <span className="l5-bars-side">
+        <span className="l5-caption">
+          Last {games.length}
+          {mark !== null && (
+            <>
+              {' '}
+              vs {fmt(mark)}
+            </>
+          )}
+        </span>
+        {mark !== null && (
+          <b className="l5-hits">
+            {games.filter((g) => g.value > mark).length}/{games.length} over
+          </b>
+        )}
+        <span className="l5-go">
+          Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+        </span>
       </span>
     </Link>
+  );
+}
+
+function MicroBars({ games, mark }) {
+  const H = 16;
+  const max = Math.max(...games.map((g) => g.value), mark ?? 0, 1) * 1.1;
+  const y = (v) => H - (v / max) * H;
+  return (
+    <svg className="l5-micro" width={5 * 9} height={H} viewBox={`0 0 ${5 * 9} ${H}`} aria-hidden="true">
+      {games.map((g, i) => (
+        <rect
+          key={g.date}
+          className={`l5-bar l5-${sideOf(g.value, mark)}`}
+          x={i * 9}
+          y={y(g.value)}
+          width="7"
+          height={Math.max(H - y(g.value), 1.5)}
+          rx="1"
+        />
+      ))}
+      {mark !== null && <line className="l5-mark" x1="0" x2={5 * 9} y1={y(mark)} y2={y(mark)} />}
+    </svg>
   );
 }
 
@@ -161,34 +205,40 @@ export function ProtoRailRow({
         <div className="rail-row-name">
           <h3>{nameLink}</h3>
           <p>
-            <ScoreLine score={score} compact />
+            <ScoreLine score={score} />
             {injury}
           </p>
         </div>
-        {!loading ? <Bars games={games} mark={mark} to={gameLogsPath} label={player.name} /> : <span />}
         <div className="rail-row-value">{valueBlock}</div>
+        {!loading && <Bars games={games} mark={mark} to={gameLogsPath} label={player.name} />}
         {openButton}
       </article>
     );
   }
-  if (variant === 'C') {
+  if (variant === 'C' || variant === 'E') {
     return (
       <article aria-label={`${player.name} player`} className={cls}>
         <div className="rail-row-name">
           <h3>{nameLink}</h3>
-          <p className="l5-pills">
-            <ScoreLine score={score} compact />
-            {!loading && (
-              <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
-                L{games.length} {mark !== null && <b>{hitSummary(games, mark)}</b>}
-                <Dots games={games} mark={mark} />
-                <ArrowUpRight size={11} strokeWidth={2.4} aria-hidden="true" />
-              </Link>
-            )}
+          <p>
+            <ScoreLine score={score} />
             {injury}
           </p>
         </div>
         <div className="rail-row-value">{valueBlock}</div>
+        {!loading && (
+            <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
+              <span>
+                L{games.length}
+                {mark !== null && <> vs {fmt(mark)}</>}
+              </span>
+              {variant === 'C' ? <Dots games={games} mark={mark} /> : <MicroBars games={games} mark={mark} />}
+              {mark !== null && <b>{hitSummary(games, mark)} over</b>}
+              <span className="l5-go">
+                Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+              </span>
+            </Link>
+          )}
         {openButton}
       </article>
     );

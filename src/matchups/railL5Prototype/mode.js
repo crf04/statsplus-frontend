@@ -5,12 +5,13 @@
  */
 import { useEffect, useState } from 'react';
 
-export const VARIANT_KEYS = ['O', 'A', 'B', 'C', 'D'];
+export const VARIANT_KEYS = ['O', 'B', 'C', 'E'];
 export const VARIANT_NAMES = {
   O: 'Today',
   A: 'Score under name + L5 tiles',
-  B: 'Score under name + L5 mini chart',
-  C: 'Score and L5 hit-rate pills',
+  B: 'Mini chart under the row',
+  C: 'Score text + L5 dots pill',
+  E: 'Score text + L5 micro-bars pill',
   D: 'One footer line: score · L5 numbers · Game logs',
 };
 
@@ -24,8 +25,8 @@ export const isPrototypeActive = () =>
   (process.env.NODE_ENV !== 'production' && readHash().get('proto') === 'l5');
 
 const readVariant = () => {
-  const key = (readHash().get('v') || 'A').toUpperCase();
-  return VARIANT_KEYS.includes(key) ? key : 'A';
+  const key = (readHash().get('v') || 'B').toUpperCase();
+  return VARIANT_KEYS.includes(key) ? key : 'B';
 };
 
 export const useVariant = () => {

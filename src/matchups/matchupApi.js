@@ -591,7 +591,8 @@ const decodeLastFiveGames = (games, statCategories, historical) => {
     return decodeFocalGameLine(game, statCategories);
   });
   // Oldest first by date, then game id, each on a real calendar date.
-  const before = (a, b) => a.gameDate < b.gameDate || (a.gameDate === b.gameDate && a.gameId < b.gameId);
+  const before = (a, b) =>
+    a.gameDate < b.gameDate || (a.gameDate === b.gameDate && a.gameId < b.gameId);
   if (
     decoded.some(
       (game, index) =>

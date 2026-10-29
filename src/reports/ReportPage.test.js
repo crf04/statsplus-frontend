@@ -384,6 +384,40 @@ test('a builder report says its author wrote it, then the same disclaimer', asyn
   expect(screen.queryByText(/Built by an AI/)).not.toBeInTheDocument();
 });
 
+const textReport = (origin) =>
+  payload({
+    origin,
+    calls: [],
+    cards: {},
+    document: {
+      title: 'Injury brief · Sunday, October 25',
+      date: '2026-10-25',
+      blocks: [
+        { id: 'b1', type: 'paragraph', text: '**x**\n\n- y', lede: false },
+        { id: 'b2', type: 'callout', text: 'One\n\n*two*', tone: 'warn' },
+      ],
+    },
+  });
+
+test('a builder report shows its text as typed: no Markdown, blank lines kept', async () => {
+  await open(textReport('builder'));
+  const article = document.querySelector('.report-blocks');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+    '**x**\n\n- y',
+    'One\n\n*two*',
+  ]);
+  expect(article.querySelectorAll('strong, em, li')).toHaveLength(0);
+});
+
+test('an assistant report still reads its text as light Markdown', async () => {
+  await open(textReport('assistant'));
+  const article = document.querySelector('.report-blocks');
+  expect(article.querySelector('strong')).toHaveTextContent('x');
+  expect(article.querySelector('li')).toHaveTextContent('y');
+  expect(article.querySelector('em')).toHaveTextContent('two');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['x', 'One', 'two']);
+});
+
 test('a report with an origin the page does not know is refused', () => {
   expect(() => decodeReport(payload({ origin: 'robot' }))).toThrow(
     'The report endpoint returned an invalid response.',

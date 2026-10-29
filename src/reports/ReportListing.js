@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSignUpThen } from '../components/Auth/useSignUpThen';
 import { useFeedback } from '../feedback/useFeedback';
 import { errorCode, setPublicHandle, setReportListed } from '../reportsApi';
+import useAdmission from './builder/useAdmission';
 import { authorPath, editedDate, publishedLine, staleDays } from '../research/researchFormat';
 
 /*
@@ -167,6 +168,7 @@ export const AuthorTools = ({
   deleting,
 }) => {
   const { waitlist } = useAuth();
+  const canWrite = useAdmission().status === 'active';
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(null); // null | 'list' | 'more'
   const [choosing, setChoosing] = useState(false);
@@ -364,7 +366,7 @@ export const AuthorTools = ({
       )}
       {open === 'more' && (
         <div className="report-tools-pop report-tools-menu" role="menu" aria-label="Report actions">
-          {!waitlist && (
+          {canWrite && (
             <Link role="menuitem" to="/reports/new" className="report-tools-write">
               <Icon name="pencil" />
               Write a report

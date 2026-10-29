@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { fetchAuthorResearch, fetchResearch } from '../reportsApi';
+import useAdmission from '../reports/builder/useAdmission';
 import ResearchEntry from './ResearchEntry';
 import SignUpPrompt from './SignUpPrompt';
 import './research.css';
@@ -25,8 +25,7 @@ const List = ({ entries, label, featured = false }) => (
  */
 /* An active account starts a Report here (crf04/statsplus#382); a waitlisted one cannot publish. */
 const WriteReport = () => {
-  const { isAuthenticated, waitlist } = useAuth();
-  if (!isAuthenticated || waitlist) return null;
+  if (useAdmission().status !== 'active') return null;
   return (
     <Link className="research-write" to="/reports/new">
       Write a report

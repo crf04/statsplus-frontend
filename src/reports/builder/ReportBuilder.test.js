@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { researchPage } from '../../research/researchFixtures';
 
@@ -68,6 +69,9 @@ beforeEach(() => {
   mockGet.mockImplementation((url) => {
     if (url === `${API}/api/reports/n3wr3p0rt1`) return Promise.resolve({ data: published });
     if (url === `${API}/api/research`) return Promise.resolve({ data: researchPage() });
+    if (url === `${API}/api/user/saved-filter-sets`) {
+      return Promise.resolve({ data: { saved_filter_sets: [] } });
+    }
     return Promise.reject({ response: { status: 404 } });
   });
   // 2026-10-28 12:00 in Tokyo, the test time zone.
@@ -151,6 +155,51 @@ test('a waitlisted account sees the waitlist message, not the builder', async ()
   expect(screen.queryByRole('button', { name: 'Add paragraph' })).not.toBeInTheDocument();
 });
 
+const WAITLISTED = {
+  response: { status: 403, data: { error: { code: 'waitlisted', message: 'Soon.' } } },
+};
+
+const refuseAdmission = (refusal) => {
+  const served = mockGet.getMockImplementation();
+  mockGet.mockImplementation((url, ...rest) =>
+    url === `${API}/api/user/saved-filter-sets` ? refusal : served(url, ...rest),
+  );
+};
+
+test('a waitlisted account the app has not yet heard about sees no builder on first load', async () => {
+  refuseAdmission(Promise.reject(WAITLISTED));
+  open();
+  expect(await screen.findByRole('region', { name: 'Beta waitlist' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Write a report' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Add paragraph' })).not.toBeInTheDocument();
+});
+
+test('a waitlisted account the app has not yet heard about gets no Write a report link', async () => {
+  refuseAdmission(Promise.reject(WAITLISTED));
+  open('/research');
+  await screen.findByText('Nothing has been listed yet.');
+  await act(async () => {});
+  expect(screen.queryByRole('link', { name: 'Write a report' })).not.toBeInTheDocument();
+});
+
+test('while admission is unknown, neither the builder nor the link shows', async () => {
+  refuseAdmission(new Promise(() => {}));
+  const { unmount } = open();
+  expect(await screen.findByText('Checking your account…')).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Write a report' })).not.toBeInTheDocument();
+  unmount();
+  open('/research');
+  await screen.findByText('Nothing has been listed yet.');
+  expect(screen.queryByRole('link', { name: 'Write a report' })).not.toBeInTheDocument();
+});
+
+test('when admission cannot be checked, the builder waits for a retry', async () => {
+  refuseAdmission(Promise.reject({ response: { status: 500 } }));
+  open();
+  expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t check your account.');
+  expect(screen.queryByRole('heading', { name: 'Write a report' })).not.toBeInTheDocument();
+});
+
 test('the Research feed offers Write a report to an active account only', async () => {
   open('/research');
   const write = await screen.findByRole('link', { name: 'Write a report' });
@@ -173,7 +222,7 @@ test("the author's own report offers Write a report in its menu", async () => {
   open('/reports/n3wr3p0rt1');
   await screen.findByRole('heading', { level: 1, name: 'Bane without Banchero' });
   fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
-  expect(screen.getByRole('menuitem', { name: 'Write a report' })).toHaveAttribute(
+  expect(await screen.findByRole('menuitem', { name: 'Write a report' })).toHaveAttribute(
     'href',
     '/reports/new',
   );
@@ -238,6 +287,25 @@ test('list items and sources are added and removed within their block', async ()
   type(within(sources).getByLabelText('Source 2 fact'), 'Kept');
   fireEvent.click(within(sources).getByRole('button', { name: 'Remove source 1' }));
   expect(within(sources).getByLabelText('Source 1 fact')).toHaveValue('Kept');
+  for (let i = 1; i < 12; i += 1) {
+    fireEvent.click(within(sources).getByRole('button', { name: 'Add source' }));
+  }
+  expect(within(sources).getByLabelText('Source 12 fact')).toBeInTheDocument();
+  expect(within(sources).getByRole('button', { name: 'Add source' })).toBeDisabled();
+  fireEvent.click(within(sources).getByRole('button', { name: 'Add source' }));
+  expect(within(sources).queryByLabelText('Source 13 fact')).not.toBeInTheDocument();
+});
+
+test('the title takes 120 characters and refuses the 121st', async () => {
+  await openBuilder();
+  add('heading');
+  type(within(block(1)).getByLabelText('Heading'), 'H');
+  const title = within(openPublish()).getByLabelText('Title');
+  type(title, 'a'.repeat(120));
+  expect(title).toHaveValue('a'.repeat(120));
+  type(title, 'a'.repeat(121));
+  expect(title).toHaveValue('a'.repeat(120));
+  expect(document.getElementById('report-build-title-count')).toHaveTextContent('120/120');
 });
 
 test('every field shows its limit and refuses text past it', async () => {
@@ -265,6 +333,13 @@ test('every field shows its limit and refuses text past it', async () => {
       `${limit.toLocaleString('en-US')}/${limit.toLocaleString('en-US')}`,
     );
   }
+  // The server counts characters as code points: an emoji is one, and is never split.
+  const heading = within(block(1)).getByLabelText('Heading');
+  type(heading, `${'x'.repeat(119)}😀`);
+  expect(heading).toHaveValue(`${'x'.repeat(119)}😀`);
+  expect(document.getElementById(`${heading.id}-count`)).toHaveTextContent('120/120');
+  type(heading, `${'x'.repeat(119)}😀😀`);
+  expect(heading).toHaveValue(`${'x'.repeat(119)}😀`);
   // Characters the server refuses are dropped as they are typed; tabs and line breaks stay.
   const text = within(block(2)).getByLabelText('Text');
   type(text, 'one\u0007\ttwo\nthree');
@@ -313,6 +388,21 @@ test('the draft survives a reload, and Discard draft starts over', async () => {
 
 test('an unreadable stored draft opens an empty builder', async () => {
   window.localStorage.setItem(DRAFT_KEY, '{"title":"x","blocks":[{"id":"b1","type":"table"}]}');
+  const first = await openBuilder();
+  expect(blocks()).toHaveLength(0);
+  first.unmount();
+
+  // A known block type with a field of the wrong kind is as unreadable as an unknown type.
+  window.localStorage.setItem(
+    DRAFT_KEY,
+    JSON.stringify({
+      title: 'x',
+      blocks: [
+        { id: 'b1', type: 'heading', text: 'Fine' },
+        { id: 'b2', type: 'paragraph', text: 42, lede: false },
+      ],
+    }),
+  );
   await openBuilder();
   expect(blocks()).toHaveLength(0);
 });
@@ -449,14 +539,57 @@ test('past the listing cap the dialog says so and keeps the draft', async () => 
   expect(JSON.parse(window.localStorage.getItem(DRAFT_KEY)).title).toBe('Listed');
 });
 
-test('Escape closes the publish dialog', async () => {
+const headingDraft = async () => {
   await openBuilder();
   add('heading');
   type(within(block(1)).getByLabelText('Heading'), 'H');
-  openPublish();
+  const opener = screen.getByRole('button', { name: 'Publish…' });
+  opener.focus();
+  return { opener, dialog: openPublish() };
+};
+
+test('Escape closes the publish dialog and returns focus to its opener', async () => {
+  const { opener } = await headingDraft();
   expect(screen.getByLabelText('Title')).toHaveFocus();
-  act(() => {
-    fireEvent.keyDown(document, { key: 'Escape' });
-  });
+  fireEvent.keyDown(screen.getByLabelText('Title'), { key: 'Escape' });
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(opener).toHaveFocus();
+});
+
+test('Escape while publishing keeps the dialog open, and no second publish starts', async () => {
+  let finish;
+  mockPost.mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  const { dialog } = await headingDraft();
+  type(within(dialog).getByLabelText('Title'), 'Once');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
+  fireEvent.keyDown(within(dialog).getByRole('button', { name: 'Publishing…' }), {
+    key: 'Escape',
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Publish…' }));
+  const again = screen.getByRole('dialog', { name: 'Publish your report' });
+  type(within(again).getByLabelText('Title'), 'Once');
+  fireEvent.submit(within(again).getByLabelText('Title').closest('form'));
+  expect(within(again).getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+  await act(async () => finish({ data: { report: { id: 'n3wr3p0rt1' } } }));
+  await screen.findByRole('heading', { level: 1, name: 'Bane without Banchero' });
+  expect(mockPost.mock.calls.map(([url, body]) => [url, body.report.title])).toEqual([
+    [`${API}/api/user/reports`, 'Once'],
+  ]);
+});
+
+test('Tab and Shift+Tab cycle inside the publish dialog', async () => {
+  const { dialog } = await headingDraft();
+  const title = within(dialog).getByLabelText('Title');
+  type(title, 'Kept inside');
+  const publish = within(dialog).getByRole('button', { name: 'Publish' });
+  publish.focus();
+  userEvent.tab();
+  expect(title).toHaveFocus();
+  userEvent.tab({ shift: true });
+  expect(publish).toHaveFocus();
 });

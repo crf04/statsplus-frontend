@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import LoginButton from '../../components/Auth/LoginButton';
 import WaitlistBanner from '../../components/Auth/WaitlistBanner';
 import { errorCode, publishReport, setPublicHandle } from '../../reportsApi';
@@ -18,6 +17,7 @@ import {
   saveDraft,
   today,
 } from './reportDraft';
+import useAdmission from './useAdmission';
 import '../ReportPage.css';
 import './ReportBuilder.css';
 
@@ -296,17 +296,43 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
   const [refusal, setRefusal] = useState(null);
   const [choosing, setChoosing] = useState(false);
   const [handleRefusal, setHandleRefusal] = useState(null);
+  const dialogRef = useRef(null);
   const titleRef = useRef(null);
+  const [opener] = useState(() => document.activeElement);
   const date = draft.date ?? today();
 
+  // Modal, so the page behind it is inert; focus returns to the opener on close.
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog.showModal) dialog.showModal();
+    else dialog.setAttribute('open', '');
     titleRef.current?.focus();
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') onCancel();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onCancel]);
+    return () => opener?.focus();
+  }, [opener]);
+
+  // A publish in flight finishes in this dialog, so it stays open until it does.
+  const close = () => {
+    if (!busy) onCancel();
+  };
+
+  const onKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const stops = dialogRef.current.querySelectorAll(
+      'input:not(:disabled), select:not(:disabled), button:not(:disabled), a[href]',
+    );
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    if (!first) event.preventDefault();
+    else if (event.shiftKey ? document.activeElement === first : document.activeElement === last) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
+  };
 
   const publish = async () => {
     try {
@@ -322,6 +348,7 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
 
   const submit = (event) => {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setRefusal(null);
     publish();
@@ -346,105 +373,102 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
   };
 
   return (
-    <div className="report-build-backdrop">
-      <div
-        className="report-build-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="report-build-dialog-title"
-      >
-        <h2 id="report-build-dialog-title">Publish your report</h2>
-        <p className="report-edit-help">
-          Once published, its text is frozen. You can still rename it, hide blocks, or delete it.
-        </p>
-        {choosing ? (
-          <HandleChooser
-            busy={busy}
-            refusal={handleRefusal}
-            submitLabel="Save and publish"
-            busyLabel="Publishing…"
-            onSubmit={chooseHandle}
-            onCancel={() => setChoosing(false)}
-          />
-        ) : (
-          <form onSubmit={submit}>
-            <fieldset className="report-edit-draft" disabled={busy}>
-              <div className="report-edit-field">
-                <div className="report-edit-label-row">
-                  <label htmlFor="report-build-title">Title</label>
-                  <Count
-                    id="report-build-title-count"
-                    used={length(draft.title)}
-                    limit={LIMITS.title}
-                  />
-                </div>
-                <input
-                  id="report-build-title"
-                  ref={titleRef}
-                  type="text"
-                  required
-                  value={draft.title}
-                  aria-describedby="report-build-title-count"
-                  onChange={(event) => dispatch({ type: 'meta', title: event.target.value })}
+    <dialog
+      ref={dialogRef}
+      className="report-build-dialog"
+      aria-labelledby="report-build-dialog-title"
+      onKeyDown={onKeyDown}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
+    >
+      <h2 id="report-build-dialog-title">Publish your report</h2>
+      <p className="report-edit-help">
+        Once published, its text is frozen. You can still rename it, hide blocks, or delete it.
+      </p>
+      {choosing ? (
+        <HandleChooser
+          busy={busy}
+          refusal={handleRefusal}
+          submitLabel="Save and publish"
+          busyLabel="Publishing…"
+          onSubmit={chooseHandle}
+          onCancel={() => setChoosing(false)}
+        />
+      ) : (
+        <form onSubmit={submit}>
+          <fieldset className="report-edit-draft" disabled={busy}>
+            <div className="report-edit-field">
+              <div className="report-edit-label-row">
+                <label htmlFor="report-build-title">Title</label>
+                <Count
+                  id="report-build-title-count"
+                  used={length(draft.title)}
+                  limit={LIMITS.title}
                 />
               </div>
-              <div className="report-edit-field report-build-date">
-                <label htmlFor="report-build-date">Date</label>
-                <input
-                  id="report-build-date"
-                  type="date"
-                  required
-                  value={date}
-                  onChange={(event) => dispatch({ type: 'meta', date: event.target.value })}
-                />
-              </div>
-              <Check
-                id="report-build-show-author"
-                label="Show my name"
-                checked={showAuthor}
-                onChange={setShowAuthor}
+              <input
+                id="report-build-title"
+                ref={titleRef}
+                type="text"
+                required
+                value={draft.title}
+                aria-describedby="report-build-title-count"
+                onChange={(event) => dispatch({ type: 'meta', title: event.target.value })}
               />
-              <Check
-                id="report-build-listed"
-                label="List in Research"
-                checked={listed}
-                onChange={(on) => {
-                  setListed(on);
-                  setRefusal(null);
-                }}
-              />
-              <p className="report-edit-help">
-                {listed
-                  ? 'Listed: anyone can find it in Research, under your public handle.'
-                  : 'Unlisted: only people with the link can open it.'}
-              </p>
-            </fieldset>
-            {refusal && (
-              <p className="report-edit-error" role="alert">
-                {refusal}
-              </p>
-            )}
-            <div className="report-edit-buttons">
-              <button
-                type="button"
-                className="report-handle-cancel"
-                onClick={onCancel}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="report-listing-button"
-                disabled={busy || !draft.title.trim() || !date}
-              >
-                {busy ? 'Publishing…' : 'Publish'}
-              </button>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
+            <div className="report-edit-field report-build-date">
+              <label htmlFor="report-build-date">Date</label>
+              <input
+                id="report-build-date"
+                type="date"
+                required
+                value={date}
+                onChange={(event) => dispatch({ type: 'meta', date: event.target.value })}
+              />
+            </div>
+            <Check
+              id="report-build-show-author"
+              label="Show my name"
+              checked={showAuthor}
+              onChange={setShowAuthor}
+            />
+            <Check
+              id="report-build-listed"
+              label="List in Research"
+              checked={listed}
+              onChange={(on) => {
+                setListed(on);
+                setRefusal(null);
+              }}
+            />
+            <p className="report-edit-help">
+              {listed
+                ? 'Listed: anyone can find it in Research, under your public handle.'
+                : 'Unlisted: only people with the link can open it.'}
+            </p>
+          </fieldset>
+          {refusal && (
+            <p className="report-edit-error" role="alert">
+              {refusal}
+            </p>
+          )}
+          <div className="report-edit-buttons">
+            <button type="button" className="report-handle-cancel" onClick={close} disabled={busy}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="report-listing-button"
+              disabled={busy || !draft.title.trim() || !date}
+            >
+              {busy ? 'Publishing…' : 'Publish'}
+            </button>
+          </div>
+        </form>
+      )}
+    </dialog>
   );
 };
 
@@ -552,20 +576,31 @@ const Builder = () => {
 
 /* `/reports/new`: active accounts write; a waitlisted one hears why not; a visitor signs in. */
 const ReportBuilderPage = () => {
-  const { isAuthenticated, waitlist } = useAuth();
+  const { status, retry } = useAdmission();
   return (
     <main className="report-page">
-      {!isAuthenticated ? (
+      {status === 'signed_out' ? (
         <div className="report-status">
           <p className="report-eyebrow">Report Builder</p>
           <h1>Sign in to write a report</h1>
           <p>Publishing a report needs a CourtAI account.</p>
           <LoginButton size="sm" />
         </div>
-      ) : waitlist ? (
+      ) : status === 'waitlisted' ? (
         <WaitlistBanner />
-      ) : (
+      ) : status === 'active' ? (
         <Builder />
+      ) : status === 'failed' ? (
+        <div className="report-status" role="alert">
+          <p>We couldn’t check your account.</p>
+          <button type="button" className="report-listing-button" onClick={retry}>
+            Try again
+          </button>
+        </div>
+      ) : (
+        <p className="report-status" role="status">
+          Checking your account…
+        </p>
       )}
     </main>
   );

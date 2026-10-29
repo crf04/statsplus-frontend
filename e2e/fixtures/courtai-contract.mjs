@@ -3217,6 +3217,22 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
       const posted = postedLinesByName[playerName] ?? null;
       const priced = !waitlisted && request.headers().authorization === 'Bearer courtai-e2e-token';
+      // Only an admitted account reads a season after the Published Season,
+      // which stays held until its cutover (crf04/statsplus-backend#648).
+      const selectedSeason = url.searchParams.get('season_filter');
+      if (!priced && selectedSeason !== null && selectedSeason > PUBLISHED_SEASON) {
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: {
+              code: 'season_unavailable',
+              message: 'The selected season is not available yet.',
+              details: { selected_season: selectedSeason, published_season: PUBLISHED_SEASON },
+            },
+          },
+        });
+        return;
+      }
       await route.fulfill({
         json: {
           game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),

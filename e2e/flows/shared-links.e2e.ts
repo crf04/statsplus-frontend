@@ -6,6 +6,7 @@ import type { Screen } from 'e2e';
 import { expect } from 'e2e';
 import { RATE_LIMITED, averages, gameLogs, waitlistedResponse } from '../fixtures/courtai.js';
 import {
+  freezeClock,
   overflowsHorizontally,
   signedInTest,
   signedOutTest,
@@ -55,6 +56,24 @@ const UNPRICED_TEXTS = [
   'FANDUEL 26.5',
   'BETRIVERS 27.5',
 ];
+
+// On 2026-10-27 the backend offers 2026-27 ahead of its cutover beside the
+// Published 2025-26, so an admitted account reads 2026-27 by default.
+const SEASON_DAY = '2026-10-27T16:00:00Z';
+const serving = (season: string) => ({ served_season: season, state: 'serving' });
+const seasonChoices = {
+  seasons: ['2025-26'],
+  default_season: '2025-26',
+  choices: [
+    {
+      season: '2026-27',
+      mode: 'unpublished',
+      families: { game_logs: serving('2026-27') },
+      team_games: { min: 2, max: 4 },
+    },
+    { season: '2025-26', mode: 'published', families: { game_logs: serving('2025-26') } },
+  ],
+};
 
 const gameLogReads = (api: Api) =>
   api.sent('/api/games/game_logs', 'GET').filter((request) => request.search.has('player_name'));
@@ -217,9 +236,11 @@ waitlistedTest(
 );
 
 signedInTest(
-  'Share copies the link tagged ref=share, which opens the same Filter Set',
+  'Share copies the link pinned to its season and tagged ref=share, which opens the same Filter Set',
   { tags: ['critical'] },
   async ({ app, screen, browser, api }) => {
+    await freezeClock(browser, SEASON_DAY);
+    await api.override({ '/api/games/seasons': { body: seasonChoices } });
     await browser.addInitScript(() => {
       Object.defineProperty(navigator, 'share', { value: undefined });
       Object.defineProperty(navigator, 'clipboard', {
@@ -231,7 +252,8 @@ signedInTest(
       });
     });
     await app.open('/?player_name=LeBron+James&game_filter=10');
-    await expect(screen.getByRole('cell', '31')).toBeVisible();
+    // 2026-27 holds one game for him, 44 points.
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
 
     await screen.getByRole('button', 'Share').tap();
     await expect(screen.getByRole('button', 'Copied')).toBeVisible();
@@ -239,23 +261,62 @@ signedInTest(
       await browser.evaluate(() => window.sessionStorage.getItem('share:clipboard') ?? ''),
     );
     expect(`${copied.pathname}${copied.search}`).toBe(
-      '/?player_name=LeBron+James&game_filter=10&ref=share',
+      '/?player_name=LeBron+James&game_filter=10&season_filter=2026-27&ref=share',
     );
 
     const readsBefore = gameLogReads(api).length;
     await app.open(`${copied.pathname}${copied.search}`);
-    await expect(screen.getByRole('cell', '31')).toBeVisible();
-    await expect(screen.getByRole('cell', '27')).toBeVisible();
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
     const opened = gameLogReads(api).slice(readsBefore);
     expect(opened.length).toBeGreaterThan(0);
     for (const request of opened) {
       expect(request.search.get('player_name')).toBe('LeBron James');
+      expect(request.search.get('season_filter')).toBe('2026-27');
       expect(request.search.has('ref')).toBe(false);
     }
     expect(
       opened.some((request) => request.search.get('game_filter') === '10'),
       'the copied link reads the same Filter Set',
     ).toBe(true);
+  },
+);
+
+signedOutTest(
+  'a signed-out link to a season not yet public says so, and signing up reads it',
+  async ({ app, screen, browser, api }) => {
+    await app.open('/?player_name=LeBron+James&season_filter=2026-27&ref=share');
+
+    await expect(
+      screen.getByText(
+        "This link uses the 2026-27 season, which isn't public yet. Sign up free to view it.",
+      ),
+    ).toBeVisible();
+    await expect(screen.getByRole('cell', '44')).toHaveCount(0);
+    await expect(screen.getByRole('cell', '31')).toHaveCount(0);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await app.screenshot('shared-link-season-held');
+
+    await screen.getByRole('alert').getByRole('button', 'Sign up free').tap();
+
+    await expect(screen.getByText('CourtAI Test User').first()).toBeVisible();
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
+    expect(gameLogReads(api).at(-1)?.authorization).toBe(BEARER);
+  },
+);
+
+waitlistedTest(
+  'a waitlisted link to a season not yet public says it opens off the waitlist',
+  async ({ app, screen }) => {
+    await app.open('/?player_name=LeBron+James&season_filter=2026-27');
+
+    await expect(
+      screen.getByText(
+        "This link uses the 2026-27 season, which isn't public yet. " +
+          'It opens once your account is off the waitlist.',
+      ),
+    ).toBeVisible();
+    await expect(screen.getByRole('button', 'Sign up free')).toHaveCount(0);
+    await expect(screen.getByRole('cell', '44')).toHaveCount(0);
   },
 );
 

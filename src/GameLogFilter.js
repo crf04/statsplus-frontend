@@ -14,6 +14,7 @@ import PlayerStatsCards from './PlayerStatsCards';
 import SavedFilterSetsModal from './SavedFilterSetsModal';
 import { useAuth } from './contexts/AuthContext';
 import { useReadAccess } from './components/Auth/readAccess';
+import LoginButton from './components/Auth/LoginButton';
 import { useSignUpThen } from './components/Auth/useSignUpThen';
 import { fetchGameLogsData, getRequestErrorMessage, isRequestCancelled } from './gameLogsApi';
 import { fetchNextOpponent } from './nextOpponentApi';
@@ -561,10 +562,13 @@ const GameLogFilter = ({ notice = null }) => {
   }, [abortGameLogsRequest, clearSeasonGameLogs, clearSelectedTeam]);
 
   // The URL is the whole view, so sharing it hands over exactly these game
-  // logs, tagged so a sign-up from it is attributed to sharing. Phones get
-  // their own share sheet; elsewhere the link is copied.
+  // logs, tagged so a sign-up from it is attributed to sharing. The season is
+  // pinned: a reader without an account would otherwise read the Published
+  // Season instead of this one. Phones get their own share sheet; elsewhere
+  // the link is copied.
   const shareLink = async () => {
     const shared = new URLSearchParams(searchParams);
+    if (workspaceSeason) shared.set('season_filter', workspaceSeason);
     shared.set(REF_PARAM, 'share');
     const url = `${window.location.origin}${pathname}?${shared.toString()}`;
     if (navigator.share) {
@@ -917,7 +921,19 @@ const GameLogFilter = ({ notice = null }) => {
           </div>
           <Card className={`dark-card${showWorkspaceLoading ? ' d-none' : ''}`}>
             <Card.Body className="p-3">
-              {seasonRefusal ? (
+              {seasonRefusal && !access.account ? (
+                // An Unpublished Season is held from readers without an
+                // admitted account until its cutover.
+                <div role="alert" className="season-unavailable">
+                  <p>
+                    {`This link uses the ${seasonRefusal.selectedSeason} season, which isn't public yet. `}
+                    {signedOut
+                      ? 'Sign up free to view it.'
+                      : 'It opens once your account is off the waitlist.'}
+                  </p>
+                  {signedOut && <LoginButton size="sm" label="Sign up free" />}
+                </div>
+              ) : seasonRefusal ? (
                 <SeasonRefusal
                   selectedSeason={seasonRefusal.selectedSeason}
                   defaultSeason={refusalDefault}

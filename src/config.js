@@ -26,6 +26,7 @@ const config = {
     TEAM_STATS: '/api/teams/stats',
     NL_QUERY: '/api/nl-query',
     USER_ATTRIBUTION: '/api/user/attribution',
+    USER_PROFILE: '/api/user/profile',
     SAVED_FILTER_SETS: '/api/user/saved-filter-sets',
     TEAM_SEASON_MINUTES: '/api/teams',
     DIET_BASELINES: '/api/diet/baselines',

@@ -69,8 +69,8 @@ beforeEach(() => {
   mockGet.mockImplementation((url) => {
     if (url === `${API}/api/reports/n3wr3p0rt1`) return Promise.resolve({ data: published });
     if (url === `${API}/api/research`) return Promise.resolve({ data: researchPage() });
-    if (url === `${API}/api/user/saved-filter-sets`) {
-      return Promise.resolve({ data: { saved_filter_sets: [] } });
+    if (url === `${API}/api/user/profile`) {
+      return Promise.resolve({ data: { success: true, user: { email: 'author@example.com' } } });
     }
     return Promise.reject({ response: { status: 404 } });
   });
@@ -162,7 +162,7 @@ const WAITLISTED = {
 const refuseAdmission = (refusal) => {
   const served = mockGet.getMockImplementation();
   mockGet.mockImplementation((url, ...rest) =>
-    url === `${API}/api/user/saved-filter-sets` ? refusal : served(url, ...rest),
+    url === `${API}/api/user/profile` ? refusal : served(url, ...rest),
   );
 };
 
@@ -458,6 +458,7 @@ test('publishing posts the block document with no cards and opens the Report', a
         listed: false,
         origin: 'builder',
       },
+      { timeout: 30000 },
     ],
   ]);
   expect(window.location.pathname).toBe('/reports/n3wr3p0rt1');
@@ -580,6 +581,85 @@ test('Escape while publishing keeps the dialog open, and no second publish start
   expect(mockPost.mock.calls.map(([url, body]) => [url, body.report.title])).toEqual([
     [`${API}/api/user/reports`, 'Once'],
   ]);
+});
+
+const heldPublish = () => {
+  let fail;
+  mockPost.mockReturnValue(
+    new Promise((_, reject) => {
+      fail = reject;
+    }),
+  );
+  return (refusal) => act(async () => fail(refusal));
+};
+
+test('a dialog the browser closes while publishing reopens, and shows the refusal', async () => {
+  const failPublish = heldPublish();
+  const { dialog } = await headingDraft();
+  type(within(dialog).getByLabelText('Title'), 'Once');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
+  dialog.removeAttribute('open');
+  fireEvent(dialog, new Event('close'));
+  expect(dialog).toHaveAttribute('open');
+
+  await failPublish({ response: { status: 500, data: {} } });
+  expect(within(dialog).getByRole('alert')).toHaveTextContent('That didn’t go through. Try again.');
+  expect(dialog).toHaveAttribute('open');
+  expect(within(dialog).getByRole('button', { name: 'Publish' })).toBeEnabled();
+});
+
+test('a dialog the browser closes while idle leaves Publish… working', async () => {
+  const { dialog } = await headingDraft();
+  dialog.removeAttribute('open');
+  fireEvent(dialog, new Event('close'));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(openPublish()).toHaveAttribute('open');
+});
+
+test('a publish that times out says the report may have been published', async () => {
+  const failPublish = heldPublish();
+  const { dialog } = await headingDraft();
+  type(within(dialog).getByLabelText('Title'), 'Slow');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
+
+  await failPublish({ code: 'ECONNABORTED', message: 'timeout of 30000ms exceeded' });
+  expect(within(dialog).getByRole('alert')).toHaveTextContent(
+    'We didn’t hear back in time, so your report may have been published. Publishing again could post it twice.',
+  );
+});
+
+test('a listed publish that times out points to Research', async () => {
+  mockPost.mockRejectedValue({ code: 'ECONNABORTED', message: 'timeout of 30000ms exceeded' });
+  const dialog = await listedDraft();
+  const alert = await within(dialog).findByRole('alert');
+  expect(alert).toHaveTextContent(
+    'We didn’t hear back in time, so your report may have been published. Look for it in Research before you publish again.',
+  );
+  expect(within(alert).getByRole('link', { name: 'Research' })).toHaveAttribute(
+    'href',
+    '/research',
+  );
+});
+
+test.each([
+  [{ 'retry-after': '690' }, 'Try again in 12 minutes.'],
+  [{ 'retry-after': '45' }, 'Try again in 45 seconds.'],
+  [{ 'retry-after': '7300' }, 'Try again in 3 hours.'],
+  [{}, 'Try again later.'],
+])('past the publishing limit (%j) the dialog says when to try again', async (headers, when) => {
+  mockPost.mockRejectedValue({
+    response: {
+      status: 429,
+      headers,
+      data: { error: { code: 'rate_limited', message: 'Too many requests.' } },
+    },
+  });
+  const { dialog } = await headingDraft();
+  type(within(dialog).getByLabelText('Title'), 'Limited');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Publish' }));
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+    `You’ve published as many reports as CourtAI allows for now. ${when}`,
+  );
 });
 
 test('Tab and Shift+Tab cycle inside the publish dialog', async () => {

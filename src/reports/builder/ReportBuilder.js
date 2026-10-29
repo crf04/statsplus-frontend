@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LoginButton from '../../components/Auth/LoginButton';
 import WaitlistBanner from '../../components/Auth/WaitlistBanner';
 import { errorCode, publishReport, setPublicHandle } from '../../reportsApi';
@@ -289,6 +289,52 @@ const BlockEditor = ({ block, place, total, dispatch, showProblem }) => {
   );
 };
 
+const showModal = (dialog) => {
+  if (dialog.open) return;
+  if (dialog.showModal) dialog.showModal();
+  else dialog.setAttribute('open', '');
+};
+
+const waitFor = (seconds) => {
+  if (seconds < 60) return seconds === 1 ? '1 second' : `${seconds} seconds`;
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  const hours = Math.ceil(minutes / 60);
+  return hours === 1 ? '1 hour' : `${hours} hours`;
+};
+
+/* What a failed publish tells the author; the draft is kept whatever happened. */
+const publishRefusal = (failure, listed) => {
+  const code = errorCode(failure);
+  if (LISTING_ERRORS[code]) return LISTING_ERRORS[code];
+  if (failure?.response?.status === 429) {
+    const seconds = Number.parseInt(failure.response.headers?.['retry-after'], 10);
+    return `You’ve published as many reports as CourtAI allows for now. Try again ${
+      seconds > 0 ? `in ${waitFor(seconds)}` : 'later'
+    }.`;
+  }
+  // The backend may still have stored it, so a blind retry could publish it twice.
+  if (!failure?.response && ['ECONNABORTED', 'ETIMEDOUT'].includes(failure?.code)) {
+    return (
+      <>
+        We didn’t hear back in time, so your report may have been published.{' '}
+        {listed ? (
+          <>
+            Look for it in{' '}
+            <Link to="/research" target="_blank" rel="noopener noreferrer">
+              Research
+            </Link>{' '}
+            before you publish again.
+          </>
+        ) : (
+          'Publishing again could post it twice.'
+        )}
+      </>
+    );
+  }
+  return FAILED;
+};
+
 const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
   const [showAuthor, setShowAuthor] = useState(false);
   const [listed, setListed] = useState(false);
@@ -303,9 +349,7 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
 
   // Modal, so the page behind it is inert; focus returns to the opener on close.
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog.showModal) dialog.showModal();
-    else dialog.setAttribute('open', '');
+    showModal(dialogRef.current);
     titleRef.current?.focus();
     return () => opener?.focus();
   }, [opener]);
@@ -339,9 +383,8 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
       const { id } = await publishReport(publishBody(draft, { date, showAuthor, listed }));
       onPublished(id);
     } catch (failure) {
-      const code = errorCode(failure);
-      if (listed && code === 'handle_required') setChoosing(true);
-      else setRefusal(LISTING_ERRORS[code] ?? FAILED);
+      if (listed && errorCode(failure) === 'handle_required') setChoosing(true);
+      else setRefusal(publishRefusal(failure, listed));
       setBusy(false);
     }
   };
@@ -382,6 +425,8 @@ const PublishDialog = ({ draft, dispatch, onCancel, onPublished }) => {
         event.preventDefault();
         close();
       }}
+      // Chrome closes a modal despite a prevented cancel when Escape repeats fast.
+      onClose={() => (busy ? showModal(dialogRef.current) : onCancel())}
     >
       <h2 id="report-build-dialog-title">Publish your report</h2>
       <p className="report-edit-help">

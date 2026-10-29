@@ -1,3 +1,4 @@
+import { REPORT_PUBLISH_TIMEOUT } from './apiSettings';
 import { apiClient, getApiUrl } from './config';
 import { isRecord, strictDecoders } from './decoding';
 
@@ -411,7 +412,9 @@ export const saveReportEdits = async (id, edits) => {
  * asks to be listed, and nothing is stored then.
  */
 export const publishReport = async (body) => {
-  const response = await apiClient.post(getApiUrl('USER_REPORTS'), body);
+  const response = await apiClient.post(getApiUrl('USER_REPORTS'), body, {
+    timeout: REPORT_PUBLISH_TIMEOUT,
+  });
   const report = isRecord(response.data) ? response.data.report : null;
   if (!isRecord(report)) fail();
   return { id: requireString(report.id) };

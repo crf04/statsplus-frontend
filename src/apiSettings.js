@@ -21,3 +21,6 @@ export const TARGET_READ_TIMEOUT = parseApiTimeout(
 // The backend cancels a web query at 30 s (statement_timeout); the request
 // gives up just after, instead of hanging open.
 export const GAME_LOGS_TIMEOUT = 35000;
+// Publishing a Report is not idempotent, so the request waits well past a slow
+// backend rather than inviting a retry that would publish it twice.
+export const REPORT_PUBLISH_TIMEOUT = 30000;

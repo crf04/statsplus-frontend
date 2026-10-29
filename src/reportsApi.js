@@ -313,6 +313,18 @@ const decodeOriginal = (original, cards) => {
   return { document: drawableDocument(decodeDocument(original.document), calls, cards), calls };
 };
 
+/*
+ * Who wrote it (crf04/statsplus#382): an AI assistant through publish_report,
+ * or its author in the Report Builder. Reports from before the field read as
+ * the assistant's.
+ */
+const ORIGINS = ['assistant', 'builder'];
+const decodeOrigin = (value) => {
+  if (value === undefined || value === null) return 'assistant';
+  if (!ORIGINS.includes(value)) fail();
+  return value;
+};
+
 export const decodeReport = (payload) => {
   const report = isRecord(payload) ? payload.report : null;
   if (!isRecord(report) || !Array.isArray(report.calls) || !isRecord(report.cards)) fail();
@@ -335,6 +347,7 @@ export const decodeReport = (payload) => {
     isAuthor: report.is_author === true,
     listed: report.listed,
     featured: report.featured,
+    origin: decodeOrigin(report.origin),
     notes: decodeNotes(report.notes),
     editedAt: decodeEditedAt(report.edited_at),
     document: drawableDocument(document, calls, cards),

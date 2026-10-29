@@ -360,6 +360,36 @@ test('a listed report says who shared it and whose view it is, linking their aut
   );
 });
 
+const footerLine = () =>
+  [...document.querySelectorAll('.report-foot p')].find((p) =>
+    p.textContent.includes('CourtAI data'),
+  ).textContent;
+
+test('an assistant report, or one from before origin, says an AI built it', async () => {
+  await open(payload({ origin: 'assistant' }));
+  expect(footerLine()).toBe(
+    'Built by an AI from CourtAI data using the Injury brief skill. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(decodeReport(payload()).origin).toBe('assistant');
+  expect(decodeReport(payload({ origin: null })).origin).toBe('assistant');
+});
+
+test('a builder report says its author wrote it, then the same disclaimer', async () => {
+  await open(
+    payload({ origin: 'builder', document: { ...payload().report.document, skill: null } }),
+  );
+  expect(footerLine()).toBe(
+    'Written by its author from CourtAI data. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(screen.queryByText(/Built by an AI/)).not.toBeInTheDocument();
+});
+
+test('a report with an origin the page does not know is refused', () => {
+  expect(() => decodeReport(payload({ origin: 'robot' }))).toThrow(
+    'The report endpoint returned an invalid response.',
+  );
+});
+
 test('an unlisted report has no author footer', async () => {
   await open();
   expect(screen.queryByText(/^Shared by/)).not.toBeInTheDocument();

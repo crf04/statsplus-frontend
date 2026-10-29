@@ -3147,6 +3147,15 @@ describe('statsplus#395: last five games and season averages on a player row', (
     ['a game without a date', { last_five_games: [{ ...entry('2026-01-10'), game_date: '' }] }],
     ['a date that is not a date', { last_five_games: [entry('2026-02-30')] }],
     ['games newest first', { last_five_games: [entry('2026-01-12'), entry('2026-01-10')] }],
+    [
+      'same-day games out of game id order',
+      {
+        last_five_games: [
+          { ...entry('2026-01-10'), game_id: '0022600102' },
+          { ...entry('2026-01-10'), game_id: '0022600101' },
+        ],
+      },
+    ],
     ['averages that are not a map', { season_averages: [25.4] }],
     ['null averages', { season_averages: null }],
     ['an average for a stat he is not offered in', { season_averages: { REB: 7.1 } }],

@@ -590,12 +590,12 @@ const decodeLastFiveGames = (games, statCategories, historical) => {
     if (!isRecord(game)) throw invalid();
     return decodeFocalGameLine(game, statCategories);
   });
-  // Oldest first, each on a real calendar date.
+  // Oldest first by date, then game id, each on a real calendar date.
+  const before = (a, b) => a.gameDate < b.gameDate || (a.gameDate === b.gameDate && a.gameId < b.gameId);
   if (
     decoded.some(
       (game, index) =>
-        !isCalendarDate(game.gameDate) ||
-        (index > 0 && game.gameDate < decoded[index - 1].gameDate),
+        !isCalendarDate(game.gameDate) || (index > 0 && !before(decoded[index - 1], game)),
     )
   ) {
     throw invalid();

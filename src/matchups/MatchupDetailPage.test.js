@@ -4212,6 +4212,15 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
     // Against 27.5: over, under, over, under, over.
     expect(slots(pill)).toEqual(['tone-up', 'tone-down', 'tone-up', 'tone-down', 'tone-up']);
     expect(pill.querySelectorAll('.rail-l5-mark')).toHaveLength(1);
+    // Bar heights scale with the value (16px tall at 1.1 × his best game), and the
+    // dashed mark sits at the line's height on the same scale.
+    const heights = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      Number(bar.getAttribute('height')).toFixed(2),
+    );
+    expect(heights).toEqual(['12.47', '9.14', '14.55', '11.22', '11.64']);
+    const mark = pill.querySelector('.rail-l5-mark');
+    expect(Number(mark.getAttribute('y1')).toFixed(2)).toBe('4.57');
+    expect(mark.getAttribute('y2')).toBe(mark.getAttribute('y1'));
     // The best prices share the row with the pill.
     const prices = within(lebron).getByRole('group', { name: /^Best Over/ });
     expect(prices).toHaveTextContent('o −114 DK u −108 DK');

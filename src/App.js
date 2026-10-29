@@ -25,6 +25,7 @@ const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
 const ReportPage = lazy(() => import('./reports/ReportPage'));
+const ReportBuilderPage = lazy(() => import('./reports/builder/ReportBuilder'));
 const ResearchPage = lazy(() => import('./research/ResearchPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
@@ -117,6 +118,7 @@ function WaitlistedShell() {
           <Route path="/" element={<GameLogFilter notice={<WaitlistBanner />} />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/reports/new" element={<ReportBuilderPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
           <Route path="/research" element={<ResearchPage />} />
           <Route path="/research/:author" element={<ResearchPage />} />
@@ -142,6 +144,7 @@ function SignedInShell() {
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
+          <Route path="/reports/new" element={<ReportBuilderPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
           <Route path="/research" element={<ResearchPage />} />
           <Route path="/research/:author" element={<ResearchPage />} />

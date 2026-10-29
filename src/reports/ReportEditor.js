@@ -106,7 +106,7 @@ const ERRORS = {
 };
 const FAILED = { field: 'form', text: 'Your edits didn’t save. Try again.' };
 
-const Count = ({ id, used, limit }) => (
+export const Count = ({ id, used, limit }) => (
   <span id={id} className={`report-edit-count${used > limit ? ' is-over' : ''}`}>
     {used.toLocaleString('en-US')}/{limit.toLocaleString('en-US')}
   </span>

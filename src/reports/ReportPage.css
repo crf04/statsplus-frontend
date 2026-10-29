@@ -443,7 +443,8 @@
 
 .report-tool:focus-visible,
 .report-tools-pop:focus-visible,
-.report-tools-menu button:focus-visible {
+.report-tools-menu button:focus-visible,
+.report-tools-menu a:focus-visible {
   outline: 2px solid var(--ct-gold);
   outline-offset: 2px;
 }
@@ -487,7 +488,8 @@
   padding: 4px;
 }
 
-.report-tools-menu button {
+.report-tools-menu button,
+.report-tools-menu a {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -500,10 +502,12 @@
   font: inherit;
   font-weight: 600;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.report-tools-menu button:hover {
+.report-tools-menu button:hover,
+.report-tools-menu a:hover {
   background: var(--ct-overlay-bg-6);
 }
 

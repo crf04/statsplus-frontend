@@ -405,6 +405,18 @@ export const saveReportEdits = async (id, edits) => {
   return decodeReport(response.data);
 };
 
+/*
+ * Publishes a Report written in the Report Builder (crf04/statsplus#382) and
+ * resolves to its id. Refusals carry handle_required or listed_limit when it
+ * asks to be listed, and nothing is stored then.
+ */
+export const publishReport = async (body) => {
+  const response = await apiClient.post(getApiUrl('USER_REPORTS'), body);
+  const report = isRecord(response.data) ? response.data.report : null;
+  if (!isRecord(report)) fail();
+  return { id: requireString(report.id) };
+};
+
 export const deleteReport = (id) =>
   apiClient.delete(`${getApiUrl('USER_REPORTS')}/${encodeURIComponent(id)}`);
 

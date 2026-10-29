@@ -564,7 +564,7 @@ const GameLogFilter = ({ notice = null }) => {
   // The URL is the whole view, so sharing it hands over exactly these game
   // logs, tagged so a sign-up from it is attributed to sharing. The season is
   // pinned: a reader without an account would otherwise read the Published
-  // Season instead of this one. Phones get their own share sheet; elsewhere
+  // Season instead of this one, so Share waits for the page season. Phones get their own share sheet; elsewhere
   // the link is copied.
   const shareLink = async () => {
     const shared = new URLSearchParams(searchParams);
@@ -903,7 +903,12 @@ const GameLogFilter = ({ notice = null }) => {
             {access.account && (hasUrlFilterSet || isRefusedLink) && (
               <div className="d-flex align-items-center gap-2 ms-auto">
                 {hasUrlFilterSet && !isRefusedLink && (
-                  <button type="button" className="btn btn-back-to-search" onClick={shareLink}>
+                  <button
+                    type="button"
+                    className="btn btn-back-to-search"
+                    onClick={shareLink}
+                    disabled={awaitingPageSeason}
+                  >
                     <span aria-live="polite">{linkCopied ? 'Copied' : 'Share'}</span>
                   </button>
                 )}

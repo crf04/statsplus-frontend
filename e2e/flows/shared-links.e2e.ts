@@ -281,6 +281,50 @@ signedInTest(
   },
 );
 
+signedInTest(
+  'Share waits for the page season, so a link copied straight after loading still pins it',
+  async ({ app, screen, browser, api }) => {
+    await freezeClock(browser, SEASON_DAY);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await api.override({
+      '/api/games/seasons': async () => {
+        await pending;
+        return seasonChoices;
+      },
+    });
+    await browser.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', { value: undefined });
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: async (text: string) => {
+            window.sessionStorage.setItem('share:clipboard', text);
+          },
+        },
+      });
+    });
+    await app.open('/?player_name=LeBron+James');
+    try {
+      await expect.poll(() => api.sent('/api/games/seasons').length).toBe(1);
+      await expect(screen.getByRole('button', 'Share')).toBeDisabled();
+    } finally {
+      release();
+    }
+
+    await expect(screen.getByRole('cell', '44')).toBeVisible();
+    await screen.getByRole('button', 'Share').tap();
+    await expect(screen.getByRole('button', 'Copied')).toBeVisible();
+    const copied = new URL(
+      await browser.evaluate(() => window.sessionStorage.getItem('share:clipboard') ?? ''),
+    );
+    expect(`${copied.pathname}${copied.search}`).toBe(
+      '/?player_name=LeBron+James&season_filter=2026-27&ref=share',
+    );
+  },
+);
+
 signedOutTest(
   'a signed-out link to a season not yet public says so, and signing up reads it',
   async ({ app, screen, browser, api }) => {

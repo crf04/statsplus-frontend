@@ -452,19 +452,20 @@ const NaturalLanguageQuery = ({
                 placeholder={
                   isLoading
                     ? 'Processing query...'
-                    : canSearch
-                      ? 'Ask about your favorite player'
-                      : 'Login to enter a query'
+                    : waitlisted
+                      ? 'Search opens when your account is off the waitlist'
+                      : 'Ask about your favorite player'
                 }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                disabled={isLoading || !canSearch}
+                // Signed out, a query signs up first and then runs.
+                disabled={isLoading || waitlisted}
                 className={`compact-search-input ${isLoading ? 'loading' : ''}`}
                 autoFocus
               />
               <Button
                 type="submit"
-                disabled={isLoading || !query.trim() || !canSearch}
+                disabled={isLoading || !query.trim() || waitlisted}
                 className="compact-search-button"
               >
                 {isLoading ? <div className="custom-spinner-compact"></div> : <Brain size={16} />}

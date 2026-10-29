@@ -3,19 +3,18 @@
 import { expect } from 'e2e';
 import { signedInTest, waitlistedTest } from './support/courtai.ts';
 
-for (const search of ['?browse=1', '?player_name=LeBron+James']) {
-  waitlistedTest(
-    `a waitlisted account opening /${search} lands on the public home page under the banner`,
-    async ({ app, screen, browser }) => {
-      await app.open(`/${search}`);
+// A link naming a Filter Set stays and is read (shared-links.e2e.ts).
+waitlistedTest(
+  'a waitlisted account opening /?browse=1 lands on the public home page under the banner',
+  async ({ app, screen, browser }) => {
+    await app.open('/?browse=1');
 
-      await expect(screen.getByRole('heading', "You're on the waitlist")).toBeVisible();
-      await expect(browser).toHaveURL(/\/$/);
-      await expect(screen.getByRole('heading', 'Get more specific')).toBeVisible();
-      await expect(screen.getByRole('textbox')).toBeDisabled();
-    },
-  );
-}
+    await expect(screen.getByRole('heading', "You're on the waitlist")).toBeVisible();
+    await expect(browser).toHaveURL(/\/$/);
+    await expect(screen.getByRole('heading', 'Get more specific')).toBeVisible();
+    await expect(screen.getByRole('textbox')).toBeDisabled();
+  },
+);
 
 signedInTest(
   'the ladder route refuses any query parameter like the backend',

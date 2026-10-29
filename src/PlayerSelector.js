@@ -74,6 +74,7 @@ const PlayerSelector = ({
   onChooseSource,
   playerList,
   postedLine,
+  playerSearchDisabled = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -155,6 +156,7 @@ const PlayerSelector = ({
             onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
             placeholder="Search for a player"
+            disabled={playerSearchDisabled}
             className="player-selector-input"
             role="combobox"
             aria-autocomplete="list"

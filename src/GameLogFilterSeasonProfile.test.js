@@ -161,8 +161,8 @@ test('while /seasons is pending the Opposing Team Profile neither reads nor show
   ]);
 });
 
-// Signed out there is no team list, so the card shows but reads nothing; with
-// no choice it would send no season (OpposingTeamProfile.test.js).
+// Signed out there is no next opponent, so the card reads the first team, and
+// with no season choice it sends no season (OpposingTeamProfile.test.js).
 test('a signed-out reader, who never reads /seasons, still sees the Opposing Team Profile', async () => {
   mockSignedIn = false;
   render(
@@ -171,9 +171,12 @@ test('a signed-out reader, who never reads /seasons, still sees the Opposing Tea
     </MemoryRouter>,
   );
   expect(await screen.findByText('Opposing Team Profile')).toBeInTheDocument();
+  await waitFor(() => expect(opponentRequests()).not.toEqual([]));
   await act(async () => {});
   expect(fetchSeasons).not.toHaveBeenCalled();
-  expect(teamStatsPaths()).toEqual([]);
+  expect(opponentRequests()).toEqual([
+    { category: 'Traditional', team: 'Atlanta Hawks', date: null },
+  ]);
 });
 
 test('a link that names its season still waits for /seasons, then each profile reads that season once', async () => {

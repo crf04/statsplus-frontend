@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useReadAccess } from '../components/Auth/readAccess';
 import { filterQueryString } from '../filterUtils';
 import useFilterPanel from './useFilterPanel';
 import FilterPanelView from './FilterPanelView';
@@ -36,12 +36,13 @@ const Tabs = ({ tab, onChange, count }) => (
 
 export default function FilterPanel(props) {
   const panel = useFilterPanel(props);
-  const { isAuthenticated, waitlist } = useAuth();
+  const access = useReadAccess();
   const location = useLocation();
   const saved = useSavedFilterSets();
   const [tab, setTab] = useState('filters');
-  // Saved Filter Sets belong to an admitted account.
-  const canSave = isAuthenticated && !waitlist;
+  // Saved Filter Sets belong to an admitted account; a signed-out visitor's
+  // Save signs up first.
+  const canSave = access.account;
   const filterQuery = filterQueryString(location.search);
   const current = findSavedFilterSet(saved.sets, filterQuery);
   // `/?browse=1` carries no Filter Set yet, so there is nothing to save.
@@ -73,7 +74,7 @@ export default function FilterPanel(props) {
       }
       savedName={canSave && current?.name}
       save={
-        canSave &&
+        access.changes &&
         hasFilterSet && (
           <SaveFilterSet
             current={current}

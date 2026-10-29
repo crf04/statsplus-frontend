@@ -195,6 +195,40 @@ describe('gameLogsApi', () => {
     ]);
   });
 
+  // A signed-out or waitlisted reader's response (crf04/statsplus#381) omits
+  // `line_prices` and every book's prices, keeping each line and its source.
+  test('a response without prices keeps every line and source, unpriced', () => {
+    const { line_prices: _prices, ...anonymous } = curryPosted;
+    anonymous.book_lines = {
+      PTS: {
+        as_of: '2026-10-21T15:00:00Z',
+        closing: false,
+        books: [
+          { book: 'draftkings', line: 26.5 },
+          { book: 'hardrockbet', line: 27.5 },
+        ],
+      },
+    };
+    const { postedLine } = decodeGameLogsResponse({ game_logs: [], posted_line: anonymous });
+    expect(lineSourcesFor(postedLine, 'PTS')).toEqual([
+      { kind: 'provider', key: 'prizepicks', line: 25.5, over: null, under: null },
+      { kind: 'provider', key: 'dabble', line: 26.5, over: null, under: null },
+      { kind: 'provider', key: 'kalshi', line: 27.5, over: null, under: null },
+      { kind: 'provider', key: 'underdog', line: 26.5, over: null, under: null },
+      { kind: 'book', key: 'draftkings', line: 26.5, over: null, under: null },
+      { kind: 'book', key: 'hardrockbet', line: 27.5, over: null, under: null },
+    ]);
+    expect(postedLineFor(postedLine, 'PTS')).toEqual({
+      kind: 'provider',
+      key: 'dabble',
+      line: 26.5,
+      over: null,
+      under: null,
+      gameDate: '2026-10-21',
+      matchup: 'GSW vs LAL',
+    });
+  });
+
   test('a response without sources keeps its posted line and offers no choice', () => {
     const { postedLine } = decodeGameLogsResponse({
       game_logs: [],

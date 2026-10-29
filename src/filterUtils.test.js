@@ -130,6 +130,13 @@ describe('filterSetFromSearchParams', () => {
     expect(lineFromSearch('player_name=A+B&line=24.5&line=25')).toBeNull();
   });
 
+  // A shared link's attribution tag is never requested or saved (crf04/statsplus#381).
+  test('ref is left out of the Filter Set query string', () => {
+    expect(filterQueryString('player_name=A+B&game_filter=10&ref=share')).toBe(
+      'player_name=A+B&game_filter=10',
+    );
+  });
+
   test('decodes date_to beside date_filter and refuses an end before the start', () => {
     expect(decode('player_name=A+B&date_filter=2026-01-01&date_to=2026-01-31')).toEqual({
       filters: { player_name: 'A B', date_filter: '2026-01-01', date_to: '2026-01-31' },

@@ -1,6 +1,6 @@
 // One state model owns draft filters and the URL patch emitted on Apply.
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useReadAccess } from '../components/Auth/readAccess';
 import { fetchSeasons } from '../seasonsApi';
 import { seasonChoiceLabel } from '../servingSeason';
 import {
@@ -129,7 +129,7 @@ const useFilterPanel = ({
   onOpenSelfFilters,
   appliedFilters,
 }) => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { account } = useReadAccess();
   // Null until the list arrives, and again if it never does: the control is
   // only offered when there is a real choice to make.
   const [seasonChoices, setSeasonChoices] = useState(null);
@@ -160,7 +160,7 @@ const useFilterPanel = ({
   const [dirty, setDirty] = useState(() => new Set());
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated) return undefined;
+    if (!account) return undefined;
     let current = true;
     fetchSeasons()
       .then((choices) => {
@@ -172,7 +172,7 @@ const useFilterPanel = ({
     return () => {
       current = false;
     };
-  }, [authLoading, isAuthenticated]);
+  }, [account]);
 
   const markControlTouched = useCallback((control) => {
     setTouchedControls((previous) => {

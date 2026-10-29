@@ -148,8 +148,10 @@ carries `lines: {}`.
 Game logs are an anonymous read (crf04/statsplus#381). Like the backend, the contract answers a
 request without the bearer, or from a waitlisted account, with every posted line and its source but
 no price: `posted_line` has no `line_prices`, and each `book_lines` entry keeps only its book and
-line. Signed in, the response carries the prices. The contract does not count anonymous reads, so a
-journey covers the per-IP limit by overriding the route with `RATE_LIMITED`.
+line. Signed in, the response carries the prices. Such a request naming a `season_filter` after the
+Published Season (2025-26) is refused with `503 season_unavailable`, as the backend holds an
+Unpublished Season until its cutover. The contract does not count anonymous reads, so a journey
+covers the per-IP limit by overriding the route with `RATE_LIMITED`.
 
 Both Matchups carry `as_of.season` and no Serving Season fields, as today's backend sends them.
 `servingSeasonMatchupPayload` is the live game after a Season Cutover to 2026-27

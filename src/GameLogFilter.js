@@ -847,6 +847,13 @@ const GameLogFilter = ({ notice = null }) => {
           {authLoading ? 'Checking authentication…' : 'Loading players and teams…'}
         </div>
       )}
+      {inWorkspace && access.reads && !access.account && (
+        <Alert variant="info" className="mx-3 shared-link-notice" role="status">
+          {signedOut
+            ? "You're viewing a shared link. Sign up free to change it or save it."
+            : "You're viewing a shared link. Changing or saving it opens once your account is off the waitlist."}
+        </Alert>
+      )}
       {listsError && (
         <Alert variant="warning" className="mx-3" role="alert">
           Unable to load player and team lists. <ErrorMessage message={listsError} />
@@ -855,13 +862,6 @@ const GameLogFilter = ({ notice = null }) => {
       {gameLogsError && !seasonRefusal && (
         <Alert variant="danger" className="mx-3" role="alert">
           <ErrorMessage message={gameLogsError} />
-        </Alert>
-      )}
-      {inWorkspace && access.reads && !access.account && (
-        <Alert variant="info" className="mx-3" role="status">
-          {signedOut
-            ? "You're viewing a shared link. Sign up free to change it or save it."
-            : "You're viewing a shared link. Changing or saving it opens once your account is off the waitlist."}
         </Alert>
       )}
       {showWorkspaceLoading && (

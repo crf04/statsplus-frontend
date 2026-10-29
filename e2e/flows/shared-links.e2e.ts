@@ -12,6 +12,7 @@ import {
   signedOutTest,
   waitlistedTest,
 } from './support/courtai.ts';
+import type { Browser } from '@e2e-dev/web';
 import type { Api } from './support/courtai.ts';
 
 const BEARER = 'Bearer courtai-e2e-token';
@@ -75,6 +76,24 @@ const seasonChoices = {
   ],
 };
 
+// The lines of the shared-link notice's text that the floating search toggle
+// covers; a readable notice has none.
+const noticeLinesUnderSearchToggle = (browser: Browser) =>
+  browser.evaluate(() => {
+    const toggle = document.querySelector('[aria-label="Open search"]')!.getBoundingClientRect();
+    const text = document.createRange();
+    text.selectNodeContents(document.querySelector('.shared-link-notice')!);
+    return [...text.getClientRects()]
+      .filter(
+        (line) =>
+          line.left < toggle.right &&
+          toggle.left < line.right &&
+          line.top < toggle.bottom &&
+          toggle.top < line.bottom,
+      )
+      .map((line) => ({ top: line.top, left: line.left, width: line.width }));
+  });
+
 const gameLogReads = (api: Api) =>
   api.sent('/api/games/game_logs', 'GET').filter((request) => request.search.has('player_name'));
 
@@ -104,6 +123,7 @@ signedOutTest(
     for (const request of gameLogReads(api)) {
       expect([request.authorization, request.search.has('ref')]).toEqual([undefined, false]);
     }
+    expect(await noticeLinesUnderSearchToggle(browser)).toEqual([]);
     expect(await overflowsHorizontally(browser)).toBe(false);
     await app.screenshot('shared-link-signed-out');
 
@@ -230,6 +250,7 @@ waitlistedTest(
     await expect(screen.getByLabel('Player:')).toBeDisabled();
     await expect(screen.getByTestId('filter-panel').getByRole('button', 'Save')).toHaveCount(0);
     await expect(screen.getByRole('tab', { name: /^Saved/ })).toHaveCount(0);
+    expect(await noticeLinesUnderSearchToggle(browser)).toEqual([]);
     expect(await overflowsHorizontally(browser)).toBe(false);
     await app.screenshot('shared-link-waitlisted');
   },

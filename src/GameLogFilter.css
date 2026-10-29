@@ -627,6 +627,14 @@ body {
   min-width: 0;
 }
 
+/* The compact search toggle floats at the top centre of the viewport
+   (ModernSearch.css: header + 12px, 52px tall), over the first thing on the
+   page. For a visitor without an account that is this notice, so start it
+   below the toggle. */
+.shared-link-notice {
+  margin-top: 64px;
+}
+
 /* Responsive side-by-side layout */
 @media (max-width: 1200px) {
   .stats-layout-container {
@@ -642,6 +650,11 @@ body {
      so start the toolbar below the toggle. */
   .workspace-toolbar {
     margin-top: 64px;
+  }
+
+  /* The shared-link notice above has already cleared the toggle. */
+  .shared-link-notice ~ .workspace-toolbar {
+    margin-top: 0;
   }
 
   .stats-layout-container {

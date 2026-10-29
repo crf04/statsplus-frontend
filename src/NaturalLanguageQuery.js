@@ -101,6 +101,7 @@ const NaturalLanguageQuery = ({
   // Combined loading state: true if either NL query or game logs are loading
   const isLoading = loading || gameLogsLoading;
   const searchRef = useRef(null);
+  const inputRef = useRef(null);
   const queryRequestRef = useRef({ id: 0, controller: null });
 
   // Close search when clicking outside
@@ -157,6 +158,14 @@ const NaturalLanguageQuery = ({
     const seeded = location.state?.query;
     if (seeded) setQuery(seeded);
   }, [location.state]);
+
+  // The ladder and Tonight sit below the hero, so filling the box would happen
+  // off-screen: bring it back into view with the cursor in it.
+  const fillQuery = (next) => {
+    setQuery(next);
+    inputRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    inputRef.current?.focus({ preventScroll: true });
+  };
 
   // Cycle real example queries through the landing placeholder so the
   // query language demos itself before the user types anything.
@@ -320,6 +329,7 @@ const NaturalLanguageQuery = ({
                       size={20}
                     />
                     <Form.Control
+                      ref={inputRef}
                       type="text"
                       placeholder={
                         isLoading
@@ -394,7 +404,7 @@ const NaturalLanguageQuery = ({
             <HomeTutorial />
             <HomeResearch />
             <QueryLadder
-              onUseQuery={setQuery}
+              onUseQuery={fillQuery}
               disabled={isLoading || waitlisted}
               currentQuery={query}
               answers={ladderAnswers}
@@ -406,7 +416,7 @@ const NaturalLanguageQuery = ({
                 spotlight={tonight.spotlight}
                 targets={tonight.targets}
                 signUp={!isAuthenticated}
-                onUseQuery={setQuery}
+                onUseQuery={fillQuery}
                 slateDate={tonight.slateDate}
                 fallback={tonight.fallback}
                 trailing={tonight.trailing}

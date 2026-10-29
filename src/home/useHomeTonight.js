@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchSlate } from '../slateApi';
 import { fetchSlateEdges } from '../slateEdgesApi';
+import { seasonOfDate } from '../gameSeason';
+import { isSeasonRefusal } from '../servingSeason';
 import { fetchResolvedTargets } from '../targets/targetsApi';
 import { TARGET_SLICES } from '../targets/targetCatalog';
-import { isCalendarDate } from '../calendarDate';
+import { getTodaySlateDate, isCalendarDate } from '../calendarDate';
 import { isRequestCancelled } from '../gameLogsApi';
 
 /*
@@ -30,6 +32,10 @@ import { isRequestCancelled } from '../gameLogsApi';
  * in localStorage and painted on mount before any read answers, then replaced
  * by the fresh one. An unreadable entry is ignored and removed.
  *
+ * The Slate and Edges read today's season, signed in or not, so the home page
+ * shows the Matchup Scores the Matchups page does. A read the backend refuses
+ * for its season is read again on the default. Targets stay on the default.
+ *
  * The Slate and Edges are public (crf04/statsplus#211): `landing` is whether
  * the Query Prompt is on screen. `account` is the uid of a signed-in, admitted
  * reader, or null: only an account reads Targets, and switching accounts
@@ -39,7 +45,7 @@ const EMPTY = { games: null, spotlight: null, slateDate: null, fallback: null, t
 
 const FALLBACKS = new Set(['previous_game_day', 'next_game_day']);
 
-const CACHE_KEY = 'courtai.homeTonight.v2';
+const CACHE_KEY = 'courtai.homeTonight.v3';
 
 // Everything below is what the ticker and Tonight read; an entry is only
 // trusted when each of those fields has the type and form they render from.
@@ -181,10 +187,21 @@ export const useHomeTonight = (landing, account) => {
         console.warn('Home page read failed', result.reason);
       }
     };
+    // Today's season, retried once on the default when the backend refuses it.
+    const season = seasonOfDate(getTodaySlateDate());
+    const inSeason = (read) =>
+      read({ season }).catch((error) => {
+        if (isSeasonRefusal(error)) return read({});
+        throw error;
+      });
     // All three reads start now; none waits on another. The Slate names the
     // date each answered for, so a read that straddled midnight ET is dropped.
-    const slateRead = settle(fetchSlate(undefined, { signal, fallback }));
-    const edgesRead = settle(fetchSlateEdges({ signal, fallback }));
+    const slateRead = settle(
+      inSeason((params) => fetchSlate(undefined, { signal, fallback, ...params })),
+    );
+    const edgesRead = settle(
+      inSeason((params) => fetchSlateEdges({ signal, fallback, ...params })),
+    );
     const targetsRead = account ? settle(fetchResolvedTargets({ signal, fallback })) : null;
     slateRead.then(warnIfFailed);
     edgesRead.then(warnIfFailed);

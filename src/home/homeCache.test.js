@@ -14,7 +14,7 @@ jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ currentUser: { uid: 'reader-a' }, isAuthenticated: true, loading: false }),
 }));
 
-const CACHE_KEY = 'courtai.homeTonight.v2';
+const CACHE_KEY = 'courtai.homeTonight.v3';
 const pending = () => new Promise(() => {});
 
 const stored = {

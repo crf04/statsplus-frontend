@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient, getApiUrl } from '../../config';
 import FilterPanelView from '../../filterPanel/FilterPanelView';
 import useFilterPanel, { STAT_COLUMNS, STAT_LABELS } from '../../filterPanel/useFilterPanel';
@@ -123,6 +123,12 @@ const GameLogPicker = ({ busy, onPreview }) => {
           filter_set: { ...set, line_type: lineType, ...(line && { line: Number(line) }) },
         }
       : null;
+
+  // A name typed before the list arrived is chosen when it arrives, if it is exactly a listed name.
+  const listed = players.data;
+  useEffect(() => {
+    if (listed?.includes(playerInput) && !player) setFilters({ player_name: playerInput });
+  }, [listed, playerInput, player]);
 
   const choosePlayer = (name) => {
     setPlayerInput(name);

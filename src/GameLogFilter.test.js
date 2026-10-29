@@ -310,16 +310,16 @@ test('uses the raw query string when deciding whether an apply changed anything'
 });
 
 test('keeps a URL-driven request held until authentication settles', async () => {
-  mockAuthState.isAuthenticated = false;
+  mockAuthState.loading = true;
   const rendered = renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
 
-  await waitFor(() => expect(screen.getByText(/Sign in to load these game logs/)).toBeVisible());
+  await act(async () => {});
   expect(screen.getByTestId('location')).toHaveTextContent(
     '/?player_name=LeBron+James&game_filter=10',
   );
   expect(fetchGameLogsData).not.toHaveBeenCalled();
 
-  mockAuthState.isAuthenticated = true;
+  mockAuthState.loading = false;
   rendered.rerender(
     <MemoryRouter initialEntries={['/?player_name=LeBron+James&game_filter=10']}>
       <GameLogFilter />
@@ -396,7 +396,9 @@ describe('Share', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Share' }));
     });
 
-    expect(clipboardText).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(clipboardText).toBe(
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
+    );
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument(), {
       timeout: 3000,
@@ -425,7 +427,9 @@ describe('Share', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Share' }));
     });
 
-    expect(clipboardText).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(clipboardText).toBe(
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
+    );
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 
@@ -447,7 +451,9 @@ describe('Share', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Share' }));
     });
 
-    expect(shared.url).toBe('http://localhost/?player_name=LeBron+James&game_filter=10');
+    expect(shared.url).toBe(
+      'http://localhost/?player_name=LeBron+James&game_filter=10&season_filter=2025-26&ref=share',
+    );
     expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled();
     expect(writeText).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -468,7 +474,7 @@ describe('Share', () => {
 
     mockAuthState.isAuthenticated = false;
     renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
-    await waitFor(() => expect(screen.getByText(/Sign in to load these game logs/)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/You're viewing a shared link/)).toBeVisible());
     expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
   });
 });
@@ -491,11 +497,11 @@ test('reaches the saved list from the Query Prompt; the Workspace keeps it in th
   expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
 });
 
-test('offers no save affordance and no saved list while signed out', async () => {
+test('offers no saved list while signed out', async () => {
   mockAuthState.isAuthenticated = false;
   renderGameLogFilter(['/?player_name=LeBron+James&game_filter=10']);
 
-  await waitFor(() => expect(screen.getByText(/Sign in to load these game logs/)).toBeVisible());
+  await waitFor(() => expect(screen.getByText(/You're viewing a shared link/)).toBeVisible());
   expect(screen.queryByRole('button', { name: 'Save Filter Set' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Saved Filter Sets' })).not.toBeInTheDocument();
   expect(fetchSavedFilterSets).not.toHaveBeenCalled();
@@ -603,11 +609,8 @@ test('returning to a full Filter Set reuses results and reapplying it refreshes'
   await waitFor(() => expect(countFiltered()).toBe(3));
 });
 
-test.each([
-  { isAuthenticated: false, loading: false },
-  { isAuthenticated: true, loading: true },
-])('unchanged Apply waits for settled authentication: %j', async (authState) => {
-  mockAuthState = authState;
+test('unchanged Apply waits for settled authentication', async () => {
+  mockAuthState = { isAuthenticated: true, loading: true };
   fetchGameLogsData.mockRejectedValue(new Error('unauthenticated'));
 
   mockFilterPatch = { game_filter: 10 };

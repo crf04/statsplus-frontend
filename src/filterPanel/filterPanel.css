@@ -557,7 +557,7 @@
   min-height: 0;
 }
 @media (min-width: 768px) {
-  .game-log-filter .row > div:has(> .fp-pinned) {
+  .game-log-filter .row > :has(> .fp-pinned) {
     position: relative;
   }
   .fp-pinned {

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toFiniteNumber } from '../numberUtils';
 import { opponentFilterLabel } from '../opponentFilters';
-import { useAuth } from '../contexts/AuthContext';
+import { useReadAccess } from '../components/Auth/readAccess';
 import { opponentExtremes } from './opponentExtremes';
 
 const useHeight = () => {
@@ -198,10 +198,11 @@ const MatchStrip = ({ seasonLogs, keptDates, lineType, line }) => {
 // panel's Saved tab; their read is passed in so the reveal still waits for it.
 const FilterPanelContext = ({ panel, extra, saved }) => {
   const [ref, height] = useHeight();
-  const { isAuthenticated } = useAuth();
-  // The Workspace reveals in one piece, so it waits for this panel's own reads.
+  const { account } = useReadAccess();
+  // The Workspace reveals in one piece, so it waits for this panel's own reads,
+  // which are an admitted account's.
   const settled =
-    !isAuthenticated ||
+    !account ||
     ((!panel.selectedPlayer || extra.nextOpponentFor === panel.selectedPlayer) &&
       (!saved || saved.sets !== null || Boolean(saved.error)));
   const { onContextSettled, nextOpponent: opponent } = extra;

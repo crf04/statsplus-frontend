@@ -83,9 +83,7 @@ signedOutTest(
   'signed-out readers are offered no saved Filter Sets',
   async ({ app, screen, api }) => {
     await app.open('/?player_name=LeBron+James&game_filter=10');
-    await expect(
-      screen.getByText('Sign in to load these game logs', { exact: false }),
-    ).toBeVisible();
+    await expect(screen.getByText("You're viewing a shared link", { exact: false })).toBeVisible();
     await expect(screen.getByRole('button', 'Save Filter Set')).toHaveCount(0);
     await expect(screen.getByRole('button', 'Saved Filter Sets')).toHaveCount(0);
     expect(api.sent('/api/user/saved-filter-sets')).toHaveLength(0);

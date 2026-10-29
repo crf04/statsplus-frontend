@@ -13,8 +13,8 @@ different job.
 Real Google authentication and backend data are intentionally outside the per-PR E2E gate. Popup
 authentication, credentials, and changing live data make a poor deterministic gate. The deployed
 smoke does verify that an unauthenticated Matchup request traverses the production proxy and receives
-the backend's stable `401 authentication_required` response. (The Slate, its Edges and the ladder are
-anonymous reads, so they no longer prove that the backend enforces authentication.) Authenticated flows can be exercised
+the backend's stable `401 authentication_required` response. (The Slate, its Edges, the ladder and
+game logs are anonymous reads, so they no longer prove that the backend enforces authentication.) Authenticated flows can be exercised
 during exploratory QA or added later as a secret-backed scheduled suite.
 
 The production smoke intentionally fails when the backend is unavailable because a frontend release
@@ -144,6 +144,14 @@ game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on hi
 PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices plus an unknown Fliff price the decoder skips, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
 Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
 carries `lines: {}`.
+
+Game logs are an anonymous read (crf04/statsplus#381). Like the backend, the contract answers a
+request without the bearer, or from a waitlisted account, with every posted line and its source but
+no price: `posted_line` has no `line_prices`, and each `book_lines` entry keeps only its book and
+line. Signed in, the response carries the prices. Such a request naming a `season_filter` after the
+Published Season (2025-26) is refused with `503 season_unavailable`, as the backend holds an
+Unpublished Season until its cutover. The contract does not count anonymous reads, so a journey
+covers the per-IP limit by overriding the route with `RATE_LIMITED`.
 
 Both Matchups carry `as_of.season` and no Serving Season fields, as today's backend sends them.
 `servingSeasonMatchupPayload` is the live game after a Season Cutover to 2026-27

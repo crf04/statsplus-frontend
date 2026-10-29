@@ -99,12 +99,7 @@ const ResearchPage = () => {
           </>
         ) : (
           <>
-            <p className="research-eyebrow">CourtAI</p>
             <h1>Research</h1>
-            <p className="research-intro">
-              Reports CourtAI users chose to share, newest first. CourtAI reports facts; each report
-              is its author&apos;s view, frozen as it was published.
-            </p>
             <WriteReport />
           </>
         )}

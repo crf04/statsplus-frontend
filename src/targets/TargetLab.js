@@ -40,6 +40,40 @@ const describeLab = ({ valid, status, pending, misread }) => {
 };
 
 /*
+ * How a Target works, in the space the Backtest fills once the Qualifiers are
+ * complete.
+ */
+function TargetTutorial() {
+  return (
+    <section className="target-tutorial" aria-labelledby="target-tutorial-heading">
+      <h3 id="target-tutorial-heading">How Targets work</h3>
+      <ol>
+        <li>
+          <b>Pick an opponent.</b> Choose the team you want to attack, like ATL. Next to each
+          Qualifier you'll see how that team ranks at defending it.
+        </li>
+        <li>
+          <b>Filter players.</b> Each Qualifier is one rule a player must meet. For example,{' '}
+          <i>Restricted area ≥ 35% of FGA</i> keeps only players who take at least 35% of their
+          shots at the rim. You can also limit it by position. A player has to pass every rule.
+        </li>
+        <li>
+          <b>Set a minutes floor (optional).</b> Under Backtest, count only games above a certain
+          number of minutes, like <i>&gt; 20</i>. This drops garbage-time cameos.
+        </li>
+        <li>
+          <b>Check the Backtest.</b> It lists every matching player who faced this team, and how
+          they did compared with their season averages.
+        </li>
+        <li>
+          <b>Save.</b> CourtAI then shows which players fit when this team is on the slate.
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+/*
  * The seasons a Backtest can read, offered whatever the Backtest has answered,
  * so a refused read can always be read again for another one.
  */
@@ -171,6 +205,7 @@ export default function TargetLab({
         </p>
       )}
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
+      {!valid && !evidence && <TargetTutorial />}
       {misread && (
         <p className="target-error" role="alert">
           The {season} Backtest is unavailable: the server answered for{' '}

@@ -1,6 +1,7 @@
 // The Filter Set sentence and inline editors, from the frozen J design.
 import { useState } from 'react';
 import { opponentFilterRankLabel } from '../opponentFilters';
+import { TEAM_CODES } from '../targets/opponentContextApi';
 import {
   TeamFilterBuilder,
   Range,
@@ -25,6 +26,7 @@ const TILES = [
   { key: 'games', title: 'Last N', sub: 'most recent games' },
   { key: 'date', title: 'Since', sub: 'a date' },
   { key: 'location', title: 'Home / Away', sub: 'venue' },
+  { key: 'opponent', title: 'Opponent', sub: 'one team' },
   { key: 'minutes', title: 'Minutes', sub: 'played' },
   // Hidden from Add a filter for now; a linked playtype rule still edits here.
   { key: 'playtype', title: 'Playtype', sub: 'matchup rating', hidden: true },
@@ -109,6 +111,34 @@ export const Editor = ({ which, panel, onDone, statColumns }) => {
         onChange={panel.changeLocation}
         options={['Both', 'Home', 'Away']}
       />
+    );
+  if (which === 'opponent')
+    body = (
+      <>
+        {panel.nextOpponentTricode && (
+          <button
+            type="button"
+            className="fp-btn-ghost fp-btn-block"
+            onClick={() => panel.changeOpponent(panel.nextOpponentTricode)}
+          >
+            Next: vs {panel.nextOpponentTricode}
+          </button>
+        )}
+        <div className="fpb-quick fpb-teams" role="group" aria-label="Teams">
+          {Object.entries(TEAM_CODES).map(([name, tricode]) => (
+            <button
+              key={tricode}
+              type="button"
+              title={name}
+              aria-pressed={panel.opponentTricode === tricode}
+              className={panel.opponentTricode === tricode ? 'is-on' : ''}
+              onClick={() => panel.changeOpponent(tricode)}
+            >
+              {tricode}
+            </button>
+          ))}
+        </div>
+      </>
     );
   if (which === 'minutes')
     body = (
@@ -280,7 +310,7 @@ const FilterPanelView = ({
         key="o"
         name={s.opponent}
         kind="versus"
-        onEdit={() => {}}
+        onEdit={() => setEditing('opponent')}
         onRemove={panel.clearOpponent}
       >
         {s.opponent}

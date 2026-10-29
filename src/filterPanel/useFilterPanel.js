@@ -128,6 +128,7 @@ const useFilterPanel = ({
   seasonGameLogsFailed,
   onOpenSelfFilters,
   appliedFilters,
+  nextOpponent,
 }) => {
   const { account } = useReadAccess();
   // Null until the list arrives, and again if it never does: the control is
@@ -658,6 +659,7 @@ const useFilterPanel = ({
     opponentTricode,
     changeOpponent,
     clearOpponent,
+    nextOpponentTricode: nextOpponent?.next_game?.opponent || null,
     // defense
     activeDefensiveCategory,
     changeDefensiveCategory,

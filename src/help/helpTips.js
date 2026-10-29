@@ -13,7 +13,8 @@ export const HELP_TIPS = {
     title: 'Targetable players',
     body: [
       'Players on the other team with a posted line for this market, highest scorers first.',
-      'The number is the line when one is posted, otherwise the Matchup Score. Pick a player to open his card.',
+      'The number is the line when one is posted, otherwise his season average. Pick a player to open his card.',
+      'The percent beside a name is his Matchup Score, a dotted underline means a thin sample, and the bars are his last five games against the line.',
     ],
   },
   matchupWindow: {

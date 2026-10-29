@@ -282,6 +282,14 @@
   transform-origin: top left;
 }
 
+.report-card-live {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--ct-gold);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
 .report-foot {
   margin-top: 40px;
   padding-top: 18px;

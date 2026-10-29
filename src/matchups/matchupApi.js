@@ -575,6 +575,46 @@ const decodeFocalGameLine = (line, statCategories) =>
     requireValue: requireNumber,
   });
 
+/*
+ * His last five Evidence-season games and his season average per stat
+ * (crf04/statsplus#395). Both are additive: an older backend omits them, which
+ * reads as not served (null), never as no games. A historical row's evidence
+ * runs past its own game, so it may only carry them empty.
+ */
+const decodeLastFiveGames = (games, statCategories, historical) => {
+  if (games === undefined) return null;
+  if (!Array.isArray(games) || games.length > 5 || (historical && games.length > 0)) {
+    throw invalid();
+  }
+  const decoded = games.map((game) => {
+    if (!isRecord(game)) throw invalid();
+    return decodeFocalGameLine(game, statCategories);
+  });
+  // Oldest first by date, then game id, each on a real calendar date.
+  const before = (a, b) =>
+    a.gameDate < b.gameDate || (a.gameDate === b.gameDate && a.gameId < b.gameId);
+  if (
+    decoded.some(
+      (game, index) =>
+        !isCalendarDate(game.gameDate) || (index > 0 && !before(decoded[index - 1], game)),
+    )
+  ) {
+    throw invalid();
+  }
+  return decoded;
+};
+
+const decodeSeasonAverages = (averages, statCategories, historical) => {
+  if (averages === undefined) return null;
+  if (!isRecord(averages) || (historical && Object.keys(averages).length > 0)) throw invalid();
+  return Object.fromEntries(
+    Object.entries(averages).map(([category, value]) => {
+      if (!statCategories.includes(category) || requireNumber(value) < 0) throw invalid();
+      return [category, value];
+    }),
+  );
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // A date fence is only meaningful over real calendar dates, so a string that
@@ -654,6 +694,8 @@ const decodePlayer = (player, experience, game) => {
     linePrices: decodeLinePrices(player.line_prices, decodedLines),
     focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
+    lastFiveGames: decodeLastFiveGames(player.last_five_games, statCategories, gameLogSourced),
+    seasonAverages: decodeSeasonAverages(player.season_averages, statCategories, gameLogSourced),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:

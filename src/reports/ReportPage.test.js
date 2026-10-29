@@ -178,18 +178,19 @@ test('a spot row opens into its story, its watch, its web sources and its cards 
   expect(screen.queryByTitle('Bane PTS w/o Banchero')).not.toBeInTheDocument();
 });
 
+const liveUrl =
+  'https://courtai.app/?player_id=1630217&without=203932&season_filter=2026-27&line_type=PTS';
+
 const openBaneCard = async (structured) => {
-  await open(payload({ calls: [{ ...logsCall, structured }, onOffCall] }));
+  const onOff = { ...onOffCall, structured: { ...onOffCall.structured, url: liveUrl } };
+  await open(payload({ calls: [{ ...logsCall, structured }, onOff] }));
   fireEvent.click(screen.getByRole('tab', { name: /^Spots/ }));
   fireEvent.click(screen.getByText('Desmond Bane o18.5 PTS'));
   await screen.findByTitle('Bane PTS w/o Banchero');
 };
 
 test('a game-log card opens its Log Workspace live on this site, and other cards do not', async () => {
-  await openBaneCard({
-    ...logsCall.structured,
-    url: 'https://courtai.app/?player_id=1630217&without=203932&season_filter=2026-27&line_type=PTS',
-  });
+  await openBaneCard({ ...logsCall.structured, url: liveUrl });
   expect(screen.getByRole('link', { name: 'Open live game logs' })).toHaveAttribute(
     'href',
     '/?player_id=1630217&without=203932&season_filter=2026-27&line_type=PTS',
@@ -202,8 +203,8 @@ test('a game-log card opens its Log Workspace live on this site, and other cards
 test('a game-log card without a Log Workspace link, or with one elsewhere, opens nothing', async () => {
   for (const url of [
     undefined,
-    'https://courtai.app/targets/4',
-    'javascript:alert(1)',
+    'https://courtai.app/targets/4?player_id=1630217',
+    'javascript:/?player_id=1630217',
     'not a url',
   ]) {
     await openBaneCard({ ...logsCall.structured, url });

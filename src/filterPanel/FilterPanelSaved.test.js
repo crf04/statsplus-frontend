@@ -256,18 +256,25 @@ test.each([
   expect(screen.getByRole('button', { name: 'Retry saved sets' })).toBeVisible();
 });
 
+// A signed-out reader's Save signs up first (crf04/statsplus#381); a
+// waitlisted account cannot save at all.
 test.each([
-  ['signed out', { isAuthenticated: false, currentUser: null, waitlist: null }],
-  ['waitlisted', { isAuthenticated: true, currentUser: { uid: 'u1' }, waitlist: { position: 3 } }],
-])('a %s reader gets no Saved tab and no Save', async (_label, auth) => {
+  ['signed out', { isAuthenticated: false, currentUser: null, waitlist: null }, 1],
+  [
+    'waitlisted',
+    { isAuthenticated: true, currentUser: { uid: 'u1' }, waitlist: { position: 3 } },
+    0,
+  ],
+])('a %s reader gets no Saved tab and %i Save', async (_label, auth, saves) => {
   mockAuth = auth;
   await renderPanel('/?player_name=LeBron+James&game_filter=5', {
     player_name: 'LeBron James',
     game_filter: 5,
   });
   expect(screen.queryByRole('tab')).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  expect(screen.queryAllByRole('button', { name: 'Save' })).toHaveLength(saves);
   expect(screen.getByRole('button', { name: /^Apply/ })).toBeVisible();
+  expect(fetchSavedFilterSets).not.toHaveBeenCalled();
 });
 
 test('a browse link carries no Filter Set, so it offers the Saved tab but no Save', async () => {

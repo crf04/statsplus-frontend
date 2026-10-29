@@ -13,6 +13,7 @@ import ThemeMenu from './theme/ThemeMenu';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
+import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -101,14 +102,23 @@ function AppNav() {
   );
 }
 
-// A waitlisted account has nothing signed-in to show but the public home page
-// the legal pages, public reports and Research: a banner explains why, and every other path returns home
-// until it signs out.
+// A link's query string names a Log Workspace Filter Set, usable or refused.
+const namesFilterSet = (search) => {
+  const { filters, invalid } = filterSetFromSearchParams(
+    new URLSearchParams(filterQueryString(search)),
+  );
+  return Object.keys(filters).length > 0 || invalid.length > 0;
+};
+
+// A waitlisted account has nothing signed-in to show but the public home page,
+// a shared Log Workspace link read as it is (crf04/statsplus#381), the legal
+// pages, public reports and Research: a banner explains why, and every other
+// path returns home until it signs out.
 function WaitlistedShell() {
   const { pathname, search } = useLocation();
-  // A link's query string would open the workspace, which a waitlisted account
-  // cannot use, so it too returns to the bare home page. Other pages ignore it.
-  if (pathname === '/' && search) return <Navigate to="/" replace />;
+  // Any other query string (an empty Workspace to browse) would open a
+  // Workspace the account cannot use, so it returns to the bare home page.
+  if (pathname === '/' && search && !namesFilterSet(search)) return <Navigate to="/" replace />;
   return (
     <>
       <AppNav />

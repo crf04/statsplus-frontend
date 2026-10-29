@@ -510,6 +510,12 @@ export const parseLine = (value) =>
   LINE_PATTERN.test(value) && Number(value) > 0 ? String(Number(value)) : null;
 
 /**
+ * The attribution tag a shared link carries (`ref=share`, crf04/statsplus#381).
+ * First-touch capture reads it; it is never part of a Filter Set.
+ */
+export const REF_PARAM = 'ref';
+
+/**
  * The query string with only its Filter Set left: what is requested, saved,
  * and compared against Saved Filter Sets. A change to anything else is a change
  * of view, not of Filter Set.
@@ -519,6 +525,7 @@ export const filterQueryString = (search) => {
   params.delete(BROWSE_PARAM);
   params.delete(LINE_TYPE_PARAM);
   params.delete(LINE_PARAM);
+  params.delete(REF_PARAM);
   return params.toString();
 };
 

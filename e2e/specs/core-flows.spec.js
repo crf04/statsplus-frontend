@@ -861,7 +861,8 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
   expect(requested.searchParams.has('utm_source')).toBe(false);
 });
 
-test('@critical a signed-out visitor keeps the link they followed', async ({ page }) => {
+// crf04/statsplus#381: a signed-out visitor reads the link they followed.
+test('@critical a signed-out visitor reads the link they followed', async ({ page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
     if (isWorkspaceGameLogs(request.url())) {
@@ -873,17 +874,12 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
   await page.goto('/?player_name=LeBron+James&game_filter=10');
 
   await expect(
-    page.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
+    page.getByRole('status').filter({ hasText: "You're viewing a shared link" }),
   ).toBeVisible();
-  // The requested URL is honoured, not rewritten, so signing in lands here.
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  // The requested URL is honoured, not rewritten.
   expect(page.url()).toContain('player_name=LeBron+James');
   expect(page.url()).toContain('game_filter=10');
-  expect(gameLogRequests).toHaveLength(0);
-
-  // Signing in fires the held Filter Set exactly once, without a second visit.
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect.poll(() => gameLogRequests.length).toBe(2);
   const requested = new URL(
     gameLogRequests.find((url) => new URL(url).searchParams.has('game_filter')),
   );
@@ -2014,7 +2010,7 @@ test('signed-out readers are offered no saved Filter Sets', async ({ page }) => 
   await installApiContract(page);
   await page.goto('/?player_name=LeBron+James&game_filter=10');
 
-  await expect(page.getByText('Sign in to load these game logs')).toBeVisible();
+  await expect(page.getByText("You're viewing a shared link", { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save Filter Set' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Saved Filter Sets' })).toHaveCount(0);
 });

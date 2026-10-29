@@ -81,6 +81,8 @@ test('signed out, the query box, Run it and Browse are enabled while "Try it" on
   expect(screen.getByRole('button', { name: 'Browse without a query' })).toBeEnabled();
   fireEvent.click(await screen.findByRole('button', { name: 'Try it' }));
   expect(box).toHaveValue('Jaime Jaquez Jr. this year against bottom 10 defenses');
+  // The box is above the fold from Tonight, so the fill must land in view.
+  expect(box).toHaveFocus();
   expect(mockAuth.signInWithGoogle).not.toHaveBeenCalled();
 });
 

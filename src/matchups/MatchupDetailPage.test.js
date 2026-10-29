@@ -2559,32 +2559,39 @@ describe('#212, statsplus#338: the rail leads with the line most sources post', 
   });
 });
 
-test('AC6: with no line for that stat the row leads with his Matchup Score, never a made-up line', async () => {
+test('AC6, statsplus#395 AC3: with no line the row leads with his season average, never a made-up line', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const austin = candidate.players.find((player) => player.id === 1630559);
   austin.scores.FG3A = score(-0.06, 0.02);
+  austin.seasonAverages = { PTS: 20.1, FG3A: 6.2 };
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+  const austinRow = screen.getByRole('article', { name: 'Austin Reaves player' });
+  expect(austinRow.querySelector('.rail-row-value')).toHaveTextContent(/^6\.2season avg$/);
+  expect(within(austinRow).getByRole('img', { name: 'Matchup Score -6%' })).toHaveClass(
+    'tone-down',
+  );
+
+  // A backend without season averages has none for FGA: no line, no average.
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   const lebronRow = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(lebronRow).getByText('+4%')).toHaveClass('tone-up');
-  expect(within(lebronRow).getByText('Matchup Score')).toBeVisible();
-  expect(lebronRow).not.toHaveTextContent('line');
+  expect(lebronRow.querySelector('.rail-row-value')).toHaveTextContent(/^—$/);
+  expect(within(lebronRow).getByRole('img', { name: 'Matchup Score +4%' })).toHaveTextContent(
+    '+4%',
+  );
+  expect(lebronRow).not.toHaveTextContent('Matchup Score');
 
-  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
-  expect(
-    within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByText('-6%'),
-  ).toHaveClass('tone-down');
-
-  // No line and no computable score: nothing is shown in its place.
-  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  // No computable score either: the badge says so rather than inventing one.
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   const empty = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(empty).getByText('—')).toBeVisible();
+  expect(within(empty).getByRole('img', { name: 'Matchup Score unavailable' })).toHaveTextContent(
+    '—',
+  );
   expect(empty).not.toHaveTextContent('%');
 });
 
@@ -2907,12 +2914,14 @@ test('AC6: a withheld score is no headline, and a defensive-only score is one', 
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   const withheld = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(withheld).getByText('—')).toBeVisible();
+  expect(within(withheld).getByRole('img', { name: 'Matchup Score unavailable' })).toBeVisible();
   expect(withheld).not.toHaveTextContent('50%');
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
   expect(
-    within(screen.getByRole('article', { name: 'LeBron James player' })).getByText('+7%'),
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('img', {
+      name: 'Matchup Score +7%',
+    }),
   ).toHaveClass('tone-up');
 });
 
@@ -4099,5 +4108,222 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
     expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
       /By season scoring/,
     );
+  });
+});
+
+describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that leads to his game logs', () => {
+  const game = (date, stats) => ({
+    gameId: `g-${date}`,
+    gameDate: date,
+    matchup: 'LAL vs. PHX',
+    minutes: 34,
+    stats,
+  });
+  const served = () => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    // Headline 27.5 (PrizePicks); oldest first.
+    lebron.lastFiveGames = [
+      game('2026-01-04', { PTS: 30, FGA: 21 }),
+      game('2026-01-06', { PTS: 22, FGA: 17 }),
+      game('2026-01-08', { PTS: 35, FGA: 24 }),
+      game('2026-01-10', { PTS: 27, FGA: 19 }),
+      game('2026-01-12', { PTS: 28, FGA: 20 }),
+    ];
+    lebron.seasonAverages = { PTS: 25.4, FGA: 19.2 };
+    lebron.bookLines = { PTS: quote([bookRow('draftkings', 27.5, -114, -108)]) };
+    const austin = candidate.players.find((player) => player.id === 1630559);
+    // Three games in the Evidence season; no line for FG3A.
+    austin.lastFiveGames = [
+      game('2026-01-08', { PTS: 24, FG3A: 6 }),
+      game('2026-01-10', { PTS: 18, FG3A: 8 }),
+      game('2026-01-12', { PTS: 20, FG3A: 5 }),
+    ];
+    austin.seasonAverages = { PTS: 20.1, FG3A: 6 };
+    austin.scores.PTS.season.blend.thin = true;
+    return candidate;
+  };
+  const row = (name) => screen.getByRole('article', { name: `${name} player` });
+  const slots = (pill) =>
+    [...pill.querySelectorAll('rect')].map((rect) =>
+      rect.classList.contains('rail-l5-stub')
+        ? 'stub'
+        : ['tone-up', 'tone-down', 'tone-flat'].find((tone) => rect.classList.contains(tone)),
+    );
+
+  test('AC1-AC3: the name, then his signed score; the line beside his season average', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    const lebron = row('LeBron James');
+    const lebronScore = within(lebron).getByRole('img', { name: 'Matchup Score +12%' });
+    expect(lebronScore).toHaveTextContent(/^\+12%$/);
+    expect(lebronScore).toHaveClass('tone-up');
+    expect(lebronScore).not.toHaveClass('thin');
+    expect(lebronScore).toHaveAttribute('title', 'Matchup Score +12%');
+    expect(lebron.querySelector('.rail-row-value')).toHaveTextContent(/^27\.525\.4 avg$/);
+
+    // A thin score keeps the underline and says so.
+    const austinScore = within(row('Austin Reaves')).getByRole('img', {
+      name: 'Matchup Score +21% · thin sample',
+    });
+    expect(austinScore).toHaveClass('thin');
+    expect(austinScore).toHaveAttribute('title', 'Matchup Score +21% · thin sample');
+
+    // The name still leads to his game logs, with no arrow.
+    const name = within(lebron).getByRole('link', { name: 'LeBron James game logs' });
+    expect(name).toHaveTextContent(/^LeBron James$/);
+    expect(name.querySelector('svg')).toBeNull();
+
+    // The score follows the window.
+    await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+    expect(within(row('LeBron James')).getByRole('img', { name: 'Matchup Score -1%' })).toHaveClass(
+      'tone-down',
+    );
+  });
+
+  test('AC1: a score that rounds to zero is dim', async () => {
+    const candidate = served();
+    candidate.players.find((player) => player.id === 2544).scores.PTS = score(0.004);
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(within(row('LeBron James')).getByRole('img', { name: 'Matchup Score +0%' })).toHaveClass(
+      'tone-flat',
+    );
+  });
+
+  test('AC4-AC6: the Last 5 pill charts five slots against the line and opens his game logs', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    const lebron = row('LeBron James');
+    const pill = within(lebron).getByRole('link', {
+      name: "Last 5 points: 30, 22, 35, 27, 28. Open LeBron James's game logs.",
+    });
+    expect(pill).toHaveTextContent(/^L5$/);
+    expect(pill).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26');
+    expect(pill).toHaveAttribute(
+      'href',
+      within(lebron).getByRole('link', { name: 'LeBron James game logs' }).getAttribute('href'),
+    );
+    // Against 27.5: over, under, over, under, over.
+    expect(slots(pill)).toEqual(['tone-up', 'tone-down', 'tone-up', 'tone-down', 'tone-up']);
+    expect(pill.querySelectorAll('.rail-l5-mark')).toHaveLength(1);
+    // Bar heights scale with the value (16px tall at 1.1 × his best game), and the
+    // dashed mark sits at the line's height on the same scale.
+    const heights = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      Number(bar.getAttribute('height')).toFixed(2),
+    );
+    expect(heights).toEqual(['12.47', '9.14', '14.55', '11.22', '11.64']);
+    // Every bar stands on the chart's 16px baseline.
+    const bases = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      (Number(bar.getAttribute('y')) + Number(bar.getAttribute('height'))).toFixed(2),
+    );
+    expect(bases).toEqual(['16.00', '16.00', '16.00', '16.00', '16.00']);
+    const mark = pill.querySelector('.rail-l5-mark');
+    expect(Number(mark.getAttribute('y1')).toFixed(2)).toBe('4.57');
+    expect(mark.getAttribute('y2')).toBe(mark.getAttribute('y1'));
+    // The best prices share the row with the pill.
+    const prices = within(lebron).getByRole('group', { name: /^Best Over/ });
+    expect(prices).toHaveTextContent('o −114 DK u −108 DK');
+    expect(pill.parentElement).toContainElement(prices);
+
+    // Two games short: the oldest slots are stubs. Against his 21.5 line.
+    const austinPill = within(row('Austin Reaves')).getByRole('link', {
+      name: "Last 5 points: 24, 18, 20, 2 games not played. Open Austin Reaves's game logs.",
+    });
+    expect(slots(austinPill)).toEqual(['stub', 'stub', 'tone-up', 'tone-down', 'tone-down']);
+  });
+
+  test('AC3, AC5: with no line the bars measure against his season average', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+
+    const austin = row('Austin Reaves');
+    expect(austin.querySelector('.rail-row-value')).toHaveTextContent(/^6season avg$/);
+    const pill = within(austin).getByRole('link', {
+      name: "Last 5 three-point attempts: 6, 8, 5, 2 games not played. Open Austin Reaves's game logs.",
+    });
+    // Equal to the average is dim.
+    expect(slots(pill)).toEqual(['stub', 'stub', 'tone-flat', 'tone-up', 'tone-down']);
+    // No price line: the pill stands alone.
+    expect(within(austin).queryByRole('group', { name: /^Best / })).not.toBeInTheDocument();
+  });
+
+  test('AC5: no games in the Evidence season is five stubs', async () => {
+    const candidate = served();
+    candidate.players.find((player) => player.id === 2544).lastFiveGames = [];
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const pill = within(row('LeBron James')).getByRole('link', {
+      name: "Last 5 points: 5 games not played. Open LeBron James's game logs.",
+    });
+    expect(slots(pill)).toEqual(['stub', 'stub', 'stub', 'stub', 'stub']);
+  });
+
+  test('AC7: the pill and name navigate; the rest of the row, score included, opens the card', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const location = () => screen.getByTestId('location');
+
+    await userEvent.click(
+      within(row('Austin Reaves')).getByRole('button', { name: 'Open selection card' }),
+    );
+    expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/matchups\/game-1$/));
+
+    await userEvent.click(
+      within(row('LeBron James')).getByRole('img', { name: 'Matchup Score +12%' }),
+    );
+    expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/matchups\/game-1$/));
+
+    await userEvent.click(
+      within(row('LeBron James')).getByRole('link', { name: /^Last 5 points/ }),
+    );
+    await waitFor(() =>
+      expect(location()).toHaveTextContent('/?player_name=LeBron+James&season_filter=2025-26'),
+    );
+    expect(
+      screen.queryByRole('heading', { name: 'LeBron James', level: 2 }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('a backend that does not serve them: no pill, and the average is his season scoring on points', async () => {
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const lebron = row('LeBron James');
+    expect(within(lebron).queryByRole('link', { name: /^Last 5/ })).not.toBeInTheDocument();
+    expect(lebron.querySelector('.rail-row-value')).toHaveTextContent(/^27\.525\.4 avg$/);
+    expect(within(lebron).getByRole('img', { name: 'Matchup Score +12%' })).toBeVisible();
+  });
+
+  test('AC8: a historical row is unchanged: no score, no pill, the arrow stays', async () => {
+    const candidate = historicalMatchup();
+    candidate.players.forEach((player) => {
+      player.lastFiveGames = [];
+      player.seasonAverages = {};
+    });
+    candidate.players.find((player) => player.id === 1630559).focalGameLine.stats.PTS = 24;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+
+    const austin = await screen.findByRole('article', { name: 'Austin Reaves player' });
+    expect(within(austin).queryByRole('img', { name: /^Matchup Score/ })).not.toBeInTheDocument();
+    expect(within(austin).queryByRole('link', { name: /^Last 5/ })).not.toBeInTheDocument();
+    expect(
+      within(austin).getByRole('link', { name: 'Austin Reaves game logs' }).querySelector('svg'),
+    ).not.toBeNull();
+    // Still measured against his season scoring.
+    expect(within(austin).getByText(/\+3\.9 vs his season average/)).toHaveClass('tone-up');
   });
 });

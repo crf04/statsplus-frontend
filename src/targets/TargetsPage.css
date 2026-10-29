@@ -483,6 +483,28 @@
   font-size: 0.68rem;
 }
 
+/* How a Target works, until there is a Backtest to show. */
+.target-tutorial {
+  max-width: 46ch;
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.target-tutorial h3 {
+  margin: 0 0 8px;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+}
+.target-tutorial ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.2em;
+}
+.target-tutorial b {
+  color: var(--ct-text);
+}
+
 /* Where the Lab stands, beside the season it reads. */
 .target-lab-header {
   display: flex;

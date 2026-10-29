@@ -795,6 +795,10 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
 
   // The blank form: a threshold has not been typed.
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
+  // Until there is a Backtest, the space explains how a Target works.
+  expect(screen.getByRole('region', { name: 'How Targets work' })).toHaveTextContent(
+    'Filter players. Each Qualifier is one rule a player must meet.',
+  );
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
 
@@ -869,6 +873,7 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
   expect(
     screen.queryByText('Complete the Qualifiers to see the Backtest.'),
   ).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'How Targets work' })).not.toBeInTheDocument();
 });
 
 test('the tonight line is absent when the opponent has no game', async () => {

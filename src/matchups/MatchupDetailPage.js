@@ -346,6 +346,13 @@ function RailRow({
             {prices}
           </>
         }
+        lineBlock={
+          <>
+            {value}
+            {caption && <small>{caption}</small>}
+          </>
+        }
+        priceBlock={prices}
         injury={injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
         openButton={
           <button

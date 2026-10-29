@@ -179,6 +179,8 @@ export function ProtoRailRow({
   selected,
   nameLink,
   valueBlock,
+  lineBlock,
+  priceBlock,
   injury,
   openButton,
 }) {
@@ -222,6 +224,7 @@ export function ProtoRailRow({
     );
   }
   if (variant === 'E') {
+    // Two rows: name + score | line + avg, then L5 | prices.
     return (
       <article aria-label={`${player.name} player`} className={cls}>
         <div className="rail-row-name">
@@ -233,16 +236,19 @@ export function ProtoRailRow({
           </h3>
           {injury && <p>{injury}</p>}
         </div>
-        <div className="rail-row-value">{valueBlock}</div>
-        {!loading && (
-          <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
-            <span>L5</span>
-            <MicroBars games={games} mark={mark} />
-            <span className="l5-go">
-              Game logs <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
-            </span>
-          </Link>
-        )}
+        <div className="rail-row-value">{lineBlock}</div>
+        <div className="l5-e-bottom">
+          {!loading ? (
+            <Link className="l5-pill" to={gameLogsPath} aria-label={`${player.name} game logs`}>
+              <span>L5</span>
+              <MicroBars games={games} mark={mark} />
+              <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+            </Link>
+          ) : (
+            <span />
+          )}
+          {priceBlock}
+        </div>
         {openButton}
       </article>
     );

@@ -100,3 +100,19 @@
 .l5-badge.l5-tone-down { color: var(--ct-miss); }
 .l5-badge.l5-tone-flat, .l5-badge.l5-score-none { color: var(--ct-dim); }
 .l5-thin { text-decoration: underline dotted; text-underline-offset: 3px; }
+
+.l5-vE { row-gap: 6px; }
+.l5-e-bottom {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.l5-e-bottom .l5-pill { margin-top: 0; }
+.l5-vE .l5-pill > svg:last-child { color: var(--ct-gold); }
+.l5-e-bottom .rail-price { margin-top: 0; }
+.l5-e-bottom .rail-price b {
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.2;
+}

@@ -30,11 +30,12 @@ test('the publish dialog stays open through fast Escapes and shows a failed publ
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
   await expect(dialog).toBeVisible();
 
   release();
-  await expect(dialog.getByRole('alert')).toHaveText('That didn’t go through. Try again.');
+  const refusal = dialog.getByRole('alert');
+  await expect(refusal).toBeVisible();
+  await expect(refusal).toHaveText('That didn’t go through. Try again.');
   await expect(dialog.getByRole('button', { name: 'Publish', exact: true })).toBeEnabled();
   expect(posts).toBe(1);
 });

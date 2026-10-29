@@ -319,6 +319,42 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   ]);
 });
 
+test('clearing the player disables Preview and sends nothing', async () => {
+  serveCards();
+  await openBuilder();
+  openPicker();
+  await pickBane();
+  choose('Player', '');
+
+  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  preview();
+  expect(previews()).toEqual([]);
+
+  choose('Player', 'Desmond Ba');
+  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+});
+
+test('the game-log picker filters to one opponent, and clearing it drops the filter', async () => {
+  serveCards();
+  await openBuilder();
+  openPicker();
+  await pickBane();
+  choose('Opponent (optional)', 'BOS');
+  preview();
+  await screen.findByRole('button', { name: 'Insert card' });
+
+  choose('Opponent (optional)', '');
+  preview();
+  await waitFor(() => expect(previews()).toHaveLength(2));
+  expect(previews()).toEqual([
+    {
+      tool: 'query_game_logs',
+      filter_set: { player_name: 'Desmond Bane', opponent_tricode: 'BOS', line_type: 'PTS' },
+    },
+    { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
+  ]);
+});
+
 test('the game-log picker offers only what a Card can draw', async () => {
   await openBuilder();
   openPicker();

@@ -6,7 +6,7 @@ import { lineTypeOptions, mergeFilterSet, parseLine } from '../../filterUtils';
 import { fetchGameLogsData, postedLineFor } from '../../gameLogsApi';
 import { bookName } from '../../matchups/displayConfig';
 import { formatNumber } from '../../numberUtils';
-import { PickerField, PreviewButton, ReadNote, useRead } from './pickerParts';
+import { PickerField, PreviewButton, ReadNote, TeamSelect, useRead } from './pickerParts';
 import '../../filterPanel/filterPanel.css';
 
 /*
@@ -73,6 +73,13 @@ const PlayerPanel = ({ filters, setFilters, playerList, season, request, busy, o
   });
   return (
     <>
+      <TeamSelect
+        id="report-pick-logs-opponent"
+        label="Opponent (optional)"
+        empty="Any opponent"
+        value={panel.opponentTricode}
+        onChange={panel.changeOpponent}
+      />
       <FilterPanelView panel={panel} statColumns={CARD_STAT_COLUMNS} />
       <button
         type="button"
@@ -120,6 +127,7 @@ const GameLogPicker = ({ busy, onPreview }) => {
   const choosePlayer = (name) => {
     setPlayerInput(name);
     if (playerList.includes(name)) setFilters({ player_name: name });
+    else if (player) setFilters({});
   };
 
   return (

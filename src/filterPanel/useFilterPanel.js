@@ -461,10 +461,11 @@ const useFilterPanel = ({
     setGameFilter(value);
     markControlTouched('game_filter');
   };
-  const clearOpponent = () => {
-    setOpponentTricode('');
+  const changeOpponent = (tricode) => {
+    setOpponentTricode(tricode);
     markControlTouched('opponent_tricode');
   };
+  const clearOpponent = () => changeOpponent('');
 
   const ensureSeason = useCallback(() => onOpenSelfFilters(), [onOpenSelfFilters]);
 
@@ -655,6 +656,7 @@ const useFilterPanel = ({
     playstyleMatchupRating,
     changePlaytype,
     opponentTricode,
+    changeOpponent,
     clearOpponent,
     // defense
     activeDefensiveCategory,

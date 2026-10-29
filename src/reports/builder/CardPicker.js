@@ -122,10 +122,13 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
   // idle | loading | retrying | drawn {call, preview} | refused {refusal}, for the latest request only.
   const [shown, setShown] = useState({ status: 'idle' });
   const latest = useRef(0);
+  // The latest preview's second try, cancelled by any edit to its choices.
+  const retry = useRef(new AbortController());
   // Closing the picker abandons the latest request, and with it any retry.
   useEffect(
     () => () => {
       latest.current += 1;
+      retry.current.abort();
     },
     [],
   );
@@ -134,10 +137,12 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
     latest.current += 1;
     const ticket = latest.current;
     const current = () => ticket === latest.current;
+    retry.current.abort();
+    retry.current = new AbortController();
     setShown({ status: 'loading', request });
     try {
       const drawn = await previewCardRetrying(request, {
-        current,
+        signal: retry.current.signal,
         onRetry: () => setShown({ status: 'retrying', request }),
       });
       if (current()) setShown({ status: 'drawn', request, drawn });
@@ -158,7 +163,12 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
   const drawn = shown.status === 'drawn' ? shown.drawn : null;
   const busy = shown.status === 'loading' || shown.status === 'retrying';
   return (
-    <section className="report-edit-item report-pick" aria-label="Add a card">
+    <section
+      className="report-edit-item report-pick"
+      aria-label="Add a card"
+      // Choices edited after a preview no longer match it, so it is not tried again.
+      onChangeCapture={() => retry.current.abort()}
+    >
       <div className="report-edit-item-head">
         <h3>Add a card</h3>
         <button type="button" className="report-build-small" onClick={onClose}>

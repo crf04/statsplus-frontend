@@ -57,26 +57,24 @@ const TOOL_LABEL = {
  */
 const CardSlot = ({ call, dispatch, remove }) => {
   const [again, setAgain] = useState({ status: 'idle' });
-  // A Card removed while its preview waits to be drawn once more sends nothing more.
-  const shown = useRef(true);
-  useEffect(() => {
-    shown.current = true;
-    return () => {
-      shown.current = false;
-    };
-  }, []);
+  // A Card removed while it is drawn again sends nothing more and changes nothing.
+  const pending = useRef(null);
+  useEffect(() => () => pending.current?.abort(), []);
   const busy = again.status === 'loading' || again.status === 'retrying';
   const previewAgain = async () => {
+    const { signal } = (pending.current = new AbortController());
     setAgain({ status: 'loading' });
     try {
       const { preview } = await previewCardRetrying(
         { tool: call.tool, args: call.args },
-        { current: () => shown.current, onRetry: () => setAgain({ status: 'retrying' }) },
+        { signal, onRetry: () => setAgain({ status: 'retrying' }) },
       );
+      if (signal.aborted) return;
       dispatch({ type: 'preview', call: call.id, preview });
       setAgain({ status: 'idle' });
     } catch (failure) {
-      setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
+      if (!signal.aborted)
+        setAgain({ status: 'refused', refusal: cardRefusal(failure, call.tool) });
     }
   };
   return (

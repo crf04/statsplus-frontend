@@ -242,11 +242,13 @@ const publishWith = async (title) => {
 const STILL_FETCHING = 'Still fetching part of this Card…';
 const UNAVAILABLE = 'That data isn’t available right now. Try again later.';
 
-/* Fake time past the builder's wait before it previews once more. */
-const waitOutRetry = () =>
+/* Fake time moved on by `ms`, flushing what it lets run. */
+const advance = (ms) =>
   act(async () => {
-    jest.advanceTimersByTime(10000);
+    jest.advanceTimersByTime(ms);
   });
+/* Fake time past the builder's wait before it previews once more. */
+const waitOutRetry = () => advance(10000);
 
 /* A Card the preview route drew with part of its data unavailable. */
 const partlyDrawn = (body) => ({
@@ -721,7 +723,10 @@ test('a Card drawn with part of its data unavailable is drawn again once, and go
   expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
   expect(within(picker).getByRole('button', { name: 'Drawing…' })).toBeDisabled();
   expect(within(picker).queryByTitle('Report')).not.toBeInTheDocument();
-  await waitOutRetry();
+  await advance(2900);
+  expect(previews()).toHaveLength(1);
+  await advance(200);
+  expect(previews()).toHaveLength(2);
   await insert();
 
   expect(previews()).toEqual([
@@ -901,6 +906,41 @@ const storedDraft = (blocks, calls) =>
   window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ title: '', date: null, blocks, calls }));
 const injuriesCall = (n) => ({ id: `c${n}`, tool: 'get_injuries', args: { date: '2026-10-27' } });
 
+test.each([
+  ['the date', 'get_injuries', async () => choose('Date', '2026-10-28')],
+  ['the team', 'get_injuries', async () => choose('Team (optional)', 'BOS')],
+  ['the player', null, async () => choose('Player', 'Ja Morant')],
+  ['the market', null, async () => choose('Market', 'REB')],
+  ['the season', null, async () => choose('Season', '2024-25')],
+  [
+    'the line',
+    null,
+    async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'My line' }), {
+        target: { value: '20.5' },
+      });
+    },
+  ],
+])('editing %s while a preview waits cancels its second try', async (_, card, edit) => {
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  const picker = openPicker(card);
+  if (!card) await pickBane();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  preview();
+  await within(picker).findByText(STILL_FETCHING);
+  await edit();
+
+  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  await waitOutRetry();
+  expect(previews()).toHaveLength(1);
+  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+});
+
 test('a reloaded draft keeps its Cards’ calls but not their previews, and draws one again', async () => {
   serveCards();
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
@@ -959,6 +999,55 @@ test('a reloaded Card refused as unavailable twice says why', async () => {
 
   expect((await screen.findByRole('alert')).textContent).toBe(UNAVAILABLE);
   await waitOutRetry();
+  expect(previews()).toHaveLength(2);
+});
+
+test('a reloaded Card deleted while it waits leaves the Card that takes its place alone', async () => {
+  mockPost
+    .mockImplementationOnce((url, body) => Promise.resolve(partlyDrawn(body)))
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  jest.useFakeTimers({ doNotFake: ['Date'] });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  await screen.findByText(STILL_FETCHING);
+  fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
+  openPicker('get_injuries');
+  choose('Team (optional)', 'MEM');
+  preview();
+  await insert();
+  await waitOutRetry();
+
+  expect(blockNames()).toEqual(['Block 1: Card']);
+  expect(within(blocks()[0]).getByTitle('Report')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  expect(previews()).toEqual([
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+    { tool: 'get_injuries', args: { date: '2026-10-27', team: 'MEM' } },
+  ]);
+});
+
+test('a reloaded Card deleted while it draws leaves the Card that takes its place alone', async () => {
+  let answer;
+  mockPost
+    .mockImplementationOnce(
+      (url, body) =>
+        new Promise((resolve) => {
+          answer = () => resolve(partlyDrawn(body));
+        }),
+    )
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
+  await openBuilder();
+  fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
+  fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
+  await addInjuriesCard();
+  await act(async () => answer());
+
+  expect(blockNames()).toEqual(['Block 1: Card']);
+  expect(within(blocks()[0]).getByTitle('Report')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(previews()).toHaveLength(2);
 });
 

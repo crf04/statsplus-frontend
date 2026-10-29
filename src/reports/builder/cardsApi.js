@@ -69,10 +69,10 @@ const RETRY_DELAY = 3000;
  * A preview drawn once more after RETRY_DELAY when it comes back with part of
  * its data unavailable (`publishable: false` or the `unavailable` refusal):
  * the server keeps fetching a slow read, so a second preview usually has it.
- * `onRetry` runs before the wait. Once `current()` is false nothing more is
- * sent, and the first outcome stands for the caller to ignore.
+ * `onRetry` runs before the wait. Aborting `signal` cancels the second try,
+ * waiting or not, and the first outcome comes back at once.
  */
-export const previewCardRetrying = async (request, { onRetry, current }) => {
+export const previewCardRetrying = async (request, { onRetry, signal }) => {
   const first = previewCard(request);
   try {
     const drawn = await first;
@@ -80,10 +80,20 @@ export const previewCardRetrying = async (request, { onRetry, current }) => {
   } catch (failure) {
     if (cardRefusal(failure)?.code !== 'unavailable') throw failure;
   }
-  if (!current()) return first;
+  if (signal.aborted) return first;
   onRetry();
-  await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-  return current() ? previewCard(request) : first;
+  await new Promise((resolve) => {
+    const timer = setTimeout(resolve, RETRY_DELAY);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
+  return signal.aborted ? first : previewCard(request);
 };
 
 /* Publishes a Report with Cards; resolves to its id like the backend's publish. */

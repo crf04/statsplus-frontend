@@ -1061,6 +1061,30 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   await expect(page.getByText('2 of 2 games', { exact: true })).toBeVisible();
 });
 
+test('@critical a search naming one opponent team applies it as a panel pick would', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James against the Hawks');
+  await page.getByRole('textbox').press('Enter');
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/opponent_tricode=ATL/);
+  await expect.poll(() => gameLogRequests.at(-1)?.searchParams.get('opponent_tricode')).toBe('ATL');
+  await expect(page.getByText('vs ATL', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
+});
+
 test('@critical Back out of the workspace returns to the Query Prompt', async ({
   authenticatedPage: page,
 }) => {

@@ -173,6 +173,10 @@ export const convertNLToFilters = (nlResult = {}) => {
     filters['rank_filter[]'] = nlResult.rank_filter;
   }
 
+  if (typeof nlResult.opponent_tricode === 'string' && nlResult.opponent_tricode) {
+    filters.opponent_tricode = nlResult.opponent_tricode;
+  }
+
   if (hasValue(nlResult.minutes_filter)) {
     addMinutesFilter(filters, nlResult.minutes_filter);
   }

@@ -31,7 +31,11 @@ export const KEYWORDS = [
   { keyword: 'since', means: 'Only games after a date you name.' },
   { keyword: 'without', means: 'Only games a named teammate missed.' },
   { keyword: 'with', means: 'Only games a named teammate played.' },
-  { keyword: 'against', means: 'Only games versus opponents matching a defensive rank.' },
+  {
+    keyword: 'against',
+    means:
+      'Only games versus one team, such as Jokic against the Blazers, or versus opponents matching a defensive rank.',
+  },
   { keyword: 'at home', means: 'Home games only. Use "on the road" for away games.' },
   {
     keyword: '10+ FGA',

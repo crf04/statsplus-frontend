@@ -41,6 +41,29 @@ describe('NaturalLanguageQuery', () => {
     expect(screen.getByRole('textbox')).not.toBeDisabled();
   });
 
+  test('applies the opponent team the parser names', async () => {
+    apiClient.post.mockResolvedValue({
+      data: { player_name: 'Nikola Jokić', opponent_tricode: 'POR', confidence: 0.95 },
+    });
+    const onFiltersApplied = jest.fn(() => ({ ok: true }));
+
+    render(
+      <MemoryRouter>
+        <NaturalLanguageQuery onFiltersApplied={onFiltersApplied} />
+      </MemoryRouter>,
+    );
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'jokic against the blazers' } });
+    fireEvent.submit(input.closest('form'));
+
+    await waitFor(() =>
+      expect(onFiltersApplied).toHaveBeenCalledWith({
+        player_name: 'Nikola Jokić',
+        opponent_tricode: 'POR',
+      }),
+    );
+  });
+
   test('gives natural-language parsing a cold-start-safe timeout', async () => {
     apiClient.post.mockResolvedValue({ data: { confidence: 0 } });
 

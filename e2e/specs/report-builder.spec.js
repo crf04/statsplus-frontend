@@ -40,7 +40,7 @@ test('the publish dialog stays open through fast Escapes and shows a failed publ
   expect(posts).toBe(1);
 });
 
-test('an author previews an injuries Card, inserts it and publishes through the card server', async ({
+test('an author draws an injuries Card, inserts it and publishes through the card server', async ({
   authenticatedPage: page,
 }) => {
   await page.goto('/reports/new');
@@ -51,10 +51,9 @@ test('an author previews an injuries Card, inserts it and publishes through the 
     .fill('Tonight’s report');
   await page.getByRole('button', { name: 'Add card' }).click();
   const picker = page.getByRole('region', { name: 'Add a card' });
-  await picker.getByLabel('Card', { exact: true }).selectOption('get_injuries');
+  await picker.getByRole('radio', { name: 'Injuries' }).check();
   await picker.getByLabel('Date', { exact: true }).fill('2026-10-27');
   await picker.getByLabel('Team (optional)').selectOption('MEM');
-  await picker.getByRole('button', { name: 'Preview card' }).click();
   await expect(
     picker.frameLocator('iframe[title="Report"]').getByText('CourtAI injuries card'),
   ).toBeVisible();

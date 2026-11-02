@@ -6,7 +6,7 @@ import { lineTypeOptions, mergeFilterSet, parseLine } from '../../filterUtils';
 import { fetchGameLogsData, postedLineFor } from '../../gameLogsApi';
 import { bookName } from '../../matchups/displayConfig';
 import { formatNumber } from '../../numberUtils';
-import { PickerField, PreviewButton, ReadNote, TeamSelect, useRead } from './pickerParts';
+import { PickerField, ReadNote, useRead, useReportRequest } from './pickerParts';
 import '../../filterPanel/filterPanel.css';
 
 /*
@@ -40,18 +40,32 @@ const decodePlayers = (data) => {
   return players;
 };
 
-const PostedLine = ({ read, lineType }) => {
-  if (read.status === 'loading') return 'finding it…';
+const gameDay = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+
+/* The posted line as its toggle names it, and the game it is posted for: 'MEM @ ORL, Oct 29'. */
+const postedLine = (read, lineType) => {
+  if (read.status === 'loading') return { name: 'Finding the line…', game: '' };
   const posted = read.status === 'ready' && postedLineFor(read.data.postedLine, lineType);
-  if (!posted) return 'none posted for this market';
-  const game = [posted.matchup, posted.gameDate].filter(Boolean).join(', ');
-  return `${bookName(posted.key)} ${formatNumber(posted.line, 1)}${game ? ` (${game})` : ''}`;
+  if (!posted) return { name: 'None posted', game: '' };
+  return {
+    name: `${bookName(posted.key)} ${formatNumber(posted.line, 1)}`,
+    game: [
+      posted.matchup,
+      posted.gameDate && gameDay.format(new Date(`${posted.gameDate}T12:00:00Z`)),
+    ]
+      .filter(Boolean)
+      .join(', '),
+  };
 };
 
 // One empty list, so the panel's season ranges never see a new one each render.
 const NO_GAMES = [];
 
-const PlayerPanel = ({ filters, setFilters, playerList, season, request, busy, onPreview }) => {
+const PlayerPanel = ({ filters, setFilters, playerList, season }) => {
   const player = filters.player_name;
   const noSeason = useCallback(() => {}, []);
   const panel = useFilterPanel({
@@ -62,39 +76,21 @@ const PlayerPanel = ({ filters, setFilters, playerList, season, request, busy, o
     seasonGameLogsLoading: season.status === 'loading',
     seasonGameLogsFailed: season.status === 'failed',
     onOpenSelfFilters: noSeason,
-    onSeasonChange: (choice) => setFilters(mergeFilterSet(filters, { season_filter: choice })),
-    // The panel's Apply previews the Card with the filters it emits.
-    onApplyFilters: (patch) => {
-      const next = mergeFilterSet(filters, patch);
-      setFilters(next);
-      const nextRequest = request(next);
-      if (nextRequest) onPreview(nextRequest);
-    },
+    onSeasonChange: (choice) =>
+      setFilters((current) => mergeFilterSet(current, { season_filter: choice })),
+    onApplyFilters: (patch) => setFilters((current) => mergeFilterSet(current, patch)),
   });
-  return (
-    <>
-      <TeamSelect
-        id="report-pick-logs-opponent"
-        label="Opponent (optional)"
-        empty="Any opponent"
-        value={panel.opponentTricode}
-        onChange={panel.changeOpponent}
-      />
-      <FilterPanelView panel={panel} statColumns={CARD_STAT_COLUMNS} />
-      <button
-        type="button"
-        className="report-listing-button"
-        disabled={busy || !request(filters)}
-        onClick={panel.apply}
-      >
-        {busy ? 'Drawing…' : 'Preview card'}
-      </button>
-    </>
-  );
+  // The builder has no Apply (crf04/statsplus#406): each filter edit applies at
+  // once, and the Card pane waits for the edits to settle before it draws.
+  const { dirtyCount, apply } = panel;
+  useEffect(() => {
+    if (dirtyCount > 0) apply();
+  }, [dirtyCount, apply]);
+  return <FilterPanelView panel={panel} statColumns={CARD_STAT_COLUMNS} menu />;
 };
 
 /* A game-log Card: a player, a market, the posted line or one the author types, and filters. */
-const GameLogPicker = ({ busy, onPreview }) => {
+const GameLogPicker = ({ onRequest }) => {
   const [filters, setFilters] = useState({});
   const [lineType, setLineType] = useState('PTS');
   const [playerInput, setPlayerInput] = useState('');
@@ -114,15 +110,19 @@ const GameLogPicker = ({ busy, onPreview }) => {
     ),
   );
   const line = typed === null ? null : parseLine(typed);
+  const posted = postedLine(season, lineType);
 
   // The Card counts the posted line unless the author typed one.
-  const request = (set) =>
-    set.player_name && (typed === null || line)
+  useReportRequest(
+    player && (typed === null || line)
       ? {
           tool: 'query_game_logs',
-          filter_set: { ...set, line_type: lineType, ...(line && { line: Number(line) }) },
+          filter_set: { ...filters, line_type: lineType, ...(line && { line: Number(line) }) },
         }
-      : null;
+      : null,
+    onRequest,
+    player ? 'Type your line to see the card.' : null,
+  );
 
   // A name typed before the list arrived is chosen when it arrives, if it is exactly a listed name.
   const listed = players.data;
@@ -138,64 +138,68 @@ const GameLogPicker = ({ busy, onPreview }) => {
 
   return (
     <>
-      <PickerField id="report-pick-logs-player" label="Player">
-        <input
-          id="report-pick-logs-player"
-          type="text"
-          list="report-pick-logs-players"
-          autoComplete="off"
-          placeholder="Search a player…"
-          value={playerInput}
-          onChange={(event) => choosePlayer(event.target.value)}
-        />
-        <datalist id="report-pick-logs-players">
-          {playerList.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
-      </PickerField>
+      <div className="report-pick-row">
+        <PickerField id="report-pick-logs-player" label="Player">
+          <input
+            id="report-pick-logs-player"
+            type="text"
+            list="report-pick-logs-players"
+            autoComplete="off"
+            placeholder="Search a player…"
+            value={playerInput}
+            onChange={(event) => choosePlayer(event.target.value)}
+          />
+          <datalist id="report-pick-logs-players">
+            {playerList.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </PickerField>
+        <PickerField id="report-pick-logs-market" label="Market">
+          <select
+            id="report-pick-logs-market"
+            value={lineType}
+            onChange={(event) => setLineType(event.target.value)}
+          >
+            {MARKETS.map(({ lineType, label }) => (
+              <option key={lineType} value={lineType}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </PickerField>
+      </div>
       <ReadNote
         read={players}
         loading="Loading players…"
         failed="We couldn’t load the player list."
       />
-      <PickerField id="report-pick-logs-market" label="Market">
-        <select
-          id="report-pick-logs-market"
-          value={lineType}
-          onChange={(event) => setLineType(event.target.value)}
-        >
-          {MARKETS.map(({ lineType, label }) => (
-            <option key={lineType} value={lineType}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </PickerField>
       {player && (
-        <fieldset className="report-pick-choices">
+        <fieldset className="report-pick-line">
           <legend>Line</legend>
-          <label>
-            <input
-              type="radio"
-              name="report-pick-logs-line"
-              checked={typed === null}
-              onChange={() => setTyped(null)}
-            />
-            <span>
-              Posted line: <PostedLine read={season} lineType={lineType} />
-            </span>
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="report-pick-logs-line"
-              checked={typed !== null}
-              onChange={() => setTyped('')}
-            />
-            My line
-          </label>
-          {typed !== null && (
+          <div className="report-pick-toggle">
+            <label className={typed === null ? 'is-on' : undefined}>
+              <input
+                type="radio"
+                name="report-pick-logs-line"
+                checked={typed === null}
+                onChange={() => setTyped(null)}
+              />
+              {posted.name}
+            </label>
+            <label className={typed !== null ? 'is-on' : undefined}>
+              <input
+                type="radio"
+                name="report-pick-logs-line"
+                checked={typed !== null}
+                onChange={() => setTyped('')}
+              />
+              My line
+            </label>
+          </div>
+          {typed === null ? (
+            posted.game && <span className="report-edit-help">{posted.game}</span>
+          ) : (
             <input
               type="text"
               inputMode="decimal"
@@ -206,18 +210,13 @@ const GameLogPicker = ({ busy, onPreview }) => {
           )}
         </fieldset>
       )}
-      {player ? (
+      {player && (
         <PlayerPanel
           filters={filters}
           setFilters={setFilters}
           playerList={playerList}
           season={season}
-          request={request}
-          busy={busy}
-          onPreview={onPreview}
         />
-      ) : (
-        <PreviewButton request={null} busy={busy} onPreview={onPreview} />
       )}
     </>
   );

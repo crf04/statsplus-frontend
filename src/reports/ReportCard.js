@@ -65,9 +65,11 @@ export const liveLink = (call) => {
 /*
  * One stored card: the card HTML the report was published with, fed the
  * stored tool result over the MCP Apps host messages, in a sandbox with no
- * same-origin access.
+ * same-origin access. `fit: false` keeps it full size: in the builder's narrow
+ * Card pane a scaled card is widened, reflows shorter and is drawn full size
+ * again, without end (crf04/statsplus#406).
  */
-const ReportCard = ({ html, call, label }) => {
+const ReportCard = ({ html, call, label, fit = true }) => {
   const { resolved: theme } = useTheme();
   const frameRef = useRef(null);
   const themeRef = useRef(theme);
@@ -132,7 +134,7 @@ const ReportCard = ({ html, call, label }) => {
     );
   }, [theme]);
 
-  const scale = fitScale(height, view);
+  const scale = fit ? fitScale(height, view) : 1;
   const live = liveLink(call);
   return (
     <>

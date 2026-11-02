@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ReportCard from '../ReportCard';
 import { cardLabel } from '../reportText';
 import { cardRefusal, previewCardRetrying } from './cardsApi';
 import GameLogPicker from './GameLogPicker';
 import { MatchupPicker, RotationPicker } from './GamePickers';
+import { requestKey } from './pickerParts';
 import { canInsert, hasRoom, LIMITS } from './reportDraft';
 import { InjuriesPicker, OnOffPicker } from './TeamPickers';
 
@@ -14,12 +15,39 @@ import { InjuriesPicker, OnOffPicker } from './TeamPickers';
  */
 
 const PICKERS = {
-  query_game_logs: { label: 'Game logs', Picker: GameLogPicker },
-  get_matchup: { label: 'Matchup', Picker: MatchupPicker },
-  get_rotation: { label: 'Rotation', Picker: RotationPicker },
-  get_on_off: { label: 'On/off', Picker: OnOffPicker },
-  get_injuries: { label: 'Injuries', Picker: InjuriesPicker },
+  query_game_logs: {
+    label: 'Game logs',
+    Picker: GameLogPicker,
+    needs: 'Choose a player to see the card.',
+  },
+  get_matchup: {
+    label: 'Matchup',
+    Picker: MatchupPicker,
+    needs: 'Choose a game and a player to see the card.',
+  },
+  get_rotation: {
+    label: 'Rotation',
+    Picker: RotationPicker,
+    needs: 'Choose a team and a finished game to see the card.',
+  },
+  get_on_off: {
+    label: 'On/off',
+    Picker: OnOffPicker,
+    needs: 'Choose a team and a player on or off the floor to see the card.',
+  },
+  get_injuries: {
+    label: 'Injuries',
+    Picker: InjuriesPicker,
+    needs: 'Choose a date to see the card.',
+  },
 };
+
+/*
+ * The Card draws itself once the choices have stayed put this long
+ * (crf04/statsplus#406): previews count against the author's CourtAI limits,
+ * so typing a line or stepping a slider sends one preview, not one per change.
+ */
+export const SETTLE_MS = 800;
 
 // While a preview with part of its data unavailable waits to be drawn once more.
 export const STILL_FETCHING = 'Still fetching part of this Card…';
@@ -42,9 +70,24 @@ const withChoice = (request, choice) => {
   return { ...request, args: { ...args, player: choice } };
 };
 
-const Refusal = ({ refusal, onChoose }) => (
+// Refusals the same choices meet again, so they offer no second try.
+const FINAL = new Set([
+  'no_card',
+  'needs_choice',
+  'invalid_input',
+  'waitlisted',
+  'unauthorized',
+  'payload_too_large',
+]);
+
+const Refusal = ({ refusal, onChoose, onRetry }) => (
   <div className="report-edit-error report-pick-refusal" role="alert">
     <p>{refusalText(refusal)}</p>
+    {!FINAL.has(refusal?.code) && (
+      <button type="button" className="report-build-small" onClick={onRetry}>
+        Try again
+      </button>
+    )}
     {refusal?.choices.length > 0 && (
       <div className="report-build-row-actions" role="group" aria-label="Choose one">
         {refusal.choices.map((choice) => (
@@ -73,13 +116,13 @@ export const Unpublishable = ({ refusal, onPreview, busy = false }) => (
 );
 
 /* Where a drawn Card goes: a block of its own, or beside a lone card or into a row with room. */
-const Insert = ({ draft, dispatch, drawn, onDone }) => {
+const Insert = ({ draft, dispatch, drawn, stale, onDone }) => {
   const [into, setInto] = useState('');
   const places = draft.blocks
     .map((block, index) => ({ block, place: index + 1 }))
     .filter(({ block }) => hasRoom(block));
   const target = into || null;
-  const allowed = drawn.preview.publishable && canInsert(draft, target);
+  const allowed = !stale && drawn.preview.publishable && canInsert(draft, target);
   return (
     <div className="report-pick-insert">
       <div className="report-pick-field">
@@ -119,9 +162,16 @@ const Insert = ({ draft, dispatch, drawn, onDone }) => {
 
 const CardPicker = ({ draft, dispatch, onClose }) => {
   const [tool, setTool] = useState('query_game_logs');
-  // idle | loading | retrying | drawn {call, preview} | refused {refusal}, for the latest request only.
+  // idle | loading | retrying | drawn {call, preview} | refused {refusal}, for the latest request
+  // only; `from` is the key of the picker request it answers.
   const [shown, setShown] = useState({ status: 'idle' });
+  // The picker's current request and its key, or null while its choices make none.
+  const [wanted, setWanted] = useState(null);
+  // What the picker says its choices still lack, when it knows better than the default.
+  const [need, setNeed] = useState(null);
   const latest = useRef(0);
+  // The key of the request drawn or drawing, which is not sent again.
+  const sent = useRef(null);
   // The latest preview's second try, cancelled by any edit to its choices.
   const retry = useRef(new AbortController());
   // Closing the picker abandons the latest request, and with it any retry.
@@ -133,35 +183,61 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
     [],
   );
 
-  const preview = async (request) => {
+  const preview = useCallback(async (request, from) => {
     latest.current += 1;
     const ticket = latest.current;
     const current = () => ticket === latest.current;
     retry.current.abort();
     retry.current = new AbortController();
-    setShown({ status: 'loading', request });
+    sent.current = from;
+    setShown({ status: 'loading', request, from });
     try {
       const drawn = await previewCardRetrying(request, {
         signal: retry.current.signal,
-        onRetry: () => setShown({ status: 'retrying', request }),
+        onRetry: () => setShown({ status: 'retrying', request, from }),
       });
-      if (current()) setShown({ status: 'drawn', request, drawn });
+      if (current()) setShown({ status: 'drawn', request, from, drawn });
     } catch (failure) {
       if (current()) {
-        setShown({ status: 'refused', request, refusal: cardRefusal(failure, request.tool) });
+        sent.current = null;
+        setShown({ status: 'refused', request, from, refusal: cardRefusal(failure, request.tool) });
       }
     }
-  };
+  }, []);
+
+  const abandon = useCallback(() => {
+    latest.current += 1;
+    retry.current.abort();
+    sent.current = null;
+    setShown({ status: 'idle' });
+  }, []);
+
+  const onRequest = useCallback((request, lacking = null) => {
+    setWanted(request && { request, key: requestKey(request) });
+    setNeed(lacking);
+  }, []);
+  useEffect(() => {
+    if (!wanted) {
+      abandon();
+      return undefined;
+    }
+    if (wanted.key === sent.current) return undefined;
+    // A second try of the last request would draw choices the author has left.
+    retry.current.abort();
+    const timer = setTimeout(() => preview(wanted.request, wanted.key), SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [wanted, preview, abandon]);
 
   const chooseTool = (next) => {
-    latest.current += 1;
-    setShown({ status: 'idle' });
+    abandon();
     setTool(next);
   };
 
-  const { Picker } = PICKERS[tool];
+  const { Picker, needs } = PICKERS[tool];
   const drawn = shown.status === 'drawn' ? shown.drawn : null;
   const busy = shown.status === 'loading' || shown.status === 'retrying';
+  // Choices changed since the Card shown, which redraws once they settle.
+  const settling = Boolean(wanted) && wanted.key !== shown.from;
   return (
     <section
       className="report-edit-item report-pick"
@@ -175,46 +251,68 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
           Cancel
         </button>
       </div>
-      <div className="report-pick-field">
-        <label htmlFor="report-pick-tool">Card</label>
-        <select id="report-pick-tool" value={tool} onChange={(e) => chooseTool(e.target.value)}>
-          {Object.entries(PICKERS).map(([value, { label }]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <Picker key={tool} busy={busy} onPreview={preview} />
-      {busy && (
-        <p className="report-edit-help" role="status">
-          {shown.status === 'retrying' ? STILL_FETCHING : 'Drawing the card…'}
-        </p>
-      )}
-      {shown.status === 'refused' && (
-        <Refusal
-          refusal={shown.refusal}
-          onChoose={(choice) => preview(withChoice(shown.request, choice))}
-        />
-      )}
-      {drawn && (
-        <>
-          <figure className="report-block-card report-pick-preview">
-            <ReportCard
-              html={drawn.preview.html}
-              call={drawn.preview}
-              label={cardLabel({ tool: drawn.call.tool, structured: drawn.preview.structured })}
+      <fieldset className="report-pick-pills">
+        <legend>Card</legend>
+        {Object.entries(PICKERS).map(([value, { label }]) => (
+          <label key={value} className={value === tool ? 'is-on' : undefined}>
+            <input
+              type="radio"
+              name="report-pick-tool"
+              checked={value === tool}
+              onChange={() => chooseTool(value)}
             />
-          </figure>
-          {drawn.preview.unpublishable && (
-            <Unpublishable
-              refusal={drawn.preview.unpublishable}
-              onPreview={() => preview(shown.request)}
+            {label}
+          </label>
+        ))}
+      </fieldset>
+      <div className="report-pick-split">
+        <div className="report-pick-form">
+          <Picker key={tool} onRequest={onRequest} />
+        </div>
+        <div className="report-pick-pane">
+          {!wanted && shown.status === 'idle' && (
+            <p className="report-edit-help">{need ?? needs}</p>
+          )}
+          {(busy || settling) && (
+            <p className="report-edit-help" role="status">
+              {shown.status === 'retrying' ? STILL_FETCHING : 'Drawing the card…'}
+            </p>
+          )}
+          {/* A refusal of choices since changed would retry those, so it waits for the redraw. */}
+          {shown.status === 'refused' && !settling && (
+            <Refusal
+              refusal={shown.refusal}
+              onChoose={(choice) => preview(withChoice(shown.request, choice), shown.from)}
+              onRetry={() => preview(shown.request, shown.from)}
             />
           )}
-          <Insert draft={draft} dispatch={dispatch} drawn={drawn} onDone={onClose} />
-        </>
-      )}
+          {drawn && (
+            <>
+              <figure className="report-block-card report-pick-preview">
+                <ReportCard
+                  html={drawn.preview.html}
+                  call={drawn.preview}
+                  label={cardLabel({ tool: drawn.call.tool, structured: drawn.preview.structured })}
+                  fit={false}
+                />
+              </figure>
+              {drawn.preview.unpublishable && (
+                <Unpublishable
+                  refusal={drawn.preview.unpublishable}
+                  onPreview={() => preview(shown.request, shown.from)}
+                />
+              )}
+              <Insert
+                draft={draft}
+                dispatch={dispatch}
+                drawn={drawn}
+                stale={settling}
+                onDone={onClose}
+              />
+            </>
+          )}
+        </div>
+      </div>
     </section>
   );
 };

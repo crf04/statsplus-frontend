@@ -76,10 +76,12 @@ E2E_BASE_URL=https://staging.courtai.app \
   npm run test:e2e:smoke
 ```
 
-The `Deployed smoke test` workflow dispatches it with mode `production` or `staging`.
-`scripts/validate-deployment-url.mjs` accepts only the production trio and the `staging.courtai.app`
-trio (a staging backend named `statsplus-backend-staging*.up.railway.app` and `mcp-staging.courtai.app`);
-staging has no API or MCP defaults.
+The `Deployed smoke test` workflow dispatches it with mode `production`, `staging` or `compatibility`
+(the production frontend against the staging API and MCP).
+`scripts/validate-deployment-url.mjs` accepts only the production trio, the `staging.courtai.app`
+trio (a staging backend named `statsplus-backend-staging*.up.railway.app` and `mcp-staging.courtai.app`)
+and the compatibility trio (`statsplus-frontend.vercel.app` with that staging backend and MCP);
+staging and compatibility have no API or MCP defaults.
 
 Protected preview smoke is a manual workflow dispatch. It accepts only an HTTPS
 `statsplus-frontend-<deployment-id>-chris-fus-projects.vercel.app` URL, checks that URL before
@@ -245,8 +247,8 @@ the encrypted repository secret is missing. Playwright trace and video are disab
 secret is present; screenshots remain available for failure evidence.
 
 Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evidence` and `parent-links` before merging. `E2E` and `e2e flows` are
-aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; two e2e flows slices per
-target, `1/2` and `2/2`): each passes only when every leg passed, so the required names are
+aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; three e2e flows slices per
+target, `1/3` to `3/3`): each passes only when every leg passed, so the required names are
 unchanged. `playwright-evidence` is the merged HTML report; `e2e-flow-evidence-<target>-<slice>` and
 `playwright-test-results-<shard>` hold per-leg evidence.
 

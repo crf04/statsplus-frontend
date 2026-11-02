@@ -181,9 +181,10 @@ clipboard-permission grant, so it uses a local clipboard sink; no automated
 test reads the real browser clipboard since the Playwright Connect spec was
 retired (see `MIGRATION.md`).
 
-The Waitlist flow checks that a waitlisted account opening `/?browse=1` or
-`/?player_name=...` lands on `/` under the banner with search disabled, and the
-ladder's refusal of query parameters. `specs/waitlist.spec.js` keeps the two
+The Waitlist flow checks that a waitlisted account opening `/?browse=1` lands on
+`/` under the banner with search disabled (a link naming a Filter Set stays and
+is read; see `flows/shared-links.e2e.ts`), and the ladder's refusal of query
+parameters. `specs/waitlist.spec.js` keeps the two
 tests that observe browser responses (every 403 before and after navigation,
 and a 403 awaited before `goto`), because e2e has no response listener (see
 `MIGRATION.md`).

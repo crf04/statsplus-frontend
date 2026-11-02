@@ -293,6 +293,7 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
                   html={drawn.preview.html}
                   call={drawn.preview}
                   label={cardLabel({ tool: drawn.call.tool, structured: drawn.preview.structured })}
+                  fit={false}
                 />
               </figure>
               {drawn.preview.unpublishable && (

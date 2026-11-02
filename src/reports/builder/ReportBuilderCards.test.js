@@ -764,6 +764,26 @@ test('a preview that fails to reach the server is not tried again', async () => 
   expect(previews()).toHaveLength(1);
 });
 
+test('a tall Card in the picker stays full size on a wide window', async () => {
+  serveCards();
+  await openBuilder();
+  const picker = openPicker('Injuries');
+  await settle();
+  const frame = await within(picker).findByTitle('Report');
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        source: frame.contentWindow,
+        data: { jsonrpc: '2.0', method: 'ui/notifications/size-changed', params: { height: 954 } },
+      }),
+    );
+  });
+
+  expect(frame.style.height).toBe('954px');
+  expect(frame.style.width).toBe('100%');
+  expect(frame.style.transform).toBe('');
+});
+
 test('a failed preview offers Try again, which sends the same request once more', async () => {
   mockPost
     .mockImplementationOnce(() => Promise.reject(new Error('Network Error')))

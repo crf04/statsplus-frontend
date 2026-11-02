@@ -61,6 +61,7 @@ for (const [name, command, args] of [
   ['eslint --cache', 'npx', ['eslint', '--cache', '.']],
   ['check-colors', 'node', ['scripts/theme/check-colors.mjs']],
   ['tokenize --check', 'node', ['scripts/theme/tokenize.mjs', '--check']],
+  ['light-tails --check', 'node', ['scripts/theme/light-tails.mjs', '--check']],
   ['format:check', 'npm', ['run', '--silent', 'format:check']],
   ['typecheck:e2e', 'npm', ['run', '--silent', 'typecheck:e2e']],
   ['build', 'npm', ['run', '--silent', 'build']],

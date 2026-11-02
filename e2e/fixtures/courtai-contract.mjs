@@ -4014,10 +4014,17 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         });
         return;
       }
+      if (/\bagainst the hawks\b/i.test(request.postDataJSON()?.query ?? '')) {
+        await route.fulfill({
+          json: { player_name: 'LeBron James', opponent_tricode: 'ATL', confidence: 0.96 },
+        });
+        return;
+      }
       await route.fulfill({
         json: {
           player_name: 'LeBron James',
           game_count: 10,
+          opponent_tricode: null,
           confidence: 0.96,
         },
       });

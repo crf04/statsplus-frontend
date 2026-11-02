@@ -41,6 +41,22 @@ describe('filterUtils', () => {
       'players_on[]': ['Jimmy Butler'],
     });
   });
+
+  test('applies the one opponent team a query names', () => {
+    expect(convertNLToFilters({ player_name: 'Nikola Jokić', opponent_tricode: 'POR' })).toEqual({
+      player_name: 'Nikola Jokić',
+      opponent_tricode: 'POR',
+    });
+  });
+
+  test('adds no opponent when the result names none or predates the field', () => {
+    expect(convertNLToFilters({ player_name: 'Nikola Jokić', opponent_tricode: null })).toEqual({
+      player_name: 'Nikola Jokić',
+    });
+    expect(convertNLToFilters({ player_name: 'Nikola Jokić' })).toEqual({
+      player_name: 'Nikola Jokić',
+    });
+  });
 });
 
 describe('filterSetFromSearchParams', () => {

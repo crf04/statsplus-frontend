@@ -4,11 +4,11 @@ import { fetchSeasonMinutes } from '../../targets/targetsApi';
 import {
   DateField,
   PickerField,
-  PreviewButton,
   ReadNote,
   slateToday,
   TeamSelect,
   useRead,
+  useReportRequest,
 } from './pickerParts';
 
 /* The on/off and injuries pickers (crf04/statsplus#382). */
@@ -18,7 +18,7 @@ const MAX_ON = 5;
 const MAX_OFF = 15;
 
 /* An on/off Card: a team, the players on and off the floor, and a season. */
-export const OnOffPicker = ({ busy, onPreview }) => {
+export const OnOffPicker = ({ onRequest }) => {
   const [team, setTeam] = useState('');
   const [season, setSeason] = useState('');
   const [floor, setFloor] = useState({});
@@ -41,6 +41,7 @@ export const OnOffPicker = ({ busy, onPreview }) => {
           },
         }
       : null;
+  useReportRequest(request, onRequest);
 
   return (
     <>
@@ -100,16 +101,16 @@ export const OnOffPicker = ({ busy, onPreview }) => {
           ))}
         </fieldset>
       )}
-      <PreviewButton request={request} busy={busy} onPreview={onPreview} />
     </>
   );
 };
 
 /* An injuries Card: the official report on a date, for every team or one. */
-export const InjuriesPicker = ({ busy, onPreview }) => {
+export const InjuriesPicker = ({ onRequest }) => {
   const [date, setDate] = useState(slateToday);
   const [team, setTeam] = useState('');
   const request = date ? { tool: 'get_injuries', args: { date, ...(team && { team }) } } : null;
+  useReportRequest(request, onRequest);
   return (
     <>
       <DateField id="report-pick-injuries-date" value={date} onChange={setDate} />
@@ -120,7 +121,6 @@ export const InjuriesPicker = ({ busy, onPreview }) => {
         value={team}
         onChange={setTeam}
       />
-      <PreviewButton request={request} busy={busy} onPreview={onPreview} />
     </>
   );
 };

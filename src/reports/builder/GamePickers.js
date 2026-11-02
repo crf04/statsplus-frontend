@@ -5,11 +5,11 @@ import {
   DateField,
   gameName,
   PickerField,
-  PreviewButton,
   ReadNote,
   slateToday,
   TeamSelect,
   useRead,
+  useReportRequest,
 } from './pickerParts';
 
 /*
@@ -18,7 +18,7 @@ import {
  */
 
 /* A Matchup Card: a date (today by default), one of that day's games, then a player in it. */
-export const MatchupPicker = ({ busy, onPreview }) => {
+export const MatchupPicker = ({ onRequest }) => {
   const [date, setDate] = useState(slateToday);
   const [gameId, setGameId] = useState('');
   const [player, setPlayer] = useState('');
@@ -32,6 +32,7 @@ export const MatchupPicker = ({ busy, onPreview }) => {
   const players = matchup.data?.players ?? [];
   const request =
     game && player ? { tool: 'get_matchup', args: { game: gameName(game), date, player } } : null;
+  useReportRequest(request, onRequest);
 
   return (
     <>
@@ -100,7 +101,6 @@ export const MatchupPicker = ({ busy, onPreview }) => {
           </select>
         </PickerField>
       )}
-      <PreviewButton request={request} busy={busy} onPreview={onPreview} />
     </>
   );
 };
@@ -129,11 +129,12 @@ const rotationRequest = (choice) =>
     ? { tool: 'get_rotation', args: { game: gameName(choice.game), date: choice.date } }
     : null;
 
-const RotationOnDate = ({ team, busy, onPreview }) => {
+const RotationOnDate = ({ team, onRequest }) => {
   const [date, setDate] = useState(slateToday);
   const slate = useRead(date ? `${team}|${date}` : null, (signal) => fetchSlate(date, { signal }));
   const game = slate.data?.games.find(plays(team)) ?? null;
   const played = game?.status === 'final';
+  useReportRequest(played ? rotationRequest({ game, date }) : null, onRequest);
   return (
     <>
       <DateField id="report-pick-rotation-date" value={date} onChange={setDate} />
@@ -151,21 +152,17 @@ const RotationOnDate = ({ team, busy, onPreview }) => {
               : `${gameName(game)} hasn’t finished, so it has no rotation yet.`}
         </p>
       )}
-      <PreviewButton
-        request={played ? rotationRequest({ game, date }) : null}
-        busy={busy}
-        onPreview={onPreview}
-      />
     </>
   );
 };
 
-const RotationRecent = ({ team, busy, onPreview }) => {
+const RotationRecent = ({ team, onRequest }) => {
   const [count, setCount] = useState(5);
   const [chosen, setChosen] = useState(null);
   const n = Math.min(20, Math.max(1, Number(count) || 1));
   const games = useRead(`${team}|${n}`, (signal) => recentGames(team, n, signal));
   const choice = games.data?.find(({ game }) => game.gameId === chosen) ?? null;
+  useReportRequest(rotationRequest(choice), onRequest);
   return (
     <>
       <PickerField id="report-pick-rotation-count" label="Last N games">
@@ -203,13 +200,12 @@ const RotationRecent = ({ team, busy, onPreview }) => {
         ) : (
           <p className="report-edit-help">{team} has no completed games yet.</p>
         ))}
-      <PreviewButton request={rotationRequest(choice)} busy={busy} onPreview={onPreview} />
     </>
   );
 };
 
 /* A rotation Card: a team, then its game on a date or one of its last N games. */
-export const RotationPicker = ({ busy, onPreview }) => {
+export const RotationPicker = ({ onRequest }) => {
   const [team, setTeam] = useState('');
   const [way, setWay] = useState('date');
   const Way = way === 'date' ? RotationOnDate : RotationRecent;
@@ -237,11 +233,7 @@ export const RotationPicker = ({ busy, onPreview }) => {
           From the last N games
         </label>
       </fieldset>
-      {team ? (
-        <Way key={team} team={team} busy={busy} onPreview={onPreview} />
-      ) : (
-        <PreviewButton request={null} busy={busy} onPreview={onPreview} />
-      )}
+      {team && <Way key={team} team={team} onRequest={onRequest} />}
     </>
   );
 };

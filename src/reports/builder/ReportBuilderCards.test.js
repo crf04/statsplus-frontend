@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../../App';
+import { SETTLE_MS } from './CardPicker';
 import { resetSeasonsCache } from '../../seasonsApi';
 import { payload as matchupPayload } from '../../matchups/matchupPayloadFixture';
 import { partialPoolSlatePayload } from '../../slatePartialPoolFixture';
@@ -163,6 +164,8 @@ beforeEach(() => {
   });
   // 2026-10-28 03:00 UTC: 12:00 in Tokyo, the test time zone, and 23:00 on the 27th in New York.
   jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-28T03:00:00Z'));
+  // The Card draws itself once the choices settle, so tests move time on to draw it.
+  jest.useFakeTimers({ doNotFake: ['Date'] });
 });
 
 afterEach(() => jest.restoreAllMocks());
@@ -203,11 +206,18 @@ const choose = (label, value) =>
 
 const openPicker = (card) => {
   fireEvent.click(screen.getByRole('button', { name: 'Add card' }));
-  if (card) choose('Card', card);
-  return screen.getByRole('region', { name: 'Add a card' });
+  const picker = screen.getByRole('region', { name: 'Add a card' });
+  if (card) fireEvent.click(within(picker).getByRole('radio', { name: card }));
+  return picker;
 };
+/* Fake time moved on by `ms`, flushing what it lets run. */
+const advance = (ms) =>
+  act(async () => {
+    jest.advanceTimersByTime(ms);
+  });
+/* Fake time past the wait for the choices to settle, so the Card draws. */
+const settle = () => advance(SETTLE_MS);
 
-const preview = () => fireEvent.click(screen.getByRole('button', { name: 'Preview card' }));
 const insert = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Insert card' }));
 };
@@ -218,14 +228,21 @@ const playersLoaded = () =>
 const pickBane = async () => {
   await playersLoaded();
   choose('Player', 'Desmond Bane');
-  await screen.findByText('Posted line: PrizePicks 24.5 (MEM @ ORL, 2026-10-29)');
+  await screen.findByRole('radio', { name: 'PrizePicks 24.5' });
+};
+
+/* Opens a filter's editor from the "+ Filter" menu. */
+const addFilter = (name) => {
+  fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+  const menu = screen.getByRole('group', { name: 'Add a filter' });
+  fireEvent.click(within(menu).getByRole('button', { name: new RegExp(`^${name}`) }));
 };
 
 /* Inserts an injuries Card for MEM, placed as `place` says. */
 const addInjuriesCard = async (place) => {
-  openPicker('get_injuries');
+  openPicker('Injuries');
   choose('Team (optional)', 'MEM');
-  preview();
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
   if (place) choose('Place', place);
   await insert();
@@ -242,11 +259,6 @@ const publishWith = async (title) => {
 const STILL_FETCHING = 'Still fetching part of this Card…';
 const UNAVAILABLE = 'That data isn’t available right now. Try again later.';
 
-/* Fake time moved on by `ms`, flushing what it lets run. */
-const advance = (ms) =>
-  act(async () => {
-    jest.advanceTimersByTime(ms);
-  });
 /* Fake time past the builder's wait before it previews once more. */
 const waitOutRetry = () => advance(10000);
 
@@ -272,11 +284,14 @@ test('a game-log Card previews with the posted line and goes in as its own block
   );
   await openBuilder();
   const picker = openPicker();
-  expect(screen.getByLabelText('Card')).toHaveValue('query_game_logs');
+  expect(within(picker).getByRole('radio', { name: 'Game logs' })).toBeChecked();
   expect(screen.getByLabelText('Market')).toHaveValue('PTS');
+  expect(within(picker).getByText('Choose a player to see the card.')).toBeInTheDocument();
   await pickBane();
-  expect(within(picker).getByRole('radio', { name: /Posted line/ })).toBeChecked();
-  preview();
+  expect(within(picker).getByRole('radio', { name: 'PrizePicks 24.5' })).toBeChecked();
+  expect(within(picker).getByText('MEM @ ORL, Oct 29')).toBeInTheDocument();
+  expect(within(picker).queryByRole('button', { name: /Preview/ })).not.toBeInTheDocument();
+  await settle();
 
   expect(await screen.findByTitle('Bane PTS season')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
   expect(previews()).toEqual([
@@ -290,6 +305,100 @@ test('a game-log Card previews with the posted line and goes in as its own block
   expect(within(blocks()[0]).getByTitle('Bane PTS season')).toBeInTheDocument();
 });
 
+test('the Card draws itself once the choices have stayed put for the settle time', async () => {
+  serveCards();
+  await openBuilder();
+  const picker = openPicker('Injuries');
+  await advance(SETTLE_MS - 1);
+  expect(previews()).toEqual([]);
+  expect(within(picker).getByRole('status')).toHaveTextContent('Drawing the card…');
+
+  await advance(1);
+  expect(previews()).toEqual([{ tool: 'get_injuries', args: { date: '2026-10-27' } }]);
+  expect(await within(picker).findByTitle('Report')).toHaveAttribute('srcdoc', '<p>game-logs</p>');
+});
+
+test('typing a line draws once the typing stops, not on each keystroke', async () => {
+  serveCards();
+  await openBuilder();
+  const picker = openPicker();
+  await pickBane();
+  await settle();
+  await within(picker).findByRole('button', { name: 'Insert card' });
+  fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
+  const typeLine = (value) =>
+    fireEvent.change(screen.getByRole('textbox', { name: 'My line' }), { target: { value } });
+  typeLine('2');
+  await advance(500);
+  typeLine('24');
+  await advance(500);
+  typeLine('24.5');
+  await advance(SETTLE_MS - 1);
+
+  expect(previews()).toEqual([
+    { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
+  ]);
+  await advance(1);
+  expect(previews()).toEqual([
+    { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
+    {
+      tool: 'query_game_logs',
+      filter_set: { player_name: 'Desmond Bane', line_type: 'PTS', line: 24.5 },
+    },
+  ]);
+});
+
+test('choices changed back to the Card drawn or drawing send no second preview', async () => {
+  let answer;
+  mockPost.mockImplementationOnce(
+    (url, body) => new Promise((resolve) => (answer = () => resolve(drawn(body)))),
+  );
+  await openBuilder();
+  const picker = openPicker('Injuries');
+  await settle();
+  choose('Team (optional)', 'MEM');
+  await advance(400);
+  choose('Team (optional)', '');
+  await advance(2000);
+  expect(previews()).toEqual([{ tool: 'get_injuries', args: { date: '2026-10-27' } }]);
+
+  await act(async () => answer());
+  choose('Team (optional)', 'MEM');
+  expect(within(picker).getByRole('button', { name: 'Insert card' })).toBeDisabled();
+  await advance(400);
+  choose('Team (optional)', '');
+  expect(within(picker).getByRole('button', { name: 'Insert card' })).toBeEnabled();
+  await advance(2000);
+  expect(previews()).toEqual([{ tool: 'get_injuries', args: { date: '2026-10-27' } }]);
+});
+
+test('another Card type clears the drawn Card at once', async () => {
+  serveCards();
+  await openBuilder();
+  const picker = openPicker('Matchup');
+  await screen.findByLabelText('Game');
+  choose('Game', '0022500584');
+  await screen.findByRole('option', { name: 'LeBron James' });
+  choose('Player', 'LeBron James');
+  await settle();
+  await within(picker).findByTitle('matchup');
+  fireEvent.click(within(picker).getByRole('radio', { name: 'Injuries' }));
+
+  expect(within(picker).queryByTitle('matchup')).not.toBeInTheDocument();
+  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+  fireEvent.click(within(picker).getByRole('radio', { name: 'Rotation' }));
+  expect(
+    within(picker).getByText('Choose a team and a finished game to see the card.'),
+  ).toBeInTheDocument();
+  await advance(2000);
+  expect(previews()).toEqual([
+    {
+      tool: 'get_matchup',
+      args: { game: 'LAL @ BOS', date: '2026-10-27', player: 'LeBron James' },
+    },
+  ]);
+});
+
 test('a typed line and the panel filters go to the server in the web app’s names', async () => {
   serveCards();
   await openBuilder();
@@ -299,11 +408,11 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'My line' }), { target: { value: '2.5' } });
 
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
+  addFilter('Opp. defense');
   choose('Defensive metric', 'OPP_PTS');
   fireEvent.click(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' }));
 
-  fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
+  addFilter('Teammate');
   fireEvent.click(screen.getByRole('radio', { name: 'Off' }));
   fireEvent.change(screen.getByRole('combobox', { name: 'Teammate' }), {
     target: { value: 'Ja' },
@@ -311,18 +420,18 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   fireEvent.click(screen.getByRole('option', { name: /Ja Morant/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-  fireEvent.click(screen.getByRole('button', { name: /\+ Last N/ }));
+  addFilter('Last N');
   fireEvent.click(screen.getByRole('button', { name: '10' }));
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-  fireEvent.click(screen.getByRole('button', { name: /\+ Home \/ Away/ }));
+  addFilter('Home / Away');
   fireEvent.click(screen.getByRole('radio', { name: 'Home' }));
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  addFilter('Own stat line');
   choose('Stat', 'PTS');
   fireEvent.click(await screen.findByRole('button', { name: 'Add stat filter' }));
-  preview();
+  await settle();
 
   await screen.findByRole('button', { name: 'Insert card' });
   expect(previews()).toEqual([
@@ -343,19 +452,19 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   ]);
 });
 
-test('clearing the player disables Preview and sends nothing', async () => {
+test('clearing the player draws nothing and says what the Card still needs', async () => {
   serveCards();
   await openBuilder();
-  openPicker();
+  const picker = openPicker();
   await pickBane();
   choose('Player', '');
+  await settle();
 
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
-  preview();
   expect(previews()).toEqual([]);
-
+  expect(within(picker).getByText('Choose a player to see the card.')).toBeInTheDocument();
   choose('Player', 'Desmond Ba');
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  await settle();
+  expect(previews()).toEqual([]);
 });
 
 /* Holds back the player list; the returned function lets it arrive. */
@@ -378,12 +487,12 @@ test('a player typed before the list loads is chosen when it arrives, if the nam
   openPicker();
   expect(screen.getByText('Loading players…')).toBeInTheDocument();
   choose('Player', 'Desmond Bane');
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  await settle();
+  expect(previews()).toEqual([]);
   await act(listArrives);
   await playersLoaded();
 
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeEnabled();
-  preview();
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
   expect(previews()).toEqual([
     { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
@@ -398,23 +507,25 @@ test('a partial player name typed before the list loads chooses no one', async (
   choose('Player', 'Desmond Ba');
   await act(listArrives);
   await playersLoaded();
+  await settle();
 
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
-  preview();
   expect(previews()).toEqual([]);
 });
 
-test('the game-log picker filters to one opponent, and clearing it drops the filter', async () => {
+test('the Opponent filter comes from + Filter and redraws the Card, and removing it drops it', async () => {
   serveCards();
   await openBuilder();
   openPicker();
   await pickBane();
-  choose('Opponent (optional)', 'BOS');
-  preview();
+  expect(screen.queryByLabelText('Opponent (optional)')).not.toBeInTheDocument();
+  addFilter('Opponent');
+  fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
 
-  choose('Opponent (optional)', '');
-  preview();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove versus BOS' }));
+  await settle();
   await waitFor(() => expect(previews()).toHaveLength(2));
   expect(previews()).toEqual([
     {
@@ -457,9 +568,24 @@ test('the game-log picker offers only what a Card can draw', async () => {
   ]);
   await pickBane();
   expect(screen.queryByRole('tab', { name: /Saved/ })).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /\+ Playtype/ })).not.toBeInTheDocument();
   expect(screen.queryByText(/Next opponent/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  expect(screen.queryByRole('button', { name: /Apply/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+  expect(
+    within(screen.getByRole('group', { name: 'Add a filter' }))
+      .getAllByRole('button')
+      .map((button) => button.textContent),
+  ).toEqual([
+    'Teammate on / off court',
+    'Last N most recent games',
+    'Since a date',
+    'Home / Away venue',
+    'Opponent one team',
+    'Minutes played',
+    'Opp. defense team ranks',
+    'Own stat line e.g. PTS 20+',
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /^Own stat line/ }));
   const stats = within(screen.getByLabelText('Stat'))
     .getAllByRole('option')
     .map((option) => option.value);
@@ -471,7 +597,7 @@ test('the game-log picker offers only what a Card can draw', async () => {
 test('a Matchup Card offers the day’s games, then a player in the game', async () => {
   serveCards();
   await openBuilder();
-  openPicker('get_matchup');
+  openPicker('Matchup');
   expect(screen.getByLabelText('Date')).toHaveValue('2026-10-27');
   await screen.findByLabelText('Game');
   expect(
@@ -479,11 +605,11 @@ test('a Matchup Card offers the day’s games, then a player in the game', async
       .getAllByRole('option')
       .map((option) => option.textContent),
   ).toEqual(['Choose a game', 'LAL @ BOS', 'MEM @ ORL']);
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  expect(screen.getByText('Choose a game and a player to see the card.')).toBeInTheDocument();
   choose('Game', '0022500584');
   await screen.findByRole('option', { name: 'LeBron James' });
   choose('Player', 'LeBron James');
-  preview();
+  await settle();
   await insert();
 
   expect(previews()).toEqual([
@@ -498,17 +624,18 @@ test('a Matchup Card offers the day’s games, then a player in the game', async
 test('a rotation Card offers only a finished game, by date or from the last games', async () => {
   serveCards();
   await openBuilder();
-  openPicker('get_rotation');
+  openPicker('Rotation');
   choose('Team', 'MEM');
   expect(
     await screen.findByText('MEM @ ORL hasn’t finished, so it has no rotation yet.'),
   ).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Preview card' })).toBeDisabled();
+  await settle();
+  expect(previews()).toEqual([]);
   choose('Date', '2026-10-24');
   expect(await screen.findByText('MEM has no game on this date.')).toBeInTheDocument();
   choose('Date', '2026-10-25');
   expect(await screen.findByText('MEM @ LAL, final.')).toBeInTheDocument();
-  preview();
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
 
   fireEvent.click(screen.getByRole('radio', { name: 'From the last N games' }));
@@ -519,7 +646,7 @@ test('a rotation Card offers only a finished game, by date or from the last game
       .map((radio) => radio.parentElement.textContent),
   ).toEqual(['MEM @ LAL, 2026-10-25', 'DAL @ MEM, 2026-10-23']);
   fireEvent.click(within(recent).getByRole('radio', { name: 'DAL @ MEM, 2026-10-23' }));
-  preview();
+  await settle();
   await insert();
 
   expect(previews()).toEqual([
@@ -532,14 +659,14 @@ test('a rotation Card offers only a finished game, by date or from the last game
 test('an on/off Card names a team, the players on and off the floor, and a season', async () => {
   serveCards();
   await openBuilder();
-  openPicker('get_on_off');
+  openPicker('On/off');
   choose('Team', 'MEM');
   await screen.findByRole('option', { name: '2024-25' });
   choose('Season', '2024-25');
   await screen.findByLabelText('Ja Morant');
   choose('Ja Morant', 'off');
   choose('Desmond Bane', 'on');
-  preview();
+  await settle();
   await insert();
 
   expect(previews()).toEqual([
@@ -558,12 +685,12 @@ test('an on/off Card names a team, the players on and off the floor, and a seaso
 test('an injuries Card takes a date and, optionally, a team', async () => {
   serveCards();
   await openBuilder();
-  openPicker('get_injuries');
+  openPicker('Injuries');
   expect(screen.getByLabelText('Date')).toHaveValue('2026-10-27');
-  preview();
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
   choose('Team (optional)', 'MEM');
-  preview();
+  await settle();
   await insert();
 
   expect(previews()).toEqual([
@@ -611,9 +738,8 @@ test.each([
     refused(status, { code, message: ASSISTANT_WORDS, details }, headers),
   );
   await openBuilder();
-  openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  openPicker('Injuries');
+  await settle();
 
   expect((await screen.findByRole('alert')).textContent).toBe(shown);
   await waitOutRetry();
@@ -627,9 +753,8 @@ test.each([
 test('a preview that fails to reach the server is not tried again', async () => {
   mockPost.mockImplementation(() => Promise.reject(new Error('Network Error')));
   await openBuilder();
-  openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  openPicker('Injuries');
+  await settle();
 
   expect((await screen.findByRole('alert')).textContent).toBe(
     'CourtAI couldn’t draw this Card. Try again.',
@@ -641,7 +766,7 @@ test('a preview that fails to reach the server is not tried again', async () => 
 test('a rotation no_card asks for a game the team played', async () => {
   serveCards();
   await openBuilder();
-  openPicker('get_rotation');
+  openPicker('Rotation');
   choose('Team', 'MEM');
   choose('Date', '2026-10-25');
   await screen.findByText('MEM @ LAL, final.');
@@ -652,7 +777,7 @@ test('a rotation no_card asks for a game the team played', async () => {
         'Call preview (get_rotation) draws no card with these args, so it cannot be a report card.',
     }),
   );
-  preview();
+  await settle();
 
   expect((await screen.findByRole('alert')).textContent).toBe(
     'No card for those choices. Pick a game the team played.',
@@ -682,7 +807,7 @@ test.each([
       details: { field },
     }),
   );
-  preview();
+  await settle();
 
   expect((await screen.findByRole('alert')).textContent).toBe(shown);
 });
@@ -693,9 +818,8 @@ const PART_UNAVAILABLE =
 test('a Card drawn with part of its data unavailable twice shows but cannot be inserted', async () => {
   mockPost.mockImplementation((url, body) => Promise.resolve(partlyDrawn(body)));
   await openBuilder();
-  const picker = openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  const picker = openPicker('Injuries');
+  await settle();
 
   expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
   expect(previews()).toHaveLength(1);
@@ -716,12 +840,10 @@ test('a Card drawn with part of its data unavailable is drawn again once, and go
     .mockImplementationOnce((url, body) => Promise.resolve(partlyDrawn(body)))
     .mockImplementation((url, body) => Promise.resolve(drawn(body)));
   await openBuilder();
-  const picker = openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  const picker = openPicker('Injuries');
+  await settle();
 
   expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
-  expect(within(picker).getByRole('button', { name: 'Drawing…' })).toBeDisabled();
   expect(within(picker).queryByTitle('Report')).not.toBeInTheDocument();
   await advance(2900);
   expect(previews()).toHaveLength(1);
@@ -739,9 +861,8 @@ test('a Card drawn with part of its data unavailable is drawn again once, and go
 test('an unavailable refusal is previewed again once, and a second one says why', async () => {
   mockPost.mockImplementation(unavailable);
   await openBuilder();
-  const picker = openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  const picker = openPicker('Injuries');
+  await settle();
 
   expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
   expect(within(picker).queryByRole('alert')).not.toBeInTheDocument();
@@ -754,15 +875,14 @@ test('an unavailable refusal is previewed again once, and a second one says why'
 
 test.each([
   ['closes the picker', () => fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))],
-  ['picks another Card', () => choose('Card', 'get_matchup')],
+  ['picks another Card', () => fireEvent.click(screen.getByRole('radio', { name: 'Matchup' }))],
 ])('no second preview lands after the author %s', async (_, leave) => {
   mockPost
     .mockImplementationOnce(unavailable)
     .mockImplementation((url, body) => Promise.resolve(drawn(body)));
   await openBuilder();
-  openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  openPicker('Injuries');
+  await settle();
   await screen.findByText(STILL_FETCHING);
   leave();
   await waitOutRetry();
@@ -778,8 +898,8 @@ test('a preview without publishable, from an older server, inserts its Card', as
     return Promise.resolve({ data: { ...data, reason: 'a field the browser does not know' } });
   });
   await openBuilder();
-  openPicker('get_injuries');
-  preview();
+  openPicker('Injuries');
+  await settle();
   await insert();
 
   expect(blockNames()).toEqual(['Block 1: Card']);
@@ -804,7 +924,7 @@ test('a needs_choice refusal lists the choices, and picking one previews again',
   openPicker();
   await playersLoaded();
   choose('Player', 'Jalen Williams');
-  preview();
+  await settle();
 
   const choices = await screen.findByRole('group', { name: 'Choose one' });
   expect(screen.getByRole('alert')).toHaveTextContent(
@@ -830,8 +950,8 @@ test('Cards make a row of two or three, and a card leaves a row with its call', 
   await addInjuriesCard('b1');
   expect(within(blocks()[0]).getAllByTitle('Report')).toHaveLength(3);
 
-  openPicker('get_injuries');
-  preview();
+  openPicker('Injuries');
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
   expect(
     within(screen.getByLabelText('Place'))
@@ -906,12 +1026,38 @@ const storedDraft = (blocks, calls) =>
   window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ title: '', date: null, blocks, calls }));
 const injuriesCall = (n) => ({ id: `c${n}`, tool: 'get_injuries', args: { date: '2026-10-27' } });
 
+const baneRequest = (filters) => ({
+  tool: 'query_game_logs',
+  filter_set: { player_name: 'Desmond Bane', line_type: 'PTS', ...filters },
+});
+const injuriesRequest = (args) => ({ tool: 'get_injuries', args: { date: '2026-10-27', ...args } });
+
 test.each([
-  ['the date', 'get_injuries', async () => choose('Date', '2026-10-28')],
-  ['the team', 'get_injuries', async () => choose('Team (optional)', 'BOS')],
-  ['the player', null, async () => choose('Player', 'Ja Morant')],
-  ['the market', null, async () => choose('Market', 'REB')],
-  ['the season', null, async () => choose('Season', '2024-25')],
+  [
+    'the date',
+    'Injuries',
+    async () => choose('Date', '2026-10-28'),
+    injuriesRequest({ date: '2026-10-28' }),
+  ],
+  [
+    'the team',
+    'Injuries',
+    async () => choose('Team (optional)', 'BOS'),
+    injuriesRequest({ team: 'BOS' }),
+  ],
+  [
+    'the player',
+    null,
+    async () => choose('Player', 'Ja Morant'),
+    baneRequest({ player_name: 'Ja Morant' }),
+  ],
+  ['the market', null, async () => choose('Market', 'REB'), baneRequest({ line_type: 'REB' })],
+  [
+    'the season',
+    null,
+    async () => choose('Season', '2024-25'),
+    baneRequest({ season_filter: '2024-25' }),
+  ],
   [
     'the line',
     null,
@@ -921,24 +1067,25 @@ test.each([
         target: { value: '20.5' },
       });
     },
+    baneRequest({ line: 20.5 }),
   ],
-])('editing %s while a preview waits cancels its second try', async (_, card, edit) => {
+])('editing %s while a preview waits cancels its second try and draws the edit', async (...row) => {
+  const [, card, edit, edited] = row;
   mockPost
     .mockImplementationOnce(unavailable)
     .mockImplementation((url, body) => Promise.resolve(drawn(body)));
   await openBuilder();
   const picker = openPicker(card);
   if (!card) await pickBane();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  await settle();
   await within(picker).findByText(STILL_FETCHING);
+  const first = previews()[0];
   await edit();
-
-  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
-  expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
   await waitOutRetry();
-  expect(previews()).toHaveLength(1);
-  expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+
+  expect(previews()).toEqual([first, edited]);
+  expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
+  expect(within(picker).getByRole('button', { name: 'Insert card' })).toBeEnabled();
 });
 
 test('editing the picker while its second try is out leaves that try’s Card out', async () => {
@@ -949,9 +1096,8 @@ test('editing the picker while its second try is out leaves that try’s Card ou
       (url, body) => new Promise((resolve) => (answer = () => resolve(drawn(body)))),
     );
   await openBuilder();
-  const picker = openPicker('get_injuries');
-  jest.useFakeTimers({ doNotFake: ['Date'] });
-  preview();
+  const picker = openPicker('Injuries');
+  await settle();
   await within(picker).findByText(STILL_FETCHING);
   await waitOutRetry();
   expect(previews()).toHaveLength(2);
@@ -982,7 +1128,6 @@ test('a reloaded Card drawn with part of its data unavailable twice says so and 
   );
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
 
   expect(await screen.findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
@@ -999,7 +1144,6 @@ test('a reloaded Card refused as unavailable is previewed again once and drawn',
     .mockImplementation((url, body) => Promise.resolve(drawn(body)));
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
 
   expect(await screen.findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
@@ -1014,7 +1158,6 @@ test('a reloaded Card refused as unavailable twice says why', async () => {
   mockPost.mockImplementation(unavailable);
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
   await screen.findByText(STILL_FETCHING);
   await waitOutRetry();
@@ -1030,13 +1173,12 @@ test('a reloaded Card deleted while it waits leaves the Card that takes its plac
     .mockImplementation((url, body) => Promise.resolve(drawn(body)));
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
   await screen.findByText(STILL_FETCHING);
   fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
-  openPicker('get_injuries');
+  openPicker('Injuries');
   choose('Team (optional)', 'MEM');
-  preview();
+  await settle();
   await insert();
   await waitOutRetry();
 
@@ -1077,7 +1219,6 @@ test('no second preview is sent for a reloaded Card deleted while it waits', asy
   mockPost.mockImplementation(unavailable);
   storedDraft([{ id: 'b1', type: 'card', card: 'c1' }], [injuriesCall(1)]);
   await openBuilder();
-  jest.useFakeTimers({ doNotFake: ['Date'] });
   fireEvent.click(screen.getByRole('button', { name: 'Preview again' }));
   await screen.findByText(STILL_FETCHING);
   fireEvent.click(within(blocks()[0]).getByRole('button', { name: /^Delete/ }));
@@ -1104,8 +1245,8 @@ test('a report holds at most 120 blocks and 48 Cards', async () => {
     cards.map((_, i) => injuriesCall(i + 1)),
   );
   await openBuilder();
-  openPicker('get_injuries');
-  preview();
+  openPicker('Injuries');
+  await settle();
   await screen.findByRole('button', { name: 'Insert card' });
 
   expect(

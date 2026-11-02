@@ -214,7 +214,7 @@
 
 .report-pick-field select,
 .report-pick-field input,
-.report-pick-choices input[type='text'] {
+.report-pick-line input[type='text'] {
   max-width: 420px;
   padding: 8px 10px;
   border: 1px solid var(--ct-line-strong);
@@ -261,8 +261,149 @@
   max-width: 420px;
 }
 
-.report-pick > .report-listing-button {
-  justify-self: start;
+/* Compact Add card (crf04/statsplus#406): Card type pills, then the picker and
+   the live Card side by side on desktop. */
+.report-pick-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-pick-pills legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.report-pick-pills label,
+.report-pick-toggle label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--ct-line-strong);
+  color: var(--ct-text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.report-pick-pills label {
+  padding: 5px 13px;
+  border-radius: 999px;
+}
+
+.report-pick-pills input,
+.report-pick-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.report-pick-pills label.is-on,
+.report-pick-toggle label.is-on {
+  border-color: var(--ct-gold-fg-55);
+  background: var(--ct-x-2c2517);
+  color: var(--ct-gold-hover);
+  font-weight: 600;
+}
+
+.report-pick-pills label:has(input:focus-visible),
+.report-pick-toggle label:has(input:focus-visible) {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 2px;
+}
+
+.report-pick-split {
+  display: grid;
+  gap: 18px;
+}
+
+.report-pick-form,
+.report-pick-pane {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.report-pick-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.report-pick-row .report-pick-field select,
+.report-pick-row .report-pick-field input {
+  min-width: 0;
+}
+
+.report-pick-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-pick-line legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 6px;
+  color: var(--ct-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.report-pick-toggle {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.report-pick-toggle label {
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+.report-pick-toggle label:first-child {
+  border-radius: var(--ct-radius-ctl) 0 0 var(--ct-radius-ctl);
+}
+
+.report-pick-toggle label + label {
+  margin-left: -1px;
+  border-radius: 0 var(--ct-radius-ctl) var(--ct-radius-ctl) 0;
+}
+
+.report-pick-line .report-edit-help {
+  margin: 0;
+}
+
+.report-pick-line input[type='text'] {
+  width: 88px;
+}
+
+@media (min-width: 901px) {
+  .report-pick-split {
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .report-pick-pane {
+    position: sticky;
+    top: 16px;
+  }
 }
 
 .report-pick-refusal p {
@@ -288,6 +429,10 @@
   .report-build-card-row,
   .report-pick-inline {
     grid-auto-flow: row;
+  }
+
+  .report-pick-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .report-pick-field select,

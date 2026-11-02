@@ -209,7 +209,10 @@ export const Editor = ({ which, panel, onDone, statColumns }) => {
  * `tabs` is the Filters | Saved switch; `body` replaces the filters with the
  * Saved tab; `savedName` names the saved set the filters are; `save` sits
  * beside Apply. All are absent for a reader with no account to save to.
- * `statColumns` narrows the Own stat line choices.
+ * `statColumns` narrows the Own stat line choices. `menu` is the Report
+ * Builder's compact form (crf04/statsplus#406): the filters as chips beside
+ * the Season, a "+ Filter" menu in place of the tiles, and no Apply, because
+ * the builder applies each edit itself.
  */
 const FilterPanelView = ({
   panel,
@@ -221,8 +224,10 @@ const FilterPanelView = ({
   savedName,
   save,
   statColumns,
+  menu,
 }) => {
   const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
   const s = panel.summary;
   const rules = [];
   panel.activePlayers.forEach((player) =>
@@ -349,6 +354,80 @@ const FilterPanelView = ({
     ),
   );
 
+  const startEditing = (key) => {
+    if (key === 'self') panel.ensureSeason();
+    setEditing(key);
+  };
+  const editor = editing && (
+    <Editor
+      which={editing}
+      panel={panel}
+      statColumns={statColumns}
+      onDone={() => setEditing(null)}
+    />
+  );
+  const seasonSelect = panel.seasons && (
+    <label className="fpb-season">
+      <span>Season</span>
+      <select
+        className="fp-select"
+        value={panel.season}
+        onChange={(e) => panel.changeSeason(e.target.value)}
+      >
+        {panel.seasons.map(({ season, label }) => (
+          <option key={season} value={season}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  if (menu) {
+    return (
+      <div className="fp fp-b fp-menu" data-testid="filter-panel">
+        <div className="fpm-bar">
+          {seasonSelect}
+          {rules.length > 0 && (
+            <ul className="fpb-rules" aria-label="Filters">
+              {rules}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="fpm-add"
+            aria-expanded={adding}
+            onClick={() => setAdding(!adding)}
+          >
+            + Filter
+          </button>
+        </div>
+        {adding && (
+          <div
+            className="fpm-menu"
+            role="group"
+            aria-label="Add a filter"
+            onKeyDown={(e) => e.key === 'Escape' && setAdding(false)}
+          >
+            {TILES.filter((tile) => !tile.hidden).map((tile) => (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => {
+                  setAdding(false);
+                  startEditing(tile.key);
+                }}
+              >
+                {tile.title} <span>{tile.sub}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {editor}
+      </div>
+    );
+  }
+
   return (
     <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
@@ -359,31 +438,11 @@ const FilterPanelView = ({
             Saved tab would otherwise wait for it forever. */}
         <div className="fpt-filters" hidden={Boolean(body)}>
           {savedName && <p className="fpt-current">Saved as {savedName}</p>}
-          {panel.seasons && (
-            <label className="fpb-season">
-              <span>Season</span>
-              <select
-                className="fp-select"
-                value={panel.season}
-                onChange={(e) => panel.changeSeason(e.target.value)}
-              >
-                {panel.seasons.map(({ season, label }) => (
-                  <option key={season} value={season}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          {seasonSelect}
           {rules.length > 0 && <ul className="fpb-rules">{rules}</ul>}
 
           {editing ? (
-            <Editor
-              which={editing}
-              panel={panel}
-              statColumns={statColumns}
-              onDone={() => setEditing(null)}
-            />
+            editor
           ) : (
             <>
               <div className="fpb-addlabel">Add a filter</div>
@@ -393,10 +452,7 @@ const FilterPanelView = ({
                     key={tile.key}
                     type="button"
                     className="fpb-tile"
-                    onClick={() => {
-                      if (tile.key === 'self') panel.ensureSeason();
-                      setEditing(tile.key);
-                    }}
+                    onClick={() => startEditing(tile.key)}
                   >
                     <b>+ {tile.title}</b>
                     <span>{tile.sub}</span>

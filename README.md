@@ -46,7 +46,9 @@ other path returns home.
 ```
 Browser  ──►  CourtAI (Vercel static)  ──►  /api/*  ──►  Backend (separate repo)
                     │
-                    └─► Firebase Auth (ID token attached to every API request)
+                    ├─► Firebase Auth (ID token attached to every API request)
+                    │
+                    └─► MCP server (/web/cards/preview, /web/reports: Report Builder Cards)
 ```
 
 A few decisions worth calling out:
@@ -65,6 +67,8 @@ A few decisions worth calling out:
 - Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them
 - Targets: saved, backtested conditions that resolve against the day's games
 - Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists, and list every provider and book posting it to pick from
+- Reports and Research: published CourtAI reports, a public Research feed with author pages, and a Report Builder that inserts CourtAI Cards
+- A System, Light or Dark Appearance menu in the header
 - Connect page for the MCP connector, an in-app feedback widget, and a public home page with legal pages
 - Responsive layout via Tailwind + Bootstrap + custom CSS
 
@@ -83,11 +87,11 @@ Requires Node `^22.22.3 || >=24.8.0` (see `engines` in `package.json` and `.nvmr
 
 ```bash
 npm ci
-cp .env.example .env   # fill in values
+cp .env.example .env.local   # fill in values
 npm start
 ```
 
-The dev server runs at `http://localhost:5173` (the Vite default). API requests default to `http://127.0.0.1:8000` unless `REACT_APP_API_BASE_URL` is set.
+The dev server runs at `http://localhost:5173` (the Vite default). API requests default to `http://127.0.0.1:8000` unless `REACT_APP_API_BASE_URL` is set, and the Report Builder previews Cards from an MCP server at `http://127.0.0.1:8001` unless `REACT_APP_MCP_BASE_URL` is set.
 
 Common scripts:
 
@@ -122,6 +126,7 @@ This repo is the frontend only. It expects a backend serving the following; the 
 - `GET  /api/players/next-opponent`
 - `/api/user/targets` (plus `preview` and `backtests`), `/api/user/saved-filter-sets`
 - `POST /api/user/feedback`, `POST /api/user/attribution`
+- `/api/reports`, `/api/user/reports`, `/api/user/public-handle`, `/api/research` (plus `/authors`)
 - `/api/admin/collection/*` for the operations console
 
 In production the deployed host (Vercel) rewrites `/api/*` to the backend origin and ignores `REACT_APP_API_BASE_URL`. In development, set `REACT_APP_API_BASE_URL` to point at a local or remote backend.

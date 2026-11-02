@@ -70,9 +70,24 @@ const withChoice = (request, choice) => {
   return { ...request, args: { ...args, player: choice } };
 };
 
-const Refusal = ({ refusal, onChoose }) => (
+// Refusals the same choices meet again, so they offer no second try.
+const FINAL = new Set([
+  'no_card',
+  'needs_choice',
+  'invalid_input',
+  'waitlisted',
+  'unauthorized',
+  'payload_too_large',
+]);
+
+const Refusal = ({ refusal, onChoose, onRetry }) => (
   <div className="report-edit-error report-pick-refusal" role="alert">
     <p>{refusalText(refusal)}</p>
+    {!FINAL.has(refusal?.code) && (
+      <button type="button" className="report-build-small" onClick={onRetry}>
+        Try again
+      </button>
+    )}
     {refusal?.choices.length > 0 && (
       <div className="report-build-row-actions" role="group" aria-label="Choose one">
         {refusal.choices.map((choice) => (
@@ -152,6 +167,8 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
   const [shown, setShown] = useState({ status: 'idle' });
   // The picker's current request and its key, or null while its choices make none.
   const [wanted, setWanted] = useState(null);
+  // What the picker says its choices still lack, when it knows better than the default.
+  const [need, setNeed] = useState(null);
   const latest = useRef(0);
   // The key of the request drawn or drawing, which is not sent again.
   const sent = useRef(null);
@@ -195,16 +212,18 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
     setShown({ status: 'idle' });
   }, []);
 
-  const onRequest = useCallback(
-    (request) => setWanted(request && { request, key: requestKey(request) }),
-    [],
-  );
+  const onRequest = useCallback((request, lacking = null) => {
+    setWanted(request && { request, key: requestKey(request) });
+    setNeed(lacking);
+  }, []);
   useEffect(() => {
     if (!wanted) {
       abandon();
       return undefined;
     }
     if (wanted.key === sent.current) return undefined;
+    // A second try of the last request would draw choices the author has left.
+    retry.current.abort();
     const timer = setTimeout(() => preview(wanted.request, wanted.key), SETTLE_MS);
     return () => clearTimeout(timer);
   }, [wanted, preview, abandon]);
@@ -251,7 +270,9 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
           <Picker key={tool} onRequest={onRequest} />
         </div>
         <div className="report-pick-pane">
-          {!wanted && shown.status === 'idle' && <p className="report-edit-help">{needs}</p>}
+          {!wanted && shown.status === 'idle' && (
+            <p className="report-edit-help">{need ?? needs}</p>
+          )}
           {(busy || settling) && (
             <p className="report-edit-help" role="status">
               {shown.status === 'retrying' ? STILL_FETCHING : 'Drawing the card…'}
@@ -261,6 +282,7 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
             <Refusal
               refusal={shown.refusal}
               onChoose={(choice) => preview(withChoice(shown.request, choice), shown.from)}
+              onRetry={() => preview(shown.request, shown.from)}
             />
           )}
           {drawn && (

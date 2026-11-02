@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../../App';
-import { SETTLE_MS } from './CardPicker';
 import { resetSeasonsCache } from '../../seasonsApi';
 import { payload as matchupPayload } from '../../matchups/matchupPayloadFixture';
 import { partialPoolSlatePayload } from '../../slatePartialPoolFixture';
@@ -216,7 +215,7 @@ const advance = (ms) =>
     jest.advanceTimersByTime(ms);
   });
 /* Fake time past the wait for the choices to settle, so the Card draws. */
-const settle = () => advance(SETTLE_MS);
+const settle = () => advance(800);
 
 const insert = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Insert card' }));
@@ -309,7 +308,7 @@ test('the Card draws itself once the choices have stayed put for the settle time
   serveCards();
   await openBuilder();
   const picker = openPicker('Injuries');
-  await advance(SETTLE_MS - 1);
+  await advance(799);
   expect(previews()).toEqual([]);
   expect(within(picker).getByRole('status')).toHaveTextContent('Drawing the card…');
 
@@ -333,7 +332,7 @@ test('typing a line draws once the typing stops, not on each keystroke', async (
   typeLine('24');
   await advance(500);
   typeLine('24.5');
-  await advance(SETTLE_MS - 1);
+  await advance(799);
 
   expect(previews()).toEqual([
     { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
@@ -741,7 +740,7 @@ test.each([
   openPicker('Injuries');
   await settle();
 
-  expect((await screen.findByRole('alert')).textContent).toBe(shown);
+  expect(within(await screen.findByRole('alert')).getByText(shown)).toBeInTheDocument();
   await waitOutRetry();
   expect(previews()).toHaveLength(1);
   expect(screen.queryByText(STILL_FETCHING)).not.toBeInTheDocument();
@@ -756,11 +755,84 @@ test('a preview that fails to reach the server is not tried again', async () => 
   openPicker('Injuries');
   await settle();
 
-  expect((await screen.findByRole('alert')).textContent).toBe(
-    'CourtAI couldn’t draw this Card. Try again.',
-  );
+  expect(
+    within(await screen.findByRole('alert')).getByText(
+      'CourtAI couldn’t draw this Card. Try again.',
+    ),
+  ).toBeInTheDocument();
   await waitOutRetry();
   expect(previews()).toHaveLength(1);
+});
+
+test('a failed preview offers Try again, which sends the same request once more', async () => {
+  mockPost
+    .mockImplementationOnce(() => Promise.reject(new Error('Network Error')))
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  openPicker('Injuries');
+  await settle();
+  await screen.findByRole('alert');
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await insert();
+
+  expect(previews()).toEqual([
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+  ]);
+  expect(blockNames()).toEqual(['Block 1: Card']);
+});
+
+test.each(['no_card', 'invalid_input', 'waitlisted'])(
+  'a %s refusal offers no Try again',
+  async (code) => {
+    mockPost.mockImplementation(() =>
+      refused(422, { code, message: ASSISTANT_WORDS, details: {} }),
+    );
+    await openBuilder();
+    openPicker('Injuries');
+    await settle();
+    await screen.findByRole('alert');
+
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+  },
+);
+
+test('a filter picked while a preview waits to be tried again cancels that second try', async () => {
+  mockPost
+    .mockImplementationOnce(unavailable)
+    .mockImplementation((url, body) => Promise.resolve(drawn(body)));
+  await openBuilder();
+  openPicker();
+  await pickBane();
+  await settle();
+  await screen.findByText(STILL_FETCHING);
+  // Inside the last settle time before the second try is due.
+  await advance(2500);
+  addFilter('Last N');
+  fireEvent.click(screen.getByRole('button', { name: '10' }));
+  // Past the second try's due time, before the edit has settled.
+  await advance(600);
+  await waitOutRetry();
+
+  expect(previews()).toEqual([
+    { tool: 'query_game_logs', filter_set: { player_name: 'Desmond Bane', line_type: 'PTS' } },
+    {
+      tool: 'query_game_logs',
+      filter_set: { player_name: 'Desmond Bane', line_type: 'PTS', game_filter: 10 },
+    },
+  ]);
+});
+
+test('choosing My line with nothing typed asks for the line', async () => {
+  serveCards();
+  await openBuilder();
+  const picker = openPicker();
+  await pickBane();
+  fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
+  await settle();
+
+  expect(within(picker).getByText('Type your line to see the card.')).toBeInTheDocument();
+  expect(previews()).toEqual([]);
 });
 
 test('a rotation no_card asks for a game the team played', async () => {
@@ -779,9 +851,11 @@ test('a rotation no_card asks for a game the team played', async () => {
   );
   await settle();
 
-  expect((await screen.findByRole('alert')).textContent).toBe(
-    'No card for those choices. Pick a game the team played.',
-  );
+  expect(
+    within(await screen.findByRole('alert')).getByText(
+      'No card for those choices. Pick a game the team played.',
+    ),
+  ).toBeInTheDocument();
 });
 
 test.each([
@@ -809,7 +883,7 @@ test.each([
   );
   await settle();
 
-  expect((await screen.findByRole('alert')).textContent).toBe(shown);
+  expect(within(await screen.findByRole('alert')).getByText(shown)).toBeInTheDocument();
 });
 
 const PART_UNAVAILABLE =
@@ -867,7 +941,9 @@ test('an unavailable refusal is previewed again once, and a second one says why'
   expect(await within(picker).findByText(STILL_FETCHING)).toHaveAttribute('role', 'status');
   expect(within(picker).queryByRole('alert')).not.toBeInTheDocument();
   await waitOutRetry();
-  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  expect(
+    within(await within(picker).findByRole('alert')).getByText(UNAVAILABLE),
+  ).toBeInTheDocument();
   expect(within(picker).queryByText(STILL_FETCHING)).not.toBeInTheDocument();
   await waitOutRetry();
   expect(previews()).toHaveLength(2);
@@ -1103,9 +1179,11 @@ test('editing the picker while its second try is out leaves that try’s Card ou
   expect(previews()).toHaveLength(2);
   await choose('Team (optional)', 'BOS');
 
-  expect((await within(picker).findByRole('alert')).textContent).toBe(UNAVAILABLE);
+  expect(
+    within(await within(picker).findByRole('alert')).getByText(UNAVAILABLE),
+  ).toBeInTheDocument();
   await act(async () => answer());
-  expect(within(picker).getByRole('alert').textContent).toBe(UNAVAILABLE);
+  expect(within(within(picker).getByRole('alert')).getByText(UNAVAILABLE)).toBeInTheDocument();
   expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
 });
 

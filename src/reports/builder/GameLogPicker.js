@@ -121,6 +121,7 @@ const GameLogPicker = ({ onRequest }) => {
         }
       : null,
     onRequest,
+    player ? 'Type your line to see the card.' : null,
   );
 
   // A name typed before the list arrived is chosen when it arrives, if it is exactly a listed name.

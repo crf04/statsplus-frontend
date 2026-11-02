@@ -98,15 +98,17 @@ export const requestKey = (request) => JSON.stringify(sortedKeys(request));
 
 /*
  * Tells the Card pane the picker's request each time it changes, or null while
- * the choices make none (crf04/statsplus#406).
+ * the choices make none, with `lacking` saying what they lack
+ * (crf04/statsplus#406).
  */
-export const useReportRequest = (request, onRequest) => {
+export const useReportRequest = (request, onRequest, lacking = null) => {
   const latest = useRef(request);
   latest.current = request;
   const key = request ? requestKey(request) : null;
+  const need = request ? null : lacking;
   useEffect(() => {
-    onRequest(latest.current);
-  }, [key, onRequest]);
+    onRequest(latest.current, need);
+  }, [key, need, onRequest]);
   // A picker part that goes away takes its request with it.
   useEffect(() => () => onRequest(null), [onRequest]);
 };

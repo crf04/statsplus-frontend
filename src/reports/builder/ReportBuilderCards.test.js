@@ -782,6 +782,22 @@ test('a failed preview offers Try again, which sends the same request once more'
   expect(blockNames()).toEqual(['Block 1: Card']);
 });
 
+test('a refusal of choices since changed offers no Try again while they settle', async () => {
+  mockPost.mockImplementation(() => Promise.reject(new Error('Network Error')));
+  await openBuilder();
+  openPicker('Injuries');
+  await settle();
+  await screen.findByRole('button', { name: 'Try again' });
+  choose('Team (optional)', 'BOS');
+
+  expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+  await settle();
+  expect(previews()).toEqual([
+    { tool: 'get_injuries', args: { date: '2026-10-27' } },
+    { tool: 'get_injuries', args: { date: '2026-10-27', team: 'BOS' } },
+  ]);
+});
+
 test.each(['no_card', 'invalid_input', 'waitlisted'])(
   'a %s refusal offers no Try again',
   async (code) => {
@@ -1178,13 +1194,11 @@ test('editing the picker while its second try is out leaves that try’s Card ou
   await waitOutRetry();
   expect(previews()).toHaveLength(2);
   await choose('Team (optional)', 'BOS');
-
-  expect(
-    within(await within(picker).findByRole('alert')).getByText(UNAVAILABLE),
-  ).toBeInTheDocument();
   await act(async () => answer());
-  expect(within(within(picker).getByRole('alert')).getByText(UNAVAILABLE)).toBeInTheDocument();
+
+  expect(within(picker).queryByTitle('Report')).not.toBeInTheDocument();
   expect(within(picker).queryByRole('button', { name: 'Insert card' })).not.toBeInTheDocument();
+  expect(within(picker).getByRole('status')).toHaveTextContent('Drawing the card…');
 });
 
 test('a reloaded draft keeps its Cards’ calls but not their previews, and draws one again', async () => {

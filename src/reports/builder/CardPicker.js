@@ -278,7 +278,8 @@ const CardPicker = ({ draft, dispatch, onClose }) => {
               {shown.status === 'retrying' ? STILL_FETCHING : 'Drawing the card…'}
             </p>
           )}
-          {shown.status === 'refused' && (
+          {/* A refusal of choices since changed would retry those, so it waits for the redraw. */}
+          {shown.status === 'refused' && !settling && (
             <Refusal
               refusal={shown.refusal}
               onChoose={(choice) => preview(withChoice(shown.request, choice), shown.from)}

@@ -24,6 +24,11 @@ import {
 import { TEAM_CODES } from './targets/opponentContextApi';
 import { fetchDietBaselines } from './targets/targetsApi';
 import ErrorMessage from './feedback/ErrorMessage';
+// PROTOTYPE (throwaway, branch prototype/profile-matchup-tabs)
+import { sampleFor, useProto } from './profileMatchupPrototype/mode';
+import ProtoSwitcher from './profileMatchupPrototype/Switcher';
+import MatchupTabProto from './profileMatchupPrototype/variants';
+import { TAB_BASES } from './profileMatchupPrototype/read';
 
 /*
  * Under a selection a Diet baseline base names the season it serves, never the
@@ -48,7 +53,12 @@ const leagueSeasonLabel = (baselines, base, choice) => {
 // default (crf04/statsplus#330), or null for the default.
 const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSettled }) => {
   const season = seasonChoice?.season ?? null;
-  const [selectedProfile, setSelectedProfile] = useState('Playtypes');
+  const proto = useProto();
+  const [selectedProfile, setSelectedProfile] = useState(
+    proto.active && proto.tab ? proto.tab : 'Playtypes',
+  );
+  const protoOpponent = sampleFor(selectedPlayer)?.opponent ?? TEAM_CODES[selectedTeam] ?? null;
+  const protoTab = proto.active && TAB_BASES[selectedProfile] && protoOpponent;
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
   const [playerLoading, setPlayerLoading] = useState(false);
@@ -275,6 +285,16 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   };
 
   const renderContent = () => {
+    if (protoTab)
+      return (
+        <MatchupTabProto
+          key={`${selectedPlayer}|${selectedProfile}`}
+          tab={selectedProfile}
+          variant={proto.variant}
+          playerName={selectedPlayer}
+          opponent={protoOpponent}
+        />
+      );
     if (loading) {
       return <p>Loading data...</p>;
     }
@@ -320,6 +340,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   };
   const handleSelectedProfile = (profile) => {
     setSelectedProfile(profile);
+    if (proto.active) proto.setTab(profile);
   };
 
   return (
@@ -369,6 +390,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
           </ToggleButtonGroup>
         </div>
         {renderContent()}
+        {proto.active && <ProtoSwitcher proto={proto} playerName={selectedPlayer} />}
       </Card.Body>
     </Card>
   );

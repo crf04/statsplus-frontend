@@ -15,6 +15,15 @@ import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
 import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/profile-matchup-tabs): the standalone
+// build replays captured data to the Log Workspace with a fake signed-in user.
+import { PROTO_STANDALONE } from './profileMatchupPrototype/mode';
+import { DEMO_URL, installMockApi } from './profileMatchupPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.search) window.history.replaceState(null, '', DEMO_URL);
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

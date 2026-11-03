@@ -252,8 +252,10 @@ signedInTest(
     await app.open('/matchups/0022500584?player=2544');
     const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
     await expect(matrix.getByRole('columnheader', 'Play types')).toBeVisible();
-    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV +9% — — +23% +16%');
-    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText('FTA +5% — — -11% -3%');
+    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV — — +9% +23% +16%');
+    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText(
+      'FTA — — +5% THIN -11% -3%',
+    );
     expect(await overflowsHorizontally(browser)).toBe(false);
     await matrix.scrollIntoView();
     await app.screenshot('selection-play-type-tov-fta');
@@ -274,6 +276,12 @@ signedInTest(
     await expect(playTypes.getByRole('article', 'Post up')).toContainText('+36%');
     await playTypes.scrollIntoView();
     await app.screenshot('defense-sheet-play-type-ft-trips');
+
+    await market.getByRole('button', 'All').tap();
+    await expect(playTypes.getByRole('article', 'Transition')).toContainText(/\+12%.*\+19%/);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await playTypes.scrollIntoView();
+    await app.screenshot('defense-sheet-play-types-all');
   },
 );
 

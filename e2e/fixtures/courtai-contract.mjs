@@ -1040,7 +1040,7 @@ export const scoreCoverageMatchupPayload = (() => {
 export const PLAY_TYPE_TURNOVER_ROWS = [
   ['Transition:TOV', 'Transition turnovers forced', ['TOV'], 3.1, 2.6, 1.4, 27],
   ['PRBallHandler:TOV', 'PRBallHandler turnovers forced', ['TOV'], 2.4, 2, 1.1, 24],
-  ['Isolation:TOV', 'Isolation turnovers forced', ['TOV'], 0.9, 1.1, -0.8, 8],
+  ['Isolation:TOV', 'Isolation turnovers forced', ['TOV'], 0.9, 1.1, -1.2, 8],
   ['Misc:TOV', 'Misc turnovers forced', ['TOV'], 0.6, 0.5, 0.4, 18],
   ['PRBallHandler:FTT', 'PRBallHandler FT trips allowed', ['FTA', 'FTM'], 2.1, 2.4, -0.9, 7],
   ['Postup:FTT', 'Postup FT trips allowed', ['FTA', 'FTM'], 1.5, 1.1, 1.6, 29],

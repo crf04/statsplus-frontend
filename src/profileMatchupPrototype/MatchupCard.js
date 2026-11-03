@@ -55,10 +55,10 @@ const MatchupCard = ({ playerName, opponent, variant, lineType, combo }) => {
         if (more) {
           event.preventDefault();
           const key = more.dataset.more;
-          const next = new Set(
-            [...open].filter((k) => !(key.startsWith('part:') && k.startsWith('part:'))),
-          );
-          if (open.has(key) && !key.startsWith('part:')) next.delete(key);
+          // part: and acc: keys are one-of-a-kind: picking one replaces the last.
+          const group = ['part:', 'acc:'].find((g) => key.startsWith(g));
+          const next = new Set([...open].filter((k) => !(group && k.startsWith(group))));
+          if (open.has(key) && !group) next.delete(key);
           else next.add(key);
           setOpen(next);
         }

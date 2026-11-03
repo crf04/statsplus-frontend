@@ -792,6 +792,94 @@ const BASE_TAG = {
   'Rebound types': 'Reb type',
 };
 
+/* The Base waterfall. W bars are the Base components as the response (and MCP) state them. Those do not
+   add up to the combo score: the backend averages each stat's Bases, then weights the stats by his line.
+   W2 bars are each Base's contribution to the score (its component divided by the Bases its stat averages),
+   which do add up to it. */
+const BASE_STAT = {
+  'Play types': 'PTS',
+  'Shot zones': 'PTS',
+  'Shot types': 'PTS',
+  'Assist locations': 'AST',
+  Traditional: 'REB',
+  'Rebound types': 'REB',
+};
+
+// One decimal, so the bars read like the MCP components (+3.1, not +3%).
+const pct1 = (v) => {
+  const t = Math.abs(v * 100).toFixed(1);
+  return t === '0.0' ? '0.0%' : `${v > 0 ? '+' : '−'}${t}%`;
+};
+
+function waterfall(d, m, opp, combo, open) {
+  const perStat = (key) => {
+    const single = d.markets.find((x) => x.market === key);
+    return single ? Object.values(single.components).filter(Boolean).length : 1;
+  };
+  const rows = Object.entries(m.components)
+    .filter(([, c]) => c)
+    .map(([base, c]) => ({
+      base,
+      component: c.value,
+      value: combo === 'W2' ? c.value / perStat(BASE_STAT[base]) : c.value,
+    }))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const total = m.season ? m.season.value : null;
+  const max = Math.max(
+    ...rows.map((r) => Math.abs(r.value)),
+    combo === 'W2' && total != null ? Math.abs(total) : 0,
+    1e-6,
+  );
+  const accKey = [...open].find((k) => k.startsWith('acc:'));
+  const expanded = accKey ? accKey.slice(4) : rows[0] && rows[0].base;
+  const bar = (v) => {
+    const w = (Math.abs(v) / max) * 50;
+    return `<span class="wbar"><i class="${v >= 0 ? 'wup' : 'wdown'}" style="${v >= 0 ? 'left:50%' : 'right:50%'};width:${w.toFixed(1)}%"></i></span>`;
+  };
+  const slices = (r) => {
+    const base = (m.bases || []).find((b) => b.base === r.base);
+    if (!base) return '<p class="sub">No rows.</p>';
+    if (r.base === 'Traditional') {
+      const t = base.slices[0];
+      return `<div class="srow"><span class="sn">${esc(opp)}: ${esc(t.metric)}</span><span class="ss"></span>${sPill(t)}<span class="sv">${esc(minus(t.vs_league))}</span></div>`;
+    }
+    const list = joined(d, base);
+    const showAll = open.has(`all:${r.base}`);
+    const shown = showAll ? list : list.slice(0, 3);
+    const more =
+      list.length > 3
+        ? `<button type="button" class="more" data-more="all:${esc(r.base)}">${showAll ? 'Show less' : `Show all ${list.length}`}</button>`
+        : '';
+    return `${list.every((x) => x.his_mix) ? '<div class="ssub">For his mix of 2s and 3s: no opponent rank.</div>' : ''}${shown.map(sRow).join('')}${more}`;
+  };
+  const body = rows
+    .map((r) => {
+      const isOpen = r.base === expanded;
+      const label = combo === 'W2' ? `${pct1(r.value)}` : pct1(r.value);
+      const title =
+        combo === 'W2'
+          ? `${r.base}: ${pct1(r.value)} of the ${m.market} score (component ${pct1(r.component)})`
+          : `${r.base} component ${pct1(r.value)}`;
+      return `<div class="wrow${isOpen ? ' open' : ''}">
+        <button type="button" class="whead" data-more="${isOpen ? 'acc:none' : `acc:${esc(r.base)}`}" aria-expanded="${isOpen}" title="${esc(title)}">
+          <span class="wcar">${isOpen ? '▾' : '▸'}</span><span class="wname">${esc(r.base)}</span>${bar(r.value)}<span class="wval ${r.value >= 0 ? 'up' : 'down'}">${label}</span>
+        </button>
+        ${isOpen ? `<div class="wbody">${slices(r)}</div>` : ''}
+      </div>`;
+    })
+    .join('');
+  const totalRow =
+    combo === 'W2' && total != null
+      ? `<div class="wtotal"><span class="wcar"></span><span class="wname">${esc(m.market)} score</span>${bar(total)}<span class="wval ${total >= 0 ? 'up' : 'down'}">${pct1(total)}</span></div>`
+      : '';
+  const foot =
+    combo === 'W2'
+      ? `Each bar is that Base's share of the ${esc(m.market)} score.`
+      : `Each bar is that Base's ${esc(m.market)} component, as MCP reports it.`;
+  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)} ${total != null ? `<span class="pill" style="${wash(total)}">${pct1(total)}</span>` : ''}</div>
+    <div class="wlist">${body}${totalRow}</div><div class="wfoot">${foot}</div>`;
+}
+
 const comboParts = (d, m) => {
   const avg = d.player.averages || {};
   const total = COMBO_PARTS[m.market].reduce((sum, k) => sum + (avg[k] || 0), 0) || 1;
@@ -845,6 +933,7 @@ function comboBody(d, m, opp, combo, open) {
         : '')
     );
   };
+  if (combo === 'W' || combo === 'W2') return waterfall(d, m, opp, combo, open);
   if (combo === 'C1') {
     const groups = parts
       .map((part) => `<div class="sgrp">${partHead(part, m)}${partRows(part, 3)}</div>`)

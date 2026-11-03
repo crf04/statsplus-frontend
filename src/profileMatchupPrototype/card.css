@@ -1323,3 +1323,111 @@
   outline: 2px solid var(--mcc-amber);
   outline-offset: -2px;
 }
+
+/* Combo waterfall (W, W2). */
+.mcc .wtitle {
+  margin: 14px 0 6px;
+  font-size: 13.5px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mcc .wtitle .pill {
+  font-size: 12px;
+  padding: 1px 7px;
+}
+.mcc .wrow {
+  border-bottom: 1px solid var(--mcc-line);
+}
+.mcc .whead,
+.mcc .wtotal {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 14px minmax(96px, 150px) minmax(0, 1fr) 54px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 2px;
+  font-size: 13.5px;
+}
+.mcc .whead {
+  cursor: pointer;
+}
+.mcc .whead:focus-visible {
+  outline: 2px solid var(--mcc-amber);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.mcc .wrow.open .whead {
+  font-weight: 600;
+}
+.mcc .wcar {
+  color: var(--mcc-faint);
+  font-size: 11px;
+}
+.mcc .wbar {
+  position: relative;
+  height: 14px;
+}
+.mcc .wbar::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--mcc-line-strong);
+}
+.mcc .wbar > i {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 2px;
+}
+.mcc .wbar > i.wup {
+  background: rgb(var(--mcc-up-rgb) / 0.75);
+}
+.mcc .wbar > i.wdown {
+  background: rgb(var(--mcc-down-rgb) / 0.75);
+}
+.mcc .wval {
+  font-family: var(--mcc-mono);
+  font-size: 12.5px;
+  text-align: right;
+}
+.mcc .wbody {
+  padding: 0 0 8px 22px;
+}
+.mcc .wbody .srow:last-of-type {
+  border-bottom: 0;
+}
+.mcc .wbody .more {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--mcc-amber);
+  margin-top: 4px;
+}
+.mcc .wtotal {
+  border-top: 2px solid var(--mcc-line-strong);
+  font-weight: 650;
+}
+.mcc .wfoot {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--mcc-faint);
+}
+@media (max-width: 520px) {
+  .mcc .whead,
+  .mcc .wtotal {
+    grid-template-columns: 12px minmax(84px, 112px) minmax(0, 1fr) 50px;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .mcc .wbody {
+    padding-left: 10px;
+  }
+}

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 import {
+  blockWrites,
   bootstrapVercelBypassCookie,
   isAllowedDeploymentUrl,
   isAllowedReleaseCheckTarget,
@@ -110,6 +111,58 @@ describe('deployed smoke Vercel bootstrap', () => {
       expect(browserContext.addCookies).not.toHaveBeenCalled();
     },
   );
+});
+
+describe('Release Check write blocking', () => {
+  const sentryUrl =
+    'https://o4512261609160704.ingest.us.sentry.io/api/4512261623840768/envelope/?sentry_version=7';
+  const traceEnvelope = [
+    '{"sent_at":"2026-11-03T15:13:02.648Z","trace":{"sampled":"true","sample_rate":"0.05"}}',
+    '{"type":"span","item_count":1,"content_type":"application/vnd.sentry.items.span.v2+json"}',
+    '{"version":2,"items":[{"name":"Main UI thread blocked","status":"ok"}]}',
+  ].join('\n');
+  const errorEnvelope = [
+    '{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","sent_at":"2026-11-03T15:13:02.648Z"}',
+    '{"type":"event"}',
+    '{"exception":{"values":[{"type":"TypeError","value":"x is undefined"}]}}',
+  ].join('\n');
+
+  const send = async (requests) => {
+    let handler;
+    const blocked = await blockWrites({
+      route: async (_pattern, fn) => {
+        handler = fn;
+      },
+    });
+    const outcomes = requests.map(([method, url, postData = null]) => {
+      const route = {
+        request: () => ({ method: () => method, url: () => url, postData: () => postData }),
+        abort: jest.fn(() => 'abort'),
+        fallback: jest.fn(() => 'fallback'),
+      };
+      return handler(route);
+    });
+    return { blocked, outcomes };
+  };
+
+  test('a sampled Sentry trace is aborted without failing the check', async () => {
+    const { blocked, outcomes } = await send([['POST', sentryUrl, traceEnvelope]]);
+    expect(outcomes).toEqual(['abort']);
+    expect(blocked).toEqual([]);
+  });
+
+  test('a Sentry error event and any other write are aborted and recorded; reads pass', async () => {
+    const { blocked, outcomes } = await send([
+      ['POST', sentryUrl, errorEnvelope],
+      ['POST', 'https://statsplus-frontend.vercel.app/api/feedback', '{"type":"span"}'],
+      ['GET', 'https://statsplus-frontend.vercel.app/api/research'],
+    ]);
+    expect(outcomes).toEqual(['abort', 'abort', 'fallback']);
+    expect(blocked).toEqual([
+      `POST ${sentryUrl}`,
+      'POST https://statsplus-frontend.vercel.app/api/feedback',
+    ]);
+  });
 });
 
 describe('deployed smoke URL and fixture wiring', () => {

@@ -162,12 +162,36 @@ export const bootstrapVercelBypassCookie = async ({
 // tries to write fails its test without the write ever reaching a server.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+// Production samples 5% of page loads for Sentry tracing. A Sentry envelope that
+// carries only telemetry items is aborted like any write but not recorded, so a
+// sampled trace cannot fail the check; one carrying an error event still does.
+const SENTRY_TELEMETRY_ITEMS = new Set([
+  'span',
+  'transaction',
+  'session',
+  'sessions',
+  'client_report',
+]);
+
+const isSentryTelemetry = (request) => {
+  if (!/(^|\.)ingest\.([a-z]+\.)?sentry\.io$/.test(new URL(request.url()).hostname)) return false;
+  const types = (request.postData() ?? '').split('\n').flatMap((line) => {
+    try {
+      const type = JSON.parse(line)?.type;
+      return typeof type === 'string' ? [type] : [];
+    } catch {
+      return [];
+    }
+  });
+  return types.length > 0 && types.every((type) => SENTRY_TELEMETRY_ITEMS.has(type));
+};
+
 export const blockWrites = async (browserContext) => {
   const blocked = [];
   await browserContext.route('**/*', (route) => {
     const request = route.request();
     if (SAFE_METHODS.has(request.method())) return route.fallback();
-    blocked.push(`${request.method()} ${request.url()}`);
+    if (!isSentryTelemetry(request)) blocked.push(`${request.method()} ${request.url()}`);
     return route.abort();
   });
   return blocked;

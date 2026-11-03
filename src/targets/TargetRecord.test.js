@@ -591,9 +591,9 @@ test('the Backtest says how many players the Position left out, and shows each P
 
 const cornerThree = { base: 'shot_zones', sliceKey: 'Corner 3', comparator: 'at_or_above' };
 const spotUp = { base: 'play_types', sliceKey: 'Spotup', comparator: 'at_or_above' };
-const seasonedBacktest = (qualifiers, dietSeasons) => ({
+const seasonedBacktest = (qualifiers, dietSeasons, season = '2026-27') => ({
   ...backtest,
-  season: '2026-27',
+  season,
   target: { opponent: 'MIN', qualifiers: [{ base: 'position', groups: ['Wing'] }, ...qualifiers] },
   players: [
     {
@@ -612,16 +612,16 @@ const seasonedBacktest = (qualifiers, dietSeasons) => ({
       shares: qualifiers.map(() => ({
         share: 0.4,
         leagueAverageShare: 0.2,
-        dietSeason: '2026-27',
+        dietSeason: season,
       })),
     },
   ],
 });
 
-const renderSeasoned = (Component, qualifiers, dietSeasons) =>
+const renderSeasoned = (Component, qualifiers, dietSeasons, season) =>
   render(
     <MemoryRouter>
-      <Component backtest={seasonedBacktest(qualifiers, dietSeasons)} />
+      <Component backtest={seasonedBacktest(qualifiers, dietSeasons, season)} />
     </MemoryRouter>,
   );
 
@@ -630,24 +630,43 @@ test('a game row tags a player whose share comes from last season’s Diet, and 
   const rowsOf = (name) =>
     screen.getAllByRole('link', { name: `${name} games vs MIN` }).map((link) => link.closest('li'));
   expect(rowsOf('Player One')).toHaveLength(3);
-  for (const row of rowsOf('Player One'))
+  for (const row of rowsOf('Player One')) {
     expect(row).toHaveTextContent('Player One LAL2025-26 Diet');
+    expect(within(row).getByText('2025-26 Diet')).toBeVisible();
+  }
   expect(rowsOf('Player Two')[0]).not.toHaveTextContent('Diet');
 });
 
 test('with several Diet Qualifiers, the tag names which share fell back', () => {
   renderSeasoned(TargetGameRows, [cornerThree, spotUp], ['2026-27', '2025-26']);
   const row = screen.getAllByRole('link', { name: 'Player One games vs MIN' })[0].closest('li');
-  expect(row).toHaveTextContent('Spot up 2025-26 Diet');
+  expect(within(row).getByText('Spot up 2025-26 Diet')).toBeVisible();
   expect(row).not.toHaveTextContent('Corner 3');
+  cleanup();
+  renderSeasoned(TargetGameRows, [cornerThree, spotUp], ['2025-26', '2025-26']);
+  const both = screen.getAllByRole('link', { name: 'Player One games vs MIN' })[0].closest('li');
+  expect(within(both).getByText('Corner 3 2025-26 Diet')).toBeVisible();
+  expect(within(both).getByText('Spot up 2025-26 Diet')).toBeVisible();
 });
 
-test('a share read from the Backtest season, or with no season sent, carries no tag', () => {
-  renderSeasoned(TargetGameRows, [cornerThree], ['2026-27']);
-  expect(screen.getAllByRole('link', { name: 'Player One games vs MIN' })).toHaveLength(3);
-  expect(screen.queryByText(/Diet/)).not.toBeInTheDocument();
-  cleanup();
+test.each(['2026-27', '2025-26'])(
+  'a share read from a %s Backtest’s own season carries no tag',
+  (season) => {
+    renderSeasoned(TargetGameRows, [cornerThree], [season], season);
+    expect(screen.getAllByRole('link', { name: 'Player One games vs MIN' })).toHaveLength(3);
+    expect(screen.queryByText(/Diet/)).not.toBeInTheDocument();
+  },
+);
+
+test('a 2025-26 Backtest tags a share read from 2024-25', () => {
+  renderSeasoned(TargetGameRows, [cornerThree], ['2024-25'], '2025-26');
+  const row = screen.getAllByRole('link', { name: 'Player One games vs MIN' })[0].closest('li');
+  expect(within(row).getByText('2024-25 Diet')).toBeVisible();
+});
+
+test('a share with no season sent carries no tag', () => {
   renderSeasoned(TargetGameRows, [cornerThree], [undefined]);
+  expect(screen.getAllByRole('link', { name: 'Player One games vs MIN' })).toHaveLength(3);
   expect(screen.queryByText(/Diet/)).not.toBeInTheDocument();
 });
 

@@ -5,7 +5,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useMatchup } from './read';
-import { drawCard, drawCardG, toCard } from './cardPort';
+import { drawCard, drawCardG, drawCardH, toCard } from './cardPort';
 import './card.css';
 
 /* The Log Workspace's Line Type (filterUtils.lineTypeOptions) as a Matchup market.
@@ -36,7 +36,11 @@ const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
       : lineType === 'None'
         ? 'PTS shown; no Line Type is selected'
         : `PTS shown; ${label} has no Matchup Score`;
-    html = drawCardG(card, scored ? wanted : 'PTS', { note, open });
+    const shown = scored ? wanted : 'PTS';
+    html =
+      variant === 'G'
+        ? drawCardG(card, shown, { note, open })
+        : drawCardH(card, shown, { note, open, mode: variant });
   }
   return (
     <div

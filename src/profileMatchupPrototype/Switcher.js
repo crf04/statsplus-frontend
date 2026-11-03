@@ -3,11 +3,17 @@
  */
 import { SAMPLES, goToPlayer } from './mode';
 
-const NAMES = { F: 'full MCP card', G: 'trimmed, market = Line Type' };
+const NAMES = {
+  F: 'full MCP card',
+  G: 'trimmed, market = Line Type',
+  H1: 'wider bars + delta',
+  H2: 'dumbbell',
+  H3: 'mix strip + list',
+};
 
 const Switcher = ({ proto, playerName }) => (
   <div className="pmp-switcher" role="group" aria-label="Prototype switcher">
-    {['F', 'G'].map((v) => (
+    {['F', 'G', 'H1', 'H2', 'H3'].map((v) => (
       <button
         key={v}
         type="button"

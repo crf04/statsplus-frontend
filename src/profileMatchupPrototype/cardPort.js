@@ -481,3 +481,147 @@ export const drawCardG = (d, picked, { note = '', open = new Set() } = {}) => {
       <div class="comps g">${chips}</div>
       ${body}`;
 };
+
+/* Variants H1-H3: between F and G in size, with three ways to read his Diet mix.
+   The right half (what the opponent allows) is the card's, unchanged. */
+const MIX_COLORS = [
+  'var(--ct-gold-fill)',
+  'rgb(var(--ct-series-lead-fg-rgb))',
+  'rgb(var(--ct-series-kept-fg-rgb))',
+  'rgb(var(--ct-series-pink-fg-rgb))',
+  'rgb(var(--ct-slate-fg-rgb))',
+];
+
+const rightHalf = (s) => {
+  const v = num(s.vs_league);
+  const w = v == null ? 0 : Math.min(50, (Math.abs(v) / 30) * 50);
+  return `<div class="rb">${v == null ? '' : `<i style="${v >= 0 ? 'left:50%' : 'right:50%'};width:${w.toFixed(1)}%;background:${soft(v)}"></i>`}</div>
+        <span class="t r"><span>${s.vs_league == null ? '–' : esc(minus(s.vs_league))}</span><span>${s.opponent_rank == null ? '' : ordinal(s.opponent_rank)}</span></span>`;
+};
+
+const mixStrip = (who, slices, key) => {
+  const top = slices.slice(0, 5);
+  const rest = slices.slice(5).reduce((sum, s) => sum + (num(s[key]) || 0), 0);
+  const segs = top
+    .map((s, i) => {
+      const v = num(s[key]) || 0;
+      return `<i style="width:${v}%;background:${MIX_COLORS[i]}" title="${esc(s.slice)} ${v}%">${v >= 13 ? `<em>${esc(s.slice)}</em>` : ''}</i>`;
+    })
+    .join('');
+  const other =
+    rest > 0.5
+      ? `<i class="oth" style="width:${rest}%" title="other ${Math.round(rest)}%">${rest >= 13 ? '<em>other</em>' : ''}</i>`
+      : '';
+  return `<div class="hstrip"><span class="who">${esc(who)}</span><div class="bar">${segs}${other}</div></div>`;
+};
+
+function butterflyH(d, m, base, opp, mode, open) {
+  const all = joined(d, base);
+  const limit = 6;
+  const hidden = !open ? Math.max(0, all.length - limit) : 0;
+  const slices = hidden ? all.slice(0, limit) : all;
+  const mx = Math.max(...all.map((s) => Math.max(num(s.share) || 0, num(s.league_share) || 0)), 1);
+  const comp = m.components[base.base];
+  const mix = all.length > 0 && all.every((x) => x.his_mix);
+  const leftHead = {
+    H1: 'His Diet · <span class="notch-key"></span> league',
+    H2: 'His Diet <span class="dot-key gold"></span> him <span class="dot-key hollow"></span> league',
+    H3: 'His share · league',
+  }[mode];
+  const rows = slices
+    .map((s, i) => {
+      const share = num(s.share);
+      const league = num(s.league_share);
+      const tip = `${s.slice}: ${s.share ?? '–'} of his Diet (league ${s.league_share ?? '–'})`;
+      let left;
+      if (mode === 'H1') {
+        const delta = share != null && league != null ? Math.round(share - league) : null;
+        const chip =
+          delta == null
+            ? ''
+            : `<span class="dchip ${delta > 0 ? 'dup' : 'ddown'}">${delta > 0 ? '+' : delta < 0 ? '−' : '±'}${Math.abs(delta)}<span class="vl"> vs lg</span></span>`;
+        left = `<div class="h1l"><span class="h1t"><b>${esc(s.share ?? '–')}</b>${chip}</span><div class="h1bar"><i style="width:${(((share || 0) / mx) * 100).toFixed(1)}%"></i>${league == null ? '' : `<s style="right:${((league / mx) * 100).toFixed(1)}%"></s>`}</div></div>`;
+      } else if (mode === 'H2') {
+        const a = ((share || 0) / mx) * 100;
+        const b = league == null ? a : (league / mx) * 100;
+        const lo = Math.min(a, b);
+        const hi = Math.max(a, b);
+        const over = a >= b;
+        left = `<div class="h2l"><div class="h2axis">
+            <span class="h2line ${over ? 'h2up' : 'h2down'}" style="left:${lo.toFixed(1)}%;width:${(hi - lo).toFixed(1)}%"></span>
+            ${league == null ? '' : `<span class="h2dot hollow" style="left:${b.toFixed(1)}%"></span><span class="h2lab lg ${over ? 'before' : 'after'}" style="left:${b.toFixed(1)}%">lg ${esc(s.league_share)}</span>`}
+            <span class="h2dot gold" style="left:${a.toFixed(1)}%"></span><span class="h2lab me ${over ? 'after' : 'before'}" style="left:${a.toFixed(1)}%">${esc(s.share ?? '–')}</span>
+          </div></div>`;
+      } else {
+        const sw =
+          i < 5
+            ? `<span class="sw" style="background:${MIX_COLORS[i]}"></span>`
+            : '<span class="sw oth"></span>';
+        left = `<div class="h3l"><b>${esc(s.share ?? '–')}</b> <span class="lg">· lg ${esc(s.league_share ?? '–')}</span>${sw}</div>`;
+      }
+      return `${left}<span class="lab" title="${esc(tip)}">${esc(s.slice)}</span>${rightHalf(s)}`;
+    })
+    .join('');
+  const strips =
+    mode === 'H3'
+      ? `<div class="hstrips">${mixStrip(d.player.name.split(' ').slice(-1)[0], all, 'share')}${mixStrip('League', all, 'league_share')}</div>`
+      : '';
+  const more =
+    all.length > limit
+      ? `<button type="button" class="more" data-more="${esc(base.base)}">${open ? 'Show fewer' : `+${hidden} more`}</button>`
+      : '';
+  return `<div class="sec"><span>${esc(base.base)} · ${esc(m.market)}</span><span class="rk ${comp && comp.value >= 0 ? 'up' : 'down'}">${comp ? pct(comp.value) : ''}</span></div>
+      ${strips}<div class="bfh ${mode}" aria-label="${esc(base.base)}: his Diet against what ${esc(opp)} allows">
+        <span class="hd l">${leftHead}</span><span class="hd r">${mix ? `${esc(opp)} allows, for his mix` : `${esc(opp)} allows`}</span>${rows}${more}</div>`;
+}
+
+export const drawCardH = (d, picked, { note = '', open = new Set(), mode = 'H1' } = {}) => {
+  const m = d.markets.find((x) => x.market === picked) || d.markets[0];
+  const opp = d.player.opponent;
+  const a = d.as_of || {};
+  const asOf = a.season_defense || a.player_diets;
+  const season = m.season;
+  const pill = season
+    ? `<span class="pill" style="${wash(season.value)}">${pct(season.value)}</span>`
+    : '<span class="pill">—</span>';
+  const l15 = m.last15 ? `<span class="gl15">L15 ${pct(m.last15.value)}</span>` : '';
+  const chips = d.bases
+    .filter((b) => m.components[b])
+    .map((b) => {
+      const c = m.components[b];
+      return `<span class="cchip${c.thin ? ' thin' : ''}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b></span>`;
+    })
+    .join('');
+  const blend =
+    season && !season.no_blend_component
+      ? `<span class="cchip blend" style="${wash(season.value)}">Blend <b>${pct(season.value)}</b></span>`
+      : '';
+  const bases = (m.bases || []).filter((b) => b.base !== 'Traditional');
+  const spatial = bases.find((b) => REGIONS[b.base]);
+  const others = bases.filter((b) => b !== spatial);
+  const sc = spatial && m.components[spatial.base];
+  const left = spatial
+    ? `<div class="hleft"><div class="sec"><span>${esc(spatial.base)} · ${esc(m.market)}</span><span class="rk ${sc && sc.value >= 0 ? 'up' : 'down'}">${sc ? pct(sc.value) : ''}</span></div>
+          ${court(d, spatial, opp)}
+          <div class="legend"><b>${esc(opp)} allows vs league</b><span>Less</span><span class="grad"></span><span>More</span></div>
+          <div class="hkey">Each zone: his share, then ${esc(opp)}'s rank (30th = most) · vs league</div></div>`
+    : '';
+  const key = others.length
+    ? `<div class="sub bfkey"><b>${esc(opp)} allows:</b> % vs league, then rank (30th = most).</div>`
+    : '';
+  const right =
+    others.map((b) => butterflyH(d, m, b, opp, mode, open.has(b.base))).join('') +
+    key +
+    tradRow(m, opp);
+  const body =
+    left || right
+      ? `<div class="layout h${left && right ? '' : ' solo'}">${left}${right ? `<div>${right}</div>` : ''}</div>`
+      : `<p class="sub">No Diet-based Base for ${esc(m.market)}.</p>`;
+  return `<div class="gh hh">
+        <div class="gt"><b>${esc(d.player.name)}</b> vs <b>${esc(opp)}</b> · Unscheduled · ${esc(a.season || '–')} · data as of ${esc(asOf ? day(asOf) : '–')}</div>
+        <div class="gs">${pill}<span class="gm">${esc(m.market)} Matchup Score${season && season.no_blend_component ? ` · ${esc(season.no_blend_component)} only` : ''}</span>${l15}</div>
+      </div>
+      ${note ? `<p class="gfall">${esc(note)}</p>` : ''}
+      <div class="comps">${chips}${blend}</div>
+      ${body}`;
+};

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 import {
+  blockWrites,
   bootstrapVercelBypassCookie,
   isAllowedDeploymentUrl,
   isAllowedReleaseCheckTarget,
@@ -110,6 +111,96 @@ describe('deployed smoke Vercel bootstrap', () => {
       expect(browserContext.addCookies).not.toHaveBeenCalled();
     },
   );
+});
+
+describe('Release Check write blocking', () => {
+  const sentryUrl =
+    'https://o4512261609160704.ingest.us.sentry.io/api/4512261623840768/envelope/?sentry_version=7';
+  const traceEnvelope = [
+    '{"sent_at":"2026-11-03T15:13:02.648Z","trace":{"sampled":"true","sample_rate":"0.05"}}',
+    '{"type":"span","item_count":1,"content_type":"application/vnd.sentry.items.span.v2+json"}',
+    '{"version":2,"items":[{"name":"Main UI thread blocked","status":"ok"}]}',
+  ].join('\n');
+  const errorEnvelope = [
+    '{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","sent_at":"2026-11-03T15:13:02.648Z"}',
+    '{"type":"event"}',
+    '{"exception":{"values":[{"type":"TypeError","value":"x is undefined"}]}}',
+  ].join('\n');
+
+  const send = async (requests) => {
+    let handler;
+    const blocked = await blockWrites({
+      route: async (_pattern, fn) => {
+        handler = fn;
+      },
+    });
+    const outcomes = requests.map(([method, url, postData = null]) => {
+      const route = {
+        request: () => ({ method: () => method, url: () => url, postData: () => postData }),
+        abort: jest.fn(() => 'abort'),
+        fallback: jest.fn(() => 'fallback'),
+      };
+      return handler(route);
+    });
+    return { blocked, outcomes };
+  };
+
+  test('a sampled Sentry trace or transaction is aborted without failing the check', async () => {
+    const transactionEnvelope = [
+      '{"sent_at":"2026-11-03T15:13:02.648Z"}',
+      '{"type":"transaction"}',
+      '{"type":"transaction","transaction":"Pageload"}',
+      '',
+    ].join('\n');
+    const { blocked, outcomes } = await send([
+      ['POST', sentryUrl, traceEnvelope],
+      ['POST', sentryUrl, transactionEnvelope],
+    ]);
+    expect(outcomes).toEqual(['abort', 'abort']);
+    expect(blocked).toEqual([]);
+  });
+
+  test('a Sentry error event and any other write are aborted and recorded; reads pass', async () => {
+    const { blocked, outcomes } = await send([
+      ['POST', sentryUrl, errorEnvelope],
+      ['POST', 'https://statsplus-frontend.vercel.app/api/feedback', '{"type":"span"}'],
+      ['GET', 'https://statsplus-frontend.vercel.app/api/research'],
+    ]);
+    expect(outcomes).toEqual(['abort', 'abort', 'fallback']);
+    expect(blocked).toEqual([
+      `POST ${sentryUrl}`,
+      'POST https://statsplus-frontend.vercel.app/api/feedback',
+    ]);
+  });
+
+  test.each([
+    ['an error event beside a span', ['POST', sentryUrl, `${traceEnvelope}\n{"type":"event"}\n{}`]],
+    ['a replay item', ['POST', sentryUrl, '{}\n{"type":"replay_event"}\n{}']],
+    ['an item with a byte length', ['POST', sentryUrl, '{}\n{"type":"span","length":2}\n{}']],
+    ['an envelope with no items', ['POST', sentryUrl, '{"sent_at":"2026-11-03T15:13:02.648Z"}']],
+    ['an envelope header that is not JSON', ['POST', sentryUrl, 'x\n{"type":"span"}\n{}']],
+    ['a truncated envelope', ['POST', sentryUrl, '{}\n{"type":"span"}']],
+    ['a payload that is not JSON', ['POST', sentryUrl, '{}\n{"type":"span"}\n\u001f\u008b\u0008']],
+    ['no body', ['POST', sentryUrl, null]],
+    ['another method', ['PUT', sentryUrl, traceEnvelope]],
+    ['plain HTTP', ['POST', sentryUrl.replace('https:', 'http:'), traceEnvelope]],
+    ['another Sentry path', ['POST', sentryUrl.replace('/envelope/', '/store/'), traceEnvelope]],
+    [
+      'a host that only ends like Sentry',
+      [
+        'POST',
+        sentryUrl.replace(
+          'o4512261609160704.ingest.us.sentry.io',
+          'o1.ingest.us.sentry.io.example.com',
+        ),
+        traceEnvelope,
+      ],
+    ],
+  ])('%s is recorded as a write', async (_label, request) => {
+    const { blocked, outcomes } = await send([request]);
+    expect(outcomes).toEqual(['abort']);
+    expect(blocked).toEqual([`${request[0]} ${request[1]}`]);
+  });
 });
 
 describe('deployed smoke URL and fixture wiring', () => {

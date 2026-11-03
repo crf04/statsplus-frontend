@@ -162,12 +162,50 @@ export const bootstrapVercelBypassCookie = async ({
 // tries to write fails its test without the write ever reaching a server.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+// Production samples 5% of page loads for Sentry tracing. A Sentry envelope that
+// carries only telemetry items is aborted like any write but not recorded, so a
+// sampled trace cannot fail the check. Anything else is recorded: another method,
+// host or path, an error event, or a body that is not a plain envelope of one
+// header line followed by JSON item header and payload line pairs.
+const SENTRY_TELEMETRY_ITEMS = new Set([
+  'span',
+  'transaction',
+  'session',
+  'sessions',
+  'client_report',
+]);
+
+const parseObject = (line) => {
+  try {
+    const value = JSON.parse(line);
+    return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+const isSentryTelemetry = (request) => {
+  if (request.method() !== 'POST') return false;
+  const url = new URL(request.url());
+  if (url.protocol !== 'https:') return false;
+  if (!/^o\d+\.ingest\.(us\.|de\.)?sentry\.io$/.test(url.hostname)) return false;
+  if (!/^\/api\/\d+\/envelope\/$/.test(url.pathname)) return false;
+  const lines = (request.postData() ?? '').replace(/\n$/, '').split('\n');
+  if (lines.length < 3 || !parseObject(lines[0])) return false;
+  for (let index = 1; index < lines.length; index += 2) {
+    const header = parseObject(lines[index]);
+    if (!header || 'length' in header || !SENTRY_TELEMETRY_ITEMS.has(header.type)) return false;
+    if (!parseObject(lines[index + 1])) return false;
+  }
+  return true;
+};
+
 export const blockWrites = async (browserContext) => {
   const blocked = [];
   await browserContext.route('**/*', (route) => {
     const request = route.request();
     if (SAFE_METHODS.has(request.method())) return route.fallback();
-    blocked.push(`${request.method()} ${request.url()}`);
+    if (!isSentryTelemetry(request)) blocked.push(`${request.method()} ${request.url()}`);
     return route.abort();
   });
   return blocked;

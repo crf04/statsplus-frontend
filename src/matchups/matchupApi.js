@@ -199,11 +199,30 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   return TRADITIONAL_MARKETS[statKey];
 };
 
+// A statsplus#407 backend scores FGM and FG2M from the shot rows, so their make
+// rows also list those markets. Production still sends the shorter lists.
+const scoreCoverageSheetMarkets = (base, sliceKey, statKey) => {
+  if (base === 'shot_zones' && statKey === 'FGM') {
+    return THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey)
+      ? ['PTS', '3PM', 'FGM', 'PA', 'PR', 'PRA']
+      : ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'];
+  }
+  if (base === 'shot_types') {
+    return {
+      FG2M: ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+      FG3M: ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA'],
+    }[statKey];
+  }
+  return undefined;
+};
+
 // `markets` lists the Stat Categories whose Matchup Score reads the row, combos
 // included (crf04/statsplus#117); every row's list is exact.
-const expectedSheetMarkets = (base, sliceKey, statKey) => [
-  canonicalSheetMarkets(base, sliceKey, statKey),
-];
+const expectedSheetMarkets = (base, sliceKey, statKey) =>
+  [
+    canonicalSheetMarkets(base, sliceKey, statKey),
+    scoreCoverageSheetMarkets(base, sliceKey, statKey),
+  ].filter(Boolean);
 
 const decodeSheetIdentity = (base, key) => {
   let sliceKey;

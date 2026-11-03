@@ -916,6 +916,41 @@ export const SCORE_COVERAGE_TRADITIONAL_ROWS = [
   ['OPP_FTM', 'FT made', ['FTM'], 15.6, 17.4, -1.3, 4],
   ['OPP_FTA', 'FT attempts', ['FTA'], 20.1, 22.6, -1.5, 3],
 ];
+// Its shot make rows list FGM, and two-point ones FG2M, as those scores read them.
+export const SCORE_COVERAGE_SHOT_MAKE_ROWS = {
+  shot_zones: [
+    [
+      'Restricted Area:FGM',
+      'Restricted Area FGM',
+      ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+      13.4,
+      12.6,
+      1.3,
+      21,
+    ],
+    [
+      'Above the Break 3:FGM',
+      'Above the Break 3 FGM',
+      ['PTS', '3PM', 'FGM', 'PA', 'PR', 'PRA'],
+      3.6,
+      4,
+      -0.7,
+      9,
+    ],
+  ],
+  shot_types: [
+    ['Pullups:FG2M', 'Pullups FG2M', ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'], 4.4, 4.1, 0.5, 19],
+    [
+      'Catch and Shoot:FG3M',
+      'Catch and Shoot FG3M',
+      ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA'],
+      5.9,
+      5.5,
+      0.6,
+      20,
+    ],
+  ],
+};
 export const scoreCoverageMatchupPayload = (() => {
   const candidate = JSON.parse(JSON.stringify(matchupPayload));
   candidate.league.defense_sheet.traditional.push(
@@ -923,6 +958,26 @@ export const scoreCoverageMatchupPayload = (() => {
       leagueRow(key, average, 2, average, 2),
     ),
   );
+  Object.entries(SCORE_COVERAGE_SHOT_MAKE_ROWS).forEach(([base, rows]) => {
+    // Shot types carry no Last 15 value here, as in the base payload.
+    const window = (row) => (base === 'shot_types' ? { ...row, last_15: null } : row);
+    candidate.league.defense_sheet[base].push(
+      ...rows.map(([key, , , , average]) => window(leagueRow(key, average, 1, average, 1))),
+    );
+    candidate.teams.forEach((team) => {
+      team.defense_sheet[base].push(
+        ...rows.map(([key, label, markets, allowed, average, sigma, rank]) => {
+          const value = defenseValue(
+            allowed,
+            Math.round((allowed / average - 1) * 100),
+            sigma,
+            rank,
+          );
+          return window(defenseRow(key, label, markets, value, value));
+        }),
+      );
+    });
+  });
   candidate.teams.forEach((team) => {
     team.defense_sheet.traditional.push(
       ...SCORE_COVERAGE_TRADITIONAL_ROWS.map(

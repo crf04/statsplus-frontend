@@ -39,6 +39,24 @@ describe('the statsplus#407 browser fixture decodes beside today’s shape', () 
     expect(player('Austin Reaves').scores.STL.season.blend).toBeNull();
   });
 
+  test('both teams list their shot make rows under FGM and FG2M', () => {
+    matchup.teams.forEach((team) => {
+      const { shotZones, shotTypes, traditional } = team.defenseSheet;
+      const listed = (market) =>
+        [...shotZones, ...shotTypes, ...traditional]
+          .filter((row) => row.markets.includes(market))
+          .map((row) => row.key);
+      expect(listed('FGM')).toEqual([
+        'Restricted Area:FGM',
+        'Above the Break 3:FGM',
+        'Pullups:FG2M',
+        'Catch and Shoot:FG3M',
+        'OPP_FGM',
+      ]);
+      expect(listed('FG2M')).toEqual(['Restricted Area:FGM', 'Pullups:FG2M']);
+    });
+  });
+
   test('both teams list the eight new Traditional rows with their markets', () => {
     matchup.teams.forEach((team) => {
       expect(

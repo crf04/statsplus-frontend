@@ -360,11 +360,43 @@ test('rejects malformed markets on a recognized additive-Base row', () => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
-const OLD_AND_NEW_SHOT_MAKE_MARKETS = [
-  ['shot_zones', 'Restricted Area:FGM', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
-  ['shot_zones', 'Corner 3:FGM', ['PTS', '3PM'], ['PTS', '3PM', 'PA', 'PR', 'PRA']],
-  ['shot_types', 'Pullups:FG2M', ['PTS'], ['PTS', 'PA', 'PR', 'PRA']],
-  ['shot_types', 'Catch and Shoot:FG3M', ['3PM', 'PTS'], ['3PM', 'PTS', 'PA', 'PR', 'PRA']],
+// [base, key, retired points-only list, today's list, the statsplus#407 list]
+const SHOT_MAKE_MARKETS = [
+  [
+    'shot_zones',
+    'Restricted Area:FGM',
+    ['PTS'],
+    ['PTS', 'PA', 'PR', 'PRA'],
+    ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+  ],
+  [
+    'shot_zones',
+    'Mid-Range:FGM',
+    ['PTS'],
+    ['PTS', 'PA', 'PR', 'PRA'],
+    ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+  ],
+  [
+    'shot_zones',
+    'Corner 3:FGM',
+    ['PTS', '3PM'],
+    ['PTS', '3PM', 'PA', 'PR', 'PRA'],
+    ['PTS', '3PM', 'FGM', 'PA', 'PR', 'PRA'],
+  ],
+  [
+    'shot_types',
+    'Pullups:FG2M',
+    ['PTS'],
+    ['PTS', 'PA', 'PR', 'PRA'],
+    ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+  ],
+  [
+    'shot_types',
+    'Catch and Shoot:FG3M',
+    ['3PM', 'PTS'],
+    ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
+    ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA'],
+  ],
 ];
 
 const withShotRow = (base, key, markets) => {
@@ -388,39 +420,53 @@ const withShotRow = (base, key, markets) => {
   return candidate;
 };
 
-describe.each(OLD_AND_NEW_SHOT_MAKE_MARKETS)(
+describe.each(SHOT_MAKE_MARKETS)(
   'shot make row %s %s',
-  (base, key, legacy, current) => {
+  (base, key, retired, today, scoreCoverage) => {
     const decodedMarkets = (markets) => {
       const camel = base === 'shot_zones' ? 'shotZones' : 'shotTypes';
       return decodeMatchup(withShotRow(base, key, markets)).teams[0].defenseSheet[camel][0].markets;
     };
 
-    test('decodes the points-and-combos list and rejects the old points-only list', () => {
-      expect(decodedMarkets(current)).toEqual(current);
-      expect(() => decodeMatchup(withShotRow(base, key, legacy))).toThrow('invalid response');
+    test('decodes today’s list and the statsplus#407 list, and rejects the points-only list', () => {
+      expect(decodedMarkets(today)).toEqual(today);
+      expect(decodedMarkets(scoreCoverage)).toEqual(scoreCoverage);
+      expect(() => decodeMatchup(withShotRow(base, key, retired))).toThrow('invalid response');
     });
 
     test('rejects a list whose elements only join to an accepted one', () => {
-      for (const accepted of [current]) {
+      for (const accepted of [today, scoreCoverage]) {
         const merged = [`${accepted[0]},${accepted[1]}`, ...accepted.slice(2)];
         expect(() => decodeMatchup(withShotRow(base, key, merged))).toThrow('invalid response');
+        expect(() => decodeMatchup(withShotRow(base, key, [accepted.join()]))).toThrow(
+          'invalid response',
+        );
       }
-      expect(() => decodeMatchup(withShotRow(base, key, [current.join()]))).toThrow(
-        'invalid response',
-      );
     });
 
     test('rejects any third list', () => {
-      const reordered = [...current].reverse();
-      const withoutPra = current.filter((market) => market !== 'PRA');
-      const withExtra = [...current, 'REB'];
-      for (const markets of [reordered, withoutPra, withExtra, []]) {
-        expect(() => decodeMatchup(withShotRow(base, key, markets))).toThrow('invalid response');
+      for (const accepted of [today, scoreCoverage]) {
+        const reordered = [...accepted].reverse();
+        const withoutPra = accepted.filter((market) => market !== 'PRA');
+        const withExtra = [...accepted, 'REB'];
+        for (const markets of [reordered, withoutPra, withExtra, []]) {
+          expect(() => decodeMatchup(withShotRow(base, key, markets))).toThrow('invalid response');
+        }
       }
     });
   },
 );
+
+test('accepts FG2M only on two-point make rows', () => {
+  for (const [base, key] of [
+    ['shot_zones', 'Corner 3:FGM'],
+    ['shot_types', 'Catch and Shoot:FG3M'],
+  ]) {
+    expect(() =>
+      decodeMatchup(withShotRow(base, key, ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'])),
+    ).toThrow('invalid response');
+  }
+});
 
 test('keeps attempt rows exact: a combo list on an FGA row is rejected', () => {
   expect(() =>

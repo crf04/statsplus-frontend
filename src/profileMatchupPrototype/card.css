@@ -1061,3 +1061,168 @@
     font-size: 10px;
   }
 }
+
+/* Variants S1-S3: plain lists; the rank pill is the only colour. */
+.mcc .gh.sh .gt {
+  font-size: 13.5px;
+}
+.mcc .gh.sh .gt b {
+  font-size: 15px;
+}
+.mcc .gh.sh .gs .pill {
+  font-size: 16px;
+  line-height: 30px;
+  padding: 0 11px;
+}
+.mcc .gh.sh .gm {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--mcc-faint);
+}
+.mcc .sinfo {
+  cursor: help;
+  color: var(--mcc-faint);
+  margin-left: 4px;
+}
+.mcc .stitle {
+  margin: 14px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mcc-fg);
+}
+.mcc .sgrp {
+  margin-top: 8px;
+}
+.mcc .sbase {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mcc-faint);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.mcc .sbase i {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.mcc .srow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 44px 46px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--mcc-line);
+  font-size: 13.5px;
+}
+.mcc .srow .sn {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mcc .srow .ss {
+  font-family: var(--mcc-mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.mcc .srow .ss b {
+  font-weight: 650;
+}
+.mcc .srow .ss i {
+  font-style: normal;
+  color: var(--mcc-faint);
+  font-size: 11px;
+  margin-left: 4px;
+}
+.mcc .spill {
+  justify-self: center;
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: #fff;
+  font: 600 11px var(--mcc-mono);
+}
+.mcc .spill.none {
+  background: var(--mcc-tint);
+  color: var(--mcc-faint);
+}
+.mcc .srow .sv {
+  font-family: var(--mcc-mono);
+  font-size: 11px;
+  color: var(--mcc-faint);
+  text-align: right;
+}
+.mcc .slist > .more,
+.mcc .sfull .more {
+  all: unset;
+  display: block;
+  margin: 8px auto 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--mcc-amber);
+  text-align: center;
+}
+.mcc .s2 {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.mcc .s2.solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+.mcc .s2 .courtbox {
+  max-width: 260px;
+}
+.mcc .s2.solo .courtbox {
+  margin: 0 auto;
+}
+.mcc .s2 .slist .sgrp:first-child {
+  margin-top: 0;
+}
+.mcc .rl.pl b {
+  font-size: clamp(12px, 5cqw, 15px);
+}
+.mcc .rl.pl .spill {
+  display: block;
+  margin: 2px auto 0;
+  min-width: 34px;
+  font-size: 10px;
+  padding: 0 4px;
+}
+.mcc .sdrivers {
+  margin-top: 12px;
+}
+.mcc .sdrivers p {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.mcc .sfull {
+  margin-top: 6px;
+}
+.mcc .sfull summary {
+  cursor: pointer;
+  color: var(--mcc-amber);
+  font-size: 12.5px;
+  list-style: none;
+}
+.mcc .sfull summary::-webkit-details-marker {
+  display: none;
+}
+@media (max-width: 520px) {
+  .mcc .s2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .mcc .s2 .courtbox {
+    margin: 0 auto;
+  }
+  .mcc .srow {
+    grid-template-columns: minmax(0, 1fr) 88px 40px 40px;
+    gap: 6px;
+    font-size: 13px;
+  }
+}

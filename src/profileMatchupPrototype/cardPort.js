@@ -164,8 +164,43 @@ export const toCard = (data, opponent) => {
         ],
       });
     }
+    // matchup._drivers: the 1-2 Bases whose components pull the score its way, strongest first.
+    const cells = Object.entries(season.components || {}).filter(([, c]) => c && c.value != null);
+    const sc = scoreCell(season);
+    const positive = sc
+      ? sc.value >= 0
+      : Math.max(...cells.map(([, c]) => c.value)) >= -Math.min(...cells.map(([, c]) => c.value));
+    cells.sort((x, y) => (positive ? y[1].value - x[1].value : x[1].value - y[1].value));
+    const chosen = cells.length
+      ? [
+          cells[0],
+          ...cells.slice(1, 2).filter(([, c]) => c.value > 0 === positive && c.value !== 0),
+        ]
+      : [];
+    const drivers = chosen
+      .map(([key]) => {
+        const label = Object.fromEntries(BASES)[key];
+        if (key === 'traditional') {
+          const t = bases.find((b) => b.base === 'Traditional');
+          return t ? { base: label, ...t.slices[0], trad: true } : null;
+        }
+        const r = readBase(data, opponent, key, market);
+        const top = r.slices.find((x) => x.vs != null);
+        return top
+          ? {
+              base: label,
+              slice: top.label,
+              share: shareText(top.share),
+              opponent_rank: top.mix ? null : top.rank,
+              vs_league: percentText(top.vs),
+              his_mix: top.mix,
+            }
+          : null;
+      })
+      .filter(Boolean);
     return {
       market,
+      drivers,
       season: scoreCell(season),
       last15: disagreeing(scoreCell(season), scoreCell(player.scores[market].last_15)),
       components,
@@ -252,13 +287,13 @@ function joined(d, base) {
     : base.slices;
 }
 
-function court(d, base, opp) {
+function court(d, base, opp, plain = false) {
   const map = REGIONS[base.base];
   const by = Object.fromEntries(joined(d, base).map((s) => [s.slice, s]));
   const at = (region) => by[map[region]];
   const fill = (region) => {
     const s = at(region);
-    return soft(s ? num(s.vs_league) : null);
+    return plain ? 'var(--mcc-tint)' : soft(s ? num(s.vs_league) : null);
   };
   const hy = 75;
   const R3 = 237.5;
@@ -286,6 +321,8 @@ function court(d, base, opp) {
       s.opponent_rank == null
         ? 'no opponent row'
         : `${esc(opp)} ${ordinal(s.opponent_rank)} (${esc(s.vs_league)} vs league)`;
+    if (plain)
+      return `<div class="rl pl${rot ? ' rot' : ''}" data-region="${region}" style="left:${(x / 5).toFixed(1)}%;top:${(y / 4).toFixed(1)}%" title="${esc(s.slice)}: ${esc(s.share)} of his ${esc(base.base)} · ${rank}"><b>${esc(s.share)}</b>${rot ? '' : sPill(s)}</div>`;
     const second = rot
       ? ''
       : `<small>${s.opponent_rank == null ? '–' : ordinal(s.opponent_rank)} · ${s.vs_league == null ? '–' : esc(minus(s.vs_league))}</small>`;
@@ -624,4 +661,96 @@ export const drawCardH = (d, picked, { note = '', open = new Set(), mode = 'H1' 
       ${note ? `<p class="gfall">${esc(note)}</p>` : ''}
       <div class="comps">${chips}${blend}</div>
       ${body}`;
+};
+
+/* Variants S1-S3: where his volume comes from, and whether the opponent allows more there.
+   Rank colour is the only colour. */
+const sPill = (s) =>
+  s.opponent_rank == null
+    ? `<span class="spill none" title="${esc(s.his_mix ? `${s.vs_league} vs league for his mix of 2s and 3s` : 'no opponent row')}">–</span>`
+    : `<span class="spill" style="background:hsl(${Math.round((s.opponent_rank - 1) * 4.1)},55%,40%)" title="${esc(ordinal(s.opponent_rank))} of 30 (30th = allows the most) · ${esc(s.vs_league)} vs league">${ordinal(s.opponent_rank)}</span>`;
+
+const NOUN = {
+  'Shot types': 'shots',
+  'Shot zones': 'shots',
+  'Play types': 'plays',
+  'Assist locations': 'assists',
+  'Rebound types': 'rebounds',
+};
+
+const sRow = (s) => `<div class="srow">
+    <span class="sn">${esc(s.slice)}</span>
+    <span class="ss"><b>${esc(s.share ?? '–')}</b> <i>lg ${esc(s.league_share ?? '–')}</i></span>
+    ${sPill(s)}<span class="sv">${s.vs_league == null ? '' : esc(minus(s.vs_league))}</span>
+  </div>`;
+
+const sGroups = (d, m, bases, all) =>
+  bases
+    .map((b) => {
+      const rows = joined(d, b);
+      return `<div class="sgrp"><div class="sbase">${esc(b.base)}${rows.every((x) => x.his_mix) ? ' <i>· for his mix of 2s and 3s</i>' : ''}</div>${(all ? rows : rows.slice(0, 3)).map(sRow).join('')}</div>`;
+    })
+    .join('');
+
+const sTrad = (m, opp) => {
+  const t = (m.bases || []).find((b) => b.base === 'Traditional');
+  if (!t || !m.components.Traditional) return '';
+  const r = t.slices[0];
+  return `<div class="sgrp"><div class="sbase">Traditional</div><div class="srow"><span class="sn">${esc(opp)}: ${esc(r.metric)}</span><span class="ss"></span>${sPill(r)}<span class="sv">${esc(minus(r.vs_league))}</span></div></div>`;
+};
+
+const driverSentence = (dr, opp) => {
+  const vs = `${minus(dr.vs_league)} vs league`;
+  if (dr.trad)
+    return `${esc(opp)} ranks ${ordinal(dr.opponent_rank)} of 30 in ${esc(dr.metric)}, ${esc(vs)}.`;
+  const first = `${esc(dr.share)} of his ${NOUN[dr.base] || 'volume'} are ${esc(dr.slice)}.`;
+  if (dr.opponent_rank == null)
+    return `${first} ${esc(opp)} allows ${esc(vs)} for his mix of 2s and 3s.`;
+  const r = dr.opponent_rank;
+  const where =
+    r >= 16
+      ? r === 30
+        ? 'the most'
+        : `the ${ordinal(31 - r)} most`
+      : r === 1
+        ? 'the fewest'
+        : `the ${ordinal(r)} fewest`;
+  return `${first} ${esc(opp)} allows ${where} (${ordinal(r)} of 30), ${esc(vs)}.`;
+};
+
+export const drawCardS = (d, picked, { note = '', mode = 'S1', open = new Set() } = {}) => {
+  const m = d.markets.find((x) => x.market === picked) || d.markets[0];
+  const opp = d.player.opponent;
+  const a = d.as_of || {};
+  const asOf = a.season_defense || a.player_diets;
+  const season = m.season;
+  const pill = season
+    ? `<span class="pill" style="${wash(season.value)}">${pct(season.value)}</span>`
+    : '<span class="pill">—</span>';
+  const info = `Share: his share of each Base for ${m.market}; lg = league average share. Pill: ${opp}'s rank, 30th = allows the most (green). % = ${opp} vs league. Score: ${m.market} Season Matchup Score${m.last15 ? `; Last 15 ${pct(m.last15.value)}` : ''}.`;
+  const head = `<div class="gh sh">
+      <div class="gt"><b>${esc(d.player.name)}</b> vs <b>${esc(opp)}</b> · ${esc(a.season || '–')} · data as of ${esc(asOf ? day(asOf) : '–')} <span class="sinfo" tabindex="0" title="${esc(info)}">ⓘ</span></div>
+      <div class="gs">${pill}<span class="gm">${esc(m.market)}</span></div>
+    </div>${note ? `<p class="gfall">${esc(note)}</p>` : ''}`;
+  const bases = (m.bases || []).filter((b) => b.base !== 'Traditional');
+  const all = open.has('all');
+  const toggle = (label) =>
+    `<button type="button" class="more" data-more="all">${all ? 'Show less' : label}</button>`;
+  const title = `<div class="stitle">Where his ${esc(m.market)} come from</div>`;
+  const list = (bs, showToggle = true) =>
+    `${sGroups(d, m, bs, all)}${sTrad(m, opp)}${showToggle && bs.some((b) => b.slices.length > 3 || joined(d, b).length > 3) ? toggle('Show all') : ''}`;
+  let body;
+  if (!bases.length && !sTrad(m, opp))
+    body = `<p class="sub">No Diet-based Base for ${esc(m.market)}.</p>`;
+  else if (mode === 'S1') body = `${title}<div class="slist">${list(bases)}</div>`;
+  else if (mode === 'S2') {
+    const spatial = bases.find((b) => REGIONS[b.base]);
+    const others = bases.filter((b) => b !== spatial);
+    body = `${title}<div class="s2${spatial && others.length ? '' : ' solo'}">${spatial ? `<div><div class="sbase">${esc(spatial.base)}</div>${court(d, spatial, opp, true)}</div>` : ''}${others.length || sTrad(m, opp) ? `<div class="slist">${list(others)}</div>` : ''}</div>`;
+  } else {
+    const sentences = (m.drivers || []).map((dr) => `<p>${driverSentence(dr, opp)}</p>`).join('');
+    body = `<div class="sdrivers">${sentences || `<p>No driver for ${esc(m.market)}.</p>`}</div>
+      <details class="sfull"${open.has('full') ? ' open' : ''}><summary data-more="full">See full breakdown</summary>${title}<div class="slist">${list(bases)}</div></details>`;
+  }
+  return `${head}${body}`;
 };

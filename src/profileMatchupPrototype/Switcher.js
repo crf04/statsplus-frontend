@@ -9,11 +9,14 @@ const NAMES = {
   H1: 'wider bars + delta',
   H2: 'dumbbell',
   H3: 'mix strip + list',
+  S1: 'one list',
+  S2: 'court + one table',
+  S3: 'drivers only',
 };
 
 const Switcher = ({ proto, playerName }) => (
   <div className="pmp-switcher" role="group" aria-label="Prototype switcher">
-    {['F', 'G', 'H1', 'H2', 'H3'].map((v) => (
+    {['S1', 'S2', 'S3', 'H1', 'H2', 'H3', 'G', 'F'].map((v) => (
       <button
         key={v}
         type="button"

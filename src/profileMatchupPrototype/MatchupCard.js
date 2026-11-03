@@ -5,7 +5,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useMatchup } from './read';
-import { drawCard, drawCardG, drawCardH, toCard } from './cardPort';
+import { drawCard, drawCardG, drawCardH, drawCardS, toCard } from './cardPort';
 import './card.css';
 
 /* The Log Workspace's Line Type (filterUtils.lineTypeOptions) as a Matchup market.
@@ -40,7 +40,9 @@ const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
     html =
       variant === 'G'
         ? drawCardG(card, shown, { note, open })
-        : drawCardH(card, shown, { note, open, mode: variant });
+        : variant.startsWith('S')
+          ? drawCardS(card, shown, { note, open, mode: variant })
+          : drawCardH(card, shown, { note, open, mode: variant });
   }
   return (
     <div
@@ -51,6 +53,7 @@ const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
         if (tile) setTileMarket(tile.dataset.market);
         const more = event.target.closest?.('[data-more]');
         if (more) {
+          event.preventDefault();
           const next = new Set(open);
           if (next.has(more.dataset.more)) next.delete(more.dataset.more);
           else next.add(more.dataset.more);

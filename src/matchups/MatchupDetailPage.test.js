@@ -636,6 +636,49 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   expect(sheetRowNames()).toEqual(['Turnovers forced']);
 });
 
+test('names every Traditional row a Last 15 window lacks', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const row = (key, markets, last15) => ({
+    key,
+    sliceKey: key,
+    label: key,
+    markets,
+    season: value(45, 12, 1.4, 25),
+    last15,
+  });
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
+    row('OPP_PTS', ['PTS', 'PA', 'PR', 'PRA'], null),
+    row('OPP_AST', ['AST', 'PA', 'RA', 'PRA'], null),
+    row('OPP_FTM', ['FTM'], null),
+    row('OPP_TOV', ['TOV'], value(13.4, 5, 1.1, 22)),
+  ];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('AST', 'FTM', 'TOV');
+  lebron.statCategories.push('AST', 'FTM', 'TOV');
+  lebron.provenance.prizepicks.push('AST', 'FTM', 'TOV');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRowNames()).toEqual(expect.arrayContaining(['Points', 'Assists', 'FT made']));
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+
+  expect(
+    screen.getByText('Opponent points, assists, and FT made unavailable for Last 15.'),
+  ).toBeVisible();
+  expect(sheetRowNames()).toContain('Turnovers forced');
+  expect(sheetRowNames()).not.toContain('Assists');
+
+  await userEvent.click(screen.getByRole('button', { name: 'AST' }));
+  expect(screen.getByText('Opponent assists unavailable for Last 15.')).toBeVisible();
+  expect(sheetRowNames()).toEqual([]);
+  expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(screen.queryByText(/unavailable for Last 15\./)).not.toBeInTheDocument();
+  expect(sheetRowNames()).toEqual(['Turnovers forced']);
+});
+
 test('renders governed traditional sheet rows without duplicate defensive columns', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [

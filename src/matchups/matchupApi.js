@@ -166,6 +166,12 @@ const TRADITIONAL_MARKETS = {
   OPP_FTA: ['FTA'],
 };
 const TRADITIONAL_SLICES = new Set(Object.keys(TRADITIONAL_MARKETS));
+const DEFENSIVE_COLUMN_KEYS = ['OPP_TOV', 'OPP_STL', 'OPP_BLK'];
+// Stored windows hold only the defensive columns and OPP_REB, and none before
+// OPP_REB existed, so any other Traditional row may lack a window's cell.
+const OPTIONAL_TRADITIONAL_KEYS = new Set(
+  Object.keys(TRADITIONAL_MARKETS).filter((key) => !DEFENSIVE_COLUMN_KEYS.includes(key)),
+);
 const ADDITIVE_SHEET_BASES = new Set([
   'play_types',
   'assist_locations',
@@ -412,7 +418,7 @@ const decodeSheetWindow = (value, availability, decode, base, key) => {
     value === null &&
     availability.status === 'available' &&
     base === 'traditional' &&
-    key === 'OPP_REB'
+    OPTIONAL_TRADITIONAL_KEYS.has(key)
   ) {
     return null;
   }
@@ -483,8 +489,6 @@ const decodeTeam = (team, surfaceAvailability) => {
     ),
   };
 };
-
-const DEFENSIVE_COLUMN_KEYS = ['OPP_TOV', 'OPP_STL', 'OPP_BLK'];
 
 const decodeDefensiveColumnWindow = (value) => {
   if (!isRecord(value)) throw invalid();

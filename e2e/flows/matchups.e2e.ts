@@ -236,6 +236,8 @@ signedInTest(
     await screen.getByRole('group', 'Market').getByRole('button', 'Field Goals Made').tap();
     await expect(screen.getByRole('article', 'Restricted area')).toBeVisible();
     await expect(screen.getByRole('article', 'FG made')).toBeVisible();
+    await screen.getByRole('article', 'Restricted area').scrollIntoView();
+    await app.screenshot('defense-sheet-fgm');
   },
 );
 

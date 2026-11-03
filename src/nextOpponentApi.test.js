@@ -99,3 +99,12 @@ test.each([
 ])('rejects unusable contract values', (payload) => {
   expect(() => decodeNextOpponent(payload)).toThrow(/invalid/);
 });
+
+test('keeps the season context a season-scoped read adds', () => {
+  const season_context = { selected_season: '2026-27', published_season: '2025-26' };
+  expect(decodeNextOpponent({ next_game: null, opponent_ranks: [], season_context })).toEqual({
+    next_game: null,
+    opponent_ranks: [],
+    season_context: { selected_season: '2026-27', published_season: '2025-26' },
+  });
+});

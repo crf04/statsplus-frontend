@@ -205,30 +205,12 @@
   color: var(--ct-gold);
 }
 
-/* The heading and its message share one line, so the note costs a row. */
-.pool-summary {
-  margin: 10px 0 4px;
-  border-left: 2px solid var(--ct-line-strong);
-  padding: 1px 0 1px 12px;
-}
-
-.pool-summary h2,
-.pool-summary p {
-  display: inline;
-  margin: 0;
-}
-
-.pool-summary h2 {
-  margin-right: 10px;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.pool-summary p {
-  font-size: 0.84rem;
+.freshness-note {
+  flex-basis: 100%;
+  margin: 0 0 2px;
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.8rem;
 }
 
 /* ---------- the board ---------- */

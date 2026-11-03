@@ -34,10 +34,11 @@ const surfaceStatusText = (name, surface, presentation, now) => {
 };
 
 /*
- * Every surface the slate reports, folded to one line: the line names only the
- * surfaces that are not fresh, and the full list with each age opens on request.
+ * Every surface the slate reports, folded to one line: the line names the pool
+ * when it is not fresh and any other surface that warns, and the full list with each age and what the pool
+ * means for the targetable counts opens on request.
  */
-function Freshness({ freshness, now, poolPresentation }) {
+function Freshness({ freshness, now, poolPresentation, poolMessage }) {
   const [open, setOpen] = useState(false);
   const surfaces = [
     {
@@ -57,7 +58,10 @@ function Freshness({ freshness, now, poolPresentation }) {
       presentation: getSurfaceFreshnessPresentation(provider, 'pool', now),
     })),
   ];
-  const notable = surfaces.filter(({ presentation }) => presentation.status !== 'fresh');
+  // The pool states any status; a single source only one that warns.
+  const notable = surfaces.filter(({ name, presentation }) =>
+    name === 'Player pool' ? presentation.status !== 'fresh' : presentation.warning,
+  );
   const warning = notable.some(({ presentation }) => presentation.warning);
   const summary = notable.length
     ? notable.map(({ name, presentation }) => `${name} ${presentation.status}`).join(' · ')
@@ -76,6 +80,7 @@ function Freshness({ freshness, now, poolPresentation }) {
       </button>
       {open && (
         <div className="freshness" role="group" aria-label="Data freshness">
+          <p className="freshness-note">{poolMessage}</p>
           {surfaces.map(({ name, surface, presentation }) => (
             <span key={name} className={presentation.warning ? 'freshness-warning' : undefined}>
               {surfaceStatusText(name, surface, presentation, now)}
@@ -84,18 +89,6 @@ function Freshness({ freshness, now, poolPresentation }) {
         </div>
       )}
     </div>
-  );
-}
-
-function PoolSummary({ isPast, poolStatus }) {
-  const presentation = getStatusPresentation(poolStatus);
-  const message = isPast ? presentation.historicalPoolMessage : presentation.currentPoolMessage;
-
-  return (
-    <section className="pool-summary" aria-labelledby="player-pool-heading">
-      <h2 id="player-pool-heading">Player pool</h2>
-      <p>{message}</p>
-    </section>
   );
 }
 
@@ -434,9 +427,13 @@ export default function SlatePage() {
               freshness={state.slate.freshness}
               now={now}
               poolPresentation={poolPresentation}
+              poolMessage={
+                isPast
+                  ? getStatusPresentation(effectivePoolStatus).historicalPoolMessage
+                  : getStatusPresentation(effectivePoolStatus).currentPoolMessage
+              }
             />
           </div>
-          <PoolSummary isPast={isPast} poolStatus={effectivePoolStatus} />
           {state.slate.games.length === 0 ? (
             <div className="empty-slate">
               <h2>No games on this slate.</h2>

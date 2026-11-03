@@ -136,10 +136,10 @@ signedInTest(
 
     await app.open('/matchups?date=2026-01-15');
 
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is unavailable; no targetable players/i),
     ).toBeVisible();
-    await screen.getByRole('button', /· details$/).tap();
     await expect(screen.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
     await expect(
       screen.getByLabel('0 targetable players, LAL 0, BOS 0', { exact: false }),
@@ -183,7 +183,7 @@ signedInTest(
     const freshness = screen.getByRole('group', 'Data freshness');
     await expect(freshness).toBeVisible();
     await expect(screen.getByText('Schedule is stale — as of 31h ago')).toBeVisible();
-    await expect(freshness.getByText(/player pool is partial/i)).toBeVisible();
+    await expect(freshness.getByText(/player pool is partial —/i)).toBeVisible();
     await expect(screen.getByText('Final after review')).toBeVisible();
     await expect(screen.getByText('Preseason')).toBeVisible();
     await expect(screen.getByText('NBA Paris Game', { exact: false })).toHaveCount(0);

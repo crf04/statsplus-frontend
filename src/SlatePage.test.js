@@ -276,7 +276,7 @@ test('an empty slate with no neighbours, or from an older backend, offers no jum
 const openFreshness = async () =>
   fireEvent.click(await screen.findByRole('button', { name: /· details$/ }));
 
-test('folds freshness to one line naming only the surfaces that are not fresh', async () => {
+test('folds freshness to one line naming the pool and any surface that warns', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
       <SlatePage />
@@ -290,6 +290,7 @@ test('folds freshness to one line naming only the surfaces that are not fresh', 
   expect(toggle).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('group', { name: 'Data freshness' })).not.toBeInTheDocument();
   expect(screen.queryByText(/schedule/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/targetable counts/i)).not.toBeInTheDocument();
 });
 
 test('shows an age for every available freshness surface and names degraded surfaces', async () => {
@@ -517,6 +518,7 @@ test('explains mixed provider counts without claiming the whole pool is missing'
       <SlatePage />
     </MemoryRouter>,
   );
+  await openFreshness();
 
   expect(await screen.findByText(/counts reflect the available boards/i)).toBeVisible();
   expect(screen.getByRole('link', { name: /9 targetable players, LAL 5, BOS 4/ })).toBeVisible();
@@ -535,6 +537,7 @@ test('shows every game of a partial pool, the one without a pool at zero', async
       <SlatePage />
     </MemoryRouter>,
   );
+  await openFreshness();
 
   expect(await screen.findByText(/counts reflect the available boards/i)).toBeVisible();
   expect(
@@ -570,6 +573,12 @@ test('shows every game of a closing slate with a neutral note, not a warning', a
   ).toBeVisible();
   expect(
     screen.getByRole('link', { name: /^OKC @ SAS, .*18 targetable players, OKC 9, SAS 9/ }),
+  ).toBeVisible();
+  // Closing sources fold into the pool's one word; only the missing ones are named.
+  expect(
+    screen.getByRole('button', {
+      name: 'Player pool closing · kalshi pool missing · prizepicks pool missing · hide',
+    }),
   ).toBeVisible();
   expect(screen.getByText(/^Player pool is closing/)).not.toHaveClass('freshness-warning');
   expect(screen.getByText(/^underdog pool is closing/)).not.toHaveClass('freshness-warning');
@@ -687,8 +696,9 @@ test.each([
     </MemoryRouter>,
   );
 
-  const heading = await screen.findByRole('heading', { name: 'Player pool' });
-  expect(within(heading.closest('section')).getByText(expected)).toBeVisible();
+  await openFreshness();
+  const freshness = screen.getByRole('group', { name: 'Data freshness' });
+  expect(within(freshness).getByText(expected, { selector: '.freshness-note' })).toBeVisible();
 });
 
 test.each([
@@ -802,10 +812,10 @@ test.each([
       </MemoryRouter>,
     );
 
-    const heading = await screen.findByRole('heading', { name: 'Player pool' });
-    const poolSection = heading.closest('section');
-    expect(within(poolSection).getByText(new RegExp(statusText, 'i'))).toBeVisible();
-    expect(within(poolSection).getByText(new RegExp(countsText, 'i'))).toBeVisible();
+    await openFreshness();
+    const note = screen.getByText(new RegExp(statusText, 'i'), { selector: '.freshness-note' });
+    expect(note).toBeVisible();
+    expect(note).toHaveTextContent(new RegExp(countsText, 'i'));
   },
 );
 
@@ -850,6 +860,7 @@ test('uses the server slate date for the heading and historical pool state', asy
   );
 
   expect(await screen.findByRole('heading', { name: 'Wednesday, January 14, 2026' })).toBeVisible();
+  await openFreshness();
   expect(screen.getByText(/current player pool is not displayed/i)).toBeVisible();
 });
 

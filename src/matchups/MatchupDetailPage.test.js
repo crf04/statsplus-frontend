@@ -4465,3 +4465,70 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
     expect(within(austin).getByText(/\+3\.9 vs his season average/)).toHaveClass('tone-up');
   });
 });
+
+test('reads play-type turnovers forced and FT trips allowed under their own markets (statsplus#416)', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const boston = candidate.teams.find((team) => team.tricode === 'BOS');
+  const row = (sliceKey, stat, markets, season, last15) => ({
+    key: `${sliceKey}:${stat}`,
+    sliceKey,
+    label: `${sliceKey} ${stat}`,
+    markets,
+    season,
+    last15,
+  });
+  boston.defenseSheet.playTypes.push(
+    row('Transition', 'TOV', ['TOV'], value(2.9, 21, 1.5, 28), null),
+    row('Isolation', 'TOV', ['TOV'], value(1.6, -14, -1.2, 4), null),
+    row('Transition', 'FTT', ['FTA', 'FTM'], value(3.4, 17, 1.3, 26), value(3.1, 9, 0.8, 21)),
+    row('Isolation', 'FTT', ['FTA', 'FTM'], value(2.2, 30, 1.9, 30), null),
+  );
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('TOV', 'FTA');
+  lebron.statCategories.push('TOV', 'FTA');
+  lebron.provenance.prizepicks.push('TOV', 'FTA');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  const playTypes = () => screen.getByRole('region', { name: 'Play types' });
+  const columns = () =>
+    [...playTypes().querySelectorAll('.sheet-base-head > span:not(.sheet-season)')].map(
+      (column) => column.textContent,
+    );
+  await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+  expect(columns()).toEqual(['Points']);
+  expect(sheetRow('Isolation')).toHaveTextContent(/^Isolation\+2%/);
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(columns()).toEqual(['Turnovers forced']);
+  expect(sheetRow('Transition')).toHaveTextContent(/^Transition\+21%/);
+  expect(sheetRow('Isolation')).toHaveTextContent(/^Isolation−14%/);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Free Throws Attempted' }));
+  expect(columns()).toEqual(['FT trips allowed']);
+  expect(
+    within(playTypes())
+      .getAllByRole('article')
+      .map((item) => item.textContent),
+  ).toEqual([expect.stringMatching(/^Isolation\+30%/), expect.stringMatching(/^Transition\+17%/)]);
+
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(columns()).toEqual(['Points', 'Turnovers forced', 'FT trips allowed']);
+  expect(sheetRow('Transition')).toHaveTextContent(/^Transition\+12%.*\+21%.*\+17%/);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+  expect(columns()).toEqual(['Points', 'FT trips allowed']);
+  expect(
+    screen.getByText(
+      'Opponent play-type turnovers forced and isolation FT trips allowed unavailable for Last 15.',
+    ),
+  ).toBeVisible();
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(
+    screen.getByText('Opponent play-type turnovers forced unavailable for Last 15.'),
+  ).toBeVisible();
+  expect(within(playTypes()).queryAllByRole('article')).toEqual([]);
+  expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
+});

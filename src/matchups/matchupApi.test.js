@@ -3490,7 +3490,12 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
     sigma_deviation: 1.3,
     rank: 26,
   };
-  const decodedValue = { allowedPer48: 2.6, percentVsLeagueAverage: 18, sigmaDeviation: 1.3, rank: 26 };
+  const decodedValue = {
+    allowedPer48: 2.6,
+    percentVsLeagueAverage: 18,
+    sigmaDeviation: 1.3,
+    rank: 26,
+  };
   const withPlayTypeRow = (key, markets, windows = { season: sheetValue, last_15: sheetValue }) => {
     const candidate = JSON.parse(JSON.stringify(payload));
     candidate.league.defense_sheet.play_types.push({
@@ -3507,12 +3512,14 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
     return candidate;
   };
   const lakersPlayTypes = (candidate) =>
-    decodeMatchup(candidate).teams[0].defenseSheet.playTypes.map(({ key, markets, season, last15 }) => ({
-      key,
-      markets,
-      season,
-      last15,
-    }));
+    decodeMatchup(candidate).teams[0].defenseSheet.playTypes.map(
+      ({ key, markets, season, last15 }) => ({
+        key,
+        markets,
+        season,
+        last15,
+      }),
+    );
   const transitionPoints = {
     key: 'Transition:PTS',
     markets: ['PTS', 'PA', 'PR', 'PRA'],
@@ -3558,14 +3565,17 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
     ['Isolation:TOV', ['TOV'], 'last_15'],
     ['Isolation:FTT', ['FTA', 'FTM'], 'season'],
     ['Isolation:FTT', ['FTA', 'FTM'], 'last_15'],
-  ])('accepts %s with a null %s cell while play types are available', (key, markets, nullWindow) => {
-    const windows = { season: sheetValue, last_15: sheetValue, [nullWindow]: null };
-    const decodedNull = nullWindow === 'season' ? 'season' : 'last15';
-    expect(lakersPlayTypes(withPlayTypeRow(key, markets, windows))).toEqual([
-      transitionPoints,
-      { key, markets, season: decodedValue, last15: decodedValue, [decodedNull]: null },
-    ]);
-  });
+  ])(
+    'accepts %s with a null %s cell while play types are available',
+    (key, markets, nullWindow) => {
+      const windows = { season: sheetValue, last_15: sheetValue, [nullWindow]: null };
+      const decodedNull = nullWindow === 'season' ? 'season' : 'last15';
+      expect(lakersPlayTypes(withPlayTypeRow(key, markets, windows))).toEqual([
+        transitionPoints,
+        { key, markets, season: decodedValue, last15: decodedValue, [decodedNull]: null },
+      ]);
+    },
+  );
 
   test('still rejects a null points cell while play types are available', () => {
     const candidate = JSON.parse(JSON.stringify(payload));
@@ -3680,8 +3690,8 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
       { components: { traditional: cell(0.1), play_types: cell(0.04) }, blend: cell(0.07) },
     ],
   ])('still rejects %s', (_label, market, window) => {
-    expect(() => decodeMatchup(withScores({ [market]: { season: window, last_15: window } }))).toThrow(
-      'invalid response',
-    );
+    expect(() =>
+      decodeMatchup(withScores({ [market]: { season: window, last_15: window } })),
+    ).toThrow('invalid response');
   });
 });

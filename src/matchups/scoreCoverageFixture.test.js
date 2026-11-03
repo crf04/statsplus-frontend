@@ -3,15 +3,15 @@ import { decodeMatchup } from './matchupApi';
 
 // The browser fixture is an ES module with a JSON import, which Jest does not
 // load, so Node reads it and hands back the payload.
-const readFixture = () =>
+const readFixture = (name = 'scoreCoverageMatchupPayload') =>
   JSON.parse(
     execFileSync(
       process.execPath,
       [
         '--input-type=module',
         '-e',
-        `import { scoreCoverageMatchupPayload } from './e2e/fixtures/courtai-contract.mjs';
-         console.log(JSON.stringify(scoreCoverageMatchupPayload));`,
+        `import { ${name} } from './e2e/fixtures/courtai-contract.mjs';
+         console.log(JSON.stringify(${name}));`,
       ],
       { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
     ),
@@ -72,6 +72,42 @@ describe('the statsplus#407 browser fixture decodes beside today’s shape', () 
         ['OPP_FG3A', ['FG3A']],
         ['OPP_FTM', ['FTM']],
         ['OPP_FTA', ['FTA']],
+      ]);
+    });
+  });
+});
+
+describe('the statsplus#416 browser fixture decodes', () => {
+  const matchup = decodeMatchup(readFixture('playTypeTurnoverMatchupPayload'));
+  const lebron = matchup.players.find((candidate) => candidate.name === 'LeBron James');
+
+  test('LeBron’s TOV and FTA carry a Play types component beside Traditional', () => {
+    expect(lebron.scores.TOV.season.components.playTypes).toEqual({ value: 0.09, thin: false });
+    expect(lebron.scores.TOV.season.blend).toEqual({ value: 0.16, thin: false });
+    expect(lebron.scores.FTA.season).toEqual({
+      components: {
+        traditional: { value: -0.11, thin: false },
+        playTypes: { value: 0.05, thin: true },
+      },
+      blend: { value: -0.03, thin: false },
+      missingInputs: [],
+    });
+    expect(Object.keys(lebron.scores.TOV.last15.components)).toEqual(['traditional']);
+  });
+
+  test('both teams list the shown play types’ turnover and FT trip rows, without Misc', () => {
+    matchup.teams.forEach((team) => {
+      expect(
+        team.defenseSheet.playTypes
+          .filter((row) => /:(TOV|FTT)$/.test(row.key))
+          .map((row) => [row.key, row.markets, row.last15]),
+      ).toEqual([
+        ['Transition:TOV', ['TOV'], null],
+        ['PRBallHandler:TOV', ['TOV'], null],
+        ['Isolation:TOV', ['TOV'], null],
+        ['PRBallHandler:FTT', ['FTA', 'FTM'], null],
+        ['Postup:FTT', ['FTA', 'FTM'], null],
+        ['Isolation:FTT', ['FTA', 'FTM'], null],
       ]);
     });
   });

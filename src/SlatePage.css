@@ -168,7 +168,6 @@
 .freshness-line {
   display: flex;
   flex: 1 1 auto;
-  max-width: 100%;
   flex-wrap: wrap;
   gap: 6px 18px;
 }
@@ -479,9 +478,12 @@
     gap: 5px;
   }
 
+  /* Stacked, the note's full-width basis would become a full height and push
+     the ages into a second column off the screen. */
   .freshness {
     align-items: flex-start;
     flex-direction: column;
+    flex-wrap: nowrap;
     gap: 4px;
   }
 

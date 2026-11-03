@@ -1035,6 +1035,7 @@ const GameLogFilter = ({ notice = null }) => {
                       selectedTeam={selectedTeam}
                       seasonChoice={profileChoice}
                       onSettled={handleProfileSettled}
+                      lineType={lineType} // PROTOTYPE (throwaway): the Matchup card's market
                     />
                   </Suspense>
                 )}

@@ -50,7 +50,13 @@ const leagueSeasonLabel = (baselines, base, choice) => {
 
 // `seasonChoice` is the /seasons choice of an Evidence season other than the
 // default (crf04/statsplus#330), or null for the default.
-const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSettled }) => {
+const PlayerProfile = ({
+  selectedPlayer,
+  selectedTeam,
+  seasonChoice = null,
+  onSettled,
+  lineType = 'PTS',
+}) => {
   const season = seasonChoice?.season ?? null;
   const proto = useProto();
   const [selectedProfile, setSelectedProfile] = useState(
@@ -286,7 +292,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   const renderContent = () => {
     if (protoCard)
       return (
-        <MatchupCard key={selectedPlayer} playerName={selectedPlayer} opponent={protoOpponent} />
+        <MatchupCard
+          key={selectedPlayer}
+          variant={proto.variant}
+          lineType={lineType}
+          playerName={selectedPlayer}
+          opponent={protoOpponent}
+        />
       );
     if (loading) {
       return <p>Loading data...</p>;
@@ -385,7 +397,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
           </div>
         )}
         {renderContent()}
-        {proto.active && <ProtoSwitcher playerName={selectedPlayer} />}
+        {proto.active && <ProtoSwitcher proto={proto} playerName={selectedPlayer} />}
       </Card.Body>
     </Card>
   );

@@ -3,9 +3,21 @@
  */
 import { SAMPLES, goToPlayer } from './mode';
 
-const Switcher = ({ playerName }) => (
-  <div className="pmp-switcher" role="group" aria-label="Prototype sample player">
-    <span>F · MCP card, full sheet</span>
+const NAMES = { F: 'full MCP card', G: 'trimmed, market = Line Type' };
+
+const Switcher = ({ proto, playerName }) => (
+  <div className="pmp-switcher" role="group" aria-label="Prototype switcher">
+    {['F', 'G'].map((v) => (
+      <button
+        key={v}
+        type="button"
+        aria-pressed={proto.variant === v}
+        onClick={() => proto.setVariant(v)}
+      >
+        {v}
+      </button>
+    ))}
+    <span>{NAMES[proto.variant]}</span>
     <select
       value={playerName}
       onChange={(e) => goToPlayer(e.target.value)}

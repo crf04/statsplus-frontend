@@ -529,3 +529,135 @@
   font: inherit;
   max-width: 100%;
 }
+
+/* Variant G: the trimmed sheet. */
+.mcc .bf .more {
+  all: unset;
+  grid-column: 1 / -1;
+  justify-self: center;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--mcc-amber);
+  padding: 2px 8px;
+}
+.mcc .bf .more:focus-visible {
+  outline: 2px solid var(--mcc-amber);
+  border-radius: 4px;
+}
+.mcc .gh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 10px;
+}
+.mcc .gt {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--mcc-muted);
+  line-height: 1.3;
+}
+.mcc .gt b {
+  color: var(--mcc-fg);
+  font-weight: 600;
+}
+.mcc .gs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcc .gs .pill {
+  font-size: 14px;
+  line-height: 24px;
+  padding: 0 8px;
+}
+.mcc .gs .gm {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--mcc-faint);
+}
+.mcc .gs .gl15 {
+  font-family: var(--mcc-mono);
+  font-size: 10px;
+  color: var(--mcc-muted);
+}
+.mcc .gfall {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--mcc-muted);
+}
+.mcc .comps.g {
+  margin-top: 6px;
+  gap: 4px;
+}
+.mcc .comps.g .cchip {
+  font-size: 11px;
+  padding: 1px 6px;
+}
+.mcc .layout.g {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 14px;
+}
+.mcc .layout.g.solo { grid-template-columns: minmax(0, 1fr); }
+.mcc .layout.g.solo .courtbox { max-width: 300px; margin: 0 auto; }
+.mcc .layout.g.solo .gkey { justify-content: center; }
+.mcc .layout.g .sec {
+  margin: 10px 0 4px;
+}
+.mcc .layout.g .bf {
+  gap: 2px 8px;
+}
+.mcc .gkey {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 8px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--mcc-faint);
+}
+.mcc .glegend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mcc .glegend .grad {
+  width: 44px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--mcc-down-rgb) / 0.7),
+    var(--mcc-tint),
+    rgb(var(--mcc-up-rgb) / 0.75)
+  );
+}
+.mcc .gnote {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--mcc-faint);
+}
+@media (max-width: 520px) {
+  .mcc .layout.g {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .mcc .layout.g .courtbox {
+    max-width: 270px;
+    margin: 0 auto;
+  }
+  .mcc .layout.g .gkey {
+    justify-content: center;
+  }
+}
+.pmp-switcher button {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 8px;
+  border: 1px solid #c0f;
+  border-radius: 3px;
+}
+.pmp-switcher button[aria-pressed='true'] {
+  background: #c0f;
+  color: #000;
+}

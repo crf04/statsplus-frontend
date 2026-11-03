@@ -316,8 +316,10 @@ function courtKey(d, base, opp) {
     </div>`;
 }
 
-function butterfly(d, m, base, opp) {
-  const slices = joined(d, base);
+function butterfly(d, m, base, opp, { limit = null, open = false } = {}) {
+  const all = joined(d, base);
+  const hidden = limit && !open ? Math.max(0, all.length - limit) : 0;
+  const slices = hidden ? all.slice(0, limit) : all;
   const mx = Math.max(
     0.4,
     ...slices.map((s) => Math.max(num(s.share) / 100 || 0, num(s.league_share) / 100 || 0)),
@@ -341,7 +343,11 @@ function butterfly(d, m, base, opp) {
     .join('');
   return `<div class="sec"><span>${esc(base.base)} · ${esc(m.market)}</span><span class="rk ${comp && comp.value >= 0 ? 'up' : 'down'}">${comp ? pct(comp.value) : ''}</span></div>
       <div class="bf" aria-label="${esc(base.base)}: his Diet against what ${esc(opp)} allows">
-        <span class="hd l">His Diet</span><span class="hd r">${mix ? `${esc(opp)} allows, for his mix` : `${esc(opp)} allows`}</span>${rows}</div>`;
+        <span class="hd l" title="Share of his volume; the tick marks the league average">His Diet</span><span class="hd r" title="% vs league, then ${esc(opp)}'s rank (30th = allows the most)">${mix ? `${esc(opp)} allows, for his mix` : `${esc(opp)} allows`}</span>${rows}${
+          limit && all.length > limit
+            ? `<button type="button" class="more" data-more="${esc(base.base)}">${open ? 'Show fewer' : `+${hidden} more`}</button>`
+            : ''
+        }</div>`;
 }
 
 function tradRow(m, opp) {
@@ -426,4 +432,52 @@ export const drawCard = (d, picked) => {
       <div class="comps" aria-label="Season Matchup Score by Base">${chips}${blend}</div>
       ${body}
       ${footer}`;
+};
+
+/* Variant G: the same card, trimmed. The market comes from the game logs, the
+   header is one line, the keys are one line each, butterflies show five slices. */
+export const drawCardG = (d, picked, { note = '', open = new Set() } = {}) => {
+  const m = d.markets.find((x) => x.market === picked) || d.markets[0];
+  const opp = d.player.opponent;
+  const a = d.as_of || {};
+  const asOf = a.season_defense || a.player_diets;
+  const season = m.season;
+  const pill = season
+    ? `<span class="pill" style="${wash(season.value)}">${pct(season.value)}</span>`
+    : '<span class="pill">—</span>';
+  const l15 = m.last15 ? `<span class="gl15">L15 ${pct(m.last15.value)}</span>` : '';
+  const chips = d.bases
+    .filter((b) => m.components[b])
+    .map((b) => {
+      const c = m.components[b];
+      return `<span class="cchip${c.thin ? ' thin' : ''}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b></span>`;
+    })
+    .join('');
+  const bases = (m.bases || []).filter((b) => b.base !== 'Traditional');
+  const spatial = bases.find((b) => REGIONS[b.base]);
+  const others = bases.filter((b) => b !== spatial);
+  const sc = spatial && m.components[spatial.base];
+  const left = spatial
+    ? `<div class="gleft"><div class="sec"><span>${esc(spatial.base)} · ${esc(m.market)}</span><span class="rk ${sc && sc.value >= 0 ? 'up' : 'down'}">${sc ? pct(sc.value) : ''}</span></div>
+          ${court(d, spatial, opp)}
+          <div class="gkey"><span>share · ${esc(opp)} rank (30th = most) · vs league</span><span class="glegend">Less<span class="grad"></span>More</span></div></div>`
+    : '';
+  const key = others.length
+    ? `<div class="gnote">Left: his share, tick = league. Right: ${esc(opp)} % vs league, rank (30th = most).</div>`
+    : '';
+  const right =
+    others.map((b) => butterfly(d, m, b, opp, { limit: 5, open: open.has(b.base) })).join('') +
+    key +
+    tradRow(m, opp);
+  const body =
+    left || right
+      ? `<div class="layout g${left && right ? '' : ' solo'}">${left}${right ? `<div>${right}</div>` : ''}</div>`
+      : `<p class="sub">No Diet-based Base for ${esc(m.market)}.</p>`;
+  return `<div class="gh">
+        <div class="gt"><b>${esc(d.player.name)}</b> vs <b>${esc(opp)}</b> · Unscheduled · ${esc(a.season || '–')} · data as of ${esc(asOf ? day(asOf) : '–')}</div>
+        <div class="gs">${pill}<span class="gm">${esc(m.market)}${season && season.no_blend_component ? ` · ${esc(season.no_blend_component)} only` : ''}</span>${l15}</div>
+      </div>
+      ${note ? `<p class="gfall">${esc(note)}</p>` : ''}
+      <div class="comps g">${chips}</div>
+      ${body}`;
 };

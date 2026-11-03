@@ -4,7 +4,7 @@
  * Shooting Type tabs use once they read the Matchup engine (the source MCP
  * get_matchup and Zone Shooting read)?
  *
- * State rides the URL hash (`#proto=profile&tab=assists`), never the query string: on
+ * State rides the URL hash (`#proto=profile&v=G`), never the query string: on
  * `/` the query string is the Filter Set.
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -51,6 +51,7 @@ export const useProto = () => {
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'profile');
   const tab = hash.get('tab');
+  const variant = hash.get('v') === 'F' ? 'F' : 'G';
 
   const write = useCallback((key, value) => {
     const next = readHash();
@@ -61,7 +62,8 @@ export const useProto = () => {
     setHash(next);
   }, []);
   const setTab = useCallback((t) => write('tab', t), [write]);
-  return { active, tab, setTab };
+  const setVariant = useCallback((v) => write('v', v), [write]);
+  return { active, tab, setTab, variant, setVariant };
 };
 
 /* Changing the sample player reloads the Log Workspace on that player. */

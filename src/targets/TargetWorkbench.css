@@ -387,6 +387,9 @@
   color: var(--ct-dim);
   font: 0.68rem var(--ct-mono);
 }
+.target-diet-season {
+  white-space: nowrap;
+}
 .target-limit {
   margin: 8px 0 0;
   color: var(--ct-dim);

@@ -145,9 +145,18 @@ describe('Release Check write blocking', () => {
     return { blocked, outcomes };
   };
 
-  test('a sampled Sentry trace is aborted without failing the check', async () => {
-    const { blocked, outcomes } = await send([['POST', sentryUrl, traceEnvelope]]);
-    expect(outcomes).toEqual(['abort']);
+  test('a sampled Sentry trace or transaction is aborted without failing the check', async () => {
+    const transactionEnvelope = [
+      '{"sent_at":"2026-11-03T15:13:02.648Z"}',
+      '{"type":"transaction"}',
+      '{"type":"transaction","transaction":"Pageload"}',
+      '',
+    ].join('\n');
+    const { blocked, outcomes } = await send([
+      ['POST', sentryUrl, traceEnvelope],
+      ['POST', sentryUrl, transactionEnvelope],
+    ]);
+    expect(outcomes).toEqual(['abort', 'abort']);
     expect(blocked).toEqual([]);
   });
 
@@ -162,6 +171,35 @@ describe('Release Check write blocking', () => {
       `POST ${sentryUrl}`,
       'POST https://statsplus-frontend.vercel.app/api/feedback',
     ]);
+  });
+
+  test.each([
+    ['an error event beside a span', ['POST', sentryUrl, `${traceEnvelope}\n{"type":"event"}\n{}`]],
+    ['a replay item', ['POST', sentryUrl, '{}\n{"type":"replay_event"}\n{}']],
+    ['an item with a byte length', ['POST', sentryUrl, '{}\n{"type":"span","length":2}\n{}']],
+    ['an envelope with no items', ['POST', sentryUrl, '{"sent_at":"2026-11-03T15:13:02.648Z"}']],
+    ['an envelope header that is not JSON', ['POST', sentryUrl, 'x\n{"type":"span"}\n{}']],
+    ['a truncated envelope', ['POST', sentryUrl, '{}\n{"type":"span"}']],
+    ['a payload that is not JSON', ['POST', sentryUrl, '{}\n{"type":"span"}\n\u001f\u008b\u0008']],
+    ['no body', ['POST', sentryUrl, null]],
+    ['another method', ['PUT', sentryUrl, traceEnvelope]],
+    ['plain HTTP', ['POST', sentryUrl.replace('https:', 'http:'), traceEnvelope]],
+    ['another Sentry path', ['POST', sentryUrl.replace('/envelope/', '/store/'), traceEnvelope]],
+    [
+      'a host that only ends like Sentry',
+      [
+        'POST',
+        sentryUrl.replace(
+          'o4512261609160704.ingest.us.sentry.io',
+          'o1.ingest.us.sentry.io.example.com',
+        ),
+        traceEnvelope,
+      ],
+    ],
+  ])('%s is recorded as a write', async (_label, request) => {
+    const { blocked, outcomes } = await send([request]);
+    expect(outcomes).toEqual(['abort']);
+    expect(blocked).toEqual([`${request[0]} ${request[1]}`]);
   });
 });
 

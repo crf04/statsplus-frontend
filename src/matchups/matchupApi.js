@@ -128,6 +128,16 @@ const PLAY_TYPE_SLICES = new Set([
   'OffScreen',
   'Postup',
 ]);
+// Turnovers forced and free-throw trips by play type (crf04/statsplus#416).
+// Publications stored before the backfill hold neither, so either window's
+// cell may be null while play types are available.
+const PLAY_TYPE_MARKETS = {
+  PTS: ['PTS', 'PA', 'PR', 'PRA'],
+  POSS: ['PTS'],
+  TOV: ['TOV'],
+  FTT: ['FTA', 'FTM'],
+};
+const OPTIONAL_PLAY_TYPE_STATS = new Set(['TOV', 'FTT']);
 const TWO_POINT_SHOT_ZONE_SLICES = new Set([
   'Restricted Area',
   'In The Paint (Non-RA)',
@@ -180,9 +190,7 @@ const ADDITIVE_SHEET_BASES = new Set([
 ]);
 
 const canonicalSheetMarkets = (base, sliceKey, statKey) => {
-  if (base === 'play_types') {
-    return statKey === 'PTS' ? ['PTS', 'PA', 'PR', 'PRA'] : ['PTS'];
-  }
+  if (base === 'play_types') return PLAY_TYPE_MARKETS[statKey];
   if (base === 'shot_zones') {
     if (statKey === 'FGA') {
       return TWO_POINT_SHOT_ZONE_SLICES.has(sliceKey) ? ['FGA', 'FG2A'] : ['FGA', 'FG3A'];
@@ -252,7 +260,7 @@ const decodeSheetIdentity = (base, key) => {
   const valid =
     (base === 'play_types' &&
       PLAY_TYPE_SLICES.has(sliceKey) &&
-      ['PTS', 'POSS'].includes(statKey)) ||
+      Object.hasOwn(PLAY_TYPE_MARKETS, statKey)) ||
     (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey) && ['FGA', 'FGM'].includes(statKey)) ||
     (base === 'shot_types' &&
       SHOT_TYPE_SLICES.has(sliceKey) &&
@@ -414,14 +422,10 @@ const decodeAvailableWindow = (value, availability, decode) => {
 };
 
 const decodeSheetWindow = (value, availability, decode, base, key) => {
-  if (
-    value === null &&
-    availability.status === 'available' &&
-    base === 'traditional' &&
-    OPTIONAL_TRADITIONAL_KEYS.has(key)
-  ) {
-    return null;
-  }
+  const optional =
+    (base === 'traditional' && OPTIONAL_TRADITIONAL_KEYS.has(key)) ||
+    (base === 'play_types' && OPTIONAL_PLAY_TYPE_STATS.has(key.split(':')[1]));
+  if (value === null && availability.status === 'available' && optional) return null;
   return decodeAvailableWindow(value, availability, decode);
 };
 
@@ -995,15 +999,22 @@ const decodeScoreCell = (cell) => {
   return { value: requireNumber(cell.value), thin: cell.thin };
 };
 
-const DEFENSIVE_SCORE_MARKETS = new Set(['TOV', 'STL', 'BLK', 'STKS']);
+// The inputs each defensive market's score may read. TOV gains Play types
+// (crf04/statsplus#416); a backend that predates it sends Traditional alone.
+const DEFENSIVE_SCORE_BASES = {
+  TOV: ['traditional', 'play_types'],
+  STL: ['traditional'],
+  BLK: ['traditional'],
+  STKS: ['traditional'],
+};
 
 const decodeScoreWindow = (window, market, historical) => {
   if (!isRecord(window) || !isRecord(window.components)) throw invalid();
-  const defensive = DEFENSIVE_SCORE_MARKETS.has(market);
+  const defensive = Object.hasOwn(DEFENSIVE_SCORE_BASES, market);
   const componentBases = Object.keys(window.components);
   if (
     componentBases.some((base) => !DEFENSE_BASES.includes(base)) ||
-    (defensive && componentBases.some((base) => base !== 'traditional'))
+    (defensive && componentBases.some((base) => !DEFENSIVE_SCORE_BASES[market].includes(base)))
   )
     throw invalid();
   const missingInputs =
@@ -1021,9 +1032,10 @@ const decodeScoreWindow = (window, market, historical) => {
   const withheldBlend = historical && window.blend === null && missingInputs.length > 0;
   const validOffensiveBlend =
     componentCount === 0 ? window.blend === null : isRecord(window.blend) || withheldBlend;
-  // A defensive Blend restates its one component (statsplus#407); a backend
-  // that predates it omits the Blend.
-  const validDefensiveBlend = window.blend == null || componentCount === 1;
+  // A defensive Blend restates its one component (statsplus#407), and a backend
+  // that predates it omits the Blend. Two components always carry their Blend.
+  const validDefensiveBlend =
+    componentCount > 1 ? isRecord(window.blend) : window.blend == null || componentCount === 1;
   if (!(defensive ? validDefensiveBlend : validOffensiveBlend)) throw invalid();
   if (historical && isRecord(window.blend) && missingInputs.length > 0) throw invalid();
   // A withheld historical score has to say what it was missing, or the page has

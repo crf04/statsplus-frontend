@@ -168,6 +168,7 @@
 .freshness-line {
   display: flex;
   flex: 1 1 auto;
+  max-width: 100%;
   flex-wrap: wrap;
   gap: 6px 18px;
 }

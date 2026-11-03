@@ -180,8 +180,9 @@ function MatchupSummary({ matchup, now }) {
 
 // A score is unavailable, not zero, when the contract could not compute it.
 // A Blend withheld alongside named missing inputs is an incomplete score, so
-// no single component may stand in for it. A defensive category has no Blend
-// by contract and names nothing missing, so its component is the whole score.
+// no single component may stand in for it. A defensive category from a backend
+// that predates its Blend names nothing missing, so its component is the whole
+// score.
 // The cell keeps its `thin` flag, which the rail shows as a dotted underline.
 const scoreFor = (player, stat, windowKey) => {
   const score = player.scores[stat]?.[windowKey];

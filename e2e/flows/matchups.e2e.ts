@@ -3,6 +3,8 @@ import {
   HISTORICAL_GAME_ID,
   historicalMatchupPayload,
   postCutoverHistoricalMatchupPayload,
+  scoreCoverageMatchupPayload,
+  scoreCoverageSelectionPayload,
   servingSeasonMatchupPayload,
   slateGame,
   slatePayload,
@@ -203,6 +205,33 @@ signedInTest(
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
     await expect(screen.getByRole('heading', 'What BOS allows')).toHaveCount(0);
+  },
+);
+
+signedInTest(
+  'the Score Matrix scores every posted market a statsplus#407 backend sends',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/matchup': { body: scoreCoverageMatchupPayload },
+      '/api/games/matchup/selection': { body: scoreCoverageSelectionPayload },
+    });
+    await app.open('/matchups/0022500584?player=2544');
+    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
+    await expect(matrix.getByRole('columnheader', 'Traditional')).toBeVisible();
+    await expect(matrix.getByRole('row', { name: /^PTS / })).toContainText('+3%');
+    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV — — — +23% +23%');
+    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText('FTA — — — -11% -11%');
+    await expect(matrix.getByRole('row', { name: /^FGM / })).toContainText('+4%');
+    await expect(screen.getByText('No Matchup Score is computed for FTM.')).toBeVisible();
+    await expect(screen.getByRole('region', 'Games vs this opponent')).toContainText('LAL vs. BOS');
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await matrix.scrollIntoView();
+    await app.screenshot('selection-score-coverage');
+
+    await screen.getByRole('group', 'Market').getByRole('button', 'Free Throws Attempted').tap();
+    await screen.getByRole('article', 'FT attempts').scrollIntoView();
+    await expect(screen.getByRole('article', 'FT attempts')).toBeVisible();
+    await app.screenshot('defense-sheet-ft-attempts');
   },
 );
 

@@ -1028,7 +1028,7 @@ test('requires injury block and injury freshness status to agree', () => {
   expect(() => decodeMatchup(candidate)).toThrow('invalid response');
 });
 
-test('requires Blend for offensive scores and accepts omitted or null Blend for defensive scores', () => {
+test('requires Blend for offensive scores and accepts omitted, null or restated Blend for defensive scores', () => {
   const defensive = JSON.parse(JSON.stringify(payload));
   defensive.players[0].posted_markets = ['TOV'];
   defensive.players[0].provenance = { prizepicks: ['TOV'] };
@@ -1049,8 +1049,27 @@ test('requires Blend for offensive scores and accepts omitted or null Blend for 
   delete missingOffensiveBlend.players[0].scores.PTS.season.blend;
   expect(() => decodeMatchup(missingOffensiveBlend)).toThrow('invalid response');
 
+  const restatedDefensiveBlend = JSON.parse(JSON.stringify(defensive));
+  restatedDefensiveBlend.players[0].scores.TOV.season.blend = { value: 0.08, thin: false };
+  restatedDefensiveBlend.players[0].scores.TOV.last_15.blend = { value: -0.02, thin: false };
+  expect(decodeMatchup(restatedDefensiveBlend).players[0].scores.TOV).toEqual({
+    season: {
+      components: { traditional: { value: 0.08, thin: false } },
+      blend: { value: 0.08, thin: false },
+      missingInputs: [],
+    },
+    last15: {
+      components: { traditional: { value: -0.02, thin: false } },
+      blend: { value: -0.02, thin: false },
+      missingInputs: [],
+    },
+  });
+
   const inventedDefensiveBlend = JSON.parse(JSON.stringify(defensive));
-  inventedDefensiveBlend.players[0].scores.TOV.season.blend = { value: 0.08, thin: false };
+  inventedDefensiveBlend.players[0].scores.TOV.season = {
+    components: {},
+    blend: { value: 0.08, thin: false },
+  };
   expect(() => decodeMatchup(inventedDefensiveBlend)).toThrow('invalid response');
 });
 
@@ -1244,6 +1263,60 @@ test('decodes Dabble free-throw and made-field-goal lines beside a scored market
         missingInputs: [],
       },
     },
+  });
+});
+
+test('decodes the shooting-market scores a statsplus#407 backend sends', () => {
+  const candidate = withShootingLines();
+  const scores = candidate.players[0].scores;
+  scores.FTA = {
+    season: {
+      components: { traditional: { value: 0.09, thin: false } },
+      blend: { value: 0.09, thin: false },
+    },
+    last_15: {
+      components: { traditional: { value: -0.04, thin: false } },
+      blend: { value: -0.04, thin: false },
+    },
+  };
+  scores.FGM = {
+    season: {
+      components: {
+        shot_zones: { value: 0.05, thin: false },
+        shot_types: { value: 0.03, thin: true },
+        traditional: { value: 0.07, thin: false },
+      },
+      blend: { value: 0.05, thin: false },
+    },
+    last_15: unscoredWindow,
+  };
+
+  const decoded = decodeMatchup(candidate).players[0].scores;
+
+  expect(Object.keys(decoded).sort()).toEqual(['FGM', 'FTA', 'PTS']);
+  expect(decoded.FTA).toEqual({
+    season: {
+      components: { traditional: { value: 0.09, thin: false } },
+      blend: { value: 0.09, thin: false },
+      missingInputs: [],
+    },
+    last15: {
+      components: { traditional: { value: -0.04, thin: false } },
+      blend: { value: -0.04, thin: false },
+      missingInputs: [],
+    },
+  });
+  expect(decoded.FGM).toEqual({
+    season: {
+      components: {
+        shotZones: { value: 0.05, thin: false },
+        shotTypes: { value: 0.03, thin: true },
+        traditional: { value: 0.07, thin: false },
+      },
+      blend: { value: 0.05, thin: false },
+      missingInputs: [],
+    },
+    last15: { components: {}, blend: null, missingInputs: [] },
   });
 });
 
@@ -3176,5 +3249,65 @@ describe('statsplus#395: last five games and season averages on a player row', (
     const averages = historicalPayload();
     averages.players[0].season_averages = { PTS: 25.4 };
     expect(() => decodeMatchup(averages)).toThrow('invalid response');
+  });
+});
+
+const NEW_TRADITIONAL_ROWS = [
+  ['OPP_PTS', ['PTS', 'PA', 'PR', 'PRA']],
+  ['OPP_AST', ['AST', 'PA', 'RA', 'PRA']],
+  ['OPP_FGM', ['FGM']],
+  ['OPP_FGA', ['FGA']],
+  ['OPP_FG3M', ['3PM']],
+  ['OPP_FG3A', ['FG3A']],
+  ['OPP_FTM', ['FTM']],
+  ['OPP_FTA', ['FTA']],
+];
+
+const withTraditionalRow = (key, markets) => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.league.defense_sheet.traditional = [
+    {
+      key,
+      season: { average_allowed_per_48: 20, sigma: 2 },
+      last_15: { average_allowed_per_48: 21, sigma: 2.1 },
+    },
+  ];
+  candidate.teams[0].defense_sheet.traditional = [
+    {
+      key,
+      label: key,
+      markets,
+      season: { allowed_per_48: 22, percent_vs_league_average: 10, sigma_deviation: 1, rank: 25 },
+      last_15: {
+        allowed_per_48: 20,
+        percent_vs_league_average: -5,
+        sigma_deviation: -0.5,
+        rank: 9,
+      },
+    },
+  ];
+  return candidate;
+};
+
+describe.each(NEW_TRADITIONAL_ROWS)('statsplus#407 Traditional row %s', (key, markets) => {
+  test('decodes with its contract markets', () => {
+    expect(
+      decodeMatchup(withTraditionalRow(key, markets)).teams[0].defenseSheet.traditional,
+    ).toEqual([
+      {
+        key,
+        sliceKey: key,
+        label: key,
+        markets,
+        season: { allowedPer48: 22, percentVsLeagueAverage: 10, sigmaDeviation: 1, rank: 25 },
+        last15: { allowedPer48: 20, percentVsLeagueAverage: -5, sigmaDeviation: -0.5, rank: 9 },
+      },
+    ]);
+  });
+
+  test('rejects any other markets', () => {
+    expect(() => decodeMatchup(withTraditionalRow(key, [...markets, 'REB']))).toThrow(
+      'invalid response',
+    );
   });
 });

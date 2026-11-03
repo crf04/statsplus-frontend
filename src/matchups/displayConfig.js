@@ -115,6 +115,14 @@ const SLICE_NAMES = {
   OPP_TOV: 'Turnovers forced',
   OPP_STL: 'Steals',
   OPP_BLK: 'Blocks',
+  OPP_PTS: 'Points',
+  OPP_AST: 'Assists',
+  OPP_FGM: 'FG made',
+  OPP_FGA: 'FG attempts',
+  OPP_FG3M: '3s made',
+  OPP_FG3A: '3PT attempts',
+  OPP_FTM: 'FT made',
+  OPP_FTA: 'FT attempts',
 };
 export const sliceName = (sliceKey) => SLICE_NAMES[sliceKey] || sliceKey;
 

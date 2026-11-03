@@ -901,6 +901,82 @@ export const servingSeasonMatchupPayload = (() => {
   return candidate;
 })();
 
+// The live game once the backend scores every posted market (crf04/statsplus#407).
+// LeBron's defensive markets restate their one component as a Blend, PTS gains a
+// Traditional cell, FTA and FGM score, and FTM keeps the empty windows of a
+// market with no computable input. Austin's STL and Tatum's BLK keep today's
+// shape, with no Blend, so one response carries both.
+export const SCORE_COVERAGE_TRADITIONAL_ROWS = [
+  ['OPP_PTS', 'Points', ['PTS', 'PA', 'PR', 'PRA'], 118.2, 114.6, 1.4, 26],
+  ['OPP_AST', 'Assists', ['AST', 'PA', 'RA', 'PRA'], 27.1, 26.4, 0.6, 19],
+  ['OPP_FGM', 'FG made', ['FGM'], 43.5, 42.1, 1.1, 24],
+  ['OPP_FGA', 'FG attempts', ['FGA'], 89, 88.4, 0.3, 17],
+  ['OPP_FG3M', '3s made', ['3PM'], 12.2, 13.1, -1, 7],
+  ['OPP_FG3A', '3PT attempts', ['FG3A'], 35.9, 36.8, -0.6, 11],
+  ['OPP_FTM', 'FT made', ['FTM'], 15.6, 17.4, -1.3, 4],
+  ['OPP_FTA', 'FT attempts', ['FTA'], 20.1, 22.6, -1.5, 3],
+];
+export const scoreCoverageMatchupPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  candidate.league.defense_sheet.traditional.push(
+    ...SCORE_COVERAGE_TRADITIONAL_ROWS.map(([key, , , , average]) =>
+      leagueRow(key, average, 2, average, 2),
+    ),
+  );
+  candidate.teams.forEach((team) => {
+    team.defense_sheet.traditional.push(
+      ...SCORE_COVERAGE_TRADITIONAL_ROWS.map(
+        ([key, label, markets, allowed, average, sigma, rank]) =>
+          defenseRow(
+            key,
+            label,
+            markets,
+            defenseValue(allowed, Math.round((allowed / average - 1) * 100), sigma, rank),
+            defenseValue(allowed, Math.round((allowed / average - 1) * 100), sigma, rank),
+          ),
+      ),
+    );
+  });
+  const lebron = candidate.players.find((player) => player.canonical_id === 2544);
+  const shooting = ['FGM', 'FTA', 'FTM'];
+  lebron.posted_markets = [...lebron.posted_markets, ...shooting];
+  lebron.provenance.dabble = ['PTS', ...shooting];
+  lebron.lines.dabble = { PTS: 27.5, FGM: 9.5, FTA: 6.5, FTM: 4.5 };
+  lebron.last_five_games.forEach((game) => {
+    Object.assign(game.stats, { FGM: 10, FTA: 6, FTM: 5 });
+  });
+  const cell = (value) => ({ value, thin: false });
+  const traditional = { season: 0.03, last_15: -0.01 };
+  ['season', 'last_15'].forEach((window) => {
+    const scores = lebron.scores;
+    scores.PTS[window].components.traditional = cell(traditional[window]);
+    DEFENSIVE_MARKETS.forEach((market) => {
+      scores[market][window].blend = scores[market][window].components.traditional;
+    });
+  });
+  lebron.scores.FTA = {
+    season: { components: { traditional: cell(-0.11) }, blend: cell(-0.11) },
+    last_15: { components: { traditional: cell(-0.08) }, blend: cell(-0.08) },
+  };
+  lebron.scores.FGM = {
+    season: {
+      components: {
+        shot_zones: cell(0.06),
+        shot_types: cell(0.04),
+        traditional: cell(0.03),
+      },
+      blend: cell(0.04),
+    },
+    last_15: {
+      components: { shot_zones: cell(0.02), traditional: cell(0.01) },
+      blend: cell(0.02),
+    },
+  };
+  const empty = { components: {}, blend: null };
+  lebron.scores.FTM = { season: empty, last_15: empty };
+  return candidate;
+})();
+
 // Production LAC @ MIL 0022501082: every Season defense Surface published, no
 // point-in-time Last 15, no archived DFS markets, canonical game-log players.
 export const HISTORICAL_GAME_ID = '0022501082';
@@ -1413,6 +1489,16 @@ export const selectionPayload = {
     ],
   },
 };
+
+// LeBron's selection logs once he posts the shooting markets above.
+export const scoreCoverageSelectionPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(selectionPayload));
+  [...candidate.h2h.rows, ...candidate.archetype.rows].forEach((row) => {
+    Object.assign(row.stats, { FGM: 11, FTA: 7, FTM: 6 });
+    Object.assign(row.deltas, { FGM: 0.012, FTA: -0.021, FTM: -0.015 });
+  });
+  return candidate;
+})();
 
 export const austinSelectionPayload = {
   player_id: 1630559,

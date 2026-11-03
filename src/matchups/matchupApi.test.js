@@ -3684,11 +3684,11 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
       'TOV',
       { components: { traditional: cell(0.1), shot_zones: cell(0.04) }, blend: cell(0.07) },
     ],
-    [
-      'a Play types component on STL',
-      'STL',
+    ...['STL', 'BLK', 'STKS'].map((market) => [
+      `a Play types component on ${market}`,
+      market,
       { components: { traditional: cell(0.1), play_types: cell(0.04) }, blend: cell(0.07) },
-    ],
+    ]),
   ])('still rejects %s', (_label, market, window) => {
     expect(() =>
       decodeMatchup(withScores({ [market]: { season: window, last_15: window } })),

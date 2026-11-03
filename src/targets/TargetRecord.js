@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
 import { aggregateEvidence, gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
-import { signed } from './targetCatalog';
+import { dietQualifiers, formatQualifierParts, signed } from './targetCatalog';
 import './TargetRecord.css';
 import HelpTip from '../help/HelpTip';
 
@@ -83,6 +83,38 @@ function recordGames(backtest, columns) {
     .sort((a, b) => a.game.gameDate.localeCompare(b.game.gameDate));
 }
 
+/*
+ * Early in a season a player can qualify on last season's Diet for a Base
+ * where this season's is thin. Each such share is tagged with its season, and
+ * named by its Qualifier when the Target has several Diet Qualifiers.
+ */
+const dietFallbacks = (backtest, player) => {
+  const fallbacks = (player.shares ?? []).flatMap((share, index) =>
+    share.dietSeason && share.dietSeason !== backtest.season
+      ? [{ season: share.dietSeason, index }]
+      : [],
+  );
+  if (fallbacks.length === 0) return [];
+  const qualifiers = dietQualifiers(backtest.target.qualifiers);
+  return fallbacks.map(({ season, index }) => ({
+    season,
+    tag:
+      qualifiers.length > 1
+        ? `${formatQualifierParts(qualifiers[index]).label} ${season} Diet`
+        : `${season} Diet`,
+  }));
+};
+
+const fallbackNote = (backtest) => {
+  const seasons = backtest.players.map((player) => dietFallbacks(backtest, player));
+  const count = seasons.filter((fallbacks) => fallbacks.length > 0).length;
+  if (count === 0) return null;
+  const named = [...new Set(seasons.flat().map(({ season }) => season))].join('/');
+  return count === 1
+    ? `1 player qualifies on ${named} Diet shares.`
+    : `${count} players qualify on ${named} Diet shares.`;
+};
+
 function scaleFor(games, column) {
   const margins = games
     .map((row) => row.margins[column])
@@ -111,6 +143,7 @@ export default function TargetRecord({
   // actually changes it rather than redone on every render.
   const games = useMemo(() => recordGames(backtest, columns), [backtest, columns]);
   const scale = useMemo(() => scaleFor(games, gradedBy), [games, gradedBy]);
+  const dietNote = useMemo(() => fallbackNote(backtest), [backtest]);
   const columnSummaries = useMemo(
     () =>
       columns.map((column) => {
@@ -182,6 +215,7 @@ export default function TargetRecord({
             : `${backtest.summary?.playersWithoutPosition} players left out: no listed position.`}
         </p>
       )}
+      {dietNote && <p className="target-limit">{dietNote}</p>}
       {games.length === 0 ? (
         <p className="target-empty">
           {backtest.target.conditions?.playerMinutes !== null &&
@@ -195,7 +229,10 @@ export default function TargetRecord({
           aria-label={`${games.length} games, oldest to newest, graded by ${gradedBy} margin`}
         >
           {games.map((row) => {
-            const label = `${row.game.gameDate} · ${row.player.name} · ${number(gameStat(row.game, gradedBy))} ${gradedBy} · season ${number(seasonStat(row.player, gradedBy))} · ${formatMargin(row.margins[gradedBy])} margin`;
+            const label = [
+              `${row.game.gameDate} · ${row.player.name} · ${number(gameStat(row.game, gradedBy))} ${gradedBy} · season ${number(seasonStat(row.player, gradedBy))} · ${formatMargin(row.margins[gradedBy])} margin`,
+              ...dietFallbacks(backtest, row.player).map(({ tag }) => tag),
+            ].join(' · ');
             return (
               <li
                 key={row.key}
@@ -277,6 +314,11 @@ export function TargetGameRows({
               {row.player.position && (
                 <small className="target-player-position">{row.player.position}</small>
               )}
+              {dietFallbacks(backtest, row.player).map(({ tag }) => (
+                <small className="target-diet-season" key={tag}>
+                  {tag}
+                </small>
+              ))}
             </span>
             <span className="target-game-line">
               <b>{gameNumber(gameStat(row.game, gradedBy))}</b> {gradedBy}

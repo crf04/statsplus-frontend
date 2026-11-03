@@ -158,7 +158,8 @@ const nullShare = (entry, qualifier) =>
   entry.base === qualifier.base &&
   entry.slice_key === null &&
   entry.share === null &&
-  entry.league_average_share === null;
+  entry.league_average_share === null &&
+  (entry.diet_season === undefined || entry.diet_season === null);
 
 const nullContext = (entry, qualifier) =>
   isRecord(entry) &&
@@ -371,11 +372,19 @@ const decodePosition = (position) => {
   return position;
 };
 
+/*
+ * A backtest share names the season its Diet was read from, which is last
+ * season's when this season's Diet is thin. A backend deployed before it sends
+ * no field, which stays absent rather than becoming the Backtest season.
+ */
 const decodeShare = (share) => {
   if (!isRecord(share)) throw createInvalidResponseError();
+  if (share.diet_season !== undefined && !isSeason(share.diet_season))
+    throw createInvalidResponseError();
   return {
     share: requireNumber(share.share),
     leagueAverageShare: requireNumberOrNull(share.league_average_share),
+    ...(share.diet_season !== undefined ? { dietSeason: share.diet_season } : {}),
   };
 };
 

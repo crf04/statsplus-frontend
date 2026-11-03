@@ -110,12 +110,31 @@ export function TargetContext({ context }) {
 }
 
 /*
+ * The stat a fit is shown by: the one the Target is graded by, so a rebounding
+ * Target lists rebounds rather than points. `gradedBy` is a card's unsaved
+ * choice; a stat the resolution does not carry yet falls back to the Target's
+ * saved one, and a backend without the Target's stats falls back to points.
+ */
+export function fitStat(entry, gradedBy) {
+  const columns = entry.statColumns ?? [];
+  const stat = [gradedBy, entry.target.statPreferences?.gradedBy, columns[0]].find((column) =>
+    columns.includes(column),
+  );
+  return stat
+    ? { label: stat, value: (player) => player.seasonAverages?.[stat] ?? null }
+    : { label: 'PPG', value: (player) => player.seasonScoring };
+}
+
+export const formatFitStat = (value) => (value === null ? '—' : value.toFixed(1));
+
+/*
  * The fits for one live Target. An unavailable pool is stated in its own words
  * so an empty table is never read as "nobody fits"; only a live entry has a
  * pool to report on, so an idle Target never reaches here.
  */
 export function TargetFitTable({ entry, dense = false }) {
   const { availability, game, players, target } = entry;
+  const stat = fitStat(entry);
   if (availability.status !== 'available') {
     const code = availability.unavailableReason;
     const reason = code && (WINDOW_REASONS[code] || `${code}.`);
@@ -153,7 +172,7 @@ export function TargetFitTable({ entry, dense = false }) {
                 {formatQualifierParts(qualifier).label}
               </th>
             ))}
-            <th className="num">PPG</th>
+            <th className="num">{stat.label}</th>
           </tr>
         </thead>
         <tbody>
@@ -181,9 +200,7 @@ export function TargetFitTable({ entry, dense = false }) {
                   )}
                 </td>
               ))}
-              <td className="num">
-                {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}
-              </td>
+              <td className="num">{formatFitStat(stat.value(player))}</td>
             </tr>
           ))}
         </tbody>

@@ -64,3 +64,34 @@ test('a Target stored as [Diet, Position] reads with the Position first', () => 
   );
   expect(container.textContent).toBe('MEMvsBig & Corner 3 ≥ 40% & 3PA avg ≥ 0.3');
 });
+
+const graded = (statPreferences) => ({
+  ...entry,
+  target: { ...entry.target, statPreferences },
+  statColumns: ['PTS', '3PA'],
+  players: [
+    { ...entry.players[0], seasonAverages: { PTS: 12.5, '3PA': 1.25 } },
+    { ...entry.players[1], seasonAverages: { PTS: 9, '3PA': null } },
+  ],
+});
+
+test('a fit shows the stat its Target is graded by, not points', () => {
+  render(<TargetFitTable entry={graded({ columns: ['PTS', '3PA'], gradedBy: '3PA' })} />);
+  const table = screen.getByRole('table');
+  expect(
+    within(table)
+      .getAllByRole('columnheader')
+      .map((cell) => cell.textContent),
+  ).toEqual(['Player', 'Corner 3', '3PA']);
+  expect(
+    within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent),
+  ).toEqual(['Big FitMEMBig44%lg 20%1.3', 'No LabelMEM41%lg 20%—']);
+});
+
+test('a Target with no saved stat choice shows its first default stat', () => {
+  render(<TargetFitTable entry={graded(null)} />);
+  expect(screen.getAllByRole('columnheader').at(-1)).toHaveTextContent('PTS');
+});

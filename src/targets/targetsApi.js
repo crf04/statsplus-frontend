@@ -380,11 +380,29 @@ const decodeShare = (share) => {
 };
 
 /*
+ * A fit's season averages are keyed by the resolved Target's stat columns. A
+ * backend deployed before them sends neither, and the fit falls back to points.
+ */
+const decodeFitAverages = (averages, statColumns) => {
+  if (!isRecord(averages)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    statColumns.map((column) => [column, requireNumberOrNull(averages[column])]),
+  );
+};
+
+const decodeStatColumns = (columns) => {
+  if (!Array.isArray(columns) || columns.some((column) => !catalogue.includes(column))) {
+    throw createInvalidResponseError();
+  }
+  return columns;
+};
+
+/*
  * A fit's shares are index-parallel with the Qualifiers, which is what lets
  * the table put one column per Qualifier. A list of another length would
  * silently misattribute a share to the wrong Qualifier.
  */
-const decodeFit = (player, qualifiers) => {
+const decodeFit = (player, qualifiers, statColumns) => {
   if (!isRecord(player) || typeof player.thin !== 'boolean' || !Array.isArray(player.shares)) {
     throw createInvalidResponseError();
   }
@@ -394,6 +412,9 @@ const decodeFit = (player, qualifiers) => {
     tricode: requireString(player.tricode),
     ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
     seasonScoring: requireNumberOrNull(player.season_scoring),
+    ...(statColumns && player.season_averages !== undefined
+      ? { seasonAverages: decodeFitAverages(player.season_averages, statColumns) }
+      : {}),
     thin: player.thin,
     shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
   };
@@ -413,12 +434,15 @@ const decodeResolvedTarget = (item) => {
   if (availability.status !== 'available' && item.players.length > 0) {
     throw createInvalidResponseError();
   }
+  const statColumns =
+    item.stat_columns === undefined ? undefined : decodeStatColumns(item.stat_columns);
   return {
     target,
     game,
+    ...(statColumns ? { statColumns } : {}),
     availability,
     context: context.map(decodeContext),
-    players: item.players.map((player) => decodeFit(player, target.qualifiers)),
+    players: item.players.map((player) => decodeFit(player, target.qualifiers, statColumns)),
   };
 };
 

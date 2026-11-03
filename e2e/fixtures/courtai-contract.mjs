@@ -3952,7 +3952,21 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/players/next-opponent') {
-      await route.fulfill({ json: { next_game: null, opponent_ranks: [] } });
+      const season = url.searchParams.get('season') ?? undefined;
+      const refusal = seasonRefusal(season);
+      if (refusal) {
+        await route.fulfill(refusal);
+        return;
+      }
+      await route.fulfill({
+        json: {
+          next_game: null,
+          opponent_ranks: [],
+          ...(season && {
+            season_context: { selected_season: season, published_season: PUBLISHED_SEASON },
+          }),
+        },
+      });
       return;
     }
 

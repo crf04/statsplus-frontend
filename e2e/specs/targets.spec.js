@@ -337,7 +337,7 @@ test('Target defaults follow each Qualifier base and keep their declared order',
     {
       base: 'play_types',
       slice: 'Transition',
-      expected: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
+      expected: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
     },
     {
       base: 'shot_zones',

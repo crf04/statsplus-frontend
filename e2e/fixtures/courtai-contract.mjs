@@ -2740,7 +2740,7 @@ const resolveTargets = (date, targets) => {
  * so a row and the handoff it links to cannot disagree.
  */
 const SLICE_MARKETS = {
-  play_types: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
+  play_types: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
   assist_locations: ['AST', 'AST/36'],
   shot_types: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
 };

@@ -347,8 +347,10 @@ signedInTest(
     const fits = screen.getByRole('article').filter({ hasText: 'At-rim assists' });
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
     await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('lg 14%');
+    // The fit reads the Target's own stat, assists, not his points.
+    await expect(fits.getByRole('row', { name: /Player/ })).toHaveText('PLAYER AT-RIM ASSISTS AST');
     await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toHaveText(
-      'Austin Reaves LAL Guard THIN 35% lg 14% 20.1',
+      'Austin Reaves LAL Guard THIN 35% lg 14% 8.5',
     );
     const otherGame = screen
       .getByRole('listitem')

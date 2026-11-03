@@ -2504,7 +2504,7 @@ const ruleShare = (qualifier) => ({
   league_average_share: null,
 });
 
-const resolvedFit = (qualifiers, player) => {
+const resolvedFit = (qualifiers, player, statColumns = []) => {
   const shares = [];
   let thin = false;
   for (const qualifier of qualifiers) {
@@ -2553,10 +2553,20 @@ const resolvedFit = (qualifiers, player) => {
     injury_badge_ref: player.injury_badge_ref,
     position: playerPosition(player),
     season_scoring: player.season_scoring,
+    season_averages: Object.fromEntries(
+      statColumns.map((column) => [
+        column,
+        targetStatAverage(seasonsByPlayer[player.name] || [], column),
+      ]),
+    ),
     thin,
     shares,
   };
 };
+
+// The saved columns, else the Backtest defaults, as the backend resolves them.
+const resolvedStatColumns = (target) =>
+  target.stat_preferences?.columns ?? [...new Set(target.qualifiers.flatMap(sliceMarkets))];
 
 const teamReference = (side) => ({
   team_id: side.team_id,
@@ -2669,6 +2679,7 @@ const resolveTargets = (date, targets) => {
       idle.push({
         target,
         game: null,
+        stat_columns: resolvedStatColumns(target),
         context: [],
         availability: IDLE_AVAILABILITY,
         players: [],
@@ -2692,6 +2703,7 @@ const resolveTargets = (date, targets) => {
         opponent: teamReference(opponent),
         opposing_team: teamReference(opposing),
       },
+      stat_columns: resolvedStatColumns(target),
       context: target.qualifiers.map((qualifier) =>
         resolvedContext(qualifier, sheet, slate.matchup.league),
       ),
@@ -2709,7 +2721,7 @@ const resolveTargets = (date, targets) => {
             },
           ),
         )
-        .map((player) => resolvedFit(target.qualifiers, player))
+        .map((player) => resolvedFit(target.qualifiers, player, resolvedStatColumns(target)))
         .filter(Boolean),
     });
   });
@@ -2728,14 +2740,14 @@ const resolveTargets = (date, targets) => {
  * so a row and the handoff it links to cannot disagree.
  */
 const SLICE_MARKETS = {
-  play_types: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
+  play_types: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
   assist_locations: ['AST', 'AST/36'],
-  shot_types: ['PTS', 'PTS/36', 'FGA', 'FGA/36'],
+  shot_types: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
 };
 
 const THREE_POINT_SLICES = ['Corner 3', 'Above the Break 3'];
-const TWO_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', 'FG2A', 'FG2A/36'];
-const THREE_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', '3PA', '3PA/36'];
+const TWO_POINT_SHOT_ZONE_STATS = ['FG2A', 'FG2A/36', 'PTS', 'PTS/36'];
+const THREE_POINT_SHOT_ZONE_STATS = ['3PA', '3PA/36', 'PTS', 'PTS/36'];
 
 const sliceMarkets = (qualifier) =>
   qualifier.base === 'shot_zones'

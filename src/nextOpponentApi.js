@@ -44,9 +44,9 @@ export const decodeNextOpponent = (payload) => {
   };
 };
 
-export const fetchNextOpponent = async (playerName, { signal } = {}) => {
+export const fetchNextOpponent = async (playerName, { season, signal } = {}) => {
   const { data } = await apiClient.get(getApiUrl('NEXT_OPPONENT'), {
-    params: { player_name: playerName },
+    params: { player_name: playerName, ...(season && { season }) },
     signal,
   });
   return decodeNextOpponent(data);

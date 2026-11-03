@@ -512,15 +512,25 @@ const GameLogFilter = ({ notice = null }) => {
 
   useEffect(() => {
     setNextOpponentRead({ player: null, data: null });
-    if (!access.account || !inWorkspace || isRefusedLink) return undefined;
+    if (!access.account || !inWorkspace || isRefusedLink || awaitingPageSeason) return undefined;
     const controller = new AbortController();
-    fetchNextOpponent(selectedPlayer, { signal: controller.signal })
+    fetchNextOpponent(selectedPlayer, {
+      season: requestFilters.season_filter,
+      signal: controller.signal,
+    })
       .catch(() => null)
       .then((data) => {
         if (!controller.signal.aborted) setNextOpponentRead({ player: selectedPlayer, data });
       });
     return () => controller.abort();
-  }, [access.account, inWorkspace, isRefusedLink, selectedPlayer]);
+  }, [
+    access.account,
+    inWorkspace,
+    isRefusedLink,
+    awaitingPageSeason,
+    selectedPlayer,
+    requestFilters.season_filter,
+  ]);
 
   // A team already chosen for this player is never here: only a load for a
   // different player sets defaultTeamFor.

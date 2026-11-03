@@ -3952,7 +3952,35 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     }
 
     if (url.pathname === '/api/players/next-opponent') {
-      await route.fulfill({ json: { next_game: null, opponent_ranks: [] } });
+      const season = url.searchParams.get('season') ?? undefined;
+      // Any offered season reads; the backend refuses only an unoffered one.
+      if (season !== undefined && !/^\d{4}-\d{2}$/.test(season)) {
+        await route.fulfill(invalidSeasonResponse);
+        return;
+      }
+      if (season !== undefined && !SEASONS.seasons.includes(season)) {
+        const { error } = seasonUnavailableResponse.json;
+        await route.fulfill({
+          ...seasonUnavailableResponse,
+          json: {
+            error: {
+              ...error,
+              message: `The ${season} season is unavailable.`,
+              details: { ...error.details, season },
+            },
+          },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          next_game: null,
+          opponent_ranks: [],
+          ...(season && {
+            season_context: { selected_season: season, published_season: PUBLISHED_SEASON },
+          }),
+        },
+      });
       return;
     }
 

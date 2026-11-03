@@ -375,3 +375,45 @@ test('without choices the Player Profile names no season', async () => {
   await screen.findByText('Game list of 1');
   expect(screen.getByLabelText('Profile season')).toHaveTextContent('default');
 });
+
+// The Next opponent block ranks the season the Game Logs read (crf04/statsplus#415).
+describe('the next-opponent read', () => {
+  const nextOpponentParams = () =>
+    apiClient.get.mock.calls
+      .filter(([path]) => path === '/api/next_opponent')
+      .map(([, options]) => options.params);
+
+  test('waits for /seasons, then sends the 2026-27 page season', async () => {
+    let answerSeasons;
+    fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
+    renderAt('/?player_name=LeBron+James');
+    await act(async () => {});
+    expect(nextOpponentParams()).toEqual([]);
+
+    await act(async () => answerSeasons(withChoices));
+    await screen.findByText('Game list of 1');
+    expect(nextOpponentParams()).toEqual([{ player_name: 'LeBron James', season: '2026-27' }]);
+  });
+
+  test.each([
+    ['only 2025-26 is offered', () => fetchSeasons.mockResolvedValue(publishedOnlySeasons)],
+    ['it is a 2025-26 Slate date', () => jest.setSystemTime(new Date('2026-09-12T16:00:00Z'))],
+  ])('names no season when %s', async (_name, arrange) => {
+    arrange();
+    renderAt('/?player_name=LeBron+James');
+    await screen.findByText('Game list of 1');
+    expect(nextOpponentParams()).toEqual([{ player_name: 'LeBron James' }]);
+  });
+
+  test('a changed Workspace season reads the next opponent again in that season', async () => {
+    renderAt('/?player_name=LeBron+James');
+    await screen.findByText('Game list of 1');
+    fireEvent.change(await seasonSelect(), { target: { value: '2025-26' } });
+    await waitFor(() =>
+      expect(nextOpponentParams()).toEqual([
+        { player_name: 'LeBron James', season: '2026-27' },
+        { player_name: 'LeBron James', season: '2025-26' },
+      ]),
+    );
+  });
+});

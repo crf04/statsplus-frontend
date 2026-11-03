@@ -4,21 +4,13 @@
  * Shooting Type tabs use once they read the Matchup engine (the source MCP
  * get_matchup and Zone Shooting read)?
  *
- * State rides the URL hash (`#proto=profile&v=B`), never the query string: on
+ * State rides the URL hash (`#proto=profile&tab=assists`), never the query string: on
  * `/` the query string is the Filter Set.
  */
 import { useCallback, useEffect, useState } from 'react';
 
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'profile';
 export const PROTO_ENABLED = process.env.NODE_ENV !== 'production' || PROTO_STANDALONE;
-
-export const VARIANT_KEYS = ['A', 'B', 'C', 'D'];
-export const VARIANT_NAMES = {
-  A: 'Table',
-  B: 'Bars + rank pill',
-  C: 'Combo chart (fixed data)',
-  D: 'MCP sentence list',
-};
 
 /* Each sample player is read against one opponent, as the page's opponent. */
 export const SAMPLES = [
@@ -58,7 +50,6 @@ export const useProto = () => {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'profile');
-  const variant = VARIANT_KEYS.includes(hash.get('v')) ? hash.get('v') : 'A';
   const tab = hash.get('tab');
 
   const write = useCallback((key, value) => {
@@ -69,16 +60,8 @@ export const useProto = () => {
     remember(next);
     setHash(next);
   }, []);
-  const step = useCallback(
-    (delta) => {
-      const i = VARIANT_KEYS.indexOf(variant);
-      write('v', VARIANT_KEYS[(i + delta + VARIANT_KEYS.length) % VARIANT_KEYS.length]);
-    },
-    [variant, write],
-  );
-  const setVariant = useCallback((v) => write('v', v), [write]);
   const setTab = useCallback((t) => write('tab', t), [write]);
-  return { active, variant, tab, step, setVariant, setTab };
+  return { active, tab, setTab };
 };
 
 /* Changing the sample player reloads the Log Workspace on that player. */

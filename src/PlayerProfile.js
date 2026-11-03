@@ -27,7 +27,7 @@ import ErrorMessage from './feedback/ErrorMessage';
 // PROTOTYPE (throwaway, branch prototype/profile-matchup-tabs)
 import { sampleFor, useProto } from './profileMatchupPrototype/mode';
 import ProtoSwitcher from './profileMatchupPrototype/Switcher';
-import MatchupTabProto from './profileMatchupPrototype/variants';
+import MatchupCardTab from './profileMatchupPrototype/MatchupCardTab';
 import { TAB_BASES } from './profileMatchupPrototype/read';
 
 /*
@@ -287,10 +287,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   const renderContent = () => {
     if (protoTab)
       return (
-        <MatchupTabProto
+        <MatchupCardTab
           key={`${selectedPlayer}|${selectedProfile}`}
           tab={selectedProfile}
-          variant={proto.variant}
           playerName={selectedPlayer}
           opponent={protoOpponent}
         />
@@ -390,7 +389,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
           </ToggleButtonGroup>
         </div>
         {renderContent()}
-        {proto.active && <ProtoSwitcher proto={proto} playerName={selectedPlayer} />}
+        {proto.active && <ProtoSwitcher playerName={selectedPlayer} />}
       </Card.Body>
     </Card>
   );

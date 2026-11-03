@@ -7,7 +7,7 @@ import { apiClient } from '../../config';
 import { sampleFor, SAMPLES } from '../mode';
 import recorded from './recorded.json';
 
-export const DEMO_URL = `/?player_name=Toumani+Camara#proto=profile&v=A`;
+export const DEMO_URL = `/?player_name=Toumani+Camara#proto=profile`;
 
 const keyOf = (config) => {
   const url = new URL(apiClient.getUri(config), window.location.origin);

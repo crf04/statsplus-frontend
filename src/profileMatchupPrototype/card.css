@@ -1245,3 +1245,81 @@
     gap: 12px;
   }
 }
+
+/* Combo markets in S4. */
+.mcc .cpart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 2px;
+}
+.mcc .cpart .cpl {
+  font-size: 13px;
+  font-weight: 650;
+}
+.mcc .cpart .cpw {
+  font-size: 11px;
+  color: var(--mcc-faint);
+}
+.mcc .cpart .cps {
+  margin-left: auto;
+  font-size: 11.5px;
+  padding: 1px 7px;
+}
+.mcc .ctrad {
+  margin-top: 4px;
+}
+.mcc .ctag {
+  font-style: normal;
+  display: inline-block;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--mcc-faint);
+  border: 1px solid var(--mcc-line-strong);
+  border-radius: 3px;
+  padding: 0 3px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.mcc .ssub {
+  font-size: 11.5px;
+  color: var(--mcc-faint);
+  margin: -2px 0 6px;
+}
+.mcc .crest {
+  margin-top: 10px;
+}
+.mcc .cseg {
+  display: inline-flex;
+  border: 1px solid var(--mcc-line-strong);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 2px 0 4px;
+}
+.mcc .cseg button {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  color: var(--mcc-muted);
+  border-right: 1px solid var(--mcc-line);
+}
+.mcc .cseg button:last-child {
+  border-right: 0;
+}
+.mcc .cseg button[aria-pressed='true'] {
+  background: var(--ct-gold-soft);
+  color: var(--mcc-amber);
+  font-weight: 600;
+}
+.mcc .cseg button i {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--mcc-faint);
+  margin-left: 3px;
+}
+.mcc .cseg button:focus-visible {
+  outline: 2px solid var(--mcc-amber);
+  outline-offset: -2px;
+}

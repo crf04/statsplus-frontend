@@ -28,6 +28,18 @@ const Switcher = ({ proto, playerName }) => (
       </button>
     ))}
     <span>{NAMES[proto.variant]}</span>
+    {proto.variant === 'S4' &&
+      ['C1', 'C2', 'C3'].map((c) => (
+        <button
+          key={c}
+          type="button"
+          aria-pressed={proto.combo === c}
+          onClick={() => proto.setCombo(c)}
+          title="Combo market treatment"
+        >
+          {c}
+        </button>
+      ))}
     <select
       value={playerName}
       onChange={(e) => goToPlayer(e.target.value)}

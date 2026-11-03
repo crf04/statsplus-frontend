@@ -14,7 +14,7 @@ const LINE_TYPE_MARKET = { FG3M: '3PM', FD_PTS: null, None: null };
 const marketFor = (lineType) =>
   lineType in LINE_TYPE_MARKET ? LINE_TYPE_MARKET[lineType] : lineType;
 
-const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
+const MatchupCard = ({ playerName, opponent, variant, lineType, combo }) => {
   const [tileMarket, setTileMarket] = useState('PTS');
   const [open, setOpen] = useState(() => new Set());
   const state = useMatchup(playerName, opponent);
@@ -41,7 +41,7 @@ const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
       variant === 'G'
         ? drawCardG(card, shown, { note, open })
         : variant.startsWith('S')
-          ? drawCardS(card, shown, { note, open, mode: variant })
+          ? drawCardS(card, shown, { note, open, mode: variant, combo })
           : drawCardH(card, shown, { note, open, mode: variant });
   }
   return (
@@ -54,9 +54,12 @@ const MatchupCard = ({ playerName, opponent, variant, lineType }) => {
         const more = event.target.closest?.('[data-more]');
         if (more) {
           event.preventDefault();
-          const next = new Set(open);
-          if (next.has(more.dataset.more)) next.delete(more.dataset.more);
-          else next.add(more.dataset.more);
+          const key = more.dataset.more;
+          const next = new Set(
+            [...open].filter((k) => !(key.startsWith('part:') && k.startsWith('part:'))),
+          );
+          if (open.has(key) && !key.startsWith('part:')) next.delete(key);
+          else next.add(key);
           setOpen(next);
         }
       }}

@@ -295,6 +295,7 @@ const PlayerProfile = ({
         <MatchupCard
           key={selectedPlayer}
           variant={proto.variant}
+          combo={proto.combo}
           lineType={lineType}
           playerName={selectedPlayer}
           opponent={protoOpponent}

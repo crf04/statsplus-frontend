@@ -51,6 +51,7 @@ export const useProto = () => {
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'profile');
   const tab = hash.get('tab');
+  const combo = ['C1', 'C2', 'C3'].includes(hash.get('combo')) ? hash.get('combo') : 'C1';
   const variant = ['F', 'G', 'H1', 'H2', 'H3', 'S1', 'S2', 'S3', 'S4'].includes(hash.get('v'))
     ? hash.get('v')
     : 'S4';
@@ -65,7 +66,8 @@ export const useProto = () => {
   }, []);
   const setTab = useCallback((t) => write('tab', t), [write]);
   const setVariant = useCallback((v) => write('v', v), [write]);
-  return { active, tab, setTab, variant, setVariant };
+  const setCombo = useCallback((c) => write('combo', c), [write]);
+  return { active, tab, setTab, variant, setVariant, combo, setCombo };
 };
 
 /* Changing the sample player reloads the Log Workspace on that player. */

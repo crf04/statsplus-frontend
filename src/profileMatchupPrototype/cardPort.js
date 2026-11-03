@@ -222,6 +222,7 @@ export const toCard = (data, opponent) => {
       name: player.name,
       team: player.tricode,
       opponent,
+      averages: player.season_averages || {},
       last_10_minutes: (player.last_10_minutes || [])
         .map((x) => (typeof x === 'number' ? x : x?.minutes))
         .filter((x) => typeof x === 'number'),
@@ -718,7 +719,11 @@ const driverSentence = (dr, opp) => {
   return `${first} ${esc(opp)} allows ${where} (${ordinal(r)} of 30), ${esc(vs)}.`;
 };
 
-export const drawCardS = (d, picked, { note = '', mode = 'S1', open = new Set() } = {}) => {
+export const drawCardS = (
+  d,
+  picked,
+  { note = '', mode = 'S1', open = new Set(), combo = 'C1' } = {},
+) => {
   const m = d.markets.find((x) => x.market === picked) || d.markets[0];
   const opp = d.player.opponent;
   const a = d.as_of || {};
@@ -747,6 +752,8 @@ export const drawCardS = (d, picked, { note = '', mode = 'S1', open = new Set() 
     const spatial = bases.find((b) => REGIONS[b.base]);
     const others = bases.filter((b) => b !== spatial);
     body = `${title}<div class="s2${spatial && others.length ? '' : ' solo'}">${spatial ? `<div><div class="sbase">${esc(spatial.base)}</div>${court(d, spatial, opp, true)}</div>` : ''}${others.length || sTrad(m, opp) ? `<div class="slist">${list(others)}</div>` : ''}</div>`;
+  } else if (mode === 'S4' && COMBO_PARTS[m.market]) {
+    body = comboBody(d, m, opp, combo, open);
   } else if (mode === 'S4') {
     // S2's list beside the card's own coloured court; with no other Base (AST), the list is the court's Base.
     const spatial = bases.find((b) => REGIONS[b.base]);
@@ -763,3 +770,129 @@ export const drawCardS = (d, picked, { note = '', mode = 'S1', open = new Set() 
   }
   return `${head}${body}`;
 };
+
+/* Combo markets (PRA, PA, PR, RA) in S4: no court. Each part of the line reads the Base that feeds it;
+   the combo's component for a Base is the part's own component scaled by the part's share of his line. */
+const COMBO_PARTS = {
+  PRA: ['PTS', 'REB', 'AST'],
+  PA: ['PTS', 'AST'],
+  PR: ['PTS', 'REB'],
+  RA: ['REB', 'AST'],
+};
+const PART = {
+  PTS: { label: 'Points', bases: ['Play types', 'Shot zones', 'Shot types'] },
+  REB: { label: 'Rebounds', bases: ['Rebound types'] },
+  AST: { label: 'Assists', bases: ['Assist locations'] },
+};
+const BASE_TAG = {
+  'Play types': 'Play type',
+  'Shot zones': 'Shot zone',
+  'Shot types': 'Shot type',
+  'Assist locations': 'Assist loc',
+  'Rebound types': 'Reb type',
+};
+
+const comboParts = (d, m) => {
+  const avg = d.player.averages || {};
+  const total = COMBO_PARTS[m.market].reduce((sum, k) => sum + (avg[k] || 0), 0) || 1;
+  return COMBO_PARTS[m.market].map((key) => {
+    const single = d.markets.find((x) => x.market === key);
+    const bases = PART[key].bases
+      .map((b) => (m.bases || []).find((x) => x.base === b))
+      .filter(Boolean);
+    return {
+      key,
+      label: PART[key].label,
+      weight: (avg[key] || 0) / total,
+      score: single && single.season,
+      bases,
+    };
+  });
+};
+
+const partHead = (part, m) => `<div class="cpart">
+    <span class="cpl">${esc(part.label)}</span>
+    <span class="cpw">${Math.round(part.weight * 100)}% of his ${esc(m.market)}</span>
+    ${part.score ? `<span class="pill cps" style="${wash(part.score.value)}" title="${esc(part.key)} Season Matchup Score">${esc(part.key)} ${pct(part.score.value)}</span>` : ''}
+  </div>`;
+
+const tagRow = (s, tag) =>
+  sRow(s).replace('<span class="sn">', `<span class="sn"><em class="ctag">${esc(tag)}</em>`);
+
+function comboBody(d, m, opp, combo, open) {
+  const parts = comboParts(d, m);
+  const all = open.has('all');
+  const toggle = `<button type="button" class="more" data-more="all">${all ? 'Show less' : 'Show all'}</button>`;
+  const title = `<div class="stitle">Where his ${esc(m.market)} come from</div>`;
+  const trad = sTrad(m, opp);
+  // A part's rows: its first Base (Points: Play types, else Shot zones) unless expanded.
+  const partRows = (part, n) => {
+    const bases = all ? part.bases : part.bases.slice(0, 1);
+    const groups = bases
+      .map((b) => {
+        const rows = joined(d, b);
+        const shown = all ? rows : rows.slice(0, n);
+        return `${bases.length > 1 || all ? `<div class="sbase">${esc(b.base)}${rows.every((x) => x.his_mix) ? ' <i>· for his mix</i>' : ''}</div>` : ''}${shown.map(sRow).join('')}`;
+      })
+      .join('');
+    return (
+      groups +
+      (part.key === 'REB'
+        ? trad.replace(
+            '<div class="sgrp"><div class="sbase">Traditional</div>',
+            '<div class="sgrp ctrad"><div class="sbase">Traditional</div>',
+          )
+        : '')
+    );
+  };
+  if (combo === 'C1') {
+    const groups = parts
+      .map((part) => `<div class="sgrp">${partHead(part, m)}${partRows(part, 3)}</div>`)
+      .join('');
+    return `${title}<div class="slist">${groups}${toggle}</div>`;
+  }
+  if (combo === 'C2') {
+    // share x |vs league| x the part's share of his line: how much a slice can move the combo.
+    const cands = [];
+    parts.forEach((part) =>
+      part.bases
+        .filter((b) => b.base !== 'Shot types')
+        .forEach((b) =>
+          joined(d, b).forEach((s) => {
+            const v = num(s.vs_league);
+            if (v == null || s.share == null) return;
+            cands.push({
+              s,
+              tag: BASE_TAG[b.base],
+              impact: part.weight * (num(s.share) / 100) * Math.abs(v),
+            });
+          }),
+        ),
+    );
+    cands.sort((x, y) => y.impact - x.impact);
+    const top = cands
+      .slice(0, 6)
+      .map((c) => tagRow(c.s, c.tag))
+      .join('');
+    const rest = all
+      ? `<div class="crest">${sGroups(
+          d,
+          m,
+          parts.flatMap((p) => p.bases),
+          true,
+        )}${trad}</div>`
+      : '';
+    return `${title}<div class="ssub">The slices that move his ${esc(m.market)} most: share × |vs league| × part of his line</div><div class="slist">${top}${rest}${toggle}</div>`;
+  }
+  // C3: one part at a time.
+  const picked =
+    parts.find((p) => open.has(`part:${p.key}`)) ||
+    parts.reduce((a, b) => (b.weight > a.weight ? b : a));
+  const seg = `<div class="cseg" role="group" aria-label="Part of the line">${parts
+    .map(
+      (p) =>
+        `<button type="button" data-more="part:${p.key}" aria-pressed="${p === picked}">${esc(p.label)} <i>${Math.round(p.weight * 100)}%</i></button>`,
+    )
+    .join('')}</div>`;
+  return `${title}${seg}<div class="slist"><div class="sgrp">${partHead(picked, m)}${partRows(picked, 3)}</div>${toggle}</div>`;
+}

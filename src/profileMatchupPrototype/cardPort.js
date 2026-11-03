@@ -747,6 +747,15 @@ export const drawCardS = (d, picked, { note = '', mode = 'S1', open = new Set() 
     const spatial = bases.find((b) => REGIONS[b.base]);
     const others = bases.filter((b) => b !== spatial);
     body = `${title}<div class="s2${spatial && others.length ? '' : ' solo'}">${spatial ? `<div><div class="sbase">${esc(spatial.base)}</div>${court(d, spatial, opp, true)}</div>` : ''}${others.length || sTrad(m, opp) ? `<div class="slist">${list(others)}</div>` : ''}</div>`;
+  } else if (mode === 'S4') {
+    // S2's list beside the card's own coloured court; with no other Base (AST), the list is the court's Base.
+    const spatial = bases.find((b) => REGIONS[b.base]);
+    const others = bases.filter((b) => b !== spatial);
+    const listed = others.length ? others : spatial ? [spatial] : [];
+    const courtCol = spatial
+      ? `<div><div class="sbase">${esc(spatial.base)}</div>${court(d, spatial, opp)}<div class="legend"><b>${esc(opp)} allows vs league</b><span>Less</span><span class="grad"></span><span>More</span></div></div>`
+      : '';
+    body = `${title}<div class="layout s4${courtCol ? '' : ' solo'}">${courtCol}<div class="slist">${list(listed)}</div></div>`;
   } else {
     const sentences = (m.drivers || []).map((dr) => `<p>${driverSentence(dr, opp)}</p>`).join('');
     body = `<div class="sdrivers">${sentences || `<p>No driver for ${esc(m.market)}.</p>`}</div>

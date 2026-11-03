@@ -12,11 +12,12 @@ const NAMES = {
   S1: 'one list',
   S2: 'court + one table',
   S3: 'drivers only',
+  S4: 'S2 list + coloured court',
 };
 
 const Switcher = ({ proto, playerName }) => (
   <div className="pmp-switcher" role="group" aria-label="Prototype switcher">
-    {['S1', 'S2', 'S3', 'H1', 'H2', 'H3', 'G', 'F'].map((v) => (
+    {['S4', 'S1', 'S2', 'S3', 'H1', 'H2', 'H3', 'G', 'F'].map((v) => (
       <button
         key={v}
         type="button"

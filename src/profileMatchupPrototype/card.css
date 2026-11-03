@@ -1226,3 +1226,22 @@
     font-size: 13px;
   }
 }
+
+/* S4: S2's list beside the card's coloured court, at F's side-by-side size. */
+.mcc .layout.s4 {
+  margin-top: 0;
+}
+.mcc .layout.s4 .slist .sgrp:first-child {
+  margin-top: 0;
+}
+.mcc .layout.s4 .srow {
+  grid-template-columns: minmax(0, 1fr) 82px 40px 40px;
+  gap: 6px;
+  font-size: 13px;
+}
+@media (max-width: 520px) {
+  .mcc .layout.s4 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

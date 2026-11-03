@@ -1032,6 +1032,54 @@ export const scoreCoverageMatchupPayload = (() => {
   return candidate;
 })();
 
+// The same game once the backend scores TOV, FTA and FTM from play types too
+// (crf04/statsplus#416). Each team lists play-type turnovers forced and
+// free-throw trips allowed, Misc included, which this build does not show. Play
+// types publish no Last 15 here, so LeBron's Last 15 TOV and FTA read
+// Traditional alone.
+export const PLAY_TYPE_TURNOVER_ROWS = [
+  ['Transition:TOV', 'Transition turnovers forced', ['TOV'], 3.1, 2.6, 1.4, 27],
+  ['PRBallHandler:TOV', 'PRBallHandler turnovers forced', ['TOV'], 2.4, 2, 1.1, 24],
+  ['Isolation:TOV', 'Isolation turnovers forced', ['TOV'], 0.9, 1.1, -1.2, 8],
+  ['Misc:TOV', 'Misc turnovers forced', ['TOV'], 0.6, 0.5, 0.4, 18],
+  ['PRBallHandler:FTT', 'PRBallHandler FT trips allowed', ['FTA', 'FTM'], 2.1, 2.4, -0.9, 7],
+  ['Postup:FTT', 'Postup FT trips allowed', ['FTA', 'FTM'], 1.5, 1.1, 1.6, 29],
+  ['Isolation:FTT', 'Isolation FT trips allowed', ['FTA', 'FTM'], 1.7, 1.5, 0.8, 21],
+  ['Misc:FTT', 'Misc FT trips allowed', ['FTA', 'FTM'], 0.4, 0.4, 0, 15],
+];
+export const playTypeTurnoverMatchupPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(scoreCoverageMatchupPayload));
+  candidate.league.defense_sheet.play_types.push(
+    ...PLAY_TYPE_TURNOVER_ROWS.map(([key, , , , average]) => ({
+      ...leagueRow(key, average, 0.3, average, 0.3),
+      last_15: null,
+    })),
+  );
+  candidate.teams.forEach((team) => {
+    team.defense_sheet.play_types.push(
+      ...PLAY_TYPE_TURNOVER_ROWS.map(([key, label, markets, allowed, average, sigma, rank]) =>
+        defenseRow(
+          key,
+          label,
+          markets,
+          defenseValue(allowed, Math.round((allowed / average - 1) * 100), sigma, rank),
+          null,
+        ),
+      ),
+    );
+  });
+  const lebron = candidate.players.find((player) => player.canonical_id === 2544);
+  const cell = (value) => ({ value, thin: false });
+  const tov = lebron.scores.TOV.season;
+  tov.components.play_types = cell(0.09);
+  tov.blend = cell(0.16);
+  lebron.scores.FTA.season = {
+    components: { traditional: cell(-0.11), play_types: { value: 0.05, thin: true } },
+    blend: cell(-0.03),
+  };
+  return candidate;
+})();
+
 // Production LAC @ MIL 0022501082: every Season defense Surface published, no
 // point-in-time Last 15, no archived DFS markets, canonical game-log players.
 export const HISTORICAL_GAME_ID = '0022501082';

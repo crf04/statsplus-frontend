@@ -603,7 +603,7 @@ const BASE_LABELS = {
 };
 // Each category names its measures once, in its header row.
 const BASE_COLUMNS = {
-  playTypes: ['Points'],
+  playTypes: ['Points', 'Turnovers forced', 'FT trips allowed'],
   shotTypes: ['Attempts', 'Makes'],
   shotZones: ['Attempts', 'Makes'],
   assistLocations: ['Allowed'],
@@ -618,7 +618,11 @@ const MEASURE_COLUMNS = {
   FGM: 'Makes',
   FG2M: 'Makes',
   FG3M: 'Makes',
+  TOV: 'Turnovers forced',
+  FTT: 'FT trips allowed',
 };
+// Play-type measures a window may lack (crf04/statsplus#416), as a sentence names them.
+const OPTIONAL_PLAY_TYPE_MEASURES = { TOV: 'turnovers forced', FTT: 'FT trips allowed' };
 // Bases that publish no rows while unavailable still belong to these markets.
 const BASE_MARKETS = { reboundTypes: ['REB', 'PR', 'RA', 'PRA'] };
 const SHARE_LABELS = {
@@ -734,13 +738,27 @@ function SheetCell({ row, windowKey }) {
   );
 }
 
-const missingRowNames = (rows) =>
-  new Intl.ListFormat('en').format(
-    rows.map((row) => {
-      const name = sliceName(row.sliceKey);
-      return /^[A-Z][a-z]/.test(name) ? name.toLowerCase() : name;
+const sentenceSliceName = (row) => {
+  const name = sliceName(row.sliceKey);
+  return /^[A-Z][a-z]/.test(name) ? name.toLowerCase() : name;
+};
+
+// A play-type measure missing from every slice is named once for the base.
+const missingRowNames = (base, rows, missingRows) => {
+  if (base !== 'playTypes')
+    return new Intl.ListFormat('en').format(missingRows.map(sentenceSliceName));
+  return new Intl.ListFormat('en').format(
+    Object.entries(OPTIONAL_PLAY_TYPE_MEASURES).flatMap(([measure, phrase]) => {
+      const missing = missingRows.filter((row) => rowMeasure(row) === measure);
+      if (!missing.length) return [];
+      const all = missing.length === rows.filter((row) => rowMeasure(row) === measure).length;
+      const slices = all
+        ? 'play-type'
+        : new Intl.ListFormat('en').format(missing.map(sentenceSliceName));
+      return [`${slices} ${phrase}`];
     }),
   );
+};
 
 function DefenseSheet({
   team,
@@ -783,8 +801,15 @@ function DefenseSheet({
         groups: [],
       };
     }
-    const missingRows =
-      base === 'traditional' ? marketRows.filter((row) => row[windowKey] === null) : [];
+    const missingRows = ['traditional', 'playTypes'].includes(base)
+      ? marketRows.filter((row) => row[windowKey] === null)
+      : [];
+    // A play-type measure shows only under its markets, and only where this window has it.
+    const columns = BASE_COLUMNS[base].filter(
+      (column) =>
+        base !== 'playTypes' ||
+        marketRows.some((row) => row[windowKey] !== null && columnOf(row) === column),
+    );
     const lead = (group) => {
       const values = group.rows
         .filter(inMarket)
@@ -810,7 +835,15 @@ function DefenseSheet({
         if ((a.lead === null) !== (b.lead === null)) return a.lead === null ? 1 : -1;
         return (b.lead ?? 0) - (a.lead ?? 0);
       });
-    return { base, availability, relevant: marketRows.length > 0, missingRows, groups };
+    return {
+      base,
+      availability,
+      relevant: marketRows.length > 0,
+      rows,
+      missingRows,
+      columns,
+      groups,
+    };
   });
   const visibleCount = sections.reduce((total, section) => total + section.groups.length, 0);
   const hasNamedUnavailable = sections.some(
@@ -842,7 +875,7 @@ function DefenseSheet({
         )
       )}
       <div className="sheet-sections">
-        {sections.map(({ base, availability, relevant, missingRows, groups }) => {
+        {sections.map(({ base, availability, relevant, rows, missingRows, columns, groups }) => {
           const label = BASE_LABELS[base];
           const season = trailingSeason(
             availability.season ?? windowSection?.season,
@@ -883,7 +916,6 @@ function DefenseSheet({
             ) : null;
           }
           if (!groups.length && !missingRows.length) return null;
-          const columns = BASE_COLUMNS[base];
           return (
             <section
               className="sheet-base"
@@ -978,7 +1010,7 @@ function DefenseSheet({
               )}
               {missingRows.length > 0 && (
                 <p className="honest-empty">
-                  Opponent {missingRowNames(missingRows)} unavailable for {windowName}.
+                  Opponent {missingRowNames(base, rows, missingRows)} unavailable for {windowName}.
                 </p>
               )}
             </section>

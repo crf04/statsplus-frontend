@@ -3482,3 +3482,216 @@ describe.each(NEW_TRADITIONAL_ROWS)('statsplus#407 Traditional row %s', (key, ma
     );
   });
 });
+
+describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
+  const sheetValue = {
+    allowed_per_48: 2.6,
+    percent_vs_league_average: 18,
+    sigma_deviation: 1.3,
+    rank: 26,
+  };
+  const decodedValue = {
+    allowedPer48: 2.6,
+    percentVsLeagueAverage: 18,
+    sigmaDeviation: 1.3,
+    rank: 26,
+  };
+  const withPlayTypeRow = (key, markets, windows = { season: sheetValue, last_15: sheetValue }) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    candidate.league.defense_sheet.play_types.push({
+      key,
+      season: windows.season && { average_allowed_per_48: 2.2, sigma: 0.3 },
+      last_15: windows.last_15 && { average_allowed_per_48: 2.2, sigma: 0.3 },
+    });
+    candidate.teams[0].defense_sheet.play_types.push({
+      key,
+      label: key,
+      markets,
+      ...windows,
+    });
+    return candidate;
+  };
+  const lakersPlayTypes = (candidate) =>
+    decodeMatchup(candidate).teams[0].defenseSheet.playTypes.map(
+      ({ key, markets, season, last15 }) => ({
+        key,
+        markets,
+        season,
+        last15,
+      }),
+    );
+  const transitionPoints = {
+    key: 'Transition:PTS',
+    markets: ['PTS', 'PA', 'PR', 'PRA'],
+    season: { allowedPer48: 18.4, percentVsLeagueAverage: 12, sigmaDeviation: 1.4, rank: 27 },
+    last15: { allowedPer48: 15.2, percentVsLeagueAverage: -8, sigmaDeviation: -1.1, rank: 5 },
+  };
+
+  test('today’s play-type sheet, with points rows only, decodes unchanged', () => {
+    expect(lakersPlayTypes(payload)).toEqual([transitionPoints]);
+  });
+
+  test.each([
+    ['Isolation:TOV', ['TOV']],
+    ['PRBallHandler:TOV', ['TOV']],
+    ['Isolation:FTT', ['FTA', 'FTM']],
+    ['Postup:FTT', ['FTA', 'FTM']],
+  ])('decodes %s with its contract markets', (key, markets) => {
+    expect(lakersPlayTypes(withPlayTypeRow(key, markets))).toEqual([
+      transitionPoints,
+      { key, markets, season: decodedValue, last15: decodedValue },
+    ]);
+  });
+
+  test.each([
+    ['Isolation:TOV', ['TOV', 'STL']],
+    ['Isolation:TOV', ['PTS']],
+    ['Isolation:FTT', ['FTA']],
+    ['Isolation:FTT', ['FTM', 'FTA']],
+    ['Isolation:FTT', ['TOV']],
+  ])('rejects %s listing %j', (key, markets) => {
+    expect(() => decodeMatchup(withPlayTypeRow(key, markets))).toThrow('invalid response');
+  });
+
+  test.each([['Isolation:FTA'], ['Isolation:FTM'], ['Isolation:STL']])(
+    'still rejects an unknown play-type stat %s',
+    (key) => {
+      expect(() => decodeMatchup(withPlayTypeRow(key, ['TOV']))).toThrow('invalid response');
+    },
+  );
+
+  test.each([
+    ['Isolation:TOV', ['TOV'], 'season'],
+    ['Isolation:TOV', ['TOV'], 'last_15'],
+    ['Isolation:FTT', ['FTA', 'FTM'], 'season'],
+    ['Isolation:FTT', ['FTA', 'FTM'], 'last_15'],
+  ])(
+    'accepts %s with a null %s cell while play types are available',
+    (key, markets, nullWindow) => {
+      const windows = { season: sheetValue, last_15: sheetValue, [nullWindow]: null };
+      const decodedNull = nullWindow === 'season' ? 'season' : 'last15';
+      expect(lakersPlayTypes(withPlayTypeRow(key, markets, windows))).toEqual([
+        transitionPoints,
+        { key, markets, season: decodedValue, last15: decodedValue, [decodedNull]: null },
+      ]);
+    },
+  );
+
+  test('still rejects a null points cell while play types are available', () => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    candidate.teams[0].defense_sheet.play_types[0].last_15 = null;
+    expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+  });
+
+  const cell = (value, thin = false) => ({ value, thin });
+  const withScores = (scores) => {
+    const candidate = JSON.parse(JSON.stringify(payload));
+    const markets = Object.keys(scores);
+    candidate.players[0].posted_markets = markets;
+    candidate.players[0].provenance = { prizepicks: markets };
+    candidate.players[0].scores = scores;
+    return candidate;
+  };
+
+  test('decodes a Play types component beside Traditional on TOV, FTA and FTM', () => {
+    const twoInputs = (traditional, playTypes, blend, thin = false) => ({
+      components: { traditional: cell(traditional), play_types: cell(playTypes, thin) },
+      blend: cell(blend),
+    });
+    const decoded = decodeMatchup(
+      withScores({
+        TOV: { season: twoInputs(0.1, 0.04, 0.07), last_15: twoInputs(-0.02, 0.06, 0.02, true) },
+        FTA: { season: twoInputs(-0.11, 0.05, -0.03), last_15: twoInputs(-0.08, 0, -0.04) },
+        FTM: { season: twoInputs(-0.09, 0.05, -0.02), last_15: twoInputs(-0.06, 0, -0.03) },
+      }),
+    ).players[0].scores;
+
+    expect(decoded).toEqual({
+      TOV: {
+        season: {
+          components: { traditional: cell(0.1), playTypes: cell(0.04) },
+          blend: cell(0.07),
+          missingInputs: [],
+        },
+        last15: {
+          components: { traditional: cell(-0.02), playTypes: cell(0.06, true) },
+          blend: cell(0.02),
+          missingInputs: [],
+        },
+      },
+      FTA: {
+        season: {
+          components: { traditional: cell(-0.11), playTypes: cell(0.05) },
+          blend: cell(-0.03),
+          missingInputs: [],
+        },
+        last15: {
+          components: { traditional: cell(-0.08), playTypes: cell(0) },
+          blend: cell(-0.04),
+          missingInputs: [],
+        },
+      },
+      FTM: {
+        season: {
+          components: { traditional: cell(-0.09), playTypes: cell(0.05) },
+          blend: cell(-0.02),
+          missingInputs: [],
+        },
+        last15: {
+          components: { traditional: cell(-0.06), playTypes: cell(0) },
+          blend: cell(-0.03),
+          missingInputs: [],
+        },
+      },
+    });
+  });
+
+  test('decodes a TOV window with Play types in one window and Traditional alone in the other', () => {
+    const decoded = decodeMatchup(
+      withScores({
+        TOV: {
+          season: {
+            components: { traditional: cell(0.1), play_types: cell(0.04) },
+            blend: cell(0.07),
+          },
+          last_15: { components: { traditional: cell(-0.02) } },
+        },
+      }),
+    ).players[0].scores.TOV;
+    expect(decoded).toEqual({
+      season: {
+        components: { traditional: cell(0.1), playTypes: cell(0.04) },
+        blend: cell(0.07),
+        missingInputs: [],
+      },
+      last15: { components: { traditional: cell(-0.02) }, blend: null, missingInputs: [] },
+    });
+  });
+
+  test.each([
+    [
+      'a TOV window with two components and no Blend',
+      'TOV',
+      { components: { traditional: cell(0.1), play_types: cell(0.04) }, blend: null },
+    ],
+    [
+      'a TOV window with two components and an omitted Blend',
+      'TOV',
+      { components: { traditional: cell(0.1), play_types: cell(0.04) } },
+    ],
+    [
+      'a Shot zones component on TOV',
+      'TOV',
+      { components: { traditional: cell(0.1), shot_zones: cell(0.04) }, blend: cell(0.07) },
+    ],
+    ...['STL', 'BLK', 'STKS'].map((market) => [
+      `a Play types component on ${market}`,
+      market,
+      { components: { traditional: cell(0.1), play_types: cell(0.04) }, blend: cell(0.07) },
+    ]),
+  ])('still rejects %s', (_label, market, window) => {
+    expect(() =>
+      decodeMatchup(withScores({ [market]: { season: window, last_15: window } })),
+    ).toThrow('invalid response');
+  });
+});

@@ -2,6 +2,7 @@ import { expect } from 'e2e';
 import {
   HISTORICAL_GAME_ID,
   historicalMatchupPayload,
+  playTypeTurnoverMatchupPayload,
   postCutoverHistoricalMatchupPayload,
   scoreCoverageMatchupPayload,
   scoreCoverageSelectionPayload,
@@ -238,6 +239,49 @@ signedInTest(
     await expect(screen.getByRole('article', 'FG made')).toBeVisible();
     await screen.getByRole('article', 'Restricted area').scrollIntoView();
     await app.screenshot('defense-sheet-fgm');
+  },
+);
+
+signedInTest(
+  'the Score Matrix and Defense Sheet read play-type turnovers and FT trips (statsplus#416)',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/matchup': { body: playTypeTurnoverMatchupPayload },
+      '/api/games/matchup/selection': { body: scoreCoverageSelectionPayload },
+    });
+    await app.open('/matchups/0022500584?player=2544');
+    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
+    await expect(matrix.getByRole('columnheader', 'Play types')).toBeVisible();
+    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV — — +9% +23% +16%');
+    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText(
+      'FTA — — +5% THIN -11% -3%',
+    );
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await matrix.scrollIntoView();
+    await app.screenshot('selection-play-type-tov-fta');
+
+    const market = screen.getByRole('group', 'Market');
+    await market.getByRole('button', 'TOV').tap();
+    const playTypes = screen.getByRole('region', 'Play types');
+    await expect(playTypes).toContainText('Turnovers forced');
+    await expect(playTypes.getByRole('article', 'Transition')).toContainText('+19%');
+    await expect(playTypes.getByRole('article', 'P&R ball handler')).toContainText('+20%');
+    await expect(playTypes.getByRole('article', 'Isolation')).toContainText('−18%');
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await playTypes.scrollIntoView();
+    await app.screenshot('defense-sheet-play-type-turnovers');
+
+    await market.getByRole('button', 'Free Throws Attempted').tap();
+    await expect(playTypes).toContainText('FT trips allowed');
+    await expect(playTypes.getByRole('article', 'Post up')).toContainText('+36%');
+    await playTypes.scrollIntoView();
+    await app.screenshot('defense-sheet-play-type-ft-trips');
+
+    await market.getByRole('button', 'All').tap();
+    await expect(playTypes.getByRole('article', 'Transition')).toContainText(/\+12%.*\+19%/);
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await playTypes.scrollIntoView();
+    await app.screenshot('defense-sheet-play-types-all');
   },
 );
 

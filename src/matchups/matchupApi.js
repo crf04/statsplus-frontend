@@ -41,9 +41,10 @@ const requireStringList = (value) => {
   return value;
 };
 const camelKey = (key) => key.replace(/_([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
-// Posted lines the Matchup shows without a Matchup Score (statsplus#370). The
-// backend still sends each an empty score window, which the decoder drops.
-const UNSCORED_MARKETS = ['FTA', 'FTM', 'FGM', 'FG2M'];
+// Shooting lines the Matchup posted before it scored them (statsplus#370). A
+// backend that predates statsplus#407 sends each empty score windows, which the
+// decoder drops so the market reads as unscored.
+const SHOOTING_MARKETS = ['FTA', 'FTM', 'FGM', 'FG2M'];
 const MARKET_CATEGORIES = new Set([
   'PTS',
   'REB',
@@ -60,7 +61,7 @@ const MARKET_CATEGORIES = new Set([
   'STL',
   'BLK',
   'STKS',
-  ...UNSCORED_MARKETS,
+  ...SHOOTING_MARKETS,
 ]);
 
 const DEFENSE_BASES = [
@@ -150,7 +151,27 @@ const REBOUND_TYPE_SLICES = new Set([
   'OffThreePtRebounds',
   'FTOffRebounds',
 ]);
-const TRADITIONAL_SLICES = new Set(['OPP_REB', 'OPP_TOV', 'OPP_STL', 'OPP_BLK']);
+const TRADITIONAL_MARKETS = {
+  OPP_REB: ['REB', 'PR', 'RA', 'PRA'],
+  OPP_TOV: ['TOV'],
+  OPP_STL: ['STL', 'STKS'],
+  OPP_BLK: ['BLK', 'STKS'],
+  OPP_PTS: ['PTS', 'PA', 'PR', 'PRA'],
+  OPP_AST: ['AST', 'PA', 'RA', 'PRA'],
+  OPP_FGM: ['FGM'],
+  OPP_FGA: ['FGA'],
+  OPP_FG3M: ['3PM'],
+  OPP_FG3A: ['FG3A'],
+  OPP_FTM: ['FTM'],
+  OPP_FTA: ['FTA'],
+};
+const TRADITIONAL_SLICES = new Set(Object.keys(TRADITIONAL_MARKETS));
+const DEFENSIVE_COLUMN_KEYS = ['OPP_TOV', 'OPP_STL', 'OPP_BLK'];
+// Stored windows hold only the defensive columns and OPP_REB, and none before
+// OPP_REB existed, so any other Traditional row may lack a window's cell.
+const OPTIONAL_TRADITIONAL_KEYS = new Set(
+  Object.keys(TRADITIONAL_MARKETS).filter((key) => !DEFENSIVE_COLUMN_KEYS.includes(key)),
+);
 const ADDITIVE_SHEET_BASES = new Set([
   'play_types',
   'assist_locations',
@@ -181,19 +202,33 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
   }
   if (base === 'assist_locations') return ['AST', 'PA', 'RA', 'PRA'];
   if (base === 'rebound_types') return ['REB', 'PR', 'RA', 'PRA'];
-  return {
-    OPP_REB: ['REB', 'PR', 'RA', 'PRA'],
-    OPP_TOV: ['TOV'],
-    OPP_STL: ['STL', 'STKS'],
-    OPP_BLK: ['BLK', 'STKS'],
-  }[statKey];
+  return TRADITIONAL_MARKETS[statKey];
+};
+
+// A statsplus#407 backend scores FGM and FG2M from the shot rows, so their make
+// rows also list those markets. Production still sends the shorter lists.
+const scoreCoverageSheetMarkets = (base, sliceKey, statKey) => {
+  if (base === 'shot_zones' && statKey === 'FGM') {
+    return THREE_POINT_SHOT_ZONE_SLICES.has(sliceKey)
+      ? ['PTS', '3PM', 'FGM', 'PA', 'PR', 'PRA']
+      : ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'];
+  }
+  if (base === 'shot_types') {
+    return {
+      FG2M: ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA'],
+      FG3M: ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA'],
+    }[statKey];
+  }
+  return undefined;
 };
 
 // `markets` lists the Stat Categories whose Matchup Score reads the row, combos
 // included (crf04/statsplus#117); every row's list is exact.
-const expectedSheetMarkets = (base, sliceKey, statKey) => [
-  canonicalSheetMarkets(base, sliceKey, statKey),
-];
+const expectedSheetMarkets = (base, sliceKey, statKey) =>
+  [
+    canonicalSheetMarkets(base, sliceKey, statKey),
+    scoreCoverageSheetMarkets(base, sliceKey, statKey),
+  ].filter(Boolean);
 
 const decodeSheetIdentity = (base, key) => {
   let sliceKey;
@@ -383,7 +418,7 @@ const decodeSheetWindow = (value, availability, decode, base, key) => {
     value === null &&
     availability.status === 'available' &&
     base === 'traditional' &&
-    key === 'OPP_REB'
+    OPTIONAL_TRADITIONAL_KEYS.has(key)
   ) {
     return null;
   }
@@ -454,8 +489,6 @@ const decodeTeam = (team, surfaceAvailability) => {
     ),
   };
 };
-
-const DEFENSIVE_COLUMN_KEYS = ['OPP_TOV', 'OPP_STL', 'OPP_BLK'];
 
 const decodeDefensiveColumnWindow = (value) => {
   if (!isRecord(value)) throw invalid();
@@ -754,7 +787,7 @@ function decodeProvenance(provenance, postedMarkets) {
 // market no DFS provider does, so nothing here is checked against the posted
 // markets. The contract (statsplus#185 section 4) makes the key required, with
 // {} for no books, so a missing key is rejected like any other malformed field.
-const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA', ...UNSCORED_MARKETS];
+const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA', ...SHOOTING_MARKETS];
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw invalid();
   return value;
@@ -988,9 +1021,10 @@ const decodeScoreWindow = (window, market, historical) => {
   const withheldBlend = historical && window.blend === null && missingInputs.length > 0;
   const validOffensiveBlend =
     componentCount === 0 ? window.blend === null : isRecord(window.blend) || withheldBlend;
-  if ((!defensive && !validOffensiveBlend) || (defensive && window.blend != null)) {
-    throw invalid();
-  }
+  // A defensive Blend restates its one component (statsplus#407); a backend
+  // that predates it omits the Blend.
+  const validDefensiveBlend = window.blend == null || componentCount === 1;
+  if (!(defensive ? validDefensiveBlend : validOffensiveBlend)) throw invalid();
   if (historical && isRecord(window.blend) && missingInputs.length > 0) throw invalid();
   // A withheld historical score has to say what it was missing, or the page has
   // nothing truthful to explain the gap with.
@@ -1003,7 +1037,7 @@ const decodeScoreWindow = (window, market, historical) => {
         decodeScoreCell(cell),
       ]),
     ),
-    blend: defensive || window.blend === null ? null : decodeScoreCell(window.blend),
+    blend: window.blend == null ? null : decodeScoreCell(window.blend),
     missingInputs,
   };
 };
@@ -1027,7 +1061,19 @@ function decodeScores(scores, statCategories, historical) {
       last15: decodeScoreWindow(scores[category].last_15, category, historical),
     },
   ]);
-  return Object.fromEntries(windows.filter(([category]) => !UNSCORED_MARKETS.includes(category)));
+  const unscored = ({ season, last15 }) =>
+    [season, last15].every(
+      (window) =>
+        Object.keys(window.components).length === 0 &&
+        window.blend === null &&
+        window.missingInputs.length === 0,
+    );
+  return Object.fromEntries(
+    windows.filter(
+      ([category, scoreWindows]) =>
+        !(SHOOTING_MARKETS.includes(category) && unscored(scoreWindows)),
+    ),
+  );
 }
 
 const decodeFreshnessSurface = (surface, surfaceName) => {

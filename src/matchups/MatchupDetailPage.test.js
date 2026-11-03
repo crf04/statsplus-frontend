@@ -636,6 +636,49 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   expect(sheetRowNames()).toEqual(['Turnovers forced']);
 });
 
+test('names every Traditional row a Last 15 window lacks', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const row = (key, markets, last15) => ({
+    key,
+    sliceKey: key,
+    label: key,
+    markets,
+    season: value(45, 12, 1.4, 25),
+    last15,
+  });
+  candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
+    row('OPP_PTS', ['PTS', 'PA', 'PR', 'PRA'], null),
+    row('OPP_AST', ['AST', 'PA', 'RA', 'PRA'], null),
+    row('OPP_FTM', ['FTM'], null),
+    row('OPP_TOV', ['TOV'], value(13.4, 5, 1.1, 22)),
+  ];
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.postedMarkets.push('AST', 'FTM', 'TOV');
+  lebron.statCategories.push('AST', 'FTM', 'TOV');
+  lebron.provenance.prizepicks.push('AST', 'FTM', 'TOV');
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+  await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'All' }));
+  expect(sheetRowNames()).toEqual(expect.arrayContaining(['Points', 'Assists', 'FT made']));
+  await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+
+  expect(
+    screen.getByText('Opponent points, assists, and FT made unavailable for Last 15.'),
+  ).toBeVisible();
+  expect(sheetRowNames()).toContain('Turnovers forced');
+  expect(sheetRowNames()).not.toContain('Assists');
+
+  await userEvent.click(screen.getByRole('button', { name: 'AST' }));
+  expect(screen.getByText('Opponent assists unavailable for Last 15.')).toBeVisible();
+  expect(sheetRowNames()).toEqual([]);
+  expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
+  expect(screen.queryByText(/unavailable for Last 15\./)).not.toBeInTheDocument();
+  expect(sheetRowNames()).toEqual(['Turnovers forced']);
+});
+
 test('renders governed traditional sheet rows without duplicate defensive columns', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.traditional = [
@@ -4108,6 +4151,101 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
     expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
       /By season scoring/,
     );
+  });
+});
+
+describe('Score Matrix coverage from a statsplus#407 backend', () => {
+  const cell = (value) => ({ value, thin: false });
+  const scored = (components, blend) => ({ components, blend });
+  const empty = { components: {}, blend: null, missing_inputs: [] };
+  const openCoverage = async () => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    const markets = ['PTS', 'TOV', 'FTA', 'FTM'];
+    const lebron = raw.players[0];
+    lebron.posted_markets = markets;
+    lebron.provenance = { dabble: markets };
+    lebron.lines = { dabble: { PTS: 25.5, TOV: 3.5, FTA: 6.5, FTM: 5.5 } };
+    lebron.scores = {
+      PTS: {
+        season: scored({ play_types: cell(0.08), traditional: cell(0.06) }, cell(0.07)),
+        last_15: scored({ play_types: cell(-0.03), traditional: cell(0.01) }, cell(-0.01)),
+      },
+      TOV: {
+        season: scored({ traditional: cell(0.05) }, cell(0.05)),
+        last_15: scored({ traditional: cell(0.02) }, cell(0.02)),
+      },
+      FTA: {
+        season: scored({ traditional: cell(-0.11) }, cell(-0.11)),
+        last_15: scored({ traditional: cell(-0.09) }, cell(-0.09)),
+      },
+      FTM: { season: empty, last_15: empty },
+    };
+    raw.league.defense_sheet.traditional = [
+      {
+        key: 'OPP_FTA',
+        season: { average_allowed_per_48: 24, sigma: 2 },
+        last_15: { average_allowed_per_48: 24.5, sigma: 2.2 },
+      },
+    ];
+    raw.teams[1].defense_sheet.traditional = [
+      {
+        key: 'OPP_FTA',
+        label: 'OPP FTA',
+        markets: ['FTA'],
+        season: {
+          allowed_per_48: 21.4,
+          percent_vs_league_average: -11,
+          sigma_deviation: -1.3,
+          rank: 3,
+        },
+        last_15: {
+          allowed_per_48: 22.3,
+          percent_vs_league_average: -9,
+          sigma_deviation: -1,
+          rank: 6,
+        },
+      },
+    ];
+    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+
+  test('scores PTS with a Traditional cell, TOV with a Blend and FTA from Traditional', async () => {
+    await openCoverage();
+
+    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+    expect(
+      within(matrix)
+        .getAllByRole('row')
+        .map((row) =>
+          within(row)
+            .getAllByRole(/^(columnheader|rowheader|cell)$/)
+            .map((entry) => entry.textContent),
+        ),
+    ).toEqual([
+      ['Market', 'Play types', 'Traditional', 'Blend'],
+      ['PTS', '+8%', '+6%', '+7%'],
+      ['TOV', '—', '+5%', '+5%'],
+      ['FTA', '—', '-11%', '-11%'],
+    ]);
+    expect(screen.getByRole('region', { name: 'Score Matrix' })).toHaveTextContent(
+      'No Matchup Score is computed for FTM.',
+    );
+  });
+
+  test('lists the FT attempts row on the FTA Defense Sheet', async () => {
+    await openCoverage();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+    const sheet = screen.getByRole('region', { name: 'What BOS allows' });
+    expect(within(sheet).getByText('FT attempts')).toBeVisible();
+    expect(within(sheet).queryByText(/has no Matchup Score/)).not.toBeInTheDocument();
   });
 });
 

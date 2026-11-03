@@ -180,8 +180,9 @@ function MatchupSummary({ matchup, now }) {
 
 // A score is unavailable, not zero, when the contract could not compute it.
 // A Blend withheld alongside named missing inputs is an incomplete score, so
-// no single component may stand in for it. A defensive category has no Blend
-// by contract and names nothing missing, so its component is the whole score.
+// no single component may stand in for it. A defensive category from a backend
+// that predates its Blend names nothing missing, so its component is the whole
+// score.
 // The cell keeps its `thin` flag, which the rail shows as a dotted underline.
 const scoreFor = (player, stat, windowKey) => {
   const score = player.scores[stat]?.[windowKey];
@@ -733,6 +734,14 @@ function SheetCell({ row, windowKey }) {
   );
 }
 
+const missingRowNames = (rows) =>
+  new Intl.ListFormat('en').format(
+    rows.map((row) => {
+      const name = sliceName(row.sliceKey);
+      return /^[A-Z][a-z]/.test(name) ? name.toLowerCase() : name;
+    }),
+  );
+
 function DefenseSheet({
   team,
   players,
@@ -770,14 +779,12 @@ function DefenseSheet({
         relevant:
           marketRows.length > 0 ||
           (BASE_MARKETS[base] ? market === 'All' || BASE_MARKETS[base].includes(market) : false),
-        legacyUnavailableRow: null,
+        missingRows: [],
         groups: [],
       };
     }
-    const legacyUnavailableRow =
-      base === 'traditional'
-        ? marketRows.find((row) => row.key === 'OPP_REB' && row[windowKey] === null) || null
-        : null;
+    const missingRows =
+      base === 'traditional' ? marketRows.filter((row) => row[windowKey] === null) : [];
     const lead = (group) => {
       const values = group.rows
         .filter(inMarket)
@@ -803,12 +810,12 @@ function DefenseSheet({
         if ((a.lead === null) !== (b.lead === null)) return a.lead === null ? 1 : -1;
         return (b.lead ?? 0) - (a.lead ?? 0);
       });
-    return { base, availability, relevant: marketRows.length > 0, legacyUnavailableRow, groups };
+    return { base, availability, relevant: marketRows.length > 0, missingRows, groups };
   });
   const visibleCount = sections.reduce((total, section) => total + section.groups.length, 0);
   const hasNamedUnavailable = sections.some(
     (section) =>
-      section.legacyUnavailableRow ||
+      section.missingRows.length > 0 ||
       (section.availability.status !== 'available' && section.relevant),
   );
   return (
@@ -835,7 +842,7 @@ function DefenseSheet({
         )
       )}
       <div className="sheet-sections">
-        {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
+        {sections.map(({ base, availability, relevant, missingRows, groups }) => {
           const label = BASE_LABELS[base];
           const season = trailingSeason(
             availability.season ?? windowSection?.season,
@@ -875,7 +882,7 @@ function DefenseSheet({
               </section>
             ) : null;
           }
-          if (!groups.length && !legacyUnavailableRow) return null;
+          if (!groups.length && !missingRows.length) return null;
           const columns = BASE_COLUMNS[base];
           return (
             <section
@@ -969,8 +976,10 @@ function DefenseSheet({
                   ))}
                 </div>
               )}
-              {legacyUnavailableRow && (
-                <p className="honest-empty">Opponent rebounds unavailable for {windowName}.</p>
+              {missingRows.length > 0 && (
+                <p className="honest-empty">
+                  Opponent {missingRowNames(missingRows)} unavailable for {windowName}.
+                </p>
               )}
             </section>
           );

@@ -1,0 +1,920 @@
+{
+  "game": {
+    "game_id": "0022500584",
+    "away_team": {
+      "team_id": 1610612747,
+      "tricode": "LAL",
+      "name": "Los Angeles Lakers",
+      "targetable_player_count": 1
+    },
+    "home_team": {
+      "team_id": 1610612738,
+      "tricode": "BOS",
+      "name": "Boston Celtics",
+      "targetable_player_count": 0
+    },
+    "scheduled_at": "2026-01-15T20:00:00+00:00",
+    "status": { "state": "scheduled", "label": "Scheduled" },
+    "classification": null,
+    "preseason": false
+  },
+  "experience": {
+    "mode": "current",
+    "player_source": "player_pool",
+    "sections": {
+      "schedule": {
+        "status": "available",
+        "source": "event_catalog",
+        "context": "current_season_catalog",
+        "unavailable_reason": null,
+        "collected_at": "2026-01-15T10:00:00+00:00"
+      },
+      "participants": {
+        "status": "available",
+        "source": "player_pool",
+        "context": "posted_markets",
+        "unavailable_reason": null
+      },
+      "season_defense": {
+        "status": "available",
+        "source": "team_matchup_publication",
+        "context": "pregame",
+        "unavailable_reason": null,
+        "season": "2025-26",
+        "window_games": null
+      },
+      "last_15_defense": {
+        "status": "available",
+        "source": "team_matchup_publication",
+        "context": "pregame",
+        "unavailable_reason": null,
+        "season": "2025-26",
+        "window_games": null
+      },
+      "injuries": {
+        "status": "unavailable",
+        "source": "rotowire",
+        "context": "current",
+        "unavailable_reason": "disabled"
+      }
+    }
+  },
+  "as_of": {
+    "season": "2025-26",
+    "season_defense": "2026-01-15",
+    "last_15_defense": "2026-01-15",
+    "player_diets": "2026-01-15"
+  },
+  "league": {
+    "surface_availability": {
+      "play_types": {
+        "season": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        },
+        "last_15": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        }
+      },
+      "shot_zones": {
+        "season": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        },
+        "last_15": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        }
+      },
+      "shot_types": {
+        "season": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        },
+        "last_15": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        }
+      },
+      "assist_locations": {
+        "season": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        },
+        "last_15": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        }
+      },
+      "traditional": {
+        "season": {
+          "status": "available",
+          "unavailable_reason": null,
+          "season": "2025-26",
+          "window_games": null
+        },
+        "last_15": {
+          "status": "available",
+          "unavailable_reason": null,
+          "season": "2025-26",
+          "window_games": null
+        }
+      },
+      "rebound_types": {
+        "season": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        },
+        "last_15": {
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "season": null,
+          "window_games": null
+        }
+      }
+    },
+    "defense_sheet": {
+      "play_types": [],
+      "shot_zones": [],
+      "shot_types": [],
+      "assist_locations": [],
+      "traditional": [
+        {
+          "key": "OPP_AST",
+          "season": { "average_allowed_per_48": 25.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_BLK",
+          "season": { "average_allowed_per_48": 2.0, "sigma": 1.0 },
+          "last_15": { "average_allowed_per_48": 2.0, "sigma": 1.0 }
+        },
+        {
+          "key": "OPP_FG3A",
+          "season": { "average_allowed_per_48": 30.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_FG3M",
+          "season": { "average_allowed_per_48": 12.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_FGA",
+          "season": { "average_allowed_per_48": 80.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_FGM",
+          "season": { "average_allowed_per_48": 40.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_FTA",
+          "season": { "average_allowed_per_48": 20.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_FTM",
+          "season": { "average_allowed_per_48": 16.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_PTS",
+          "season": { "average_allowed_per_48": 110.0, "sigma": 1.0 },
+          "last_15": null
+        },
+        {
+          "key": "OPP_REB",
+          "season": { "average_allowed_per_48": 40.0, "sigma": 1.0 },
+          "last_15": { "average_allowed_per_48": 40.0, "sigma": 1.0 }
+        },
+        {
+          "key": "OPP_STL",
+          "season": { "average_allowed_per_48": 5.0, "sigma": 1.0 },
+          "last_15": { "average_allowed_per_48": 5.0, "sigma": 1.0 }
+        },
+        {
+          "key": "OPP_TOV",
+          "season": { "average_allowed_per_48": 10.0, "sigma": 1.0 },
+          "last_15": { "average_allowed_per_48": 10.0, "sigma": 1.0 }
+        }
+      ],
+      "rebound_types": []
+    },
+    "defensive_columns": {
+      "OPP_TOV": {
+        "season": { "average_per_48": 10.0, "sigma": 1.0 },
+        "last_15": { "average_per_48": 10.0, "sigma": 1.0 }
+      },
+      "OPP_STL": {
+        "season": { "average_per_48": 5.0, "sigma": 1.0 },
+        "last_15": { "average_per_48": 5.0, "sigma": 1.0 }
+      },
+      "OPP_BLK": {
+        "season": { "average_per_48": 2.0, "sigma": 1.0 },
+        "last_15": { "average_per_48": 2.0, "sigma": 1.0 }
+      }
+    }
+  },
+  "teams": [
+    {
+      "team_id": 1610612747,
+      "tricode": "LAL",
+      "name": "Los Angeles Lakers",
+      "defense_sheet": {
+        "play_types": [],
+        "shot_zones": [],
+        "shot_types": [],
+        "assist_locations": [],
+        "traditional": [
+          {
+            "key": "OPP_AST",
+            "label": "OPP AST",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "allowed_per_48": 25.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_BLK",
+            "label": "OPP BLK",
+            "markets": ["BLK", "STKS"],
+            "season": {
+              "allowed_per_48": 2.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": {
+              "allowed_per_48": 2.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            }
+          },
+          {
+            "key": "OPP_FG3A",
+            "label": "OPP FG3A",
+            "markets": ["FG3A"],
+            "season": {
+              "allowed_per_48": 30.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FG3M",
+            "label": "OPP FG3M",
+            "markets": ["3PM"],
+            "season": {
+              "allowed_per_48": 12.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FGA",
+            "label": "OPP FGA",
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 80.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FGM",
+            "label": "OPP FGM",
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 40.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FTA",
+            "label": "OPP FTA",
+            "markets": ["FTA"],
+            "season": {
+              "allowed_per_48": 20.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FTM",
+            "label": "OPP FTM",
+            "markets": ["FTM"],
+            "season": {
+              "allowed_per_48": 16.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_PTS",
+            "label": "OPP PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 110.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_REB",
+            "label": "OPP REB",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "allowed_per_48": 40.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": {
+              "allowed_per_48": 40.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            }
+          },
+          {
+            "key": "OPP_STL",
+            "label": "OPP STL",
+            "markets": ["STL", "STKS"],
+            "season": {
+              "allowed_per_48": 5.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": {
+              "allowed_per_48": 5.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            }
+          },
+          {
+            "key": "OPP_TOV",
+            "label": "OPP TOV",
+            "markets": ["TOV"],
+            "season": {
+              "allowed_per_48": 10.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            },
+            "last_15": {
+              "allowed_per_48": 10.0,
+              "percent_vs_league_average": 0.0,
+              "sigma_deviation": 0.0,
+              "rank": 15
+            }
+          }
+        ],
+        "rebound_types": []
+      },
+      "defensive_columns": {
+        "OPP_TOV": {
+          "season": { "per_48": 10.0, "percent_vs_league_average": 0.0 },
+          "last_15": { "per_48": 10.0, "percent_vs_league_average": 0.0 }
+        },
+        "OPP_STL": {
+          "season": { "per_48": 5.0, "percent_vs_league_average": 0.0 },
+          "last_15": { "per_48": 5.0, "percent_vs_league_average": 0.0 }
+        },
+        "OPP_BLK": {
+          "season": { "per_48": 2.0, "percent_vs_league_average": 0.0 },
+          "last_15": { "per_48": 2.0, "percent_vs_league_average": 0.0 }
+        }
+      }
+    },
+    {
+      "team_id": 1610612738,
+      "tricode": "BOS",
+      "name": "Boston Celtics",
+      "defense_sheet": {
+        "play_types": [],
+        "shot_zones": [],
+        "shot_types": [],
+        "assist_locations": [],
+        "traditional": [
+          {
+            "key": "OPP_AST",
+            "label": "OPP AST",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "allowed_per_48": 20.0,
+              "percent_vs_league_average": -20.0,
+              "sigma_deviation": -5.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_BLK",
+            "label": "OPP BLK",
+            "markets": ["BLK", "STKS"],
+            "season": {
+              "allowed_per_48": 3.0,
+              "percent_vs_league_average": 50.0,
+              "sigma_deviation": 1.0,
+              "rank": 16
+            },
+            "last_15": {
+              "allowed_per_48": 3.0,
+              "percent_vs_league_average": 50.0,
+              "sigma_deviation": 1.0,
+              "rank": 16
+            }
+          },
+          {
+            "key": "OPP_FG3A",
+            "label": "OPP FG3A",
+            "markets": ["FG3A"],
+            "season": {
+              "allowed_per_48": 33.0,
+              "percent_vs_league_average": 10.0,
+              "sigma_deviation": 3.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FG3M",
+            "label": "OPP FG3M",
+            "markets": ["3PM"],
+            "season": {
+              "allowed_per_48": 15.0,
+              "percent_vs_league_average": 25.0,
+              "sigma_deviation": 3.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FGA",
+            "label": "OPP FGA",
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 88.0,
+              "percent_vs_league_average": 10.0,
+              "sigma_deviation": 8.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FGM",
+            "label": "OPP FGM",
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 42.0,
+              "percent_vs_league_average": 5.0,
+              "sigma_deviation": 2.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FTA",
+            "label": "OPP FTA",
+            "markets": ["FTA"],
+            "season": {
+              "allowed_per_48": 18.0,
+              "percent_vs_league_average": -10.0,
+              "sigma_deviation": -2.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_FTM",
+            "label": "OPP FTM",
+            "markets": ["FTM"],
+            "season": {
+              "allowed_per_48": 20.0,
+              "percent_vs_league_average": 25.0,
+              "sigma_deviation": 4.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_PTS",
+            "label": "OPP PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 121.0,
+              "percent_vs_league_average": 10.0,
+              "sigma_deviation": 11.0,
+              "rank": 16
+            },
+            "last_15": null
+          },
+          {
+            "key": "OPP_REB",
+            "label": "OPP REB",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "allowed_per_48": 44.0,
+              "percent_vs_league_average": 10.0,
+              "sigma_deviation": 4.0,
+              "rank": 16
+            },
+            "last_15": {
+              "allowed_per_48": 44.0,
+              "percent_vs_league_average": 10.0,
+              "sigma_deviation": 4.0,
+              "rank": 16
+            }
+          },
+          {
+            "key": "OPP_STL",
+            "label": "OPP STL",
+            "markets": ["STL", "STKS"],
+            "season": {
+              "allowed_per_48": 4.0,
+              "percent_vs_league_average": -20.0,
+              "sigma_deviation": -1.0,
+              "rank": 16
+            },
+            "last_15": {
+              "allowed_per_48": 4.0,
+              "percent_vs_league_average": -20.0,
+              "sigma_deviation": -1.0,
+              "rank": 16
+            }
+          },
+          {
+            "key": "OPP_TOV",
+            "label": "OPP TOV",
+            "markets": ["TOV"],
+            "season": {
+              "allowed_per_48": 12.0,
+              "percent_vs_league_average": 20.0,
+              "sigma_deviation": 2.0,
+              "rank": 16
+            },
+            "last_15": {
+              "allowed_per_48": 12.0,
+              "percent_vs_league_average": 20.0,
+              "sigma_deviation": 2.0,
+              "rank": 16
+            }
+          }
+        ],
+        "rebound_types": []
+      },
+      "defensive_columns": {
+        "OPP_TOV": {
+          "season": { "per_48": 12.0, "percent_vs_league_average": 20.0 },
+          "last_15": { "per_48": 12.0, "percent_vs_league_average": 20.0 }
+        },
+        "OPP_STL": {
+          "season": { "per_48": 4.0, "percent_vs_league_average": -20.0 },
+          "last_15": { "per_48": 4.0, "percent_vs_league_average": -20.0 }
+        },
+        "OPP_BLK": {
+          "season": { "per_48": 3.0, "percent_vs_league_average": 50.0 },
+          "last_15": { "per_48": 3.0, "percent_vs_league_average": 50.0 }
+        }
+      }
+    }
+  ],
+  "players": [
+    {
+      "canonical_id": 2544,
+      "name": "LeBron James",
+      "team_id": 1610612747,
+      "tricode": "LAL",
+      "player_source": "player_pool",
+      "stat_categories": ["PTS", "TOV", "STL", "BLK", "STKS", "FGM", "FG2M", "FTA", "FTM"],
+      "focal_game_line": null,
+      "posted_markets": ["PTS", "TOV", "STL", "BLK", "STKS", "FGM", "FG2M", "FTA", "FTM"],
+      "provenance": {
+        "prizepicks": ["PTS", "TOV", "STL", "BLK", "STKS", "FGM", "FG2M", "FTA", "FTM"]
+      },
+      "lines": {},
+      "line_prices": {},
+      "season_scoring": 20.0,
+      "last_five_games": [],
+      "season_averages": { "PTS": 20.0, "STL": 1.0, "BLK": 1.0 },
+      "last_10_minutes": [35.0],
+      "diet_shares": {
+        "assist_locations": [],
+        "play_types": [],
+        "shot_types": [],
+        "shot_zones": [],
+        "rebound_types": []
+      },
+      "diet_thin": {
+        "assist_locations": true,
+        "play_types": true,
+        "shot_types": true,
+        "shot_zones": true,
+        "rebound_types": true
+      },
+      "scores": {
+        "PTS": {
+          "season": {
+            "components": { "traditional": { "value": 0.1, "thin": false } },
+            "blend": { "value": 0.1, "thin": false },
+            "missing_inputs": [
+              "team_defense:play_types",
+              "team_defense:shot_zones",
+              "team_defense:shot_types"
+            ]
+          },
+          "last_15": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": [
+              "team_defense:play_types",
+              "team_defense:shot_zones",
+              "team_defense:shot_types",
+              "team_defense:traditional"
+            ]
+          }
+        },
+        "TOV": {
+          "season": {
+            "components": { "traditional": { "value": 0.2, "thin": false } },
+            "blend": { "value": 0.2, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": { "traditional": { "value": 0.2, "thin": false } },
+            "blend": { "value": 0.2, "thin": false },
+            "missing_inputs": []
+          }
+        },
+        "STL": {
+          "season": {
+            "components": { "traditional": { "value": -0.2, "thin": false } },
+            "blend": { "value": -0.2, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": { "traditional": { "value": -0.2, "thin": false } },
+            "blend": { "value": -0.2, "thin": false },
+            "missing_inputs": []
+          }
+        },
+        "BLK": {
+          "season": {
+            "components": { "traditional": { "value": 0.5, "thin": false } },
+            "blend": { "value": 0.5, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": { "traditional": { "value": 0.5, "thin": false } },
+            "blend": { "value": 0.5, "thin": false },
+            "missing_inputs": []
+          }
+        },
+        "STKS": {
+          "season": {
+            "components": { "traditional": { "value": 0.15, "thin": false } },
+            "blend": { "value": 0.15, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": { "traditional": { "value": 0.15, "thin": false } },
+            "blend": { "value": 0.15, "thin": false },
+            "missing_inputs": []
+          }
+        },
+        "FGM": {
+          "season": {
+            "components": { "traditional": { "value": 0.05, "thin": false } },
+            "blend": { "value": 0.05, "thin": false },
+            "missing_inputs": ["team_defense:shot_zones", "team_defense:shot_types"]
+          },
+          "last_15": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": [
+              "team_defense:shot_zones",
+              "team_defense:shot_types",
+              "team_defense:traditional"
+            ]
+          }
+        },
+        "FG2M": {
+          "season": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": ["team_defense:shot_zones", "team_defense:shot_types"]
+          },
+          "last_15": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": ["team_defense:shot_zones", "team_defense:shot_types"]
+          }
+        },
+        "FTA": {
+          "season": {
+            "components": { "traditional": { "value": -0.1, "thin": false } },
+            "blend": { "value": -0.1, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": ["team_defense:traditional"]
+          }
+        },
+        "FTM": {
+          "season": {
+            "components": { "traditional": { "value": 0.25, "thin": false } },
+            "blend": { "value": 0.25, "thin": false },
+            "missing_inputs": []
+          },
+          "last_15": {
+            "components": {},
+            "blend": null,
+            "missing_inputs": ["team_defense:traditional"]
+          }
+        }
+      },
+      "injury_badge_ref": null,
+      "book_lines": {}
+    }
+  ],
+  "injuries": {
+    "status": "unavailable",
+    "unavailable_reason": "disabled",
+    "retrieved_at": null,
+    "source": "nba_official",
+    "source_url": "https://official.nba.com/nba-injury-report-2025-26-season/",
+    "teams": []
+  },
+  "freshness": {
+    "schedule": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00" },
+    "pool": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00", "providers": {} },
+    "stats": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00" },
+    "team_matchups": {
+      "season": {
+        "status": "unavailable",
+        "retrieved_at": "2026-01-15T10:00:00+00:00",
+        "surfaces": {
+          "play_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "shot_zones": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "shot_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "assist_locations": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "traditional": {
+            "status": "available",
+            "unavailable_reason": null,
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "rebound_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          }
+        }
+      },
+      "last_15": {
+        "status": "unavailable",
+        "retrieved_at": "2026-01-15T10:00:00+00:00",
+        "surfaces": {
+          "play_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "shot_zones": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "shot_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "assist_locations": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "traditional": {
+            "status": "available",
+            "unavailable_reason": null,
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          },
+          "rebound_types": {
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported",
+            "retrieved_at": "2026-01-15T10:00:00+00:00"
+          }
+        }
+      }
+    },
+    "player_diets": {
+      "status": "missing",
+      "retrieved_at": "2026-01-15T10:00:00+00:00",
+      "surfaces": {
+        "assist_locations": {
+          "status": "missing",
+          "unavailable_reason": "provider_no_observation",
+          "retrieved_at": "2026-01-15T10:00:00+00:00"
+        },
+        "play_types": {
+          "status": "missing",
+          "unavailable_reason": "provider_no_observation",
+          "retrieved_at": "2026-01-15T10:00:00+00:00"
+        },
+        "shot_types": {
+          "status": "missing",
+          "unavailable_reason": "provider_no_observation",
+          "retrieved_at": "2026-01-15T10:00:00+00:00"
+        },
+        "shot_zones": {
+          "status": "missing",
+          "unavailable_reason": "provider_no_observation",
+          "retrieved_at": "2026-01-15T10:00:00+00:00"
+        },
+        "rebound_types": {
+          "status": "missing",
+          "unavailable_reason": "provider_no_observation",
+          "retrieved_at": "2026-01-15T10:00:00+00:00"
+        }
+      }
+    },
+    "player_game_logs": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00" },
+    "injuries": { "status": "unavailable", "retrieved_at": null }
+  },
+  "provenance": {
+    "generation": [],
+    "sources": {
+      "schedule": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00" },
+      "pool": { "status": "fresh", "retrieved_at": "2026-01-15T10:00:00+00:00" },
+      "injuries": { "status": "unavailable", "retrieved_at": null }
+    }
+  },
+  "trailing": [],
+  "coverage": {
+    "mixed_cutoff": false,
+    "mixed_freshness": false,
+    "coverage_cutoffs": [],
+    "source": "database"
+  }
+}

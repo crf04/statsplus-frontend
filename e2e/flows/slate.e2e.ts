@@ -139,6 +139,7 @@ signedInTest(
     await expect(
       screen.getByText(/player pool is unavailable; no targetable players/i),
     ).toBeVisible();
+    await screen.getByRole('button', /· details$/).tap();
     await expect(screen.getByText('prizepicks pool is stale-served — as of 3h ago')).toBeVisible();
     await expect(
       screen.getByLabel('0 targetable players, LAL 0, BOS 0', { exact: false }),
@@ -178,6 +179,7 @@ signedInTest(
 
     await app.open('/matchups?date=2026-01-15');
 
+    await screen.getByRole('button', /· details$/).tap();
     const freshness = screen.getByRole('group', 'Data freshness');
     await expect(freshness).toBeVisible();
     await expect(screen.getByText('Schedule is stale — as of 31h ago')).toBeVisible();
@@ -214,11 +216,14 @@ signedInTest(
     });
 
     await app.open('/matchups?date=2026-01-15');
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
     ).toBeVisible();
 
     await screen.getByLabel('Slate date').fill('2026-01-16');
+    // A new date remounts the status line, folded again.
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
     ).toBeVisible();

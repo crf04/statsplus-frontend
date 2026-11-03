@@ -33,41 +33,56 @@ const surfaceStatusText = (name, surface, presentation, now) => {
   return `${name} is ${presentation.status}${age}${thresholdNote}`;
 };
 
-function SurfaceFreshness({ name, surface, surfaceName, now, presentation }) {
-  const effectivePresentation =
-    presentation || getSurfaceFreshnessPresentation(surface, surfaceName, now);
-  return (
-    <span className={effectivePresentation.warning ? 'freshness-warning' : undefined}>
-      {surfaceStatusText(name, surface, effectivePresentation, now)}
-    </span>
-  );
-}
-
+/*
+ * Every surface the slate reports, folded to one line: the line names only the
+ * surfaces that are not fresh, and the full list with each age opens on request.
+ */
 function Freshness({ freshness, now, poolPresentation }) {
+  const [open, setOpen] = useState(false);
+  const surfaces = [
+    {
+      name: 'Schedule',
+      surface: freshness.schedule,
+      presentation: getSurfaceFreshnessPresentation(freshness.schedule, 'schedule', now),
+    },
+    {
+      name: 'Player pool',
+      surface: freshness.pool,
+      presentation:
+        poolPresentation || getSurfaceFreshnessPresentation(freshness.pool, 'pool', now),
+    },
+    ...freshness.pool.providers.map((provider) => ({
+      name: `${provider.name} pool`,
+      surface: provider,
+      presentation: getSurfaceFreshnessPresentation(provider, 'pool', now),
+    })),
+  ];
+  const notable = surfaces.filter(({ presentation }) => presentation.status !== 'fresh');
+  const warning = notable.some(({ presentation }) => presentation.warning);
+  const summary = notable.length
+    ? notable.map(({ name, presentation }) => `${name} ${presentation.status}`).join(' · ')
+    : 'All data fresh';
+
   return (
-    <div className="freshness" role="group" aria-label="Data freshness">
-      <SurfaceFreshness
-        name="Schedule"
-        surface={freshness.schedule}
-        surfaceName="schedule"
-        now={now}
-      />
-      <SurfaceFreshness
-        name="Player pool"
-        surface={freshness.pool}
-        surfaceName="pool"
-        now={now}
-        presentation={poolPresentation}
-      />
-      {freshness.pool.providers.map((provider) => (
-        <SurfaceFreshness
-          key={provider.name}
-          name={`${provider.name} pool`}
-          surface={provider}
-          surfaceName="pool"
-          now={now}
-        />
-      ))}
+    <div className="freshness-line">
+      <button
+        type="button"
+        className={warning ? 'freshness-toggle freshness-warning' : 'freshness-toggle'}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {summary}
+        <span className="freshness-toggle-hint">{open ? ' · hide' : ' · details'}</span>
+      </button>
+      {open && (
+        <div className="freshness" role="group" aria-label="Data freshness">
+          {surfaces.map(({ name, surface, presentation }) => (
+            <span key={name} className={presentation.warning ? 'freshness-warning' : undefined}>
+              {surfaceStatusText(name, surface, presentation, now)}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

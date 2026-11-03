@@ -272,6 +272,26 @@ test('an empty slate with no neighbours, or from an older backend, offers no jum
   expect(screen.queryByRole('button', { name: /game day/ })).toBeNull();
 });
 
+// The status line folds every surface's age behind its details toggle.
+const openFreshness = async () =>
+  fireEvent.click(await screen.findByRole('button', { name: /· details$/ }));
+
+test('folds freshness to one line naming only the surfaces that are not fresh', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
+      <SlatePage />
+    </MemoryRouter>,
+  );
+
+  const toggle = await screen.findByRole('button', {
+    name: 'Player pool stale-served · underdog pool missing · details',
+  });
+  expect(toggle).toHaveClass('freshness-warning');
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByRole('group', { name: 'Data freshness' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/schedule/i)).not.toBeInTheDocument();
+});
+
 test('shows an age for every available freshness surface and names degraded surfaces', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups?date=2026-01-15']}>
@@ -279,6 +299,7 @@ test('shows an age for every available freshness surface and names degraded surf
     </MemoryRouter>,
   );
 
+  await openFreshness();
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
   expect(screen.getByRole('group', { name: 'Data freshness' })).toBeVisible();
   expect(screen.getByText('Player pool is stale-served — as of 30m ago')).toBeVisible();
@@ -298,6 +319,7 @@ test('updates freshness ages each minute and cleans up its clock', async () => {
     </MemoryRouter>,
   );
 
+  await openFreshness();
   expect(await screen.findByText('Schedule is fresh — as of 10m ago')).toBeVisible();
   expect(jest.getTimerCount()).toBe(1);
   act(() => jest.advanceTimersByTime(60000));
@@ -321,6 +343,7 @@ test('warns when a fresh schedule crosses the 30h bar without refetching', async
     </MemoryRouter>,
   );
 
+  await openFreshness();
   const fresh = await screen.findByText(/schedule is fresh/i);
   expect(fresh).not.toHaveClass('freshness-warning');
   act(() => jest.advanceTimersByTime(120000));
@@ -346,6 +369,7 @@ test('labels a fresh pool snapshot stale when it crosses the 15m bar', async () 
     </MemoryRouter>,
   );
 
+  await openFreshness();
   const fresh = await screen.findByText('Player pool is fresh — as of 14m ago');
   expect(fresh).not.toHaveClass('freshness-warning');
   expect(screen.getByText('Targetable counts use the current player pool.')).toBeVisible();
@@ -379,6 +403,7 @@ test('holds a prizepicks entry to a 90m bar and every other provider to 15m', as
     </MemoryRouter>,
   );
 
+  await openFreshness();
   // Noon: prizepicks is 75m old, underdog 10m.
   const prizepicks = await screen.findByText('prizepicks pool is fresh — as of 1h ago');
   expect(prizepicks).not.toHaveClass('freshness-warning');
@@ -422,6 +447,7 @@ test('holds a pool that only prizepicks has read to its 90m bar', async () => {
     </MemoryRouter>,
   );
 
+  await openFreshness();
   // Noon: the pool is 75m old, past the 15m bar but inside prizepicks's 90m.
   const pool = await screen.findByText('Player pool is fresh — as of 1h ago');
   expect(pool).not.toHaveClass('freshness-warning');
@@ -534,6 +560,7 @@ test('shows every game of a closing slate with a neutral note, not a warning', a
     </MemoryRouter>,
   );
 
+  await openFreshness();
   expect(await screen.findByText('Lines closed at tip; showing closing lines.')).toBeVisible();
   expect(
     screen.getByRole('link', { name: /^BOS @ DET, .*19 targetable players, BOS 9, DET 10/ }),

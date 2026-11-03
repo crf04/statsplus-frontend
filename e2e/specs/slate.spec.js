@@ -78,6 +78,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page.locator('.slate-pip')).toHaveCount(9);
   await expect(page.getByText('NBA Paris Game')).toBeVisible();
   await expect(page.getByText('Preseason')).toHaveCount(0);
+  await page.getByRole('button', { name: /· details$/ }).click();
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
@@ -132,6 +133,7 @@ test('a slate pool only PrizePicks has read is fresh to 90 minutes, then stale',
   });
 
   await page.goto('/matchups?date=2026-01-15');
+  await page.getByRole('button', { name: /· details$/ }).click();
 
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();

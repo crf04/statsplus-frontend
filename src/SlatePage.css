@@ -125,19 +125,18 @@
   outline-offset: -2px;
 }
 
-/* One status line rather than a stacked block: every freshness surface the
-   slate reports still states itself, but the slate itself starts higher up the
-   page. The line only grows when a surface is degraded. */
+/* One status line rather than a stacked block: the line names only the
+   degraded freshness surfaces, and every surface's age opens beneath it. */
 
 .slate-status {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 18px;
-  margin-top: 18px;
+  margin-top: 14px;
   border-top: 1px solid var(--ct-line);
   border-bottom: 1px solid var(--ct-line);
-  padding: 10px 0;
+  padding: 8px 0;
   font-family: var(--ct-mono);
   font-size: 0.72rem;
 }
@@ -166,8 +165,35 @@
   color: var(--ct-dim);
 }
 
+.freshness-line {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+.freshness-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.72rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshness-toggle-hint {
+  color: var(--ct-dim);
+}
+
+.freshness-toggle:hover .freshness-toggle-hint {
+  color: var(--ct-gold);
+}
+
 .freshness {
   display: flex;
+  flex-basis: 100%;
   flex-wrap: wrap;
   gap: 4px 18px;
   color: var(--ct-dim);
@@ -179,28 +205,12 @@
   color: var(--ct-gold);
 }
 
-.pool-summary {
-  margin: 14px 0 6px;
-  border-left: 2px solid var(--ct-line-strong);
-  padding: 2px 0 2px 14px;
-}
-
-.pool-summary h2,
-.pool-summary p {
-  margin: 0;
-}
-
-.pool-summary h2 {
-  margin-bottom: 3px;
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.pool-summary p {
-  font-size: 0.84rem;
+.freshness-note {
+  flex-basis: 100%;
+  margin: 0 0 2px;
+  color: var(--ct-text);
+  font-family: var(--ct-sans);
+  font-size: 0.8rem;
 }
 
 /* ---------- the board ---------- */
@@ -468,9 +478,12 @@
     gap: 5px;
   }
 
+  /* Stacked, the note's full-width basis would become a full height and push
+     the ages into a second column off the screen. */
   .freshness {
     align-items: flex-start;
     flex-direction: column;
+    flex-wrap: nowrap;
     gap: 4px;
   }
 

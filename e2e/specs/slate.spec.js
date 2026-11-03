@@ -78,9 +78,10 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await expect(page.locator('.slate-pip')).toHaveCount(9);
   await expect(page.getByText('NBA Paris Game')).toBeVisible();
   await expect(page.getByText('Preseason')).toHaveCount(0);
+  await page.getByRole('button', { name: /· details$/ }).click();
   await expect(page.getByText(/schedule is fresh.*as of/i)).toBeVisible();
   const freshness = page.getByRole('group', { name: 'Data freshness' });
-  await expect(freshness.getByText(/player pool is stale-served/i)).toBeVisible();
+  await expect(freshness.getByText(/player pool is stale-served —/i)).toBeVisible();
   await expect(freshness.getByText(/underdog pool is missing/i)).toBeVisible();
   // Both were read 20 minutes ago: PrizePicks is polled hourly and is fresh for 90, Dabble for 15.
   await expect(freshness.getByText('prizepicks pool is fresh — as of 20m ago')).toBeVisible();
@@ -102,6 +103,7 @@ test('@critical authenticated user opens a slate and navigates dates', async ({
   await page.getByLabel('Slate date').fill('2026-01-10');
   await expect(page).toHaveURL(/date=2026-01-10/);
   await expect(page.getByRole('heading', { name: 'NYK @ MIL' })).toBeVisible();
+  await page.getByRole('button', { name: /· details$/ }).click();
   await expect(
     page.getByText(/current player pool is not displayed for historical dates/i),
   ).toBeVisible();
@@ -132,6 +134,7 @@ test('a slate pool only PrizePicks has read is fresh to 90 minutes, then stale',
   });
 
   await page.goto('/matchups?date=2026-01-15');
+  await page.getByRole('button', { name: /· details$/ }).click();
 
   const freshness = page.getByRole('group', { name: 'Data freshness' });
   await expect(freshness.getByText('Player pool is fresh — as of 20m ago')).toBeVisible();

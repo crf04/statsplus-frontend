@@ -28,9 +28,9 @@ const LoginButton = ({ className = '', size = 'lg', label = 'Sign in with Google
         style={{
           // Google's official dark-neutral button variant — sits in the page's
           // palette without repainting the brand mark.
-          backgroundColor: '#131314',
-          borderColor: '#3a3428',
-          color: '#e3e3e3',
+          backgroundColor: 'var(--ct-x-131314)',
+          borderColor: 'var(--ct-rule)',
+          color: 'var(--ct-x-e3e3e3)',
           fontWeight: '500',
           minWidth: '200px',
           padding: size === 'lg' ? '12px 24px' : '8px 16px',

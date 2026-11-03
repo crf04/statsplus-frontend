@@ -63,7 +63,7 @@ test.describe('filter panel matches the design reference', () => {
 
   test('panel with the opponent list expanded', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
-    await panel.getByRole('button', { name: '+ 10 more' }).click();
+    await panel.getByRole('button', { name: '+ 15 more' }).click();
     await expect(panel.getByRole('button', { name: 'Show fewer' })).toBeVisible();
     await expect(panel).toHaveScreenshot('panel-1920-opponent-expanded.png', SHOT);
   });

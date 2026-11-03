@@ -45,6 +45,29 @@ export const TARGET_SLICES = {
   ],
 };
 
+/*
+ * Qualifiers are any rule a player must meet, not only diet shares
+ * (crf04/statsplus docs/adr/0005). A Position names one or more of these
+ * groups; an Average Qualifier is a season average in one Target stat column.
+ */
+export const POSITION_GROUPS = ['Guard', 'Wing', 'Big'];
+export const POSITION_BASE = 'position';
+export const AVERAGE_BASE = 'season_average';
+
+/* The backend refuses an Average threshold above this. */
+export const AVERAGE_THRESHOLD_MAX = 1000;
+
+/* The Position leads whatever order the Qualifiers are stored in. */
+export const positionFirst = (qualifiers) => [
+  ...qualifiers.filter(({ base }) => base === POSITION_BASE),
+  ...qualifiers.filter(({ base }) => base !== POSITION_BASE),
+];
+
+export const isDietQualifier = (qualifier) =>
+  qualifier.base !== POSITION_BASE && qualifier.base !== AVERAGE_BASE;
+
+export const dietQualifiers = (qualifiers) => qualifiers.filter(isDietQualifier);
+
 export const TARGET_COMPARATORS = [
   { key: 'at_or_above', symbol: '≥', label: 'At or above' },
   { key: 'at_or_below', symbol: '≤', label: 'At or below' },
@@ -126,14 +149,22 @@ export const signed = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
  * apart from the slice it applies to, so the two parts are published separately
  * and the flat form is built from them rather than spelled twice.
  */
-export const formatQualifierParts = (qualifier) => ({
-  label: targetSliceLabel(qualifier.base, qualifier.sliceKey),
-  value: `${comparatorSymbol(qualifier.comparator)} ${formatShare(qualifier.threshold)}`,
-});
+export const formatQualifierParts = (qualifier) => {
+  if (qualifier.base === POSITION_BASE) return { label: qualifier.groups.join('/'), value: '' };
+  if (qualifier.base === AVERAGE_BASE)
+    return {
+      label: `${qualifier.stat} avg`,
+      value: `${comparatorSymbol(qualifier.comparator)} ${qualifier.threshold}`,
+    };
+  return {
+    label: targetSliceLabel(qualifier.base, qualifier.sliceKey),
+    value: `${comparatorSymbol(qualifier.comparator)} ${formatShare(qualifier.threshold)}`,
+  };
+};
 
 export const formatQualifier = (qualifier) => {
   const { label, value } = formatQualifierParts(qualifier);
-  return `${label} ${value}`;
+  return value ? `${label} ${value}` : label;
 };
 
 /*
@@ -145,7 +176,7 @@ export const formatQualifier = (qualifier) => {
  * docs/adr/0001-targets-store-player-criteria-not-team-readings.md.
  */
 export const deriveTargetTitle = ({ opponent, qualifiers }) =>
-  `${opponent} vs ${qualifiers.map(formatQualifier).join(', ')}`;
+  `${opponent} vs ${positionFirst(qualifiers).map(formatQualifier).join(', ')}`;
 
 /*
  * A threshold is typed as a percentage and stored as a 0–1 share, rounded to
@@ -182,3 +213,21 @@ export const nudgeThresholdPercent = (percentText, delta) => {
   const current = Number(String(percentText).trim()) || 0;
   return String(Math.min(100, Math.max(0, Math.round((current + delta) * 10) / 10)));
 };
+
+/*
+ * An Average Qualifier's threshold is a plain number in the stat's own units,
+ * sent exactly as typed: rounding 0.004 to two decimals would send 0 and admit
+ * players with no attempts. The backend rounds only to compare duplicates. A
+ * blank, negative or non-numeric entry has no value, which is what keeps the
+ * draft unsaveable.
+ */
+export const parseAverageThreshold = (text) => {
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value) || value < 0 || value > AVERAGE_THRESHOLD_MAX) return null;
+  return value;
+};
+
+/* A Target holds one to ten Qualifiers of every kind, Position included. */
+export const QUALIFIER_LIMIT = 10;

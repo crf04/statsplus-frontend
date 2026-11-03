@@ -41,6 +41,9 @@ const requireStringList = (value) => {
   return value;
 };
 const camelKey = (key) => key.replace(/_([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
+// Posted lines the Matchup shows without a Matchup Score (statsplus#370). The
+// backend still sends each an empty score window, which the decoder drops.
+const UNSCORED_MARKETS = ['FTA', 'FTM', 'FGM', 'FG2M'];
 const MARKET_CATEGORIES = new Set([
   'PTS',
   'REB',
@@ -57,6 +60,7 @@ const MARKET_CATEGORIES = new Set([
   'STL',
   'BLK',
   'STKS',
+  ...UNSCORED_MARKETS,
 ]);
 
 const DEFENSE_BASES = [
@@ -571,6 +575,46 @@ const decodeFocalGameLine = (line, statCategories) =>
     requireValue: requireNumber,
   });
 
+/*
+ * His last five Evidence-season games and his season average per stat
+ * (crf04/statsplus#395). Both are additive: an older backend omits them, which
+ * reads as not served (null), never as no games. A historical row's evidence
+ * runs past its own game, so it may only carry them empty.
+ */
+const decodeLastFiveGames = (games, statCategories, historical) => {
+  if (games === undefined) return null;
+  if (!Array.isArray(games) || games.length > 5 || (historical && games.length > 0)) {
+    throw invalid();
+  }
+  const decoded = games.map((game) => {
+    if (!isRecord(game)) throw invalid();
+    return decodeFocalGameLine(game, statCategories);
+  });
+  // Oldest first by date, then game id, each on a real calendar date.
+  const before = (a, b) =>
+    a.gameDate < b.gameDate || (a.gameDate === b.gameDate && a.gameId < b.gameId);
+  if (
+    decoded.some(
+      (game, index) =>
+        !isCalendarDate(game.gameDate) || (index > 0 && !before(decoded[index - 1], game)),
+    )
+  ) {
+    throw invalid();
+  }
+  return decoded;
+};
+
+const decodeSeasonAverages = (averages, statCategories, historical) => {
+  if (averages === undefined) return null;
+  if (!isRecord(averages) || (historical && Object.keys(averages).length > 0)) throw invalid();
+  return Object.fromEntries(
+    Object.entries(averages).map(([category, value]) => {
+      if (!statCategories.includes(category) || requireNumber(value) < 0) throw invalid();
+      return [category, value];
+    }),
+  );
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // A date fence is only meaningful over real calendar dates, so a string that
@@ -650,6 +694,8 @@ const decodePlayer = (player, experience, game) => {
     linePrices: decodeLinePrices(player.line_prices, decodedLines),
     focalGameLine,
     seasonScoring: player.season_scoring === null ? null : requireNumber(player.season_scoring),
+    lastFiveGames: decodeLastFiveGames(player.last_five_games, statCategories, gameLogSourced),
+    seasonAverages: decodeSeasonAverages(player.season_averages, statCategories, gameLogSourced),
     last10Minutes: player.last_10_minutes.map(requireNumber),
     dietShares: decodeDietShares(player.diet_shares),
     injuryBadgeRef:
@@ -708,7 +754,7 @@ function decodeProvenance(provenance, postedMarkets) {
 // market no DFS provider does, so nothing here is checked against the posted
 // markets. The contract (statsplus#185 section 4) makes the key required, with
 // {} for no books, so a missing key is rejected like any other malformed field.
-const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA'];
+const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA', ...UNSCORED_MARKETS];
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw invalid();
   return value;
@@ -974,15 +1020,14 @@ function decodeScores(scores, statCategories, historical) {
   ) {
     throw invalid();
   }
-  return Object.fromEntries(
-    statCategories.map((category) => [
-      category,
-      {
-        season: decodeScoreWindow(scores[category].season, category, historical),
-        last15: decodeScoreWindow(scores[category].last_15, category, historical),
-      },
-    ]),
-  );
+  const windows = statCategories.map((category) => [
+    category,
+    {
+      season: decodeScoreWindow(scores[category].season, category, historical),
+      last15: decodeScoreWindow(scores[category].last_15, category, historical),
+    },
+  ]);
+  return Object.fromEntries(windows.filter(([category]) => !UNSCORED_MARKETS.includes(category)));
 }
 
 const decodeFreshnessSurface = (surface, surfaceName) => {

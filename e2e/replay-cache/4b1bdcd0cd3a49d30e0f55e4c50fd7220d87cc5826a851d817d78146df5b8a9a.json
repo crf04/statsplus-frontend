@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-28T06:13:58.543Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap link \"All filters\" in \"Get more specific\"",
+        "target": {
+          "role": "link",
+          "name": "All filters",
+          "within": "Get more specific"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/query-reference.e2e.ts::the%20agent%20finds%20a%20filter%20in%20the%20reference%20and%20runs%20its%20example",
+      "targetId": "desktop-west",
+      "instructionDigest": "de668b212ba963f7ecbfa725a58f7f86153a2ed109f5187ded8a75d36ec14b80",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Opened the “All filters” link. The Query reference page at /help is displayed with the complete list of understood clauses and opponent filter categories.",
+    "startPath": "/",
+    "endPath": "/help",
+    "endAnchors": [
+      {
+        "role": "link",
+        "name": "←Back to search",
+        "text": "Back to search"
+      },
+      {
+        "role": "heading",
+        "name": "Query reference"
+      },
+      {
+        "text": "Ask for a player in plain English, then add clauses until the sample is the one you mean."
+      },
+      {
+        "role": "heading",
+        "name": "Clauses"
+      },
+      {
+        "role": "rowheader",
+        "name": "last"
+      },
+      {
+        "role": "cell",
+        "name": "Only the most recent N games."
+      },
+      {
+        "role": "rowheader",
+        "name": "since"
+      },
+      {
+        "role": "cell",
+        "name": "Only games after a date you name."
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "1 game"
+      },
+      {
+        "text": "LAL @ BOS"
+      },
+      {
+        "text": "Reaves"
+      },
+      {
+        "text": "+24%"
+      },
+      {
+        "text": "Tatum"
+      },
+      {
+        "text": "+15%"
+      },
+      {
+        "text": "James"
+      },
+      {
+        "text": "+12%"
+      }
+    ],
+    "endWaitMs": 12601,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

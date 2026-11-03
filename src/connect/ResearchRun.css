@@ -1,18 +1,18 @@
 .rr {
-  --rr-kept: 104, 186, 166;
-  --rr-mixed: 232, 163, 61;
-  --rr-dropped: 150, 140, 125;
-  --rr-lead: 128, 160, 230;
+  --rr-kept: var(--ct-series-kept-fg-rgb);
+  --rr-mixed: var(--ct-gold-fg-rgb);
+  --rr-dropped: var(--ct-series-dropped-fg-rgb);
+  --rr-lead: var(--ct-series-lead-fg-rgb);
 
   border: 1px solid var(--ct-line-strong);
   border-radius: 14px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
   overflow: hidden;
 }
 
 .rr-brief {
   padding: 22px 24px;
-  background: radial-gradient(520px 220px at 0% 0%, rgba(232, 163, 61, 0.07), transparent 70%);
+  background: radial-gradient(520px 220px at 0% 0%, var(--ct-gold-bg-7), transparent 70%);
 }
 
 .rr-brief-parts {
@@ -21,7 +21,7 @@
   margin: 0 0 16px;
   padding: 14px 16px;
   border-radius: 14px 14px 4px 14px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ct-overlay-bg-7);
 }
 
 .rr-brief-parts > div {
@@ -118,7 +118,7 @@
 .rr-verdict {
   margin-left: auto;
   padding: 1px 8px;
-  border: 1px solid rgba(var(--rr-v), 0.6);
+  border: 1px solid rgb(var(--rr-v) / calc(0.6 * var(--ct-k-accent-fg)));
   border-radius: 999px;
   color: rgb(var(--rr-v));
   font-size: 11px;
@@ -147,7 +147,7 @@
 .rr-report {
   padding: 20px 24px 22px;
   border-top: 1px solid var(--ct-line-strong);
-  background: rgba(232, 163, 61, 0.05);
+  background: var(--ct-gold-bg-5);
 }
 
 .rr-report ul {
@@ -164,7 +164,7 @@
   border: 1px solid var(--ct-line);
   border-left: 3px solid rgb(var(--rr-v));
   border-radius: 10px;
-  background: #120f0a;
+  background: var(--ct-x-120f0a);
 }
 
 .rr-item-kept {
@@ -195,12 +195,12 @@
 .rr-item-dropped .rr-item-head strong {
   color: var(--ct-dim);
   text-decoration: line-through;
-  text-decoration-color: rgba(var(--rr-dropped), 0.7);
+  text-decoration-color: rgb(var(--rr-dropped) / calc(0.7 * var(--ct-k-accent-fg)));
 }
 
 .rr-item-body {
   margin: 0;
-  color: #d7cfbd;
+  color: var(--ct-x-d7cfbd);
   font-size: 13.5px;
   line-height: 1.55;
 }

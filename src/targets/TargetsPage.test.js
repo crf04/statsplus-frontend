@@ -795,6 +795,10 @@ test('an incomplete draft asks for nothing and says what to complete', async () 
 
   // The blank form: a threshold has not been typed.
   expect(labStatus()).toHaveTextContent('Complete the Qualifiers to see the Backtest.');
+  // Until there is a Backtest, the space explains how a Target works.
+  expect(screen.getByRole('region', { name: 'How Targets work' })).toHaveTextContent(
+    'Filter players. Each Qualifier is one rule a player must meet.',
+  );
   await settle();
   expect(fetchTargetPreview).not.toHaveBeenCalled();
 
@@ -869,6 +873,7 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
   expect(
     screen.queryByText('Complete the Qualifiers to see the Backtest.'),
   ).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'How Targets work' })).not.toBeInTheDocument();
 });
 
 test('the tonight line is absent when the opponent has no game', async () => {
@@ -1612,6 +1617,27 @@ test('no active Targets says so without calling an unresolved read zero', async 
   fetchResolvedTargets.mockResolvedValue({ ...resolution, entries: [resolution.entries[1]] });
   renderPage(false);
   expect(await screen.findByText('No Targets active today')).toBeVisible();
+});
+
+test('a fit pill shows the player’s Position beside his name, and none when he has none', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        players: [
+          { ...resolution.entries[0].players[0], position: 'Wing' },
+          { ...resolution.entries[0].players[0], canonicalId: 9, name: 'Unlisted', position: null },
+        ],
+      },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  const pills = within(card).getAllByRole('listitem');
+  expect(pills[0]).toHaveTextContent(/^LeBron JamesWing · Corner 3 44%/);
+  expect(pills[1]).toHaveTextContent(/^Unlisted · Corner 3 44%/);
 });
 
 test('thin evidence stays visible as a dashed fit pill', async () => {

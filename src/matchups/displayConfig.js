@@ -146,14 +146,28 @@ export const CATEGORY_ORDER = Object.freeze([
   'BLK',
   'TOV',
   'FGA',
+  'FGM',
   'FG2A',
+  'FG2M',
   'FG3A',
+  'FTA',
+  'FTM',
   'PR',
   'PA',
   'RA',
   'PRA',
   'STKS',
 ]);
+
+// Codes a reader may not know on sight; the rest read as they are.
+const CATEGORY_LABELS = Object.freeze({
+  FTA: 'Free Throws Attempted',
+  FTM: 'Free Throws Made',
+  FGM: 'Field Goals Made',
+  FG2M: 'Two-Pointers Made',
+});
+
+export const categoryLabel = (category) => CATEGORY_LABELS[category] ?? category;
 
 export const orderCategories = (categories) => {
   const rank = (category) => {

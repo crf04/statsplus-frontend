@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-28T06:10:52.207Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"+ Last N\"",
+        "target": {
+          "role": "button",
+          "name": "+ Last N"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"1\" into spinbutton \"Last N games\"",
+        "target": {
+          "role": "spinbutton",
+          "name": "Last N games",
+          "placeholder": "Custom"
+        },
+        "value": "1"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Done\"",
+        "target": {
+          "role": "button",
+          "name": "Done"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Apply 1 change\"",
+        "target": {
+          "role": "button",
+          "name": "Apply 1 change"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/log-workspace.e2e.ts::the%20agent%20narrows%20the%20workspace%20to%20the%20last%20game",
+      "targetId": "desktop",
+      "instructionDigest": "3b7a49e4fb07497e56a2ed8ab90cb65313621091e5a3d691973b2fde1b6e5ea1",
+      "paramsDigest": "7cca07fb9c3c24b46b5679ed9da3e6eb9cfdeff47e63a47ce6c2ebec4e1b34ec",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Set the Last N filter to 1 and applied it. The page now shows the URL game_filter=1, the active filter “last 1 games,” “1 of 2 games match,” and a single Game Logs row.",
+    "startPath": "/?player_name=LeBron+James",
+    "endPath": "/?player_name=LeBron+James&game_filter=1",
+    "endAnchors": [
+      {
+        "text": "1/1"
+      },
+      {
+        "text": "L5 1/1 · L10 1/1"
+      },
+      {
+        "text": "GAMES <= 1"
+      },
+      {
+        "text": "last"
+      },
+      {
+        "text": "1 games"
+      },
+      {
+        "role": "button",
+        "name": "Remove last",
+        "text": "×"
+      },
+      {
+        "text": "1 of 2 games match"
+      },
+      {
+        "role": "button",
+        "name": "Clear all"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "1/2"
+      },
+      {
+        "text": "L5 1/2 · L10 1/2"
+      },
+      {
+        "text": "2 of 2 games match"
+      },
+      {
+        "text": "2 of 2 games"
+      },
+      {
+        "role": "cell",
+        "name": "1/8"
+      },
+      {
+        "role": "cell",
+        "name": "DAL"
+      },
+      {
+        "role": "cell",
+        "name": "L"
+      },
+      {
+        "role": "cell",
+        "name": "53%"
+      }
+    ],
+    "endWaitMs": 12377,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

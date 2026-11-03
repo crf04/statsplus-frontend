@@ -136,6 +136,7 @@ signedInTest(
 
     await app.open('/matchups?date=2026-01-15');
 
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is unavailable; no targetable players/i),
     ).toBeVisible();
@@ -178,10 +179,11 @@ signedInTest(
 
     await app.open('/matchups?date=2026-01-15');
 
+    await screen.getByRole('button', /· details$/).tap();
     const freshness = screen.getByRole('group', 'Data freshness');
     await expect(freshness).toBeVisible();
     await expect(screen.getByText('Schedule is stale — as of 31h ago')).toBeVisible();
-    await expect(freshness.getByText(/player pool is partial/i)).toBeVisible();
+    await expect(freshness.getByText(/player pool is partial —/i)).toBeVisible();
     await expect(screen.getByText('Final after review')).toBeVisible();
     await expect(screen.getByText('Preseason')).toBeVisible();
     await expect(screen.getByText('NBA Paris Game', { exact: false })).toHaveCount(0);
@@ -214,11 +216,14 @@ signedInTest(
     });
 
     await app.open('/matchups?date=2026-01-15');
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
     ).toBeVisible();
 
     await screen.getByLabel('Slate date').fill('2026-01-16');
+    // A new date remounts the status line, folded again.
+    await screen.getByRole('button', /· details$/).tap();
     await expect(
       screen.getByText(/player pool is stale — as of 30m ago.*older than 15m freshness bar/i),
     ).toBeVisible();
@@ -233,14 +238,18 @@ signedInTest(
     await app.open('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
 
-    const searchLink = screen.getByRole('link', { name: 'Search', exact: false });
+    const searchLink = screen.getByRole('link', 'Search');
     await searchLink.focus();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', { name: 'Matchups', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', 'Targets')).toBeFocused();
     await browser.keyboard.press('Tab');
+    await expect(screen.getByRole('link', 'Research')).toBeFocused();
+    await browser.keyboard.press('Tab');
     await expect(screen.getByRole('link', { name: 'Connect', exact: false })).toBeFocused();
+    await browser.keyboard.press('Tab');
+    await expect(screen.getByRole('button', 'Appearance: Dark')).toBeFocused();
     await browser.keyboard.press('Tab');
     await expect(screen.getByRole('button', { name: 'Feedback', exact: false })).toBeFocused();
     await browser.keyboard.press('Tab');

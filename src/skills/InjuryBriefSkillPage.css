@@ -59,8 +59,8 @@
 }
 
 .skill-download:hover {
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
 }
 
 .skill-download:focus-visible {

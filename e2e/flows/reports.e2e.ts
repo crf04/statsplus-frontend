@@ -1,7 +1,8 @@
 // CourtAI reports (crf04/statsplus#342): a published report is a public page.
 import { expect } from 'e2e';
 import type { Browser } from '@e2e-dev/web';
-import { signedOutTest, waitlistedTest } from './support/courtai.ts';
+import { reportPayload, researchEntry, researchPayload } from '../fixtures/courtai.js';
+import { signedInTest, signedOutTest, waitlistedTest } from './support/courtai.ts';
 
 const REPORT = '/reports/k3x9q2mtzr';
 const TITLE = 'Injury brief · Sunday, October 25';
@@ -57,6 +58,37 @@ signedOutTest(
   },
 );
 
+signedOutTest(
+  'a signed-out visitor reads a block report: its lede, spot, cards inline and in a row, table and sources',
+  async ({ app, screen, browser }) => {
+    await app.open('/reports/r7b10cks28');
+    await expect(
+      screen.getByRole('heading', 'Austin Reaves assists without Dončić · LAL @ LAC', { level: 1 }),
+    ).toBeVisible();
+    await expect(screen.getByText('At 6.5 it does; 7.5 needs his full role.')).toBeVisible();
+    await expect(screen.getByRole('region', 'Austin Reaves o6.5 AST')).toBeVisible();
+    await expect(screen.getByRole('heading', 'The market', { level: 2 })).toBeVisible();
+    await expect(screen.getByRole('cell', 'DraftKings +107', { exact: false })).toBeVisible();
+    // Every card is drawn where the writer put it, from its stored HTML, without a click.
+    expect((await cardFrames(browser)).map((frame: CardFrame) => frame.title)).toEqual([
+      'LAL on/off',
+      'Reaves AST w/o Dončić',
+      'Reaves POTENTIAL_AST season',
+      'Reaves matchup',
+    ]);
+    await expect(screen.getByRole('link', 'Spread LAL -4.5')).toBeVisible();
+    // A row of cards sits side by side, and stacks into one column under 600px.
+    const row = await browser.evaluate(() => {
+      const [a, b] = [
+        ...document.querySelectorAll('.report-block-card-row .report-block-card'),
+      ].map((card) => card.getBoundingClientRect());
+      return { width: window.innerWidth, stacked: b.top >= a.bottom, sameTop: a.top === b.top };
+    });
+    expect(row.width < 600 ? row.stacked : row.sameTop).toBe(true);
+    await app.screenshot('block-report');
+  },
+);
+
 signedOutTest('a report that does not exist says so', async ({ app, screen }) => {
   await app.open('/reports/zzzzzzzzzz');
   await expect(
@@ -68,3 +100,76 @@ waitlistedTest('a waitlisted account can still read a report', async ({ app, scr
   await app.open(REPORT);
   await expect(screen.getByRole('heading', TITLE, { level: 1 })).toBeVisible();
 });
+
+signedOutTest(
+  'a signed-out visitor finds a listed report from the nav and its author page',
+  async ({ app, screen, api }) => {
+    const listed = researchPayload({ reports: [researchEntry()] });
+    await api.override({
+      '/api/research': { body: listed },
+      '/api/research/authors/bighatprops': { body: listed },
+      '/api/reports/k3x9q2mtzr': () => ({
+        report: {
+          ...reportPayload().report,
+          listed: true,
+          author: { label: '@bighatprops', handle: 'bighatprops' },
+        },
+      }),
+    });
+    await app.open('/privacy');
+    await screen.getByRole('link', 'Research').tap();
+    await expect(screen.getByRole('heading', 'Research', { level: 1 })).toBeVisible();
+    await screen.getByRole('link', '@bighatprops').tap();
+    await expect(screen.getByRole('heading', '@bighatprops', { level: 1 })).toBeVisible();
+    await screen.getByRole('link', TITLE).tap();
+    await expect(screen.getByRole('heading', TITLE, { level: 1 })).toBeVisible();
+    await expect(
+      screen.getByText("CourtAI reports facts; this is the author's view.", { exact: false }),
+    ).toBeVisible();
+    await app.screenshot('research-report');
+  },
+);
+
+signedInTest(
+  'an author with no handle chooses one, then the report lists',
+  async ({ app, screen, api }) => {
+    let listed = false;
+    await api.override({
+      '/api/reports/k3x9q2mtzr': () => ({
+        report: {
+          ...reportPayload().report,
+          is_author: true,
+          listed,
+          // A listed report names its author by handle.
+          ...(listed && { author: { label: '@qa_reader', handle: 'qa_reader' } }),
+        },
+      }),
+      // The first listing finds no handle; the one after the handle is set lists.
+      '/api/user/reports/k3x9q2mtzr': () => {
+        if (api.sent('/api/user/reports/k3x9q2mtzr', 'PATCH').length === 1) {
+          return { status: 409, body: { error: 'handle_required', message: 'Choose a handle.' } };
+        }
+        listed = true;
+        return { report: { id: 'k3x9q2mtzr', listed: true } };
+      },
+    });
+    await app.open(REPORT);
+    await screen.getByRole('button', 'List').tap();
+    await screen.getByRole('button', 'List in Research').tap();
+
+    const field = screen.getByLabel('Choose your public handle');
+    await field.fill('ab');
+    await screen.getByRole('button', 'Save and list').tap();
+    await expect(
+      screen.getByText('Use 3–20 lowercase letters, numbers or underscores.'),
+    ).toBeVisible();
+
+    await field.fill('@QA_Reader');
+    await screen.getByRole('button', 'Save and list').tap();
+    await expect(screen.getByText('Listed in Research')).toBeVisible();
+    expect(api.sent('/api/user/public-handle', 'PUT').map((request) => request.body)).toEqual([
+      { handle: 'ab' },
+      { handle: 'qa_reader' },
+    ]);
+  },
+);

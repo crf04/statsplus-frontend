@@ -4,6 +4,7 @@ import { filterQueryString } from '../filterUtils';
 import { getRequestErrorMessage } from '../gameLogsApi';
 import { createSavedFilterSet } from '../savedFilterSetsApi';
 import ErrorMessage from '../feedback/ErrorMessage';
+import { useSignUpThen } from '../components/Auth/useSignUpThen';
 
 /*
  * Save sits beside Apply and names the set in place. It stores the URL's
@@ -30,6 +31,15 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
 
   // A different Filter Set is a different thing to save.
   useEffect(stopNaming, [filterQuery]);
+
+  // Signed out, Save signs up first and then opens the naming form.
+  const startNaming = useSignUpThen('save-filter-set', () => {
+    attempt.current += 1;
+    // The query the user typed is the name they would most likely reach for.
+    setName(defaultName.slice(0, 100));
+    setError(null);
+    setNaming(true);
+  });
 
   if (naming)
     return (
@@ -104,13 +114,7 @@ const SaveFilterSet = ({ current, dirty, defaultName = '' }) => {
       className="fp-btn-ghost fpt-save"
       disabled={dirty}
       title={dirty ? 'Apply your changes first' : undefined}
-      onClick={() => {
-        attempt.current += 1;
-        // The query the user typed is the name they would most likely reach for.
-        setName(defaultName.slice(0, 100));
-        setError(null);
-        setNaming(true);
-      }}
+      onClick={() => startNaming()}
     >
       Save
     </button>

@@ -9,9 +9,11 @@ import LoginButton from './components/Auth/LoginButton';
 import UserProfile from './components/Auth/UserProfile';
 import { FeedbackProvider } from './feedback/FeedbackContext';
 import FeedbackButton from './feedback/FeedbackButton';
+import ThemeMenu from './theme/ThemeMenu';
 import SiteFooter from './legal/SiteFooter';
 import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
+import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
@@ -24,6 +26,8 @@ const QueryReferencePage = lazy(() => import('./help/QueryReferencePage'));
 const ConnectPage = lazy(() => import('./connect/ConnectPage'));
 const InjuryBriefSkillPage = lazy(() => import('./skills/InjuryBriefSkillPage'));
 const ReportPage = lazy(() => import('./reports/ReportPage'));
+const ReportBuilderPage = lazy(() => import('./reports/builder/ReportBuilder'));
+const ResearchPage = lazy(() => import('./research/ResearchPage'));
 const PrivacyPage = lazy(() => import('./legal/PrivacyPage'));
 const TermsPage = lazy(() => import('./legal/TermsPage'));
 
@@ -67,7 +71,6 @@ function RouteContent({ children }) {
 
 function AppNav() {
   const { isAuthenticated, isAdmin } = useAuth();
-
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
@@ -80,10 +83,12 @@ function AppNav() {
           </NavLink>
           <NavLink to="/matchups">Matchups</NavLink>
           <NavLink to="/targets">Targets</NavLink>
+          <NavLink to="/research">Research</NavLink>
           <NavLink to="/connect">Connect</NavLink>
           {isAuthenticated && isAdmin && <NavLink to="/operations">Operations</NavLink>}
         </div>
         <div className="app-auth">
+          <ThemeMenu />
           {isAuthenticated ? (
             <>
               <FeedbackButton />
@@ -98,14 +103,23 @@ function AppNav() {
   );
 }
 
-// A waitlisted account has nothing signed-in to show but the public home page
-// the legal pages and public reports: a banner explains why, and every other path returns home
-// until it signs out.
+// A link's query string names a Log Workspace Filter Set, usable or refused.
+const namesFilterSet = (search) => {
+  const { filters, invalid } = filterSetFromSearchParams(
+    new URLSearchParams(filterQueryString(search)),
+  );
+  return Object.keys(filters).length > 0 || invalid.length > 0;
+};
+
+// A waitlisted account has nothing signed-in to show but the public home page,
+// a shared Log Workspace link read as it is (crf04/statsplus#381), the legal
+// pages, public reports and Research: a banner explains why, and every other
+// path returns home until it signs out.
 function WaitlistedShell() {
   const { pathname, search } = useLocation();
-  // A link's query string would open the workspace, which a waitlisted account
-  // cannot use, so it too returns to the bare home page. Other pages ignore it.
-  if (pathname === '/' && search) return <Navigate to="/" replace />;
+  // Any other query string (an empty Workspace to browse) would open a
+  // Workspace the account cannot use, so it returns to the bare home page.
+  if (pathname === '/' && search && !namesFilterSet(search)) return <Navigate to="/" replace />;
   return (
     <>
       <AppNav />
@@ -114,7 +128,10 @@ function WaitlistedShell() {
           <Route path="/" element={<GameLogFilter notice={<WaitlistBanner />} />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/reports/new" element={<ReportBuilderPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteContent>
@@ -137,7 +154,10 @@ function SignedInShell() {
           <Route path="/help" element={<QueryReferencePage />} />
           <Route path="/connect" element={<ConnectPage />} />
           <Route path="/skills/injury-brief" element={<InjuryBriefSkillPage />} />
+          <Route path="/reports/new" element={<ReportBuilderPage />} />
           <Route path="/reports/:id" element={<ReportPage />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/research/:author" element={<ResearchPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/matchups" element={<SlatePage />} />

@@ -1,0 +1,73 @@
+{
+  "tailBaseline": 96,
+  "entries": [
+    {
+      "path": "src/connect/MatchupCardFrame.js",
+      "reason": "Host variables for the MCP card iframe imitate Claude's own host palette, not CourtAI's; they stay as Claude paints them (crf04/statsplus#354, out of scope)."
+    },
+    {
+      "path": "src/reports/ReportCard.js",
+      "reason": "Same Claude-host emulation as MatchupCardFrame, for report cards."
+    },
+    {
+      "path": "src/components/Auth/LoginButton.js",
+      "match": "#4285F4",
+      "reason": "Google mark: brand colours Google's sign-in guidelines fix."
+    },
+    {
+      "path": "src/components/Auth/LoginButton.js",
+      "match": "#34A853",
+      "reason": "Google mark: brand colours Google's sign-in guidelines fix."
+    },
+    {
+      "path": "src/components/Auth/LoginButton.js",
+      "match": "#FBBC04",
+      "reason": "Google mark: brand colours Google's sign-in guidelines fix."
+    },
+    {
+      "path": "src/components/Auth/LoginButton.js",
+      "match": "#EA4335",
+      "reason": "Google mark: brand colours Google's sign-in guidelines fix."
+    },
+    {
+      "path": "src/AssistChart.js",
+      "match": "hsl(",
+      "reason": "Continuous red-to-green scale computed from the defense ratio, not a palette colour. Light mode decides its lightness."
+    },
+    {
+      "path": "src/PlaystyleComparisonChart.js",
+      "match": "hsl(",
+      "reason": "Continuous red-to-green scale computed from the defense ratio, not a palette colour."
+    },
+    {
+      "path": "src/matchupRating.js",
+      "match": "hsl(",
+      "reason": "Continuous red-to-green scale for the Total Matchup Rating, not a palette colour."
+    },
+    {
+      "path": "src/utils.js",
+      "match": "rgb(",
+      "reason": "RankCube encodes the rank as red and green channels computed per rank."
+    },
+    {
+      "path": "src/matchups/MatchupDetailPage.css",
+      "match": "hsl(calc",
+      "reason": "Rank hue computed from --rank, not a palette colour."
+    },
+    {
+      "path": "src/readings.css",
+      "match": "hsl(calc",
+      "reason": "Rank hue computed from --rank, not a palette colour."
+    },
+    {
+      "path": "src/theme/themeStore.js",
+      "match": "#0d0b07",
+      "reason": "The browser chrome colour (meta theme-color) of each theme, written before CSS can be read; it is --ct-ink, which themeStore.test.js checks against src/theme.css."
+    },
+    {
+      "path": "src/theme/themeStore.js",
+      "match": "#f3f4f6",
+      "reason": "The browser chrome colour (meta theme-color) of each theme, written before CSS can be read; it is --ct-ink, which themeStore.test.js checks against src/theme.css."
+    }
+  ]
+}

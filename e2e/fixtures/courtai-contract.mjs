@@ -1,5 +1,6 @@
 import statCatalogue from '../../src/targets/targetStatCatalogue.json' with { type: 'json' };
 import reportFixture from './report.json' with { type: 'json' };
+import blockReportFixture from './report-blocks.json' with { type: 'json' };
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -14,6 +15,12 @@ export const gameLogs = [
     REB: 8,
     OREB: 2,
     DREB: 6,
+    REB_CHANCES: 14,
+    OREB_CHANCES: 5,
+    DREB_CHANCES: 9,
+    POTENTIAL_AST: 17,
+    REB_CONV_PCT: 0.571,
+    AST_CONV_PCT: 0.529,
     PF: 2,
     AST: 9,
     STL: 1,
@@ -38,6 +45,12 @@ export const gameLogs = [
     REB: 7,
     OREB: 1,
     DREB: 6,
+    REB_CHANCES: null,
+    OREB_CHANCES: null,
+    DREB_CHANCES: null,
+    POTENTIAL_AST: null,
+    REB_CONV_PCT: null,
+    AST_CONV_PCT: null,
     PF: 3,
     AST: 8,
     STL: 2,
@@ -64,6 +77,10 @@ export const averages = {
   FG_PCT: 0.538,
   FD_PTS: 51,
   TOV: 2.5,
+  REB_CHANCES: 15.8,
+  REB_CONV_PCT: 0.59,
+  POTENTIAL_AST: 12.1,
+  AST_CONV_PCT: 0.58,
 };
 
 export const slateGame = {
@@ -449,6 +466,38 @@ const scores = (markets, seasonValue, last15Value, { zeroMarkets = [] } = {}) =>
     ]),
   );
 
+// A box line in every market a row can carry, from his points, rebounds and
+// assists. Recent games round it; a season average keeps its decimals.
+const marketBox = ({ PTS, REB, AST }, round = (value) => value) => ({
+  PTS,
+  REB,
+  AST,
+  '3PM': round(PTS / 9),
+  FGA: round(PTS * 0.75),
+  FG2A: round(PTS * 0.45),
+  FG3A: round(PTS * 0.3),
+  PRA: PTS + REB + AST,
+  PA: PTS + AST,
+  PR: PTS + REB,
+  RA: REB + AST,
+  TOV: 3,
+  STL: 1,
+  BLK: 1,
+  STKS: 2,
+});
+const marketValues = (box, markets) =>
+  Object.fromEntries(markets.map((market) => [market, box[market]]));
+// His last games in the Evidence season, oldest first, in the focal_game_line
+// shape (crf04/statsplus#395).
+const lastFiveGames = (tricode, markets, games) =>
+  games.map(([gameId, gameDate, opponent, line]) => ({
+    game_id: gameId,
+    game_date: gameDate,
+    matchup: `${tricode} vs. ${opponent}`,
+    minutes: 35,
+    stats: marketValues(marketBox(line, Math.round), markets),
+  }));
+
 export const matchupPayload = {
   game: {
     ...slateGame,
@@ -609,6 +658,15 @@ export const matchupPayload = {
         fliff: { PTS: { over: -140, under: 110 } },
       },
       season_scoring: 25.4,
+      // Five games against his 27.5 points line: over, under, over, under, over.
+      last_five_games: lastFiveGames('LAL', COMPLETE_MARKETS, [
+        ['0022500541', '2026-01-05', 'PHX', { PTS: 31, REB: 8, AST: 9 }],
+        ['0022500553', '2026-01-07', 'DEN', { PTS: 22, REB: 6, AST: 7 }],
+        ['0022500562', '2026-01-09', 'SAC', { PTS: 29, REB: 9, AST: 10 }],
+        ['0022500570', '2026-01-11', 'POR', { PTS: 18, REB: 5, AST: 6 }],
+        ['0022500577', '2026-01-13', 'UTA', { PTS: 33, REB: 7, AST: 8 }],
+      ]),
+      season_averages: marketValues(marketBox({ PTS: 25.4, REB: 7.2, AST: 8.1 }), COMPLETE_MARKETS),
       last_10_minutes: [35, 36, 38, 34, 37, 36, 35, 39, 36, 37],
       diet_shares: {
         play_types: [
@@ -648,11 +706,28 @@ export const matchupPayload = {
       tricode: 'LAL',
       posted_markets: ['PTS', 'FG3A', 'STL', 'REB'],
       provenance: { prizepicks: ['PTS', 'FG3A', 'REB'], underdog: ['STL'] },
-      // No book has numbered him yet, so the rail falls back to his Matchup Score.
+      // No book has numbered him yet, so the rail leads with his season average.
       lines: {},
       book_lines: {},
       line_prices: {},
       season_scoring: 20.1,
+      // Three games this season, so two stubs; no line, so they read against
+      // his 20.1 points average.
+      last_five_games: lastFiveGames(
+        'LAL',
+        ['PTS', 'FG3A', 'STL', 'REB'],
+        [
+          ['0022500562', '2026-01-09', 'SAC', { PTS: 24, REB: 4, AST: 5 }],
+          ['0022500570', '2026-01-11', 'POR', { PTS: 17, REB: 5, AST: 4 }],
+          ['0022500577', '2026-01-13', 'UTA', { PTS: 21, REB: 3, AST: 6 }],
+        ],
+      ),
+      season_averages: marketValues(marketBox({ PTS: 20.1, REB: 4.3, AST: 5.2 }), [
+        'PTS',
+        'FG3A',
+        'STL',
+        'REB',
+      ]),
       last_10_minutes: [32, 35, 34, 33, 31, 35, 36, 34, 35, 33],
       diet_shares: {
         // Above the display gate but intentionally posted for PTS, not FGA,
@@ -1758,6 +1833,22 @@ const leaguePlayers = [...matchupPayload.players, ...historicalMatchupPayload.pl
 );
 
 /*
+ * NBA.com's listed position, as the Target Position groups. Kawhi Leonard has
+ * none, so a Position Qualifier leaves him out and the Backtest counts him.
+ */
+const PLAYER_POSITIONS = {
+  2544: 'Wing',
+  1630559: 'Guard',
+  1628369: 'Wing',
+  202695: null,
+  201935: 'Guard',
+  1627826: 'Big',
+  203507: 'Big',
+  203081: 'Guard',
+};
+const playerPosition = (player) => PLAYER_POSITIONS[player.canonical_id] ?? null;
+
+/*
  * Each of them has a season in the game-log route too, because a backtest row
  * and the Log Workspace that row hands off to have to be reading the same
  * games. It is the shared season rewritten as that player's: their team, and
@@ -1855,7 +1946,8 @@ const applySelfFilters = (logs, url) =>
     const stat = key.match(/^self_filters\[(.+)\]$/)?.[1];
     if (!stat) return remaining;
     const [min, max] = value.split(',').map(Number);
-    return remaining.filter((log) => log[stat] >= min && log[stat] <= max);
+    // A game without the stat fails any range, as the real endpoint does.
+    return remaining.filter((log) => log[stat] != null && log[stat] >= min && log[stat] <= max);
   }, logs);
 
 // The real endpoint reads date_filter and date_to as an inclusive calendar range
@@ -1903,7 +1995,13 @@ const traditionalTeamStats = {
 // the canonical form ignores the order the Qualifiers were typed in.
 const canonicalQualifiers = (qualifiers) =>
   qualifiers
-    .map((q) => `${q.base}:${q.slice_key}:${q.comparator}:${q.threshold}`)
+    .map((q) =>
+      q.base === 'position'
+        ? `position:${[...q.groups].sort().join('+')}`
+        : q.base === 'season_average'
+          ? `season_average:${q.stat}:${q.comparator}:${Number(q.threshold).toFixed(2)}`
+          : `${q.base}:${q.slice_key}:${q.comparator}:${q.threshold}`,
+    )
     .sort()
     .join('|');
 
@@ -1965,14 +2063,25 @@ const backendShare = (share) => {
   return `${percent.endsWith('.0') ? percent.slice(0, -2) : percent}%`;
 };
 
+const POSITION_ORDER = ['Guard', 'Wing', 'Big'];
+const backendQualifierClause = (qualifier) => {
+  if (qualifier.base === 'position')
+    return POSITION_ORDER.filter((group) => qualifier.groups.includes(group)).join('/');
+  const comparator = qualifier.comparator === 'at_or_below' ? '≤' : '≥';
+  if (qualifier.base === 'season_average')
+    return `${qualifier.stat} avg ${comparator} ${qualifier.threshold}`;
+  return `${BACKEND_SLICE_LABELS[qualifier.slice_key] || qualifier.slice_key} ${comparator} ${backendShare(
+    qualifier.threshold,
+  )}`;
+};
+
+// The Position leads, then the Qualifiers as they were entered.
 const backendTargetTitle = ({ opponent, qualifiers }) =>
-  `${opponent} vs ${qualifiers
-    .map(
-      (qualifier) =>
-        `${BACKEND_SLICE_LABELS[qualifier.slice_key] || qualifier.slice_key} ${
-          qualifier.comparator === 'at_or_below' ? '≤' : '≥'
-        } ${backendShare(qualifier.threshold)}`,
-    )
+  `${opponent} vs ${[
+    ...qualifiers.filter(({ base }) => base === 'position'),
+    ...qualifiers.filter(({ base }) => base !== 'position'),
+  ]
+    .map(backendQualifierClause)
     .join(', ')}`;
 
 const TARGET_LIMIT = 50;
@@ -2040,6 +2149,15 @@ const IDLE_AVAILABILITY = {
 const namesSlice = (rowKey, sliceKey) => rowKey === sliceKey || rowKey.startsWith(`${sliceKey}:`);
 
 const resolvedContext = (qualifier, sheet, sheetLeague) => {
+  // A Position or Average Qualifier reads no Defense Sheet row.
+  if (!isDietQualifier(qualifier))
+    return {
+      base: qualifier.base,
+      slice_key: null,
+      label: null,
+      availability: null,
+      metrics: [],
+    };
   const leagueRows = Object.fromEntries(
     (sheetLeague.defense_sheet[qualifier.base] || []).map((row) => [row.key, row]),
   );
@@ -2065,6 +2183,116 @@ const resolvedContext = (qualifier, sheet, sheetLeague) => {
   };
 };
 
+const isDietQualifier = (qualifier) =>
+  qualifier.base !== 'position' && qualifier.base !== 'season_average';
+
+/*
+ * The season-eligibility rule for an Average Qualifier: a player below the
+ * Diet thin rule's games floor (THIN_MIN_GAMES) is thin. The fits flag him and
+ * the Backtest leaves him out. The rule applies only to a Target with an
+ * Average Qualifier. Every player has played 20 games, as his Diet facts say,
+ * except Damian Lillard, who has played 3.
+ */
+const SEASON_GAMES_PLAYED = { 'Damian Lillard': 3 };
+const seasonGamesPlayed = (player) => SEASON_GAMES_PLAYED[player.name] ?? 20;
+
+/*
+ * Every Target stat column an Average Qualifier can name, with its own
+ * evaluator over a season's game logs (this fixture's copy of the catalogue).
+ * Counting stats average per game, /36 stats per 36 minutes played, and the
+ * shooting rates are percentages of the season's totals (PTS/FGA is points
+ * per attempt).
+ */
+const TARGET_COLUMNS = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'FG2A',
+  'FG2M',
+  '3PA',
+  'FGM',
+  'FGA',
+  'FTM',
+  'FTA',
+  'STL',
+  'BLK',
+  'TOV',
+  'OREB',
+  'DREB',
+  'PF',
+  'MIN',
+  'PA',
+  'PR',
+  'RA',
+  'PRA',
+  'SB',
+  'PTS/36',
+  'REB/36',
+  'AST/36',
+  '3PM/36',
+  'FG2A/36',
+  '3PA/36',
+  'FGA/36',
+  'FTA/36',
+  'STL/36',
+  'BLK/36',
+  'TOV/36',
+  'PRA/36',
+  'PR/36',
+  'PA/36',
+  'FG%',
+  '3P%',
+  'TS%',
+  'PTS/FGA',
+];
+const COUNTING_STATS = {
+  PTS: (log) => log.PTS,
+  REB: (log) => log.REB,
+  AST: (log) => log.AST,
+  '3PM': (log) => log.FG3M,
+  FG2A: (log) => log.FGA - log.FG3A,
+  FG2M: (log) => log.FGM - log.FG3M,
+  '3PA': (log) => log.FG3A,
+  FGM: (log) => log.FGM,
+  FGA: (log) => log.FGA,
+  FTM: (log) => log.FTM,
+  FTA: (log) => log.FTA,
+  STL: (log) => log.STL,
+  BLK: (log) => log.BLK,
+  TOV: (log) => log.TOV,
+  OREB: (log) => log.OREB,
+  DREB: (log) => log.DREB,
+  PF: (log) => log.PF,
+  MIN: (log) => log.MIN,
+  PA: (log) => log.PTS + log.AST,
+  PR: (log) => log.PTS + log.REB,
+  RA: (log) => log.REB + log.AST,
+  PRA: (log) => log.PTS + log.REB + log.AST,
+  SB: (log) => log.STL + log.BLK,
+};
+const seasonTotal = (season, column) =>
+  season.reduce((total, log) => total + COUNTING_STATS[column](log), 0);
+const ratioOrNull = (numerator, denominator) =>
+  Number.isFinite(numerator / denominator) ? numerator / denominator : null;
+const RATE_STATS = {
+  'FG%': (season) => ratioOrNull(seasonTotal(season, 'FGM') * 100, seasonTotal(season, 'FGA')),
+  '3P%': (season) => ratioOrNull(seasonTotal(season, '3PM') * 100, seasonTotal(season, '3PA')),
+  'TS%': (season) =>
+    ratioOrNull(
+      seasonTotal(season, 'PTS') * 100,
+      2 * (seasonTotal(season, 'FGA') + 0.44 * seasonTotal(season, 'FTA')),
+    ),
+  'PTS/FGA': (season) => ratioOrNull(seasonTotal(season, 'PTS'), seasonTotal(season, 'FGA')),
+};
+const targetStatAverage = (season, column) => {
+  if (season.length === 0) return null;
+  if (RATE_STATS[column]) return RATE_STATS[column](season);
+  if (column.endsWith('/36'))
+    return ratioOrNull(seasonTotal(season, column.slice(0, -3)) * 36, seasonTotal(season, 'MIN'));
+  return seasonTotal(season, column) / season.length;
+};
+
 // The Matchup Score's own thin floors: every fact in the Base needs the games,
 // and the Base's volume per game has to clear its floor.
 const THIN_MIN_GAMES = 5;
@@ -2080,10 +2308,35 @@ const thinBase = (base, facts) =>
   facts.reduce((total, fact) => total + fact.season.volume / fact.season.games_played, 0) <
     THIN_MIN_VOLUME_PER_GAME[base];
 
+const ruleShare = (qualifier) => ({
+  base: qualifier.base,
+  slice_key: null,
+  share: null,
+  league_average_share: null,
+});
+
 const resolvedFit = (qualifiers, player) => {
   const shares = [];
   let thin = false;
   for (const qualifier of qualifiers) {
+    if (qualifier.base === 'position') {
+      // A player with no listed Position never fits a Position Qualifier.
+      if (!qualifier.groups.includes(playerPosition(player))) return null;
+      shares.push(ruleShare(qualifier));
+      continue;
+    }
+    if (qualifier.base === 'season_average') {
+      const average = targetStatAverage(seasonsByPlayer[player.name] || [], qualifier.stat);
+      if (!Number.isFinite(average)) return null;
+      const meets =
+        qualifier.comparator === 'at_or_below'
+          ? average <= qualifier.threshold
+          : average >= qualifier.threshold;
+      if (!meets) return null;
+      thin = thin || seasonGamesPlayed(player) < THIN_MIN_GAMES;
+      shares.push(ruleShare(qualifier));
+      continue;
+    }
     const facts = player.diet_shares[qualifier.base] || [];
     const fact = facts.find((item) => item.key === qualifier.slice_key);
     // No stored share for the slice is not a share of zero, so the player is
@@ -2109,6 +2362,7 @@ const resolvedFit = (qualifiers, player) => {
     tricode: player.tricode,
     posted_markets: player.posted_markets,
     injury_badge_ref: player.injury_badge_ref,
+    position: playerPosition(player),
     season_scoring: player.season_scoring,
     thin,
     shares,
@@ -2390,6 +2644,7 @@ const backtestPlayer = (target, statColumns, player) => {
     name: player.name,
     team_id: player.team_id,
     tricode: player.tricode,
+    position: playerPosition(player),
     season_scoring: player.season_scoring,
     shares: fit.shares,
     season_totals: seasonTotals(season),
@@ -2416,9 +2671,12 @@ const backtestPlayer = (target, statColumns, player) => {
  * each player's own season average and the share of games at or above it. A
  * market with no game to average has no figure.
  */
-export const backtestSummary = (players, statColumns) => {
+export const backtestSummary = (players, statColumns, playersWithoutPosition) => {
   const games = players.flatMap((player) => player.games.map((game) => ({ player, game })));
   return {
+    ...(playersWithoutPosition !== undefined
+      ? { players_without_position: playersWithoutPosition }
+      : {}),
     players: players.length,
     games: games.length,
     columns: Object.fromEntries(
@@ -2522,7 +2780,13 @@ const backtestTarget = (target, season) => {
     },
     proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
     stat_columns: statColumns,
-    summary: backtestSummary(players, statColumns),
+    summary: backtestSummary(
+      players,
+      statColumns,
+      target.qualifiers.some(({ base }) => base === 'position')
+        ? leaguePlayers.filter((player) => playerPosition(player) === null).length
+        : undefined,
+    ),
     players,
   };
 };
@@ -2536,20 +2800,39 @@ const backtestTarget = (target, season) => {
  */
 const TARGET_QUALIFIER_LIMIT = 10;
 
+const invalidQualifier = (qualifier) => {
+  if (qualifier.base === 'position')
+    return (
+      !Array.isArray(qualifier.groups) ||
+      qualifier.groups.length === 0 ||
+      qualifier.groups.some((group) => !POSITION_ORDER.includes(group))
+    );
+  if (qualifier.base === 'season_average')
+    return (
+      !TARGET_COLUMNS.includes(qualifier.stat) ||
+      !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
+      typeof qualifier.threshold !== 'number' ||
+      !Number.isFinite(qualifier.threshold) ||
+      qualifier.threshold < 0 ||
+      qualifier.threshold > 1000
+    );
+  return (
+    !knownSlice(qualifier.base, qualifier.slice_key) ||
+    !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
+    typeof qualifier.threshold !== 'number' ||
+    qualifier.threshold < 0 ||
+    qualifier.threshold > 1
+  );
+};
+
 const invalidTargetBody = (body) =>
   !body ||
   typeof body.opponent !== 'string' ||
   !Array.isArray(body.qualifiers) ||
   body.qualifiers.length === 0 ||
   body.qualifiers.length > TARGET_QUALIFIER_LIMIT ||
-  body.qualifiers.some(
-    (qualifier) =>
-      !knownSlice(qualifier.base, qualifier.slice_key) ||
-      !['at_or_above', 'at_or_below'].includes(qualifier.comparator) ||
-      typeof qualifier.threshold !== 'number' ||
-      qualifier.threshold < 0 ||
-      qualifier.threshold > 1,
-  );
+  body.qualifiers.some((qualifier) => invalidQualifier(qualifier)) ||
+  body.qualifiers.filter(({ base }) => base === 'position').length > 1;
 
 const previewTarget = (draft, season) => {
   const target = { ...draft, title: backendTargetTitle(draft) };
@@ -2588,12 +2871,60 @@ const refuseFallback = (route) =>
     },
   });
 
-const PUBLIC_ROUTES = new Set(['/api/games/slate', '/api/games/slate/edges', '/api/games/ladder']);
+const PUBLIC_ROUTES = new Set([
+  '/api/games/slate',
+  '/api/games/slate/edges',
+  '/api/games/ladder',
+  '/api/games/game_logs',
+]);
+
+// A signed-out or waitlisted game-log read keeps every posted line and its
+// source but no price (crf04/statsplus#381): no `line_prices`, and each book
+// entry without `over` and `under`.
+const withoutPrices = (posted) => {
+  const unpriced = { ...posted };
+  delete unpriced.line_prices;
+  unpriced.book_lines = Object.fromEntries(
+    Object.entries(posted.book_lines ?? {}).map(([market, quote]) => [
+      market,
+      { ...quote, books: quote.books.map(({ book, line }) => ({ book, line })) },
+    ]),
+  );
+  return unpriced;
+};
 
 // One published report (crf04/statsplus#342), trimmed from the 2026-10-25 injury brief:
 // two games, two spots, two set-aside players and two real cards (game logs, on/off).
 export const REPORT_ID = 'k3x9q2mtzr';
 export const reportPayload = () => structuredClone(reportFixture);
+
+// The same kind of report as a block document (crf04/statsplus#380): the Reaves
+// assists report, its paragraphs, spot, table and callouts around four real cards.
+export const BLOCK_REPORT_ID = 'r7b10cks28';
+export const blockReportPayload = () => structuredClone(blockReportFixture);
+
+// One page of Research (crf04/statsplus#372): Featured, then listed reports newest first.
+export const researchPayload = ({
+  featured = /** @type {object[]} */ ([]),
+  reports = /** @type {object[]} */ ([]),
+  nextCursor = /** @type {string | null} */ (null),
+} = {}) => ({
+  featured,
+  reports,
+  next_cursor: nextCursor,
+});
+// The fixture report as a listed Research entry.
+export const researchEntry = (overrides = {}) => ({
+  id: REPORT_ID,
+  title: 'Injury brief · Sunday, October 25',
+  listed_at: '2026-10-25T23:00:00Z',
+  created_at: '2026-10-25T22:30:00Z',
+  date: '2026-10-25',
+  author: { handle: 'bighatprops' },
+  covers: { games: ['ORL @ NYK', 'DET @ CHA'], players: ['Desmond Bane', 'Paolo Banchero'] },
+  preview_url: `/api/reports/${REPORT_ID}/preview.png`,
+  ...overrides,
+});
 
 // The ladder's three Filter Sets, as the backend owns them, each answered from
 // the same game-log composition `/api/games/game_logs` serves for them.
@@ -2699,7 +3030,107 @@ const unscheduledShotZonePayload = (opponent) => ({
   ],
 }); // prettier-ignore
 
+// The MCP server's Report Builder routes (crf04/statsplus#382, the coordination repository's
+// docs/contracts/report-builder-cards.md). The browser calls them cross-origin with the bearer.
+const CARD_TOOLS = ['query_game_logs', 'get_matchup', 'get_rotation', 'get_on_off', 'get_injuries'];
+const CARD_OF = {
+  query_game_logs: 'game-logs',
+  get_matchup: 'matchup',
+  get_rotation: 'rotation',
+  get_on_off: 'on-off',
+  get_injuries: 'injuries',
+};
+const CALL_ID = /^[a-z0-9-]{1,40}$/;
+const isRecordValue = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/* Why a /web/reports body breaks the contract, or null when it keeps it. */
+const cardPublishProblem = (body) => {
+  if (!isRecordValue(body) || !isRecordValue(body.report) || !Array.isArray(body.report.blocks))
+    return 'report.blocks is required';
+  if (typeof body.show_author !== 'boolean' || typeof body.listed !== 'boolean')
+    return 'show_author and listed are booleans';
+  if (!Array.isArray(body.calls) || body.calls.length > 48) return 'calls holds at most 48';
+  const ids = body.calls.map((call) => call?.id);
+  if (
+    new Set(ids).size !== ids.length ||
+    body.calls.some(
+      (call) => !CALL_ID.test(call.id) || !CARD_TOOLS.includes(call.tool) || !isRecordValue(call.args),
+    )
+  )
+    return 'each call has a unique id, a card tool and args';
+  const named = body.report.blocks.flatMap((block) =>
+    block.type === 'card' ? [block.card] : block.type === 'cards' ? block.cards : [],
+  );
+  if (body.report.blocks.some((block) => block.type === 'cards' && !(block.cards.length >= 2 && block.cards.length <= 3)))
+    return 'a cards row holds 2-3 calls';
+  if (named.some((id) => !ids.includes(id))) return 'every card names a call';
+  return null;
+}; // prettier-ignore
+
+const installCardRoutes = async (page) => {
+  await page.route(/^https?:\/\/[^/]+\/web\/(cards\/preview|reports)$/, async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const cors = {
+      'access-control-allow-origin': request.headers().origin || '*',
+      'access-control-allow-headers': 'Authorization, Content-Type',
+      'access-control-expose-headers': 'Retry-After',
+    };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: cors });
+      return;
+    }
+    const refuse = (status, code, message) =>
+      route.fulfill({ status, headers: cors, json: { error: { code, message } } });
+    if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+      await refuse(401, 'unauthorized', 'Missing E2E bearer token.');
+      return;
+    }
+    const body = request.postDataJSON();
+    if (url.pathname === '/web/reports') {
+      const problem = cardPublishProblem(body);
+      if (problem) await refuse(400, 'invalid_input', problem);
+      else {
+        await route.fulfill({
+          status: 201,
+          headers: cors,
+          json: {
+            report: {
+              id: BLOCK_REPORT_ID,
+              url: `https://courtai.app/reports/${BLOCK_REPORT_ID}`,
+            },
+          },
+        });
+      }
+      return;
+    }
+    if (!CARD_TOOLS.includes(body?.tool) || !isRecordValue(body.args ?? body.filter_set)) {
+      await refuse(400, 'invalid_input', 'A card request names a card tool and its args.');
+      return;
+    }
+    // A Filter Set comes back as the args the server would convert it to; this
+    // contract converts only the player and the market.
+    const args = body.args ?? {
+      player: body.filter_set.player_name,
+      market: body.filter_set.line_type === 'FG3M' ? '3PM' : body.filter_set.line_type,
+    };
+    const card = CARD_OF[body.tool];
+    await route.fulfill({
+      headers: cors,
+      json: {
+        call: { tool: body.tool, args },
+        structured: {},
+        meta: null,
+        card,
+        html: `<!doctype html><p>CourtAI ${card} card</p>`,
+      },
+    });
+  });
+};
+
 export const installApiContract = async (page, overrides = {}, { waitlisted = false } = {}) => {
+  await installCardRoutes(page);
   const operationsJobs = [...operationsPayload.jobs];
   // Saved Filter Sets are account state rather than reference data, so the
   // contract remembers what this page saved: a list that never changes cannot
@@ -2723,6 +3154,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       target.conditions ?? null,
     ]);
   let attributionRecorded = false;
+  let publicHandle = null;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -2805,6 +3237,65 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    // The account chooses its public handle once (crf04/statsplus#372), as the backend
+    // normalizes it: one leading @ and capitals dropped, then 3-20 of a-z, 0-9 and _.
+    if (url.pathname === '/api/user/public-handle' && request.method() === 'PUT' && !override) {
+      if (request.headers().authorization !== 'Bearer courtai-e2e-token') {
+        await route.fulfill({
+          status: 401,
+          json: { error: { code: 'unauthorized', message: 'Missing E2E bearer token.' } },
+        });
+        return;
+      }
+      let body;
+      try {
+        body = request.postDataJSON();
+      } catch {
+        body = null;
+      }
+      const raw = typeof body?.handle === 'string' ? body.handle.trim() : '';
+      const handle = (raw.startsWith('@') ? raw.slice(1) : raw).toLowerCase();
+      if (!/^[a-z0-9_]{3,20}$/.test(handle)) {
+        await route.fulfill({
+          status: 400,
+          json: {
+            error: 'invalid_handle',
+            message: 'A handle is 3-20 characters of a-z, 0-9 and _.',
+          },
+        });
+      } else if (publicHandle !== null) {
+        await route.fulfill({
+          status: 409,
+          json: {
+            error: 'handle_already_set',
+            message: 'Your handle is already set. Ask CourtAI support to change it.',
+          },
+        });
+      } else {
+        publicHandle = handle;
+        await route.fulfill({ json: { handle } });
+      }
+      return;
+    }
+
+    // Research is an anonymous read (crf04/statsplus#372). Nothing is listed by
+    // default, so the nav and the public home stay as they were; a test lists
+    // reports with an override for '/api/research' or '/api/research/authors/<handle>'.
+    if (
+      request.method() === 'GET' &&
+      (url.pathname === '/api/research' || url.pathname.startsWith('/api/research/authors/'))
+    ) {
+      if (override) {
+        await fulfillOverride(
+          route,
+          typeof override === 'function' ? await override(request) : override,
+        );
+      } else {
+        await route.fulfill({ json: researchPayload() });
+      }
+      return;
+    }
+
     // A published report is an anonymous read (crf04/statsplus#342): the stored
     // document, its card calls' results and the card HTML, or 404 for any other id.
     const reportPath = url.pathname.startsWith('/api/reports/') && url.pathname.split('/');
@@ -2816,6 +3307,8 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         );
       } else if (reportPath[3] === REPORT_ID) {
         await route.fulfill({ json: reportPayload() });
+      } else if (reportPath[3] === BLOCK_REPORT_ID) {
+        await route.fulfill({ json: blockReportPayload() });
       } else {
         await route.fulfill({
           status: 404,
@@ -2848,9 +3341,9 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
-    // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211):
-    // answered whoever asks, a waitlisted account included, and whatever
-    // Authorization header comes with them.
+    // The Slate, its Edges and the ladder are anonymous reads (crf04/statsplus#211),
+    // and so are game logs (crf04/statsplus#381): answered whoever asks, a
+    // waitlisted account included, and whatever Authorization header comes with them.
     if (override && PUBLIC_ROUTES.has(url.pathname)) {
       const response = typeof override === 'function' ? await override(request) : override;
       await fulfillOverride(route, response);
@@ -2919,6 +3412,42 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
       return;
     }
 
+    if (url.pathname === '/api/games/game_logs') {
+      const playerName = url.searchParams.get('player_name');
+      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
+      const posted = postedLinesByName[playerName] ?? null;
+      const priced = !waitlisted && request.headers().authorization === 'Bearer courtai-e2e-token';
+      // Only an admitted account reads a season after the Published Season,
+      // which stays held until its cutover (crf04/statsplus-backend#648).
+      const selectedSeason = url.searchParams.get('season_filter');
+      if (!priced && selectedSeason !== null && selectedSeason > PUBLISHED_SEASON) {
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: {
+              code: 'season_unavailable',
+              message: 'The selected season is not available yet.',
+              details: { selected_season: selectedSeason, published_season: PUBLISHED_SEASON },
+            },
+          },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),
+          averages: [averages],
+          season_averages: [{ ...averages, PTS: 27, AST: 8 }],
+          // Like the real endpoint, the season total ignores every filter.
+          season_game_count: season.length,
+          next_game: 'Atlanta Hawks',
+          player_id: playerIdsByName[playerName] ?? null,
+          posted_line: posted && !priced ? withoutPrices(posted) : posted,
+        },
+      });
+      return;
+    }
+
     if (waitlisted) {
       await route.fulfill(waitlistedResponse);
       return;
@@ -2983,6 +3512,24 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
     if (override) {
       const response = typeof override === 'function' ? await override(request) : override;
       await fulfillOverride(route, response);
+      return;
+    }
+
+    if (url.pathname === '/api/user/profile' && request.method() === 'GET') {
+      await route.fulfill({
+        json: {
+          success: true,
+          user: {
+            firebase_uid: 'courtai-e2e-user',
+            email: 'e2e@courtai.test',
+            display_name: 'CourtAI Test User',
+            photo_url: null,
+            created_at: '2026-10-01T00:00:00',
+            last_login: '2026-10-28T00:00:00',
+            is_active: true,
+          },
+        },
+      });
       return;
     }
 
@@ -3161,12 +3708,22 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         }
       }
       const index = targets.findIndex((item) => String(item.id) === targetId);
-      const toStored = (qualifier) => ({
-        base: qualifier.base,
-        slice_key: qualifier.slice_key,
-        comparator: qualifier.comparator,
-        threshold: qualifier.threshold,
-      });
+      const toStored = (qualifier) =>
+        qualifier.base === 'position'
+          ? { base: 'position', groups: qualifier.groups }
+          : qualifier.base === 'season_average'
+            ? {
+                base: 'season_average',
+                stat: qualifier.stat,
+                comparator: qualifier.comparator,
+                threshold: qualifier.threshold,
+              }
+            : {
+                base: qualifier.base,
+                slice_key: qualifier.slice_key,
+                comparator: qualifier.comparator,
+                threshold: qualifier.threshold,
+              };
       const conflict = (message) =>
         route.fulfill({ status: 409, json: { error: { code: 'operation_conflict', message } } });
 
@@ -3457,10 +4014,17 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         });
         return;
       }
+      if (/\bagainst the hawks\b/i.test(request.postDataJSON()?.query ?? '')) {
+        await route.fulfill({
+          json: { player_name: 'LeBron James', opponent_tricode: 'ATL', confidence: 0.96 },
+        });
+        return;
+      }
       await route.fulfill({
         json: {
           player_name: 'LeBron James',
           game_count: 10,
+          opponent_tricode: null,
           confidence: 0.96,
         },
       });
@@ -3469,24 +4033,6 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
 
     if (url.pathname === '/api/games/seasons') {
       await route.fulfill({ json: SEASONS });
-      return;
-    }
-
-    if (url.pathname === '/api/games/game_logs') {
-      const playerName = url.searchParams.get('player_name');
-      const season = applySeason(seasonsByPlayer[playerName] || gameLogs, url);
-      await route.fulfill({
-        json: {
-          game_logs: applyDateRange(applyOpponentTricode(applySelfFilters(season, url), url), url),
-          averages: [averages],
-          season_averages: [{ ...averages, PTS: 27, AST: 8 }],
-          // Like the real endpoint, the season total ignores every filter.
-          season_game_count: season.length,
-          next_game: 'Atlanta Hawks',
-          player_id: playerIdsByName[playerName] ?? null,
-          posted_line: postedLinesByName[playerName] ?? null,
-        },
-      });
       return;
     }
 

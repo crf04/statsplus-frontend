@@ -39,7 +39,7 @@ export default function FeedbackPopover() {
   const { panel, closeFeedback, showToast } = useFeedback();
   const { currentUser } = useAuth();
   const { pathname, search } = useLocation();
-  const { id, reference, container } = panel;
+  const { id, reference, report, container } = panel;
   const [message, setMessage] = useState('');
   const [replyOk, setReplyOk] = useState(true);
   const [withScreenshot, setWithScreenshot] = useState(false);
@@ -134,7 +134,9 @@ export default function FeedbackPopover() {
     >
       <div className="feedback-body">
         <div className="feedback-head">
-          <strong>{reference ? 'Report this error' : 'Feedback'}</strong>
+          <strong>
+            {reference ? 'Report this error' : report ? 'Report this report' : 'Feedback'}
+          </strong>
           <button
             type="button"
             className="feedback-icon"
@@ -154,7 +156,9 @@ export default function FeedbackPopover() {
           placeholder={
             reference
               ? 'What were you doing when this happened?'
-              : 'What’s working, what’s broken, what’s missing?'
+              : report
+                ? 'What’s wrong with this report?'
+                : 'What’s working, what’s broken, what’s missing?'
           }
         />
         <label className="feedback-x">
@@ -205,7 +209,14 @@ export default function FeedbackPopover() {
           </label>
         </div>
         <p className="feedback-fine">
-          Also sends this page’s address and the app version
+          Also sends this page’s address
+          {report ? (
+            <>
+              {' '}
+              (report <code>{report}</code>)
+            </>
+          ) : null}{' '}
+          and the app version
           {reference ? (
             <>
               , and error <code>ref {reference}</code>

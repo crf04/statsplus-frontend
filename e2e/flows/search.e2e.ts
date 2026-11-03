@@ -1,6 +1,6 @@
 // Flow: Search. A prose query resolves to a Log Workspace whose Filter Set
-// lives in the URL; a rejected query stays retryable; signed-out visitors keep
-// the link they followed.
+// lives in the URL; a rejected query stays retryable. Signed-out visitors
+// reading a shared link are shared-links.e2e.ts.
 import { expect } from 'e2e';
 import { signedInTest, signedOutTest } from './support/courtai.ts';
 
@@ -101,24 +101,6 @@ signedInTest(
     await api.override({});
     await screen.getByRole('textbox', PROMPT).fill(QUERY);
     await screen.getByRole('textbox', PROMPT).press('Enter');
-    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
-    await expect(screen.getByRole('cell', '31')).toBeVisible();
-  },
-);
-
-signedOutTest(
-  'a signed-out visitor keeps the link and loads it once after signing in',
-  { tags: ['critical'] },
-  async ({ app, screen, browser, api }) => {
-    await app.open('/?player_name=LeBron+James&game_filter=10');
-
-    await expect(
-      screen.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
-    ).toBeVisible();
-    await expect(browser).toHaveURL('/?player_name=LeBron+James&game_filter=10');
-    expect(api.sent('/api/games/game_logs')).toHaveLength(0);
-
-    await screen.getByRole('button', 'Sign in with Google').first().tap();
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
   },

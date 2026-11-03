@@ -59,14 +59,14 @@
 .waitlist-signout.btn {
   min-width: 160px;
   padding: 8px 16px;
-  background: #131314;
-  border-color: #3a3428;
-  color: #e3e3e3;
+  background: var(--ct-x-131314);
+  border-color: var(--ct-rule);
+  color: var(--ct-x-e3e3e3);
   font-weight: 500;
 }
 
 .waitlist-signout.btn:hover:not(:disabled) {
   border-color: var(--ct-gold);
-  background: #131314;
+  background: var(--ct-x-131314);
   color: var(--ct-gold-hover);
 }

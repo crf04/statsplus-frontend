@@ -105,8 +105,9 @@ describe('a page that reads the newest offered season up to its own', () => {
       expect(screen.getByLabelText('Request season')).toHaveTextContent('2026-27'),
     );
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(screen.getByLabelText('Current URL')).toBeEmptyDOMElement();
   });

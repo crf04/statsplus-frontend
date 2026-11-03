@@ -40,7 +40,7 @@ const resolved = {
   ],
 };
 
-const CACHE_KEY = 'courtai.homeTonight.v2';
+const CACHE_KEY = 'courtai.homeTonight.v3';
 const pending = () => new Promise(() => {});
 
 beforeEach(() => {
@@ -156,16 +156,27 @@ test('switching accounts clears the previous reader and rereads', async () => {
 });
 
 test('the Slate, Edges and Targets are all requested before any of them answers', () => {
+  jest.useFakeTimers({ now: new Date('2026-10-29T16:00:00Z') });
   fetchSlate.mockReturnValue(pending());
   fetchSlateEdges.mockReturnValue(pending());
   fetchResolvedTargets.mockReturnValue(pending());
   renderHook(() => useHomeTonight(true, 'reader-a'));
+  jest.useRealTimers();
 
   // Synchronously after mount: nothing has resolved, yet all three are in flight,
-  // each asking for the next game day on its own and naming no date.
+  // each asking for the next game day on its own and naming no date. The Slate
+  // and Edges name today's season; Targets stay on the default.
   const signal = expect.any(AbortSignal);
-  expect(fetchSlate).toHaveBeenCalledWith(undefined, { signal, fallback: 'next_game_day' });
-  expect(fetchSlateEdges).toHaveBeenCalledWith({ signal, fallback: 'next_game_day' });
+  expect(fetchSlate).toHaveBeenCalledWith(undefined, {
+    signal,
+    fallback: 'next_game_day',
+    season: '2026-27',
+  });
+  expect(fetchSlateEdges).toHaveBeenCalledWith({
+    signal,
+    fallback: 'next_game_day',
+    season: '2026-27',
+  });
   expect(fetchResolvedTargets).toHaveBeenCalledWith({ signal, fallback: 'next_game_day' });
 });
 

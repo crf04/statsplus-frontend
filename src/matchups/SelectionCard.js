@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   bookMark,
   bookName,
+  categoryLabel,
   formatScorePercent as formatPercent,
   orderCategories,
 } from './displayConfig';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 const BASE_ORDER = [
   'shotTypes',
@@ -37,8 +39,10 @@ const signClass = (value) => {
 const washStyle = (component) => {
   if (!component || Math.round(component.value * 100) === 0) return undefined;
   const alpha = Math.min(0.55, Math.abs(component.value) * 3);
-  const rgb = component.value > 0 ? '76, 175, 125' : '194, 78, 78';
-  return { background: `rgba(${rgb}, ${alpha.toFixed(2)})` };
+  const family = component.value > 0 ? 'hit' : 'miss';
+  return {
+    background: `rgb(var(--ct-${family}-bg-rgb) / calc(${alpha.toFixed(2)} * var(--ct-k-accent-bg)))`,
+  };
 };
 
 // The tip time is the schedule's own time in the reader's zone.
@@ -128,26 +132,34 @@ function BookLines({ market, quote }) {
   );
 }
 
-// The DFS apps that price a pick, in the order their rows are listed. Dabble's
-// price is the owner's −122 for an even line (statsplus#263).
-const DFS_PRICED = ['underdog', 'dabble'];
+// Every app and market that numbers the stat, priced or not: the rail shows
+// one line, so this is where the others are read.
+const APP_ORDER = ['prizepicks', 'underdog', 'dabble', 'novig', 'kalshi', 'polymarket'];
 
-// The decoder admits a price only beside that provider's line for the market.
-const dfsQuotes = (player, market) =>
-  DFS_PRICED.flatMap((provider) => {
-    const quote = player.linePrices?.[provider]?.[market];
-    return quote ? [{ provider, line: player.lines[provider][market], ...quote }] : [];
-  });
+const appQuotes = (player, market) =>
+  Object.keys(player.lines ?? {})
+    .filter((provider) => typeof player.lines[provider]?.[market] === 'number')
+    .sort((a, b) => {
+      const rank = (provider) =>
+        APP_ORDER.includes(provider) ? APP_ORDER.indexOf(provider) : APP_ORDER.length;
+      return rank(a) - rank(b) || a.localeCompare(b);
+    })
+    .map((provider) => ({
+      provider,
+      line: player.lines[provider][market],
+      over: player.linePrices?.[provider]?.[market]?.over ?? null,
+      under: player.linePrices?.[provider]?.[market]?.under ?? null,
+    }));
 
-// Renders nothing when neither app prices the stat, whatever the books quote.
+// Renders nothing when no app numbers the stat, whatever the books quote.
 function DfsLines({ player, market }) {
-  const quotes = dfsQuotes(player, market);
+  const quotes = appQuotes(player, market);
   if (quotes.length === 0) return null;
   return (
-    <section className="selection-panel selection-panel-books" aria-label="DFS">
-      <h3>DFS · {market}</h3>
+    <section className="selection-panel selection-panel-books" aria-label="Apps">
+      <h3>Apps · {market}</h3>
       <div className="selection-table-wrap">
-        <table aria-label={`${market} DFS lines`} className="selection-books">
+        <table aria-label={`${market} app lines`} className="selection-books">
           <thead>
             <tr>
               <th scope="col">App</th>
@@ -240,7 +252,7 @@ function StatStrip({ player, categories, activeStat, onPick }) {
             type="button"
             key={category}
             className="selection-strip-tile"
-            aria-label={category}
+            aria-label={categoryLabel(category)}
             aria-describedby={`selection-strip-${category}`}
             aria-pressed={activeStat === category}
             onClick={() => onPick(category)}
@@ -369,7 +381,10 @@ export default function SelectionCard({
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
   }, [player.id, stats, sheetMarket]);
-  const rows = categories.map((market) => ({ market, score: player.scores[market][windowKey] }));
+  const rows = categories
+    .filter((market) => Object.hasOwn(player.scores, market))
+    .map((market) => ({ market, score: player.scores[market][windowKey] }));
+  const unscored = categories.filter((market) => !Object.hasOwn(player.scores, market));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
     return index === -1 ? BASE_ORDER.length : index;
@@ -420,59 +435,67 @@ export default function SelectionCard({
       />
       <div className="selection-panels">
         <section className="selection-panel" aria-label="Score Matrix">
-          <h3>Score Matrix</h3>
-          <div className="selection-table-wrap">
-            <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
-              <thead>
-                <tr>
-                  <th scope="col">{historical ? 'Category' : 'Market'}</th>
-                  {bases.map((base) => (
-                    <th scope="col" key={base}>
-                      {BASE_LABELS[base] || base}
-                    </th>
-                  ))}
-                  {hasBlend && (
-                    <th scope="col" className="blend-col">
-                      Blend
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ market, score }) => (
-                  <tr
-                    key={market}
-                    className={market === activeStat ? 'active-market-row' : undefined}
-                    onClick={() => setActiveStat(market)}
-                  >
-                    <th scope="row">
-                      <button
-                        type="button"
-                        className="selection-matrix-pick"
-                        aria-pressed={market === activeStat}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setActiveStat(market);
-                        }}
-                      >
-                        {market}
-                      </button>
-                    </th>
+          <div className="help-tip-heading">
+            <h3>Score Matrix</h3>
+            <HelpTip tip="scoreMatrix" />
+          </div>
+          {rows.length > 0 && (
+            <div className="selection-table-wrap">
+              <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
+                <thead>
+                  <tr>
+                    <th scope="col">{historical ? 'Category' : 'Market'}</th>
                     {bases.map((base) => (
-                      <td key={base} style={washStyle(score.components[base])}>
-                        <Cell component={score.components[base]} />
-                      </td>
+                      <th scope="col" key={base}>
+                        {BASE_LABELS[base] || base}
+                      </th>
                     ))}
                     {hasBlend && (
-                      <td className="blend-col" style={washStyle(score.blend)}>
-                        <Cell component={score.blend} />
-                      </td>
+                      <th scope="col" className="blend-col">
+                        Blend
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map(({ market, score }) => (
+                    <tr
+                      key={market}
+                      className={market === activeStat ? 'active-market-row' : undefined}
+                      onClick={() => setActiveStat(market)}
+                    >
+                      <th scope="row">
+                        <button
+                          type="button"
+                          className="selection-matrix-pick"
+                          aria-pressed={market === activeStat}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setActiveStat(market);
+                          }}
+                        >
+                          {market}
+                        </button>
+                      </th>
+                      {bases.map((base) => (
+                        <td key={base} style={washStyle(score.components[base])}>
+                          <Cell component={score.components[base]} />
+                        </td>
+                      ))}
+                      {hasBlend && (
+                        <td className="blend-col" style={washStyle(score.blend)}>
+                          <Cell component={score.blend} />
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {unscored.length > 0 && (
+            <p className="honest-empty">No Matchup Score is computed for {unscored.join(', ')}.</p>
+          )}
         </section>
         <section
           className="selection-panel selection-panel-log"

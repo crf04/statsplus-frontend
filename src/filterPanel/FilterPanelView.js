@@ -1,6 +1,7 @@
 // The Filter Set sentence and inline editors, from the frozen J design.
 import { useState } from 'react';
 import { opponentFilterRankLabel } from '../opponentFilters';
+import { TEAM_CODES } from '../targets/opponentContextApi';
 import {
   TeamFilterBuilder,
   Range,
@@ -25,6 +26,7 @@ const TILES = [
   { key: 'games', title: 'Last N', sub: 'most recent games' },
   { key: 'date', title: 'Since', sub: 'a date' },
   { key: 'location', title: 'Home / Away', sub: 'venue' },
+  { key: 'opponent', title: 'Opponent', sub: 'one team' },
   { key: 'minutes', title: 'Minutes', sub: 'played' },
   // Hidden from Add a filter for now; a linked playtype rule still edits here.
   { key: 'playtype', title: 'Playtype', sub: 'matchup rating', hidden: true },
@@ -49,7 +51,7 @@ const Rule = ({ kind, children, onEdit, onRemove, name }) => (
   </li>
 );
 
-export const Editor = ({ which, panel, onDone }) => {
+export const Editor = ({ which, panel, onDone, statColumns }) => {
   const title = TILES.find((tile) => tile.key === which)?.title;
   let body = null;
   if (which === 'teammate') body = <TeammateSearch panel={panel} />;
@@ -110,6 +112,34 @@ export const Editor = ({ which, panel, onDone }) => {
         options={['Both', 'Home', 'Away']}
       />
     );
+  if (which === 'opponent')
+    body = (
+      <>
+        {panel.nextOpponentTricode && (
+          <button
+            type="button"
+            className="fp-btn-ghost fp-btn-block"
+            onClick={() => panel.changeOpponent(panel.nextOpponentTricode)}
+          >
+            Next: vs {panel.nextOpponentTricode}
+          </button>
+        )}
+        <div className="fpb-quick fpb-teams" role="group" aria-label="Teams">
+          {Object.entries(TEAM_CODES).map(([name, tricode]) => (
+            <button
+              key={tricode}
+              type="button"
+              title={name}
+              aria-pressed={panel.opponentTricode === tricode}
+              className={panel.opponentTricode === tricode ? 'is-on' : ''}
+              onClick={() => panel.changeOpponent(tricode)}
+            >
+              {tricode}
+            </button>
+          ))}
+        </div>
+      </>
+    );
   if (which === 'minutes')
     body = (
       <>
@@ -150,7 +180,7 @@ export const Editor = ({ which, panel, onDone }) => {
   if (which === 'self')
     body = (
       <>
-        <StatSelect panel={panel} />
+        <StatSelect panel={panel} columns={statColumns} />
         <StatRange panel={panel} />
         <button
           type="button"
@@ -179,9 +209,25 @@ export const Editor = ({ which, panel, onDone }) => {
  * `tabs` is the Filters | Saved switch; `body` replaces the filters with the
  * Saved tab; `savedName` names the saved set the filters are; `save` sits
  * beside Apply. All are absent for a reader with no account to save to.
+ * `statColumns` narrows the Own stat line choices. `menu` is the Report
+ * Builder's compact form (crf04/statsplus#406): the filters as chips beside
+ * the Season, a "+ Filter" menu in place of the tiles, and no Apply, because
+ * the builder applies each edit itself.
  */
-const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, savedName, save }) => {
+const FilterPanelView = ({
+  panel,
+  pinned,
+  filler,
+  compactTiles,
+  tabs,
+  body,
+  savedName,
+  save,
+  statColumns,
+  menu,
+}) => {
   const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
   const s = panel.summary;
   const rules = [];
   panel.activePlayers.forEach((player) =>
@@ -269,7 +315,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
         key="o"
         name={s.opponent}
         kind="versus"
-        onEdit={() => {}}
+        onEdit={() => setEditing('opponent')}
         onRemove={panel.clearOpponent}
       >
         {s.opponent}
@@ -308,6 +354,80 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
     ),
   );
 
+  const startEditing = (key) => {
+    if (key === 'self') panel.ensureSeason();
+    setEditing(key);
+  };
+  const editor = editing && (
+    <Editor
+      which={editing}
+      panel={panel}
+      statColumns={statColumns}
+      onDone={() => setEditing(null)}
+    />
+  );
+  const seasonSelect = panel.seasons && (
+    <label className="fpb-season">
+      <span>Season</span>
+      <select
+        className="fp-select"
+        value={panel.season}
+        onChange={(e) => panel.changeSeason(e.target.value)}
+      >
+        {panel.seasons.map(({ season, label }) => (
+          <option key={season} value={season}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  if (menu) {
+    return (
+      <div className="fp fp-b fp-menu" data-testid="filter-panel">
+        <div className="fpm-bar">
+          {seasonSelect}
+          {rules.length > 0 && (
+            <ul className="fpb-rules" aria-label="Filters">
+              {rules}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="fpm-add"
+            aria-expanded={adding}
+            onClick={() => setAdding(!adding)}
+          >
+            + Filter
+          </button>
+        </div>
+        {adding && (
+          <div
+            className="fpm-menu"
+            role="group"
+            aria-label="Add a filter"
+            onKeyDown={(e) => e.key === 'Escape' && setAdding(false)}
+          >
+            {TILES.filter((tile) => !tile.hidden).map((tile) => (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => {
+                  setAdding(false);
+                  startEditing(tile.key);
+                }}
+              >
+                {tile.title} <span>{tile.sub}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {editor}
+      </div>
+    );
+  }
+
   return (
     <div className={`fp fp-b${pinned ? ' fp-pinned' : ''}`} data-testid="filter-panel">
       <div className="fp-scroll">
@@ -317,35 +437,12 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
             reports when the Workspace has settled, and an Apply sent from the
             Saved tab would otherwise wait for it forever. */}
         <div className="fpt-filters" hidden={Boolean(body)}>
-          <div className="fpb-head">
-            <span className="fpb-eyebrow">Showing</span>
-            <h2>{panel.selectedPlayer}&rsquo;s games</h2>
-            {savedName && <p className="fpt-current">Saved as {savedName}</p>}
-          </div>
-          {panel.seasons && (
-            <label className="fpb-season">
-              <span>Season</span>
-              <select
-                className="fp-select"
-                value={panel.season}
-                onChange={(e) => panel.changeSeason(e.target.value)}
-              >
-                {panel.seasons.map(({ season, label }) => (
-                  <option key={season} value={season}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {rules.length > 0 ? (
-            <ul className="fpb-rules">{rules}</ul>
-          ) : (
-            <p className="fpb-empty">Every game this season. Add a filter to narrow it.</p>
-          )}
+          {savedName && <p className="fpt-current">Saved as {savedName}</p>}
+          {seasonSelect}
+          {rules.length > 0 && <ul className="fpb-rules">{rules}</ul>}
 
           {editing ? (
-            <Editor which={editing} panel={panel} onDone={() => setEditing(null)} />
+            editor
           ) : (
             <>
               <div className="fpb-addlabel">Add a filter</div>
@@ -355,10 +452,7 @@ const FilterPanelView = ({ panel, pinned, filler, compactTiles, tabs, body, save
                     key={tile.key}
                     type="button"
                     className="fpb-tile"
-                    onClick={() => {
-                      if (tile.key === 'self') panel.ensureSeason();
-                      setEditing(tile.key);
-                    }}
+                    onClick={() => startEditing(tile.key)}
                   >
                     <b>+ {tile.title}</b>
                     <span>{tile.sub}</span>

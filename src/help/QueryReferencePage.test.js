@@ -50,6 +50,16 @@ describe('QueryReferencePage', () => {
     ).toBeInTheDocument();
   });
 
+  test('shows a single-team opponent example', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('cell', {
+        name: 'Only games versus one team, such as Jokic against the Blazers, or versus opponents matching a defensive rank.',
+      }),
+    ).toBeInTheDocument();
+  });
+
   test('offers a way back to the search page', () => {
     renderPage();
 

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchSlate } from '../slateApi';
 import { fetchSlateEdges } from '../slateEdgesApi';
+import { seasonOfDate } from '../gameSeason';
+import { isSeasonRefusal } from '../servingSeason';
 import { fetchResolvedTargets } from '../targets/targetsApi';
 import { TARGET_SLICES } from '../targets/targetCatalog';
-import { isCalendarDate } from '../calendarDate';
+import { getTodaySlateDate, isCalendarDate } from '../calendarDate';
 import { isRequestCancelled } from '../gameLogsApi';
 
 /*
@@ -30,6 +32,11 @@ import { isRequestCancelled } from '../gameLogsApi';
  * in localStorage and painted on mount before any read answers, then replaced
  * by the fresh one. An unreadable entry is ignored and removed.
  *
+ * The Slate and Edges read today's season, signed in or not, so the home page
+ * shows the Matchup Scores the Matchups page does. When the backend refuses
+ * that season on either read, both are read again on the default, so the two
+ * never come from different seasons. Targets stay on the default.
+ *
  * The Slate and Edges are public (crf04/statsplus#211): `landing` is whether
  * the Query Prompt is on screen. `account` is the uid of a signed-in, admitted
  * reader, or null: only an account reads Targets, and switching accounts
@@ -39,7 +46,7 @@ const EMPTY = { games: null, spotlight: null, slateDate: null, fallback: null, t
 
 const FALLBACKS = new Set(['previous_game_day', 'next_game_day']);
 
-const CACHE_KEY = 'courtai.homeTonight.v2';
+const CACHE_KEY = 'courtai.homeTonight.v3';
 
 // Everything below is what the ticker and Tonight read; an entry is only
 // trusted when each of those fields has the type and form they render from.
@@ -181,13 +188,27 @@ export const useHomeTonight = (landing, account) => {
         console.warn('Home page read failed', result.reason);
       }
     };
+    // The Slate and Edges are one answer from one season: today's, or, when the
+    // backend refuses it on either read, both read again on the default.
+    const season = seasonOfDate(getTodaySlateDate());
+    const readPair = (params) => [
+      settle(fetchSlate(undefined, { signal, fallback, ...params })),
+      settle(fetchSlateEdges({ signal, fallback, ...params })),
+    ];
+    const isRefused = (result) => result.status === 'rejected' && isSeasonRefusal(result.reason);
     // All three reads start now; none waits on another. The Slate names the
     // date each answered for, so a read that straddled midnight ET is dropped.
-    const slateRead = settle(fetchSlate(undefined, { signal, fallback }));
-    const edgesRead = settle(fetchSlateEdges({ signal, fallback }));
+    const firstRead = readPair({ season });
     const targetsRead = account ? settle(fetchResolvedTargets({ signal, fallback })) : null;
-    slateRead.then(warnIfFailed);
-    edgesRead.then(warnIfFailed);
+    const pairRead = Promise.all(firstRead).then((pair) =>
+      pair.some(isRefused) ? Promise.all(readPair({})) : pair,
+    );
+    // The day a Slate answers for is the same in every season, so its first
+    // answer decides the day without waiting on Edges.
+    const slateDay = firstRead[0].then((slate) =>
+      isRefused(slate) ? pairRead.then(([retried]) => retried) : slate,
+    );
+    pairRead.then((pair) => pair.forEach(warnIfFailed));
     targetsRead?.then(warnIfFailed);
 
     // The day on screen from the cache, kept here rather than read inside a
@@ -201,7 +222,7 @@ export const useHomeTonight = (landing, account) => {
     // A Slate that failed to read leaves the painted cache alone. Once it has
     // answered, the cache is decided at once, without waiting for Edges: an
     // empty Slate, or one for another day than the painted one, clears it.
-    slateRead.then((slate) => {
+    slateDay.then((slate) => {
       if (signal.aborted || slate.status !== 'fulfilled') return;
       const { games, slateDate } = slate.value;
       if (games.length === 0 || (paintedDate !== null && paintedDate !== slateDate)) dropPaint();
@@ -210,7 +231,7 @@ export const useHomeTonight = (landing, account) => {
     // hold back the ticker. Edges can only replace the paint, or clear it when
     // they answer null or for another day; a failed Edges read keeps a
     // same-day paint.
-    Promise.all([slateRead, edgesRead]).then(([slate, edges]) => {
+    pairRead.then(([slate, edges]) => {
       if (signal.aborted) return;
       if (slate.status !== 'fulfilled' || slate.value.games.length === 0) return;
       if (edges.status !== 'fulfilled') return;
@@ -231,7 +252,7 @@ export const useHomeTonight = (landing, account) => {
       setState((current) => ({ ...current, ...fresh }));
     });
     if (targetsRead) {
-      Promise.all([slateRead, targetsRead]).then(([slate, resolved]) => {
+      Promise.all([slateDay, targetsRead]).then(([slate, resolved]) => {
         if (signal.aborted) return;
         if (resolved.status !== 'fulfilled') return;
         if (slate.status === 'fulfilled' && resolved.value.slateDate !== slate.value.slateDate) {

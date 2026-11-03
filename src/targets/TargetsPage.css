@@ -200,8 +200,8 @@
 }
 
 .target-primary:hover:not(:disabled) {
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
 }
 
 .target-primary:disabled {
@@ -483,6 +483,28 @@
   font-size: 0.68rem;
 }
 
+/* How a Target works, until there is a Backtest to show. */
+.target-tutorial {
+  max-width: 46ch;
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.target-tutorial h3 {
+  margin: 0 0 8px;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+}
+.target-tutorial ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.2em;
+}
+.target-tutorial b {
+  color: var(--ct-text);
+}
+
 /* Where the Lab stands, beside the season it reads. */
 .target-lab-header {
   display: flex;
@@ -703,8 +725,8 @@
   cursor: pointer;
 }
 .target-new-button:hover:not(:disabled) {
-  background: var(--ct-gold);
-  color: var(--ct-ink);
+  background: var(--ct-gold-fill);
+  color: var(--ct-on-0d0b07);
 }
 .target-workbench-top .target-detail-actions button {
   min-height: 40px;
@@ -783,4 +805,9 @@
     position: sticky;
     top: 0;
   }
+}
+
+/* The page's own label, larger than the section eyebrows, carries its help tip. */
+.targets-page .slate-title .eyebrow {
+  font-size: 1.05rem;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, Bookmark } from 'lucide-react';
+import { ArrowUpRight, Bookmark, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
@@ -13,6 +13,7 @@ import {
   UNAVAILABLE_RELATIVE_LABEL,
   bookMark,
   bookName,
+  categoryLabel,
   findDietShare,
   formatScorePercent,
   dietBaseVolumePerGame,
@@ -23,6 +24,7 @@ import {
 } from './displayConfig';
 import { SEASON_WINDOW_REASONS, WINDOW_REASONS } from '../windowReasons';
 import { isSeasonRefusal, trailingSample, trailingSeason } from '../servingSeason';
+import { getTodaySlateDate } from '../calendarDate';
 import { EvidenceSeasonBar, SeasonRefusal, useEvidenceSeason, withSeason } from '../EvidenceSeason';
 import { seasonOfGameId } from '../gameSeason';
 import { bestPrices, formatPrice } from './linePrices';
@@ -31,6 +33,7 @@ import TargetCaptureModal from '../targets/TargetCaptureModal';
 import '../readings.css';
 import './MatchupDetailPage.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 const WINDOWS = [
   { key: 'season', label: 'Season' },
@@ -179,11 +182,19 @@ function MatchupSummary({ matchup, now }) {
 // A Blend withheld alongside named missing inputs is an incomplete score, so
 // no single component may stand in for it. A defensive category has no Blend
 // by contract and names nothing missing, so its component is the whole score.
+// The cell keeps its `thin` flag, which the rail shows as a dotted underline.
 const scoreFor = (player, stat, windowKey) => {
   const score = player.scores[stat]?.[windowKey];
   if (!score) return null;
   if (score.blend === null && score.missingInputs.length > 0) return null;
-  return score.blend?.value ?? Object.values(score.components)[0]?.value ?? null;
+  return score.blend ?? Object.values(score.components)[0] ?? null;
+};
+
+// His season average in the stat. A backend that does not serve
+// `season_averages` still has his points, as `season_scoring`.
+const seasonAverageFor = (player, stat) => {
+  if (!player.seasonAverages) return stat === 'PTS' ? player.seasonScoring : null;
+  return Object.hasOwn(player.seasonAverages, stat) ? player.seasonAverages[stat] : null;
 };
 
 const postedLine = (player, provider, stat) => {
@@ -192,34 +203,31 @@ const postedLine = (player, provider, stat) => {
 };
 
 /*
- * The books that post him in this stat, PrizePicks first, each with its line,
- * and the one line the row leads with. A prediction market's line leads when
- * one posts it (Polymarket, then Novig, then Kalshi); otherwise the first book
- * that has one. No line anywhere is a null headline, never a guess. The row is
- * flagged when the posted lines span a full point or more.
+ * The line the row leads with: the one most sources post, counting every DFS
+ * and prediction-market provider and every sportsbook that posts him in this
+ * stat. A tie goes to the first source in order: Polymarket, Novig, Kalshi,
+ * PrizePicks, the other providers, then the sportsbooks. A lone far rung on a
+ * prediction market's ladder therefore never outvotes the books
+ * (statsplus#338). No line anywhere is a null headline, never a guess.
  */
-const DISAGREEMENT_SPAN = 1;
-const linesFor = (player, stat) => {
-  const books = Object.keys(player.provenance)
-    .filter((provider) => player.provenance[provider].includes(stat))
-    .sort((a, b) => Number(b === 'prizepicks') - Number(a === 'prizepicks'))
-    .map((provider) => ({ provider, line: postedLine(player, provider, stat) }));
-  const posted = (provider) =>
-    books.find((book) => book.provider === provider && book.line !== null);
-  const market = MARKET_PROVIDERS.map(posted).find(Boolean);
-  const lead = market ?? books.find((book) => book.line !== null);
-  const lines = books.map((book) => book.line).filter((line) => line !== null);
-  return {
-    books,
-    headline: lead?.line ?? null,
-    headlineProvider: lead?.provider ?? null,
-    fromMarket: Boolean(market),
-    flagged: lines.length > 1 && Math.max(...lines) - Math.min(...lines) >= DISAGREEMENT_SPAN,
-  };
+const providerRank = (provider) => {
+  const market = MARKET_PROVIDERS.indexOf(provider);
+  if (market !== -1) return market;
+  return provider === 'prizepicks' ? MARKET_PROVIDERS.length : MARKET_PROVIDERS.length + 1;
 };
-
-// A book's gap from the headline: "+0.5", "−1". Trailing zeros are trimmed.
-const signedGap = (gap) => `${gap < 0 ? '−' : '+'}${Math.abs(Math.round(gap * 100) / 100)}`;
+const headlineFor = (player, stat) => {
+  const providers = Object.keys(player.provenance)
+    .filter((provider) => player.provenance[provider].includes(stat))
+    .sort((a, b) => providerRank(a) - providerRank(b))
+    .map((provider) => postedLine(player, provider, stat));
+  const books = (player.bookLines?.[stat]?.books ?? []).map((entry) => entry.line);
+  const lines = [...providers, ...books].filter((line) => line !== null);
+  const count = (line) => lines.filter((other) => other === line).length;
+  return lines.reduce(
+    (lead, line) => (lead === null || count(line) > count(lead) ? line : lead),
+    null,
+  );
+};
 
 // "Best Over −106 at Novig, best Under −102 at Novig, line 26.5"; a side no
 // source prices says so.
@@ -256,8 +264,117 @@ function RailPrices({ best }) {
   );
 }
 
-const averageOf = (values) =>
-  values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+// The stat in words, for the Last 5 pill's label.
+const STAT_WORDS = {
+  PTS: 'points',
+  REB: 'rebounds',
+  AST: 'assists',
+  '3PM': 'threes made',
+  FGA: 'field goal attempts',
+  FG2A: 'two-point attempts',
+  FG3A: 'three-point attempts',
+  FGM: 'field goals made',
+  FG2M: 'two-pointers made',
+  FTA: 'free throw attempts',
+  FTM: 'free throws made',
+  PRA: 'points, rebounds and assists',
+  PA: 'points and assists',
+  PR: 'points and rebounds',
+  RA: 'rebounds and assists',
+  TOV: 'turnovers',
+  STL: 'steals',
+  BLK: 'blocks',
+  STKS: 'steals and blocks',
+};
+const statWords = (stat) => STAT_WORDS[stat] ?? categoryLabel(stat);
+
+// His Matchup Score beside his name: signed, toned, and underlined when thin.
+// It sits above the row's button so its label shows on hover, so a click on it
+// opens the card the way the rest of the row does.
+function RailScore({ score, onClick }) {
+  const percent = score === null ? null : formatScorePercent(score.value);
+  const label =
+    percent === null
+      ? 'Matchup Score unavailable'
+      : `Matchup Score ${percent}${score.thin ? ' · thin sample' : ''}`;
+  const tone = score === null ? 'tone-flat' : toneClass(Math.round(score.value * 100));
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`rail-score ${tone}${score?.thin ? ' thin' : ''}`}
+      onClick={onClick}
+    >
+      {percent ?? '—'}
+    </span>
+  );
+}
+
+const L5_SLOTS = 5;
+const L5_SLOT_WIDTH = 9;
+const L5_BAR_WIDTH = 7;
+const L5_HEIGHT = 16;
+const L5_STUB = 1.5;
+
+/*
+ * His last five games as five bars against the mark (the line, or his season
+ * average without one), oldest left. Games he has not played in the Evidence
+ * season are grey stubs on the left; it is never topped up from another season.
+ */
+function LastFivePill({ games, stat, mark, name, to }) {
+  const values = games.map((game) => game.stats[stat]);
+  const missing = L5_SLOTS - values.length;
+  const slots = [...Array(missing).fill(null), ...values];
+  const words = values.map(formatStat);
+  if (missing > 0) words.push(`${missing} ${missing === 1 ? 'game' : 'games'} not played`);
+  const top = Math.max(...values, mark ?? 0, 1) * 1.1;
+  const y = (value) => L5_HEIGHT - (value / top) * L5_HEIGHT;
+  const width = L5_SLOTS * L5_SLOT_WIDTH;
+  return (
+    <Link
+      className="rail-l5"
+      to={to}
+      aria-label={`Last 5 ${statWords(stat)}: ${words.join(', ')}. Open ${name}'s game logs.`}
+    >
+      L5
+      <svg
+        width={width}
+        height={L5_HEIGHT}
+        viewBox={`0 0 ${width} ${L5_HEIGHT}`}
+        aria-hidden="true"
+      >
+        {slots.map((value, index) =>
+          value === null ? (
+            <rect
+              key={index}
+              className="rail-l5-stub"
+              x={index * L5_SLOT_WIDTH}
+              y={L5_HEIGHT - L5_STUB}
+              width={L5_BAR_WIDTH}
+              height={L5_STUB}
+              rx="0.75"
+            />
+          ) : (
+            <rect
+              key={index}
+              className={`rail-l5-bar ${mark === null ? 'tone-flat' : toneClass(value - mark)}`}
+              x={index * L5_SLOT_WIDTH}
+              y={Math.min(y(value), L5_HEIGHT - L5_STUB)}
+              width={L5_BAR_WIDTH}
+              height={Math.max(L5_HEIGHT - y(value), L5_STUB)}
+              rx="1"
+            />
+          ),
+        )}
+        {mark !== null && (
+          <line className="rail-l5-mark" x1="0" x2={width} y1={y(mark)} y2={y(mark)} />
+        )}
+      </svg>
+      <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+    </Link>
+  );
+}
 
 function RailRow({
   player,
@@ -271,87 +388,91 @@ function RailRow({
   season,
 }) {
   const serializedPlayerId = String(player.id);
-  // Game Logs name the Evidence season as their own season filter.
+  // Game Logs name the season the Matchup read, since their own default may differ.
   const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined })}`;
-  const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
-  let value;
-  let caption;
-  let meta;
-  let marks = null;
-  let prices = null;
-  let flagged = false;
+  const injuryBadge = injury && (
+    <span className="injury-badge">{injury.status || injury.rawStatus}</span>
+  );
+  const openButton = (
+    // The whole row opens the selection card; its links sit above it.
+    <button
+      ref={(node) => register(serializedPlayerId, node)}
+      type="button"
+      className="rail-row-open"
+      aria-expanded={selected}
+      aria-controls="matchup-selection-card"
+      aria-label={selected ? 'Selected' : 'Open selection card'}
+      onClick={() => onSelect(player)}
+    />
+  );
+  const rowClass = `rail-row${selected ? ' selected' : ''}`;
+
   if (historical) {
+    const seasonAverage = stat === 'PTS' ? player.seasonScoring : null;
     const focal = player.focalGameLine;
     const did = focal && Object.hasOwn(focal.stats, stat) ? focal.stats[stat] : null;
     const delta =
       did !== null && seasonAverage !== null ? Math.round((did - seasonAverage) * 10) / 10 : null;
-    value = <b>{did === null ? '—' : formatStat(did)}</b>;
-    caption = stat;
-    meta = (
-      <>
-        {focal ? `${Math.round(focal.minutes)} min` : 'Minutes unavailable'}
-        {delta !== null && (
-          <em className={toneClass(delta)}>
-            {' · '}
-            {delta > 0 ? '+' : delta < 0 ? '−' : '±'}
-            {Math.abs(delta).toFixed(1)} vs his season average
-          </em>
-        )}
-      </>
+    return (
+      <article aria-label={`${player.name} player`} className={rowClass}>
+        <div className="rail-row-name">
+          <h3>
+            <Link
+              aria-label={`${player.name} game logs`}
+              className="player-game-logs"
+              to={gameLogsPath}
+            >
+              {player.name}
+              <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
+            </Link>
+          </h3>
+          <p>
+            {focal ? `${Math.round(focal.minutes)} min` : 'Minutes unavailable'}
+            {delta !== null && (
+              <em className={toneClass(delta)}>
+                {' · '}
+                {delta > 0 ? '+' : delta < 0 ? '−' : '±'}
+                {Math.abs(delta).toFixed(1)} vs his season average
+              </em>
+            )}
+          </p>
+        </div>
+        <div className="rail-row-value">
+          <b>{did === null ? '—' : formatStat(did)}</b>
+          <small>{stat}</small>
+        </div>
+        {openButton}
+      </article>
     );
-  } else {
-    const { books, headline, headlineProvider, fromMarket, ...rest } = linesFor(player, stat);
-    flagged = rest.flagged;
-    const score = headline === null ? scoreFor(player, stat, windowKey) : null;
-    value =
-      headline !== null ? (
-        <b>{formatStat(headline)}</b>
-      ) : (
-        <b className={score === null ? undefined : toneClass(Math.round(score * 100))}>
-          {score === null ? '—' : formatScorePercent(score)}
-        </b>
-      );
-    caption =
-      headline !== null
-        ? seasonAverage !== null
-          ? `${fromMarket ? 'market line' : 'line'} · ${seasonAverage.toFixed(1)} avg`
-          : fromMarket
-            ? 'market line'
-            : 'line'
-        : 'Matchup Score';
-    const minutes = averageOf(player.last10Minutes);
-    meta = minutes === null ? null : `${Math.round(minutes)} min last 10`;
-    const differs = (line) => line !== null && line !== headline;
-    const against = fromMarket ? 'the market' : headlineProvider && bookName(headlineProvider);
-    marks = books.length ? (
-      <span
-        className="rail-books"
-        aria-label={`${stat} posted by ${listWords(
-          books.map(({ provider, line }) => {
-            if (!differs(line)) return bookName(provider);
-            const gap = line - headline;
-            return `${bookName(provider)} at ${formatStat(line)}, ${Math.abs(
-              Math.round(gap * 100) / 100,
-            )} ${gap < 0 ? 'lower' : 'higher'} than ${against}`;
-          }),
-        )}`}
-      >
-        {books.map(({ provider, line }) => (
-          <i key={provider} aria-hidden="true" className={differs(line) ? 'differs' : undefined}>
-            {bookMark(provider)}
-            {differs(line) ? ` ${signedGap(line - headline)}` : ''}
-          </i>
-        ))}
-      </span>
-    ) : null;
-    const best = bestPrices(player, stat, headline);
-    if (best && (best.over || best.under)) prices = <RailPrices best={best} />;
   }
+
+  // Before the game: his line beside his season average, or the average alone
+  // when no source posts a line; then his last five against that number.
+  const headline = headlineFor(player, stat);
+  const seasonAverage = seasonAverageFor(player, stat);
+  const mark = headline ?? seasonAverage;
+  const caption =
+    headline !== null
+      ? seasonAverage !== null
+        ? `${seasonAverage.toFixed(1)} avg`
+        : null
+      : seasonAverage !== null
+        ? 'season avg'
+        : null;
+  const best = bestPrices(player, stat, headline);
+  const prices = best && (best.over || best.under) ? <RailPrices best={best} /> : null;
+  const lastFive =
+    player.lastFiveGames && player.statCategories.includes(stat) ? (
+      <LastFivePill
+        games={player.lastFiveGames}
+        stat={stat}
+        mark={mark}
+        name={player.name}
+        to={gameLogsPath}
+      />
+    ) : null;
   return (
-    <article
-      aria-label={`${player.name} player`}
-      className={`rail-row${selected ? ' selected' : ''}${flagged ? ' lines-disagree' : ''}`}
-    >
+    <article aria-label={`${player.name} player`} className={`${rowClass} rail-row-upcoming`}>
       <div className="rail-row-name">
         <h3>
           <Link
@@ -360,39 +481,30 @@ function RailRow({
             to={gameLogsPath}
           >
             {player.name}
-            <ArrowUpRight size={12} strokeWidth={2.4} aria-hidden="true" />
           </Link>
-        </h3>
-        <p>
-          {meta}
-          {injury && <span className="injury-badge">{injury.status || injury.rawStatus}</span>}
-        </p>
+        </h3>{' '}
+        <RailScore score={scoreFor(player, stat, windowKey)} onClick={() => onSelect(player)} />
+        {injuryBadge && <p>{injuryBadge}</p>}
       </div>
       <div className="rail-row-value">
-        {value}
-        <small>{caption}</small>
-        {marks}
-        {prices}
-        {flagged && <span className="selection-visually-hidden">Lines disagree</span>}
+        <b>{mark === null ? '—' : formatStat(mark)}</b>
+        {caption && <small>{caption}</small>}
       </div>
-      {/* The whole row opens the selection card; the name above stays its own link. */}
-      <button
-        ref={(node) => register(serializedPlayerId, node)}
-        type="button"
-        className="rail-row-open"
-        aria-expanded={selected}
-        aria-controls="matchup-selection-card"
-        aria-label={selected ? 'Selected' : 'Open selection card'}
-        onClick={() => onSelect(player)}
-      />
+      {(lastFive || prices) && (
+        <div className="rail-row-foot">
+          {lastFive}
+          {prices}
+        </div>
+      )}
+      {openButton}
     </article>
   );
 }
 
 /*
  * One stat at a time: the selected tab's, points on All. After the game each
- * row leads with what he did; before it, with his posted line, or his Matchup
- * Score when no book has posted a number.
+ * row leads with what he did; before it, with his posted line, or his season
+ * average when no source has posted a number.
  */
 function PlayerRail({
   players,
@@ -408,6 +520,7 @@ function PlayerRail({
   registerTrigger,
   headingRef,
   season,
+  unscored,
 }) {
   const stat = market === 'All' ? 'PTS' : market;
   const injuryById = new Map(
@@ -425,14 +538,17 @@ function PlayerRail({
   return (
     <aside className="player-rail" aria-label={label}>
       <div className="rail-heading">
-        <p className="matchup-eyebrow">{label}</p>
+        <p className="matchup-eyebrow">
+          {label}
+          {!historical && <HelpTip tip="matchupRail" />}
+        </p>
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>
           {teamTricode ? `${teamTricode} · ` : ''}
-          {stat}
+          {categoryLabel(stat)}
         </h2>
         <p className="rail-count">
-          By season scoring
+          {unscored ? 'By season points' : 'By season scoring'}
           {targetableCount !== null ? ` · ${targetableCount} targetable returned` : ''}
         </p>
       </div>
@@ -631,6 +747,8 @@ function DefenseSheet({
   trailing,
   seasonContext,
   onCapture,
+  unscored,
+  historical,
 }) {
   const inMarket = (row) => market === 'All' || row.markets.includes(market);
   let hidden = 0;
@@ -696,14 +814,25 @@ function DefenseSheet({
   return (
     <section className="defense-sheet" aria-labelledby="defense-sheet-heading">
       <header className="sheet-heading">
-        <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+        <div className="help-tip-heading">
+          <h2 id="defense-sheet-heading">What {team.tricode} allows</h2>
+          <HelpTip tip="defenseSheet" />
+        </div>
         <p>
           Compared with the league average, softest spots first.
           {hidden ? ` ${hidden} close to average hidden.` : ''}
         </p>
       </header>
-      {visibleCount === 0 && !hasNamedUnavailable && (
-        <p className="honest-empty">No Defense Sheet rows match these controls.</p>
+      {unscored ? (
+        <p className="honest-empty">
+          {categoryLabel(market)} has no Matchup Score or Defense Sheet rows.
+          {historical ? '' : ' Posted lines are in the rail.'}
+        </p>
+      ) : (
+        visibleCount === 0 &&
+        !hasNamedUnavailable && (
+          <p className="honest-empty">No Defense Sheet rows match these controls.</p>
+        )
       )}
       <div className="sheet-sections">
         {sections.map(({ base, availability, relevant, legacyUnavailableRow, groups }) => {
@@ -851,55 +980,70 @@ function DefenseSheet({
   );
 }
 
+const INJURY_STATUS_ORDER = ['Out', 'Doubtful', 'Questionable', 'Probable'];
+const injuryStatus = (entry) => entry.status || entry.rawStatus || 'Unknown status';
+const byInjuryStatus = (statuses) =>
+  [...new Set(statuses)].sort((a, b) => {
+    const rank = (status) =>
+      INJURY_STATUS_ORDER.includes(status) ? INJURY_STATUS_ORDER.indexOf(status) : 99;
+    return rank(a) - rank(b);
+  });
+
+/*
+ * One line above the team tabs, so the report is seen before the rail. It
+ * names who is out only on request; the full PDF stays one link away.
+ */
 function InjuryReport({ injuries, now }) {
-  if (injuries.status === 'unavailable') {
-    return (
-      <section className="injury-report" aria-labelledby="injury-heading">
-        <h2 id="injury-heading">Injury Report</h2>
-        <p className="honest-empty">
-          Injury report unavailable: {injuries.unavailableReason || 'unknown reason'}.
-        </p>
-        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
-          Data source: {injuries.source}
-        </a>
-      </section>
-    );
-  }
+  const [open, setOpen] = useState(false);
   const entries = injuries.teams.flatMap((team) => team.entries);
+  if (entries.length === 0) {
+    return <p className="injury-line">Injuries · none reported</p>;
+  }
+  const statuses = entries.map(injuryStatus);
+  const summary = byInjuryStatus(statuses)
+    .map((status) => `${statuses.filter((item) => item === status).length} ${status}`)
+    .join(' · ');
   return (
-    <section className="injury-report" aria-labelledby="injury-heading">
-      <div className="section-heading">
-        <p className="matchup-eyebrow">
-          {injuries.status} · as of {formatAge(injuries.retrievedAt, now)}
-        </p>
-        <h2 id="injury-heading">Injury Report</h2>
-        <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
-          Data source: {injuries.source}
-        </a>
-      </div>
-      {entries.length === 0 ? (
-        <p className="honest-empty">No non-Available injury entries were reported.</p>
-      ) : (
-        <div className="injury-list">
-          {injuries.teams.flatMap((team) =>
-            team.entries.map((entry) => (
-              <article key={entry.id}>
-                <div>
-                  <strong>{entry.playerName}</strong> <span>{entry.tricode}</span>
-                </div>
-                <span className="injury-badge">
-                  {entry.status || entry.rawStatus || 'Unknown status'}
-                </span>
-                <p>{entry.reason}</p>
-                <a href={entry.sourceUrl} target="_blank" rel="noreferrer">
-                  Source
-                </a>
-                <small>
-                  {team.tricode} submission: {team.submissionState || 'unknown'}
-                </small>
-              </article>
-            )),
-          )}
+    <section className="injury-line" aria-label="Injury report">
+      <button
+        type="button"
+        className="injury-line-toggle"
+        aria-expanded={open}
+        aria-controls="injury-line-names"
+        onClick={() => setOpen(!open)}
+      >
+        <span>Injuries · {summary}</span>
+        <span className="injury-line-action">
+          {open ? 'Hide' : 'Show'}
+          <ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" />
+        </span>
+      </button>
+      {open && (
+        <div id="injury-line-names">
+          {injuries.teams
+            .filter((team) => team.entries.length)
+            .map((team) => (
+              <p key={team.tricode}>
+                <b>{team.tricode}</b>
+                {byInjuryStatus(team.entries.map(injuryStatus)).map((status) => (
+                  <span key={status}>
+                    <em className={`injury-status-${status.toLowerCase().replace(/\W+/g, '-')}`}>
+                      {status}
+                    </em>{' '}
+                    {team.entries
+                      .filter((entry) => injuryStatus(entry) === status)
+                      .map((entry) => entry.playerName)
+                      .join(', ')}
+                  </span>
+                ))}
+              </p>
+            ))}
+          <small>
+            {injuries.status} · as of {formatAge(injuries.retrievedAt, now)} ·{' '}
+            <a href={injuries.sourceUrl} target="_blank" rel="noreferrer">
+              {injuries.source}
+            </a>
+          </small>
         </div>
       )}
     </section>
@@ -993,6 +1137,10 @@ function Detail({ matchup, gameId, evidence }) {
   // A chosen stat the other side does not have falls back the same way.
   const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
+  // The decoder drops the score of a category with no Matchup Score.
+  const unscoredMarket = opposingPlayers.some(
+    (player) => player.statCategories.includes(market) && !Object.hasOwn(player.scores, market),
+  );
   const shortest = shortestLast15(matchup);
   const windows = WINDOWS.map((item) =>
     item.key === 'last15' && shortest < 15 ? { ...item, label: `Last ${shortest}` } : item,
@@ -1059,8 +1207,18 @@ function Detail({ matchup, gameId, evidence }) {
     <>
       <header className="matchup-heading">
         <div>
-          <Link to={withSeason('/matchups', evidence.linked)}>← Back to slate</Link>
-          <p className="matchup-eyebrow">Matchup</p>
+          <Link
+            to={withSeason(
+              `/matchups?date=${getTodaySlateDate(new Date(matchup.game.scheduledAt))}`,
+              evidence.linked,
+            )}
+          >
+            ← Back to slate
+          </Link>
+          <p className="matchup-eyebrow">
+            Matchup
+            <HelpTip tip="matchupPage" />
+          </p>
           <h1>
             {matchup.game.away.tricode} @ {matchup.game.home.tricode}
           </h1>
@@ -1079,6 +1237,8 @@ function Detail({ matchup, gameId, evidence }) {
       )}
       <div className="detail-grid">
         <div className="matchup-sidebar">
+          {/* An injury report nobody has is named in the summary sentence. */}
+          {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
           <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
           <PlayerRail
             players={opposingPlayers}
@@ -1099,17 +1259,17 @@ function Detail({ matchup, gameId, evidence }) {
             onSelect={(player) => updateSelectedPlayer(player.id)}
             registerTrigger={registerTrigger}
             headingRef={railHeading}
-            season={season}
+            season={season ?? matchup.asOfSeason ?? evidence.defaultSeason}
+            unscored={unscoredMarket}
           />
-          {/* An injury report nobody has is named in the summary sentence. */}
-          {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
         </div>
         <div className="matchup-workspace">
           <section className="detail-controls" aria-label="Defense Sheet controls">
             <div className="control-row">
               <div className="control-group">
-                <span className="control-label" aria-hidden="true">
-                  Window
+                <span className="control-label">
+                  <span aria-hidden="true">Window</span>
+                  <HelpTip tip="matchupWindow" />
                 </span>
                 <div className="segmented" role="group" aria-label="Stat window">
                   {windows.map((item) => (
@@ -1131,8 +1291,9 @@ function Detail({ matchup, gameId, evidence }) {
                 </div>
               </div>
               <div className="control-group">
-                <span className="control-label" aria-hidden="true">
-                  Show
+                <span className="control-label">
+                  <span aria-hidden="true">Show</span>
+                  <HelpTip tip="matchupShow" />
                 </span>
                 <div className="segmented" role="group" aria-label="Deviation filter">
                   {DEVIATIONS.map((item) => (
@@ -1157,6 +1318,8 @@ function Detail({ matchup, gameId, evidence }) {
                 <button
                   type="button"
                   aria-pressed={market === item}
+                  aria-label={categoryLabel(item)}
+                  title={categoryLabel(item)}
                   key={item}
                   onClick={() => setMarket(item)}
                 >
@@ -1213,6 +1376,8 @@ function Detail({ matchup, gameId, evidence }) {
               trailing={matchup.trailing}
               seasonContext={matchup.seasonContext}
               onCapture={setCapture}
+              unscored={unscoredMarket}
+              historical={historical}
             />
           )}
         </div>

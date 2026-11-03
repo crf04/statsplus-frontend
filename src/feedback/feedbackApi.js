@@ -1,4 +1,5 @@
 import config, { apiClient, getApiUrl } from '../config';
+import { resolveThemeColors } from '../theme/useThemeColors';
 
 export const X_HANDLE_PATTERN = /^[A-Za-z0-9_]{1,15}$/;
 export const MESSAGE_MAX_LENGTH = 4000;
@@ -33,7 +34,7 @@ export const captureScreenshot = async () => {
     const capture = toJpeg(document.body, {
       quality: 0.7,
       pixelRatio: 1,
-      backgroundColor: '#0d0b07',
+      backgroundColor: resolveThemeColors({ ink: '--ct-ink' }).ink,
       width: window.innerWidth,
       height: window.innerHeight,
       style: { transform: `translate(${-window.scrollX}px, ${-window.scrollY}px)` },

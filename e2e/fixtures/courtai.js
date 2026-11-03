@@ -18,7 +18,8 @@ export const test = base.extend({
   ],
   authenticatedPage: async ({ page }, run) => {
     await page.addInitScript((storageKey) => {
-      window.localStorage.setItem(storageKey, 'true');
+      // Init scripts run in every frame; a sandboxed card frame has no storage.
+      if (window === window.top) window.localStorage.setItem(storageKey, 'true');
     }, E2E_AUTH_STORAGE_KEY);
     await installApiContract(page);
     await run(page);
@@ -26,7 +27,8 @@ export const test = base.extend({
   // Signed in, but every API route answers with the backend's `waitlisted` refusal.
   waitlistedPage: async ({ page }, run) => {
     await page.addInitScript((storageKey) => {
-      window.localStorage.setItem(storageKey, 'true');
+      // Init scripts run in every frame; a sandboxed card frame has no storage.
+      if (window === window.top) window.localStorage.setItem(storageKey, 'true');
     }, E2E_AUTH_STORAGE_KEY);
     await installApiContract(page, {}, { waitlisted: true });
     await run(page);
@@ -34,6 +36,7 @@ export const test = base.extend({
   adminPage: async ({ page }, run) => {
     await page.addInitScript(
       ({ authKey, adminKey }) => {
+        if (window !== window.top) return;
         window.localStorage.setItem(authKey, 'true');
         window.localStorage.setItem(adminKey, 'true');
       },

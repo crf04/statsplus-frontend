@@ -4,8 +4,8 @@ import { dayName, lastName, matchupsPath, shortSlateDay, signedPercent } from '.
 
 /*
  * The scoreboard under the header: every game today, in tip-off order, with
- * its three biggest points Matchup effects either way. Each cell opens the
- * game's Matchup.
+ * its three biggest points Matchup effects either way, a thin sample underlined
+ * dotted as on the Matchup rail. Each cell opens the game's Matchup.
  */
 const HomeTicker = ({ slateDate, games, fallback = null }) => (
   <nav
@@ -25,7 +25,10 @@ const HomeTicker = ({ slateDate, games, fallback = null }) => (
           aria-label={`${game.away.tricode} at ${game.home.tricode} Matchup, ${formatTip(
             game.scheduledAt,
           )}${game.effects
-            .map((effect) => `, ${lastName(effect.name)} ${signedPercent(effect.value)}`)
+            .map(
+              (effect) =>
+                `, ${lastName(effect.name)} ${signedPercent(effect.value)}${effect.thin ? ' thin sample' : ''}`,
+            )
             .join('')}`}
         >
           <span className="home-tick-teams">
@@ -36,7 +39,10 @@ const HomeTicker = ({ slateDate, games, fallback = null }) => (
             {game.effects.map((effect) => (
               <li key={effect.canonicalId}>
                 <span>{lastName(effect.name)}</span>
-                <span className={effect.value >= 0 ? 'is-up' : 'is-down'}>
+                <span
+                  className={`${effect.value >= 0 ? 'is-up' : 'is-down'}${effect.thin ? ' thin' : ''}`}
+                  title={effect.thin ? 'Thin sample' : undefined}
+                >
                   {signedPercent(effect.value)}
                 </span>
               </li>

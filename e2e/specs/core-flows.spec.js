@@ -142,6 +142,18 @@ const openPublicHome = async (page, request) => {
   expect(effectsByGame(replayedEdges), 'the configured API serves the page its edges').toEqual(
     effectsByGame(edges),
   );
+  // What the page rendered its games from names the same teams the configured API names
+  // (in the compatibility Release Check the page reads from that API, so a team change
+  // the production frontend cannot render is seen here).
+  const teamsByGame = (body) =>
+    Object.fromEntries(
+      body.games
+        .map((game) => [game.game_id, [game.away_team.tricode, game.home_team.tricode]])
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
+  expect(teamsByGame(replayedSlate), 'the configured API names the page its teams').toEqual(
+    teamsByGame(slate),
+  );
   expect(slate.games.length, 'the page was served at least one game').toBeGreaterThan(0);
   const slateGame = (id) => slate.games.find((game) => game.game_id === id);
   const edgeGames = edges.games.filter(
@@ -487,7 +499,7 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
   // left of the page. (Programmatic scrolling would also scroll the clipping
   // containers, which a finger cannot.)
   const readings = [
-    page.getByText('Hit Rate', { exact: true }),
+    page.getByText('Hit rate', { exact: true }),
     ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
       page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
     ),
@@ -849,7 +861,8 @@ test('a link keeps working when it carries an unrecognised parameter', async ({
   expect(requested.searchParams.has('utm_source')).toBe(false);
 });
 
-test('@critical a signed-out visitor keeps the link they followed', async ({ page }) => {
+// crf04/statsplus#381: a signed-out visitor reads the link they followed.
+test('@critical a signed-out visitor reads the link they followed', async ({ page }) => {
   const gameLogRequests = [];
   page.on('request', (request) => {
     if (isWorkspaceGameLogs(request.url())) {
@@ -861,17 +874,12 @@ test('@critical a signed-out visitor keeps the link they followed', async ({ pag
   await page.goto('/?player_name=LeBron+James&game_filter=10');
 
   await expect(
-    page.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
+    page.getByRole('status').filter({ hasText: "You're viewing a shared link" }),
   ).toBeVisible();
-  // The requested URL is honoured, not rewritten, so signing in lands here.
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  // The requested URL is honoured, not rewritten.
   expect(page.url()).toContain('player_name=LeBron+James');
   expect(page.url()).toContain('game_filter=10');
-  expect(gameLogRequests).toHaveLength(0);
-
-  // Signing in fires the held Filter Set exactly once, without a second visit.
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
-  await expect.poll(() => gameLogRequests.length).toBe(2);
   const requested = new URL(
     gameLogRequests.find((url) => new URL(url).searchParams.has('game_filter')),
   );
@@ -1051,6 +1059,30 @@ test('@critical a link fixing one opponent narrows the read, and the panel can c
   expect(gameLogRequests.at(-1).searchParams.has('opponent_tricode')).toBe(false);
   await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toBeVisible();
   await expect(page.getByText('2 of 2 games', { exact: true })).toBeVisible();
+});
+
+test('@critical a search naming one opponent team applies it as a panel pick would', async ({
+  authenticatedPage: page,
+}) => {
+  const gameLogRequests = [];
+  page.on('request', (request) => {
+    if (isWorkspaceGameLogs(request.url())) {
+      gameLogRequests.push(new URL(request.url()));
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('textbox').fill('LeBron James against the Hawks');
+  await page.getByRole('textbox').press('Enter');
+
+  await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/opponent_tricode=ATL/);
+  await expect.poll(() => gameLogRequests.at(-1)?.searchParams.get('opponent_tricode')).toBe('ATL');
+  await expect(page.getByText('vs ATL', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByTestId('filter-panel').getByRole('button', { name: /^Remove versus/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'DAL', exact: true })).toHaveCount(0);
 });
 
 test('@critical Back out of the workspace returns to the Query Prompt', async ({
@@ -2002,7 +2034,7 @@ test('signed-out readers are offered no saved Filter Sets', async ({ page }) => 
   await installApiContract(page);
   await page.goto('/?player_name=LeBron+James&game_filter=10');
 
-  await expect(page.getByText('Sign in to load these game logs')).toBeVisible();
+  await expect(page.getByText("You're viewing a shared link", { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save Filter Set' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Saved Filter Sets' })).toHaveCount(0);
 });

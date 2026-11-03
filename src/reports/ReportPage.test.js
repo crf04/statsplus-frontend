@@ -1,21 +1,23 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../App';
 import { decodeReport } from '../reportsApi';
+import { themeStore } from '../theme/useTheme';
 import { fitScale } from './ReportCard';
-import { cardLabel } from './ReportPage';
+import { cardLabel } from './reportText';
 
+const mockAuth = {
+  currentUser: null,
+  loading: false,
+  error: null,
+  signInWithGoogle: jest.fn(),
+  logout: jest.fn(),
+  getToken: jest.fn(),
+  isAuthenticated: false,
+  isAdmin: false,
+};
 jest.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
-  useAuth: () => ({
-    currentUser: null,
-    loading: false,
-    error: null,
-    signInWithGoogle: jest.fn(),
-    logout: jest.fn(),
-    getToken: jest.fn(),
-    isAuthenticated: false,
-    isAdmin: false,
-  }),
+  useAuth: () => mockAuth,
 }));
 
 const mockGet = jest.fn();
@@ -49,6 +51,8 @@ const payload = (overrides = {}) => ({
     created_at: '2026-10-25T22:30:00Z',
     author: { label: '@bighatprops' },
     is_author: false,
+    listed: false,
+    featured: false,
     calls: [logsCall, onOffCall],
     cards: { 'game-logs': '<p>game logs card</p>', 'on-off': '<p>on/off card</p>' },
     document: {
@@ -121,6 +125,15 @@ beforeEach(() => {
   mockDelete.mockReset();
 });
 
+afterEach(() => {
+  Object.assign(mockAuth, { currentUser: null, isAuthenticated: false });
+  jest.restoreAllMocks();
+  act(() => themeStore.setPreference('system'));
+});
+
+const PUBLISHED = Date.parse('2026-10-25T22:30:00Z');
+const DAY = 24 * 60 * 60 * 1000;
+
 test('a report opens on its first tab and names its author and day', async () => {
   await open();
   expect(mockGet).toHaveBeenCalledWith(
@@ -163,6 +176,41 @@ test('a spot row opens into its story, its watch, its web sources and its cards 
   fireEvent.click(chips[1]);
   expect(screen.getByTitle('ORL on/off')).toBeInTheDocument();
   expect(screen.queryByTitle('Bane PTS w/o Banchero')).not.toBeInTheDocument();
+});
+
+const liveUrl =
+  'https://courtai.app/?player_id=1630217&without=203932&season_filter=2026-27&line_type=PTS';
+
+const openBaneCard = async (structured) => {
+  const onOff = { ...onOffCall, structured: { ...onOffCall.structured, url: liveUrl } };
+  await open(payload({ calls: [{ ...logsCall, structured }, onOff] }));
+  fireEvent.click(screen.getByRole('tab', { name: /^Spots/ }));
+  fireEvent.click(screen.getByText('Desmond Bane o18.5 PTS'));
+  await screen.findByTitle('Bane PTS w/o Banchero');
+};
+
+test('a game-log card opens its Log Workspace live on this site, and other cards do not', async () => {
+  await openBaneCard({ ...logsCall.structured, url: liveUrl });
+  expect(screen.getByRole('link', { name: 'Open live game logs' })).toHaveAttribute(
+    'href',
+    '/?player_id=1630217&without=203932&season_filter=2026-27&line_type=PTS',
+  );
+  fireEvent.click(within(screen.getByRole('group', { name: 'Cards' })).getByText('ORL on/off'));
+  expect(screen.getByTitle('ORL on/off')).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: 'Open live game logs' })).not.toBeInTheDocument();
+});
+
+test('a game-log card without a Log Workspace link, or with one elsewhere, opens nothing', async () => {
+  for (const url of [
+    undefined,
+    'https://courtai.app/targets/4?player_id=1630217',
+    'javascript:/?player_id=1630217',
+    'not a url',
+  ]) {
+    await openBaneCard({ ...logsCall.structured, url });
+    expect(screen.queryByRole('link', { name: 'Open live game logs' })).not.toBeInTheDocument();
+    cleanup();
+  }
 });
 
 test('a card gets the stored tool result over the host messages', async () => {
@@ -243,16 +291,60 @@ test('the footer links the skill, and only the author can delete', async () => {
     'href',
     'https://courtai.app/skills/injury-brief',
   );
-  expect(screen.queryByRole('button', { name: 'Delete this report' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'More report actions' })).not.toBeInTheDocument();
 });
 
 test('the author deletes the report after confirming', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
   jest.spyOn(window, 'confirm').mockReturnValue(true);
   mockDelete.mockResolvedValue({ data: { success: true } });
   await open(payload({ is_author: true }));
-  fireEvent.click(screen.getByRole('button', { name: 'Delete this report' }));
+  fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
   expect(await screen.findByRole('heading', { name: 'Report deleted' })).toBeInTheDocument();
   expect(mockDelete).toHaveBeenCalledWith('http://127.0.0.1:8000/api/user/reports/k3x9q2mtzr');
+});
+
+test('a delete that fails says so, keeps the report and can be tried again', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  const alert = jest.spyOn(window, 'alert').mockImplementation(() => {});
+  mockDelete.mockRejectedValueOnce({ response: { status: 500 } });
+  await open(payload({ is_author: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  await waitFor(() =>
+    expect(alert).toHaveBeenCalledWith('The report could not be deleted. Try again.'),
+  );
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Injury brief · Sunday, October 25' }),
+  ).toBeInTheDocument();
+  const more = screen.getByRole('button', { name: 'More report actions' });
+  await waitFor(() => expect(more).toBeEnabled());
+
+  mockDelete.mockResolvedValueOnce({ data: { success: true } });
+  fireEvent.click(more);
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  expect(await screen.findByRole('heading', { name: 'Report deleted' })).toBeInTheDocument();
+  expect(mockDelete).toHaveBeenCalledTimes(2);
+});
+
+test('a delete that fails while List is open leaves the keyboard in the List popup', async () => {
+  Object.assign(mockAuth, { currentUser: { uid: 'u1' }, isAuthenticated: true });
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  jest.spyOn(window, 'alert').mockImplementation(() => {});
+  let fail;
+  mockDelete.mockReturnValueOnce(new Promise((_, reject) => (fail = reject)));
+  await open(payload({ is_author: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'More report actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete this report' }));
+  await waitFor(() => expect(mockDelete).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: 'List' }));
+  const dialog = screen.getByRole('dialog', { name: 'List in Research' });
+  expect(dialog).toHaveFocus();
+  await act(async () => fail({ response: { status: 500 } }));
+  expect(screen.getByRole('button', { name: 'More report actions' })).toBeEnabled();
+  expect(dialog).toHaveFocus();
 });
 
 test('a missing report says it is not available', async () => {
@@ -289,4 +381,200 @@ test('a card taller than the window shrinks to fit on wide screens, never below 
   expect(fitScale(3000, { innerWidth: 1320, innerHeight: 900 })).toBe(0.7);
   expect(fitScale(500, { innerWidth: 1320, innerHeight: 900 })).toBe(1);
   expect(fitScale(954, { innerWidth: 390, innerHeight: 844 })).toBe(1);
+});
+
+test('a listed report says who shared it and whose view it is, linking their author page', async () => {
+  await open(payload({ listed: true, author: { label: '@bighatprops', handle: 'bighatprops' } }));
+  const shared = screen.getByText(/^Shared by/);
+  expect(shared).toHaveTextContent(
+    "Shared by @bighatprops. CourtAI reports facts; this is the author's view.",
+  );
+  expect(within(shared).getByRole('link', { name: '@bighatprops' })).toHaveAttribute(
+    'href',
+    '/research/@bighatprops',
+  );
+});
+
+const footerLine = () =>
+  [...document.querySelectorAll('.report-foot p')].find((p) =>
+    p.textContent.includes('CourtAI data'),
+  ).textContent;
+
+test('an assistant report, or one from before origin, says an AI built it', async () => {
+  await open(payload({ origin: 'assistant' }));
+  expect(footerLine()).toBe(
+    'Built by an AI from CourtAI data using the Injury brief skill. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(decodeReport(payload()).origin).toBe('assistant');
+  expect(decodeReport(payload({ origin: null })).origin).toBe('assistant');
+});
+
+test('a builder report says its author wrote it, then the same disclaimer', async () => {
+  await open(
+    payload({ origin: 'builder', document: { ...payload().report.document, skill: null } }),
+  );
+  expect(footerLine()).toBe(
+    'Written by its author from CourtAI data. A spot is a place to look, not a pick. Make your own →',
+  );
+  expect(screen.queryByText(/Built by an AI/)).not.toBeInTheDocument();
+});
+
+const textReport = (origin) =>
+  payload({
+    origin,
+    calls: [],
+    cards: {},
+    document: {
+      title: 'Injury brief · Sunday, October 25',
+      date: '2026-10-25',
+      blocks: [
+        { id: 'b1', type: 'paragraph', text: '**x**\n\n- y', lede: false },
+        { id: 'b2', type: 'callout', text: 'One\n\n*two*', tone: 'warn' },
+      ],
+    },
+  });
+
+test('a builder report shows its text as typed: no Markdown, blank lines kept', async () => {
+  await open(textReport('builder'));
+  const article = document.querySelector('.report-blocks');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+    '**x**\n\n- y',
+    'One\n\n*two*',
+  ]);
+  expect(article.querySelectorAll('strong, em, li')).toHaveLength(0);
+});
+
+test('an assistant report still reads its text as light Markdown', async () => {
+  await open(textReport('assistant'));
+  const article = document.querySelector('.report-blocks');
+  expect(article.querySelector('strong')).toHaveTextContent('x');
+  expect(article.querySelector('li')).toHaveTextContent('y');
+  expect(article.querySelector('em')).toHaveTextContent('two');
+  expect([...article.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['x', 'One', 'two']);
+});
+
+test('a report with an origin the page does not know is refused', () => {
+  expect(() => decodeReport(payload({ origin: 'robot' }))).toThrow(
+    'The report endpoint returned an invalid response.',
+  );
+});
+
+test('an unlisted report has no author footer', async () => {
+  await open();
+  expect(screen.queryByText(/^Shared by/)).not.toBeInTheDocument();
+});
+
+test('a report shows when it was published and its data age, with no badge at exactly three days', async () => {
+  jest.spyOn(Date, 'now').mockReturnValue(PUBLISHED + 3 * DAY);
+  await open();
+  expect(
+    screen.getByText('Published October 25, 2026, data as of 6:30 PM EDT'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/days old$/)).not.toBeInTheDocument();
+});
+
+test('a report more than three days old carries a badge with its age', async () => {
+  jest.spyOn(Date, 'now').mockReturnValue(PUBLISHED + 3 * DAY + 60 * 1000);
+  await open();
+  expect(screen.getByText('3 days old')).toBeInTheDocument();
+});
+
+test('a report its author deleted says so and leads to more research and sign-up', async () => {
+  mockGet.mockRejectedValue({
+    response: { status: 410, data: { error: 'removed', by: 'author' } },
+  });
+  window.history.pushState({}, '', '/reports/k3x9q2mtzr');
+  render(<App />);
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'This report was removed by its author' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('Its author deleted it, so the link no longer opens it.'),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Browse more research →' })).toHaveAttribute(
+    'href',
+    '/research',
+  );
+  expect(screen.getByRole('complementary', { name: 'Sign up' })).toBeInTheDocument();
+});
+
+test('a report taken down says CourtAI removed it, not its author', async () => {
+  mockGet.mockRejectedValue({
+    response: { status: 410, data: { error: 'removed', by: 'takedown' } },
+  });
+  window.history.pushState({}, '', '/reports/k3x9q2mtzr');
+  render(<App />);
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'This report was taken down' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('CourtAI removed it, so the link no longer opens it.'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/removed by its author/)).not.toBeInTheDocument();
+});
+
+test('signed out, a report ends in a sign-up prompt to run the same research', async () => {
+  await open();
+  const prompt = screen.getByRole('complementary', { name: 'Sign up' });
+  expect(
+    within(prompt).getByRole('heading', { name: 'Run the same research on any player' }),
+  ).toBeInTheDocument();
+});
+
+const initialize = (frame) => {
+  const posted = jest.spyOn(frame.contentWindow, 'postMessage');
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      source: frame.contentWindow,
+      data: { jsonrpc: '2.0', id: 1, method: 'ui/initialize' },
+    }),
+  );
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      source: frame.contentWindow,
+      data: { jsonrpc: '2.0', method: 'ui/notifications/initialized' },
+    }),
+  );
+  return posted;
+};
+
+test("a card takes the app's theme, and repaints when the theme changes", async () => {
+  act(() => themeStore.setPreference('light'));
+  await open();
+  fireEvent.click(screen.getByText('The read and cards'));
+  const frame = await screen.findByTitle('ORL on/off');
+  expect(frame.parentElement).toHaveAttribute('data-theme', 'light');
+  const posted = initialize(frame);
+  const greeting = posted.mock.calls[0][0];
+  expect(greeting.result.hostContext.theme).toBe('light');
+  expect(greeting.result.hostContext.styles.variables['--color-text-primary']).toBe('#15181d');
+
+  act(() => themeStore.setPreference('dark'));
+  expect(frame.parentElement).toHaveAttribute('data-theme', 'dark');
+  expect(posted).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      method: 'ui/notifications/host-context-changed',
+      params: expect.objectContaining({ theme: 'dark' }),
+    }),
+    '*',
+  );
+  expect(posted.mock.calls.at(-1)[0].params.styles.variables['--color-text-primary']).toBe(
+    '#faf9f5',
+  );
+});
+
+test('the decoder refuses a report without its listing state, or listed without a handle', () => {
+  const unknown = payload();
+  delete unknown.report.listed;
+  expect(() => decodeReport(unknown)).toThrow('The report endpoint returned an invalid response.');
+  const anonymous = payload({ listed: true, author: { label: '@bighatprops' } });
+  expect(() => decodeReport(anonymous)).toThrow(
+    'The report endpoint returned an invalid response.',
+  );
+  const shared = payload({ listed: true, featured: true, author: { handle: 'bighatprops' } });
+  expect(decodeReport(shared)).toMatchObject({
+    listed: true,
+    featured: true,
+    authorHandle: 'bighatprops',
+  });
 });

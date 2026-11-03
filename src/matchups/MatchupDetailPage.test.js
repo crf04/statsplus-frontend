@@ -314,8 +314,8 @@ test('links every displayed player name to that player’s game logs', async () 
   const reavesCard = screen.getByRole('article', { name: 'Austin Reaves player' });
   const lebronLink = within(lebronCard).getByRole('link', { name: 'LeBron James game logs' });
   const reavesLink = within(reavesCard).getByRole('link', { name: 'Austin Reaves game logs' });
-  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James');
-  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves');
+  expect(lebronLink).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26');
+  expect(reavesLink).toHaveAttribute('href', '/?player_name=Austin+Reaves&season_filter=2025-26');
   // The name is the link: no second "Game logs" label on the card.
   expect(lebronLink).toHaveTextContent('LeBron James');
   expect(within(lebronCard).getByRole('heading', { level: 3 })).toContainElement(lebronLink);
@@ -855,9 +855,9 @@ test('sorts a player with no season scoring last and explains zero-component off
   await screen.findByRole('article', { name: 'LeBron James player' });
   expect(railNames()).toEqual(['Austin Reaves', 'LeBron James']);
   // No season average to stand his line beside.
-  expect(screen.getByRole('article', { name: 'LeBron James player' })).toHaveTextContent(
-    /27\.5linePP/,
-  );
+  const row = screen.getByRole('article', { name: 'LeBron James player' });
+  expect(row.querySelector('.rail-row-value b')).toHaveTextContent('27.5');
+  expect(row).not.toHaveTextContent('avg');
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   expect(screen.getByText('No score components were computable for FGA in Last 15.')).toBeVisible();
 });
@@ -947,7 +947,9 @@ test('the team switch heads the sidebar and the stat strip sits last on the shee
   await screen.findByRole('heading', { name: 'What BOS allows' });
   const teamTabs = screen.getByRole('group', { name: 'Defense team' });
   const sidebar = document.querySelector('.matchup-sidebar');
-  expect(sidebar.firstElementChild).toBe(teamTabs);
+  // The injury line heads the sidebar, then the team switch.
+  expect(sidebar.firstElementChild).toBe(screen.getByRole('region', { name: 'Injury report' }));
+  expect(sidebar.children[1]).toBe(teamTabs);
   const tabs = within(teamTabs).getAllByRole('button');
   expect(tabs.map((tab) => tab.textContent)).toEqual([
     'LAL defensevs BOS players',
@@ -1007,8 +1009,25 @@ test('renders raw injury statuses and keeps the signed-out shell honest', async 
       </Routes>
     </MemoryRouter>,
   );
-  expect((await screen.findAllByText('Game-time decision')).length).toBeGreaterThan(0);
-  expect(screen.getByText('Left calf soreness')).toBeVisible();
+  const toggle = await screen.findByRole('button', {
+    name: 'Injuries · 1 Game-time decision Show',
+  });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(document.getElementById('injury-line-names')).toBeNull();
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect(toggle).toHaveTextContent('Hide');
+  const names = document.getElementById('injury-line-names');
+  expect(names).toHaveTextContent(
+    /^LALGame-time decision Austin Reavesfresh · as of .* · rotowire$/,
+  );
+  expect(within(names).getByRole('link', { name: 'rotowire' })).toHaveAttribute(
+    'href',
+    'https://example.com/injuries',
+  );
+  expect(screen.queryByText('Left calf soreness')).not.toBeInTheDocument();
+  await userEvent.click(toggle);
+  expect(document.getElementById('injury-line-names')).toBeNull();
 
   unmount();
   useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
@@ -1047,6 +1066,27 @@ test('opens and deep-links the selection card while market flips reuse delivered
   );
   expect((await screen.findAllByText('+0.018')).length).toBeGreaterThan(0);
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
+});
+
+test('the Score Matrix washes each cell green up and red down, as a tint behind the number', async () => {
+  render(
+    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
+      <Routes>
+        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const matrix = await screen.findByRole('table', { name: 'LeBron James Score Matrix' });
+  const washes = [...matrix.querySelectorAll('tbody td')].map((cell) => [
+    cell.textContent,
+    cell.style.background,
+  ]);
+  expect(washes).toEqual([
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
+  ]);
 });
 
 test('filtered to a combo market, the Defense Sheet lists the shot make rows that feed its points', async () => {
@@ -2399,7 +2439,7 @@ test('AC4: after the game each row shows minutes and what he did, against his av
   expect(fga).not.toHaveTextContent('season average');
 });
 
-test('AC5: before the game the row leads with his line, PrizePicks first, other books beside their marks', async () => {
+test('AC5: before the game the row shows his line and season average; the books stay in his card', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   // Whatever order the books arrive in, PrizePicks' line leads.
   const lebronFixture = candidate.players.find((player) => player.id === 2544);
@@ -2410,146 +2450,148 @@ test('AC5: before the game the row leads with his line, PrizePicks first, other 
 
   const lebron = await screen.findByRole('article', { name: 'LeBron James player' });
   expect(within(lebron).getByText('27.5')).toBeVisible();
-  expect(within(lebron).getByText('line · 25.4 avg')).toBeVisible();
-  // Minutes before the game are his last-10 average: (35 + 36 + 38) / 3.
-  expect(within(lebron).getByText('36 min last 10')).toBeVisible();
-  const lebronBooks = within(lebron).getByLabelText(
-    'PTS posted by PrizePicks and Underdog at 26.5, 1 lower than PrizePicks',
-  );
-  expect(lebronBooks).toHaveTextContent('PPUD −1');
+  expect(within(lebron).getByText('25.4 avg')).toBeVisible();
+  // No minutes, no per-book marks and no disagreement flag in the row.
+  expect(lebron).not.toHaveTextContent('min last 10');
+  expect(lebron).not.toHaveTextContent(/PP|UD/);
+  expect(within(lebron).queryByText('Lines disagree')).not.toBeInTheDocument();
 
   // PrizePicks posts Austin without a number, so Underdog's line leads.
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
   expect(within(austin).getByText('21.5')).toBeVisible();
-  expect(within(austin).getByText('line · 20.1 avg')).toBeVisible();
-  expect(within(austin).getByLabelText('PTS posted by PrizePicks and Underdog')).toHaveTextContent(
-    'PPUD',
-  );
+  expect(within(austin).getByText('20.1 avg')).toBeVisible();
   // The live rail keeps its injury badges.
   expect(within(austin).getByText('Game-time decision')).toHaveClass('injury-badge');
 });
 
-describe('#212: the rail leads with the market line and flags books that disagree', () => {
-  const railFor = async (provenance, lines) => {
+describe('#212, statsplus#338: the rail leads with the line most sources post', () => {
+  const headlineFor = async (provenance, lines, bookLines = {}) => {
     const candidate = JSON.parse(JSON.stringify(matchup));
     const lebron = candidate.players.find((player) => player.id === 2544);
     lebron.provenance = provenance;
     lebron.lines = lines;
+    lebron.bookLines = bookLines;
     fetchMatchup.mockResolvedValueOnce(candidate);
     renderMatchup();
-    return screen.findByRole('article', { name: 'LeBron James player' });
+    const row = await screen.findByRole('article', { name: 'LeBron James player' });
+    return row.querySelector('.rail-row-value b').textContent;
   };
-  const books = (row) => row.querySelector('.rail-books');
 
-  test('a market and a DFS book that agree: market headline, bare marks, no flag', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], polymarket: ['PTS'] },
-      { dabble: { PTS: 7.5 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DBPM');
-    expect(books(row)).toHaveAttribute('aria-label', 'PTS posted by Dabble and Polymarket');
-    expect(row).not.toHaveClass('lines-disagree');
-    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
+  test('a market line outranks a DFS book that disagrees', async () => {
+    expect(
+      await headlineFor(
+        { dabble: ['PTS'], polymarket: ['PTS'] },
+        { dabble: { PTS: 6.5 }, polymarket: { PTS: 7.5 } },
+      ),
+    ).toBe('7.5');
   });
 
-  test('Dabble 1 lower than the market: market headline, DB −1, flagged', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], polymarket: ['PTS'] },
-      { dabble: { PTS: 6.5 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(within(row).getByText('market line · 25.4 avg')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DB −1PM');
-    expect(books(row)).toHaveAttribute(
-      'aria-label',
-      'PTS posted by Dabble at 6.5, 1 lower than the market and Polymarket',
-    );
-    expect(row).toHaveClass('lines-disagree');
-    expect(within(row).getByText('Lines disagree')).toBeInTheDocument();
+  test('only DFS books: PrizePicks leads', async () => {
+    expect(
+      await headlineFor(
+        { dabble: ['PTS'], prizepicks: ['PTS'] },
+        { dabble: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } },
+      ),
+    ).toBe('27.5');
   });
 
-  test('only DFS books: PrizePicks leads under the old rule and the caption says line', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], prizepicks: ['PTS'] },
-      { dabble: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } },
-    );
-    expect(within(row).getByText('27.5')).toBeVisible();
-    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
-    expect(within(row).queryByText(/market line/)).not.toBeInTheDocument();
-    expect(books(row)).toHaveTextContent('PPDB −1');
-  });
-
-  test('two markets that disagree: Polymarket leads, Kalshi and Novig show their gaps', async () => {
-    const row = await railFor(
-      { kalshi: ['PTS'], novig: ['PTS'], polymarket: ['PTS'] },
-      { kalshi: { PTS: 8 }, novig: { PTS: 7 }, polymarket: { PTS: 7.5 } },
-    );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(books(row)).toHaveTextContent('KX +0.5NV −0.5PM');
-    expect(books(row)).toHaveAttribute(
-      'aria-label',
-      'PTS posted by Kalshi at 8, 0.5 higher than the market, Novig at 7, 0.5 lower than the market and Polymarket',
-    );
-    // 8 against 7 spans a full point.
-    expect(row).toHaveClass('lines-disagree');
+  test('two markets that disagree: Polymarket leads', async () => {
+    expect(
+      await headlineFor(
+        { kalshi: ['PTS'], novig: ['PTS'], polymarket: ['PTS'] },
+        { kalshi: { PTS: 8 }, novig: { PTS: 7 }, polymarket: { PTS: 7.5 } },
+      ),
+    ).toBe('7.5');
   });
 
   test('a market line outranks PrizePicks and Novig outranks Kalshi', async () => {
-    const row = await railFor(
-      { prizepicks: ['PTS'], kalshi: ['PTS'], novig: ['PTS'] },
-      { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
-    );
-    expect(within(row).getByText('8')).toBeVisible();
-    expect(books(row)).toHaveTextContent('PP +1.5KX +0.5NV');
+    expect(
+      await headlineFor(
+        { prizepicks: ['PTS'], kalshi: ['PTS'], novig: ['PTS'] },
+        { prizepicks: { PTS: 9.5 }, kalshi: { PTS: 8.5 }, novig: { PTS: 8 } },
+      ),
+    ).toBe('8');
   });
 
-  test('a 0.5 gap is shown but not flagged', async () => {
-    const row = await railFor(
-      { dabble: ['PTS'], novig: ['PTS'] },
-      { dabble: { PTS: 7 }, novig: { PTS: 7.5 } },
+  // statsplus#338: Duncan Robinson PTS, DET @ NYK, 2026-10-27.
+  test('a Polymarket rung most sources do not post never leads', async () => {
+    expect(
+      await headlineFor(
+        { underdog: ['PTS'], dabble: ['PTS'], polymarket: ['PTS'], novig: ['PTS'] },
+        {
+          underdog: { PTS: 12.5 },
+          dabble: { PTS: 11.5 },
+          polymarket: { PTS: 9.5 },
+          novig: { PTS: 12.5 },
+        },
+        {
+          PTS: quote([
+            bookRow('betmgm', 11.5, -115, -115),
+            bookRow('betrivers', 11.5, -134, -103),
+            bookRow('draftkings', 12.5, 101, -128),
+            bookRow('fanduel', 12.5, -108, -122),
+          ]),
+        },
+      ),
+    ).toBe('12.5');
+  });
+
+  test('the sportsbooks count toward the consensus', async () => {
+    expect(
+      await headlineFor(
+        { polymarket: ['PTS'], underdog: ['PTS'] },
+        { polymarket: { PTS: 29.5 }, underdog: { PTS: 21.5 } },
+        { PTS: quote([bookRow('draftkings', 21.5, -110, -110)]) },
+      ),
+    ).toBe('21.5');
+  });
+
+  test('a line only the sportsbooks post leads', async () => {
+    expect(await headlineFor({}, {}, { PTS: quote([bookRow('fanduel', 18.5, -110, -110)]) })).toBe(
+      '18.5',
     );
-    expect(within(row).getByText('7.5')).toBeVisible();
-    expect(books(row)).toHaveTextContent('DB −0.5NV');
-    expect(row).not.toHaveClass('lines-disagree');
-    expect(within(row).queryByText('Lines disagree')).not.toBeInTheDocument();
   });
 
   test('a market that posts without a number does not lead', async () => {
-    const row = await railFor({ polymarket: ['PTS'], dabble: ['PTS'] }, { dabble: { PTS: 6.5 } });
-    expect(within(row).getByText('6.5')).toBeVisible();
-    expect(within(row).getByText('line · 25.4 avg')).toBeVisible();
-    expect(row).not.toHaveClass('lines-disagree');
+    expect(
+      await headlineFor({ polymarket: ['PTS'], dabble: ['PTS'] }, { dabble: { PTS: 6.5 } }),
+    ).toBe('6.5');
   });
 });
 
-test('AC6: with no line for that stat the row leads with his Matchup Score, never a made-up line', async () => {
+test('AC6, statsplus#395 AC3: with no line the row leads with his season average, never a made-up line', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   const austin = candidate.players.find((player) => player.id === 1630559);
   austin.scores.FG3A = score(-0.06, 0.02);
+  austin.seasonAverages = { PTS: 20.1, FG3A: 6.2 };
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
+  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+  const austinRow = screen.getByRole('article', { name: 'Austin Reaves player' });
+  expect(austinRow.querySelector('.rail-row-value')).toHaveTextContent(/^6\.2season avg$/);
+  expect(within(austinRow).getByRole('img', { name: 'Matchup Score -6%' })).toHaveClass(
+    'tone-down',
+  );
+
+  // A backend without season averages has none for FGA: no line, no average.
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   const lebronRow = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(lebronRow).getByText('+4%')).toHaveClass('tone-up');
-  expect(within(lebronRow).getByText('Matchup Score')).toBeVisible();
-  expect(lebronRow).not.toHaveTextContent('line');
+  expect(lebronRow.querySelector('.rail-row-value')).toHaveTextContent(/^—$/);
+  expect(within(lebronRow).getByRole('img', { name: 'Matchup Score +4%' })).toHaveTextContent(
+    '+4%',
+  );
+  expect(lebronRow).not.toHaveTextContent('Matchup Score');
 
-  await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
-  expect(
-    within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByText('-6%'),
-  ).toHaveClass('tone-down');
-
-  // No line and no computable score: nothing is shown in its place.
-  await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+  // No computable score either: the badge says so rather than inventing one.
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
   const empty = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(empty).getByText('—')).toBeVisible();
+  expect(within(empty).getByRole('img', { name: 'Matchup Score unavailable' })).toHaveTextContent(
+    '—',
+  );
   expect(empty).not.toHaveTextContent('%');
 });
 
@@ -2561,7 +2603,7 @@ test('AC7: rows sort by season scoring, open the selection card and hand focus b
   const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
   expect(within(austin).getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
     'href',
-    '/?player_name=Austin+Reaves',
+    '/?player_name=Austin+Reaves&season_filter=2025-26',
   );
   const open = within(austin).getByRole('button', { name: 'Open selection card' });
   await userEvent.click(open);
@@ -2623,7 +2665,7 @@ test('AC8: the sheet is headed by what the team allows and how to read it', asyn
   renderMatchup();
 
   const heading = await screen.findByRole('heading', { name: 'What BOS allows' });
-  expect(heading.nextElementSibling).toHaveTextContent(
+  expect(heading.closest('header').querySelector('p')).toHaveTextContent(
     'Compared with the league average, softest spots first. 1 close to average hidden.',
   );
 });
@@ -2872,12 +2914,14 @@ test('AC6: a withheld score is no headline, and a defensive-only score is one', 
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
   const withheld = screen.getByRole('article', { name: 'LeBron James player' });
-  expect(within(withheld).getByText('—')).toBeVisible();
+  expect(within(withheld).getByRole('img', { name: 'Matchup Score unavailable' })).toBeVisible();
   expect(withheld).not.toHaveTextContent('50%');
 
   await userEvent.click(screen.getByRole('button', { name: 'TOV' }));
   expect(
-    within(screen.getByRole('article', { name: 'LeBron James player' })).getByText('+7%'),
+    within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('img', {
+      name: 'Matchup Score +7%',
+    }),
   ).toHaveClass('tone-up');
 });
 
@@ -3089,9 +3133,14 @@ describe('Selection card DFS prices', () => {
       .slice(1)
       .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
 
-  test('lists Underdog and Dabble with their own line, Over and Under, with no sportsbook quoting him', async () => {
+  test('lists every app and market that numbers him, priced or not, with no sportsbook quoting him', async () => {
     await openWithDfs({
-      lines: { underdog: { PTS: 26.5 }, dabble: { PTS: 27.5 }, novig: { PTS: 27.5 } },
+      lines: {
+        underdog: { PTS: 26.5 },
+        dabble: { PTS: 27.5 },
+        novig: { PTS: 27.5 },
+        prizepicks: { PTS: 25.5 },
+      },
       linePrices: {
         dabble: { PTS: { over: -122, under: -122 } },
         underdog: { PTS: { over: -112, under: null } },
@@ -3099,12 +3148,14 @@ describe('Selection card DFS prices', () => {
       },
     });
 
-    const panel = screen.getByRole('region', { name: 'DFS' });
-    expect(within(panel).getByRole('heading', { name: 'DFS · PTS' })).toBeVisible();
-    // Novig is a prediction market, not a DFS app, so it has no row here.
-    expect(rows(within(panel).getByRole('table', { name: 'PTS DFS lines' }))).toEqual([
+    const panel = screen.getByRole('region', { name: 'Apps' });
+    expect(within(panel).getByRole('heading', { name: 'Apps · PTS' })).toBeVisible();
+    // The rail shows one line, so every other number is read here, in a fixed order.
+    expect(rows(within(panel).getByRole('table', { name: 'PTS app lines' }))).toEqual([
+      'PrizePicks25.5——',
       'Underdog26.5-112—',
       'Dabble27.5-122-122',
+      'Novig27.5-106-102',
     ]);
     expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
   });
@@ -3117,8 +3168,8 @@ describe('Selection card DFS prices', () => {
     });
 
     expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
-    // Dabble posts PTS but prices only FGA, so PTS has no DFS panel.
-    expect(screen.queryByRole('region', { name: 'DFS' })).not.toBeInTheDocument();
+    // Dabble prices only FGA, but its PTS line is still listed, unpriced.
+    expect(rows(screen.getByRole('table', { name: 'PTS app lines' }))).toEqual(['Dabble27.5——']);
 
     await userEvent.click(
       within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -3126,7 +3177,7 @@ describe('Selection card DFS prices', () => {
       }),
     );
 
-    expect(rows(screen.getByRole('table', { name: 'FGA DFS lines' }))).toEqual([
+    expect(rows(screen.getByRole('table', { name: 'FGA app lines' }))).toEqual([
       'Dabble8.5-122-122',
     ]);
   });
@@ -3180,18 +3231,25 @@ test('names every allowlisted sportsbook', async () => {
 });
 
 describe('rail price line', () => {
-  const openRail = async ({ bookLines = {}, linePrices = {}, lines = {} }) => {
+  const openRail = async ({ bookLines = {}, linePrices = {}, lines = {}, provenance = {} }) => {
     const candidate = JSON.parse(JSON.stringify(matchup));
     const lebron = candidate.players.find((player) => player.id === 2544);
     lebron.bookLines = bookLines;
     lebron.linePrices = linePrices;
     lebron.lines = { ...lebron.lines, ...lines };
+    lebron.provenance = { ...lebron.provenance, ...provenance };
     fetchMatchup.mockResolvedValueOnce(candidate);
     renderMatchup();
     return screen.findByRole('article', { name: 'LeBron James player' });
   };
   const priceLine = (row) => within(row).queryByRole('group', { name: /^Best / });
   const text = (element) => normalized(element).trim();
+  // Unpriced markets that join PrizePicks at 27.5, so the headline is a line no
+  // source prices and outvotes the books.
+  const unpricedHeadline = {
+    provenance: { polymarket: ['PTS'], novig: ['PTS'], kalshi: ['PTS'] },
+    lines: { polymarket: { PTS: 27.5 }, novig: { PTS: 27.5 }, kalshi: { PTS: 27.5 } },
+  };
 
   test('shows the best Over and Under across books and priced providers with their marks', async () => {
     const row = await openRail({
@@ -3252,7 +3310,8 @@ describe('rail price line', () => {
           bookRow('betmgm', 28.5, 120, -150),
         ]),
       },
-      lines: { underdog: { PTS: 26.5 } },
+      provenance: unpricedHeadline.provenance,
+      lines: { ...unpricedHeadline.lines, underdog: { PTS: 26.5 } },
       linePrices: { underdog: { PTS: { over: -112, under: -112 } } },
     });
 
@@ -3268,6 +3327,7 @@ describe('rail price line', () => {
       bookLines: {
         PTS: quote([bookRow('draftkings', 26.5, -110, -110), bookRow('fanduel', 25.5, -105, -125)]),
       },
+      ...unpricedHeadline,
     });
 
     expect(text(priceLine(row))).toBe('books 25.5 o −105 FD u −125 FD');
@@ -3337,7 +3397,8 @@ describe('rail price line', () => {
           bookRow('betmgm', 25.5, -110, -110),
         ]),
       },
-      lines: { underdog: { PTS: 26.5 } },
+      provenance: unpricedHeadline.provenance,
+      lines: { ...unpricedHeadline.lines, underdog: { PTS: 26.5 } },
       linePrices: { underdog: { PTS: { over: -105, under: -105 } } },
     };
     const row = await openRail(setup);
@@ -3636,12 +3697,13 @@ describe('Evidence season', () => {
       ['game-1', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
     expect(seasonSelect()).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups?season=2026-27',
+      '/matchups?date=2026-01-15&season=2026-27',
     );
     expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
       'href',
@@ -3672,7 +3734,7 @@ describe('Evidence season', () => {
     expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
     expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
       'href',
-      '/?player_name=Austin+Reaves',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
     );
 
     fireEvent.change(seasonSelect(), { target: { value: '2026-27' } });
@@ -3700,12 +3762,13 @@ describe('Evidence season', () => {
       ['0022600003', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
     expect(seasonSelect()).toHaveValue('2026-27');
-    expect(screen.getByTestId('evidence-season-chip')).toHaveTextContent(
-      'Evidence season 2026-27 · early, 2–4 games per team',
+    expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
+      '2026-27 · early, 2–4 games per team',
     );
     expect(screen.getByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups',
+      '/matchups?date=2026-01-15',
     );
   });
 
@@ -3727,7 +3790,7 @@ describe('Evidence season', () => {
     });
     expect(await screen.findByRole('link', { name: '← Back to slate' })).toHaveAttribute(
       'href',
-      '/matchups?season=2025-26',
+      '/matchups?date=2026-01-15&season=2025-26',
     );
     unmount();
 
@@ -3806,6 +3869,29 @@ describe('Evidence season', () => {
     expect(screen.queryByRole('heading', { name: /allows$/ })).not.toBeInTheDocument();
   });
 
+  // The Log Workspace defaults to the newest offered season, so a Game Logs
+  // link names the season this Matchup read, the Published Season included.
+  test('a 2026-27 game read on 2025-26 links its game logs to 2025-26', async () => {
+    renderMatchup('/matchups/0022600003?season=2025-26');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+  });
+
+  test('without season choices, a Matchup links its game logs to the season it answered for', async () => {
+    fetchSeasons.mockRejectedValue(new Error('seasons down'));
+    fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2025-26' });
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
+    expect(screen.getByRole('link', { name: 'Austin Reaves game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=Austin+Reaves&season_filter=2025-26',
+    );
+  });
+
   test('a linked season the choices do not offer falls back to the default and says so', async () => {
     renderMatchup('/matchups/game-1?season=2027-28&player=2544');
     await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3880,5 +3966,364 @@ describe('Evidence season', () => {
         '2025-26 season · sample not reported',
       ),
     ).toBeVisible();
+  });
+});
+
+describe('categories the Matchup posts but does not score (statsplus#370)', () => {
+  const unscored = { components: {}, blend: null, missing_inputs: [] };
+  const openShootingLines = async (markets = ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']) => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    const lebron = raw.players[0];
+    lebron.posted_markets = markets;
+    lebron.provenance = { dabble: markets };
+    const lines = { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 };
+    lebron.lines = { dabble: Object.fromEntries(markets.map((market) => [market, lines[market]])) };
+    lebron.line_prices = { dabble: { FTA: { over: -118, under: -104 } } };
+    lebron.scores = Object.fromEntries(
+      markets.map((market) => [
+        market,
+        market === 'PTS' ? lebron.scores.PTS : { season: unscored, last_15: unscored },
+      ]),
+    );
+    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+  const buttonNames = (group) =>
+    within(group)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label') ?? button.textContent);
+
+  test('reads in box-score order under their full names', async () => {
+    await openShootingLines();
+
+    expect(buttonNames(screen.getByRole('group', { name: 'Market' }))).toEqual([
+      'All',
+      'PTS',
+      'Field Goals Made',
+      'Two-Pointers Made',
+      'Free Throws Attempted',
+      'Free Throws Made',
+    ]);
+    expect(
+      buttonNames(screen.getByRole('group', { name: 'Selection log stat' })).slice(0, 5),
+    ).toEqual([
+      'PTS',
+      'Field Goals Made',
+      'Two-Pointers Made',
+      'Free Throws Attempted',
+      'Free Throws Made',
+    ]);
+  });
+
+  test('shows the posted Dabble line and prices with no Matchup Score', async () => {
+    await openShootingLines();
+
+    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+    expect(
+      within(matrix)
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => within(row).getByRole('rowheader').textContent),
+    ).toEqual(['PTS']);
+    expect(screen.queryByText(/No score components were computable/)).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: /Free Throws Attempted/ })).toBeVisible();
+    const row = screen.getByRole('article', { name: 'LeBron James player' });
+    expect(row.querySelector('.rail-row-value b')).toHaveTextContent('6.5');
+    expect(
+      within(row).getByRole('group', {
+        name: 'Best Over −118 at Dabble, best Under −104 at Dabble, line 6.5',
+      }),
+    ).toBeVisible();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+    expect(
+      within(screen.getByRole('table', { name: 'FTA app lines' }))
+        .getAllByRole('row')
+        .slice(1)
+        .map((tableRow) => tableRow.textContent),
+    ).toEqual(['Dabble6.5-118-104']);
+  });
+
+  test('says a player posted only in unscored categories has no Matchup Score', async () => {
+    await openShootingLines(['FTA', 'FTM']);
+
+    const panel = screen.getByRole('region', { name: 'Score Matrix' });
+    expect(within(panel).queryByRole('table')).not.toBeInTheDocument();
+    expect(panel).toHaveTextContent('No Matchup Score is computed for FTA, FTM.');
+  });
+
+  test('names the categories the Score Matrix leaves out', async () => {
+    await openShootingLines();
+
+    expect(screen.getByRole('region', { name: 'Score Matrix' })).toHaveTextContent(
+      'No Matchup Score is computed for FGM, FG2M, FTA, FTM.',
+    );
+  });
+
+  test('says an unscored tab has no Defense Sheet rows, whatever the controls', async () => {
+    await openShootingLines();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', {
+        name: 'Free Throws Attempted',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
+
+    const sheet = screen.getByRole('region', { name: 'What BOS allows' });
+    expect(
+      within(sheet).getByText(
+        'Free Throws Attempted has no Matchup Score or Defense Sheet rows. Posted lines are in the rail.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(sheet).queryByText('No Defense Sheet rows match these controls.'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
+      /By season points/,
+    );
+    expect(screen.queryByText(/By season scoring/)).not.toBeInTheDocument();
+  });
+
+  test('keeps the controls message on a scored tab the controls empty', async () => {
+    await openShootingLines();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'PTS' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'At least 2 sigma' }));
+
+    const sheet = screen.getByRole('region', { name: 'What BOS allows' });
+    expect(within(sheet).getByText('No Defense Sheet rows match these controls.')).toBeVisible();
+    expect(within(sheet).queryByText(/has no Matchup Score/)).not.toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Targetable players' })).toHaveTextContent(
+      /By season scoring/,
+    );
+  });
+});
+
+describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that leads to his game logs', () => {
+  const game = (date, stats) => ({
+    gameId: `g-${date}`,
+    gameDate: date,
+    matchup: 'LAL vs. PHX',
+    minutes: 34,
+    stats,
+  });
+  const served = () => {
+    const candidate = JSON.parse(JSON.stringify(matchup));
+    const lebron = candidate.players.find((player) => player.id === 2544);
+    // Headline 27.5 (PrizePicks); oldest first.
+    lebron.lastFiveGames = [
+      game('2026-01-04', { PTS: 30, FGA: 21 }),
+      game('2026-01-06', { PTS: 22, FGA: 17 }),
+      game('2026-01-08', { PTS: 35, FGA: 24 }),
+      game('2026-01-10', { PTS: 27, FGA: 19 }),
+      game('2026-01-12', { PTS: 28, FGA: 20 }),
+    ];
+    lebron.seasonAverages = { PTS: 25.4, FGA: 19.2 };
+    lebron.bookLines = { PTS: quote([bookRow('draftkings', 27.5, -114, -108)]) };
+    const austin = candidate.players.find((player) => player.id === 1630559);
+    // Three games in the Evidence season; no line for FG3A.
+    austin.lastFiveGames = [
+      game('2026-01-08', { PTS: 24, FG3A: 6 }),
+      game('2026-01-10', { PTS: 18, FG3A: 8 }),
+      game('2026-01-12', { PTS: 20, FG3A: 5 }),
+    ];
+    austin.seasonAverages = { PTS: 20.1, FG3A: 6 };
+    austin.scores.PTS.season.blend.thin = true;
+    return candidate;
+  };
+  const row = (name) => screen.getByRole('article', { name: `${name} player` });
+  const slots = (pill) =>
+    [...pill.querySelectorAll('rect')].map((rect) =>
+      rect.classList.contains('rail-l5-stub')
+        ? 'stub'
+        : ['tone-up', 'tone-down', 'tone-flat'].find((tone) => rect.classList.contains(tone)),
+    );
+
+  test('AC1-AC3: the name, then his signed score; the line beside his season average', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    const lebron = row('LeBron James');
+    const lebronScore = within(lebron).getByRole('img', { name: 'Matchup Score +12%' });
+    expect(lebronScore).toHaveTextContent(/^\+12%$/);
+    expect(lebronScore).toHaveClass('tone-up');
+    expect(lebronScore).not.toHaveClass('thin');
+    expect(lebronScore).toHaveAttribute('title', 'Matchup Score +12%');
+    expect(lebron.querySelector('.rail-row-value')).toHaveTextContent(/^27\.525\.4 avg$/);
+
+    // A thin score keeps the underline and says so.
+    const austinScore = within(row('Austin Reaves')).getByRole('img', {
+      name: 'Matchup Score +21% · thin sample',
+    });
+    expect(austinScore).toHaveClass('thin');
+    expect(austinScore).toHaveAttribute('title', 'Matchup Score +21% · thin sample');
+
+    // The name still leads to his game logs, with no arrow.
+    const name = within(lebron).getByRole('link', { name: 'LeBron James game logs' });
+    expect(name).toHaveTextContent(/^LeBron James$/);
+    expect(name.querySelector('svg')).toBeNull();
+
+    // The score follows the window.
+    await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+    expect(within(row('LeBron James')).getByRole('img', { name: 'Matchup Score -1%' })).toHaveClass(
+      'tone-down',
+    );
+  });
+
+  test('AC1: a score that rounds to zero is dim', async () => {
+    const candidate = served();
+    candidate.players.find((player) => player.id === 2544).scores.PTS = score(0.004);
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(within(row('LeBron James')).getByRole('img', { name: 'Matchup Score +0%' })).toHaveClass(
+      'tone-flat',
+    );
+  });
+
+  test('AC4-AC6: the Last 5 pill charts five slots against the line and opens his game logs', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    const lebron = row('LeBron James');
+    const pill = within(lebron).getByRole('link', {
+      name: "Last 5 points: 30, 22, 35, 27, 28. Open LeBron James's game logs.",
+    });
+    expect(pill).toHaveTextContent(/^L5$/);
+    expect(pill).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26');
+    expect(pill).toHaveAttribute(
+      'href',
+      within(lebron).getByRole('link', { name: 'LeBron James game logs' }).getAttribute('href'),
+    );
+    // Against 27.5: over, under, over, under, over.
+    expect(slots(pill)).toEqual(['tone-up', 'tone-down', 'tone-up', 'tone-down', 'tone-up']);
+    expect(pill.querySelectorAll('.rail-l5-mark')).toHaveLength(1);
+    // Bar heights scale with the value (16px tall at 1.1 × his best game), and the
+    // dashed mark sits at the line's height on the same scale.
+    const heights = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      Number(bar.getAttribute('height')).toFixed(2),
+    );
+    expect(heights).toEqual(['12.47', '9.14', '14.55', '11.22', '11.64']);
+    // Every bar stands on the chart's 16px baseline.
+    const bases = [...pill.querySelectorAll('.rail-l5-bar')].map((bar) =>
+      (Number(bar.getAttribute('y')) + Number(bar.getAttribute('height'))).toFixed(2),
+    );
+    expect(bases).toEqual(['16.00', '16.00', '16.00', '16.00', '16.00']);
+    const mark = pill.querySelector('.rail-l5-mark');
+    expect(Number(mark.getAttribute('y1')).toFixed(2)).toBe('4.57');
+    expect(mark.getAttribute('y2')).toBe(mark.getAttribute('y1'));
+    // The best prices share the row with the pill.
+    const prices = within(lebron).getByRole('group', { name: /^Best Over/ });
+    expect(prices).toHaveTextContent('o −114 DK u −108 DK');
+    expect(pill.parentElement).toContainElement(prices);
+
+    // Two games short: the oldest slots are stubs. Against his 21.5 line.
+    const austinPill = within(row('Austin Reaves')).getByRole('link', {
+      name: "Last 5 points: 24, 18, 20, 2 games not played. Open Austin Reaves's game logs.",
+    });
+    expect(slots(austinPill)).toEqual(['stub', 'stub', 'tone-up', 'tone-down', 'tone-down']);
+  });
+
+  test('AC3, AC5: with no line the bars measure against his season average', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
+
+    const austin = row('Austin Reaves');
+    expect(austin.querySelector('.rail-row-value')).toHaveTextContent(/^6season avg$/);
+    const pill = within(austin).getByRole('link', {
+      name: "Last 5 three-point attempts: 6, 8, 5, 2 games not played. Open Austin Reaves's game logs.",
+    });
+    // Equal to the average is dim.
+    expect(slots(pill)).toEqual(['stub', 'stub', 'tone-flat', 'tone-up', 'tone-down']);
+    // No price line: the pill stands alone.
+    expect(within(austin).queryByRole('group', { name: /^Best / })).not.toBeInTheDocument();
+  });
+
+  test('AC5: no games in the Evidence season is five stubs', async () => {
+    const candidate = served();
+    candidate.players.find((player) => player.id === 2544).lastFiveGames = [];
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const pill = within(row('LeBron James')).getByRole('link', {
+      name: "Last 5 points: 5 games not played. Open LeBron James's game logs.",
+    });
+    expect(slots(pill)).toEqual(['stub', 'stub', 'stub', 'stub', 'stub']);
+  });
+
+  test('AC7: the pill and name navigate; the rest of the row, score included, opens the card', async () => {
+    fetchMatchup.mockResolvedValueOnce(served());
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const location = () => screen.getByTestId('location');
+
+    await userEvent.click(
+      within(row('Austin Reaves')).getByRole('button', { name: 'Open selection card' }),
+    );
+    expect(await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/matchups\/game-1$/));
+
+    await userEvent.click(
+      within(row('LeBron James')).getByRole('img', { name: 'Matchup Score +12%' }),
+    );
+    expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/matchups\/game-1$/));
+
+    await userEvent.click(
+      within(row('LeBron James')).getByRole('link', { name: /^Last 5 points/ }),
+    );
+    await waitFor(() =>
+      expect(location()).toHaveTextContent('/?player_name=LeBron+James&season_filter=2025-26'),
+    );
+    expect(
+      screen.queryByRole('heading', { name: 'LeBron James', level: 2 }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('a backend that does not serve them: no pill, and the average is his season scoring on points', async () => {
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const lebron = row('LeBron James');
+    expect(within(lebron).queryByRole('link', { name: /^Last 5/ })).not.toBeInTheDocument();
+    expect(lebron.querySelector('.rail-row-value')).toHaveTextContent(/^27\.525\.4 avg$/);
+    expect(within(lebron).getByRole('img', { name: 'Matchup Score +12%' })).toBeVisible();
+  });
+
+  test('AC8: a historical row is unchanged: no score, no pill, the arrow stays', async () => {
+    const candidate = historicalMatchup();
+    candidate.players.forEach((player) => {
+      player.lastFiveGames = [];
+      player.seasonAverages = {};
+    });
+    candidate.players.find((player) => player.id === 1630559).focalGameLine.stats.PTS = 24;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+
+    const austin = await screen.findByRole('article', { name: 'Austin Reaves player' });
+    expect(within(austin).queryByRole('img', { name: /^Matchup Score/ })).not.toBeInTheDocument();
+    expect(within(austin).queryByRole('link', { name: /^Last 5/ })).not.toBeInTheDocument();
+    expect(
+      within(austin).getByRole('link', { name: 'Austin Reaves game logs' }).querySelector('svg'),
+    ).not.toBeNull();
+    // Still measured against his season scoring.
+    expect(within(austin).getByText(/\+3\.9 vs his season average/)).toHaveClass('tone-up');
   });
 });

@@ -209,7 +209,7 @@ test('signed-out shared readers send no account or next-opponent requests', asyn
   await page.goto(PARITY_PATH);
   await expect(page.getByTestId('filter-panel')).toBeVisible();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Sign in to load these game logs' }),
+    page.getByRole('status').filter({ hasText: "You're viewing a shared link" }),
   ).toBeVisible();
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),

@@ -13,8 +13,8 @@ different job.
 Real Google authentication and backend data are intentionally outside the per-PR E2E gate. Popup
 authentication, credentials, and changing live data make a poor deterministic gate. The deployed
 smoke does verify that an unauthenticated Matchup request traverses the production proxy and receives
-the backend's stable `401 authentication_required` response. (The Slate, its Edges and the ladder are
-anonymous reads, so they no longer prove that the backend enforces authentication.) Authenticated flows can be exercised
+the backend's stable `401 authentication_required` response. (The Slate, its Edges, the ladder and
+game logs are anonymous reads, so they no longer prove that the backend enforces authentication.) Authenticated flows can be exercised
 during exploratory QA or added later as a secret-backed scheduled suite.
 
 The production smoke intentionally fails when the backend is unavailable because a frontend release
@@ -76,10 +76,12 @@ E2E_BASE_URL=https://staging.courtai.app \
   npm run test:e2e:smoke
 ```
 
-The `Deployed smoke test` workflow dispatches it with mode `production` or `staging`.
-`scripts/validate-deployment-url.mjs` accepts only the production trio and the `staging.courtai.app`
-trio (a staging backend named `statsplus-backend-staging*.up.railway.app` and `mcp-staging.courtai.app`);
-staging has no API or MCP defaults.
+The `Deployed smoke test` workflow dispatches it with mode `production`, `staging` or `compatibility`
+(the production frontend against the staging API and MCP).
+`scripts/validate-deployment-url.mjs` accepts only the production trio, the `staging.courtai.app`
+trio (a staging backend named `statsplus-backend-staging*.up.railway.app` and `mcp-staging.courtai.app`)
+and the compatibility trio (`statsplus-frontend.vercel.app` with that staging backend and MCP);
+staging and compatibility have no API or MCP defaults.
 
 Protected preview smoke is a manual workflow dispatch. It accepts only an HTTPS
 `statsplus-frontend-<deployment-id>-chris-fus-projects.vercel.app` URL, checks that URL before
@@ -141,9 +143,18 @@ unavailable for want of a point-in-time snapshot, no archived DFS markets, and c
 participants for both teams. One authenticated journey covers each; keep the historical outcome in a
 single integrated journey rather than splitting it across implementation-shaped tests. On the live
 game LeBron James carries posted `lines` (PrizePicks and Underdog disagree on his points, and only
-PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices plus an unknown Fliff price the decoder skips, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail falls back to his Matchup
-Score, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
-carries `lines: {}`.
+PrizePicks numbers his rebounds; Polymarket and Dabble post points too, `line_prices` carry Underdog, Polymarket and Dabble prices plus an unknown Fliff price the decoder skips, and `book_lines` carry five sportsbook quotes), Austin Reaves has `lines: {}` so the rail leads with his
+season average, Jayson Tatum omits the field as a pre-lines backend would, and every game-log participant
+carries `lines: {}`. LeBron carries five `last_five_games` and Austin three (two stubs on the Last 5 pill), both
+with `season_averages`; Jayson Tatum omits both, as a backend before crf04/statsplus#395 does.
+
+Game logs are an anonymous read (crf04/statsplus#381). Like the backend, the contract answers a
+request without the bearer, or from a waitlisted account, with every posted line and its source but
+no price: `posted_line` has no `line_prices`, and each `book_lines` entry keeps only its book and
+line. Signed in, the response carries the prices. Such a request naming a `season_filter` after the
+Published Season (2025-26) is refused with `503 season_unavailable`, as the backend holds an
+Unpublished Season until its cutover. The contract does not count anonymous reads, so a journey
+covers the per-IP limit by overriding the route with `RATE_LIMITED`.
 
 Both Matchups carry `as_of.season` and no Serving Season fields, as today's backend sends them.
 `servingSeasonMatchupPayload` is the live game after a Season Cutover to 2026-27
@@ -194,6 +205,16 @@ Jest runs in a fixed timezone east of UTC (`TZ=Asia/Tokyo` in the `test` scripts
 product reads in UTC is only observably read in UTC when the machine reading it is somewhere else,
 so anything asserting a calendar day should use an instant near midnight UTC.
 
+The Report Builder's Cards come from the MCP server, not the backend (crf04/statsplus#382), so
+`installApiContract` also answers its two browser routes, `POST /web/cards/preview` and
+`POST /web/reports`, on whatever host the build names (`REACT_APP_MCP_BASE_URL`; a local build
+defaults to `http://127.0.0.1:8001`). Both refuse a missing bearer with `401 unauthorized` and answer
+with CORS headers, as the server does. A preview draws a placeholder Card for any of the five card
+tools and returns its args as the canonical call (a Filter Set comes back with only the player and
+market converted). A publish checks the body against the contract (unique call ids, at most 48 calls,
+rows of 2–3, every card naming a call) and answers with `BLOCK_REPORT_ID`. The authenticated
+fixtures set their storage key only in the top frame, because a sandboxed Card frame has no storage.
+
 Saved Filter Sets and Targets are account state rather than reference data, so the contract
 remembers what a page saved instead of replaying a fixed list. The Targets routes derive each
 title from the Qualifiers on every write, as the backend does, so a journey that edits a Target can
@@ -226,8 +247,8 @@ the encrypted repository secret is missing. Playwright trace and video are disab
 secret is present; screenshots remain available for failure evidence.
 
 Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evidence` and `parent-links` before merging. `E2E` and `e2e flows` are
-aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; two e2e flows slices per
-target, `1/2` and `2/2`): each passes only when every leg passed, so the required names are
+aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; three e2e flows slices per
+target, `1/3` to `3/3`): each passes only when every leg passed, so the required names are
 unchanged. `playwright-evidence` is the merged HTML report; `e2e-flow-evidence-<target>-<slice>` and
 `playwright-test-results-<shard>` hold per-leg evidence.
 

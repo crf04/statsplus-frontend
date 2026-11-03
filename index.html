@@ -8,6 +8,22 @@
       content="CourtAI helps explore NBA player game logs with advanced filters, natural language search, and performance analytics."
     />
     <meta name="theme-color" content="#0d0b07" />
+    <!-- The visitor's theme before anything paints: the rule of src/theme/themeStore.js. -->
+    <script>
+      (function () {
+        var preference = null;
+        try {
+          preference = localStorage.getItem('courtai:theme');
+        } catch (error) {}
+        var light =
+          preference === 'light' ||
+          (preference !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches);
+        document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute('content', light ? '#f3f4f6' : '#0d0b07');
+      })();
+    </script>
     <title>CourtAI | NBA Game Log Analytics</title>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CourtAI" />

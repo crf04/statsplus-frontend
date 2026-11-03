@@ -100,7 +100,7 @@ export const TeammateSearch = ({ panel }) => (
   </div>
 );
 
-export const StatSelect = ({ panel, id }) => (
+export const StatSelect = ({ panel, id, columns = STAT_COLUMNS }) => (
   <select
     id={id}
     className="fp-select"
@@ -111,7 +111,7 @@ export const StatSelect = ({ panel, id }) => (
     aria-label="Stat"
   >
     <option value="">Choose a stat…</option>
-    {STAT_COLUMNS.map((column) => (
+    {columns.map((column) => (
       <option key={column} value={column}>
         {STAT_LABELS[column] || column} ({column})
       </option>
@@ -168,7 +168,11 @@ export const selfChipLabel = (filter) => {
     : filter.range.every((v) => Number.isInteger(v))
       ? 0
       : 1;
-  const name = filter.column === 'USG_PCT' ? STAT_LABELS.USG_PCT : filter.column;
+  const name = ['USG_PCT', 'REB_CHANCES', 'POTENTIAL_AST', 'REB_CONV_PCT', 'AST_CONV_PCT'].includes(
+    filter.column,
+  )
+    ? STAT_LABELS[filter.column]
+    : filter.column;
   return `${name} ${fmt(filter.range[0], digits)}–${fmt(filter.range[1], digits)}`;
 };
 

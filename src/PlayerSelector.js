@@ -74,6 +74,7 @@ const PlayerSelector = ({
   onChooseSource,
   playerList,
   postedLine,
+  playerSearchDisabled = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -142,8 +143,8 @@ const PlayerSelector = ({
   };
 
   return (
-    <Row className="mb-4 player-selector-row">
-      <Col md={4} className="position-relative">
+    <Row className="player-selector-row">
+      <Col className="position-relative">
         <Form.Group>
           <Form.Label htmlFor="player-selector-input" className="player-selector-label">
             Player:
@@ -155,6 +156,7 @@ const PlayerSelector = ({
             onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
             placeholder="Search for a player"
+            disabled={playerSearchDisabled}
             className="player-selector-input"
             role="combobox"
             aria-autocomplete="list"
@@ -184,7 +186,7 @@ const PlayerSelector = ({
           )}
         </Form.Group>
       </Col>
-      <Col md={4}>
+      <Col xs="auto" className="player-selector-narrow">
         <Form.Group>
           <Form.Label htmlFor="player-selector-line-type" className="player-selector-label">
             Line Type:
@@ -203,7 +205,7 @@ const PlayerSelector = ({
           </Form.Select>
         </Form.Group>
       </Col>
-      <Col md={4}>
+      <Col xs="auto" className="player-selector-narrow">
         <Form.Group>
           <Form.Label htmlFor="player-selector-line-value" className="player-selector-label">
             Line Value:

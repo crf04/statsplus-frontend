@@ -48,3 +48,8 @@ jest.mock('firebase/auth', () => ({
     addScope: jest.fn(),
   })),
 }));
+
+// jsdom has no Performance Timeline entries; Sentry's browser tracing reads them.
+if (typeof performance.getEntriesByType !== 'function') {
+  performance.getEntriesByType = () => [];
+}

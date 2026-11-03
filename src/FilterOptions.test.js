@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import FilterOptions from './FilterOptions';
 import { fetchSeasons } from './seasonsApi';
@@ -20,7 +20,7 @@ beforeEach(() => {
   fetchSeasons.mockRejectedValue(new Error('offline'));
 });
 
-const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
+const renderPanel = (appliedFilters = {}, seasonGameLogs = [], extra = {}) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
     const [seasonChoice, setSeasonChoice] = useState(null);
@@ -40,6 +40,7 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = []) => {
           averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
           appliedFilters={applied}
+          {...extra}
         />
         <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <button onClick={() => setApplied({ date_filter: '2026-03-01' })}>
@@ -91,6 +92,60 @@ test('editing Last N uses quick picks and specific opponents can be removed', ()
   fireEvent.click(screen.getByRole('button', { name: /^Remove versus/ }));
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', game_filter: 5, opponent_tricode: null });
+});
+
+const teams = () =>
+  within(screen.getByRole('group', { name: 'Teams' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+
+test('the Opponent tile lists the 30 teams and a second pick replaces the first', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  expect(teams()).toHaveLength(30);
+  expect(teams().slice(0, 3)).toEqual(['ATL', 'BOS', 'BKN']);
+  fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
+  fireEvent.click(screen.getByRole('button', { name: 'OKC' }));
+  expect(screen.getByRole('button', { name: 'versus OKC' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'versus BOS' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'OKC' })).toHaveAttribute('aria-pressed', 'true');
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'OKC' });
+});
+
+test('Next: vs OPP filters to the next opponent only once tapped', () => {
+  renderPanel({}, [], { nextOpponent: { next_game: { opponent: 'CHA' } } });
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James' });
+  fireEvent.click(screen.getByRole('button', { name: 'Next: vs CHA' }));
+  expect(screen.getByRole('button', { name: 'versus CHA' })).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'CHA' });
+});
+
+test.each([
+  ['no next-opponent read', {}],
+  ['no upcoming game', { nextOpponent: { next_game: null, opponent_ranks: [] } }],
+])('with %s the Opponent editor has no Next button and the list still works', (_, extra) => {
+  renderPanel({}, [], extra);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'DEN' }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'DEN' });
+});
+
+test('a linked versus rule opens the Opponent editor on its team', () => {
+  renderPanel({ opponent_tricode: 'OKC' }, [], {
+    nextOpponent: { next_game: { opponent: 'CHA' } },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'versus OKC' }));
+  expect(screen.getByRole('button', { name: 'OKC' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Next: vs CHA' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'BOS' });
 });
 
 test('season strip uses actual rows and the selected line', () => {
@@ -420,4 +475,83 @@ test('USG% keyboard steps land on the 0.1 grid when season values have two decim
   expect(screen.getByText('USG% 25.0–40.0')).toBeVisible();
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[USG_PCT]': '25,40' });
+});
+
+test('Own stat line offers Potential assists in integer steps and the chip reads the range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, POTENTIAL_AST: 8 },
+    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, POTENTIAL_AST: null },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, POTENTIAL_AST: 20 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'POTENTIAL_AST' } });
+  expect(screen.getByText('8–20')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Potential assists 8–20')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[POTENTIAL_AST]': '8,20' });
+});
+
+test('Own stat line offers Rebound chances and emits its range', () => {
+  renderPanel({}, [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, REB_CHANCES: 6 },
+    { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, REB_CHANCES: 15 },
+  ]);
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  fireEvent.change(screen.getByLabelText('Stat'), { target: { value: 'REB_CHANCES' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+  expect(screen.getByText('Rebound chances 6–15')).toBeVisible();
+  apply();
+  expect(patch()).toEqual({ player_name: 'LeBron James', 'self_filters[REB_CHANCES]': '6,15' });
+});
+
+describe.each([
+  // [column, label, low, high, keyboard-moved chip range, serialized range]
+  ['REB_CHANCES', 'Rebound chances', 6, 12, '7–11', '7,11'],
+  ['POTENTIAL_AST', 'Potential assists', 8, 14, '9–13', '9,13'],
+  ['REB_CONV_PCT', 'REB conversion %', 0.4, 0.75, '0.41–0.74', '0.41,0.74'],
+  ['AST_CONV_PCT', 'AST conversion %', 0.3, 0.6, '0.31–0.59', '0.31,0.59'],
+])('Own stat line %s', (column, label, low, high, chip, serialized) => {
+  test('keyboard steps land on the stat grid, and the chip and request read the moved range', () => {
+    renderPanel({}, [
+      { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25, [column]: low },
+      { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10, [column]: null },
+      { GAME_DATE: '2026-01-05', MATCHUP: 'LAL @ MIA', PTS: 16, [column]: high },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+    fireEvent.change(screen.getByLabelText('Stat'), { target: { value: column } });
+    const min = screen.getByRole('slider', { name: `Minimum ${column}` });
+    const max = screen.getByRole('slider', { name: `Maximum ${column}` });
+    fireEvent.focus(min);
+    fireEvent.keyDown(min, { key: 'ArrowRight' });
+    fireEvent.focus(max);
+    fireEvent.keyDown(max, { key: 'ArrowLeft' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add stat filter' }));
+    expect(screen.getByText(`${label} ${chip}`)).toBeVisible();
+    apply();
+    expect(patch()).toEqual({
+      player_name: 'LeBron James',
+      [`self_filters[${column}]`]: serialized,
+    });
+  });
+});
+
+test('each tracking stat sits with its parent stat in the Own stat line', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Own stat line/ }));
+  const labels = within(screen.getByLabelText('Stat'))
+    .getAllByRole('option')
+    .map((o) => o.textContent.replace(/ \(\w+\)$/, ''));
+  const at = (label) => labels.indexOf(label);
+  expect(at('Rebounds')).toBeGreaterThan(-1);
+  expect(labels.slice(at('Rebounds'), at('Rebounds') + 3)).toEqual([
+    'Rebounds',
+    'Rebound chances',
+    'REB conversion %',
+  ]);
+  expect(labels.slice(at('Assists'), at('Assists') + 3)).toEqual([
+    'Assists',
+    'Potential assists',
+    'AST conversion %',
+  ]);
 });

@@ -50,16 +50,18 @@ export function FeedbackProvider({ children }) {
     };
   }, []);
 
-  // `opener` is the element that asked: focus returns to it on close, and a
+  // `report` is the id of a report being flagged. `opener` is the element that asked: focus returns to it on close, and a
   // dialog around it hosts the popover so the dialog's focus trap lets it type.
   const openFeedback = useCallback(
-    ({ reference, opener } = {}) => {
+    ({ reference, report, opener } = {}) => {
       const current = panelRef.current;
       const latest = onScreen.current[onScreen.current.length - 1]?.reference ?? null;
       const nextOpener = opener ?? current?.opener ?? null;
       showPanel({
         id: current?.id ?? ++nextId.current,
-        reference: reference ?? latest,
+        // A flagged report (crf04/statsplus#372) is about the report, not an error.
+        reference: report ? null : (reference ?? latest),
+        report: report ?? null,
         opener: nextOpener,
         container: dialogAround(nextOpener),
       });

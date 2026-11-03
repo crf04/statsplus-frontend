@@ -170,11 +170,25 @@ signedInTest(
   async ({ app, screen, browser, api }) => {
     await app.open('/matchups/0022500584');
     await screen.getByRole('link', 'LeBron James game logs').tap();
-    await expect(browser).toHaveURL('/?player_name=LeBron+James');
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
     await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
     await expect(screen.getByRole('cell', '31')).toBeVisible();
     expect(api.sent('/api/games/game_logs')[0].search.get('player_name')).toBe('LeBron James');
+  },
+);
+
+signedInTest(
+  "a Matchup player's Last 5 opens his Log Workspace",
+  async ({ app, screen, browser }) => {
+    await app.open('/matchups/0022500584');
+    const player = screen.getByRole('article', 'LeBron James player');
+    await expect(player.getByRole('img', 'Matchup Score +12%')).toBeVisible();
+    await player
+      .getByRole('link', "Last 5 points: 31, 22, 29, 18, 33. Open LeBron James's game logs.")
+      .tap();
+    await expect(browser).toHaveURL('/?player_name=LeBron+James&season_filter=2025-26');
+    await expect(screen.getByRole('heading', 'Game Logs')).toBeVisible();
   },
 );
 
@@ -185,7 +199,7 @@ signedInTest(
     await app.open('/matchups/0022500584');
     await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
     await screen.getByRole('link', '← Back to slate').tap();
-    await expect(browser).toHaveURL('/matchups');
+    await expect(browser).toHaveURL('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     await expect(screen.getByRole('link', { name: /Open Team Sheets/ })).toBeVisible();
     await expect(screen.getByRole('heading', 'What BOS allows')).toHaveCount(0);
@@ -289,9 +303,7 @@ signedInTest(
     });
     await app.open('/matchups?date=2026-01-15&season=2026-27');
     await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     await expect(
       screen.getByText(
         'Scores use 2025-26 team defense (80–82 games per team) until every team has played 10 games.',
@@ -306,9 +318,7 @@ signedInTest(
     await screen.getByRole('link', { name: /Open Team Sheets/ }).tap();
     await expect(browser).toHaveURL('/matchups/0022500584?season=2026-27');
     await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     await screen.getByRole('group', 'Market').getByRole('button', 'All').tap();
     await expect(
       screen.getByRole('region', 'Play types').getByText('2025-26 season · 80–82 games per team'),
@@ -319,7 +329,7 @@ signedInTest(
     );
     await expect(screen.getByRole('link', '← Back to slate')).toHaveAttribute(
       'href',
-      '/matchups?season=2026-27',
+      '/matchups?date=2026-01-15&season=2026-27',
     );
     expect(api.sent('/api/games/matchup').map((request) => request.search.get('season'))).toEqual([
       '2026-27',
@@ -387,9 +397,8 @@ signedInTest(
         seasonOf(request) ? selectedMatchup : servingSeasonMatchupPayload,
     });
     await app.open('/matchups?date=2026-10-27');
-    await expect(screen.getByTestId('evidence-season-chip')).toHaveText(
-      'Evidence season 2026-27 · early, 2–4 games per team',
-    );
+    await expect(screen.getByRole('combobox', 'Evidence season')).toHaveValue('2026-27');
+    await expect(screen.getByTestId('evidence-season-chip')).toHaveCount(0);
     expect(api.sent('/api/games/slate').map((request) => request.search.get('season'))).toEqual([
       '2026-27',
     ]);

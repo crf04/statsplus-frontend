@@ -236,19 +236,16 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
   );
 
   // The page opens on PTS: the rail leads with each player's posted line, or
-  // his Matchup Score where no book has numbered him.
+  // his season average where no book has numbered him.
   const market = page.getByRole('group', { name: 'Market' });
   await expect(market.getByRole('button', { name: 'PTS' })).toHaveAttribute('aria-pressed', 'true');
   const rail = page.getByRole('complementary', { name: 'Targetable players' });
   await expect(rail).toContainText('By season scoring · 2 targetable returned');
   const lebron = rail.getByRole('article', { name: 'LeBron James player' });
-  await expect(lebron).toContainText('27.5market line · 25.4 avg');
-  await expect(
-    lebron.getByLabel(
-      'PTS posted by PrizePicks, Underdog at 26.5, 1 lower than the market, Polymarket and Dabble',
-    ),
-  ).toHaveText('PPUD −1PMDB');
-  await expect(lebron.getByText('Lines disagree')).toHaveCount(1);
+  // The row is his line and season average; each book's line waits in his card.
+  await expect(lebron).toContainText('27.525.4 avg');
+  await expect(lebron).not.toContainText('PPUD');
+  await expect(lebron).not.toContainText('min last 10');
   // The 27.5 headline is priced by the books and Polymarket: BetMGM wins the
   // Over tie as a sportsbook, Polymarket's Under beats every book, and
   // Dabble's −122 beats neither. Underdog's 26.5 price is for another line
@@ -259,14 +256,78 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
     'Best Over −110 at BetMGM, best Under −102 at Polymarket, line 27.5',
   );
   await expect(lebron.getByText(/^books /)).toHaveCount(0);
+  // His Matchup Score sits beside his name, and his Last 5 against the line
+  // leads to the same Game Logs as the name, which carries no arrow.
+  await expect(lebron.getByRole('img', { name: 'Matchup Score +12%' })).toHaveText('+12%');
+  const lebronLogs = '/?player_name=LeBron+James&season_filter=2025-26';
+  await expect(lebron.getByRole('link', { name: 'LeBron James game logs' })).toHaveAttribute(
+    'href',
+    lebronLogs,
+  );
+  await expect(
+    lebron.getByRole('link', { name: 'LeBron James game logs' }).locator('svg'),
+  ).toHaveCount(0);
+  const lebronFive = lebron.getByRole('link', {
+    name: "Last 5 points: 31, 22, 29, 18, 33. Open LeBron James's game logs.",
+  });
+  await expect(lebronFive).toHaveAttribute('href', lebronLogs);
+  await expect(lebronFive.locator('rect.rail-l5-bar.tone-up')).toHaveCount(3);
+  await expect(lebronFive.locator('rect.rail-l5-bar.tone-down')).toHaveCount(2);
   const austin = rail.getByRole('article', { name: 'Austin Reaves player' });
-  await expect(austin).toContainText('+24%Matchup Score');
+  // No line: his season average leads, and his three games read against it.
+  await expect(austin.locator('.rail-row-value')).toHaveText('20.1season avg');
+  await expect(austin.getByRole('img', { name: 'Matchup Score +24%' })).toBeVisible();
+  const austinFive = austin.getByRole('link', {
+    name: "Last 5 points: 24, 17, 21, 2 games not played. Open Austin Reaves's game logs.",
+  });
+  await expect(austinFive.locator('rect.rail-l5-stub')).toHaveCount(2);
+  await expect(austinFive.locator('rect.rail-l5-bar.tone-up')).toHaveCount(2);
+  // What the classes are for: grey stubs unlike the bars, a dashed gold mark,
+  // a dotted underline on a thin score, and the pill level with the prices.
+  const look = await rail.evaluate((node) => {
+    const style = (selector) => getComputedStyle(node.querySelector(selector));
+    const middle = (element) => {
+      const box = element.getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const lebronRow = [...node.querySelectorAll('article')].find((article) =>
+      article.getAttribute('aria-label').startsWith('LeBron James'),
+    );
+    return {
+      stubFill: style('.rail-l5-stub').fill,
+      barFill: style('.rail-l5-bar.tone-up').fill,
+      markDash: style('.rail-l5-mark').strokeDasharray,
+      markStroke: style('.rail-l5-mark').stroke,
+      // The fixture's scores are not thin, so read the rule off a thin one.
+      thinUnderline: (() => {
+        const score = document.createElement('span');
+        score.className = 'rail-score thin';
+        node.append(score);
+        const { textDecorationLine, textDecorationStyle } = getComputedStyle(score);
+        score.remove();
+        return `${textDecorationLine} ${textDecorationStyle}`;
+      })(),
+      offset: Math.abs(
+        middle(lebronRow.querySelector('.rail-l5')) -
+          middle(lebronRow.querySelector('.rail-price')),
+      ),
+    };
+  });
+  expect(look.stubFill).toBe('rgba(255, 255, 255, 0.16)');
+  expect(look.barFill).toBe('rgb(76, 175, 125)');
+  expect(look.markDash).toBe('3px, 2px');
+  expect(look.markStroke).toBe('rgb(232, 163, 61)');
+  expect(look.thinUnderline).toBe('underline dotted');
+  expect(look.offset).toBeLessThan(1);
   await expect(austin.getByText('Game-time decision')).toBeVisible();
   await expect(rail.getByRole('article', { name: /player$/ })).toHaveText([
     /^LeBron James/,
     /^Austin Reaves/,
   ]);
   await expect(page.getByRole('article', { name: 'Maxi Kleber player' })).toHaveCount(0);
+  // The injury line names who is out once it is opened.
+  await expect(page.getByText('Maxi Kleber')).toHaveCount(0);
+  await page.getByRole('button', { name: /^Injuries · .* Show$/ }).click();
   await expect(page.getByText('Maxi Kleber')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Matchup Score' })).toHaveCount(0);
 
@@ -285,8 +346,7 @@ test('@critical user opens a Defense Sheet and changes local spotting controls',
 
   // A stat only PrizePicks numbers him in.
   await market.getByRole('button', { name: 'REB' }).click();
-  await expect(lebron).toContainText('7.5line');
-  await expect(lebron.getByLabel('REB posted by PrizePicks')).toHaveText('PP');
+  await expect(lebron.locator('.rail-row-value b')).toHaveText('7.5');
   await expect(lebron.getByRole('group', { name: /^Best / })).toHaveCount(0);
   await expect(sheet.getByRole('heading', { level: 3, name: 'Rebound Types' })).toBeVisible();
   await expect(
@@ -512,7 +572,7 @@ test('matchup renders disabled injuries and unavailable surfaces without inventi
   await expect(summary).toHaveText(/ · Tip-off .*\. No lines posted yet\.$/);
   await expect(summary.locator('.matchup-warning')).toHaveCount(0);
   await expect(page.getByText('No posted players are available for this market.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Injury Report' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Injury report' })).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
   await page.screenshot({
@@ -644,8 +704,10 @@ test('matchup keeps stale unmatched injury entries visible', async ({ page }, te
   });
 
   await page.goto('/matchups/0022500584');
+  await page.getByRole('button', { name: /^Injuries · .* Show$/ }).click();
   await expect(page.getByText('Gabe Vincent')).toBeVisible();
-  await expect(page.getByText('Probable')).toBeVisible();
+  await expect(page.getByText('Probable', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Injury report' })).toContainText('stale · as of');
   expect(consoleErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
   await page.screenshot({
@@ -872,11 +934,11 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await expect(table.getByRole('row', { name: /^BetRivers/ })).toContainText('27.5-115-105 ★');
   await expect(table.getByRole('img', { name: 'best price' })).toHaveCount(3);
   await expect(table.getByRole('row', { name: /^FanDuel/ }).getByRole('img')).toHaveCount(0);
-  // Underdog and Dabble price his points at their own lines.
+  // Every app and market that numbers his points is listed; Underdog and
+  // Dabble price theirs at their own lines.
   const dfs = page
-    .getByRole('region', { name: 'DFS' })
-    .getByRole('table', { name: 'PTS DFS lines' });
-  await expect(dfs.getByRole('row')).toHaveCount(3);
+    .getByRole('region', { name: 'Apps' })
+    .getByRole('table', { name: 'PTS app lines' });
   await expect(dfs.getByRole('row', { name: /^Underdog/ })).toContainText('26.5-112-112');
   await expect(dfs.getByRole('row', { name: /^Dabble/ })).toContainText('27.5-122-122');
   await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png'), fullPage: true });
@@ -900,7 +962,7 @@ test('selection card lists sportsbook lines per book, starring the best price on
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Sportsbooks' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'DFS' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Apps' })).toHaveCount(0);
 });
 
 test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({
@@ -1186,7 +1248,9 @@ test('the sheet shows both measures at full strength, draws no category boxes an
   const fontSize = async (locator) =>
     Number.parseFloat(await locator.evaluate((node) => getComputedStyle(node).fontSize));
   expect(await fontSize(page.getByText(/^By season scoring/))).toBeGreaterThanOrEqual(10.88 * 1.15);
-  expect(await fontSize(page.getByText('Left calf soreness'))).toBeGreaterThanOrEqual(10.88 * 1.15);
+  expect(await fontSize(page.getByRole('button', { name: /^Injuries · / }))).toBeGreaterThanOrEqual(
+    10.88 * 1.15,
+  );
 });
 
 test.describe('on a touch screen', () => {

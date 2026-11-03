@@ -31,19 +31,24 @@ redirected.
 | `/matchups`, `/matchups/:gameId`   | Slate for a date; one game's Matchup sheet                                                        |
 | `/targets`, `/targets/:targetId`   | Saved Targets and a Target's detail, Lab and Backtest                                             |
 | `/skills/injury-brief`             | The injury-brief skill page                                                                       |
+| `/reports/new`                     | The Report Builder: an active account writes a report, inserts CourtAI Cards, and publishes it    |
 | `/reports/:id`                     | A published report, also open to waitlisted visitors                                              |
+| `/research`, `/research/@handle`   | Listed reports, Featured first, and one author's listed reports; public                           |
 | `/privacy`, `/terms`               | Legal pages, also open to signed-out and waitlisted visitors                                      |
 | `/operations`, `/admin/operations` | Admin operations console (the second path is an alias)                                            |
 
-A waitlisted account sees only the public home page, the legal pages and published reports, under a
-banner; every other path returns home.
+A waitlisted account sees only the public home page, a shared Log Workspace link (read-only), the legal pages,
+published reports and Research, under a banner; `/reports/new` shows the banner instead of the editor, and every
+other path returns home.
 
 ## Architecture
 
 ```
 Browser  ──►  CourtAI (Vercel static)  ──►  /api/*  ──►  Backend (separate repo)
                     │
-                    └─► Firebase Auth (ID token attached to every API request)
+                    ├─► Firebase Auth (ID token attached to every API request)
+                    │
+                    └─► MCP server (/web/cards/preview, /web/reports: Report Builder Cards)
 ```
 
 A few decisions worth calling out:
@@ -62,6 +67,8 @@ A few decisions worth calling out:
 - Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them
 - Targets: saved, backtested conditions that resolve against the day's games
 - Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists, and list every provider and book posting it to pick from
+- Reports and Research: published CourtAI reports, a public Research feed with author pages, and a Report Builder that inserts CourtAI Cards
+- A System, Light or Dark Appearance menu in the header
 - Connect page for the MCP connector, an in-app feedback widget, and a public home page with legal pages
 - Responsive layout via Tailwind + Bootstrap + custom CSS
 
@@ -80,11 +87,11 @@ Requires Node `^22.22.3 || >=24.8.0` (see `engines` in `package.json` and `.nvmr
 
 ```bash
 npm ci
-cp .env.example .env   # fill in values
+cp .env.example .env.local   # fill in values
 npm start
 ```
 
-The dev server runs at `http://localhost:5173` (the Vite default). API requests default to `http://127.0.0.1:8000` unless `REACT_APP_API_BASE_URL` is set.
+The dev server runs at `http://localhost:5173` (the Vite default). API requests default to `http://127.0.0.1:8000` unless `REACT_APP_API_BASE_URL` is set, and the Report Builder previews Cards from an MCP server at `http://127.0.0.1:8001` unless `REACT_APP_MCP_BASE_URL` is set.
 
 Common scripts:
 
@@ -102,7 +109,7 @@ Codex exploratory QA process.
 
 The Vite configuration preserves the existing `REACT_APP_*` variables and also accepts equivalent `VITE_*` names. See `.env.example` for the full list. The Firebase web config values are public client config by design — the security boundary is Firebase auth rules and the backend's token verification, not these keys.
 
-Error reporting is off unless `REACT_APP_SENTRY_DSN` (or `VITE_SENTRY_DSN`) is set; with it unset nothing is initialized or sent. API responses with a 5xx status are reported with their full `X-Request-ID` as the `request_id` tag, the same ID whose first eight characters appear as `(ref …)`. Source maps upload to Sentry only when `SENTRY_AUTH_TOKEN` (with `SENTRY_ORG` and `SENTRY_PROJECT`) is present at build time.
+Error reporting is off unless `REACT_APP_SENTRY_DSN` (or `VITE_SENTRY_DSN`) is set; with it unset nothing is initialized or sent. API responses with a 5xx status are reported with their full `X-Request-ID` as the `request_id` tag, the same ID whose first eight characters appear as `(ref …)`. Page loads and web vitals are traced at `REACT_APP_SENTRY_TRACES_SAMPLE_RATE` (alias `VITE_SENTRY_TRACES_SAMPLE_RATE`, default `0.05`; a value outside 0 to 1 falls back to the default). Trace headers are not sent on API calls. Session replay stays off. Source maps upload to Sentry only when `SENTRY_AUTH_TOKEN` (with `SENTRY_ORG` and `SENTRY_PROJECT`) is present at build time.
 
 ## Backend API
 
@@ -119,6 +126,7 @@ This repo is the frontend only. It expects a backend serving the following; the 
 - `GET  /api/players/next-opponent`
 - `/api/user/targets` (plus `preview` and `backtests`), `/api/user/saved-filter-sets`
 - `POST /api/user/feedback`, `POST /api/user/attribution`
+- `/api/reports`, `/api/user/reports`, `/api/user/public-handle`, `/api/research` (plus `/authors`)
 - `/api/admin/collection/*` for the operations console
 
 In production the deployed host (Vercel) rewrites `/api/*` to the backend origin and ignores `REACT_APP_API_BASE_URL`. In development, set `REACT_APP_API_BASE_URL` to point at a local or remote backend.

@@ -39,15 +39,15 @@ test('every region reads his share, then the opponent rank and percent vs league
   );
   expect(fills.slice(0, 10)).toEqual([
     'var(--ct-surface)',
-    'rgba(76, 175, 125, 0.20)', // above the break, +2.3%
-    'rgba(194, 78, 78, 0.78)', // left corner, -18.6%
-    'rgba(194, 78, 78, 0.78)', // right corner
+    'rgb(var(--ct-hit-fill-rgb) / 0.20)', // above the break, +2.3%
+    'rgb(var(--ct-miss-fill-rgb) / 0.78)', // left corner, -18.6%
+    'rgb(var(--ct-miss-fill-rgb) / 0.78)', // right corner
     'var(--ct-surface)',
-    'rgba(194, 78, 78, 0.36)', // mid-range, -6.7%
+    'rgb(var(--ct-miss-fill-rgb) / 0.36)', // mid-range, -6.7%
     'var(--ct-surface)',
-    'rgba(194, 78, 78, 0.17)', // paint, -1.4%
+    'rgb(var(--ct-miss-fill-rgb) / 0.17)', // paint, -1.4%
     'var(--ct-surface)',
-    'rgba(194, 78, 78, 0.13)', // restricted area, -0.3%
+    'rgb(var(--ct-miss-fill-rgb) / 0.13)', // restricted area, -0.3%
   ]);
   // The key reads his largest zone.
   expect(container.querySelector('.ps-key-cell').textContent).toBe('31%18th · −0.3%');
@@ -67,9 +67,9 @@ test('a zone with no opponent row is untinted and the key says so', () => {
 });
 
 test('fill is green when the opponent allows more, red when less, deeper further from league', () => {
-  expect(zoneFill(2.3)).toBe('rgba(76, 175, 125, 0.20)');
-  expect(zoneFill(-18.6)).toBe('rgba(194, 78, 78, 0.78)');
-  expect(zoneFill(-40)).toBe('rgba(194, 78, 78, 0.80)');
+  expect(zoneFill(2.3)).toBe('rgb(var(--ct-hit-fill-rgb) / 0.20)');
+  expect(zoneFill(-18.6)).toBe('rgb(var(--ct-miss-fill-rgb) / 0.78)');
+  expect(zoneFill(-40)).toBe('rgb(var(--ct-miss-fill-rgb) / 0.80)');
   expect(zoneFill(null)).toBe('var(--ps-untinted)');
 });
 

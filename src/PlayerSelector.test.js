@@ -63,6 +63,25 @@ test('lists every provider and book with its line, prices and game; the named on
   expect(sourceLabels({ pressed: true })).toEqual(['BetRivers 27.5, Over +102, no Under price']);
 });
 
+// A signed-out or waitlisted reader's response carries no prices
+// (crf04/statsplus#381): each source is its name and line, with no price cells.
+test('sources without prices show their lines and no price cells', () => {
+  renderSelector({
+    postedLine: decodePosted({
+      game_date: '2026-10-21',
+      matchup: 'GSW vs LAL',
+      lines: { PTS: { value: 26.5, provider: 'dabble' } },
+      provider_lines: { dabble: { PTS: 26.5 } },
+      book_lines: { PTS: { books: [{ book: 'draftkings', line: 26.5 }] } },
+    }),
+  });
+  expect(sourceLabels()).toEqual(['Dabble 26.5', 'DraftKings 26.5']);
+  const buttons = within(screen.getByRole('group', { name: 'Posted Lines:' })).getAllByRole(
+    'button',
+  );
+  expect(buttons.map((button) => button.textContent)).toEqual(['Dabble26.5', 'DraftKings26.5']);
+});
+
 test('a provider or book the app does not know is offered under its own key', () => {
   renderSelector({
     postedLine: decodePosted({

@@ -11,7 +11,7 @@ import TargetLab from './TargetLab';
 import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
-import { formatQualifierParts, formatObservedShare } from './targetCatalog';
+import { dietQualifiers, formatQualifierParts, formatObservedShare } from './targetCatalog';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
@@ -20,6 +20,7 @@ import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTarg
 import '../SlatePage.css';
 import './TargetsPage.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import HelpTip from '../help/HelpTip';
 
 // A card only depends on its own Target, its own Backtest read and its own
 // resolved entry; memoizing it keeps N-1 cards from re-rendering (and
@@ -82,11 +83,15 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
               <ul className="target-fit-pills">
                 {entry.players.map((player) => (
                   <li key={player.canonicalId} className={player.thin ? 'is-thin' : undefined}>
-                    <b>{player.name}</b> ·{' '}
+                    <b>{player.name}</b>
+                    {player.position && (
+                      <small className="target-player-position">{player.position}</small>
+                    )}{' '}
+                    ·{' '}
                     {player.shares
                       .map(
                         (share, index) =>
-                          `${formatQualifierParts(entry.target.qualifiers[index]).label} ${formatObservedShare(share.share)}`,
+                          `${formatQualifierParts(dietQualifiers(entry.target.qualifiers)[index]).label} ${formatObservedShare(share.share)}`,
                       )
                       .join(' · ')}{' '}
                     · {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)} ppg
@@ -318,7 +323,10 @@ function TargetsPageContent() {
     <main className="slate-page targets-page">
       <section className="slate-heading">
         <div className="slate-title">
-          <p className="eyebrow">Targets</p>
+          <p className="eyebrow">
+            Targets
+            <HelpTip tip="targets" />
+          </p>
           <p className="targets-active">
             {resolved.status === 'ready'
               ? (() => {

@@ -4,7 +4,12 @@ import { apiClient } from './config';
 import { publishedOnlySeasons, unpublishedSeasons } from './seasonChoicesFixture';
 
 jest.mock('./config', () => ({ apiClient: { get: jest.fn() }, getApiUrl: (key) => key }));
-jest.mock('./PlaystyleComparisonChart', () => () => <p>Playtype chart</p>);
+jest.mock('./PlaystyleComparisonChart', () => ({ teamData }) => (
+  <>
+    <p>Playtype chart</p>
+    {teamData?.[0]?.TEAM_NAME && <p>Compared with {teamData[0].TEAM_NAME}</p>}
+  </>
+));
 jest.mock('./AssistProfileChart', () => () => <p>Assist chart</p>);
 jest.mock('./TwoThreeAssistChart', () => () => null);
 
@@ -351,6 +356,80 @@ test('a refused Evidence season says it is not available yet', async () => {
   );
   await act(async () => {});
   expect(screen.getByText("2026-27 isn't available yet.")).toBeVisible();
+});
+
+// The opponent comparison reads the same Evidence season as the player chart.
+test('the comparison read names the Evidence season, the default never', async () => {
+  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  await act(async () => {});
+  const comparisonReads = () =>
+    apiClient.get.mock.calls
+      .filter(([url]) => url === 'TEAM_STATS')
+      .map(([, { params }]) => params);
+  expect(comparisonReads()).toEqual([{ category: 'Playtypes', team: 'BOS' }]);
+
+  apiClient.get.mockClear();
+  rerender(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="BOS"
+      seasonChoice={unpublishedSeasons.choices[0]}
+    />,
+  );
+  await act(async () => {});
+  expect(comparisonReads()).toEqual([{ category: 'Playtypes', team: 'BOS', season: '2026-27' }]);
+});
+
+test('a comparison answered for an Evidence season renders its data', async () => {
+  apiClient.get.mockImplementation((url) =>
+    url === 'TEAM_STATS'
+      ? Promise.resolve({
+          data: {
+            data: [{ TEAM_NAME: 'Boston Celtics' }],
+            season_context: { selected_season: '2026-27', published_season: '2025-26' },
+          },
+        })
+      : Promise.resolve({ data: [{ PLAY_TYPE: 'Isolation' }] }),
+  );
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="BOS"
+      seasonChoice={unpublishedSeasons.choices[0]}
+    />,
+  );
+  await act(async () => {});
+  expect(screen.getByText('Compared with Boston Celtics')).toBeVisible();
+});
+
+test('a refused comparison season says it is not available yet', async () => {
+  const refusal = Object.assign(new Error('Request failed with status code 503'), {
+    response: {
+      status: 503,
+      headers: {},
+      data: {
+        error: {
+          code: 'season_unavailable',
+          message: 'Refused.',
+          details: { selected_season: '2026-27', published_season: '2025-26' },
+        },
+      },
+    },
+  });
+  apiClient.get.mockImplementation((url) =>
+    url === 'TEAM_STATS'
+      ? Promise.reject(refusal)
+      : Promise.resolve({ data: [{ PLAY_TYPE: 'Isolation' }] }),
+  );
+  render(
+    <PlayerProfile
+      selectedPlayer="LeBron James"
+      selectedTeam="BOS"
+      seasonChoice={unpublishedSeasons.choices[0]}
+    />,
+  );
+  await act(async () => {});
+  expect(screen.getByText("2026-27 isn't available yet.", { exact: true })).toBeVisible();
 });
 
 // Zone Shooting reads the Unscheduled Matchup for the Evidence season and

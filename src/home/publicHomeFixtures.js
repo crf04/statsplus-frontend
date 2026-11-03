@@ -79,6 +79,8 @@ const bodies = {
   '/api/games/slate': slate,
   '/api/games/slate/edges': edges,
   '/api/games/ladder': ladder,
+  // Nothing listed in Research (crf04/statsplus#372), so the home strip stays away.
+  '/api/research': { featured: [], reports: [], next_cursor: null },
 };
 
 export const homeGet = (url) => {

@@ -1159,6 +1159,101 @@ test('decodes the complete governed backend market set and both score encodings'
   expect(Object.keys(decodeMatchup(candidate).players[0].scores)).toEqual(markets);
 });
 
+// The backend's window for a category the Matchup does not score (statsplus#370).
+const unscoredWindow = { components: {}, blend: null, missing_inputs: [] };
+const withShootingLines = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  const player = candidate.players[0];
+  const markets = ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS'];
+  player.posted_markets = markets;
+  player.stat_categories = markets;
+  player.provenance = { dabble: markets };
+  player.lines = { dabble: { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 } };
+  player.line_prices = {
+    dabble: {
+      FTA: { over: -118, under: -104 },
+      FG2M: { over: 102, under: -125 },
+      PTS: { over: -122, under: -122 },
+    },
+  };
+  player.book_lines = {
+    FTA: {
+      as_of: '2026-01-15T22:00:00Z',
+      closing: false,
+      books: [
+        {
+          book: 'fanduel',
+          line: 6.5,
+          over: -120,
+          under: -110,
+          updated_at: '2026-01-15T21:55:00Z',
+          best_over: true,
+          best_under: true,
+        },
+      ],
+    },
+  };
+  player.scores = {
+    PTS: player.scores.PTS,
+    FG2M: { season: unscoredWindow, last_15: unscoredWindow },
+    FGM: { season: unscoredWindow, last_15: unscoredWindow },
+    FTA: { season: unscoredWindow, last_15: unscoredWindow },
+    FTM: { season: unscoredWindow, last_15: unscoredWindow },
+  };
+  return candidate;
+};
+
+test('decodes Dabble free-throw and made-field-goal lines beside a scored market', () => {
+  const player = decodeMatchup(withShootingLines()).players[0];
+
+  expect(player.postedMarkets).toEqual(['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']);
+  expect(player.statCategories).toEqual(['FG2M', 'FGM', 'FTA', 'FTM', 'PTS']);
+  expect(player.provenance).toEqual({ dabble: ['FG2M', 'FGM', 'FTA', 'FTM', 'PTS'] });
+  expect(player.lines).toEqual({
+    dabble: { FG2M: 4.5, FGM: 7.5, FTA: 6.5, FTM: 5.5, PTS: 25.5 },
+  });
+  expect(player.linePrices).toEqual({
+    dabble: {
+      FTA: { over: -118, under: -104 },
+      FG2M: { over: 102, under: -125 },
+      PTS: { over: -122, under: -122 },
+    },
+  });
+  expect(player.bookLines.FTA.books).toEqual([
+    {
+      book: 'fanduel',
+      line: 6.5,
+      over: -120,
+      under: -110,
+      updatedAt: '2026-01-15T21:55:00Z',
+      bestOver: true,
+      bestUnder: true,
+    },
+  ]);
+  // The four have no Matchup Score, so only PTS carries one.
+  expect(player.scores).toEqual({
+    PTS: {
+      season: {
+        components: { playTypes: { value: 0.08, thin: false } },
+        blend: { value: 0.12, thin: false },
+        missingInputs: [],
+      },
+      last15: {
+        components: { playTypes: { value: -0.03, thin: false } },
+        blend: { value: -0.01, thin: false },
+        missingInputs: [],
+      },
+    },
+  });
+});
+
+test('still requires a score entry for every unscored category it posts', () => {
+  const candidate = withShootingLines();
+  delete candidate.players[0].scores.FTA;
+
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
 test.each([
   [
     'an unposted score row',
@@ -2987,4 +3082,99 @@ test('rejects a shot-type Points row with the wrong markets', () => {
   ]) {
     expect(() => decodeMatchup(withShotTypePointsRow(markets))).toThrow('invalid response');
   }
+});
+
+describe('statsplus#395: last five games and season averages on a player row', () => {
+  const entry = (date, stats = { PTS: 28, FGA: 20 }) => ({
+    game_id: `game-${date}`,
+    game_date: date,
+    matchup: 'LAL vs. PHX',
+    minutes: 34.5,
+    stats,
+  });
+  const withRow = (fields) => ({ ...payload, players: [{ ...payload.players[0], ...fields }] });
+
+  test('an older backend omits both: not served, never no games', () => {
+    const [player] = decodeMatchup(payload).players;
+    expect(player.lastFiveGames).toBeNull();
+    expect(player.seasonAverages).toBeNull();
+  });
+
+  test('decodes the games oldest first in the focal line shape, and the averages per stat', () => {
+    const [player] = decodeMatchup(
+      withRow({
+        last_five_games: [entry('2026-01-10', { PTS: 31, FGA: 22 }), entry('2026-01-12')],
+        season_averages: { PTS: 25.4, FGA: 19.2 },
+      }),
+    ).players;
+    expect(player.lastFiveGames).toEqual([
+      {
+        gameId: 'game-2026-01-10',
+        gameDate: '2026-01-10',
+        matchup: 'LAL vs. PHX',
+        minutes: 34.5,
+        stats: { PTS: 31, FGA: 22 },
+      },
+      {
+        gameId: 'game-2026-01-12',
+        gameDate: '2026-01-12',
+        matchup: 'LAL vs. PHX',
+        minutes: 34.5,
+        stats: { PTS: 28, FGA: 20 },
+      },
+    ]);
+    expect(player.seasonAverages).toEqual({ PTS: 25.4, FGA: 19.2 });
+  });
+
+  test('decodes no games and no season rate as served and empty', () => {
+    const [player] = decodeMatchup(withRow({ last_five_games: [], season_averages: {} })).players;
+    expect(player.lastFiveGames).toEqual([]);
+    expect(player.seasonAverages).toEqual({});
+  });
+
+  test.each([
+    ['games that are not a list', { last_five_games: { PTS: 28 } }],
+    ['null games', { last_five_games: null }],
+    [
+      'six games',
+      {
+        last_five_games: ['01', '02', '03', '04', '05', '06'].map((day) => entry(`2026-01-${day}`)),
+      },
+    ],
+    ['a null game', { last_five_games: [null] }],
+    ['a game missing one of his stats', { last_five_games: [entry('2026-01-10', { PTS: 28 })] }],
+    ['a stat sent as text', { last_five_games: [entry('2026-01-10', { PTS: '28', FGA: 20 })] }],
+    ['a game without a date', { last_five_games: [{ ...entry('2026-01-10'), game_date: '' }] }],
+    ['a date that is not a date', { last_five_games: [entry('2026-02-30')] }],
+    ['games newest first', { last_five_games: [entry('2026-01-12'), entry('2026-01-10')] }],
+    [
+      'same-day games out of game id order',
+      {
+        last_five_games: [
+          { ...entry('2026-01-10'), game_id: '0022600102' },
+          { ...entry('2026-01-10'), game_id: '0022600101' },
+        ],
+      },
+    ],
+    ['averages that are not a map', { season_averages: [25.4] }],
+    ['null averages', { season_averages: null }],
+    ['an average for a stat he is not offered in', { season_averages: { REB: 7.1 } }],
+    ['an average sent as text', { season_averages: { PTS: '25.4' } }],
+    ['a negative average', { season_averages: { PTS: -1 } }],
+  ])('rejects %s', (_name, fields) => {
+    expect(() => decodeMatchup(withRow(fields))).toThrow('invalid response');
+  });
+
+  test('a historical row may carry them only empty', () => {
+    const empty = historicalPayload();
+    Object.assign(empty.players[0], { last_five_games: [], season_averages: {} });
+    expect(decodeMatchup(empty).players[0].lastFiveGames).toEqual([]);
+
+    const games = historicalPayload();
+    games.players[0].last_five_games = [entry('2026-01-10')];
+    expect(() => decodeMatchup(games)).toThrow('invalid response');
+    const averages = historicalPayload();
+    averages.players[0].season_averages = { PTS: 25.4 };
+    expect(() => decodeMatchup(averages)).toThrow('invalid response');
+  });
 });

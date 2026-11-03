@@ -22,6 +22,8 @@ export default defineConfig({
     : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: externalBaseUrl || localBaseUrl,
+    // The app follows the device's scheme; specs see dark unless they choose.
+    colorScheme: 'dark',
     trace: bypassSecretActive ? 'off' : 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: bypassSecretActive ? 'off' : 'retain-on-failure',

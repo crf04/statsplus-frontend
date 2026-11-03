@@ -281,7 +281,7 @@
   gap: 8px;
   margin: 0 0 10px 12px;
   padding-left: 12px;
-  border-left: 2px solid var(--ct-hit-soft);
+  border-left: 2px solid var(--ct-hit-fg-14);
 }
 
 .target-under-item {
@@ -311,8 +311,8 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: var(--ct-hit);
-  box-shadow: 0 0 0 3px var(--ct-hit-soft);
+  background: var(--ct-hit-fill);
+  box-shadow: 0 0 0 3px var(--ct-hit-fg-14);
 }
 
 .target-under-count {

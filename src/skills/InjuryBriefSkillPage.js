@@ -63,6 +63,33 @@ const CLIENTS = [
       </>,
     ],
   },
+  {
+    id: 'chatgpt',
+    name: 'ChatGPT',
+    note: (
+      <>
+        Skill uploads are on ChatGPT Business, Enterprise, Edu and Healthcare workspaces, when your
+        admin allows them; Plus and Pro do not include them. If <strong>Skills</strong> is missing
+        under Plugins, your plan or workspace does not have it.
+      </>
+    ),
+    steps: [
+      <>
+        <Download />
+      </>,
+      <>
+        In the sidebar, open <strong>Plugins → Skills</strong>, select <strong>Create</strong>, then{' '}
+        <strong>Upload from your computer</strong>, and choose the zip without unzipping it.
+      </>,
+      <>
+        Wait for ChatGPT&apos;s scan. If it shows <strong>Needs Review</strong>, read what it flags
+        before you use the skill.
+      </>,
+      <>
+        In a new chat with the CourtAI plugin on, <Ask />
+      </>,
+    ],
+  },
 ];
 
 const InjuryBriefSkillPage = () => {

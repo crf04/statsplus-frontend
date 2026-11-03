@@ -1,6 +1,6 @@
 // One state model owns draft filters and the URL patch emitted on Apply.
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useReadAccess } from '../components/Auth/readAccess';
 import { fetchSeasons } from '../seasonsApi';
 import { seasonChoiceLabel } from '../servingSeason';
 import {
@@ -34,7 +34,11 @@ const DEFAULT_RANK_RANGE = [21, 30];
 export const STAT_COLUMNS = [
   'PTS',
   'REB',
+  'REB_CHANCES',
+  'REB_CONV_PCT',
   'AST',
+  'POTENTIAL_AST',
+  'AST_CONV_PCT',
   'FG3M',
   'STL',
   'BLK',
@@ -63,7 +67,11 @@ export const STAT_COLUMNS = [
 export const STAT_LABELS = {
   PTS: 'Points',
   REB: 'Rebounds',
+  REB_CHANCES: 'Rebound chances',
+  REB_CONV_PCT: 'REB conversion %',
   AST: 'Assists',
+  POTENTIAL_AST: 'Potential assists',
+  AST_CONV_PCT: 'AST conversion %',
   FG3M: '3s made',
   STL: 'Steals',
   BLK: 'Blocks',
@@ -94,6 +102,10 @@ export const STAT_LABELS = {
 export const STAT_PRECISION = {
   FG_PCT: { digits: 2, step: 0.01 },
   USG_PCT: { digits: 1, step: 0.1 },
+  REB_CHANCES: { digits: 0, step: 1 },
+  POTENTIAL_AST: { digits: 0, step: 1 },
+  REB_CONV_PCT: { digits: 2, step: 0.01 },
+  AST_CONV_PCT: { digits: 2, step: 0.01 },
 };
 
 const FLOAT_SLACK = 1e-9;
@@ -109,14 +121,16 @@ const useFilterPanel = ({
   playerList,
   onApplyFilters,
   onSeasonChange,
+  pageSeason,
   selectedPlayer,
   seasonGameLogs,
   seasonGameLogsLoading,
   seasonGameLogsFailed,
   onOpenSelfFilters,
   appliedFilters,
+  nextOpponent,
 }) => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { account } = useReadAccess();
   // Null until the list arrives, and again if it never does: the control is
   // only offered when there is a real choice to make.
   const [seasonChoices, setSeasonChoices] = useState(null);
@@ -147,7 +161,7 @@ const useFilterPanel = ({
   const [dirty, setDirty] = useState(() => new Set());
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated) return undefined;
+    if (!account) return undefined;
     let current = true;
     fetchSeasons()
       .then((choices) => {
@@ -159,7 +173,7 @@ const useFilterPanel = ({
     return () => {
       current = false;
     };
-  }, [authLoading, isAuthenticated]);
+  }, [account]);
 
   const markControlTouched = useCallback((control) => {
     setTouchedControls((previous) => {
@@ -448,10 +462,11 @@ const useFilterPanel = ({
     setGameFilter(value);
     markControlTouched('game_filter');
   };
-  const clearOpponent = () => {
-    setOpponentTricode('');
+  const changeOpponent = (tricode) => {
+    setOpponentTricode(tricode);
     markControlTouched('opponent_tricode');
   };
+  const clearOpponent = () => changeOpponent('');
 
   const ensureSeason = useCallback(() => onOpenSelfFilters(), [onOpenSelfFilters]);
 
@@ -593,7 +608,8 @@ const useFilterPanel = ({
     (summary.defense?.length || 0) +
     (summary.self?.length || 0);
 
-  const linkedSeason = appliedFilters?.season_filter ?? seasonChoices?.defaultSeason ?? '';
+  const defaultSeason = pageSeason ?? seasonChoices?.defaultSeason ?? '';
+  const linkedSeason = appliedFilters?.season_filter ?? defaultSeason;
   const choices = seasonChoices?.choices;
   // With choices (crf04/statsplus#330) a season outside them falls back to the
   // default, as the Workspace's request does. An older backend lists bare
@@ -601,7 +617,7 @@ const useFilterPanel = ({
   // selectable so the control never shows a season the results are not.
   const season =
     choices && !choices.some((choice) => choice.season === linkedSeason)
-      ? (seasonChoices.defaultSeason ?? '')
+      ? defaultSeason
       : linkedSeason;
   const listed = choices
     ? choices.map((choice) => ({ season: choice.season, label: seasonChoiceLabel(choice) }))
@@ -641,7 +657,9 @@ const useFilterPanel = ({
     playstyleMatchupRating,
     changePlaytype,
     opponentTricode,
+    changeOpponent,
     clearOpponent,
+    nextOpponentTricode: nextOpponent?.next_game?.opponent || null,
     // defense
     activeDefensiveCategory,
     changeDefensiveCategory,

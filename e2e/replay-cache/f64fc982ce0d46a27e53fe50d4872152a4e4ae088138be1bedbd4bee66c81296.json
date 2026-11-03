@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-10-28T06:12:51.164Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Save\"",
+        "target": {
+          "role": "button",
+          "name": "Save"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"LeBron last 10\" into textbox \"Name this Filter Set\"",
+        "target": {
+          "role": "textbox",
+          "name": "Name this Filter Set",
+          "placeholder": "LeBron last 10 at home"
+        },
+        "value": "LeBron last 10"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Save\"",
+        "target": {
+          "role": "button",
+          "name": "Save"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "e2e/flows/saved-filter-sets.e2e.ts::the%20agent%20saves%20the%20workspace%20under%20a%20name",
+      "targetId": "phone",
+      "instructionDigest": "fa95f3e758640ccd3dee409a6813cd53d4ed54544e9cd1f821ca2ec75065c641",
+      "paramsDigest": "d921bd6ecd0f0ddd0f423de9ca88d661c37c6545e83cddd14f99bd7bd83535c8",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Saved the current filters as “LeBron last 10.” The Saved tab now shows 1 saved set, and the confirmation reads “Saved as LeBron last 10.”",
+    "startPath": "/?player_name=LeBron+James&game_filter=10",
+    "endPath": "/?player_name=LeBron+James&game_filter=10",
+    "endAnchors": [
+      {
+        "text": "Saved as LeBron last 10"
+      },
+      {
+        "name": "LeBron last 10",
+        "text": "Saved as LeBron last 10"
+      },
+      {
+        "role": "tab",
+        "name": "Saved 1",
+        "text": "Saved"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Save"
+      },
+      {
+        "role": "tab",
+        "name": "Saved 0",
+        "text": "Saved"
+      }
+    ],
+    "endWaitMs": 12789,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "a7d97b1332a430e628ee278d949761f30bd8af402b1bf4bce804bd684ea5dc1d",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "f9f49ed79c2662c7f6e0522da33af26cd0588919fce8b674530ba7c83e5d217c",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

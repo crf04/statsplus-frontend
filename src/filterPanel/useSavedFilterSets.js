@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useReadAccess } from '../components/Auth/readAccess';
 import { fetchSavedFilterSets, subscribeSavedFilterSets } from '../savedFilterSetsApi';
 
 /*
@@ -8,13 +9,14 @@ import { fetchSavedFilterSets, subscribeSavedFilterSets } from '../savedFilterSe
  * Every save, rename and delete notifies, so all three follow without a reload.
  */
 const useSavedFilterSets = () => {
-  const { isAuthenticated, currentUser } = useAuth();
+  const { currentUser } = useAuth();
+  const { account } = useReadAccess();
   const [sets, setSets] = useState(null);
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
   useEffect(() => subscribeSavedFilterSets(() => setRevision((value) => value + 1)), []);
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!account) {
       setSets(null);
       return undefined;
     }
@@ -28,7 +30,7 @@ const useSavedFilterSets = () => {
         if (!controller.signal.aborted) setError(error || true);
       });
     return () => controller.abort();
-  }, [isAuthenticated, currentUser?.uid, revision]);
+  }, [account, currentUser?.uid, revision]);
   return { sets, error, retry: () => setRevision((value) => value + 1) };
 };
 

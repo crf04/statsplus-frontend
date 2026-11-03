@@ -1,7 +1,8 @@
 jest.unmock('axios');
+import { waitFor } from '@testing-library/react';
 import * as Sentry from '@sentry/react';
 import apiClient from './utils/axiosConfig';
-import { initErrorReporting, reportRenderError } from './errorReporting';
+import { initErrorReporting, parseTracesSampleRate, reportRenderError } from './errorReporting';
 
 jest.mock('./firebase/config', () => ({ auth: { currentUser: null } }));
 jest.mock('firebase/auth', () => ({ getIdToken: jest.fn() }));
@@ -83,7 +84,7 @@ test('a render error is reported', async () => {
   expect(events().map((event) => event.exception.values[0].value)).toEqual(['render failed']);
 });
 
-test('events carry no tokens, emails, request bodies, tracing or replay', async () => {
+test('events carry no tokens, emails, request bodies or replay', async () => {
   initErrorReporting({ dsn: 'https://key@example.ingest.sentry.io/1', transport });
   Sentry.setUser({ email: 'someone@example.com', id: 'u1' });
   Sentry.addBreadcrumb({ message: 'Bearer secret-token' });
@@ -113,13 +114,9 @@ test('events carry no tokens, emails, request bodies, tracing or replay', async 
   }
   expect(sent.flatMap(([, items]) => items.map(([header]) => header.type))).toEqual(['event']);
   const options = Sentry.getClient().getOptions();
-  expect(options.tracesSampleRate).toBe(0);
   expect(options.sendDefaultPii).toBe(false);
   expect(options.integrations.map((integration) => integration.name)).not.toEqual(
     expect.arrayContaining(['Replay']),
-  );
-  expect(options.integrations.map((integration) => integration.name)).not.toEqual(
-    expect.arrayContaining(['BrowserTracing']),
   );
 });
 
@@ -166,4 +163,49 @@ test('an uncaught error is reported without the page query, hash or frame URL se
   window.history.replaceState({}, '', '/');
   expect(events().map((event) => event.exception.values[0].value)).toEqual(['boom']);
   expect(JSON.stringify(sent)).not.toMatch(/secret-token|someone@example\.com/);
+});
+
+describe('tracing options', () => {
+  const initWith = (options) => {
+    initErrorReporting({ dsn: 'https://key@example.ingest.sentry.io/1', transport, ...options });
+    return Sentry.getClient().getOptions();
+  };
+
+  test('page loads are traced at 5% by default, with replays and header propagation off', async () => {
+    const options = initWith();
+    expect(options.tracesSampleRate).toBe(0.05);
+    expect(options.replaysSessionSampleRate).toBe(0);
+    expect(options.replaysOnErrorSampleRate).toBe(0);
+    expect(options.tracePropagationTargets).toBeUndefined();
+    // Tracing is a separate chunk added after the window load event.
+    window.dispatchEvent(new Event('load'));
+    await waitFor(() =>
+      expect(Sentry.getClient().getIntegrationByName('BrowserTracing')).toBeDefined(),
+    );
+  });
+
+  test('a rate of 0 never fetches the tracing chunk', async () => {
+    initWith({ tracesSampleRate: 0 });
+    window.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(Sentry.getClient().getIntegrationByName('BrowserTracing')).toBeUndefined();
+  });
+
+  test('the rate passed to init is used', () => {
+    expect(initWith({ tracesSampleRate: 0.2 }).tracesSampleRate).toBe(0.2);
+  });
+
+  test.each([
+    [undefined, 0.05],
+    ['', 0.05],
+    ['0.3', 0.3],
+    ['0', 0],
+    ['1', 1],
+    ['abc', 0.05],
+    ['-1', 0.05],
+    ['2', 0.05],
+    ['NaN', 0.05],
+  ])('the rate setting %p resolves to %p', (raw, expected) => {
+    expect(parseTracesSampleRate(raw)).toBe(expected);
+  });
 });

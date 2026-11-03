@@ -18,5 +18,5 @@ export const formatMatchupRating = formatVsLeague;
 // Red where the opponent allows less of his mix, green where it allows more.
 export const matchupRatingColor = (percent) => {
   const value = 1 - percent / 100;
-  return `hsl(${(1 - (value - 0.8) / (1.2 - 0.8)) * 120}, 100%, 40%)`;
+  return `hsl(${(1 - (value - 0.8) / (1.2 - 0.8)) * 120}, 100%, var(--ct-scale-lightness))`;
 };

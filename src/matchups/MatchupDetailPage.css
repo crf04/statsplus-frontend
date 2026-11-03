@@ -133,7 +133,7 @@
   scrollbar-width: none;
   /* Fade the right edge so a cut-off tab reads as "more to the right". The
      trailing spacer keeps the last tab clear of the fade at full scroll. */
-  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, var(--ct-mask) calc(100% - 28px), transparent);
 }
 
 .market-tabs::after {
@@ -256,14 +256,6 @@
   font-size: 0.79rem;
 }
 
-.injury-report {
-  margin: 0;
-  border: 1px solid var(--ct-line);
-  border-radius: var(--ct-radius-card);
-  padding: 12px;
-  background: var(--ct-surface);
-}
-
 .injury-badge {
   border: 1px solid var(--ct-line-strong);
   border-radius: 999px;
@@ -271,12 +263,6 @@
   color: var(--ct-dim);
   font-family: var(--ct-mono);
   font-size: 0.67rem;
-}
-
-.injury-list small {
-  color: var(--ct-dim);
-  font-family: var(--ct-mono);
-  font-size: 0.69rem;
 }
 
 .selection-close,
@@ -294,20 +280,10 @@
   color: var(--ct-gold);
 }
 
-.player-list,
-.injury-list {
+.player-list {
   display: grid;
   gap: 0;
   margin-top: 8px;
-}
-
-.injury-list article {
-  border-top: 1px solid var(--ct-line);
-  padding: 7px 5px;
-}
-
-.injury-list p {
-  margin: 0;
 }
 
 .player-game-logs {
@@ -329,31 +305,6 @@
 .player-game-logs:focus-visible {
   color: var(--ct-gold);
   border-bottom-color: var(--ct-gold);
-}
-
-.injury-report .section-heading h2 {
-  color: var(--ct-dim);
-  font-size: 0.76rem;
-}
-
-.injury-list {
-  grid-template-columns: 1fr;
-}
-
-.injury-list article {
-  position: relative;
-  font-size: 0.79rem;
-}
-
-.injury-list a {
-  display: inline-block;
-  color: var(--ct-gold);
-  font-size: 0.72rem;
-}
-
-.injury-list small {
-  display: block;
-  margin-top: 3px;
 }
 
 /* The header's one sentence: when, what the sheet is built on, what is missing. */
@@ -421,7 +372,7 @@
 }
 
 .rail-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ct-overlay-bg-3);
 }
 
 .rail-row.selected {
@@ -482,41 +433,86 @@
   line-height: 1;
 }
 
-.rail-row-value b.tone-up {
-  color: var(--ct-hit);
-}
-
-.rail-row-value b.tone-down {
-  color: var(--ct-miss);
-}
-
 .rail-row-value small {
   color: var(--ct-dim);
   font-size: 0.74rem;
 }
 
-.rail-books {
+/* Before the game, two lines: name and score beside the line and average,
+   then the Last 5 pill beside the best prices. */
+.rail-row-upcoming {
+  row-gap: 6px;
+}
+
+.rail-score {
+  position: relative;
+  z-index: 1;
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rail-score.thin {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.rail-row-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rail-row-foot .rail-price {
+  margin: 0 0 0 auto;
+}
+
+.rail-l5 {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
-  gap: 3px;
-}
-
-.rail-books i {
-  border: 1px solid var(--ct-line-strong);
-  border-radius: 3px;
-  padding: 0 4px;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--ct-line);
+  border-radius: 999px;
+  padding: 3px 10px;
   color: var(--ct-dim);
-  font-family: var(--ct-sans);
-  font-size: 0.68rem;
-  font-style: normal;
-  font-weight: 600;
+  font-size: 0.78rem;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-/* A flagged row lights the marks of the books off the headline in the gold
-   accent. */
-.rail-row.lines-disagree .rail-books i.differs {
+.rail-l5:hover,
+.rail-l5:focus-visible {
   border-color: var(--ct-gold);
   background: var(--ct-gold-soft);
+}
+
+.rail-l5 svg {
+  overflow: visible;
+}
+
+.rail-l5 > svg:last-child {
   color: var(--ct-gold);
+}
+
+.rail-l5-bar {
+  fill: currentColor;
+  opacity: 0.85;
+}
+
+.rail-l5-stub {
+  fill: var(--ct-overlay-bg-16);
+}
+
+.rail-l5-mark {
+  stroke: var(--ct-gold);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2;
 }
 
 /* Defense Sheet: no box around a category, one header row naming its
@@ -592,7 +588,7 @@
 
 .sheet-base-head .sheet-season {
   padding: 1px 7px;
-  border: 1px solid var(--ct-gold-soft);
+  border: 1px solid var(--ct-gold-fg-12);
   border-radius: 999px;
   background: var(--ct-gold-soft);
   color: var(--ct-text);
@@ -612,7 +608,7 @@
 }
 
 .sheet-row:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ct-overlay-bg-2p5);
 }
 
 .sheet-row.selection-why {
@@ -652,9 +648,9 @@
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    rgba(239, 122, 108, 0.45),
-    rgba(255, 255, 255, 0.12) 50%,
-    rgba(95, 208, 138, 0.45)
+    var(--ct-x-ef7a6c-45-fill),
+    var(--ct-overlay-bg-12) 50%,
+    var(--ct-x-5fd08a-45-fill)
   );
 }
 
@@ -667,10 +663,10 @@
   align-items: center;
   justify-content: center;
   transform: translate(-50%, -50%);
-  border: 2px solid var(--ct-ink, #0d0c0a);
+  border: 2px solid var(--ct-ink, var(--ct-x-0d0c0a));
   border-radius: 999px;
   background: hsl(calc((var(--rank) - 1) * 4.1) 62% 46%);
-  color: #fff;
+  color: var(--ct-on-ffffff);
   font-family: var(--ct-mono);
   font-size: 0.66rem;
   font-style: normal;
@@ -738,10 +734,10 @@
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  border: 1px solid rgba(232, 163, 61, 0.22);
+  border: 1px solid var(--ct-gold-fg-22);
   border-radius: 999px;
   padding: 4px 11px;
-  background: rgba(232, 163, 61, 0.06);
+  background: var(--ct-gold-bg-6);
   font-size: 0.86rem;
 }
 
@@ -766,10 +762,10 @@
 .selection-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(232, 163, 61, 0.55);
+  border: 1px solid var(--ct-gold-fg-55);
   border-radius: var(--ct-radius-card);
   padding: 16px 18px 14px;
-  background: linear-gradient(180deg, #1a160e 0%, var(--ct-surface) 140px);
+  background: linear-gradient(180deg, var(--ct-x-1a160e) 0%, var(--ct-surface) 140px);
 }
 
 .selection-card-heading {
@@ -857,7 +853,7 @@ button.selection-strip-tile {
 }
 
 button.selection-strip-tile:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ct-overlay-bg-4);
 }
 
 button.selection-strip-tile:focus-visible {
@@ -944,7 +940,7 @@ button.selection-strip-tile:focus-visible {
 }
 
 .selection-panel-log {
-  border-color: rgba(232, 163, 61, 0.35);
+  border-color: var(--ct-gold-fg-35);
 }
 
 .selection-panel-books {
@@ -1029,7 +1025,7 @@ button.selection-strip-tile:focus-visible {
 }
 
 .selection-matrix tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ct-overlay-bg-3);
 }
 
 .selection-matrix-pick {
@@ -1061,7 +1057,12 @@ button.selection-strip-tile:focus-visible {
 }
 
 .score-none {
-  color: rgba(255, 255, 255, 0.14);
+  color: var(--ct-overlay-fg-14);
+}
+
+/* Dark's near-invisible dash would be faint on white; light gives it the dim text colour. */
+[data-theme='light'] .score-none {
+  color: var(--ct-dim);
 }
 
 .selection-table-wrap .thin-flag {
@@ -1230,7 +1231,7 @@ button.selection-strip-tile:focus-visible {
   font-style: normal;
 }
 
-.rail-row-value .rail-price b {
+.rail-price b {
   color: var(--ct-text);
   font-family: var(--ct-sans);
   font-size: 0.8rem;
@@ -1242,4 +1243,98 @@ button.selection-strip-tile:focus-visible {
   font-size: 0.64rem;
   font-style: normal;
   letter-spacing: 0.02em;
+}
+
+/* The page's own label, larger than the section eyebrows, carries its help tip. */
+.matchup-heading .matchup-eyebrow {
+  font-size: 1.05rem;
+}
+
+/* The injury report: one quiet line above the team tabs that opens the names. */
+.injury-line {
+  margin: 0 0 10px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid var(--ct-line);
+  color: var(--ct-dim);
+  font-size: 0.8rem;
+}
+
+.injury-line-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ct-dim);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.injury-line-toggle:hover {
+  color: var(--ct-text);
+}
+
+.injury-line-toggle:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 4px;
+}
+
+.injury-line-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  color: var(--ct-gold);
+}
+
+.injury-line-action svg {
+  transition: transform 0.15s;
+}
+
+.injury-line-toggle[aria-expanded='true'] .injury-line-action svg {
+  transform: rotate(180deg);
+}
+
+.injury-line p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 6px 0 0;
+  color: var(--ct-text);
+}
+
+.injury-line p b {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+}
+
+.injury-line em {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.injury-line em.injury-status-out {
+  color: var(--ct-miss);
+}
+
+.injury-line em.injury-status-doubtful,
+.injury-line em.injury-status-questionable {
+  color: var(--ct-gold);
+}
+
+.injury-line small {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--ct-mono);
+  font-size: 0.69rem;
+}
+
+.injury-line a {
+  color: var(--ct-gold);
 }

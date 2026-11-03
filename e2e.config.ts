@@ -11,6 +11,10 @@ const app = {
   },
 };
 
+// The app follows the device's colour scheme, light in a headless browser;
+// flows run in dark, the theme their recorded runs saw.
+const darkTheme = () => window.localStorage.setItem('courtai:theme', 'dark');
+
 export default {
   tests: ['e2e/flows/**/*.e2e.ts'],
   workers: 2,
@@ -27,12 +31,20 @@ export default {
   targets: [
     {
       name: 'desktop',
-      engine: web({ viewport: { width: 1440, height: 900 }, timezoneId: 'Asia/Tokyo' }),
+      engine: web({
+        viewport: { width: 1440, height: 900 },
+        timezoneId: 'Asia/Tokyo',
+        initScripts: [darkTheme],
+      }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/desktop.log' } },
     },
     {
       name: 'phone',
-      engine: web({ viewport: { width: 390, height: 844 }, timezoneId: 'Asia/Tokyo' }),
+      engine: web({
+        viewport: { width: 390, height: 844 },
+        timezoneId: 'Asia/Tokyo',
+        initScripts: [darkTheme],
+      }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/phone.log' } },
     },
     {
@@ -40,7 +52,11 @@ export default {
       // shows the previous day. The other targets are east of it (Tokyo); the
       // Playwright suite ran in the machine's zone (New York here, UTC in CI).
       name: 'desktop-west',
-      engine: web({ viewport: { width: 1440, height: 900 }, timezoneId: 'America/New_York' }),
+      engine: web({
+        viewport: { width: 1440, height: 900 },
+        timezoneId: 'America/New_York',
+        initScripts: [darkTheme],
+      }),
       app: { ...app, command: { ...app.command, log: '.e2e/logs/desktop-west.log' } },
     },
   ],

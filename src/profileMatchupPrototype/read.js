@@ -14,6 +14,21 @@ export const TAB_BASES = {
 export const MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA'];
 
 const SLICE_LABELS = {
+  shot_zones: {
+    'Restricted Area': 'Restricted area',
+    'In The Paint (Non-RA)': 'Paint (non-RA)',
+    'Mid-Range': 'Mid-range',
+    'Corner 3': 'Corner 3',
+    'Above the Break 3': 'Above-break 3',
+  },
+  rebound_types: {
+    DefTwoPtRebounds: 'DREB off 2PT misses',
+    DefThreePtRebounds: 'DREB off 3PT misses',
+    FTDefRebounds: 'DREB off FT misses',
+    OffTwoPtRebounds: 'OREB off 2PT misses',
+    OffThreePtRebounds: 'OREB off 3PT misses',
+    FTOffRebounds: 'OREB off FT misses',
+  },
   play_types: {
     Transition: 'Transition',
     Isolation: 'Isolation',

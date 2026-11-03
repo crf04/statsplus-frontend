@@ -497,6 +497,10 @@
 }
 
 @media (max-width: 520px) {
+  .mcc .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
   .mcc .mh .nm {
     font-size: 17px;
   }

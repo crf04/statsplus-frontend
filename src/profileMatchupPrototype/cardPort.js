@@ -5,7 +5,15 @@
  * Unscheduled Matchup the web app fetches (the tool's own selection rules,
  * see read.js). Each Player Profile tab draws one Base of it.
  */
-import { readBase, TAB_BASES } from './read';
+import { readBase } from './read';
+
+const DIET_BASES = [
+  ['shot_types', 'Shot types'],
+  ['shot_zones', 'Shot zones'],
+  ['play_types', 'Play types'],
+  ['assist_locations', 'Assist locations'],
+  ['rebound_types', 'Rebound types'],
+];
 
 const MARKET_ORDER = [
   'PTS',
@@ -118,7 +126,7 @@ export const toCard = (data, opponent) => {
       ),
     );
     const bases = [];
-    Object.values(TAB_BASES).forEach(({ base, label }) => {
+    DIET_BASES.forEach(([base, label]) => {
       const r = readBase(data, opponent, base, market);
       const slices = r.slices
         .filter((s) => s.vs != null)
@@ -164,7 +172,7 @@ export const toCard = (data, opponent) => {
       bases,
     };
   });
-  const diet = Object.values(TAB_BASES).map(({ base, label }) => ({
+  const diet = DIET_BASES.map(([base, label]) => ({
     base: label,
     slices: readBase(data, opponent, base, 'PTS').slices.map((s) => ({
       slice: s.label,
@@ -349,7 +357,7 @@ function tradRow(m, opp) {
 }
 
 /* The card's draw(), with the body narrowed to one Base: the tab's. */
-export const drawTab = (d, picked, tabBase) => {
+export const drawCard = (d, picked) => {
   const m = d.markets.find((x) => x.market === picked) || d.markets[0];
   const opp = d.player.opponent;
   const minutes = d.player.last_10_minutes || [];
@@ -364,8 +372,7 @@ export const drawTab = (d, picked, tabBase) => {
     .map((x) => {
       const s = x.season;
       const tone = !s || Math.round(s.value * 100) === 0 ? '' : s.value > 0 ? ' up' : ' down';
-      const has = x.components[tabBase] ? '' : ' nobase';
-      return `<button type="button" class="tile mk${x === m ? ' on' : ''}${s && s.thin ? ' thin' : ''}${has}" data-market="${esc(x.market)}" aria-pressed="${x === m}">
+      return `<button type="button" class="tile mk${x === m ? ' on' : ''}${s && s.thin ? ' thin' : ''}" data-market="${esc(x.market)}" aria-pressed="${x === m}">
         <span class="k">${esc(x.market)}</span><span class="v${tone}">${s ? pct(s.value) : '—'}</span>${x.last15 ? `<span class="l15">L15 ${pct(x.last15.value)}</span>` : ''}</button>`;
     })
     .join('');
@@ -373,7 +380,7 @@ export const drawTab = (d, picked, tabBase) => {
     .filter((b) => m.components[b])
     .map((b) => {
       const c = m.components[b];
-      return `<span class="cchip${c.thin ? ' thin' : ''}${b === tabBase ? ' this' : ''}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b>${c.thin ? '<em>low conf.</em>' : ''}</span>`;
+      return `<span class="cchip${c.thin ? ' thin' : ''}" style="${wash(c.value)}">${esc(SHORT[b] || b)} <b>${pct(c.value)}</b>${c.thin ? '<em>low conf.</em>' : ''}</span>`;
     })
     .join('');
   const blend =
@@ -381,20 +388,26 @@ export const drawTab = (d, picked, tabBase) => {
       ? `<span class="cchip blend${season.thin ? ' thin' : ''}" style="${wash(season.value)}">Blend <b>${pct(season.value)}</b>${season.thin ? '<em>low conf.</em>' : ''}${m.last15 ? `<span class="l15">Last 15 <b>${pct(m.last15.value)}</b></span>` : ''}</span>`
       : '';
 
-  const base = (m.bases || []).find((b) => b.base === tabBase);
-  let body;
-  if (!base || !m.components[tabBase]) {
-    body = `<p class="sub">No ${esc(tabBase)} reading for ${esc(m.market)}: ${esc(tabBase)} is not part of the ${esc(m.market)} Matchup Score. Pick a highlighted market.</p>`;
-  } else if (REGIONS[tabBase]) {
-    const comp = m.components[tabBase];
-    body = `<div class="layout solo"><div><div class="sec"><span>${esc(tabBase)} · ${esc(m.market)}</span><span class="rk ${comp.value >= 0 ? 'up' : 'down'}">${pct(comp.value)}</span></div>
-          ${court(d, base, opp)}
+  // matchup.html draw(): the first spatial Base is the court, every other Diet Base a butterfly.
+  const bases = (m.bases || []).filter((b) => b.base !== 'Traditional');
+  const spatial = bases.find((b) => REGIONS[b.base]);
+  const others = bases.filter((b) => b !== spatial);
+  const sc = spatial && m.components[spatial.base];
+  const left = spatial
+    ? `<div><div class="sec"><span>${esc(spatial.base)} · ${esc(m.market)}</span><span class="rk ${sc && sc.value >= 0 ? 'up' : 'down'}">${sc ? pct(sc.value) : ''}</span></div>
+          ${court(d, spatial, opp)}
           <div class="legend"><b>${esc(opp)} allows vs league</b><span>Less</span><span class="grad"></span><span>More</span></div>
-          ${courtKey(d, base, opp)}</div></div>`;
-  } else {
-    body = `<div class="layout solo"><div>${butterfly(d, m, base, opp)}<div class="sub bfkey"><b>His Diet:</b> share of his volume; the tick marks the league average.<br><b>${esc(opp)} allows:</b> % vs league, then rank (30th = most).</div></div></div>`;
-  }
+          ${courtKey(d, spatial, opp)}</div>`
+    : '';
+  const key = others.length
+    ? `<div class="sub bfkey"><b>His Diet:</b> share of his volume; the tick marks the league average.<br><b>${esc(opp)} allows:</b> % vs league, then rank (30th = most).</div>`
+    : '';
   const trad = tradRow(m, opp);
+  const right = others.map((b) => butterfly(d, m, b, opp)).join('') + key + trad;
+  const body =
+    left || right
+      ? `<div class="layout${left && right ? '' : ' solo'}">${left}${right ? `<div>${right}</div>` : ''}</div>`
+      : `<p class="sub">No Diet-based Base for ${esc(m.market)}.</p>`;
   const a = d.as_of || {};
   const footer = `<details class="as-of rule"><summary>Data as of ${esc(asOf ? day(asOf) : '–')}</summary><p>Completed ${esc(a.season || '')} season: Season defense ${esc(a.season_defense || '–')}, Last 15 defense ${esc(a.last_15_defense || '–')}, player Diets ${esc(a.player_diets || '–')}.</p></details>`;
 
@@ -412,6 +425,5 @@ export const drawTab = (d, picked, tabBase) => {
       </div>
       <div class="comps" aria-label="Season Matchup Score by Base">${chips}${blend}</div>
       ${body}
-      ${trad}
       ${footer}`;
 };

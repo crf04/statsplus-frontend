@@ -5,7 +5,7 @@ import { SAMPLES, goToPlayer } from './mode';
 
 const Switcher = ({ playerName }) => (
   <div className="pmp-switcher" role="group" aria-label="Prototype sample player">
-    <span>E · MCP card port</span>
+    <span>F · MCP card, full sheet</span>
     <select
       value={playerName}
       onChange={(e) => goToPlayer(e.target.value)}

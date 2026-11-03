@@ -27,8 +27,7 @@ import ErrorMessage from './feedback/ErrorMessage';
 // PROTOTYPE (throwaway, branch prototype/profile-matchup-tabs)
 import { sampleFor, useProto } from './profileMatchupPrototype/mode';
 import ProtoSwitcher from './profileMatchupPrototype/Switcher';
-import MatchupCardTab from './profileMatchupPrototype/MatchupCardTab';
-import { TAB_BASES } from './profileMatchupPrototype/read';
+import MatchupCard from './profileMatchupPrototype/MatchupCard';
 
 /*
  * Under a selection a Diet baseline base names the season it serves, never the
@@ -58,7 +57,7 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
     proto.active && proto.tab ? proto.tab : 'Playtypes',
   );
   const protoOpponent = sampleFor(selectedPlayer)?.opponent ?? TEAM_CODES[selectedTeam] ?? null;
-  const protoTab = proto.active && TAB_BASES[selectedProfile] && protoOpponent;
+  const protoCard = proto.active && protoOpponent;
   const [playerData, setPlayerData] = useState(null);
   const [teamData, setTeamData] = useState(null);
   const [playerLoading, setPlayerLoading] = useState(false);
@@ -285,14 +284,9 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   };
 
   const renderContent = () => {
-    if (protoTab)
+    if (protoCard)
       return (
-        <MatchupCardTab
-          key={`${selectedPlayer}|${selectedProfile}`}
-          tab={selectedProfile}
-          playerName={selectedPlayer}
-          opponent={protoOpponent}
-        />
+        <MatchupCard key={selectedPlayer} playerName={selectedPlayer} opponent={protoOpponent} />
       );
     if (loading) {
       return <p>Loading data...</p>;
@@ -346,48 +340,50 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
     <Card className="dark-card">
       <Card.Body>
         <h4 className="mb-2">Player Profile</h4>
-        <div className="category-toggles-wrapper">
-          <ToggleButtonGroup
-            type="radio"
-            name="player-profile"
-            value={selectedProfile}
-            onChange={handleSelectedProfile}
-            className="per36-toggle-group"
-          >
-            <ToggleButton
-              id="profile-playtypes"
-              value="Playtypes"
-              variant="outline-primary"
-              className="per36-toggle-btn"
+        {!protoCard && (
+          <div className="category-toggles-wrapper">
+            <ToggleButtonGroup
+              type="radio"
+              name="player-profile"
+              value={selectedProfile}
+              onChange={handleSelectedProfile}
+              className="per36-toggle-group"
             >
-              Playtypes
-            </ToggleButton>
-            <ToggleButton
-              id="profile-assists"
-              value="assists"
-              variant="outline-primary"
-              className="per36-toggle-btn"
-            >
-              Assists
-            </ToggleButton>
-            <ToggleButton
-              id="profile-shooting-type"
-              value="Shooting Type"
-              variant="outline-primary"
-              className="per36-toggle-btn"
-            >
-              Shooting Type
-            </ToggleButton>
-            <ToggleButton
-              id="profile-zone-shooting"
-              value="Zone Shooting"
-              variant="outline-primary"
-              className="per36-toggle-btn"
-            >
-              Zone Shooting
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
+              <ToggleButton
+                id="profile-playtypes"
+                value="Playtypes"
+                variant="outline-primary"
+                className="per36-toggle-btn"
+              >
+                Playtypes
+              </ToggleButton>
+              <ToggleButton
+                id="profile-assists"
+                value="assists"
+                variant="outline-primary"
+                className="per36-toggle-btn"
+              >
+                Assists
+              </ToggleButton>
+              <ToggleButton
+                id="profile-shooting-type"
+                value="Shooting Type"
+                variant="outline-primary"
+                className="per36-toggle-btn"
+              >
+                Shooting Type
+              </ToggleButton>
+              <ToggleButton
+                id="profile-zone-shooting"
+                value="Zone Shooting"
+                variant="outline-primary"
+                className="per36-toggle-btn"
+              >
+                Zone Shooting
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </div>
+        )}
         {renderContent()}
         {proto.active && <ProtoSwitcher playerName={selectedPlayer} />}
       </Card.Body>

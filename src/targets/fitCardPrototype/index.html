@@ -135,6 +135,30 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 .c-slice .rank { min-width: 20px; height: 20px; font-size: 10px; }
 @media (max-width: 720px) { .c-wrap { grid-template-columns: 1fr; } }
 
+/* ---------- D: fits only, line-first ---------- */
+.d-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.d-head .a-count { margin-left: auto; }
+.d-row { display: grid; grid-template-columns: minmax(140px, 1fr) auto 64px 170px; gap: 18px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.d-row.hdr { border-top: 0; padding: 0 0 6px; }
+.d-row.hdr span { font: 10px var(--mono); color: var(--dim); letter-spacing: .1em; text-transform: uppercase; text-align: right; }
+.d-row.hdr span:first-child { text-align: left; }
+.d-name b { font-weight: 600; }
+.d-name small { margin-left: 8px; font: 11px var(--mono); color: var(--dim); }
+.d-l5 { display: flex; gap: 3px; justify-content: flex-end; }
+.d-l5 span { width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); background: var(--surface-2); color: var(--dim); }
+.d-l5 span.o { background: rgba(111,191,138,.16); color: var(--good); }
+.d-avg { text-align: right; font: 15px var(--mono); }
+.d-line { text-align: right; font-family: var(--mono); }
+.d-line b { color: var(--gold); font-size: 15px; }
+.d-line small { display: block; color: var(--dim); font-size: 11px; margin-top: 1px; white-space: nowrap; }
+@media (max-width: 640px) {
+  .d-row { grid-template-columns: 1fr auto auto; gap: 6px 14px; }
+  .d-row.hdr { display: none; }
+  .d-name { grid-column: 1 / -1; }
+  .d-l5 { justify-content: flex-start; }
+  .d-avg::before { content: 'AVG '; font-size: 10px; color: var(--dim); }
+}
+
 /* switcher (not part of the design) */
 .switch { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: #f5f2ea; color: #111; border-radius: 999px; padding: 5px; box-shadow: 0 8px 30px rgba(0,0,0,.5); font: 600 13px var(--sans); z-index: 9; }
 .switch button { border: 0; background: #111; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
@@ -173,7 +197,9 @@ const P = [
     prices: [['Novig', 5.5, null, null]],
     slice: { name: 'OREB off 2PT misses', share: 36, rank: 13, vs: -0.3 } },
 ];
-const sgn = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(Math.abs(n) % 1 ? 1 : 0);
+// 2026-27 REB average and last 5 REB, oldest first (query_game_logs, 2026-11-03).
+const CUR = { 'Jaden McDaniels': [6.0, [6, 7, 6, 3, 6]], 'Jonathan Kuminga': [5.4, [10, 3, 1, 6, 10]], 'Joan Beringer': [6.9, [7, 10, 4, 6, 7]] };
+const sgn =(n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(Math.abs(n) % 1 ? 1 : 0);
 const gap = (p) => p.avg - p.line;
 const rank = (r) => `<span class="rank" style="--r:${r}" title="Rank ${r}/30 — 30 allows the most">${r}</span>`;
 const title = () => `<span class="ttl"><span class="team">${T.opponent}</span><span class="vs">vs</span><span class="q">${T.qualifier}</span></span>`;
@@ -181,6 +207,15 @@ const best = (p) => p.prices.find((x) => x[2]) ;
 const priced = (p) => { const b = best(p); return b ? `${b[0]} o${b[2]} / u${b[3]}` : `${p.prices[0][0]} · no price`; };
 
 const V = {
+  D: { name: 'Fits only, line-first', render: () => `
+    <div class="d-head"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span></div>
+    <div class="d-row hdr"><span>Player</span><span>Last 5 ${T.stat}</span><span>Avg</span><span>Line</span></div>
+    ${P.map((p) => { const [avg, l5] = CUR[p.name]; return `<div class="d-row">
+      <div class="d-name"><b>${p.name}</b><small>${p.pos}</small></div>
+      <div class="d-l5" title="Last 5 games vs the line">${l5.map((v) => `<span class="${v > p.line ? 'o' : ''}">${v}</span>`).join('')}</div>
+      <div class="d-avg">${avg.toFixed(1)}</div>
+      <div class="d-line"><b>${p.line}</b><small>${priced(p)}</small></div>
+    </div>`; }).join('')}` },
   A: { name: 'One line per fit', render: () => `
     <div class="a-head"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span><span class="tag fade">fade</span></div>
     <div class="a-why">
@@ -239,7 +274,7 @@ const V = {
     </div>` },
 };
 const keys = Object.keys(V);
-const cur = () => { const m = location.hash.match(/v=([A-Z])/); return m && V[m[1]] ? m[1] : 'A'; };
+const cur = () => { const m = location.hash.match(/v=([A-Z])/); return m && V[m[1]] ? m[1] : 'D'; };
 function show() { const k = cur(); document.getElementById('card').innerHTML = V[k].render(); document.getElementById('label').textContent = `${k} · ${V[k].name}`; }
 function go(d) { const i = (keys.indexOf(cur()) + d + keys.length) % keys.length; location.hash = `v=${keys[i]}`; }
 document.getElementById('prev').onclick = () => go(-1);

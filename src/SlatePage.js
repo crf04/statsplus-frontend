@@ -23,7 +23,7 @@ import { seasonOfDate } from './gameSeason';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateStatus';
 import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
-import { useResolvedTargets } from './targets/useTargets';
+import { useResolvedTargets, useTargetBacktests } from './targets/useTargets';
 import './SlatePage.css';
 import ErrorMessage from './feedback/ErrorMessage';
 
@@ -242,9 +242,15 @@ export default function SlatePage() {
   const resolvedTargets = useResolvedTargets(
     explicitDate ?? (state.status === 'ready' ? state.slate.slateDate : undefined),
     // With no date in the URL the day is not known until the Slate answers.
-    { waiting: explicitDate === null && state.status !== 'ready' },
+    // The season is the Slate's own Evidence season, so fit averages agree
+    // with the Matchup a row opens (crf04/statsplus#423).
+    {
+      waiting: !evidenceReady || (explicitDate === null && state.status !== 'ready'),
+      season,
+    },
   );
   const liveEntries = resolvedTargets.entries.filter((entry) => entry.game);
+  const targetBacktests = useTargetBacktests(liveEntries.length > 0);
   const now = useMinuteNow(state.status === 'ready');
   const slateDate =
     state.status === 'ready'
@@ -460,6 +466,7 @@ export default function SlatePage() {
                 renderExtra={(game) => (
                   <SlateGameTargets
                     entries={liveEntries.filter((entry) => entry.game.gameId === game.gameId)}
+                    backtests={targetBacktests}
                   />
                 )}
               />

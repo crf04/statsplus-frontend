@@ -410,6 +410,81 @@ const decodeStatColumns = (columns) => {
 };
 
 /*
+ * A fit's posted lines in the graded stat, `{ provider: { market: line } }`,
+ * and the per-pick prices beside them, `{ provider: { market: { over,
+ * under } } }`: the Matchup player row's shapes (crf04/statsplus#423). A price
+ * exists only where that provider's line does, and a provider this build does
+ * not price is skipped, as the Matchup skips it. A side with no price is null.
+ */
+const PRICED_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi', 'dabble'];
+const requirePrice = (value) => {
+  if (value === null) return null;
+  if (!Number.isInteger(value)) throw createInvalidResponseError();
+  return value;
+};
+
+const decodeFitLines = (lines) => {
+  if (!isRecord(lines)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    Object.entries(lines).map(([provider, markets]) => {
+      if (!isRecord(markets)) throw createInvalidResponseError();
+      return [
+        provider,
+        Object.fromEntries(
+          Object.entries(markets).map(([market, line]) => {
+            if (requireNumber(line) < 0) throw createInvalidResponseError();
+            return [market, line];
+          }),
+        ),
+      ];
+    }),
+  );
+};
+
+const decodeFitLinePrices = (linePrices, lines) => {
+  if (!isRecord(linePrices)) throw createInvalidResponseError();
+  return Object.fromEntries(
+    Object.entries(linePrices)
+      .filter(([provider]) => PRICED_PROVIDERS.includes(provider))
+      .map(([provider, markets]) => {
+        if (!isRecord(markets)) throw createInvalidResponseError();
+        const posted = Object.hasOwn(lines, provider) ? lines[provider] : {};
+        return [
+          provider,
+          Object.fromEntries(
+            Object.entries(markets).map(([market, sides]) => {
+              if (!Object.hasOwn(posted, market) || !isRecord(sides))
+                throw createInvalidResponseError();
+              // Both sides null is a posted line nobody prices; it reads as
+              // the line alone.
+              return [market, { over: requirePrice(sides.over), under: requirePrice(sides.under) }];
+            }),
+          ),
+        ];
+      }),
+  );
+};
+
+// The graded stat in his last five games, newest first: `{ game_id,
+// game_date, value }`, where a null value is a game with no figure for it. A
+// completed game, or a player with no log, sends none.
+const decodeFitLastFive = (games) => {
+  if (!Array.isArray(games) || games.length > 5) throw createInvalidResponseError();
+  const decoded = games.map((game) => {
+    if (!isRecord(game) || !isCalendarDate(game.game_date)) throw createInvalidResponseError();
+    return {
+      gameId: requireString(game.game_id),
+      gameDate: game.game_date,
+      value: requireNumberOrNull(game.value),
+    };
+  });
+  // Newest first: a list out of order would put the chips in the wrong games.
+  if (decoded.some((game, index) => index > 0 && decoded[index - 1].gameDate < game.gameDate))
+    throw createInvalidResponseError();
+  return decoded;
+};
+
+/*
  * A fit's shares are index-parallel with the Qualifiers, which is what lets
  * the table put one column per Qualifier. A list of another length would
  * silently misattribute a share to the wrong Qualifier.
@@ -418,6 +493,7 @@ const decodeFit = (player, qualifiers, statColumns) => {
   if (!isRecord(player) || typeof player.thin !== 'boolean' || !Array.isArray(player.shares)) {
     throw createInvalidResponseError();
   }
+  const lines = player.lines === undefined ? undefined : decodeFitLines(player.lines);
   return {
     canonicalId: requireNumber(player.canonical_id),
     name: requireString(player.name),
@@ -426,6 +502,15 @@ const decodeFit = (player, qualifiers, statColumns) => {
     seasonScoring: requireNumberOrNull(player.season_scoring),
     ...(statColumns && player.season_averages !== undefined
       ? { seasonAverages: decodeFitAverages(player.season_averages) }
+      : {}),
+    // Each is absent from a backend deployed before it, which is not the same
+    // as a player with no line or no games.
+    ...(lines ? { lines } : {}),
+    ...(player.line_prices !== undefined
+      ? { linePrices: decodeFitLinePrices(player.line_prices, lines ?? {}) }
+      : {}),
+    ...(player.last_five_games !== undefined
+      ? { lastFiveGames: decodeFitLastFive(player.last_five_games) }
       : {}),
     thin: player.thin,
     shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),
@@ -465,8 +550,10 @@ const decodeResolvedTarget = (item) => {
 export const decodeResolvedTargets = (payload = {}) => {
   if (!isRecord(payload) || !isCalendarDate(payload.slate_date) || !Array.isArray(payload.targets))
     throw createInvalidResponseError();
+  const seasonContext = decodeSeasonContext(payload.season_context);
   return {
     slateDate: payload.slate_date,
+    ...(seasonContext ? { seasonContext } : {}),
     entries: payload.targets.map(decodeResolvedTarget),
   };
 };
@@ -695,11 +782,21 @@ export const fetchTargets = async ({ signal } = {}) => {
  * computes, so the Slate and a Target detail opened from it always agree
  * about which day they are showing.
  */
-export const fetchResolvedTargets = async ({ date, signal, fallback } = {}) => {
-  const response = await apiClient.get(targetsUrl('/resolve'), {
-    params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
-    signal,
-  });
+export const fetchResolvedTargets = async ({ date, signal, fallback, season } = {}) => {
+  const response = await apiClient
+    .get(targetsUrl('/resolve'), {
+      params: {
+        ...(date ? { date } : {}),
+        ...(fallback ? { fallback } : {}),
+        // The Evidence season the Slate reads, so a fit's average is that
+        // season's (crf04/statsplus#423). A backend before it ignores it.
+        ...(season ? { season } : {}),
+      },
+      signal,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeResolvedTargets(response.data);
 };
 

@@ -6,14 +6,17 @@ import { getTodaySlateDate } from './calendarDate';
 import { fetchSlate } from './slateApi';
 import { closingPoolSlatePayload } from './slateClosingPoolFixture';
 import { partialPoolSlatePayload } from './slatePartialPoolFixture';
-import { fetchResolvedTargets } from './targets/targetsApi';
+import { fetchResolvedTargets, fetchTargetBacktests } from './targets/targetsApi';
 import { fetchSeasons } from './seasonsApi';
 import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from './seasonChoicesFixture';
 import { seasonRefusalOr } from './servingSeason';
 
 jest.mock('./slateApi', () => ({ fetchSlate: jest.fn() }));
 jest.mock('./seasonsApi', () => ({ fetchSeasons: jest.fn() }));
-jest.mock('./targets/targetsApi', () => ({ fetchResolvedTargets: jest.fn() }));
+jest.mock('./targets/targetsApi', () => ({
+  fetchResolvedTargets: jest.fn(),
+  fetchTargetBacktests: jest.fn(),
+}));
 jest.mock('./contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false }),
 }));
@@ -64,6 +67,7 @@ beforeEach(() => {
   jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00Z'));
   fetchSlate.mockResolvedValue(slate);
   fetchResolvedTargets.mockResolvedValue({ slateDate: '2026-01-15', entries: [] });
+  fetchTargetBacktests.mockResolvedValue([]);
   fetchSeasons.mockResolvedValue(legacySeasons);
 });
 
@@ -932,13 +936,12 @@ test('a game with a Target grows a block of its fits beneath the row', async () 
   expect(block.getByText('≥ 40%')).toBeVisible();
   expect(block.getByText('1')).toBeVisible();
   expect(block.getByText('fit', { exact: false })).toBeVisible();
-  // One column per Qualifier, so a share is attributable to what demanded it.
-  expect(block.getByRole('columnheader', { name: 'Corner 3' })).toBeVisible();
-  // The share that made the player fit, against what the league does on it.
+  // The card names the player and his average, not the Qualifier shares
+  // the Targets page already shows (crf04/statsplus#423).
   expect(block.getByText('LeBron James')).toBeVisible();
-  expect(block.getByText('44%')).toBeVisible();
-  expect(block.getByText('lg 20%')).toBeVisible();
   expect(block.getByText('25.4')).toBeVisible();
+  expect(block.queryByRole('columnheader', { name: 'Corner 3' })).not.toBeInTheDocument();
+  expect(block.queryByText('44%')).not.toBeInTheDocument();
   // A stored Player Pool named these players, so there is no other evidence
   // to name; only a completed game's participants are captioned.
   expect(block.queryByText('from game logs')).not.toBeInTheDocument();
@@ -976,8 +979,48 @@ test('a thin diet is flagged in the fit list rather than dropped from it', async
 
   expect(await screen.findByText('Austin Reaves')).toBeVisible();
   expect(screen.getByText('thin')).toBeVisible();
-  // Nothing to compare against is not a league average of zero.
-  expect(screen.queryByText(/^lg /)).not.toBeInTheDocument();
+});
+
+test('the fit card leans on the Target Backtest the Slate reads in one batch', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    slateDate: '2026-01-15',
+    entries: [resolvedEntry()],
+  });
+  // Season average 20; the games run 18 and 24 against it: +5% and one of two over.
+  fetchTargetBacktests.mockResolvedValue([
+    {
+      targetId: 7,
+      status: 'ready',
+      backtest: {
+        season: '2025-26',
+        statColumns: ['PTS'],
+        players: [
+          {
+            canonicalId: 1,
+            seasonAverages: { PTS: 20 },
+            games: [
+              { gameDate: '2026-01-01', stats: { PTS: 18 } },
+              { gameDate: '2026-01-03', stats: { PTS: 24 } },
+            ],
+          },
+        ],
+      },
+    },
+  ]);
+
+  renderSlate();
+
+  expect(await screen.findByText('boost PTS')).toBeVisible();
+  expect(
+    screen.getByText('2025-26 backtest: PTS +5% vs own average, 50% of games over it.'),
+  ).toBeVisible();
+  expect(fetchTargetBacktests).toHaveBeenCalledTimes(1);
+});
+
+test('a Slate with no live Target reads no Backtests', async () => {
+  renderSlate();
+  expect(await screen.findByRole('heading', { name: 'LAL @ BOS' })).toBeVisible();
+  expect(fetchTargetBacktests).not.toHaveBeenCalled();
 });
 
 test('an unavailable pool reads differently from nobody fitting', async () => {
@@ -1153,6 +1196,12 @@ describe('Evidence season', () => {
     expect(fetchSlate.mock.calls).toEqual([
       ['2026-01-15', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
+    // The Targets resolve reads the same season, so fit averages are its own.
+    await waitFor(() =>
+      expect(fetchResolvedTargets.mock.calls).toEqual([
+        [{ date: '2026-01-15', season: '2026-27', signal: expect.any(AbortSignal) }],
+      ]),
+    );
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2026-27');
     expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
@@ -1209,6 +1258,14 @@ describe('Evidence season', () => {
       expect(fetchSlate.mock.calls).toEqual([
         ['2026-10-27', { signal: expect.any(AbortSignal), season: '2026-27' }],
       ]);
+      // A 2026-27 day resolves its Targets in 2026-27 too (crf04/statsplus#423).
+      await waitFor(() =>
+        expect(fetchResolvedTargets).toHaveBeenCalledWith({
+          date: '2026-10-27',
+          season: '2026-27',
+          signal: expect.any(AbortSignal),
+        }),
+      );
       expect(seasonSelect()).toHaveValue('2026-27');
       expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
       expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(

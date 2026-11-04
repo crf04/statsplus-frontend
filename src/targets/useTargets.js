@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { isRecord } from '../decoding';
 import { beginStatPreferenceRead } from './useStatPreferences';
 import { describeBacktestFailure, seasonUnavailableDetails } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
@@ -16,6 +17,7 @@ import {
   fetchDietBaselines,
   fetchSeasonMinutes,
   fetchResolvedTargets,
+  fetchTargetBacktests,
   fetchTargetPreview,
   fetchTargets,
 } from './targetsApi';
@@ -46,15 +48,18 @@ const readList = async ({ signal, userId }) => {
     preferences.release();
   }
 };
+// A scope is a date, or `{ date, season }` when a season is chosen.
 const readResolution = ({ scope, signal, userId, bypass }) => {
-  const load = () => fetchResolvedTargets({ date: scope, signal });
-  if (historicalDate(scope))
-    return readRevisit('resolution', userId, scope, load, { signal, bypass });
-  // An absent scope is the Slate's own current date, read as often as every
+  const { date, season } = isRecord(scope) ? scope : { date: scope };
+  const load = () => fetchResolvedTargets({ date, signal, ...(season ? { season } : {}) });
+  const identity = (day) => (season ? [day, season] : day);
+  if (historicalDate(date))
+    return readRevisit('resolution', userId, identity(date), load, { signal, bypass });
+  // An absent date is the Slate's own current date, read as often as every
   // surface that shows it revisits — cached under one identity rather than
   // the (unknown here) date it will turn out to be.
-  if (scope === undefined)
-    return readRevisit('resolution', userId, 'current', load, { signal, bypass });
+  if (date === undefined)
+    return readRevisit('resolution', userId, identity('current'), load, { signal, bypass });
   return load();
 };
 
@@ -152,8 +157,44 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  * other surfaces pass none, which is the Slate's own current date, and read
  * the date back off the response rather than working it out a second time.
  */
-export const useResolvedTargets = (date, options) =>
-  useAccountRead(readResolution, EMPTY_RESOLUTION, date, options);
+export const useResolvedTargets = (date, { season, ...options } = {}) => {
+  // One scope per date and season, so the read reruns only when either moves.
+  const scope = useMemo(() => (season ? { date, season } : date), [date, season]);
+  return useAccountRead(readResolution, EMPTY_RESOLUTION, scope, options);
+};
+
+/*
+ * The cached Target Backtests by Target id, for the Slate's fit cards to lean
+ * on (crf04/statsplus#423). Only the batch is read: a Target the backend has
+ * not cached, or whose read failed, has no lean, and the Slate never starts
+ * the league-wide scan on its own. A failed batch is the same as an empty one.
+ */
+const NO_BACKTESTS = {};
+export const useTargetBacktests = (enabled) => {
+  const [backtests, setBacktests] = useState(NO_BACKTESTS);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const controller = new AbortController();
+    // Each read starts over: a refresh that fails shows no lean rather than
+    // the last batch's.
+    setBacktests(NO_BACKTESTS);
+    fetchTargetBacktests({ signal: controller.signal })
+      .then((reads) => {
+        if (controller.signal.aborted) return;
+        setBacktests(
+          Object.fromEntries(
+            reads
+              .filter((read) => read.status === 'ready')
+              .map((read) => [String(read.targetId), read.backtest]),
+          ),
+        );
+      })
+      // The read already started from nothing, so a failure leaves nothing.
+      .catch(() => {});
+    return () => controller.abort();
+  }, [enabled]);
+  return enabled ? backtests : NO_BACKTESTS;
+};
 
 const EMPTY_PREVIEW = { status: 'idle', error: null, unavailable: null, preview: null, key: null };
 

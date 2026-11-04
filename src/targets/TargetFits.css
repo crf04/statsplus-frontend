@@ -195,11 +195,6 @@
   color: var(--ct-dim);
 }
 
-.target-fits.is-dense td {
-  padding: 3px 6px;
-  font-size: 0.74rem;
-}
-
 /* --- the backtest --- */
 
 /* The backtest is asked for rather than shown, so its control reads as one: a
@@ -289,10 +284,111 @@
   gap: 2px;
 }
 
-/* The dense table states a few numbers per player; it does not need the width
-   the page has. */
-.target-under .target-fits-wrap {
+/* The card states a few numbers per player; it does not need the width the
+   page has. */
+.target-under .target-fits {
   max-width: 640px;
+  min-width: 0;
+  margin-top: 4px;
+}
+
+.target-under .target-fits td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.target-fit-name b {
+  font-weight: 600;
+}
+
+.target-fits td.target-fit-name small {
+  display: inline;
+  margin-left: 8px;
+  font-family: var(--ct-mono);
+}
+
+/* The last five games, newest first, each green when it went over the line. */
+.target-fit-l5 {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.target-fit-l5 span {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--ct-surface-2);
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.target-fit-l5 span.is-over {
+  background: var(--ct-hit-soft);
+  color: var(--ct-hit);
+}
+
+.target-fit-avg {
+  white-space: nowrap;
+}
+
+.target-fit-line b {
+  color: var(--ct-gold);
+  font-weight: 600;
+}
+
+.target-fits td.target-fit-line small {
+  white-space: nowrap;
+}
+
+.target-fit-noline {
+  color: var(--ct-dim);
+  font-size: 0.7rem;
+}
+
+/* Why the Target is worth reading: its lean and one reason, two lines at most. */
+.target-fit-why {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 640px;
+  margin: 2px 0 2px;
+  color: var(--ct-dim);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.target-fit-why p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.target-lean {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--ct-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.target-lean.is-fade {
+  background: var(--ct-miss-soft);
+  color: var(--ct-miss);
+}
+
+.target-lean.is-boost {
+  background: var(--ct-hit-soft);
+  color: var(--ct-hit);
 }
 
 .target-under-head {
@@ -337,9 +433,48 @@
     min-width: 0;
   }
 
+  /* On a phone a fit is two lines: the player, then his games, average and
+     line. The column heads would name cells that no longer line up. */
+  .target-under .target-fits thead {
+    display: none;
+  }
+
+  .target-under .target-fits tr {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 4px 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ct-line);
+  }
+
+  .target-under .target-fits td,
+  .target-under .target-fits td.target-fit-name {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .target-under .target-fits td.target-fit-name {
+    grid-column: 1 / -1;
+  }
+
+  .target-under .target-fits td:nth-child(2) {
+    text-align: left;
+  }
+
+  /* The provider wraps above its prices rather than pushing the row wide. */
+  .target-under .target-fits td.target-fit-line small {
+    white-space: normal;
+  }
+
+  .target-under .target-fit-avg::before {
+    content: 'avg ';
+    color: var(--ct-dim);
+    font-size: 0.6rem;
+  }
+
   .target-fits th,
   .target-fits td,
-  .target-fits.is-dense td,
   .target-backtest th,
   .target-backtest th[scope='rowgroup'],
   .target-backtest td {

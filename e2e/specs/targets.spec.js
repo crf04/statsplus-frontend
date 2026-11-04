@@ -308,8 +308,13 @@ test('@critical saved Targets show fits on the list and under the Slate game', a
     .getByRole('listitem')
     .filter({ has: page.getByRole('heading', { name: 'LAL @ BOS' }) });
   const fits = row.getByRole('article').filter({ hasText: 'At-rim assists' });
-  await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
-  await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('lg 14%');
+  // Graded by AST, which nobody posts for him: his last five read with no line.
+  const lebron = fits.getByRole('row', { name: /LeBron James/ });
+  await expect(lebron.getByRole('group', { name: 'Last 5 AST, newest first' })).toHaveText(
+    '861079',
+  );
+  await expect(lebron).toContainText('no line');
+  await expect(lebron).not.toContainText('31%');
   await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toContainText('thin');
   await expect(row.getByText('No LAL player meets every Qualifier today.')).toBeVisible();
 });
@@ -325,7 +330,7 @@ test('completed-game Targets use canonical game-log participants on the Slate', 
   const row = page
     .getByRole('listitem')
     .filter({ has: page.getByRole('heading', { name: 'LAC @ MIL' }) });
-  await expect(row.getByRole('row', { name: /Kawhi Leonard/ })).toContainText('28%');
+  await expect(row.getByRole('row', { name: /Kawhi Leonard/ })).toBeVisible();
   await expect(row.getByText('from game logs')).toBeVisible();
 });
 
@@ -622,19 +627,53 @@ test('a Defender chosen for 2025-26 keeps his name while 2026-27 is unavailable'
   ]);
 });
 
-test('Slate fits remain readable on a phone', async ({ authenticatedPage: page }) => {
+test('Slate fits show the line, its best Over price and the last five on a phone', async ({
+  authenticatedPage: page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installApiContract(page);
   await page.goto('/targets');
   await composeTarget(page, {
     opponent: 'BOS',
-    base: 'assist_locations',
-    slice: 'AtRimAssists',
-    percent: 30,
+    base: 'play_types',
+    slice: 'Transition',
+    percent: 15,
   });
   await saveTarget(page);
+  // The list reads the Backtest, so the Slate's one batch read finds it
+  // cached. Nobody qualifying has faced BOS, so it grades nothing: no lean.
+  await expect(
+    summaryItem(card(page, 'BOS vs Transition offense ≥ 15%'), 'Player-games'),
+  ).toHaveText('0 player-games');
   await page.goto('/matchups?date=2026-01-15');
-  await expect(page.getByRole('row', { name: /LeBron James/ })).toBeVisible();
+  // Graded by PTS. PrizePicks, Polymarket and Dabble post 27.5 against
+  // Underdog's 26.5; Polymarket's -110 is the best Over at 27.5.
+  const lebron = page.getByRole('row', { name: /LeBron James/ });
+  await expect(lebron).toContainText('27.5Polymarket o−110 u−102');
+  // The group says how many went over; each over chip is painted the hit
+  // colour and each under chip is not.
+  const chips = lebron.getByRole('group', { name: 'Last 5 PTS, newest first, 3 over 27.5' });
+  await expect(chips).toHaveText('3318292231');
+  const hit = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = 'var(--ct-hit)';
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  for (const [value, over] of [
+    ['33', true],
+    ['18', false],
+    ['29', true],
+    ['22', false],
+    ['31', true],
+  ]) {
+    const chip = chips.getByText(value, { exact: true });
+    if (over) await expect(chip).toHaveCSS('color', hit);
+    else await expect(chip).not.toHaveCSS('color', hit);
+  }
+  await expect(page.getByRole('row', { name: /Austin Reaves/ })).toContainText('no line');
+  await expect(page.getByText(/^(fade|boost) /)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

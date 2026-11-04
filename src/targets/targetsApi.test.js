@@ -1,5 +1,6 @@
 import { clearRevisitCaches, readRevisit } from '../revisitCache';
 import { apiClient } from '../config';
+import { SeasonAfterGameError, SeasonUnavailableError } from '../servingSeason';
 import {
   createTarget,
   decodeDietBaselines,
@@ -312,6 +313,107 @@ test('decodes a live Target into the readings and fits the day-scoped surfaces r
   });
 });
 
+// The fit fields crf04/statsplus#423 adds: lines and per-pick prices in the
+// graded stat, in the Matchup row's shapes, and the last five, newest first.
+const withFitLines = (fields) => ({
+  ...wireResolvedLive,
+  players: [{ ...wireResolvedLive.players[0], ...fields }],
+});
+
+test("decodes a fit's lines, per-pick prices and last five, skipping unknown priced providers", () => {
+  const [fit] = decodeResolvedTargets(
+    resolvePayload([
+      withFitLines({
+        lines: { prizepicks: { REB: 5.5 }, underdog: { REB: 5.5 }, fliff: { REB: 6.5 } },
+        line_prices: {
+          underdog: { REB: { over: 124, under: -152 } },
+          fliff: { REB: { over: -140, under: 110 } },
+        },
+        last_five_games: [
+          { game_id: '0022600061', game_date: '2026-11-02', value: 7 },
+          { game_id: '0022600047', game_date: '2026-10-31', value: null },
+          { game_id: '0022600030', game_date: '2026-10-29', value: 10.5 },
+        ],
+      }),
+    ]),
+  ).entries[0].players;
+  expect(fit.lines).toEqual({
+    prizepicks: { REB: 5.5 },
+    underdog: { REB: 5.5 },
+    fliff: { REB: 6.5 },
+  });
+  expect(fit.linePrices).toEqual({ underdog: { REB: { over: 124, under: -152 } } });
+  expect(fit.lastFiveGames).toEqual([
+    { gameId: '0022600061', gameDate: '2026-11-02', value: 7 },
+    { gameId: '0022600047', gameDate: '2026-10-31', value: null },
+    { gameId: '0022600030', gameDate: '2026-10-29', value: 10.5 },
+  ]);
+});
+
+test('a posted line priced on neither side decodes as two null prices', () => {
+  const [fit] = decodeResolvedTargets(
+    resolvePayload([
+      withFitLines({
+        lines: { underdog: { REB: 5.5 } },
+        line_prices: { underdog: { REB: { over: null, under: null } } },
+      }),
+    ]),
+  ).entries[0].players;
+  expect(fit.linePrices).toEqual({ underdog: { REB: { over: null, under: null } } });
+});
+
+test('a backend without the fit line fields decodes them as absent, not empty', () => {
+  const [fit] = decodeResolvedTargets(resolvePayload([wireResolvedLive])).entries[0].players;
+  expect(Object.keys(fit)).toEqual([
+    'canonicalId',
+    'name',
+    'tricode',
+    'seasonScoring',
+    'thin',
+    'shares',
+  ]);
+  const [empty] = decodeResolvedTargets(
+    resolvePayload([withFitLines({ lines: {}, line_prices: {}, last_five_games: [] })]),
+  ).entries[0].players;
+  expect([empty.lines, empty.linePrices, empty.lastFiveGames]).toEqual([{}, {}, []]);
+});
+
+test.each([
+  [
+    'a price with no line beside it',
+    { lines: {}, line_prices: { underdog: { REB: { over: 100, under: -120 } } } },
+  ],
+  ['a negative line', { lines: { underdog: { REB: -1 } } }],
+  [
+    'six games in the last five',
+    {
+      last_five_games: Array.from({ length: 6 }, () => ({
+        game_id: '0022600061',
+        game_date: '2026-11-02',
+        value: 7,
+      })),
+    },
+  ],
+  ['a bare number for a game', { last_five_games: [7] }],
+  [
+    'a game value that is not a number',
+    { last_five_games: [{ game_id: '0022600061', game_date: '2026-11-02', value: '7' }] },
+  ],
+  [
+    'games oldest first',
+    {
+      last_five_games: [
+        { game_id: '0022600030', game_date: '2026-10-29', value: 7 },
+        { game_id: '0022600061', game_date: '2026-11-02', value: 7 },
+      ],
+    },
+  ],
+])('refuses %s', (_, fields) => {
+  expect(() => decodeResolvedTargets(resolvePayload([withFitLines(fields)]))).toThrow(
+    /invalid response/i,
+  );
+});
+
 test('an idle Target keeps its record and states that nothing named a pool', () => {
   const { entries } = decodeResolvedTargets(resolvePayload([wireResolvedLive, wireResolvedIdle]));
 
@@ -509,6 +611,35 @@ test('resolves against the Slate date the caller is showing, or the current one'
     params: {},
     signal: undefined,
   });
+});
+
+test('resolves in the Evidence season the Slate reads, and names it back', async () => {
+  apiClient.get.mockResolvedValue({
+    data: {
+      ...resolvePayload([]),
+      season_context: { selected_season: '2026-27', published_season: '2025-26' },
+    },
+  });
+
+  await expect(fetchResolvedTargets({ date: '2026-11-04', season: '2026-27' })).resolves.toEqual({
+    slateDate: '2026-01-15',
+    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+    entries: [],
+  });
+  expect(apiClient.get).toHaveBeenCalledWith('/api/user/targets/resolve', {
+    params: { date: '2026-11-04', season: '2026-27' },
+    signal: undefined,
+  });
+});
+
+test.each([
+  [503, 'season_unavailable', SeasonUnavailableError],
+  [400, 'season_after_game', SeasonAfterGameError],
+])('a %s %s resolve is the season refusal the Slate reads', async (status, code, Refusal) => {
+  apiClient.get.mockRejectedValue({
+    response: { status, data: { error: { code, message: 'Refused.', details: {} } } },
+  });
+  await expect(fetchResolvedTargets({ season: '2026-27' })).rejects.toBeInstanceOf(Refusal);
 });
 
 /*

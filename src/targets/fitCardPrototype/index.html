@@ -136,7 +136,7 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 @media (max-width: 720px) { .c-wrap { grid-template-columns: 1fr; } }
 
 /* ---------- D: fits only, line-first ---------- */
-.d-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.d-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .d-head .a-count { margin-left: auto; }
 .d-row { display: grid; grid-template-columns: minmax(140px, 1fr) auto 64px 170px; gap: 18px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
 .d-row.hdr { border-top: 0; padding: 0 0 6px; }
@@ -147,7 +147,7 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
 .d-l5 { display: flex; gap: 3px; justify-content: flex-end; }
 .d-l5 span { width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); background: var(--surface-2); color: var(--dim); }
 .d-l5 span.o { background: rgba(111,191,138,.16); color: var(--good); }
-.d-avg { text-align: right; font: 15px var(--mono); }
+.d-avg { text-align: right; font: 15px var(--mono); white-space: nowrap; }
 .d-line { text-align: right; font-family: var(--mono); }
 .d-line b { color: var(--gold); font-size: 15px; }
 .d-line small { display: block; color: var(--dim); font-size: 11px; margin-top: 1px; white-space: nowrap; }
@@ -158,6 +158,12 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
   .d-l5 { justify-content: flex-start; }
   .d-avg::before { content: 'AVG '; font-size: 10px; color: var(--dim); }
 }
+
+.d-why { display: flex; gap: 8px; align-items: baseline; margin: 2px 0 10px; font-size: .86rem; line-height: 1.4; color: var(--dim); }
+.d-why .tag { flex: none; }
+.d-why p { margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tag.boost { color: var(--good); background: rgba(111,191,138,.14); }
+#extra .game-row { margin-top: 18px; }
 
 /* switcher (not part of the design) */
 .switch { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: #f5f2ea; color: #111; border-radius: 999px; padding: 5px; box-shadow: 0 8px 30px rgba(0,0,0,.5); font: 600 13px var(--sans); z-index: 9; }
@@ -173,6 +179,7 @@ main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
     <div class="meta">Wed 8:00 PM ET · scheduled</div>
   </div>
   <div class="under" id="card"></div>
+  <div id="extra"></div>
 </main>
 <div class="switch">
   <button id="prev" aria-label="Previous variant">←</button>
@@ -197,9 +204,33 @@ const P = [
     prices: [['Novig', 5.5, null, null]],
     slice: { name: 'OREB off 2PT misses', share: 36, rank: 13, vs: -0.3 } },
 ];
-// 2026-27 REB average and last 5 REB, oldest first (query_game_logs, 2026-11-03).
-const CUR = { 'Jaden McDaniels': [6.0, [6, 7, 6, 3, 6]], 'Jonathan Kuminga': [5.4, [10, 3, 1, 6, 10]], 'Joan Beringer': [6.9, [7, 10, 4, 6, 7]] };
-const sgn =(n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(Math.abs(n) % 1 ? 1 : 0);
+// D's Targets. lean = sign of the graded stat's 2025-26 backtest; why = the Target's note, else that backtest.
+const DT = [
+  { opponent: 'HOU', q: 'Wing', stat: 'REB', backtest: { diff: -3.2, hit: 41 },
+    note: 'Wings rebound less vs HOU. 2025-26 REB/36 −13.3% (31% hit). 6-7/6-11/6-11/6-11 lineup, #1 OREB%. Early 2026-27 −25% (2/10 over).',
+    fits: [
+      { name: 'Jaden McDaniels', pos: 'Wing', avg: 6.0, l5: [6, 7, 6, 3, 6], line: 5.5, price: 'Underdog o+124 u−152' },
+      { name: 'Jonathan Kuminga', pos: 'Wing', avg: 5.4, l5: [10, 3, 1, 6, 10], line: 5.5, price: 'Underdog o+103 u−127' },
+      { name: 'Joan Beringer', pos: 'Wing', avg: 6.9, l5: [7, 10, 4, 6, 7], line: 5.5, price: 'Novig · no price' },
+    ] },
+  { opponent: 'IND', q: 'P&R ball handler <b class="gold mono">≥ 29.8%</b> <em class="dim">&amp;</em> Isolation <b class="gold mono">≥ 7.4%</b>', stat: 'PTS', backtest: { diff: 23.6, hit: 67 }, note: null,
+    fits: [{ name: 'Ty Jerome', pos: 'Wing', avg: 28.2, l5: [28, 31, 15, 10, 40], line: 22.5, price: 'Dabble o−122 u−122' }] },
+];
+function dCard(t) {
+  const lean = t.backtest.diff < 0 ? 'fade' : 'boost';
+  const why = t.note ?? `2025-26 backtest: ${t.stat} ${sgn(t.backtest.diff)}% vs own average, ${t.backtest.hit}% of games over it.`;
+  return `
+    <div class="d-head"><span class="dot"></span><span class="ttl"><span class="team">${t.opponent}</span><span class="vs">vs</span><span class="q">${t.q}</span></span><span class="a-count"><b>${t.fits.length}</b>fit</span></div>
+    <div class="d-why"><span class="tag ${lean}">${lean} ${t.stat}</span><p>${why}</p></div>
+    <div class="d-row hdr"><span>Player</span><span>Last 5 ${t.stat}</span><span>Avg</span><span>Line</span></div>
+    ${t.fits.map((p) => `<div class="d-row">
+      <div class="d-name"><b>${p.name}</b><small>${p.pos}</small></div>
+      <div class="d-l5">${p.l5.map((v) => `<span class="${v > p.line ? 'o' : ''}">${v}</span>`).join('')}</div>
+      <div class="d-avg">${p.avg.toFixed(1)}</div>
+      <div class="d-line"><b>${p.line}</b><small>${p.price}</small></div>
+    </div>`).join('')}`;
+}
+const sgn = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(Math.abs(n) % 1 ? 1 : 0);
 const gap = (p) => p.avg - p.line;
 const rank = (r) => `<span class="rank" style="--r:${r}" title="Rank ${r}/30 — 30 allows the most">${r}</span>`;
 const title = () => `<span class="ttl"><span class="team">${T.opponent}</span><span class="vs">vs</span><span class="q">${T.qualifier}</span></span>`;
@@ -207,15 +238,9 @@ const best = (p) => p.prices.find((x) => x[2]) ;
 const priced = (p) => { const b = best(p); return b ? `${b[0]} o${b[2]} / u${b[3]}` : `${p.prices[0][0]} · no price`; };
 
 const V = {
-  D: { name: 'Fits only, line-first', render: () => `
-    <div class="d-head"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span></div>
-    <div class="d-row hdr"><span>Player</span><span>Last 5 ${T.stat}</span><span>Avg</span><span>Line</span></div>
-    ${P.map((p) => { const [avg, l5] = CUR[p.name]; return `<div class="d-row">
-      <div class="d-name"><b>${p.name}</b><small>${p.pos}</small></div>
-      <div class="d-l5" title="Last 5 games vs the line">${l5.map((v) => `<span class="${v > p.line ? 'o' : ''}">${v}</span>`).join('')}</div>
-      <div class="d-avg">${avg.toFixed(1)}</div>
-      <div class="d-line"><b>${p.line}</b><small>${priced(p)}</small></div>
-    </div>`; }).join('')}` },
+  D: { name: 'Fits + fade/boost', render: () => dCard(DT[0]), extra: () => `
+    <div class="game-row"><div class="teams">IND<span>@</span>MEM</div><div class="meta">Wed 8:00 PM ET · scheduled</div></div>
+    <div class="under">${dCard(DT[1])}</div>` },
   A: { name: 'One line per fit', render: () => `
     <div class="a-head"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span><span class="tag fade">fade</span></div>
     <div class="a-why">
@@ -275,7 +300,7 @@ const V = {
 };
 const keys = Object.keys(V);
 const cur = () => { const m = location.hash.match(/v=([A-Z])/); return m && V[m[1]] ? m[1] : 'D'; };
-function show() { const k = cur(); document.getElementById('card').innerHTML = V[k].render(); document.getElementById('label').textContent = `${k} · ${V[k].name}`; }
+function show() { const k = cur(); document.getElementById('card').innerHTML = V[k].render(); document.getElementById('extra').innerHTML = V[k].extra ? V[k].extra() : ''; document.getElementById('label').textContent = `${k} · ${V[k].name}`; }
 function go(d) { const i = (keys.indexOf(cur()) + d + keys.length) % keys.length; location.hash = `v=${keys[i]}`; }
 document.getElementById('prev').onclick = () => go(-1);
 document.getElementById('next').onclick = () => go(1);

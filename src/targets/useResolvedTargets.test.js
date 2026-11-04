@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useResolvedTargets } from './useTargets';
 import { fetchResolvedTargets } from './targetsApi';
 import { clearRevisitCaches } from '../revisitCache';
+import { seasonRefusalOr } from '../servingSeason';
 jest.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ isAuthenticated: true, loading: false, currentUser: { uid: 'alice' } }),
 }));
@@ -60,4 +61,61 @@ test('an explicit historical date and the implicit current slate never share a c
     2,
     expect.objectContaining({ date: undefined }),
   );
+});
+
+/*
+ * A season fallback (crf04/statsplus#427) belongs to the reader that asked for
+ * it. These run signed in as alice, so the revisit cache is live.
+ */
+const refused = () =>
+  seasonRefusalOr({
+    response: {
+      status: 503,
+      data: { error: { code: 'season_unavailable', message: '2026-27 is not offered.' } },
+    },
+  });
+const refuseSeason = () =>
+  fetchResolvedTargets.mockImplementation(({ season }) =>
+    season ? Promise.reject(refused()) : Promise.resolve({ slateDate: '2026-11-04', entries: [] }),
+  );
+
+test('a strict reader keeps a season refusal and never reads without the season', async () => {
+  refuseSeason();
+  const { result } = renderHook(() => useResolvedTargets(undefined, { season: '2026-27' }));
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.error).toBe('2026-27 is not offered.');
+  expect(fetchResolvedTargets.mock.calls.map(([request]) => request.season)).toEqual(['2026-27']);
+});
+
+test('a strict reader never gets a fallback another reader cached', async () => {
+  refuseSeason();
+  const fallback = renderHook(() =>
+    useResolvedTargets(undefined, { season: '2026-27', orDefault: true }),
+  );
+  await waitFor(() => expect(fallback.result.current.status).toBe('ready'));
+  expect(fallback.result.current.slateDate).toBe('2026-11-04');
+  fallback.unmount();
+
+  const strict = renderHook(() => useResolvedTargets(undefined, { season: '2026-27' }));
+  await waitFor(() => expect(strict.result.current.status).toBe('error'));
+  expect(fetchResolvedTargets.mock.calls.map(([request]) => request.season)).toEqual([
+    '2026-27',
+    undefined,
+    '2026-27',
+  ]);
+});
+
+test('a fallback reader keeps a failure that is not a season refusal', async () => {
+  fetchResolvedTargets.mockRejectedValue({
+    response: {
+      status: 503,
+      data: { error: { code: 'provider_unavailable', message: 'Targets are unavailable.' } },
+    },
+  });
+  const { result } = renderHook(() =>
+    useResolvedTargets(undefined, { season: '2026-27', orDefault: true }),
+  );
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.error).toBe('Targets are unavailable.');
+  expect(fetchResolvedTargets).toHaveBeenCalledTimes(1);
 });

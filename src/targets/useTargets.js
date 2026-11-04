@@ -13,6 +13,7 @@ import { isRecord } from '../decoding';
 import { beginStatPreferenceRead } from './useStatPreferences';
 import { describeBacktestFailure, seasonUnavailableDetails } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
+import { isSeasonRefusal } from '../servingSeason';
 import {
   fetchDietBaselines,
   fetchSeasonMinutes,
@@ -48,11 +49,17 @@ const readList = async ({ signal, userId }) => {
     preferences.release();
   }
 };
-// A scope is a date, or `{ date, season }` when a season is chosen.
+// A scope is a date, or `{ date, season, orDefault }` when a season is chosen.
+// With `orDefault`, a season the backend refuses is read again without one,
+// so the reader gets the backend's default season rather than no Targets.
 const readResolution = ({ scope, signal, userId, bypass }) => {
-  const { date, season } = isRecord(scope) ? scope : { date: scope };
-  const load = () => fetchResolvedTargets({ date, signal, ...(season ? { season } : {}) });
-  const identity = (day) => (season ? [day, season] : day);
+  const { date, season, orDefault } = isRecord(scope) ? scope : { date: scope };
+  const load = () =>
+    fetchResolvedTargets({ date, signal, ...(season ? { season } : {}) }).catch((error) => {
+      if (!season || !orDefault || !isSeasonRefusal(error)) throw error;
+      return fetchResolvedTargets({ date, signal });
+    });
+  const identity = (day) => (season ? [day, season, ...(orDefault ? ['or-default'] : [])] : day);
   if (historicalDate(date))
     return readRevisit('resolution', userId, identity(date), load, { signal, bypass });
   // An absent date is the Slate's own current date, read as often as every
@@ -157,9 +164,12 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  * other surfaces pass none, which is the Slate's own current date, and read
  * the date back off the response rather than working it out a second time.
  */
-export const useResolvedTargets = (date, { season, ...options } = {}) => {
+export const useResolvedTargets = (date, { season, orDefault = false, ...options } = {}) => {
   // One scope per date and season, so the read reruns only when either moves.
-  const scope = useMemo(() => (season ? { date, season } : date), [date, season]);
+  const scope = useMemo(
+    () => (season ? { date, season, ...(orDefault ? { orDefault } : {}) } : date),
+    [date, season, orDefault],
+  );
   return useAccountRead(readResolution, EMPTY_RESOLUTION, scope, options);
 };
 

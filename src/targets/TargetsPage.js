@@ -4,7 +4,9 @@ import { Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getRequestErrorMessage } from '../gameLogsApi';
-import { formatTip } from '../calendarDate';
+import { formatTip, getTodaySlateDate } from '../calendarDate';
+import { useDefaultEvidenceSeason } from '../EvidenceSeason';
+import { seasonOfDate } from '../gameSeason';
 import { readRevisit } from '../revisitCache';
 import TargetForm, { blankTargetDraft, targetToDraft } from './TargetForm';
 import TargetLab from './TargetLab';
@@ -266,7 +268,17 @@ function TargetsPageContent() {
    * second read over the same list, so a day that will not resolve costs the
    * cards their counts and nothing else.
    */
-  const resolved = useResolvedTargets();
+  // Read for the Slate's own default Evidence season, so a fit's averages
+  // agree with the Slate's for the same player (crf04/statsplus#427). The page
+  // offers no season of its own, so the Lab's `?season=` never moves the
+  // cards; a season the backend refuses falls back to its default rather than
+  // costing the cards their fits.
+  const evidence = useDefaultEvidenceSeason({ newestUpTo: seasonOfDate(getTodaySlateDate()) });
+  const resolved = useResolvedTargets(undefined, {
+    waiting: !evidence.ready,
+    season: evidence.season,
+    orDefault: true,
+  });
   const entryByTargetId = useMemo(() => {
     const map = new Map();
     for (const entry of resolved.entries) map.set(entry.target.id, entry);

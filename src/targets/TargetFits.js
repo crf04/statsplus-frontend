@@ -111,18 +111,14 @@ export function TargetContext({ context }) {
 
 /*
  * The stat a fit is shown by: the one the Target is graded by, so a rebounding
- * Target lists rebounds rather than points. `gradedBy` is a card's unsaved
- * choice; a stat the resolution does not carry yet falls back to the Target's
- * saved one, and a backend without the Target's stats falls back to points.
+ * Target lists rebounds rather than points. `gradedBy` is a card's live choice,
+ * else the Target's saved one, else its first default column. A backend
+ * without the Target's stats sends no columns, and the fit shows points.
  */
 export function fitStat(entry, gradedBy) {
-  const columns = entry.statColumns ?? [];
-  const stat = [gradedBy, entry.target.statPreferences?.gradedBy, columns[0]].find((column) =>
-    columns.includes(column),
-  );
-  return stat
-    ? { label: stat, value: (player) => player.seasonAverages?.[stat] ?? null }
-    : { label: 'PPG', value: (player) => player.seasonScoring };
+  if (!entry.statColumns?.length) return { label: 'PPG', value: (player) => player.seasonScoring };
+  const stat = gradedBy ?? entry.target.statPreferences?.gradedBy ?? entry.statColumns[0];
+  return { label: stat, value: (player) => player.seasonAverages?.[stat] ?? null };
 }
 
 export const formatFitStat = (value) => (value === null ? '—' : value.toFixed(1));

@@ -1638,12 +1638,18 @@ test('a resolved Target carries its stat columns and each fit its season average
       {
         ...wireResolvedLive,
         stat_columns: ['PTS', '3PA'],
-        players: [{ ...wireResolvedLive.players[0], season_averages: { PTS: 25.4, '3PA': null } }],
+        players: [
+          {
+            ...wireResolvedLive.players[0],
+            season_averages: { PTS: 25.4, '3PA': null, REB: 7.1, NEW_STAT: 1 },
+          },
+        ],
       },
     ]),
   );
   expect(entries[0].statColumns).toEqual(['PTS', '3PA']);
-  expect(entries[0].players[0].seasonAverages).toEqual({ PTS: 25.4, '3PA': null });
+  // Every catalogue stat the backend sends is kept; one this build does not know is dropped.
+  expect(entries[0].players[0].seasonAverages).toEqual({ PTS: 25.4, '3PA': null, REB: 7.1 });
 });
 
 test('a stat column outside the catalogue is refused', () => {

@@ -2504,7 +2504,7 @@ const ruleShare = (qualifier) => ({
   league_average_share: null,
 });
 
-const resolvedFit = (qualifiers, player, statColumns = []) => {
+const resolvedFit = (qualifiers, player) => {
   const shares = [];
   let thin = false;
   for (const qualifier of qualifiers) {
@@ -2554,7 +2554,7 @@ const resolvedFit = (qualifiers, player, statColumns = []) => {
     position: playerPosition(player),
     season_scoring: player.season_scoring,
     season_averages: Object.fromEntries(
-      statColumns.map((column) => [
+      statCatalogue.map((column) => [
         column,
         targetStatAverage(seasonsByPlayer[player.name] || [], column),
       ]),
@@ -2564,9 +2564,41 @@ const resolvedFit = (qualifiers, player, statColumns = []) => {
   };
 };
 
-// The saved columns, else the Backtest defaults, as the backend resolves them.
-const resolvedStatColumns = (target) =>
-  target.stat_preferences?.columns ?? [...new Set(target.qualifiers.flatMap(sliceMarkets))];
+// The saved columns, else the backend's default union: a Diet slice names its
+// markets, an Average its own stat where readable per game, a Position none.
+const AVERAGE_DISPLAYABLE_STATS = new Set([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  '3PA',
+  'FG2A',
+  'FG2M',
+  'FGA',
+  'FGM',
+  'FTA',
+  'FTM',
+  'STL',
+  'BLK',
+  'TOV',
+  'PA',
+  'PR',
+  'RA',
+  'PRA',
+]);
+const qualifierStatColumns = (qualifier) => {
+  if (qualifier.base === 'position') return [];
+  if (qualifier.base === 'season_average')
+    return AVERAGE_DISPLAYABLE_STATS.has(qualifier.stat.replace(/\/36$/, ''))
+      ? [qualifier.stat]
+      : [];
+  return sliceMarkets(qualifier);
+};
+const resolvedStatColumns = (target) => {
+  if (target.stat_preferences?.columns) return target.stat_preferences.columns;
+  const columns = [...new Set(target.qualifiers.flatMap(qualifierStatColumns))];
+  return columns.length > 0 ? columns : ['PTS', 'PTS/36'];
+};
 
 const teamReference = (side) => ({
   team_id: side.team_id,
@@ -2721,7 +2753,7 @@ const resolveTargets = (date, targets) => {
             },
           ),
         )
-        .map((player) => resolvedFit(target.qualifiers, player, resolvedStatColumns(target)))
+        .map((player) => resolvedFit(target.qualifiers, player))
         .filter(Boolean),
     });
   });

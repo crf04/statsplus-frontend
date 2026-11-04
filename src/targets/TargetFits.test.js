@@ -91,6 +91,14 @@ test('a fit shows the stat its Target is graded by, not points', () => {
   ).toEqual(['Big FitMEMBig44%lg 20%1.3', 'No LabelMEM41%lg 20%—']);
 });
 
+test('a saved stat outside the default columns still reads from the fit', () => {
+  const entryWithRebounds = graded({ columns: ['PTS', 'REB'], gradedBy: 'REB' });
+  entryWithRebounds.players[0].seasonAverages.REB = 6.4;
+  render(<TargetFitTable entry={entryWithRebounds} />);
+  expect(screen.getAllByRole('columnheader').at(-1)).toHaveTextContent('REB');
+  expect(screen.getAllByRole('row')[1]).toHaveTextContent(/6\.4$/);
+});
+
 test('a Target with no saved stat choice shows its first default stat', () => {
   render(<TargetFitTable entry={graded(null)} />);
   expect(screen.getAllByRole('columnheader').at(-1)).toHaveTextContent('PTS');

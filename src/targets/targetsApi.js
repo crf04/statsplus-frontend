@@ -380,13 +380,16 @@ const decodeShare = (share) => {
 };
 
 /*
- * A fit's season averages are keyed by the resolved Target's stat columns. A
+ * A fit's season averages cover every catalogue stat, so a card can show a
+ * column added after the read. A key this build does not know is dropped. A
  * backend deployed before them sends neither, and the fit falls back to points.
  */
-const decodeFitAverages = (averages, statColumns) => {
+const decodeFitAverages = (averages) => {
   if (!isRecord(averages)) throw createInvalidResponseError();
   return Object.fromEntries(
-    statColumns.map((column) => [column, requireNumberOrNull(averages[column])]),
+    Object.entries(averages)
+      .filter(([column]) => catalogue.includes(column))
+      .map(([column, value]) => [column, requireNumberOrNull(value)]),
   );
 };
 
@@ -413,7 +416,7 @@ const decodeFit = (player, qualifiers, statColumns) => {
     ...(player.position !== undefined ? { position: decodePosition(player.position) } : {}),
     seasonScoring: requireNumberOrNull(player.season_scoring),
     ...(statColumns && player.season_averages !== undefined
-      ? { seasonAverages: decodeFitAverages(player.season_averages, statColumns) }
+      ? { seasonAverages: decodeFitAverages(player.season_averages) }
       : {}),
     thin: player.thin,
     shares: alignToDiet(player.shares, qualifiers, nullShare).map(decodeShare),

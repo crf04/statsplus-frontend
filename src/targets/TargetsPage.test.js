@@ -6,6 +6,7 @@ import { clearRevisitCaches, invalidateTargetResolutions } from '../revisitCache
 import TargetRecord from './TargetRecord';
 import { fetchSeasons } from '../seasonsApi';
 import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
+import { seasonRefusalOr } from '../servingSeason';
 import { useTargets } from './useTargets';
 import {
   createTarget,
@@ -284,7 +285,7 @@ test('shows every saved Target as a card carrying the stored title, Qualifiers, 
   expect(cards[0]).toHaveTextContent('Leaks the corner late.');
   expect(cards[1]).toHaveAccessibleName('MIA vs Restricted area ≤ 20% (v2)');
   expect(cards[1]).not.toHaveTextContent('No note');
-  expect(screen.getByText('1 Target active today')).toBeInTheDocument();
+  expect(await screen.findByText('1 Target active today')).toBeInTheDocument();
 });
 
 test('counts one Target as a Target rather than as Targets', async () => {
@@ -299,7 +300,7 @@ test('says so plainly when the account has no Targets yet', async () => {
   renderPage();
 
   expect(await screen.findByRole('heading', { name: 'No Targets yet.' })).toBeInTheDocument();
-  expect(screen.getByText('1 Target active today')).toBeInTheDocument();
+  expect(await screen.findByText('1 Target active today')).toBeInTheDocument();
 });
 
 test('shows unsaved samples only after an authenticated empty list succeeds', async () => {
@@ -647,11 +648,80 @@ test('a card says what today makes of its Target', async () => {
   renderPage();
 
   const live = await screen.findByRole('article', { name: 'OKC vs Corner 3 ≥ 40% (v2)' });
-  expect(within(live).getByText(/LeBron James/)).toBeVisible();
+  expect(await within(live).findByText(/LeBron James/)).toBeVisible();
   const idle = screen.getByRole('article', { name: 'MIA vs Restricted area ≤ 20% (v2)' });
   expect(within(idle).getByText('no game today')).toBeVisible();
   // The count is the current Slate Date's, which the page does not name.
   expect(fetchResolvedTargets).toHaveBeenCalledWith(expect.objectContaining({ date: undefined }));
+});
+
+/*
+ * The cards read the Slate's default Evidence season, so a fit's averages are
+ * the Slate's for the same player (crf04/statsplus#427): on 2026-11-04, with
+ * 2026-27 offered beside a 2025-26 Published Season, that is 2026-27. The read
+ * waits for /seasons, so it is made once and never first without the season.
+ */
+test("the cards resolve once, for the Slate's default Evidence season", async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  renderPage();
+
+  const live = await screen.findByRole('article', { name: 'OKC vs Corner 3 ≥ 40% (v2)' });
+  expect(within(live).getByText(/LeBron James/)).toBeVisible();
+  await act(async () => jest.runOnlyPendingTimers());
+  expect(fetchResolvedTargets.mock.calls).toEqual([
+    [{ date: undefined, season: '2026-27', signal: expect.any(AbortSignal) }],
+  ]);
+});
+
+// The Lab's season rides the URL; the cards keep the Slate's default.
+test("a season the Lab chose leaves the cards on the Slate's default", async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  renderPage(false, '/targets?season=2024-25');
+
+  await screen.findByText('1 Target active today');
+  await act(async () => jest.runOnlyPendingTimers());
+  expect(fetchResolvedTargets.mock.calls.map(([request]) => request.season)).toEqual(['2026-27']);
+});
+
+// When the Slate's default is the Published Season it is not named, as on the Slate.
+test('a default that is the Published Season resolves without naming it', async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  fetchSeasons.mockResolvedValue(publishedOnlySeasons);
+  renderPage();
+
+  await screen.findByText('1 Target active today');
+  expect(fetchResolvedTargets).toHaveBeenCalledTimes(1);
+  expect(Object.keys(fetchResolvedTargets.mock.calls[0][0]).sort()).toEqual(['date', 'signal']);
+});
+
+/*
+ * A season the backend refuses (503 season_unavailable, 400 season_after_game)
+ * does not cost the cards their fits: they are read again without a season,
+ * which is the backend's own default.
+ */
+test.each([
+  [503, 'season_unavailable'],
+  [400, 'season_after_game'],
+])('a %s %s refusal falls back to a resolve without the season', async (status, code) => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  fetchResolvedTargets.mockImplementation(({ season }) =>
+    season
+      ? Promise.reject(
+          seasonRefusalOr({
+            response: { status, data: { error: { code, message: 'Not offered.' } } },
+          }),
+        )
+      : Promise.resolve(resolution),
+  );
+  renderPage();
+
+  const live = await screen.findByRole('article', { name: 'OKC vs Corner 3 ≥ 40% (v2)' });
+  expect(within(live).getByText(/LeBron James/)).toBeVisible();
+  expect(screen.getByText('1 Target active today')).toBeInTheDocument();
+  expect(fetchResolvedTargets.mock.calls.map(([request]) => request.season)).toEqual([
+    '2026-27',
+    undefined,
+  ]);
 });
 
 /*
@@ -1531,7 +1601,7 @@ test('the collection opens a compact dialog and resets its draft after dismissal
 test('cards state tonight’s fits as pills and keep criteria and logs read-only', async () => {
   renderPage(false);
   const card = await screen.findByRole('article', { name: targets[0].title });
-  expect(within(card).getByRole('link', { name: /LAL @ OKC/ })).toHaveAttribute(
+  expect(await within(card).findByRole('link', { name: /LAL @ OKC/ })).toHaveAttribute(
     'href',
     '/matchups/0022500584',
   );
@@ -1635,7 +1705,7 @@ test('a fit pill shows the player’s Position beside his name, and none when he
   });
   renderPage(false);
   const card = await screen.findByRole('article', { name: targets[0].title });
-  const pills = within(card).getAllByRole('listitem');
+  const pills = await within(card).findAllByRole('listitem');
   expect(pills[0]).toHaveTextContent(/^LeBron JamesWing · Corner 3 44%/);
   expect(pills[1]).toHaveTextContent(/^Unlisted · Corner 3 44%/);
 });
@@ -2295,7 +2365,7 @@ test('regrading a card switches its fit pills to the new stat at once', async ()
   });
   renderPage(false);
   const card = await screen.findByRole('article', { name: targets[0].title });
-  const fits = within(card).getByRole('region', { name: 'Playing tonight' });
+  const fits = await within(card).findByRole('region', { name: 'Playing tonight' });
   expect(within(fits).getByRole('listitem')).toHaveTextContent('25.4 PTS');
   const summary = await within(card).findByRole('list', { name: 'Backtest summary' });
   fireEvent.click(

@@ -36,13 +36,11 @@ export const pageDefaultSeason = ({ choices, publishedSeason, ceiling }) => {
   return newest && (!publishedSeason || newest > publishedSeason) ? newest : publishedSeason;
 };
 
-export function useEvidenceSeason({ newestUpTo = null } = {}) {
+// /seasons, read once signed in: `loading` until it answers or fails.
+const useSeasonsRead = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const signedIn = !authLoading && isAuthenticated;
-  const [searchParams, setSearchParams] = useSearchParams();
-  const linked = searchParams.get(SEASON_PARAM);
   const [read, setRead] = useState({ status: 'loading', seasons: null });
-  const [fallbackFrom, setFallbackFrom] = useState(null);
 
   useEffect(() => {
     if (!signedIn) return undefined;
@@ -54,6 +52,33 @@ export function useEvidenceSeason({ newestUpTo = null } = {}) {
       current = false;
     };
   }, [signedIn]);
+  return { signedIn, read };
+};
+
+/*
+ * The season useEvidenceSeason reads with no link, for a page that offers no
+ * season of its own and so ignores `?season=` (crf04/statsplus#427): named
+ * only when it is not the backend's default, and `ready` once /seasons settles.
+ */
+export function useDefaultEvidenceSeason({ newestUpTo }) {
+  const { signedIn, read } = useSeasonsRead();
+  const defaultSeason = read.seasons?.defaultSeason ?? null;
+  const reads = pageDefaultSeason({
+    choices: read.seasons?.choices,
+    publishedSeason: defaultSeason,
+    ceiling: newestUpTo,
+  });
+  return {
+    ready: !signedIn || read.status !== 'loading',
+    season: signedIn && reads !== defaultSeason ? reads : null,
+  };
+}
+
+export function useEvidenceSeason({ newestUpTo = null } = {}) {
+  const { signedIn, read } = useSeasonsRead();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linked = searchParams.get(SEASON_PARAM);
+  const [fallbackFrom, setFallbackFrom] = useState(null);
 
   const choices = read.seasons?.choices;
   const defaultSeason = read.seasons?.defaultSeason ?? null;

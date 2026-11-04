@@ -175,6 +175,9 @@ export const useTargetBacktests = (enabled) => {
   useEffect(() => {
     if (!enabled) return undefined;
     const controller = new AbortController();
+    // Each read starts over: a refresh that fails shows no lean rather than
+    // the last batch's.
+    setBacktests(NO_BACKTESTS);
     fetchTargetBacktests({ signal: controller.signal })
       .then((reads) => {
         if (controller.signal.aborted) return;
@@ -186,6 +189,7 @@ export const useTargetBacktests = (enabled) => {
           ),
         );
       })
+      // The read already started from nothing, so a failure leaves nothing.
       .catch(() => {});
     return () => controller.abort();
   }, [enabled]);

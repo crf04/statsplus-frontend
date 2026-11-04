@@ -65,15 +65,15 @@ export function recordGames(backtest, columns) {
 
 /*
  * A backtest's headline in one stat, as the Targets page reads it: how far
- * the games ran from each player's own season average, as a percent rounded
- * for display, and the share of games over it. The Slate's fit card quotes it
+ * the games ran from each player's own season average, as a percent at full
+ * precision (round it only to display it), and the share of games over it. The Slate's fit card quotes it
  * (crf04/statsplus#423), so the two never disagree about the same Target.
  */
 export const backtestGrade = (backtest, column) => {
   const games = recordGames(backtest, [column]);
   const margins = games.map((row) => row.margins[column]).filter((margin) => margin !== null);
   return {
-    relative: rounded(aggregateColumn(games, column).relative),
+    relative: aggregateColumn(games, column).relative,
     hitShare: margins.length
       ? margins.filter((margin) => margin > 0).length / margins.length
       : null,

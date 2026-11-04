@@ -414,7 +414,7 @@ const decodeStatColumns = (columns) => {
  * and the per-pick prices beside them, `{ provider: { market: { over,
  * under } } }`: the Matchup player row's shapes (crf04/statsplus#423). A price
  * exists only where that provider's line does, and a provider this build does
- * not price is skipped, as the Matchup skips it.
+ * not price is skipped, as the Matchup skips it. A side with no price is null.
  */
 const PRICED_PROVIDERS = ['underdog', 'novig', 'polymarket', 'kalshi', 'dabble'];
 const requirePrice = (value) => {
@@ -455,10 +455,9 @@ const decodeFitLinePrices = (linePrices, lines) => {
             Object.entries(markets).map(([market, sides]) => {
               if (!Object.hasOwn(posted, market) || !isRecord(sides))
                 throw createInvalidResponseError();
-              const over = requirePrice(sides.over);
-              const under = requirePrice(sides.under);
-              if (over === null && under === null) throw createInvalidResponseError();
-              return [market, { over, under }];
+              // Both sides null is a posted line nobody prices; it reads as
+              // the line alone.
+              return [market, { over: requirePrice(sides.over), under: requirePrice(sides.under) }];
             }),
           ),
         ];

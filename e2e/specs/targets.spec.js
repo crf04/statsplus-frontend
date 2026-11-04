@@ -650,9 +650,28 @@ test('Slate fits show the line, its best Over price and the last five on a phone
   // Underdog's 26.5; Polymarket's -110 is the best Over at 27.5.
   const lebron = page.getByRole('row', { name: /LeBron James/ });
   await expect(lebron).toContainText('27.5Polymarket o−110 u−102');
-  const chips = lebron.getByRole('group', { name: 'Last 5 PTS, newest first' });
+  // The group says how many went over; each over chip is painted the hit
+  // colour and each under chip is not.
+  const chips = lebron.getByRole('group', { name: 'Last 5 PTS, newest first, 3 over 27.5' });
   await expect(chips).toHaveText('3318292231');
-  await expect(chips.locator('.is-over')).toHaveText(['33', '29', '31']);
+  const hit = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = 'var(--ct-hit)';
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  for (const [value, over] of [
+    ['33', true],
+    ['18', false],
+    ['29', true],
+    ['22', false],
+    ['31', true],
+  ]) {
+    const chip = chips.getByText(value, { exact: true });
+    if (over) await expect(chip).toHaveCSS('color', hit);
+    else await expect(chip).not.toHaveCSS('color', hit);
+  }
   await expect(page.getByRole('row', { name: /Austin Reaves/ })).toContainText('no line');
   await expect(page.getByText(/^(fade|boost) /)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(

@@ -158,6 +158,14 @@ test('each fit shows his last five against the majority line and the best Over p
     'Joan Beringer Wing71046.96.5PrizePicks',
     'No Line Wing312.1no line',
   ]);
+  // The group says how many went over, so the colour is not the only signal.
+  expect(
+    screen.getAllByRole('group', { name: /newest first/ }).map((group) => group.ariaLabel),
+  ).toEqual([
+    'Last 5 REB, newest first, 3 over 5.5',
+    'Last 3 REB, newest first, 2 over 6.5',
+    'Last 2 REB, newest first',
+  ]);
   const chips = (name) =>
     within(screen.getByRole('row', { name: new RegExp(name) }))
       .getByRole('group', { name: /newest first/ })
@@ -245,6 +253,35 @@ test('a positive backtest is a boost, and the note is the reason when there is o
   expect(card.getByText('boost REB')).toHaveClass('is-boost');
   expect(card.getByText('Wings rebound more vs HOU.')).toBeVisible();
   expect(card.queryByText(/backtest:/)).not.toBeInTheDocument();
+});
+
+test.each([
+  // 5, 5, 4.994 against 5: −0.04%, which displays as 0% but is still a fade.
+  ['a small negative', [5, 5, 4.994], 'fade REB'],
+  // Exactly on the average is not a fade.
+  ['an exact zero', [5, 5, 5], 'boost REB'],
+])('%s backtest leans by its unrounded sign', (_, values, lean) => {
+  const card = slate('', { 7: backtest(values) });
+  expect(card.getByText(/^(fade|boost) REB$/)).toHaveTextContent(lean);
+  expect(
+    card.getByText('2025-26 backtest: REB 0% vs own average, 0% of games over it.'),
+  ).toBeVisible();
+});
+
+test('a line its provider prices on neither side reads as the line alone', () => {
+  render(
+    <TargetFitTable
+      entry={rebounds([
+        fit({
+          seasonAverages: { REB: 6 },
+          lastFiveGames: games(7),
+          lines: { underdog: { REB: 5.5 } },
+          linePrices: { underdog: { REB: { over: null, under: null } } },
+        }),
+      ])}
+    />,
+  );
+  expect(rows()).toEqual(['Big Fit Big76.05.5Underdog']);
 });
 
 test('with no backtest the note stands alone, with no lean', () => {

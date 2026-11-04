@@ -350,6 +350,18 @@ test("decodes a fit's lines, per-pick prices and last five, skipping unknown pri
   ]);
 });
 
+test('a posted line priced on neither side decodes as two null prices', () => {
+  const [fit] = decodeResolvedTargets(
+    resolvePayload([
+      withFitLines({
+        lines: { underdog: { REB: 5.5 } },
+        line_prices: { underdog: { REB: { over: null, under: null } } },
+      }),
+    ]),
+  ).entries[0].players;
+  expect(fit.linePrices).toEqual({ underdog: { REB: { over: null, under: null } } });
+});
+
 test('a backend without the fit line fields decodes them as absent, not empty', () => {
   const [fit] = decodeResolvedTargets(resolvePayload([wireResolvedLive])).entries[0].players;
   expect(Object.keys(fit)).toEqual([
@@ -370,13 +382,6 @@ test.each([
   [
     'a price with no line beside it',
     { lines: {}, line_prices: { underdog: { REB: { over: 100, under: -120 } } } },
-  ],
-  [
-    'a pick priced on neither side',
-    {
-      lines: { underdog: { REB: 5.5 } },
-      line_prices: { underdog: { REB: { over: null, under: null } } },
-    },
   ],
   ['a negative line', { lines: { underdog: { REB: -1 } } }],
   [

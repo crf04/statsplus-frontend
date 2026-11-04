@@ -163,7 +163,8 @@ export const fitLine = (player, stat) => {
 
 /*
  * Why a Target is worth reading tonight: a FADE or BOOST lean from the sign of
- * its backtest in the graded stat, and one reason. The reason is the Target's
+ * its backtest in the graded stat, unrounded, so a -0.04% that displays as 0%
+ * is still a fade; and one reason. The reason is the Target's
  * note, else the backtest in a sentence. No backtest is no lean; with neither
  * there is nothing to say.
  */
@@ -196,18 +197,23 @@ function FitLine({ line }) {
   );
 }
 
+// A chip is green when its game went over the line; the group says how many
+// did, so the colour is not the only way to read it.
 function LastFive({ games, line, stat }) {
+  const over = (value) => value !== null && Boolean(line) && value > line.line;
+  const label = `Last ${games.length} ${stat}, newest first`;
   return (
     <span
       className="target-fit-l5"
       role="group"
-      aria-label={`Last ${games.length} ${stat}, newest first`}
+      aria-label={
+        line
+          ? `${label}, ${games.filter(({ value }) => over(value)).length} over ${line.line}`
+          : label
+      }
     >
       {games.map(({ gameId, value }) => (
-        <span
-          className={value !== null && line && value > line.line ? 'is-over' : undefined}
-          key={gameId}
-        >
+        <span className={over(value) ? 'is-over' : undefined} key={gameId}>
           {formatGameValue(value)}
         </span>
       ))}

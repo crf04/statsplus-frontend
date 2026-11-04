@@ -92,13 +92,13 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
                       <small className="target-player-position">{player.position}</small>
                     )}{' '}
                     ·{' '}
-                    {player.shares
-                      .map(
+                    {[
+                      ...player.shares.map(
                         (share, index) =>
                           `${formatQualifierParts(dietQualifiers(entry.target.qualifiers)[index]).label} ${formatObservedShare(share.share)}`,
-                      )
-                      .join(' · ')}{' '}
-                    · {formatFitStat(stat.value(player))} {stat.label}
+                      ),
+                      `${formatFitStat(stat.value(player))} ${stat.label}`,
+                    ].join(' · ')}
                     {player.thin && <small> · thin evidence</small>}
                   </li>
                 ))}

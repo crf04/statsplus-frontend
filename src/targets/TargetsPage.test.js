@@ -1759,6 +1759,24 @@ test('a fit pill shows the player’s Position beside his name, and none when he
   expect(pills[1]).toHaveTextContent(/^Unlisted · Corner 3 44%/);
 });
 
+test('a fit pill with no Qualifier shares (a Position-only Target) has a single separator', async () => {
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        players: [{ ...resolution.entries[0].players[0], position: 'Wing', shares: [] }],
+      },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  const [pill] = await within(card).findAllByRole('listitem');
+  expect(pill.textContent).not.toContain('· ·');
+  expect(pill).toHaveTextContent(/^LeBron JamesWing · [\d.]+ [A-Z0-9%/]+$/);
+});
+
 test('thin evidence stays visible as a dashed fit pill', async () => {
   fetchResolvedTargets.mockResolvedValue({
     ...resolution,

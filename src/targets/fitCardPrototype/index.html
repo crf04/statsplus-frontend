@@ -1,0 +1,252 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Branch prototype/target-fit-card.
+  Question: how should a live Target's fits read under a Slate row once each
+  fit shows the player's posted line and the matchup the Target aims at?
+  Three variants, switchable via #v=A|B|C and the bottom bar (← → keys too).
+  Data: real CourtAI reads for MIN @ HOU, 2026-11-04 (get_targets + get_matchup
+  REB), captured 2026-11-03. Static; no backend, no sign-in.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Target Fit Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #0d0b07; --surface: #16130d; --surface-2: #1d1911;
+  --line: rgba(255,255,255,.08); --line-strong: rgba(255,255,255,.16);
+  --text: #efe9dc; --dim: #9b937f; --gold: #e8a33d; --gold-soft: rgba(232,163,61,.12);
+  --good: #6fbf8a; --bad: #e0705a; --bad-soft: rgba(224,112,90,.12);
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --sans: 'Barlow', -apple-system, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+.proto-banner { font: 11px var(--mono); color: var(--dim); text-align: center; padding: 6px 16px; border-bottom: 1px solid var(--line); letter-spacing: .06em; }
+main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
+
+/* host context: the Slate game row the Target hangs under */
+.game-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px 8px 0 0; }
+.game-row .teams { font-family: var(--display); font-weight: 800; font-size: 1.5rem; letter-spacing: .02em; }
+.game-row .teams span { color: var(--dim); font-weight: 500; font-size: .9rem; margin: 0 8px; font-family: var(--mono); }
+.game-row .meta { font: 12px var(--mono); color: var(--dim); }
+.under { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; padding: 14px 16px 16px; border-left: 3px solid #2d3a2a; }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 4px rgba(111,191,138,.15); flex: none; }
+.ttl { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ttl .team { font-family: var(--display); font-weight: 800; font-size: 1.55rem; letter-spacing: .02em; line-height: 1; }
+.ttl .vs { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.ttl .q { font-weight: 500; }
+.rank { display: inline-flex; min-width: 24px; height: 24px; padding: 0 4px; align-items: center; justify-content: center; border-radius: 4px; background: hsl(calc((var(--r) - 1) * 4.1) 78% 43%); color: #fff; font: 800 11px var(--mono); }
+.mono { font-family: var(--mono); }
+.dim { color: var(--dim); }
+.neg { color: var(--bad); }
+.pos { color: var(--good); }
+.gold { color: var(--gold); }
+.tag { display: inline-block; font: 600 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+.tag.fade { color: var(--bad); background: var(--bad-soft); }
+.lbl { font: 10px var(--mono); color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
+
+/* ---------- A: one line per fit ---------- */
+.a-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.a-count { font: 13px var(--mono); color: var(--dim); }
+.a-count b { color: var(--text); font-family: var(--display); font-size: 1.3rem; margin-right: 4px; }
+.a-why { margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; font-size: .86rem; }
+.a-why .item { display: inline-flex; align-items: center; gap: 8px; }
+.a-table { width: 100%; border-collapse: collapse; }
+.a-table th { font: 10px var(--mono); color: var(--dim); letter-spacing: .1em; text-transform: uppercase; text-align: right; padding: 0 10px 8px; border-bottom: 1px solid var(--line-strong); font-weight: 400; }
+.a-table th:first-child { text-align: left; padding-left: 0; }
+.a-table td { padding: 10px; text-align: right; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: .9rem; white-space: nowrap; }
+.a-table td:first-child { text-align: left; padding-left: 0; font-family: var(--sans); white-space: normal; }
+.a-name { font-weight: 600; }
+.a-sub { display: block; font: 11px var(--mono); color: var(--dim); margin-top: 2px; }
+.a-line b { font-size: 1rem; }
+.a-line small { display: block; color: var(--dim); font-size: 11px; }
+.a-gap { font-weight: 600; }
+.score { display: inline-block; padding: 3px 7px; border-radius: 4px; font: 600 12px var(--mono); }
+.score.neg { background: var(--bad-soft); }
+@media (max-width: 640px) {
+  .a-table thead { display: none; }
+  .a-table, .a-table tbody, .a-table tr, .a-table td { display: block; }
+  .a-table tr { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .a-table td { border: 0; padding: 0; }
+  .a-table td:first-child { grid-column: 1 / -1; }
+  .a-table td.a-avg::before { content: 'AVG '; color: var(--dim); font-size: 10px; }
+  .a-table td.a-mu { grid-column: 3; }
+  .a-table td.a-avg { text-align: left; }
+}
+
+/* ---------- B: line vs average strips ---------- */
+.b-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.b-head .left { display: flex; align-items: center; gap: 10px; }
+.b-sentence { margin: 10px 0 16px; padding: 10px 12px; background: var(--surface); border-radius: 6px; font-size: .9rem; line-height: 1.5; }
+.b-sentence .rank { vertical-align: -6px; margin-right: 2px; }
+.b-list { display: grid; gap: 4px; }
+.b-row { display: grid; grid-template-columns: 180px 1fr 92px; gap: 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.b-who b { display: block; font-weight: 600; }
+.b-who span { font: 11px var(--mono); color: var(--dim); }
+.b-track { position: relative; height: 38px; }
+.b-axis { position: absolute; left: 0; right: 0; top: 18px; height: 2px; background: var(--line-strong); border-radius: 1px; }
+.b-gapbar { position: absolute; top: 17px; height: 4px; background: var(--bad); opacity: .5; border-radius: 2px; }
+.b-gapbar.over { background: var(--good); }
+.b-mark { position: absolute; top: 0; transform: translateX(-50%); text-align: center; font: 11px var(--mono); white-space: nowrap; }
+.b-mark i { display: block; width: 2px; height: 14px; margin: 0 auto; background: currentColor; }
+.b-mark.line { color: var(--gold); top: 12px; }
+.b-mark.line i { height: 14px; width: 3px; }
+.b-mark.line span { display: block; margin-top: 2px; font-weight: 700; }
+.b-mark.avg { color: var(--text); top: -2px; display: flex; flex-direction: column-reverse; align-items: center; }
+.b-mark.avg i { width: 10px; height: 10px; border-radius: 50%; margin-top: 2px; }
+.b-mark.avg span { display: block; color: var(--dim); }
+.b-right { text-align: right; font-family: var(--mono); }
+.b-right .score { margin-bottom: 4px; }
+.b-right small { display: block; color: var(--dim); font-size: 11px; }
+.b-legend { display: flex; gap: 14px; margin-top: 10px; font: 11px var(--mono); color: var(--dim); }
+.b-legend .g { color: var(--gold); }
+@media (max-width: 640px) {
+  .b-row { grid-template-columns: 1fr auto; gap: 6px 10px; }
+  .b-track { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ---------- C: matchup panel + player tiles ---------- */
+.c-wrap { display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+.c-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.c-big { display: flex; align-items: center; gap: 10px; }
+.c-big .rank { min-width: 40px; height: 40px; font-size: 18px; border-radius: 6px; }
+.c-big div { font-size: .85rem; line-height: 1.3; }
+.c-big b { display: block; font-size: 1.05rem; }
+.c-stat { display: flex; justify-content: space-between; font: 12px var(--mono); border-top: 1px solid var(--line); padding-top: 8px; }
+.c-note { font-size: .8rem; color: var(--dim); line-height: 1.4; }
+.c-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; align-content: start; }
+.c-tile { border: 1px solid var(--line-strong); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.c-tile .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.c-tile .top b { font-weight: 600; }
+.c-tile .top span { font: 11px var(--mono); color: var(--dim); }
+.c-nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.c-nums div { background: var(--surface-2); border-radius: 5px; padding: 6px 8px; }
+.c-nums div b { display: block; font: 700 1.1rem var(--mono); margin-top: 2px; }
+.c-nums div.line b { color: var(--gold); }
+.c-prices { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 11px var(--mono); color: var(--dim); }
+.c-prices b { color: var(--text); font-weight: 500; }
+.c-slice { font-size: .78rem; color: var(--dim); line-height: 1.35; display: flex; gap: 6px; align-items: center; }
+.c-slice .rank { min-width: 20px; height: 20px; font-size: 10px; }
+@media (max-width: 720px) { .c-wrap { grid-template-columns: 1fr; } }
+
+/* switcher (not part of the design) */
+.switch { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: #f5f2ea; color: #111; border-radius: 999px; padding: 5px; box-shadow: 0 8px 30px rgba(0,0,0,.5); font: 600 13px var(--sans); z-index: 9; }
+.switch button { border: 0; background: #111; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+.switch span { padding: 0 12px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="proto-banner">PROTOTYPE · real CourtAI data for MIN @ HOU, Nov 4 · no sign-in</div>
+<main>
+  <div class="game-row">
+    <div class="teams">MIN<span>@</span>HOU</div>
+    <div class="meta">Wed 8:00 PM ET · scheduled</div>
+  </div>
+  <div class="under" id="card"></div>
+</main>
+<div class="switch">
+  <button id="prev" aria-label="Previous variant">←</button>
+  <span id="label"></span>
+  <button id="next" aria-label="Next variant">→</button>
+</div>
+<script>
+// Captured from CourtAI get_targets / get_matchup (REB), MIN @ HOU 2026-11-04.
+const T = {
+  opponent: 'HOU', qualifier: 'Wing', stat: 'REB', note: 'Fade: wings rebound less vs HOU',
+  rank: 1, vsLeague: -11, metric: 'rebounds allowed per 48',
+  backtest: { label: 'REB/36', diff: -13.3, hit: 31, games: 254, season: '2025-26' },
+};
+const P = [
+  { name: 'Jaden McDaniels', team: 'MIN', pos: 'Wing', min: 32.8, avg: 4.2, line: 5.5, score: -11,
+    prices: [['Underdog', 5.5, '+124', '−152'], ['Dabble', 5.5, '+120', '−120'], ['Polymarket', 5.5, '+127', '−186'], ['Novig', 3.5, null, null]],
+    slice: { name: 'DREB off 2PT misses', share: 40, rank: 10, vs: -6 } },
+  { name: 'Jonathan Kuminga', team: 'MIN', pos: 'Wing', min: 30.8, avg: 5.6, line: 5.5, score: -14,
+    prices: [['Underdog', 5.5, '+103', '−127'], ['Novig', 5.5, '+106', '−120']],
+    slice: { name: 'DREB off 3PT misses', share: 35, rank: 1, vs: -25 } },
+  { name: 'Joan Beringer', team: 'MIN', pos: 'Wing', min: 18.1, avg: 2.3, line: 5.5, score: -10,
+    prices: [['Novig', 5.5, null, null]],
+    slice: { name: 'OREB off 2PT misses', share: 36, rank: 13, vs: -0.3 } },
+];
+const sgn = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(Math.abs(n) % 1 ? 1 : 0);
+const gap = (p) => p.avg - p.line;
+const rank = (r) => `<span class="rank" style="--r:${r}" title="Rank ${r}/30 — 30 allows the most">${r}</span>`;
+const title = () => `<span class="ttl"><span class="team">${T.opponent}</span><span class="vs">vs</span><span class="q">${T.qualifier}</span></span>`;
+const best = (p) => p.prices.find((x) => x[2]) ;
+const priced = (p) => { const b = best(p); return b ? `${b[0]} o${b[2]} / u${b[3]}` : `${p.prices[0][0]} · no price`; };
+
+const V = {
+  A: { name: 'One line per fit', render: () => `
+    <div class="a-head"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span><span class="tag fade">fade</span></div>
+    <div class="a-why">
+      <span class="item">${rank(T.rank)} ${T.opponent} allows the fewest rebounds <span class="mono neg">${sgn(T.vsLeague)}% vs lg</span></span>
+      <span class="item dim mono">Backtest ${T.backtest.label} <span class="neg">${sgn(T.backtest.diff)}%</span> · ${T.backtest.hit}% over</span>
+    </div>
+    <table class="a-table">
+      <thead><tr><th>Player</th><th>Avg ${T.stat}</th><th>Line</th><th>Avg − line</th><th>Matchup</th></tr></thead>
+      <tbody>${P.map((p) => `<tr>
+        <td><span class="a-name">${p.name}</span><span class="a-sub">${p.team} · ${p.pos} · ${p.min.toFixed(1)} min L10</span></td>
+        <td class="a-avg">${p.avg.toFixed(1)}</td>
+        <td class="a-line"><b class="gold">${p.line}</b><small>${priced(p)}</small></td>
+        <td class="a-gap ${gap(p) < 0 ? 'neg' : 'pos'}">${sgn(gap(p))}</td>
+        <td class="a-mu"><span class="score neg">${sgn(p.score)}%</span></td>
+      </tr>`).join('')}</tbody>
+    </table>` },
+
+  B: { name: 'Line vs average', render: () => {
+    const lo = 0, hi = 8, x = (v) => ((v - lo) / (hi - lo)) * 100;
+    return `
+    <div class="b-head"><div class="left"><span class="dot"></span>${title()}<span class="tag fade">fade</span></div><span class="lbl">${P.length} fit · ${T.stat}</span></div>
+    <div class="b-sentence">${rank(T.rank)} <b>${T.opponent}</b> allows the fewest rebounds in the league (<span class="mono neg">${sgn(T.vsLeague)}%</span>). Wings facing them averaged <span class="mono neg">${sgn(T.backtest.diff)}%</span> ${T.backtest.label} and beat their own average ${T.backtest.hit}% of the time (${T.backtest.season}, ${T.backtest.games} games).</div>
+    <div class="b-list">${P.map((p) => {
+      const a = x(p.avg), l = x(p.line), left = Math.min(a, l), w = Math.abs(a - l);
+      return `<div class="b-row">
+        <div class="b-who"><b>${p.name}</b><span>${p.team} · ${p.min.toFixed(1)} min L10</span></div>
+        <div class="b-track"><div class="b-axis"></div>
+          <div class="b-gapbar ${gap(p) >= 0 ? 'over' : ''}" style="left:${left}%;width:${w}%"></div>
+          <div class="b-mark avg" style="left:${a}%"><i></i><span>${p.avg.toFixed(1)}</span></div>
+          <div class="b-mark line" style="left:${l}%"><i></i><span>${p.line}</span></div>
+        </div>
+        <div class="b-right"><span class="score neg">${sgn(p.score)}%</span><small>${priced(p)}</small></div>
+      </div>`; }).join('')}</div>
+    <div class="b-legend"><span>● season avg</span><span class="g">| posted line</span><span>matchup score →</span></div>`; } },
+
+  C: { name: 'Matchup panel + tiles', render: () => `
+    <div class="a-head" style="margin-bottom:12px"><span class="dot"></span>${title()}<span class="a-count"><b>${P.length}</b>fit</span></div>
+    <div class="c-wrap">
+      <aside class="c-panel">
+        <div class="lbl">The matchup</div>
+        <div class="c-big">${rank(T.rank)}<div><b>Fewest ${T.stat} allowed</b><span class="mono neg">${sgn(T.vsLeague)}% vs league</span> <span class="dim">· ${T.metric}</span></div></div>
+        <div class="c-stat"><span class="dim">Backtest ${T.backtest.label}</span><span class="neg">${sgn(T.backtest.diff)}%</span></div>
+        <div class="c-stat"><span class="dim">Beat own avg</span><span>${T.backtest.hit}% <span class="dim">of ${T.backtest.games}</span></span></div>
+        <div class="c-note"><span class="tag fade">fade</span> ${T.note}.</div>
+      </aside>
+      <div class="c-tiles">${P.map((p) => `<div class="c-tile">
+        <div class="top"><b>${p.name}</b><span>${p.min.toFixed(1)} min</span></div>
+        <div class="c-nums">
+          <div class="line"><span class="lbl">Line</span><b>${p.line}</b></div>
+          <div><span class="lbl">Avg</span><b>${p.avg.toFixed(1)}</b></div>
+          <div><span class="lbl">Matchup</span><b class="neg">${sgn(p.score)}%</b></div>
+        </div>
+        <div class="c-prices">${p.prices.map((x) => `<span>${x[0]} <b>${x[1]}</b>${x[2] ? ` o${x[2]} u${x[3]}` : ''}</span>`).join('')}</div>
+        <div class="c-slice">${rank(p.slice.rank)}<span>${p.slice.name} (${p.slice.share}% of his boards) <span class="mono">${sgn(p.slice.vs)}%</span></span></div>
+      </div>`).join('')}</div>
+    </div>` },
+};
+const keys = Object.keys(V);
+const cur = () => { const m = location.hash.match(/v=([A-Z])/); return m && V[m[1]] ? m[1] : 'A'; };
+function show() { const k = cur(); document.getElementById('card').innerHTML = V[k].render(); document.getElementById('label').textContent = `${k} · ${V[k].name}`; }
+function go(d) { const i = (keys.indexOf(cur()) + d + keys.length) % keys.length; location.hash = `v=${keys[i]}`; }
+document.getElementById('prev').onclick = () => go(-1);
+document.getElementById('next').onclick = () => go(1);
+addEventListener('keydown', (e) => { if (e.target.closest('input,textarea,[contenteditable]')) return; if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); });
+addEventListener('hashchange', show);
+show();
+</script>
+</body>
+</html>

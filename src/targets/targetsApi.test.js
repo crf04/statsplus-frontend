@@ -1686,3 +1686,29 @@ test('an Average threshold of 1000 is accepted and one above it is refused', () 
   ]);
   expect(() => decodeTargets(withThreshold(1000.01))).toThrow(/invalid response/i);
 });
+
+test('a resolved Target carries its stat columns and each fit its season averages', () => {
+  const { entries } = decodeResolvedTargets(
+    resolvePayload([
+      {
+        ...wireResolvedLive,
+        stat_columns: ['PTS', '3PA'],
+        players: [
+          {
+            ...wireResolvedLive.players[0],
+            season_averages: { PTS: 25.4, '3PA': null, REB: 7.1, NEW_STAT: 1 },
+          },
+        ],
+      },
+    ]),
+  );
+  expect(entries[0].statColumns).toEqual(['PTS', '3PA']);
+  // Every catalogue stat the backend sends is kept; one this build does not know is dropped.
+  expect(entries[0].players[0].seasonAverages).toEqual({ PTS: 25.4, '3PA': null, REB: 7.1 });
+});
+
+test('a stat column outside the catalogue is refused', () => {
+  expect(() =>
+    decodeResolvedTargets(resolvePayload([{ ...wireResolvedLive, stat_columns: ['PPG'] }])),
+  ).toThrow();
+});

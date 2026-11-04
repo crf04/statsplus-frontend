@@ -1540,7 +1540,7 @@ test('cards state tonight’s fits as pills and keep criteria and logs read-only
     '/targets/7',
   );
   expect(within(card).getByRole('listitem')).toHaveTextContent('44%');
-  expect(within(card).getByRole('listitem')).toHaveTextContent('25.4 ppg');
+  expect(within(card).getByRole('listitem')).toHaveTextContent('25.4 PPG');
   expect(within(card).queryByRole('spinbutton')).not.toBeInTheDocument();
   expect(within(card).queryByRole('table')).not.toBeInTheDocument();
 });
@@ -2250,4 +2250,56 @@ test('a list with a failed card is read again on the next visit', async () => {
   expect(await screen.findAllByRole('list', { name: 'Backtest summary' })).toHaveLength(2);
   expect(fetchTargetBacktests).toHaveBeenCalledTimes(2);
   expect(fetchTargetBacktest).toHaveBeenCalledTimes(2);
+});
+
+test('a card’s fit pills show the stat the Target is graded by', async () => {
+  auth.currentUser = { uid: 'fit-stat-reader' };
+  fetchTargets.mockResolvedValue([
+    { ...targets[0], statPreferences: { columns: ['PTS', '3PM'], gradedBy: '3PM' } },
+    targets[1],
+  ]);
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        statColumns: ['PTS', '3PM'],
+        players: [
+          { ...resolution.entries[0].players[0], seasonAverages: { PTS: 25.4, '3PM': 2.1 } },
+        ],
+      },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  const fits = await screen.findByRole('region', { name: 'Playing tonight' });
+  expect(within(fits).getByRole('listitem')).toHaveTextContent('2.1 3PM');
+  expect(within(fits).getByRole('listitem')).not.toHaveTextContent('ppg');
+});
+
+test('regrading a card switches its fit pills to the new stat at once', async () => {
+  auth.currentUser = { uid: 'fit-regrade-reader' };
+  fetchTargetBacktests.mockResolvedValue(readyBatch(targets, preview));
+  fetchResolvedTargets.mockResolvedValue({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        statColumns: ['PTS', '3PM'],
+        players: [
+          { ...resolution.entries[0].players[0], seasonAverages: { PTS: 25.4, '3PM': 2.1 } },
+        ],
+      },
+      resolution.entries[1],
+    ],
+  });
+  renderPage(false);
+  const card = await screen.findByRole('article', { name: targets[0].title });
+  const fits = within(card).getByRole('region', { name: 'Playing tonight' });
+  expect(within(fits).getByRole('listitem')).toHaveTextContent('25.4 PTS');
+  const summary = await within(card).findByRole('list', { name: 'Backtest summary' });
+  fireEvent.click(
+    within(within(summary).getByRole('listitem', { name: '3PM', exact: true })).getByRole('button'),
+  );
+  expect(within(fits).getByRole('listitem')).toHaveTextContent('2.1 3PM');
 });

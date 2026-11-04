@@ -342,17 +342,17 @@ test('Target defaults follow each Qualifier base and keep their declared order',
     {
       base: 'shot_zones',
       slice: 'Restricted Area',
-      expected: ['PTS', 'PTS/36', 'FG2A', 'FG2A/36'],
+      expected: ['FG2A', 'FG2A/36', 'PTS', 'PTS/36'],
     },
     {
       base: 'shot_zones',
       slice: 'Corner 3',
-      expected: ['PTS', 'PTS/36', '3PA', '3PA/36'],
+      expected: ['3PA', '3PA/36', 'PTS', 'PTS/36'],
     },
     {
       base: 'shot_types',
       slice: 'Catch and Shoot',
-      expected: ['PTS', 'PTS/36', 'FGA', 'FGA/36'],
+      expected: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
     },
     { base: 'assist_locations', slice: 'AtRimAssists', expected: ['AST', 'AST/36'] },
   ];

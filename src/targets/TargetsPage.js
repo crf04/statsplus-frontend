@@ -12,6 +12,7 @@ import TargetRecord from './TargetRecord';
 import useStatPreferences from './useStatPreferences';
 import { StatSaveStatus } from './StatPicker';
 import { dietQualifiers, formatQualifierParts, formatObservedShare } from './targetCatalog';
+import { fitStat, formatFitStat } from './TargetFits';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
 import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
@@ -32,6 +33,7 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
   const onPreferencesChange = stats.onChange;
   const columns = preferences?.columns ?? read?.backtest?.statColumns ?? [];
   const gradedBy = preferences?.gradedBy ?? columns[0];
+  const stat = entry && fitStat(entry, gradedBy);
   const minutesNote = backtestMinutesNote(target);
   const editHref = `/targets/${target.id}`;
   return (
@@ -94,7 +96,7 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
                           `${formatQualifierParts(dietQualifiers(entry.target.qualifiers)[index]).label} ${formatObservedShare(share.share)}`,
                       )
                       .join(' · ')}{' '}
-                    · {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)} ppg
+                    · {formatFitStat(stat.value(player))} {stat.label}
                     {player.thin && <small> · thin evidence</small>}
                   </li>
                 ))}

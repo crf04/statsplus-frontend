@@ -110,12 +110,27 @@ export function TargetContext({ context }) {
 }
 
 /*
+ * The stat a fit is shown by: the one the Target is graded by, so a rebounding
+ * Target lists rebounds rather than points. `gradedBy` is a card's live choice,
+ * else the Target's saved one, else its first default column. A backend
+ * without the Target's stats sends no columns, and the fit shows points.
+ */
+export function fitStat(entry, gradedBy) {
+  if (!entry.statColumns?.length) return { label: 'PPG', value: (player) => player.seasonScoring };
+  const stat = gradedBy ?? entry.target.statPreferences?.gradedBy ?? entry.statColumns[0];
+  return { label: stat, value: (player) => player.seasonAverages?.[stat] ?? null };
+}
+
+export const formatFitStat = (value) => (value === null ? '—' : value.toFixed(1));
+
+/*
  * The fits for one live Target. An unavailable pool is stated in its own words
  * so an empty table is never read as "nobody fits"; only a live entry has a
  * pool to report on, so an idle Target never reaches here.
  */
 export function TargetFitTable({ entry, dense = false }) {
   const { availability, game, players, target } = entry;
+  const stat = fitStat(entry);
   if (availability.status !== 'available') {
     const code = availability.unavailableReason;
     const reason = code && (WINDOW_REASONS[code] || `${code}.`);
@@ -153,7 +168,7 @@ export function TargetFitTable({ entry, dense = false }) {
                 {formatQualifierParts(qualifier).label}
               </th>
             ))}
-            <th className="num">PPG</th>
+            <th className="num">{stat.label}</th>
           </tr>
         </thead>
         <tbody>
@@ -181,9 +196,7 @@ export function TargetFitTable({ entry, dense = false }) {
                   )}
                 </td>
               ))}
-              <td className="num">
-                {player.seasonScoring === null ? '—' : player.seasonScoring.toFixed(1)}
-              </td>
+              <td className="num">{formatFitStat(stat.value(player))}</td>
             </tr>
           ))}
         </tbody>

@@ -2553,9 +2553,51 @@ const resolvedFit = (qualifiers, player) => {
     injury_badge_ref: player.injury_badge_ref,
     position: playerPosition(player),
     season_scoring: player.season_scoring,
+    season_averages: Object.fromEntries(
+      statCatalogue.map((column) => [
+        column,
+        targetStatAverage(seasonsByPlayer[player.name] || [], column),
+      ]),
+    ),
     thin,
     shares,
   };
+};
+
+// The saved columns, else the backend's default union: a Diet slice names its
+// markets, an Average its own stat where readable per game, a Position none.
+const AVERAGE_DISPLAYABLE_STATS = new Set([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  '3PA',
+  'FG2A',
+  'FG2M',
+  'FGA',
+  'FGM',
+  'FTA',
+  'FTM',
+  'STL',
+  'BLK',
+  'TOV',
+  'PA',
+  'PR',
+  'RA',
+  'PRA',
+]);
+const qualifierStatColumns = (qualifier) => {
+  if (qualifier.base === 'position') return [];
+  if (qualifier.base === 'season_average')
+    return AVERAGE_DISPLAYABLE_STATS.has(qualifier.stat.replace(/\/36$/, ''))
+      ? [qualifier.stat]
+      : [];
+  return sliceMarkets(qualifier);
+};
+const resolvedStatColumns = (target) => {
+  if (target.stat_preferences?.columns) return target.stat_preferences.columns;
+  const columns = [...new Set(target.qualifiers.flatMap(qualifierStatColumns))];
+  return columns.length > 0 ? columns : ['PTS', 'PTS/36'];
 };
 
 const teamReference = (side) => ({
@@ -2669,6 +2711,7 @@ const resolveTargets = (date, targets) => {
       idle.push({
         target,
         game: null,
+        stat_columns: resolvedStatColumns(target),
         context: [],
         availability: IDLE_AVAILABILITY,
         players: [],
@@ -2692,6 +2735,7 @@ const resolveTargets = (date, targets) => {
         opponent: teamReference(opponent),
         opposing_team: teamReference(opposing),
       },
+      stat_columns: resolvedStatColumns(target),
       context: target.qualifiers.map((qualifier) =>
         resolvedContext(qualifier, sheet, slate.matchup.league),
       ),
@@ -2730,12 +2774,12 @@ const resolveTargets = (date, targets) => {
 const SLICE_MARKETS = {
   play_types: ['PTS', 'FGA', 'PTS/36', 'FGA/36'],
   assist_locations: ['AST', 'AST/36'],
-  shot_types: ['PTS', 'PTS/36', 'FGA', 'FGA/36'],
+  shot_types: ['FGA', 'FGA/36', 'PTS', 'PTS/36'],
 };
 
 const THREE_POINT_SLICES = ['Corner 3', 'Above the Break 3'];
-const TWO_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', 'FG2A', 'FG2A/36'];
-const THREE_POINT_SHOT_ZONE_STATS = ['PTS', 'PTS/36', '3PA', '3PA/36'];
+const TWO_POINT_SHOT_ZONE_STATS = ['FG2A', 'FG2A/36', 'PTS', 'PTS/36'];
+const THREE_POINT_SHOT_ZONE_STATS = ['3PA', '3PA/36', 'PTS', 'PTS/36'];
 
 const sliceMarkets = (qualifier) =>
   qualifier.base === 'shot_zones'

@@ -376,14 +376,19 @@
     min-height: 44px;
   }
 }
-/* Position beside a player's name and a count of players the Position left out. */
-.target-player-position {
+/* Position and a last-season Diet tag beside a player's name, and a count of
+   players the Position left out. */
+.target-player-position,
+.target-diet-season {
   margin-left: 6px;
   padding: 0 5px;
   border: 1px solid var(--ct-line-strong);
   border-radius: 4px;
   color: var(--ct-dim);
   font: 0.68rem var(--ct-mono);
+}
+.target-diet-season {
+  white-space: nowrap;
 }
 .target-limit {
   margin: 8px 0 0;

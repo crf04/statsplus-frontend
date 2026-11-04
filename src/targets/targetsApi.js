@@ -466,11 +466,23 @@ const decodeFitLinePrices = (linePrices, lines) => {
   );
 };
 
-// The graded stat in his last five games, newest first; null is a game with no
-// value for it.
+// The graded stat in his last five games, newest first: `{ game_id,
+// game_date, value }`, where a null value is a game with no figure for it. A
+// completed game, or a player with no log, sends none.
 const decodeFitLastFive = (games) => {
   if (!Array.isArray(games) || games.length > 5) throw createInvalidResponseError();
-  return games.map(requireNumberOrNull);
+  const decoded = games.map((game) => {
+    if (!isRecord(game) || !isCalendarDate(game.game_date)) throw createInvalidResponseError();
+    return {
+      gameId: requireString(game.game_id),
+      gameDate: game.game_date,
+      value: requireNumberOrNull(game.value),
+    };
+  });
+  // Newest first: a list out of order would put the chips in the wrong games.
+  if (decoded.some((game, index) => index > 0 && decoded[index - 1].gameDate < game.gameDate))
+    throw createInvalidResponseError();
+  return decoded;
 };
 
 /*
@@ -539,8 +551,10 @@ const decodeResolvedTarget = (item) => {
 export const decodeResolvedTargets = (payload = {}) => {
   if (!isRecord(payload) || !isCalendarDate(payload.slate_date) || !Array.isArray(payload.targets))
     throw createInvalidResponseError();
+  const seasonContext = decodeSeasonContext(payload.season_context);
   return {
     slateDate: payload.slate_date,
+    ...(seasonContext ? { seasonContext } : {}),
     entries: payload.targets.map(decodeResolvedTarget),
   };
 };
@@ -769,11 +783,21 @@ export const fetchTargets = async ({ signal } = {}) => {
  * computes, so the Slate and a Target detail opened from it always agree
  * about which day they are showing.
  */
-export const fetchResolvedTargets = async ({ date, signal, fallback } = {}) => {
-  const response = await apiClient.get(targetsUrl('/resolve'), {
-    params: { ...(date ? { date } : {}), ...(fallback ? { fallback } : {}) },
-    signal,
-  });
+export const fetchResolvedTargets = async ({ date, signal, fallback, season } = {}) => {
+  const response = await apiClient
+    .get(targetsUrl('/resolve'), {
+      params: {
+        ...(date ? { date } : {}),
+        ...(fallback ? { fallback } : {}),
+        // The Evidence season the Slate reads, so a fit's average is that
+        // season's (crf04/statsplus#423). A backend before it ignores it.
+        ...(season ? { season } : {}),
+      },
+      signal,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeResolvedTargets(response.data);
 };
 

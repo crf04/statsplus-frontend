@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { isRecord } from '../decoding';
 import { beginStatPreferenceRead } from './useStatPreferences';
 import { describeBacktestFailure, seasonUnavailableDetails } from './backtestSample';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
@@ -47,15 +48,18 @@ const readList = async ({ signal, userId }) => {
     preferences.release();
   }
 };
+// A scope is a date, or `{ date, season }` when a season is chosen.
 const readResolution = ({ scope, signal, userId, bypass }) => {
-  const load = () => fetchResolvedTargets({ date: scope, signal });
-  if (historicalDate(scope))
-    return readRevisit('resolution', userId, scope, load, { signal, bypass });
-  // An absent scope is the Slate's own current date, read as often as every
+  const { date, season } = isRecord(scope) ? scope : { date: scope };
+  const load = () => fetchResolvedTargets({ date, signal, ...(season ? { season } : {}) });
+  const identity = (day) => (season ? [day, season] : day);
+  if (historicalDate(date))
+    return readRevisit('resolution', userId, identity(date), load, { signal, bypass });
+  // An absent date is the Slate's own current date, read as often as every
   // surface that shows it revisits — cached under one identity rather than
   // the (unknown here) date it will turn out to be.
-  if (scope === undefined)
-    return readRevisit('resolution', userId, 'current', load, { signal, bypass });
+  if (date === undefined)
+    return readRevisit('resolution', userId, identity('current'), load, { signal, bypass });
   return load();
 };
 
@@ -153,8 +157,11 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  * other surfaces pass none, which is the Slate's own current date, and read
  * the date back off the response rather than working it out a second time.
  */
-export const useResolvedTargets = (date, options) =>
-  useAccountRead(readResolution, EMPTY_RESOLUTION, date, options);
+export const useResolvedTargets = (date, { season, ...options } = {}) => {
+  // One scope per date and season, so the read reruns only when either moves.
+  const scope = useMemo(() => (season ? { date, season } : date), [date, season]);
+  return useAccountRead(readResolution, EMPTY_RESOLUTION, scope, options);
+};
 
 /*
  * The cached Target Backtests by Target id, for the Slate's fit cards to lean

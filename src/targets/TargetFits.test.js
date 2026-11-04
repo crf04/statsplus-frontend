@@ -32,6 +32,14 @@ const entry = {
   ],
 };
 
+// Decoded last games, newest first, as the resolve decoder returns them.
+const games = (...values) =>
+  values.map((value, index) => ({
+    gameId: `00225000${10 - index}`,
+    gameDate: `2026-01-${String(20 - index).padStart(2, '0')}`,
+    value,
+  }));
+
 const headers = () => screen.getAllByRole('columnheader').map((cell) => cell.textContent);
 const rows = () =>
   screen
@@ -104,7 +112,7 @@ test('each fit shows his last five against the majority line and the best Over p
           name: 'Jaden McDaniels',
           position: 'Wing',
           seasonAverages: { REB: 6 },
-          lastFiveGames: [6, 7, 6, 3, 5.5],
+          lastFiveGames: games(6, 7, 6, 3, 5.5),
           // Four providers post 5.5 and Novig 3.5: the line is 5.5, and of the
           // providers pricing it Polymarket's +127 is the best Over.
           lines: {
@@ -126,7 +134,7 @@ test('each fit shows his last five against the majority line and the best Over p
           name: 'Joan Beringer',
           position: 'Wing',
           seasonAverages: { REB: 6.9 },
-          lastFiveGames: [7, 10, 4],
+          lastFiveGames: games(7, 10, 4),
           // PrizePicks posts 6.5 and Underdog 5.5: a tie goes to PrizePicks,
           // which prices no pick, so the row shows its line alone.
           lines: { prizepicks: { REB: 6.5 }, underdog: { REB: 5.5 } },
@@ -137,7 +145,7 @@ test('each fit shows his last five against the majority line and the best Over p
           name: 'No Line',
           position: 'Wing',
           seasonAverages: { REB: 2.1 },
-          lastFiveGames: [3, 1],
+          lastFiveGames: games(3, 1),
           lines: { prizepicks: { PTS: 8.5 } },
           linePrices: {},
         }),
@@ -165,6 +173,39 @@ test('each fit shows his last five against the majority line and the best Over p
   expect([...chips('Beringer')].map((chip) => chip.className)).toEqual(['is-over', 'is-over', '']);
   // No line is nothing to beat, so every chip stays neutral.
   expect([...chips('No Line')].map((chip) => chip.className)).toEqual(['', '']);
+});
+
+test('a 3PA Target reads the line posted under the FG3A market', () => {
+  render(
+    <TargetFitTable
+      entry={{
+        ...entry,
+        target: { ...entry.target, statPreferences: { columns: ['3PA'], gradedBy: '3PA' } },
+        statColumns: ['3PA'],
+        players: [
+          fit({
+            seasonAverages: { '3PA': 6.2 },
+            lastFiveGames: games(7, 5),
+            lines: { prizepicks: { FG3A: 5.5 }, underdog: { FG3A: 6.5 } },
+            linePrices: { underdog: { FG3A: { over: 105, under: -135 } } },
+          }),
+        ],
+      }}
+    />,
+  );
+  // One provider each: the tie goes to PrizePicks' 5.5, which prices no pick.
+  expect(headers()).toEqual(['Player', 'Last 5 3PA', 'Avg 3PA', 'Line']);
+  expect(rows()).toEqual(['Big Fit Big756.25.5PrizePicks']);
+});
+
+test('a completed game sends no last games, and the Last 5 column goes', () => {
+  render(
+    <TargetFitTable
+      entry={rebounds([fit({ seasonAverages: { REB: 4 }, lastFiveGames: [], lines: {} })])}
+    />,
+  );
+  expect(headers()).toEqual(['Player', 'Avg REB', 'Line']);
+  expect(rows()).toEqual(['Big Fit Big4.0no line']);
 });
 
 // Season average 5; the games run 4, 4, 6 (fade) or 6, 6, 4 (boost) against it.

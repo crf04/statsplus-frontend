@@ -1196,6 +1196,12 @@ describe('Evidence season', () => {
     expect(fetchSlate.mock.calls).toEqual([
       ['2026-01-15', { signal: expect.any(AbortSignal), season: '2026-27' }],
     ]);
+    // The Targets resolve reads the same season, so fit averages are its own.
+    await waitFor(() =>
+      expect(fetchResolvedTargets.mock.calls).toEqual([
+        [{ date: '2026-01-15', season: '2026-27', signal: expect.any(AbortSignal) }],
+      ]),
+    );
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveValue('2026-27');
     expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
     expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(
@@ -1252,6 +1258,14 @@ describe('Evidence season', () => {
       expect(fetchSlate.mock.calls).toEqual([
         ['2026-10-27', { signal: expect.any(AbortSignal), season: '2026-27' }],
       ]);
+      // A 2026-27 day resolves its Targets in 2026-27 too (crf04/statsplus#423).
+      await waitFor(() =>
+        expect(fetchResolvedTargets).toHaveBeenCalledWith({
+          date: '2026-10-27',
+          season: '2026-27',
+          signal: expect.any(AbortSignal),
+        }),
+      );
       expect(seasonSelect()).toHaveValue('2026-27');
       expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
       expect(screen.getByRole('combobox', { name: 'Evidence season' })).toHaveDisplayValue(

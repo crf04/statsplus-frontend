@@ -120,13 +120,18 @@ export function fitStat(entry, gradedBy) {
 
 export const formatFitStat = (value) => (value === null ? '—' : value.toFixed(1));
 
+// The posted-line market a Target stat is quoted in: 3PA is posted as FG3A
+// (backend `target_stat_market`); every other stat is its own market.
+const TARGET_MARKET_ALIASES = { '3PA': 'FG3A' };
+export const targetStatMarket = (stat) => TARGET_MARKET_ALIASES[stat] ?? stat;
+
 // Providers in the order they win a tied count, as the game-log picker's
 // majority line does (crf04/statsplus#274): PrizePicks, then alphabetical.
 const byProviderPreference = (a, b) =>
   (b === 'prizepicks') - (a === 'prizepicks') || (a < b ? -1 : a > b ? 1 : 0);
 
 /*
- * The line a fit row shows in one stat: the line most providers post, and
+ * The line a fit row shows in one market: the line most providers post, and
  * beside it the best Over price among the providers posting that line, with
  * that provider's Under. Null when nobody posts the stat; undefined when the
  * backend sent no lines at all (one deployed before crf04/statsplus#423).
@@ -198,10 +203,10 @@ function LastFive({ games, line, stat }) {
       role="group"
       aria-label={`Last ${games.length} ${stat}, newest first`}
     >
-      {games.map((value, index) => (
+      {games.map(({ gameId, value }) => (
         <span
           className={value !== null && line && value > line.line ? 'is-over' : undefined}
-          key={index}
+          key={gameId}
         >
           {formatGameValue(value)}
         </span>
@@ -240,7 +245,7 @@ export function TargetFitTable({ entry }) {
   }
   // A backend deployed before crf04/statsplus#423 sends neither, and the card
   // reads as it did: no chips, no line column.
-  const showLastFive = players.some((player) => player.lastFiveGames);
+  const showLastFive = players.some((player) => player.lastFiveGames?.length);
   const showLines = players.some((player) => player.lines);
   return (
     <table className="target-fits" aria-label={`Fits for ${target.title}`}>
@@ -257,7 +262,7 @@ export function TargetFitTable({ entry }) {
       </thead>
       <tbody>
         {players.map((player) => {
-          const line = fitLine(player, stat.key);
+          const line = fitLine(player, targetStatMarket(stat.key));
           return (
             <tr className={player.thin ? 'is-thin' : undefined} key={player.canonicalId}>
               <td className="target-fit-name">
@@ -273,7 +278,7 @@ export function TargetFitTable({ entry }) {
               </td>
               {showLastFive && (
                 <td className="num">
-                  {player.lastFiveGames && (
+                  {player.lastFiveGames?.length > 0 && (
                     <LastFive games={player.lastFiveGames} line={line} stat={stat.key} />
                   )}
                 </td>

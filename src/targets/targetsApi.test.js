@@ -1570,6 +1570,61 @@ test('shares are one entry per Qualifier of every kind, and the Diet ones are wh
     expect(() => decodeBacktest(entries(shares))).toThrow(/invalid response/i);
 });
 
+test('each backtest share carries the season its Diet was read from, or none when not sent', () => {
+  const twoDietTarget = {
+    ...wireMixedTarget,
+    qualifiers: [
+      wirePositionQualifier,
+      wireDietQualifier,
+      { ...wireDietQualifier, base: 'play_types', slice_key: 'Spotup' },
+      wireAverageQualifier,
+    ],
+  };
+  const seasoned = (base, dietSeason) => ({ ...ruleShare(base), diet_season: dietSeason });
+  const backtest = (shares) =>
+    decodeBacktest({
+      ...wireBacktest,
+      season: '2026-27',
+      target: twoDietTarget,
+      players: [{ ...wireLeBron, shares }],
+    });
+  const mixedSeason = [
+    seasoned('position', null),
+    { ...wireLeBron.shares[0], diet_season: '2026-27' },
+    {
+      base: 'play_types',
+      slice_key: 'Spotup',
+      share: 0.31,
+      league_average_share: 0.22,
+      diet_season: '2025-26',
+    },
+    seasoned('season_average', null),
+  ];
+  expect(backtest(mixedSeason).players[0].shares).toEqual([
+    { share: 0.44, leagueAverageShare: 0.2, dietSeason: '2026-27' },
+    { share: 0.31, leagueAverageShare: 0.22, dietSeason: '2025-26' },
+  ]);
+  // A backend deployed before the field sends none, and none is invented.
+  expect(
+    backtest([
+      ruleShare('position'),
+      wireLeBron.shares[0],
+      { base: 'play_types', slice_key: 'Spotup', share: 0.31, league_average_share: 0.22 },
+      ruleShare('season_average'),
+    ]).players[0].shares,
+  ).toEqual([
+    { share: 0.44, leagueAverageShare: 0.2 },
+    { share: 0.31, leagueAverageShare: 0.22 },
+  ]);
+  // A Diet share names a season; a Position or Average entry names none.
+  for (const shares of [
+    mixedSeason.with(1, { ...mixedSeason[1], diet_season: null }),
+    mixedSeason.with(1, { ...mixedSeason[1], diet_season: '2026' }),
+    mixedSeason.with(0, seasoned('position', '2025-26')),
+  ])
+    expect(() => backtest(shares)).toThrow(/invalid response/i);
+});
+
 test('a resolved Target with a Position and an Average decodes Position on each fit', () => {
   const live = {
     ...wireResolvedLive,

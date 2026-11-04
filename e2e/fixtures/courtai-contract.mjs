@@ -2862,7 +2862,7 @@ const seasonTotals = (season) =>
       {},
     );
 
-const backtestPlayer = (target, statColumns, player) => {
+const backtestPlayer = (target, statColumns, player, backtestSeason) => {
   const fit = resolvedFit(target.qualifiers, player);
   // A thin Diet is excluded from the longer view rather than flagged in it, so
   // the sample is not polluted by a diet nobody should lean on.
@@ -2879,7 +2879,12 @@ const backtestPlayer = (target, statColumns, player) => {
     tricode: player.tricode,
     position: playerPosition(player),
     season_scoring: player.season_scoring,
-    shares: fit.shares,
+    // The fixture keeps one season of Diet, so every Diet share is read from
+    // the Backtest season and a Position or Average entry names none.
+    shares: fit.shares.map((share) => ({
+      ...share,
+      diet_season: share.slice_key === null ? null : backtestSeason,
+    })),
     season_totals: seasonTotals(season),
     season_games: season.length,
     season_averages: Object.fromEntries(
@@ -2999,7 +3004,7 @@ const seasonMetadata = (season) => ({
 const backtestTarget = (target, season) => {
   const statColumns = [...new Set(target.qualifiers.flatMap(sliceMarkets))];
   const players = leaguePlayers
-    .map((player) => backtestPlayer(target, statColumns, player))
+    .map((player) => backtestPlayer(target, statColumns, player, season ?? DEFAULT_SEASON))
     .filter(Boolean)
     // Season scoring descending, as every player list the product shows is.
     .sort((first, second) => second.season_scoring - first.season_scoring);

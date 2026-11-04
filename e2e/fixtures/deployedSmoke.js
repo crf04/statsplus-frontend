@@ -12,6 +12,8 @@ export const test = base.extend({
     await routeApiToCandidate(context);
     await bootstrapVercelBypassCookie({ browserContext: context, requestApi: request });
     await run(page);
+    // A candidate /api fetch still in flight when the test ends would throw outside any test.
+    await context.unrouteAll({ behavior: 'ignoreErrors' });
     expect(blockedWrites, 'The Release Check is read-only; these writes were aborted').toEqual([]);
   },
 });

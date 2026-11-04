@@ -1,11 +1,7 @@
-import { UNAVAILABLE_RELATIVE_LABEL } from '../matchups/displayConfig';
-import {
-  dietQualifiers,
-  positionFirst,
-  formatObservedShare,
-  formatQualifierParts,
-  signed,
-} from './targetCatalog';
+import { UNAVAILABLE_RELATIVE_LABEL, bookName } from '../matchups/displayConfig';
+import { formatPrice } from '../matchups/linePrices';
+import { backtestGrade, formatAggregatePercent } from './backtestGrade';
+import { positionFirst, formatQualifierParts, signed } from './targetCatalog';
 import { WINDOW_REASONS } from '../windowReasons';
 import '../readings.css';
 import './TargetFits.css';
@@ -116,19 +112,112 @@ export function TargetContext({ context }) {
  * without the Target's stats sends no columns, and the fit shows points.
  */
 export function fitStat(entry, gradedBy) {
-  if (!entry.statColumns?.length) return { label: 'PPG', value: (player) => player.seasonScoring };
+  if (!entry.statColumns?.length)
+    return { key: 'PTS', label: 'PPG', value: (player) => player.seasonScoring };
   const stat = gradedBy ?? entry.target.statPreferences?.gradedBy ?? entry.statColumns[0];
-  return { label: stat, value: (player) => player.seasonAverages?.[stat] ?? null };
+  return { key: stat, label: stat, value: (player) => player.seasonAverages?.[stat] ?? null };
 }
 
 export const formatFitStat = (value) => (value === null ? '—' : value.toFixed(1));
 
+// Providers in the order they win a tied count, as the game-log picker's
+// majority line does (crf04/statsplus#274): PrizePicks, then alphabetical.
+const byProviderPreference = (a, b) =>
+  (b === 'prizepicks') - (a === 'prizepicks') || (a < b ? -1 : a > b ? 1 : 0);
+
 /*
- * The fits for one live Target. An unavailable pool is stated in its own words
- * so an empty table is never read as "nobody fits"; only a live entry has a
- * pool to report on, so an idle Target never reaches here.
+ * The line a fit row shows in one stat: the line most providers post, and
+ * beside it the best Over price among the providers posting that line, with
+ * that provider's Under. Null when nobody posts the stat; undefined when the
+ * backend sent no lines at all (one deployed before crf04/statsplus#423).
+ * A line whose providers price no pick (PrizePicks) comes back unpriced.
  */
-export function TargetFitTable({ entry, dense = false }) {
+export const fitLine = (player, stat) => {
+  if (!player.lines) return undefined;
+  const posted = Object.keys(player.lines)
+    .sort(byProviderPreference)
+    .filter((provider) => Number.isFinite(player.lines[provider]?.[stat]))
+    .map((provider) => ({ provider, line: player.lines[provider][stat] }));
+  if (posted.length === 0) return null;
+  const count = (line) => posted.filter((source) => source.line === line).length;
+  const lead = posted.reduce((best, source) =>
+    count(source.line) > count(best.line) ? source : best,
+  );
+  const priced = posted
+    .filter((source) => source.line === lead.line)
+    .map((source) => ({ ...source, ...player.linePrices?.[source.provider]?.[stat] }))
+    .filter((source) => Number.isInteger(source.over));
+  const best = priced.reduce(
+    (top, source) => (top === null || source.over > top.over ? source : top),
+    null,
+  );
+  return best
+    ? { line: lead.line, provider: best.provider, over: best.over, under: best.under ?? null }
+    : { line: lead.line, provider: lead.provider, over: null, under: null };
+};
+
+/*
+ * Why a Target is worth reading tonight: a FADE or BOOST lean from the sign of
+ * its backtest in the graded stat, and one reason. The reason is the Target's
+ * note, else the backtest in a sentence. No backtest is no lean; with neither
+ * there is nothing to say.
+ */
+export const fitReason = (target, backtest, stat) => {
+  const grade = backtest ? backtestGrade(backtest, stat) : null;
+  const graded = grade && grade.relative !== null && grade.hitShare !== null ? grade : null;
+  const sentence =
+    graded &&
+    `${backtest.season ? `${backtest.season} backtest` : 'Backtest'}: ${stat} ${formatAggregatePercent(graded.relative)} vs own average, ${Math.round(graded.hitShare * 100)}% of games over it.`;
+  return {
+    lean: graded ? (graded.relative < 0 ? 'fade' : 'boost') : null,
+    text: target.note || sentence || null,
+  };
+};
+
+const formatGameValue = (value) => (value === null ? '—' : String(Number(value.toFixed(1))));
+
+function FitLine({ line }) {
+  if (line === undefined) return '—';
+  if (line === null) return <span className="target-fit-noline">no line</span>;
+  return (
+    <>
+      <b>{line.line}</b>
+      <small>
+        {bookName(line.provider)}
+        {line.over !== null &&
+          ` o${formatPrice(line.over)} u${line.under === null ? '—' : formatPrice(line.under)}`}
+      </small>
+    </>
+  );
+}
+
+function LastFive({ games, line, stat }) {
+  return (
+    <span
+      className="target-fit-l5"
+      role="group"
+      aria-label={`Last ${games.length} ${stat}, newest first`}
+    >
+      {games.map((value, index) => (
+        <span
+          className={value !== null && line && value > line.line ? 'is-over' : undefined}
+          key={index}
+        >
+          {formatGameValue(value)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/*
+ * The fits for one live Target: per player, his last five games in the graded
+ * stat against his posted line, his season average, and the line with one
+ * price. An unavailable pool is stated in its own words so an empty table is
+ * never read as "nobody fits"; only a live entry has a pool to report on, so
+ * an idle Target never reaches here.
+ */
+export function TargetFitTable({ entry }) {
   const { availability, game, players, target } = entry;
   const stat = fitStat(entry);
   if (availability.status !== 'available') {
@@ -149,37 +238,31 @@ export function TargetFitTable({ entry, dense = false }) {
       </p>
     );
   }
+  // A backend deployed before crf04/statsplus#423 sends neither, and the card
+  // reads as it did: no chips, no line column.
+  const showLastFive = players.some((player) => player.lastFiveGames);
+  const showLines = players.some((player) => player.lines);
   return (
-    /* One column per Qualifier, so a Target with several outgrows a phone.
-       The table scrolls inside its own bounds rather than the page. */
-    <div className="target-fits-wrap">
-      <table
-        className={`target-fits${dense ? ' is-dense' : ''}`}
-        aria-label={`Fits for ${target.title}`}
-      >
-        {/* A completed game has no Player Pool to read, so its participants are
-            the game's own logs, as they are on the Matchup. */}
-        {availability.source === 'game_logs' && <caption>from game logs</caption>}
-        <thead>
-          <tr>
-            <th>Player</th>
-            {dietQualifiers(target.qualifiers).map((qualifier, index) => (
-              <th className="num" key={index}>
-                {formatQualifierParts(qualifier).label}
-              </th>
-            ))}
-            <th className="num">{stat.label}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((player) => (
+    <table className="target-fits" aria-label={`Fits for ${target.title}`}>
+      {/* A completed game has no Player Pool to read, so its participants are
+          the game's own logs, as they are on the Matchup. */}
+      {availability.source === 'game_logs' && <caption>from game logs</caption>}
+      <thead>
+        <tr>
+          <th>Player</th>
+          {showLastFive && <th className="num">Last 5 {stat.key}</th>}
+          <th className="num">Avg {stat.key}</th>
+          {showLines && <th className="num">Line</th>}
+        </tr>
+      </thead>
+      <tbody>
+        {players.map((player) => {
+          const line = fitLine(player, stat.key);
+          return (
             <tr className={player.thin ? 'is-thin' : undefined} key={player.canonicalId}>
-              <td>
+              <td className="target-fit-name">
                 <b>{player.name}</b>
-                <small>{player.tricode}</small>
-                {player.position && (
-                  <small className="target-player-position">{player.position}</small>
-                )}
+                {player.position && <small> {player.position}</small>}
                 {/* A thin diet is flagged rather than dropped, so this list
                     never disagrees with the Matchup about who is in the game. */}
                 {player.thin && (
@@ -188,28 +271,50 @@ export function TargetFitTable({ entry, dense = false }) {
                   </span>
                 )}
               </td>
-              {player.shares.map((share, index) => (
-                <td className="num" key={index}>
-                  <b>{formatObservedShare(share.share)}</b>
-                  {share.leagueAverageShare !== null && (
-                    <small>lg {formatObservedShare(share.leagueAverageShare)}</small>
+              {showLastFive && (
+                <td className="num">
+                  {player.lastFiveGames && (
+                    <LastFive games={player.lastFiveGames} line={line} stat={stat.key} />
                   )}
                 </td>
-              ))}
-              <td className="num">{formatFitStat(stat.value(player))}</td>
+              )}
+              <td className="num target-fit-avg">{formatFitStat(stat.value(player))}</td>
+              {showLines && (
+                <td className="num target-fit-line">
+                  <FitLine line={line} />
+                </td>
+              )}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function FitReason({ entry, backtest }) {
+  const stat = fitStat(entry);
+  const { lean, text } = fitReason(entry.target, backtest, stat.key);
+  if (!lean && !text) return null;
+  return (
+    <div className="target-fit-why">
+      {lean && (
+        <span className={`target-lean is-${lean}`}>
+          {lean} {stat.key}
+        </span>
+      )}
+      {text && <p>{text}</p>}
     </div>
   );
 }
 
 /*
  * The Slate's own view of a Target: it hangs under the game row it belongs to,
- * so the game states itself and only the Target and its fits are repeated.
+ * so the game states itself and only the Target, why it is worth reading, and
+ * its fits are repeated. `backtests` holds the cached Target Backtests by
+ * Target id; a Target with none has no lean.
  */
-export function SlateGameTargets({ entries }) {
+export function SlateGameTargets({ entries, backtests = {} }) {
   if (entries.length === 0) return null;
   return (
     <div className="target-under">
@@ -224,7 +329,8 @@ export function SlateGameTargets({ entries }) {
               </span>
             )}
           </div>
-          <TargetFitTable entry={entry} dense />
+          <FitReason entry={entry} backtest={backtests[String(entry.target.id)]} />
+          <TargetFitTable entry={entry} />
         </article>
       ))}
     </div>

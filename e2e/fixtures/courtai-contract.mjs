@@ -2695,6 +2695,28 @@ const canonicalFixtureConditions = (conditions) =>
     ? null
     : { ...conditions, player_minutes: conditions.player_minutes ?? null };
 
+const gradedStat = (target) => target.stat_preferences?.graded_by ?? resolvedStatColumns(target)[0];
+
+// A fit's posted lines and per-pick prices in the graded stat, and that stat
+// in his last five games, newest first: the Matchup row's own, passed through
+// (crf04/statsplus#423).
+const onlyStat = (byProvider, stat, keep = () => true) =>
+  Object.fromEntries(
+    Object.entries(byProvider ?? {})
+      .filter(([provider, markets]) => markets[stat] !== undefined && keep(provider))
+      .map(([provider, markets]) => [provider, { [stat]: markets[stat] }]),
+  );
+const fitLineFields = (player, stat) => {
+  const lines = onlyStat(player.lines, stat);
+  return {
+    lines,
+    line_prices: onlyStat(player.line_prices, stat, (provider) => provider in lines),
+    last_five_games: (player.last_five_games ?? [])
+      .map((game) => game.stats[stat] ?? null)
+      .reverse(),
+  };
+};
+
 const resolveTargets = (date, targets) => {
   const slate = RESOLVABLE_SLATES[date];
   const live = [];
@@ -2753,7 +2775,10 @@ const resolveTargets = (date, targets) => {
             },
           ),
         )
-        .map((player) => resolvedFit(target.qualifiers, player))
+        .map((player) => {
+          const fit = resolvedFit(target.qualifiers, player);
+          return fit && { ...fit, ...fitLineFields(player, gradedStat(target)) };
+        })
         .filter(Boolean),
     });
   });

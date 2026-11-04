@@ -16,6 +16,7 @@ import {
   fetchDietBaselines,
   fetchSeasonMinutes,
   fetchResolvedTargets,
+  fetchTargetBacktests,
   fetchTargetPreview,
   fetchTargets,
 } from './targetsApi';
@@ -154,6 +155,35 @@ export const useTargets = (options) => useAccountRead(readList, EMPTY_LIST, unde
  */
 export const useResolvedTargets = (date, options) =>
   useAccountRead(readResolution, EMPTY_RESOLUTION, date, options);
+
+/*
+ * The cached Target Backtests by Target id, for the Slate's fit cards to lean
+ * on (crf04/statsplus#423). Only the batch is read: a Target the backend has
+ * not cached, or whose read failed, has no lean, and the Slate never starts
+ * the league-wide scan on its own. A failed batch is the same as an empty one.
+ */
+const NO_BACKTESTS = {};
+export const useTargetBacktests = (enabled) => {
+  const [backtests, setBacktests] = useState(NO_BACKTESTS);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const controller = new AbortController();
+    fetchTargetBacktests({ signal: controller.signal })
+      .then((reads) => {
+        if (controller.signal.aborted) return;
+        setBacktests(
+          Object.fromEntries(
+            reads
+              .filter((read) => read.status === 'ready')
+              .map((read) => [String(read.targetId), read.backtest]),
+          ),
+        );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [enabled]);
+  return enabled ? backtests : NO_BACKTESTS;
+};
 
 const EMPTY_PREVIEW = { status: 'idle', error: null, unavailable: null, preview: null, key: null };
 

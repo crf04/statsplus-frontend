@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { filterSetToSearchParams } from '../filterUtils';
-import { aggregateEvidence, gameStat, seasonStat } from './statValues';
+import { aggregateColumn, formatAggregatePercent, recordGames, rounded } from './backtestGrade';
+import { gameStat, seasonStat } from './statValues';
 import StatPicker from './StatPicker';
 import { dietQualifiers, formatQualifierParts, signed } from './targetCatalog';
 import './TargetRecord.css';
@@ -16,20 +17,9 @@ const number = (value) => (value == null ? '—' : value.toFixed(1));
 const gameNumber = (value) => (value == null ? '—' : Number(value.toFixed(1)).toString());
 const formatMargin = (value) => (value == null ? '—' : signed(value));
 
-const rounded = (value) => {
-  if (!Number.isFinite(value)) return null;
-  const display = Number(value.toFixed(1));
-  return Object.is(display, -0) ? 0 : display;
-};
 const formatAggregateNumber = (value) => {
   const display = rounded(value);
   return display === null ? '—' : `${display > 0 ? '+' : ''}${display.toFixed(1)}`;
-};
-const formatAggregatePercent = (value) => {
-  const display = rounded(value);
-  if (display === null) return '—';
-  const text = display.toFixed(1).replace(/\.0$/, '');
-  return `${display > 0 ? '+' : ''}${text}%`;
 };
 const unitFor = (column) => {
   if (column.endsWith('/36')) return `${column}`;
@@ -37,51 +27,6 @@ const unitFor = (column) => {
   if (column === 'PTS/FGA') return 'PTS/FGA';
   return `${column}/game`;
 };
-
-const aggregateColumn = (games, column) => {
-  const evidence = games
-    .map((row) => aggregateEvidence(row.game, row.player, column))
-    .filter(Boolean);
-  if (evidence.length === 0) return { difference: null, relative: null, count: 0 };
-
-  const excess = evidence.reduce((total, item) => total + item.excess, 0);
-  const expected = evidence.reduce((total, item) => total + item.expectedProduction, 0);
-  // Evidence kind and multiplier are homogeneous for each selected column.
-  const first = evidence[0];
-  const difference =
-    first.kind === 'weighted'
-      ? (excess / evidence.reduce((total, item) => total + item.weight, 0)) * first.multiplier
-      : excess / evidence.length;
-  const relative = expected === 0 ? null : (excess / expected) * 100;
-  return {
-    difference: Number.isFinite(difference) ? difference : null,
-    relative: relative === null || Number.isFinite(relative) ? relative : null,
-    count: evidence.length,
-  };
-};
-
-// Keep full precision through grading and arithmetic; round only for display.
-function recordGames(backtest, columns) {
-  return backtest.players
-    .flatMap((player) =>
-      player.games.map((game, index) => ({
-        player,
-        game,
-        key: `${player.canonicalId}-${game.gameDate}-${index}`,
-        margins: Object.fromEntries(
-          columns.map((column) => {
-            const value = gameStat(game, column);
-            const average = seasonStat(player, column);
-            return [
-              column,
-              Number.isFinite(value) && Number.isFinite(average) ? value - average : null,
-            ];
-          }),
-        ),
-      })),
-    )
-    .sort((a, b) => a.game.gameDate.localeCompare(b.game.gameDate));
-}
 
 /*
  * Early in a season a player can qualify on last season's Diet for a Base

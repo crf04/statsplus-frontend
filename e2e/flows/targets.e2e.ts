@@ -345,13 +345,16 @@ signedInTest(
     await app.open('/matchups?date=2026-01-15');
     await expect(screen.getByRole('heading', 'LAL @ BOS')).toBeVisible();
     const fits = screen.getByRole('article').filter({ hasText: 'At-rim assists' });
-    await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('31%');
-    await expect(fits.getByRole('row', { name: /LeBron James/ })).toContainText('lg 14%');
-    // The fit reads the Target's own stat, assists, not his points.
-    await expect(fits.getByRole('row', { name: /Player/ })).toHaveText('PLAYER AT-RIM ASSISTS AST');
-    await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toHaveText(
-      'Austin Reaves LAL Guard THIN 35% lg 14% 8.5',
+    // The fit reads the Target's own stat, assists, not his points: his last
+    // five newest first, his average and his line, which nobody posts
+    // (crf04/statsplus#423). The Qualifier shares stay on the Targets page.
+    await expect(fits.getByRole('row', { name: /LeBron James/ })).toHaveText(
+      'LeBron James Wing 8 6 10 7 9 8.5 no line',
     );
+    // Austin has played three games, and none of them names his assists.
+    await expect(fits.getByRole('group', 'Last 3 AST, newest first')).toHaveText('— — —');
+    await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toContainText('THIN');
+    await expect(fits.getByRole('row', { name: /Austin Reaves/ })).toContainText('no line');
     const otherGame = screen
       .getByRole('listitem')
       .filter({ has: screen.getByRole('heading', 'LAC @ MIL') })

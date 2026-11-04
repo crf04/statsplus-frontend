@@ -312,6 +312,72 @@ test('decodes a live Target into the readings and fits the day-scoped surfaces r
   });
 });
 
+// The fit fields crf04/statsplus#423 adds: lines and per-pick prices in the
+// graded stat, in the Matchup row's shapes, and the last five, newest first.
+const withFitLines = (fields) => ({
+  ...wireResolvedLive,
+  players: [{ ...wireResolvedLive.players[0], ...fields }],
+});
+
+test("decodes a fit's lines, per-pick prices and last five, skipping unknown priced providers", () => {
+  const [fit] = decodeResolvedTargets(
+    resolvePayload([
+      withFitLines({
+        lines: { prizepicks: { REB: 5.5 }, underdog: { REB: 5.5 }, fliff: { REB: 6.5 } },
+        line_prices: {
+          underdog: { REB: { over: 124, under: -152 } },
+          fliff: { REB: { over: -140, under: 110 } },
+        },
+        last_five_games: [7, 10, null, 6, 7],
+      }),
+    ]),
+  ).entries[0].players;
+  expect(fit.lines).toEqual({
+    prizepicks: { REB: 5.5 },
+    underdog: { REB: 5.5 },
+    fliff: { REB: 6.5 },
+  });
+  expect(fit.linePrices).toEqual({ underdog: { REB: { over: 124, under: -152 } } });
+  expect(fit.lastFiveGames).toEqual([7, 10, null, 6, 7]);
+});
+
+test('a backend without the fit line fields decodes them as absent, not empty', () => {
+  const [fit] = decodeResolvedTargets(resolvePayload([wireResolvedLive])).entries[0].players;
+  expect(Object.keys(fit)).toEqual([
+    'canonicalId',
+    'name',
+    'tricode',
+    'seasonScoring',
+    'thin',
+    'shares',
+  ]);
+  const [empty] = decodeResolvedTargets(
+    resolvePayload([withFitLines({ lines: {}, line_prices: {}, last_five_games: [] })]),
+  ).entries[0].players;
+  expect([empty.lines, empty.linePrices, empty.lastFiveGames]).toEqual([{}, {}, []]);
+});
+
+test.each([
+  [
+    'a price with no line beside it',
+    { lines: {}, line_prices: { underdog: { REB: { over: 100, under: -120 } } } },
+  ],
+  [
+    'a pick priced on neither side',
+    {
+      lines: { underdog: { REB: 5.5 } },
+      line_prices: { underdog: { REB: { over: null, under: null } } },
+    },
+  ],
+  ['a negative line', { lines: { underdog: { REB: -1 } } }],
+  ['six games in the last five', { last_five_games: [1, 2, 3, 4, 5, 6] }],
+  ['a game value that is not a number', { last_five_games: ['7'] }],
+])('refuses %s', (_, fields) => {
+  expect(() => decodeResolvedTargets(resolvePayload([withFitLines(fields)]))).toThrow(
+    /invalid response/i,
+  );
+});
+
 test('an idle Target keeps its record and states that nothing named a pool', () => {
   const { entries } = decodeResolvedTargets(resolvePayload([wireResolvedLive, wireResolvedIdle]));
 

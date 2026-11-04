@@ -673,6 +673,55 @@ test("the cards resolve once, for the Slate's default Evidence season", async ()
   ]);
 });
 
+/*
+ * Each season answers with its own fit, so the pill proves which one it reads:
+ * Beringer's 2026-27 REB, Position and last five, never 2025-26's.
+ */
+test('a fit pill shows the 2026-27 average and Position, not the default season’s', async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  auth.currentUser = { uid: 'season-parity-reader' };
+  fetchTargets.mockResolvedValue([
+    { ...targets[0], statPreferences: { columns: ['PTS', 'REB'], gradedBy: 'REB' } },
+    targets[1],
+  ]);
+  const fit = (season) => ({
+    ...resolution,
+    entries: [
+      {
+        ...resolution.entries[0],
+        statColumns: ['PTS', 'REB'],
+        players: [
+          {
+            ...resolution.entries[0].players[0],
+            canonicalId: 1642000,
+            name: 'Yanic Konan Niederhauser',
+            ...(season === '2026-27'
+              ? {
+                  position: 'Center',
+                  seasonAverages: { PTS: 9.1, REB: 6.9 },
+                  lastFiveGames: [{ gameId: '0022600051', gameDate: '2026-11-02', value: 8 }],
+                }
+              : {
+                  position: 'Forward',
+                  seasonAverages: { PTS: 3.4, REB: 2.3 },
+                  lastFiveGames: [{ gameId: '0022501180', gameDate: '2026-04-12', value: 1 }],
+                }),
+          },
+        ],
+      },
+      resolution.entries[1],
+    ],
+  });
+  fetchResolvedTargets.mockImplementation(({ season }) => Promise.resolve(fit(season)));
+  renderPage(false);
+
+  const fits = await screen.findByRole('region', { name: 'Playing tonight' });
+  const pill = within(fits).getByRole('listitem');
+  expect(pill).toHaveTextContent(/^Yanic Konan NiederhauserCenter · Corner 3 44% · 6\.9 REB$/);
+  expect(pill).not.toHaveTextContent('2.3');
+  expect(pill).not.toHaveTextContent('Forward');
+});
+
 // The Lab's season rides the URL; the cards keep the Slate's default.
 test("a season the Lab chose leaves the cards on the Slate's default", async () => {
   jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));

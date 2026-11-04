@@ -273,6 +273,12 @@
     top: auto;
     bottom: calc(100% + 8px);
   }
+  /* A modal body scrolls and clips what rises above it, so there the list
+     opens downward. */
+  .modal .target-stat-options {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
 }
 .target-stat-save {
   font-size: 0.7rem;

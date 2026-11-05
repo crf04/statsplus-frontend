@@ -55,7 +55,6 @@ export default function FilterPanel(props) {
     <FilterPanelView
       panel={panel}
       pinned
-      compactTiles
       tabs={
         canSave && (
           <Tabs tab={tab} onChange={setTab} count={saved.sets ? saved.sets.length : null} />

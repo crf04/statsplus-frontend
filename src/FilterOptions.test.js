@@ -59,6 +59,41 @@ test('untouched controls emit only the player, and Own stat line is ready withou
   expect(screen.getByRole('option', { name: 'Points (PTS)' })).toBeVisible();
 });
 
+test('Add a filter lists each filter under its group with a visible hint', () => {
+  renderPanel();
+  const add = screen.getByRole('group', { name: 'Add a filter' });
+  expect(
+    within(add)
+      .getAllByRole('group')
+      .map((group) => [
+        group.getAttribute('aria-label'),
+        within(group)
+          .getAllByRole('button')
+          .map((button) => button.textContent),
+      ]),
+  ).toEqual([
+    [
+      'Games',
+      [
+        '+ Last N games most recent only',
+        '+ Since a date from a start date',
+        '+ Home / Away venue',
+      ],
+    ],
+    ['Opponent', ['+ One team e.g. vs BOS', '+ Defense rank e.g. top-10 vs PTS']],
+    [
+      'Player',
+      [
+        '+ Teammate on/off with or without',
+        '+ Minutes played his minutes',
+        '+ Own stat line e.g. PTS 20+',
+      ],
+    ],
+  ]);
+  fireEvent.click(within(add).getByRole('button', { name: /\+ Defense rank/ }));
+  expect(screen.getByText('Defense rank', { selector: '.fpb-editor-head span' })).toBeVisible();
+});
+
 test('Add a filter offers no playtype matchup rating tile', () => {
   renderPanel();
   expect(screen.getByRole('button', { name: /\+ Minutes/ })).toBeVisible();
@@ -96,7 +131,7 @@ const teams = () =>
 
 test('the Opponent tile lists the 30 teams and a second pick replaces the first', () => {
   renderPanel();
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ One team/ }));
   expect(teams()).toHaveLength(30);
   expect(teams().slice(0, 3)).toEqual(['ATL', 'BOS', 'BKN']);
   fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
@@ -110,7 +145,7 @@ test('the Opponent tile lists the 30 teams and a second pick replaces the first'
 
 test('Next: vs OPP filters to the next opponent only once tapped', () => {
   renderPanel({}, [], { nextOpponent: { next_game: { opponent: 'CHA' } } });
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ One team/ }));
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James' });
   fireEvent.click(screen.getByRole('button', { name: 'Next: vs CHA' }));
@@ -124,7 +159,7 @@ test.each([
   ['no upcoming game', { nextOpponent: { next_game: null, opponent_ranks: [] } }],
 ])('with %s the Opponent editor has no Next button and the list still works', (_, extra) => {
   renderPanel({}, [], extra);
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opponent/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ One team/ }));
   expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'DEN' }));
   apply();
@@ -238,7 +273,7 @@ test('opening a different Filter Set clears an end date the old one left behind'
 
 test('Team Filter categories scope metrics and switching drops a stale selection', () => {
   renderPanel();
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ Defense rank/ }));
   fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'OPP_PTS' } });
   expect(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' })).toBeEnabled();
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
@@ -278,7 +313,7 @@ test('editing a Team Filter loads its rank window and replaces its existing toke
 test('positions 1,8 display as ranks 23–30 and choosing 23–30 requests 1,8', () => {
   renderPanel({ 'teams_against[]': ['OPP_PTS'], 'rank_filter[]': ['1,8'] });
   expect(screen.getByText('Points Allowed (ranks 23–30)')).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: /\+ Opp. defense/ }));
+  fireEvent.click(screen.getByRole('button', { name: /\+ Defense rank/ }));
   fireEvent.click(screen.getByRole('tab', { name: 'Play type' }));
   fireEvent.change(screen.getByLabelText('Defensive metric'), {
     target: { value: 'sheet:play_types:Isolation:PTS' },

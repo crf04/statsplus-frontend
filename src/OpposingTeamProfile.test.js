@@ -53,6 +53,23 @@ test('Traditional shows each reading as a labelled bar, split into two columns',
   expect(screen.queryByText('Value (Rank & vs Avg %)')).not.toBeInTheDocument();
 });
 
+test('Defensive Rating reads with one decimal, its rank and its gap from league', async () => {
+  await show('Traditional', {
+    ...traditional,
+    DRTG: 108.4321,
+    DRTG_RANK: 4,
+    DRTG_vs_avg_pct: -5.21,
+  });
+  const drtg = screen.getByText('DRTG').closest('[role="listitem"]');
+  expect(drtg).toHaveTextContent('DRTG108.4−5.2%4');
+  expect(within(drtg).getByTitle('Rank 4 of 30')).toBeInTheDocument();
+});
+
+test('a Traditional body without DRTG shows its row as N/A', async () => {
+  await show('Traditional', traditional);
+  expect(screen.getByText('DRTG').closest('[role="listitem"]')).toHaveTextContent('DRTGN/A—–');
+});
+
 test('Playtypes stay in one column with percent vs league and no footnote', async () => {
   await show('Playtypes', playtypes);
   expect(screen.getAllByTestId('opponent-bars-column')).toHaveLength(1);

@@ -2169,6 +2169,9 @@ const applyOpponentTricode = (logs, url) => {
 const traditionalTeamStats = {
   OPP_PTS: 112,
   OPP_PTS_RANK: 18,
+  DRTG: 114.2,
+  DRTG_RANK: 17,
+  DRTG_vs_avg_pct: 0.6,
   OPP_OREB: 10.62,
   OPP_OREB_RANK: 7,
   OPP_OREB_vs_avg_pct: -4.75,

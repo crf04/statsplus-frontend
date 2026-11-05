@@ -90,8 +90,30 @@ test('Add a filter lists each filter under its group with a visible hint', () =>
       ],
     ],
   ]);
-  fireEvent.click(within(add).getByRole('button', { name: /\+ Defense rank/ }));
-  expect(screen.getByText('Defense rank', { selector: '.fpb-editor-head span' })).toBeVisible();
+  ['most recent only', 'from a start date', 'venue', 'e.g. vs BOS', 'e.g. top-10 vs PTS'].forEach(
+    (hint) => expect(within(add).getByText(hint)).toBeVisible(),
+  );
+  ['with or without', 'his minutes', 'e.g. PTS 20+'].forEach((hint) =>
+    expect(within(add).getByText(hint)).toBeVisible(),
+  );
+  [
+    'Last N games',
+    'Since a date',
+    'Home / Away',
+    'One team',
+    'Defense rank',
+    'Teammate on/off',
+    'Minutes played',
+    'Own stat line',
+  ].forEach((label) => {
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Add a filter' })).getByRole('button', {
+        name: new RegExp(`^\\+ ${label.replace('/', '\\/')} `),
+      }),
+    );
+    expect(screen.getByText(label, { selector: '.fpb-editor-head span' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  });
 });
 
 test('Add a filter offers no playtype matchup rating tile', () => {

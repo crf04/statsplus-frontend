@@ -332,7 +332,7 @@ const GameLogFilter = ({ notice = null }) => {
   // Nothing in flight outlives the workspace.
   useEffect(() => clearSeasonGameLogs, [clearSeasonGameLogs]);
 
-  // The strip and Own stat line share one unfiltered-season read per player.
+  // Own stat line reads the unfiltered season once per player.
   const loadSeasonGameLogs = useCallback(() => {
     const player = requestFilters.player_name;
     const season = requestFilters.season_filter;

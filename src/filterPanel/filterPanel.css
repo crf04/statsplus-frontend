@@ -901,7 +901,7 @@
   color: var(--ct-x-aab4c4);
 }
 
-/* ---- J: count folded into the strip, compact tiles ------------------- */
+/* ---- J: compact tiles ---------------------------------------------- */
 
 @media (min-width: 768px) {
   .fp-pinned .fp-scroll .fp-filler.is-j {

@@ -22,7 +22,8 @@ const lastOneGame = (request: { url(): string }) => ({
 const setLastNGames = async (screen: Screen, games: string) => {
   const panel = screen.getByTestId('filter-panel');
   const field = screen.getByLabel('Last N games');
-  if (!(await field.isVisible())) await panel.getByRole('button', '+ Last N').tap();
+  if (!(await field.isVisible()))
+    await panel.getByRole('button', '+ Last N games most recent only').tap();
   await field.fill(games);
   await screen.getByRole('button', { name: /^Apply/ }).tap();
 };

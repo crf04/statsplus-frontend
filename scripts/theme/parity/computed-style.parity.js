@@ -78,7 +78,7 @@ const ROUTES = {
       await open(page, `${origin}${PARITY_PATH}`);
       const panel = page.getByTestId('filter-panel');
       await expect(panel.getByText(/^Next:/)).toBeVisible();
-      await panel.getByRole('button', { name: '+ Opp. defense' }).click();
+      await panel.getByRole('button', { name: '+ Defense rank' }).click();
     },
   },
   'Log Workspace with charts': {

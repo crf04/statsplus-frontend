@@ -588,7 +588,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Defense rank' }).click();
   const defensiveFilter = page.getByTestId('filter-panel');
   const fromRank = page.getByRole('slider', { name: 'From rank' });
   const toRank = page.getByRole('slider', { name: 'To rank' });
@@ -626,7 +626,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
   // filters travel with paired ranks. Applying filters re-renders the panel
   // from appliedFilters and resets the category pill, so it needs clicking again.
   const rankedRequestCount = gameLogRequests.length;
-  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Defense rank' }).click();
   await page.getByRole('tab', { name: 'Play type' }).click();
   await page.getByLabel('Defensive metric').selectOption('Transition Points');
   for (let step = 0; step < 10; step += 1) await fromRank.press('ArrowLeft');
@@ -676,7 +676,7 @@ test('a shared link with a retired Play type volume filter still loads and sends
   expect(request.searchParams.getAll('rank_filter[]')).toEqual(['10']);
   await expect(page.getByText(/sheet:/)).toHaveCount(0);
 
-  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Defense rank' }).click();
   await expect(page.getByRole('tab', { name: 'Play volume' })).toHaveCount(0);
   await expect(page.getByRole('tab', { name: 'Shot zone' })).toBeVisible();
 });
@@ -695,7 +695,7 @@ test('a Defense Sheet row filter sends its exact token and survives a reload', a
   await page.getByRole('textbox').press('Enter');
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
 
-  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Opp. defense' }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Defense rank' }).click();
   await page.getByRole('tab', { name: 'Shot zone' }).click();
   await page.getByLabel('Defensive metric').selectOption({ label: 'Restricted Area Makes' });
   await page

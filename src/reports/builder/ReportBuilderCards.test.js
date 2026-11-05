@@ -407,7 +407,7 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   fireEvent.click(screen.getByRole('radio', { name: 'My line' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'My line' }), { target: { value: '2.5' } });
 
-  addFilter('Opp. defense');
+  addFilter('Defense rank');
   choose('Defensive metric', 'OPP_PTS');
   fireEvent.click(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' }));
 
@@ -517,7 +517,7 @@ test('the Opponent filter comes from + Filter and redraws the Card, and removing
   openPicker();
   await pickBane();
   expect(screen.queryByLabelText('Opponent (optional)')).not.toBeInTheDocument();
-  addFilter('Opponent');
+  addFilter('One team');
   fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
   await settle();
@@ -575,13 +575,13 @@ test('the game-log picker offers only what a Card can draw', async () => {
       .getAllByRole('button')
       .map((button) => button.textContent),
   ).toEqual([
-    'Teammate on / off court',
-    'Last N most recent games',
-    'Since a date',
+    'Last N games most recent only',
+    'Since a date from a start date',
     'Home / Away venue',
-    'Opponent one team',
-    'Minutes played',
-    'Opp. defense team ranks',
+    'One team e.g. vs BOS',
+    'Defense rank e.g. top-10 vs PTS',
+    'Teammate on/off with or without',
+    'Minutes played his minutes',
     'Own stat line e.g. PTS 20+',
   ]);
   fireEvent.click(screen.getByRole('button', { name: /^Own stat line/ }));

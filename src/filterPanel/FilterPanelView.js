@@ -21,18 +21,20 @@ export const formatDate = (iso) => {
   });
 };
 
+// Grouped by what each filter narrows; `sub` is the hint shown beside it.
 const TILES = [
-  { key: 'teammate', title: 'Teammate', sub: 'on / off court' },
-  { key: 'games', title: 'Last N', sub: 'most recent games' },
-  { key: 'date', title: 'Since', sub: 'a date' },
-  { key: 'location', title: 'Home / Away', sub: 'venue' },
-  { key: 'opponent', title: 'Opponent', sub: 'one team' },
-  { key: 'minutes', title: 'Minutes', sub: 'played' },
+  { key: 'games', group: 'Games', title: 'Last N games', sub: 'most recent only' },
+  { key: 'date', group: 'Games', title: 'Since a date', sub: 'from a start date' },
+  { key: 'location', group: 'Games', title: 'Home / Away', sub: 'venue' },
+  { key: 'opponent', group: 'Opponent', title: 'One team', sub: 'e.g. vs BOS' },
+  { key: 'defense', group: 'Opponent', title: 'Defense rank', sub: 'e.g. top-10 vs PTS' },
   // Hidden from Add a filter for now; a linked playtype rule still edits here.
-  { key: 'playtype', title: 'Playtype', sub: 'matchup rating', hidden: true },
-  { key: 'defense', title: 'Opp. defense', sub: 'team ranks' },
-  { key: 'self', title: 'Own stat line', sub: 'e.g. PTS 20+' },
+  { key: 'playtype', group: 'Opponent', title: 'Playtype', sub: 'matchup rating', hidden: true },
+  { key: 'teammate', group: 'Player', title: 'Teammate on/off', sub: 'with or without' },
+  { key: 'minutes', group: 'Player', title: 'Minutes played', sub: 'his minutes' },
+  { key: 'self', group: 'Player', title: 'Own stat line', sub: 'e.g. PTS 20+' },
 ];
+const ADD_GROUPS = ['Games', 'Opponent', 'Player'];
 
 const Rule = ({ kind, children, onEdit, onRemove, name }) => (
   <li className="fpb-rule">
@@ -218,7 +220,6 @@ const FilterPanelView = ({
   panel,
   pinned,
   filler,
-  compactTiles,
   tabs,
   body,
   savedName,
@@ -445,18 +446,28 @@ const FilterPanelView = ({
             editor
           ) : (
             <>
-              <div className="fpb-addlabel">Add a filter</div>
-              <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
-                {TILES.filter((tile) => !tile.hidden).map((tile) => (
-                  <button
-                    key={tile.key}
-                    type="button"
-                    className="fpb-tile"
-                    onClick={() => startEditing(tile.key)}
-                  >
-                    <b>+ {tile.title}</b>
-                    <span>{tile.sub}</span>
-                  </button>
+              <div className="fpb-add" role="group" aria-label="Add a filter">
+                <div className="fpb-addlabel" aria-hidden="true">
+                  Add a filter
+                </div>
+                {ADD_GROUPS.map((group) => (
+                  <div key={group} className="fpb-addgroup" role="group" aria-label={group}>
+                    <div className="fpb-addgroup-title" aria-hidden="true">
+                      {group}
+                    </div>
+                    <ul>
+                      {TILES.filter((tile) => tile.group === group && !tile.hidden).map((tile) => (
+                        <li key={tile.key}>
+                          <button type="button" onClick={() => startEditing(tile.key)}>
+                            <b>
+                              <span className="fpb-add-plus">+</span> {tile.title}
+                            </b>{' '}
+                            <span className="fpb-add-hint">{tile.sub}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
               </div>
             </>

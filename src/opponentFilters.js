@@ -22,6 +22,7 @@ export const OPPONENT_FILTERS = [
       { token: 'OPP_STL', label: 'Steals', means: 'Steals allowed' },
       { token: 'OPP_BLK', label: 'Blocks', means: 'Blocks allowed' },
       { token: 'OPP_FTA', label: 'Free Throws Allowed', means: 'Fouls (FT attempts)' },
+      { token: 'OPP_FG3M', label: '3s Allowed', means: 'Threes allowed' },
       { token: 'OPP_TOV', label: 'Turnovers Forced', means: 'Turnovers forced' },
     ],
   },
@@ -90,7 +91,6 @@ export const OPPONENT_FILTERS = [
       { token: 'PU 2s', label: 'Pull-Up 2s', means: 'Pull-up two defense' },
       { token: 'PU 3s', label: 'Pull-Up 3s', means: 'Pull-up three defense' },
       { token: 'Less Than 10 ft', label: 'Inside 10 ft', means: 'Paint protection' },
-      { token: 'OPP_FG3M', label: '3s Allowed', means: 'Threes allowed' },
       { token: 'OPP_FG3A', label: '3PT Attempts Allowed', means: 'Three-point attempts allowed' },
       {
         token: 'sheet:shot_types:Catch and Shoot:FG2M',
